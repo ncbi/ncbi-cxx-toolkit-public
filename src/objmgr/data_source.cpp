@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -31,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/01/29 17:45:00  grichenk
+* Added seq-id handles locking
+*
 * Revision 1.5  2002/01/28 19:44:49  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -98,8 +100,6 @@ BEGIN_SCOPE(objects)
 CDataSource::SBioseqInfo::SBioseqInfo(void)
     : m_Entry(0)
 {
-    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
-        << " created (no entry)" << NcbiEndl;
     return;
 }
 
@@ -107,16 +107,12 @@ CDataSource::SBioseqInfo::SBioseqInfo(void)
 CDataSource::SBioseqInfo::SBioseqInfo(CSeq_entry& entry)
     : m_Entry(&entry)
 {
-    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
-        << " created (entry)" << NcbiEndl;
     return;
 }
 
 
 CDataSource::SBioseqInfo::SBioseqInfo(const SBioseqInfo& info)
 {
-    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
-        << " created (copy)" << NcbiEndl;
     if ( &info != this )
         *this = info;
 }
@@ -124,8 +120,6 @@ CDataSource::SBioseqInfo::SBioseqInfo(const SBioseqInfo& info)
 
 CDataSource::SBioseqInfo::~SBioseqInfo(void)
 {
-    NcbiCout << "DataSource::SBioseqInfo " << NStr::PtrToString(this)
-        << " deleted" << NcbiEndl;
     return;
 }
 
@@ -146,8 +140,6 @@ static CMutex s_DataSource_Mutex;
 CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
 {
-    NcbiCout << "DataSource " << NStr::PtrToString(this)
-        << " created (loader)" << NcbiEndl;
     m_Loader->SetTargetDataSource(*this);
 }
 
@@ -155,17 +147,19 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
 CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr)
 {
-    NcbiCout << "DataSource " << NStr::PtrToString(this)
-        << " created (entry)" << NcbiEndl;
     x_AddToBioseqMap(entry);
 }
 
 
 CDataSource::~CDataSource(void)
 {
-    NcbiCout << "DataSource " << NStr::PtrToString(this)
-        << " deleted" << NcbiEndl;
-    return;
+    // Find and drop each TSE
+    while (m_Entries.size() > 0) {
+        CSeq_entry* entry = *m_Entries.begin();
+        while ( entry->GetParentEntry() )
+            entry = entry->GetParentEntry();
+        DropTSE(*entry);
+    }
 }
 
 
@@ -190,7 +184,11 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
         if ( !m_Loader->GetRecords(loc, CDataLoader::eBioseqCore) )
             return CBioseq_Handle();
     }
-    CBioseq_Handle h(GetIdMapper().GetHandle(id));
+    CSeq_id_Handle idh = GetIdMapper().GetHandle(id, false);
+    // Do not even try to find the bioseq handle if there is no id handle
+    if ( !idh )
+        return CBioseq_Handle();
+    CBioseq_Handle h(idh);
     CMutexGuard guard(s_DataSource_Mutex);
     TBioseqMap::iterator found = m_BioseqMap.find(h.m_Value);
     if ( found == m_BioseqMap.end() )
@@ -272,7 +270,6 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
         }
         else {
             // Do not copy seq-data
-            //### CDelta_ext::Tdata& dlist = ext->SetDelta();
             iterate (CDelta_ext::Tdata, it, inst.GetExt().GetDelta().Get()) {
                 CDelta_seq* dseq = new CDelta_seq;
                 if ( (*it)->IsLiteral() ) {
@@ -575,12 +572,15 @@ void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse)
             CSeq_id_Handle key = GetIdMapper().GetHandle(**id);
             TBioseqMap::iterator found = m_BioseqMap.find(key);
             if ( found != m_BioseqMap.end() ) {
+                //### Just warning?
                 CBioseq* seq2 = &found->second->m_Entry->GetSeq();
                 LOG_POST(Warning << " duplicate Bioseq: " << (*id)->DumpAsFasta());
                 _ASSERT(SerialEquals<CBioseq>(*seq, *seq2));
                 return;
             }
             else {
+                // Lock the handle
+                GetIdMapper().AddHandleReference(key);
                 // Add new seq-id synonym
                 info->m_Synonyms.insert(key);
             }
@@ -711,7 +711,14 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
             }
         }
     }
-    seqmap->Add(pos, CSeqMap::eSeqEnd); //???
+    seqmap->Add(pos, CSeqMap::eSeqEnd);
+    for (int i = 0; i < seqmap->size(); i++) {
+        // Lock seq-id handles
+        const CSeqMap::CSegmentInfo& info = (*seqmap)[i].second;
+        if (info.m_SegType == CSeqMap::eSeqRef) {
+            GetIdMapper().AddHandleReference(info.m_RefSeq);
+        }
+    }
     m_SeqMaps[&seq] = seqmap;
 }
 
@@ -832,7 +839,7 @@ void CDataSource::x_DataToSeqMap(const CSeq_data& data,
                                  int& pos, int len,
                                  CSeqMap& seqmap)
 {
-    //### Search for gaps in the data
+    //### Search for gaps in the data???
     CSeqMap::TSeqSegment seg(pos,
         CSeqMap::CSegmentInfo(CSeqMap::eSeqData, false)); //???
     seg.second.m_RefData.Reset(&data);
@@ -851,6 +858,7 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
+        GetIdMapper().AddHandleReference(mapit->first.GetKey());
         TRangeMap* rm = x_GetRangeMap(mapit->first, true);
         rm->insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
@@ -865,6 +873,7 @@ void CDataSource::x_MapAlign(const CSeq_align& align)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
+        GetIdMapper().AddHandleReference(mapit->first.GetKey());
         TRangeMap* rm = x_GetRangeMap(mapit->first, true);
         rm->insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
@@ -880,6 +889,7 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
+        GetIdMapper().AddHandleReference(mapit->first.GetKey());
         TRangeMap* rm = x_GetRangeMap(mapit->first, true);
         rm->insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
@@ -940,26 +950,135 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
 void CDataSource::x_DropEntry(CSeq_entry& entry)
 {
     if ( entry.IsSeq() ) {
-        CBioseq* seq = &entry.GetSeq();
-        iterate ( CBioseq::TId, id, seq->GetId() ) {
+        CBioseq& seq = entry.GetSeq();
+        CSeq_id_Handle key;
+        iterate ( CBioseq::TId, id, seq.GetId() ) {
             // Find the bioseq index
-            CSeq_id_Handle key = GetIdMapper().GetHandle(**id);
+            key = GetIdMapper().GetHandle(**id);
             TBioseqMap::iterator found = m_BioseqMap.find(key);
             _ASSERT( found != m_BioseqMap.end() );
             m_BioseqMap.erase(found);
         }
-        TSeqMaps::iterator map_it = m_SeqMaps.find(seq);
+        TSeqMaps::iterator map_it = m_SeqMaps.find(&seq);
         if (map_it != m_SeqMaps.end()) {
+            for (int i = 0; i < map_it->second->size(); i++) {
+                // Lock seq-id handles
+                const CSeqMap::CSegmentInfo& info = (*(map_it->second))[i].second;
+                if (info.m_SegType == CSeqMap::eSeqRef) {
+                    GetIdMapper().ReleaseHandleReference(info.m_RefSeq);
+                }
+            }
             m_SeqMaps.erase(map_it);
         }
-    // m_AnnotMap
+        x_DropAnnotMap(entry);
+        GetIdMapper().ReleaseHandleReference(key);
     }
     else {
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
             x_DropEntry(**it);
         }
+        x_DropAnnotMap(entry);
     }
     m_Entries.erase(&entry);
+}
+
+
+void CDataSource::x_DropAnnotMap(CSeq_entry& entry)
+{
+    const CBioseq::TAnnot* annot_list = 0;
+    if ( entry.IsSeq() ) {
+        if ( entry.GetSeq().IsSetAnnot() ) {
+            annot_list = &entry.GetSeq().GetAnnot();
+        }
+    }
+    else {
+        if ( entry.GetSet().IsSetAnnot() ) {
+            annot_list = &entry.GetSet().GetAnnot();
+        }
+        // Do not iterate sub-trees -- they will be iterated by
+        // the calling function.
+    }
+    if ( !annot_list ) {
+        return;
+    }
+    iterate ( CBioseq::TAnnot, ai, *annot_list ) {
+        switch ( (*ai)->GetData().Which() ) {
+        case CSeq_annot::C_Data::e_Ftable:
+            {
+                iterate ( CSeq_annot::C_Data::TFtable, it,
+                    (*ai)->GetData().GetFtable() ) {
+                    x_DropFeature(**it);
+                }
+                break;
+            }
+        case CSeq_annot::C_Data::e_Align:
+            {
+                iterate ( CSeq_annot::C_Data::TAlign, it,
+                    (*ai)->GetData().GetAlign() ) {
+                    x_DropAlign(**it);
+                }
+                break;
+            }
+        case CSeq_annot::C_Data::e_Graph:
+            {
+                iterate ( CSeq_annot::C_Data::TGraph, it,
+                    (*ai)->GetData().GetGraph() ) {
+                    x_DropGraph(**it);
+                }
+                break;
+            }
+        }
+    }
+}
+
+
+void CDataSource::x_DropFeature(const CSeq_feat& feat)
+{
+    // Create a copy of annot object to iterate all seq-id handles
+    CRef<CAnnotObject> aobj(new CAnnotObject(*this, feat));
+    // Iterate handles
+    iterate ( CHandleRangeMap::TLocMap,
+        mapit, aobj->GetRangeMap().GetMap() ) {
+        TRangeMap* rm = x_GetRangeMap(mapit->first, false);
+        if ( rm ) {
+            rm->erase(mapit->second.GetOverlappingRange());
+        }
+        GetIdMapper().ReleaseHandleReference(mapit->first.GetKey());
+    }
+}
+
+
+void CDataSource::x_DropAlign(const CSeq_align& align)
+{
+    // Create a copy of annot object to iterate all seq-id handles
+    CRef<CAnnotObject> aobj(new CAnnotObject(*this, align));
+    // Iterate handles
+    iterate ( CHandleRangeMap::TLocMap,
+        mapit, aobj->GetRangeMap().GetMap() ) {
+        TRangeMap* rm = x_GetRangeMap(mapit->first, false);
+        if ( rm ) {
+            rm->insert(TRangeMap::value_type(
+                mapit->second.GetOverlappingRange(), aobj));
+        }
+        GetIdMapper().ReleaseHandleReference(mapit->first.GetKey());
+    }
+}
+
+
+void CDataSource::x_DropGraph(const CSeq_graph& graph)
+{
+    // Create a copy of annot object to iterate all seq-id handles
+    CRef<CAnnotObject> aobj(new CAnnotObject(*this, graph));
+    // Iterate handles
+    iterate ( CHandleRangeMap::TLocMap,
+        mapit, aobj->GetRangeMap().GetMap() ) {
+        TRangeMap* rm = x_GetRangeMap(mapit->first, false);
+        if ( rm ) {
+            rm->insert(TRangeMap::value_type(
+                mapit->second.GetOverlappingRange(), aobj));
+        }
+        GetIdMapper().ReleaseHandleReference(mapit->first.GetKey());
+    }
 }
 
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/29 17:45:00  grichenk
+* Added seq-id handles locking
+*
 * Revision 1.4  2002/01/28 19:44:49  gouriano
 * changed the interface of BioseqHandle: two functions moved from Scope
 *
@@ -116,8 +119,6 @@ public:
 
     CSeq_id_Mapper& GetIdMapper(void);
 
-private:
-
     /// Get the complete Bioseq (as loaded by now)
     const CBioseq& GetBioseq(const CBioseq_Handle& handle);
 
@@ -143,13 +144,38 @@ private:
                      SSeqData* seq_piece,
                      CScope& scope);
 
+    CDataLoader* GetDataLoader(void);
+    CSeq_entry* GetTopEntry(void);
+
+private:
+    // Structure to keep bioseq's parent seq-entry along with the list
+    // of seq-id synonyms for the bioseq.
+    struct SBioseqInfo : public CObject
+    {
+        typedef set<CSeq_id_Handle> TSynonyms;
+
+        SBioseqInfo(void);
+        SBioseqInfo(CSeq_entry& entry);
+        SBioseqInfo(const SBioseqInfo& info);
+        virtual ~SBioseqInfo(void);
+
+        SBioseqInfo& operator= (const SBioseqInfo& info);
+
+        bool operator== (const SBioseqInfo& info);
+        bool operator!= (const SBioseqInfo& info);
+        bool operator<  (const SBioseqInfo& info);
+
+        CRef<CSeq_entry> m_Entry;
+        TSynonyms        m_Synonyms;
+    };
 
     // Internal typedefs
-    typedef CAnnot_CI::TRange    TRange;
-    typedef CAnnot_CI::TRangeMap TRangeMap;
-    typedef CAnnot_CI::TAnnotMap TAnnotMap;
-    typedef set< CRef<CSeq_entry> >       TEntries;
-    typedef map<const CBioseq*, CRef<CSeqMap> > TSeqMaps;
+    typedef CAnnot_CI::TRange                       TRange;
+    typedef CAnnot_CI::TRangeMap                    TRangeMap;
+    typedef CAnnot_CI::TAnnotMap                    TAnnotMap;
+    typedef set< CRef<CSeq_entry> >                 TEntries;
+    typedef map<const CBioseq*, CRef<CSeqMap> >     TSeqMaps;
+    typedef map<CSeq_id_Handle, CRef<SBioseqInfo> > TBioseqMap;
 
     // Process seq-entry recursively
     void x_IndexEntry     (CSeq_entry& entry, CSeq_entry& tse);
@@ -179,55 +205,32 @@ private:
 
     // Remove entry from the datasource, update indexes
     void x_DropEntry(CSeq_entry& entry);
-
-private:
-    CDataLoader* GetDataLoader(void);
-    CSeq_entry* GetTopEntry(void);
-
-private:
-    CRef<CDataLoader>    m_Loader;
-    CRef<CSeq_entry>     m_pTopEntry;
-    CRef<CObjectManager> m_ObjMgr;
-
-    // Structure to keep bioseq's parent seq-entry along with the list
-    // of seq-id synonyms for the bioseq.
-    struct SBioseqInfo : public CObject
-    {
-        typedef set<CSeq_id_Handle> TSynonyms;
-
-        SBioseqInfo(void);
-        SBioseqInfo(CSeq_entry& entry);
-        SBioseqInfo(const SBioseqInfo& info);
-        virtual ~SBioseqInfo(void);
-
-        SBioseqInfo& operator= (const SBioseqInfo& info);
-
-        bool operator== (const SBioseqInfo& info);
-        bool operator!= (const SBioseqInfo& info);
-        bool operator<  (const SBioseqInfo& info);
-
-        CRef<CSeq_entry> m_Entry;
-        TSynonyms        m_Synonyms;
-    };
+    void x_DropAnnotMap(CSeq_entry& entry);
+    // Process a single data element
+    void x_DropFeature(const CSeq_feat& feat);
+    void x_DropAlign(const CSeq_align& align);
+    void x_DropGraph(const CSeq_graph& graph);
 
     // Replace initial handle range map with the new one, containing duplicate
     // range sets for each synonym of each handle
     void x_ResolveLocationHandles(CHandleRangeMap& loc);
 
-    typedef map<CSeq_id_Handle, CRef<SBioseqInfo> > TBioseqMap;
+    CRef<CDataLoader>    m_Loader;
+    CRef<CSeq_entry>     m_pTopEntry;
+    CRef<CObjectManager> m_ObjMgr;
 
-    TEntries                 m_Entries;   // All known seq-entries
-    TBioseqMap               m_BioseqMap; // Bioseq by seq-id key
-    TSeqMaps                 m_SeqMaps;   // Sequence maps for bioseqs
-    TAnnotMap                m_AnnotMap;  // Index of annotations
+    TEntries             m_Entries;   // All known seq-entries
+    TBioseqMap           m_BioseqMap; // Bioseq by seq-id key
+    TSeqMaps             m_SeqMaps;   // Sequence maps for bioseqs
+    TAnnotMap            m_AnnotMap;  // Index of annotations
 
-    friend class CDesc_CI;
+    //friend class CDesc_CI;
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI;
-    friend class CScope;
-    friend class CSeqVector;
-    friend class CBioseq_Handle;
-    friend class CObjectManager;
+    //friend class CScope;
+    //friend class CSeqVector;
+    //friend class CBioseq_Handle;
+    //friend class CObjectManager;
 };
 
 
