@@ -53,8 +53,14 @@ void CStdPoolOfThreads::KillAllThreads(bool wait)
 
     CRef<CStdRequest> poison(new CFatalRequest);
 
-    for (TACValue i = 0;  i < n;  ++i) {
-        AcceptRequest(poison);
+    for (TACValue i = 0;  i < n;  ) {
+        try {
+            WaitForRoom();
+            AcceptRequest(poison);
+            ++i;
+        } catch (CBlockingQueueException&) { // guard against races
+            continue;
+        }
     }
     NON_CONST_ITERATE(TThreads, it, m_Threads) {
         if (wait) {
@@ -78,6 +84,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/10/18 14:44:42  ucko
+* KillAllThreads: don't try to poison full queues.
+*
 * Revision 1.5  2004/09/08 14:21:20  ucko
 * Rework again to eliminate races in KillAllThreads.
 *
