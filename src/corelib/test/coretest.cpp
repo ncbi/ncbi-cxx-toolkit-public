@@ -30,6 +30,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  1999/07/06 15:26:37  vakatov
+* CNcbiRegistry::
+*   - allow multi-line values
+*   - allow values starting and ending with space symbols
+*   - introduced EFlags/TFlags for optional parameters in the class
+*     member functions -- rather than former numerous boolean parameters
+*
 * Revision 1.46  1999/05/27 15:22:16  vakatov
 * Extended and fixed tests for the StringToXXX() functions
 *
@@ -254,23 +261,53 @@ static void TestRegistry(void)
     _ASSERT( entries.empty() );
 
     // Compose a test registry
-    _ASSERT( reg.Set("Section0", "Name01", "Val01_BAD!!!") );
-    _ASSERT( reg.Set("Section1", "Name11", "Val11_t") );
+    _ASSERT(  reg.Set("Section0", "Name01", "Val01_BAD!!!") );
+    _ASSERT(  reg.Set("Section1", "Name11", "Val11_t") );
     _ASSERT( !reg.Empty() );
-    _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
-    _ASSERT( reg.Get("Section1", "Name11", false).empty() );
-    _ASSERT( reg.Set("Section1", "Name11", "Val11_t") );
-    _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!", true, false) );
+    _ASSERT(  reg.Get("Section1", "Name11") == "Val11_t" );
+    _ASSERT(  reg.Get("Section1", "Name11",
+                      CNcbiRegistry::ePersistent).empty() );
+    _ASSERT(  reg.Set("Section1", "Name11", "Val11_t") );
+    _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!",
+                      CNcbiRegistry::eNoOverride) );
 
-    _ASSERT( reg.Set("Section2", "Name21", "Val21", false, false) );
-    _ASSERT( reg.Set("Section2", "Name21", "Val21_t") );
+    _ASSERT(  reg.Set("Section2", "Name21", "Val21",
+                      CNcbiRegistry::ePersistent |
+                      CNcbiRegistry::eNoOverride) );
+    _ASSERT(  reg.Set("Section2", "Name21", "Val21_t") );
     _ASSERT( !reg.Empty() );
-    _ASSERT( reg.Set("Section3", "Name31", "Val31_t") );
+    _ASSERT(  reg.Set("Section3", "Name31", "Val31_t") );
 
     _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
-    _ASSERT( reg.Get("Section2", "Name21", false) == "Val21" );
+    _ASSERT( reg.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
+             "Val21" );
     _ASSERT( reg.Get("Section2", "Name21") == "Val21_t" );
     _ASSERT( reg.Get("SectionX", "Name21").empty() );
+
+    _ASSERT( reg.Set("Section4", "Name41", "Val410 Val411 Val413",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name42", "V420 V421\nV422 V423 \"",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name43",
+                     " \tV430 V431  \n V432 V433 ",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name43T",
+                     " \tV430 V431  \n V432 V433 ",
+                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
+    _ASSERT( reg.Set("Section4", "Name44", "\n V440 V441 \r\n",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name45", "\r\n V450 V451  \n  ",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name46", "\n\nV460\" \n \t \n\t",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name46T", "\n\nV460\" \n \t \n\t",
+                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
+    _ASSERT( reg.Set("Section4", "Name47", "470\n471\\\n 472\\\n473\\",
+                     CNcbiRegistry::ePersistent) );
+    _ASSERT( reg.Set("Section4", "Name47T", "470\n471\\\n 472\\\n473\\",
+                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate) );
+    string xxx("\" V481\" \n\"V482 ");
+    _ASSERT( reg.Set("Section4", "Name48", xxx, CNcbiRegistry::ePersistent) );
 
     // Dump
     CNcbiOstrstream os;
@@ -282,24 +319,56 @@ static void TestRegistry(void)
     // "Persistent" load
     CNcbiIstrstream is1(os_str);
     CNcbiRegistry  reg1(is1);
-    _ASSERT( reg1.Get("Section2", "Name21", false) == "Val21" );
-    _ASSERT( reg1.Get("Section2", "Name21") == "Val21" );
-    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString /*,true,true*/) );
-    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString, false, false) );
+    _ASSERT(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
+              "Val21" );
+    _ASSERT(  reg1.Get("Section2", "Name21") == "Val21" );
+    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString) );
+    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent |
+                       CNcbiRegistry::eNoOverride) );
     _ASSERT( !reg1.Empty() );
-    _ASSERT(  reg1.Set("Section2", "Name21", NcbiEmptyString, false, true) );
-    _ASSERT(  reg1.Empty() );
+    _ASSERT(  reg1.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent) );
 
     // "Transient" load
     CNcbiIstrstream is2(os_str);
-    CNcbiRegistry  reg2(is2, true);
-    _ASSERT( reg2.Get("Section2", "Name21", false).empty() );
-    _ASSERT( reg2.Get("Section2", "Name21") == "Val21" );
-    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString, false, true) );
-    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString, false, false) );
+    CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
+    _ASSERT(  reg2.Get("Section2", "Name21",
+                       CNcbiRegistry::ePersistent).empty() );
+    _ASSERT(  reg2.Get("Section2", "Name21") == "Val21" );
+    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent) );
+    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString,
+                       CNcbiRegistry::ePersistent |
+                       CNcbiRegistry::eNoOverride) );
     _ASSERT( !reg2.Empty() );
-    _ASSERT(  reg2.Set("Section2", "Name21", NcbiEmptyString /*,true,true*/) );
-    _ASSERT(  reg2.Empty() );
+    _ASSERT(  reg2.Set("Section2", "Name21", NcbiEmptyString) );
+
+
+    _ASSERT( reg.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
+    _ASSERT( reg.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
+    _ASSERT( reg.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
+    _ASSERT( reg.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
+    _ASSERT( reg.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
+    _ASSERT( reg.Get("Section4", "Name45")  == "\r\n V450 V451  \n  " );
+    _ASSERT( reg.Get("Section4", "Name46")  == "\n\nV460\" \n \t \n\t" );
+    _ASSERT( reg.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
+    _ASSERT( reg.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg.Get("Section4", "Name48")  == xxx );
+
+    _ASSERT( reg2.Get("Section4", "Name41")  == "Val410 Val411 Val413" );
+    _ASSERT( reg2.Get("Section4", "Name42")  == "V420 V421\nV422 V423 \"" );
+    _ASSERT( reg2.Get("Section4", "Name43")  == " \tV430 V431  \n V432 V433 ");
+    _ASSERT( reg2.Get("Section4", "Name43T") == "V430 V431  \n V432 V433" );
+    _ASSERT( reg2.Get("Section4", "Name44")  == "\n V440 V441 \r\n" );
+    _ASSERT( reg2.Get("Section4", "Name45")  == "\r\n V450 V451  \n  " );
+    _ASSERT( reg2.Get("Section4", "Name46")  == "\n\nV460\" \n \t \n\t" );
+    _ASSERT( reg2.Get("Section4", "Name46T") == "\n\nV460\" \n \t \n" );
+    _ASSERT( reg2.Get("Section4", "Name47")  == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg2.Get("Section4", "Name47T") == "470\n471\\\n 472\\\n473\\" );
+    _ASSERT( reg2.Get("Section4", "Name48")  == xxx );
+
 
     // Printout of the whole registry content
     _ASSERT( reg.Set("Section0", "Name01", "") );
@@ -320,7 +389,8 @@ static void TestRegistry(void)
             NcbiCout << "    Default:    "
                      << reg.Get(*itSection, *itEntry) << NcbiEndl;
             NcbiCout << "    Persistent: "
-                     << reg.Get(*itSection, *itEntry, false) << NcbiEndl;
+                     << reg.Get(*itSection, *itEntry,
+                                CNcbiRegistry::ePersistent) << NcbiEndl;
         }
     }
 
