@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.74  2003/12/31 16:04:37  coulouri
+ * use -1 to disable protein neighboring words
+ *
  * Revision 1.73  2003/12/08 16:03:05  coulouri
  * Propagate protein neighboring threshold even if it is zero
  *
@@ -951,7 +954,15 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       }
    }
 
-   options->threshold = threshold;
+   /* if the supplied threshold is -1, disable neighboring words */
+   if (threshold == -1)
+      options->threshold = 0;
+
+   /* if the supplied threshold is > 0, use it */
+   if (threshold > 0)
+      options->threshold = threshold;
+
+   /* otherwise, use the default */
 
    if (use_pssm)
       options->use_pssm = use_pssm;
