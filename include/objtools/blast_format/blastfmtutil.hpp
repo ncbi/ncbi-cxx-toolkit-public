@@ -36,6 +36,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbireg.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include  <objmgr/bioseq_handle.hpp>
@@ -205,6 +206,18 @@ public:
                                string& evalue_str, 
                                string& bit_score_str);
     
+    ///Fill new alignset containing the specified number of alignments with
+    ///unique slave seqids.  Note no new seqaligns were created. It just 
+    ///references the original seqalign
+    ///@param source_aln: the original alnset
+    ///@param new_aln: the new alnset
+    ///@param number: the specified number
+    ///
+    static void PruneSeqalign(CSeq_align_set& source_aln, 
+                              CSeq_align_set& new_aln,
+                              unsigned int number);
+    
+    
 };
 
 END_NCBI_SCOPE
@@ -212,6 +225,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.8  2005/02/22 15:52:49  jianye
+add pruneseqalign
+
 Revision 1.7  2005/02/14 17:42:36  jianye
 Added more url
 

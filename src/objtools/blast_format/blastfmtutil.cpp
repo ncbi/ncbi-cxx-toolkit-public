@@ -460,4 +460,28 @@ void CBlastFormatUtil::GetScoreString(double evalue, double bit_score,
 }
 
 
+void CBlastFormatUtil::PruneSeqalign(CSeq_align_set& source_aln, 
+                                     CSeq_align_set& new_aln,
+                                     unsigned int number)
+{
+    CConstRef<CSeq_id> previous_id, subid; 
+    bool is_first_aln = true;
+    unsigned int num_align = 0;
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
+        if(num_align >= number) {
+            break;
+        }
+        subid = &((*iter)->GetSeq_id(1));
+        if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))){
+            
+            num_align++;
+        }
+        new_aln.Set().push_back(*iter);
+        is_first_aln = false;
+        previous_id = subid;
+        
+    }
+}
+
+
 END_NCBI_SCOPE
