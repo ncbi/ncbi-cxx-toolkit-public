@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/26 18:31:39  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.13  1999/07/22 20:36:38  vasilche
 * Fixed 'using namespace' declaration for MSVC.
 *
@@ -86,22 +90,132 @@ BEGIN_NCBI_SCOPE
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
     : m_Output(out)
 {
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentPosition = 0;
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLimit = INT_MAX;
+#endif
 }
 
 CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
 {
+#if CHECK_STREAM_INTEGRITY
+    if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
+        THROW1_TRACE(runtime_error, "CObjectOStreamAsnBinary not finished");
+#endif
 }
+
+#if CHECK_STREAM_INTEGRITY
+inline
+void CObjectOStreamAsnBinary::StartTag(TByte code)
+{
+    m_Limits.push(m_CurrentTagLimit);
+    m_CurrentTagCode = code;
+    m_CurrentTagPosition = m_CurrentPosition;
+    m_CurrentTagState = (code & 0x1f) == eLongTag? eTagValue: eLengthStart;
+}
+
+inline
+void CObjectOStreamAsnBinary::EndTag(void)
+{
+    if ( m_Limits.empty() )
+        THROW1_TRACE(runtime_error, "too many tag ends");
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLimit = m_Limits.top();
+    m_Limits.pop();
+}
+
+inline
+void CObjectOStreamAsnBinary::SetTagLength(size_t length)
+{
+    size_t limit = m_CurrentPosition + 1 + length;
+    if ( limit > m_CurrentTagLimit )
+        THROW1_TRACE(runtime_error, "tag will overflow enclosing tag");
+    else
+        m_CurrentTagLimit = limit;
+    if ( m_CurrentTagCode & 0x20 ) // constructed
+        m_CurrentTagState = eTagStart;
+    else
+        m_CurrentTagState = eData;
+    if ( length == 0 )
+        EndTag();
+}
+#endif
 
 inline
 void CObjectOStreamAsnBinary::WriteByte(TByte byte)
 {
+#if CHECK_STREAM_INTEGRITY
+    _TRACE("WriteByte: " << unsigned(byte));
+    if ( m_CurrentPosition >= m_CurrentTagLimit )
+        THROW1_TRACE(runtime_error, "tag size overflow");
+    switch ( m_CurrentTagState ) {
+    case eTagStart:
+        StartTag(byte);
+        break;
+    case eTagValue:
+        if ( byte & 0x80 )
+            m_CurrentTagState = eLengthStart;
+        break;
+    case eLengthStart:
+        if ( byte == 0 ) {
+            SetTagLength(0);
+            if ( m_CurrentTagCode == 0 )
+                EndTag();
+        }
+        else if ( byte == 0x80 ) {
+            if ( !(m_CurrentTagCode & 0x20) ) {
+                THROW1_TRACE(runtime_error,
+                             "cannot use indefinite form for primitive tag");
+            }
+            m_CurrentTagState = eTagStart;
+        }
+        else if ( byte < 0x80 ) {
+            SetTagLength(byte);
+        }
+        else {
+            m_CurrentTagLengthSize = byte - 0x80;
+            if ( m_CurrentTagLengthSize > sizeof(size_t) )
+                THROW1_TRACE(runtime_error, "too big length");
+            m_CurrentTagState = eLengthValueFirst;
+        }
+        break;
+    case eLengthValueFirst:
+        if ( byte == 0 )
+            THROW1_TRACE(runtime_error, "first byte of length is zero");
+        m_CurrentTagState = eLengthValue;
+        // fall down to next case (no break needed)
+    case eLengthValue:
+        m_CurrentTagLength = (m_CurrentTagLength << 8) | byte;
+        if ( --m_CurrentTagLengthSize == 0 )
+            SetTagLength(m_CurrentTagLength);
+        break;
+    case eData:
+        if ( m_CurrentPosition + 1 == m_CurrentTagLimit )
+            EndTag();
+        break;
+    }
+    m_CurrentPosition++;
+#endif
     m_Output.put(byte);
 }
 
 inline
 void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 {
-    m_Output.write(bytes, size);
+    if ( size == 0 )
+        return;
+#if CHECK_STREAM_INTEGRITY
+    _TRACE("WriteBytes: " << size);
+    if ( m_CurrentTagState != eData )
+        THROW1_TRACE(runtime_error, "WriteBytes only allowed in DATA");
+    if ( m_CurrentPosition + size > m_CurrentTagLimit )
+        THROW1_TRACE(runtime_error, "tag DATA overflow");
+    if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
+        EndTag();
+#endif
+    if ( !m_Output.write(bytes, size) )
+        THROW1_TRACE(runtime_error, "write error");
 }
 
 template<typename T>
@@ -209,9 +323,21 @@ void CObjectOStreamAsnBinary::WriteLength(size_t length)
         WriteByte(length >> 8);
         WriteByte(length);
     }
+    else if ( length < 0xffffff ) {
+        WriteByte(0x83);
+        WriteByte(length >> 16);
+        WriteByte(length >> 8);
+        WriteByte(length);
+    }
+    else if ( length < 0xffffffff ) {
+        WriteByte(0x84);
+        WriteByte(length >> 24);
+        WriteByte(length >> 16);
+        WriteByte(length >> 8);
+        WriteByte(length);
+    }
     else {
-        WriteByte(0x80 | sizeof(length));
-        WriteBytesOf(*this, length);
+        THROW1_TRACE(runtime_error, "too big length");
     }
 }
 
@@ -442,7 +568,18 @@ unsigned CObjectOStreamAsnBinary::GetAsnFlags(void)
 
 void CObjectOStreamAsnBinary::AsnWrite(AsnIo& , const char* data, size_t length)
 {
-    WriteBytes(data, length);
+    if ( length == 0 )
+        return;
+#if CHECK_STREAM_INTEGRITY
+    _TRACE("WriteBytes: " << length);
+    if ( m_CurrentTagState != eTagStart )
+        THROW1_TRACE(runtime_error, "AsnWrite only allowed at tag start");
+    if ( m_CurrentPosition + length > m_CurrentTagLimit )
+        THROW1_TRACE(runtime_error, "tag DATA overflow");
+    m_CurrentPosition += length;
+#endif
+    if ( !m_Output.write(data, length) )
+        THROW1_TRACE(runtime_error, "write error");
 }
 
 END_NCBI_SCOPE

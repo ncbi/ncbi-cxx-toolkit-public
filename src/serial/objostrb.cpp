@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/26 18:31:40  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.17  1999/07/22 20:36:38  vasilche
 * Fixed 'using namespace' declaration for MSVC.
 *
@@ -382,6 +386,7 @@ void CObjectOStreamBinary::VEnd(const Block& )
 
 void CObjectOStreamBinary::StartMember(Member& , const CMemberId& id)
 {
+    WriteByte(eMember);
     WriteStringValue(id.GetName());
 }
 
@@ -404,6 +409,8 @@ unsigned CObjectOStreamBinary::GetAsnFlags(void)
 
 void CObjectOStreamBinary::AsnWrite(AsnIo& , const char* data, size_t length)
 {
+    WriteByte(eBytes);
+    WriteSize(length);
     WriteBytes(data, length);
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/26 18:31:31  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.7  1999/07/21 14:20:01  vasilche
 * Added serialization of bool.
 *
@@ -83,7 +87,8 @@ namespace CObjectStreamBinaryDefs
         eOtherClass,
         eElement,
         eEndOfElements,
-		eBytes
+		eBytes,
+        eMember
     };
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/07/26 18:31:28  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.18  1999/07/22 20:36:37  vasilche
 * Fixed 'using namespace' declaration for MSVC.
 *
@@ -130,6 +134,9 @@ class CObjectIStream
 public:
     typedef unsigned TIndex;
 
+    CObjectIStream(void);
+    virtual ~CObjectIStream(void);
+
     // root reader
     virtual void Read(TObjectPtr object, TTypeInfo typeInfo);
 
@@ -155,23 +162,62 @@ public:
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
     // reads type info
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
+    enum EPointerType {
+        eNullPointer,
+        eMemberPointer,
+        eObjectPointer,
+        eThisPointer,
+        eOtherPointer
+    };
 
     virtual void SkipValue(void);
 
+    // low level readers:
+    enum EFailFlags {
+        eNoError = 0,
+        eEOF = 1,
+        eReadError = 2,
+        eFormatError = 4,
+        eOverflow = 8,
+        eIllegalCall = 16
+    };
+    bool fail(void) const
+        {
+            return m_Fail != 0;
+        }
+    unsigned GetFailFlags(void) const
+        {
+            return m_Fail;
+        }
+    unsigned SetFailFlags(unsigned flags)
+        {
+            unsigned old = m_Fail;
+            m_Fail |= flags;
+            return old;
+        }
+    unsigned ClearFailFlags(unsigned flags)
+        {
+            unsigned old = m_Fail;
+            m_Fail &= ~flags;
+            return old;
+        }
+
+    // member interface
     class Member : public CMemberId {
     public:
-        Member(CObjectIStream& in)
-            : m_In(in)
+        Member(CObjectIStream& in);
+        Member(CObjectIStream& in, const CMemberId& id);
+        ~Member(void);
+
+        Member* GetPrevous(void) const
             {
-                in.StartMember(*this);
-            }
-        ~Member(void)
-            {
-                m_In.EndMember(*this);
+                return m_Previous;
             }
     private:
         CObjectIStream& m_In;
+        Member* m_Previous;
     };
+
     // block interface
     enum EFixed {
         eFixed
@@ -290,6 +336,7 @@ public:
 		friend class CObjectIStream;
 	};
 
+    // ASN.1 interface
     class AsnIo {
     public:
         AsnIo(CObjectIStream& in);
@@ -309,22 +356,27 @@ public:
     private:
         CObjectIStream& m_In;
         asnio* m_AsnIo;
+
+    public:
+        size_t m_Count;
     };
 
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnClose(AsnIo& asn);
-    virtual unsigned GetAsnFlags(void);
-    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
-
 protected:
-    // block interface
     friend class Block;
     friend class Member;
 	friend class ByteBlock;
-    static void SetNonFixed(Block& block)
+    friend class AsnIo;
+
+    // member interface
+    virtual void StartMember(Member& member) = 0;
+    virtual void EndMember(const Member& member);
+
+    // block interface
+    static void SetNonFixed(Block& block, bool finished = false)
         {
             block.m_Fixed = false;
             block.m_Size = 0;
+            block.m_Finished = finished;
         }
     static void SetFixed(Block& block, unsigned size)
         {
@@ -337,26 +389,22 @@ protected:
     virtual bool VNext(const Block& block);
     virtual void FEnd(const Block& block);
     virtual void VEnd(const Block& block);
-    virtual void StartMember(Member& member) = 0;
-    virtual void EndMember(const Member& member);
 	static void SetBlockLength(ByteBlock& block, size_t length)
 		{
 			block.m_Length = length;
 			block.m_KnownLength = true;
 		}
 	virtual void Begin(ByteBlock& block);
-	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length) = 0;
+	virtual size_t ReadBytes(const ByteBlock& block,
+                             char* buffer, size_t count) = 0;
 	virtual void End(const ByteBlock& block);
 
-public:
-    enum EPointerType {
-        eNullPointer,
-        eMemberPointer,
-        eObjectPointer,
-        eThisPointer,
-        eOtherPointer
-    };
-protected:
+    // ASN.1 interface
+    virtual void AsnOpen(AsnIo& asn);
+    virtual void AsnClose(AsnIo& asn);
+    virtual unsigned GetAsnFlags(void);
+    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+
     // low level readers
     CIObjectInfo ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
@@ -384,6 +432,9 @@ protected:
     
 private:
     vector<CIObjectInfo> m_Objects;
+
+    unsigned m_Fail;
+    Member* m_CurrentMember;
 };
 
 //#include <serial/objistr.inl>

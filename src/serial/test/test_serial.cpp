@@ -91,20 +91,7 @@ int CTestSerial::Run(void)
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
-        }
-
-        {
-            {
-                CObjectOStreamBinary(ofstream("test.bin",
-											  ios::binary)) << write;
-            }
-            CSerialObject read;
-            {
-                CObjectIStreamBinary(ifstream("test.bin",
-											  ios::binary)) >> read;
-            }
-            read.Dump(NcbiCerr);
-            read.m_Next->Dump(NcbiCerr);
+            CObjectIStreamAsn(ifstream("test.asno")).SkipValue();
         }
 
         {
@@ -119,7 +106,26 @@ int CTestSerial::Run(void)
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
+            CObjectIStreamAsnBinary(ifstream("test.asnb",
+                                             ios::binary)).SkipValue();
         }
+
+        {
+            {
+                CObjectOStreamBinary(ofstream("test.bin",
+											  ios::binary)) << write;
+            }
+            CSerialObject read;
+            {
+                CObjectIStreamBinary(ifstream("test.bin",
+											  ios::binary)) >> read;
+            }
+            read.Dump(NcbiCerr);
+            read.m_Next->Dump(NcbiCerr);
+            CObjectIStreamBinary(ifstream("test.bin",
+                                          ios::binary)).SkipValue();
+        }
+
         NcbiCerr << "OK" << endl;
     }
     catch (exception& e) {

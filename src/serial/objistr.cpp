@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/26 18:31:34  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.16  1999/07/22 17:33:49  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -91,6 +95,15 @@
 
 BEGIN_NCBI_SCOPE
 
+CObjectIStream::CObjectIStream(void)
+    : m_Fail(0), m_CurrentMember(0)
+{
+}
+
+CObjectIStream::~CObjectIStream(void)
+{
+}
+
 // root reader
 void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
@@ -136,12 +149,14 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             CTypeInfo::TMemberIndex index =
                 info.GetTypeInfo()->FindMember(memberName);
             if ( index < 0 ) {
+                SetFailFlags(eFormatError);
                 THROW1_TRACE(runtime_error, "member not found: " +
                              info.GetTypeInfo()->GetName() + "." + memberName);
             }
             const CMemberInfo* memberInfo =
                 info.GetTypeInfo()->GetMemberInfo(index);
             if ( memberInfo->GetTypeInfo() != declaredType ) {
+                SetFailFlags(eFormatError);
                 THROW1_TRACE(runtime_error, "incompatible member type");
             }
             return memberInfo->GetMember(info.GetObject());
@@ -166,6 +181,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             break;
         }
     default:
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "illegal pointer type");
     }
     while ( HaveMemberSuffix() ) {
@@ -174,6 +190,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         CTypeInfo::TMemberIndex index =
             info.GetTypeInfo()->FindMember(memberName);
         if ( index < 0 ) {
+            SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "member not found: " +
                          info.GetTypeInfo()->GetName() + "." + memberName);
         }
@@ -183,6 +200,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                             memberInfo->GetTypeInfo());
     }
     if ( info.GetTypeInfo() != declaredType ) {
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "incompatible member type");
     }
     return info.GetObject();
@@ -207,6 +225,7 @@ CIObjectInfo CObjectIStream::ReadObjectInfo(void)
             CTypeInfo::TMemberIndex index =
                 info.GetTypeInfo()->FindMember(memberName);
             if ( index < 0 ) {
+                SetFailFlags(eFormatError);
                 THROW1_TRACE(runtime_error, "member not found: " +
                              info.GetTypeInfo()->GetName() + "." + memberName);
             }
@@ -227,12 +246,14 @@ CIObjectInfo CObjectIStream::ReadObjectInfo(void)
             return CIObjectInfo(object, typeInfo);
         }
     default:
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "illegal pointer type");
     }
 }
 
 string CObjectIStream::ReadMemberPointer(void)
 {
+    SetFailFlags(eIllegalCall);
     THROW1_TRACE(runtime_error, "illegal call");
 }
 
@@ -255,11 +276,13 @@ bool CObjectIStream::HaveMemberSuffix(void)
 
 string CObjectIStream::ReadMemberSuffix(void)
 {
+    SetFailFlags(eIllegalCall);
     THROW1_TRACE(runtime_error, "illegal call");
 }
 
 void CObjectIStream::SkipValue(void)
 {
+    SetFailFlags(eIllegalCall);
     THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
@@ -288,6 +311,33 @@ void CObjectIStream::FEnd(const Block& )
 
 void CObjectIStream::VEnd(const Block& )
 {
+}
+
+CObjectIStream::Member::Member(CObjectIStream& in)
+    : m_In(in), m_Previous(in.m_CurrentMember)
+{
+    in.m_CurrentMember = this;
+    in.StartMember(*this);
+}
+
+CObjectIStream::Member::Member(CObjectIStream& in, const CMemberId& id)
+    : CMemberId(id), m_In(in), m_Previous(in.m_CurrentMember)
+{
+    in.m_CurrentMember = this;
+}
+
+CObjectIStream::Member::~Member(void)
+{
+    if ( m_In.fail() ) {
+        string stack = ToString();
+        for ( const Member* m = m_Previous; m; m = m->m_Previous ) {
+            stack = m->ToString() + '.' + stack;
+        }
+        ERR_POST("Error in CObjectIStream: " << stack);
+    }
+    
+    m_In.m_CurrentMember = m_Previous;
+    m_In.EndMember(*this);
 }
 
 void CObjectIStream::EndMember(const Member& )
@@ -347,12 +397,14 @@ CObjectIStream::Block::~Block(void)
 {
     if ( Fixed() ) {
         if ( GetNextIndex() != GetSize() ) {
+            m_In.SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "not all elements read");
         }
         m_In.FEnd(*this);
     }
     else {
         if ( !Finished() ) {
+            m_In.SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "not all elements read");
         }
         m_In.VEnd(*this);
@@ -398,6 +450,7 @@ CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
 const CIObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
 {
     if ( index >= m_Objects.size() ) {
+        const_cast<CObjectIStream*>(this)->SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "invalid object index");
     }
     return m_Objects[index];
@@ -414,7 +467,7 @@ extern "C" {
 }
 
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
-    : m_In(in)
+    : m_In(in), m_Count(0)
 {
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
@@ -430,8 +483,12 @@ void CObjectIStream::AsnOpen(AsnIo& )
 {
 }
 
-void CObjectIStream::AsnClose(AsnIo& )
+void CObjectIStream::AsnClose(AsnIo& asn)
 {
+    if ( asn.m_Count != 0 ) {
+        SetFailFlags(eFormatError);
+        THROW1_TRACE(runtime_error, "not all bytes read");
+    }
 }
 
 unsigned CObjectIStream::GetAsnFlags(void)
@@ -441,8 +498,8 @@ unsigned CObjectIStream::GetAsnFlags(void)
 
 size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
 {
+    SetFailFlags(eIllegalCall);
     THROW1_TRACE(runtime_error, "illegal call");
 }
 
 END_NCBI_SCOPE
-

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/26 18:31:30  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.12  1999/07/22 17:33:43  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -103,7 +107,8 @@ public:
     virtual void SkipValue(void);
 
     TByte ReadByte(void);
-    void ReadBytes(char* bytes, size_t size);
+    void ReadBytes(char* buffer, size_t count);
+    void SkipBytes(size_t count);
     TIndex ReadIndex(void);
     unsigned ReadSize(void);
     virtual string ReadString(void);
@@ -120,10 +125,12 @@ protected:
     virtual string ReadOtherPointer(void);
     
     virtual void FBegin(Block& block);
+    virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
+    
 
 private:
     CIObjectInfo ReadObjectInfo(void);
@@ -135,6 +142,10 @@ private:
     vector<string> m_Strings;
 
     CNcbiIstream& m_Input;
+    
+    void CheckError(void);
+    void Overflow(const string& message);
+    void FormatError(const string& message);
 };
 
 //#include <objistrb.inl>

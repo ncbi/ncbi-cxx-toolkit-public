@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/26 18:31:30  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.6  1999/07/22 17:33:42  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -57,6 +61,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objstrasnb.hpp>
+#include <stack>
+
+#define CHECK_STREAM_INTEGRITY 1
 
 BEGIN_NCBI_SCOPE
 
@@ -69,6 +76,7 @@ public:
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
 
     CObjectIStreamAsnBinary(CNcbiIstream& in);
+    virtual ~CObjectIStreamAsnBinary(void);
 
     virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
@@ -87,7 +95,9 @@ public:
 
     unsigned char ReadByte(void);
     signed char ReadSByte(void);
-    void ReadBytes(char* bytes, size_t size);
+    void ReadBytes(char* buffer, size_t count);
+    void SkipBytes(size_t count);
+    void CheckError(void);
     virtual string ReadString(void);
     virtual char* ReadCString(void);
 
@@ -107,7 +117,7 @@ public:
     bool LastTagWas(EClass c, bool constructed, ETag tag);
 
     size_t ReadShortLength(void);
-    size_t ReadLength(void);
+    size_t ReadLength(bool allowIndefinite = false);
 
     void ExpectShortLength(size_t length);
     void ExpectIndefiniteLength(void);
@@ -135,9 +145,7 @@ private:
 
     string ReadClassTag(void);
 
-    void SkipObjectData(void);
-    void SkipObjectPointer(void);
-    void SkipBlock(void);
+    bool SkipRealValue(void);
 
     CNcbiIstream& m_Input;
 
@@ -148,6 +156,29 @@ private:
         eSysTagBack
     };
     ELastTagState m_LastTagState;
+
+#if CHECK_STREAM_INTEGRITY
+    size_t m_CurrentPosition;
+    enum ETagState {
+        eTagStart,
+        eTagValue,
+        eLengthStart,
+        eLengthValueFirst,
+        eLengthValue,
+        eData
+    };
+    ETagState m_CurrentTagState;
+    size_t m_CurrentTagPosition;
+    TByte m_CurrentTagCode;
+    size_t m_CurrentTagLengthSize;
+    size_t m_CurrentTagLength;
+    size_t m_CurrentTagLimit;
+    stack<size_t> m_Limits;
+
+    void StartTag(TByte code);
+    void EndTag(void);
+    void SetTagLength(size_t length);
+#endif
 };
 
 //#include <serial/objistrasnb.inl>

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/26 18:31:31  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.9  1999/07/22 17:33:45  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -68,6 +72,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objstrasnb.hpp>
+#include <stack>
+
+#define CHECK_STREAM_INTEGRITY 1
 
 BEGIN_NCBI_SCOPE
 
@@ -133,6 +140,29 @@ protected:
 
 private:
     CNcbiOstream& m_Output;
+
+#if CHECK_STREAM_INTEGRITY
+    size_t m_CurrentPosition;
+    enum ETagState {
+        eTagStart,
+        eTagValue,
+        eLengthStart,
+        eLengthValueFirst,
+        eLengthValue,
+        eData
+    };
+    ETagState m_CurrentTagState;
+    size_t m_CurrentTagPosition;
+    TByte m_CurrentTagCode;
+    size_t m_CurrentTagLengthSize;
+    size_t m_CurrentTagLength;
+    size_t m_CurrentTagLimit;
+    stack<size_t> m_Limits;
+
+    void StartTag(TByte code);
+    void EndTag(void);
+    void SetTagLength(size_t length);
+#endif
 };
 
 //#include <serial/objostrasnb.inl>

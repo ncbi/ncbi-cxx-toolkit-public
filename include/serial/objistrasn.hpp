@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/26 18:31:29  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.13  1999/07/22 17:33:41  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -124,6 +128,7 @@ public:
 
     TByte ReadByte(void);
     void ReadBytes(TByte* bytes, unsigned size);
+    void CheckError(void);
     TIndex ReadIndex(void);
     virtual string ReadString(void);
     string ReadId(void);

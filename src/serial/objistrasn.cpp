@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/07/26 18:31:35  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
 * Revision 1.19  1999/07/22 17:33:51  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -144,13 +148,25 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
 {
 }
 
+void CObjectIStreamAsn::CheckError(void)
+{
+    if ( m_Input.eof() ) {
+        SetFailFlags(eEOF);
+        THROW1_TRACE(runtime_error, "unexpected EOF");
+    }
+    else if ( !m_Input ) {
+        SetFailFlags(eReadError);
+        THROW1_TRACE(runtime_error, "read error");
+    }
+}
+
 inline
 char CObjectIStreamAsn::GetChar(void)
 {
 #if USE_UNGET
 	char c;
-	if ( !m_Input.get(c) )
-		THROW1_TRACE(runtime_error, "unexpected EOF");
+	m_Input.get(c);
+    CheckError();
 	_TRACE("GetChar(): '" << c << "'");
 	return c;
 #else
@@ -163,9 +179,8 @@ char CObjectIStreamAsn::GetChar(void)
 	}
 	else {
 		char c;
-		if ( !m_Input.get(c) ) {
-			throw runtime_error("unexpected EOF");
-		}
+		m_Input.get(c);
+        CheckError();
 		m_GetChar = (unsigned char)c;
         _TRACE("GetChar(): '" << c << "'");
 		return c;
@@ -187,6 +202,7 @@ char CObjectIStreamAsn::GetChar0(void)
 		return char(unget);
 	}
 	else {
+        SetFailFlags(eIllegalCall);
 		throw runtime_error("bad GetChar0 call");
 	}
 #endif
@@ -197,10 +213,11 @@ void CObjectIStreamAsn::UngetChar(void)
 {
 #if USE_UNGET
 	_TRACE("UngetChar...");
-	if ( !m_Input.unget() )
-		THROW1_TRACE(runtime_error, "cannot unget");
+	m_Input.unget();
+    CheckError();
 #else
     if ( m_UngetChar >= 0 || m_GetChar < 0 ) {
+        SetFailFlags(eIllegalCall);
         throw runtime_error("cannot unget");
     }
     _TRACE("UngetChar(): '" << char(m_GetChar) << "'");
@@ -242,6 +259,7 @@ inline
 void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
 {
     if ( !GetChar(expect, skipWhiteSpace) ) {
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, string("'") + expect + "' expected");
     }
 }
@@ -270,6 +288,7 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
 		else
 	        UngetChar();
 	}
+    SetFailFlags(eFormatError);
     THROW1_TRACE(runtime_error, string("'") + choiceTrue +
                  "' or '" + choiceFalse + "' expected");
 }
@@ -336,6 +355,7 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
         return true;
     }
     else if ( c < ' ' ) {
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "bad char in string");
     }
     else if ( c == terminator ) {
@@ -353,6 +373,7 @@ void CObjectIStreamAsn::Read(TObjectPtr object, TTypeInfo typeInfo)
     if ( c == typeInfo->GetName()[0] || c == '[' ) {
         string id = ReadId();
         if ( id != typeInfo->GetName() ) {
+            SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "invalid object type: " + id +
                          ", expected: " + typeInfo->GetName());
         }
@@ -368,15 +389,19 @@ void CObjectIStreamAsn::ReadStd(bool& data)
         data = false;
     else if ( s == "TRUE" )
         data = true;
-    else
+    else {
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "TRUE or FALSE expected");
+    }
 }
 
 void CObjectIStreamAsn::ReadStd(char& data)
 {
     Expect('\'', true);
-    if ( !ReadEscapedChar(data, '\'') )
+    if ( !ReadEscapedChar(data, '\'') ) {
+        SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "empty char");
+    }
 }
 
 template<typename T>
@@ -396,8 +421,10 @@ void ReadStdSigned(CObjectIStreamAsn& in, T& data)
         break;
     }
     char c = in.GetChar();
-    if ( c < '0' || c > '9' )
+    if ( c < '0' || c > '9' ) {
+        in.SetFailFlags(in.eFormatError);
         THROW1_TRACE(runtime_error, "bad number");
+    }
     T n = c - '0';
     while ( (c = in.GetChar()) >= '0' && c <= '9' ) {
         // TODO: check overflow
@@ -416,8 +443,10 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
     char c = in.GetChar(true);
     if ( c == '+' )
         c = in.GetChar();
-    if ( c < '0' || c > '9' )
+    if ( c < '0' || c > '9' ) {
+        in.SetFailFlags(in.eFormatError);
         THROW1_TRACE(runtime_error, "bad number");
+    }
     T n = c - '0';
     while ( (c = in.GetChar()) >= '0' && c <= '9' ) {
         // TODO: check overflow
@@ -441,8 +470,10 @@ void CObjectIStreamAsn::ReadStd(signed char& data)
 {
     int i;
     ReadStdNumber(*this, i);
-    if ( i < -128 || i > 127 )
+    if ( i < -128 || i > 127 ) {
+        SetFailFlags(eOverflow);
         THROW1_TRACE(runtime_error, "signed char overflow error");
+    }
     data = i;
 }
 
@@ -450,8 +481,10 @@ void CObjectIStreamAsn::ReadStd(unsigned char& data)
 {
     unsigned i;
     ReadStdNumber(*this, i);
-    if ( i > 255 )
+    if ( i > 255 ) {
+        SetFailFlags(eOverflow);
         THROW1_TRACE(runtime_error, "unsigned char overflow error");
+    }
     data = i;
 }
 
@@ -589,6 +622,7 @@ size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& , char* dst, size_t length)
 			cc = (cc << 4) | (c - 'A' + 10);
 		}
 		else {
+            SetFailFlags(eFormatError);
 			THROW1_TRACE(runtime_error, "bad char in octet string");
 		}
 		*dst++ = cc;
@@ -657,11 +691,16 @@ void CObjectIStreamAsn::SkipValue()
             ++blockLevel;
             break;
         case '}':
-            if ( blockLevel == 0 ) {
+            switch ( blockLevel ) {
+            case 0:
                 UngetChar();
                 return;
+            case 1:
+                return;
+            default:
+                --blockLevel;
+                break;
             }
-            --blockLevel;
             break;
         case ',':
             if ( blockLevel == 0 ) {
@@ -687,16 +726,10 @@ void CObjectIStreamAsn::AsnOpen(AsnIo& )
 size_t CObjectIStreamAsn::AsnRead(AsnIo& , char* data, size_t length)
 {
     m_Input.get(data, length);
-    if ( !m_Input ) {
-        ERR_POST("AsnRead: fault");
-        return 0;
-    }
+    CheckError();
     size_t count = m_Input.gcount();
     data[count++] = m_Input.get();
-    if ( !m_Input ) {
-        ERR_POST("AsnRead: fault");
-        return 0;
-    }
+    CheckError();
     return count;
 }
 
