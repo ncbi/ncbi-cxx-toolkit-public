@@ -45,6 +45,7 @@ mb_lookup \
 na_lookup \
 ncbi_std \
 link_hsps \
+ncbimath \
 util
 
 # OBJ =
