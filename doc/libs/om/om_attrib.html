@@ -234,6 +234,9 @@ by   a Bioseq handle.
     ESegmentType GetType(void) const;
     TSeqPosition GetPosition(void) const;
     TSeqLength   GetLength(void) const;
+    // The following function makes sense only
+    // when the segment is a reference to another sequence
+    const CSeq_id& GetRefSeqid(void) const;
 </pre>
 
 
