@@ -33,6 +33,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiexec.hpp>
+#include <corelib/ncbifile.hpp>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> // for _exit
@@ -45,6 +46,9 @@ USING_NCBI_SCOPE;
 
 #define TEST_RESULT_C    99   // Test exit code for current test
 #define TEST_RESULT_P     0   // Test exit code for test from PATH
+
+
+string app;
 
 
 ////////////////////////////////
@@ -71,9 +75,33 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
+    if ( !CFile(app).Exists() ) {
+        // Run from some path from the PATH environment variable.
+        // Try to determine that path.
+        string env_path = GetEnvironment().Get("PATH");
+        list<string> split;
+#if defined(NCBI_OS_MSWIN)
+        NStr::Split(env_path, ";", split);
+#else
+        NStr::Split(env_path, ":", split);
+#endif
+        string pname = GetArguments().GetProgramName();
+        int i = 0;
+        ITERATE(list<string>, it, split) {
+            app = CDirEntry::MakePath(*it, pname);
+            if ( CFile(app).Exists() ) {
+                break;
+            }
+            app = kEmptyStr;
+        }
+    }
+    if ( app.empty() ) {
+        exit(1);
+    }
+    cout << "Application path: " << app << endl;
+
     // Initialization of variables and structures
 
-    const string app = GetArguments().GetProgramName();
     char* app_c = strdup(app.c_str());
     assert( app_c != 0 );
 
@@ -190,7 +218,7 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[], const char* envp[])
 {
-     // Exec from test?
+    // Exec from test?
     if ( argc > 1) {
         assert(argv[1] && *argv[1]);
         cout << endl << "Exec: " << argv[1] << endl;
@@ -214,6 +242,7 @@ int main(int argc, const char* argv[], const char* envp[])
         _exit(TEST_RESULT_C);
     }
     cout << "Start tests:" << endl << endl;
+    app = argv[0];
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
@@ -222,6 +251,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2003/03/10 20:49:06  ivanov
+ * A PATH environment variable is used to find current file to execute
+ *
  * Revision 6.12  2002/08/14 17:06:20  ucko
  * Reinstate calls to _exit, but be sure to include <unistd.h> first for
  * the prototype.
