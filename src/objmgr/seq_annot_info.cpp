@@ -346,32 +346,12 @@ CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
                                              annotRef,
                                              m_ObjectInfos);
                     }
-                    else if ( hr.IsSingleStrand() ) {
+                    else {
                         key.m_Range = hr.GetOverlappingRange();
                         tse.x_MapAnnotObject(index,
                                              key,
                                              annotRef,
                                              m_ObjectInfos);
-                    }
-                    else {
-                        key.m_Range = hr.GetOverlappingRange(
-                            CHandleRange::eStrandPlus);
-                        if ( !key.m_Range.Empty() ) {
-                            annotRef.m_StrandIndex = 1;
-                            tse.x_MapAnnotObject(index,
-                                                key,
-                                                annotRef,
-                                                m_ObjectInfos);
-                        }
-                        key.m_Range = hr.GetOverlappingRange(
-                            CHandleRange::eStrandMinus);
-                        if ( !key.m_Range.Empty() ) {
-                            annotRef.m_StrandIndex = 2;
-                            tse.x_MapAnnotObject(index,
-                                                key,
-                                                annotRef,
-                                                m_ObjectInfos);
-                        }
                     }
                 }
                 else {
@@ -530,6 +510,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/09/30 15:04:09  grichenk
+ * Removed splitting of total ranges by strand
+ *
  * Revision 1.23  2004/08/20 15:08:27  grichenk
  * Fixed strands indexing
  *
