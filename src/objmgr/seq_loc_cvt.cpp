@@ -975,12 +975,12 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
     }
     case CSeq_loc::e_Packed_int:
     {
-        res |= ConvertPacked_int(src, dst, loc_index);
+        res = ConvertPacked_int(src, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Packed_pnt:
     {
-        res |= ConvertPacked_pnt(src, dst, loc_index);
+        res = ConvertPacked_pnt(src, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Mix:
@@ -1021,6 +1021,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/08/11 16:41:32  vasilche
+* Assign instead of |= for single bool value.
+*
 * Revision 1.33  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
