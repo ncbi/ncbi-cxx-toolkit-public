@@ -383,8 +383,12 @@ protected:
     void DisableDataBufProcessing() { m_DataBufDisabled = true; }
 
     /// Disable NULL/not NULL in data fields
-    /// (Performance tweak)
+    /// (Performance tweak, call before BindData)
     void DisableNull() { m_DisabledNull = true; }
+
+    /// Disable packing of variable length fields in the data buffer
+    /// (Call after BindData)
+    void DisableDataPacking();
 
     /// Wrapper around get operation.    
     EBDB_ErrCode x_Fetch(unsigned int flags);    
@@ -533,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/03/15 14:43:48  kuznets
+ * +DisableDataPacking()
+ *
  * Revision 1.38  2005/02/23 18:34:44  kuznets
  * CBDB_Transaction: added flag for non-associated transactions (perf.tuning)
  *
