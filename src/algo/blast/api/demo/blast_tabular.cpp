@@ -62,19 +62,18 @@ CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
                                                      IBlastSeqInfoSrc* seqinfo_src)
     : m_OutStream(&ostream), m_pSeqInfoSrc(seqinfo_src)
 {
-
+    const CBlastOptions& options = blaster->GetOptionsHandle().GetOptions();
     m_QueryVec = blaster->GetQueries(); 
-    m_Program = blaster->GetOptions().GetProgramType();
+    m_Program = options.GetProgramType();
     m_pHspStream = blaster->GetHSPStream();
     m_pQuery = blaster->GetQueryBlk();
 
     m_ibPerformTraceback = 
-        (blaster->GetOptions().GetGappedMode() && 
-         blaster->GetOptions().GetGapExtnAlgorithm() != 
-             eGreedyWithTracebackExt);
+        (options.GetGappedMode() && 
+         options.GetGapExtnAlgorithm() != eGreedyWithTracebackExt);
 
     m_iGenCodeString = 
-        FindGeneticCode(blaster->GetOptions().GetQueryGeneticCode());
+        FindGeneticCode(options.GetQueryGeneticCode());
     // Sequence source must be copied, to guarantee multi-thread safety.
     m_ipSeqSrc = BlastSeqSrcCopy(blaster->GetSeqSrc());
     // Effective lengths must be duplicated in query info structure, because
@@ -85,10 +84,10 @@ CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
     // do the preparation for it here.
     if (m_ibPerformTraceback) {
         BLAST_GapAlignSetUp(m_Program, m_ipSeqSrc, 
-            blaster->GetOptions().GetScoringOpts(), 
-            blaster->GetOptions().GetEffLenOpts(), 
-            blaster->GetOptions().GetExtnOpts(), 
-            blaster->GetOptions().GetHitSaveOpts(), m_ipQueryInfo, 
+            options.GetScoringOpts(), 
+            options.GetEffLenOpts(), 
+            options.GetExtnOpts(), 
+            options.GetHitSaveOpts(), m_ipQueryInfo, 
             blaster->GetScoreBlk(), &m_ipScoreParams, &m_ipExtParams, 
             &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
         /* Set X-dropoff for traceback before tabular output to final 
@@ -277,6 +276,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/31 14:55:46  ucko
+* Eliminate use of removed GetOptions() shortcut.
+*
 * Revision 1.12  2005/02/15 23:27:45  dondosha
 * Set X-dropoff in the GapAlignStruct to final X-dropoff for traceback before tabular formatting
 *
