@@ -97,7 +97,7 @@ static char* s_GetArgs(const char* client_host)
         nodelen = strlen(client_host);
         buflen += sizeof(address) - 1 + nodelen;
         if ((ip = SOCK_gethostbyname(client_host)) != 0 &&
-            SOCK_ntoa(ip, addr, sizeof(addr))      != 0) {
+            SOCK_ntoa(ip, addr, sizeof(addr))      == 0) {
             size_t addrlen = strlen(addr) + 2;
             nodelen += addrlen;
             buflen  += addrlen;
@@ -847,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2003/05/14 04:19:48  lavr
+ * BUGFIX: Actually add IP address in "address=" CGI argument
+ *
  * Revision 6.53  2003/05/14 03:55:28  lavr
  * Arguments to include host address (for statistics purposes on backends)
  *
