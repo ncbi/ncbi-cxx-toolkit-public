@@ -1335,7 +1335,6 @@ bool CMemoryFile::Unmap(void)
     return status;
 }
 
-#define HAVE_MADVISE 1
 
 bool CMemoryFile::MemMapAdviseAddr(void* addr, size_t len, EMemMapAdvise advise)
 {
@@ -1384,6 +1383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2002/07/11 19:28:30  ivanov
+ * Removed test stuff from MemMapAdvise[Addr]
+ *
  * Revision 1.26  2002/07/11 19:21:30  ivanov
  * Added CMemoryFile::MemMapAdvise[Addr]()
  *
