@@ -12497,10 +12497,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-bits=`expr 8 \* $ac_cv_sizeof_size_t`
+NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
 
 cat >>confdefs.h <<_ACEOF
-#define NCBI_PLATFORM_BITS $bits
+#define NCBI_PLATFORM_BITS $NCBI_PLATFORM_BITS
 _ACEOF
 
 
@@ -13420,6 +13420,7 @@ s,@compiler_root@,$compiler_root,;t t
 s,@compiler_version@,$compiler_version,;t t
 s,@COMPILER@,$COMPILER,;t t
 s,@OSTYPE@,$OSTYPE,;t t
+s,@NCBI_PLATFORM_BITS@,$NCBI_PLATFORM_BITS,;t t
 CEOF
 
 _ACEOF

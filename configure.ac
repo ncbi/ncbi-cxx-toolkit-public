@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.76 2002/05/23 22:22:56 ucko Exp $
+#  $Id: configure.ac,v 1.77 2002/05/24 16:13:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2461,8 +2461,8 @@ AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(size_t)
-bits=`expr 8 \* $ac_cv_sizeof_size_t`
-AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $bits,
+NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
                    [Define to the architecture size.])
 
 
@@ -2643,7 +2643,7 @@ AC_SUBST(compiler_version)
 
 AC_SUBST(COMPILER)
 AC_SUBST(OSTYPE)
-
+AC_SUBST(NCBI_PLATFORM_BITS)
 
 #############################################################################
 ### Create output files and do some post-configuration

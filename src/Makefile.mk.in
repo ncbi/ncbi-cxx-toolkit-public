@@ -152,6 +152,9 @@ FAST_CXXFLAGS = @FAST_CXXFLAGS@
 COMPILER = @COMPILER@
 OSTYPE   = @OSTYPE@
 
+### Pointer size
+NCBI_PLATFORM_BITS = @NCBI_PLATFORM_BITS@
+
 ### Configuration summary
 signature = @signature@
 
