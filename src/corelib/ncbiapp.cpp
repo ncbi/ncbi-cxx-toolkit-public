@@ -113,8 +113,7 @@ CNcbiApplication::CNcbiApplication(void)
     m_Environ.reset(new CNcbiEnvironment);
 
     // Create an empty registry
-    m_Config = new CNcbiRegistry;
-    m_OwnsConfig = true;
+    m_Config.Reset(new CNcbiRegistry);
 
 }
 
@@ -125,9 +124,6 @@ CNcbiApplication::~CNcbiApplication(void)
     FlushDiag(0, true);
     if (m_CinBuffer) {
         delete [] m_CinBuffer;
-    }
-    if (m_OwnsConfig) {
-        delete m_Config;
     }
 }
 
@@ -638,11 +634,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
     } else if (entry.registry != &reg) {
         // should be impossible with new CMetaRegistry interface...
         if (&reg == m_Config  &&  reg.Empty()) {
-            if (m_OwnsConfig) {
-                delete m_Config;
-            }
-            m_Config     = entry.registry;
-            m_OwnsConfig = false;
+            m_Config.Reset(entry.registry);
         } else {
             // copy into reg
             CNcbiStrstream str;
@@ -862,10 +854,10 @@ string CNcbiApplication::FindProgramExecutablePath
 }
 
 
-void CNcbiApplication::x_HonorStandardSettings( CNcbiRegistry* reg)
+void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
 {
     if (reg == 0) {
-        reg = m_Config;
+        reg = m_Config.GetPointer();
         if (reg == 0)
             return;
     }
@@ -996,6 +988,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2004/12/20 16:44:14  ucko
+ * Take advantage of the fact that CNcbiRegistry is now a CObject, and
+ * generalize x_HonorStandardSettings to accept any IRegistry.
+ *
  * Revision 1.99  2004/10/20 14:16:24  gouriano
  * Give access to logfile name
  *

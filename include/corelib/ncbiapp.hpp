@@ -433,7 +433,7 @@ private:
     /// [DEBUG]:  ABORT_ON_THROW, DIAG_POST_LEVEL, MessageFile
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
-    void x_HonorStandardSettings(CNcbiRegistry* reg = 0);
+    void x_HonorStandardSettings(IRegistry* reg = 0);
 
     /// Setup log file
     ///
@@ -458,8 +458,7 @@ private:
     static CNcbiApplication*   m_Instance;   ///< Current app. instance
     auto_ptr<CVersionInfo>     m_Version;    ///< Program version
     auto_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.
-    CNcbiRegistry*             m_Config;     ///< Guaranteed to be non-NULL
-    bool                       m_OwnsConfig; ///< Whether to delete on destr.
+    CRef<CNcbiRegistry>        m_Config;     ///< Guaranteed to be non-NULL
     auto_ptr<CNcbiOstream>     m_DiagStream; ///< Opt., aux., see eDS_ToMemory
     auto_ptr<CNcbiArguments>   m_Arguments;  ///< Command-line arguments
     auto_ptr<CArgDescriptions> m_ArgDesc;    ///< Cmd.-line arg descriptions
@@ -538,6 +537,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/12/20 16:44:01  ucko
+ * Take advantage of the fact that CNcbiRegistry is now a CObject, and
+ * generalize x_HonorStandardSettings to accept any IRegistry.
+ *
  * Revision 1.48  2004/12/01 13:48:03  kuznets
  * Changes to make CGI parameters available as arguments
  *
