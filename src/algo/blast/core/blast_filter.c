@@ -114,9 +114,8 @@ s_ParseRepeatOptions(const char* repeat_options, char** dbname)
     ASSERT(dbname);
     *dbname = NULL;
 
-    if (!repeat_options || (*repeat_options != 'R')) {
+    if (!repeat_options)
         return 0;
-    }
     
     ptr = strstr(repeat_options, "-d");
     if (ptr) {
@@ -182,6 +181,8 @@ s_ParseDustOptions(const char *ptr, int* level, int* window, int* linker)
 			index1++;
 		}
 	}
+        if (arg != 0 && arg != 3)
+           return 1;
 
 	*level = level_pri; 
 	*window = window_pri; 
@@ -244,6 +245,8 @@ s_ParseSegOptions(const char *ptr, Int4* window, double* locut, double* hicut)
 			index1++;
 		}
 	}
+        if (arg != 0 && arg != 3)
+           return 1;
 
 	return 0;
 }
@@ -257,6 +260,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
         Boolean mask_at_hash = FALSE; /* the default. */
         char* buffer;
         const char* ptr = instructions;
+        char error_buffer[1024];
         Int2 status = 0;
         SSegOptions* segOptions = NULL;
         SDustOptions* dustOptions = NULL;
@@ -268,7 +272,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 
         if (instructions == NULL || strcasecmp(instructions, "F") == 0)
         {
-             FilterSetUpOptionsNew(filtering_options, eEmpty);
+             SBlastFilterOptionsNew(filtering_options, eEmpty);
              return status;
         }
 
@@ -284,21 +288,22 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 	{
 		if (*ptr == 'S')
 		{
-                        if (program_number == eBlastTypeBlastn)
-                        {
-                            sfree(buffer);
-                            if (blast_message)
-                               Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                                  "SEG may not be used with BLASTN program");
-                            return 1;
-                        }
-                        SegSetUpOptionsNew(&segOptions);
+                        SSegOptionsNew(&segOptions);
 			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
 			if (buffer[0] != NULLB)
 			{
                                 int window;
                                 double locut, hicut; 
-				s_ParseSegOptions(buffer, &window, &locut, &hicut);
+				status = s_ParseSegOptions(buffer, &window, &locut, &hicut);
+                                if (status)
+                                {
+                                     sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                                     if (blast_message)
+                                       Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
+                                            error_buffer);
+                                     sfree(buffer);
+                                     return status;
+                                }
                                 segOptions->window = window;
                                 segOptions->locut = locut;
                                 segOptions->hicut = hicut;
@@ -306,20 +311,21 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 		}
 		else if (*ptr == 'D')
 		{
-                        if (program_number != eBlastTypeBlastn)
-                        {
-                            sfree(buffer);
-                            if (blast_message)
-                                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                                  "DUST may only be used with BLASTN program");
-                            return 1;
-                        }
-                        DustSetUpOptionsNew(&dustOptions);
+                        SDustOptionsNew(&dustOptions);
 			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
 			if (buffer[0] != NULLB)
                         {
                                 int window, level, linker;
-				s_ParseDustOptions(buffer, &level, &window, &linker);
+				status = s_ParseDustOptions(buffer, &level, &window, &linker);
+                                if (status)
+                                {
+                                     sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                                     if (blast_message)
+                                       Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
+                                            error_buffer);
+                                     sfree(buffer);
+                                     return status;
+                                }
                                 dustOptions->level = level;
                                 dustOptions->window = window;
                                 dustOptions->linker = linker;
@@ -327,20 +333,21 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 		}
                 else if (*ptr == 'R')
                 {
-                        if (program_number != eBlastTypeBlastn)
-                        {
-                            sfree(buffer);
-                            if (blast_message)
-                                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                                  "Repeat filtering may only be used with BLASTN program");
-                            return 1;
-                        }
-                        RepeatSetUpOptionsNew(&repeatOptions);
+                        SRepeatFilterOptionsNew(&repeatOptions);
 			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
 			if (buffer[0] != NULLB)
                         {
                              char* dbname = NULL;
-                             s_ParseRepeatOptions(buffer, &dbname); 
+                             status = s_ParseRepeatOptions(buffer, &dbname); 
+                             if (status)
+                             {
+                                  sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                                  if (blast_message)
+                                     Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
+                                            error_buffer);
+                                   sfree(buffer);
+                                   return status;
+                             }
                              if (dbname)
                              {
                                  sfree(repeatOptions->database);
@@ -351,9 +358,9 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 		else if (*ptr == 'L' || *ptr == 'T')
 		{ /* do low-complexity filtering; dust for blastn, otherwise seg.*/
                         if (program_number == eBlastTypeBlastn)
-                            DustSetUpOptionsNew(&dustOptions);
+                            SDustOptionsNew(&dustOptions);
                         else
-                            SegSetUpOptionsNew(&segOptions);
+                            SSegOptionsNew(&segOptions);
 			ptr++;
 		}
 		else if (*ptr == 'm')
@@ -368,7 +375,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 	}
         sfree(buffer);
 
-        status = FilterSetUpOptionsNew(filtering_options, eEmpty);
+        status = SBlastFilterOptionsNew(filtering_options, eEmpty);
         if (status)
             return status;
 
@@ -856,7 +863,8 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 
 Int2
 BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, const SBlastFilterOptions* filter_options, BlastSeqLoc* *seqloc_retval)
+   Int4 offset, const SBlastFilterOptions* filter_options, BlastSeqLoc* *seqloc_retval,
+   Blast_Message* *blast_message)
 {
 	Int2 seqloc_num=0;
 	Int2 status=0;		/* return value. */
@@ -866,6 +874,10 @@ BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length
         ASSERT(seqloc_retval);
 
         *seqloc_retval = NULL;
+
+        status = SBlastFilterOptionsValidate(program_number, filter_options, blast_message);
+        if (status)
+           return status;
 
 	if (filter_options->segOptions)
 	{
@@ -935,7 +947,7 @@ s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 que
 }
 
 static Int2
-s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out)
+s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out, Blast_Message* *blast_message)
 {
         Int2 status = 0;
         Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
@@ -955,7 +967,7 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
            return 0;
 
         if ((status = BlastSetUp_Filter(program_number, buffer,
-                       query_length, 0, filter_options, &filter_slp))) 
+                       query_length, 0, filter_options, &filter_slp, blast_message))) 
              return status;
 
         if (BlastIsReverseStrand(kIsNucl, context) == TRUE)
@@ -1035,7 +1047,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
         if (!reverse || no_forward_strand)
         {
             Int4 filter_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-            if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_options, &filter_per_context)))
+            if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_options, &filter_per_context, blast_message)))
             {
                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
                   "Failure at filtering");
