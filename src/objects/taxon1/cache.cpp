@@ -283,52 +283,23 @@ struct SSubtypeAbbr {
     COrgMod::ESubtype m_eSubtype;
 };
 
-static SSubtypeAbbr s_Subsp =
-    { s_achSubsp, sizeof(s_achSubsp), COrgMod::eSubtype_sub_species };
-static SSubtypeAbbr s_Ssp =
-    { s_achSsp,   sizeof(s_achSsp),   COrgMod::eSubtype_sub_species };
-static SSubtypeAbbr s_F_Sp =
-    { s_achF_Sp,  sizeof(s_achF_Sp),  COrgMod::eSubtype_forma_specialis };
-static SSubtypeAbbr s_FSp =
-    { s_achFSp,   sizeof(s_achFSp),   COrgMod::eSubtype_forma_specialis };
-static SSubtypeAbbr s_Str =
-    { s_achStr,   sizeof(s_achStr),   COrgMod::eSubtype_strain };
-static SSubtypeAbbr s_Substr=
-    { s_achSubstr,sizeof(s_achSubstr),COrgMod::eSubtype_substrain };
-static SSubtypeAbbr s_Var =
-    { s_achVar,   sizeof(s_achVar),   COrgMod::eSubtype_variety };
-static SSubtypeAbbr s_Sv =
-    { s_achSv,    sizeof(s_achSv),    COrgMod::eSubtype_serovar };
-static SSubtypeAbbr s_Cv =
-    { s_achCv,    sizeof(s_achCv),    COrgMod::eSubtype_cultivar };
-static SSubtypeAbbr s_Pv =
-    { s_achPv,    sizeof(s_achPv),    COrgMod::eSubtype_pathovar };
-static SSubtypeAbbr s_Bv =
-    { s_achBv,    sizeof(s_achBv),    COrgMod::eSubtype_biovar };
-static SSubtypeAbbr s_F =
-    { s_achF,     sizeof(s_achF),     COrgMod::eSubtype_forma };
-static SSubtypeAbbr s_Fo =
-    { s_achFo,    sizeof(s_achFo),    COrgMod::eSubtype_forma };
-static SSubtypeAbbr s_Grp =
-    { s_achGrp,   sizeof(s_achGrp),   COrgMod::eSubtype_group };
-static SSubtypeAbbr s_Endl = { NULL,0,COrgMod::eSubtype_other };
 
-static SSubtypeAbbr* s_apSubtypes[] = {
-    &s_Subsp,
-    &s_Ssp,
-    &s_F_Sp,
-    &s_FSp,
-    &s_Str,
-    &s_Substr,
-    &s_Var,
-    &s_Sv,
-    &s_Cv,
-    &s_Pv,
-    &s_Bv,
-    &s_F,
-    &s_Fo,
-    &s_Grp,
-    &s_Endl
+static SSubtypeAbbr s_aSubtypes[] = {
+    { s_achSubsp, sizeof(s_achSubsp)-1, COrgMod::eSubtype_sub_species };
+    { s_achSsp,   sizeof(s_achSsp)-1,   COrgMod::eSubtype_sub_species };
+    { s_achF_Sp,  sizeof(s_achF_Sp)-1,  COrgMod::eSubtype_forma_specialis };
+    { s_achFSp,   sizeof(s_achFSp)-1,   COrgMod::eSubtype_forma_specialis };
+    { s_achStr,   sizeof(s_achStr)-1,   COrgMod::eSubtype_strain };
+    { s_achSubstr,sizeof(s_achSubstr)-1,COrgMod::eSubtype_substrain };
+    { s_achVar,   sizeof(s_achVar)-1,   COrgMod::eSubtype_variety };
+    { s_achSv,    sizeof(s_achSv)-1,    COrgMod::eSubtype_serovar };
+    { s_achCv,    sizeof(s_achCv)-1,    COrgMod::eSubtype_cultivar };
+    { s_achPv,    sizeof(s_achPv)-1,    COrgMod::eSubtype_pathovar };
+    { s_achBv,    sizeof(s_achBv)-1,    COrgMod::eSubtype_biovar };
+    { s_achF,     sizeof(s_achF)-1,     COrgMod::eSubtype_forma };
+    { s_achFo,    sizeof(s_achFo)-1,    COrgMod::eSubtype_forma };
+    { s_achGrp,   sizeof(s_achGrp)-1,   COrgMod::eSubtype_group };
+    { NULL,       0,                    COrgMod::eSubtype_other };
 };
 
 COrgMod::ESubtype
@@ -350,16 +321,16 @@ COrgRefCache::GetSubtypeFromName( string& sName )
     }
 
     /* check for subsp */
-    SSubtypeAbbr** ppSubtypeAbbr = &s_apSubtypes[0];
-    while( (*ppSubtypeAbbr)->m_eSubtype != COrgMod::eSubtype_other ) {
+    SSubtypeAbbr* pSubtypeAbbr = &s_aSubtypes[0];
+    while( pSubtypeAbbr->m_eSubtype != COrgMod::eSubtype_other ) {
 	if( (pos=NStr::FindNoCase( sName,
-	       string((*ppSubtypeAbbr)->m_pchAbbr,
-		      (*ppSubtypeAbbr)->m_nAbbrLen) )) != NPOS ) {
-	    sName.erase( pos, (*ppSubtypeAbbr)->m_nAbbrLen );
+	       string(pSubtypeAbbr->m_pchAbbr,
+		      pSubtypeAbbr->m_nAbbrLen) )) != NPOS ) {
+	    sName.erase( pos, pSubtypeAbbr->m_nAbbrLen );
 	    sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
-	    return (*ppSubtypeAbbr)->m_eSubtype;
+	    return pSubtypeAbbr->m_eSubtype;
 	}
-	++ppSubtypeAbbr;
+	++pSubtypeAbbr;
     }
     return COrgMod::eSubtype_other;
 }
@@ -1043,6 +1014,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.14  2003/03/06 16:11:29  domrach
+ * More static initialization work
+ *
  * Revision 6.13  2003/03/06 16:01:20  domrach
  * Static initialization corrected for msvc
  *
