@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  1999/11/19 19:59:08  vakatov
+ * Get rid of an insignificant compiler warning
+ *
  * Revision 6.3  1999/10/18 18:01:43  vakatov
  * Use double-quotes (rather than angles) to #include ncbi_buffer.h
  * (this kludge is to ease compilation in the NCBI C++ tree).
@@ -133,7 +136,8 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
     return 0 /* false */;
 
   /* find the last allocated chunk */
-  for (pTail = (*pBuf)->list;  pTail  &&  pTail->next;  pTail = pTail->next);
+  for (pTail = (*pBuf)->list;  pTail  &&  pTail->next;  pTail = pTail->next)
+    continue;
 
   /* write to an unfilled space of the last allocated chunk, if any */
   if (pTail  &&  pTail->size != pTail->alloc_size) {
