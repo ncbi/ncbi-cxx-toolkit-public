@@ -546,7 +546,7 @@ static void s_DoLogData
             if (SOCK_ntoa(sin->sin_addr.s_addr, tail, sizeof(tail)) != 0)
                 strcpy(tail, "<unknown>");
             sprintf(tail + strlen(tail), ":%hu, msg# %u", ntohs(sin->sin_port),
-                    event == eIO_Read ? sock->n_in : sock->n_out);
+                    (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
         } else {
             assert(!sin);
             *tail = 0;
@@ -2972,6 +2972,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.86  2003/02/28 14:50:18  lavr
+ * Add one more explicit cast to "unsigned" in s_DoLogData()
+ *
  * Revision 6.85  2003/02/24 21:13:23  lavr
  * More comments added; fix for read-ahead on shut-down-for-write socket
  *
