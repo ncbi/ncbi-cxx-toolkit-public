@@ -144,7 +144,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = 0;
+    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
 #endif
 
     // read from connection
@@ -170,11 +170,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    static const STimeout s_ZeroTmo = {0, 0};
-
     if ( !m_Conn )
         return 0;
-    _ASSERT(gptr()  ||  eback() == m_ReadBuf);
+    _ASSERT(!gptr()  ||  eback() == m_ReadBuf);
 
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
@@ -198,19 +196,17 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     } else
         n_read = 0;
 
-    /* Do not even try to read directly from connection if it can lead
-     * to waiting while we already have read at least some data.
-     */
-    if (n == 0  ||  (n_read > 0  &&
-                     CONN_Wait(m_Conn, eIO_Read, &s_ZeroTmo) != eIO_Success)) {
+    if (n == 0)
         return (streamsize) n_read;
-    }
 
-    CT_CHAR_TYPE* x_buf = gptr() && n < (size_t) m_BufSize ? m_ReadBuf : buf;
-    size_t       x_read = gptr() && n < (size_t) m_BufSize ? m_BufSize : n;
-    // read directly from connection
-    CONN_Read(m_Conn,x_buf,x_read*sizeof(CT_CHAR_TYPE),&x_read, eIO_ReadPlain);
-    if (x_read /= sizeof(CT_CHAR_TYPE)) {
+    do {
+        size_t       x_read = gptr() && n < (size_t)m_BufSize? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf = gptr() && n < (size_t)m_BufSize? m_ReadBuf : buf;
+        EIO_Status   status = CONN_Read(m_Conn, x_buf,
+                                        x_read*sizeof(CT_CHAR_TYPE),
+                                        &x_read, eIO_ReadPlain);
+        if (!(x_read /= sizeof(CT_CHAR_TYPE)))
+            break;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
@@ -219,12 +215,17 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else if (gptr()) {
+            _ASSERT(x_read <= n);
             size_t xx_read = x_read > (size_t) m_BufSize ? m_BufSize : x_read;
             memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
-    }
-    return (streamsize)(n_read + x_read);
+        n      -= x_read;
+        n_read += x_read;
+        if (status != eIO_Success)
+            break;
+    } while ( n );
+    return (streamsize) n_read;
 }
 
 
@@ -289,6 +290,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2003/11/03 20:04:35  lavr
+ * CStreamUtils::Readsome() reorganized: s_Readsome() introduced.
+ * Add and elaborate notes about I/O on MSVC and MIPSPro.
+ * Allow to use stream readsome() on these two compilers.
+ *
  * Revision 6.36  2003/10/22 18:16:09  lavr
  * More consistent use of buffer pointers in the implementation
  *
