@@ -65,6 +65,8 @@ extern "C" {
 #define BLAST_WORDSIZE_PROT 3
 #define BLAST_WORDSIZE_NUCL 11
 #define BLAST_WORDSIZE_MEGABLAST 28
+#define BLAST_VARWORD_NUCL 0
+#define BLAST_VARWORD_MEGABLAST 1
 
 /** Protein gap costs are the defaults for the BLOSUM62 scoring matrix.
  * More gap costs are listed in BLASTOptionSetGapParams 
