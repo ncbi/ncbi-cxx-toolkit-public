@@ -245,6 +245,10 @@ void CTime::x_Init(const string& str, const string& fmt)
 {
     Clear();
 
+    if( str.empty() ) {
+        return;
+    }
+    
     const char* fff;
     const char* sss = str.c_str();
 
@@ -1300,6 +1304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/09/29 21:20:17  golikov
+ * x_Init: create empty CTime obj if str.empty() true, ignore format
+ *
  * Revision 1.38  2003/07/15 20:09:22  ivanov
  * Fixed some memory leaks
  *
