@@ -121,6 +121,9 @@ END_NCBI_SCOPE
 #endif // _STMT_IMPL_HPP_
 /*
 * $Log$
+* Revision 1.15  2004/09/27 23:48:41  vakatov
+* Warning fix:  added missing EOL
+*
 * Revision 1.14  2004/09/22 14:20:41  kholodov
 * Moved cvs log to the bottom of the file
 *
