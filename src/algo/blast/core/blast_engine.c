@@ -122,8 +122,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
    if (mb_lookup) {
       wordfinder = MB_WordFinder;
-      offset_array_size = 
-         MAX(OFFSET_ARRAY_SIZE, ((MBLookupTablePtr)lookup->lut)->longest_chain);
+      offset_array_size = OFFSET_ARRAY_SIZE + 
+         ((MBLookupTablePtr)lookup->lut)->longest_chain;
    } else {
       if (blastp) {
          wordfinder = BlastAaWordFinder;
@@ -132,8 +132,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       } else {
          wordfinder = BlastNaWordFinder;
       }
-      offset_array_size = 
-         MAX(OFFSET_ARRAY_SIZE, ((LookupTablePtr)lookup->lut)->longest_chain);
+      offset_array_size = OFFSET_ARRAY_SIZE + 
+         ((LookupTablePtr)lookup->lut)->longest_chain;
    }
 
 
@@ -270,7 +270,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
                                   ewp,
                                   query_offsets,
                                   subject_offsets,
-                                  offset_array_size,
+                                  OFFSET_ARRAY_SIZE,
                                   init_hitlist);
             
             if (init_hitlist->total == 0)
