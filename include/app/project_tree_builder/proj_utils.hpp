@@ -79,6 +79,9 @@ struct SProjectTreeInfo
 
     /// <projects> branch of tree (scripts\projects)
     string m_Projects;
+
+    /// <impl> sub-branch of include/* project path
+    string m_Impl;
 };
 
 // Get parent directory
@@ -89,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/07 19:13:02  gorelenk
+ * + m_Impl in struct SProjectTreeInfo .
+ *
  * Revision 1.10  2004/02/26 21:20:58  gorelenk
  * Added declaration of IProjectFilter interface. auto_ptr<IProjectFilter>
  * member used instead of m_Subtree in struct SProjectTreeInfo.
