@@ -30,10 +30,17 @@
  *
  */
 
-/// File access objects for CSeqDB
+/// @file seqdbfile.hpp
+/// File access objects for CSeqDB.
 ///
-/// These objects define access to the various database component
-/// files, such as name.pin, name.phr, name.psq, and so on.
+/// Defines classes:
+///     CSeqDBRawFile
+///     CSeqDBExtFile
+///     CSeqDBIdxFile
+///     CSeqDBSeqFile
+///     CSeqDBHdrFile
+///
+/// Implemented for: UNIX, MS-Windows
 
 #include "seqdbgeneral.hpp"
 #include "seqdbatlas.hpp"
@@ -49,13 +56,14 @@ BEGIN_NCBI_SCOPE
 
 /// Raw file.
 ///
-/// This is the lowest level; it controls basic (byte data) access to
-/// the file, isolating higher levels from differences in handling
-/// mmapped vs opened files.  This will probably become a thin wrapper
-/// around the Atlas functionality, which is fine.
+/// This is the lowest level of SeqDB file object.  It controls basic
+/// (byte data) access to the file, isolating higher levels from
+/// differences in handling mmapped vs opened files.  This has mostly
+/// become a thin wrapper around the Atlas functionality.
 
 class CSeqDBRawFile {
 public:
+    /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
     CSeqDBRawFile(CSeqDBAtlas & atlas)
@@ -136,23 +144,55 @@ private:
 
 class CSeqDBExtFile : public CObject {
 public:
+    /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
+    /// Constructor
+    ///
+    /// This builds an object which has a few properties required by
+    /// most or all database volume component files.  This object
+    /// keeps a lease on the file from the first access until
+    /// instructed not to, moving and expanding that lease to cover
+    /// incoming requests.  By keeping a lease, lookups, file opens,
+    /// and other expensive operations are usually avoided on
+    /// subsequent calls.  This object also provides some methods to
+    /// read data in a byte swapped or direct way.
+    /// @param atlas
+    ///   The memory management layer object.
+    /// @param dbfilename
+    ///   The name of the managed file.
+    /// @param prot_nucl
+    ///   The sequence type.
     CSeqDBExtFile(CSeqDBAtlas   & atlas,
                   const string  & dbfilename,
                   char            prot_nucl);
     
+    /// Destructor
     virtual ~CSeqDBExtFile()
     {
     }
     
+    /// Release memory held in the atlas layer by this object.
     void UnLease()
     {
         m_Lease.Clear();
     }
     
 protected:
-    const char * x_GetRegion(Uint4 start, Uint4 end, bool keep, CSeqDBLockHold & locked) const
+    /// Get a region of the file
+    ///
+    /// This method is called to load part of the file into the lease
+    /// object.  If the keep argument is set, an additional hold is
+    /// acquired on the object, so that the user will conceptually own
+    /// a hold on the object.  Such a hold should be returned with the
+    /// top level RetSequence() method.
+    ///
+    /// @param start
+    ///   The beginning offset of the region.
+    const char * x_GetRegion(Uint4            start,
+                             Uint4            end,
+                             bool             keep,
+                             CSeqDBLockHold & locked) const
     {
         m_Atlas.Lock(locked);
         
@@ -216,7 +256,7 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 }
 
 
-/// Index files
+/// Index file
 ///
 /// This is the .pin or .nin file; it provides indices into the other
 /// files.  The version, title, date, and other summary information is
@@ -361,8 +401,21 @@ CSeqDBIdxFile::GetSeqStart(Uint4 oid, Uint4 & start) const
 }
 
 
+/// Sequence data file
+///
+/// This is the .psq or .nsq file; it provides the raw sequence data,
+/// and for nucleotide sequences, ambiguity data.  For nucleotide
+/// sequences, the last byte will contain a two bit marker with a
+/// number from 0-3, which indicates how much of the rest of that byte
+/// is filled with base information (0-3 bases, which is 0-6 bits).
+/// For ambiguous regions, the sequence data is normally randomized in
+/// this file, to reduce the number of accidental false positives
+/// during the search.  The ambiguity data encodes the location of,
+/// and actual data for, those regions.
+
 class CSeqDBSeqFile : public CSeqDBExtFile {
 public:
+    /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
     CSeqDBSeqFile(CSeqDBAtlas   & atlas,
@@ -390,8 +443,16 @@ public:
 };
 
 
+/// Header file
+///
+/// This is the .phr or .nhr file.  It contains descriptive data for
+/// each sequence, including taxonomic information and identifiers for
+/// sequence files.  The version, title, date, and other summary
+/// information is also stored here.
+
 class CSeqDBHdrFile : public CSeqDBExtFile {
 public:
+    /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
     CSeqDBHdrFile(CSeqDBAtlas   & atlas,
