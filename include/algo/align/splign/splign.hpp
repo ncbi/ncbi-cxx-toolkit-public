@@ -125,8 +125,9 @@ public:
         const char* GetAcceptor(void) const; // or zero if less than 2 chars
         
         // NetCache-related serialization
-        void ToBuffer   (vector<char>* buf) const;
-        void FromBuffer (const vector<char>& buf);
+        typedef vector<char> TNetCacheBuffer;
+        void ToBuffer   (TNetCacheBuffer* buf) const;
+        void FromBuffer (const TNetCacheBuffer& buf);
     };
     
     typedef vector<SSegment> TSegments;
@@ -151,8 +152,9 @@ public:
         double GetIdentity(void) const;
         
         // save to / read from NetCache buffer
-        void ToBuffer   (vector<char>* buf) const;
-        void FromBuffer (const vector<char>& buf);
+        typedef vector<char> TNetCacheBuffer;
+        void ToBuffer   (TNetCacheBuffer* buf) const;
+        void FromBuffer (const TNetCacheBuffer& buf);
     };
     
     typedef vector<SAlignedCompartment> TResults;
@@ -225,6 +227,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/12/01 14:54:38  kapustin
+ * typedef public std types
+ *
  * Revision 1.16  2004/11/29 21:09:12  kapustin
  * Move out-of-class struct definitions back within CSplign for more compatibility
  *
