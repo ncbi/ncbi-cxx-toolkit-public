@@ -201,7 +201,18 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 
     if (a_content < 0.87) {
         return eBinaryASN;
+    } 
+
+    // Signature check
+    if (buf[1] == 0x80) {
+        if (buf[0] == 0x30 || buf[0] == 0x31) {
+            return eBinaryASN;
+        }
+        if (buf[0] >= 0xA0) {
+            return eBinaryASN;
+        }
     }
+
 
     input.close();
     return format;
@@ -213,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/02 20:16:09  kuznets
+ * Improved ASN binary recognition by checking ASN specific signatures
+ *
  * Revision 1.9  2003/11/26 14:34:16  kuznets
  * Fine tuned ascii content coefficient to better recognize binary asns
  *
