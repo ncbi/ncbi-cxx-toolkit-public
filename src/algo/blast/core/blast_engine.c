@@ -140,8 +140,24 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
  * query against one subject sequence. Translation of the subject sequence
  * into 6 frames is done inside, if necessary. If subject sequence is 
  * too long, it can be split into several chunks. 
+ * @ param program_number BLAST program type [in]
+ * @param query Query sequence structure [in]
+ * @param query_info Query information [in]
+ * @param subject Subject sequence structure [in]
+ * @param lookup Lookup table [in]
+ * @param gap_align Structure for gapped alignment information [in]
+ * @param score_params Scoring parameters [in]
+ * @param word_params Initial word finding and ungapped extension 
+ *                    parameters [in]
+ * @param ext_params Gapped extension parameters [in]
+ * @param hit_params Hit saving parameters [in]
+ * @param db_options Database options [in]
+ * @param diagnostics Hit counts and other diagnostics [in] [out]
+ * @param aux_struct Structure containing different auxiliary data and memory
+ *                   for the preliminary stage of the BLAST search [in]
+ * @param hsp_list_out List of HSPs found for a given subject sequence [in]
  */
-static Int2
+Int2
 BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
@@ -169,6 +185,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    Int4 hsp_num_max;
    BlastUngappedStats* ungapped_stats = NULL;
    BlastGappedStats* gapped_stats = NULL;
+   Boolean prelim_traceback = 
+      (ext_params->options->ePrelimGapExt == eGreedyWithTracebackExt);
 
    const Boolean k_translated_subject = (program_number == blast_type_tblastn
                          || program_number == blast_type_tblastx
@@ -296,7 +314,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
          Blast_HSPListsMerge(hsp_list, &combined_hsp_list, hsp_num_max, offset,
-            (Boolean) (hsp_list->traceback_done || !score_options->gapped_calculation));
+            (prelim_traceback || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
       
       Blast_HSPListAppend(combined_hsp_list, hsp_list_out, hsp_num_max);
@@ -474,8 +492,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    return status;
 }
 
-#define BLAST_DB_CHUNK_SIZE 1024
-
 Int4 
 BLAST_RPSSearchEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
@@ -488,10 +504,11 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastDiagnostics* diagnostics)
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
+   BlastHSPResults** results)
 {
    BlastCoreAuxStruct* aux_struct = NULL;
-   BlastHSPList* hsp_list;
+   BlastHSPList* hsp_list = NULL;
    BlastScoringParameters* score_params = NULL;
    BlastInitialWordParameters* word_params = NULL;
    BlastExtensionParameters* ext_params = NULL;
@@ -506,15 +523,12 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    BlastQueryInfo concat_db_info;
    BLAST_SequenceBlk concat_db;
    RPSAuxInfo *rps_info;
-   BlastHSPResults prelim_results;
    Uint1 *orig_query_seq = NULL;
    BlastRawCutoffs* raw_cutoffs = NULL;
 
    if (program_number != blast_type_rpsblast &&
        program_number != blast_type_rpstblastn)
       return -1;
-   if (results->num_queries != 1)
-      return -2;
 
    if ((status =
        BLAST_SetUpAuxStructures(program_number, seq_src,
@@ -566,10 +580,6 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    concat_db_info.last_context = num_db_seqs - 1;
    concat_db_info.context_offsets = lookup->rps_seq_offsets;
 
-   prelim_results.num_queries = num_db_seqs;
-   prelim_results.hitlist_array = (BlastHitList **)calloc(num_db_seqs,
-                                             sizeof(BlastHitList *));
-
    /* Change the table of diagonals that will be used for the
       search; we need a diag table that can fit the entire
       concatenated DB */
@@ -604,14 +614,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    if (hsp_list && hsp_list->hspcnt > 0) {
       /* Save the HSPs into a hit list */
-      Blast_HSPResultsSaveHitList(program_number, &prelim_results, hsp_list, hit_params);
+      BlastHSPStreamWrite(hsp_stream, &hsp_list);
    }
-
-   /* Change the results from a single hsplist with many 
-      contexts to many hsplists each with a single context.
-      'query' and 'subject' offsets are still reversed. */
-
-   Blast_HSPResultsRPSUpdate(results, &prelim_results);
 
    /* for a translated search, throw away the packed version
       of the query and replace with the original (excluding the
@@ -625,15 +629,10 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    /* Do the traceback. After this call, query and 
       subject have reverted to their traditional meanings. */
 
-   BLAST_RPSTraceback(program_number, results, &concat_db, 
+   BLAST_RPSTraceback(program_number, hsp_stream, &concat_db, 
             &concat_db_info, query, query_info, gap_align, 
             score_params, ext_params, hit_params, db_options, 
-            rps_info->karlin_k);
-
-   /* The traceback calculated the E values, so it's safe
-      to sort the results now */
-
-   Blast_HSPResultsSortByEvalue(results);
+            rps_info->karlin_k, results);
 
    /* free the internal structures used */
    /* Do not destruct score block here */
@@ -642,7 +641,6 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       query->sequence_start = orig_query_seq;
       query->sequence = orig_query_seq + 1;
    }
-   sfree(prelim_results.hitlist_array);
    gap_align->sbp->posMatrix = NULL;
    gap_align->positionBased = FALSE;
    gap_align->sbp = NULL;
@@ -668,10 +666,11 @@ BLAST_SearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastDiagnostics* diagnostics)
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics,
+   BlastHSPResults** results)
 {
    BlastCoreAuxStruct* aux_struct = NULL;
-   BlastHSPList* hsp_list; 
+   BlastHSPList* hsp_list = NULL; 
    BlastScoringParameters* score_params = NULL;
    BlastInitialWordParameters* word_params = NULL;
    BlastExtensionParameters* ext_params = NULL;
@@ -752,10 +751,8 @@ BLAST_SearchEngine(Uint1 program_number,
             /* Check for HSP inclusion */
             status = Blast_HSPListUniqSort(hsp_list);
          }
-         /* Save the HSPs into a hit list */
-         Blast_HSPResultsSaveHitList(program_number, results, hsp_list, hit_params);
+         BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
-         /*BlastSequenceBlkClean(subject);*/
    }
    
    itr = BlastSeqSrcIteratorFree(itr);
@@ -777,17 +774,13 @@ BLAST_SearchEngine(Uint1 program_number,
       gap_align->sbp->effective_search_sp *= db_hits;
    }
 
-   /* Now sort the hit lists for all queries, but only if this is a database
-      search. */
-   if (db_length > 0)
-      Blast_HSPResultsSortByEvalue(results);
+   /* Prohibit any subsequent writing to the HSP stream. */
+   BlastHSPStreamClose(hsp_stream);
 
-   if (!ext_options->skip_traceback && score_options->gapped_calculation) {
-      status = 
-         BLAST_ComputeTraceback(program_number, results, query, query_info,
-            seq_src, gap_align, score_params, ext_params, hit_params,
-            eff_len_params, db_options, psi_options);
-   }
+   status = 
+      BLAST_ComputeTraceback(program_number, hsp_stream, query, query_info,
+         seq_src, gap_align, score_params, ext_params, hit_params,
+         eff_len_params, db_options, psi_options, results);
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;

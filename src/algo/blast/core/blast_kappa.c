@@ -2402,16 +2402,43 @@ BlastHitsGetBestEvalue(BlastHSPList* hsplist)
     return retval;
 }
 
+/** Save the results for one query, and clean the internal structure. */
+
+static Int2
+Blast_HSPResultsUpdateFromSWheap(SWheap* significantMatches,
+                                 Int4 query_index, Int4 hitlist_size,
+                                 BlastHSPResults* results)
+{
+   SWResults *SWAligns; /* All new alignments, concatenated
+                           into a single, flat list */
+   if (query_index < 0)
+      return 0;
+
+   SWAligns = SWheapToFlatList(significantMatches);
+
+   results->hitlist_array[query_index] = Blast_HitListNew(hitlist_size);
+          
+   if(SWAligns != NULL) {
+      newConvertSWalignsUpdateHitList(SWAligns, 
+         results->hitlist_array[query_index]);
+   }
+   SWAligns = SWResultsFree(SWAligns);
+   /* Clean up */
+   SWheapRelease(significantMatches);
+   return 0;
+}
+
 Int2
 Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* queryInfo,
                   BlastScoreBlk* sbp,
-                  BlastHitList* hitList,
+                  BlastHSPStream* hsp_stream,
                   const BlastSeqSrc* seqSrc,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
                   const BlastHitSavingParameters* hitsavingParams,
-                  const PSIBlastOptions* psiOptions)
+                  const PSIBlastOptions* psiOptions,
+                  BlastHSPResults* results)
 {
 
   const Uint1 k_program_name = blast_type_blastp;
@@ -2420,7 +2447,6 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
   Boolean SmithWaterman = FALSE; /* USe smith-waterman to get scores.*/
   Boolean positionBased=FALSE; /* FIXME, how is this determined? */
   Int2 status=0;              /* Return value. */
-  Int4 index;                   /* index over matches */
   Uint1*    query;            /* the query sequence */
   Int4      queryLength;      /* the length of the query sequence */
   double localScalingFactor;       /* the factor by which to
@@ -2448,6 +2474,8 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
 
   BlastExtensionOptions* extendOptions=NULL; /* Options for extension. */
   BlastHitSavingOptions* hitsavingOptions=NULL; /* Options for saving hits. */
+  BlastHSPList* thisMatch = NULL;  
+  Int4 current_query_index;
 
   /* Get pointer to options for extensions and hitsaving. */
   if (extendParams == NULL || (extendOptions=extendParams->options) == NULL)
@@ -2461,10 +2489,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
 
   adjustParameters = extendParams->options->compositionBasedStats; 
 
-  SWheapInitialize(&significantMatches, hitsavingOptions->hitlist_size,
-                   hitsavingOptions->hitlist_size, psiOptions->inclusion_ethresh);
-
-   sbp->kbp_ideal = Blast_KarlinBlkIdealCalc(sbp);
+  sbp->kbp_ideal = Blast_KarlinBlkIdealCalc(sbp);
 
 
   /**** Validate parameters *************/
@@ -2504,14 +2529,28 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
 
   localScalingFactor = Kappa_RescaleSearch(searchParams, queryBlk, queryInfo, sbp, scoringParams);
 
-  for(index = 0; index < hitList->hsplist_count; index++) {
+  /* Initialize current query index to -1, so index 0 would indicate a new 
+     query. */
+  current_query_index = -1;
+
+  while (BlastHSPStreamRead(hsp_stream, &thisMatch) != kBlastHSPStream_Eof) {
     /* for all matching sequences */
     Kappa_MatchingSequence matchingSeq; /* the data for a matching
                                          * database sequence */
 
-    BlastHSPList* thisMatch = hitList->hsplist_array[index];
     if(thisMatch->hsp_array == NULL) {
       continue;
+    }
+
+    if (thisMatch->query_index != current_query_index) {
+       /* This HSP list is for a new query sequence. Save results for 
+          the previous query. */
+       Blast_HSPResultsUpdateFromSWheap(&significantMatches, 
+          current_query_index, hitsavingOptions->hitlist_size, results);
+       SWheapInitialize(&significantMatches, hitsavingOptions->hitlist_size,
+                        hitsavingOptions->hitlist_size, 
+                        psiOptions->inclusion_ethresh);
+       current_query_index = thisMatch->query_index;
     }
 
     if(SWheapWillAcceptOnlyBelowCutoff(&significantMatches)) {
@@ -2708,23 +2747,13 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
     }
     /* end if Kappa_AdjustSearch ran without error */
     Kappa_MatchingSequenceRelease(&matchingSeq);
+    
   }
   /* end for all matching sequences */
 
-  Blast_HitListHSPListsFree(hitList); 
-  /* All HSP's have been saved on other structs, free HSPList before repopulating below. */
-
-  {
-    SWResults *SWAligns;        /* All new alignments, concatenated
-                                   into a single, flat list */
-    SWAligns = SWheapToFlatList(&significantMatches);
-    if(SWAligns != NULL) {
-      newConvertSWalignsUpdateHitList(SWAligns, hitList);
-    }
-    SWAligns = SWResultsFree(SWAligns);
-  }
-  /* Clean up */
-  SWheapRelease(&significantMatches);
+  /* Save results for the last query, which were not saved inside the loop. */
+  Blast_HSPResultsUpdateFromSWheap(&significantMatches, 
+     current_query_index, hitsavingOptions->hitlist_size, results);
 
   if(SmithWaterman) 
     Kappa_ForbiddenRangesRelease(&forbidden);
