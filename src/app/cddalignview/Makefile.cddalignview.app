@@ -11,19 +11,19 @@ SRC = \
 
 LIB = \
 	xcddalignview \
+	ncbimime \
 	cdd \
 	cn3d \
-	ncbimime \
 	mmdb1 \
 	mmdb2 \
 	mmdb3 \
-	pub \
 	seqset $(SEQ_LIBS) \
+	pub \
 	medline \
 	biblio \
 	general \
 	xser \
-	xncbi \
-	xutil
+	xutil \
+	xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
