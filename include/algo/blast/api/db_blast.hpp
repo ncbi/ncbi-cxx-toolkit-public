@@ -53,7 +53,7 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
-// Type definition for a vector of error messages from the BLAST engine
+/// Type definition for a vector of error messages from the BLAST engine
 typedef vector<Blast_Message*> TBlastError;
 
 /// Runs the BLAST algorithm between a set of sequences and BLAST database
@@ -64,11 +64,11 @@ public:
     /// Contructor, creating default options for a given program
     CDbBlast(const TSeqLocVector& queries, 
              BlastSeqSrc* bssp, EProgram p, RPSInfo* rps_info=0,
-             BlastHSPStream* hsp_stream=0, MT_LOCK lock=0);
-    // Constructor using a prebuilt options handle
+             BlastHSPStream* hsp_stream=0, bool mt=false);
+    /// Constructor using a prebuilt options handle
     CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp, 
              CBlastOptionsHandle& opts, RPSInfo* rps_info=0,
-             BlastHSPStream* hsp_stream=0, MT_LOCK lock=0);
+             BlastHSPStream* hsp_stream=0, bool mt=false);
 
     virtual ~CDbBlast();
 
@@ -81,20 +81,26 @@ public:
     CBlastOptionsHandle& SetOptionsHandle();
     const CBlastOptionsHandle& GetOptionsHandle() const;
 
-    // Perform BLAST search
+    /// Perform BLAST search
     virtual TSeqAlignVector Run();
-    // Run BLAST search without traceback
+    /// Run BLAST search without traceback
     virtual void PartialRun();
-    // Just perform the search setup
+    /// Perform the main part of the search setup
     virtual int SetupSearch();
-    // Run the search engine; assumes that setup has already been performed
+    /// Run the search engine; assumes that main setup has already been 
+    /// performed
     virtual void RunSearchEngine();
+    /// Run the preliminary stage of the search engine; assumes that both 
+    /// main and additional gapped alignment setup have already been performed.
+    virtual void RunPreliminarySearch();
+    /// Run only the traceback stage of the BLAST search
+    virtual TSeqAlignVector RunTraceback(); 
     
-    // Remove extra results if a limit is provided on total number of HSPs
+    /// Remove extra results if a limit is provided on total number of HSPs
     void TrimBlastHSPResults();
 
     /// Retrieves regions filtered on the query/queries
-    //const TSeqLocVector& GetFilteredQueryRegions() const;
+    // const TSeqLocVector& GetFilteredQueryRegions() const;
     const BlastMaskLoc* GetFilteredQueryRegions() const;
 
     void SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src=false);
@@ -103,6 +109,7 @@ public:
     BlastHSPResults* GetResults() const;
     BlastDiagnostics* GetDiagnostics() const;
     BlastScoreBlk* GetScoreBlk() const;
+    LookupTableWrap* GetLookupTable() const;
     const CBlastQueryInfo& GetQueryInfo() const;
     const CBLAST_SequenceBlk& GetQueryBlk() const;
     TBlastError& GetErrorMessage();
@@ -112,6 +119,8 @@ protected:
     virtual void x_ResetQueryDs();
     virtual void x_ResetResultDs();
     virtual void x_InitFields();
+    virtual void x_InitHSPStream();
+
     RPSInfo * GetRPSInfo() const;    
 
     /// Internal data structures used in this and all derived classes 
@@ -119,9 +128,9 @@ protected:
     CBLAST_SequenceBlk  m_iclsQueries;    ///< one for all queries
     CBlastQueryInfo     m_iclsQueryInfo;  ///< one for all queries
     BlastScoreBlk*      m_ipScoreBlock;   ///< Karlin-Altschul parameters
-    BlastDiagnostics*    m_ipDiagnostics; ///< Statistical return structures
+    BlastDiagnostics*   m_ipDiagnostics; ///< Statistical return structures
     TBlastError         m_ivErrors;       ///< Error (info, warning) messages
-   
+    
     BlastHSPResults*    m_ipResults;      /**< Results structure - not private, 
                                              because derived class will need to
                                              set it. */
@@ -132,9 +141,6 @@ private:
     RPSInfo*             m_pRpsInfo;      ///< RPS BLAST database information
     BlastHSPStream*      m_pHspStream;    /**< Placeholder for streaming HSP 
                                              lists out of the engine. */
-    MT_LOCK              m_pLock;         /**< Locking mechanism for writing
-                                             results. */
-
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
 
     /// Prohibit copy constructor
@@ -148,6 +154,11 @@ private:
                                               table is created: complement of
                                               filtered regions */
     BlastMaskLoc*       m_ipFilteredRegions;///< Filtered regions
+    bool                m_ibLocalResults; /**< Are results saved locally or
+                                             streamed out to the client of 
+                                             this class? */
+    bool                m_ibMultiThreaded; /**< Is this a multi-threaded 
+                                              search? */
 };
 
 inline void
@@ -251,6 +262,11 @@ inline RPSInfo * CDbBlast::GetRPSInfo() const
     return m_pRpsInfo;
 }
 
+inline LookupTableWrap* CDbBlast::GetLookupTable() const
+{
+    return m_ipLookupTable;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -260,6 +276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/07/06 15:47:11  dondosha
+* Made changes in preparation for implementation of multi-threaded search; added doxygen comments
+*
 * Revision 1.21  2004/06/24 15:55:16  dondosha
 * Added doxygen file description
 *
