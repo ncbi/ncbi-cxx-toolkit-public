@@ -360,7 +360,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
                   query_info, subject->frame, orig_length, offset);
                if (kTranslatedSubject) {
                   prot_length = subject->length;
-                  subject->length = 2*orig_length + 1;
+                  subject->length = orig_length;
                }
             }
             /** NB: If queries are concatenated, HSP offsets must be adjusted
