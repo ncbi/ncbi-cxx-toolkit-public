@@ -153,7 +153,7 @@ public:
 
     bool IsClientSide(void) const;
     bool IsServerSide(void) const;
-    bool IsDatagram(void)   const;
+    bool IsDatagram  (void) const;
 
     // Close the current underlying "SOCK" (if any, and if owned),
     // and from now on use "sock" as the underlying "SOCK" instead.
@@ -197,11 +197,13 @@ public:
     CDatagramSocket(void);
 
     // NOTE:  the created underlying "SOCK" will be owned by the object
-    CDatagramSocket(unsigned short  port,  // always in host byte order
-                    ESwitch         do_log = eDefault);
+    CDatagramSocket(unsigned short port,  // always in host byte order
+                    ESwitch        do_log = eDefault);
 
-    // EIO_Status Open(unsigned short port = 0, ESwitch do_log = eDefault);
+    EIO_Status Bind(unsigned short port, ESwitch do_log = eDefault);
 
+    // NOTE:  unlike system's connect() this method only specifies the default
+    // destination, and does not restrict the source of the incoming messages.
     EIO_Status Connect(const string& host, unsigned short port);
 
     EIO_Status Wait(const STimeout* timeout = 0);
@@ -438,13 +440,6 @@ inline bool CSocket::IsDatagram(void) const
 //  CDatagramSocket::
 //
 
-inline EIO_Status CDatagramSocket::Connect(const string&  host,
-                                           unsigned short port)
-{
-    return m_Socket ? DSOCK_Connect(m_Socket, host.c_str(), port) : eIO_Closed;
-}
-
-
 inline EIO_Status CDatagramSocket::Wait(const STimeout* timeout)
 {
     return m_Socket ? DSOCK_WaitMsg(m_Socket, timeout) : eIO_Closed;
@@ -570,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/04/11 20:58:12  lavr
+ * CDatagramSocket:: API defined completely
+ *
  * Revision 6.21  2003/04/09 19:05:55  siyan
  * Added doxygen support
  *

@@ -287,11 +287,39 @@ CDatagramSocket::CDatagramSocket(void)
 
 
 CDatagramSocket::CDatagramSocket(unsigned short  port,
-                                 ESwitch         log)
+                                 ESwitch         log_data)
     : CSocket()
 {
-    if (DSOCK_CreateEx(port, &m_Socket, log) != eIO_Success)
+    if (DSOCK_CreateEx(port, &m_Socket, log_data) != eIO_Success)
         m_Socket = 0;
+}
+
+
+EIO_Status CDatagramSocket::Bind(unsigned short  port,
+                                 ESwitch         log_data)
+{
+    if ( m_Socket )
+        return eIO_Unknown;
+
+    EIO_Status status = DSOCK_CreateEx(port, &m_Socket, log_data);
+    if (status != eIO_Success)
+        m_Socket = 0;
+    return status;
+}
+
+
+EIO_Status CDatagramSocket::Connect(const string&  host,
+                                    unsigned short port)
+{
+    if ( !m_Socket ) {
+        EIO_Status status = DSOCK_Create(0, &m_Socket);
+        if (status != eIO_Success) {
+            m_Socket = 0;
+            return status;
+        }
+    }
+
+    return DSOCK_Connect(m_Socket, host.c_str(), port);
 }
 
 
@@ -495,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/04/11 20:59:30  lavr
+ * CDatagramSocket:: API defined completely
+ *
  * Revision 6.12  2003/02/20 17:55:39  lavr
  * Inlining CSocket::Shutdown() and CSocket::Wait()
  *
