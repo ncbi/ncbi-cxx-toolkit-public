@@ -38,8 +38,8 @@ static char const rcsid[] = "$Id$";
 * ==========================================================================
 */
 
-#include <blast_seg.h>
-#include <lnfact.h>
+#include <algo/blast/core/blast_seg.h>
+#include <algo/blast/core/lnfact.h>
 
 /*---------------------------------------------------------------(SeqNew)---*/
 

@@ -37,8 +37,8 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <greedy_align.h>
-#include <blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <algo/blast/core/greedy_align.h>
+#include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
 
 /* -------- From original file edit.c ------------- */
 

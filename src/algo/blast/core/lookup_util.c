@@ -28,7 +28,7 @@ static char const rcsid[] = "$Id$";
 
 */
 
-#include "util.h"
+#include <algo/blast/core/util.h>
 
 void __sfree(void **x)
 {

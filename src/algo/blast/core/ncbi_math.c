@@ -42,6 +42,9 @@
 * 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
 *
 * $Log$
+* Revision 1.2  2003/08/11 15:02:00  dondosha
+* Added algo/blast/core to all #included headers
+*
 * Revision 1.1  2003/08/02 16:31:48  camacho
 * Moved ncbimath.c -> ncbi_math.c
 *
@@ -93,7 +96,7 @@
 #define THIS_MODULE g_corelib
 #define THIS_FILE _this_file
 
-#include "ncbi_math.h"
+#include <algo/blast/core/ncbi_math.h>
 
 extern char * g_corelib;
 static char * _this_file = __FILE__;

@@ -37,7 +37,7 @@ Contents: Initialization and freeing of structures for gapped alignment
 
 static char const rcsid[] = "$Id$";
 
-#include <gapinfo.h>
+#include <algo/blast/core/gapinfo.h>
 
 GapStateArrayStruct* 
 GapStateFree(GapStateArrayStruct* state_struct)

@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.28  2003/08/11 15:01:59  dondosha
+ * Added algo/blast/core to all #included headers
+ *
  * Revision 1.27  2003/08/01 17:27:04  dondosha
  * Renamed external functions to avoid collisions with ncbitool library; made other functions static
  *
@@ -136,8 +139,8 @@ Detailed Contents:
  * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
  *
  * */
-#include <blastkar.h>
-#include <blast_util.h>
+#include <algo/blast/core/blastkar.h>
+#include <algo/blast/core/blast_util.h>
 
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)

@@ -35,11 +35,11 @@ Contents: High level BLAST functions
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_engine.h>
-#include <aa_ungapped.h>
-#include <blast_util.h>
-#include <blast_gapalign.h>
-#include <blast_traceback.h>
+#include <algo/blast/core/blast_engine.h>
+#include <algo/blast/core/aa_ungapped.h>
+#include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_traceback.h>
 
 #if 0
 extern OIDListPtr LIBCALL 

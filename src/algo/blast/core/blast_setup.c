@@ -36,9 +36,9 @@ $Revision$
 
 ******************************************************************************/
 
-#include <blast_setup.h>
-#include <blast_util.h>
-#include <blast_filter.h>
+#include <algo/blast/core/blast_setup.h>
+#include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_filter.h>
 
 /** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
  *      Should be moved to blastkar.c (or it's successor) in the future.

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.10  2003/08/11 15:01:59  dondosha
+ * Added algo/blast/core to all #included headers
+ *
  * Revision 1.9  2003/07/31 14:31:41  camacho
  * Replaced Char for char
  *
@@ -67,7 +70,7 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_message.h>
+#include <algo/blast/core/blast_message.h>
 
 /*
 	Deallocates message memory.

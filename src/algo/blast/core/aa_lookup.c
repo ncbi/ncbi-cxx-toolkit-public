@@ -26,10 +26,10 @@
 
 */
 
-#include <blast_def.h>
-#include <blast_options.h>
-#include <aa_lookup.h>
-#include <util.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/util.h>
 
 static char const rcsid[] = "$Id$";
 

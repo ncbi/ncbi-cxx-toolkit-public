@@ -36,9 +36,9 @@ Detailed Contents:
 ******************************************************************************
  * $Revision$
  */
-#include <blast_options.h>
-#include <blast_def.h>
-#include <mb_lookup.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/mb_lookup.h>
 
 static char const rcsid[] = "$Id$";
 

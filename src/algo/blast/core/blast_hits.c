@@ -42,10 +42,10 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_options.h>
-#include <blast_extend.h>
-#include <blast_hits.h>
-#include <blast_util.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_hits.h>
+#include <algo/blast/core/blast_util.h>
 
 void 
 BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPList* hsp_list, 

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.53  2003/08/11 15:01:59  dondosha
+ * Added algo/blast/core to all #included headers
+ *
  * Revision 1.52  2003/08/01 17:26:19  dondosha
  * Use renamed versions of functions from local blastkar.h
  *
@@ -282,9 +285,9 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_options.h>
-#include <blast_gapalign.h>
-#include <blast_filter.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_filter.h>
 
 QuerySetUpOptions*
 BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)

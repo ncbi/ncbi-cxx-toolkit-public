@@ -35,8 +35,8 @@ Detailed Contents:
 
 ******************************************************************************/
 
-#include <link_hsps.h>
-#include <blast_util.h>
+#include <algo/blast/core/link_hsps.h>
+#include <algo/blast/core/blast_util.h>
 
 static char const rcsid[] = "$Id$";
 

@@ -37,12 +37,12 @@ Contents: Functions to initialize structures used for BLAST extension
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_extend.h>
-#include <blast_options.h>
-#include <aa_lookup.h>
-#include <na_lookup.h>
-#include <mb_lookup.h>
-#include <blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <algo/blast/core/blast_extend.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/na_lookup.h>
+#include <algo/blast/core/mb_lookup.h>
+#include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
 
 #define MIN_INIT_HITLIST_SIZE 100
 

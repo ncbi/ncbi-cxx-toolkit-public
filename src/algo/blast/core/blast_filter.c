@@ -36,13 +36,13 @@ Contents: All code related to query sequence masking/filtering for BLAST
  * $Revision$
  * */
 
-#include <blast_def.h>
-#include <blast_util.h>
-#include <blast_filter.h>
-#include <blast_dust.h>
-#include <blast_seg.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_filter.h>
+#include <algo/blast/core/blast_dust.h>
+#include <algo/blast/core/blast_seg.h>
 #ifdef CC_FILTER_ALLOWED
-#include <urkpcc.h>
+#include <algo/blast/core/urkpcc.h>
 #endif
 
 /* The following function will replace BlastSetUp_CreateDoubleInt */

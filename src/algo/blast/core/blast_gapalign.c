@@ -37,13 +37,13 @@ Contents: Functions to perform gapped alignment
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_options.h>
-#include <blast_def.h>
-#include <blast_gapalign.h>
-#include <blast_util.h> /* for READDB_UNPACK_BASE macros */
-#include <blast_setup.h>
-#include <greedy_align.h>
-#include <blast_setup.h>
+#include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_gapalign.h>
+#include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <algo/blast/core/blast_setup.h>
+#include <algo/blast/core/greedy_align.h>
+#include <algo/blast/core/blast_setup.h>
 
 static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, BlastGapAlignStruct* gap_align,

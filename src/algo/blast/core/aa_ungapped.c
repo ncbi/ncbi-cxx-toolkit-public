@@ -28,7 +28,7 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <aa_ungapped.h>
+#include <algo/blast/core/aa_ungapped.h>
 
 static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
 

@@ -35,10 +35,10 @@ Contents: Functions for accessing the lookup tables for nucleotide BLAST
  * $Revision$
  * */
 
-#include <blast_def.h>
-#include <aa_lookup.h>
-#include <na_lookup.h>
-#include <mb_lookup.h>
+#include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/na_lookup.h>
+#include <algo/blast/core/mb_lookup.h>
 
 static char const rcsid[] = "$Id$";
 
