@@ -1434,7 +1434,7 @@ diag_compare_match(VoidPtr v1, VoidPtr v2)
  * @param gap_align A placeholder for gapped alignment information and 
  *        score block. [in] [out]
  * @param score_options Options related to scoring alignments [in]
- * @param ext_options Options related to alignment extension [in]
+ * @param ext_params Options related to alignment extension [in]
  * @param hit_options Options related to saving HSPs [in]
  * @param init_hitlist Contains all the initial hits [in]
  * @param hsp_list_ptr List of HSPs with full extension information [out]
