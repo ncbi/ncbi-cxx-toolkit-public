@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/04/29 17:33:59  ucko
+* Add explicit "typename" in three places.
+*
 * Revision 1.3  2001/05/17 15:01:19  lavr
 * Typos corrected
 *
@@ -110,7 +113,7 @@ bool CIntervalTreeIterator<Traits>::operator!(void) const
 
 template<typename Traits>
 inline
-CIntervalTreeIterator<Traits>::TTreeMapValueP
+typename CIntervalTreeIterator<Traits>::TTreeMapValueP
 CIntervalTreeIterator<Traits>::GetTreeMapValue(void) const
 {
     if ( InAuxMap() )
@@ -132,7 +135,7 @@ void CIntervalTreeIterator<Traits>::Next(void)
 
 template<typename Traits>
 inline
-CIntervalTreeIterator<Traits>::interval_type
+typename CIntervalTreeIterator<Traits>::interval_type
 CIntervalTreeIterator<Traits>::GetInterval(void) const
 {
     return GetTreeMapValue()->GetInterval();
@@ -148,7 +151,7 @@ CIntervalTreeIterator<Traits>& CIntervalTreeIterator<Traits>::operator++(void)
 
 template<typename Traits>
 inline
-CIntervalTreeIterator<Traits>::reference
+typename CIntervalTreeIterator<Traits>::reference
 CIntervalTreeIterator<Traits>::GetValue(void) const
 {
     return *GetTreeMapValue()->m_Value;
