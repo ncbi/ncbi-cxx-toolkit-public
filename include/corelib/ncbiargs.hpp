@@ -273,7 +273,7 @@ public:
     // will be added to the list of accepted arguments. Passing "-h" in
     // the command line will printout USAGE and ignore all other passed args.
     CArgDescriptions(bool auto_help = true);
-    ~CArgDescriptions(void);
+    virtual ~CArgDescriptions(void);
 
     // Available argument types
     enum EType {
@@ -402,7 +402,7 @@ public:
 
     // Printout (add to the end of) USAGE to the string "str" using
     // provided arg. descriptions and usage context. Return "str".
-    string& PrintUsage(string& str) const;
+    virtual string& PrintUsage(string& str) const;
 
     // Check if the "name" is spelled correctly: it can contain only
     // alphanumeric characters and underscore ('_'), or be empty.
@@ -684,6 +684,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/05/28 18:00:11  kuznets
+ * CArgDescription::PrintUsage declared virtual to enable custom help screens
+ *
  * Revision 1.29  2003/05/16 16:00:39  vakatov
  * + CArgs::IsEmpty()
  * + CArgDescriptions::PrintUsageIfNoArgs()
