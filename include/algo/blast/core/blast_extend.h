@@ -50,7 +50,6 @@ typedef struct BlastUngappedData {
    Int4 s_start; /**< Start of the ungapped alignment in subject */ 
    Int4 length;  /**< Length of the ungapped alignment */
    Int4 score;   /**< Score of the ungapped alignment */
-   Int2 frame;   /**< Needed for translated searches */
 } BlastUngappedData;
 
 /** Structure to hold the initial HSP information */

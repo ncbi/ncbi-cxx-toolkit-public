@@ -390,7 +390,6 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
    if (ungapped_data) {
       (*ungapped_data)->length = q_end - q_beg;
       (*ungapped_data)->score = score;
-      (*ungapped_data)->frame = 0;
    }
    
    return 0;
@@ -1634,7 +1633,6 @@ BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start,
   ungapped_data->s_start = s_start;
   ungapped_data->length  = len;
   ungapped_data->score   = score;
-  ungapped_data->frame   = 0;
 
   BLAST_SaveInitialHit(ungapped_hsps, q_off, s_off, ungapped_data);
 
