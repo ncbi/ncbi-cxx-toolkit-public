@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/08 16:25:05  vakatov
+* Get rid of the redundant `extern "C"' at "main()"
+*
 * Revision 1.3  1999/05/11 03:11:55  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -38,7 +41,6 @@
 *
 * Revision 1.1  1999/01/13 14:46:45  lewisg
 * simple cgi demo
-*
 * ===========================================================================
 */
 
@@ -50,10 +52,7 @@
 USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 
 
-// the extern "C" main(...) is necessary to make main() visible
-// outside of the ncbi namespace
-
-extern "C" int main(int argc, char *argv[]) 
+int main(int argc, char *argv[]) 
 {
     CCgiRequest Request(argc, argv);
     CCgiResponse Response;
