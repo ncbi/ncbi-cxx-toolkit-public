@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.7 2001/01/08 17:52:56 vakatov Exp $
+	$Id: maketests.met,v 1.8 2001/01/25 00:13:34 vakatov Exp $
 	
    ================================================================================ *)
 
@@ -39,6 +39,15 @@ global DODEBUG
 --global DOOPENTPT
 --global NCSASOCK
 
+on ResolveAlias(pathname)
+	tell application "Finder"
+		--if the last character of pathname is ":" then error "Don't use a trailing colon with ResolveAlias."
+		if exists folder pathname then return pathname & ":"
+		if exists alias file pathname then return the original item of alias file pathname as string
+		error "The folder (or alias) '" & pathname & "' doesn't exist."
+	end tell
+end ResolveAlias
+
 (* ==== These subroutines set paths and other preferences during population ==== *)
 
 on DoSetGlobals()
@@ -50,6 +59,16 @@ on DoSetGlobals()
 		--set OTLIB to METROWERKSCW & "MacOS Support:OpenTransport:Open Tpt Client Developer:PPC Libraries:"
 		
 		set NCBICPP to METRO & CPPROOT as string
+		
+		try
+			tell me to set Dev to ResolveAlias(HARDDISK & "Development")
+			tell me to set Trees to ResolveAlias(Dev & "Trees")
+			tell me to set NCBIgroup to ResolveAlias(Trees & "NCBI")
+			tell me to set Vault to ResolveAlias(NCBIgroup & "ncbi.vault")
+			tell me to set Internal to ResolveAlias(Vault & "internal")
+			tell me to set IntCpp to ResolveAlias(Internal & "c++")
+			set NCBICPP to IntCpp
+		end try
 		
 		set SOURCEFILES to NCBICPP & "src:" as string
 		set INCLUDEFILES to NCBICPP & "include:" as string
@@ -435,9 +454,12 @@ on DoCompileBinary(projName)
 		
 		if DODEBUG = "TRUE" then
 			open (BINARIES & projName & " dbg.µ")
+			set the debug of every target file of target 1 of project document 1 to true
 		else
 			open (BINARIES & projName & ".µ")
+			set the debug of every target file of target 1 of project document 1 to false
 		end if
+		
 		Make Project
 		Close Project
 		
