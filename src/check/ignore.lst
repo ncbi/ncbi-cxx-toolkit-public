@@ -1,0 +1,15 @@
+# $Id: ignore.lst,v 1.1 2002/06/17 21:17:43 ivanov Exp $
+#
+# List of pairs "test/signature" that will not be checked
+#
+#    test      - the path in form <src_dir/test_name>
+#    signature - OS/compiler signature without machine name (from Makefile.mk)
+#
+###########################################################################
+
+; Corelib
+
+corelib/test/test_ncbidll   KCC_400-Release--i686-pc-linux-gnuaout
+
+; Other
+
