@@ -1342,6 +1342,11 @@ void CValidError_feat::ValidateCommonCDSProduct
         return;
     }
 
+    // !!!
+    // IMPORTANT: currently we are unable to perform this test because
+    // of the way feature indexing is implemented. We have no access to the 
+    // "original" Cdregion feature object, only to a copy of it.
+    /**
     if ( &feat != sfp ) {
         // if genomic product set, with one cds on contig and one on cdna,
         // do not report.
@@ -1354,6 +1359,7 @@ void CValidError_feat::ValidateCommonCDSProduct
     
     PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts, 
         "Same product Bioseq from multiple CDS features", feat);
+    **/
 }
 
 
@@ -2069,6 +2075,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/01/29 21:58:26  shomrat
+* Commented check for multiple CDS due to feature indexing implementation issues
+*
 * Revision 1.8  2003/01/29 17:50:06  shomrat
 * Bug fix in ValidateExceptText
 *
