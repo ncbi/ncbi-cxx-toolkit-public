@@ -273,6 +273,7 @@ class CPluginManager : public CPluginManagerBase
 {
 public:
     typedef IClassFactory<TClass, TIfVer> TClassFactory;
+    typedef TIfVer                        TInterfaceVersion;
 
     /// Create class instance
     /// @return
@@ -287,6 +288,7 @@ public:
         TClassFactory* factory = GetFactory(driver, version);
         return factory->CreateInstance(driver, version, params);
     }
+
 
 
     /// Get class factory
@@ -861,6 +863,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/09/17 15:05:34  kuznets
+ * +CPluginMananger::TInterfaceVersion
+ *
  * Revision 1.31  2004/08/19 13:02:17  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *
