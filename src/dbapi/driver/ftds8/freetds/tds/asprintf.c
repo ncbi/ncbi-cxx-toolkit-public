@@ -64,7 +64,11 @@ vasprintf(char **ret, const char *fmt, va_list ap)
   volatile unsigned int pgs;
   struct sigaction sa, osa;
   int len;
+#ifdef HAVE_GETPAGESIZE
+  long pgsize = getpagesize();
+#else
   long pgsize = sysconf(_SC_PAGE_SIZE);
+#endif
 
   pgs = ((strlen(fmt) + 1) / pgsize) + 1;
   if (sigaction(SIGSEGV, NULL, &osa)) {
