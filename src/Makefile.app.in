@@ -54,6 +54,7 @@ SKIP_REBUILD = true
 
 $(XAPP):: $(XOBJ) $(XLIBDEP)
 	@for l in $(XLIBDEP) /dev/null ; do \
+	   test "$$l" = "/dev/null"  &&  break ; \
 	   read srcdir builddir tmpl < "$$l" ; \
 	   test -z "$$builddir" || $(SKIP_REBUILD) || \
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
