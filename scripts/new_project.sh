@@ -46,11 +46,11 @@ CreateMakefile_Lib()
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
 builddir = $builddir
-# builddir = $(NCBI)/c++/Release/build
+# builddir = \$(NCBI)/c++/Release/build
 
 
 ###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 5 LINES !!!
-include $(builddir)/Makefile.mk
+include \$(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
 BINTOUCH = @:
@@ -64,9 +64,9 @@ LIB    = $proj_name
 LIBOBJ = $proj_name
 # LOBJ =
 
-# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
-# CFLAGS   = $(ORIG_CFLAGS)
-# CXXFLAGS = $(ORIG_CXXFLAGS)
+# CPPFLAGS = \$(ORIG_CPPFLAGS) \$(NCBI_C_INCLUDE)
+# CFLAGS   = \$(ORIG_CFLAGS)
+# CXXFLAGS = \$(ORIG_CXXFLAGS)
 #
 # LIB_OR_DLL = dll
 #                                                                         ###
@@ -74,8 +74,8 @@ LIBOBJ = $proj_name
 
 
 ###  LIBRARY BUILD RULES -- DON'T EDIT OR MOVE THESE 2 LINES !!!
-include $(builddir)/Makefile.is_dll_support
-include $(builddir)/Makefile.lib
+include \$(builddir)/Makefile.is_dll_support
+include \$(builddir)/Makefile.lib
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
@@ -102,11 +102,11 @@ CreateMakefile_App()
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT
 builddir = $builddir
-# builddir = $(NCBI)/c++/Release/build
+# builddir = \$(NCBI)/c++/Release/build
 
 
 ###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 4 LINES !!!
-include $(builddir)/Makefile.mk
+include \$(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
 LOCAL_CPPFLAGS = -I.
@@ -117,21 +117,21 @@ LOCAL_CPPFLAGS = -I.
 APP = $proj_name
 OBJ = $proj_name
 
-# PRE_LIBS = $(NCBI_C_LIBPATH) .....
+# PRE_LIBS = \$(NCBI_C_LIBPATH) .....
 LIB        = xncbi
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
-# LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
+# LIBS     = \$(NCBI_C_LIBPATH) -lncbi \$(NETWORK_LIBS) \$(ORIG_LIBS)
 
-# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
-# CFLAGS   = $(ORIG_CFLAGS)
-# CXXFLAGS = $(ORIG_CXXFLAGS)
-# LDFLAGS  = $(ORIG_LDFLAGS)
+# CPPFLAGS = \$(ORIG_CPPFLAGS) \$(NCBI_C_INCLUDE)
+# CFLAGS   = \$(ORIG_CFLAGS)
+# CXXFLAGS = \$(ORIG_CXXFLAGS)
+# LDFLAGS  = \$(ORIG_LDFLAGS)
 #                                                                         ###
 #############################################################################
 
 
 ###  APPLICATION BUILD RULES  -- DON'T EDIT OR MOVE THIS LINE !!!
-include $(builddir)/Makefile.app
+include \$(builddir)/Makefile.app
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) HERE
