@@ -125,7 +125,7 @@ always in the form IP:host (i.e. name converted to dotted IP notation), while th
 side is completely preserved. IP address substitutions are used by dispatcher, when non-local
 client tries to access a service, located at NCBI site. The substitution is seen as a part of host
 environment obtained from the service iterator via call to
-<a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx</i></b></a>,
+<a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
 which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>.
 Partial IP substitutions in the form <tt>@host=host</tt> are used when no detailed
 IP substitution like <tt>@host:port=host:port</tt> matches the host and port of
