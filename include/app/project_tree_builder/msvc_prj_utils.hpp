@@ -205,10 +205,6 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
                                 const list<SConfigInfo> configs,
                                 const SCustomBuildInfo& build_info);
 
-/// Get components from site
-void GetComponents(const string& entry, list<string>* components);
-
-
 /// Checks if 2 dirs has the same root
 bool SameRootDirs(const string& dir1, const string& dir2);
 
@@ -217,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/05 16:26:43  gorelenk
+ * Function GetComponents moved to class CMsvcSite member.
+ *
  * Revision 1.7  2004/02/04 23:17:58  gorelenk
  * Added declarations of functions GetComponents and SameRootDirs.
  *
