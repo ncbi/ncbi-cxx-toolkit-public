@@ -1177,11 +1177,19 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                     const_cast<CSeq_id&>(*id.GetSeqId()));
                 CHandleRange::TRange master_range = range & aoit->first;
                 TSeqPos start = master_range.GetFrom() - aoit->first.GetFrom();
-                TSeqPos end = master_range.GetTo() - aoit->first.GetFrom();
+                TSeqPos end = aoit->first.GetTo() - master_range.GetTo();
 
                 CHandleRangeMap ref_rmap;
-                CHandleRange::TRange search_range(
-                    ref_range.GetFrom() + start, ref_range.GetFrom() + end);
+                CHandleRange::TRange search_range;
+                if ( !reverse_ref ) {
+                    search_range.Set(ref_range.GetFrom() + start,
+                                     ref_range.GetTo() - end);
+                }
+                else {
+                    // Reverse strand
+                    search_range.Set(ref_range.GetFrom() + end,
+                                     ref_range.GetTo() - start);
+                }
                 ref_rmap.AddRanges(ref_idh).AddRange(search_range, eNa_strand_unknown);
                 bool found = false;
                 if (m_Selector.m_NoMapping) {
@@ -1452,6 +1460,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/07/19 18:28:43  grichenk
+* Fixed strand
+*
 * Revision 1.16  2004/07/19 17:41:59  grichenk
 * Added strand processing in annot.locs
 *
