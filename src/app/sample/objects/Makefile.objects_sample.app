@@ -11,6 +11,7 @@ SRC = objects_sample
 
 ### BEGIN COPIED SETTINGS
 LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
-# The serialization code needs the C Toolkit corelib, but only if it's present.
-LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
+## If you need the C toolkit...
+# LIBS     = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
+# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 ### END COPIED SETTINGS
