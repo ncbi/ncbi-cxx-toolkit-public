@@ -125,22 +125,23 @@ void CBlobSplitterImpl::CollectPieces(void)
         m_Pieces->Add(it->second, main_chunk);
     }
 
-    // display pieces statistics
-    CSize single_ref;
-    ITERATE ( CAnnotPieces, it, *m_Pieces ) {
-        if ( it->second.size() <= 1 ) {
-            single_ref += it->second.m_Size;
+    if ( m_Params.m_Verbose ) {
+        // display pieces statistics
+        CSize single_ref;
+        ITERATE ( CAnnotPieces, it, *m_Pieces ) {
+            if ( it->second.size() <= 1 ) {
+                single_ref += it->second.m_Size;
+            }
+            else {
+                NcbiCout << "@" << it->first.AsString() << ": " <<
+                    it->second.m_Size << '\n';
+            }
         }
-        else {
-            NcbiCout << "@" << it->first.AsString() << ": " <<
-                it->second.m_Size << '\n';
+        if ( single_ref ) {
+            NcbiCout << "with 1 obj: " << single_ref << '\n';
         }
+        NcbiCout << NcbiEndl;
     }
-    if ( single_ref ) {
-        NcbiCout << "with 1 obj: " << single_ref << '\n';
-    }
-    NcbiCout << NcbiEndl;
-
 #if 0
     {{
         _ASSERT(m_Chunks.size() == 1);
@@ -204,7 +205,10 @@ void CBlobSplitterImpl::SplitPieces(void)
         }
 
         // split this id
-        LOG_POST("Splitting @"<<max_iter->first.AsString()<<": "<< max_size);
+        if ( m_Params.m_Verbose ) {
+            LOG_POST("Splitting @"<<max_iter->first.AsString()<<
+                     ": "<<max_size);
+        }
 
         SIdAnnotPieces& objs = max_iter->second;
         size_t max_piece_length; // too long annotations
@@ -229,7 +233,7 @@ void CBlobSplitterImpl::SplitPieces(void)
                 pieces.push_back(piece);
             }
         }
-        if ( !pieces.empty() ) {
+        if ( m_Params.m_Verbose && !pieces.empty() ) {
             LOG_POST("  "<<pieces.size()<<" long pieces");
         }
         ITERATE ( vector<SAnnotPiece>, it, pieces ) {
@@ -293,10 +297,12 @@ void CBlobSplitterImpl::SplitPieces(void)
     }}
 #endif
 
-    // display collected chunks stats
-    ITERATE ( TChunks, it, m_Chunks ) {
-        NcbiCout << "Chunk: " << it->first << ": " << it->second.m_Size <<
-            NcbiEndl;
+    if ( m_Params.m_Verbose ) {
+        // display collected chunks stats
+        ITERATE ( TChunks, it, m_Chunks ) {
+            NcbiCout << "Chunk: " << it->first << ": " << it->second.m_Size <<
+                NcbiEndl;
+        }
     }
 }
 
@@ -307,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/05 17:40:34  vasilche
+* Added 'verbose' option to splitter parameters.
+*
 * Revision 1.5  2004/01/07 17:36:23  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

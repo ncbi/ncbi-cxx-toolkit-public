@@ -57,6 +57,7 @@ struct SSplitterParams
         {
             SetChunkSize(kDefaultChunkSize);
             m_Compression = eCompression_none;
+            m_Verbose = 0;
         }
 
 
@@ -67,11 +68,14 @@ struct SSplitterParams
             m_MaxChunkSize = size_t(double(size) * 1.2);
         }
 
+    typedef int TVerbose;
+
     // parameters
     size_t       m_ChunkSize;
     size_t       m_MinChunkSize;
     size_t       m_MaxChunkSize;
     ECompression m_Compression;
+    TVerbose     m_Verbose;
 };
 
 
@@ -81,6 +85,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/05 17:40:34  vasilche
+* Added 'verbose' option to splitter parameters.
+*
 * Revision 1.5  2003/12/30 16:06:14  vasilche
 * Compression methods moved to separate header: id2_compress.hpp.
 *

@@ -101,9 +101,11 @@ void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
         CopySkeleton(dst.SetSet(), src.GetSet());
     }
 
-    // annot statistics
-    if ( small_annot ) {
-        NcbiCout << "Small Seq-annots: " << small_annot << NcbiEndl;
+    if ( m_Params.m_Verbose ) {
+        // annot statistics
+        if ( small_annot ) {
+            NcbiCout << "Small Seq-annots: " << small_annot << NcbiEndl;
+        }
     }
 #if 0
     NcbiCout << "Total: after: " <<
@@ -111,13 +113,13 @@ void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
         NcbiEndl;
 #endif
 
-    // skeleton statistics
-    {{
+    if ( m_Params.m_Verbose ) {
+        // skeleton statistics
         s_Sizer.Set(*m_Skeleton, m_Params);
         CSize size(s_Sizer);
         NcbiCout <<
             "\nSkeleton: " << size << NcbiEndl;
-    }}
+    }
 }
 
 
@@ -260,7 +262,9 @@ bool CBlobSplitterImpl::CopyAnnot(CBioseq_SplitInfo& bioseq_info,
     }
 
     if ( info.m_Size.GetAsnSize() > 1024 ) {
-        NcbiCout << info;
+        if ( m_Params.m_Verbose ) {
+            NcbiCout << info;
+        }
     }
     else {
         small_annot += info.m_Size;
@@ -286,6 +290,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/05 17:40:34  vasilche
+* Added 'verbose' option to splitter parameters.
+*
 * Revision 1.5  2004/01/22 20:10:42  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
