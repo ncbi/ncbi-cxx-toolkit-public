@@ -417,7 +417,8 @@ private:
     static CNcbiApplication*   m_Instance;   ///< Current app. instance
     auto_ptr<CVersionInfo>     m_Version;    ///< Program version
     auto_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.
-    auto_ptr<CNcbiRegistry>    m_Config;     ///< Guaranteed to be non-NULL
+    CNcbiRegistry*             m_Config;     ///< Guaranteed to be non-NULL
+    bool                       m_OwnsConfig; ///< Whether to delete on destr.
     auto_ptr<CNcbiOstream>     m_DiagStream; ///< Opt., aux., see eDS_ToMemory
     auto_ptr<CNcbiArguments>   m_Arguments;  ///< Command-line arguments
     auto_ptr<CArgDescriptions> m_ArgDesc;    ///< Cmd.-line arg descriptions
@@ -475,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/08/05 19:59:10  ucko
+ * With the new meta-registry setup, we don't necessarily own m_Config.
+ *
  * Revision 1.37  2003/07/28 10:58:54  siyan
  * Minor comment changes.
  *
