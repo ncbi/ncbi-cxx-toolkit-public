@@ -41,6 +41,7 @@
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbicntr.hpp>
 #include <list>
+#include <memory>
 
 #if defined(_DEBUG)
 #   define  INTERNAL_MUTEX_DEBUG
@@ -780,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/09/20 13:51:56  vasilche
+ * Added #include <memory> for auto_ptr<>
+ *
  * Revision 1.12  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *
