@@ -66,9 +66,9 @@ public:
     ///
     /// It is the caller's responsibility to ensure that there are
     /// enough 'characters' in seq, i.e., that pos + pat.size() <= seq.size()
-    template<class Seq, class Pat, class Compare>
+    template<class Seq, class Pat, class Compare_fun>
     static EMatch Match(const Seq& seq, const Pat& pat, TSeqPos pos,
-                        const Compare compare)
+                        const Compare_fun compare_fun)
     {
 
         // for efficiency, no check is made that we're not looking
@@ -77,7 +77,7 @@ public:
         EMatch rv = eYes;
         // check pattern positions in succession
         for (unsigned int i = 0;  i < pat.size();  i++) {
-            EMatch res = compare(seq[pos+i], pat[i]);
+            EMatch res = compare_fun(seq[pos+i], pat[i]);
             if (res == eNo) {
                 return eNo;
             }
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/18 20:01:06  jcherry
+ * Changed function argument name to avoid confusion with std::compare
+ *
  * Revision 1.3  2003/08/18 19:22:13  jcherry
  * Moved orf and seq_match to algo/sequence
  *
