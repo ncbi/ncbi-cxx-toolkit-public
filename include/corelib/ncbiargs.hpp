@@ -627,14 +627,30 @@ public:
                   TFlags        flags = 0    ///< Optional file flags
                  );
 
+    /// Flag to invert constraint logically
+    enum EConstraintNegate {
+        eConstraintInvert,  ///< Logical NOT
+        eConstraint         ///< Constraint is not inverted (taken as is)
+    };
+
     /// Set additional user defined constraint on argument value.
     ///
     /// Constraint is defined by CArgAllow and its derived classes.
     /// The constraint object must be allocated by "new", and it must NOT be
     /// freed by "delete" after it has been passed to CArgDescriptions!
+    ///
+    /// @param name
+    ///    Name of the parameter(flag) to check
+    /// @param constraint
+    ///    Constraint class
+    /// @param negate
+    ///    Flag indicates if this is inverted(NOT) constaint
+    /// 
     /// @sa
     ///   See "CArgAllow_***" classes for some pre-defined constraints
-    void SetConstraint(const string& name, CArgAllow* constraint);
+    void SetConstraint(const string&      name, 
+                       CArgAllow*         constraint,
+                       EConstraintNegate  negate = eConstraint);
 
     /// Check if there is already an argument description with specified name.
     bool Exist(const string& name) const;
@@ -880,7 +896,8 @@ public:
     virtual bool Verify(const string &value) const = 0;
 
     /// Get usage information.
-    virtual string GetUsage(void) const = 0;
+    virtual 
+    string GetUsage(void) const = 0;
 
 protected:
     /// Protected destructor.
@@ -1153,7 +1170,14 @@ public:
     virtual void VerifyDefault (void) const;
 
     /// Set argument constraint.
-    virtual void SetConstraint(CArgAllow* constraint);
+    virtual 
+    void SetConstraint(CArgAllow*                           constraint,
+                       CArgDescriptions::EConstraintNegate  negate 
+                                    = CArgDescriptions::eConstraint);
+
+    /// Returns TRUE if associated contraint is inverted (NOT)
+    /// @sa SetConstraint
+    virtual bool IsConstraintInverted() const { return false; }
 
     /// Get argument constraint.
     virtual const CArgAllow* GetConstraint(void) const;
@@ -1176,6 +1200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/12/15 15:30:10  kuznets
+ * Implemented constraint invertion (NOT)
+ *
  * Revision 1.40  2004/12/07 12:19:12  kuznets
  * Fixed warning
  *

@@ -220,13 +220,17 @@ public:
     virtual CArgValue* ProcessArgument(const string& value) const;
     virtual CArgValue* ProcessDefault(void) const;
 
-    virtual void SetConstraint(CArgAllow* constraint);
+    virtual 
+    void SetConstraint(CArgAllow*                          constraint, 
+                       CArgDescriptions::EConstraintNegate negate);
     virtual const CArgAllow* GetConstraint(void) const;
+    virtual bool IsConstraintInverted() const;
 
 private:
-    CArgDescriptions::EType  m_Type;
-    CArgDescriptions::TFlags m_Flags;
-    CConstRef<CArgAllow>     m_Constraint;
+    CArgDescriptions::EType              m_Type;
+    CArgDescriptions::TFlags             m_Flags;
+    CConstRef<CArgAllow>                 m_Constraint;
+    CArgDescriptions::EConstraintNegate  m_NegateConstraint;
 };
 
 
@@ -397,6 +401,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/12/15 15:30:53  kuznets
+ * Implemented constraint invertion (NOT)
+ *
  * Revision 1.7  2004/12/02 14:24:14  kuznets
  * Implement support of multiple key arguments (list of values)
  *

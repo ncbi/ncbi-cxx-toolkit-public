@@ -519,7 +519,8 @@ void CArgDesc::VerifyDefault(void) const
 }
 
 
-void CArgDesc::SetConstraint(CArgAllow* constraint)
+void CArgDesc::SetConstraint(CArgAllow*                          constraint,
+                             CArgDescriptions::EConstraintNegate)
 {
     NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
         "No-value arguments may not be constrained",
@@ -536,7 +537,14 @@ const CArgAllow* CArgDesc::GetConstraint(void) const
 string CArgDesc::GetUsageConstraint(void) const
 {
     const CArgAllow* constraint = GetConstraint();
-    return constraint ? constraint->GetUsage() : kEmptyStr;
+    if (!constraint)
+        return kEmptyStr;
+    string usage;
+    if (IsConstraintInverted()) {
+        usage = " NOT ";
+    }
+    usage += constraint->GetUsage();
+    return usage;
 }
 
 
@@ -561,7 +569,8 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
                                      CArgDescriptions::EType  type,
                                      CArgDescriptions::TFlags flags)
     : CArgDesc(name, comment),
-      m_Type(type), m_Flags(flags)
+      m_Type(type), m_Flags(flags),
+      m_NegateConstraint(CArgDescriptions::eConstraint)
 {
     // verify if "flags" "type" are matching
     switch ( type ) {
@@ -660,14 +669,26 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
     if ( m_Constraint ) {
         bool err = false;
         try {
-            if ( !m_Constraint->Verify(value) )
-                err = true;
+            bool check = m_Constraint->Verify(value);
+            if (m_NegateConstraint == CArgDescriptions::eConstraintInvert) {
+                err = check;
+            } else {
+                err = !check;
+            }
+
         } catch (...) {
             err = true;
         }
-        if ( err ) {
+
+        if (err) {
+            string err_msg;
+            if (m_NegateConstraint == CArgDescriptions::eConstraintInvert) {
+                err_msg = "Illegal value, unexpected ";
+            } else {
+                err_msg = "Illegal value, expected ";
+            }
             NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
-                "Illegal value, expected " + m_Constraint->GetUsage(),value));
+                       err_msg + m_Constraint->GetUsage(),value));
         }
     }
 
@@ -682,9 +703,11 @@ CArgValue* CArgDescMandatory::ProcessDefault(void) const
 }
 
 
-void CArgDescMandatory::SetConstraint(CArgAllow* constraint)
+void CArgDescMandatory::SetConstraint(CArgAllow* constraint,
+                                      CArgDescriptions::EConstraintNegate negate)
 {
     m_Constraint = constraint;
+    m_NegateConstraint = negate;
 }
 
 
@@ -693,7 +716,10 @@ const CArgAllow* CArgDescMandatory::GetConstraint(void) const
     return m_Constraint;
 }
 
-
+bool CArgDescMandatory::IsConstraintInverted() const
+{
+    return m_NegateConstraint == CArgDescriptions::eConstraintInvert;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -1433,7 +1459,9 @@ void CArgDescriptions::AddExtra
 }
 
 
-void CArgDescriptions::SetConstraint(const string& name, CArgAllow* constraint)
+void CArgDescriptions::SetConstraint(const string&      name, 
+                                     CArgAllow*         constraint,
+                                     EConstraintNegate  negate)
 {
     CRef<CArgAllow> safe_delete(constraint);
 
@@ -1442,7 +1470,7 @@ void CArgDescriptions::SetConstraint(const string& name, CArgAllow* constraint)
         NCBI_THROW(CArgException, eConstraint,
             "Attempt to set constraint for undescribed argument: "+ name);
     }
-    (*it)->SetConstraint(constraint);
+    (*it)->SetConstraint(constraint, negate);
 }
 
 
@@ -2255,7 +2283,8 @@ bool CArgAllow_Strings::Verify(const string& value) const
 }
 
 
-string CArgAllow_Strings::GetUsage(void) const
+string 
+CArgAllow_Strings::GetUsage(void) const
 {
     if ( m_Strings.empty() ) {
         return "ERROR:  Constraint with no values allowed(?!)";
@@ -2363,6 +2392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/12/15 15:30:45  kuznets
+ * Implemented constraint invertion (NOT)
+ *
  * Revision 1.54  2004/12/03 14:49:15  kuznets
  * GCC compilation fix
  *
