@@ -78,7 +78,7 @@ streambuf* CId1Reader::x_SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
         }}
         *server_input >> id1_reply;
 
-        if(id1_reply.IsGotgi())
+        if (id1_reply.IsGotgi())
             gi = id1_reply.GetGotgi();
         else {
             LOG_POST("SeqId is not found");
@@ -154,11 +154,11 @@ class CId1StreamBuf : public streambuf
 public:
     CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream* server);
     ~CId1StreamBuf();
-    void                Close(void) { m_Server = 0; }
+    void                 Close(void) { m_Server = 0; }
 
 protected:
-    virtual CT_INT_TYPE underflow(void);
-    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize size);
+    virtual CT_INT_TYPE  underflow(void);
+    virtual streamsize   xsgetn(CT_CHAR_TYPE* buf, streamsize size);
 
     CId1Seqref&          m_Id1Seqref;
     CT_CHAR_TYPE         buffer[1024];
@@ -195,7 +195,7 @@ CId1StreamBuf::~CId1StreamBuf()
 
 CT_INT_TYPE CId1StreamBuf::underflow(void)
 {
-    if( !m_Server )
+    if ( !m_Server )
         return CT_EOF;
 
 #ifdef NCBI_COMPILER_MIPSPRO
@@ -314,17 +314,19 @@ char* CId1Seqref::print(char* s, int size) const
 {
     CNcbiOstrstream ostr(s,size);
     ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
-    s[ostr.pcount()]=0;
+    s[ostr.pcount()] = 0;
     return s;
 }
+
 
 char* CId1Seqref::printTSE(char* s, int size) const
 {
     CNcbiOstrstream ostr(s,size);
     ostr << "TSE(" << Sat() << "," << SatKey () << ")";
-    s[ostr.pcount()]=0;
+    s[ostr.pcount()] = 0;
     return s;
 }
+
 
 int CId1Seqref::Compare(const CSeqref &seqRef, EMatchLevel ml) const
 {
@@ -368,7 +370,7 @@ CId1Reader::CId1Reader(unsigned noConn)
 #if !defined(NCBI_THREADS)
     noConn=1;
 #endif
-    for(unsigned i = 0; i < noConn; ++i)
+    for (unsigned i = 0; i < noConn; ++i)
         m_Pool.push_back(NewID1Service());
 }
 
@@ -393,7 +395,6 @@ void CId1Reader::SetParallelLevel(size_t size)
         delete m_Pool[i];
 
     m_Pool.resize(size);
-
     for (size_t i = poolSize; i < size; ++i)
         m_Pool[i] = NewID1Service();
 }
@@ -401,7 +402,7 @@ void CId1Reader::SetParallelLevel(size_t size)
 
 CConn_ServiceStream* CId1Reader::NewID1Service(void)
 {
-    _TRACE("CId1Reader("<<this<<")->NewID1Service()");
+    _TRACE("CId1Reader(" << this << ")->NewID1Service()");
     STimeout tmout;
     tmout.sec = 20;
     tmout.usec = 0;
@@ -411,7 +412,7 @@ CConn_ServiceStream* CId1Reader::NewID1Service(void)
 
 void CId1Reader::Reconnect(size_t conn)
 {
-    _TRACE("Reconnect("<<conn<<")");
+    _TRACE("Reconnect(" << conn << ")");
     conn = conn % m_Pool.size();
     delete m_Pool[conn];
     m_Pool[conn] = NewID1Service();
@@ -424,6 +425,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.32  2003/03/31 17:02:03  lavr
+ * Some code reformatting to [more closely] meet coding requirements
+ *
  * Revision 1.31  2003/03/30 07:00:29  lavr
  * MIPS-specific workaround for lame-designed stream read ops
  *
