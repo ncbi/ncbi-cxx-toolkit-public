@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>cgi.hpp</title>
+  </head>
+
+  <body BGCOLOR="#FFFFFF">
+  <pre><font color = "red">// File name: cgi.hpp
+// Description: Demonstrate the basic CGI classes and functions
+<font color = "green">
+#ifndef CGI_HPP
+#define CGI_HPP
+
+#include <cgi/cgiapp.hpp>
+#include <cgi/ncbires.hpp>
+<font color = "blue">
+BEGIN_NCBI_SCOPE
+</font></font></font>
+<font color="blue">class</font> CHelloApp : public CCgiApplication
+{
+public:
+    virtual CNcbiResource* LoadResource(void);
+    virtual int ProcessRequest(CCgiContext& context);
+};
+
+<font color="blue">class</font> CHelloResource : public CNcbiResource
+{
+public:
+
+    CHelloResource(CNcbiRegistry& config)
+      : CNcbiResource(config) {}
+
+    virtual ~CHelloResource() {};   
+   
+    // defines the command to be executed when no other command matches
+    virtual CNcbiCommand* GetDefaultCommand( void ) const;
+    
+};
+
+<font color="blue">class</font> CHelloCommand : public CNcbiCommand
+{
+public:
+  
+    CHelloCommand( CNcbiResource& resource ) : CNcbiCommand(resource) {};
+    virtual ~CHelloCommand( void ) {};
+
+    virtual void Execute( CCgiContext& ctx );
+    virtual string GetLink(CCgiContext&) const { return NcbiEmptyString; }
+
+protected:
+
+    CHelloResource& GetHelloResource() const
+        { 
+	  return dynamic_cast<CHelloResource&>( GetResource() ); 
+	}
+
+    virtual string GetEntry() const { return string("cmd"); }
+};
+
+<font color="blue">class</font> CHelloBasicCommand : public CHelloCommand
+{
+public:
+
+    CHelloBasicCommand(CNcbiResource& resource) : CHelloCommand(resource) {};
+    virtual ~CHelloBasicCommand(void) {};
+
+    virtual CNcbiCommand* Clone( void ) const;
+    virtual string GetName( void ) const { return string("init"); };
+
+protected:
+
+    virtual string GetEntry() const { return string("cmd1"); }
+};
+
+<font color="blue">class</font> CHelloReplyCommand : public CHelloBasicCommand
+{
+public:
+
+    CHelloReplyCommand( CNcbiResource& resource) : CHelloBasicCommand(resource) {};
+    virtual ~CHelloReplyCommand(void) {};
+
+    virtual CNcbiCommand* Clone( void ) const;
+    virtual string GetName( void ) const { return string("reply"); };
+
+protected:
+
+    virtual string GetEntry() const { return string("cmd2"); }
+};
+<font color="blue">
+END_NCBI_SCOPE <font color="green">
+#endif /* CGI_HPP */
