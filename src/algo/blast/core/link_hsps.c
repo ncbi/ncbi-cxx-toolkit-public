@@ -1231,7 +1231,6 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       hsp->next = score_hsp_array[index];
    }
 
-   sfree(subject_seq);
    sfree(score_hsp_array);
    sfree(offset_hsp_array);
    sfree(end_hsp_array);
