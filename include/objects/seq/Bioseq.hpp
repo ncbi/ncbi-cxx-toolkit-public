@@ -88,6 +88,10 @@ public:
 
     const CSeq_id* GetFirstId() const;
 
+    // check molecule type for nucleotide or protein
+    bool IsNa(void) const;
+    bool IsAa(void) const;
+
 protected:
     // From CSerialUserOp
     virtual void UserOp_Assign(const CSerialUserOp& source);
@@ -143,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/12/19 20:10:27  kans
+ * added IsNa and IsAa methods
+ *
  * Revision 1.14  2002/10/03 19:06:25  clausen
  * Removed extra whitespace
  *

@@ -227,6 +227,16 @@ const CSeq_id* CBioseq::GetFirstId() const
     return *GetId().begin();
 }
 
+bool CBioseq::IsNa(void) const
+{
+    return GetInst ().IsNa ();
+}
+
+bool CBioseq::IsAa(void) const
+{
+    return GetInst ().IsAa ();
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -236,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2002/12/19 20:11:22  kans
+ * added IsNa and IsAa methods
+ *
  * Revision 6.16  2002/11/04 21:29:15  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *
