@@ -30,7 +30,7 @@ $fmsearch = "./search.cgi";
 ## ignore by search.
 ## If there is more than one directory, seperate them with a comma
 
-@ignorelist = ( "c++", "docxx", "search", "ssi");
+@ignorelist = ( "c++", "docxx", "search", "ssi", "doxyhtml");
 
 ## If there is more than one directory, seperate them with a comma
 
