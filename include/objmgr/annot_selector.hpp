@@ -35,8 +35,9 @@
 
 
 #include <corelib/ncbi_limits.h>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
+#include <objmgr/annot_name.hpp>
+#include <objmgr/annot_type_selector.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 #include <vector>
 
@@ -50,161 +51,6 @@ class CSeq_entry_Handle;
 class CSeq_annot_Handle;
 class CAnnotObject_Info;
 
-class CAnnotName
-{
-public:
-    CAnnotName(void)
-        : m_Named(false)
-        {
-        }
-    CAnnotName(const string& name)
-        : m_Named(true), m_Name(name)
-        {
-        }
-    CAnnotName(const char* name)
-        : m_Named(true), m_Name(name)
-        {
-        }
-
-    bool IsNamed(void) const
-        {
-            return m_Named;
-        }
-    const string& GetName(void) const
-        {
-            _ASSERT(m_Named);
-            return m_Name;
-        }
-
-    void SetUnnamed(void)
-        {
-            m_Named = false;
-            m_Name.erase();
-        }
-    void SetNamed(const string& name)
-        {
-            m_Name = name;
-            m_Named = true;
-        }
-
-    bool operator<(const CAnnotName& name) const
-        {
-            return name.m_Named && (!m_Named || name.m_Name > m_Name);
-        }
-    bool operator==(const CAnnotName& name) const
-        {
-            return name.m_Named == m_Named && name.m_Name == m_Name;
-        }
-    bool operator!=(const CAnnotName& name) const
-        {
-            return name.m_Named != m_Named || name.m_Name != m_Name;
-        }
-
-private:
-    bool   m_Named;
-    string m_Name;
-};
-
-
-struct SAnnotTypeSelector
-{
-    typedef CSeq_annot::C_Data::E_Choice TAnnotType;
-    typedef CSeqFeatData::E_Choice       TFeatType;
-    typedef CSeqFeatData::ESubtype       TFeatSubtype;
-
-    SAnnotTypeSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set)
-        : m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatType(CSeqFeatData::e_not_set),
-          m_AnnotType(annot)
-    {
-    }
-
-    SAnnotTypeSelector(TFeatType  feat)
-        : m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatType(feat),
-          m_AnnotType(CSeq_annot::C_Data::e_Ftable)
-    {
-    }
-
-    SAnnotTypeSelector(TFeatSubtype feat_subtype)
-        : m_FeatSubtype(feat_subtype),
-          m_FeatType(CSeqFeatData::GetTypeFromSubtype(feat_subtype)),
-          m_AnnotType(CSeq_annot::C_Data::e_Ftable)
-    {
-    }
-   
-    TAnnotType GetAnnotType(void) const
-        {
-            return TAnnotType(m_AnnotType);
-        }
-
-    TFeatType GetFeatType(void) const
-        {
-            return TFeatType(m_FeatType);
-        }
-
-    TFeatSubtype GetFeatSubtype(void) const
-        {
-            return TFeatSubtype(m_FeatSubtype);
-        }
-
-    bool operator<(const SAnnotTypeSelector& s) const
-        {
-            if ( m_AnnotType != s.m_AnnotType )
-                return m_AnnotType < s.m_AnnotType;
-            if ( m_FeatType != s.m_FeatType )
-                return m_FeatType < s.m_FeatType;
-            return m_FeatSubtype < s.m_FeatSubtype;
-        }
-
-    bool operator==(const SAnnotTypeSelector& s) const
-        {
-            return m_AnnotType == s.m_AnnotType &&
-                m_FeatType == s.m_FeatType &&
-                m_FeatSubtype == s.m_FeatSubtype;
-        }
-
-    bool operator!=(const SAnnotTypeSelector& s) const
-        {
-            return m_AnnotType != s.m_AnnotType ||
-                m_FeatType != s.m_FeatType ||
-                m_FeatSubtype != s.m_FeatSubtype;
-        }
-
-    void SetAnnotType(TAnnotType type)
-        {
-            m_AnnotType = type;
-            // Reset feature type/subtype
-            if (m_AnnotType != CSeq_annot::C_Data::e_Ftable) {
-                m_FeatType = CSeqFeatData::e_not_set;
-                m_FeatSubtype = CSeqFeatData::eSubtype_any;
-            }
-        }
-
-    void SetFeatType(TFeatType type)
-        {
-            m_FeatType = type;
-            // Adjust annot type and feature subtype
-            m_AnnotType = CSeq_annot::C_Data::e_Ftable;
-            m_FeatSubtype = CSeqFeatData::eSubtype_any;
-        }
-
-    void SetFeatSubtype(TFeatSubtype subtype)
-        {
-            m_FeatSubtype = subtype;
-            // Adjust annot type and feature type
-            m_AnnotType = CSeq_annot::C_Data::e_Ftable;
-            if (m_FeatSubtype != CSeqFeatData::eSubtype_any) {
-                m_FeatType =
-                    CSeqFeatData::GetTypeFromSubtype(GetFeatSubtype());
-            }
-        }
-
-private:
-    Uint2           m_FeatSubtype;  // Seq-feat subtype
-    Uint1           m_FeatType;   // Seq-feat type
-    Uint1           m_AnnotType;  // Annotation type
-};
 
 // Structure to select type of Seq-annot
 struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
@@ -483,6 +329,7 @@ protected:
     ELimitObject          m_LimitObjectType;
     EIdResolving          m_IdResolving;
     CConstRef<CObject>    m_LimitObject;
+    TTSE_Lock             m_LimitTSE_Lock;
     size_t                m_MaxSize; //
     TAnnotsNames          m_IncludeAnnotsNames;
     TAnnotsNames          m_ExcludeAnnotsNames;
@@ -500,6 +347,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/08/05 18:23:48  vasilche
+* CAnnotName and CAnnotTypeSelector are moved in separate headers. Added TSE_Lock field.
+*
 * Revision 1.30  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
