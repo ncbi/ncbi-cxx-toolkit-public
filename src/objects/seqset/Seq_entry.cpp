@@ -100,16 +100,18 @@ bool CSeq_entry::UserOp_Equals(const CSerialUserOp& object) const
 }
 
 
-SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos) {
+SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
+{
     SIZE_TYPE vbar = str.find('|', pos);
     if (vbar == NPOS) {
         return NPOS; // bad
     }
 
     switch (CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str())) {
-        // Deliberate fall-through here.
     case CSeq_id::e_Patent: case CSeq_id::e_Other: // 3 args
         vbar = str.find('|', vbar + 1);
+        // intentional fall-through - this allows us to correctly
+        // calculate the number of '|' spearations for FastA IDs
 
     case CSeq_id::e_Genbank:   case CSeq_id::e_Embl:    case CSeq_id::e_Pir:
     case CSeq_id::e_Swissprot: case CSeq_id::e_General: case CSeq_id::e_Ddbj:
@@ -120,6 +122,8 @@ SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos) {
             return NPOS; // bad
         }
         vbar = str.find('|', vbar + 1);
+        // intentional fall-through - this allows us to correctly
+        // calculate the number of '|' spearations for FastA IDs
 
     case CSeq_id::e_Local: case CSeq_id::e_Gibbsq: case CSeq_id::e_Gibbmt:
     case CSeq_id::e_Giim:  case CSeq_id::e_Gi:
@@ -208,7 +212,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
         if (line[0] == '>') {
             // new sequence
             SIZE_TYPE       space = line.find_first_of(" \t");
-            string          name  = line.substr(1, space), local;
+            string          name  = line.substr(1, space - 1), local;
             CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
 
             s_FixSeqData(seq);
@@ -337,6 +341,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.10  2003/01/03 13:16:08  dicuccio
+ * Minor formatting change.  Added comment about intentional fall-through.  Fixed
+ * big in parsing of FastA IDs: must skip trailing space in ID string
+ *
  * Revision 6.9  2002/11/25 18:50:01  ucko
  * Skip initial > when parsing IDs (caught by Mike DiCuccio)
  *
