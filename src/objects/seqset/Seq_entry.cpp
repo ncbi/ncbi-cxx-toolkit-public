@@ -195,7 +195,9 @@ static void s_FixSeqData(CBioseq* seq)
         return;
     }
     CSeq_inst& inst = seq->SetInst();
-    if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
+    switch (inst.GetRepr()) {
+    case CSeq_inst::eRepr_delta:
+    {
         TSeqPos length = 0;
         NON_CONST_ITERATE (CDelta_ext::Tdata, it,
                            inst.SetExt().SetDelta().Set()) {
@@ -211,7 +213,10 @@ static void s_FixSeqData(CBioseq* seq)
                 length += lit.GetLength();
             }
         }
-    } else {
+        break;
+    }
+    case CSeq_inst::eRepr_raw:
+    {
         CSeq_data& data = inst.SetSeq_data();
         if (data.IsIupacna()) {
             inst.SetLength(data.GetIupacna().Get().size());
@@ -219,6 +224,10 @@ static void s_FixSeqData(CBioseq* seq)
         } else {
             inst.SetLength(data.GetIupacaa().Get().size());
         }        
+        break;
+    }
+    default: // especially not_set!
+        break;
     }
 }
 
@@ -240,6 +249,66 @@ static CSeq_data& s_LastData(CSeq_inst& inst)
 }
 
 
+static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
+                                           const string& line,
+                                           TReadFastaFlags flags)
+{
+    SIZE_TYPE       start = 0;
+    CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
+    do {
+        ++start;
+        SIZE_TYPE space = line.find_first_of(" \t", start);
+        string    name  = line.substr(start, space - start), local;
+
+        if (flags & fReadFasta_NoParseID) {
+            local = name;
+        } else {
+            // try to parse out IDs
+            SIZE_TYPE pos = 0;
+            while (pos < name.size()) {
+                SIZE_TYPE end = s_EndOfFastaID(name, pos);
+                if (end == NPOS) {
+                    if (pos > 0) {
+                        NCBI_THROW2(CSeqsetParseException, eFormat,
+                                    "s_ParseFastaDefline: Bad ID "
+                                    + name.substr(pos),
+                                    pos);
+                    } else {
+                        local = name;
+                        break;
+                    }
+                }
+
+                CRef<CSeq_id> id(new CSeq_id(name.substr(pos, end - pos)));
+                ids.push_back(id);
+                if (mol == CSeq_inst::eMol_not_set
+                    &&  !(flags & fReadFasta_ForceType)) {
+                    CSeq_id::EAccessionInfo ai = id->IdentifyAccession();
+                    if (ai & CSeq_id::fAcc_nuc) {
+                        mol = CSeq_inst::eMol_na;
+                    } else if (ai & CSeq_id::fAcc_prot) {
+                        mol = CSeq_inst::eMol_na;
+                    }
+                }
+                pos = end + 1;
+            }
+        }
+            
+        if ( !local.empty() ) {
+            ids.push_back(CRef<CSeq_id>
+                          (new CSeq_id(CSeq_id::e_Local, local, kEmptyStr)));
+        }
+
+        start = line.find('\1', start);
+        if (space != NPOS  &&  title.empty()) {
+            title.assign(line, space + 1,
+                         (start == NPOS) ? NPOS : (start - space - 1));
+        }
+    } while (start != NPOS  &&  (flags & fReadFasta_Redund));
+    return mol;
+}
+
+
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
 {
     CRef<CSeq_entry>       entry(new CSeq_entry);
@@ -258,59 +327,23 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
         }
         if (line[0] == '>') {
             // new sequence
-            SIZE_TYPE       space = line.find_first_of(" \t");
-            string          name  = line.substr(1, space - 1), local;
-            CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
-
             s_FixSeqData(seq);
             seq = new CBioseq;
-            seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+            if (flags & fReadFasta_NoSeqData) {
+                seq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
+            } else {
+                seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+            }
             {{
                 CRef<CSeq_entry> entry2(new CSeq_entry);
                 entry2->SetSeq(*seq);
                 sset.push_back(entry2);
             }}
-            if (flags & fReadFasta_NoParseID) {
-                local = name;
-            } else {
-                // try to parse out IDs
-                SIZE_TYPE pos = 0;
-                while (pos < name.size()) {
-                    SIZE_TYPE end = s_EndOfFastaID(name, pos);
-                    if (end == NPOS) {
-                        if (pos > 0) {
-                            NCBI_THROW2(CSeqsetParseException, eFormat,
-                                        "ReadFasta: Bad ID "
-                                        + name.substr(pos),
-                                        pos);
-                        } else {
-                            local = name;
-                            break;
-                        }
-                    }
-
-                    CRef<CSeq_id> id(new CSeq_id(name.substr(pos, end - pos)));
-                    seq->SetId().push_back(id);
-                    if (mol == CSeq_inst::eMol_not_set
-                        &&  !(flags & fReadFasta_ForceType)) {
-                        CSeq_id::EAccessionInfo ai = id->IdentifyAccession();
-                        if (ai & CSeq_id::fAcc_nuc) {
-                            mol = CSeq_inst::eMol_na;
-                        } else if (ai & CSeq_id::fAcc_prot) {
-                            mol = CSeq_inst::eMol_na;
-                        }
-                    }
-                    pos = end + 1;
-                }
-            }
-            
-            if ( !local.empty() ) {
-                seq->SetId().push_back
-                    (CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, local,
-                                               kEmptyStr)));
-            }
-
-            if (mol == CSeq_inst::eMol_not_set) {
+            string          title;
+            CSeq_inst::EMol mol = s_ParseFastaDefline(seq->SetId(), title,
+                                                      line, flags);
+            if (mol == CSeq_inst::eMol_not_set
+                &&  (!flags & fReadFasta_NoSeqData)) {
                 if (flags & fReadFasta_AssumeNuc) {
                     _ASSERT(!(flags & fReadFasta_AssumeProt));
                     mol = CSeq_inst::eMol_na;
@@ -321,12 +354,12 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
             }
             seq->SetInst().SetMol(mol);
 
-            if (space != NPOS) {
+            if ( !title.empty() ) {
                 CRef<CSeqdesc> desc(new CSeqdesc);
-                desc->SetTitle(line.substr(space + 1));
+                desc->SetTitle(title);
                 seq->SetDescr().Set().push_back(desc);
             }
-        } else {
+        } else if (!(flags & fReadFasta_NoSeqData)) {
             // actual data; may contain embedded junk
             CSeq_inst& inst = seq->SetInst();
             string residues;
@@ -389,6 +422,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.19  2003/05/09 15:48:59  ucko
+ * +fReadFasta_{Redund,NoSeqData} (suggested by Michel Dumontier)
+ * Split off s_ParseFastaDefline.
+ *
  * Revision 6.18  2003/04/24 16:14:12  vasilche
  * Fixed Parentize().
  *
