@@ -281,7 +281,9 @@ void CFlatGatherer::x_GatherReferences(void) const
     }
 
     // gather references from features
-    CFeat_CI it(m_Current->GetScope(), m_Current->GetLocation(), CSeqFeatData::e_Pub);
+    SAnnotSelector sel(CSeqFeatData::e_Pub);
+    sel.SetCombineMethod(SAnnotSelector::eCombine_All);
+    CFeat_CI it(m_Current->GetScope(), m_Current->GetLocation(), sel);
     for ( ; it; ++it) {
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(it->GetData().GetPub(),
                                         *m_Current, &it->GetLocation())));
@@ -350,8 +352,10 @@ void CFlatGatherer::x_FlushComments(void) const
     if ( m_Comments.empty() ) {
         return;
     }
-    // add a period to the last comment
-    m_Comments.back()->AddPeriod();
+    // add a period to the last comment (if not local id)
+    if ( dynamic_cast<CLocalIdComment*>(&*m_Comments.back()) == 0 ) {
+        m_Comments.back()->AddPeriod();
+    }
     
     // add a period to a GSDB comment (if exist and not last)
     TCommentVec::iterator last = m_Comments.end();
@@ -469,7 +473,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx) const
     if ( local_id != 0 ) {
         if ( ctx.IsTPA()  ||  ctx.IsGED() ) {
             if ( ctx.Config().IsModeGBench()  ||  ctx.Config().IsModeDump() ) {
-                // !!! create a CLocalIdComment(*local_id, ctx)
+                x_AddComment(new CLocalIdComment(*local_id, ctx));
             }
         }
     }
@@ -681,9 +685,7 @@ void CFlatGatherer::x_CollectSourceDescriptors
     CScope* scope = &ctx.GetScope();
     const CSeq_loc& loc = ctx.GetLocation();
 
-    TRange print_range;
-    print_range.SetFrom(0);
-    print_range.SetTo(GetLength(loc, scope) - 1);
+    TRange print_range(0, GetLength(loc, scope) - 1);
 
     for ( CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         sf.Reset(new CSourceFeatureItem(dit->GetSource(), print_range, ctx));
@@ -918,18 +920,60 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
 }
 
 
-bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
+static bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
 {
     CSeq_loc_CI last;
     for ( CSeq_loc_CI it(feat.GetLocation()); it; ++it ) {
         last = it;
     }
     
-    if ( last  &&  seq.IsSynonym(last.GetSeq_id()) ) {
-        return true;
+    return (last  &&  seq.IsSynonym(last.GetSeq_id()));
+}
+
+
+static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
+{
+    if ( ctx.GetMapper() != 0 ) {
+        return ctx.GetMapper();
     }
-    
-    return false;
+
+    // do not create mapper if not segmented or segmented but not doing master style.
+    const CFlatFileConfig& cfg = ctx.Config();
+    if ( !ctx.IsSegmented()  || !(cfg.IsStyleMaster()  ||  cfg.IsFormatFTable()) ) {
+        return 0;
+    }
+
+    CSeq_loc_Mapper* mapper = new CSeq_loc_Mapper(ctx.GetHandle());
+    if ( mapper != 0 ) {
+        mapper->SetMergeAbutting();
+        mapper->PreserveDestinationLocs();
+        mapper->KeepNonmappingRanges();
+    }
+    return mapper;
+}
+
+
+static bool s_CopyCDSFromCDNA(CBioseqContext& ctx)
+{
+    return ctx.IsInGPS()  &&  !ctx.IsInNucProt()  &&  ctx.Config().CopyCDSFromCDNA();
+}
+
+
+static void s_FixLocation(CConstRef<CSeq_loc>& feat_loc, CBioseqContext& ctx)
+{
+    if ( !feat_loc->IsMix() ) {
+        return;
+    }
+
+    bool partial5 = feat_loc->IsPartialLeft();
+    bool partial3 = feat_loc->IsPartialRight();
+
+    CRef<CSeq_loc> loc(SeqLocMerge(ctx.GetHandle(), feat_loc->GetMix().Get(),
+        fFuseAbutting | fMergeIntervals));
+    loc->SetPartialLeft(partial5);
+    loc->SetPartialRight(partial3);
+
+    feat_loc.Reset(loc);
 }
 
 
@@ -941,62 +985,70 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CScope& scope = ctx.GetScope();
     CFlatItemOStream& out = *m_ItemOS;
 
+    CRef<CSeq_loc_Mapper> mapper(s_CreateMapper(ctx));
+
     for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
+        const CSeq_feat& feat = it->GetOriginalFeature();
+        
         // if part show only features ending on that part
         if ( ctx.IsPart()  &&  
-             !s_FeatEndsOnBioseq(it->GetOriginalFeature(), ctx.GetHandle()) ) {
+             !s_FeatEndsOnBioseq(feat, ctx.GetHandle()) ) {
             continue;
         }
-
-        CConstRef<CSeq_loc> featloc(ctx.IsPart() ? 
-            &it->GetOriginalFeature().GetLocation() : &it->GetLocation());
-        if ( ctx.GetMapper() != 0 ) {
-            featloc.Reset(ctx.GetMapper()->Map(*featloc));
+        
+        CConstRef<CSeq_loc> feat_loc(&feat.GetLocation());
+        if ( mapper ) {
+            feat_loc.Reset(mapper->Map(*feat_loc));
+            s_FixLocation(feat_loc, ctx);
         }
-        // !!! need to fix for part        
-        if ( !featloc  ||  featloc->IsNull() ) {
-            continue;
-        }
+                
+        out << new CFeatureItem(feat, ctx, feat_loc);
 
-        out << new CFeatureItem(it->GetOriginalFeature(), ctx, featloc);
         // Add more features depending on user preferences
-        switch ( it->GetData().GetSubtype() ) {
+        switch ( feat.GetData().GetSubtype() ) {
         case CSeqFeatData::eSubtype_mRNA:
             {{
                 // optionally map CDS from cDNA onto genomic
-                if ( ctx.IsInGPS()  &&  ctx.IsNuc()  &&
-                     ctx.Config().CopyCDSFromCDNA() ) {
-                    const CSeq_feat& mrna = it->GetOriginalFeature();
-                    if ( mrna.IsSetProduct() ) {
-                        CBioseq_Handle cdna = 
-                            scope.GetBioseqHandle(mrna.GetProduct());
-                        if ( cdna ) {
-                            // There is only one CDS on an mRNA
-                            CFeat_CI cds(cdna, 0, 0, CSeqFeatData::e_Cdregion);
-                            if ( cds ) {
-                                CSeq_loc_Mapper mapper(mrna,
-                                    CSeq_loc_Mapper::eProductToLocation, &scope);
-                                CRef<CSeq_loc> cds_loc = mapper.Map(cds->GetLocation());
-                                out << new CFeatureItem(
-                                    cds->GetOriginalFeature(),
-                                    ctx, cds_loc,
-                                    CFeatureItem::eMapped_from_cdna);
-                            }
-                        }
-                    }
+                if ( s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct() ) {
+                    x_CopyCDSFromCDNA(feat, ctx);
                 }
                 break;
             }}
         case CSeqFeatData::eSubtype_cdregion:
             {{  
                 if ( !ctx.Config().IsFormatFTable() ) {
-                    x_GetFeatsOnCdsProduct(it->GetOriginalFeature(), ctx);
+                    x_GetFeatsOnCdsProduct(it->GetOriginalFeature(), ctx, mapper);
                 }
                 break;
             }}
         default:
             break;
         }
+    }
+}
+
+
+void CFlatGatherer::x_CopyCDSFromCDNA
+(const CSeq_feat& feat,
+ CBioseqContext& ctx) const
+{
+    CScope& scope = ctx.GetScope();
+
+    CBioseq_Handle cdna = scope.GetBioseqHandle(feat.GetProduct());
+    if ( !cdna ) {
+        return;
+    }
+    // NB: There is only one CDS on an mRNA
+    CFeat_CI cds(cdna, 0, 0, CSeqFeatData::e_Cdregion);
+    if ( cds ) {
+        // map mRNA location to the genomic
+        CSeq_loc_Mapper mapper(feat,
+                               CSeq_loc_Mapper::eProductToLocation,
+                               &scope);
+        CRef<CSeq_loc> cds_loc = mapper.Map(cds->GetLocation());
+
+        *m_ItemOS << new CFeatureItem(cds->GetOriginalFeature(), ctx, cds_loc,
+                                      CFeatureItem::eMapped_from_cdna);
     }
 }
 
@@ -1080,8 +1132,10 @@ void CFlatGatherer::x_GatherFeatures(void) const
             sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
             sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
             for ( CFeat_CI it(ctx.GetHandle(), 0, 0, sel); it; ++it ) {  
-                out << new CFeatureItem(*it, ctx, &it->GetProduct(),
-                    CFeatureItem::eMapped_from_prot);
+                out << new CFeatureItem(it->GetOriginalFeature(),
+                                        ctx,
+                                        &it->GetProduct(),
+                                        CFeatureItem::eMapped_from_prot);
             }
         }
     }
@@ -1101,7 +1155,8 @@ static bool s_IsCDD(const CSeq_feat& feat)
 
 void CFlatGatherer::x_GetFeatsOnCdsProduct
 (const CSeq_feat& feat,
- CBioseqContext& ctx) const
+ CBioseqContext& ctx,
+ CRef<CSeq_loc_Mapper>& mapper) const
 {
     _ASSERT(feat.GetData().IsCdregion());
 
@@ -1123,7 +1178,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         
     CFeat_CI prev;
     bool first = true;
-    CSeq_loc_Mapper mapper(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
+    CSeq_loc_Mapper prot_to_nuc(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
     // explore mat_peptides, sites, etc.
     for ( CFeat_CI it(prot, 0, 0); it; ++it ) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
@@ -1157,14 +1212,17 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         }
 
         // map prot location to nuc location
-        CRef<CSeq_loc> loc(mapper.Map(it->GetLocation()));
-        if ( !loc ) {
+        CRef<CSeq_loc> loc(prot_to_nuc.Map(it->GetLocation()));
+        // possibly map again (e.g. from part to master)
+        if ( loc.NotEmpty()  &&  mapper.NotEmpty() ) {
+            loc.Reset(mapper->Map(*loc));
+        }
+        if ( !loc  ||  loc->IsNull() ) {
             continue;
         }
         // make sure feature is within sublocation
         if ( ctx.GetMasterLocation() != 0 ) {
             const CSeq_loc& mloc = *ctx.GetMasterLocation();
-            // !!! need to map location from part to master???
             if ( Compare(mloc, *loc, &scope) != eContains ) {
                 continue;
             }
@@ -1187,6 +1245,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/05/06 17:52:21  shomrat
+* Fixed feature location
+*
 * Revision 1.19  2004/04/27 15:12:16  shomrat
 * Added logic for partial range formatting
 *
