@@ -33,6 +33,7 @@
 #include <corelib/ncbitime.hpp>
 #include <util/cache/blob_cache.hpp>
 #include <util/cache/int_cache.hpp>
+#include <util/rwstream.hpp>
 #include <util/bytesrc.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objistrasnb.hpp>
@@ -422,6 +423,7 @@ void CCachedId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
     // update seqref's version
     GetVersion(seqref, conn);
     if ( !LoadSNPTable(snp_info, seqref) ) {
+        snp_info.Reset();
         // load SNP table from GenBank
         CId1Reader::x_GetSNPAnnot(snp_info, seqref, conn);
 
@@ -539,28 +541,11 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
         sw.Start();
     }
     try {
-        size_t size = m_BlobCache->GetSize(key, version);
-        if ( size == 0 ) {
+        auto_ptr<IReader> reader(m_BlobCache->GetReadStream(key, version));
+        if ( !reader.get() ) {
             return false;
         }
-        
-        AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
-        if ( !m_BlobCache->Read(key, version, buf.get(), size) ) {
-            if ( CollectStatistics() ) {
-                double time = sw.Elapsed();
-                if ( CollectStatistics() > 1 ) {
-                    LOG_POST("CCachedId1Reader: Failed load of SNP table: "<<
-                             seqref.printTSE()<<
-                             " in " << (time*1000) << " ms");
-                }
-                snp_load_count++;
-                snp_load_time += time;
-            }
-
-            return false;
-        }
-
-        CNcbiIstrstream stream(buf.get(), size);
+        CRStream stream(reader.get());
 
         // blob type
         char type[4];
@@ -584,6 +569,7 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
 
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
+            size_t size = m_BlobCache->GetSize(key, version);
             if ( CollectStatistics() > 1 ) {
                 LOG_POST("CCachedId1Reader: loaded SNP table: "<<
                          seqref.printTSE()<<
@@ -630,18 +616,21 @@ void CCachedId1Reader::StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
         sw.Start();
     }
     try {
-        CNcbiOstrstream stream;
-        stream.write("STBL", 4);
-        snp_info.StoreTo(stream);
+        {{
+            auto_ptr<IWriter> writer;
+            writer.reset(m_BlobCache->GetWriteStream(key, version));
+            if ( !writer.get() ) {
+                return;
+            }
 
-        size_t size = stream.pcount();
-        const char* buf = stream.str();
-        stream.freeze(false);
-
-        m_BlobCache->Store(key, version, buf, size);
+            CWStream stream(writer.get());
+            stream.write("STBL", 4);
+            snp_info.StoreTo(stream);
+        }}
 
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
+            size_t size = m_BlobCache->GetSize(key, version);
             if ( CollectStatistics() > 1 ) {
                 LOG_POST("CCachedId1Reader: stored SNP table: "<<
                          seqref.printTSE()<<
@@ -682,6 +671,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.11  2003/10/23 13:48:38  vasilche
+ * Use CRStream and CWStream instead of strstreams.
+ *
  * Revision 1.10  2003/10/21 16:32:50  vasilche
  * Cleaned ID1 statistics messages.
  * Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.
