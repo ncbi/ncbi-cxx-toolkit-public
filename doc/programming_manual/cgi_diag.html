@@ -30,9 +30,11 @@ appear.  By default, there are two possible values:
 
 <p>
 However, an application can make other options available by calling
-<a href="../lxr/ident?i=RegisterCgiDiagHandler"><b>RegisterCgiDiagHandler</b></a>
+<a href="../lxr/ident?i=RegisterDiagFactory"><b>RegisterDiagFactory</b></a>
 from its <b>Init</b> routine.  In particular, calling <pre>
-RegisterCgiDiagHandler("email", EmailDiagHandlerFactory);
+#include &lt;connect/email_diag_handler.hpp&gt;
+...
+RegisterDiagFactory("email", new CEmailDiagFactory);
 </pre>
 and linking against <b>xconnect</b> and <b>connect</b> enables
 destinations of the form <b>email:<i>user@host</i></b>, which will
@@ -40,7 +42,9 @@ cause the application to e-mail diagnostics to the specified address
 when done.
 <p>
 Similarly, calling <pre>
-RegisterCgiDiagHandler("comments", CommentDiagHandlerFactory);
+#include &lt;html/commentdiag.hpp&gt;
+...
+RegisterDiagFactory("comments", new CCommentDiagFactory);
 </pre>
 and linking against <b>xhtml</b> will enable the destination
 <b>comments</b>.  With this destination, diagnostics will take the
