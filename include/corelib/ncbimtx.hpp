@@ -36,25 +36,8 @@
  *      CFastMutex       -- simple mutex with fast lock/unlock functions
  *      CFastMutexGuard  -- acquire fast mutex, then guarantee for its release
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.5  2001/05/17 14:53:50  lavr
- * Typos corrected
- *
- * Revision 1.4  2001/04/16 18:45:28  vakatov
- * Do not include system MT-related headers if in single-thread mode
- *
- * Revision 1.3  2001/03/26 22:50:24  grichenk
- * Fixed CFastMutex::Unlock() bug
- *
- * Revision 1.2  2001/03/26 21:11:37  vakatov
- * Allow use of not yet initialized mutexes (with A.Grichenko)
- *
- * Revision 1.1  2001/03/13 22:34:24  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
+
 
 #include <corelib/ncbistl.hpp>
 #include <stdexcept>
@@ -202,7 +185,7 @@ public:
 //
 //  CFastMutexGuard::
 //
-//    Acquire fast mutex, then guarantee for its release
+//    Acquire fast mutex, then guarantee for its release.
 //
 
 class CFastMutexGuard
@@ -216,6 +199,17 @@ public:
 
     // Release the mutex right now (do not release it in the guard destructor).
     void Release(void) { m_Mutex->Unlock();  m_Mutex = 0; }
+
+    // Lock on mutex "mtx" (if it's not guarded yet) and start guarding it.
+    // NOTE: it never holds more than one lock on the guarded mutex!
+    void Guard(CFastMutex& mtx) {
+        if (&mtx == m_Mutex)
+            return;
+        if ( m_Mutex )
+            m_Mutex->Unlock();
+        m_Mutex = &mtx;
+        m_Mutex->Lock();
+    }
 
     // Get the mutex being guarded
     CFastMutex* GetMutex(void) const { return m_Mutex; }
@@ -371,5 +365,31 @@ void CFastMutex::Unlock(void)
 
 
 END_NCBI_SCOPE
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.6  2002/01/23 23:31:17  vakatov
+ * Added CFastMutexGuard::Guard()
+ *
+ * Revision 1.5  2001/05/17 14:53:50  lavr
+ * Typos corrected
+ *
+ * Revision 1.4  2001/04/16 18:45:28  vakatov
+ * Do not include system MT-related headers if in single-thread mode
+ *
+ * Revision 1.3  2001/03/26 22:50:24  grichenk
+ * Fixed CFastMutex::Unlock() bug
+ *
+ * Revision 1.2  2001/03/26 21:11:37  vakatov
+ * Allow use of not yet initialized mutexes (with A.Grichenko)
+ *
+ * Revision 1.1  2001/03/13 22:34:24  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
 
 #endif  /* NCBIMTX__HPP */
