@@ -1182,6 +1182,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
         }
         const CTSE_Info::TRangeMap& rmap = objs->x_GetRangeMap(index);
 
+        bool need_unique = false;
+
         ITERATE(CHandleRange, rg_it, hr) {
             CHandleRange::TRange range = rg_it->first;
 
@@ -1319,6 +1321,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                     continue;
                 }
 
+                need_unique |= bool(aoit->second.m_HandleRange)  &&
+                    aoit->second.m_HandleRange->GetData().IsCircular();
                 CAnnotObject_Ref annot_ref(annot_info);
                 if (!cvt  &&  annot_info.GetMultiIdFlags()) {
                     // Create self-conversion, add to conversion set
@@ -1348,7 +1352,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                 }
             }
         }
-        if ( hr.end() - hr.begin() > 1 ) {
+        if ( need_unique  ||  hr.end() - hr.begin() > 1 ) {
             TAnnotSet::iterator first_added = m_AnnotSet.begin() + start_size;
             sort(first_added, m_AnnotSet.end());
             m_AnnotSet.erase(unique(first_added, m_AnnotSet.end()),
@@ -1798,6 +1802,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/10/26 17:13:38  grichenk
+* Filter duplicates of circular features
+*
 * Revision 1.34  2004/10/26 15:46:59  vasilche
 * Fixed processing of partial intervals in feature mapping.
 *
