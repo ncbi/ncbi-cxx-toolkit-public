@@ -87,11 +87,12 @@ QueryInfo_SetContext(BlastQueryInfo*   qinfo,
                      Uint4             length,
                      EBlastProgramType prog)
 {
-    qinfo->contexts[index].frame =
-        BLAST_ContextToFrame(prog, index);
+    qinfo->contexts[index].frame = BLAST_ContextToFrame(prog, index);
+    ASSERT(qinfo->contexts[index].frame != 127);
     
     qinfo->contexts[index].query_index =
         Blast_GetQueryIndexFromContext(index, prog);
+    ASSERT(qinfo->contexts[index].query_index != -1);
     
     if (index) {
         Uint4 prev_loc = qinfo->contexts[index-1].query_offset;
@@ -109,7 +110,9 @@ QueryInfo_SetContext(BlastQueryInfo*   qinfo,
 }
 
 /** Allocates the query information structure and fills the context 
- * offsets, in case of multiple queries, frames or strands. 
+ * offsets, in case of multiple queries, frames or strands. If query seqids
+ * cannot be resolved, they will be ignored as warnings will be issued in
+ * blast::SetupQueries.
  * NB: effective length will be assigned inside the engine.
  * @param queries Vector of query locations [in]
  * @param options BLAST search options [in]
@@ -120,24 +123,26 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                BlastQueryInfo** qinfo)
 {
     ASSERT(qinfo);
+    BlastQueryInfo* query_info = *qinfo = NULL;
 
     // Allocate and initialize the query info structure
-    if ( !((*qinfo) = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)))) {
+    if ( !(query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)))) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
     }
 
     EProgram prog = options.GetProgram();
     unsigned int nframes = GetNumberOfFrames(prog);
-    (*qinfo)->num_queries = static_cast<int>(queries.size());
-    (*qinfo)->first_context = 0;
-    (*qinfo)->last_context = (*qinfo)->num_queries * nframes - 1;
+    query_info->num_queries = static_cast<int>(queries.size());
+    query_info->first_context = 0;
+    query_info->last_context = query_info->num_queries * nframes - 1;
 
     EBlastProgramType progtype = options.GetProgramType();
     
-    (*qinfo)->contexts =
-        (BlastContextInfo*) calloc((*qinfo)->last_context + 1, sizeof(BlastContextInfo));
+    query_info->contexts =
+        (BlastContextInfo*) calloc(query_info->last_context + 1, 
+                                   sizeof(BlastContextInfo));
     
-    if ( ! (*qinfo)->contexts) {
+    if ( !query_info->contexts ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
     }
     
@@ -162,9 +167,9 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
 
         if (strand == eNa_strand_minus) {
             if (translate) {
-                (*qinfo)->first_context = 3;
+                query_info->first_context = 3;
             } else {
-                (*qinfo)->first_context = 1;
+                query_info->first_context = 1;
             }
         }
     }
@@ -176,8 +181,12 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     Uint4 max_length = 0;
 
     ITERATE(TSeqLocVector, itr, queries) {
-        TSeqPos length = sequence::GetLength(*itr->seqloc, itr->scope);
-        ASSERT(length != numeric_limits<TSeqPos>::max());
+        TSeqPos length = 0;
+        try { length = sequence::GetLength(*itr->seqloc, itr->scope); }
+        catch (const CException& e) { 
+            // Ignore exceptions in this function as they will be caught in
+            // SetupQueries
+        }
 
         strand = sequence::GetStrand(*itr->seqloc, itr->scope);
         if (strand_opt == eNa_strand_minus || strand_opt == eNa_strand_plus) {
@@ -187,7 +196,8 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
         if (translate) {
             for (unsigned int i = 0; i < nframes; i++) {
                 unsigned int prot_length = 
-                    (length == 0 ? 0 : (length - i % CODON_LENGTH) / CODON_LENGTH);
+                    (length == 0 ? 0 : 
+                     (length - i % CODON_LENGTH) / CODON_LENGTH);
                 max_length = MAX(max_length, prot_length);
                 
                 Uint4 ctx_len(0);
@@ -195,17 +205,20 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                 switch (strand) {
                 case eNa_strand_plus:
                     ctx_len = (i<3) ? prot_length : 0;
-                    QueryInfo_SetContext(*qinfo, ctx_index + i, ctx_len, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
+                                         progtype);
                     break;
 
                 case eNa_strand_minus:
                     ctx_len = (i<3) ? 0 : prot_length;
-                    QueryInfo_SetContext(*qinfo, ctx_index + i, ctx_len, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index + i, ctx_len, 
+                                         progtype);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
-                    QueryInfo_SetContext(*qinfo, ctx_index + i, prot_length, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index + i, 
+                                         prot_length, progtype);
                     break;
 
                 default:
@@ -218,31 +231,36 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
             if (is_na) {
                 switch (strand) {
                 case eNa_strand_plus:
-                    QueryInfo_SetContext(*qinfo, ctx_index, length, progtype);
-                    QueryInfo_SetContext(*qinfo, ctx_index+1, 0, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index, length,
+                                         progtype);
+                    QueryInfo_SetContext(query_info, ctx_index+1, 0, progtype);
                     break;
 
                 case eNa_strand_minus:
-                    QueryInfo_SetContext(*qinfo, ctx_index, 0, progtype);
-                    QueryInfo_SetContext(*qinfo, ctx_index+1, length, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index, 0, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index+1, length,
+                                         progtype);
                     break;
 
                 case eNa_strand_both:
                 case eNa_strand_unknown:
-                    QueryInfo_SetContext(*qinfo, ctx_index, length, progtype);
-                    QueryInfo_SetContext(*qinfo, ctx_index+1, length, progtype);
+                    QueryInfo_SetContext(query_info, ctx_index, length,
+                                         progtype);
+                    QueryInfo_SetContext(query_info, ctx_index+1, length,
+                                         progtype);
                     break;
 
                 default:
                     abort();
                 }
             } else {    // protein
-                QueryInfo_SetContext(*qinfo, ctx_index, length, progtype);
+                QueryInfo_SetContext(query_info, ctx_index, length, progtype);
             }
         }
         ctx_index += nframes;
     }
-    (*qinfo)->max_length = max_length;
+    query_info->max_length = max_length;
+    *qinfo = query_info;
 }
 
 /// Compresses sequence data on vector to buffer, which should have been
@@ -287,12 +305,15 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
  * @param options Options for the BLAST search [in]
  * @param qinfo Query information structure [in]
  * @param seqblk Query sequences data structure [out]
+ * @param blast_msg structure to contain error messages
  */
 void
 SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
-             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk)
+             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
+             Blast_Message** blast_msg)
 {
     ASSERT(seqblk);
+    ASSERT(blast_msg);
     ASSERT(queries.size() != 0);
 
     EProgram prog = options.GetProgram();
@@ -314,18 +335,20 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
 
-    // FIXME: this is leaked in case of exception
-    BlastMaskLoc* mask = NULL;
-    mask = BlastMaskLocNew(qinfo->last_context+1);
+    CBlastMaskLoc mask(BlastMaskLocNew(qinfo->last_context+1));
 
     // Unless the strand option is set to single strand, the actual
     // CSeq_locs dictacte which strand to examine during the search
     ENa_strand strand_opt = options.GetStrandOption();
     int index = 0;
+    string error_string;
 
+    // to keep track of the query position in its vector for error reporting
+    int query_num = 0;  
     ITERATE(TSeqLocVector, itr, queries) {
 
         try {
+            query_num++;
             ENa_strand strand;
             BlastSeqLoc* bsl_tmp=NULL;
 
@@ -421,12 +444,14 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             ++index;
             ctx_index += nframes;
         } catch (const CException& e) {
-            // FIXME: issue warning, replace inner try/catch blocks
-            //cerr << "A warning should be issued here" << e.what() << endl;
-            NCBI_THROW(CBlastException, eBadParameter, 
-                       "Sequence not found: wrong query type provided");
+            error_string += 
+                "Query number " + NStr::IntToString(query_num) + ": ";
+            error_string += e.ReportThis(eDPF_ErrCodeExplanation) + " ";
         }
-        
+    }
+    if (error_string.size() != 0) {
+        Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, 0, 0,
+                           error_string.c_str());
     }
 
     if (BlastSeqBlkNew(seqblk) < 0) {
@@ -435,7 +460,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     BlastSeqBlkSetSequence(*seqblk, buf.release(), buflen - 2);
 
-    (*seqblk)->lcase_mask = mask;
+    (*seqblk)->lcase_mask = mask.Release();
     (*seqblk)->lcase_mask_allocated = TRUE;
 }
 
@@ -979,6 +1004,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/01/06 15:41:35  camacho
+* Add Blast_Message output parameter to SetupQueries
+*
 * Revision 1.29  2004/12/28 17:08:26  camacho
 * fix compiler warning
 *

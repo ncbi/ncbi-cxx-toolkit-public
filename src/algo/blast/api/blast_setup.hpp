@@ -53,9 +53,18 @@ NCBI_XBLAST_EXPORT void
 SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo); // out
 
-NCBI_XBLAST_EXPORT void
+/// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
+/// @param queries vector of blast::SSeqLoc structures [in]
+/// @param options BLAST options object [in]
+/// @param qinfo BlastQueryInfo structure to obtain context information [in]
+/// @param seqblk Structure to save sequence data, allocated in this 
+/// function [out]
+/// @param blast_msg Structure to save warnings/errors, allocated in this
+/// function [out]
+void
 SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
-             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk);
+             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk,
+             Blast_Message** blast_msg);
 
 NCBI_XBLAST_EXPORT void
 SetupSubjects(const TSeqLocVector& subjects, 
@@ -183,6 +192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/01/06 15:41:20  camacho
+* Add Blast_Message output parameter to SetupQueries
+*
 * Revision 1.27  2004/12/28 16:47:43  camacho
 * 1. Use typedefs to AutoPtr consistently
 * 2. Remove exception specification from blast::SetupQueries
