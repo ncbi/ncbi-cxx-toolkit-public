@@ -35,6 +35,7 @@
 #include <app/project_tree_builder/proj_tree_builder.hpp>
 #include <app/project_tree_builder/msvc_project_context.hpp>
 #include <app/project_tree_builder/msvc_prj_files_collector.hpp>
+#include <app/project_tree_builder/msvc_dlls_info_utils.hpp>
 
 #include <corelib/ncbistre.hpp>
 
@@ -56,12 +57,15 @@ CMsvcDllsInfo::~CMsvcDllsInfo(void)
 
 void CMsvcDllsInfo::GetDllsList(list<string>* dlls_ids) const
 {
+    ncbi::GetDllsList(m_Registry, dlls_ids);
+#if 0
     dlls_ids->clear();
 
     string dlls_ids_str = 
         m_Registry.GetString("DllBuild", "DLLs", "");
     
     NStr::Split(dlls_ids_str, LIST_SEPARATOR, *dlls_ids);
+#endif
 }
 
 
@@ -103,8 +107,11 @@ void CMsvcDllsInfo::GetDllInfo(const string& dll_id, SDllInfo* dll_info) const
 {
     dll_info->Clear();
 
+    GetHostedLibs(m_Registry, dll_id, &(dll_info->m_Hosting) );
+#if 0
     string hosting_str = m_Registry.GetString(dll_id, "Hosting", "");
     NStr::Split(hosting_str, LIST_SEPARATOR, dll_info->m_Hosting);
+#endif
 
     string depends_str = m_Registry.GetString(dll_id, "Dependencies", "");
     NStr::Split(depends_str, LIST_SEPARATOR, dll_info->m_Depends);
@@ -493,6 +500,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/04/20 14:14:24  gorelenk
+ * Changed implementation of CMsvcDllsInfo::GetDllsList and
+ * CMsvcDllsInfo::GetDllInfo .
+ *
  * Revision 1.12  2004/04/13 17:07:52  gorelenk
  * Changed implementation of s_InitalizeDllProj .
  *
