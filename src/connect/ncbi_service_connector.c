@@ -88,18 +88,17 @@ static const char* s_VT_GetType(CONNECTOR connector)
 }
 
 
-static char* s_GetArgs(void)
+static char* s_GetArgs(const char* client_host)
 {
     static const char platform[] = "&platform=";
     static const char address[]  = "address=";
     size_t nodelen, archlen, buflen;
     const char* arch;
-    char node[256];
     char* p;
 
     buflen = 0;
-    if (SOCK_gethostbyaddr(0, node, sizeof(node)) && *node) {
-        nodelen = strlen(node);
+    if (*client_host) {
+        nodelen = strlen(client_host);
         buflen += sizeof(address) - 1 + nodelen;
     } else
         nodelen = 0;
@@ -114,7 +113,7 @@ static char* s_GetArgs(void)
     if (nodelen) {
         strcpy(&p[buflen], address);
         buflen += sizeof(address) - 1;
-        strcpy(&p[buflen], node);
+        strcpy(&p[buflen], client_host);
         buflen += nodelen;
     }
     if (archlen) {
@@ -738,19 +737,21 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 {
     CONNECTOR          ccc;
     SServiceConnector* xxx;
-    char*             args;
+    char*              x_args;
+    SConnNetInfo*      x_net_info;
 
     if (!service || !*service)
         return 0;
 
-    args = s_GetArgs();
-    ccc  = (SConnector*)        malloc(sizeof(SConnector));
-    xxx  = (SServiceConnector*) malloc(sizeof(SServiceConnector) +
-                                       (args ? strlen(args) : 0));
+    x_net_info =
+        net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service);
+    x_args     = s_GetArgs(x_net_info->client_host);
+    ccc        = (SConnector*)        malloc(sizeof(SConnector));
+    xxx        = (SServiceConnector*) malloc(sizeof(SServiceConnector) +
+                                             (x_args ? strlen(x_args) : 0));
     xxx->name     = 0;
     xxx->service  = SERV_ServiceName(service);
-    xxx->net_info = net_info
-        ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service);
+    xxx->net_info = x_net_info;
     if (types & fSERV_StatelessOnly)
         xxx->net_info->stateless = 1/*true*/;
     if (types & fSERV_Firewall)
@@ -763,9 +764,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         memset(&xxx->params, 0, sizeof(xxx->params));
     memset(&xxx->meta, 0, sizeof(xxx->meta));
 
-    if (args) {
-        strcpy(xxx->args, args);
-        free(args);
+    if (x_args) {
+        strcpy(xxx->args, x_args);
+        free(x_args);
     } else
         xxx->args[0] = '\0';
 
@@ -792,6 +793,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2002/11/12 05:52:00  lavr
+ * Use client_host from conn.info as value for "address="
+ *
  * Revision 6.48  2002/11/01 20:16:05  lavr
  * Expand hostname buffers to hold up to 256 chars
  *
