@@ -643,33 +643,53 @@ void CValidError_feat::ValidateCdregion (
     const CSeq_feat& feat
 ) 
 {
-    ITERATE( CSeq_feat::TQual, qual, feat.GetQual () ) {
-        if ( (**qual).GetQual() == "codon" ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
-                "Use the proper genetic code, if available, "
-                "or set transl_excepts on specific codons", feat);
-            break;
-        }
-    }
-
     bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
         IsOverlappingGenePseudo(feat);
+    
+    bool transl_except = false;
+
+    ITERATE (CSeq_feat::TQual, it, feat.GetQual()) {
+        const CGb_qual& qual = **it;
+        if ( qual.CanGetQual() ) {
+            const string& key = qual.GetQual();
+            if ( NStr::EqualNocase(key, "pseudo") ) {
+                pseudo = true;
+            } else if ( NStr::EqualNocase(key, "exception") ) {
+                if ( !feat.CanGetExcept()  ||  !feat.GetExcept() ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
+                        "Exception flag should be set in coding region", feat);
+                }
+            } else if ( NStr::EqualNocase(key, "transl_except") ) {
+                transl_except = true;
+            } else if ( NStr::EqualNocase(key, "codon") ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
+                    "Use the proper genetic code, if available, "
+                    "or set transl_excepts on specific codons", feat);
+            } else if ( NStr::EqualNocase(key, "protein_id") ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
+                    "protein_id should not be a gbqual on a CDS feature", feat);
+            } else if ( NStr::EqualNocase(key, "transcript_id") ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
+                    "transcript_id should not be a gbqual on a CDS feature", feat);
+            }
+        }
+    }
+    if ( transl_except  &&  feat.CanGetExcept_text()  &&
+         NStr::FindNoCase(feat.GetExcept_text(), "RNA editing") != NPOS ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
+            "CDS has both RNA editing /exception and /transl_except qualifiers", feat);
+    }
+    
     bool conflict = cdregion.CanGetConflict()  &&  cdregion.GetConflict();
     if ( !pseudo  &&  !conflict ) {
         ValidateCdTrans(feat);
         ValidateSplice(feat, false);
-        ValidateCdsProductId(feat);
     } else if ( conflict ) {
         ValidateCdConflict(cdregion, feat);
     }
+    ValidateCdsProductId(feat);
 
-    ITERATE( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
-        ECompare comp = sequence::Compare((**codebreak).GetLoc (),
-            feat.GetLocation (), m_Scope );
-        if ( (comp != eContained) && (comp != eSame))
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
-                "Code-break location not in coding region", feat);
-    }
+    x_ValidateCdregionCodebreak(cdregion, feat);
 
     if ( cdregion.CanGetOrf()  &&  cdregion.GetOrf ()  &&
          feat.CanGetProduct () ) {
@@ -678,21 +698,19 @@ void CValidError_feat::ValidateCdregion (
     }
 
     if ( pseudo && feat.CanGetProduct () ) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_PsuedoCdsHasProduct,
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PsuedoCdsHasProduct,
             "A pseudo coding region should not have a product", feat);
     }
     
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation ());
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( bsh ) {
         CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
         if ( diter ) {
             const CBioSource& src = diter->GetSource();
-            
             int biopgencode = src.GetGenCode();
             
-            if (cdregion.CanGetCode ()) {
+            if ( cdregion.CanGetCode() ) {
                 int cdsgencode = cdregion.GetCode().GetId();
-                
                 if ( biopgencode != cdsgencode ) {
                     int genome = 0;
                     
@@ -701,17 +719,17 @@ void CValidError_feat::ValidateCdregion (
                     }
                     
                     if ( IsPlastid(genome) ) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
                             "Genetic code conflict between CDS (code " +
                             NStr::IntToString (cdsgencode) +
                             ") and BioSource.genome biological context (" +
-                            s_PlastidTxt [genome] + ") (uses code 11)", feat);
+                            s_PlastidTxt[genome] + ") (uses code 11)", feat);
                     } else {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
                             "Genetic code conflict between CDS (code " +
-                            NStr::IntToString (cdsgencode) +
+                            NStr::IntToString(cdsgencode) +
                             ") and BioSource (code " +
-                            NStr::IntToString (biopgencode) + ")", feat);
+                            NStr::IntToString(biopgencode) + ")", feat);
                     }
                 }
             }
@@ -726,6 +744,38 @@ void CValidError_feat::ValidateCdregion (
 }
 
 
+void CValidError_feat::x_ValidateCdregionCodebreak
+(const CCdregion& cds,
+ const CSeq_feat& feat)
+{
+    const CSeq_loc& feat_loc = feat.GetLocation();
+    const CCode_break* prev_cbr = 0;
+
+    ITERATE (CCdregion::TCode_break, it, cds.GetCode_break()) {
+        const CCode_break& cbr = **it;
+        const CSeq_loc& cbr_loc = cbr.GetLoc();
+        ECompare comp = Compare(cbr_loc, feat_loc, m_Scope);
+        if ( (comp != eContained) && (comp != eSame)) {
+            PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
+                "Code-break location not in coding region", feat);
+        }
+        if ( prev_cbr != 0 ) {
+            if ( Compare(cbr_loc, prev_cbr->GetLoc()) == eSame ) {
+                string msg = "Multiple code-breaks at same location";
+                string str;
+                cbr_loc.GetLabel(&str);
+                if ( !str.empty() ) {
+                    msg += "[" + str + "]";
+                }
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_DuplicateTranslExcept,
+                   msg, feat);
+            }
+        }
+        prev_cbr = &cbr;
+    }
+}
+
+
 // non-pseudo CDS must have product
 void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
 {
@@ -733,7 +783,12 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     if ( feat.CanGetProduct() ) {
         return;
     }
-    
+    // bail if pseudo
+    bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
+        IsOverlappingGenePseudo(feat);
+    if ( pseudo ) {
+        return;
+    }
     // bail if location has just stop
     if ( feat.CanGetLocation() ) {
         const CSeq_loc& loc = feat.GetLocation();
@@ -743,16 +798,16 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
             }
         }
     }
-    
     // supress in case of the appropriate exception
     if ( feat.CanGetExcept()  &&  feat.CanGetExcept_text()  &&
-        !IsBlankString(feat.GetExcept_text()) ) {
+         !IsBlankString(feat.GetExcept_text()) ) {
         if ( NStr::Find(feat.GetExcept_text(),
-                        "rearrangement required for product") != NPOS ) {
-            return;
+            "rearrangement required for product") != NPOS ) {
+           return;
         }
     }
     
+    // non-pseudo CDS must have /product
     PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
         "Expected CDS product absent", feat);
 }
@@ -2682,6 +2737,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/06/25 14:58:46  shomrat
+* fixes and enhancements to Cdregion validation
+*
 * Revision 1.57  2004/06/17 17:04:37  shomrat
 * TGA can be used for Selenocysteine without needing modified codon recognition exception
 *
