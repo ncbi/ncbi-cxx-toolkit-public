@@ -1111,7 +1111,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
             }
 
             /* Replace with the offset derived from extending a gap
-               in seq2, if that is larger */
+               in seq1, if that is larger */
 
             if (k + 1 <= diag_upper[d - gap_extend] && 
                 k + 1 >= diag_lower[d - gap_extend] &&
