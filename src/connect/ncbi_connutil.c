@@ -759,10 +759,13 @@ extern SOCK URL_Connect
     static const char  X_REQ_Q[] = "?";
     static const char  X_REQ_E[] = " HTTP/1.0\r\n";
 
-    SOCK  sock;
-    char  buffer[80];
-    char* x_args = 0;
     EIO_Status st;
+    BUF        buf;
+    SOCK       sock;
+    char*      header;
+    char       buffer[80];
+    size_t     headersize;
+    char*      x_args = 0;
 
     /* check the args */
     if (!host  ||  !*host  ||  !port  ||  !path  ||  !*path  ||
@@ -794,21 +797,6 @@ extern SOCK URL_Connect
         content_length = 0;
     }
 
-    /* connect to HTTPD */
-    if ((st= SOCK_CreateEx(host, port, c_timeout, &sock, log)) != eIO_Success){
-        CORE_LOGF(eLOG_Error,
-                  ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
-                   host, port, IO_StatusStr(st)));
-        return 0/*error*/;
-    }
-
-    /* setup i/o timeout for the connection */
-    if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
-        CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
-        SOCK_Close(sock);
-        return 0;
-    }
-
     /* URL-encode "args", if any specified */
     if (args  &&  *args) {
         size_t src_size = strlen(args);
@@ -826,58 +814,70 @@ extern SOCK URL_Connect
         }
     }
 
-    /* compose and send HTTP header */
-    if (
-        /* {POST|GET} <path>?<args> HTTP/1.0\r\n */
-        (st = SOCK_Write(sock, (const void*) X_REQ_R, strlen(X_REQ_R),
-                         0, eIO_WritePersist))
-        != eIO_Success  ||
-        (st = SOCK_Write(sock, (const void*) path, strlen(path),
-                         0, eIO_WritePersist))
-        != eIO_Success  ||
-        (x_args  &&
-         ((st = SOCK_Write(sock, (const void*) X_REQ_Q, strlen(X_REQ_Q),
-                           0, eIO_WritePersist))
-          != eIO_Success  ||
-          (st = SOCK_Write(sock, (const void*) x_args, strlen(x_args),
-                           0, eIO_WritePersist))
-          != eIO_Success
-          )
-         )  ||
-        (st = SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E),
-                         0, eIO_WritePersist))
-        != eIO_Success  ||
+    buf = 0;
+    errno = 0;
+    /* compose HTTP header */
+    if (/* {POST|GET} <path>?<args> HTTP/1.0\r\n */
+        !BUF_Write(&buf,   (const void*) X_REQ_R, strlen(X_REQ_R))    ||
+        !BUF_Write(&buf,   (const void*) path, strlen(path))          ||
 
+        (x_args  &&
+         (!BUF_Write(&buf, (const void*) X_REQ_Q, strlen(X_REQ_Q))    ||
+          !BUF_Write(&buf, (const void*) x_args, strlen(x_args))))    ||
+        !BUF_Write(&buf, (const void*) X_REQ_E, strlen(X_REQ_E))      ||
+        
         /* <user_header> */
         (user_hdr  &&
-         (st = SOCK_Write(sock, (const void*) user_hdr, strlen(user_hdr),
-                          0, eIO_WritePersist))
-         != eIO_Success)  ||
+         !BUF_Write(&buf,  (const void*) user_hdr, strlen(user_hdr))) ||
 
         /* Content-Length: <content_length>\r\n\r\n */
         (req_method != eReqMethod_Get  &&
          (sprintf(buffer, "Content-Length: %lu\r\n",
-                  (unsigned long) content_length) <= 0  ||
-          (st = SOCK_Write(sock, (const void*) buffer, strlen(buffer),
-                           0, eIO_WritePersist))
-          != eIO_Success))  ||
-        (st = SOCK_Write(sock, (const void*) "\r\n", 2,
-                         0, eIO_WritePersist))
-        != eIO_Success)
-        {
-            CORE_LOGF(eLOG_Error,
-                      ("[URL_Connect]  Error sending HTTP header to"
-                       " %s:%hu: %s", host, port, st == eIO_Success
-                       ? strerror(errno) : IO_StatusStr(st)));
-            if (x_args)
-                free(x_args);
-            SOCK_Close(sock);
-            return 0/*error*/;
-        }
+                  (unsigned long) content_length) <= 0                ||
+          !BUF_Write(&buf, (const void*) buffer, strlen(buffer))))    ||
 
-    /* success */
+        !BUF_Write(&buf,   (const void*) "\r\n", 2)) {
+        CORE_LOGF(eLOG_Error, ("[URL_Connect]  Error composing HTTP header for"
+                               " %s:%hu%s%s", host, port, errno ? ": " : "",
+                               errno ? strerror(errno) : ""));
+        BUF_Destroy(buf);
+        if (x_args)
+            free(x_args);
+        return 0/*error*/;
+    }
     if (x_args)
         free(x_args);
+
+    if (!(header = (char*) malloc(headersize = BUF_Size(buf))) ||
+        BUF_Read(buf, header, headersize) != headersize) {
+        CORE_LOGF(eLOG_Error, ("[URL_Connect]  Error storing HTTP header for"
+                               " %s:%hu: %s", host, port,
+                               errno ? strerror(errno) : "Unknown error"));
+        if (header)
+            free(header);
+        BUF_Destroy(buf);
+        return 0/*error*/;
+    }
+    BUF_Destroy(buf);
+
+    /* connect to HTTPD */
+    st = SOCK_CreateEx(host, port, c_timeout, &sock, header, headersize, log);
+    free(header);
+    if (st != eIO_Success) {
+        CORE_LOGF(eLOG_Error,
+                  ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
+                   host, port, IO_StatusStr(st)));
+        return 0/*error*/;
+    }
+
+    /* setup i/o timeout for the connection */
+    if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
+        CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
+        SOCK_Close(sock);
+        return 0/*error*/;
+    }
+
+    /* success */
     return sock;
 }
 
@@ -1476,6 +1476,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2003/05/14 03:51:54  lavr
+ * URL_Connect() rewritten to submit HTTP header as SOCK's initial buffer
+ *
  * Revision 6.54  2003/04/30 17:02:11  lavr
  * Name collision resolved in ConnNetInfo_ParseURL()
  *
