@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/07/23 15:59:36  ivanov
+* Added possibility using user defined dump print handler
+*
 * Revision 1.2  2001/07/02 21:33:05  vakatov
 * Fixed against SIGXCPU during the signal handling.
 * Increase the amount of reserved memory for the memory limit handler
@@ -49,8 +52,27 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
+
 
 BEGIN_NCBI_SCOPE
+
+
+// Code for program exit hamndler
+
+enum ELimitsExitCode {
+    eLEC_None,    // normal exit
+    eLEC_Memory,  // memory limit
+    eLEC_Cpu      // CPU usage limit
+};
+
+
+// Parameter's type for limit's print handler
+typedef void *TLimitsPrintParameter;
+
+// Type of handler for print dump info after generating any limitation event
+typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrintParameter);
 
 
 /* [UNIX only] 
@@ -58,24 +80,32 @@ BEGIN_NCBI_SCOPE
  *
  * If, during the program execution, the heap size exceeds "max_heap_size"
  * in any `operator new' (but not malloc, etc.!), then:
- *  1) dump info about current program state to log-stream;
+ *  1) dump info about current program state to log-stream.
+ *     if defined print handler "handler", then it will be used for write dump.
+ *     if defined "parameter", it will be carried to print handler;
  *  2) terminate the program.
  *
  * NOTE:  "max_heap_size" == 0 will lift off the heap restrictions.
  */
-extern bool SetHeapLimit(size_t max_heap_size);
+extern bool SetHeapLimit(size_t max_heap_size, 
+                         TLimitsPrintHandler handler = 0, 
+                         TLimitsPrintParameter parameter = 0);
 
 
 /* [UNIX only] 
  * Set the limit for the CPU time that can be consumed by this process.
  *
  * If current process consumes more than "max_cpu_time" seconds of CPU time:
- *  1) dump info about current program state to log-stream;
+ *  1) dump info about current program state to log-stream.
+ *     if defined print handler "handler", then it will be used for write dump.
+ *     if defined "parameter", it will be carried to print handler;
  *  2) terminate the program.
  *
  * NOTE:  "max_cpu_time" == 0 will lift off the CPU time restrictions.
  */
-extern bool SetCpuTimeLimit(size_t max_cpu_time);
+extern bool SetCpuTimeLimit(size_t max_cpu_time,
+                         TLimitsPrintHandler handler = 0, 
+                         TLimitsPrintParameter parameter = 0);
 
 
 END_NCBI_SCOPE
