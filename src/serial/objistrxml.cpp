@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/11/26 22:09:02  gouriano
+* added HasMoreElements method,
+* added unnamed lists of sequences (choices) as container elements
+*
 * Revision 1.29  2002/11/20 21:22:51  gouriano
 * corrected processing of unnamed sequences as choice variants
 *
@@ -1006,6 +1010,40 @@ void CObjectIStreamXml::SkipContainer(const CContainerTypeInfo* containerType)
     }
 }
 
+
+bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
+{
+    if (NextTagIsClosing()) {
+        return false;
+    }
+    TTypeInfo type = elementType;
+    if (type->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* ptr =
+            dynamic_cast<const CPointerTypeInfo*>(type);
+        if (ptr) {
+            type = ptr->GetPointedType();
+        }
+    }
+    const CClassTypeInfoBase* classType =
+        dynamic_cast<const CClassTypeInfoBase*>(type);
+    if (classType) {
+        TMemberIndex first = classType->GetItems().FirstIndex();
+        if (classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix()) {
+            CLightString tagName;
+            if (m_RejectedTag.empty()) {
+                tagName = ReadName(BeginOpeningTag());
+            } else {
+                tagName = RejectedName();
+            }
+            UndoClassMember();
+            return (classType->GetItems().FindDeep(tagName) != kInvalidMember);
+        }
+    }
+    return true;
+}
+
+
+
 void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
                                               TObjectPtr containerPtr)
 {
@@ -1013,7 +1051,7 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
     if ( !WillHaveName(elementType) ) {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-        while ( !NextTagIsClosing() ) {
+        while ( HasMoreElements(elementType) ) {
             bool tagIsOpen = false;
             if (!FetchFrameFromTop(1).GetSkipTag()) {
                 OpenStackTag(0);
@@ -1030,7 +1068,7 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
         END_OBJECT_FRAME();
     }
     else {
-        while ( !NextTagIsClosing() ) {
+        while ( HasMoreElements(elementType) ) {
             cType->AddElement(containerPtr, *this);
         }
     }
@@ -1042,7 +1080,7 @@ void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* cType)
     if ( !WillHaveName(elementType) ) {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-        while ( !NextTagIsClosing() ) {
+        while ( HasMoreElements(elementType) ) {
             OpenStackTag(0);
             SkipObject(elementType);
             CloseStackTag(0);
@@ -1051,7 +1089,7 @@ void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* cType)
         END_OBJECT_FRAME();
     }
     else {
-        while ( !NextTagIsClosing() ) {
+        while ( HasMoreElements(elementType) ) {
             SkipObject(elementType);
         }
     }
@@ -1179,14 +1217,14 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     }
                 }
             }
-            TMemberIndex last = classType->GetMembers().LastIndex();
-            if (pos <= last) {
-                if (classType->GetMemberInfo(pos)->GetId().HasNotag()) {
-                    TopFrame().SetNotag();
-                    return pos;
-                }
-            }
             if ( SelfClosedTag()) {
+                TMemberIndex last = classType->GetMembers().LastIndex();
+                if (pos == last) {
+                    if (classType->GetMemberInfo(pos)->GetId().HasNotag()) {
+                        TopFrame().SetNotag();
+                        return pos;
+                    }
+                }
                 m_Attlist = false;
                 return kInvalidMember;
             }
@@ -1199,7 +1237,6 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     }
 
     TMemberIndex ind = classType->GetMembers().Find(tagName);
-/*
     if (ind == kInvalidMember) {
         ind = classType->GetMembers().FindDeep(tagName);
         if (ind != kInvalidMember) {
@@ -1207,7 +1244,6 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             UndoClassMember();
         }
     }
-*/
     if ( ind != kInvalidMember ) {
         const CMemberInfo *mem_info = classType->GetMemberInfo(ind);
         if (mem_info->GetId().HaveNoPrefix()) {
@@ -1216,6 +1252,10 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             }
             return ind;
         }
+    }
+    if (TopFrame().GetSkipTag()) {
+        UndoClassMember();
+        return kInvalidMember;
     }
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id, pos);
