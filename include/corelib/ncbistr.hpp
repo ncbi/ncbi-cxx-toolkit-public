@@ -61,6 +61,7 @@ NCBI_XNCBI_EXPORT extern const char *const kEmptyCStr;
 
 
 /// Empty "C++" string.
+#ifndef NCBI_OS_MSWIN
 class NCBI_XNCBI_EXPORT CNcbiEmptyString
 {
 public:
@@ -72,7 +73,18 @@ private:
     static const string& FirstGet(void);
     static const string* m_Str;     ///< Null string pointer.
 };
-
+#else  // NCBI_OS_MSWIN 
+class CNcbiEmptyString
+{
+public:
+    /// Get string.
+    static const string& Get(void)
+	{
+		static string empty_str;
+		return empty_str;
+	}
+};
+#endif // NCBI_OS_MSWIN
 /// Empty string definition.
 #define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
 
@@ -1846,13 +1858,14 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 /////////////////////////////////////////////////////////////////////////////
 //  CNcbiEmptyString::
 //
-
+#ifndef NCBI_OS_MSWIN
 inline
 const string& CNcbiEmptyString::Get(void)
 {
     const string* str = m_Str;
     return str ? *str: FirstGet();
 }
+#endif // NCBI_OS_MSWIN
 
 
 
@@ -2234,6 +2247,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2004/03/11 18:48:34  gorelenk
+ * Added (condionaly) Windows-specific declaration of class CNcbiEmptyString.
+ *
  * Revision 1.52  2004/03/05 14:21:54  shomrat
  * added missing definitions
  *
