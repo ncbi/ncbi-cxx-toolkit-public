@@ -205,7 +205,7 @@ static void s_TEST_Tree()
     TreeDepthFirstTraverse(*str, TestFunctor1);
     cout << endl;
 
-    delete tr;
+    delete str;
 }
 
 struct IdValue
@@ -269,6 +269,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.21  2004/07/22 01:24:38  ucko
+ * Oops, the correct node to delete is str, since tr gets reassigned...
+ *
  * Revision 1.20  2004/07/21 21:18:57  ucko
  * s_TEST_Tree: delete tr rather than tr5 at the end, now that the call
  * to TreeReRoot has been removed.
