@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/08 16:45:55  vakatov
+* Get rid of the redundant `extern "C"' at "main()
+*
 * Revision 1.12  1999/06/11 20:30:34  vasilche
 * We should catch exception by reference, because catching by value
 * doesn't preserve comment string.
@@ -92,10 +95,6 @@ public:
 
 };
 
-extern "C" int main(int argc, char *argv[])
-{
-    return CMyApp().AppMain( argc, argv );
-}
 
 SFactoryList < CHTMLBasicPage > PageList [] = {
     { CPmDocSumPage::New, "docsum", 0 },
@@ -132,3 +131,16 @@ int CMyApp::ProcessRequest(CCgiContext& ctx)
 
 
 END_NCBI_SCOPE
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN()
+
+
+USING_NCBI_SCOPE;  // this turns on the ncbi namespace
+
+int main(int argc, char *argv[])
+{
+    return CMyApp().AppMain(argc, argv);
+}

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/08 16:45:53  vakatov
+* Get rid of the redundant `extern "C"' at "main()
+*
 * Revision 1.7  1999/06/11 20:30:32  vasilche
 * We should catch exception by reference, because catching by value
 * doesn't preserve comment string.
@@ -62,17 +65,7 @@
 USING_NCBI_SCOPE;  // this turns on the ncbi namespace
 
 
-// extern "C" main(...) is necessary to make main() visible
-// outside of the ncbi namespace
-
-static int Demo(void);
-
-extern "C" int main() 
-{
-	return Demo();
-}
-
-int Demo(void)
+int s_Demo(void)
 {
     CCgiResponse Response; // used to write out the html
     CHTML_html * Html = 0; // the following are tags used in the page.
@@ -112,3 +105,11 @@ int Demo(void)
     // error
     return 1;
 }
+
+
+
+int main() 
+{
+	return s_Demo();
+}
+
