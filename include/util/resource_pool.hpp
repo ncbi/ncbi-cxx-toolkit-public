@@ -52,8 +52,9 @@ template<class Value>
 class CResourcePool
 {
 public: 
-    typedef Value  TValue;
-    typedef Value  TValuePtr;
+    typedef Value                       TValue;
+    typedef Value*                      TValuePtr;
+    typedef typename vector<TValuePtr>  TPoolList;
 
 public:
     CResourcePool()
@@ -61,7 +62,7 @@ public:
 
     ~CResourcePool()
     {
-        ITERATE(typename vector<Value*>, it, m_FreeObjects) {
+        ITERATE(TPoolList, it, m_FreeObjects) {
             Value* v = *it;
             delete v;
         }
@@ -79,7 +80,7 @@ public:
         if (m_FreeObjects.empty()) {
             v = new Value;
         } else {
-            typename vector<Value*>::iterator it = m_FreeObjects.end();
+            typename TPoolList::iterator it = m_FreeObjects.end();
             v = *(--it);
             m_FreeObjects.pop_back();
         }
@@ -110,7 +111,7 @@ public:
     ///    object's pointer otherwise.
     Value* Forget(Value* v)
     {
-        NON_CONST_ITERATE(typename vector<Value*>, it, m_FreeObjects) {
+        NON_CONST_ITERATE(typename TPoolList, it, m_FreeObjects) {
             Value* vp = *it;
             if (v == vp) {
                 m_FreeObjects.erase(it);
@@ -129,12 +130,18 @@ public:
         m_FreeObjects.clear();
     }
 
+    /// Get internal list of free objects
+    TPoolList& GetFreeList() { return m_FreeObjects; }
+
+    /// Get internal list of free objects
+    const TPoolList& GetFreeList() const { return m_FreeObjects; }
+
 protected:
     CResourcePool(const CResourcePool&);
     CResourcePool& operator=(const CResourcePool&);
 
 protected:
-    vector<Value*>  m_FreeObjects;
+    TPoolList   m_FreeObjects;
 };
 
 
@@ -168,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/10 16:16:48  kuznets
+ * Add accessors to internal list of free objects
+ *
  * Revision 1.3  2004/02/23 19:18:20  kuznets
  * +CResourcePool::Forget to manually remove objects from the pool.
  *
