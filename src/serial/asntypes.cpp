@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2002/10/25 15:23:16  vasilche
+* Fixed warning about name hiding.
+*
 * Revision 1.57  2002/10/25 15:15:45  vasilche
 * Fixed check for NCBI C toolkit.
 *
@@ -1012,9 +1015,9 @@ CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
     m_AsnIo = AsnIoNew(flags, 0, this, ReadAsn, 0);
     if ( format == eSerial_AsnBinary ) {
 #if CHECK_STREAM_INTEGRITY
-        CObjectIStreamAsnBinary& in =
-            static_cast<CObjectIStreamAsnBinary&>(GetStream());
-        if ( in.m_CurrentTagState != in.eTagStart ) {
+        CObjectIStreamAsnBinary& sin =
+            static_cast<CObjectIStreamAsnBinary&>(in);
+        if ( sin.m_CurrentTagState != sin.eTagStart ) {
             in.ThrowError(in.fIllegalCall, "double tag read");
         }
 #endif
