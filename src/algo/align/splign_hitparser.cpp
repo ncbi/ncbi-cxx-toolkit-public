@@ -98,9 +98,7 @@ void DoSingleLinkageClustering (
 
         int n1 = CID_Get( vt[kk->n1] ), n2 = CID_Get( vt[kk->n2] );
         if( n1 != n2 ) {
-            vector<T>::iterator jj, jend;
-            for( jj = vt.begin(), jend = vt.end(); jj != jend; ++jj ) {
-
+            NON_CONST_ITERATE (typename vector<T>, jj, vt) {
                 if( CID_Get( *jj ) == n1 )
                     CID_Set( *jj, n2 );
             }
@@ -1347,6 +1345,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/26 16:52:44  ucko
+* Add an explicit "typename" annotation required by GCC 3.4, and adjust
+* the code to take advantage of the ITERATE macro.
+*
 * Revision 1.3  2004/04/23 14:37:44  kapustin
 * *** empty log message ***
 *
