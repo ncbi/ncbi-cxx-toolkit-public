@@ -148,8 +148,9 @@ void* CBlastTabularFormatThread::Main(void)
 
    GetSeqArg seq_arg;
 
+   memset((void*) &seq_arg, 0, sizeof(seq_arg));
+
    if (m_ibPerformTraceback) {
-      memset((void*) &seq_arg, 0, sizeof(seq_arg));
       seq_arg.encoding = 
           Blast_TracebackGetEncoding(m_Program);
    }
@@ -261,6 +262,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/08/04 22:03:36  dondosha
+* Memset GetSeqArg structure in all cases, to prevent FUM error
+*
 * Revision 1.3  2004/07/06 15:55:27  dondosha
 * Changed CDbBlast argument in constructor to const pointer
 *
