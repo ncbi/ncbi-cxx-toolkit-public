@@ -757,6 +757,11 @@ int remainder;
 		if (is_numeric_type(curcol->column_type)) {
                        info->row_size += sizeof(TDS_NUMERIC) + 1;
 		}
+#ifdef NCBI_FTDS
+		else if(curcol->column_type == SYBVARBINARY) {
+		  info->row_size+= sizeof(TDS_INT); /* to prevent memory corruption */
+		}
+#endif
 		
 		/* actually this 4 should be a machine dependent #define */
 		if(remainder = info->row_size & 0x3) {
@@ -846,6 +851,12 @@ int remainder;
 		} else if (!is_blob_type(curcol->column_type)) {
 			info->row_size += curcol->column_size + 1;
 		}
+#ifdef NCBI_FTDS
+		else if(curcol->column_type == SYBVARBINARY) {
+		  info->row_size+= sizeof(TDS_INT); /* to prevent memory corruption */
+		}
+#endif
+
 
 
 		/* actually this 4 should be a machine dependent #define */
