@@ -388,12 +388,12 @@ COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
 
 GENBANK_LDEP = \
-	ncbi_xreader_id1 id1 ncbi_xreader_id2 id2 xconnect \
+	ncbi_xreader_id1 id1 ncbi_xreader_id2 id2 seqsplit xconnect \
 	ncbi_xreader_pubseqos dbapi_driver \
 	$(GENBANK_READER_LIBS)
 GENBANK_LIBS = ncbi_xloader_genbank $(GENBANK_LDEP)
 
-GENBANK_READER_LDEP = id2 $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
+GENBANK_READER_LDEP = id2 seqsplit $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
 GENBANK_READER_LIBS = ncbi_xreader $(GENBANK_READER_LDEP)
 
 GENBANK_READER_PUBSEQOS_LDEP = dbapi_driver $(GENBANK_READER_LIBS)
@@ -402,7 +402,7 @@ GENBANK_READER_PUBSEQOS_LIBS = ncbi_xreader_pubseqos $(GENBANK_READER_PUBSEQOS_L
 GENBANK_READER_ID1_LDEP = xconnect id1 $(GENBANK_READER_LIBS)
 GENBANK_READER_ID1_LIBS = ncbi_xreader_id1 $(GENBANK_READER_ID1_LDEP)
 
-GENBANK_READER_ID2_LDEP = xconnect id2 $(GENBANK_READER_LIBS)
+GENBANK_READER_ID2_LDEP = xconnect id2 seqsplit $(GENBANK_READER_LIBS)
 GENBANK_READER_ID2_LIBS = ncbi_xreader_id2 $(GENBANK_READER_ID2_LDEP)
 
 GENBANK_READER_ID1C_LDEP = $(GENBANK_READER_ID1_LIBS)
@@ -416,7 +416,7 @@ OBJMGR_LIBS = $(GENBANK_LIBS)
 
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
-QOBJMGR_ONLY_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
+QOBJMGR_ONLY_LIBS = xobjmgr id2 seqsplit id1 seqset $(SEQ_LIBS) pub medline biblio \
 	general xcompress $(CMPRS_LIB)
 QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
 QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall

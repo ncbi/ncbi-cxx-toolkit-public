@@ -1,3 +1,2 @@
-ASN = id2 seqsplit
 LIB = id2
-SRC = $(ASN:%=%__) $(ASN:%=%___)
+SRC = id2__ id2___
