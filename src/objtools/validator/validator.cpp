@@ -538,6 +538,10 @@ identifier.",
 "The Bioseq has a gi identifier and more than one GenBank/EMBL/DDBJ \
 accession identifier.",
 
+"The Bioseq has a TPA identifier but does not have a Seq-hist.assembly alignment. \
+This should be annotated or calculated by the database, resulting in a PRIMARY \
+block visible in the flatfile.",
+
 /* SEQ_DESCR */
 
 "The biological source of this sequence has not been described \
@@ -882,6 +886,12 @@ same type, and the label and comment are also identical. This is likely \
 to be an error in annotating the record. Note that GenBank format \
 suppresses duplicate features, so use of Graphic view is recommended.",
 
+"The feature product refers to a database ID that has a locus name \
+but no accession. This is probably an error in parsing of a submission.",
+
+"The RNA feature product type does not correspond to the RNA feature type. \
+ These need to be consistent.",
+
 /* SEQ_ALIGN */
 
 "The seqence referenced by an alignment SeqID is not packaged in the \
@@ -998,8 +1008,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.6  2003/01/24 20:37:54  shomrat
-* Added missing error strings
+* Revision 1.7  2003/01/24 21:17:19  shomrat
+* Added missing verbose strings
 *
 * Revision 1.5  2003/01/07 20:00:57  shomrat
 * Member function GetMessage() changed to GetMsg() due o conflict
