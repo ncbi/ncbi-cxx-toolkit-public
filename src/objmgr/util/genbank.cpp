@@ -30,6 +30,7 @@
 */
 
 #include <objects/util/genbank.hpp>
+#include <objects/util/sequence.hpp>
 #include <objects/objmgr/seqdesc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/seq_vector.hpp>
@@ -503,7 +504,7 @@ bool CGenbankWriter::WriteLocus(const CBioseq_Handle& handle)
 
 bool CGenbankWriter::WriteDefinition(const CBioseq_Handle& handle)
 {
-    string definition = handle.GetTitle();
+    string definition = GetTitle(handle);
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
         definition += '.';
     }
@@ -2763,6 +2764,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2002/06/06 18:36:02  clausen
+* Changed call from CBioseq_Handle::GetTitle() to GetTitle()
+*
 * Revision 1.19  2002/05/06 16:11:01  ucko
 * Merge in Andrei Gourianov's changes to use the new OM (thanks!)
 * Move CVS log to end.
