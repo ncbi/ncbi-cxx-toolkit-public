@@ -33,6 +33,8 @@
 
 #include <objtools/alnmgr/alnmix.hpp>
 
+#include <objects/seqalign/Seq_align_set.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -49,7 +51,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CAlnMix::CAlnMix(void)
     : m_MergeFlags(0),
-      m_SingleRefseq(false)
+      m_SingleRefseq(false),
+      m_ContainsAA(false),
+      m_ContainsNA(false)
 {
     x_CreateScope();
 }
@@ -58,7 +62,9 @@ CAlnMix::CAlnMix(void)
 CAlnMix::CAlnMix(CScope& scope)
     : m_Scope(&scope),
       m_MergeFlags(0),
-      m_SingleRefseq(false)
+      m_SingleRefseq(false),
+      m_ContainsAA(false),
+      m_ContainsNA(false)
 {
 }
 
@@ -146,6 +152,29 @@ void CAlnMix::Merge(TMergeFlags flags)
 }
 
 
+void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
+{
+    if (m_InputAlnsMap.find((void *)&aln) == m_InputAlnsMap.end()) {
+        // add only if not already added
+        m_InputAlnsMap[(void *)&aln] = &aln;
+        m_InputAlns.push_back(CConstRef<CSeq_align>(&aln));
+
+        if (aln.GetSegs().IsDenseg()) {
+            Add(aln.GetSegs().GetDenseg(), flags);
+        } else if (aln.GetSegs().IsStd()) {
+            CRef<CSeq_align> sa = aln.CreateDensegFromStdseg();
+            Add(*sa, flags);
+        } else if (aln.GetSegs().IsDisc()) {
+            iterate (CSeq_align_set::Tdata,
+                     aln_it,
+                     aln.GetSegs().GetDisc().Get()) {
+                Add(**aln_it, flags);
+            }
+        }
+    }
+}
+
+
 void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 {
     if (m_InputDSsMap.find((void *)&ds) != m_InputDSsMap.end()) {
@@ -161,10 +190,25 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
     m_InputDSsMap[(void *)&ds] = &ds;
     m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
+    int ds_index = m_InputDSs.size();
 
     vector<CRef<CAlnMixSeq> > ds_seq;
 
-    //store the bioseq handles
+    // check the widths
+    if (ds.IsSetWidths()) {
+        if (ds.GetWidths().size() != ds.GetDim()) {
+            string errstr = string("CAlnMix::Add(): ")
+                + "Dense-seg "
+                + NStr::IntToString(ds_index)
+                + " has incorrect widths size ("
+                + NStr::IntToString(ds.GetWidths().size())
+                + "). Should be equal to its dim ("
+                + NStr::IntToString(ds.GetDim()) + ").";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+        }
+    }
+
+    //store the seqs
     for (CAlnMap::TNumrow row = 0;  row < ds.GetDim();  row++) {
 
         CRef<CAlnMixSeq> aln_seq;
@@ -186,8 +230,15 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 // add this sequence
                 m_Seqs.push_back(aln_seq);
             
-                // mark if protein sequence
-                aln_seq->m_IsAA = false;
+                // AA or NA?
+                if (ds.IsSetWidths()) {
+                    if (ds.GetWidths()[row] == 1) {
+                        aln_seq->m_IsAA = true;
+                        m_ContainsAA = true;
+                    } else {
+                        m_ContainsNA = true;
+                    }
+                }
 
             } else {
                 aln_seq = it->second;
@@ -217,17 +268,37 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 
                 CRef<CSeq_id> seq_id(new CSeq_id);
                 seq_id->Assign(*aln_seq->m_BioseqHandle->GetSeqId());
-                m_SeqIds[seq_id] = aln_seq;
                 aln_seq->m_SeqId = seq_id;
                 aln_seq->m_DS_Count = 1;
 
                 // add this sequence
                 m_Seqs.push_back(aln_seq);
             
-                // mark if protein sequence
-                aln_seq->m_IsAA = aln_seq->m_BioseqHandle->GetBioseqCore()
-                    ->GetInst().GetMol() == CSeq_inst::eMol_aa;
-
+                // AA or NA?
+                if (aln_seq->m_BioseqHandle->GetBioseqCore()
+                    ->GetInst().GetMol() == CSeq_inst::eMol_aa) {
+                    aln_seq->m_IsAA = true;
+                    m_ContainsAA = true;
+                } else {
+                    m_ContainsNA = true;
+                }
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+                // Verify the widths (if exist)
+                if (ds.IsSetWidths()) {
+                    const int& width = ds.GetWidths()[row];
+                    if (width == 1  &&  aln_seq->m_IsAA != true  ||
+                        width == 3  &&  aln_seq->m_IsAA != false) {
+                        string errstr = string("CAlnMix::Add(): ")
+                            + "Incorrect width(" 
+                            + NStr::IntToString(width) +
+                            ") or molecule type(" + 
+                            (aln_seq->m_IsAA ? "AA" : "NA") +
+                            ").";
+                        NCBI_THROW(CAlnException, eInvalidSegment,
+                                   errstr);
+                    }
+                }
+#endif
             } else {
                 aln_seq = it->second;
                 aln_seq->m_DS_Count++;
@@ -281,7 +352,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                         match->m_AlnSeq2 = aln_seq2;
                         match->m_Start2 = start2;
                         match->m_Len = len;
-                        match->m_DSIndex = m_InputDSs.size();
+                        match->m_DSIndex = ds_index;
 
                         // determine the strand
                         match->m_StrandsDiffer = false;
@@ -427,11 +498,19 @@ void CAlnMix::x_Merge()
         }
     }}
 
+    // Set the widths if the mix contains both AA & NA
+    if (m_ContainsNA  &&  m_ContainsAA) {
+        ITERATE (TSeqs, seq_i, m_Seqs) {
+            (*seq_i)->m_Width = (*seq_i)->m_IsAA ? 1 : 3;
+        }
+    }
+
     // Sort matches by score
     stable_sort(m_Matches.begin(), m_Matches.end(), x_CompareAlnMatchScores);
 
     CAlnMixSeq * refseq = 0, * seq1 = 0, * seq2 = 0;
     TSeqPos start, start1, start2, len, curr_len;
+    int width1, width2;
     CAlnMixMatch * match;
     CAlnMixSeq::TMatchList::iterator match_list_iter1, match_list_iter2;
     CAlnMixSeq::TMatchList::iterator match_list_i;
@@ -525,6 +604,11 @@ void CAlnMix::x_Merge()
             match->m_AlnSeq2 = seq2;
             match->m_Start2 = start2;
 
+            width1 = seq1->m_Width;
+            if (seq2) {
+                width2 = seq2->m_Width;
+            }
+
             // this match is used erase from seq1 list
             if ( !first_refseq ) {
                 seq1->m_MatchList.erase(match_list_iter1);
@@ -603,15 +687,18 @@ void CAlnMix::x_Merge()
 #endif
                         // this match needs to be truncated
                         TSeqPos left_diff = 
-                            truncated_match->m_Start1 - match->m_Start1;
+                            (truncated_match->m_Start1 - match->m_Start1) / width1;
                         TSeqPos right_diff =
                             match->m_Len - truncated_match->m_Len - left_diff;
                         match->m_Len = curr_len =
                             len = truncated_match->m_Len;
                         match->m_Start1 = start1 = 
                             truncated_match->m_Start1;
-                        match->m_Start2 = start2 += match->m_StrandsDiffer ?
-                            right_diff : left_diff;
+                        if (seq2) {
+                            match->m_Start2 = start2 += 
+                                (match->m_StrandsDiffer ? right_diff : left_diff) *
+                                width2;
+                        }
                     }
                 }
             }
@@ -677,7 +764,7 @@ void CAlnMix::x_Merge()
                     TSignedSeqPos left_diff = 0;
                     if (start1 >= lo_start_i->first) {
                         left_diff = lo_start_i->first + 
-                            lo_start_i->second->m_Len -
+                            lo_start_i->second->m_Len * width1 -
                             start1;
                         if (left_diff < 0) {
                             left_diff = 0;
@@ -686,7 +773,7 @@ void CAlnMix::x_Merge()
 
                     TSignedSeqPos right_diff
                         = (start_i == starts.end() ? 0 :
-                           len - (start_i->first - start1));
+                           len * width1 - (start_i->first - start1));
                     if (right_diff < 0) {
                         right_diff = 0;
                     }
@@ -699,11 +786,13 @@ void CAlnMix::x_Merge()
                             //   x-------)
                             m_TruncateMap[match->m_DSIndex][start1] 
                                 = match;
-                            match->m_Start1 = start1 += left_diff;
-                            if (match->m_StrandsDiffer) {
-                                match->m_Start2 = start2 += right_diff;
-                            } else {
-                                match->m_Start2 = start2 += left_diff;
+                            match->m_Start1 = start1 += left_diff * width1;
+                            if (seq2) {
+                                if (match->m_StrandsDiffer) {
+                                    match->m_Start2 = start2 += right_diff * width2;
+                                } else {
+                                    match->m_Start2 = start2 += left_diff * width2;
+                                }
                             }
                             match->m_Len = len -= diff;
                             
@@ -730,11 +819,12 @@ void CAlnMix::x_Merge()
                 // look back
                 if (hi_start_i == starts.end()  &&  start_i != lo_start_i) {
                     CAlnMixSegment * prev_seg = lo_start_i->second;
-                    if (lo_start_i->first + prev_seg->m_Len > start1) {
+                    if (lo_start_i->first + prev_seg->m_Len * width1 >
+                        start1) {
                         // x----..   becomes  x-x--..
                         //   x--..
                         
-                        TSeqPos len1 = start1 - lo_start_i->first;
+                        TSeqPos len1 = (start1 - lo_start_i->first) / width1;
                         TSeqPos len2 = prev_seg->m_Len - len1;
                         
                         // create the second seg
@@ -750,11 +840,13 @@ void CAlnMix::x_Merge()
                             tmp_start_i = it->second;
                             if (seq->m_PositiveStrand ==
                                 seq1->m_PositiveStrand) {
-                                seq->m_Starts[tmp_start_i->first + len1]
+                                seq->m_Starts
+                                    [tmp_start_i->first + len1 * seq->m_Width]
                                     = seg;
                                 seg->m_StartIts[seq] = ++tmp_start_i;
                             } else {
-                                seq->m_Starts[tmp_start_i->first + len2]
+                                seq->m_Starts
+                                    [tmp_start_i->first + len2 * seq->m_Width]
                                     = prev_seg;
                                 seq->m_Starts[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
@@ -784,7 +876,7 @@ void CAlnMix::x_Merge()
                         seg = new CAlnMixSegment;
                         TSeqPos len1 = 
                             seg->m_Len = prev_seg->m_Len - curr_len;
-                        start += curr_len;
+                        start += curr_len * width1;
 
                         // truncate the first seg
                         prev_seg->m_Len = curr_len;
@@ -796,11 +888,13 @@ void CAlnMix::x_Merge()
                             tmp_start_i = it->second;
                             if (seq->m_PositiveStrand ==
                                 seq1->m_PositiveStrand) {
-                                seq->m_Starts[tmp_start_i->first + curr_len]
+                                seq->m_Starts[tmp_start_i->first +
+                                             curr_len * seq->m_Width]
                                     = seg;
                                 seg->m_StartIts[seq] = ++tmp_start_i;
                             } else{
-                                seq->m_Starts[tmp_start_i->first + len1]
+                                seq->m_Starts[tmp_start_i->first +
+                                             len1 * seq->m_Width]
                                     = prev_seg;
                                 seq->m_Starts[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
@@ -816,7 +910,7 @@ void CAlnMix::x_Merge()
                     } else {
                         // x----)     becomes  x----)x--)
                         // x-------)
-                        start += prev_seg->m_Len;
+                        start += prev_seg->m_Len * width1;
                         curr_len -= prev_seg->m_Len;
                         start_i++;
                     }
@@ -830,7 +924,7 @@ void CAlnMix::x_Merge()
                         start + curr_len > start_i->first) {
                         //       x--..
                         // x--------..
-                        seg->m_Len = start_i->first - start;
+                        seg->m_Len = (start_i->first - start) / width1;
                         seg->m_DSIndex = match->m_DSIndex;
                     } else {
                         //       x-----)
@@ -840,7 +934,7 @@ void CAlnMix::x_Merge()
                         hi_start_i = start_i;
                         hi_start_i--; // DONE!
                     }
-                    start += seg->m_Len;
+                    start += seg->m_Len * width1;
                     curr_len -= seg->m_Len;
                     if (lo_start_i == start_i) {
                         lo_start_i--;
@@ -858,7 +952,7 @@ void CAlnMix::x_Merge()
                         CRef<CAlnMixSeq> row (new CAlnMixSeq);
                         row->m_BioseqHandle = seq2->m_BioseqHandle;
                         row->m_SeqId = seq2->m_SeqId;
-                        row->m_Factor = seq2->m_Factor;
+                        row->m_Width = seq2->m_Width;
                         row->m_SeqIndex = seq2->m_SeqIndex;
                         if (m_MergeFlags & fQuerySeqMergeOnly) {
                             row->m_DSIndex = match->m_DSIndex;
@@ -886,7 +980,7 @@ void CAlnMix::x_Merge()
                     = starts2.lower_bound(start2);
                 start_i = match->m_StrandsDiffer ? hi_start_i : lo_start_i;
 
-                while(start < start2 + len) {
+                while(start < start2 + len * width2) {
                     if (start2_i != starts2.end() &&
                         start2_i->first == start) {
                         // this seg already exists
@@ -907,7 +1001,7 @@ void CAlnMix::x_Merge()
                         start2_i--;
                         start_i->second->m_StartIts[seq2] = start2_i;
                     }
-                    start += start_i->second->m_Len;
+                    start += start_i->second->m_Len * width2;
                     start2_i++;
                     if (match->m_StrandsDiffer) {
                         start_i--;
@@ -935,6 +1029,10 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
     const TSeqPos&                start1  = match->m_Start1;
     const TSeqPos&                start2  = match->m_Start2;
     const TSeqPos&                len     = match->m_Len;
+    const int&                    width1  = seq1->m_Width;
+    const int&                    width2  = seq2->m_Width;
+    TSeqPos                       start1_plus_len = start1 + len * width1;
+    TSeqPos                       start2_plus_len = start2 + len * width2;
     CAlnMixSeq::TStarts::iterator start_i;
 
     // subject sequences go on separate rows if requested
@@ -961,6 +1059,12 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             return false;
         }
 
+        // check frame
+        if (seq2->m_Width == 3  &&
+            start2 % 3 != starts2.begin()->first % 3) {
+            return false;
+        }
+
         start_i = starts2.lower_bound(start2);
 
         // check below
@@ -973,12 +1077,12 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                     start_i->second->m_StartIts.find(seq1);
                 if (start_it_i != start_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
-                        if (start_it_i->second->first < start1 + len) {
+                        if (start_it_i->second->first < start1_plus_len) {
                             return false;
                         }
                     } else {
                         if (start_it_i->second->first + 
-                            start_i->second->m_Len > start1) {
+                            start_i->second->m_Len * width1 > start1) {
                             return false;
                         }
                     }
@@ -986,7 +1090,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             }
 
             // check for overlap
-            if (start_i->first + start_i->second->m_Len > start2) {
+            if (start_i->first + start_i->second->m_Len * width2 > start2) {
                 return false;
             }
             start_i++;
@@ -994,15 +1098,15 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
 
         // check the overlap for consistency
         while (start_i != starts2.end()  &&  
-               start_i->first < start2 + len) {
+               start_i->first < start2_plus_len) {
             if ( !m_IndependentDSs ) {
                 CAlnMixSegment::TStartIterators::iterator start_it_i =
                     start_i->second->m_StartIts.find(seq1);
                 if (start_it_i != start_i->second->m_StartIts.end()) {
                     if (start_it_i->second->first != start1 + 
                         (match->m_StrandsDiffer ?
-                         start2 + len - 
-                         (start_i->first + start_i->second->m_Len) :
+                         start2_plus_len - 
+                         (start_i->first + start_i->second->m_Len * width2) :
                          start_i->first - start2)) {
                         return false;
                     }
@@ -1019,11 +1123,11 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                 if (start_it_i != start_i->second->m_StartIts.end()) {
                     if (match->m_StrandsDiffer) {
                         if (start_it_i->second->first + 
-                            start_i->second->m_Len > start1) {
+                            start_i->second->m_Len * width1 > start1) {
                             return false;
                         }
                     } else {
-                        if (start_it_i->second->first < start1 + len) {
+                        if (start_it_i->second->first < start1_plus_len) {
                             return false;
                         }
                     }
@@ -1040,15 +1144,15 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
         } else {
             CAlnMixSegment::TStartIterators::iterator it;
             TSeqPos tmp_start =
-                match->m_StrandsDiffer ? start2 + len : start2;
+                match->m_StrandsDiffer ? start2_plus_len : start2;
             while (start_i != starts1.end()  &&
-                   start_i->first < start1 + len) {
+                   start_i->first < start1_plus_len) {
 
                 CAlnMixSegment::TStartIterators& its = 
                     start_i->second->m_StartIts;
 
                 if (match->m_StrandsDiffer) {
-                    tmp_start -= start_i->second->m_Len;
+                    tmp_start -= start_i->second->m_Len * width2;
                 }
 
                 if ((it = its.find(seq2)) != its.end()) {
@@ -1059,7 +1163,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                 }
 
                 if ( !match->m_StrandsDiffer ) {
-                    tmp_start += start_i->second->m_Len;
+                    tmp_start += start_i->second->m_Len * width2;
                 }
 
                 start_i++;
@@ -1130,6 +1234,23 @@ void CAlnMix::x_CreateSegmentsVector()
         }
     }
 
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+    iterate (TSeqs, row_i, m_Rows) {
+        iterate (CAlnMixSegment::TStarts, st_i, (*row_i)->m_Starts) {
+            iterate(CAlnMixSegment::TStartIterators,
+                    st_it_i, (*st_i).second->m_StartIts) {
+                // both should point to the same seg
+                if ((*st_it_i).second->second != (*st_i).second) {
+                    NCBI_THROW(CAlnException, eMergeFailure,
+                               "CAlnMix::x_CreateSegmentsVector(): "
+                               "Internal error: Segments messed up.");
+                }
+            }
+        }
+         
+    }       
+#endif
+
     TSeqs::iterator refseq_it = m_Rows.begin(); 
     while (true) {
         CAlnMixSeq * refseq = 0;
@@ -1161,6 +1282,28 @@ void CAlnMix::x_CreateSegmentsVector()
                     CAlnMixSeq * row = start_its_i->first;
 
                     if (row->m_StartIt != start_its_i->second) {
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+                        if (row->m_PositiveStrand ?
+                            row->m_StartIt->first >
+                            start_its_i->second->first :
+                            row->m_StartIt->first <
+                            start_its_i->second->first) {
+                            string errstr =
+                                string("CAlnMix::x_CreateSegmentsVector():")
+                                + " Internal error: Integrity broken" +
+                                " row=" + NStr::IntToString(row->m_RowIndex) +
+                                " seq=" + NStr::IntToString(row->m_SeqIndex)
+                                + " row->m_StartIt->first="
+                                + NStr::IntToString(row->m_StartIt->first)
+                                + " start_its_i->second->first=" +
+                                NStr::IntToString(start_its_i->second->first)
+                                + " refseq->m_StartIt->first=" +
+                                NStr::IntToString(refseq->m_StartIt->first)
+                                + " strand=" +
+                                (row->m_PositiveStrand ? "plus" : "minus");
+                            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+                        }
+#endif
                         seg_stack.push(row->m_StartIt->second);
                         pop_seg = false;
                         break;
@@ -1184,11 +1327,14 @@ void CAlnMix::x_CreateSegmentsVector()
                             string errstr =
                                 string("CAlnMix::x_CreateSegmentsVector():")
                                 + " Internal error: Integrity broken" +
-                                " row=" + NStr::IntToString(row->m_RowIndex)
+                                " row=" + NStr::IntToString(row->m_RowIndex) +
+                                " seq=" + NStr::IntToString(row->m_SeqIndex)
                                 + " row->m_StartIt->first="
                                 + NStr::IntToString(row->m_StartIt->first)
                                 + " start_its_i->second->first=" +
                                 NStr::IntToString(start_its_i->second->first)
+                                + " refseq->m_StartIt->first=" +
+                                NStr::IntToString(refseq->m_StartIt->first)
                                 + " strand=" +
                                 (row->m_PositiveStrand ? "plus" : "minus");
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
@@ -1256,20 +1402,22 @@ void CAlnMix::x_CreateSegmentsVector()
                 TSignedSeqPos& prev_start = starts[rowidx];
                 TSeqPos& prev_len = lens[rowidx];
                 TSeqPos start = start_its_i->second->first;
+                const bool plus = row->m_PositiveStrand;
+                const int& width = row->m_Width;
+                TSeqPos prev_start_plus_len = prev_start + prev_len * width;
+                TSeqPos start_plus_len = start + len * width;
                 if (prev_start >= 0  &&  start >= 0) {
-                    if (row->m_PositiveStrand  &&  
-                        prev_start + prev_len < start  ||
-                        !row->m_PositiveStrand  &&
-                        start + len < prev_start) {
+                    if (plus  &&  prev_start_plus_len < start  ||
+                        !plus  &&  start_plus_len < prev_start) {
                         // create a new seg
                         CRef<CAlnMixSegment> seg (new CAlnMixSegment);
                         TSeqPos new_start;
                         if (row->m_PositiveStrand) {
-                            new_start = prev_start + prev_len;
-                            seg->m_Len = start - new_start;
+                            new_start = prev_start + prev_len * width;
+                            seg->m_Len = (start - new_start) / width;
                         } else {
-                            new_start = start + len;
-                            seg->m_Len = prev_start - new_start;
+                            new_start = start_plus_len;
+                            seg->m_Len = (prev_start - new_start) / width;
                         }                            
                         row->m_Starts[new_start] = seg;
                         CAlnMixSeq::TStarts::iterator start_i =
@@ -1338,19 +1486,21 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
                     seq1 = seg1->m_StartIts.begin()->first;
                     
                     start1 = seg1->m_StartIts[seq1]->first;
+                    TSeqPos start1_plus_len = 
+                        start1 + seg1->m_Len * seq1->m_Width;
                         
                     if (seq1->m_PositiveStrand) {
                         seq1->m_BioseqHandle->GetSeqVector
                             (CBioseq_Handle::eCoding_Iupac,
                              CBioseq_Handle::eStrand_Plus).
-                            GetSeqData(start1, start1 + seg1->m_Len, s1);
+                            GetSeqData(start1, start1_plus_len, s1);
                     } else {
                         CSeqVector seq_vec = 
                             seq1->m_BioseqHandle->GetSeqVector
                             (CBioseq_Handle::eCoding_Iupac,
                              CBioseq_Handle::eStrand_Minus);
                         TSeqPos size = seq_vec.size();
-                        seq_vec.GetSeqData(size - (start1 + seg1->m_Len),
+                        seq_vec.GetSeqData(size - start1_plus_len,
                                            size - start1, 
                                            s1);
                     }                                
@@ -1364,20 +1514,22 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
                 
                 string s2;
 
-                TSeqPos start2 = seg2->m_StartIts[seq2]->first;
+                const TSeqPos& start2 = seg2->m_StartIts[seq2]->first;
+                TSeqPos start2_plus_len = 
+                    start2 + seg2->m_Len * seq2->m_Width;
                             
                 if (seq2->m_PositiveStrand) {
                     seq2->m_BioseqHandle->GetSeqVector
                         (CBioseq_Handle::eCoding_Iupac,
                          CBioseq_Handle::eStrand_Plus).
-                        GetSeqData(start2, start2 + seg2->m_Len, s2);
+                        GetSeqData(start2, start2_plus_len, s2);
                 } else {
                     CSeqVector seq_vec = 
                         seq2->m_BioseqHandle->GetSeqVector
                         (CBioseq_Handle::eCoding_Iupac,
                          CBioseq_Handle::eStrand_Minus);
                     TSeqPos size = seq_vec.size();
-                    seq_vec.GetSeqData(size - (start2 + seg2->m_Len),
+                    seq_vec.GetSeqData(size - start2_plus_len,
                                        size - start2, 
                                        s2);
                 }                                
@@ -1497,7 +1649,8 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                         TSeqPos this_start = orig_start + 
                             (seq->m_PositiveStrand ? 
                              len_so_far :
-                             orig_len - len_so_far - seg->m_Len);
+                             orig_len - len_so_far - seg->m_Len) *
+                            seq->m_Width;
 
                         // create the bindings:
                         seq->m_Starts[this_start] = seg;
@@ -1543,11 +1696,15 @@ void CAlnMix::x_CreateDenseg()
     CDense_seg::TStarts&  starts  = m_DS->SetStarts();
     CDense_seg::TStrands& strands = m_DS->SetStrands();
     CDense_seg::TLens&    lens    = m_DS->SetLens();
+    CDense_seg::TWidths&  widths  = m_DS->SetWidths();
 
     ids.resize(numrows);
     lens.resize(numsegs);
     starts.resize(num, -1);
     strands.resize(num, eNa_strand_minus);
+    if (m_ContainsNA  &&  m_ContainsAA) {
+        widths.resize(numrows);
+    }
 
     // ids
     for (numrow = 0;  numrow < numrows;  numrow++) {
@@ -1573,6 +1730,15 @@ void CAlnMix::x_CreateDenseg()
             }
         }
     }
+
+    // widths
+    if (m_ContainsNA  &&  m_ContainsAA) {
+        for (numrow = 0;  numrow < numrows;  numrow++) {
+            widths[numrow] = m_Rows[numrow]->m_Width;
+        }
+    }
+
+
 #if OBJECTS_ALNMGR___ALNMIX__DBG
     offset = 0;
     for (numrow = 0;  numrow < numrows;  numrow++) {
@@ -1600,7 +1766,9 @@ void CAlnMix::x_CreateDenseg()
                     NCBI_THROW(CAlnException, eMergeFailure, errstr);
                 }
                 max_start = start + 
-                  lens[plus ? numseg : numsegs - 1 - numseg];
+                    lens[plus ? numseg : numsegs - 1 - numseg] *
+                    (m_ContainsNA  &&  m_ContainsAA ?
+                     widths[numrow] : 1);
             }
             if (strands[numrow] == eNa_strand_plus) {
                 offset += numrows;
@@ -1620,6 +1788,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2003/08/20 14:34:58  todorov
+* Support for NA2AA Densegs
+*
 * Revision 1.65  2003/08/01 20:49:26  todorov
 * Changed the control of the main Merge() loop
 *

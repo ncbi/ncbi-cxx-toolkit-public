@@ -34,7 +34,8 @@
 */
 
 #include <objtools/alnmgr/alnvec.hpp>
-#include <objects/seqalign/Seq_align.hpp>
+//#include <objects/seqalign/Seq_align.hpp>
+#include <Seq_align.hpp>
 #include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -167,6 +168,8 @@ private:
     TSeqIdMap                   m_SeqIds;
     TTruncateDSIndexMap         m_TruncateMap;
     TTruncateDSIndexMap         m_DeleteMap;
+    bool                        m_ContainsAA;
+    bool                        m_ContainsNA;
 };
 
 
@@ -194,7 +197,7 @@ public:
     CAlnMixSeq(void) 
         : m_DS_Count(0),
           m_Score(0),
-          m_Factor(1),
+          m_Width(1),
           m_RefBy(0),
           m_ExtraRow(0),
           m_DSIndex(0)
@@ -208,7 +211,7 @@ public:
     CRef<CSeq_id>         m_SeqId;
     int                   m_Score;
     bool                  m_IsAA;
-    int                   m_Factor;
+    int                   m_Width;
     bool                  m_PositiveStrand;
     TStarts               m_Starts;
     CAlnMixSeq *          m_RefBy;
@@ -297,20 +300,6 @@ const CSeq_align& CAlnMix::GetSeqAlign() const
 }
 
 
-inline
-void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
-{
-    if (m_InputAlnsMap.find((void *)&aln) == m_InputAlnsMap.end()) {
-        // add only if not already added
-        m_InputAlnsMap[(void *)&aln] = &aln;
-        m_InputAlns.push_back(CConstRef<CSeq_align>(&aln));
-        CTypeConstIterator<CDense_seg> i;
-        for (i = ConstBegin(aln); i; ++i) {
-            Add(*i, flags);
-        }
-    }
-}
-
 
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
@@ -324,6 +313,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/08/20 14:35:14  todorov
+* Support for NA2AA Densegs
+*
 * Revision 1.28  2003/06/26 21:35:53  todorov
 * + fFillUnalignedRegions
 *

@@ -134,6 +134,7 @@ public:
     TSignedSeqPos GetStop   (TNumrow row, TNumseg seg, int offset = 0) const;
     TSignedRange  GetRange  (TNumrow row, TNumseg seg, int offset = 0) const;
     TSeqPos       GetLen    (             TNumseg seg, int offset = 0) const;
+    TSeqPos       GetSeqLen (TNumrow row, TNumseg seg, int offset = 0) const;
     TSegTypeFlags GetSegType(TNumrow row, TNumseg seg, int offset = 0) const;
     
     TSegTypeFlags GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const;
@@ -305,7 +306,8 @@ protected:
     TNumseg           x_GetRawSegFromSeg(TNumseg seg)              const;
     TSignedSeqPos     x_GetRawStart     (TNumrow row, TNumseg seg) const;
     TSignedSeqPos     x_GetRawStop      (TNumrow row, TNumseg seg) const;
-    TSeqPos           x_GetRawLen       (TNumseg seg)              const;
+    TSeqPos           x_GetLen          (TNumrow row, TNumseg seg) const;
+    int               x_GetWidth        (TNumrow row)              const;
 
     bool x_SkipType               (TSegTypeFlags type,
                                    TGetChunkFlags flags) const;
@@ -322,6 +324,7 @@ protected:
     const CDense_seg::TLens&        m_Lens;
     const CDense_seg::TStrands&     m_Strands;
     const CDense_seg::TScores&      m_Scores;
+    const CDense_seg::TWidths&      m_Widths;
     TNumrow                         m_Anchor;
     vector<TNumseg>                 m_AlnSegIdx;
     mutable vector<TNumseg>         m_SeqLeftSegs;
@@ -347,6 +350,7 @@ CAlnMap::CAlnMap(const CDense_seg& ds)
       m_Lens(m_DS->GetLens()),
       m_Strands(m_DS->GetStrands()),
       m_Scores(m_DS->GetScores()),
+      m_Widths(m_DS->GetWidths()),
       m_Anchor(-1),
       m_RawSegTypes(0)
 {
@@ -365,6 +369,7 @@ CAlnMap::CAlnMap(const CDense_seg& ds, TNumrow anchor)
       m_Lens(m_DS->GetLens()),
       m_Strands(m_DS->GetStrands()),
       m_Scores(m_DS->GetScores()),
+      m_Widths(m_DS->GetWidths()),
       m_Anchor(-1),
       m_RawSegTypes(0)
 {
@@ -468,17 +473,23 @@ TSignedSeqPos CAlnMap::x_GetRawStart(TNumrow row, TNumseg seg) const
 }
 
 inline
-TSeqPos CAlnMap::x_GetRawLen(TNumseg seg) const
+int CAlnMap::x_GetWidth(TNumrow row) const
 {
-    return m_Lens[seg];
+    return
+        m_Widths.size() == m_NumRows ? m_Widths[row] : 1;
 }
 
+inline
+TSeqPos CAlnMap::x_GetLen(TNumrow row, TNumseg seg) const
+{
+    return m_Lens[seg] * x_GetWidth(row);
+}
 
 inline
 TSignedSeqPos CAlnMap::x_GetRawStop(TNumrow row, TNumseg seg) const
 {
     TSignedSeqPos start = x_GetRawStart(row, seg);
-    return ((start > -1) ? (start + (TSignedSeqPos)x_GetRawLen(seg) - 1)
+    return ((start > -1) ? (start + (TSignedSeqPos)x_GetLen(row, seg) - 1)
             : -1);
 }
 
@@ -519,11 +530,19 @@ TSeqPos CAlnMap::GetLen(TNumseg seg, int offset) const
 
 
 inline
+TSeqPos CAlnMap::GetSeqLen(TNumrow row, TNumseg seg, int offset) const
+{
+    return x_GetLen(row, x_GetRawSegFromSeg(seg) + offset);
+}
+
+
+inline
 TSignedSeqPos CAlnMap::GetStop(TNumrow row, TNumseg seg, int offset) const
 {
     TSignedSeqPos start = GetStart(row, seg, offset);
-    return ((start > -1) ? (start + (TSignedSeqPos)GetLen(seg, offset) - 1)
-            : -1);
+    return ((start > -1) ? 
+            (start + (TSignedSeqPos)GetSeqLen(row, seg, offset) - 1) :
+            -1);
 }
 
 
@@ -540,7 +559,7 @@ CAlnMap::GetRange(TNumrow row, TNumseg seg, int offset) const
 {
     TSignedSeqPos start = GetStart(row, seg, offset);
     if (start > -1) {
-        return TSignedRange(start, start + GetLen(seg, offset) - 1);
+        return TSignedRange(start, start + GetSeqLen(row, seg, offset) - 1);
     } else {
         return TSignedRange(-1, -1);
     }
@@ -610,6 +629,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/08/20 14:35:14  todorov
+* Support for NA2AA Densegs
+*
 * Revision 1.24  2003/07/17 22:46:56  todorov
 * name change +TSeqPosList
 *

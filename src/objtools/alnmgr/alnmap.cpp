@@ -135,7 +135,7 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     // is it seq or gap?
     if (start >= 0) {
         flags |= fSeq;
-        cont_next_start = start + m_Lens[seg];
+        cont_next_start = start + x_GetLen(row, seg);
         cont_prev_stop  = start;
     }
 
@@ -159,7 +159,7 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
             if ((flags & fSeq) && 
                 (IsPositiveStrand(row) ?
                  start != (TSignedSeqPos)cont_next_start :
-                 start + m_Lens[r_seg] != cont_prev_stop)) {
+                 start + x_GetLen(row, r_seg) != cont_prev_stop)) {
                 flags |= fUnalignedOnRight;
             }
             flags &= ~(flags & fNoSeqOnRight);
@@ -178,7 +178,7 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
         if ((start = m_Starts[l_index]) >= 0) {
             if ((flags & fSeq) && 
                 (IsPositiveStrand(row) ?
-                 start + m_Lens[l_seg] != cont_prev_stop :
+                 start + x_GetLen(row, l_seg) != cont_prev_stop :
                  start != (TSignedSeqPos)cont_next_start)) {
                 flags |= fUnalignedOnLeft;
             }
@@ -296,7 +296,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
         }
         if (cur <= top && start >= 0) {
             if (sseq_pos >= start &&
-                seq_pos < start + m_Lens[plus ? cur : last - cur]) {
+                seq_pos < start + x_GetLen(row, plus ? cur : last - cur)) {
                 return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
@@ -316,7 +316,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
         }
         if (cur >= btm && start >= 0) {
             if (sseq_pos >= start
-                &&  seq_pos < start + m_Lens[plus ? cur : last - cur]) {
+                &&  seq_pos < start + x_GetLen(row, plus ? cur : last - cur)) {
                 return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
@@ -352,7 +352,7 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
     }
 
     TSeqPos start = m_Starts[raw_seg * m_NumRows + row];
-    TSeqPos len   = m_Lens[raw_seg];
+    TSeqPos len   = x_GetLen(row, raw_seg);
     TSeqPos stop  = start + len -1;
     bool    plus  = IsPositiveStrand(row);
 
@@ -400,9 +400,9 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
 
     // main case: seq_pos is within an alnseg
     //assert(seq_pos >= start  &&  seq_pos <= stop);
-    TSeqPos delta = seq_pos - start;
+    TSeqPos delta = (seq_pos - start) / x_GetWidth(row);
     return m_AlnStarts[seg.GetAlnSeg()]
-        + (plus ? delta : len - 1 - delta);
+        + (plus ? delta : m_Lens[raw_seg] - 1 - delta);
 }
 
 TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
@@ -416,11 +416,11 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
     TNumseg seg = GetSeg(aln_pos);
     TSignedSeqPos pos = GetStart(for_row, seg);
     if (pos >= 0) {
-        TSeqPos delta = aln_pos - GetAlnStart(seg);
+        TSeqPos delta = (aln_pos - GetAlnStart(seg)) * x_GetWidth(for_row);
         if (IsPositiveStrand(for_row)) {
             pos += delta;
         } else {
-            pos += GetLen(seg) - 1 - delta;
+            pos += x_GetLen(for_row, seg) - 1 - delta;
         }
     } else if (dir != eNone) {
         // it is a gap, search in the neighbouring segments
@@ -486,10 +486,13 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
     TSeqPos delta
         = seq_pos - m_Starts[raw_seg * m_NumRows + row];
+    if (x_GetWidth(for_row) != x_GetWidth(row)) {
+        delta = delta / x_GetWidth(row) * x_GetWidth(for_row);
+    }
 
     return (GetStart(for_row, raw_seg)
             + (StrandSign(row) == StrandSign(for_row) ? delta
-               : m_Lens[raw_seg] - 1 - delta));
+               : x_GetLen(for_row, raw_seg) - 1 - delta));
 }
 
 
@@ -536,12 +539,12 @@ TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
             seg = m_NumSegs;
             while (seg--) {
                 if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                    return start + m_Lens[seg] - 1;
+                    return start + x_GetLen(row, seg) - 1;
                 }
             }
             seg = -1; // not found; reset
         } else {
-            return m_Starts[seg * m_NumRows + row] + m_Lens[seg] - 1;
+            return m_Starts[seg * m_NumRows + row] + x_GetLen(row, seg) - 1;
         }
     } else {
         TNumseg& seg = m_SeqLeftSegs[row];
@@ -550,12 +553,12 @@ TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
             seg = -1;
             while (++seg < m_NumSegs) {
                 if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                    return start + m_Lens[seg] - 1;
+                    return start + x_GetLen(row, seg) - 1;
                 }
             }
             seg = -1; // not found; reset
         } else {
-            return m_Starts[seg * m_NumRows + row] + m_Lens[seg] - 1;
+            return m_Starts[seg * m_NumRows + row] + x_GetLen(row, seg) - 1;
         }
     }
     return -1;
@@ -793,7 +796,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     from = m_AlnMap.m_Starts[start_seg * m_AlnMap.m_NumRows
                                      + m_Row];
     if (from >= 0) {
-        to = from + m_AlnMap.m_Lens[start_seg] - 1;
+        to = from + m_AlnMap.x_GetLen(m_Row, start_seg) - 1;
     } else {
         from = -1;
         to = -1;
@@ -809,10 +812,10 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom(),
                                       chunk->GetRange().GetTo()
-                                      + m_AlnMap.m_Lens[seg]);
+                                      + m_AlnMap.x_GetLen(m_Row, seg));
             } else {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom()
-                                      - m_AlnMap.m_Lens[seg],
+                                      - m_AlnMap.x_GetLen(m_Row, seg),
                                       chunk->GetRange().GetTo());
             }
         }
@@ -862,11 +865,14 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         if (!chunk->IsGap()) {
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().Set
-                    (chunk->GetRange().GetFrom() + m_LeftDelta,
+                    (chunk->GetRange().GetFrom()
+                     + m_LeftDelta * m_AlnMap.x_GetWidth(m_Row),
                      chunk->GetRange().GetTo());
             } else {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom(),
-                                      chunk->GetRange().GetTo() - m_LeftDelta);
+                                      chunk->GetRange().GetTo()
+                                      - m_LeftDelta
+                                      * m_AlnMap.x_GetWidth(m_Row));
             }
             chunk->SetType(chunk->GetType() & ~fNoSeqOnLeft);
         }            
@@ -877,10 +883,12 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().Set
                     (chunk->GetRange().GetFrom(),
-                     chunk->GetRange().GetTo() - m_RightDelta);
+                     chunk->GetRange().GetTo()
+                     - m_RightDelta * m_AlnMap.x_GetWidth(m_Row));
             } else {
                 chunk->SetRange().Set
-                    (chunk->GetRange().GetFrom() + m_RightDelta,
+                    (chunk->GetRange().GetFrom()
+                     + m_RightDelta * m_AlnMap.x_GetWidth(m_Row),
                      chunk->GetRange().GetTo());
             }
             chunk->SetType(chunk->GetType() & ~fNoSeqOnRight);
@@ -898,6 +906,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/08/20 14:34:58  todorov
+* Support for NA2AA Densegs
+*
 * Revision 1.35  2003/07/17 22:47:13  todorov
 * name change
 *

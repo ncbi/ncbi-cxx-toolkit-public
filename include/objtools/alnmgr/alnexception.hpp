@@ -49,6 +49,7 @@ public:
         eInvalidRow,
         eInvalidSegment,
         eInvalidDenseg,
+        eTranslateFailure,
         eMergeFailure,
         eUnknownMergeFailure
     };
@@ -64,6 +65,7 @@ public:
         case eInvalidRow:           return "eInvalidRow";
         case eInvalidSegment:       return "eInvalidSegment";
         case eInvalidDenseg:        return "eInvalidDenseg";
+        case eTranslateFailure:     return "eTranslateFailure";
         case eMergeFailure:         return "eMergeFailure";
         case eUnknownMergeFailure:  return "eUnknownMergeFailure";
         default:                    return CException::GetErrCodeString();
@@ -80,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/20 14:35:14  todorov
+ * Support for NA2AA Densegs
+ *
  * Revision 1.7  2003/07/15 20:50:40  todorov
  * +eInvalidSeqId
  *

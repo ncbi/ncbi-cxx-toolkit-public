@@ -44,6 +44,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 
 // Object Manager includes
 #include <objmgr/gbloader.hpp>
@@ -222,12 +223,15 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 
     bool anchored = IsSetAnchor();
     bool plus     = IsPositiveStrand(row);
+    int  width    = x_GetWidth(row);
+
+    scrn_width *= width;
 
     const bool record_inserts = insert_starts && insert_lens;
     const bool record_coords  = scrn_width && scrn_lefts && scrn_rights;
 
     // allocate space for the row
-    buffer.reserve(aln_len + 1);
+    buffer.reserve(aln_len * width + 1);
     string buff;
     
     // in order to make sure m_Seq{Left,Right}Segs[row] are initialized
@@ -242,15 +246,17 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
          seg < m_NumSegs;
          ++seg, pos += m_NumRows, anchor_pos += m_NumRows) {
         
+        const TSeqPos& seg_len = m_Lens[seg];
+
         start = m_Starts[pos];
-        len = m_Lens[seg];
+        len = seg_len * width;
 
         if (anchored  &&  m_Starts[anchor_pos] < 0) {
             if (start >= 0) {
                 // record the insert if requested
                 if (record_inserts) {
                     insert_starts->push_back(start);
-                    insert_aln_starts->push_back(aln_pos);
+                    insert_aln_starts->push_back(aln_pos / width);
                     insert_lens->push_back(start + len - 1);
                 }
             }
@@ -287,9 +293,9 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                     nscrns = (aln_pos + len - scrn_pos) / scrn_width;
                     curr_pos = aln_pos;
                     for (int i = 0; i < nscrns; i++) {
-                        delta = plus ?
-                            scrn_width - (curr_pos - scrn_pos) :
-                            curr_pos - scrn_pos - scrn_width;
+                        delta = (plus ?
+                                 scrn_width - (curr_pos - scrn_pos) :
+                                 curr_pos - scrn_pos - scrn_width);
                         
                         scrn_lefts->push_back(scrn_lft_seq_pos);
                         if (plus ?
@@ -322,7 +328,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                 }
             } else {
                 // add appropriate number of gap/end chars
-                char* ch_buff = new char[len+1];
+                
+                char* ch_buff = new char[seg_len + 1];
                 char fill_ch;
                 
                 if (seg < left_seg  ||  seg > right_seg) {
@@ -331,8 +338,8 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                     fill_ch = GetGapChar(row);
                 }
                 
-                memset(ch_buff, fill_ch, len);
-                ch_buff[len] = 0;
+                memset(ch_buff, fill_ch, seg_len);
+                ch_buff[seg_len] = 0;
                 buffer += ch_buff;
                 delete[] ch_buff;
             }
@@ -702,6 +709,7 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
     const char * res1 = s1.c_str();
     const char * res2 = s2.c_str();
     const char * end1 = res1 + s1.length();
+    const char * end2 = res2 + s2.length();
     
     if (s1_is_prot  &&  s2_is_prot) {
         if (s_AlnVecBlosum62Map.empty()) {
@@ -730,11 +738,42 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
             }
         }
     } else {
-        NCBI_THROW(CAlnException, eInvalidRequest,
-                   "CAlnVec::CalculateScore(): "
-                   "Mixing prot and nucl not implemented yet.");
+        string t;
+        if (s1_is_prot) {
+            TranslateNAToAA(s2, t);
+            for ( ;  res1 != end1;  res1++, res2++) {
+                score += s_AlnVecBlosum62Map[*res1][*res2];
+            }
+        } else {
+            TranslateNAToAA(s1, t);
+            for ( ;  res2 != end2;  res1++, res2++) {
+                score += s_AlnVecBlosum62Map[*res1][*res2];
+            }
+        }
     }
     return score;
+}
+
+
+void CAlnVec::TranslateNAToAA(const string& na, string& aa)
+{
+    if (na.size() % 3) {
+        NCBI_THROW(CAlnException, eTranslateFailure,
+                   "CAlnVec::TranslateNAToAA(): "
+                   "NA size expected to be divizible by 3");
+    }
+
+    const CTrans_table& tbl = CGen_code_table::GetTransTable(1);
+
+    unsigned int i, state;
+
+    string::const_iterator res = na.begin();
+    while (res != na.end()) {
+        for (i = 0; i < 3; i++, res++) {
+            state = tbl.NextCodonState (state, *res);
+        }
+        aa.push_back(tbl.GetCodonResidue(state));
+    }
 }
 
 
@@ -800,6 +839,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/08/20 14:34:58  todorov
+* Support for NA2AA Densegs
+*
 * Revision 1.38  2003/07/23 20:26:14  todorov
 * fixed an unaligned pieces coords problem in GetWhole..
 *

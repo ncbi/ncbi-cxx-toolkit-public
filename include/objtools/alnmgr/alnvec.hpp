@@ -116,8 +116,9 @@ public:
     int CalculateScore(TNumrow row1, TNumrow row2);
 
     // static utilities
-    static int  CalculateScore(const string& s1, const string& s2,
-                               bool s1_is_prot, bool s2_is_prot);
+    static void TranslateNAToAA(const string& na, string& aa);
+    static int  CalculateScore (const string& s1, const string& s2,
+                                bool s1_is_prot, bool s2_is_prot);
     
     // temporaries for conversion (see note below)
     static unsigned char FromIupac(unsigned char c);
@@ -125,8 +126,8 @@ public:
 
 protected:
 
-    CSeqVector& x_GetSeqVector         (TNumrow row) const;
-    CSeqVector& x_GetConsensusSeqVector(void)        const;
+    CSeqVector& x_GetSeqVector         (TNumrow row)       const;
+    CSeqVector& x_GetConsensusSeqVector(void)              const;
 
     mutable CRef<CObjectManager>    m_ObjMgr;
     mutable CRef<CScope>            m_Scope;
@@ -154,11 +155,13 @@ private:
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
 
+
 inline
 bool CAlnVec::IsSetConsensus(void) const
 {
     return (m_ConsensusSeq != -1);
 }
+
 
 inline
 CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
@@ -171,6 +174,7 @@ CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
 
     return m_ConsensusSeq;
 }
+
 
 inline 
 CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
@@ -198,13 +202,26 @@ string& CAlnVec::GetSeqString(string& buffer,
                               TNumrow row,
                               TSeqPos seq_from, TSeqPos seq_to) const
 {
-    if (IsPositiveStrand(row)) {
-        x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
+    if (x_GetWidth(row) == 3) {
+        string buff;
+        buffer.erase();
+        if (IsPositiveStrand(row)) {
+            x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buff);
+        } else {
+            CSeqVector& seq_vec = x_GetSeqVector(row);
+            TSeqPos size = seq_vec.size();
+            seq_vec.GetSeqData(size - seq_to - 1, size - seq_from, buff);
+        }
+        TranslateNAToAA(buff, buffer);
     } else {
-        CSeqVector& seq_vec = x_GetSeqVector(row);
-        TSeqPos size = seq_vec.size();
-        seq_vec.GetSeqData(size - seq_to - 1, size - seq_from, buffer);
-    }        
+        if (IsPositiveStrand(row)) {
+            x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
+        } else {
+            CSeqVector& seq_vec = x_GetSeqVector(row);
+            TSeqPos size = seq_vec.size();
+            seq_vec.GetSeqData(size - seq_to - 1, size - seq_from, buffer);
+        }
+    }
     return buffer;
 }
 
@@ -214,18 +231,9 @@ string& CAlnVec::GetSegSeqString(string& buffer,
                                  TNumrow row,
                                  TNumseg seg, int offset) const
 {
-    if (IsPositiveStrand(row)) {
-        x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
-                                       GetStop (row, seg, offset) + 1,
-                                       buffer);
-    } else {
-        CSeqVector& seq_vec = x_GetSeqVector(row);
-        TSeqPos size = seq_vec.size();
-        x_GetSeqVector(row).GetSeqData(size - GetStop(row, seg, offset) - 1,
-                                       size - GetStart(row, seg, offset),
-                                       buffer);
-    }        
-    return buffer;
+    return GetSeqString(buffer, row,
+                        GetStart(row, seg, offset),
+                        GetStop (row, seg, offset));
 }
 
 
@@ -234,18 +242,9 @@ string& CAlnVec::GetSeqString(string& buffer,
                               TNumrow row,
                               const CAlnMap::TRange& seq_rng) const
 {
-    if (IsPositiveStrand(row)) {
-        x_GetSeqVector(row).GetSeqData(seq_rng.GetFrom(),
-                                       seq_rng.GetTo() + 1,
-                                       buffer);
-    } else {
-        CSeqVector& seq_vec = x_GetSeqVector(row);
-        TSeqPos size = seq_vec.size();
-        x_GetSeqVector(row).GetSeqData(size - seq_rng.GetTo() - 1,
-                                       size - seq_rng.GetFrom(),
-                                       buffer);
-    }        
-    return buffer;
+    return GetSeqString(buffer, row,
+                        seq_rng.GetFrom(),
+                        seq_rng.GetTo());
 }
 
 
@@ -354,6 +353,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2003/08/20 14:35:14  todorov
+ * Support for NA2AA Densegs
+ *
  * Revision 1.22  2003/07/23 20:40:54  todorov
  * +aln_starts for the inserts in GetWhole...
  *
