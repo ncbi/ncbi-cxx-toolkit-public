@@ -10084,7 +10084,7 @@ fi
 if test "$with_odbc" != "no" ; then
    case "$with_odbc" in
       yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"} ;;
-      */*      ) ODBC_PATH=$with_bdb                   ;;
+      */*      ) ODBC_PATH=$with_odbc                  ;;
    esac
    ODBC_INCLUDE="-I$ODBC_PATH/include"
    ODBC_LIBPATH="${ODBC_PATH}/lib"
@@ -10107,7 +10107,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*)"x";
+SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*) "x";
             SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);
   ;
   return 0;

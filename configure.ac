@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.206 2003/07/22 15:55:11 ucko Exp $
+#  $Id: configure.ac,v 1.207 2003/08/05 16:08:00 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2306,7 +2306,7 @@ fi
 if test "$with_odbc" != "no" ; then
    case "$with_odbc" in
       yes | "" ) : ${ODBC_PATH:="/opt/machine/merant"} ;;
-      */*      ) ODBC_PATH=$with_bdb                   ;;
+      */*      ) ODBC_PATH=$with_odbc                  ;;
    esac
    ODBC_INCLUDE="-I$ODBC_PATH/include"
    ODBC_LIBPATH="${ODBC_PATH}/lib"
@@ -2316,7 +2316,7 @@ if test "$with_odbc" != "no" ; then
    AC_CACHE_CHECK([for ODBC libraries in $ODBC_PATH], ncbi_cv_lib_odbc,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <sql.h>]],
-          [[SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*)"x";
+          [[SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*) "x";
             SQLRETURN x = SQLConnect(hdbc, cp, 1, cp, 2, cp, 3);]])],
           [ncbi_cv_lib_odbc=yes], [ncbi_cv_lib_odbc=no])])
    if test "$ncbi_cv_lib_odbc" = "no"; then
