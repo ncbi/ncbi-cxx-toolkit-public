@@ -242,7 +242,7 @@ void CBDB_RawFile::x_Open(const char* filename,
                              kOpenFileMask
                              );
         if ( ret ) {
-            if (open_mode == eReadWrite) {
+            if (open_mode == eCreate) {
                 x_Create(filename, database);
             }
             else {
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/06/25 16:35:56  kuznets
+ * Bug fix: data file gets created even if eCreate flag was not specified.
+ *
  * Revision 1.9  2003/06/10 20:08:27  kuznets
  * Fixed function names.
  *
