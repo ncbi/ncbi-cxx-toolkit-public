@@ -20,7 +20,7 @@ X_OPTIONAL_PROJ =  serial bdb dbapi objects objmgr objtools ctools algo app \
 CHECK_SUB_PROJ = @check@
 EXPENDABLE_SUB_PROJ = @gui@
 
-SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ) $(CHECK_SUB_PROJ)
+SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 include ./Makefile.meta
 
 $(OPTIONAL_PROJ) util connect cgi html hello: corelib
