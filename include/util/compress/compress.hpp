@@ -263,10 +263,10 @@ private:
                            // next session
 
     // Friend classes
-    friend CCompressionIStreambuf;
-    friend CCompressionOStreambuf;
-    friend CDecompressionIStreambuf;
-    friend CDecompressionOStreambuf;
+    friend class CCompressionIStreambuf;
+    friend class CCompressionOStreambuf;
+    friend class CDecompressionIStreambuf;
+    friend class CDecompressionOStreambuf;
 };
 
  
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/08 20:48:51  ivanov
+ * Added class-key declaration for friend classes in the CCompression
+ *
  * Revision 1.1  2003/04/07 20:42:11  ivanov
  * Initial revision
  *
