@@ -908,10 +908,11 @@ or disabled, the second (<u><i>indirect</i></u>) part of the back-end API is use
 Attempt to use the CGI is only done, if <a href="../lxr/ident?i=SERV_OpenEx"><tt>net_info</tt></a> argument is provided non-<tt>NULL</tt> in the
 calls to <b><i>SERV_Open()</i></b> or <b><i>SERV_OpenEx()</i></b>.<br>
 <u>Note</u>: In call to <b><i>SERV_OpenSimple()</i></b>, <tt>net_info</tt> gets created internally before upcall to
-<b><i>SERV_Open()</i></b> and thus CGI dispatching is likely to happen, unless <tt>net_info</tt> could not be constructed
-from the environment.<br>
-<u>Note</u>: In the above conditions, the network service name resolution is also undertaken if service name could
-not be resolved (due to service inexistence or other error) with the use of locally found <tt>LBSMD</tt>.
+<b><i>SERV_Open()</i></b> and thus CGI dispatching is likely to happen, unless either <tt>net_info</tt> could not be constructed
+from the environment, or environment varaible <tt>CONN_LB_DISABLE</tt> (or service-specific one, or either of corresponding registry keys)
+is set to <tt>TRUE</tt>.<br>
+<u>Note</u>: In the above conditions, the network service name resolution is also undertaken if service name
+could not be resolved (due to service inexistence or other error) with the use of locally found <tt>LBSMD</tt>.
 
 <p>
 <a name="ref_Example"></a>The following code example uses both <a href="#ref_ServiceConnector">service connector</a> and the service
