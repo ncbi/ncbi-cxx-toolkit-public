@@ -118,7 +118,7 @@ public:
     position_type   GetFrom() const
     {
         if(! m_vRanges.empty())
-            return rbegin()->GetFrom();
+            return begin()->GetFrom();
         else return -1;
     }
     position_type   GetToOpen() const
@@ -352,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/12 20:51:52  yazhuk
+ * Fixed GetFrom()
+ *
  * Revision 1.2  2003/12/22 19:17:49  dicuccio
  * Use correct #include guard
  *
