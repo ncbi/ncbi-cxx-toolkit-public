@@ -669,6 +669,24 @@
 #  define NCBI_VALIDATOR_EXPORT     __declspec(dllimport)
 #endif
 
+/*
+ * Export specifier for library bdb
+ */
+#ifdef NCBI_BDB_EXPORTS
+#  define NCBI_BDB_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_BDB_EXPORT     __declspec(dllimport)
+#endif
+
+
+/*
+ * Export specifier for library lds
+ */
+#ifdef NCBI_LDS_EXPORTS
+#  define NCBI_LDS_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_LDS_EXPORT     __declspec(dllimport)
+#endif
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
@@ -733,7 +751,8 @@
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
-
+#  define NCBI_LDS_EXPORT
+#  define NCBI_BDB_EXPORT
 
 #endif
 
@@ -743,6 +762,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.25  2003/06/03 18:48:54  kuznets
+ * + export defines for bdb and lds libraries.
+ *
  * Revision 1.24  2003/06/02 16:01:29  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr
