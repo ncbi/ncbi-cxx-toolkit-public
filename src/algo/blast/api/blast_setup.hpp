@@ -34,6 +34,7 @@
 #define ALGO_BLAST_API___BLAST_SETUP__HPP
 
 #include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
 
@@ -57,7 +58,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
 void
 SetupSubjects(const TSeqLocVector& subjects, 
-              CBlastOptions* options,
+              EProgram program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
@@ -160,6 +161,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/03/15 19:57:52  dondosha
+* SetupSubjects takes just program argument instead of CBlastOptions*
+*
 * Revision 1.18  2004/03/06 00:39:47  camacho
 * Some refactorings, changed boolen parameter to enum in GetSequence
 *

@@ -404,6 +404,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     BlastSeqBlkSetSequence(*seqblk, buf, buflen - 1);
 
     (*seqblk)->lcase_mask = head_mask;
+    (*seqblk)->lcase_mask_allocated = TRUE;
 
     return;
 }
@@ -411,16 +412,14 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
 void
 SetupSubjects(const TSeqLocVector& subjects, 
-              CBlastOptions* options,
+              EProgram prog,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
-    ASSERT(options);
     ASSERT(seqblk_vec);
     ASSERT(max_subjlen);
     ASSERT(subjects.size() != 0);
 
-    EProgram prog = options->GetProgram();
     // Nucleotide subject sequences are stored in ncbi2na format, but the
     // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
     // the ambiguities
@@ -864,6 +863,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/03/15 19:57:52  dondosha
+* SetupSubjects takes just program argument instead of CBlastOptions*
+*
 * Revision 1.60  2004/03/11 17:26:46  dicuccio
 * Use NStr::ToUpper() instead of transform
 *
