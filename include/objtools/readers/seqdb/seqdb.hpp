@@ -85,7 +85,7 @@ public:
         return m_Data;
     }
     
-    Int4 GetLength(void)
+    Uint4 GetLength(void)
     {
         return m_Length;
     }
@@ -172,7 +172,7 @@ public:
     
     
     /// Returns the sequence length in base pairs or residues.
-    Int4 GetSeqLength(TOID oid) const;
+    Uint4 GetSeqLength(TOID oid) const;
     
     /// Returns an unbiased, approximate sequence length.
     ///
@@ -181,7 +181,7 @@ public:
     /// examination of the sequence data.  This method avoids doing
     /// that, returning an approximation ranging from L-3 to L+3
     /// (where L indicates the exact length), and unbiased on average.
-    Int4 GetSeqLengthApprox(TOID oid) const;
+    Uint4 GetSeqLengthApprox(TOID oid) const;
     
     /// Get the ASN.1 header for the sequence.
     CRef<CBlast_def_line_set> GetHdr(TOID oid) const;
@@ -198,9 +198,9 @@ public:
     /// should be returned with RetSequence.  This data pointed to
     /// by *buffer is in read-only memory (where supported).
     /// @return
-    ///   In case of an error, -1 is returned; otherwise the return
-    ///   value is the sequence length (in base pairs or residues).
-    Int4 GetSequence(TOID oid, const char ** buffer) const;
+    ///   The return value is the sequence length (in base pairs or
+    ///   residues).  In case of an error, an exception is thrown.
+    Uint4 GetSequence(TOID oid, const char ** buffer) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -211,9 +211,9 @@ public:
     /// the sequence is a protein sequence.  When done, resources
     /// should be returned with RetSequence.
     /// @return
-    ///   In case of an error, -1 is returned; otherwise the return
-    ///   value is the sequence length (in base pairs or residues).
-    Int4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code) const;
+    ///   The return value is the sequence length (in base pairs or
+    ///   residues).  In case of an error, an exception is thrown.
+    Uint4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -234,10 +234,10 @@ public:
     ///   The NA encoding, kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8.
     /// @param alloc_strategy
     ///   Indicate which allocation strategy to use.
-    Int4 GetAmbigSeqAlloc(TOID               oid,
-                          char            ** buffer,
-                          Uint4              nucl_code,
-                          ESeqDBAllocType    strategy) const;
+    Uint4 GetAmbigSeqAlloc(TOID               oid,
+                           char            ** buffer,
+                           Uint4              nucl_code,
+                           ESeqDBAllocType    strategy) const;
     
     /// Returns any resources associated with the sequence.
     /// 
