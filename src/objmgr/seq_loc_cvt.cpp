@@ -140,6 +140,17 @@ CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 }
 
 
+void CSeq_loc_Conversion::Reset(void)
+{
+    _ASSERT(!IsSpecialLoc());
+    m_TotalRange = TRange::GetEmpty();
+    m_Partial = false;
+    m_PartialFlag = 0;
+    m_DstFuzz_from.Reset();
+    m_DstFuzz_to.Reset();
+}
+
+
 void CSeq_loc_Conversion::CombineWith(CSeq_loc_Conversion& cvt)
 {
     _ASSERT(cvt.m_Src_id_Handle == m_Dst_id_Handle);
@@ -226,7 +237,7 @@ bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
     bool ret = GoodSrcId(src.GetId()) && ConvertPoint(src.GetPoint(), strand);
     if ( ret ) {
         if ( src.IsSetFuzz() ) {
-            if ( MinusStrand() ) {
+            if ( m_Reverse ) {
                 m_DstFuzz_from = ReverseFuzz(src.GetFuzz());
             }
             else {
@@ -250,7 +261,7 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
     bool ret = GoodSrcId(src.GetId()) &&
         ConvertInterval(src.GetFrom(), src.GetTo(), strand);
     if ( ret ) {
-        if ( MinusStrand() ) {
+        if ( m_Reverse ) {
             if ( !(m_PartialFlag & fPartial_to) && src.IsSetFuzz_from() ) {
                 m_DstFuzz_to = ReverseFuzz(src.GetFuzz_from());
             }
@@ -315,14 +326,13 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
     m_PartialFlag = 0;
     m_DstFuzz_from.Reset();
     m_DstFuzz_to.Reset();
+    bool partial_from = false, partial_to = false;
     if ( src_from < m_Src_from ) {
-        m_Partial = true;
-        m_PartialFlag |= fPartial_from;
+        m_Partial = partial_from = true;
         src_from = m_Src_from;
     }
     if ( src_to > m_Src_to ) {
-        m_Partial = true;
-        m_PartialFlag |= fPartial_to;
+        m_Partial = partial_to = true;
         src_to = m_Src_to;
     }
     if ( src_from > src_to ) {
@@ -338,9 +348,16 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
         m_LastStrand = Reverse(src_strand);
         dst_from = m_Shift - src_to;
         dst_to = m_Shift - src_from;
+        swap(partial_from, partial_to);
     }
     m_LastType = eMappedObjType_Seq_interval;
     m_TotalRange += m_LastRange.SetFrom(dst_from).SetTo(dst_to);
+    if ( partial_from ) {
+        m_PartialFlag |= fPartial_from;
+    }
+    if ( partial_to ) {
+        m_PartialFlag |= fPartial_to;
+    }
     return true;
 }
 
@@ -481,7 +498,7 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
                 }
                 if ( src_pack_pnts.IsSetFuzz() ) {
                     CConstRef<CInt_fuzz> fuzz(&src_pack_pnts.GetFuzz());
-                    if ( MinusStrand() ) {
+                    if ( m_Reverse ) {
                         fuzz = ReverseFuzz(*fuzz);
                     }
                     pnts.SetFuzz(const_cast<CInt_fuzz&>(*fuzz));
@@ -872,6 +889,12 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
             }
         }
         m_LastType = eMappedObjType_not_set;
+    }
+    else if ( ref.GetMappedObjectType() == ref.eMappedObjType_not_set ) {
+        if ( m_Partial ) {
+            // set empty location
+            ref.SetMappedSeq_loc(m_Dst_loc_Empty);
+        }
     }
 }
 
@@ -1539,6 +1562,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/10/27 19:31:46  vasilche
+* CSeq_loc_Conversion::Reset() made non-inline.
+* Fixed Int-fuzz when mapped on minus strand.
+* Make empty location if mapping segment is completely inside intron.
+*
 * Revision 1.44  2004/10/27 18:42:49  vasilche
 * Added include <algorithm> for sort().
 *
