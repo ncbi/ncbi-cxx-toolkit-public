@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/02/17 20:02:45  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.16  2000/01/10 19:46:42  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -177,14 +183,6 @@ bool CStlClassInfoMapImpl::EqualsKeyValuePair(TConstObjectPtr key1,
 {
     return GetKeyTypeInfo()->Equals(key1, key2) &&
         GetValueTypeInfo()->Equals(value1, value2);
-}
-
-void CStlClassInfoMapImpl::CollectKeyValuePair(COObjectList& objectList,
-                                               TConstObjectPtr key,
-                                               TConstObjectPtr value) const
-{
-    GetKeyTypeInfo()->CollectExternalObjects(objectList, key);
-    GetValueTypeInfo()->CollectExternalObjects(objectList, value);
 }
 
 void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,

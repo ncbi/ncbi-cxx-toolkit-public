@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/02/17 20:02:44  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.31  2000/02/11 17:10:25  vasilche
 * Optimized text parsing.
 *
@@ -151,7 +157,7 @@
 # include <asn.h>
 #endif
 
-#define ALLOW_CYCLES 0
+#define ALLOW_CYCLES 1
 
 BEGIN_NCBI_SCOPE
 
@@ -164,8 +170,7 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
     _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
 #if ALLOW_CYCLES
-    _TRACE("CTypeInfo::CollectObjects: " << NStr::PtrToString(object));
-    typeInfo->CollectObjects(m_Objects, object);
+    m_Objects.Add(object, typeInfo->GetRealTypeInfo(object));
     COObjectInfo info(m_Objects, object, typeInfo);
     if ( info.IsMember() ) {
         if ( !info.GetRootObjectInfo().IsWritten() ) {
@@ -185,9 +190,6 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 #endif
     WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
-#if ALLOW_CYCLES
-    m_Objects.CheckAllWritten();
-#endif
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
@@ -202,6 +204,7 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
            NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
 #if ALLOW_CYCLES
+    m_Objects.Add(object, typeInfo->GetRealTypeInfo(object));
     if ( object != 0 ) {
         COObjectInfo info(m_Objects, object, typeInfo);
         if ( info.IsMember() ) {
@@ -247,6 +250,7 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         return;
     }
 #if ALLOW_CYCLES
+    m_Objects.Add(object, typeInfo->GetRealTypeInfo(object));
     COObjectInfo info(m_Objects, object, typeInfo);
     WritePointer(info, typeInfo);
     _ASSERT(!info.IsMember());

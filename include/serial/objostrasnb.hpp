@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/02/17 20:02:28  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.16  2000/01/10 20:12:37  vasilche
 * Fixed duplicate argument names.
 * Fixed conflict between template and variable name.
@@ -96,8 +102,6 @@
 #include <serial/objostr.hpp>
 #include <serial/objstrasnb.hpp>
 #include <stack>
-
-#define CHECK_STREAM_INTEGRITY 1
 
 BEGIN_NCBI_SCOPE
 

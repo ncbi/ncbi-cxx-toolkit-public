@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/02/17 20:02:42  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.10  2000/01/10 20:12:36  vasilche
 * Fixed duplicate argument names.
 * Fixed conflict between template and variable name.
@@ -226,14 +232,6 @@ TTypeInfo CNullTypeInfo::GetTypeInfo(void)
 {
     TTypeInfo typeInfo = new CNullTypeInfo();
     return typeInfo;
-}
-
-void CNullTypeInfo::CollectExternalObjects(COObjectList& ,
-                                           TConstObjectPtr object) const
-{
-    if ( object != 0 ) {
-        THROW1_TRACE(runtime_error, "non null value");
-    }
 }
 
 void CNullTypeInfo::WriteData(CObjectOStream& out,

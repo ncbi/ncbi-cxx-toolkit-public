@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/02/17 20:02:42  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.32  2000/02/01 21:47:21  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -335,23 +341,14 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
-void CSequenceOfTypeInfo::CollectExternalObjects(COObjectList& l,
-                                                 TConstObjectPtr object) const
-{
-    _TRACE("SequenceOf<" << GetDataTypeInfo()->GetName() << ">::Collect: " <<
-           NStr::PtrToString(object));
-    for ( object = First(object); object != 0; object = Next(object) ) {
-        GetDataTypeInfo()->CollectObjects(l, Data(object));
-    }
-}
-
 void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
                                     TConstObjectPtr object) const
 {
     CObjectOStream::Block block(out, RandomOrder());
+    TTypeInfo dataType = GetDataTypeInfo();
     for ( object = First(object); object != 0; object = Next(object) ) {
         block.Next();
-        out.WriteExternalObject(Data(object), GetDataTypeInfo());
+        dataType->WriteData(out, Data(object));
     }
 }
 
@@ -376,7 +373,7 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
     }
     object = next;
 
-    in.ReadExternalObject(Data(object), dataType);
+    dataType->ReadData(in, Data(object));
 
     while ( block.Next() ) {
 
@@ -389,7 +386,7 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
         }
         object = next;
 
-        in.ReadExternalObject(Data(object), dataType);
+        dataType->ReadData(in, Data(object));
     }
 }
 
@@ -524,11 +521,6 @@ void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 		THROW1_TRACE(runtime_error, "null bytestore pointer");
 	BSFree(Get(dst));
 	Get(dst) = BSDup(Get(src));
-}
-
-void COctetStringTypeInfo::CollectExternalObjects(COObjectList& ,
-                                                  TConstObjectPtr ) const
-{
 }
 
 void COctetStringTypeInfo::WriteData(CObjectOStream& out,

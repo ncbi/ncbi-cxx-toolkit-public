@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/02/17 20:02:29  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.3  2000/02/11 17:10:20  vasilche
 * Optimized text parsing.
 *
@@ -51,16 +57,9 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbidbg.hpp>
-#include <corelib/ncbiexpt.hpp>
+#include <serial/exception.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CEofException : public runtime_error
-{
-public:
-    CEofException(void) THROWS_NONE;
-    ~CEofException(void) THROWS_NONE;
-};
 
 class CStreamBuffer
 {
@@ -68,14 +67,14 @@ public:
     CStreamBuffer(CNcbiIstream& in);
     ~CStreamBuffer(void);
 
-    char PeekChar(size_t offset = 0)
+    char PeekChar(size_t offset = 0) THROWS((CSerialIOException))
         {
             char* pos = m_CurrentPos + offset;
             if ( pos >= m_DataEndPos )
                 pos = FillBuffer(pos);
             return *pos;
         }
-    char GetChar(void)
+    char GetChar(void) THROWS((CSerialIOException))
         {
             char* pos = m_CurrentPos;
             if ( pos >= m_DataEndPos )
@@ -83,52 +82,59 @@ public:
             m_CurrentPos = pos + 1;
             return *pos;
         }
+    // precondition: GetChar or SkipChar was last method called
     void UngetChar(void)
         {
             char* pos = m_CurrentPos;
             _ASSERT(pos > m_Buffer);
             m_CurrentPos = pos - 1;
         }
+    // precondition: PeekChar(c) was called when c >= count
     void SkipChars(size_t count)
         {
+            _ASSERT(count > 0);
+            _ASSERT(m_CurrentPos + count <= m_DataEndPos);
             m_CurrentPos += count;
-            _ASSERT(m_CurrentPos <= m_DataEndPos);
         }
+    // equivalent of SkipChars(1)
     void SkipChar(void)
         {
             SkipChars(1);
         }
-    void SkipEndOfLine(char lastChar);
-    char SkipSpaces(void);
+    // precondition: last char extracted was either '\r' or '\n'
+    // action: inctement line count and
+    //         extract next complimentary '\r' or '\n' char if any
+    void SkipEndOfLine(char lastChar) THROWS((CSerialIOException));
+    // action: skip all spaces (' ') and return next non space char
+    //         without extracting it
+    char SkipSpaces(void) THROWS((CSerialIOException));
 
-    void MarkPos(void)
+    const char* GetCurrentPos(void) const
         {
-            m_MarkPos = m_CurrentPos;
-        }
-    const char* GetMarkPos(void) const
-        {
-            return m_MarkPos;
+            return m_CurrentPos;
         }
 
+    // return: current line counter
     size_t GetLine(void) const
         {
             return m_Line;
         }
 
-    size_t ReadLine(char* buff, size_t size);
+    // action: read in buffer up to end of line
+    size_t ReadLine(char* buff, size_t size) THROWS((CSerialIOException));
 
 protected:
-    char* FillBuffer(char* pos);
+    // action: fill buffer so *pos char is valid
+    // return: new value of pos pointer if buffer content was shifted
+    char* FillBuffer(char* pos) THROWS((CSerialIOException));
 
 private:
-    
-    CNcbiIstream& m_Input;
-    size_t m_BufferSize;
-    char* m_Buffer;
-    char* m_CurrentPos;
-    char* m_DataEndPos;
-    char* m_MarkPos;
-    size_t m_Line;
+    CNcbiIstream& m_Input;    // source stream
+    size_t m_BufferSize;      // buffer size
+    char* m_Buffer;           // buffer pointer
+    char* m_CurrentPos;       // current char position in buffer
+    char* m_DataEndPos;       // end of valid content in buffer
+    size_t m_Line;            // current line counter
 };
 
 END_NCBI_SCOPE

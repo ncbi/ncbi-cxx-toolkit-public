@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/02/17 20:02:45  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.15  1999/12/28 18:55:52  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -199,14 +205,6 @@ void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
         type->Assign(object, data);
         SetObjectPointer(dst, object);
     }
-}
-
-void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,
-                                              TConstObjectPtr object) const
-{
-    TConstObjectPtr data = GetObjectPointer(object);
-    if ( data )
-        GetRealDataTypeInfo(data)->CollectObjects(objectList, data);
 }
 
 void CPointerTypeInfo::WriteData(CObjectOStream& out,

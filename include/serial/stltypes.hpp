@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/02/17 20:02:29  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.29  2000/01/10 19:46:34  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -367,16 +373,6 @@ public:
         }
 
 protected:
-    virtual void CollectExternalObjects(COObjectList& objectList,
-                                        TConstObjectPtr object) const
-        {
-            const TObjectType& l = Get(object);
-            TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            for ( TConstIterator i = l.begin(); i != l.end(); ++i ) {
-                dataTypeInfo->CollectObjects(objectList, &*i);
-            }
-        }
-
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& l = Get(object);
@@ -384,7 +380,7 @@ protected:
             CObjectOStream::Block block(l.size(), out, RandomOrder());
             for ( TConstIterator i = l.begin(); i != l.end(); ++i ) {
                 block.Next();
-                out.WriteExternalObject(&*i, dataTypeInfo);
+                dataTypeInfo->WriteData(out, &*i);
             }
         }
 
@@ -396,8 +392,7 @@ protected:
             if ( block.Fixed() )
                 Reserve(object, block.GetSize());
             while ( block.Next() ) {
-                in.ReadExternalObject(AddEmpty(object, block.GetIndex()),
-                                      dataTypeInfo);
+                dataTypeInfo->ReadData(in, AddEmpty(object, block.GetIndex()));
             }
         }
 
@@ -574,8 +569,6 @@ public:
     ~CStlClassInfoMapImpl(void);
 
 protected:
-    void CollectKeyValuePair(COObjectList& objectList,
-                             TConstObjectPtr key, TConstObjectPtr value) const;
     void WriteKeyValuePair(CObjectOStream& out,
                            TConstObjectPtr key, TConstObjectPtr value) const;
     void ReadKeyValuePair(CObjectIStream& in,
@@ -659,15 +652,6 @@ public:
         }
 
 protected:
-    virtual void CollectExternalObjects(COObjectList& objectList,
-                                        TConstObjectPtr object) const
-        {
-            const TObjectType& o = Get(object);
-            for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
-                CollectKeyValuePair(objectList, &i->first, &i->second);
-            }
-        }
-
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& o = Get(object);

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/02/17 20:02:30  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.20  1999/12/28 18:55:40  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -160,6 +166,12 @@ public:
 
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const;
+    // deletes object
+    virtual void Delete(TObjectPtr object) const;
+    // clear object contents so Delete will not leave unused memory allocated
+    // note: object contents is not guaranteed to be in initial state
+    //       (as after Create), to do so you should call SetDefault after
+    virtual void DeleteExternalObjects(TObjectPtr object) const;
 
     // check, whether object contains default value
     virtual bool IsDefault(TConstObjectPtr object) const = 0;
@@ -187,9 +199,6 @@ public:
     virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
 
     // I/O interface:
-    // collect info about all memory chunks for writing of complex grafs
-    void CollectObjects(COObjectList& objectList,
-                        TConstObjectPtr object) const;
     // read object
     virtual void ReadData(CObjectIStream& in,
                           TObjectPtr object) const = 0;
@@ -197,8 +206,8 @@ public:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
 
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
+    long GetLongValue(TConstObjectPtr object) const;
+    void SetLongValue(TObjectPtr, long value) const;
 
 private:
     friend class CObjectOStream;
@@ -236,42 +245,6 @@ public:
             return sizeof(TObjectType);
         }
 };
-
-#if 0
-template<typename T>
-class CTypeInfoTmpl : public CTypeInfo
-{
-    typedef CTypeInfo CParent;
-public:
-    typedef T TObjectType; // type of object
-
-    // object getters:
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectType*>(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectType*>(object);
-        }
-
-    // define GetSize from CTypeInfo
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-
-protected:
-    CTypeInfoTmpl<T>(const string& name)
-        : CParent(name)
-        {
-        }
-    CTypeInfoTmpl<T>(const char* name)
-        : CParent(name)
-        {
-        }
-};
-#endif
 
 //#include <serial/typeinfo.inl>
 

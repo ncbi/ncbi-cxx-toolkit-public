@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/02/17 20:02:29  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.4  2000/01/10 19:46:33  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -55,6 +61,12 @@
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
+
+#ifdef _DEBUG
+#define CHECK_STREAM_INTEGRITY 1
+#else
+#undef CHECK_STREAM_INTEGRITY
+#endif
 
 namespace CObjectStreamAsnBinaryDefs
 {

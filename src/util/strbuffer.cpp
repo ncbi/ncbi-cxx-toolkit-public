@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/02/17 20:02:45  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.3  2000/02/11 17:10:25  vasilche
 * Optimized text parsing.
 *
@@ -48,7 +54,6 @@
 
 #include <corelib/ncbistre.hpp>
 #include <serial/strbuffer.hpp>
-#include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -63,7 +68,7 @@ size_t BiggerBufferSize(size_t size)
 CStreamBuffer::CStreamBuffer(CNcbiIstream& in)
     : m_Input(in),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
-      m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer), m_MarkPos(m_Buffer),
+      m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
       m_Line(1)
 {
 }
@@ -73,7 +78,9 @@ CStreamBuffer::~CStreamBuffer(void)
     delete[] m_Buffer;
 }
 
+// this method is highly optimized
 char CStreamBuffer::SkipSpaces(void)
+    THROWS((CSerialIOException))
 {
     // cache pointers
     char* pos = m_CurrentPos;
@@ -91,7 +98,8 @@ char CStreamBuffer::SkipSpaces(void)
     //     end == m_DataEndPos
     //     pos < end
     for (;;) {
-        // we use do{}while() cycle because condition is true at the beginning ( pos < end )
+        // we use do{}while() cycle because
+        // condition is true at the beginning ( pos < end )
         do {
             // cache current char
             char c = *pos;
@@ -114,6 +122,7 @@ char CStreamBuffer::SkipSpaces(void)
 }
 
 char* CStreamBuffer::FillBuffer(char* pos)
+    THROWS((CSerialIOException))
 {
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
@@ -124,7 +133,6 @@ char* CStreamBuffer::FillBuffer(char* pos)
         memmove(newPos, m_CurrentPos, m_DataEndPos - m_CurrentPos);
         m_CurrentPos = newPos;
         m_DataEndPos -= erase;
-        m_MarkPos = m_Buffer;
         pos -= erase;
     }
     size_t dataSize = m_DataEndPos - m_Buffer;
@@ -139,7 +147,6 @@ char* CStreamBuffer::FillBuffer(char* pos)
         memcpy(newBuffer, m_Buffer, dataSize);
         m_CurrentPos = newBuffer + (m_CurrentPos - m_Buffer);
         m_DataEndPos = newBuffer + dataSize;
-        m_MarkPos = newBuffer + (m_MarkPos - m_Buffer);
         delete[] m_Buffer;
         m_Buffer = newBuffer;
         m_BufferSize = newSize;
@@ -152,9 +159,9 @@ char* CStreamBuffer::FillBuffer(char* pos)
             if ( pos < m_DataEndPos )
                 return pos;
             if ( m_Input.eof() )
-                THROW0_TRACE(CEofException());
+                THROW0_TRACE(CSerialEofException());
             else
-                THROW1_TRACE(runtime_error, "read fault");
+                THROW1_TRACE(CSerialIOException, "read fault");
         }
         m_DataEndPos += count;
         load -= count;
@@ -163,6 +170,7 @@ char* CStreamBuffer::FillBuffer(char* pos)
 }
 
 void CStreamBuffer::SkipEndOfLine(char lastChar)
+    THROWS((CSerialIOException))
 {
     _ASSERT(lastChar == '\n' || lastChar == '\r');
     _ASSERT(m_CurrentPos > m_Buffer && m_CurrentPos[-1] == lastChar);
@@ -171,7 +179,7 @@ void CStreamBuffer::SkipEndOfLine(char lastChar)
     try {
         nextChar = PeekChar();
     }
-    catch ( CEofException& /* ignored */ ) {
+    catch ( CSerialEofException& /* ignored */ ) {
         return;
     }
     // lastChar either '\r' or \n'
@@ -181,6 +189,7 @@ void CStreamBuffer::SkipEndOfLine(char lastChar)
 }
 
 size_t CStreamBuffer::ReadLine(char* buff, size_t size)
+    THROWS((CSerialIOException))
 {
     size_t count = 0;
     try {
@@ -203,18 +212,9 @@ size_t CStreamBuffer::ReadLine(char* buff, size_t size)
         }
         return count;
     }
-    catch ( CEofException& /*ignored*/ ) {
+    catch ( CSerialEofException& /*ignored*/ ) {
         return count;
     }
-}
-
-CEofException::CEofException(void) THROWS_NONE
-    : runtime_error("end of file")
-{
-}
-
-CEofException::~CEofException(void) THROWS_NONE
-{
 }
 
 END_NCBI_SCOPE

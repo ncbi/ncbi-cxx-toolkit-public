@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/02/17 20:02:44  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.12  2000/01/10 19:46:41  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -83,6 +89,8 @@
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
+
+#undef SKIP_NON_CLASS
 
 BEGIN_NCBI_SCOPE
 

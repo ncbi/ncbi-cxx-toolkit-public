@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/02/17 20:02:44  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.24  2000/01/10 19:46:40  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -675,8 +681,14 @@ void CObjectIStreamAsnBinary::ReadString(string& s)
     ExpectSysTag(eVisibleString);
     size_t length = ReadLength();
     s.reserve(length);
-    for ( size_t i = 0; i < length; ++i ) {
-        s += char(ReadByte());
+    while ( length > 0 ) {
+        char buffer[128];
+        size_t count = length;
+        if ( count > sizeof(buffer) )
+            count = sizeof(buffer);
+        ReadBytes(buffer, count);
+        s.append(buffer, count);
+        length -= count;
     }
 }
 
@@ -686,8 +698,14 @@ void CObjectIStreamAsnBinary::ReadStringStore(string& s)
     ExpectSysTag(eApplication, false, eStringStore);
     size_t length = ReadLength();
     s.reserve(length);
-    for ( size_t i = 0; i < length; ++i ) {
-        s += char(ReadByte());
+    while ( length > 0 ) {
+        char buffer[128];
+        size_t count = length;
+        if ( count > sizeof(buffer) )
+            count = sizeof(buffer);
+        ReadBytes(buffer, count);
+        s.append(buffer, count);
+        length -= count;
     }
 }
 

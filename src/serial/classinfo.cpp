@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/02/17 20:02:43  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.30  2000/02/01 21:47:21  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -316,7 +322,7 @@ TTypeInfo CClassInfoTmpl::GetClassInfoByName(const string& name)
 TTypeInfo CClassInfoTmpl::GetRealTypeInfo(TConstObjectPtr object) const
 {
     const type_info* ti = GetCPlusPlusTypeInfo(object);
-    if ( ti == 0 )
+    if ( ti == 0 || ti == &GetId() )
         return this;
     RegisterSubClasses();
     return GetClassInfoById(*ti);
@@ -349,17 +355,6 @@ void CClassInfoTmpl::AddSubClass(const char* id, TTypeInfoGetter getter)
 void CClassInfoTmpl::AddSubClassNull(const char* id)
 {
     AddSubClassNull(CMemberId(id));
-}
-
-void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
-                                            TConstObjectPtr object) const
-{
-    for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        const CMemberInfo& memberInfo = *m_Members.GetMemberInfo(i);
-        TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
-        TConstObjectPtr member = memberInfo.GetMember(object);
-        memberTypeInfo->CollectExternalObjects(objectList, member);
-    }
 }
 
 void CClassInfoTmpl::WriteData(CObjectOStream& out,

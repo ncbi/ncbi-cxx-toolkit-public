@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/02/17 20:02:28  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.24  2000/02/11 17:10:19  vasilche
 * Optimized text parsing.
 *
@@ -164,12 +170,10 @@ public:
 protected:
     TIndex ReadIndex(void);
 
-    void MarkBuffer(void); // mark start of some position
-    const char* GetMark(void) const; // return marked position
-    size_t GetMarkOffset(void) const; // return offset of marked position
-    // before current
-
-    size_t ReadId(void); // read id into local buffer, returns ID length
+    // action: read ID into local buffer
+    // return: ID pointer and length
+    // note: it is not zero ended
+    pair<const char*, size_t> ReadId(void);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/02/17 20:02:46  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.17  1999/12/17 19:05:05  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -109,21 +115,18 @@ CTypeInfo::~CTypeInfo(void)
 {
 }
 
-void CTypeInfo::CollectObjects(COObjectList& objectList,
-                               TConstObjectPtr object) const
-{
-    if ( objectList.Add(object, this) )
-        CollectExternalObjects(objectList, object);
-}
-
-void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
-{
-    // there is no members by default
-}
-
 TObjectPtr CTypeInfo::Create(void) const
 {
-   THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
+    THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
+}
+
+void CTypeInfo::Delete(TObjectPtr /*object*/) const
+{
+    THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
+}
+
+void CTypeInfo::DeleteExternalObjects(TObjectPtr /*object*/) const
+{
 }
 
 TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const

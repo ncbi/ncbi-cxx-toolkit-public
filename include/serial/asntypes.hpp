@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/02/17 20:02:26  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.23  2000/02/01 21:44:33  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -196,9 +202,6 @@ private:
 
 protected:
 
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
-
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr obejct) const;
 
@@ -281,9 +284,6 @@ public:
 
 protected:
     
-    void CollectExternalObjects(COObjectList& list,
-                                TConstObjectPtr object) const;
-
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;

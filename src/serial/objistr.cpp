@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/02/17 20:02:43  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.39  2000/02/11 17:10:24  vasilche
 * Optimized text parsing.
 *
@@ -181,7 +187,8 @@
 # include <asn.h>
 #endif
 
-#define ALLOW_CYCLES 0
+#define ALLOW_CYCLES 1
+#undef SKIP_NON_CLASS
 
 BEGIN_NCBI_SCOPE
 

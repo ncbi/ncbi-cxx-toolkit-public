@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/02/17 20:02:44  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.36  2000/02/11 17:10:24  vasilche
 * Optimized text parsing.
 *
@@ -239,12 +245,6 @@ void CObjectIStreamAsn::SkipChar(void)
 }
 
 inline
-const char* CObjectIStreamAsn::GetMark(void) const
-{
-    return m_Input.GetMarkPos();
-}
-
-inline
 void CObjectIStreamAsn::SkipEndOfLine(char c)
 {
     m_Input.SkipEndOfLine(c);
@@ -369,41 +369,42 @@ void CObjectIStreamAsn::SkipComments(void)
             }
         }
     }
-    catch ( CEofException& /* ignored */ ) {
+    catch ( CSerialEofException& /* ignored */ ) {
         return;
     }
 }
 
-size_t CObjectIStreamAsn::ReadId(void)
+pair<const char*, size_t> CObjectIStreamAsn::ReadId(void)
 {
     char c = SkipWhiteSpace();
     if ( c == '[' ) {
-        m_Input.SkipChar();
-        m_Input.MarkPos();
-        for ( size_t i = 0; ; ++i ) {
+        for ( size_t i = 1; ; ++i ) {
             switch ( m_Input.PeekChar(i) ) {
             case '\r':
             case '\n':
                 ThrowError(eFormatError, "end of line: expected ']'");
                 break;
             case ']':
-                m_Input.SkipChars(i + 1);
-                return i;
+                {
+                    const char* ptr = m_Input.GetCurrentPos();
+                    m_Input.SkipChars(i);
+                    return make_pair(ptr + 1, i - 2);
+                }
             }
         }
     }
 	else {
-        m_Input.MarkPos();
         if ( !FirstIdChar(c) ) {
-            return 0;
+            return pair<const char*, size_t>(0, 0);
         }
         else {
             for ( size_t i = 1; ; ++i ) {
                 c = m_Input.PeekChar(i);
                 if ( !IdChar(c) &&
                      (c != '-' || !IdChar(m_Input.PeekChar(i + 1))) ) {
+                    const char* ptr = m_Input.GetCurrentPos();
                     m_Input.SkipChars(i);
-                    return i;
+                    return make_pair(ptr, i);
                 }
             }
         }
@@ -417,18 +418,19 @@ void CObjectIStreamAsn::ReadNull(void)
 
 string CObjectIStreamAsn::ReadTypeName()
 {
-    size_t size = ReadId();
+    pair<const char*, size_t> id = ReadId();
+    string s(id.first, id.second);
     ExpectString("::=", true);
-    return string(GetMark(), size);
+    return s;
 }
 
 class CBufferId
 {
 public:
-    CBufferId(const char* start, size_t size)
+    CBufferId(const pair<const char*, size_t>& id)
         {
-            m_Start = start;
-            char* end = m_End = const_cast<char*>(start + size);
+            m_Start = id.first;
+            char* end = m_End = const_cast<char*>(id.first) + id.second;
             m_LastChar = *end;
             *end = 0;
         }
@@ -452,10 +454,10 @@ pair<long, bool>
 CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
 {
     // not integer
-    size_t size = ReadId();
-    if ( size != 0 ) {
+    pair<const char*, size_t> id = ReadId();
+    if ( id.second != 0 ) {
         // enum element by name
-        return make_pair(values.FindValue(CBufferId(GetMark(), size)), true);
+        return make_pair(values.FindValue(CBufferId(id)), true);
     }
     if ( values.IsInteger() ) {
         // allow any integer
@@ -521,14 +523,14 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
 
 bool CObjectIStreamAsn::ReadBool(void)
 {
-    size_t size = ReadId();
-    if ( size == 4 && memcmp(GetMark(), "TRUE", 4) == 0 )
+    pair<const char*, size_t> id = ReadId();
+    if ( id.second == 4 && memcmp(id.first, "TRUE", 4) == 0 )
         return true;
-    if ( size == 5 && memcmp(GetMark(), "FALSE", 5) == 0 )
+    if ( id.second == 5 && memcmp(id.first, "FALSE", 5) == 0 )
         return false;
 
     ThrowError(eFormatError,
-               "\"" + string(GetMark(), size) + "\": TRUE or FALSE expected");
+               "\""+string(id.first, id.second)+"\": TRUE or FALSE expected");
     return false;
 }
 
@@ -603,35 +605,50 @@ double CObjectIStreamAsn::ReadDouble(void)
 
 void CObjectIStreamAsn::ReadString(string& s)
 {
-    s.erase();
     Expect('\"', true);
-    char c;
-    for ( ;; ) {
-        c = GetChar();
+    s.erase();
+    size_t i = 0;
+    for (;;) {
+        char c = m_Input.PeekChar(i);
         switch ( c ) {
         case '\r':
         case '\n':
+            // flush string
+            s.append(m_Input.GetCurrentPos(), i);
+            m_Input.SkipChars(i + 1);
+            i = 0;
+            // skip end of line
             SkipEndOfLine(c);
-            continue;
+            break;
         case '\"':
-            if ( GetChar('\"') ) {
+            if ( m_Input.PeekChar(i + 1) == '\"' ) {
                 // double quote -> one quote
-                s += '\"';
+                s.append(m_Input.GetCurrentPos(), i + 1);
+                m_Input.SkipChars(i + 2);
+                i = 0;
             }
             else {
                 // end of string
+                s.append(m_Input.GetCurrentPos(), i);
+                m_Input.SkipChars(i + 1);
                 return;
             }
-            continue;
+            break;
         default:
             if ( c < ' ' && c >= 0 ) {
                 ThrowError(eFormatError,
                            "bad char in string: " + NStr::IntToString(c));
             }
             else {
-                s += c;
+                ++i;
+                if ( i == 128 ) {
+                    // too long string -> flush it
+                    s.append(m_Input.GetCurrentPos(), i);
+                    m_Input.SkipChars(i);
+                    i = 0;
+                }
             }
-            continue;
+            break;
         }
     }
 }
@@ -658,11 +675,11 @@ bool CObjectIStreamAsn::VNext(const Block& block)
 
 void CObjectIStreamAsn::StartMember(Member& m, const CMemberId& member)
 {
-    size_t size = ReadId();
-    if ( size != member.GetName().size() ||
-         memcmp(GetMark(), member.GetName().data(), size) != 0 ) {
+    pair<const char*, size_t> id = ReadId();
+    if ( id.second != member.GetName().size() ||
+         memcmp(id.first, member.GetName().data(), id.second) != 0 ) {
         ThrowError(eFormatError,
-                   "\"" + string(GetMark(), size) + "\": expected " +
+                   "\"" + string(id.first, id.second) + "\": expected " +
                    member.GetName());
     }
     SetIndex(m, 0, member);
@@ -670,28 +687,28 @@ void CObjectIStreamAsn::StartMember(Member& m, const CMemberId& member)
 
 void CObjectIStreamAsn::StartMember(Member& m, const CMembers& members)
 {
-    size_t size = ReadId();
-    if ( size == 0 )
+    pair<const char*, size_t> id = ReadId();
+    if ( id.second == 0 )
         ThrowError(eFormatError, "member id expected");
-    TMemberIndex index = members.FindMember(CBufferId(GetMark(), size));
+    TMemberIndex index = members.FindMember(CBufferId(id));
     if ( index < 0 ) {
         ThrowError(eFormatError,
-                   "\"" + string(GetMark(), size) + "\": unexpected member");
+                   "\"" + string(id.first, id.second) + "\": unexpected member");
     }
     SetIndex(m, index, members.GetMemberId(index));
 }
 
 void CObjectIStreamAsn::StartMember(Member& m, LastMember& lastMember)
 {
-    size_t size = ReadId();
-    if ( size == 0 )
+    pair<const char*, size_t> id = ReadId();
+    if ( id.second == 0 )
         ThrowError(eFormatError, "member id expected");
     TMemberIndex index =
-        lastMember.GetMembers().FindMember(CBufferId(GetMark(), size),
+        lastMember.GetMembers().FindMember(CBufferId(id),
                                            lastMember.GetIndex());
     if ( index < 0 ) {
         string message =
-            "\"" + string(GetMark(), size) + "\": unexpected member, should be one of: ";
+            "\"" + string(id.first, id.second) + "\": unexpected member, should be one of: ";
         iterate ( CMembers::TMembers, i, lastMember.GetMembers().GetMembers() ) {
             message += '\"' + i->ToString() + "\" ";
         }
@@ -790,10 +807,10 @@ CObjectIStream::TIndex CObjectIStreamAsn::ReadObjectPointer(void)
 
 string CObjectIStreamAsn::ReadOtherPointer(void)
 {
-    size_t size = ReadId();
-    if ( size == 0 )
+    pair<const char*, size_t> id = ReadId();
+    if ( id.second == 0 )
         ThrowError(eFormatError, "type name expected");
-    return string(GetMark(), size);
+    return string(id.first, id.second);
 }
 
 bool CObjectIStreamAsn::HaveMemberSuffix(void)
@@ -804,11 +821,11 @@ bool CObjectIStreamAsn::HaveMemberSuffix(void)
 CObjectIStreamAsn::TMemberIndex
 CObjectIStreamAsn::ReadMemberSuffix(const CMembers& members)
 {
-    size_t size = ReadId();
-    TMemberIndex index = members.FindMember(CBufferId(GetMark(), size));
+    pair<const char*, size_t> id = ReadId();
+    TMemberIndex index = members.FindMember(CBufferId(id));
     if ( index < 0 ) {
         ThrowError(eFormatError,
-                   "member not found: " + string(GetMark(), size));
+                   "member not found: " + string(id.first, id.second));
     }
     return index;
 }
@@ -896,7 +913,6 @@ void CObjectIStreamAsn::AsnOpen(AsnIo& asn)
 size_t CObjectIStreamAsn::AsnRead(AsnIo& asn, char* data, size_t length)
 {
     size_t count = 0;
-#if 1
     if ( asn.m_Count == 0 ) {
         // dirty hack to add structure name with '::='
         const string& name = asn.GetRootTypeName();
@@ -914,7 +930,6 @@ size_t CObjectIStreamAsn::AsnRead(AsnIo& asn, char* data, size_t length)
         length -= count;
         asn.m_Count = 1;
     }
-#endif
     return count + m_Input.ReadLine(data, length);
 }
 #endif

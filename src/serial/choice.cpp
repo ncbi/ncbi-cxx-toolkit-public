@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/17 20:02:42  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.5  2000/02/01 21:47:21  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -144,15 +150,6 @@ void CChoiceTypeInfoBase::Assign(TObjectPtr dst, TConstObjectPtr src) const
         GetVariantTypeInfo(index)->Assign(GetData(dst, index),
                                           GetData(src, index));
     }
-}
-
-void CChoiceTypeInfoBase::CollectExternalObjects(COObjectList& l,
-                                                 TConstObjectPtr object) const
-{
-    TMemberIndex index = GetIndex(object);
-    if ( index >= 0 && index < GetVariantsCount() )
-        GetVariantTypeInfo(index)->
-            CollectExternalObjects(l, GetData(object, index));
 }
 
 void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,

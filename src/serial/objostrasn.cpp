@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/02/17 20:02:45  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.32  2000/02/01 21:47:23  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -199,6 +205,7 @@ bool CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
     return false;
 }
 
+inline
 void CObjectOStreamAsn::WriteEscapedChar(char c)
 {
     if ( c == '"' ) {
@@ -294,8 +301,15 @@ void CObjectOStreamAsn::WriteNull(void)
 void CObjectOStreamAsn::WriteString(const string& str)
 {
     m_Output << '\"';
+    size_t col = 20;
     for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
-        WriteEscapedChar(*i);
+        char c = *i;
+        if ( col >= 72 && c == ' ' || col >= 78 ) {
+            m_Output << '\n';
+            col = 0;
+        }
+        WriteEscapedChar(c);
+        ++col;
     }
     m_Output << '\"';
 }
@@ -350,14 +364,14 @@ void CObjectOStreamAsn::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
 
 void CObjectOStreamAsn::WriteNewLine(void)
 {
-    m_Output << "\n";
+    m_Output << '\n';
     for ( int i = 0; i < m_Ident; ++i )
         m_Output << "  ";
 }
 
 void CObjectOStreamAsn::VBegin(Block& )
 {
-    m_Output << "{";
+    m_Output << '{';
     ++m_Ident;
 }
 
@@ -392,11 +406,18 @@ void CObjectOStreamAsn::Begin(const ByteBlock& )
 
 static const char* const HEX = "0123456789ABCDEF";
 
-void CObjectOStreamAsn::WriteBytes(const ByteBlock& , const char* bytes, size_t length)
+void CObjectOStreamAsn::WriteBytes(const ByteBlock& ,
+                                   const char* bytes, size_t length)
 {
+    size_t col = 20;
 	while ( length-- > 0 ) {
 		char c = *bytes++;
+        if ( col >= 76 ) {
+            m_Output << '\n';
+            col = 0;
+        }
 		m_Output << HEX[(c >> 4) & 0xf] << HEX[c & 0xf];
+        col += 2;
 	}
 }
 
@@ -427,7 +448,6 @@ void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 
 void CObjectOStreamAsn::AsnWrite(AsnIo& asn, const char* data, size_t length)
 {
-#if 1
     if ( asn.m_Count == 0 ) {
         // dirty hack to skip structure name with '::='
         const char* p = (const char*)memchr(data, ':', length);
@@ -455,7 +475,6 @@ void CObjectOStreamAsn::AsnWrite(AsnIo& asn, const char* data, size_t length)
         }
         asn.m_Count = 1;
     }
-#endif
     if ( !m_Output.write(data, length) )
         THROW1_TRACE(runtime_error, "write fault");
 }

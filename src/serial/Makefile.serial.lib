@@ -8,9 +8,11 @@ LIBOBJ = \
   member memberid memberlist classinfo \
   stltypes enumerated choice asntypes \
   serial serialasn \
-  strbuffer objistr objostr objlist \
-  $(serial_ws50_rtti_kludge) objistrb objostrb \
+  exception strbuffer objistr objostr objlist \
+  $(serial_ws50_rtti_kludge) \
   objostrasn objistrasn objostrasnb objistrasnb
+#objistrb objostrb
+
 LIB    = xser
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)

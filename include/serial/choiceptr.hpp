@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/02/17 20:02:27  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
 * Revision 1.10  2000/01/05 19:43:43  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -169,9 +175,6 @@ public:
     TObjectPtr Create(void) const;
 
 protected:
-    void CollectExternalObjects(COObjectList& list,
-                                TConstObjectPtr object) const;
-
     void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
