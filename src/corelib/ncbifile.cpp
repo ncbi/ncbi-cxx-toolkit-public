@@ -1072,6 +1072,30 @@ string CDir::GetHome(void)
 }
 
 
+string CDir::GetCwd()
+{
+    string cwd;
+
+#ifdef NCBI_OS_UNIX
+
+    char buf[4096];
+    if (getcwd(buf, sizeof(buf) - 1)) {
+        cwd = buf;
+    }
+
+#elif defined(NCBI_OS_MSWIN)
+
+    char buf[4096];
+    if (_getcwd(buf, sizeof(buf) - 1)) {
+        cwd = buf;
+    }
+
+#endif
+
+    return cwd;
+}
+
+
 CDir::~CDir(void)
 {
     return;
@@ -1404,6 +1428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/01/16 13:27:56  dicuccio
+ * Added CDir::GetCwd()
+ *
  * Revision 1.36  2002/11/05 15:46:49  dicuccio
  * Changed CDir::GetEntries() to store fully qualified path names - this permits
  * CDirEntry::GetType() to work on files outside of the local directory.
