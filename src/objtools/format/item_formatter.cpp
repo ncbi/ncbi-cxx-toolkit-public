@@ -31,7 +31,10 @@
 *
 */
 #include <corelib/ncbistd.hpp>
-
+#include <objects/biblio/Cit_book.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Title.hpp>
+#include <objects/biblio/Imprint.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/items/item.hpp>
@@ -44,6 +47,7 @@
 #include <objtools/format/embl_formatter.hpp>
 #include <objtools/format/gff_formatter.hpp>
 #include <objtools/format/ftable_formatter.hpp>
+#include <objtools/format/gbseq_formatter.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/flat_expt.hpp>
 #include "utils.hpp"
@@ -74,12 +78,13 @@ CFlatItemFormatter* CFlatItemFormatter::New(TFormat format)
     case eFormat_FTable:
         return new CFtableFormatter;
 
-    case eFormat_DDBJ:
     case eFormat_GBSeq:
+        return new CGBSeqFormatter;
+
+    case eFormat_DDBJ:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
-        break;
     }
 
     return 0;
@@ -110,10 +115,12 @@ string  CFlatItemFormatter::x_FormatAccession
     
     acc_line << primary;
 
-    ITERATE(list<string>, str, acc.GetExtraAccessions()) {
-        if ( ValidateAccession(*str) ) {
-            acc_line << separator << *str;
-        }
+    if ( ctx.IsWGS() ) {
+        acc_line << separator << acc.GetWGSAccession();
+    }
+
+    ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
+        acc_line << separator << *it;
     }
 
     return CNcbiOstrstreamToString(acc_line);
@@ -202,6 +209,134 @@ void CFlatItemFormatter::x_FormatRefLocation
 }
 
 
+static size_t s_NumAuthors(const CCit_book::TAuthors& authors)
+{
+    if ( authors.CanGetNames() ) {
+        const CAuth_list::C_Names& names = authors.GetNames();
+        switch ( names.Which() ) {
+        case CAuth_list::C_Names::e_Std:
+            return names.GetStd().size();
+        case CAuth_list::C_Names::e_Ml:
+            return names.GetMl().size();
+        case CAuth_list::C_Names::e_Str:
+            return names.GetStr().size();
+        default:
+            break;
+        }
+    }
+
+    return 0;
+}
+
+
+void CFlatItemFormatter::x_FormatRefJournal
+(string& journal, const CReferenceItem& ref) const
+{
+    if ( ref.GetBook() == 0 ) {  // not from a book
+        
+        switch ( ref.GetCategory() ) {
+        case CReferenceItem::eSubmission:
+            journal = "Submitted ";
+            if ( ref.GetDate() != 0 ) {
+                journal += '(';
+                DateToString(*ref.GetDate(), journal, true);
+                journal += ") ";
+            }
+            journal += ref.GetJournal();
+            break;
+        case CReferenceItem::eUnpublished:
+            journal = ref.GetJournal();
+            break;
+        case CReferenceItem::ePublished:
+            journal = ref.GetJournal();
+            if ( !ref.GetVolume().empty() ) {
+                journal += " " + ref.GetVolume();
+            }
+            if ( !ref.GetIssue().empty() ) {
+                journal += " (" + ref.GetIssue() + ')';
+            }
+            if ( !ref.GetPages().empty() ) {
+                journal += ", " + ref.GetPages();
+            }
+            if ( ref.GetDate() != 0 ) {
+                ref.GetDate()->GetDate(&journal, " (%Y)");
+            }
+            break;
+        default:
+            break;
+        }
+        
+        if ( journal.empty() ) {
+            journal = "Unpublished";
+        }
+    } else {
+        while ( true ) {
+            const CCit_book& book = *ref.GetBook();
+            _ASSERT(book.CanGetImp()  &&  book.CanGetTitle());
+            
+            string year;
+
+            if ( ref.GetDate() != 0 ) {
+                ref.GetDate()->GetDate(&year, "(%Y)");
+            }
+            
+            if ( ref.GetCategory() == CReferenceItem::eUnpublished ) {
+                journal = "Unpublished " + year;
+                break;
+            }
+            
+            string title = book.GetTitle().GetTitle();
+            if ( title.length() < 3 ) {
+                journal = ".";
+                break;
+            }
+
+            CNcbiOstrstream jour;
+            jour << "(in) ";
+            if ( book.CanGetAuthors() ) {
+                const CCit_book::TAuthors& auth = book.GetAuthors();
+                jour << CReferenceItem::GetAuthString(&auth);
+                size_t num_auth = s_NumAuthors(auth);
+                jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << endl;
+            }
+            jour << NStr::ToUpper(title);
+            if ( !ref.GetVolume().empty()  &&  ref.GetVolume() != "0" ) {
+                jour << " " << ref.GetVolume();
+            }
+
+            if ( !ref.GetIssue().empty() ) {
+                jour << " " << ref.GetIssue();
+            }
+
+            if ( !ref.GetPages().empty() ) {
+                jour << ": " << ref.GetPages();
+            }
+
+            jour << ';' << endl;
+
+            const CCit_book::TImp& imp = book.GetImp();
+            if ( imp.CanGetPub() ) {
+                string affil;
+                CReferenceItem::FormatAffil(imp.GetPub(), affil);
+                if ( !affil.empty() ) {
+                    jour << affil << ' ';
+                }
+            }
+
+            jour << year;
+
+            if ( imp.CanGetPrepub()  &&
+                 imp.GetPrepub() == CImprint::ePrepub_in_press ) {
+                jour << " In press";
+            }
+
+            journal = CNcbiOstrstreamToString(jour);
+            break;
+        }
+    }
+}
+
+
 void CFlatItemFormatter::x_GetKeywords
 (const CKeywordsItem& kws,
  const string& prefix,
@@ -229,6 +364,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/13 16:48:39  shomrat
+* Added Journal formatting (from fenbank_formatter)
+*
 * Revision 1.6  2004/04/07 14:51:24  shomrat
 * Fixed typo
 *
