@@ -50,7 +50,8 @@ CSeq_feat::~CSeq_feat(void)
 {
 }
 
-static int s_SeqFeatTypeOrder[] = {
+
+static int s_TypeOrder[] = {
     3, // e_not_set = 0,
     0, // e_Gene,
     3, // e_Org,
@@ -60,21 +61,26 @@ static int s_SeqFeatTypeOrder[] = {
     3  // e_Pub, and the rest
 };
 
+int CSeq_feat::GetTypeSortingOrder(CSeqFeatData::E_Choice type)
+{
+    return s_TypeOrder[min(size_t(type),
+                           sizeof(s_TypeOrder)/sizeof(s_TypeOrder[0])-1)];
+}
+
+
 // Corresponds to SortFeatItemListByPos from the C toolkit
 int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
                                   const CSeq_loc& loc1,
                                   const CSeq_loc& loc2) const
 {
-    CSeqFeatData::E_Choice type1 = GetData().Which();
-    CSeqFeatData::E_Choice type2 = f2.GetData().Which();
+    const CSeqFeatData& data1 = GetData();
+    const CSeqFeatData& data2 = f2.GetData();
+    CSeqFeatData::E_Choice type1 = data1.Which();
+    CSeqFeatData::E_Choice type2 = data2.Which();
 
     {{ // order by feature type
-        const size_t MAX_TYPE =
-            sizeof(s_SeqFeatTypeOrder)/sizeof(s_SeqFeatTypeOrder[0]);
-        int order1 = size_t(type1) < MAX_TYPE?
-            s_SeqFeatTypeOrder[type1]: s_SeqFeatTypeOrder[MAX_TYPE-1];
-        int order2 = size_t(type2) < MAX_TYPE?
-            s_SeqFeatTypeOrder[type2]: s_SeqFeatTypeOrder[MAX_TYPE-1];
+        int order1 = GetTypeSortingOrder(type1);
+        int order2 = GetTypeSortingOrder(type2);
         int diff = order1 - order2;
         if ( diff != 0 )
             return diff;
@@ -82,22 +88,42 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
 
     // compare internal intervals
     if ( loc1.IsMix()  &&  loc2.IsMix() ) {
-        const CSeq_loc_mix::Tdata& ivals1 = loc1.GetMix().Get();
-        const CSeq_loc_mix::Tdata& ivals2 = loc2.GetMix().Get();
+        const CSeq_loc_mix::Tdata& l1 = loc1.GetMix().Get();
+        const CSeq_loc_mix::Tdata& l2 = loc2.GetMix().Get();
         for ( CSeq_loc_mix::Tdata::const_iterator
-                  it1 = ivals1.begin(), it2 = ivals2.begin();
-              it1 != ivals1.end()  &&  it2 != ivals2.end();  it1++, it2++) {
+                  it1 = l1.begin(), it2 = l2.begin(); ;  it1++, it2++) {
+            if ( it1 == l1.end() ) {
+                if ( it2 == l2.end() ) {
+                    break;
+                }
+                else {
+                    // f1 loc is shorter
+                    return -1;
+                }
+            }
+            if ( it2 == l2.end() ) {
+                // f2 loc is shorter
+                return 1;
+            }
             int diff = CompareLocations(**it1, **it2);
             if ( diff != 0 )
                 return diff;
         }
     }
 
+    {{ // compare subtypes
+        CSeqFeatData::ESubtype subtype1 = data1.GetSubtype();
+        CSeqFeatData::ESubtype subtype2 = data2.GetSubtype();
+        int diff = subtype1 - subtype2;
+        if ( diff != 0 )
+            return diff;
+    }}
+
     // compare frames of identical CDS ranges
-    if (type1 == CSeqFeatData::e_Cdregion) {
-        _ASSERT(type2 == CSeqFeatData::e_Cdregion);
-        CCdregion::EFrame frame1 = GetData().GetCdregion().GetFrame();
-        CCdregion::EFrame frame2 = f2.GetData().GetCdregion().GetFrame();
+    if ( type1 == CSeqFeatData::e_Cdregion &&
+         type2 == CSeqFeatData::e_Cdregion ) {
+        CCdregion::EFrame frame1 = data1.GetCdregion().GetFrame();
+        CCdregion::EFrame frame2 = data2.GetCdregion().GetFrame();
         if (frame1 > CCdregion::eFrame_one
             ||  frame2 > CCdregion::eFrame_one) {
             int diff = frame1 - frame2;
@@ -106,15 +132,18 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
         }
     }
 
-    {{ // compare subtypes
-        CSeqFeatData::ESubtype subtype1 = GetData().GetSubtype();
-        CSeqFeatData::ESubtype subtype2 = f2.GetData().GetSubtype();
-        int diff = subtype1 - subtype2;
+    // compare labels
+    // if imp features
+    if ( type1 == CSeqFeatData::e_Imp && type2 == CSeqFeatData::e_Imp ) {
+        int diff = NStr::CompareNocase(data1.GetImp().GetKey(),
+                                       data2.GetImp().GetKey());
         if ( diff != 0 )
             return diff;
-    }}
+    }
 
-    // XXX - should compare feature content labels and parent seq-annots
+    // XXX - should compare parent seq-annots
+    // XXX 1. parent Seq-annot idx.itemID
+    // XXX 2. features itemID
 
     return 0; // unknown
 }
@@ -150,6 +179,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.14  2003/04/24 16:15:32  vasilche
+ * Fixed CSeq_feat::Compare().
+ *
  * Revision 6.13  2003/04/18 19:40:39  kans
  * changed iterate to ITERATE
  *

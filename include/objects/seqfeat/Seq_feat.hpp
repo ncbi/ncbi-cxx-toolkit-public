@@ -42,6 +42,7 @@
 #include <objects/seqfeat/Seq_feat_.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
 // generated classes
@@ -76,6 +77,8 @@ public:
     static int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2);
     int CompareNonLocation(const CSeq_feat& f2,
                            const CSeq_loc& loc1, const CSeq_loc& loc2) const;
+    int GetTypeSortingOrder(void) const;
+    static int GetTypeSortingOrder(CSeqFeatData::E_Choice type);
 
     int Compare(const CSeq_feat& f2) const;
     int Compare(const CSeq_feat& f2,
@@ -134,6 +137,13 @@ int CSeq_feat::Compare(const CSeq_feat& f2) const
 }
 
 
+inline
+int CSeq_feat::GetTypeSortingOrder(void) const
+{
+    return GetTypeSortingOrder(GetData().Which());
+}
+
+
 NCBI_SEQFEAT_EXPORT
 inline
 bool operator< (const CSeq_feat& f1, const CSeq_feat& f2)
@@ -155,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2003/04/24 16:15:31  vasilche
+* Fixed CSeq_feat::Compare().
+*
 * Revision 1.12  2003/02/26 17:53:06  vasilche
 * Added public version of feature comparison assuming that
 * total range check is done already.
