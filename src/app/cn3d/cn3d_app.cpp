@@ -612,7 +612,7 @@ void Cn3DApp::MacOpenFile(const wxString& filename)
 {
     if (filename.size() > 0) {
         INFOMSG("apple open event file: " << filename);
-        structureWindow->LoadFile(filename);
+        structureWindow->LoadData(filename, false);
     }
 }
 #endif
@@ -622,6 +622,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/01/17 02:11:27  thiessen
+* mac fix
+*
 * Revision 1.13  2004/01/17 01:47:26  thiessen
 * add network load
 *
