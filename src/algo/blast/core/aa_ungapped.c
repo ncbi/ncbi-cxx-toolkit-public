@@ -280,7 +280,6 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
       for (i = 0; i < hits; ++i) {
          diag_coord = 
             (subject_offsets[i]  - query_offsets[i]) & diag_mask;
-           
          diff = subject_offsets[i] - 
             (diag_array[diag_coord].diag_level - diag_offset);
 
@@ -298,7 +297,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
                   query_offsets[i], subject_offsets[i], hsp_len, score);
             }
             diag_array[diag_coord].diag_level = 
-                  s_last_off - (lookup->wordsize - 1) + diag_offset;
+                  s_last_off - (wordsize - 1) + diag_offset;
          }
       } /* end for */
    } /* end while */
