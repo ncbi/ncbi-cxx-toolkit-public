@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/06/25 15:32:06  lavr
+ * Added function: SERV_GetNextInfoEx
+ * SERV_Open and SERV_GetNextInfo made macros for faster access
+ *
  * Revision 6.17  2001/06/11 22:14:44  lavr
  * Include files adjusted
  *
@@ -128,13 +132,6 @@ SERV_ITER SERV_OpenSimple
 #define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
 
 
-SERV_ITER SERV_Open
-(const char*         service,       /* service name                          */
- TSERV_Type          types,         /* mask of type(s) of servers requested  */
- unsigned int        preferred_host,/* preferred host to use service on, nbo */
- const SConnNetInfo* info           /* connection information                */
- );
-
 SERV_ITER SERV_OpenEx
 (const char*         service,       /* service name                          */
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
@@ -144,15 +141,29 @@ SERV_ITER SERV_OpenEx
  size_t              n_skip         /* number of servers in preceding array  */
  );
 
+#define SERV_Open(service, types, preferred_host, info) \
+        SERV_OpenEx(service, types, preferred_host, info, 0, 0)
 
-/* Get the next server meta-address.
- * Note that the application program should NOT destroy returned server info:
- * it will be freed automatically upon iterator destruction.
+
+/* Get the next server meta-address, optionally accompanied by a host
+ * environment, specified in LBSMD configuration file on that host.
  * Return 0 if no more servers were found for the service requested.
+ * Only when completing successfully, i.e. returning non-NULL info,
+ * this function can also provide the host environment as follows:
+ * when 'env' parameter is passed as a non-NULL pointer, then a copy of
+ * the host environment is allocated, and pointer to it is stored in '*env'.
+ * NULL value stored if no environment is available for the host, which
+ * is referred by returned server info. Otherwise, *env remains untouched.
+ * NOTE that the application program should NOT destroy returned server info:
+ * it will be freed automatically upon iterator destruction. On the other hand,
+ * environment has to be explicitly free()'d, when no longer needed.
  */
-const SSERV_Info* SERV_GetNextInfo
-(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+const SSERV_Info* SERV_GetNextInfoEx
+(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
+ char**              env            /* ptr to copy of host envir to store in */
  );
+
+#define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
 
 
 /* Penalize server returned last from SERV_GetNextInfo.
