@@ -210,9 +210,18 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
    Int4 hsp_q, hsp_s, hsp_len;
    Int4 i;
    Int4 score;
+   Int4 diag_offset, diag_coord, diag_mask, diff;
+   DiagStructPtr diag_array;
+
+   if (!diag) 
+      return -1;
    
    /* clear the diagonal array */
    DiagClear(diag);
+   
+   diag_offset = diag->offset;
+   diag_array = diag->diag_array;
+   diag_mask = diag->diag_mask;
    
    while(first_offset <= last_offset)
    {
