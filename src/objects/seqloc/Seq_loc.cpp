@@ -378,8 +378,11 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
 }
 
 
-TSeqPos CSeq_loc::GetStart(void) const
+TSeqPos CSeq_loc::GetStart(TSeqPos seq_len) const
 {
+    if (seq_len == kInvalidSeqPos) {
+        return GetTotalRange().GetFrom();
+    }
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -409,7 +412,7 @@ TSeqPos CSeq_loc::GetStart(void) const
         }
     case CSeq_loc::e_Mix:
         {
-            return (*GetMix().Get().begin())->GetStart();
+            return (*GetMix().Get().begin())->GetStart(seq_len);
         }
     case CSeq_loc::e_Equiv:
     case CSeq_loc::e_Bond:
@@ -424,8 +427,11 @@ TSeqPos CSeq_loc::GetStart(void) const
 }
 
 
-TSeqPos CSeq_loc::GetEnd(void) const
+TSeqPos CSeq_loc::GetEnd(TSeqPos seq_len) const
 {
+    if (seq_len == kInvalidSeqPos) {
+        return GetTotalRange().GetTo();
+    }
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -455,7 +461,7 @@ TSeqPos CSeq_loc::GetEnd(void) const
         }
     case CSeq_loc::e_Mix:
         {
-            return (*GetMix().Get().rbegin())->GetEnd();
+            return (*GetMix().Get().rbegin())->GetEnd(seq_len);
         }
     case CSeq_loc::e_Equiv:
     case CSeq_loc::e_Bond:
@@ -472,8 +478,11 @@ TSeqPos CSeq_loc::GetEnd(void) const
 
 TSeqPos CSeq_loc::GetCircularLength(TSeqPos seq_len) const
 {
-    TSeqPos start = GetStart();
-    TSeqPos stop = GetEnd();
+    if (seq_len == kInvalidSeqPos) {
+        return GetTotalRange().GetLength();
+    }
+    TSeqPos start = GetStart(seq_len);
+    TSeqPos stop = GetEnd(seq_len);
     return start > stop ? seq_len - start + stop + 1 : stop - start + 1;
 }
 
@@ -932,6 +941,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.33  2003/09/22 18:38:14  grichenk
+ * Fixed circular seq-locs processing by TestForOverlap()
+ *
  * Revision 6.32  2003/09/17 18:39:01  grichenk
  * + GetStart(), GetEnd(), GetCircularLength()
  *

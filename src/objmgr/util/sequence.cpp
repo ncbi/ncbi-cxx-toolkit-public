@@ -1795,7 +1795,8 @@ int x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
 
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
-                   EOverlapType type)
+                   EOverlapType type,
+                   TSeqPos circular_len)
 {
     CRange<TSeqPos> rg1, rg2;
     bool multi_seq = false;
@@ -1808,6 +1809,10 @@ int TestForOverlap(const CSeq_loc& loc1,
         if (type == eOverlap_Simple  ||
             type == eOverlap_Contained  ||
             type == eOverlap_Contains) {
+            // Can not process circular multi-id locations
+            if (circular_len != 0) {
+                throw;
+            }
             return x_TestForOverlap_MultiSeq(loc1, loc2, type);
         }
         multi_seq = true;
@@ -1820,6 +1825,51 @@ int TestForOverlap(const CSeq_loc& loc1,
     switch (type) {
     case eOverlap_Simple:
         {
+            if (circular_len != kInvalidSeqPos) {
+                TSeqPos from1 = loc1.GetStart(circular_len);
+                TSeqPos from2 = loc2.GetStart(circular_len);
+                TSeqPos to1 = loc1.GetEnd(circular_len);
+                TSeqPos to2 = loc2.GetEnd(circular_len);
+                if (from1 > to1) {
+                    if (from2 > to2) {
+                        // Both locations are circular and must intersect at 0
+                        return abs(int(from2 - from1)) +
+                            abs(int(to1 - to2));
+                    }
+                    else {
+                        // Only the first location is circular, rg2 may be used
+                        // for the second one.
+                        int loc_len = rg2.GetLength() + loc1.GetCircularLength(circular_len);
+                        if (from1 < rg2.GetFrom()  ||  to1 > rg2.GetTo()) {
+                            // loc2 is completely in loc1
+                            return loc_len - 2*rg2.GetLength();
+                        }
+                        if (from1 < rg2.GetTo()) {
+                            return loc_len - (rg2.GetTo() - from1);
+                        }
+                        if (rg2.GetFrom() < to1) {
+                            return loc_len - (to1 - rg2.GetFrom());
+                        }
+                        return -1;
+                    }
+                }
+                else if (from2 > to2) {
+                    // Only the second location is circular
+                    int loc_len = rg1.GetLength() + loc2.GetCircularLength(circular_len);
+                    if (from2 < rg1.GetFrom()  ||  to2 > rg1.GetTo()) {
+                        // loc2 is completely in loc1
+                        return loc_len - 2*rg1.GetLength();
+                    }
+                    if (from2 < rg1.GetTo()) {
+                        return loc_len - (rg1.GetTo() - from2);
+                    }
+                    if (rg1.GetFrom() < to2) {
+                        return loc_len - (to2 - rg1.GetFrom());
+                    }
+                    return -1;
+                }
+                // Locations are not circular, proceed to normal calculations
+            }
             if ( rg1.GetTo() >= rg2.GetFrom()  &&
                 rg1.GetFrom() <= rg2.GetTo() ) {
                 return abs(int(rg2.GetFrom() - rg1.GetFrom())) +
@@ -1829,6 +1879,29 @@ int TestForOverlap(const CSeq_loc& loc1,
         }
     case eOverlap_Contained:
         {
+            if (circular_len != kInvalidSeqPos) {
+                TSeqPos from1 = loc1.GetStart(circular_len);
+                TSeqPos from2 = loc2.GetStart(circular_len);
+                TSeqPos to1 = loc1.GetEnd(circular_len);
+                TSeqPos to2 = loc2.GetEnd(circular_len);
+                if (from1 > to1) {
+                    if (from2 > to2) {
+                        return (from1 <= from2  &&  to1 >= to2) ?
+                            (from2 - from1) - (to1 - to2) : -1;
+                    }
+                    else {
+                        if (rg2.GetFrom() >= from1  ||  rg2.GetTo() <= to1) {
+                            return loc1.GetCircularLength(circular_len) -
+                                rg2.GetLength();
+                        }
+                        return -1;
+                    }
+                }
+                else if (from2 > to2) {
+                    // Non-circular location can not contain a circular one
+                    return -1;
+                }
+            }
             if ( rg1.GetFrom() <= rg2.GetFrom()  &&
                 rg1.GetTo() >= rg2.GetTo() ) {
                 return (rg2.GetFrom() - rg1.GetFrom()) +
@@ -1838,6 +1911,29 @@ int TestForOverlap(const CSeq_loc& loc1,
         }
     case eOverlap_Contains:
         {
+            if (circular_len != kInvalidSeqPos) {
+                TSeqPos from1 = loc1.GetStart(circular_len);
+                TSeqPos from2 = loc2.GetStart(circular_len);
+                TSeqPos to1 = loc1.GetEnd(circular_len);
+                TSeqPos to2 = loc2.GetEnd(circular_len);
+                if (from1 > to1) {
+                    if (from2 > to2) {
+                        return (from2 <= from1  &&  to2 >= to1) ?
+                            (from1 - from2) - (to2 - to1) : -1;
+                    }
+                    else {
+                        // Non-circular location can not contain a circular one
+                        return -1;
+                    }
+                }
+                else if (from2 > to2) {
+                    if (rg1.GetFrom() >= from2  ||  rg1.GetTo() <= to2) {
+                        return loc2.GetCircularLength(circular_len) -
+                            rg1.GetLength();
+                    }
+                    return -1;
+                }
+            }
             if ( rg2.GetFrom() <= rg1.GetFrom()  &&
                 rg2.GetTo() >= rg1.GetTo() ) {
                 return (rg1.GetFrom() - rg2.GetFrom()) +
@@ -1904,10 +2000,11 @@ int TestForOverlap(const CSeq_loc& loc1,
 }
 
 
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
-                                            CSeqFeatData::E_Choice feat_type,
-                                            EOverlapType overlap_type,
-                                            CScope& scope)
+CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
+                                              CSeqFeatData::E_Choice feat_type,
+                                              CSeqFeatData::ESubtype feat_subtype,
+                                              EOverlapType overlap_type,
+                                              CScope& scope)
 {
     bool revert_locations = false;
     SAnnotSelector::EOverlapType annot_overlap_type;
@@ -1932,10 +2029,11 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
     CConstRef<CSeq_feat> feat_ref;
     int diff = -1;
 
-    CFeat_CI feat_it(scope, loc, feat_type,
-        annot_overlap_type,
-        CFeat_CI::eResolve_TSE, // ???
-        CFeat_CI::e_Location);
+    CFeat_CI feat_it(scope, loc, SAnnotSelector()
+        .SetFeatChoice(feat_type)
+        .SetFeatSubtype(feat_subtype)
+        .SetOverlapType(annot_overlap_type)
+        .SetResolveTSE());
     for ( ; feat_it; ++feat_it) {
         // treat subset as a special case
         int cur_diff = ( !revert_locations ) ?
@@ -1953,50 +2051,24 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
 
 
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
+                                            CSeqFeatData::E_Choice feat_type,
+                                            EOverlapType overlap_type,
+                                            CScope& scope)
+{
+    return x_GetBestOverlappingFeat(loc,
+        feat_type, CSeqFeatData::eSubtype_any,
+        overlap_type, scope);
+}
+
+
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope)
 {
-    bool revert_locations = false;
-    SAnnotSelector::EOverlapType annot_overlap_type;
-    switch (overlap_type) {
-    case eOverlap_Simple:
-    case eOverlap_Contained:
-    case eOverlap_Contains:
-        // Require total range overlap
-        annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
-        break;
-    case eOverlap_Subset:
-    case eOverlap_CheckIntervals:
-    case eOverlap_Interval:
-        revert_locations = true;
-        // there's no break here - proceed to "default"
-    default:
-        // Require intervals overlap
-        annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
-        break;
-    }
-
-    CConstRef<CSeq_feat> feat_ref;
-    int diff = -1;
-
-    for ( CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-                           annot_overlap_type,
-                           CFeat_CI::eResolve_TSE, // ???
-                           CFeat_CI::e_Location); feat_it; ++feat_it ) {
-        if ( feat_it->GetData().GetSubtype() != feat_type )
-            continue;
-        int cur_diff = ( !revert_locations ) ?
-            TestForOverlap(loc, feat_it->GetLocation(), overlap_type) :
-            TestForOverlap(feat_it->GetLocation(), loc, overlap_type);
-        if (cur_diff < 0)
-            continue;
-        if ( cur_diff < diff  ||  diff < 0 ) {
-            diff = cur_diff;
-            feat_ref = &feat_it->GetMappedFeature();
-        }
-    }
-    return feat_ref;
+    return x_GetBestOverlappingFeat(loc,
+        CSeqFeatData::GetTypeFromSubtype(feat_type), feat_type,
+        overlap_type, scope);
 }
 
 
@@ -3026,6 +3098,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.60  2003/09/22 18:38:14  grichenk
+* Fixed circular seq-locs processing by TestForOverlap()
+*
 * Revision 1.59  2003/07/17 21:00:50  vasilche
 * Added missing include <list>
 *

@@ -244,7 +244,8 @@ enum EOverlapType {
 NCBI_XOBJUTIL_EXPORT
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
-                   EOverlapType type);
+                   EOverlapType type,
+                   TSeqPos circular_len = kInvalidSeqPos);
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
@@ -497,6 +498,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2003/09/22 18:38:14  grichenk
+* Fixed circular seq-locs processing by TestForOverlap()
+*
 * Revision 1.29  2003/08/21 16:09:44  ucko
 * Correct path to header for FASTA reader
 *

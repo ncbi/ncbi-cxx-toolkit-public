@@ -85,9 +85,11 @@ public:
     void InvalidateTotalRangeCache(void);
     void InvalidateTotalRangeCacheAll(void);
 
-    // Both start and end are inclusive, no ID is checked
-    TSeqPos GetStart(void) const;
-    TSeqPos GetEnd(void) const;
+    // Special case for circular sequences. No ID is checked for
+    // circular locations. If the sequence is not circular
+    // (seq_len == kInvalidSeqPos) all functions work like GetTotalRange()
+    TSeqPos GetStart(TSeqPos seq_len) const;
+    TSeqPos GetEnd(TSeqPos seq_len) const;
     TSeqPos GetCircularLength(TSeqPos seq_len) const;
 
     // Appends a label suitable for display (e.g., error messages)
@@ -338,6 +340,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/09/22 18:38:13  grichenk
+ * Fixed circular seq-locs processing by TestForOverlap()
+ *
  * Revision 1.26  2003/09/17 18:39:01  grichenk
  * + GetStart(), GetEnd(), GetCircularLength()
  *
