@@ -88,7 +88,7 @@ public:
         
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
-    // sort, drops duplicates and cleans up remaining items
+    // sort, merge duplicates and cleans up remaining items
     static void Rearrange(TReferences& refs, CBioseqContext& ctx);
 
     bool Matches(const CPub_set& ps) const;
@@ -122,10 +122,10 @@ public:
     static void GetAuthNames(list<string>& authors, const CAuth_list* alp);
     static void FormatAffil(const CAffil& affil, string& result);
 
+    void SetLoc(const CConstRef<CSeq_loc>& loc);
 private:
     
     void x_GatherInfo(CBioseqContext& ctx);
-
     void x_Init(const CPub&           pub,  CBioseqContext& ctx);
     void x_Init(const CCit_gen&       gen,  CBioseqContext& ctx);
     void x_Init(const CCit_sub&       sub,  CBioseqContext& ctx);
@@ -169,17 +169,6 @@ private:
 };
 
 
-class LessEqual
-{
-public:
-    LessEqual(bool serial_first, bool is_refseq);
-    bool operator()(const CRef<CReferenceItem>& ref1, const CRef<CReferenceItem>& ref2);
-private:
-    bool m_SerialFirst;
-    bool m_IsRefSeq;
-};
-
-
 ///////////////////////////////////////////////////////////////////////////
 //
 // INLINE METHODS
@@ -199,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/06 17:43:44  shomrat
+* moved non-public class to src file
+*
 * Revision 1.7  2004/04/27 15:08:46  shomrat
 * + GetPrepub
 *
