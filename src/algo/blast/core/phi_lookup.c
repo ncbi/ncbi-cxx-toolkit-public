@@ -621,6 +621,10 @@ s_InitPattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
                             "pattern too long");
       }
     }
+    
+    /* Free the seedSearch structure - it's no longer needed */
+    sfree(seedSearch);
+
     localPattern[j-1] = 1;
     if (patternSearch->patternProbability > 1.0)
       patternSearch->patternProbability = 1.0;
@@ -759,6 +763,8 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
                                hitArray[i]-hitArray[i+1]+1);
       }
    }
+
+   sfree(hitArray);
 
    return lookup->num_matches;
 }
