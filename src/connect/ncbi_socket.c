@@ -33,6 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2001/08/29 17:32:56  juran
+ * Define POSIX macros missing from Universal Interfaces 3.4
+ * in terms of the 'proper' constants.
+ * Complain about unsupported platforms at compile-time, not runtime.
+ *
  * Revision 6.34  2001/07/11 16:16:39  vakatov
  * Fixed comments for HAVE_GETHOSTBYNAME_R, HAVE_GETHOSTBYADDR_R; other
  * minor (style and messages) fixes
@@ -301,6 +306,10 @@ typedef int TSOCK_Handle;
 
 #elif defined(NCBI_OS_MAC)
 
+#  if TARGET_API_MAC_CARBON
+#    define O_NONBLOCK kO_NONBLOCK
+#  endif
+
 typedef int TSOCK_Handle;
 #  define SOCK_INVALID        (-1)
 #  ifndef SOCK_ERRNO
@@ -535,8 +544,7 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
                   fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1);
 #else
-    assert(0);
-    return 0/*false*/;
+#	error "Unsupported platform"
 #endif
 }
 
