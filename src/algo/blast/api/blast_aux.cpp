@@ -32,12 +32,15 @@
 /// some auxiliary functions to convert CSeq_loc to/from BlastMask structures.
 
 #include <ncbi_pch.hpp>
+#include <sstream>
+
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -382,6 +385,35 @@ FindGeneticCode(int genetic_code)
     return retval;
 }
 
+EProgram ProgramNameToEnum(const string& program_name)
+{
+    if (program_name.empty()) {
+        NCBI_THROW(CBlastException, eBadParameter, "Empty program name");
+    }
+
+    string lowercase_program_name(program_name);
+    lowercase_program_name = NStr::ToLower(lowercase_program_name);
+
+    if (lowercase_program_name == "blastn") {
+        return eBlastn;
+    } else if (lowercase_program_name == "blastp") {
+        return eBlastp;
+    } else if (lowercase_program_name == "blastx") {
+        return eBlastx;
+    } else if (lowercase_program_name == "tblastn") {
+        return eTblastn;
+    } else if (lowercase_program_name == "tblastx") {
+        return eTblastx;
+    } else if (lowercase_program_name == "rpsblast") {
+        return eRPSBlast;
+    } else if (lowercase_program_name == "rpstblastn") {
+        return eRPSTblastn;
+    }
+    ostringstream os;
+    os << program_name << " not supported";
+    NCBI_THROW(CBlastException, eNotSupported, os.str());
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -392,6 +424,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2004/08/18 18:14:13  camacho
+ * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
+ *
  * Revision 1.46  2004/08/13 22:33:26  camacho
  * Added DebugDump for PSIBlastOptions
  *

@@ -2425,11 +2425,6 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
     m_HitSaveOpts->phi_align = TRUE;
 }
 
-/// Global function to convert program type enumeration used in the engine
-/// to the program enumeration.
-NCBI_XBLAST_EXPORT
-EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -2439,6 +2434,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2004/08/18 18:13:42  camacho
+* Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
+*
 * Revision 1.70  2004/08/16 19:46:05  dondosha
 * Reflect in comments that uneven gap linking works now not just for tblastn
 *

@@ -749,14 +749,12 @@ static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
 
 int CBlastApplication::Run(void)
 {
-    EBlastProgramType program_number;
     int status = 0;
 
     // Process command line args
     const CArgs& args = GetArgs();
     
-    BlastProgram2Number(args["program"].AsString().c_str(), &program_number);
-    EProgram program = GetProgramFromBlastProgramType(program_number);
+    EProgram program = ProgramNameToEnum(args["program"].AsString());
 
     Int4 strand_number = args["strand"].AsInteger();
     ENa_strand strand;

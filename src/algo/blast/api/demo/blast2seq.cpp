@@ -77,7 +77,6 @@ private:
     virtual void Exit(void);
 
     void InitObjMgr(void);
-    EProgram GetBlastProgramNum(const string& prog);
     CBlastOptionsHandle* ProcessCommandLineArgs() THROWS((CBlastException));
 
 #ifndef NDEBUG
@@ -229,28 +228,12 @@ CBlast2seqApplication::InitObjMgr(void)
     }
 }
 
-EProgram
-CBlast2seqApplication::GetBlastProgramNum(const string& prog)
-{
-    if (prog == "blastp")
-        return eBlastp;
-    if (prog == "blastn")
-        return eBlastn;
-    if (prog == "blastx")
-        return eBlastx;
-    if (prog == "tblastn")
-        return eTblastn;
-    if (prog == "tblastx")
-        return eTblastx;
-    return eBlastProgramMax;
-}
-
 CBlastOptionsHandle*
 CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
 {
     CArgs args = GetArgs();
 
-    EProgram prog = GetBlastProgramNum(args["program"].AsString());
+    EProgram prog = ProgramNameToEnum(args["program"].AsString());
 
     if (args["lookup"].AsInteger() == 1) {
         prog = eMegablast;
@@ -442,14 +425,11 @@ int CBlast2seqApplication::Run(void)
         InitObjMgr();
         int counter = 0;
         const CArgs args = GetArgs();
-        EBlastProgramType program_number;
 
         if (args["trace"])
             SetDiagTrace(eDT_Enable);
 
-        BlastProgram2Number(args["program"].AsString().c_str(), 
-                            &program_number);
-        EProgram program = GetProgramFromBlastProgramType(program_number);
+        EProgram program = ProgramNameToEnum(args["program"].AsString());
         ENa_strand query_strand = eNa_strand_unknown;
         ENa_strand subject_strand = eNa_strand_unknown;
 
@@ -527,6 +507,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/08/18 18:14:13  camacho
+ * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
+ *
  * Revision 1.51  2004/08/17 17:22:01  dondosha
  * Removed call to register GenBank loader in object manager
  *

@@ -62,6 +62,16 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+/// Map a string into an element of the enumeration above (except
+/// eBlastProgramMax).
+/// @param program_name [in]
+/// @return an element of the ncbi::blast::EProgram enumeration, except
+/// eBlastProgramMax
+/// @throws CBlastException if the string does not map into any of the EProgram
+/// elements
+NCBI_XBLAST_EXPORT
+EProgram ProgramNameToEnum(const std::string& program_name);
+
 /** Converts a CSeq_loc into a BlastMaskLoc structure used in NewBlast
  * @param slp CSeq_loc to convert [in]
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
@@ -165,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/08/18 18:13:42  camacho
+* Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
+*
 * Revision 1.39  2004/08/11 14:24:20  camacho
 * Move FindGeneticCode
 *
