@@ -108,8 +108,8 @@ int main(void)
     CORE_SetREG( REG_Create(0, s_REG_Get, 0, 0, 0) );
 
     /* Connection timeout */
-    /*    timeout.sec  = 5;
-          timeout.usec = 123456;*/
+    timeout.sec  = 5;
+    timeout.usec = 123456;
 
     /* Printout all socket traffic */
     /* SOCK_SetDataLoggingAPI(eOn); */
@@ -142,6 +142,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2004/11/22 20:27:32  lavr
+ * Weird 5.123456 timeout restored to the form it used to be
+ *
  * Revision 6.16  2004/11/22 20:25:27  lavr
  * "yar" replaced with "graceland"
  *
