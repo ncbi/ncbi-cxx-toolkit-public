@@ -755,6 +755,77 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject, BlastHSPPtr hsp,
    return 0;
 }
 
+static Int2
+BlastOOFGetNumIdentical(Uint1Ptr query_seq, Uint1Ptr subject_seq, 
+   BlastHSPPtr hsp, Int4Ptr num_ident_ptr, Int4Ptr align_length_ptr)
+{
+   Int4 i, num_ident, align_length, q_off, s_off;
+   Int2 context;
+   Uint1Ptr q, s;
+   GapXEditScriptPtr esp;
+
+   if (!hsp->gap_info)
+      return -1;
+
+   context = hsp->context;
+   s_off = hsp->query.offset;
+   q_off = hsp->subject.offset;
+
+   if (!subject_seq || !query_seq)
+      return -1;
+
+   q = &query_seq[q_off];
+   s = &subject_seq[s_off];
+
+   num_ident = 0;
+   align_length = 0;
+
+
+   for (esp = hsp->gap_info->esp; esp; esp = esp->next) {
+      switch (esp->op_type) {
+      case 3: /* Substitution */
+         align_length += esp->num;
+         for (i=0; i<esp->num; i++) {
+            if (*q == *s)
+               num_ident++;
+            ++q;
+            s += CODON_LENGTH;
+         }
+         break;
+      case 6: /* Insertion */
+         align_length += esp->num;
+         s += esp->num * CODON_LENGTH;
+         break;
+      case 0: /* Deletion */
+         align_length += esp->num;
+         q += esp->num;
+         break;
+      case 1: /* Gap of two nucleotides. */
+         s -= 2;
+         break;
+      case 2: /* Gap of one nucleotide. */
+         s -= 1;
+         break;
+      case 4: /* Insertion of one nucleotide. */
+         s += 1;
+         break;
+      case 5: /* Insertion of two nucleotides. */
+         s += 2;
+         break;
+      default: 
+         s += esp->num * CODON_LENGTH;
+         q += esp->num;
+         break;
+      }
+   }
+
+   *align_length_ptr = align_length;
+   *num_ident_ptr = num_ident;
+   return 0;
+
+
+}
+
 /** Compute gapped alignment with traceback for all HSPs from a single
  * query/subject sequence pair.
  * @param program_number Type of BLAST program [in]
@@ -834,19 +905,29 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
       }
    } else {
       /* For out-of-frame gapping, switch query and subject sequences */
-      subject_start = subject = query_blk->sequence;
-      subject_length_orig = query_blk->length;
-      query = subject_blk->sequence;
-      query_length = subject_blk->length;
+      query = query_blk->oof_sequence + CODON_LENGTH;
+      query_length = query_blk->length;
+      subject = subject_start = subject_blk->sequence;
+      subject_length_orig = subject_blk->length;
    }
    
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp_start_is_contained = FALSE;
       hsp_end_is_contained = FALSE;
       hsp = hsp_array[index];
-      context_offset = query_info->context_offsets[hsp->context];
-      query = &(query_blk->sequence[context_offset]);
-      query_length = BLAST_GetQueryLength(query_info, hsp->context);
+      if (is_ooframe) {
+         Int4 context = hsp->context - hsp->context%3;
+         context_offset = 
+            query_info->context_offsets[context];
+         query = 
+            query_blk->oof_sequence + CODON_LENGTH + context_offset;
+         query_length = query_info->context_offsets[context+3]
+            - context_offset;
+       } else {
+         context_offset = query_info->context_offsets[hsp->context];
+         query = query_blk->sequence + context_offset;
+         query_length = BLAST_GetQueryLength(query_info, hsp->context);
+      }
       
       for (index1=0; index1<index; index1++) {
          hsp_start_is_contained = FALSE;
@@ -918,10 +999,10 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
             hsp->subject.gapped_start = s_start;
          } else {
             if(is_ooframe) {
-               /* Code above should be investigated for possible
+               /* Code below should be investigated for possible
                   optimization for OOF */
-               q_start = hsp->subject.gapped_start;
-               s_start = hsp->query.gapped_start;
+               s_start = hsp->subject.gapped_start;
+               q_start = hsp->query.gapped_start;
                gap_align->subject_start = 0;
                gap_align->query_start = 0;
             } else {
@@ -947,19 +1028,11 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
             score_options, q_start, s_start, query_length, subject_length);
          
          if (gap_align->score >= min_score_to_keep) {
-            if(is_ooframe) {
-               hsp->query.offset = gap_align->subject_start + start_shift;
-               hsp->subject.offset = gap_align->query_start;
-               /* The end is one further for BLAST than for the gapped align */
-               hsp->query.end = gap_align->subject_stop + 1 + start_shift;
-               hsp->subject.end = gap_align->query_stop + 1;
-            } else {
-               hsp->query.offset = gap_align->query_start;
-               hsp->subject.offset = gap_align->subject_start + start_shift;
-               /* The end is one further for BLAST than for the gapped align */
-               hsp->query.end = gap_align->query_stop + 1;
-               hsp->subject.end = gap_align->subject_stop + 1 + start_shift;
-            }
+            hsp->subject.offset = gap_align->subject_start + start_shift;
+            hsp->query.offset = gap_align->query_start;
+            /* The end is one further for BLAST than for the gapped align */
+            hsp->subject.end = gap_align->subject_stop + 1 + start_shift;
+            hsp->query.end = gap_align->query_stop + 1;
             
             if (gap_align->edit_block && start_shift > 0) {
                gap_align->edit_block->start2 += start_shift;
@@ -973,17 +1046,10 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
             gap_align->edit_block = NULL;
             
             if (hsp->gap_info) {
-               if (is_ooframe) {
-                  hsp->gap_info->frame2 = hsp->query.frame;
-                  hsp->gap_info->frame1 = hsp->subject.frame;
-                  hsp->gap_info->original_length1 = subject_blk->length;
-                  hsp->gap_info->original_length2 = query_length;
-               } else {
-                  hsp->gap_info->frame1 = hsp->query.frame;
-                  hsp->gap_info->frame2 = hsp->subject.frame;
-                  hsp->gap_info->original_length1 = query_length;
-                  hsp->gap_info->original_length2 = subject_blk->length;
-               }
+               hsp->gap_info->frame2 = hsp->query.frame;
+               hsp->gap_info->frame1 = hsp->subject.frame;
+               hsp->gap_info->original_length1 = query_length;
+               hsp->gap_info->original_length2 = subject_blk->length;
                if (program_number == blast_type_blastx)
                   hsp->gap_info->translate1 = TRUE;
                if (program_number == blast_type_tblastn)
@@ -1007,9 +1073,15 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
                   keep = FALSE;
             }
 
-            BlastHSPGetNumIdentical(query, subject, hsp, 
-               score_options->gapped_calculation, &hsp->num_ident, 
-               &align_length);
+            if (is_ooframe) {
+               BlastOOFGetNumIdentical(query, subject, hsp, 
+                                       &hsp->num_ident, &align_length);
+            } else {
+               BlastHSPGetNumIdentical(query, subject, hsp, 
+                  score_options->gapped_calculation, &hsp->num_ident, 
+                  &align_length);
+            }
+
             if (hsp->num_ident * 100 < 
                 align_length * hit_options->percent_identity) {
                keep = FALSE;

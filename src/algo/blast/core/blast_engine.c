@@ -66,6 +66,31 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
    return (BlastCoreAuxStructPtr) MemFree(aux_struct);
 }
 
+void TranslateHSPsToDNAPCoord(BlastInitHitListPtr init_hitlist, 
+        BlastQueryInfoPtr query_info)
+{
+   BlastInitHSPPtr init_hsp;
+   Int4 index, context, frame;
+   Int4Ptr context_offsets = query_info->context_offsets;
+   
+   for (index = 0; index < init_hitlist->total; ++index) {
+      init_hsp = &init_hitlist->init_hsp_array[index];
+
+      context = 
+         BinarySearchInt4(init_hsp->q_off, context_offsets,
+                          query_info->last_context+1);
+      frame = context % 3;
+      
+      init_hsp->q_off = 
+         (init_hsp->q_off - context_offsets[context]) * CODON_LENGTH + 
+         context_offsets[context-frame] + frame;
+      init_hsp->ungapped_data->q_start = 
+         (init_hsp->ungapped_data->q_start - context_offsets[context]) 
+         * CODON_LENGTH + context_offsets[context-frame] + frame;
+   }
+   return;
+}
+
 /** The core of the BLAST search: comparison between the (concatenated)
  * query against one subject sequence. Translation of the subject sequence
  * into 6 frames is done inside, if necessary. If subject sequence is 
@@ -162,6 +187,12 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
          return_stats->init_extends += init_hitlist->total;
          
          if (score_options->gapped_calculation) {
+            if (score_options->is_ooframe) {
+               /* Convert query offsets in all HSPs into the mixed-frame  
+                  coordinates */
+               TranslateHSPsToDNAPCoord(init_hitlist, query_info);
+            }
+
             aux_struct->GetGappedScore(program_number, query, subject, 
                gap_align, score_options, ext_params, hit_params, 
                init_hitlist, &hsp_list);
@@ -179,8 +210,10 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
          hsp_list->oid = subject->oid;
          
          /* Multiple contexts - adjust all HSP offsets to the individual 
-            query coordinates; also assign frames */
-         BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info);
+            query coordinates; also assign frames, except in case of
+            out-of-frame gapping. */
+         BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info, 
+                                  score_options->is_ooframe);
          
 #ifdef DO_LINK_HSPS
          if (hit_options->do_sum_stats == TRUE)
@@ -389,15 +422,15 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
                            eff_len_options->dbseq_num, &ewp)) != 0)
       return status;
       
+   if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
+                    eff_len_options, sbp, query_info)) != 0)
+      return status;
+
    BlastExtensionParametersNew(program_number, ext_options, sbp, query_info, 
                                ext_params);
 
    BlastHitSavingParametersNew(program_number, hit_options, NULL, sbp, 
                                query_info, hit_params);
-
-   if ((status = BLAST_CalcEffLengths(program_number, scoring_options, 
-                    eff_len_options, sbp, query_info)) != 0)
-      return status;
 
    BlastInitialWordParametersNew(program_number, word_options, *hit_params, 
       *ext_params, sbp, query_info, eff_len_options, word_params);

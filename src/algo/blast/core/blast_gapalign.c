@@ -987,9 +987,10 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   Int4Ptr *matrix;
   Int4 X;
   GapXDropStateArrayStructPtr state_struct;
+  Int4 factor = 1;
   
   matrix = gap_align->sbp->matrix;
-  *pei =0; *pej = -2;
+  *pei =0; *pej = 0;
   data.sapp = *sapp = S;
   data.last= 0;
   m = score_options->gap_open + score_options->gap_extend;
@@ -1033,7 +1034,15 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   data.CD[i].CC = data.CD[i].DD = MININT;
   tt = 0;  j = i;
   state_struct->used = i+1;
-  B-=2;
+
+  if (!reversed) {
+     /* Shift sequence to allow for backwards frame shift */
+     B -= 2;
+  } else {
+     /* Set direction of the coordinates in B */
+     factor = -1;
+  }
+
   tt = 0;  j = i;
   for(j_r = 1; j_r <= M; j_r++) {
     count += j - tt; 
@@ -1042,9 +1051,12 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
     state[j_r] = state_array - tt + 1;
     stp = state[j_r];
     tt_start = tt; 
-    if (!(gap_align->positionBased)) /*AAS*/
-      wa = matrix[A[j_r]]; 
-    else {
+    if (!(gap_align->positionBased)) {
+      if(reversed)
+         wa = matrix[A[M-j_r]]; 
+      else
+         wa = matrix[A[j_r]]; 
+    } else {
       if(reversed)
         wa = gap_align->sbp->posMatrix[M - j_r];
       else
@@ -1058,7 +1070,8 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	else if (sc+shift == f1) {
 	  if (f1 == s2) st1=2; else st1 = 5;
 	} else if (f2 == s1) st1 = 1; else st1 = 4;
-	sc += wa[B[i++]];
+	sc += wa[B[factor*i]];
+   ++i;
 	f1 = s3; 
 	s3 = (++dp)->CC; f1 = MAX(f1, s3);
 	d = dp->DD;
@@ -1081,7 +1094,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	    } else {
 		cb = i;
 		dp->CC = sc;
-		if (sc > best_score) {best_score = sc; *pei = j_r;*pej=i-3;}
+		if (sc > best_score) {best_score = sc; *pei = j_r;*pej=i-1;}
 		if ((sc-=m) > (e1-=data.h)) e1 = sc; else st1+=10;
 		if (sc < (d-=data.h)) { dp->DD = d; st1 += 20;} 
 		else dp->DD = sc;
@@ -1094,7 +1107,8 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	else if (sc+shift == f1) {
 	  if (f1 == s3) st1=1; else st1 = 4;
 	} else if (f2 == s1) st1 = 2; else st1 = 5;
-	sc += wa[B[i++]];
+	sc += wa[B[factor*i]];
+   ++i;
 	f2 = s2; s2 = (++dp)->CC; f2 = MAX(f2, s2);
 	d = dp->DD;
 	if (sc < MAX(d, e2)) {
@@ -1115,7 +1129,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	    } else {
 		cb = i;
 		dp->CC = sc;
-		if (sc > best_score) {best_score = sc;*pei= j_r; *pej=i-3;}
+		if (sc > best_score) {best_score = sc;*pei= j_r; *pej=i-1;}
 		if ((sc-=m) > (e2-=data.h)) e2 = sc; else st1+=10;
 		if (sc < (d-=data.h)) {dp->DD = d; st1+=20;} 
 		else  dp->DD = sc;
@@ -1128,7 +1142,8 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	else if (sc+shift == f1) {
 	  if (f1 == s3) st1=2; else st1 = 5;
 	} else if (f2 == s2) st1 = 1; else st1 = 4;
-	sc += wa[B[i++]];
+	sc += wa[B[factor*i]];
+   ++i;
 	f1 = f2;
 	f2 = s1; s1 = (++dp)->CC; f2 = MAX(f2, s1);
 	d = dp->DD;
@@ -1151,7 +1166,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	    } else {
 		cb = i;
 		dp->CC = sc;
-		if (sc > best_score) {best_score = sc;*pei = j_r; *pej=i-3;}
+		if (sc > best_score) {best_score = sc;*pei = j_r; *pej=i-1;}
 		if ((sc-=m) > (e3-=data.h)) e3 = sc; else st1 += 10;
 		if (sc < (d-=data.h)) {dp->DD = d; st1 += 20;}
 		else dp->DD = sc;
@@ -1188,7 +1203,8 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 
     state_struct->used += (MAX(i, j) - tt_start + 1);
   }
-  i = *pei; j = *pej+2;
+
+  i = *pei; j = *pej;
   /* printf("best = %d i,j=%d %d\n", best_score, i, j); */
   tmp = MemNew(i + j);        
   for (s= 1, c= 0; i > 0 || j > 0; c++, i--) {
@@ -1203,6 +1219,10 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   while(c >= 0) {
       *data.sapp++ = tmp[c--];
   }
+
+  if (!reversed)
+     /* Sequence was shifted backwards, so length must be adjusted */
+     *pej -= 2;
 
   MemFree(tmp);
 
@@ -1245,6 +1265,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   Int4Ptr *matrix;
   Int4Ptr wa;
   BlastGapDPPtr dp;
+  Int4 factor = 1;
   
   if(!score_only)
       return OOF_ALIGN(A, B, M, N, S, pei, pej, sapp, gap_align, score_options,
@@ -1257,7 +1278,14 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   X = gap_align->gap_x_dropoff;
   shift = score_options->shift_pen;
 
-  B-=2;
+  if(!reversed) {
+     /* Allow for a backwards frame shift */
+     B -= 2;
+  } else {
+     /* Set the direction for the coordinates in B */
+     factor = -1;
+  }
+
   if (X < m)
 	X = m;
 
@@ -1279,18 +1307,23 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   tt = 0;  j = i;
   for (j_r = 1; j_r <= M; j_r++) {
     count += j - tt; CD[2].CC = CD[2].DD= MININT;
-    if (!(gap_align->positionBased)) /*AAS*/
-      wa = matrix[A[j_r]]; 
-    else {
+    if (!(gap_align->positionBased)) {
+       if(reversed)
+          wa = matrix[A[M-j_r]];
+       else
+          wa = matrix[A[j_r]];
+    } else {
       if(reversed)
-        wa = gap_align->sbp->posMatrix[M - j_r];
+        wa = gap_align->sbp->posMatrix[M-j_r];
       else
         wa = gap_align->sbp->posMatrix[j_r + query_offset];
     }
     s1 = s2 = s3 = f1= f2 = MININT; f1=f2=e1 = e2 = e3 = MININT; sc = MININT;
     for(cb = i = tt, dp = &CD[i-1]; 1;) {
 	if (i >= j) break;
-	sc = MAX(MAX(f1, f2)-shift, s3)+wa[B[i++]];
+   sc = MAX(MAX(f1, f2)-shift, s3)+wa[B[factor*i]];
+   ++i;
+
 	f1 = s3; 
 	s3 = (++dp)->CC; f1 = MAX(f1, s3);
 	d = dp->DD;
@@ -1318,7 +1351,9 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	    }
 	}
 	if (i >= j) {c = e1; e1 = e2; e2 = e3; e3 = c; break;}
-	sc = MAX(MAX(f1, f2)-shift, s2)+wa[B[i++]];
+   sc = MAX(MAX(f1, f2)-shift, s2)+wa[B[factor*i]];
+   ++i;
+
 	f2 = s2; s2 = (++dp)->CC; f2 = MAX(f2, s2);
 	d = dp->DD;
 	if (sc < MAX(d, e2)) {
@@ -1344,7 +1379,10 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 	    }
 	}
 	if (i >= j) { c = e2; e2 = e1; e1 = e3; e3 = c; break; }
-	sc = MAX(MAX(f1, f2)-shift, s1)+wa[B[++i]];
+
+   sc = MAX(MAX(f1, f2)-shift, s1)+wa[B[factor*i]];
+   ++i;
+
 	f1 = f2;
 	f2 = s1; s1 = (++dp)->CC; f2 = MAX(f2, s1);
 	d = dp->DD;
@@ -1399,6 +1437,10 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
     }
   }
   
+  if (!reversed)
+     /* The sequence was shifted, so length should be adjusted as well */
+     *pej -= 2;
+
   MemFree(CD);
 
   return best_score;
@@ -2282,7 +2324,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
 #endif
  
          if(is_prot && !score_options->is_ooframe) {
-            max_offset = BLAST_GetStartForGappedAlignment(gap_align, init_hsp, query->sequence, subject->sequence);
+            max_offset = BLAST_GetStartForGappedAlignment(gap_align, init_hsp,
+                            query->sequence, subject->sequence);
             init_hsp->s_off += max_offset - init_hsp->q_off;
             init_hsp->q_off = max_offset;
          }
@@ -2364,17 +2407,16 @@ static Int4 reverse_seq(Uint1 *seq, Uint1 *pos, Uint1 *target)
 /** Performs gapped extension for protein sequences, given two
  * sequence blocks, scoring and extension options, and an initial HSP 
  * with information from the previously performed ungapped extension
- * @param query_in The query sequence block [in]
- * @param subject_in The subject sequence block [in]
+ * @param query_blk The query sequence block [in]
+ * @param subject_blk The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options Options related to scoring [in]
  * @param init_hsp The initial HSP information [in]
  */
-static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_in,
-   BLAST_SequenceBlkPtr subject_in, BlastGapAlignStructPtr gap_align,
+static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_blk,
+   BLAST_SequenceBlkPtr subject_blk, BlastGapAlignStructPtr gap_align,
    BlastScoringOptionsPtr score_options, BlastInitHSPPtr init_hsp)
 {
-   BLAST_SequenceBlkPtr query_blk, subject_blk;
    Int4 tmpval;
    Boolean found_start, found_end;
    Int4 q_length=0, s_length=0, score_right, score_left;
@@ -2386,44 +2428,29 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_in,
       return FALSE;
    
    if (score_options->is_ooframe) {
-      /* Switch query and subject */
-      query_blk = subject_in;
-      subject_blk = query_in;
-      tmpval = init_hsp->q_off;
-      init_hsp->q_off = init_hsp->s_off;
-      init_hsp->s_off = tmpval;
+      q_length = init_hsp->ungapped_data->q_start;
+      s_length = init_hsp->ungapped_data->s_start;
+      subject = subject_blk->sequence;
+      query = query_blk->oof_sequence + CODON_LENGTH + q_length;
    } else {
-      query_blk = query_in;
-      subject_blk = subject_in;
+      q_length = init_hsp->q_off + 1;
+      s_length = init_hsp->s_off + 1;
+      query = query_blk->sequence;
+      subject = subject_blk->sequence;
    }
-
-   query = query_blk->sequence;
-   subject = subject_blk->sequence;
 
    found_start = FALSE;
    found_end = FALSE;
     
    /* Looking for "left" score */
    score_left = 0;
-   if (init_hsp->q_off != 0 && init_hsp->s_off != 0) {
+   if (q_length != 0 && s_length != 0) {
       found_start = TRUE;
       if(score_options->is_ooframe) {
-         q_left = (Uint1Ptr) MemNew((init_hsp->q_off+3)*sizeof(Uint1));
-         s_left = (Uint1Ptr) MemNew((init_hsp->s_off+5)*sizeof(Uint1));
-         
-         q_length = reverse_seq(query, 
-                                   query+init_hsp->q_off-1, q_left+1);
-         s_length = reverse_seq(subject, 
-                                subject+init_hsp->s_off-3, s_left+3);
-         
-         score_left = OOF_SEMI_G_ALIGN(q_left, s_left+2, q_length, s_length,
-            NULL, &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
-            score_options, init_hsp->q_off, TRUE);
-         q_left = MemFree(q_left);
-         s_left = MemFree(s_left);
+         score_left = OOF_SEMI_G_ALIGN(subject, query, s_length, q_length,
+            NULL, &private_s_start, &private_q_start, TRUE, NULL, gap_align, 
+            score_options, s_length, TRUE);
       } else {
-         q_length = (init_hsp->q_off+1);
-         s_length = (init_hsp->s_off+1);
          score_left = SEMI_G_ALIGN_EX(query, subject, q_length, s_length, NULL,
             &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
             score_options, init_hsp->q_off, FALSE, TRUE);
@@ -2442,21 +2469,22 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_in,
        init_hsp->s_off < subject_blk->length) {
       found_end = TRUE;
       if(score_options->is_ooframe) {
-         score_right = OOF_SEMI_G_ALIGN(query+init_hsp->q_off-1, 
-            subject+init_hsp->s_off-1, query_blk->length-q_length,
-            subject_blk->length-s_length, NULL, &(gap_align->query_stop), 
-            &(gap_align->subject_stop), TRUE, NULL, gap_align, 
-            score_options, init_hsp->q_off, FALSE);
+         score_right = OOF_SEMI_G_ALIGN(subject+s_length-1, 
+            query-1, subject_blk->length-s_length,
+            query_blk->length-q_length, NULL, &(gap_align->subject_stop), 
+            &(gap_align->query_stop), TRUE, NULL, gap_align, 
+            score_options, q_length, FALSE);
+         gap_align->query_stop += q_length;
+         gap_align->subject_stop += s_length;
       } else {
          score_right = SEMI_G_ALIGN_EX(query+init_hsp->q_off,
             subject+init_hsp->s_off, query_blk->length-q_length, 
             subject_blk->length-s_length, NULL, &(gap_align->query_stop), 
             &(gap_align->subject_stop), TRUE, NULL, gap_align, 
             score_options, init_hsp->q_off, FALSE, FALSE);
+         gap_align->query_stop += init_hsp->q_off;
+         gap_align->subject_stop += init_hsp->s_off;
       }
-      
-      gap_align->query_stop += init_hsp->q_off;
-      gap_align->subject_stop += init_hsp->s_off;
    }
    
    if (found_start == FALSE) {	/* Start never found */
@@ -2475,19 +2503,6 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_in,
    }
    
    gap_align->score = score_right+score_left;
-
-   if (score_options->is_ooframe) {
-      /* Switch back query and subject offsets */
-      tmpval = init_hsp->q_off;
-      init_hsp->q_off = init_hsp->s_off;
-      init_hsp->s_off = tmpval;
-      tmpval = gap_align->query_start;
-      gap_align->query_start = gap_align->subject_start;
-      gap_align->subject_start = tmpval;
-      tmpval = gap_align->query_stop;
-      gap_align->query_stop = gap_align->subject_stop;
-      gap_align->subject_stop = tmpval;
-   }
 
    return 0;
 }
@@ -2582,7 +2597,6 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     Int4 q_length=0, s_length=0, score_right, score_left, private_q_length, private_s_length, tmp;
     Int4 prev;
     Int4Ptr tback, tback1, p = NULL, q;
-    Uint1Ptr q_left=NULL, s_left=NULL;
     Boolean is_ooframe = score_options->is_ooframe;
     Int2 status = 0;
     
@@ -2601,18 +2615,12 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     found_start = TRUE;
         
     if(is_ooframe) {
-       q_left = (Uint1Ptr) MemNew((q_start+3)*sizeof(Uint1));
-       s_left = (Uint1Ptr) MemNew((s_start+5)*sizeof(Uint1));
-       
-       q_length = reverse_seq(query, query+q_start-1, q_left+1);
-       s_length = reverse_seq(subject, subject+s_start-3, s_left+3);
-       
-       score_left = OOF_SEMI_G_ALIGN(q_left, s_left+2, q_length, s_length,
-                       tback, &private_q_length, &private_s_length, FALSE,
-                       &tback1, gap_align, score_options, q_start, TRUE);
-       
-       q_left = MemFree(q_left);
-       s_left = MemFree(s_left);
+       q_length = q_start;
+       s_length = s_start;
+       score_left =
+          OOF_SEMI_G_ALIGN(subject, query+q_start, s_length, q_length,
+             tback, &private_s_length, &private_q_length, FALSE,
+             &tback1, gap_align, score_options, s_start, TRUE);
     } else {        
        q_length = q_start + 1;
        s_length = s_start + 1;
@@ -2643,10 +2651,10 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     if ((q_start < query_length) && (s_start < subject_length)) {
        found_end = TRUE;
        if(is_ooframe){
-          score_right = OOF_SEMI_G_ALIGN(query+q_start-1, subject+s_start-1, 
-                           query_length-q_length, subject_length-s_length, 
-                           tback1, &private_q_length, &private_s_length, FALSE,
-                           &tback1, gap_align, score_options, q_start, FALSE);
+          score_right = OOF_SEMI_G_ALIGN(subject+s_start-1, query+q_start-1, 
+                           subject_length-s_length, query_length-q_length,
+                           tback1, &private_s_length, &private_q_length, FALSE,
+                           &tback1, gap_align, score_options, s_start, FALSE);
             if (prev != 3 && p) {
                 while (*p == 0 || *p == 6) p++;
                 *p = prev+*p-3;
@@ -2675,9 +2683,9 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
 
     if(is_ooframe) {
 	gap_align->edit_block = OOFTracebackToGapXEditBlock(
-           gap_align->query_stop-gap_align->query_start+1, 
-           gap_align->subject_stop-gap_align->subject_start+1, tback, 
-           gap_align->query_start, gap_align->subject_start);
+           gap_align->subject_stop-gap_align->subject_start+1, 
+           gap_align->query_stop-gap_align->query_start+1, tback, 
+           gap_align->subject_start, gap_align->query_start);
     } else {
         status = BLAST_TracebackToGapXEditBlock(tback, 
            gap_align->query_stop-gap_align->query_start+1, 
@@ -2728,3 +2736,4 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitListPtr init_hitlist,
    *hsp_list_ptr = hsp_list;
    return 0;
 }
+
