@@ -33,8 +33,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/10/05 21:26:30  lavr
+ * Log message edited
+ *
  * Revision 6.5  2000/10/05 21:10:11  lavr
- * ncbiconf.h included
+ * Parameters to 'Open' and 'OpenEx' changed
  *
  * Revision 6.4  2000/05/31 23:12:17  lavr
  * First try to assemble things together to get working service mapper
