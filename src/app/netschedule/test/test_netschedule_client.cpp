@@ -78,11 +78,17 @@ void CTestNetScheduleClient::Init(void)
                               "NetSchedule client");
     
     arg_desc->AddPositional("hostname", 
-                            "NetCache host name.", CArgDescriptions::eString);
+                            "NetSchedule host name.", 
+                            CArgDescriptions::eString);
 
     arg_desc->AddPositional("port",
                             "Port number.", 
                             CArgDescriptions::eInteger);
+
+    arg_desc->AddPositional("queue", 
+                            "NetSchedule queue name (like: noname).",
+                            CArgDescriptions::eString);
+
 
     arg_desc->AddOptionalKey("jcount", 
                              "jcount",
@@ -99,17 +105,18 @@ void CTestNetScheduleClient::Init(void)
 int CTestNetScheduleClient::Run(void)
 {
     CArgs args = GetArgs();
-    const string& host  = args["hostname"].AsString();
+    const string&  host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
+    const string&  queue_name = args["queue"].AsString();  
 
     unsigned jcount = 10000;
     if (args["jcount"]) {
         jcount = args["jcount"].AsInteger();
     }
     CNetScheduleClient::EJobStatus status;
-    CNetScheduleClient cl(host, port, "client_test", "noname");
+    CNetScheduleClient cl(host, port, "client_test", queue_name);
 
-    const string input = "Hello NetSchedule!";
+    const string input = "Hello " + queue_name;
 
     string job_key = cl.SubmitJob(input);
     NcbiCout << job_key << NcbiEndl;
@@ -156,8 +163,10 @@ int CTestNetScheduleClient::Run(void)
             status = cl.GetStatus(jk, &ret_code, &output);
 
             if (status == CNetScheduleClient::eDone) {
-                if (output != "DONE" || ret_code != 0) {
-                    _ASSERT(0);
+                string expected_output = "DONE " + queue_name;
+                if (output != expected_output || ret_code != 0) {
+                    ERR_POST("Unexpected output or return code:" +
+                             output);
                 }
                 jobs.erase(it);
                 ++cnt;
@@ -216,6 +225,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/14 17:31:08  kuznets
+ * Test data integrity checks
+ *
  * Revision 1.3  2005/02/14 13:47:33  kuznets
  * Delay added to the tests to make it look more like normal programs
  *

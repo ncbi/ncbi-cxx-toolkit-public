@@ -81,6 +81,9 @@ void CTestNetScheduleNode::Init(void)
 
     arg_desc->AddPositional("port", "Port number.", 
                             CArgDescriptions::eInteger);
+    arg_desc->AddPositional("queue", 
+                            "NetSchedule queue name (like: noname).",
+                            CArgDescriptions::eString);
     
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -90,10 +93,11 @@ void CTestNetScheduleNode::Init(void)
 int CTestNetScheduleNode::Run(void)
 {
     CArgs args = GetArgs();
-    const string& host  = args["hostname"].AsString();
-    unsigned short port = args["port"].AsInteger();
+    const string&  host       = args["hostname"].AsString();
+    unsigned short port       = args["port"].AsInteger();
+    const string&  queue_name = args["queue"].AsString();  
 
-    CNetScheduleClient cl(host, port, "node_test", "noname");
+    CNetScheduleClient cl(host, port, "node_test", queue_name);
 
     string    job_key;
     string    input;
@@ -101,12 +105,14 @@ int CTestNetScheduleNode::Run(void)
     int       no_jobs_counter = 0;
     unsigned  jobs_done = 0;
 
+    set<string> jobs_processed;
+
     // The main job processing loop, polls the 
     // queue for available jobs
     // 
     // There is no payload algorithm here, node just
     // sleeps and reports the processing result back to server
-    // as string "DONE". Practical application should use
+    // as string "DONE ...". Practical application should use
     // netcache as result storage
     //
     // Well behaved node should not constantly poll the queue for
@@ -117,9 +123,22 @@ int CTestNetScheduleNode::Run(void)
         job_exists = cl.GetJob(&job_key, &input);
 
         if (job_exists) {
+            string expected_input = "Hello " + queue_name;
+            if (expected_input != input) {
+                ERR_POST("Unexpected input: " + input);
+            }
+
+            if (jobs_processed.find(job_key) != jobs_processed.end()) {
+                LOG_POST(Error << "Job: " << job_key 
+                               << " has already been processed.");
+            } else {
+                jobs_processed.insert(job_key);
+            }
+
             // do no job here, just delay for a little while
             SleepMilliSec(50);
-            cl.PutResult(job_key, 0, "DONE");
+            string out = "DONE " + queue_name;
+            cl.PutResult(job_key, 0, out);
 
             no_jobs_counter = 0;
             ++jobs_done;
@@ -140,13 +159,14 @@ int CTestNetScheduleNode::Run(void)
             
             SleepMilliSec(delay);
 
-            if (++no_jobs_counter > 200) { // no new jobs coming
+            if (++no_jobs_counter > 100) { // no new jobs coming
                 break;
             }
         }
 
     }
-    NcbiCout << NcbiEndl << "Jobs done: " << jobs_done << NcbiEndl;
+    NcbiCout << NcbiEndl << "Jobs done: " 
+             << jobs_processed.size() << NcbiEndl;
 
     return 0;
 }
@@ -161,6 +181,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/14 17:31:08  kuznets
+ * Test data integrity checks
+ *
  * Revision 1.3  2005/02/14 13:47:33  kuznets
  * Delay added to the tests to make it look more like normal programs
  *
