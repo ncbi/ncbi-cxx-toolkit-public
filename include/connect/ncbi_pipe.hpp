@@ -42,7 +42,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_core.h>
-#include <stdio.h>
 #include <vector>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
@@ -318,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/11/13 17:51:47  lavr
+ * -<stdio.h>
+ *
  * Revision 1.18  2003/11/12 16:34:48  ivanov
  * Removed references to CPipeIOStream from  comments
  *
