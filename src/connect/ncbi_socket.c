@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2002/01/28 20:29:52  lavr
+ * Distinguish between EOF and severe read error
+ * Return eIO_Success if waiting for read in a stream with EOF already seen
+ *
  * Revision 6.38  2001/12/03 21:35:32  vakatov
  * + SOCK_IsServerSide()
  * SOCK_Reconnect() - check against reconnect of server-side socket to its peer
@@ -991,7 +995,18 @@ static EIO_Status s_Close(SOCK sock)
 
 /* To allow emulating "peek" using the NCBI data buffering.
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
- * on Win32, so we had to implement this feature by ourselves)
+ * on Win32, so we had to implement this feature by ourselves.)
+ * Please note the following status combination and their meanings:
+ * -------------------------------+------------------------------------------
+ *              Field             |
+ * ---------------+---------------+                  Meaning
+ * sock->r_status | sock->is_eof  |
+ * ---------------+---------------+------------------------------------------
+ * eIO_Closed     |       0       |  Socket shut down
+ * eIO_Closed     |       1       |  Read severely failed
+ * not eIO_Closed |       0       |  Read completed with r_status error
+ * not eIO_Closed |       1       |  Read hit EOF and completed with r_status
+ * ---------------+---------------+------------------------------------------
  */
 static int s_NCBI_Recv(SOCK        sock,
                        void*       buffer,
@@ -1006,7 +1021,7 @@ static int s_NCBI_Recv(SOCK        sock,
     n_read = peek ?
         BUF_Peek(sock->buf, x_buffer, size) :
         BUF_Read(sock->buf, x_buffer, size);
-    if (n_read == size  ||  sock->r_status == eIO_Closed) {
+    if (n_read == size  ||  sock->r_status == eIO_Closed  ||  sock->is_eof) {
         return (int) n_read;
     }
 
@@ -1031,9 +1046,9 @@ static int s_NCBI_Recv(SOCK        sock,
         /* catch EOF */
         if (x_readsock == 0  ||
             (x_readsock < 0  &&  SOCK_ERRNO == SOCK_ENOTCONN)) {
-            sock->r_status = eIO_Closed;
+            sock->r_status = x_readsock == 0 ? eIO_Success : eIO_Closed;
             sock->is_eof   = 1/*true*/;
-            return n_read ? (int) n_read : 0;
+            break;
         }
         /* catch unknown ERROR */
         if (x_readsock < 0) {
@@ -1061,8 +1076,7 @@ static int s_NCBI_Recv(SOCK        sock,
         }
         sock->n_read += x_readsock;
         n_read       += x_readsock;
-    }
-    while (!buffer  &&  n_read < size);
+    } while (!buffer  &&  n_read < size);
 
     return (int) n_read;
 }
@@ -1088,7 +1102,7 @@ static EIO_Status s_Recv(SOCK        sock,
 
     *n_read = 0;
     if (size == 0)
-        return sock->r_status;
+        return SOCK_Status(sock, eIO_Read);
 
     for (;;) {
         /* try to read */
@@ -1102,8 +1116,8 @@ static EIO_Status s_Recv(SOCK        sock,
         if (sock->r_status == eIO_Unknown) {
             return eIO_Unknown;  /* some error */
         }
-        if (sock->r_status == eIO_Closed) {
-            return eIO_Closed;  /* hit EOF or shut down */
+        if (sock->r_status == eIO_Closed  ||  sock->is_eof) {
+            return eIO_Closed;   /* shut down or hit EOF */
         }
 
         x_errno = SOCK_ERRNO;
@@ -1139,13 +1153,13 @@ static EIO_Status s_SelectStallsafe(SOCK                  sock,
                                     EIO_Event             event,
                                     const struct timeval* timeout)
 {
-    EIO_Status status;
     static struct timeval s_ZeroTimeout = {0, 0};
+    EIO_Status status;
 
     /* just checking */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error,
-                 "[SOCK::s_Select]  Attempted to stall protection on an "
+                 "[SOCK::s_Select]  Stall protection attempted on an "
                  "invalid socket");
         assert(0);
         return eIO_Unknown;
@@ -1153,7 +1167,7 @@ static EIO_Status s_SelectStallsafe(SOCK                  sock,
 
     /* check if to use a "regular" s_Select() */
     if (event == eIO_Read  ||
-        sock->r_status == eIO_Closed  ||
+        sock->r_status == eIO_Closed  ||  sock->is_eof  ||
         sock->r_on_w == eOff  ||
         (sock->r_on_w == eDefault  &&  s_ReadOnWrite != eOn)) {
         /* wait until event (up to timeout) */
@@ -1165,9 +1179,9 @@ static EIO_Status s_SelectStallsafe(SOCK                  sock,
     if (status != eIO_Timeout)
         return status;
 
-    /* do wait (and try read data if it is not writable yet) */
+    /* do wait (and try to read data if the stream is not yet writable) */
     do {
-        /* try upread data to the internal buffer */
+        /* try upread data into the internal buffer */
         s_NCBI_Recv(sock, 0, 100000000/*read as much as possible*/, 1/*peek*/);
 
         /* wait for r/w */
@@ -1176,10 +1190,8 @@ static EIO_Status s_SelectStallsafe(SOCK                  sock,
             s_Select(sock->sock, eIO_Write, &s_ZeroTimeout) == eIO_Success) {
             break;  /* can write now */
         }
-    }
-    while (status == eIO_Success);
+    } while (status == eIO_Success);
 
-    /* return status;*/
     return status;
 }
 
@@ -1341,15 +1353,15 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
     int x_how;
     switch ( how ) {
     case eIO_Read:
-        if (sock->r_status == eIO_Closed) {
-            if ( sock->is_eof ) {
-                /* Hit EOF, but not shutdown yet. So, flag it as shutdown, but
-                 * do not call the actual system shutdown(), as it can cause
-                 * smart OS'es like Linux to complain. */
-                sock->is_eof = 0/*false*/;
-            }
-            return eIO_Success;
+        if ( sock->is_eof ) {
+            /* Hit EOF (and may be not yet shut down). So, flag it as been
+             * shut down, but do not call the actual system shutdown(),
+             * as it can cause smart OS'es like Linux to complain. */
+            sock->is_eof = 0/*false*/;
+            sock->r_status = eIO_Closed;
         }
+        if (sock->r_status == eIO_Closed)
+            return eIO_Success;  /* has been shutdown already */
         x_how = SOCK_SHUTDOWN_RD;
         sock->r_status = eIO_Closed;
         break;
@@ -1402,6 +1414,9 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
                        sock->is_eof ? "closed" : "shutdown"));
             return eIO_Closed;
         }
+        if (sock->is_eof) {
+            return sock->r_status;
+        }
         break;
     case eIO_Write:
         if (sock->w_status == eIO_Closed) {
@@ -1418,6 +1433,9 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
             CORE_LOG(eLOG_Warning,
                      "[SOCK_Wait(RW)]  Attempt to wait on shutdown socket");
             return eIO_Closed;
+        }
+        if (sock->is_eof) {
+            return sock->r_status;
         }
         if (sock->r_status == eIO_Closed) {
             CORE_LOGF(eLOG_Note,
@@ -1540,7 +1558,8 @@ extern EIO_Status SOCK_Status(SOCK      sock,
 {
     switch ( direction ) {
     case eIO_Read:
-        return sock->r_status;
+        return sock->r_status != eIO_Success
+            ? sock->r_status : (sock->is_eof ? eIO_Closed : eIO_Success);
     case eIO_Write:
         return sock->w_status;
     default:
