@@ -194,7 +194,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_PushBack
  *         So does CONN_Close() but only if connection is was open before.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
-(CONN conn              /* [in] connection handle                      */ 
+(CONN        conn   /* [in] connection handle                      */
  );
 
 
@@ -326,6 +326,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2004/10/26 14:47:42  lavr
+ * Slight formatting
+ *
  * Revision 6.20  2004/06/09 14:03:06  jcherry
  * Moved #define out of enum body (SWIG was choking on this)
  *
