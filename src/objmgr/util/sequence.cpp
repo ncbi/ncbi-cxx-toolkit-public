@@ -1756,27 +1756,12 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
         CFeat_CI::eResolve_TSE, // ???
         CFeat_CI::e_Location);
     for ( ; feat_it; ++feat_it) {
-        int cur_diff =
-            TestForOverlap(loc, feat_it->GetLocation(), overlap_type);
+        // treat subset as a special case
+        int cur_diff = (overlap_type != eOverlap_Subset) ?
+            TestForOverlap(loc, feat_it->GetLocation(), overlap_type) :
+            TestForOverlap(feat_it->GetLocation(), loc, overlap_type);
         if (cur_diff < 0)
             continue;
-/*
-        // Compare strands. This may not work properly if
-        // both seq-locs have "other" strand, which may mean
-        // presence of both "plus" and "minus" intervals. The
-        // function will consider "other" == "other", although
-        // real strands may be different for intersecting intervals.
-        ENa_strand l_strand = GetStrand(loc);
-        ENa_strand f_strand = GetStrand(feat_it->GetLocation());
-        if (l_strand != f_strand
-            &&  l_strand != eNa_strand_both
-            &&  (l_strand != eNa_strand_unknown
-                || f_strand == eNa_strand_minus)
-            &&  (l_strand != eNa_strand_unknown
-                || f_strand == eNa_strand_minus)) {
-            continue;
-        }
-*/
         if ( cur_diff < diff  ||  diff < 0 ) {
             diff = cur_diff;
             feat_ref = &feat_it->GetMappedFeature();
@@ -1817,8 +1802,9 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                            CFeat_CI::e_Location); feat_it; ++feat_it ) {
         if ( feat_it->GetData().GetSubtype() != feat_type )
             continue;
-        int cur_diff =
-            TestForOverlap(loc, feat_it->GetLocation(), overlap_type);
+        int cur_diff = (overlap_type != eOverlap_Subset) ?
+            TestForOverlap(loc, feat_it->GetLocation(), overlap_type) :
+            TestForOverlap(feat_it->GetLocation(), loc, overlap_type);
         if (cur_diff < 0)
             continue;
         if ( cur_diff < diff  ||  diff < 0 ) {
@@ -2870,6 +2856,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.43  2003/04/02 16:58:59  grichenk
+* Change location and feature in GetBestOverlappingFeat()
+* for eOverlap_Subset.
+*
 * Revision 1.42  2003/03/25 22:00:20  grichenk
 * Added strand checking to TestForOverlap()
 *
