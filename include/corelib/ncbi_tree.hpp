@@ -274,6 +274,9 @@ public:
     /// @return pointer to new subtree
     CTreePairNode<TId, TValue>* AddNode(const TId& id, const TValue& value);
 
+    void AddNode(CTreePairNode<TId, TValue>* node) { TParent::AddNode(node); }
+
+
     /// Return TParent::TValueType 
     /// (tree node value in terms of the upper level tree)
     const TTreeValueType& GetTreeValue() const { return this->m_Value; }
@@ -835,6 +838,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/07/29 13:14:08  kuznets
+ * +CTreePairNode::AddNode()
+ *
  * Revision 1.36  2004/07/22 17:20:20  ucko
  * Qualify dependent names in FindSubNode to fix GCC 3.4 build.
  *
