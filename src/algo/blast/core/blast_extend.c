@@ -39,8 +39,7 @@ static char const rcsid[] = "$Id$";
 
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/aa_lookup.h>
-#include <algo/blast/core/na_lookup.h>
+#include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/blast_util.h> /* for READDB_UNPACK_BASE macros */
 
