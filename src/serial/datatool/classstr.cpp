@@ -904,8 +904,10 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         m_Members.front().cName.empty();
     bool generateCopy = wrapperClass && m_Members.front().type->CanBeCopied();
 
-    out <<
-        "class "<<GetClassNameDT()<<" : public "<<GetClassNameDT()<<"_Base\n"
+    out << "class ";
+    if ( !CClassCode::GetExportSpecifier().empty() )
+        out << CClassCode::GetExportSpecifier() << " ";
+    out << GetClassNameDT()<<" : public "<<GetClassNameDT()<<"_Base\n"
         "{\n"
         "    typedef "<<GetClassNameDT()<<"_Base Tparent;\n"
         "public:\n";
@@ -1092,6 +1094,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2002/12/23 18:40:07  dicuccio
+* Added new command-line option: -oex <export-specifier> for adding WIn32 export
+* specifiers to generated objects.
+*
 * Revision 1.44  2002/12/17 21:51:41  gouriano
 * corrected generation of "simple" members
 *

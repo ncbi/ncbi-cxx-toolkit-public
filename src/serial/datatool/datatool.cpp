@@ -38,6 +38,7 @@
 
 #include <memory>
 
+#include <serial/datatool/code.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/lexer.hpp>
 #include <serial/datatool/dtdlexer.hpp>
@@ -118,6 +119,9 @@ void CDataTool::Init(void)
                       CArgDescriptions::eOutputFile);
 
     // code generation arguments
+    d->AddOptionalKey("oex", "exportSpec",
+                      "class export specifier for MSVC",
+                      CArgDescriptions::eString);
     d->AddOptionalKey("od", "defFile",
                       "code definition file",
                       CArgDescriptions::eInputFile);
@@ -360,6 +364,10 @@ bool CDataTool::GenerateCode(void)
     if ( !generator.HaveGenerateTypes() )
         return true;
 
+    // set the export specifier, if provided
+    if ( const CArgValue& oex = args["oex"] )
+        CClassCode::SetExportSpecifier(oex.AsString());
+
     // prepare generator
     
     // set namespace
@@ -435,6 +443,7 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
 
 END_NCBI_SCOPE
 
+
 int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
@@ -445,6 +454,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2002/12/23 18:40:07  dicuccio
+* Added new command-line option: -oex <export-specifier> for adding WIn32 export
+* specifiers to generated objects.
+*
 * Revision 1.56  2002/10/22 15:06:12  gouriano
 * added possibillity to use quoted syntax form for generated include files
 *

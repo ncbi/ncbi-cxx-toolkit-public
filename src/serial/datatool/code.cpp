@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/12/23 18:40:07  dicuccio
+* Added new command-line option: -oex <export-specifier> for adding WIn32 export
+* specifiers to generated objects.
+*
 * Revision 1.36  2002/08/14 17:14:25  grichenk
 * Fixed function name conflict on Win32: renamed
 * GetClassName() -> GetClassNameDT()
@@ -103,6 +107,9 @@
 
 BEGIN_NCBI_SCOPE
 
+string          CClassCode::sm_ExportSpecifier;
+
+
 CClassContext::~CClassContext(void)
 {
 }
@@ -131,6 +138,21 @@ CClassCode::~CClassCode(void)
         GenerateCPP(cpp);
         m_Code.AddCPPCode(cpp);
     }
+}
+
+void CClassCode::SetExportSpecifier(const string& str)
+{
+    sm_ExportSpecifier = str;
+    int pos;
+    while ( (pos = sm_ExportSpecifier.find_first_of(" !@#$%^&*()")) !=
+        string::npos) {
+        sm_ExportSpecifier.erase (pos, 1);
+    }
+}
+
+const string& CClassCode::GetExportSpecifier(void)
+{
+    return sm_ExportSpecifier;
 }
 
 const CNamespace& CClassCode::GetNamespace(void) const
@@ -221,8 +243,10 @@ CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
-    header <<
-        "class "<<GetClassNameDT();
+    header << "class ";
+    if ( !GetExportSpecifier().empty() )
+        header << CClassCode::GetExportSpecifier() << " ";
+    header << GetClassNameDT();
     string parentNamespaceRef;
     if ( !GetParentClassName().empty() ) {
         parentNamespaceRef =
@@ -274,8 +298,10 @@ CNcbiOstream& CClassCode::GenerateUserHPP(CNcbiOstream& header) const
     if ( InternalClass() ) {
         return header;
     }
-    header <<
-        "class "<<GetClassNameDT()<<" : public "<<GetClassNameDT()<<"_Base\n"
+    header << "class ";
+    if ( !GetExportSpecifier().empty() )
+        header << CClassCode::GetExportSpecifier() << " ";
+    header << GetClassNameDT()<<" : public "<<GetClassNameDT()<<"_Base\n"
         "{\n"
         "public:\n"
         "    "<<GetClassNameDT()<<"();\n"
