@@ -322,16 +322,56 @@ CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
-                key.m_Range = hr.GetOverlappingRange();
                 if ( hr.HasGaps() ) {
                     annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     annotRef.m_HandleRange->GetData() = hr;
+                    if ( hr.IsCircular() ) {
+                        key.m_Range = hr.GetOverlappingRange(
+                            CHandleRange::eCircularStart);
+                        tse.x_MapAnnotObject(index,
+                                             key,
+                                             annotRef,
+                                             m_ObjectInfos);
+                        key.m_Range = hr.GetOverlappingRange(
+                            CHandleRange::eCircularEnd);
+                        tse.x_MapAnnotObject(index,
+                                             key,
+                                             annotRef,
+                                             m_ObjectInfos);
+                    }
+                    else if ( hr.IsSingleStrand() ) {
+                        key.m_Range = hr.GetOverlappingRange();
+                        tse.x_MapAnnotObject(index,
+                                             key,
+                                             annotRef,
+                                             m_ObjectInfos);
+                    }
+                    else {
+                        key.m_Range = hr.GetOverlappingRange(
+                            CHandleRange::eStrandPlus);
+                        if ( !key.m_Range.Empty() ) {
+                            annotRef.m_StrandIndex = 1;
+                            tse.x_MapAnnotObject(index,
+                                                key,
+                                                annotRef,
+                                                m_ObjectInfos);
+                        }
+                        key.m_Range = hr.GetOverlappingRange(
+                            CHandleRange::eStrandMinus);
+                        if ( !key.m_Range.Empty() ) {
+                            annotRef.m_StrandIndex = 2;
+                            tse.x_MapAnnotObject(index,
+                                                key,
+                                                annotRef,
+                                                m_ObjectInfos);
+                        }
+                    }
                 }
                 else {
+                    key.m_Range = hr.GetOverlappingRange();
                     annotRef.m_HandleRange.Reset();
+                    tse.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
                 }
-                
-                tse.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -483,6 +523,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/08/16 18:00:40  grichenk
+ * Added detection of circular locations, improved annotation
+ * indexing by strand.
+ *
  * Revision 1.20  2004/08/12 14:18:27  vasilche
  * Allow SNP Seq-entry in addition to SNP Seq-annot.
  *

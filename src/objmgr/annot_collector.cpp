@@ -318,6 +318,13 @@ bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 }
 
 
+bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
+{
+    return ( m_Object == ref.m_Object  &&
+        GetAnnotObjectIndex() == ref.GetAnnotObjectIndex() );
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CAnnotObject_Ref comparision
 /////////////////////////////////////////////////////////////////////////////
@@ -641,6 +648,9 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                 }
             }
         }
+        sort(m_AnnotSet.begin(), m_AnnotSet.end());
+        TAnnotSet::iterator new_end = unique(m_AnnotSet.begin(), m_AnnotSet.end());
+        m_AnnotSet.resize(new_end - m_AnnotSet.begin());
         NON_CONST_ITERATE(CAnnotMappingCollector::TAnnotMappingSet, amit,
             m_MappingCollector->m_AnnotMappingSet) {
             CAnnotObject_Ref annot_ref = amit->first;
@@ -769,6 +779,11 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
             if ( !hr.IntersectingWith(range) ) {
                 return false;
             }
+        }
+    }
+    else {
+        if ( (hr.GetStrandsFlag() & index.m_StrandIndex) == 0 ) {
+            return false; // different strands
         }
     }
     if ( !x_MatchLocIndex(index) ) {
@@ -1483,6 +1498,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/08/16 18:00:40  grichenk
+* Added detection of circular locations, improved annotation
+* indexing by strand.
+*
 * Revision 1.19  2004/08/05 18:27:21  vasilche
 * Fixed assert when LimitTSE is used.
 *

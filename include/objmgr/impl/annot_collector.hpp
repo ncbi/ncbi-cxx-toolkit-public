@@ -151,6 +151,7 @@ public:
 
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
+    bool operator==(const CAnnotObject_Ref& ref) const; // sort by object
 
 private:
     CConstRef<CObject>      m_Object;
@@ -577,6 +578,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/16 18:00:40  grichenk
+* Added detection of circular locations, improved annotation
+* indexing by strand.
+*
 * Revision 1.11  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

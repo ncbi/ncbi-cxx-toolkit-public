@@ -77,13 +77,16 @@ struct SAnnotObject_Index
 {
     SAnnotObject_Index(void)
         : m_AnnotObject_Info(0),
-          m_AnnotLocationIndex(0)
+          m_AnnotLocationIndex(0),
+          m_StrandIndex(0x3) // both strands are in this index
         {
         }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;
-    unsigned int                        m_AnnotLocationIndex;
     CRef< CObjectFor<CHandleRange> >    m_HandleRange;
+    unsigned short                      m_AnnotLocationIndex;
+    // bit 0 = plus strand; bit 1 = minus strand
+    unsigned short                      m_StrandIndex;
 };
 
 
@@ -168,6 +171,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/08/16 18:00:40  grichenk
+* Added detection of circular locations, improved annotation
+* indexing by strand.
+*
 * Revision 1.7  2004/08/05 18:24:52  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *

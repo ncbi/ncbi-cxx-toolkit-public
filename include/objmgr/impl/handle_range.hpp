@@ -68,8 +68,25 @@ public:
 
     // return true if there is a gap between some intervals
     bool HasGaps(void) const;
+
+    bool IsMultipart(void) const;
+    bool IsCircular(void) const;
+    bool IsSingleStrand(void) const;
+
     // Get the range including all ranges in the list (with any strand)
-    TRange GetOverlappingRange(void) const;
+    enum ETotalRangeFlags {
+        eStrandPlus    = 1,
+        eStrandMinus   = 2,
+        eStrandAny     = eStrandPlus | eStrandMinus,
+        eCircularStart = eStrandPlus,  // first part of a circular location
+        eCircularEnd   = eStrandMinus, // second part of a circular location
+    };
+    typedef unsigned int TTotalRangeFlags;
+
+    // Return strands flag
+    TTotalRangeFlags GetStrandsFlag(void) const;
+
+    TRange GetOverlappingRange(TTotalRangeFlags flags = eStrandAny) const;
     
     // Get the range including all ranges in the list which (with any strand)
     // filter the list through 'range' argument
@@ -86,6 +103,9 @@ private:
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
 
     TRanges        m_Ranges;
+    vector<TRange> m_TotalRanges; // for plus and minus strands
+    bool           m_IsCircular;
+    bool           m_IsSingleStrand;
 
     // friend class CDataSource;
     friend class CHandleRangeMap;
@@ -113,12 +133,64 @@ CHandleRange::const_iterator CHandleRange::end(void) const
 }
 
 
+inline
+bool CHandleRange::IsMultipart(void) const
+{
+    return m_IsCircular || !m_IsSingleStrand;
+}
+
+
+inline
+bool CHandleRange::IsCircular(void) const
+{
+    return m_IsCircular;
+}
+
+
+inline
+bool CHandleRange::IsSingleStrand(void) const
+{
+    return m_IsSingleStrand;
+}
+
+
+inline
+CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
+{
+    TTotalRangeFlags ret = 0;
+    if ( m_Ranges.empty() ) {
+        return ret;
+    }
+    if ( !m_IsCircular ) {
+        if ( !m_TotalRanges[0].Empty() ) {
+            ret |= eStrandPlus;
+        }
+        if ( !m_TotalRanges[1].Empty() ) {
+            ret |= eStrandMinus;
+        }
+    }
+    else {
+        if ( !IsReverse(m_Ranges.front().second) ) {
+            ret |= eStrandPlus;
+        }
+        if ( !IsForward(m_Ranges.front().second) ) {
+            ret |= eStrandMinus;
+        }
+    }
+    return ret;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2004/08/16 18:00:40  grichenk
+ * Added detection of circular locations, improved annotation
+ * indexing by strand.
+ *
  * Revision 1.18  2003/07/17 20:07:55  vasilche
  * Reduced memory usage by feature indexes.
  * SNP data is loaded separately through PUBSEQ_OS.

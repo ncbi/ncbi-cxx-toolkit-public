@@ -47,7 +47,12 @@ BEGIN_SCOPE(objects)
 
 
 CHandleRange::CHandleRange(void)
+    : m_IsCircular(false),
+      m_IsSingleStrand(true)
 {
+    m_TotalRanges.resize(2);
+    m_TotalRanges[0] = TRange::GetEmpty();
+    m_TotalRanges[1] = TRange::GetEmpty();
 }
 
 
@@ -66,6 +71,9 @@ CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
 {
     if (this != &hr) {
         m_Ranges = hr.m_Ranges;
+        m_TotalRanges = hr.m_TotalRanges;
+        m_IsCircular = hr.m_IsCircular;
+        m_IsSingleStrand = hr.m_IsSingleStrand;
     }
     return *this;
 }
@@ -73,8 +81,60 @@ CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
 
 void CHandleRange::AddRange(TRange range, ENa_strand strand)
 {
+    if ( !m_Ranges.empty()  &&  m_IsSingleStrand ) {
+        if ( strand != m_Ranges.front().second) {
+            // Different strands, the location can not be circular
+            m_IsCircular = false;
+            // Reorganize total ranges by strand
+            TRange total_range = m_TotalRanges[0];
+            total_range += m_TotalRanges[1];
+            if ( !IsReverse(m_Ranges.front().second) ) {
+                m_TotalRanges[0] = total_range;
+            }
+            else {
+                m_TotalRanges[0] = TRange::GetEmpty();
+            }
+            if ( !IsForward(m_Ranges.front().second) ) {
+                m_TotalRanges[1] = total_range;
+            }
+            else {
+                m_TotalRanges[1] = TRange::GetEmpty();
+            }
+            m_IsSingleStrand = false;
+        }
+        else if ( !m_IsCircular ) {
+            // Circular location?
+            if ( !IsReverse(strand) ) {
+                m_IsCircular =
+                    range.GetFrom() < m_Ranges.back().first.GetFrom();
+            }
+            else {
+                m_IsCircular =
+                    range.GetFrom() > m_Ranges.back().first.GetFrom();
+            }
+            if ( m_IsCircular ) {
+                // Reorganize total ranges. Everything already collected
+                // goes to the first part, all new ranges will go to the
+                // second part.
+                m_TotalRanges[0] += m_TotalRanges[1];
+                m_TotalRanges[1] = TRange::GetEmpty();
+            }
+        }
+    }
     m_Ranges.push_back(TRanges::value_type(range, strand));
-    sort(m_Ranges.begin(), m_Ranges.end());
+    if ( !m_IsCircular ) {
+        // Regular location
+        if ( !IsReverse(strand) ) {
+            m_TotalRanges[0] += range;
+        }
+        if ( !IsForward(strand) ) {
+            m_TotalRanges[1] += range;
+        }
+    }
+    else {
+        // Circular location, second part
+        m_TotalRanges[1] += range;
+    }
 }
 
 
@@ -100,40 +160,16 @@ bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
 
 bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 {
-    TRanges::const_iterator it1 = m_Ranges.begin();
-    TRanges::const_iterator end1 = m_Ranges.end();
-    if ( it1 == end1 ) {
+    if (!m_TotalRanges[0].IntersectingWith(hr.m_TotalRanges[0])
+        &&  !m_TotalRanges[1].IntersectingWith(hr.m_TotalRanges[1])) {
         return false;
     }
-    TRanges::const_iterator it2 = hr.m_Ranges.begin();
-    TRanges::const_iterator end2 = hr.m_Ranges.end();
-    if ( it2 == end2 ) {
-        return false;
-    }
-    for ( ;; ) {
-        if ( it2->first.Empty() ||
-             it2->first.GetToOpen() <= it1->first.GetFrom() ) {
-            if ( ++it2 == end2 ) {
-                break;
-            }
-        }
-        else if ( it1->first.Empty() ||
-                  it1->first.GetToOpen() <= it2->first.GetFrom() ) {
-            if ( ++it1 == end1 ) {
-                break;
-            }
-        }
-        else if ( x_IntersectingStrands(it1->second, it2->second) ) {
-            return true;
-        }
-        else if ( it1->first.GetToOpen() < it2->first.GetToOpen() ) {
-            if ( ++it1 == end1 ) {
-                break;
-            }
-        }
-        else {
-            if ( ++it2 == end2 ) {
-                break;
+    ITERATE(TRanges, it1, m_Ranges) {
+        ITERATE(TRanges, it2, hr.m_Ranges) {
+            if ( it1->first.IntersectingWith(it2->first) ) {
+                if ( x_IntersectingStrands(it1->second, it2->second) ) {
+                    return true;
+                }
             }
         }
     }
@@ -164,11 +200,37 @@ void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 }
 
 
-CHandleRange::TRange CHandleRange::GetOverlappingRange(void) const
+CHandleRange::TRange
+CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
 {
     TOpenRange ret = TOpenRange::GetEmpty();
-    ITERATE ( TRanges, it, m_Ranges ) {
-        ret += it->first;
+    if (flags & eStrandPlus) {   // == eCircularStart
+        ret += m_TotalRanges[0];
+        if ( m_IsCircular ) {
+            // Adjust start/stop to include cut point
+            if ( !IsReverse(m_Ranges.front().second) ) {
+                // Include end
+                ret.SetTo(TRange::GetWholeTo());
+            }
+            else {
+                // Include start
+                ret.SetFrom(TRange::GetWholeFrom());
+            }
+        }
+    }
+    if (flags & eStrandMinus) {  // == eCircularEnd
+        ret += m_TotalRanges[1];
+        if ( m_IsCircular ) {
+            // Adjust start/stop to include cut point
+            if ( !IsReverse(m_Ranges.front().second) ) {
+                // Include end
+                ret.SetFrom(TRange::GetWholeFrom());
+            }
+            else {
+                // Include start
+                ret.SetTo(TRange::GetWholeTo());
+            }
+        }
     }
     return ret;
 }
@@ -214,6 +276,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/08/16 18:00:40  grichenk
+* Added detection of circular locations, improved annotation
+* indexing by strand.
+*
 * Revision 1.21  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
