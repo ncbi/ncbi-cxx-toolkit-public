@@ -26,6 +26,7 @@ inside NCBI users at:
     <li> <a href="#ref_Debugging">Debugging Tools and Troubleshooting</a>
     <li> <a href="#ref_CxxConnectionStreams">C++ Connection Streams</a> built on top of connection objects.
     <li> <a href="#ref_ServiceAPI">Service mapping API</a>: description of service name resolution API.
+    <li> <a href="#ref_ThreadedServer">Threaded Server Support</a>
 </ul>
 </ol>
 
@@ -1056,6 +1057,16 @@ int main(int argc, char* argv[])
 </pre>
 <u>Note</u>: No network (indirect) mapping occurs in the above example because <tt>net_info</tt> is passed as <tt>NULL</tt>
 to the connector's constructor.
+
+<a name="ref_ThreadedServer"></a><h2>Threaded Server Support</h2>
+This library also provides
+<a href="../lxr/ident?i=CThreadedServer&d=C">CThreadedServer</a>, an
+abstract base class for multithreaded network servers.
+<a href="../lxr/source/src/connect/test/test_threaded_server.cpp">Here</a>
+is a demonstration of its use.  Note that this class <b>does not</b>
+support multiplexing traffic over a single TCP connection; rather,
+each thread has an individual TCP connection created when a client
+connects to the server's listening port.
 
 <p>
 <hr>
