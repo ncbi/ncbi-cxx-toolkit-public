@@ -159,7 +159,7 @@ static char s_MakeDegenerateBase(const string &str1, const string& str2)
 {
     static const char kIdxToSymbol[] = "?ACMGRSVUWYHKDBN";
     
-    vector<char> symbol_to_idx(256, 0);
+    vector<char> symbol_to_idx(256, '\0');
     for (size_t i = 0; i < sizeof(kIdxToSymbol) - 1; ++i) {
         symbol_to_idx[kIdxToSymbol[i]] = i;
     }
@@ -782,6 +782,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/10/05 20:25:47  ucko
+* s_MakeDegenerateBase: tweak initializer for symbol_to_idx to avoid
+* triggering an inappropriate template with some compilers.
+*
 * Revision 1.18  2004/10/05 15:51:05  shomrat
 * Fixed codon and orgmod formatting
 *
