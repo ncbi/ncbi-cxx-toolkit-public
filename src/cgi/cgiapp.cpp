@@ -222,7 +222,7 @@ private:
 };
 
 
-CCgiApplication::CCgiApplication(void) : m_hostIP(0)
+CCgiApplication::CCgiApplication(void) : m_hostIP(0), m_Iteration(0)
 {
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
@@ -689,6 +689,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/03/24 16:15:59  ucko
+* Initialize m_Iteration to 0.
+*
 * Revision 1.44  2003/03/12 16:10:23  kuznets
 * iterate -> ITERATE
 *
