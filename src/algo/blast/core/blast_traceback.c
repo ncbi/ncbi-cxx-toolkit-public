@@ -934,8 +934,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPStream* hsp_stream,
             BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
          }
          
-         /* Calculate and fill the bit scores. This is the only time when 
-            they are calculated. */
+         /* Recalculate the bit scores, as they might have changed. */
          Blast_HSPListGetBitScores(hsp_list, 
             score_params->options->gapped_calculation, sbp);
 
