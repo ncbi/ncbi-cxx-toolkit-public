@@ -82,8 +82,8 @@ enum EValidateAction {
     eValidate_Throw     // throw an exception if not valid
 };
 
-void            xncbi_SetValidateAction(EValidateAction action);
-EValidateAction xncbi_GetValidateAction(void);
+extern void            xncbi_SetValidateAction(EValidateAction action);
+extern EValidateAction xncbi_GetValidateAction(void);
 
 
 END_NCBI_SCOPE
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.29  2002/09/24 20:59:47  vasilche
+ * Added "extern" keyword.
+ *
  * Revision 1.28  2002/09/24 18:27:17  vasilche
  * Removed redundant "extern" keyword
  *
