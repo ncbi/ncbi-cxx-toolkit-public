@@ -40,6 +40,8 @@ static char const rcsid[] =
 
 USING_NCBI_SCOPE;
 
+extern "C" {
+
 static int CollectorLockHandler(void* user_data, EMT_Lock how)
 {
     CFastMutex* lock = (CFastMutex*) user_data;
@@ -62,6 +64,8 @@ static void CollectorLockCleanup(void* user_data)
 {
     CFastMutex* lock = (CFastMutex*) user_data;
     delete lock;
+}
+
 }
 
 MT_LOCK Blast_CMT_LOCKInit()
