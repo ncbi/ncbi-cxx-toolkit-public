@@ -67,7 +67,8 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
-      m_AdaptiveDepth(false)
+      m_AdaptiveDepth(false),
+      m_ExcludeExternal(false)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
         SetFeatType(feat);
@@ -88,7 +89,8 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_UnresolvedFlag(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
-      m_AdaptiveDepth(false)
+      m_AdaptiveDepth(false),
+      m_ExcludeExternal(false)
 {
 }
 
@@ -118,6 +120,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
         m_NoMapping = sel.m_NoMapping;
         m_AdaptiveDepth = sel.m_AdaptiveDepth;
+        m_ExcludeExternal = sel.m_ExcludeExternal;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
         m_ExcludedTSE = sel.m_ExcludedTSE;
         m_AnnotTypesSet = sel.m_AnnotTypesSet;
@@ -620,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/01/04 16:50:34  vasilche
+* Added SAnnotSelector::SetExcludeExternal().
+*
 * Revision 1.19  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *

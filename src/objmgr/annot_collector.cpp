@@ -1425,15 +1425,28 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     using_tse.AddUsedTSE(tse);
                 }
             }
-            CScope_Impl::TTSE_LockMatchSet tse_map =
-                m_Scope->GetTSESetWithAnnots(idit->first);
-            ITERATE ( CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map ) {
-                if ( tse ) {
-                    tse.AddUsedTSE(tse_it->first);
+            if ( m_Selector.m_ExcludeExternal ) {
+                if ( !bh ) {
+                    // no sequence tse
+                    continue;
                 }
-                ITERATE ( CScope_Impl::TSeq_idSet, id_it, tse_it->second ) {
-                    found |= x_SearchTSE(tse_it->first,
-                                         *id_it, idit->second, cvt);
+                CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(bh);
+                ITERATE(CSynonymsSet, syn_it, *syns) {
+                    found |= x_SearchTSE(tse, syns->GetSeq_id_Handle(syn_it),
+                                         idit->second, cvt);
+                }
+            }
+            else {
+                CScope_Impl::TTSE_LockMatchSet tse_map =
+                    m_Scope->GetTSESetWithAnnots(idit->first);
+                ITERATE ( CScope_Impl::TTSE_LockMatchSet, tse_it, tse_map ) {
+                    if ( tse ) {
+                        tse.AddUsedTSE(tse_it->first);
+                    }
+                    ITERATE( CScope_Impl::TSeq_idSet, id_it, tse_it->second ) {
+                        found |= x_SearchTSE(tse_it->first, *id_it,
+                                             idit->second, cvt);
+                    }
                 }
             }
         }
@@ -1442,18 +1455,17 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
             CConstRef<CSynonymsSet> syns =
                 m_Scope->GetSynonyms(idit->first, GetGetFlag());
             CScope_Impl::TSeq_idSet idh_set;
-            if (syns) {
-                ITERATE(CSynonymsSet, syn_it, *syns) {
-                    idh_set.insert(syns->GetSeq_id_Handle(syn_it));
+            ITERATE ( set<CTSE_Handle>, tse_it, m_TSE_LockSet ) {
+                if ( !syns ) {
+                    found |= x_SearchTSE(*tse_it, idit->first,
+                                         idit->second, cvt);
                 }
-            }
-            else {
-                idh_set.insert(idit->first);
-            }
-            ITERATE( CScope_Impl::TSeq_idSet, id_it, idh_set) {
-                ITERATE ( set<CTSE_Handle>, tse_it, m_TSE_LockSet ) {
-                    found = x_SearchTSE(*tse_it,
-                                        *id_it, idit->second, cvt) || found;
+                else {
+                    ITERATE(CSynonymsSet, syn_it, *syns) {
+                        found |= x_SearchTSE(*tse_it,
+                                             syns->GetSeq_id_Handle(syn_it),
+                                             idit->second, cvt);
+                    }
                 }
             }
         }
@@ -1868,6 +1880,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/01/04 16:50:34  vasilche
+* Added SAnnotSelector::SetExcludeExternal().
+*
 * Revision 1.41  2004/12/22 15:56:19  vasilche
 * Added CTSE_Handle.
 * Renamed x_Search() methods to avoid name clash.

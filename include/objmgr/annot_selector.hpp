@@ -301,6 +301,14 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetSearchExternal(const CSeq_entry_Handle& tse);
     SAnnotSelector& SetSearchExternal(const CBioseq_Handle& seq);
 
+    /// Exclude all external annotations from search.
+    /// Effective when no limit is set.
+    SAnnotSelector& SetExcludeExternal(bool exclude = true)
+        {
+            m_ExcludeExternal = exclude;
+            return *this;
+        }
+
     typedef vector<CAnnotName> TAnnotsNames;
     /// Select annotations from all Seq-annots
     SAnnotSelector& ResetAnnotsNames(void);
@@ -390,6 +398,7 @@ protected:
     TAnnotsNames          m_ExcludeAnnotsNames;
     bool                  m_NoMapping;
     bool                  m_AdaptiveDepth;
+    bool                  m_ExcludeExternal;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesSet        m_AnnotTypesSet;
@@ -414,6 +423,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/01/04 16:50:34  vasilche
+* Added SAnnotSelector::SetExcludeExternal().
+*
 * Revision 1.40  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *
