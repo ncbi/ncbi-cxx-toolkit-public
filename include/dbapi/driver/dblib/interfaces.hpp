@@ -81,7 +81,6 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
-    virtual void SetPacketSize   (unsigned int packet_size);
 
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
@@ -647,8 +646,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.15  2003/04/01 20:16:09  soussov
- * SetPacketSize(unsigned int packet_size) method added
+ * Revision 1.16  2003/04/01 20:27:17  vakatov
+ * Temporarily rollback to R1.14 -- until more backward-incompatible
+ * changes (in CException) are ready to commit (to avoid breaking the
+ * compatibility twice).
  *
  * Revision 1.14  2003/02/13 15:43:00  ivanov
  * Added export specifier NCBI_DBAPIDRIVER_DBLIB_EXPORT for class definitions
