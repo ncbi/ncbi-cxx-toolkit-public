@@ -226,7 +226,7 @@ static Int2 MultiSeqGetSequence(void* multiseq_handle, void* args)
  * @param args Pointer to GetSeqArg structure [in]
  * @return return codes defined in blast_seqsrc.h
  */
-static Int2 MultiSeqRetSequence(void* multiseq_handle, void* args)
+static Int2 MultiSeqRetSequence(void* /*multiseq_handle*/, void* args)
 {
     GetSeqArg* seq_args = (GetSeqArg*) args;
 
@@ -461,6 +461,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/04/28 20:09:43  dondosha
+ * Commented out unused argument name
+ *
  * Revision 1.14  2004/04/28 19:38:20  dondosha
  * Added implementation of BLASTSeqSrcRetSequence function
  *
