@@ -148,7 +148,7 @@ static void compon(SequencePtr win)
 	Int4 letter;
 	CharPtr seq, seqmax;
         Int4Ptr alphaindex;
-        BooleanPtr alphaflag;
+        Boolean* alphaflag;
         Int4 alphasize;
 
         alphasize = win->palpha->alphasize;
@@ -300,7 +300,7 @@ static Int4 shiftwin1(SequencePtr win)
 	Int4 j, length;
 	Int4Ptr comp;
         Int4Ptr alphaindex;
-        BooleanPtr alphaflag;
+        Boolean* alphaflag;
 
 	length = win->length;
 	comp = win->composition;
@@ -789,7 +789,7 @@ static AlphaPtr AA20alpha_std (void)
 {
    AlphaPtr palpha;
    Int4Ptr alphaindex;
-   BooleanPtr alphaflag;
+   Boolean* alphaflag;
    CharPtr alphachar;
    Uint1 c, i;
 
@@ -800,7 +800,7 @@ static AlphaPtr AA20alpha_std (void)
    palpha->lnalphasize = LN20;
 
    alphaindex = (Int4Ptr) MemNew (CHAR_SET * sizeof(Int4));
-   alphaflag = (BooleanPtr) MemNew (CHAR_SET * sizeof(Boolean));
+   alphaflag = (Boolean*) MemNew (CHAR_SET * sizeof(Boolean));
    alphachar = (CharPtr) MemNew (palpha->alphasize * sizeof(Char));
 
    for (c=0, i=0; c<128; c++)
@@ -898,7 +898,7 @@ static AlphaPtr AlphaCopy (AlphaPtr palpha)
    pbeta->lnalphasize = palpha->lnalphasize;
 
    pbeta->alphaindex = (Int4Ptr) MemNew (CHAR_SET * sizeof(Int4));
-   pbeta->alphaflag = (BooleanPtr) MemNew (CHAR_SET * sizeof(Boolean));
+   pbeta->alphaflag = (Boolean*) MemNew (CHAR_SET * sizeof(Boolean));
    pbeta->alphachar = (CharPtr) MemNew (palpha->alphasize * sizeof(Char));
 
    for (i=0; i<CHAR_SET; i++)
