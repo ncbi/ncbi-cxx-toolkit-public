@@ -380,9 +380,9 @@ bool BlockMultipleAlignment::GetSequenceAndIndexAt(
         if (isAligned)
             *isAligned = false;
         // override requested justification for end m_blocks
-        if (blockInfo.block == m_blocks.back()) // also true if there's a single aligned block
+        if (blockInfo.block == m_blocks.back().GetPointer()) // also true if there's a single aligned block
             requestedJustification = eLeft;
-        else if (blockInfo.block == m_blocks.front())
+        else if (blockInfo.block == m_blocks.front().GetPointer())
             requestedJustification = eRight;
     } else
         if (isAligned)
@@ -1509,6 +1509,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/25 16:24:50  thiessen
+* remove WorkShop warnings
+*
 * Revision 1.2  2004/05/25 16:12:30  thiessen
 * fix GCC warnings
 *

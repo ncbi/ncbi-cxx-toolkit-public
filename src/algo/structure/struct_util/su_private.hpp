@@ -50,7 +50,7 @@ BEGIN_SCOPE(struct_util)
 // utility function to remove some elements from a vector. Actually does this by copying to a new
 // vector, so T should have an efficient copy ctor.
 template < class T >
-static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, unsigned int nToRemove)
+void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, unsigned int nToRemove)
 {
     if (v.size() != remove.size()) {
 #ifndef _DEBUG
@@ -85,6 +85,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/25 16:24:51  thiessen
+* remove WorkShop warnings
+*
 * Revision 1.3  2004/05/25 16:12:30  thiessen
 * fix GCC warnings
 *
