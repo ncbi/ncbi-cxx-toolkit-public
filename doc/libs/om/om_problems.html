@@ -197,7 +197,36 @@ To store sequence entry in an ASN file, use the following code:
   </li>
   <li>
     Implement some sort of "Seq_loc iterator, or cursor" - to be able
-	to traverse a set of Seq_locs in some organized way. 
+	to traverse a set of Seq_locs in some organized way.
+	CSeq_loc_CI class was added to the xutil library.
+
+<blockquote>
+CSeq_loc_CI object has been added to the <tt>seqloc</tt> library.
+The object is defined in in the <tt>Seq_loc.hpp</tt>.
+
+The iterator goes through all intervals of a Seq-loc
+keeping the correct order of the intervals. Points
+are shown as intervals of length 1 (it is also possible
+to use IsPoint() method). Locations of <tt>whole</tt> type
+are shown with special values <tt>CRange&lt;int&gt;::GetWholeFrom()</tt>
+and <tt>CRange&lt;int&gt;::GetWholeTo()</tt>. Another way to find a
+whole location is to use <tt>CSeq_loc_CI::IsWhole()</tt>.
+<br>
+A brief example of using the iterator (assuming we
+have a CSeq_loc object "loc"):
+
+<pre>
+for (CSeq_loc_CI loc_it(loc); loc_it; loc_it++) {
+  // Check seq-id
+  if ( loc_it.GetSeq_id().IsGi()  &&  loc_it.GetSeq_id().GetGi() == 2) {
+    int from = loc_it.GetRange().GetFrom();
+    int to = loc_it.GetRange().GetTo();
+    ...
+  }
+}
+</pre>
+</blockquote>
+ 
   </li>
   <li>
   Method <tt>CSeq_loc::GetTotalRange</tt> returns incorrect data in case of Seq_loc
