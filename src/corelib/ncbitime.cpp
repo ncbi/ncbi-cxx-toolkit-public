@@ -29,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/22 19:59:29  ucko
+* Use timegm() when available [fixes FreeBSD build].
+* Tweak to work on Cygwin.
+*
 * Revision 1.13  2001/07/23 16:05:57  ivanov
 * Fixed bug in Get/Set DB-time formats (1 day difference)
 *
@@ -83,9 +87,9 @@
 #include <corelib/ncbitime.hpp>
 #include <stdlib.h>
 
-#if defined NCBI_OS_MSWIN
+#if defined NCBI_OS_MSWIN && !defined(__CYGWIN__)
 #   include <sys/timeb.h>
-#elif defined NCBI_OS_UNIX
+#elif defined NCBI_OS_UNIX || defined(__CYGWIN__)
 #   include <sys/time.h>
 #endif
 
@@ -108,6 +112,9 @@ static MyTZDLS MyReadLocation()
 static MyTZDLS sTZDLS = MyReadLocation();
 #	define TimeZone() sTZDLS.timezone
 #	define Daylight() sTZDLS.daylight
+#elif defined(__CYGWIN__)
+#	define TimeZone() _timezone
+#	define Daylight() _daylight
 #else
 #	define TimeZone() timezone
 #	define Daylight() daylight
@@ -460,17 +467,26 @@ string CTime::AsString(const string& fmt) const
 time_t CTime::GetTimeT(void) const
 {
     struct tm t;
+#ifndef HAVE_TIMEGM
     struct tm *ttemp;
     time_t timer;
+#endif
 
     // Convert time to time_t value at base local time
+#ifdef HAVE_TIMEGM
+    t.tm_sec   = Second();
+#else
     t.tm_sec   = Second() + (int) (IsGmtTime() ? -TimeZone() : 0);
+#endif
     t.tm_min   = Minute();
     t.tm_hour  = Hour();
     t.tm_mday  = Day();
     t.tm_mon   = Month()-1;
     t.tm_year  = Year()-1900;
     t.tm_isdst = -1;
+#ifdef HAVE_TIMEGM
+    return IsGmtTime() ? timegm(&t) : mktime(&t);
+#else
     timer = mktime(&t);
 
     // Correct timezone for GMT time
@@ -481,6 +497,7 @@ time_t CTime::GetTimeT(void) const
             timer += 3600;
     }
     return timer;
+#endif
 }
 
 
@@ -549,7 +566,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     time_t timer;
 
     // Get time with nanoseconds
-#if defined NCBI_OS_MSWIN
+#if defined NCBI_OS_MSWIN && !defined(__CYGWIN__)
 
     if (value) {
         timer = *value;
@@ -560,7 +577,7 @@ CTime& CTime::x_SetTime(const time_t* value)
         ns = (long) timebuffer.millitm * 
             (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
     }
-#elif defined NCBI_OS_UNIX
+#elif defined NCBI_OS_UNIX || defined(__CYGWIN__)
 
     timer = value ? *value : time(0);
     //    struct timespec tp;
