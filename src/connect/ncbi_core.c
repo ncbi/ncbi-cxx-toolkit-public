@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/08/09 16:24:29  lavr
+ * Remove last (unneeded) parameter from LOG_Reset()
+ *
  * Revision 6.7  2001/04/25 20:52:29  vakatov
  * LOG_WriteInternal() -- abort on "eLOG_Fatal" even if no logging is set
  *
@@ -225,13 +228,12 @@ extern void LOG_Reset
 (LOG          lg,
  void*        user_data,
  FLOG_Handler handler,
- FLOG_Cleanup cleanup,
- int/*bool*/  do_cleanup)
+ FLOG_Cleanup cleanup)
 {
     LOG_LOCK_WRITE;
     LOG_VALID;
 
-    if (do_cleanup  &&  lg->cleanup)
+    if (lg->cleanup)
         lg->cleanup(lg->user_data);
 
     lg->user_data = user_data;
@@ -270,7 +272,7 @@ extern LOG LOG_Delete(LOG lg)
 
     LOG_UNLOCK;
 
-    LOG_Reset(lg, 0, 0, 0, 1/*true*/);
+    LOG_Reset(lg, 0, 0, 0);
     lg->ref_count--;
     lg->magic_number++;
     if ( lg->mt_lock )
