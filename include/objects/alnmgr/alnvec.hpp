@@ -91,11 +91,7 @@ public:
     string& GetAlnSeqString(string& buffer,
                             TNumrow row, 
                             const CAlnMap::TSignedRange& aln_rng)         const;
-    string& GetAlnSeqString1(string& buffer,
-                            TNumrow row, 
-                            const CAlnMap::TSignedRange& aln_rng)         const;
 
-    
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
     TResidue              GetResidue     (TNumrow row, TSeqPos aln_pos) const;
 
@@ -354,6 +350,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2003/01/22 22:54:04  todorov
+ * Removed an obsolete function
+ *
  * Revision 1.14  2003/01/17 18:17:29  todorov
  * Added a better-performing set of GetXXXString methods
  *
