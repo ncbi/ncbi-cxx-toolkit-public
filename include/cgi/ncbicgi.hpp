@@ -36,6 +36,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/10/04 18:17:51  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.50  2001/06/19 20:08:29  vakatov
 * CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
 * requests' content body
@@ -464,13 +468,15 @@ public:
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
                 CNcbiIstream* istr  = 0 /*NcbiCin*/,
-                TFlags        flags = 0);
+                TFlags        flags = 0,
+                int           ifd = -1);
     // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
     CCgiRequest(int                argc,
                 const char* const* argv,
                 const char* const* envp  = 0,
                 CNcbiIstream*      istr  = 0,
-                TFlags             flags = 0);
+                TFlags             flags = 0,
+                int                ifd = -1);
 
     // Destructor
     ~CCgiRequest(void);
@@ -523,12 +529,14 @@ public:
     // "application/x-www-form-urlencoded" or "multipart/form-data" type,
     // and "fDoNotParseContent" flag was not passed to the constructor).
     CNcbiIstream* GetInputStream(void) const;
+    // Returns file descriptor of input stream, or -1 if unavailable.
+    int           GetInputFD(void) const;
 
     // Set input stream to "is".
     // If "own" is set to TRUE then this stream will be destroyed
     // as soon as SetInputStream() gets called with another stream pointer.
     // NOTE: SetInputStream(0) will be called in ::~CCgiRequest().
-    void SetInputStream(CNcbiIstream* is, bool own = false);
+    void SetInputStream(CNcbiIstream* is, bool own = false, int fd = -1);
 
     // Decode the URL-encoded(FORM or ISINDEX) string "str" into a set of
     // entries <"name", "value"> and add them to the "entries" set.
@@ -557,13 +565,16 @@ private:
     CCgiCookies m_Cookies;
     // input stream
     CNcbiIstream* m_Input; 
+    // Input file descriptor, if available.
+    int           m_InputFD;
     bool          m_OwnInput;
 
     // the real constructor code
     void x_Init(const CNcbiArguments*   args,
                 const CNcbiEnvironment* env,
                 CNcbiIstream*           istr,
-                TFlags                  flags);
+                TFlags                  flags,
+                int                     ifd);
 
     // retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name) const;
@@ -704,6 +715,10 @@ inline const TCgiIndexes& CCgiRequest::GetIndexes(void) const {
 
 inline CNcbiIstream* CCgiRequest::GetInputStream(void) const {
     return m_Input;
+}
+
+inline int CCgiRequest::GetInputFD(void) const {
+    return m_InputFD;
 }
 
 

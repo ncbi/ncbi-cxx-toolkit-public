@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/10/04 18:17:52  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.24  2001/06/13 21:04:37  vakatov
 * Formal improvements and general beautifications of the CGI lib sources.
 *
@@ -143,9 +147,11 @@ int CCgiApplication::Run(void)
     // run as a plain CGI application
     _TRACE("CCgiApplication::Run: calling ProcessRequest");
     m_Context.reset( CreateContext() );
+    ConfigureDiagnostics(*m_Context);
     result = ProcessRequest(*m_Context);
     _TRACE("CCgiApplication::Run: flushing");
     m_Context->GetResponse().Flush();
+    FlushDiagnostics();
     _TRACE("CCgiApplication::Run: return " << result);
     return result;
 }
@@ -201,9 +207,204 @@ CCgiContext* CCgiApplication::CreateContext
 (CNcbiArguments*   args,
  CNcbiEnvironment* env,
  CNcbiIstream*     inp, 
- CNcbiOstream*     out)
+ CNcbiOstream*     out,
+ int               ifd,
+ int               ofd)
 {
-    return new CCgiContext(*this, args, env, inp, out);
+    return new CCgiContext(*this, args, env, inp, out, ifd, ofd);
+}
+
+
+// Flexible diagnostics support added by Aaron Ucko in September 2001
+//
+
+static CCgiDiagHandler* s_ActiveCgiDiagHandler;
+
+
+static void s_CgiDiagHandler(const SDiagMessage& mess)
+{
+    *s_ActiveCgiDiagHandler << mess;
+}
+
+
+class CCgiStreamDiagHandler : public CCgiDiagHandler
+{
+public:
+    CCgiStreamDiagHandler(CNcbiOstream& os) : m_Stream(&os) {}
+
+    virtual CCgiStreamDiagHandler& operator <<(const SDiagMessage& mess)
+        { *m_Stream << mess;  return *this; }
+private:
+    CNcbiOstream* m_Stream;
+};
+
+
+static CCgiDiagHandler* s_StderrDiagHandlerFactory(const string&, CCgiContext&)
+{
+    return new CCgiStreamDiagHandler(NcbiCerr);
+}
+
+
+static CCgiDiagHandler* s_AsBodyDiagHandlerFactory(const string&,
+                                                   CCgiContext& context)
+{
+    CCgiResponse&    response = context.GetResponse();
+    CCgiDiagHandler* result   = new CCgiStreamDiagHandler(response.out());
+    response.SetContentType("text/plain");
+    response.WriteHeader();
+    response.SetOutput(NULL); // suppress normal output
+    return result;
+}
+
+
+CCgiApplication::CCgiApplication(void)
+{
+    RegisterCgiDiagHandler("stderr", s_StderrDiagHandlerFactory);
+    RegisterCgiDiagHandler("asbody", s_AsBodyDiagHandlerFactory);    
+}
+
+
+void CCgiApplication::RegisterCgiDiagHandler(const string& key,
+                                             FCgiDiagHandlerFactory fact)
+{
+    m_DiagHandlers[key] = fact;
+}
+
+
+FCgiDiagHandlerFactory CCgiApplication::FindCgiDiagHandler(const string& key)
+{
+    TDiagHandlerMap::const_iterator it = m_DiagHandlers.find(key);
+    if (it != m_DiagHandlers.end()) {
+        return it->second;
+    } else {
+        return NULL;
+    }
+}
+
+
+void CCgiApplication::ConfigureDiagnostics(CCgiContext& context)
+{
+    // Disable for production servers?
+    ConfigureDiagDestination(context);
+    ConfigureDiagThreshold(context);
+    ConfigureDiagFormat(context);
+}
+
+
+void CCgiApplication::ConfigureDiagDestination(CCgiContext& context)
+{
+    const CCgiRequest& request = context.GetRequest();
+
+    bool   is_set = false;
+    string dest   = request.GetEntry("diag-destination", &is_set);
+    if (!is_set) {
+        // Explicitly set to default to avoid leakage in Fast-CGI case
+        dest = "stderr";
+    }
+    SIZE_TYPE colon = dest.find(':');
+    FCgiDiagHandlerFactory factory = FindCgiDiagHandler(dest.substr(0, colon));
+    if (factory == NULL) {
+        factory = s_StderrDiagHandlerFactory;
+    }
+    m_DiagHandler.reset(factory(dest.substr(colon + 1), context));
+    s_ActiveCgiDiagHandler = m_DiagHandler.get();
+    SetDiagHandler(s_CgiDiagHandler, NULL, NULL);
+}
+
+
+void CCgiApplication::ConfigureDiagThreshold(CCgiContext& context)
+{
+    const CCgiRequest& request = context.GetRequest();
+
+    bool   is_set    = false;
+    string threshold = request.GetEntry("diag-threshold", &is_set);
+    SetDiagTrace(eDT_Default);
+    if (is_set) {
+        if (threshold == "fatal") {
+            SetDiagPostLevel(eDiag_Fatal);
+        } else if (threshold == "critical") {
+            SetDiagPostLevel(eDiag_Critical);
+        } else if (threshold == "error") {
+            SetDiagPostLevel(eDiag_Error);
+        } else if (threshold == "warning") {
+            SetDiagPostLevel(eDiag_Warning);
+        } else if (threshold == "info") {
+            SetDiagPostLevel(eDiag_Info);
+        } else if (threshold == "trace") {
+            SetDiagPostLevel(eDiag_Info);
+            SetDiagTrace(eDT_Enable);
+        } else {
+            SetDiagPostLevel(eDiag_Warning);
+        }
+    } else {
+        // Explicitly set to default to avoid leakage in Fast-CGI case
+#ifdef NDEBUG
+        SetDiagPostLevel(eDiag_Error);
+#else
+        SetDiagPostLevel(eDiag_Warning);
+#endif
+    }
+}
+
+
+void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
+{
+    const CCgiRequest& request = context.GetRequest();
+
+    typedef map<string,EDiagPostFlag> TFlagMap;
+    static TFlagMap s_FlagMap;
+
+    EDiagPostFlag defaults = (EDiagPostFlag)(eDPF_Prefix | eDPF_Severity
+                                             | eDPF_ErrCode | eDPF_ErrSubCode);
+
+    bool   is_set = false;
+    string format = request.GetEntry("diag-format", &is_set);
+    UnsetDiagPostFlag(eDPF_All);
+    if (is_set) {
+        if (s_FlagMap.empty()) {
+            s_FlagMap["file"]        = eDPF_File;
+            s_FlagMap["path"]        = eDPF_LongFilename;
+            s_FlagMap["line"]        = eDPF_Line;
+            s_FlagMap["prefix"]      = eDPF_Prefix;
+            s_FlagMap["severity"]    = eDPF_Severity;
+            s_FlagMap["code"]        = eDPF_ErrCode;
+            s_FlagMap["subcode"]     = eDPF_ErrSubCode;
+            s_FlagMap["time"]        = eDPF_DateTime;
+            s_FlagMap["omitinfosev"] = eDPF_OmitInfoSev;
+            s_FlagMap["all"]         = eDPF_All;
+            s_FlagMap["trace"]       = eDPF_Trace;
+            s_FlagMap["log"]         = eDPF_Log;
+        }
+        list<string> flags;
+        NStr::Split(format, " ", flags);
+        iterate(list<string>, flag, flags) {
+            TFlagMap::const_iterator it;
+            if ((it = s_FlagMap.find(*flag)) != s_FlagMap.end()) {
+                SetDiagPostFlag(it->second);
+            } else if ((*flag)[0] == '!'
+                       &&  ((it = s_FlagMap.find(flag->substr(1)))
+                            != s_FlagMap.end())) {
+                UnsetDiagPostFlag(it->second);
+            } else if (*flag == "default") {
+                SetDiagPostFlag(defaults);
+            }
+        }
+    } else {
+        // Explicitly set to default to avoid leakage in Fast-CGI case
+        SetDiagPostFlag(defaults);
+    }
+}
+
+
+void CCgiApplication::FlushDiagnostics(void)
+{
+    m_DiagHandler->Flush();
+}
+
+
+void CCgiApplication::SetDiagNode(CNCBINode* node)
+{
+    m_DiagHandler->SetDiagNode(node);
 }
 
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/10/04 18:17:53  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.12  2001/07/17 22:39:54  vakatov
 * CCgiResponse:: Made GetOutput() fully consistent with out().
 * Prohibit copy constructor and assignment operator.
@@ -77,6 +81,11 @@
 
 #include <cgi/ncbicgir.hpp>
 #include <time.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#else
+#define STDOUT_FILENO 1
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -94,9 +103,10 @@ inline bool s_ZeroTime(const tm& date)
 }
 
 
-CCgiResponse::CCgiResponse(CNcbiOstream* os)
+CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
     : m_IsRawCgi(false),
-      m_Output(os ? os : &NcbiCout)
+      m_Output(os ? os : &NcbiCout),
+      m_OutputFD(os ? ofd : STDOUT_FILENO) // "os" is NOT a typo
 {
     return;
 }

@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/10/04 18:17:51  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.22  2001/06/13 21:04:35  vakatov
 * Formal improvements and general beautifications of the CGI lib sources.
 *
@@ -114,6 +118,30 @@
 BEGIN_NCBI_SCOPE
 
 class CCgiServerContext;
+class CNCBINode;
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiDiagHandler::
+//
+
+class CCgiDiagHandler
+{
+public:
+    virtual void             SetDiagNode(CNCBINode* node) {}
+    virtual CCgiDiagHandler& operator <<(const SDiagMessage& mess) = 0;
+    virtual void             Flush(void) {}
+};
+
+// Should return a newly allocated handler, which the caller then owns
+typedef CCgiDiagHandler* (*FCgiDiagHandlerFactory)(const string& s,
+                                                   CCgiContext& context);
+
+// Actually in libconnect to avoid extra dependencies
+CCgiDiagHandler* EmailDiagHandlerFactory(const string& s, CCgiContext&);
+
+// Actually in libhtml to avoid extra dependencies
+CCgiDiagHandler* CommentDiagHandlerFactory(const string& s, CCgiContext&);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -125,6 +153,8 @@ class CCgiApplication : public CNcbiApplication
     typedef CNcbiApplication CParent;
 
 public:
+    CCgiApplication(void);
+
     static CCgiApplication* Instance(void); // Singleton method    
 
     // These methods will throw exception if no server context set
@@ -146,10 +176,23 @@ public:
 
 protected:
     // Factory method for the Context object construction
-    virtual CCgiContext* CreateContext(CNcbiArguments*   args = 0,
-                                       CNcbiEnvironment* env  = 0,
-                                       CNcbiIstream*     inp  = 0, 
-                                       CNcbiOstream*     out  = 0);
+    virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
+                                         CNcbiEnvironment* env  = 0,
+                                         CNcbiIstream*     inp  = 0, 
+                                         CNcbiOstream*     out  = 0,
+                                         int               ifd  = -1,
+                                         int               ofd  = -1);
+
+    void                   RegisterCgiDiagHandler(const string& key,
+                                                FCgiDiagHandlerFactory fact);
+    FCgiDiagHandlerFactory FindCgiDiagHandler(const string& key);
+    virtual void           ConfigureDiagnostics(CCgiContext& context);
+    virtual void           ConfigureDiagDestination(CCgiContext& context);
+    virtual void           ConfigureDiagThreshold(CCgiContext& context);
+    virtual void           ConfigureDiagFormat(CCgiContext& context);
+
+    virtual void           FlushDiagnostics(void);
+    virtual void           SetDiagNode(CNCBINode* node);
 
 private:
     // If FastCGI-capable, and run as a Fast-CGI then iterate through
@@ -162,8 +205,12 @@ private:
     CCgiContext&   x_GetContext (void) const;
     CNcbiResource& x_GetResource(void) const;
 
-    auto_ptr<CNcbiResource> m_Resource;
-    auto_ptr<CCgiContext>   m_Context;
+    auto_ptr<CNcbiResource>   m_Resource;
+    auto_ptr<CCgiContext>     m_Context;
+
+    auto_ptr<CCgiDiagHandler> m_DiagHandler;
+    typedef map<string, FCgiDiagHandlerFactory> TDiagHandlerMap;
+    TDiagHandlerMap           m_DiagHandlers;
 };
 
 

@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>CGI Diagnostic Handling</title>
+</head>
+<body bgcolor = white>
+<h1>CGI Diagnostic Handling</h1>
+<p>
+By default, CGI applications support three query parameters affecting
+<a href="diag.html">diagnostic output</a>:
+<a href="#ref_destination">diag-destination</a>,
+<a href="#ref_threshold">diag-threshold</a>, and
+<a href="#ref_format">diag-format</a>.  It is possible to modify this
+behavior by overriding the virtual function
+<a href="../lxr/ident?i=ConfigureDiagnostics"><b>CCgiApplication::ConfigureDiagnostics</b></a>.
+(In particular, production applications may wish to disable these
+parameters by defining <b>ConfigureDiagnostics</b> to be a no-op.)
+
+<a name="ref_destination"><h2>diag-destination</h2></a>
+<p>
+The parameter <b>diag-destination</b> controls where diagnostics
+appear.  By default, there are two possible values:
+</p>
+<table border="1">
+ <tr> <th>value</th> <th>effects</th> </tr>
+ <tr> <td><b>stderr</b></td>
+      <td>Send diagnostics to the standard error stream (default behavior)</td>
+ </tr>
+ <tr> <td><b>asbody</b></td>
+      <td>Send diagnostics to the client in place of normal output</td> </tr>
+</table>
+
+<p>
+However, an application can make other options available by calling
+<a href="../lxr/ident?i=RegisterCgiDiagHandler"><b>RegisterCgiDiagHandler</b></a>
+from its <b>Init</b> routine.  In particular, calling <pre>
+RegisterCgiDiagHandler("email", EmailDiagHandlerFactory);
+</pre>
+and linking against <b>xconnect</b> and <b>connect</b> enables
+destinations of the form <b>email:<i>user@host</i></b>, which will
+cause the application to e-mail diagnostics to the specified address
+when done.
+<p>
+Similarly, calling <pre>
+RegisterCgiDiagHandler("comments", CommentDiagHandlerFactory);
+</pre>
+and linking against <b>xhtml</b> will enable the destination
+<b>comments</b>.  With this destination, diagnostics will take the
+form of comments in the generated HTML, provided that the application
+has also used <a href="../lxr/ident?i=SetDiagNode"><b>SetDiagNode</b></a>
+to indicate where they should go.  (Applications may call that
+function repeatedly; each invocation will affect all diagnostics until
+the next invocation.  Also, <b>SetDiagNode</b> is effectively a no-op
+for destinations other than <b>comments</b>, so applications may call
+it unconditionally.)
+<p>
+Those destinations are not available by default because they introduce
+additional dependencies; however, either may become a standard
+possibility in future versions of the toolkit.
+
+<a name="ref_threshold"><h2>diag-threshold</h2></a>
+The parameter <b>diag-threshold</b> sets the minimum
+<a href="diag.html#severity">severity level</a> of displayed
+diagnostics; its value can be either <b>fatal</b>, <b>critical</b>,
+<b>error</b>, <b>warning</b>, <b>info</b>, or <b>trace</b>.  For the
+most part, setting this parameter is simply akin to calling
+<a href="../lxr/ident?i=SetDiagPostLevel"><b>SetDiagPostLevel</b></a>.
+However, setting <b>diag-threshold</b> to <b>trace</b> is <i>NOT</i>
+equivalent to calling <tt>SetDiagPostLevel(eDiag_Trace)</tt>; the
+former reports all diagnostics, whereas the latter reports only traces.
+
+<a name="ref_format"><h2>diag-format</h2></a>
+
+Finally, the parameter <b>diag-format</b> controls diagnostics'
+default appearance; setting it is akin to calling
+<a href="../lxr/ident?i=SetDiagPostFlag"><b>{Set,Unset}DiagPostFlag</b></a>.
+Its value is a list of flags, delimited by spaces (which appear as "+"
+signs in URLs); possible flags are <b>file</b>, <b>path</b>,
+<b>line</b>, <b>prefix</b>, <b>severity</b>, <b>code</b>,
+<b>subcode</b>, <b>time</b>, <b>omitinfosev</b>, <b>all</b>,
+<b>trace</b>, <b>log</b>, and <b>default</b>.  Every flag but
+<b>default</b> corresponds to a value in
+<a href="../lxr/ident?i=EDiagPostFlag"><b>EDiagPostFlag</b></a>, and
+can be turned off by preceding its name with an exclamation point
+("!").  <b>default</b> corresponds to the four flags which are on by
+default: <b>line</b>, <b>prefix</b>, <b>code</b>, and <b>subcode</b>,
+and may not be subtracted.
+
+<br>
+<a href="htmlcgi.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<!--a href="asn.html"> <i> next</i> </a-->
+
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+ <td><address><a href="mailto:ucko@ncbi.nlm.nih.gov">Aaron Ucko</a></address></td>
+ <td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>

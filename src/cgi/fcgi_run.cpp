@@ -31,6 +31,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2001/10/04 18:17:53  ucko
+ * Accept additional query parameters for more flexible diagnostics.
+ * Support checking the readiness of CGI input and output streams.
+ *
  * Revision 1.10  2001/07/16 21:18:09  vakatov
  * CAutoCgiContext:: to provide a clean reset of "m_Context" in RunFastCGI()
  *
@@ -81,6 +85,7 @@ bool CCgiApplication::RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
 # include <cgi/cgictx.hpp>
 
 # include <fcgiapp.h>
+# include <fcgi_stdio.h>
 # include <sys/stat.h>
 # include <errno.h>
 # include <unistd.h>
@@ -146,28 +151,30 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
                << " iteration of " << iterations);
 
         // accept the next request and obtain its data
-        FCGX_Stream *pfin, *pfout, *pferr;
-        FCGX_ParamArray penv;
-        if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
+        FCGX_Request fcreq;
+        FCGX_InitRequest(&fcreq, 0, 0);
+        if ( FCGX_Accept_r(&fcreq) != 0 ) {
             _TRACE("CCgiApplication::RunFastCGI: no more requests");
             break;
         }
 
         // default exit status (error)
         *result = -1;
-        FCGX_SetExitStatus(-1, pfout);
+        FCGX_SetExitStatus(-1, fcreq.out);
 
         // process the request
         try {
             // initialize CGI context with the new request data
-            CNcbiEnvironment  env(penv);
-            CCgiObuffer       obuf(pfout, 512);
+            CNcbiEnvironment  env(fcreq.envp);
+            CCgiObuffer       obuf(fcreq.out, 512);
             CNcbiOstream      ostr(&obuf);
-            CCgiIbuffer       ibuf(pfin);
+            CCgiIbuffer       ibuf(fcreq.in);
             CNcbiIstream      istr(&ibuf);
             CNcbiArguments    args(0, 0);  // no cmd.-line ars
 
-            m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
+            // ipcFd is supposed to be private.  Oh well.
+            m_Context.reset(CreateContext(&args, &env, &istr, &ostr,
+                                          fcreq.ipcFd, fcreq.ipcFd));
 
             // safely clear contex data and reset "m_Context" to zero
             CAutoCgiContext auto_context(m_Context);
@@ -194,13 +201,16 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
                      ", pid " + NStr::IntToString(getpid()));
             }
 
+            ConfigureDiagnostics(*m_Context);
+
             // call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             *result = ProcessRequest(*m_Context);
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
+            FlushDiagnostics();
             _TRACE("CCgiApplication::Run: done, status: " << *result);
-            FCGX_SetExitStatus(*result, pfout);
+            FCGX_SetExitStatus(*result, fcreq.out);
         }
         catch (exception& e) {
             ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());
@@ -209,7 +219,7 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 
         // close current request
         _TRACE("CCgiApplication::RunFastCGI: FINISHING");
-        FCGX_Finish();
+        FCGX_Finish_r(&fcreq);
 
         // check if this CGI executable has been changed
         time_t mtimeNew =

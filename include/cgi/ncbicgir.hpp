@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/10/04 18:17:52  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.11  2001/07/17 22:39:53  vakatov
 * CCgiResponse:: Made GetOutput() fully consistent with out().
 * Prohibit copy constructor and assignment operator.
@@ -85,7 +89,8 @@ class CCgiResponse
 {
 public:
     // 'ctors
-    CCgiResponse(CNcbiOstream* os = 0); // (default sets out.stream to "cout")
+    CCgiResponse(CNcbiOstream* os = 0, int ofd = -1);
+    // (default sets out.stream to "cout", ofd to STDOUT_FILENO)
     ~CCgiResponse(void);
 
     // Set/get the "raw CGI" response type
@@ -110,8 +115,9 @@ public:
     CCgiCookies&       Cookies(void);
 
     // Set/get output stream (NULL here means "no output stream")
-    void          SetOutput(CNcbiOstream* os);
+    void          SetOutput(CNcbiOstream* os, int fd = -1);
     CNcbiOstream* GetOutput(void) const;
+    int           GetOutputFD(void) const;
 
     // Get output stream.  Throw exception if GetOutput() is NULL
     CNcbiOstream& out(void) const;
@@ -134,6 +140,7 @@ protected:
     TMap          m_HeaderValues;  // Header lines in alphabetical order
     CCgiCookies   m_Cookies;       // Cookies
     CNcbiOstream* m_Output;        // Default output stream
+    int           m_OutputFD;      // Output file descriptor, if available.
 
     // Prohibit copy constructor and assignment operator
     CCgiResponse(const CCgiResponse& response);
@@ -182,14 +189,19 @@ inline CCgiCookies& CCgiResponse::Cookies(void)
     return m_Cookies;
 }
 
-inline void CCgiResponse::SetOutput(CNcbiOstream* out)
+inline void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
 {
-    m_Output = out;
+    m_Output   = out;
+    m_OutputFD = fd;
 }
 
 inline CNcbiOstream* CCgiResponse::GetOutput(void) const
 {
     return m_Output;
+}
+
+inline int CCgiResponse::GetOutputFD(void) const {
+    return m_OutputFD;
 }
 
 inline CNcbiOstream& CCgiResponse::WriteHeader(void) const

@@ -8,7 +8,7 @@
 include $(srcdir)/Makefile.connect.lib
 
 LIBOBJ = $(LIBOBJ_C) \
-      ncbi_conn_streambuf ncbi_conn_stream ncbi_core_cxx
+      ncbi_conn_streambuf ncbi_conn_stream ncbi_core_cxx cgi_email_diag_handler
 
 LIB    = xconnect
 

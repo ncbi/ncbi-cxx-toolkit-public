@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/10/04 18:17:53  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.21  2001/06/13 21:04:37  vakatov
 * Formal improvements and general beautifications of the CGI lib sources.
 *
@@ -158,15 +162,17 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          const CNcbiArguments*   args,
                          const CNcbiEnvironment* env,
                          CNcbiIstream*           inp,
-                         CNcbiOstream*           out)
+                         CNcbiOstream*           out,
+                         int                     ifd,
+                         int                     ofd)
     : m_App(app),
       m_Request(0),
-      m_Response(out)
+      m_Response(out, ofd)
 {
     try {
         m_Request.reset(new CCgiRequest(args ? args : &app.GetArguments(),
                                         env  ? env  : &app.GetEnvironment(),
-                                        inp));
+                                        inp, 0, ifd));
     }
     catch (exception& _DEBUG_ARG(e)) {
         _TRACE("CCgiContext::CCgiContext: " << e.what());
@@ -280,6 +286,45 @@ const string& CCgiContext::GetSelfURL(void) const
         (GetRequest().GetProperty(eCgi_ScriptName), "//", "/");
 
     return m_SelfURL;
+}
+
+
+CCgiContext::TStreamStatus
+CCgiContext::GetStreamStatus(STimeout *timeout) const
+{
+#ifdef NCBI_OS_UNIX
+    int ifd  = m_Request->GetInputFD();
+    int ofd  = m_Response.GetOutputFD();
+    int nfds = max(ifd, ofd) + 1;
+    if (nfds == 0) {
+        return 0;
+    }
+
+    fd_set readfds, writefds;
+    FD_ZERO(&readfds);
+    if (ifd >= 0) {
+        FD_SET(ifd, &readfds);
+    }
+    FD_ZERO(&writefds);
+    if (ofd >= 0) {
+        FD_SET(ofd, &writefds);
+    }
+    struct timeval tv;
+    tv.tv_sec  = timeout->sec;
+    tv.tv_usec = timeout->usec;
+    select(nfds, &readfds, &writefds, NULL, &tv);
+
+    TStreamStatus result = 0;
+    if (ifd >= 0  &&  FD_ISSET(ifd, &readfds)) {
+        result |= fInputReady;
+    }
+    if (ofd >= 0  &&  FD_ISSET(ofd, &writefds)) {
+        result |= fOutputReady;
+    }
+    return result;
+#else
+    return 0;
+#endif
 }
 
 END_NCBI_SCOPE

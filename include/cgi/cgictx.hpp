@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/10/04 18:17:51  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.17  2001/06/13 21:04:35  vakatov
 * Formal improvements and general beautifications of the CGI lib sources.
 *
@@ -123,7 +127,7 @@
 #include <corelib/ncbistd.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
-
+#include <connect/ncbi_types.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -206,7 +210,9 @@ public:
                 const CNcbiArguments*   args = 0 /* D: app.GetArguments()   */,
                 const CNcbiEnvironment* env  = 0 /* D: app.GetEnvironment() */,
                 CNcbiIstream*           inp  = 0 /* see ::CCgiRequest(istr) */,
-                CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */
+                CNcbiOstream*           out  = 0 /* see ::CCgiResponse(out) */,
+                int                     ifd  = -1,
+                int                     ofd  = -1
                 );
     virtual ~CCgiContext(void);
 
@@ -251,6 +257,15 @@ public:
 
     // program name access
     const string& GetSelfURL(void) const;
+
+    // Which streams are ready?
+    enum EStreamStatus {
+        fInputReady  = 0x1,
+        fOutputReady = 0x2
+    };
+    typedef int TStreamStatus;
+    TStreamStatus GetStreamStatus(STimeout* timeout) const;
+    TStreamStatus GetStreamStatus(void) const; // supplies {0,0}
 
 private:
     CCgiServerContext& x_GetServerContext(void) const;
@@ -368,6 +383,14 @@ inline
 void CCgiContext::ClearMsg(void)
 {
     m_Messages.clear();
+}
+
+
+inline
+CCgiContext::TStreamStatus CCgiContext::GetStreamStatus(void) const
+{
+    STimeout timeout = {0, 0};
+    return GetStreamStatus(&timeout);
 }
 
 

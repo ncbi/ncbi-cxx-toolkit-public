@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/10/04 18:17:53  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
 * Revision 1.49  2001/06/19 20:08:30  vakatov
 * CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
 * requests' content body
@@ -214,7 +218,11 @@
 #include <cgi/ncbicgi.hpp>
 #include <stdio.h>
 #include <time.h>
-
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#else
+#define STDIN_FILENO 0
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -871,10 +879,11 @@ CCgiRequest::CCgiRequest
 (const CNcbiArguments*   args,
  const CNcbiEnvironment* env,
  CNcbiIstream*           istr,
- TFlags                  flags)
+ TFlags                  flags,
+ int                     ifd)
     : m_Env(0)
 {
-    x_Init(args, env, istr, flags);
+    x_Init(args, env, istr, flags, ifd);
 }
 
 
@@ -883,7 +892,8 @@ CCgiRequest::CCgiRequest
  const char* const* argv,
  const char* const* envp,
  CNcbiIstream*      istr,
- TFlags             flags)
+ TFlags             flags,
+ int                ifd)
     : m_Env(0)
 {
     CNcbiArguments args(argc, argv);
@@ -891,7 +901,7 @@ CCgiRequest::CCgiRequest
     CNcbiEnvironment* env = new CNcbiEnvironment(envp);
     flags |= fOwnEnvironment;
 
-    x_Init(&args, env, istr, flags);
+    x_Init(&args, env, istr, flags, ifd);
 }
 
 
@@ -899,7 +909,8 @@ void CCgiRequest::x_Init
 (const CNcbiArguments*   args,
  const CNcbiEnvironment* env,
  CNcbiIstream*           istr,
- TFlags                  flags)
+ TFlags                  flags,
+ int                     ifd)
 {
     // Setup environment variables
     _ASSERT( !m_Env );
@@ -942,8 +953,10 @@ void CCgiRequest::x_Init
 
     // POST method?
     if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
-        if ( !istr )
+        if ( !istr ) {
             istr = &NcbiCin;  // default input stream
+            ifd = STDIN_FILENO;
+        }
 
         const string& content_type = GetProperty(eCgi_ContentType);
         if ((flags & fDoNotParseContent) == 0  &&
@@ -991,15 +1004,18 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
             }
             // parse query from the POST content
             s_ParsePostQuery(content_type, str, m_Entries);
-            m_Input = 0;
+            m_Input    = 0;
+            m_InputFD = -1;
         }
         else {
             // Let the user to retrieve and parse the content
             m_Input    = istr;
+            m_InputFD  = ifd;
             m_OwnInput = false;
         }
     } else {
-        m_Input = 0;
+        m_Input   = 0;
+        m_InputFD = -1;
     }
 
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
@@ -1082,12 +1098,13 @@ size_t CCgiRequest::GetContentLength(void) const
 }
 
 
-void CCgiRequest::SetInputStream(CNcbiIstream* is, bool own)
+void CCgiRequest::SetInputStream(CNcbiIstream* is, bool own, int fd)
 {
     if (m_Input  &&  m_OwnInput  &&  is != m_Input) {
         delete m_Input;
     }
     m_Input    = is;
+    m_InputFD  = fd;
     m_OwnInput = own;
 }
 
