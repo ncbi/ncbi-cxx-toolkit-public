@@ -1,13 +1,17 @@
+#
+# $Id$
+#
+# Generate source files and makefiles from ASN.1 spec.
+# (NOTE:  hard-wired for the C++ Toolkit directory structure.)
+#
+
 SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
 INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 
 ASNFILE = $(MODULE_ASN)
 IMPFILES = $(MODULE_IMPORT:=.asn)
 FILES = $(MODULE).files
-MODULEFILE = $(MODULE).module
 
-#FULL_MODULE = $(MODULE)__.cpp
-#FULL_MODULE_BASE = $(MODULE)___.cpp
 
 all: sources makefiles
 
@@ -32,23 +36,15 @@ purge_all_files:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
 	$(DATATOOL) -oR $(top_srcdir) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def
 
-#$(FULL_MODULE_BASE): $(FILES)
-#	for f in `grep GENFILES_LOCAL $(FILES) | sed 's/^.*=//'`; do echo '#include "'$$f'_.cpp"'; done > $@
-
-#$(FULL_MODULE): $(FULL_MODULE_BASE)
-#	sed 's/_\.cpp/\.cpp/' $(FULL_MODULE_BASE) > $@
-
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
-Makefile.in: $(MODULEFILE)
-	@echo Updating $@
+Makefile.in:
+	@echo Creating $@
 	@( echo "LIB_PROJ = $(MODULE)"; echo "srcdir = @srcdir@"; echo "include @builddir@/Makefile.meta"; ) > $@
 
-Makefile.$(MODULE).lib: $(MODULEFILE)
-	@echo Updating $@
+Makefile.$(MODULE).lib:
+	@echo Creating $@
 	@( echo 'LIB = $$(TMPL)'; echo 'LIBOBJ = $$(LIB)__ $$(LIB)___'; ) > $@
-
-$(MODULEFILE):
 
 $(MODULE).def:
 
