@@ -509,15 +509,18 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
             ii;
         
         ETranscriptSymbol ts = *ib;
-        char seg_type0 = ((ts == eInsert || (ts & eIntron_GT_AG))? 1:
+        bool intron = (ts & eIntron_GT_AG) || (ts & eIntron_GC_AG) ||
+                      (ts & eIntron_AT_AC) || (ts & eIntron_Generic);
+        char seg_type0 = ((ts == eInsert || intron )? 1:
                           (ts == eDelete)? 2: 0);
         size_t seg_len = 0;
 
         for (ii = ib;  ii != ie; ++ii) {
             ts = *ii;
-            char seg_type = ((ts == eInsert || (ts & eIntron_GT_AG))? 1:
+            intron = (ts & eIntron_GT_AG) || (ts & eIntron_GC_AG) ||
+                (ts & eIntron_AT_AC) || (ts & eIntron_Generic);
+            char seg_type = ((ts == eInsert || intron )? 1:
                              (ts == eDelete)? 2: 0);
-
             if(seg_type0 != seg_type) {
                 starts.push_back( (seg_type0 == 1)? -1: start1 - m_Seq1 );
                 starts.push_back( (seg_type0 == 2)? -1: start2 - m_Seq2 );
@@ -995,6 +998,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/06/17 16:06:13  kapustin
+ * Detect all variety of splices in Seq-Align formatter (restored from 1.27)
+ *
  * Revision 1.28  2003/06/17 14:51:04  dicuccio
  * Fixed after algo/ rearragnement
  *
