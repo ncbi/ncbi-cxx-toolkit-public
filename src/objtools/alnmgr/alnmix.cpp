@@ -265,11 +265,12 @@ void CAlnMix::Add(const CDense_seg &ds)
     }
 
     //record all alignment relations
-    int           seg_off = 0;
-    TSignedSeqPos start1, start2;
-    TSeqPos       len;
-    bool          single_chunk;
-    bool          strands_exist = 
+    int              seg_off = 0;
+    TSignedSeqPos    start1, start2;
+    TSeqPos          len;
+    bool             single_chunk;
+    CAlnMap::TNumrow first_non_gapped_row_found;
+    bool             strands_exist = 
         ds.GetStrands().size() == ds.GetNumseg() * ds.GetDim();
 
     for (CAlnMap::TNumseg seg =0;  seg < ds.GetNumseg();  seg++) {
@@ -285,14 +286,23 @@ void CAlnMix::Add(const CDense_seg &ds)
                 for (CAlnMap::TNumrow row2 = row1+1;
                      row2 < ds.GetDim();  row2++) {
                     if ((start2 = ds.GetStarts()[seg_off + row2]) >= 0) {
-                        //match found, record *each* pair
-                        single_chunk = false;
+                        //match found
+                        if (single_chunk) {
+                            single_chunk = false;
+                            first_non_gapped_row_found = row1;
+                        }
+                        
+                        //create the match
+                        CRef<CAlnMixMatch> match(new CAlnMixMatch);
+
+                        //add only pairs with the first_non_gapped_row_found
+                        //still, calc the score to be added to the seqs' scores
+                        if (row1 == first_non_gapped_row_found) {
+                            m_Matches.push_back(match);
+                        }
 
                         CRef<CAlnMixSeq> aln_seq2 = ds_seq[row2];
 
-                        //create the match
-                        CRef<CAlnMixMatch> match(new CAlnMixMatch);
-                        m_Matches.push_back(match);
 
                         match->m_AlnSeq1 = aln_seq1;
                         match->m_Start1 = start1;
@@ -574,7 +584,7 @@ void CAlnMix::x_Merge()
             // loop through overlapping segments
             start = start1;
             while (hi_start_i == starts.end()) {
-                if (start_i->first == start) {
+                if (start_i != starts.end()  &&  start_i->first == start) {
                     CAlnMixSegment * prev_seg = start_i->second;
                     if (prev_seg->m_Len > curr_len) {
                         // x-------)  becomes  x----)x--)
@@ -758,7 +768,7 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
     const TSeqPos&                start2  = match->m_Start2;
     const TSeqPos&                len     = match->m_Len;
     CAlnMixSeq::TStarts::iterator start_i;
-        
+
     if ( !starts2.empty() ) {
 
         // check strand
@@ -884,12 +894,20 @@ void CAlnMix::x_CreateSegmentsVector()
     // init the start iterators for each row
     non_const_iterate (TSeqs, row_i, m_Rows) {
         CAlnMixSeq * row = *row_i;
-        if (row->m_PositiveStrand) {
-            row->m_StartIt = row->m_Starts.begin();
+        if (row->m_Starts.size()) {
+            if (row->m_PositiveStrand) {
+                row->m_StartIt = row->m_Starts.begin();
+            } else {
+                row->m_StartIt = row->m_Starts.end();
+                row->m_StartIt--;
+            }
         } else {
-            row->m_StartIt = row->m_Starts.end();
-            row->m_StartIt--;
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+            NCBI_THROW(CAlnException, eMergeFailure,
+                       "CAlnMix::x_CreateSegmentsVector(): "
+                       "Internal error: no starts for this row. ");
         }
+#endif
     }
 
     // init the start iterators for each extra row
@@ -1178,6 +1196,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/01/22 19:39:13  todorov
+* 1) Matches w/ the 1st non-gapped row added only; the rest used to calc seqs'
+* score only
+* 2) Fixed a couple of potential problems
+*
 * Revision 1.23  2003/01/17 18:56:26  todorov
 * Perform merge algorithm even if only one input denseg
 *
