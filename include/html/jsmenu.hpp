@@ -28,9 +28,12 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:   JavaScript popup menu support
  *
  */
+
+/// @file jsmenu.hpp 
+/// JavaScript popup menu support.
+
 
 #include <corelib/ncbistd.hpp>
 #include <html/node.hpp>
@@ -45,79 +48,93 @@
 BEGIN_NCBI_SCOPE
 
 
-//===========================================================================
-//
-// Class for support JavaScript popup menu's
-//
-// NOTE: For successful work menu in HTML pages need:
-//    - file with popup menu JavaScript library ("ncbi_menu*.js" or
-//      "popupmenu2*.js")
-//      (by default using menu with URL, defined in constant 
-//      "kJSMenuDefaultURL*");
-//    - define menus and add its to HTML page (AppendChild()).
-//    - call EnablePopupMenu() (in CHTML_html or CHTMLPage).
-// 
-// NOTE: We must add menus to a BODY only, otherwise menu not will be work.
-//
-//===========================================================================
+/// Popup menu attribute.
+///
+/// If attribute not define for menu with function SetAttribute(), 
+/// then it have some default value dependent on menu type.
+/// All attributes have effect only for specified menu type, otherwise it
+/// will be ignored.
 
-// Popup menu attribute   
-// if attribute not define for menu with function SetAttribute(), 
-// then it have some default value
-//
-// NOTE: All attributes have effect only for specified menu type
-//       (CHTMLPopupMenu::EType). Otherwise it will be ignored.
-//
 enum EHTML_PM_Attribute {
-    //                               Using by type     Value example
-    eHTML_PM_enableTracker,          // eSmith         "true"
-    eHTML_PM_disableHide,            // eSmith         "false"
-    eHTML_PM_fontSize,               // eSmith         "14"
-    eHTML_PM_fontWeigh,              // eSmith         "plain"
-    eHTML_PM_fontFamily,             // eSmith         "arial,helvetica"
-    eHTML_PM_fontColor,              // eSmith         "black"
-    eHTML_PM_fontColorHilite,        // eSmith         "#ffffff"
-    eHTML_PM_menuBorder,             // eSmith         "1"
-    eHTML_PM_menuItemBorder,         // eSmith         "0"
-    eHTML_PM_menuItemBgColor,        // eSmith         "#cccccc"
-    eHTML_PM_menuLiteBgColor,        // eSmith         "white"
-    eHTML_PM_menuBorderBgColor,      // eSmith         "#777777"
-    eHTML_PM_menuHiliteBgColor,      // eSmith         "#000084"
-    eHTML_PM_menuContainerBgColor,   // eSmith         "#cccccc"
-    eHTML_PM_childMenuIcon,          // eSmith         "images/arrows.gif"
-    eHTML_PM_childMenuIconHilite,    // eSmith         "images/arrows2.gif"
-    eHTML_PM_bgColor,                // eSmith,eKurdin "#555555"
-    eHTML_PM_titleColor,             // eKurdin        "#FFFFFF"
-    eHTML_PM_borderColor,            // eKurdin        "black"
-    eHTML_PM_alignH,                 // eKurdin        "left" or "right"
-    eHTML_PM_alignV                  // eKurdin        "bottom" or "top"
+    //                               Using by     Value example
+    //
+    //                               S  - eSmith 
+    //                               K  - eKurdin 
+    //                               KS - eKurdinSide
+    
+    eHTML_PM_enableTracker,          // S         "true"
+    eHTML_PM_disableHide,            // S   KS    "false"
+    eHTML_PM_menuWidth,              //     KS    "100"
+    eHTML_PM_peepOffset,             //     KS    "20"
+    eHTML_PM_topOffset,              //     KS    "10"
+    eHTML_PM_fontSize,               // S         "14"
+    eHTML_PM_fontWeigh,              // S         "plain"
+    eHTML_PM_fontFamily,             // S         "arial,helvetica"
+    eHTML_PM_fontColor,              // S         "black"
+    eHTML_PM_fontColorHilite,        // S         "#ffffff"
+    eHTML_PM_menuBorder,             // S         "1"
+    eHTML_PM_menuItemBorder,         // S         "0"
+    eHTML_PM_menuItemBgColor,        // S         "#cccccc"
+    eHTML_PM_menuLiteBgColor,        // S         "white"
+    eHTML_PM_menuBorderBgColor,      // S         "#777777"
+    eHTML_PM_menuHiliteBgColor,      // S         "#000084"
+    eHTML_PM_menuContainerBgColor,   // S         "#cccccc"
+    eHTML_PM_childMenuIcon,          // S         "images/arrows.gif"
+    eHTML_PM_childMenuIconHilite,    // S         "images/arrows2.gif"
+    eHTML_PM_bgColor,                // S K       "#555555"
+    eHTML_PM_titleColor,             //   K       "#FFFFFF"
+    eHTML_PM_borderColor,            //   K       "black"
+    eHTML_PM_alignH,                 //   K       "left" or "right"
+    eHTML_PM_alignV,                 //   K       "bottom" or "top"
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CHTMLPopupMenu --
+///
+/// Define for support JavaScript popup menues.
+///
+/// For successful work menu in HTML pages next steps required:
+///    - File with popup menu JavaScript library -- "*.js".
+///      By default using menu with URL, defined in constant
+///      kJSMenuDefaultURL*, defined in the jsmenu.cpp.
+///    - Define menues and add it to HTML page (AppendChild()).
+///    - Call EnablePopupMenu() (member function of CHTML_html and CHTMLPage).
+/// 
+/// NOTE: We must add menues to a BODY only, otherwise menu not will be work.
+/// NOTE: Menues of eKurdinSide type must be added (using AppendChild) only
+///       to a HEAD node. And menu of this type must be only one on the page!
 
 class CHTMLPopupMenu : public CNCBINode
 {
     typedef CNCBINode CParent;
     friend class CHTMLPage;
     friend class CHTMLNode;
-
 public:
 
-    // Popup menu type
+    /// Popup menu type.
     enum EType {
-        eSmith,             // Smith's menu (ncbi_menu*.js)
-        eKurdin,            // Sergey Kurdin's menu (popupmenu2.js)
+        eSmith,             ///< Smith's menu (ncbi_menu*.js)
+        eKurdin,            ///< Sergey Kurdin's popup menu (popupmenu2*.js)
+        eKurdinSide,        ///< Sergey Kurdin's side menu (sidemenu*.js)
+
         ePMFirst = eSmith,
-        ePMLast  = eKurdin
+        ePMLast  = eKurdinSide
     };
 
-    // Construct menu with name "name" (JavaScript variable name)
+    /// Constructor.
+    ///
+    /// Construct menu with name "name" (JavaScript variable name).
     CHTMLPopupMenu(const string& name, EType type = eSmith);
+
+    /// Destructor.
     virtual ~CHTMLPopupMenu(void);
 
-    // Get menu name
+    /// Get menu name.
     string GetName(void) const;
-    // Get menu type
-    EType GetType(void) const;
+    /// Get menu type.
+    EType  GetType(void) const;
 
 
     // Add new item to current menu
@@ -139,65 +156,71 @@ public:
                  const string& mouseover = kEmptyStr,  // JS code
                  const string& mouseout  = kEmptyStr); // JS code
 
-    // NOTE: The "node" will convert to string inside this function, so
-    //       the "node"'s Print() method for must not change "node" structure.
+    // NOTE: The "node" will be convert to a string inside function, so
+    //       the node's Print() method must not change a node structure.
     void AddItem(CNCBINode& node,
                  const string& action    = kEmptyStr,  // JS code
                  const string& color     = kEmptyStr,
                  const string& mouseover = kEmptyStr,  // JS code
                  const string& mouseout  = kEmptyStr); // JS code
 
-    // Add item's separator
-    // NOTE: do nothing for eKurdin menu type
+    /// Add item's separator.
+    ///
+    /// NOTE: do nothing for eKurdin menu type
     void AddSeparator(void); 
 
-    // Set menu attribute
+    /// Set menu attribute.
     void SetAttribute(EHTML_PM_Attribute attribute, const string& value);
 
-    // Get JavaScript code for menu call
+    /// Get JavaScript code for menu call.
     string ShowMenu(void) const;
 
-    // Get HTML code for insert into the end of the HEAD and BODY blocks.
-    // If "menu_lib_url" is not defined, then using default URL.
+    /// Get HTML code for inserting into end of the HEAD and BODY blocks.
+    /// If "menu_lib_url" is not defined, then use default URL.
     static string GetCodeHead(EType type = eSmith,
                               const string& menu_lib_url = kEmptyStr);
     static string GetCodeBody(EType type = eSmith,
                               bool use_dynamic_menu = false);
-    // Get HTML code for insert into the end of the <BODY ...> tag.
+    /// Get HTML code for inserting into end of the BODY block.
     static string GetCodeBodyTagHandler(EType type);
     static string GetCodeBodyTagAction(EType type);
 
 private:
-    // Get code for menu items in text format (JS function inside code)
+    /// Get code for menu items in text format (internal JS function code).
     string GetCodeMenuItems(void) const;
 
-    // Print menu
+    /// Print menu.
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
-    // Menu item type
+    /// Menu item type.
     struct SItem {
-        // menu item
+        /// Constructor for menu item.
         SItem(const string& title, const string& action, const string& color,
               const string& mouseover, const string& mouseout);
-        // separator
+        /// Constructor for separator.
         SItem(void);
-        string title;      // menu item title
-        string action;     // JS action on press item
-        string color;      // ? (not used in JSMenu script)
-        string mouseover;  // JS action on mouse over event for item
-        string mouseout;   // JS action on mouse out event for item
+
+        string title;      ///< Menu item title.
+        string action;     ///< JS action on press item.
+        string color;      ///< ? (not used in JSMenu script).
+        string mouseover;  ///< JS action on mouse over event for item.
+        string mouseout;   ///< JS action on mouse out event for item.
     };
     typedef list<SItem> TItems;
 
-    // Menu attribute type
+    /// Menu attribute type.
     typedef map<EHTML_PM_Attribute, string> TAttributes;
+
+    /// Get attribute value.
     string GetMenuAttributeValue(EHTML_PM_Attribute attribute) const;
+
+    /// Get attribute name
     string GetMenuAttributeName(EHTML_PM_Attribute attribute) const;
 
-    string       m_Name;   // menu name
-    EType        m_Type;   // menu type
-    TItems       m_Items;  // menu items
-    TAttributes  m_Attrs;  // menu attributes
+    string       m_Name;   ///< Menu name
+    EType        m_Type;   ///< Menu type
+    TItems       m_Items;  ///< Menu items
+    TAttributes  m_Attrs;  ///< Menu attributes
 };
 
 
@@ -211,6 +234,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2003/10/01 15:55:04  ivanov
+ * Added support for Sergey Kurdin's side menu
+ *
  * Revision 1.10  2003/04/25 13:45:32  siyan
  * Added doxygen groupings
  *
@@ -226,7 +252,7 @@ END_NCBI_SCOPE
  * because there's no reason for it not to be const).
  *
  * Revision 1.6  2002/02/13 20:15:39  ivanov
- * Added support of dynamic popup menus. Changed GetCodeBody().
+ * Added support of dynamic popup menues. Changed GetCodeBody().
  *
  * Revision 1.5  2001/11/29 16:05:16  ivanov
  * Changed using menu script name "menu.js" -> "ncbi_menu.js"
@@ -242,7 +268,7 @@ END_NCBI_SCOPE
  * Changed means for init JavaScript popup menu & add it to HTML document.
  *
  * Revision 1.1  2001/07/16 13:45:33  ivanov
- * Initialization
+ * Initial revision
  *
  * ===========================================================================
  */

@@ -225,10 +225,12 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu, EHTML_EH_Attribute e
     case CHTMLPopupMenu::eSmith: 
         SetEventHandler(event, menu->ShowMenu());
         return;
-
     case CHTMLPopupMenu::eKurdin: 
         SetEventHandler(eHTML_EH_MouseOver, menu->ShowMenu());
         SetEventHandler(eHTML_EH_MouseOut, "PopUpMenu2_Hide()");
+        return;
+    case CHTMLPopupMenu::eKurdinSide:
+        AppendHTMLText(menu->ShowMenu());
         return;
     }
     _TROUBLE;
@@ -2081,6 +2083,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2003/10/01 15:57:13  ivanov
+ * Added support for Sergey Kurdin's side menu
+ *
  * Revision 1.86  2003/07/08 17:13:53  gouriano
  * changed thrown exceptions to CException-derived ones
  *

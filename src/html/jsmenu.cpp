@@ -42,10 +42,15 @@ BEGIN_NCBI_SCOPE
 const string kJSMenuDefaultURL_Smith
  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js";
 
-// Sergey Kurdin's menu
+// Sergey Kurdin's popup menu
 const string kJSMenuDefaultURL_Kurdin
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_3.js";
 
+// Sergey Kurdin's popup menu
+const string kJSMenuDefaultURL_KurdinSide
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/sidemenu/sidemenu1.js";
+const string kJSMenuDefaultURL_KurdinSideCSS
+ = "http://www.ncbi.nlm.nih.gov/coreweb/styles/sidemenu.css"; 
  
 
 CHTMLPopupMenu::CHTMLPopupMenu(const string& name, EType type)
@@ -87,8 +92,14 @@ void CHTMLPopupMenu::AddItem(const string& title,
                              const string& mouseover, const string& mouseout)
 {
     string x_action = action;
-    if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
-        x_action = "window.location='" + action + "'";
+    if (m_Type == eKurdinSide) {
+        if ( x_action.empty() ) {
+            x_action = "none";
+        }
+    } else {
+        if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
+            x_action = "window.location='" + action + "'";
+        }
     }
     SItem item(title, x_action, color, mouseover, mouseout);
     m_Items.push_back(item);
@@ -127,10 +138,15 @@ void CHTMLPopupMenu::AddItem(CNCBINode& node,
 
 void CHTMLPopupMenu::AddSeparator(void)
 {
-    if ( m_Type != eSmith ) {
+    // Only eKurdin popup menu don't support separators
+    if ( m_Type == eKurdin ) {
         return;
     }
     SItem item;
+    if (m_Type == eKurdinSide) {
+        item.title  = "none";
+        item.action = "none";
+    }
     m_Items.push_back(item);
 } 
 
@@ -158,6 +174,12 @@ string CHTMLPopupMenu::GetMenuAttributeName(EHTML_PM_Attribute attribute) const
         return "enableTracker"; 
     case eHTML_PM_disableHide:
         return "disableHide"; 
+    case eHTML_PM_menuWidth:
+        return "menuWidth"; 
+    case eHTML_PM_peepOffset:
+        return "peepOffset"; 
+    case eHTML_PM_topOffset:
+        return "topOffset"; 
     case eHTML_PM_fontSize:
         return "fontSize"; 
     case eHTML_PM_fontWeigh:
@@ -219,7 +241,9 @@ string CHTMLPopupMenu::ShowMenu(void) const
     switch (m_Type) {
     case eSmith:
         return "window.showMenu(window." + m_Name + ");";
+
     case eKurdin:
+        {
         string align_h      = GetMenuAttributeValue(eHTML_PM_alignH);
         string align_v      = GetMenuAttributeValue(eHTML_PM_alignV);
         string color_border = GetMenuAttributeValue(eHTML_PM_borderColor);
@@ -228,6 +252,13 @@ string CHTMLPopupMenu::ShowMenu(void) const
         string s = "','"; 
         return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
                 color_border + s + color_title + s + color_back + "');";
+        }
+
+    case eKurdinSide:
+        return "<script language=\"JavaScript1.2\">\n<!--\n" \
+               "document.write(SideMenuType == \"static\" ? " \
+               "SideMenuStaticHtml : SideMenuDynamicHtml);" \
+               "\n//-->\n</script>\n";
     }
     _TROUBLE;
     return kEmptyStr;
@@ -282,6 +313,33 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
             code += "\n]\n";
         }
         break;
+
+    case eKurdinSide:
+        {
+            // Menu name always is "SideMenuParams"
+            code = "var SideMenuParams = [\n";
+            // Menu configuration
+            string is_dynamic  = GetMenuAttributeValue(eHTML_PM_disableHide);
+            if ( is_dynamic == "true" ) {
+                is_dynamic = "static";
+            } else if ( is_dynamic == "false" ) {  
+                is_dynamic = "dynamic";
+            }
+            // else by default
+            string width       = GetMenuAttributeValue(eHTML_PM_menuWidth);
+            string peep_offset = GetMenuAttributeValue(eHTML_PM_peepOffset);
+            string top_offset  = GetMenuAttributeValue(eHTML_PM_topOffset);
+            code += "[\"\",\"" + is_dynamic + "\",\"\",\"" + width + "\",\"" +
+                peep_offset + "\",\"" + top_offset + "\",\"\",\"\"]";
+            // Write menu items
+            ITERATE (TItems, i, m_Items) {
+                code += ",\n[\"" +
+                    i->title     + "\",\""  +
+                    i->action    + "\",\"\",\"\"]";
+            }
+            code += "\n]\n";
+        }
+        break;
     }
 
     return code;
@@ -306,13 +364,20 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
 
     case eSmith:
         url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Smith : menu_lib_url;
-        code = "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
         break;
 
     case eKurdin:
         url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Kurdin : menu_lib_url;
-        code = "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
         break;
+
+    case eKurdinSide:
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide : menu_lib_url;
+        code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" +
+            kJSMenuDefaultURL_KurdinSideCSS + "\">\n"; 
+        break;
+    }
+    if ( !url.empty() ) {
+        code += "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
     }
     return code;
 }
@@ -360,6 +425,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2003/10/01 15:56:44  ivanov
+ * Added support for Sergey Kurdin's side menu
+ *
  * Revision 1.17  2003/09/03 20:21:35  ivanov
  * Updated Sergey Kurdin's popup menu to v2.3
  *
@@ -395,7 +463,7 @@ END_NCBI_SCOPE
  * Make GetName const.
  *
  * Revision 1.6  2002/02/13 20:16:09  ivanov
- * Added support of dynamic popup menus. Changed GetCodeBody().
+ * Added support of dynamic popup menues. Changed GetCodeBody().
  *
  * Revision 1.5  2001/11/29 16:06:31  ivanov
  * Changed using menu script name "menu.js" -> "ncbi_menu.js".

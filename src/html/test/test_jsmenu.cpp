@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Ivanov, Denis Vakatov
  *
- * File Description:   Test Javascript popup menus
+ * File Description:   Test Javascript popup menues
  * 
  */
 
@@ -38,7 +38,76 @@
 
 #include <test/test_assert.h>  /* This header must go last */
 
+
 USING_NCBI_SCOPE;
+
+
+/////////////////////////////////
+// Create popup menu
+//
+
+enum EMenuType {
+    eSmithPlain,
+    eSmithHtml,
+    eKurdin,
+    eKurdinSide
+};
+
+
+static CHTMLPopupMenu* CreatePopupMenu(EMenuType type)
+{
+    CHTMLPopupMenu* menu = 0;
+
+    switch (type) {
+    case eSmithPlain:
+        // Create Smith's popup menu
+        menu = new CHTMLPopupMenu("MenuSmith", CHTMLPopupMenu::eSmith);
+        menu->AddItem("Red"  , "document.bgColor='red'");
+        menu->AddItem("Yellow","document.bgColor='yellow'");
+        menu->AddItem("Green", "document.bgColor='green'");
+        menu->AddSeparator();
+        menu->AddItem("White", "document.bgColor='white'");
+        menu->SetAttribute(eHTML_PM_fontColor, "black");
+        menu->SetAttribute(eHTML_PM_fontColorHilite,"white");
+        break;
+    case eSmithHtml:
+        {
+        // Create Smith's popup menu with HTML items
+        menu = new CHTMLPopupMenu("MenuSmithHtml");
+        menu->AddItem("<b>Bold item</b>");
+        menu->AddItem("<img src='http://www.ncbi.nlm.nih.gov/corehtml/help.gif'> Image item");
+        CHTML_a* anchor = new CHTML_a("some link...", "Link item");
+        menu->AddItem(*anchor);
+        }
+        break;
+    case eKurdin:
+        menu = new CHTMLPopupMenu("MenuKurdinPopup", CHTMLPopupMenu::eKurdin);
+        menu->AddItem("NIH", "http://www.nih.gov");
+        menu->AddItem("NLM", "http://www.nlm.nih.gov");
+        menu->AddItem("NCBI","top.location='http://www.ncbi.nlm.nih.gov'");
+        menu->SetAttribute(eHTML_PM_disableHide, "true");
+        menu->SetAttribute(eHTML_PM_titleColor, "yellow");
+        menu->SetAttribute(eHTML_PM_alignV, "top");
+        break;
+    case eKurdinSide:
+        menu = new CHTMLPopupMenu("MenuKurdinSide", CHTMLPopupMenu::eKurdinSide);
+        menu->AddItem("Web sites");
+        menu->AddItem("NIH", "http://www.nih.gov");
+        menu->AddItem("NLM", "http://www.nlm.nih.gov");
+        menu->AddItem("NCBI","http://www.ncbi.nlm.nih.gov");
+        menu->AddSeparator();
+        menu->AddItem("Netscape", "http://www.netscape.com");
+        menu->AddItem("Microsoft","http://www.microsoft.com");
+        //menu->SetAttribute(eHTML_PM_disableHide, "false");
+        menu->SetAttribute(eHTML_PM_menuWidth, "120");
+        menu->SetAttribute(eHTML_PM_peepOffset,"20");
+        menu->SetAttribute(eHTML_PM_topOffset, "10");
+        break;
+    default:
+        _TROUBLE;
+    }
+    return menu;
+}
 
 
 
@@ -48,7 +117,7 @@ USING_NCBI_SCOPE;
 
 static void Test_Html(void)
 {
-    LOG_POST("\nHTML test\n");
+    LOG_POST("HTML test\n");
 
     // Create HTML page skeleton with HEAD and BODY
     CHTML_html* html = new CHTML_html;
@@ -58,65 +127,44 @@ static void Test_Html(void)
     html->AppendChild(head); 
     html->AppendChild(body); 
 
-    // Create one menu
-    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
+    // Create menues
+    CHTMLPopupMenu* menuSM = CreatePopupMenu(eSmithPlain);
+    CHTMLPopupMenu* menuSH = CreatePopupMenu(eSmithHtml);
+    CHTMLPopupMenu* menuKP = CreatePopupMenu(eKurdin);
+    CHTMLPopupMenu* menuKS = CreatePopupMenu(eKurdinSide);
 
-    m1->AddItem("Red"  , "document.bgColor='red'");
-    m1->AddItem("White" , "document.bgColor='white'");
-    m1->AddSeparator();
-    m1->AddItem("Green", "document.bgColor='green'");
-    m1->SetAttribute(eHTML_PM_fontColor, "black");
-    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
+    // Add menues to the page
+    // !!! We can add Smith's and Kurdin's menu to the BODY only!
+    // !!! We can add Kurdin's side menu to the HEAD only!
+    body->AppendChild(menuSM);
+    body->AppendChild(menuSH);
+    body->AppendChild(menuKP);
+    head->AppendChild(menuKS);
 
-    // !!! We can add menu to BODY only!
-    body->AppendChild(m1);
+    // Add menu calls
+    CHTML_a* anchorSM = new CHTML_a("#","Smith's menu (click me)");
+    anchorSM->AttachPopupMenu(menuSM, eHTML_EH_Click);
+    CHTML_a* anchorSH = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
+    anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
+    CHTML_a* anchorKP = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
+    anchorKP->AttachPopupMenu(menuKP);
 
-    // Create another menu
-    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2",CHTMLPopupMenu::eKurdin);
+    body->AppendChild(anchorSM);
+    body->AppendChild(new CHTML_p(new CHTML_br(2)));
+    body->AppendChild(anchorSH);
+    body->AppendChild(new CHTML_p(new CHTML_br(2)));
+    body->AppendChild(anchorKP);
 
-    m2->AddItem("NCBI", "http://ncbi.nlm.nih.gov");
-    m2->AddItem("Netscape", "http://www.netscape.com");
-    m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
-    m2->SetAttribute(eHTML_PM_disableHide, "true");
-    m2->SetAttribute(eHTML_PM_titleColor, "yellow");
-    m2->SetAttribute(eHTML_PM_alignV, "top");
-
-    body->AppendChild(m2);
-
-    // Create menu with HTML items
-    CHTMLPopupMenu* m3 = new CHTMLPopupMenu("Menu3");
-
-    m3->AddItem("<b>Bold item</b>");
-    m3->AddItem("<img src='someimage.gif'> Image item");
-
-    CHTML_a* anchor = new CHTML_a("some link...", "Link item");
-    m3->AddItem(*anchor);
-
-    body->AppendChild(m3);
-
-    // Add menus call
-    CHTML_a* anchor1 = new CHTML_a("#","Smith's Menu");
-    anchor1->AttachPopupMenu(m1, eHTML_EH_Click);
-
-    CHTML_a* anchor2 = new CHTML_a("#","Kurdin's Menu");
-    anchor2->AttachPopupMenu(m2);
-
-    CHTML_a* anchor3 = new CHTML_a("#","Smith's HTML Menu");
-    anchor3->AttachPopupMenu(m3, eHTML_EH_MouseOver);
-
-    body->AppendChild(anchor1);
-    body->AppendChild(new CHTML_p(""));
-    body->AppendChild(anchor2);
-    body->AppendChild(new CHTML_p(""));
-    body->AppendChild(anchor3);
+    body->AttachPopupMenu(menuKS);
 
     // Enable using popup menus (we can skip call this function)
     html->EnablePopupMenu(CHTMLPopupMenu::eSmith);
     html->EnablePopupMenu(CHTMLPopupMenu::eKurdin);
+    html->EnablePopupMenu(CHTMLPopupMenu::eKurdinSide);
     
     // Print in HTML format
     html->Print(cout);
-    cout << endl << endl;
+    LOG_POST("\n");
 }
 
 
@@ -129,51 +177,51 @@ static void Test_Template(void)
     LOG_POST("\nTemplate test\n");
 
     CHTMLPage page("JSMenu test page","template_jsmenu.html"); 
-    CNCBINode* view = new CNCBINode();
+    CNCBINode* view_menues   = new CNCBINode();
+    CNCBINode* view_sidemenu = new CNCBINode();
 
-    // Create one menu
-    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
-    m1->AddItem("Red"  , "document.bgColor='red'");
-    m1->AddItem("White" ,"document.bgColor='white'");
-    m1->AddItem("Green", "document.bgColor='green'");
-    m1->AddSeparator();
-    m1->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
-    m1->SetAttribute(eHTML_PM_fontColor, "black");
-    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
+    // Create menues
+    CHTMLPopupMenu* menuSP = CreatePopupMenu(eSmithPlain);
+    CHTMLPopupMenu* menuSH = CreatePopupMenu(eSmithHtml);
+    CHTMLPopupMenu* menuKP = CreatePopupMenu(eKurdin);
+    CHTMLPopupMenu* menuKS = CreatePopupMenu(eKurdinSide);
 
-    view->AppendChild(m1);
+    // Add menues to the page
+    // !!! We can add Smith's and Kurdin's menu to the BODY only!
+    view_menues->AppendChild(menuSP);
+    view_menues->AppendChild(menuSH);
+    view_menues->AppendChild(menuKP);
+    // !!! We can add Kurdin's side menu to the HEAD only!
+    view_sidemenu->AppendChild(menuKS);
 
-    // Create another menu
-    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2",CHTMLPopupMenu::eKurdin);
-    m2->AddItem("NCBI", "http://ncbi.nlm.nih.gov");
-    m2->AddItem("Netscape", "http://www.netscape.com");
-    m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
-    m2->SetAttribute(eHTML_PM_disableHide, "true");
-    m2->SetAttribute(eHTML_PM_titleColor, "yellow");
-    m2->SetAttribute(eHTML_PM_alignV, "top");
+    // Add menu calls
+    CHTML_a* anchorSP = new CHTML_a("#","Smith's menu (click me)");
+    anchorSP->AttachPopupMenu(menuSP, eHTML_EH_Click);
+    CHTML_a* anchorSH = new CHTML_a("#","Smith's menu with HTML (move mouse over me)");
+    anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
+    CHTML_a* anchorKP = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
+    anchorKP->AttachPopupMenu(menuKP);
 
-    view->AppendChild(m2);
+    view_menues->AppendChild(anchorSP);
+    view_menues->AppendChild(new CHTML_p(new CHTML_br(2)));
+    view_menues->AppendChild(anchorSH);
+    view_menues->AppendChild(new CHTML_p(new CHTML_br(2)));
+    view_menues->AppendChild(anchorKP);
 
-    // Add menus call
-    CHTML_a* anchor1 = new CHTML_a("#","Smith's Menu");
-    anchor1->AttachPopupMenu(m1, eHTML_EH_Click);
+    view_sidemenu->AppendChild(menuKS);
 
-    CHTML_a* anchor2 = new CHTML_a("#","Kurdin's Menu");
-    anchor2->AttachPopupMenu(m2);
+    page.AddTagMap("VIEW_MENUES",   view_menues);
+    page.AddTagMap("VIEW_SIDEMENU", view_sidemenu);
 
-    view->AppendChild(anchor1);
-    view->AppendChild(new CHTML_br());
-    view->AppendChild(anchor2);
-
-    page.AddTagMap("VIEW", view);
-
-    // Enable using popup menus (we can skip call this function)
+    // Enable using popup menues (we can skip call this function)
     page.EnablePopupMenu(CHTMLPopupMenu::eSmith);
     page.EnablePopupMenu(CHTMLPopupMenu::eKurdin);
+    page.EnablePopupMenu(CHTMLPopupMenu::eKurdinSide);
 
     // Print test result
     page.Print(cout, CNCBINode::eHTML);
     cout << endl << endl;
+    LOG_POST("\n");
 }
 
 
@@ -252,6 +300,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2003/10/01 15:57:40  ivanov
+ * Added support for Sergey Kurdin's side menu
+ *
  * Revision 1.6  2002/12/09 22:13:30  ivanov
  * Added tests for Sergey Kurdin's popup menu
  *
@@ -260,7 +311,7 @@ int main(int argc, const char* argv[])
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
  *
  * Revision 1.4  2002/02/13 20:19:44  ivanov
- * Added support of dynamic popup menus
+ * Added support of dynamic popup menues
  *
  * Revision 1.3  2001/08/15 19:42:39  ivanov
  * Added test for use method AddMenuItem( node, ...)
