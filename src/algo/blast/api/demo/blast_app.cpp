@@ -51,7 +51,7 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include "blast_input.hpp"
-#include <algo/blast/api/seqsrc_readdb.h>
+#include <algo/blast/api/seqdb_src.hpp>
 #include <objtools/alnmgr/util/blast_format.hpp>
 
 #ifndef NCBI_C_TOOLKIT
@@ -298,10 +298,10 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         if (args["matrix"]) {
             opt.SetMatrixName(args["matrix"].AsString().c_str());
         }
-        if (args["gopen"].AsInteger()) {
+        if (args["gopen"].AsInteger() || args["greedy"].AsInteger()) {
             opt.SetGapOpeningCost(args["gopen"].AsInteger());
         }
-        if (args["gext"].AsInteger()) {
+        if (args["gext"].AsInteger() || args["greedy"].AsInteger()) {
             opt.SetGapExtensionCost(args["gext"].AsInteger());
         }
     }
@@ -711,8 +711,8 @@ int CBlastApplication::Run(void)
     // Read the query(ies) from input file; perform the setup
     TSeqLocVector query_loc = 
         BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
-                  *m_ObjMgr, strand, from, to, &id_counter, 
-                  args["lcase"].AsBoolean());
+            *m_ObjMgr, strand, from, to, &id_counter,
+            args["lcase"].AsBoolean());
 
     if (args["dbrange"]) {
         const char* delimiters = " ,:;";
@@ -723,10 +723,9 @@ int CBlastApplication::Run(void)
     }
 
     BlastSeqSrc* seq_src = 
-        ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
-                              (program == eBlastp || program == eBlastx ||
-                               program == eRPSBlast || program == eRPSTblastn),
-                              first_oid, last_oid, NULL);
+        SeqDbSrcInit(args["db"].AsString().c_str(), 
+                     (program == eBlastp || program == eBlastx),
+                     first_oid, last_oid, NULL);
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
 
@@ -749,6 +748,7 @@ int CBlastApplication::Run(void)
 
     TSeqAlignVector seqalignv = blaster.Run();
 
+    BlastSeqSrcFree(seq_src);
     if (rps_info) {
         Nlm_MemMapFini(rps_mmap);
         Nlm_MemMapFini(rps_pssm_mmap);
