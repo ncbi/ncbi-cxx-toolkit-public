@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2002/06/07 11:13:01  clausen
+ * Added comment about util/sequence.hpp
+ *
  * Revision 1.16  2002/06/06 20:32:01  clausen
  * Moved methods using object manager to objects/util
  *
@@ -110,6 +113,14 @@ class CSeq_id : public CSeq_id_Base,
     typedef CSeq_id_Base Tparent;
 
 public:
+
+    //
+    // See also CSeq_id related functions in "util/sequence.hpp":
+    //
+    //TSeqPos GetLength(const CSeq_id&, CScope*);
+    //bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
+    //
+     
     // Default constructor
     CSeq_id( void );
 
