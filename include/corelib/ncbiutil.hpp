@@ -85,7 +85,7 @@ inline X* NotNull(X* object)
 // get map element (pointer) or NULL if absent
 template<class Key, class Element>
 inline Element GetMapElement(const map<Key, Element>& m, const Key& key,
-                             const Element& def = Element())
+                             const Element& def = 0)
 {
     typename map<Key, Element>::const_iterator ptr = m.find(key);
     if ( ptr !=m.end() )
@@ -236,6 +236,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/01/03 01:19:58  ucko
+ * Change default fallback for GetMapElement to 0, since "Element()"
+ * seems to confuse at least some compilers.
+ *
  * Revision 1.26  2003/01/02 15:52:04  ucko
  * Generalized GetMapElement to support non-pointer value types.
  *
