@@ -1,7 +1,7 @@
 #! /bin/sh
 #$Id$
 
-status_dir="../../../status"
+status_dir="../../../../status"
 
 if test -f "$status_dir/Sybase.enabled"; then
     methods="PUBSEQOS ID1"
