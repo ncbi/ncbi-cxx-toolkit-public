@@ -286,17 +286,13 @@ Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk,
    Uint1** translation_buffer_ptr, Uint1** subject_ptr, 
    Int4* subject_length_ptr, Int4* start_shift_ptr);
 
-/** Adjusts offset if out-of-frame and negative frame, or if partial sequence 
- * used for extension.
+/** Adjusts offsets if partial sequence was used for extension.
  * @param hsp The hit to work on [in][out]
- * @param subject_blk information about database sequence [in]
- * @param is_ooframe true if out-of-frame (blastx or tblastn) used. [in]
  * @param start_shift amount of database sequence not used for extension. [in]
 */
 NCBI_XBLAST_EXPORT
 void
-Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, BLAST_SequenceBlk* subject_blk, 
-                             Boolean is_ooframe, Int4 start_shift);
+Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, Int4 start_shift);
 
 /********************************************************************************
           HSPList API
