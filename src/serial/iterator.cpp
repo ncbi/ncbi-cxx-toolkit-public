@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/09 15:21:40  vasilche
+* Fixed bugs in iterators.
+* Added iterator constructors from CObjectInfo.
+* Added CLeafTypeIterator.
+*
 * Revision 1.14  2000/11/08 19:24:39  vasilche
 * Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
 *
@@ -250,6 +255,41 @@ bool CConstTreeLevelIterator::HaveChildren(const CConstObjectInfo& object)
     }
 }
 
+static
+bool ContainsType(const CConstObjectInfo& object,
+                  TTypeInfo needType)
+{
+    if ( object.GetTypeInfo()->IsType(needType) )
+        return true;
+    switch ( object.GetTypeFamily() ) {
+    case eTypeFamilyClass:
+        for ( CConstObjectInfo::CMemberIterator m(object); m; ++m ) {
+            if ( m.GetMemberInfo()->GetTypeInfo()->MayContainType(needType) &&
+                 ContainsType(*m, needType) )
+                return true;
+        }
+        return false;
+    case eTypeFamilyChoice:
+        {
+            CConstObjectInfo::CChoiceVariant v =
+                object.GetCurrentChoiceVariant();
+            return v &&
+                v.GetVariantInfo()->GetTypeInfo()->MayContainType(needType) &&
+                ContainsType(*v, needType);
+        }
+    case eTypeFamilyPointer:
+        return ContainsType(object.GetPointedObject(), needType);
+    case eTypeFamilyContainer:
+        for ( CConstObjectInfo::CElementIterator e(object); e; ++e ) {
+            if ( ContainsType(*e, needType) )
+                return true;
+        }
+        return false;
+    default:
+        return false;
+    }
+}
+
 CTreeLevelIterator::~CTreeLevelIterator(void)
 {
 }
@@ -366,8 +406,7 @@ bool CTreeIteratorTmpl<LevelIterator>::Step(const TObjectInfo& current)
 {
     if ( CanEnter(current) ) {
         AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
-        if ( nextLevel ) {
-            _ASSERT(nextLevel->Valid());
+        if ( nextLevel && nextLevel->Valid() ) {
             m_Stack.push(nextLevel);
             return true;
         }
@@ -430,7 +469,7 @@ template<class Parent>
 bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
     return CParent::CanSelect(object) &&
-        !CConstTreeLevelIterator::HaveChildren(object);
+        ContainsType(object, GetIteratorType());
 }
 
 template<class Parent>

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/09 15:21:25  vasilche
+* Fixed bugs in iterators.
+* Added iterator constructors from CObjectInfo.
+* Added CLeafTypeIterator.
+*
 * Revision 1.18  2000/11/08 19:24:17  vasilche
 * Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
 *
@@ -138,6 +143,12 @@ public:
         : CParent(objectPtr, typeInfo), m_DetectLoops(detectLoops)
         {
         }
+    CBeginInfo(const CObjectInfo& object,
+               bool detectLoops = false)
+        : CParent(object.GetObjectPtr(), object.GetTypeInfo()),
+          m_DetectLoops(detectLoops)
+        {
+        }
 
     bool m_DetectLoops;
 };
@@ -153,6 +164,12 @@ public:
     CConstBeginInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo,
                     bool detectLoops = false)
         : CParent(objectPtr, typeInfo), m_DetectLoops(detectLoops)
+        {
+        }
+    CConstBeginInfo(const CConstObjectInfo& object,
+                    bool detectLoops = false)
+        : CParent(object.GetObjectPtr(), object.GetTypeInfo()),
+          m_DetectLoops(detectLoops)
         {
         }
     CConstBeginInfo(const CBeginInfo& beginInfo)
@@ -260,7 +277,7 @@ public:
     bool operator!(void) const
         {
             _DEBUG_ARG(m_LastCall = eValid);
-            return CheckValid();
+            return !CheckValid();
         }
     // go to next object
     TThis& operator++(void)
@@ -502,11 +519,11 @@ public:
         }
     C* operator->(void)
         {
-            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+            return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
     const C* operator->(void) const
         {
-            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+            return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
 
@@ -539,7 +556,7 @@ public:
         }
     const C* operator->(void) const
         {
-            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+            return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
 
@@ -576,11 +593,11 @@ public:
         }
     C* operator->(void)
         {
-            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+            return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
     const C* operator->(void) const
         {
-            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+            return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
 
@@ -613,7 +630,7 @@ public:
         }
     const C* operator->(void) const
         {
-            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+            return CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
 
