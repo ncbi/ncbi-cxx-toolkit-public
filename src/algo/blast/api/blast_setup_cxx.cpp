@@ -593,8 +593,8 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
 
     full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
-		retval = full_path;
-        retval[retval.find(mtx)] = NULLB;
+        retval = full_path;
+        retval.erase(retval.size() - mtx.size());
         return retval;
     }
 
@@ -606,7 +606,7 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = full_path;
-        retval[retval.find(mtx)] = NULLB;
+        retval.erase(retval.size() - mtx.size());
         return retval;
     }
 
@@ -616,13 +616,13 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = full_path;
-        retval[retval.find(mtx)] = NULLB;
+        retval.erase(retval.size() - mtx.size());
         return retval;
     }
 
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (!app)
-        return NULL;
+        return retval;
 
     const string& blastmat_env = app->GetEnvironment().Get("BLASTMAT");
     if (CFile(blastmat_env).Exists()) {
@@ -633,7 +633,7 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
         full_path += mtx;
         if (CFile(full_path).Exists()) {
             retval = full_path;
-            retval[retval.find(mtx)] = NULLB;
+            retval.erase(retval.size() - mtx.size());
             return retval;
         }
     }
@@ -646,7 +646,7 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = full_path;
-        retval[retval.find(mtx)] = NULLB;
+        retval.erase(retval.size() - mtx.size());
         return retval;
     }
 #endif
@@ -658,7 +658,7 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
         full_path += mtx;
         if (CFile(full_path).Exists()) {
             retval = full_path;
-            retval[retval.find(mtx)] = NULLB;
+            retval.erase(retval.size() - mtx.size());
             return retval;
         }
     }
@@ -669,7 +669,7 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = full_path;
-        retval[retval.find(mtx)] = NULLB;
+        retval.erase(retval.size() - mtx.size());
         return retval;
     }
 #endif
@@ -708,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/09/30 03:23:18  camacho
+* Fixes to FindMatrixPath
+*
 * Revision 1.31  2003/09/29 21:38:29  camacho
 * Assign retval only when successfully found path to matrix
 *
