@@ -107,7 +107,7 @@ for f in $x_conf_dir/status/*.enabled; do
    f=`echo $f | sed 's|^.*/status/\(.*\).enabled$|\1|g'`
    x_features=`echo "$x_features $f"`
 done
-x_features=`echo "$x_features" | sed 's|^ *||g`
+x_features=`echo "$x_features" | sed 's|^ *||g'`
 
 
 #echo ----------------------------------------------------------------------
