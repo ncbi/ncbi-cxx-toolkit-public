@@ -35,7 +35,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <dbapi/driver_mgr.hpp>
 #include <dbapi/variant.hpp>
-
+#include <util/reader_writer.hpp>
 
 /** @addtogroup DbAPI
  *
@@ -149,6 +149,9 @@ public:
     virtual ostream& GetBlobOStream(size_t blob_size, 
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
+
+    // Support for NCBI reader interface
+    virtual IReader* GetBlobReader() = 0;
 
     // Close resultset
     virtual void Close() = 0;
@@ -299,6 +302,11 @@ public:
                                     size_t blob_size, 
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
+
+    // Implementation of IWriter interface
+    virtual IWriter* GetBlobWriter(unsigned int col,
+                                   size_t blob_size, 
+                                   EAllowLog log_it = eEnableLog) = 0;
     // Update statement for cursor
     virtual void Update(const string& table, const string& updateSql) = 0;
 
@@ -507,6 +515,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/07/20 17:55:09  kholodov
+ * Added: IReader/IWriter support for BLOB I/O
+ *
  * Revision 1.30  2004/04/26 14:17:40  kholodov
  * Added: ExecuteQuery() method
  *
