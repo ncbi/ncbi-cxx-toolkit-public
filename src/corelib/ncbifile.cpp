@@ -903,6 +903,7 @@ public:
     }
     virtual ~CTmpStream(void) 
     { 
+        close();
         CFile(m_FileName).Remove();
     }
 protected:
@@ -1518,6 +1519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2003/02/28 21:06:02  ivanov
+ * Added close() call to CTmpStream destructor before the file deleting.
+ *
  * Revision 1.40  2003/02/14 19:30:50  ivanov
  * Added mode ios::trunc by default for files creates in CFile::CreateTmpFile().
  * Get read of some warnings - initialize variables in CMemoryFile::x_Map().
