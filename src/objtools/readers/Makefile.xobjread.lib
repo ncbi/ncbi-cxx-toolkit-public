@@ -2,3 +2,4 @@
 
 LIB = xobjread
 SRC = fasta readfeat gff_reader agp_read aln_reader
+DLL_LIB = creaders
