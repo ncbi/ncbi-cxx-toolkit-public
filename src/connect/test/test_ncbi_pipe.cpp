@@ -25,20 +25,23 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  Test program for CPipe class
+ * File Description:  Test program for the Pipe API
  *
  */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
-#include <corelib/ncbipipe.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/ncbi_pipe.hpp>
+#include <string.h>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
+#else
+#   error "Pipe tests configured for Windows and Unix only."
 #endif
 
 #include <test/test_assert.h>  // This header must go last
@@ -47,55 +50,57 @@
 USING_NCBI_SCOPE;
 
 
-#define TEST_RESULT       99   // Test exit code
-#define BUFFER_SIZE  1024*10   // Size of read buffer
+const int    kTestResult =      99;   // Tests exit code
+const size_t kBufferSize = 10*1024;   // I/O buffer size
 
 
 ////////////////////////////////
 // Auxiliary functions
 //
 
-// Reading from pipe
-static string s_ReadPipe(CPipe& pipe) 
+// Delay a some time. Needs only for more proper output.
+static void Delay() 
 {
-    char buf[BUFFER_SIZE];
-    size_t total = 0;
-    size_t size = BUFFER_SIZE-1;
-    for (;;) {
-        size_t cnt = pipe.Read(buf+total, size,CPipe::eStdOut);
-        cerr << "Read from pipe: " << cnt << endl;
-        total += cnt;
-        size  -= cnt;
-        if (size == 0  ||  cnt == 0 )
-            break;
-    }
-    buf[total] = 0;
-    string str = buf;
-    cerr << "Read from pipe (total): " << total << endl;
-    cerr << "Read from pipe = " << str << endl;
-    cerr.flush();
-    return str;
+    SleepMilliSec(300);
+}
+
+
+// Reading from pipe
+static EIO_Status s_ReadPipe(CPipe& pipe, void* buf, size_t size,
+                             size_t* n_read) 
+{
+    EIO_Status status = pipe.Read(buf, size, n_read, CPipe::eStdOut);
+    Delay();
+    cerr << "Read from pipe " << *n_read << " bytes:" << endl;
+    cerr.write((char*)buf, *n_read);
+    cerr << endl;
+    return status;
 }
 
 
 // Writing to pipe
-static void s_WritePipe(CPipe& pipe, string message) 
+static EIO_Status s_WritePipe(CPipe& pipe, const void* buf, size_t size,
+                              size_t* n_written) 
 {
-    pipe.Write(message.c_str(), message.length());
-    cerr << "Wrote to pipe: " << message << endl;
-    cerr << "Wrote to pipe (total): " << message.length() << endl;
+    EIO_Status status = pipe.Write(buf, size, n_written);
+    cerr << "Wrote to pipe " << *n_written << " bytes:" << endl;
+    cerr.write((char*)buf, *n_written);
+    cerr << endl;
+    return status;
 }
 
 
 // Reading from file stream
 static string s_ReadFile(FILE* fs) 
 {
-    char buf[BUFFER_SIZE];
-    size_t cnt = read(fileno(fs), buf, BUFFER_SIZE-1);
+    char buf[kBufferSize];
+    size_t cnt = read(fileno(fs), buf, kBufferSize-1);
     buf[cnt] = 0;
     string str = buf;
-    cerr << "Read from file (total): " << cnt << endl;
-    cerr << "Read from file stream: " << str << endl;
+    Delay();
+    cerr << "Read from file stream " << cnt << " bytes:" << endl;
+    cerr.write(buf, cnt);
+    cerr << endl;
     return str;
 }
 
@@ -104,18 +109,17 @@ static string s_ReadFile(FILE* fs)
 static void s_WriteFile(FILE* fs, string message) 
 {
     write(fileno(fs), message.c_str(), message.length());
-    cerr << "Wrote to file: " << message << endl;
-    cerr << "Wrote to file (total): " << message.length() << endl;
-    cerr.flush();
+    cerr << "Wrote to file stream " << message.length() << " bytes:" << endl;
+    cerr << message << endl;
 }
 
 
 // Reading from iostream
 static string s_ReadStream(istream& ios)
 {
-    char buf[BUFFER_SIZE];
+    char buf[kBufferSize];
     size_t total = 0;
-    size_t size  = BUFFER_SIZE-1;
+    size_t size  = kBufferSize-1;
     for (;;) {
         ios.read(buf+total, size);
         size_t cnt = ios.gcount();
@@ -128,17 +132,10 @@ static string s_ReadStream(istream& ios)
     }
     buf[total] = 0;
     string str = buf;
-    cerr << "Read from iostream (total): " << total << endl;
-    cerr << "Read from iostream = " << str << endl;
-    cerr.flush();
+    Delay();
+    cerr << "Read from stream " << total << " bytes:" << endl;
+    cerr << str << endl;
     return str;
-}
-
-
-// Delay a some time. Needs only for more proper output.
-static void Delay() 
-{
-    SleepMilliSec(300);
 }
 
 
@@ -156,7 +153,10 @@ public:
 
 void CTest::Init(void)
 {
-    SetDiagPostLevel(eDiag_Warning);
+   // Set error posting and tracing on maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
 }
 
 
@@ -167,84 +167,107 @@ int CTest::Run(void)
     string str;
     vector<string> args;
 
+    char        buf[kBufferSize];
+    size_t      n_read    = 0;
+    size_t      n_written = 0;
+    int         exitcode  = 0;
+    string      message;
+    EIO_Status  status;
+
+    // Create pipe object
+    CPipe pipe;
+    STimeout timeout = {2,0};
+    assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Close, &timeout) == eIO_Success);
+
 #if defined(NCBI_OS_UNIX)
     // Pipe for reading (direct from pipe)
     args.push_back("-l");
-    CPipe pipe("ls", args, CPipe::eDoNotUse, CPipe::eText);
-    s_ReadPipe(pipe);
-    // Wait a little bit while app closing and then will check it exit code
+    assert(pipe.Open("ls", args, CPipe::fStdIn_Close) == eIO_Success);
     Delay();
-    assert(pipe.Close() == 0);
+    status = s_ReadPipe(pipe, buf, kBufferSize, &n_read);
+    assert(status == eIO_Success  ||  status == eIO_Timeout);
+    assert(n_read > 0);
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == 0);
 
     // Pipe for reading (iostream)
-    pipe.Open("ls", args, CPipe::eDoNotUse, CPipe::eText);
+    assert(pipe.Open("ls", args, CPipe::fStdIn_Close) == eIO_Success);
+    Delay();
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
-    // Wait a little bit while app closing and then will check it exit code
-    Delay();
-    assert(pipe.Close() == 0);
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == 0);
 
 #elif defined (NCBI_OS_MSWIN)
     string cmd = GetEnvironment().Get("COMSPEC");
     // Pipe for reading (direct from pipe)
     args.push_back("/c");
     args.push_back("dir *.*");
-    CPipe pipe(cmd.c_str(), args, CPipe::eDoNotUse, CPipe::eText);
-    s_ReadPipe(pipe);
-    // Wait a little bit while app closing and then will check it exit code
+    assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close) == eIO_Success);
     Delay();
-    assert(pipe.Close() == 0);
+    status = s_ReadPipe(pipe, buf, kBufferSize, &n_read);
+    assert(status == eIO_Success  ||  status == eIO_Timeout);
+    assert(n_read > 0);
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == 0);
 
     // Pipe for reading (iostream)
-    pipe.Open(cmd.c_str(), args, CPipe::eDoNotUse, CPipe::eText);
+    assert(pipe.Open(cmd.c_str(), args, CPipe::fStdIn_Close) == eIO_Success);
+    Delay();
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
-    // Wait a little bit while app closing and then will check it exit code
-    Delay();
-    assert(pipe.Close() == 0);
-
-#else
-#   error "Pipe tests configured for Windows or Unix only."
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == 0);
 #endif
 
     // Pipe for writing (direct from pipe)
     args.clear();
-    args.push_back("one_argument");
-    pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
-    s_WritePipe(pipe, "Child, are you ready?");
-    // Wait a little bit while app closing and then will check it exit code
+    args.push_back("one");
+    assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close) == eIO_Success);
     Delay();
-    assert(pipe.Close() == TEST_RESULT);
+    message = "Child, are you ready?";
+    assert(s_WritePipe(pipe, message.c_str(), message.length(),
+                       &n_written) == eIO_Success);
+    assert(n_written == message.length());
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == kTestResult);
 
     // Pipe for writing (iostream)
-    pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
-    s_WritePipe(pipe, "Child, are you ready?");
-    // Wait a little bit while app closing and then will check it exit code
+    assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close) == eIO_Success);
     Delay();
-    assert(pipe.Close() == TEST_RESULT);
+    assert(s_WritePipe(pipe, message.c_str(), message.length(),
+                       &n_written) == eIO_Success);
+    assert(n_written == message.length());
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == kTestResult);
     
     // Bidirectional pipe (direct from pipe)
     args.clear();
+    args.push_back("one");
     args.push_back("two");
-    args.push_back("arguments");
-    pipe.Open(app.c_str(), args);
+    assert(pipe.Open(app.c_str(), args) == eIO_Success);
     Delay();
-    s_WritePipe(pipe, "Child, are you ready again?");
-    Delay();
-    str = s_ReadPipe(pipe);
-    assert(str == "Ok. Test 2 running.");
-    // Wait a little bit while app closing and then will check it exit code
-    Delay();
-    assert(pipe.Close() == TEST_RESULT);
+    message = "Child, are you ready again?";
+    assert(s_WritePipe(pipe, message.c_str(), message.length(),
+                       &n_written) == eIO_Success);
+    assert(n_written == message.length());
+    message = "Ok. Test 2 running.";
+    assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Success);
+    assert(n_read == message.length());
+    assert(memcmp(buf, message.c_str(), n_read) == 0);
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == kTestResult);
 
     // Bidirectional pipe (iostream)
     args.clear();
     args.push_back("one");
     args.push_back("two");
     args.push_back("three");
-    pipe.Open(app.c_str(), args, CPipe::eText,  CPipe::eText,  CPipe::eText);
-    CPipeIOStream ps(pipe);
+    assert(pipe.Open(app.c_str(), args, CPipe::fStdErr_Open) == eIO_Success);
     Delay();
+    CPipeIOStream ps(pipe);
     cout << endl;
     for (int i = 5; i<=10; i++) {
         int value; 
@@ -259,11 +282,10 @@ int CTest::Run(void)
     ps >> str;
     cout << str << endl;
     assert(str == "Done");
-    // Wait a little bit while app closing and then will check it exit code
-    Delay();
-    assert(pipe.Close() == TEST_RESULT);
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == kTestResult);
 
-    cout << endl << "TEST execution completed successfully!" << endl << endl;
+    cout << "\nTEST execution completed successfully!\n";
 
     return 0;
 }
@@ -277,6 +299,11 @@ int main(int argc, const char* argv[])
 {
     string command;
 
+    // Invalid arguments
+    if (argc > 4) {
+        exit(1);
+    }
+
     // Spawned process for unidirectional test
     if (argc == 2) {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
@@ -284,17 +311,16 @@ int main(int argc, const char* argv[])
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
         cout << "Ok. Test 1 running." << endl;
-        exit(TEST_RESULT);
+        exit(kTestResult);
     }
 
     // Spawned process for bidirectional test (direct from pipe)
     if (argc == 3) {
         cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
-        Delay();
         command = s_ReadFile(stdin);
         assert(command == "Child, are you ready again?");
         s_WriteFile(stdout, "Ok. Test 2 running.");
-        exit(TEST_RESULT);
+        exit(kTestResult);
     }
 
     // Spawned process for bidirectional test (iostream)
@@ -308,7 +334,7 @@ int main(int argc, const char* argv[])
             cout.flush();
         }
         cerr << "Done" << endl;
-        exit(TEST_RESULT);
+        exit(kTestResult);
     }
 
     // Execute main application function
@@ -319,6 +345,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2003/09/02 20:38:10  ivanov
+ * Changes concerned moving ncbipipe to CONNECT library from CORELIB and
+ * rewritting CPipe class using I/O timeouts.
+ *
  * Revision 6.13  2003/04/23 20:57:45  ivanov
  * Slightly changed static read/write functions. Minor cosmetics.
  *
@@ -365,3 +395,4 @@ int main(int argc, const char* argv[])
  *
  * ===========================================================================
  */
+
