@@ -120,23 +120,6 @@ Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1Ptr buffer, Uint1Ptr genetic_code);
 
-/** Given a GI, read the sequence from the database and fill out a
- *  BLAST_SequenceBlk structure.
- * @param db the database to read from, assumed to already be open.
- * @param gi the gi of the sequence to read
- * @param seq pointer to the sequence block to fill out
- */
-Int4 MakeBlastSequenceBlkFromGI(ReadDBFILEPtr db, Int4 gi, BLAST_SequenceBlkPtr seq);
-
-
-/** Given an ordinal id, read the sequence from the database and fill out a
- *  BLAST_SequenceBlk structure.
- * @param db the database to read from, assumed to already be open.
- * @param oid the ordinal id of the sequence to read
- * @param seq pointer to the sequence block to fill out
- */
-Int4 MakeBlastSequenceBlkFromOID(ReadDBFILEPtr db, Int4 oid, BLAST_SequenceBlkPtr seq);
-
 /** Given a file containing sequence(s) in fasta format,
  * read a sequence and fill out a BLAST_SequenceBlk structure.
  *
@@ -186,8 +169,12 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
 Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
                             Uint1Ptr PNTR rev_sequence_ptr);
 
-/** Initialize the thread information structure */
-BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp);
+#if 0
+/** CC: Moved to blast_engine.c as static functions? */
+/** Initialize the thread information structure
+ * @param last_oid2search Last ordinal id to examine in a database search.
+ */
+BlastThrInfoPtr BLAST_ThrInfoNew(Int4 last_oid2search);
 
 /** Deallocate the thread information structure */
 void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info);
@@ -206,6 +193,7 @@ void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info);
 Boolean 
 BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
                 Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info);
+#endif
 
 /** This function translates the context number of a context into the frame of 
  * the sequence.
