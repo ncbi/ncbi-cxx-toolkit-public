@@ -337,7 +337,10 @@ bool CSeqVector_CI::operator>=(const CSeqVector_CI& iter) const
 inline
 CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 {
-    _ASSERT(*this);
+    if ( !bool(*this) ) {
+        NCBI_THROW(CSeqVectorException, eOutOfRange,
+                   "Can not return residue: iterator out of range");
+    }
     return *m_Cache;
 }
 
@@ -463,6 +466,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/12/09 20:36:41  grichenk
+* Throw exception from operator*() if the iterator is out of range
+*
 * Revision 1.24  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *
