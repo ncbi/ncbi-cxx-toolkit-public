@@ -401,42 +401,52 @@ Int8 NStr::StringToInt8(const string& str)
     return sign ? -n : n;
 }
 
-
-Uint8 NStr::StringToUInt8(const string& str)
+Uint8 NStr::StringToUInt8(const string& str, const int base /* = 10 default */)  // Added a base argument
 {
     const char* pc = str.c_str();
 
     if (*pc == '+')
         ++pc;
 
-    if (!isdigit(*pc))
-        NCBI_THROW2(CStringException,eConvert,
-            "String cannot be converted",s_DiffPtr(pc,str.c_str()));
-
+ 
     Uint8 n = 0;
-    Uint8 limdiv = kMax_UI8 / 10;
-    int   limoff = int(kMax_UI8 % 10);
+    Uint8 limdiv = kMax_UI8 / base;
+    int   limoff = int(kMax_UI8 % base);
 
-    while (*pc) {
-        if (!isdigit(*pc))
+    do {
+        // Do a sanity check for common radixes
+        int ch = *pc; 
+        if (base == 10 && !isdigit(ch)            ||
+            base == 16 && !isxdigit(ch)           ||
+            base == 8  && (ch < '0' || ch > '7')  ||
+            base == 2  && (ch < '0' || ch > '1') ) {  
+
             NCBI_THROW2(CStringException,eConvert,
-                "String cannot be converted",s_DiffPtr(pc,str.c_str()));
-        int delta = *pc++ - '0';
-        n *= 10;
+				"String cannot be converted - bad format", s_DiffPtr(pc,str.c_str()) );
+        }
+
+        int delta;  // corresponding numeric value of *pc
+        if (isdigit(ch)) {
+            delta = ch - '0';
+        } else {
+            ch = tolower(ch);
+            // Got to be 'a' to 'f' because of previous sanity checks
+            delta = ch - 'a' + 10;
+        }
+		
+        n *= base;
 
         // Overflow checking
         if (n > limdiv || (n == limdiv && delta > limoff)) {
             NCBI_THROW2(CStringException,eConvert,
-                "String cannot be converted",s_DiffPtr(pc,str.c_str()));
+				"String cannot be converted - overflow", s_DiffPtr(pc,str.c_str()) );
         }
 
         n += delta;
-    }
+    } while (*++pc);
 
     return n;
 }
-
-
 
 string NStr::UInt8ToString(Uint8 value)
 {
@@ -520,10 +530,17 @@ const void* NStr::StringToPtr(const string& str)
     }
     // look for an address marker
     if (str.find("0x") != 0) {
-        NCBI_THROW2(CStringException,eConvert,"String cannot be converted",0);
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted", 0);
     }
     string s = str.substr(2, str.length()-2);
+
+    // Added check for size of pointer 
+#if SIZEOF_VOIDP == 4
     return reinterpret_cast<const void*> (NStr::StringToULong(s, 16));
+#elif SIZEOF_VOIDP == 8
+    return reinterpret_cast<const void*> (NStr::StringToUInt8(s, 16));
+#endif
+   _ASSERT(0); 
 }
 
 
@@ -979,6 +996,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2003/02/26 16:45:53  siyan
+ * Reimplemented NStr::StringToUInt8 to support additional base parameters that can
+ * take radix values such as 10(default), 16, 8, 2.
+ * Reimplemented StringToPtr to support 64 bit addresses.
+ *
  * Revision 1.79  2003/02/25 19:14:53  kuznets
  * NStr::StringToBool changed to understand YES/NO
  *
