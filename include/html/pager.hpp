@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/04/14 17:28:54  vasilche
+* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
+* As a result special parameter is added with empty name: "=cmd"
+*
 * Revision 1.3  1999/04/06 19:33:46  vasilche
 * Added defalut page size.
 *
@@ -89,14 +93,10 @@ public:
     static const string KParam_DisplayPage;
     // name of image button for previous block of pages
     static const string KParam_PreviousPages;
-    static const string KParam_PreviousPagesX;
     // name of image button for next block of pages
     static const string KParam_NextPages;
-    static const string KParam_NextPagesX;
     // beginning of names of image buttons for specific page
     static const string KParam_Page;
-    // ".x" suffix for image buttons
-    static const string KParam_x;
 
 private:
     // pager parameters

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/04/14 17:29:01  vasilche
+* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
+* As a result special parameter is added with empty name: "=cmd"
+*
 * Revision 1.6  1999/04/06 19:33:41  vasilche
 * Added defalut page size.
 *
@@ -63,11 +67,8 @@ BEGIN_NCBI_SCOPE
 const string CPager::KParam_PageSize = "dispmax";
 const string CPager::KParam_DisplayPage = "page";
 const string CPager::KParam_Page = "page ";
-const string CPager::KParam_x = ".x";
 const string CPager::KParam_PreviousPages = "previous pages";
-const string CPager::KParam_PreviousPagesX = KParam_PreviousPages + KParam_x;
 const string CPager::KParam_NextPages = "next pages";
-const string CPager::KParam_NextPagesX = KParam_NextPages + KParam_x;
 
 string CPagerView::sm_DefaultImagesDir = "/images/";
 
@@ -76,55 +77,55 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
       m_PageSize(GetPageSize(request, defaultPageSize)),
       m_PageChanged(false)
 {
-    const TCgiEntries& entries = request.GetEntries();
+    TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
 
-    if ( entries.find(KParam_PreviousPagesX) != entries.end() ) {
-        // previous pages
-        // round to previous page block
-        m_PageChanged = true;
-        int page = GetDisplayPage(request);
-        m_DisplayPage = page - page % m_PageBlockSize - 1;
-    }
-    else if ( entries.find(KParam_NextPagesX) != entries.end() ) {
-        // next pages
-        // round to next page block
-        m_PageChanged = true;
-        int page = GetDisplayPage(request);
-        m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
-    }
-    else {
-        // look for params like: "page 2.x=..."
-        for ( TCgiEntriesCI i = entries.begin(); i != entries.end(); ++i ) {
-            const string& param = i->first;
-            if ( NStr::StartsWith(param, KParam_Page) && NStr::EndsWith(param, KParam_x) ) {
-                // "page xxx"
-                string page = param.substr(KParam_Page.size(),
-                        param.size() - KParam_Page.size() - KParam_x.size());
-                try {
-                    m_DisplayPage = NStr::StringToInt(page) - 1;
-                    m_PageChanged = true;
-                    break;
-                } catch (exception e) {
-                    _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
-                            << e.what() );
-                    // ignore exception right now
-                }
+    // look in preprocessed IMAGE values with empty string key
+    TCgiEntriesI i = entries.find(NcbiEmptyString);
+    if ( i != entries.end() ) {
+        if ( i->second == KParam_PreviousPages ) {
+            // previous pages
+            // round to previous page block
+            m_PageChanged = true;
+            int page = GetDisplayPage(request);
+            m_DisplayPage = page - page % m_PageBlockSize - 1;
+        }
+        else if ( i->second == KParam_NextPages ) {
+            // next pages
+            // round to next page block
+            m_PageChanged = true;
+            int page = GetDisplayPage(request);
+            m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
+        }
+        else if ( NStr::StartsWith(i->second, KParam_Page) ) {
+            // look for params like: "page 2"
+            string page = i->second.substr(KParam_Page.size());
+            try {
+                m_DisplayPage = NStr::StringToInt(page) - 1;
+                m_PageChanged = true;
+            } catch (exception e) {
+                _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
+                        << e.what() );
+                // ignore exception right now
+                m_PageChanged = false;
             }
         }
-        if ( !m_PageChanged ) {
-            TCgiEntriesCI page = entries.find(KParam_DisplayPage);
-            if ( page != entries.end() ) {
-                try {
-                    m_DisplayPage = NStr::StringToInt(page->second);
-                } catch (exception e) {
-                    _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
-                            << e.what() );
-                    m_DisplayPage = 0;
-                }
-            }
-            else {
+        else {
+            m_PageChanged = false;
+        }
+    }
+    if ( !m_PageChanged ) {
+        TCgiEntriesCI page = entries.find(KParam_DisplayPage);
+        if ( page != entries.end() ) {
+            try {
+                m_DisplayPage = NStr::StringToInt(page->second);
+            } catch (exception e) {
+                _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
+                        << e.what() );
                 m_DisplayPage = 0;
             }
+        }
+        else {
+            m_DisplayPage = 0;
         }
     }
 
@@ -139,34 +140,33 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
 
 bool CPager::IsPagerCommand(const CCgiRequest& request)
 {
-    const TCgiEntries& entries = request.GetEntries();
+    TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
 
-    if ( entries.find(KParam_PreviousPagesX) != entries.end() ) {
-        // previous pages
-        return true;
-    }
-    else if ( entries.find(KParam_NextPagesX) != entries.end() ) {
-        // next pages
-        return true;
-    }
-    else {
-        // look for params like: "page 2.x=..."
-        for ( TCgiEntriesCI i = entries.begin(); i != entries.end(); ++i ) {
-            const string& param = i->first;
-            if ( NStr::StartsWith(param, KParam_Page) &&
-                 NStr::EndsWith(param, KParam_x) ) {
-                // "page xxx"
-                string page = param.substr(KParam_Page.size(),
-                        param.size() - KParam_Page.size() - KParam_x.size());
-                try {
-                    NStr::StringToInt(page);
-                    return true;
-                } catch (exception e) {
-                    // ignore exception right now
-                }
+    // look in preprocessed IMAGE values with empty string key
+    TCgiEntriesI i = entries.find(NcbiEmptyString);
+    if ( i != entries.end() ) {
+        if ( i->second == KParam_PreviousPages ) {
+            // previous pages
+            return true;
+        }
+        else if ( i->second == KParam_NextPages ) {
+            // next pages
+            return true;
+        }
+        else if ( NStr::StartsWith(i->second, KParam_Page) ) {
+            // look for params like: "page 2"
+            string page = i->second.substr(KParam_Page.size());
+            try {
+                NStr::StringToInt(page);
+                return true;
+            } catch (exception e) {
+                _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
+                        << e.what() );
+                // ignore exception right now
             }
         }
     }
+
     return false;
 }
 

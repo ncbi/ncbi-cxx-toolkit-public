@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/04/14 17:28:59  vasilche
+* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
+* As a result special parameter is added with empty name: "=cmd"
+*
 * Revision 1.20  1999/04/13 14:26:01  vasilche
 * Removed old _TRACE
 *
@@ -153,19 +157,29 @@ CNcbiCommand::~CNcbiCommand( void )
 
 bool CNcbiCommand::IsRequested( const CNcbiContext& ctx ) const
 {
-  const string value = GetName();
+    const string value = GetName();
   
-  TCgiEntries& entries = const_cast<TCgiEntries&>( 
-      ctx.GetRequest().GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+    TCgiEntries& entries = const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
 
-  for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
-    if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
-      return true;
-    } // if
-  } // for
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+            return true;
+        } // if
+    } // for
 
-  return false;
+    // if there is no 'cmd' entry
+    if ( p.first == p.second ) {
+        // check the same for IMAGE value
+        p = entries.equal_range( NcbiEmptyString );
+        for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+            if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+                return true;
+            } // if
+        } // for
+    }
+
+    return false;
 }
 
 //

@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/04/14 17:28:58  vasilche
+* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
+* As a result special parameter is added with empty name: "=cmd"
+*
 * Revision 1.21  1999/03/01 21:02:22  vasilche
 * Added parsing of 'form-data' requests.
 *
@@ -647,6 +651,40 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
         // parse "$QUERY_STRING"(or cmd.-line arg)
         s_ParseQuery(*query_string, m_Entries, m_Indexes, indexes_as_entries);
     }
+
+    if ( m_Entries.find(NcbiEmptyString) != m_Entries.end() ) {
+        // there is already empty name key
+        ERR_POST("empty key name: we'll not check for IMAGE names");
+        return;
+    }
+
+    // check for IMAGE input entries like: "Command.x=5&Command.y=3" and
+    // put them with empty string key for better access
+    string imageName;
+    for ( TCgiEntriesI i = m_Entries.begin(); i != m_Entries.end(); ++i ) {
+        const string& entry = i->first;
+        SIZE_TYPE size = entry.size();
+        // check for our case
+        if ( size > 2 && entry.compare(size - 2, 2, ".x") == 0 ) {
+            // get base name of IMAGE
+            string name = entry.substr(0, size - 2);
+            // check for .y part
+            if ( m_Entries.find(name + ".y") != m_Entries.end() ) {
+                // name is correct IMAGE name
+                if ( imageName.empty() ) {
+                    // is't first name - Ok
+                    imageName = name;
+                }
+                else {
+                    // is't second name - error: we will not change anything
+                    ERR_POST("duplicated IMAGE name: \"" << imageName <<
+                             "\" and \"" << name << "\"");
+                    return;
+                }
+            }
+        }
+    }
+    m_Entries.insert(TCgiEntries::value_type(NcbiEmptyString, imageName));
 }
 
 const string& CCgiRequest::x_GetPropertyByName(const string& name)
