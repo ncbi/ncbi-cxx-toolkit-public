@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/05/31 20:58:19  grichenk
+* Fixed GetSeqData() bug
+*
 * Revision 1.24  2002/05/31 17:53:00  grichenk
 * Optimized for better performance (CTSE_Info uses atomic counter,
 * delayed annotations indexing, no location convertions in
@@ -530,7 +533,6 @@ void CSeqVector::x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buf
     TSeqPos cache_stop = m_CachedLen;
     if (m_CachedPos < vstart) {
         cache_start += vstart - m_CachedPos;
-        cache_stop -= vstart - m_CachedPos;
     }
     if (cache_stop - cache_start > vstop - vstart) {
         cache_stop = cache_start + vstop - vstart;
@@ -544,6 +546,8 @@ void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 {
     // Force size calculation
     TSeqPos seq_size = size();
+    if (stop > seq_size)
+        stop = seq_size;
     // Convert position to destination strand
     if ( !m_PlusStrand ) {
         start = seq_size - start - 1;
