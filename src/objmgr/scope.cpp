@@ -564,14 +564,16 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id)
 {
     CBioseq_Handle ret;
-    {{
-        TReadLockGuard rguard(m_Scope_Conf_RWLock);
-        ret.m_Bioseq_Info = x_GetBioseq_Info(id);
-    }}
-    if ( !ret.m_Bioseq_Info->HasBioseq() ) {
-        ret.m_Bioseq_Info.Reset();
+    if ( id )  {
+        {{
+            TReadLockGuard rguard(m_Scope_Conf_RWLock);
+            ret.m_Bioseq_Info = x_GetBioseq_Info(id);
+        }}
+        if ( !ret.m_Bioseq_Info->HasBioseq() ) {
+            ret.m_Bioseq_Info.Reset();
+        }
+        ret.m_Seq_id = id;
     }
-    ret.m_Seq_id = id;
     return ret;
 }
 
@@ -1032,6 +1034,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2003/10/23 13:47:27  vasilche
+* Check CSeq_id_Handle for null in CScope::GetBioseqHandle().
+*
 * Revision 1.87  2003/10/22 14:08:15  vasilche
 * Detach all CBbioseq_Handle objects from scope in CScope::ResetHistory().
 *
