@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/11/27 16:59:38  ucko
+* Drop definitions of CToMultiExHandler methods now found in err_handler.cpp.
+*
 * Revision 1.9  2002/10/03 18:50:00  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -169,23 +172,4 @@ void CDataSource::Action(const CDbapiEvent& e)
     if( dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
     }
-}
-
-//====================================================================
-CToMultiExHandler::CToMultiExHandler()
-    : m_ex(0)
-{
-    m_ex = new CDB_MultiEx("DBAPI message collector");
-}
-
-CToMultiExHandler::~CToMultiExHandler()
-{
-    delete m_ex;
-}
-
-bool CToMultiExHandler::HandleIt(CDB_Exception* ex)
-{
-    m_ex->Push(*ex);
-       
-    return true;
 }
