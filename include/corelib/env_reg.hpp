@@ -46,7 +46,30 @@
 BEGIN_NCBI_SCOPE
 
 class CNcbiEnvironment;
-class IEnvRegMapper;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IEnvRegMapper --
+///
+/// Abstract policy class mediating conversions between environment
+/// variable names and registry entry names.
+
+class NCBI_XNCBI_EXPORT IEnvRegMapper : public CObject
+{
+public:
+    /// Returns empty strings for unsupported (section, name) pairs.
+    virtual string RegToEnv(const string& section, const string& name) const
+        = 0;
+
+    /// The return value indicates whether the environment variable was
+    /// appropriately formatted.
+    virtual bool   EnvToReg(const string& env, string& section, string& name)
+        const = 0;
+
+    /// Can be overriden to speed enumeration.
+    virtual string GetPrefix(void) const { return kEmptyStr; }
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -116,30 +139,6 @@ private:
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// IEnvRegMapper --
-///
-/// Abstract policy class mediating conversions between environment
-/// variable names and registry entry names.
-
-class IEnvRegMapper : public CObject
-{
-public:
-    /// Returns empty strings for unsupported (section, name) pairs.
-    virtual string RegToEnv(const string& section, const string& name) const
-        = 0;
-
-    /// The return value indicates whether the environment variable was
-    /// appropriately formatted.
-    virtual bool   EnvToReg(const string& env, string& section, string& name)
-        const = 0;
-
-    /// Can be overriden to speed enumeration.
-    virtual string GetPrefix(void) const { return kEmptyStr; }
-};
-
-
 /// CSimpleEnvRegMapper --
 ///
 /// Treat environment variables named <prefix><name><suffix> as
@@ -151,7 +150,7 @@ public:
 ///
 /// Not used in the default configuration.
 
-class CSimpleEnvRegMapper : public IEnvRegMapper
+class NCBI_XNCBI_EXPORT CSimpleEnvRegMapper : public IEnvRegMapper
 {
 public:
     CSimpleEnvRegMapper(const string& section, const string& prefix,
@@ -173,7 +172,7 @@ private:
 /// all other names get mapped as
 ///     [<section>]<name> <-> NCBI_CONFIG__<section>__<name> .
 
-class CNcbiEnvRegMapper : public IEnvRegMapper
+class NCBI_XNCBI_EXPORT CNcbiEnvRegMapper : public IEnvRegMapper
 {
 public:
     string RegToEnv (const string& section, const string& name) const;
@@ -194,6 +193,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/14 18:11:44  ucko
+ * Move full declaration of IEnvRegMapper to above CEnvironmentRegistry
+ * (and its use of CConstRef<IEnvRegMapper> as a parameter of multimap<>).
+ * Sprinkle in more NCBI_XNCBI_EXPORT tags for good measure.
+ *
  * Revision 1.1  2005/03/14 15:52:09  ucko
  * Support taking settings from the environment.
  *
