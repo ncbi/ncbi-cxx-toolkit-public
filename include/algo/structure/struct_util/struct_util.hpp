@@ -83,6 +83,9 @@ public:
 
     bool Okay(void) const { return m_okay; }
 
+    //  Use ctor to copy the SeqEntryList & SeqAnnotList.
+    AlignmentUtility* Clone() const;
+
     // Get ASN data
     const SeqAnnotList& GetSeqAnnots(void);
 
@@ -144,6 +147,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/11/03 19:09:15  lanczyck
+* add Clone() method
+*
 * Revision 1.10  2004/10/26 22:36:56  lanczyck
 * make GetPSSMScoreOfCharWithAverageOfBZ public
 *

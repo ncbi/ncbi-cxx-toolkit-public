@@ -116,6 +116,11 @@ AlignmentUtility::~AlignmentUtility()
         delete m_currentMultiple;
 }
 
+AlignmentUtility* AlignmentUtility::Clone() const {
+    const SeqAnnotList& seqAnnots = const_cast<AlignmentUtility*>(this)->GetSeqAnnots();
+    return new AlignmentUtility(m_seqEntries, seqAnnots);
+}
+
 static bool AlignedToAllSlaves(unsigned int masterResidue, const AlignmentSet::AlignmentList& alignments)
 {
     AlignmentSet::AlignmentList::const_iterator a, ae = alignments.end();
@@ -508,6 +513,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/11/03 19:10:11  lanczyck
+* add Clone() method
+*
 * Revision 1.17  2004/10/26 22:37:17  lanczyck
 * make GetPSSMScoreOfCharWithAverageOfBZ public
 *
