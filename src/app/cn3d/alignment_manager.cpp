@@ -561,7 +561,7 @@ const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int
         return NULL;
 }
 
-void AlignmentManager::ShowSequenceViewer(void)
+void AlignmentManager::ShowSequenceViewer(void) const
 {
     sequenceViewer->CreateSequenceWindow();
 }
@@ -786,6 +786,11 @@ void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)
     threader->CalculateScores(GetCurrentMultipleAlignment(), weightPSSM);
 }
 
+int AlignmentManager::NUpdates(void) const
+{
+    return updateViewer->GetCurrentAlignments().size();
+}
+
 void AlignmentManager::GetUpdateSequences(list < const Sequence * > *updateSequences) const
 {
     updateSequences->clear();
@@ -943,6 +948,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2003/10/13 13:23:31  thiessen
+* add -i option to show import window
+*
 * Revision 1.88  2003/09/22 17:33:12  thiessen
 * add AlignmentChanged flag; flush message file; check row order of repeats
 *

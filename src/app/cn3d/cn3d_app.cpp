@@ -55,6 +55,7 @@
 #include "cn3d/cn3d_glcanvas.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -305,6 +306,8 @@ bool Cn3DApp::OnInit(void)
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_OPTION_HELP },
         { wxCMD_LINE_SWITCH, "r", "readonly", "message file is read-only",
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
+        { wxCMD_LINE_SWITCH, "i", "imports", "show import window on startup",
+            wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
         { wxCMD_LINE_SWITCH, "f", "force", "force saves to same file",
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
         { wxCMD_LINE_OPTION, "m", "message", "message file",
@@ -412,6 +415,12 @@ bool Cn3DApp::OnInit(void)
     // give structure window initial focus
     structureWindow->Raise();
     structureWindow->SetFocus();
+
+    // optionally open imports window, but only if any imports present
+    if (commandLine.Found("i") && structureWindow->glCanvas->structureSet &&
+            structureWindow->glCanvas->structureSet->alignmentManager->NUpdates() > 0)
+        structureWindow->glCanvas->structureSet->alignmentManager->ShowUpdateWindow();
+
     return true;
 }
 
@@ -457,6 +466,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/10/13 13:23:31  thiessen
+* add -i option to show import window
+*
 * Revision 1.5  2003/07/17 18:47:01  thiessen
 * add -f option to force save to same file
 *

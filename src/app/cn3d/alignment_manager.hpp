@@ -109,8 +109,6 @@ public:
     const Vector * GetAlignmentColor(const Sequence *sequence,
         int seqIndex, StyleSettings::eColorScheme colorScheme) const;
 
-    void ShowUpdateWindow(void) const;
-
     // sequence alignment algorithm functions
     void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
     void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
@@ -132,13 +130,15 @@ public:
     bool GetStructureProteins(std::vector < const Sequence * > *chains) const;
 
     // get a list of (slave) sequences present in the updates
+    int NUpdates(void) const;
     void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
 
     // remove sequence from both multiple alignment and updates
     void PurgeSequence(const MoleculeIdentifier *identifier);
 
-    // show sequence/alignment viewer
-    void ShowSequenceViewer(void);
+    // show sequence/alignment/update viewer
+    void ShowSequenceViewer(void) const;
+    void ShowUpdateWindow(void) const;
 
 private:
     void Init(void);
@@ -167,6 +167,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/10/13 13:23:31  thiessen
+* add -i option to show import window
+*
 * Revision 1.47  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *
