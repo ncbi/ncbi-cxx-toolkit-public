@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.25 2001/11/28 20:58:42 sherry Exp $
+-- $Id: docsum.asn,v 1.26 2001/11/28 21:41:42 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.26  2001/11/28 21:41:42  sherry
+-- correction to golden path (UCSC) contig hits
+--
 -- Revision 1.25  2001/11/28 20:58:42  sherry
 -- added UCSC mapping coordinates, and added amino-acid position to function-set
 --
@@ -296,7 +299,9 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	ss-list SET OF NSE-ss,			-- set of all subsnp id's in the refSNP cluster	
 	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates and functional relationships
 						-- between variations and genes as annotated on contig sequence
-	ucsc-mapset SET OF NSE-rsUCSCContigHit OPTIONAL, -- list of hits to genome in golden path contig coordinates 
+						-- data from SNPContigLoc & ContigInfo tables
+	ucsc-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in golden path contig coordinates 
+						-- data from SNPGoldenPathContigLoc and GoldenPathContigInfo
 	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
 	gene-info SET OF NSE-rsLocusID OPTIONAL	-- set of gene information inferred by blast similarity of variation and GenBank sequences.
 						-- analysis is independent of annotation of genome sequence (contig-mapset, above) and
@@ -373,14 +378,6 @@ NSE-rsContigHit ::= SEQUENCE {		-- data from SNPContigLoc, ContigInfo tables, & 
 	chromosome VisibleString OPTIONAL	-- Chromosome number
 }
 	
-NSE-rsUCSCContigHit ::= SEQUENCE {	-- data from SNPGoldenPathContigLoc & GoldenPathContigInfo tables
-	contig-id VisibleString,		-- Id of contig when naming files for refSNPs x contig		
-	locations SET OF NSE-rsMaploc,		-- set of all valid locations for variation on contig
-	accession VisibleString OPTIONAL,	-- Accession number of the contig
-	version INTEGER OPTIONAL,		-- version number of the contig	
-	chromosome VisibleString OPTIONAL	-- Chromosome number
-}
-
 
 NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a contig
 	asn-from INTEGER,		-- beginning of variation as feature on contig			SNPContigLoc.asn_from
