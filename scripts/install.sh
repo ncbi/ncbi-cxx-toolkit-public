@@ -138,9 +138,13 @@ fi
 
 
 # Copy to the install dir;  use TAR to preserve symbolic links, if any
+case "`uname`" in
+  Darwin ) bs=63 ;;
+  *      ) bs=200 ;;
+esac
 for d in $install_dirs ; do
-   ( cd $top_srcdir  &&  tar cfb - 200 $d ) |  \
-     ( cd $install_dir  &&  tar xfb - 200 )
+   ( cd $top_srcdir  &&  tar cfb - $bs $d ) |  \
+     ( cd $install_dir  &&  tar xfb - $bs )
    test $? -eq 0  ||  Usage "Failed to copy to $install_dir/$d"
 
    # Get rid of the CVS sub-dirs

@@ -166,9 +166,13 @@ else
 fi
 
 # Copy dirs to the install dir;  use TAR to preserve symbolic links, if any
+case "`uname`" in
+  Darwin ) bs=63 ;;
+  *      ) bs=200 ;;
+esac
 for d in $install_dirs ; do
-   ( cd $build_dir  &&  tar cfb - 200 $d ) |  \
-     ( cd $install_dir  &&  tar xfb - 200 )
+   ( cd $build_dir  &&  tar cfb - $bs $d ) |  \
+     ( cd $install_dir  &&  tar xfb - $bs )
    test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
 done
 
