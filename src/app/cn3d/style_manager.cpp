@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/04/11 16:39:56  thiessen
+* fix style manager bug
+*
 * Revision 1.62  2002/02/22 20:46:57  thiessen
 * more rigorous fix for same
 *
@@ -814,21 +817,38 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         info->classification == Residue::ePartialBackboneAtom ||
         info->classification == Residue::eCompleteBackboneAtom) { // is backbone of some sort
 
-        // always allow alpha and C1* atoms for sidechain display
-        if (info->classification != Residue::eAlphaBackboneAtom &&
-            !(residue->IsNucleotide() && info->code == " C1*")) {
+        // control presence of non CA/C1* sidechain atoms
+        if ((residue->IsAminoAcid() && info->classification != Residue::eAlphaBackboneAtom) ||
+            (residue->IsNucleotide() && info->code != " C1*")) {
 
             // skip if backbone off
             if (backboneStyle->type == StyleSettings::eOff)
                 ATOM_NOT_DISPLAYED;
 
             // show only alpha atom if eTrace
-            if (backboneStyle->type == StyleSettings::eTrace)
+            if (backboneStyle->type == StyleSettings::eTrace &&
+                info->classification != Residue::eAlphaBackboneAtom)
                 ATOM_NOT_DISPLAYED;
 
             // don't show complete backbone if set to partial
             if (info->classification == Residue::eCompleteBackboneAtom &&
                 backboneStyle->type == StyleSettings::ePartial)
+                ATOM_NOT_DISPLAYED;
+        }
+
+        // if this is alpha/C1* and backbone is off, but sidechains are on, then
+        // let the atom be visible *and* take the style of the sidechain
+        else if (backboneStyle->type == StyleSettings::eOff ||
+                 (residue->IsNucleotide() && backboneStyle->type != StyleSettings::eComplete)) {
+
+            const StyleSettings::GeneralStyle *sidechainStyle = NULL;
+            if (residue->IsAminoAcid()) sidechainStyle = &(settings.proteinSidechains);
+            else if (residue->IsNucleotide()) sidechainStyle = &(settings.nucleotideSidechains);
+
+            if (sidechainStyle && sidechainStyle->isOn) {
+                backboneStyle = NULL;
+                generalStyle = sidechainStyle;
+            } else
                 ATOM_NOT_DISPLAYED;
         }
     }
@@ -860,11 +880,6 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             ERR_POST(Error << "StyleManager::GetAtomStyle() - inappropriate style for atom");
             return false;
     }
-
-    // make sure actual sphere isn't shown for C1* if not complete backbone
-    if (info->residue->IsNucleotide() && info->code == " C1*" &&
-        backboneStyle->type != StyleSettings::eComplete)
-        atomStyle->radius = 0.0;
 
     // determine color
     static const Vector unalignedColor(175.0/255, 175.0/255, 175.0/255);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2002/04/11 16:39:54  thiessen
+* fix style manager bug
+*
 * Revision 1.99  2002/04/10 13:16:28  thiessen
 * new selection by distance algorithm
 *
@@ -1554,6 +1557,7 @@ void StructureObject::SelectByDistance(
             }
         }
     }
+    if (highlightedAtoms.size() == 0 || unhighlightedResidues.size() == 0) return;
 
     // now check all unhighlighted residues, to see if any atoms are within cutoff distance
     // of any highlighted atoms; if so, add to residue selection list
