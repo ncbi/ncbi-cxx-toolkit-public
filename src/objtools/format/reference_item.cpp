@@ -52,6 +52,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/biblio/Imprint.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -89,10 +90,11 @@ private:
 
 void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_sub)
 {
+    result.erase();
+
     if (affil.IsStr()) {
         result = affil.GetStr();
-    } else {
-        result.erase();
+    } else if (affil.IsStd()) {
         const CAffil::C_Std& std = affil.GetStd();
         if (gen_sub) {
             if (std.IsSetDiv()) {
@@ -201,6 +203,32 @@ CReferenceItem::CReferenceItem
     x_GatherInfo(ctx);
 }
 
+
+CReferenceItem::CReferenceItem(const CSubmit_block& sub, CBioseqContext& ctx) :
+    CFlatItem(&ctx), m_PubType(ePub_sub), m_Category(eSubmission),
+    m_PatentId(0), m_PMID(0), m_MUID(0), m_Serial(kMax_Int),
+    m_JustUids(false), m_Elect(false)
+{
+    x_SetObject(sub);
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetWhole(*ctx.GetPrimaryId());
+    m_Loc = loc;
+
+    if (sub.IsSetCit()) {
+        m_Sub.Reset(&sub.GetCit());
+        m_Title = "Direct Submission";
+        m_PubType = ePub_sub;
+        if (m_Sub->IsSetAuthors()) {
+            m_Authors.Reset(&m_Sub->GetAuthors());
+        }
+        if (m_Sub->IsSetDate()) {
+            m_Date.Reset(&m_Sub->GetDate());
+        }
+    } else {
+        x_SetSkip();
+    }
+}
 
 void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
 {
@@ -366,6 +394,9 @@ void CReferenceItem::x_CreateUniqueStr(void) const
     if (!NStr::IsBlank(m_UniqueStr)) {
         return;
     }
+    if (m_Pubdesc.Empty()) {
+        return;
+    }
 
     ITERATE (CPubdesc::TPub::Tdata, it, m_Pubdesc->GetPub().Get()) {
         const CPub& pub = **it;
@@ -421,17 +452,19 @@ bool CReferenceItem::x_Matches(const CPub& pub) const
 
 void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
 {
+    _ASSERT(m_Pubdesc.NotEmpty());
+
     if (!m_Pubdesc->IsSetPub()) {
         NCBI_THROW(CFlatException, eInvalidParam, "Pub not set on Pubdesc");
     }
 
     const CPubdesc::TPub& pub = m_Pubdesc->GetPub();
 
-    if (ctx.GetSubmitBlock() != NULL) {
+    /*if (ctx.GetSubmitBlock() != NULL) {
         m_Title = "Direct Submission";
         m_Sub.Reset(&ctx.GetSubmitBlock()->GetCit());
         m_PubType = ePub_sub;
-    }
+    }*/
 
     //CPub_equiv::Tdata::const_iterator last = m_Pubdesc->GetPub().Get().end()--;
     ITERATE (CPub_equiv::Tdata, it, pub.Get()) {
@@ -1204,6 +1237,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/02/07 15:01:06  shomrat
+* Support for submissions
+*
 * Revision 1.27  2005/01/12 16:45:12  shomrat
 * Code refactoring, moved journal formatting to format classes
 *
