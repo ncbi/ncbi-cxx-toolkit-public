@@ -165,6 +165,13 @@ void CAppNWA::x_RunOnPair() const
                    "spliced alignment algorithm");
     }
      
+    if(bEndSpaceFree && bMM) {
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "End-space free alignment is not yet "
+                   "supported in Myers-Miller algorithm");
+    }
+     
     if(bMT && !bMM) {
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
@@ -325,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/03/07 13:52:57  kapustin
+ * Add a temporary check that -mm is not used with -esf
+ *
  * Revision 1.11  2003/03/05 20:13:53  kapustin
  * Simplify FormatAsText(). Fix FormatAsSeqAlign(). Convert sequence alphabets to capitals
  *
