@@ -228,7 +228,7 @@ on SetProjectData()
 	end if
 	
 	if pCreateCoreLibs then
-		AddSimpleProjectExceptFiles("xncbi", {}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
+		AddSimpleProjectExceptFiles("xncbi", {"libdl"}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
 		AddSimpleProject("xalgoalign", {}, "algo:align")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
@@ -418,9 +418,10 @@ on SetProjectData()
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
+		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"submit", "w_fltable", "entrez2", "entrez2cli"})
+			{"w_fltable", "entrez2", "entrez2cli"})
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
