@@ -1,7 +1,7 @@
 include $(builddir)/Makefile.mk
 
 all all_r:
-	/bin/sh -c ' \
+	$(SHELL) -c ' \
 		cd "$(srcdir)" || exit 2; \
 	    if test -x "$(bindir)/datatool"; then \
 	        NCBI_DATATOOL_PATH="$(bindir)"; \
