@@ -1,4 +1,4 @@
-$Id$
+#$Id$
 
 APP = test_overwrite
 SRC = overwrite
