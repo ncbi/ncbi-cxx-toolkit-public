@@ -1606,15 +1606,15 @@ which are kept in the CVS repository. Click <a href="msvc_prj.html">here</a> to 
 if you wish to modify and/or add the NCBI C++ Toolkit project files.
 There is a short summary:
 <ul>
-    <li>All project files in the CVS repository contain a single (<span class="ncbi_dir">DebugMT</span>) configuration. This way, you can directly use
+    <li>All project files in the CVS repository contain a single (<span class="ncbi_dir">DebugDLL</span>) configuration. This way, you can directly use
     <span class="ncbi_util">cvs.exe</span> on your PC and have project files checked out and in, just <a href="#ref_MsvcProjSettings">make
-    sure</a> you work with single-configuration project files in <span class="ncbi_dir">DebugMT</span> mode.</li>
+    sure</a> you work with single-configuration project files in <span class="ncbi_dir">DebugDLL</span> mode.</li>
     <li>The checked out project files can be checked in back to the CVS only if they contain exactly one configuration
-        (<span class="ncbi_dir">DebugMT</span>).</li>
+        (<span class="ncbi_dir">DebugDLL</span>).</li>
     <li>Use script <a href="msvc_prj.html#all2one_sh"><span class="ncbi_script">all2one.sh</span></a> to convert any multi-configuration
     project file to a single configuration one.</li>
     <li>Use script <a href="msvc_prj.html#one2one_sh"><span class="ncbi_script">one2one.sh</span></a> to change configuration in any
-    single-configuration project file (e.g. from <span class="ncbi_dir">ReleaseDLL</span> to <span class="ncbi_dir">DebugMT</span>).</li>
+    single-configuration project file (e.g. from <span class="ncbi_dir">ReleaseMT</span> to <span class="ncbi_dir">DebugDLL</span>).</li>
     <li>Use script <a href="msvc_prj.html#one2all_sh"><span class="ncbi_script">one2all.sh</span></a> to convert a single configuration
     (template) project file to the multi-configuration one (containing all of the following configurations:
     <span class="ncbi_dir">Debug</span>, <span class="ncbi_dir">DebugMT</span>, <span class="ncbi_dir">DebugDLL</span>, <span class="ncbi_dir">Release</span>, <span class="ncbi_dir">ReleaseMT</span>, <span class="ncbi_dir">ReleaseDLL</span>).</li>
@@ -1685,13 +1685,13 @@ If you don't want to build the whole NCBI C++ tree, but just
 need to <em>use</em> the NCBI C++ Toolkit functionality in your own, separate projects,
 there are pre-built libraries located at:
 <ul>
-    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>ReleaseMT</em></span> -- statically linked against standard Microsoft run-time library,
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>ReleaseDLL</em></span> -- linked against dynamic Microsoft run-time library,
     MT-safe versions
-    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>Release</em></span> -- statically linked against standard Microsoft run-time library,
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>Release</em></span> -- linked against static Microsoft run-time library,
     <emph>not</emph> MT-safe versions
-    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>DebugMT</em></span> -- statically linked against standard Microsoft run-time library,
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>DebugDLL</em></span> -- linked against dynamic Microsoft run-time library,
     MT-safe versions with debug information preserved
-    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>Debug</em></span> -- statically linked against standard Microsoft run-time library,
+    <li> <span class="ncbi_dir">\\dizzy\public\cxx\<em>Debug</em></span> -- linked against static Microsoft run-time library,
     <emph>not</emph> MT-safe versions with debug information preserved
 </ul>
 along with the header and source files at:
@@ -1710,8 +1710,8 @@ in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi
 You have to specify the used library name(s) in <span class="ncbi_menu">"Project"/"Settings..."</span>, tab <span class="ncbi_menu">"Link"</span>,
 category <span class="ncbi_menu">"Input"</span>, list <span class="ncbi_menu">"Object/Library modules"</span>.
 <br>
-You also have to put the correct path to the libraries (either <span class="ncbi_dir">\\dizzy\public\cxx\<em>ReleaseMT</em></span>,
-<span class="ncbi_dir">\\dizzy\public\cxx\<em>DebugMT</em></span> etc, according to the configuration you are tuning)
+You also have to put the correct path to the libraries (either <span class="ncbi_dir">\\dizzy\public\cxx\<em>ReleaseDLL</em></span>,
+<span class="ncbi_dir">\\dizzy\public\cxx\<em>DebugDLL</em></span> etc, according to the configuration you are tuning)
 in the field <span class="ncbi_menu">"Additional library path"</span>.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
@@ -1884,14 +1884,14 @@ For example, here are the paths to the automatically built C Toolkit:
 <ul>
   <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>include</em></span>
   <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>altsrc</em></span>
-  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>ReleaseMT</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>ReleaseDLL</em></span>
   <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>Release</em></span>
-  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>DebugMT</em></span>
+  <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>DebugDLL</em></span>
   <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>Debug</em></span>
   <li> <span class="ncbi_dir">\\dizzy\public\ncbi\<em>src</em></span>
 </ul>
 
-For backward compatibility we maintain copies of production MT-safe libraries (<span class="ncbi_dir">ReleaseMT</span>) in <span class="ncbi_dir">\\dizzy\public\<em>lib</em></span>,
+For backward compatibility we maintain copies of production MT-safe libraries (<span class="ncbi_dir">ReleaseDLL</span>) in <span class="ncbi_dir">\\dizzy\public\<em>lib</em></span>,
 and copies of MT-safe debug libraries (<span class="ncbi_dir">DebugMT</span>) in <span class="ncbi_dir">\\dizzy\public\<em>dbglib</em></span>. The use of there
 "historically kept" directories is deprecated, and all new projects have to refer to the new names from the list
 above precisely the same way, as explained earlier in <a href="#ref_MsvcProjCXX">"How to use pre-built NCBI C++ libraries"</a>.

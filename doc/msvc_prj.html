@@ -95,7 +95,7 @@ Therefore, the project files are always produced in UNIX text file format.</li>
 <p><li>
 <a name="commit_sh"></a><span class="ncbi_script">commit.sh</span> -
 control script for use from inside the CVS upon each commit to ensure
-that the project being checked in contains one fixed configuration only (namely, <span class="ncbi_config">DebugMT</span>).
+that the project being checked in contains one fixed configuration only (namely, <span class="ncbi_config">DebugDLL</span>).
 This script as well checks that the file being committed is in UNIX text file format, and rejects if not.
 The extensions (and only in directories specified in <span class="ncbi_script_a">DIRLIST</span>
 parameter, as described below) checked are: <span class="ncbi_file">.dsw</span>,
@@ -165,11 +165,10 @@ $ find . -name "*.dsp.bak" -exec rm -f {} \;
 
 <li>
 You may wish to use the script <a href="#one2one_sh"><span class="ncbi_script">one2one.sh</span></a>
-for converting all project files to standard single configuration <span class="ncbi_config">DebugMT</span>, if configurations,
+for converting all project files to standard single configuration <span class="ncbi_config">DebugDLL</span>, if configurations,
 different from <span class="ncbi_config">DebugMT</span>, have been chosen in step 2 above:
 <pre class="ncbi_cmd">
-$ find . -name "*.dsp" -print -exec ./one2one.sh
-{} DebugMT \;
+$ find . -name "*.dsp" -print -exec ./one2one.sh {} DebugMT \;
 </pre></li>
 
 <li>
