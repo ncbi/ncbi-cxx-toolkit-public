@@ -1,3 +1,38 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Kevin Bealer
+ *
+ */
+
+/// test_pin application.
+/// 
+/// This test application serves as a CVS managed tool bench and
+/// scratch pad where I (Kevin Bealer) can keep routines that test the
+/// stability and performance of, and new functionality added to, the
+/// seqdb library.
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
@@ -7,6 +42,7 @@
 #include <iostream>
 #include <string>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbifile.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -14,8 +50,9 @@
 #include <sys/wait.h>
 #include <assert.h>
 
-USING_NCBI_SCOPE;
+volatile int gnum = 0;
 
+USING_NCBI_SCOPE;
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -246,6 +283,64 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-accel2]";
         
+        if (s == "-mutexes") {
+            /*Uint4 z = 0;*/
+            
+            CMutex a;
+            CFastMutex b;
+            
+            
+            double spt1 = dbl_time();
+            for(int i = 0; i<10000000; i++) {
+                CMutexGuard aa(a);
+                
+                gnum++;
+            }
+            
+            double spt2 = dbl_time();
+            for(int i = 0; i<10000000; i++) {
+                CFastMutexGuard bb(b);
+                
+                gnum++;
+            }
+
+            double spt3 = dbl_time();
+            for(int i = 0; i<10000000; i++) {
+                gnum++;
+            }
+
+            double sptA = dbl_time();
+            for(int i = 0; i<10000000; i++) {
+                CMutexGuard aa(a);
+                
+                gnum++;
+            }
+            
+            double sptB = dbl_time();
+            for(int i = 0; i<10000000; i++) {
+                CFastMutexGuard bb(b);
+                
+                gnum++;
+            }
+            
+            double sptC = dbl_time();
+            for(int i = 0; i<10000000; i++) {
+                gnum++;
+            }
+            
+            double sptX = dbl_time();
+            
+            cout << "\nS run1 = " << spt2 - spt1 << endl;
+            cout <<   "S run2 = " << sptB - sptA << endl;
+            cout << "\nF run1 = " << spt3 - spt2 << endl;
+            cout <<   "F run2 = " << sptC - sptB << endl;
+            cout << "\nC run1 = " << sptA - spt3 << endl;
+            cout <<   "C run2 = " << sptX - sptC << endl;
+            
+            cout << "\nnothing " << gnum << endl;
+            return 0;
+        } else desc += " [-mutexes]";
+        
         if (s == "-fromcpp") {
             const char * ge = getenv("BLASTDB");
             string pe("BLASTDB=/home/bealer/code/ut/internal/blast/unit_test/data:" + string(ge ? ge : ""));
@@ -256,12 +351,14 @@ int test1(int argc, char ** argv)
             
             Int4 num1 = local1.GetNumSeqs();
             Int4 num2 = local1.GetNumSeqs();
-        
+            
+            int rv = 0 | num1 | num2;
+            
             assert(num1 >= 1);
             assert(num1 == num2);
             
             cout << "Test worked." << endl;
-            return 0;
+            return rv;
         } else desc += " [-fromcpp]";
         
         if (s == "-alphabeta") {
@@ -314,6 +411,66 @@ int test1(int argc, char ** argv)
             
             return 0;
         } else desc += " [-dyn]";
+        
+        if (s == "-atlas") {
+            {
+                cerr << "Going to construct?" << endl;
+                
+                CSeqDB db("nr", 'p');
+                
+                cerr << "Constructor ran?" << endl;
+            }
+            cerr << "Destructor ran?" << endl;
+            
+            {
+                cerr << "Going to construct?" << endl;
+                
+                CSeqDB db("nr", 'p');
+                
+                cerr << "Constructor ran?" << endl;
+                
+                const char * sq = 0;
+                Uint4 sqlen = 0;
+                
+                sqlen = db.GetSequence(10, & sq);
+                
+                db.RetSequence(& sq);
+                
+                cout << "sqlen = " << sqlen << endl;
+                
+                cerr << "Finished simple test.. should suffer now? (no)" << endl;
+            }
+            cerr << "Destructor ran?" << endl;
+            
+            // Do nothing..
+            
+//             cout << "Num oids: " << db.GetNumSeqs() << endl;
+            
+//             char * buf1 = 0;
+            
+//             Int4 len = db.GetAmbigSeqAlloc(10,
+//                                            & buf1,
+//                                            kSeqDBNuclBlastNA8,
+//                                            eNew);
+            
+//             cout << "Length (10): " << len << endl;
+            
+//             delete[] buf1;
+            
+            return 0;
+        } else desc += " [-atlas]";
+        
+        if (s == "-atlas2") {
+            CSeqDB db("nr", 'p');
+            
+            for(Uint4 index = 311073; index < 700000; index++) {
+                const char * sq = 0;
+                /*Uint4 sqlen =*/ db.GetSequence(10, & sq);
+                db.RetSequence(& sq);
+            }
+            
+            return 0;
+        } else desc += " [-atlas2]";
         
         if (s == "-limit") {
             {
@@ -991,6 +1148,76 @@ int test1(int argc, char ** argv)
             continue;
         }
         
+        if (s == "-nt") {
+            dbname = "nt";
+            seqtype = 'n';
+            use_mm = false;
+            continue;
+        } else desc += " [-nt]";
+        
+        if (s == "-nt,est,gss") {
+            dbname = "nt est gss";
+            seqtype = 'n';
+            continue;
+        } else desc += " [-nt,est,gss]";
+        
+        if (s == "-lump") {
+            dbname = "../tdata/lump";
+            seqtype = 'n';
+            use_mm = false;
+            continue;
+        } else desc += " [-lump]";
+        
+        if (s == "-super_size") {
+            CSeqDB db("nt est", kSeqTypeNucl, 0, 0, use_mm);
+            
+            cout << "total length: " << db.GetTotalLength() << endl;
+            cout << "number seqs : " << db.GetNumSeqs() << endl;
+            
+            unsigned nseq = db.GetNumSeqs();
+            
+            const char * seqdata = 0;
+            
+            for(int i = 0; i<1000; i++) { 
+                const char * s2 = 0;
+                db.GetSequence(i, & s2);
+                
+                cout << "Got seq " << i << " first char " << (0xFF & s2[0]) << endl;
+                
+                if (seqdata) {
+                    db.RetSequence(& seqdata);
+                    //assert(seqdata == 0);
+                }
+                
+                seqdata = s2;
+            }
+            
+            unsigned iters = 10000;
+            
+            for(unsigned j = 0; j<iters; j++) {
+                unsigned j2 = j * (nseq/iters);
+                
+                const char * s2 = 0;
+                
+                db.GetSequence(j, & s2);
+                
+                cout << "Got seq " << j2 << " first char " << (0xFF & s2[0]) << endl;
+                
+                if (seqdata) {
+                    db.RetSequence(& seqdata);
+                    assert(seqdata == 0);
+                }
+                
+                seqdata = s2;
+            }
+            
+            if (seqdata) {
+                db.RetSequence(& seqdata);
+                seqdata = 0;
+            }
+            
+        } else desc += " [-lump]";
+        
         if (s == "-file") {
             use_mm = false;
             continue;
@@ -1091,10 +1318,24 @@ int test1(int argc, char ** argv)
         } else desc += " [-loop <iterations>]";
         
         if (s == "-") {
-            cout << "Usage:\n"
-                 << argv[0]
-                 << desc
-                 << endl;
+            cout << "\nUsage:\n\n" << argv[0];
+            
+            while(desc.length() > 70) {
+                int loc = 70;
+                
+                for(int i = 20; i<70; i++) {
+                    if (desc[i] == '[') {
+                        loc = i;
+                    }
+                }
+                
+                cout << string(desc, 0, loc-1) << "\n"
+                     << string(string(argv[0]).length() + 1, ' ');
+                
+                desc.erase(0, loc);
+            }
+            
+            cout << desc << endl;
             
             return 0;
         }
@@ -1152,9 +1393,9 @@ int test1(int argc, char ** argv)
             double dend = dbl_time();
             
             if (show_progress) {
-            cout << "NR seq count: " << nseqs   << endl;
-            cout << "Total length: " << tleng   << endl;
-            cout << "Compute time: " << (dend - dstart) << endl;
+                cout << "NR seq count: " << nseqs   << endl;
+                cout << "Total length: " << tleng   << endl;
+                cout << "Compute time: " << (dend - dstart) << endl;
             }
             
             double cstart = dbl_time();
@@ -1221,7 +1462,10 @@ int test1(int argc, char ** argv)
                 
                 if (deletions && buffer1[ii]) {
                     dbi.RetSequence(& buffer1[ii]);
+                    buffer1[ii] = 0;
                 }
+                
+                //cout << "[" << i << "]" << endl;
                 
                 Int4 seqlen = dbi.GetSequence(i, & buffer1[ii]);
                 const char * bufdata = buffer1[ii];
@@ -1254,6 +1498,19 @@ int test1(int argc, char ** argv)
                 }
             }
             
+            cout << "Dumping remaining sequences:" << endl;
+            
+            {
+                for(int i = 0; i<10; i++) {
+                    if (buffer1[i] != 0) {
+                        dbi.RetSequence(& buffer1[i]);
+                        cout << "Deleted.  Is zero? " << ((buffer1[i]==0)?("yes"):("no")) << endl;
+                        buffer1[i] = 0;
+                    }
+                }
+            }
+            cout << "Done dumping remaining sequences." << endl;
+            
             double cend = dbl_time();
             
             if (show_progress) {
@@ -1262,7 +1519,11 @@ int test1(int argc, char ** argv)
                 cout << "Sampling est:  "   << ((sampling / double(numsamp)) * nseqs) << "\n";
                 cout << "Compute ctime: "   << (cend - cstart) << endl;
             }
-        } 
+        }
+        catch(CSeqDBException & ex) {
+            cout << "Message follows: " << ex.GetErrCodeString() << endl;
+            cout << "Actual Message : " << ex.GetMsg() << endl;
+        }
         catch(string ee) {
             cout << "Caught me an " << ee << endl;
         }
@@ -1272,6 +1533,29 @@ int test1(int argc, char ** argv)
     }
     
     return 0;
+}
+
+int test2(void)
+{
+    cout << "whoop" << endl;
+    
+    int done_count = 0;
+    
+    try {
+        CMemoryFile a("/net/fridge/vol/export/blast/db/blast/nt.00.nsq");
+        done_count ++;
+        CMemoryFile b("/net/fridge/vol/export/blast/db/blast/nt.00.nsq");
+        done_count ++;
+        CMemoryFile c("/net/fridge/vol/export/blast/db/blast/nt.00.nsq");
+        done_count ++;
+    }
+    catch(...) {
+        cerr << "Shinola.." << endl;
+    }
+    
+    cout << "Doneness: " << done_count << endl;
+    
+    return 3;
 }
 
 int main(int argc, char ** argv)
@@ -1289,11 +1573,7 @@ int main(int argc, char ** argv)
         rc = 1;
         cout << "--four--" << endl;
     }
-    catch(...) {
-        cout << "--five--" << endl;
-    }
     
     return rc;
 }
-
 
