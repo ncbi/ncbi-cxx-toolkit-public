@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/12 21:10:35  kimelman
+* traps for coredumps
+*
 * Revision 1.8  2002/04/11 20:03:29  kimelman
 * switch to pubseq
 *
@@ -141,6 +144,8 @@ void* CTestThread::Main(void)
   
   CScope scope1(*pom);
   scope1.AddDefaults();
+
+  LOG_POST(" Processing gis from "<< m_Start << " to " << m_Stop);
   
   for (int i = m_Start;  i < m_Stop;  i++) {
     CScope scope2(*pom);
@@ -189,7 +194,7 @@ public:
 };
 
 const unsigned c_TestFrom = 1;
-const unsigned c_TestTo   = 51;
+const unsigned c_TestTo   = 201;
 const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
 int CTestApplication::Test(const int test_mode,const int thread_count)
@@ -201,7 +206,7 @@ int CTestApplication::Test(const int test_mode,const int thread_count)
   
   // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
   // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-  pOm->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader(thread_count),1+2*thread_count),
+  pOm->RegisterDataLoader(*new CGBDataLoader("ID", 0,1+2*thread_count),
                           CObjectManager::eDefault);
   
   CRef<CScope> scope = new CScope(*pOm);
@@ -210,7 +215,7 @@ int CTestApplication::Test(const int test_mode,const int thread_count)
   
   for (int i=0; i<thread_count; ++i)
     {
-      thr[i] = new CTestThread(test_mode, *pOm, *scope,c_TestFrom+i*step,c_TestTo+(i+1)*step);
+      thr[i] = new CTestThread(test_mode, *pOm, *scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
       thr[i]->Run();
     }
   
@@ -233,15 +238,19 @@ int CTestApplication::Run()
 {
   int timing[4/*threads*/][2/*om*/][3/*scope*/];
   int tc = sizeof(timing)/sizeof(*timing);
+
+  CPubseqReader q(1);
+  memset(timing,0,sizeof(timing));
   
   LOG_POST("START: " << time(0) );;
   
   for(int thr=tc-1,i=0 ; thr >= 0 ; --thr)
-    for(int global_om=1;global_om>=(thr>0?0:1); --global_om)
-      for(int global_scope=2;global_scope>=(thr==0?1:(global_om==0?1:0)); --global_scope)
+    for(int global_om=0;global_om<=(thr>0?1:0); ++global_om)
+      for(int global_scope=0;global_scope<=(thr==0?1:(global_om==0?1:2)); ++global_scope)
         {
           int mode = (global_om<<2) + global_scope ;
-          LOG_POST("Test(" << i << ") # threads = " << thr+1 );
+          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
+                   ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")));
           time_t start=time(0);
           Test(mode,thr+1);
           timing[thr][global_om][global_scope] = time(0)-start ;
@@ -249,12 +258,12 @@ int CTestApplication::Run()
           LOG_POST("Test(" << i++ << ") completed  ===============");
         }
   
-  for(int thr=tc-1 ; thr >= 0 ; --thr)
-    for(int global_om=1;global_om>=(thr>0?0:1); --global_om)
-      for(int global_scope=2;global_scope>=(thr==0?1:(global_om==0?1:0)); --global_scope)
+  for(int global_om=0;global_om<=1; ++global_om)
+    for(int global_scope=0;global_scope<=2; ++global_scope)
+      for(int thr=0; thr < tc ; ++thr)
         {
-          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local") <<
-                   ", scope=" << (global_scope==0?"auto":(global_scope==1?"per thread":"global")) <<
+          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
+                   ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
                    " ==>> " << timing[thr][global_om][global_scope] << " sec");
         }
   

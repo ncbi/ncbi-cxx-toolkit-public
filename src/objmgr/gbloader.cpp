@@ -117,6 +117,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
         }
       catch(...)
         {
+          LOG_POST("CPubseqReader:: unable to init ");
           m_Driver=0;
         }
     }
@@ -787,6 +788,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/04/12 21:10:33  kimelman
+* traps for coredumps
+*
 * Revision 1.27  2002/04/11 18:45:35  ucko
 * Pull in extra headers to make KCC happy.
 *
