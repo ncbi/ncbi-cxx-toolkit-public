@@ -41,20 +41,7 @@ extern "C" {
 
 #include <algo/blast/core/blast_def.h>
 
-#define AA20    2
-
-#define LN20    2.9957322735539909
-
-#define CHAR_SET 128
-
 /*--------------------------------------------------------------(structs)---*/
-
-typedef struct Seg
-  {
-   int begin;
-   int end;
-   struct Seg *next;
-  } Seg;
 
 typedef struct Alpha
   {
@@ -78,20 +65,6 @@ typedef struct SegParameters
    Int4 maxbogus;
    Alpha* palpha;
   } SegParameters;
-
-typedef struct Sequence
-  {
-   struct Sequence* parent;
-   char* seq;
-   Alpha* palpha;
-   Int4 start;
-   Int4 length;
-   Int4 bogus;
-   Boolean punctuation;
-   Int4* composition;
-   Int4* state;
-   double entropy;
-  } Sequence;
 
 SegParameters* SegParametersNewAa (void);
 void SegParametersFree(SegParameters* sparamsp);
