@@ -88,7 +88,7 @@ CGenetic_code_table::CGenetic_code_table(void)
 // a coding region feature location and uses CTrans_table
 // to do the translation
 
-class CTrans_table : public CObject
+class NCBI_SEQFEAT_EXPORT CTrans_table : public CObject
 {
 public:
     // constructor
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/04/14 19:12:36  ivanov
+* Added export specifier for class CTrans_table
+*
 * Revision 1.8  2003/01/03 19:17:30  shomrat
 * Added Win32 export specifier
 *
