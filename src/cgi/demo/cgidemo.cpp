@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     // this program expects queries of the form cgidemo?name=Fred
     // the following line extracts the "Fred"
     string Name;
-    TCgiEntries::iterator iName = Entries.find("name");
+    TCgiEntries::const_iterator iName = Entries.find("name");
     if (iName == Entries.end()) Name = "World"; 
     else Name = iName->second;
 
@@ -70,6 +70,9 @@ int main(int argc, char *argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/02/21 22:02:23  vakatov
+ * Minor code amendment to get rid of a compilation warning
+ *
  * Revision 1.5  2002/04/16 18:47:08  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
