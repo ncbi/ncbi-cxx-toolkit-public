@@ -164,11 +164,12 @@ private:
         bool& pseudo, bool& had_prot_desc, string& precursor_comment) const;
     void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
+    void x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_feat) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
-    void x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& ctx) const;
+    void x_ImportQuals(CBioseqContext& ctx) const;
     void x_AddRptUnitQual(const string& rpt_unit) const;
     void x_CleanQuals(void) const;
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
@@ -301,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/10/18 18:44:16  shomrat
+* + AddBondQuals
+*
 * Revision 1.19  2004/10/05 15:32:56  shomrat
 * Changed CSourceFeatureItem::x_GatherInfo implementation
 *
