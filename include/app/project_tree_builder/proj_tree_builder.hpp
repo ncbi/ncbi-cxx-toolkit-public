@@ -127,6 +127,9 @@ struct SMakeProjectT
     static void   ConvertLibDepends       (const list<string>& depends_libs, 
                                            list<CProjKey>*     depends_ids);
 
+    static void   ConvertLibDependsMacro  (const list<string>& depends, 
+                                           list<string>& depends_libs);
+
     static bool   IsConfigurableDefine    (const string& define);
     static string StripConfigurableDefine (const string& define);
 };
@@ -331,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/12/20 15:20:30  gouriano
+ * Process macros in library dependencies
+ *
  * Revision 1.8  2004/09/13 13:49:36  gouriano
  * Make it to rely more on UNIX makefiles
  *
