@@ -1363,9 +1363,13 @@ private:
 
     CTextFsa                m_SourceQualTags;
     // seq ids contained withinh the orignal seq entry.
-    vector< CRef<CSeq_id> > m_InitialSeqIds;
-    // prot bioseqs without a full reference 
+    set< CConstRef<CSeq_id> > m_InitialSeqIds;
+    // prot bioseqs without a full reference
     vector< CConstRef<CBioseq> > m_ProtWithNoFullRef;
+    // Bioseqs without pubs (should be considered only if m_NoPubs is false)
+    vector< CConstRef<CBioseq> > m_BioseqWithNoPubs;
+    // Bioseqs without source (should be considered only if m_NoSource is false)
+    vector< CConstRef<CBioseq> > m_BioseqWithNoSource;
 
     // Validation methods
     void ValidateDescrChain(const CSeq_descr& descr);
@@ -1437,6 +1441,11 @@ private:
                                      const CCdregion& cdregion);
     bool IsDeltaOrFarSeg(const CSeq_loc& loc);
     bool IsFarLocation(const CSeq_loc& loc) const;
+    void CheckForPubOnBioseq(const CBioseq& seq);
+    void CheckForBiosourceOnBioseq(const CBioseq& seq);
+    void ReportMissingPubs(const CBioseq& seq, const CCit_sub* cs);
+    void ReportMissingBiosource(const CBioseq& seq);
+    void ReportProtWithoutFullRef(void);
 
     // typedefs:
     typedef const CSeq_feat& TFeat;
@@ -2773,9 +2782,10 @@ void CValidError_impl::ValidateDescrChain(const CSeq_descr& descr)
 
 void CValidError_impl::ValidateSeqDescContext(const CBioseq& seq)
 {
+    // !!! is everything done?
     bool prf_found = false;
     const CDate* create_date_prev = 0;
-
+    
     for (CTypeConstIterator<CSeqdesc> dt(ConstBegin(seq)); dt; ++dt) {
         switch (dt->Which()) {
         case CSeqdesc::e_Prf:
@@ -3350,8 +3360,7 @@ void CValidError_impl::ValidatePartsSet(const CBioseq_set& seqset)
 void CValidError_impl::ValidatePopSet(const CBioseq_set& seqset)
 {
     const CBioSource*   biosrc  = 0;
-    const string        *first_taxname = 0, 
-                        *taxname = 0;
+    const string        *first_taxname = 0;
     static const string influenza = "Influenza virus ";
 
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
@@ -3574,13 +3583,14 @@ static size_t s_NumOfIntervals(const CSeq_loc& loc)
 }
 
 
-bool CValidError_impl::IsFarLocation(const CSeq_loc& loc) const
+bool CValidError_impl::IsFarLocation(const CSeq_loc& loc) const 
 {
+    // !!! need implementation as binary search
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
-        const CSeq_id& id = citer.GetSeq_id();
         bool found = false;
-        iterate( vector< CRef<CSeq_id> >, id_ref, m_InitialSeqIds ) {
-            if ( id.Match(**id_ref) ) {
+        const CSeq_id& id = citer.GetSeq_id();
+        iterate( set< CConstRef<CSeq_id> >, i,  m_InitialSeqIds ) {
+            if ( (*i)->Match(id) ) {
                 found = true;
                 break;
             }
@@ -3590,7 +3600,6 @@ bool CValidError_impl::IsFarLocation(const CSeq_loc& loc) const
         }
     }
     return false;
-
 }
 
 
@@ -3708,7 +3717,7 @@ void CValidError_impl::ValidateSeqFeatContext(const CBioseq& seq)
 
     }  // end of for loop
 
-    if ( s_isAa(seq)  && !full_length_prot_ref ) {
+    if ( s_isAa(seq)  && !full_length_prot_ref  &&  !m_IsPDB) {
         m_ProtWithNoFullRef.push_back(CConstRef<CBioseq>(&seq));
     }
 }
@@ -4247,19 +4256,10 @@ void CValidError_impl::Validate(const CSeq_entry& se, const CCit_sub* cs)
                     break;
             }
             // store the seq_id in the initial seq_entry
-            m_InitialSeqIds.push_back(*id);
+            m_InitialSeqIds.insert(*id);
         }
     }
 
-    if (m_NoPubs  &&  !m_IsGPS  &&  !m_IsRefSeq  &&  !cs) {
-        string msg = "No publications anywhere on this entire record";
-        ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, msg, *seq);
-    }
-
-    if(m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {
-        string msg = "No organism name anywhere on this entire record";
-        ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, msg, *seq);
-    }
 
     // Iterate thru components of record and validate each
     for (CTypeConstIterator <CSeq_feat> fi (se); fi; ++fi) {
@@ -4293,7 +4293,85 @@ void CValidError_impl::Validate(const CSeq_entry& se, const CCit_sub* cs)
     for (CTypeConstIterator <CSeq_descr> ei (se); ei; ++ei) {
         ValidateDescrChain (*ei);
     }
+
+    ReportMissingPubs(*seq, cs);
+    ReportMissingBiosource(*seq);
+    ReportProtWithoutFullRef();
 }
+
+
+void CValidError_impl::ReportMissingPubs(const CBioseq& seq, const CCit_sub* cs)
+{
+    if (m_NoPubs  &&  !m_IsGPS  &&  !m_IsRefSeq  &&  !cs) {
+        ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, 
+            "No publications anywhere on this entire record", seq);
+    } else {
+        size_t num_no_pubs = m_BioseqWithNoPubs.size();
+        if ( num_no_pubs > 10 ) {
+            ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, 
+                NStr::IntToString(num_no_pubs) + 
+                " Bioseqs without publication in this record  (first reported)",
+                *(m_BioseqWithNoPubs[0]));
+        } else {
+            string msg;
+            for ( size_t i =0; i < num_no_pubs; ++i ) {
+                msg = NStr::IntToString(i + 1) + " of " + 
+                    NStr::IntToString(num_no_pubs) + 
+                    " Bioseqs without publication";
+                ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoPubFound, msg, 
+                    *(m_BioseqWithNoPubs[0]));
+            }
+        }
+    }        
+}
+
+
+void CValidError_impl::ReportMissingBiosource(const CBioseq& seq)
+{
+    if(m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {
+        ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+            "No organism name anywhere on this entire record", seq);
+    } else {
+        size_t num_no_source = m_BioseqWithNoSource.size();
+        if ( num_no_source > 10 ) {
+            ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, 
+                NStr::IntToString(num_no_source) + 
+                " Bioseqs without source in this record (first reported)",
+                *(m_BioseqWithNoSource[0]));
+        } else {
+            string msg;
+            for ( size_t i =0; i < num_no_source; ++i ) {
+                msg = NStr::IntToString(i + 1) + " of " + 
+                    NStr::IntToString(num_no_source) + 
+                    " Bioseqs without publication";
+                ValidErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound, msg, 
+                    *(m_BioseqWithNoSource[0]));
+            }
+        }
+    }        
+}
+
+
+void CValidError_impl::ReportProtWithoutFullRef(void)
+{
+    size_t num = m_ProtWithNoFullRef.size();
+    
+    if ( num > 10 ) {
+        ValidErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, 
+            NStr::IntToString(num) + " Bioseqs with no full length " 
+            "Prot-ref feature (first reported)",
+            *(m_ProtWithNoFullRef[0]));
+    } else {
+        string msg;
+        for ( size_t i = 0; i < num; ++i ) {
+            msg = NStr::IntToString(i + 1) + " of " + 
+                NStr::IntToString(num) + 
+                " Bioseqs without full length Prot-ref feature";
+            ValidErr(eDiag_Error, eErr_SEQ_FEAT_NoProtRefFound, msg, 
+                *(m_ProtWithNoFullRef[0]));
+        }
+    }
+}   
 
 
 void CValidError_impl::Validate(const CSeq_submit& ss)
@@ -4624,7 +4702,7 @@ void CValidError_impl::ValidateBioseqContext(const CBioseq& seq)
     // Get Molinfo
     CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
 
-    if (mi->IsSetTech()) {
+    if ( mi  &&  mi->IsSetTech()) {
         switch (mi->GetTech()) {
         case CMolInfo::eTech_sts:
         case CMolInfo::eTech_survey:
@@ -4674,6 +4752,61 @@ void CValidError_impl::ValidateBioseqContext(const CBioseq& seq)
     ValidateCollidingGeneNames(seq);
 
     ValidateSeqDescContext(seq);
+
+    if ( !m_NoPubs ) {  // make sure that there is a pub on this bioseq
+        CheckForPubOnBioseq(seq);
+    }
+    if ( !m_NoBioSource ) { // make sure that there is a source on this bioseq
+        CheckForBiosourceOnBioseq(seq);
+    }
+}
+
+
+// look for a pub desc on the bioseq, if none
+// look for a covarge of the bioseq by pub feat
+void CValidError_impl::CheckForPubOnBioseq(const CBioseq& seq)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( !bsh ) {
+        return;
+    }
+
+    // Check for CPubdesc on the biodseq
+    CSeqdesc_CI desc( bsh, CSeqdesc::e_Pub );
+    if ( desc ) {
+        return;
+    }
+    
+    if ( !seq.GetInst().IsSetLength() ) {
+        return;
+    }
+
+    // check for full cover of the bioseq by pub features.
+    TSeqPos len = bsh.GetSeqVector().size();
+    bool covered = false;
+    CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
+
+    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Pub); fi; ++fi ) {
+        range += fi->GetLocation().GetTotalRange();;
+        if ( (fi->GetLocation().IsWhole())  ||
+             ((range.GetFrom() == 0)  &&  (range.GetTo() == len - 1)) ) {
+            covered = true;
+            break;
+        }
+    }
+    if ( !covered ) {
+        m_BioseqWithNoPubs.push_back( CConstRef<CBioseq>(&seq) );
+    }
+}
+
+
+void CValidError_impl::CheckForBiosourceOnBioseq(const CBioseq& seq)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
+    if ( !di ) {
+        m_BioseqWithNoSource.push_back(CConstRef<CBioseq>(&seq));
+    }
 }
 
 
@@ -4794,10 +4927,12 @@ void CValidError_impl::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (bioseq);
 
     bool fruit_fly = false;
-    const string& taxname = 
-        CSeqdesc_CI(CDesc_CI(bsh), CSeqdesc::e_Source)->GetSource().GetOrg().GetTaxname();
-    if ( NStr::CompareNocase(taxname, "Drosophila melanogaster") == 0 ) {
-        fruit_fly = true;
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
+    if ( di ) {
+        if ( NStr::CompareNocase(di->GetSource().GetOrg().GetTaxname(),
+             "Drosophila melanogaster") == 0 ) {
+            fruit_fly = true;
+        }
     }
 
     CFeat_CI curr(bsh, 0, 0, CSeqFeatData::e_not_set);
@@ -5105,7 +5240,7 @@ void CValidError_impl::ValidateRawConst(const CBioseq& seq)
         CSeqVector sv = m_Scope->GetBioseqHandle(*id).GetSeqVector();
 
         unsigned int bad_cnt = 0;
-        for (TSeqPos pos = 0; pos < data_len; pos++) {
+        for (TSeqPos pos = 0; pos < sv.size(); pos++) {
             if (sv[pos] > 250) {
                 if (++bad_cnt > 10) {
                     ValidErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
@@ -5824,10 +5959,10 @@ void CValidError_impl::ValidateSourceQualTags(
 {
     if ( str.empty() ) return;
 
-    int str_len = str.length();
+    size_t str_len = str.length();
 
     int state = m_SourceQualTags.GetInitialState();
-    for ( int i = 0; i < str.length(); ++i ) {
+    for ( size_t i = 0; i < str_len; ++i ) {
         state = m_SourceQualTags.GetNextState(state, str[i]);
         if ( m_SourceQualTags.IsMatchFound(state) ) {
             string match = m_SourceQualTags.GetMatches(state)[0];
@@ -5921,12 +6056,12 @@ void CValidError_impl::ValidateBioSource
 		ValidErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleChromosomes, msg, obj);
 	}
 
-	const COrgName& orgname = orgref.GetOrgname();
-	const string& lineage = orgname.GetLineage();
-	if ( lineage.empty() ) {
+    if ( !orgref.IsSetOrgname()  ||
+         orgref.GetOrgname().GetLineage().empty() ) {
 		ValidErr(eDiag_Error, eErr_SEQ_DESCR_MissingLineage, 
 			     "No lineage for this BioSource.", obj);
 	} else {
+        const string& lineage = orgref.GetOrgname().GetLineage();
 		if ( bsrc.GetGenome() == CBioSource_Base::eGenome_kinetoplast ) {
 			if ( lineage.find("Kinetoplastida") == string::npos ) {
 				ValidErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrganelle, 
@@ -5941,6 +6076,10 @@ void CValidError_impl::ValidateBioSource
 			}
 		}
 	}
+    if ( !orgref.IsSetOrgname() ) {
+        return;
+    }
+    const COrgName& orgname = orgref.GetOrgname();
 
 	iterate ( COrgName::TMod, omit, orgname.GetMod() ) {
 		int subtype = (**omit).GetSubtype();
@@ -6196,7 +6335,7 @@ void CValidError_impl::ValidateImpGbquals
             bool error = false;
             switch ( gbqual ) {
             case CGbqualType::e_Rpt_type:
-                for ( int i = 0; 
+                for ( size_t i = 0; 
                       i < sizeof(s_LegalRepeatTypes) / sizeof(string); 
                       ++i ) {
                     if ( val.find(s_LegalRepeatTypes[i]) != string::npos ) {
@@ -6220,7 +6359,7 @@ void CValidError_impl::ValidateImpGbquals
                     bool found = false,
                          multiple_rpt_unit = true;
 
-                    for ( int i = 0; i < val.length(); ++i ) {
+                    for ( size_t i = 0; i < val.length(); ++i ) {
                         if ( val[i] <= ' ' ) {
                             found = true;
                         } else if ( val[i] == '('  ||  val[i] == ')'  ||
@@ -6239,7 +6378,7 @@ void CValidError_impl::ValidateImpGbquals
                 
             case CGbqualType::e_Label:
                 {
-                    for ( int i = 0; i < val.length(); ++i ) {
+                    for ( size_t i = 0; i < val.length(); ++i ) {
                         if ( isspace(val[i])  ||  isdigit(val[i]) ) {
                             error = true;
                             break;
@@ -6251,7 +6390,7 @@ void CValidError_impl::ValidateImpGbquals
             case CGbqualType::e_Cons_splice:
                 { 
                     error = true;
-                    for ( int i = 0; 
+                    for ( size_t i = 0; 
                           i < sizeof(s_LegalConsSpliceStrings) / sizeof(string); 
                           ++i ) {
                         if ( NStr::CompareNocase(val, s_LegalConsSpliceStrings[i]) == 0 ) {
@@ -6329,19 +6468,21 @@ void CValidError_impl::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         break;
 
     case CSeqFeatData::eSubtype_Imp_CDS:
-        // impfeat CDS must be pseudo; fail if not
-        bool pseudo = false;
-        // !!! check for pseudo requires overlapping gene - not yet implemented
-
-        iterate( CSeq_feat::TQual, gbqual, feat.GetQual() ) {
-            if ( NStr::CompareNocase( (*gbqual)->GetQual(), "translation") == 0 ) {
-                ValidErr(eDiag_Error, eErr_SEQ_FEAT_ImpCDShasTranslation,
-                    "ImpFeat CDS with /translation found", feat);
+        {
+            // impfeat CDS must be pseudo; fail if not
+            bool pseudo = false;
+            // !!! check for pseudo requires overlapping gene - not yet implemented
+            
+            iterate( CSeq_feat::TQual, gbqual, feat.GetQual() ) {
+                if ( NStr::CompareNocase( (*gbqual)->GetQual(), "translation") == 0 ) {
+                    ValidErr(eDiag_Error, eErr_SEQ_FEAT_ImpCDShasTranslation,
+                        "ImpFeat CDS with /translation found", feat);
+                }
             }
-        }
-        if ( !pseudo ) {
-            ValidErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
-                "ImpFeat CDS should be pseudo", feat);
+            if ( !pseudo ) {
+                ValidErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
+                    "ImpFeat CDS should be pseudo", feat);
+            }
         }
         break;
     }// end of switch statement  
@@ -6420,9 +6561,9 @@ void CValidError_impl::CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& f
     
     iterate( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
         if ( *iter < 64 ) {  // 0-63 = codon,  255=no data in cell
-            char taa = ncbieaa[*iter];
-            char  aa = trna.GetAa().GetNcbieaa();
-            if ( aa > 0 && aa != 255 ) {
+            unsigned char taa = ncbieaa[*iter];
+            unsigned char  aa = trna.GetAa().GetNcbieaa();
+            if ( (aa > 0)  &&  (aa != 255) ) {
                 if ( taa != aa ) {
                     EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
                     ValidErr (sev, eErr_SEQ_FEAT_TrnaCodonWrong,
@@ -6451,7 +6592,7 @@ void CValidError_impl::CheckForBadGeneOverlap(const CSeq_feat& feat)
 }
 
 
-static bool s_IsResidue(char res) 
+static bool s_IsResidue(unsigned char res) 
 {
     return res < 250;
 }
@@ -6658,7 +6799,7 @@ int CValidError_impl::CheckForRaggedEnd
     if ( ragged > 0 ) {
         len = GetLength(loc, m_Scope);
 
-        CSeq_loc::TRange range;
+        CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
         iterate( CCdregion::TCode_break, cbr, cdregion.GetCode_break() ) {
             SRelLoc rl(loc, (*cbr)->GetLoc(), m_Scope);
             CRef<CSeq_loc> rel_loc = rl.Resolve(m_Scope);
@@ -6742,7 +6883,7 @@ static string s_MapToNTCoords
 
 
 inline
-static char s_Residue(char res)
+static char s_Residue(unsigned char res)
 {
     return res == 255 ? '?' : res;
 }
@@ -6756,7 +6897,7 @@ void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
     // biological exception
     size_t except_num = sizeof(sm_BypassCdsTransCheck) / sizeof(string);
     if ( feat.GetExcept() && feat.IsSetExcept_text() ) {
-        for ( int i = 0; i < except_num; ++i ) {
+        for ( size_t i = 0; i < except_num; ++i ) {
             if ( SearchNoCase(feat.GetExcept_text(), 
                 sm_BypassCdsTransCheck[i]) != string::npos ) {
                 return; 
@@ -6987,7 +7128,7 @@ void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
         ValidErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA, msg, feat);
     } else {
         // report individual mismatches
-        for ( int i = 0; i < mismatches.size(); ++i ) {
+        for ( size_t i = 0; i < mismatches.size(); ++i ) {
             nuclocstr = s_MapToNTCoords(feat, product, mismatches[i], m_Scope);
             prot_res = prot_vec[mismatches[i]];
             transl_res = s_Residue(transl_prot[mismatches[i]]);
@@ -7021,7 +7162,6 @@ void CValidError_impl::CdTransCheck(const CSeq_feat& feat)
 
 void CValidError_impl::CheckForBothStrands (const CSeq_feat& feat)
 {
-    bool bothstrands = false;
     const CSeq_loc& location = feat.GetLocation ();
     for (CSeq_loc_CI citer (location); citer; ++citer) {
         if ( citer.GetStrand () == eNa_strand_both ) {
@@ -7830,6 +7970,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2002/12/17 17:59:35  shomrat
+* Add checks for Bioseq with no pubs / source
+*
 * Revision 1.35  2002/12/13 22:35:38  ucko
 * Fix compilation on at least GCC 2.9x.
 *
