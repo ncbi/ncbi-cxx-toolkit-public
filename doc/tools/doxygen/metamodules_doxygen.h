@@ -285,7 +285,28 @@
  */
 
 
+/* ========================================================================= */
 
+
+/** @defgroup GUI 
+ *  HTML members
+ */
+
+
+/* ========================================================================= */
+
+
+/** @defgroup HTML
+ *  GUI members
+ */
+
+
+/* ========================================================================= */
+
+
+/** @defgroup OBJECTS
+ *  Objects members
+ */
 
 
 /* ========================================================================= */
@@ -296,24 +317,59 @@
  */
 
 
-/** @defgroup GUI 
- *  GUI members
- */
-
-
-/** @defgroup INTERNAL 
- *  Internal members
- */
-
-
-/** @defgroup OBJECTS
- *  Objects members
- */
+/* ========================================================================= */
 
 
 /** @defgroup SERIAL 
  *  Serial members
  */
+
+/** @defgroup FieldsComplex Fields for Complex ASN types
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup GenClassSupport Generated Classes Support
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup HookSupport Hook Support
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup ObjHierarchy Object Hierarchy Iterator
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup ObjStreamSupport Object Stream Support
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup SerialDef Serialization Definition
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup SerialExcep Serial Exception
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup TypeInfoC Type Info Classes for C Toolkit
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup TypeInfoCPP Type Info Classes for C++ Toolkit
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup TypeLookup Type Lookup
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup UserCodeSupport User Code Support
+ *  @ingroup SERIAL
+ */
+
+
+/* ========================================================================= */
 
 
 /** @defgroup UTIL 
