@@ -1179,19 +1179,64 @@ void CSemaphore::Wait(void)
 }
 
 
-bool CSemaphore::TryWait(void)
+bool CSemaphore::TryWait(unsigned int timeout_sec, unsigned int timeout_nsec)
 {
 #if defined(NCBI_POSIX_THREADS)
     xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
                    "CSemaphore::TryWait() -- pthread_mutex_lock() failed");
 
-    bool retval;
+    bool retval = false;
     if (m_Sem->count != 0) {
         m_Sem->count--;
         retval = true;
     }
-    else {
-        retval = false;
+    else if (timeout_sec > 0  ||  timeout_nsec > 0) {
+#ifdef NCBI_OS_SOLARIS
+        // arbitrary limit of 100Ms (~3.1 years) -- supposedly only for
+        // native threads, but apparently also for POSIX threads :-/
+        if (timeout_sec >= 100 * 1000 * 1000) {
+            timeout_sec  = 100 * 1000 * 1000;
+            timeout_nsec = 0;
+        }
+#endif
+        static const unsigned int kBillion = 1000 * 1000 * 1000;
+        struct timeval  now;
+        struct timespec timeout = { 0, 0 };
+        gettimeofday(&now, 0);
+        // timeout_sec added below to avoid overflow
+        timeout.tv_sec  = now.tv_sec;
+        timeout.tv_nsec = now.tv_usec * 1000 + timeout_nsec;
+        if (timeout.tv_nsec >= kBillion) {
+            timeout.tv_sec  += timeout.tv_nsec / kBillion;
+            timeout.tv_nsec %= kBillion;
+        }
+        if (timeout_sec > kMax_Int - timeout.tv_sec) {
+            // Max out rather than overflowing
+            timeout.tv_sec  = kMax_Int;
+            timeout.tv_nsec = kBillion - 1;
+        } else {
+            timeout.tv_sec += timeout_sec;
+        }
+        
+        m_Sem->wait_count++;
+        do {
+            int status = pthread_cond_timedwait(&m_Sem->cond, &m_Sem->mutex,
+                                                &timeout);
+            if (status == ETIMEDOUT) {
+                break;
+            } else if (status != 0  &&  status != EINTR) {
+                // EINVAL, presumably?
+                xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                               "CSemaphore::TryWait() -- "
+                               "pthread_cond_timedwait() and "
+                               "pthread_mutex_unlock() failed");
+                xncbi_Validate(0, "CSemaphore::TryWait() -- "
+                               "pthread_cond_timedwait() failed");
+            }
+        } while (m_Sem->count == 0);
+        m_Sem->wait_count--;
+        m_Sem->count--;
+        retval = true;
     }
 
     xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
@@ -1200,7 +1245,13 @@ bool CSemaphore::TryWait(void)
     return retval;
 
 #elif defined(NCBI_WIN32_THREADS)
-    DWORD res = WaitForSingleObject(m_Sem->sem, 0);
+    DWORD timeout_msec; // DWORD == unsigned long
+    if (timeout_sec >= kMax_ULong / 1000) {
+        timeout_msec = kMax_ULong;
+    } else {
+        timeout_msec = timeout_sec * 1000 + timeout_nsec / (1000 * 1000);
+    }
+    DWORD res = WaitForSingleObject(m_Sem->sem, timeout_msec);
     xncbi_Validate(res == WAIT_OBJECT_0  ||  res == WAIT_TIMEOUT,
                    "CSemaphore::TryWait() -- WaitForSingleObject() failed");
     return (res == WAIT_OBJECT_0);
@@ -1285,6 +1336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/09/13 15:14:49  ucko
+ * Give CSemaphore::TryWait an optional timeout (defaulting to 0)
+ *
  * Revision 1.17  2002/04/11 21:08:03  ivanov
  * CVS log moved to end of the file
  *

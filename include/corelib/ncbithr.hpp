@@ -583,9 +583,10 @@ public:
     // Decrement the counter (by one).
     void Wait(void);
 
-    // If the semaphore's count is zero then return FALSE;
-    // else, decrement the counter (by one) and return TRUE.
-    bool TryWait(void);
+    // Wait up to timeout_sec + timeout_nsec/1E9 seconds for the
+    // semaphore's count to exceed zero.  If that happens, decrement
+    // the counter (by one) and return TRUE; otherwise, return FALSE.
+    bool TryWait(unsigned int timeout_sec = 0, unsigned int timeout_nsec = 0);
 
     // Increment the counter (by "count").
     // Do nothing and throw an exception if counter would exceed "max_count".
@@ -751,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/09/13 15:14:43  ucko
+ * Give CSemaphore::TryWait an optional timeout (defaulting to 0)
+ *
  * Revision 1.10  2002/07/15 18:17:52  gouriano
  * renamed CNcbiException and its descendents
  *
