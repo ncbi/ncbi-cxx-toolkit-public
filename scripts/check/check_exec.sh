@@ -30,7 +30,7 @@ script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
 # Run command
-( sleep 1; $@ ) &
+sh -c "sleep 1; $*" &
 pid=$!
 echo $pid
 
