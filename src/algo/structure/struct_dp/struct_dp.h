@@ -121,6 +121,26 @@ DP_LocalBlockAlign(
     DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
 );
 
+/* returned alignment container for multiple tracebacks */
+typedef struct {
+    int nAlignments;                    /* number of alignments returned */
+    DP_AlignmentResult *alignments;     /* individual alignments, highest-scoring first */
+} DP_MultipleAlignmentResults;
+
+/* for destroying multiple alignment results; do not use free (MemFree) */
+extern void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments);
+
+/* local alignment routine returning sorted list of highest-scoring alignments */
+extern int                              /* returns an above STRUCT_DP_ error code */
+DP_MultipleLocalBlockAlign(
+    const DP_BlockInfo *blocks,         /* blocks on subject; NOTE: block freezing ignored! */
+    DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
+    unsigned int queryFrom,             /* range of query to search */
+    unsigned int queryTo,
+    DP_MultipleAlignmentResults **alignments,   /* alignments, if any found; caller should destroy */
+    unsigned int maxAlignments          /* max # alignments to return, 0 == unlimited (all) */
+);
+
 #ifdef __cplusplus
 }
 #endif
@@ -130,6 +150,9 @@ DP_LocalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/09/07 00:06:19  thiessen
+* add multiple tracebacks for local alignments
+*
 * Revision 1.8  2003/08/22 14:28:49  thiessen
 * add standard loop calculating function
 *

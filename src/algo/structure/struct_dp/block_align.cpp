@@ -36,6 +36,7 @@
 #include <corelib/ncbi_limits.h>
 
 #include <vector>
+#include <list>
 #include <algorithm>
 
 #include "struct_dp/struct_dp.h"
@@ -297,7 +298,7 @@ int CalculateLocalMatrix(Matrix& matrix,
 }
 
 int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned int lastBlockPos,
-    unsigned int queryFrom, DP_AlignmentResult **alignment)
+    unsigned int queryFrom, DP_AlignmentResult *alignment)
 {
     // trace backwards from last block/pos
     vector < unsigned int > blockPositions;
@@ -310,13 +311,12 @@ int TracebackAlignment(const Matrix& matrix, unsigned int lastBlock, unsigned in
     unsigned int firstBlock = block + 1; // last block traced to == first block of the alignment
 
     // allocate and fill in alignment result structure
-    *alignment = new DP_AlignmentResult;
-    (*alignment)->score = matrix[lastBlock][lastBlockPos - queryFrom].score;
-    (*alignment)->firstBlock = firstBlock;
-    (*alignment)->nBlocks = blockPositions.size();
-    (*alignment)->blockPositions = new unsigned int[blockPositions.size()];
+    alignment->score = matrix[lastBlock][lastBlockPos - queryFrom].score;
+    alignment->firstBlock = firstBlock;
+    alignment->nBlocks = blockPositions.size();
+    alignment->blockPositions = new unsigned int[blockPositions.size()];
     for (block=0; block<blockPositions.size(); block++)
-        (*alignment)->blockPositions[block] = blockPositions[lastBlock - firstBlock - block];
+        alignment->blockPositions[block] = blockPositions[lastBlock - firstBlock - block];
 
     return STRUCT_DP_FOUND_ALIGNMENT;
 }
@@ -325,6 +325,12 @@ int TracebackGlobalAlignment(const Matrix& matrix,
     const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
     DP_AlignmentResult **alignment)
 {
+    if (!alignment) {
+        ERROR_MESSAGE("TracebackGlobalAlignment() - NULL alignment handle");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+    *alignment = NULL;
+
     // find max score (e.g., best-scoring position of last block)
     int score = DP_NEGATIVE_INFINITY;
     unsigned int residue, lastBlockPos = 0;
@@ -340,14 +346,21 @@ int TracebackGlobalAlignment(const Matrix& matrix,
         return STRUCT_DP_ALGORITHM_ERROR;
     }
 
-    INFO_MESSAGE("Score of best global alignment: " << score);
-    return TracebackAlignment(matrix, blocks->nBlocks - 1, lastBlockPos, queryFrom, alignment);
+//    INFO_MESSAGE("Score of best global alignment: " << score);
+    *alignment = new DP_AlignmentResult;
+    return TracebackAlignment(matrix, blocks->nBlocks - 1, lastBlockPos, queryFrom, *alignment);
 }
 
 int TracebackLocalAlignment(const Matrix& matrix,
     const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
     DP_AlignmentResult **alignment)
 {
+    if (!alignment) {
+        ERROR_MESSAGE("TracebackLocalAlignment() - NULL alignment handle");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+    *alignment = NULL;
+
     // find max score (e.g., best-scoring position of any block)
     int score = DP_NEGATIVE_INFINITY;
     unsigned int block, residue, lastBlock = 0, lastBlockPos = 0;
@@ -362,12 +375,107 @@ int TracebackLocalAlignment(const Matrix& matrix,
     }
 
     if (score <= 0) {
-        INFO_MESSAGE("No positive-scoring local alignment found.");
+//        INFO_MESSAGE("No positive-scoring local alignment found.");
         return STRUCT_DP_NO_ALIGNMENT;
     }
 
-    INFO_MESSAGE("Score of best local alignment: " << score);
-    return TracebackAlignment(matrix, lastBlock, lastBlockPos, queryFrom, alignment);
+//    INFO_MESSAGE("Score of best local alignment: " << score);
+    *alignment = new DP_AlignmentResult;
+    return TracebackAlignment(matrix, lastBlock, lastBlockPos, queryFrom, *alignment);
+}
+
+typedef struct {
+    unsigned int block;
+    unsigned int residue;
+} Traceback;
+
+int TracebackMultipleLocalAlignments(const Matrix& matrix,
+    const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo,
+    DP_MultipleAlignmentResults **alignments, unsigned int maxAlignments)
+{
+    if (!alignments) {
+        ERROR_MESSAGE("TracebackMultipleLocalAlignments() - NULL alignments handle");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+    *alignments = NULL;
+
+    unsigned int block, residue;
+    vector < vector < bool > > usedCells(blocks->nBlocks);
+    for (block=0; block<blocks->nBlocks; block++)
+        usedCells[block].resize(queryTo - queryFrom + 1, false);
+
+    // find N max scores
+    list < Traceback > tracebacks;
+    while (maxAlignments == 0 || tracebacks.size() < maxAlignments) {
+
+        // find next best scoring cell that's not part of an alignment already reported
+        int score = DP_NEGATIVE_INFINITY;
+        unsigned int lastBlock = 0, lastBlockPos = 0;
+        for (block=0; block<blocks->nBlocks; block++) {
+            for (residue=queryFrom; residue<=queryTo; residue++) {
+                if (!usedCells[block][residue - queryFrom] &&
+                    matrix[block][residue - queryFrom].score > score)
+                {
+                    score = matrix[block][residue - queryFrom].score;
+                    lastBlock = block;
+                    lastBlockPos = residue;
+                }
+            }
+        }
+        if (score <= 0)
+            break;
+
+        // mark cells of this alignment as used, and see if any part of this alignment
+        // has been reported before
+        block = lastBlock;
+        residue = lastBlockPos;
+        bool repeated = false;
+        do {
+            if (usedCells[block][residue - queryFrom]) {
+                repeated = true;
+                break;
+            } else {
+                usedCells[block][residue - queryFrom] = true;
+            }
+            residue = matrix[block][residue - queryFrom].tracebackResidue;
+            block--;
+        } while (residue != NO_TRACEBACK);
+        if (repeated)
+            continue;
+
+        // add traceback start to list
+        tracebacks.resize(tracebacks.size() + 1);
+        tracebacks.back().block = lastBlock;
+        tracebacks.back().residue = lastBlockPos;
+    }
+
+    if (tracebacks.size() == 0) {
+//        INFO_MESSAGE("No positive-scoring local alignment found.");
+        return STRUCT_DP_NO_ALIGNMENT;
+    }
+
+    // allocate result structure
+    *alignments = new DP_MultipleAlignmentResults;
+    (*alignments)->nAlignments = 0;
+    (*alignments)->alignments = new DP_AlignmentResult[tracebacks.size()];
+
+    // fill in results from tracebacks
+    list < Traceback >::const_iterator t, te = tracebacks.end();
+    unsigned int a = 0;
+    for (t=tracebacks.begin(); t!=te; t++, a++) {
+        if (TracebackAlignment(matrix, t->block, t->residue, queryFrom, &((*alignments)->alignments[a]))
+                == STRUCT_DP_FOUND_ALIGNMENT)
+        {
+            (*alignments)->nAlignments++;
+//            if (a == 0)
+//                INFO_MESSAGE("Score of best local alignment: " << (*alignments)->alignments[a].score);
+//            else
+//                INFO_MESSAGE("Score of next local alignment: " << (*alignments)->alignments[a].score);
+        } else
+            return STRUCT_DP_ALGORITHM_ERROR;
+    }
+
+    return STRUCT_DP_FOUND_ALIGNMENT;
 }
 
 END_SCOPE(struct_dp)
@@ -440,6 +548,33 @@ int DP_LocalBlockAlign(
     return TracebackLocalAlignment(matrix, blocks, queryFrom, queryTo, alignment);
 }
 
+int DP_MultipleLocalBlockAlign(
+    const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore,
+    unsigned int queryFrom, unsigned int queryTo,
+    DP_MultipleAlignmentResults **alignments, unsigned int maxAlignments)
+{
+    if (!blocks || blocks->nBlocks < 1 || !blocks->blockSizes || !BlockScore || queryTo < queryFrom) {
+        ERROR_MESSAGE("DP_MultipleLocalBlockAlign() - invalid parameters");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+    for (unsigned int block=0; block<blocks->nBlocks; block++) {
+        if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
+            WARNING_MESSAGE("DP_MultipleLocalBlockAlign() - frozen block specifications are ignored...");
+            break;
+        }
+    }
+
+    Matrix matrix(blocks->nBlocks, queryTo - queryFrom + 1);
+
+    int status = CalculateLocalMatrix(matrix, blocks, BlockScore, queryFrom, queryTo);
+    if (status != STRUCT_DP_OKAY) {
+        ERROR_MESSAGE("DP_MultipleLocalBlockAlign() - CalculateLocalMatrix() failed");
+        return status;
+    }
+
+    return TracebackMultipleLocalAlignments(matrix, blocks, queryFrom, queryTo, alignments, maxAlignments);
+}
+
 DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
 {
     DP_BlockInfo *blocks = new DP_BlockInfo;
@@ -457,10 +592,10 @@ void DP_DestroyBlockInfo(DP_BlockInfo *blocks)
 {
     if (!blocks)
         return;
-    delete blocks->blockPositions;
-    delete blocks->blockSizes;
-    delete blocks->maxLoops;
-    delete blocks->freezeBlocks;
+    delete[] blocks->blockPositions;
+    delete[] blocks->blockSizes;
+    delete[] blocks->maxLoops;
+    delete[] blocks->freezeBlocks;
     delete blocks;
 }
 
@@ -468,8 +603,16 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 {
     if (!alignment)
         return;
-    delete alignment->blockPositions;
+    delete[] alignment->blockPositions;
     delete alignment;
+}
+
+void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments)
+{
+    if (!alignments) return;
+    for (unsigned int i=0; i<alignments->nAlignments; i++)
+        delete[] alignments->alignments[i].blockPositions;
+    delete alignments;
 }
 
 unsigned int DP_CalculateMaxLoopLength(
@@ -499,6 +642,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/09/07 00:06:19  thiessen
+* add multiple tracebacks for local alignments
+*
 * Revision 1.12  2003/08/23 22:10:05  thiessen
 * fix local alignment block edge bug
 *
