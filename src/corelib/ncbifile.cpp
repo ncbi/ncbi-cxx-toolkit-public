@@ -1708,19 +1708,22 @@ bool CDir::Create(void) const
     TMode mode = s_ConstructMode(user_mode, group_mode, other_mode);
 
 #if defined(NCBI_OS_MSWIN)
-    if ( mkdir(GetPath().c_str()) != 0 ) {
+    errno = 0;
+    if ( mkdir(GetPath().c_str()) != 0  &&  errno != EEXIST ) {
         return false;
     }
     return chmod(GetPath().c_str(), mode) == 0;
 
 #elif defined(NCBI_OS_UNIX)
-
-    return mkdir(GetPath().c_str(), mode) == 0;
+    errno = 0;
+    if ( mkdir(GetPath().c_str(), mode) != 0  &&  errno != EEXIST ) {
+        return false;
+    }
+    return true;
 
 #elif defined(NCBI_OS_MAC)
     OSErr err;
     long dirID;
-    
     err = ::FSpDirCreate(&FSS(), smRoman, &dirID);
     return err == noErr;
 
@@ -2314,6 +2317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2004/12/14 17:50:28  ivanov
+ * CDir::Create(): return TRUE if creating directory already exists
+ *
  * Revision 1.84  2004/10/08 12:43:53  ivanov
  * Fixed CDirEntry::Reset() -- delete trailing path separator always except
  * some special cases, like root dir and PC's disk names.

@@ -469,7 +469,8 @@ static void s_TEST_Dir(void)
     
     // Create directory
     assert( CDir("dir_1").Create() );
-    assert( !CDir("dir_1").Create() );
+    // Try to create it second time -- should be OK
+    assert( CDir("dir_1").Create() );
 
     // Create file in the directory
     FILE* file = fopen(REL "dir_1" SEP "file_1", "w+");
@@ -879,6 +880,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/12/14 17:50:28  ivanov
+ * CDir::Create(): return TRUE if creating directory already exists
+ *
  * Revision 1.41  2004/10/08 12:44:54  ivanov
  * Added more tests for CDirEntry::NormalizePath()
  *
