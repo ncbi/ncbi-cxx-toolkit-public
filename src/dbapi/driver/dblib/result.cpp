@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 // Aux. for s_*GetItem()
 static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
-                                    EDB_Type b_type, BYTE* d_ptr, DBINT d_len)
+                                    EDB_Type b_type, const BYTE* d_ptr, DBINT d_len)
 {
     switch (data_type) {
     case eDB_VarBinary: {
@@ -481,7 +481,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                              SDBL_ColDescr* fmt, CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
-    BYTE* d_ptr = dbdata  (cmd, item_no);
+    const BYTE* d_ptr = dbdata  (cmd, item_no);
     DBINT d_len = dbdatlen(cmd, item_no);
 
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
@@ -588,7 +588,7 @@ size_t CDBL_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
         return 0;
     }
 
-    BYTE* d_ptr = dbdata  (m_Cmd, m_CurrItem + 1);
+    const BYTE* d_ptr = dbdata  (m_Cmd, m_CurrItem + 1);
     DBINT d_len = dbdatlen(m_Cmd, m_CurrItem + 1);
 
     if (d_ptr == 0 || d_len < 1) { // NULL value
@@ -887,7 +887,7 @@ static CDB_Object* s_RetGetItem(DBPROCESS* cmd, int item_no,
                                 SDBL_ColDescr* fmt, CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
-    BYTE* d_ptr = dbretdata(cmd, item_no);
+    const BYTE* d_ptr = dbretdata(cmd, item_no);
     DBINT d_len = dbretlen (cmd, item_no);
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
                                        b_type, d_ptr, d_len);
@@ -963,7 +963,7 @@ size_t CDBL_ParamResult::ReadItem(void* buffer, size_t buffer_size,
         return 0;
     }
 
-    BYTE* d_ptr = dbretdata(m_Cmd, m_CurrItem + 1);
+    const BYTE* d_ptr = dbretdata(m_Cmd, m_CurrItem + 1);
     DBINT d_len = dbretlen (m_Cmd, m_CurrItem + 1);
 
     if (d_ptr == 0 || d_len < 1) { // NULL value
@@ -1030,7 +1030,7 @@ static CDB_Object* s_AltGetItem(DBPROCESS* cmd, int id, int item_no,
                                 SDBL_ColDescr* fmt, CDB_Object* item_buff)
 {
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
-    BYTE* d_ptr = dbadata(cmd, id, item_no);
+    const BYTE* d_ptr = dbadata(cmd, id, item_no);
     DBINT d_len = dbadlen(cmd, id, item_no);
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
                                        b_type, d_ptr, d_len);
@@ -1140,7 +1140,7 @@ size_t CDBL_ComputeResult::ReadItem(void* buffer, size_t buffer_size,
         return 0;
     }
 
-    BYTE* d_ptr = dbadata(m_Cmd, m_ComputeId, m_CurrItem + 1);
+    const BYTE* d_ptr = dbadata(m_Cmd, m_ComputeId, m_CurrItem + 1);
     DBINT d_len = dbadlen(m_Cmd, m_ComputeId, m_CurrItem + 1);
 
     if (d_ptr == 0 || d_len < 1) { // NULL value
@@ -1554,6 +1554,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/04/08 19:05:51  gorelenk
+ * Changed declalation of s_GenericGetItem (added 'const' to 'BYTE* d_ptr')
+ * and fixed compilation errors on MSVC 7.10 .
+ *
  * Revision 1.19  2003/04/29 21:16:21  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *
