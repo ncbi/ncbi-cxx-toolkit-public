@@ -30,8 +30,8 @@
  */
 
 
+#include <algo/sequence/find_pattern.hpp>
 #include <util/regexp.hpp>
-#include "find_pattern.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/16 18:02:22  jcherry
+ * Moved find_pattern to algo/sequence
+ *
  * Revision 1.7  2003/12/15 21:20:02  jcherry
  * Added simple repeat searches
  *

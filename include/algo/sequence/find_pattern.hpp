@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
-#define GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
+#ifndef ALGO_SEQUENCE___FIND_PATTERN__HPP
+#define ALGO_SEQUENCE___FIND_PATTERN__HPP
 
 #include <corelib/ncbistd.hpp>
 
@@ -62,11 +62,14 @@ public:
 
 END_NCBI_SCOPE
 
-#endif   // GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
+#endif   // ALGO_SEQUENCE___FIND_PATTERN__HPP
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/16 18:02:21  jcherry
+ * Moved find_pattern to algo/sequence
+ *
  * Revision 1.8  2003/12/15 21:20:02  jcherry
  * Added simple repeat searches
  *
