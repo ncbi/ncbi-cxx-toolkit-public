@@ -1402,8 +1402,8 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.94  2003/03/21 19:50:06  ucko
-* Properly cast return values to TTSE_Lock for GCC 2.9x.
+* Revision 1.95  2003/03/21 21:08:53  grichenk
+* Fixed TTSE_Lock initialization
 *
 * Revision 1.93  2003/03/21 19:22:51  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
