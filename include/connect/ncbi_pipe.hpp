@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <stdio.h>
 #include <vector>
 
@@ -73,6 +74,8 @@ public:
 // Program can read from stdin/stderr and write to stdin of the
 // executed child process using pipe object functions Read/Write.
 
+class CPipeHandle;
+
 class NCBI_XNCBI_EXPORT CPipe
 {
 public:
@@ -97,7 +100,7 @@ public:
     // Constructors.
     // Second constructor just calls Open(). Trows exceptions on errors.
     CPipe();
-    CPipe(const char *cmdname, const vector<string> args,
+    CPipe(const char *cmdname, const vector<string>& args,
           const EMode mode_stdin  = eDefaultStdIn,
           const EMode mode_stdout = eDefaultStdOut,
           const EMode mode_stderr = eDefaultStdErr);
@@ -112,7 +115,7 @@ public:
     // spawned commands standard input or standard output (according open 
     // mode). If some pipe was opened that it will be closed.
     // The function throws on an error.
-    void Open(const char *cmdname, const vector<string> args,
+    void Open(const char *cmdname, const vector<string>& args,
               const EMode mode_stdin  = eDefaultStdIn,
               const EMode mode_stdout = eDefaultStdOut,
               const EMode mode_stderr = eDefaultStdErr);
@@ -135,17 +138,7 @@ public:
     size_t Write(const void *buffer, const size_t count) const;
 
 private:
-    // Initialization of the class members
-    void Init();
-
-private:
-    // I/O handles of the child process for:
-    int m_StdIn;    // write to the shild stdin
-    int m_StdOut;   // read from the child stdout
-    int m_StdErr;   // read from the child stderr
-
-    // Pid of running child process
-    int m_Pid;
+    CRef<CPipeHandle> m_PipeHandle;
 };
 
 
@@ -189,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/03/03 14:46:02  dicuccio
+ * Reimplemented CPipe using separate private platform-specific implementations
+ *
  * Revision 1.7  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
