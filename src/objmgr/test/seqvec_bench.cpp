@@ -67,6 +67,20 @@ public:
     virtual void Init(void);
     virtual int  Run (void);
 
+    void start(const char* name);
+    void start_iter(void);
+    void end_iter(void);
+    void end(void);
+    void end_all(void);
+
+    CStopWatch sw;
+    vector<string> names;
+    vector<double> times;
+    bool get_best;
+    unsigned test_count;
+    unsigned counter;
+
+    static int result_mask;
 };
 
 
@@ -84,6 +98,7 @@ void CSeqVecBench::Init(void)
                              "number of iterations to run",
                              CArgDescriptions::eInteger, "5");
 
+    arg_desc->AddFlag("average", "collect average time instead of minumum");
     arg_desc->AddFlag("iupac", "test Iupac coding");
     arg_desc->AddFlag("minus", "test minus strand of sequence");
 
@@ -93,64 +108,48 @@ void CSeqVecBench::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-static CStopWatch sw;
-static string name;
-static vector<string> names;
-static vector<double> times;
-static bool get_best;
-static double best_time;
-static unsigned test_count;
-static unsigned counter;
-
-static
-void start(const char* n)
+void CSeqVecBench::start(const char* n)
 {
-    name = n;
-    cout << "Running test: " << name << "..." << endl;
-    get_best = getenv("BEST_TIME") != 0;
-    best_time = 0;
+    names.push_back(n);
+    times.push_back(0);
+    cout << "Running test: " << names.back() << "..." << endl;
     test_count = 0;
 }
 
-static inline
-void start_iter(void)
+inline
+void CSeqVecBench::start_iter(void)
 {
     counter = 0;
     sw.Start();
 }
 
 
-static inline
-void end_iter(void)
+inline
+void CSeqVecBench::end_iter(void)
 {
     double time = sw.Elapsed();
     if ( get_best ) {
-        if ( test_count == 0 || time < best_time ) {
-            best_time = time;
+        if ( test_count == 0 || time < times.back() ) {
+            times.back() = time;
             test_count = 1;
         }
     }
     else {
-        best_time += time;
+        times.back() += time;
         test_count += 1;
     }
 }
 
 
-static
-void end(void)
+void CSeqVecBench::end(void)
 {
-    best_time /= test_count;
-    cout << setw(40) << name << " : " << 
-        counter << " bases in " << best_time << " secs" << endl;
-    names.push_back(name);
-    times.push_back(best_time);
+    times.back() /= test_count;
+    cout << setw(40) << names.back() << " : " << 
+        counter << " bases in " << times.back() << " secs" << endl;
 }
 
 
-static
-void
-end_all(void)
+void CSeqVecBench::end_all(void)
 {
     cout << endl << "Normalized to "<<names.front()<<":" << endl;
     for ( size_t i = 1; i < names.size(); ++i ) {
@@ -158,7 +157,9 @@ end_all(void)
     }
 }
 
-int result_mask;
+
+int CSeqVecBench::result_mask = 0;
+
 
 int CSeqVecBench::Run(void)
 {
@@ -192,11 +193,13 @@ int CSeqVecBench::Run(void)
     CBioseq_Handle::EVectorStrand strand = args["minus"]?
         CBioseq_Handle::eStrand_Minus: CBioseq_Handle::eStrand_Plus;
 
+    get_best = !args["average"];
+
     //
     // we ignore the first iteration, as additional fetching may occur here
     //
-    cout << "forcing retrieval of whole sequence..." << endl;
     {{
+        cout << "forcing retrieval of whole sequence..." << endl;
         sw.Start();
         string sequence;
         CSeqVector vec = handle.GetSeqVector(coding, strand);
@@ -205,9 +208,9 @@ int CSeqVecBench::Run(void)
         CMD5 sum;
         sum.Update(sequence.data(), sequence.size());
         cout << "  md5 sum is: " << sum.GetHexSum() << endl;
-        best_time = sw.Elapsed();
+        double load_time = sw.Elapsed();
+        cout << "  loaded in " << load_time << " seconds" << endl;
     }}
-    cout << "  loaded in " << best_time << " seconds" << endl;
 
     unsigned char mask = 0;
     int i;
@@ -220,8 +223,8 @@ int CSeqVecBench::Run(void)
         CSeqVector vec = handle.GetSeqVector(coding, strand);
         string str;
         vec.GetSeqData(0, vec.size(), str);
-        const int mul1 = 10;
-        const int mul2 = 1;
+        const int mul1 = 1;
+        const int mul2 = 3;
         for (i = iters*mul1;  i;  --i) {
             start_iter();
             for ( int j = 0; j < mul2; ++j ) {
@@ -233,7 +236,7 @@ int CSeqVecBench::Run(void)
             end_iter();
         }
         counter /= mul2;
-        best_time /= mul2;
+        times.back() /= mul2;
     }}
     end();
 
@@ -307,8 +310,8 @@ int CSeqVecBench::Run(void)
         CSeqVector vec = handle.GetSeqVector(coding, strand);
         string str;
         vec.GetSeqData(0, vec.size(), str);
-        const int mul1 = 10;
-        const int mul2 = 1;
+        const int mul1 = 1;
+        const int mul2 = 3;
         for (i = iters*mul1;  i;  --i) {
             start_iter();
             for ( int j = 0; j < mul2; ++j ) {
@@ -320,7 +323,7 @@ int CSeqVecBench::Run(void)
             end_iter();
         }
         counter /= mul2;
-        best_time /= mul2;
+        times.back() /= mul2;
     }}
     end();
 
@@ -375,6 +378,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/22 17:57:45  vasilche
+ * Some code cleaning.
+ * Added '-average' option.
+ *
  * Revision 1.1  2003/08/29 13:34:48  vasilche
  * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
  * CSeqVector::operator[] made significantly faster.
