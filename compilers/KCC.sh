@@ -19,8 +19,11 @@ if test "$?" -ne 0 ; then
 ERROR:  cannot find KAI C++ compiler ($CXX)
 
 HINT:  if you are at NCBI, try to add the following path:
-  Solaris:  setenv PATH /net/pluto/export/home/beloslyu/KCC/KCC_BASE/bin:\$PATH
-  Linux:    setenv PATH /net/linus/export/home/coremake/KCC/KCC_BASE/bin:\$PATH
+ Linux:
+   sh, bash:
+      PATH="/usr/kcc/KCC_BASE/bin:\$PATH"
+   tcsh:
+      setenv PATH /usr/kcc/KCC_BASE/bin:\$PATH
 
 EOF
     exit 1
@@ -33,7 +36,7 @@ case "$1" in
  32     )  ARCH="" ;;
  64     )  ARCH="--with-64" ;;
  * )
-    echo "USAGE: $NCBI_COMPILER.sh {32|64} [build_dir] [--configure-flags] [--help]"
+    echo "USAGE: `basename $0` {32|64} [build_dir] [--configure-flags] [--help]"
     exit 2
     ;;
 esac
