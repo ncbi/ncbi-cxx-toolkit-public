@@ -48,7 +48,7 @@
 
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 
 #include <bdb/bdb_expt.hpp>
 #include <bdb/bdb_cursor.hpp>
@@ -1379,6 +1379,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/22 19:02:54  kuznets
+ * Reflecting chnages in connect layout
+ *
  * Revision 1.18  2005/03/22 16:16:10  kuznets
  * Statistics improvement: added database information
  *

@@ -30,7 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 
 #include "job_status.hpp"
 
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/22 19:02:54  kuznets
+ * Reflecting chnages in connect layout
+ *
  * Revision 1.8  2005/03/09 17:37:16  kuznets
  * Added node notification thread and execution control timeline
  *

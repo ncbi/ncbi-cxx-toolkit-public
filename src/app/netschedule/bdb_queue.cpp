@@ -33,7 +33,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
 #include <db.h>
@@ -1583,6 +1583,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/03/22 19:02:54  kuznets
+ * Reflecting chnages in connect layout
+ *
  * Revision 1.20  2005/03/22 16:14:49  kuznets
  * +PrintStat()
  *

@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_types.h>
@@ -429,6 +429,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/22 19:02:54  kuznets
+ * Reflecting chnages in connect layout
+ *
  * Revision 1.8  2005/03/17 20:37:41  kuznets
  * test for PutFailure()
  *

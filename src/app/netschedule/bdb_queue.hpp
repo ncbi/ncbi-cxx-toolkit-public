@@ -43,7 +43,7 @@
 
 #include <corelib/ncbimtx.hpp>
 
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
@@ -440,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/22 19:02:54  kuznets
+ * Reflecting chnages in connect layout
+ *
  * Revision 1.15  2005/03/22 16:14:49  kuznets
  * +PrintStat()
  *

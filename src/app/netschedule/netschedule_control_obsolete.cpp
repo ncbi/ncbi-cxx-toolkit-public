@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -180,6 +180,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/22 19:02:54  kuznets
+ * Reflecting chnages in connect layout
+ *
  * Revision 1.4  2005/03/21 13:07:57  kuznets
  * Adde stat option
  *
