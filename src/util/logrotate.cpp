@@ -61,12 +61,15 @@ void CRotatingLogStreamBuf::Rotate(void)
     m_Size = seekoff(0, IOS_BASE::cur, IOS_BASE::out);
 }
 
+// The use of new_size in overflow and sync is to avoid
+// double-counting when one calls the other.  (Which, if either, is
+// actually lower-level seems to vary with compiler.)
 
 CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
 {
-    m_Size += pptr() - pbase();
+    CT_POS_TYPE new_size = m_Size + pptr() - pbase();
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
-        m_Size += 1; // CT_POS_TYPE lacks ++ on WorkShop at least
+        new_size += 1; // CT_POS_TYPE lacks ++ on WorkShop at least
     }
     // Perform output first, in case switching files discards data.
     CT_INT_TYPE result = CNcbiFilebuf::overflow(c);
@@ -74,7 +77,7 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
     // seem to handle the case of pptr() being null by setting the
     // pointers and writing c to the buffer but not actually flushing
     // it to disk. :-/
-    m_Size -= pptr() - pbase();
+    m_Size = new_size + pbase() - pptr();
     if (m_Size >= m_Limit) {
         Rotate();
     }
@@ -82,21 +85,18 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
 }
 
 
-#ifdef NO_PUBSYNC
-// According to the standard, overriding overflow should suffice.
-// However, some older compilers (G++ 2.x, at least) require us to
-// override sync too, as they use overflow only for the first byte. :-/
 int CRotatingLogStreamBuf::sync(void)
 {
     // Perform output first, in case switching files discards data.
-    m_Size += pptr() - pbase();
+    CT_POS_TYPE new_size = m_Size + pptr() - pbase();
     int result = CNcbiFilebuf::sync();
+    // pptr() ought to equal pbase() now, but just in case...
+    m_Size = new_size + pbase() - pptr();
     if (m_Size >= m_Limit) {
         Rotate();
     }
     return result;
 }
-#endif
 
 
 string CRotatingLogStream::x_BackupName(string& name) {
@@ -115,6 +115,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/02/12 16:41:08  ucko
+* Always supply CRotatingLogStreamBuf::sync, and avoid double-counting
+* via run-time rather than compile-time logic.
+*
 * Revision 1.1  2002/11/25 17:21:00  ucko
 * Add support for automatic log rotation (CRotatingLogStream)
 *

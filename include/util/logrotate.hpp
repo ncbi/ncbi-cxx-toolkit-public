@@ -47,9 +47,7 @@ public:
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c = CT_EOF);
-#ifdef NO_PUBSYNC // g++ 2
     virtual int sync(void);
-#endif
 
 private:
     CRotatingLogStream* m_Stream;
@@ -98,6 +96,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/02/12 16:41:04  ucko
+* Always supply CRotatingLogStreamBuf::sync, and avoid double-counting
+* via run-time rather than compile-time logic.
+*
 * Revision 1.3  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *
