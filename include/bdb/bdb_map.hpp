@@ -63,7 +63,7 @@ template<> struct CBDB_TypeMapper<string>
 
 template<class K, class T> class db_map_base
 {
-protected:
+public:
 
     typedef typename CBDB_TypeMapper<K>::TFieldType  db_first_type;
     typedef typename CBDB_TypeMapper<T>::TFieldType  db_second_type;
@@ -83,8 +83,8 @@ protected:
         }
     };
 
-    typedef db_map_base<K, T>::File  map_file_type;
-
+    typedef typename db_map_base<K, T>::File  map_file_type;
+protected:
 
     // Base class for all db_map iterators
     // Class opens its own copy of BerkeleyDB file and cursor on it.
@@ -409,7 +409,7 @@ public:
 
     typedef K                                        key_type;
     typedef T                                        referent_type;
-    typedef std::pair<const K, T>                    value_type;
+    typedef std::pair<const K, T>                          value_type;
 
     typedef db_map<K, T>                             self_type;
     typedef typename self_type::iterator_base        iterator_base_type;
@@ -514,7 +514,6 @@ void db_map_base<K, T>::open(const char* fname,
 template<class K, class T>
 typename db_map_base<K, T>::const_iterator  db_map_base<K, T>::begin() const
 {
-    m_Dbf.Sync();
     return const_iterator(&m_Dbf);
 }
 
@@ -522,15 +521,14 @@ typename db_map_base<K, T>::const_iterator  db_map_base<K, T>::begin() const
 template<class K, class T>
 typename db_map_base<K, T>::const_iterator  db_map_base<K, T>::end() const
 {
-    m_Dbf.Sync();
-    return const_iterator(&m_Dbf).go_end();
+    const_iterator it(&m_Dbf);
+    return it.go_end();
 }
 
 
 template<class K, class T>
 typename db_map_base<K, T>::const_iterator db_map_base<K, T>::find(const K& key) const
 {
-    m_Dbf.Sync();
     return const_iterator(&m_Dbf, key);
 }
 
@@ -603,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/24 15:43:25  kuznets
+ * Fixed SUN compilation problems
+ *
  * Revision 1.5  2003/07/23 20:22:50  kuznets
  * Implemened:  clean(), erase()
  *
