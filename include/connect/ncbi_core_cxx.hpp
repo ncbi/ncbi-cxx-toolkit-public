@@ -29,13 +29,16 @@
  * Author:  Anton Lavrentiev
  *
  * File description:
- *   C++->C conversion functions for basic corelib stuff:
+ *   C++->C conversion functions for basic CORE connect stuff:
  *     Registry
  *     Logging
  *     Locking
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/05/07 18:20:19  lavr
+ * -#include <ncbidiag.hpp>: not needed for API definition (moved into .cpp)
+ *
  * Revision 6.5  2002/01/15 21:28:34  lavr
  * +MT_LOCK_cxx2c()
  *
@@ -55,7 +58,6 @@
  */
 
 #include <connect/ncbi_core.h>
-#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
 
