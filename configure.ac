@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.249 2003/12/24 15:25:55 ucko Exp $
+#  $Id: configure.ac,v 1.250 2004/01/02 17:04:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -732,10 +732,8 @@ case "$host_os:$compiler" in
    if $CXX -v 2>&1 | grep -q Apple; then
       # Suppress warnings about potential changes in the size of long double;
       # our ABI isn't too stable yet anyway.
-      # -fno-common is only necessary when building shared libraries,
-      # but sometimes they include static libs....
-      CFLAGS="-Wno-long-double -fno-common $CFLAGS"
-      CXXFLAGS="-Wno-long-double -fno-common $CXXFLAGS"
+      CFLAGS="-Wno-long-double $CFLAGS"
+      CXXFLAGS="-Wno-long-double $CXXFLAGS"
    fi
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks -I/sw/include $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices -L/sw/lib $LIBS"
@@ -914,9 +912,8 @@ fi
 if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    case "$host_os:$compiler" in
     darwin*:GCC )
-      # Moved to regular flags, due to some cases of inclusion.
-      # CFLAGS_DLL="-fno-common"
-      # CXXFLAGS_DLL="-fno-common"
+      CFLAGS_DLL="-fno-common"
+      CXXFLAGS_DLL="-fno-common"
       ;;
     *:GCC | linux*:KCC )
       CFLAGS_DLL="-fPIC"
@@ -1039,6 +1036,18 @@ if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 else
    FORCE_STATIC_LIB=
+   # Some shared libraries end up containing static libraries, so make
+   # sure to use DLL flags for both on platforms where such inclusion
+   # would otherwise be illegal....
+   case "$host_os:$host_cpu" in
+      linux*:*86) ;;
+      linux* | darwin*)
+        CFLAGS="$CFLAGS $CFLAGS_DLL"
+        CFLAGS_DLL=
+        CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
+        CXXFLAGS_DLL=
+        ;;
+   esac
 fi
 
 if test "$LIB_OR_DLL" = "both"; then
