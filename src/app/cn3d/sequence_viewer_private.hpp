@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/11/17 19:47:37  thiessen
+* working show/hide alignment row
+*
 * Revision 1.2  2000/11/03 01:12:18  thiessen
 * fix memory problem with alignment cloning
 *
@@ -77,6 +80,7 @@ public:
     void ScrollToColumn(int column) { viewerWidget->ScrollTo(column, -1); }
 
     void OnTitleView(wxCommandEvent& event);
+    void OnShowHideRows(wxCommandEvent& event);
     void OnEditMenu(wxCommandEvent& event);
     void OnMouseMode(wxCommandEvent& event);
     void OnJustification(wxCommandEvent& event);
@@ -86,6 +90,7 @@ public:
         // view menu
         MID_SHOW_TITLES,
         MID_HIDE_TITLES,
+        MID_SHOW_HIDE_ROWS,
 
         // edit menu
         MID_ENABLE_EDIT,
@@ -126,7 +131,11 @@ private:
 
     BlockMultipleAlignment::eUnalignedJustification currentJustification;
     BlockMultipleAlignment::eUnalignedJustification GetCurrentJustification(void) const
-        { return currentJustification; }    
+        { return currentJustification; }
+
+    // called before an operation (e.g., alignment editor enable) that requires
+    // all rows of an alignment to be visible; 'false' return should abort that operation
+    bool QueryShowAllRows(void);
 
 public:
     // ask if user wants to save edits; return value indicates whether program should
@@ -183,7 +192,7 @@ public:
 class DisplayRow
 {
 public:
-    virtual int Size() const = 0;
+    virtual int Width(void) const = 0;
     virtual bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground,
         wxColour *cellBackgroundColor) const = 0;
@@ -203,7 +212,7 @@ public:
     DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) :
         row(r), alignment(a) { }
 
-    int Size() const { return alignment->AlignmentWidth(); }
+    int Width(void) const { return alignment->AlignmentWidth(); }
 
     DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromAlignment(row, newAlignment); }
@@ -238,7 +247,7 @@ public:
     DisplayRowFromSequence(const Sequence *s, Messenger *mesg) :
         sequence(s), messenger(mesg) { }
 
-    int Size() const { return sequence->sequenceString.size(); }
+    int Width(void) const { return sequence->sequenceString.size(); }
     
     DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromSequence(sequence, messenger); }
@@ -268,7 +277,7 @@ public:
         theString(s), stringColor(color), title(t),
         hasBackgroundColor(hasBG), backgroundColor(bgColor) { }
 
-    int Size() const { return theString.size(); }
+    int Width(void) const { return theString.size(); }
     
     DisplayRow * Clone(const BlockMultipleAlignment *newAlignment) const
         { return new DisplayRowFromString(

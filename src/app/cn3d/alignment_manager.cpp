@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/17 19:48:13  thiessen
+* working show/hide alignment row
+*
 * Revision 1.26  2000/11/13 18:06:52  thiessen
 * working structure re-superpositioning
 *
@@ -131,7 +134,7 @@ BEGIN_SCOPE(Cn3D)
 ///// AlignmentManager methods /////
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *mesg) :
-    sequenceSet(sSet), alignmentSet(aSet), messenger(mesg), sequenceViewer(NULL)
+    messenger(mesg), sequenceViewer(NULL)
 {
     NewAlignments(sSet, aSet);
 }
@@ -144,6 +147,9 @@ AlignmentManager::~AlignmentManager(void)
 
 void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)
 {
+    sequenceSet = sSet;
+    alignmentSet = aSet; 
+
     // create a sequence viewer for this alignment
     if (!sequenceViewer) {
         sequenceViewer = new SequenceViewer(this, messenger);
@@ -155,12 +161,10 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
         return;
     }
 
-    // make a multiple with all rows
-    AlignmentList alignments;
-    AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
-    for (a=alignmentSet->alignments.begin(); a!=ae; a++) alignments.push_back(*a);
-    // sequenceViewer will own the resulting alignment
-    sequenceViewer->DisplayAlignment(CreateMultipleFromPairwiseWithIBM(alignments));
+    // all slaves start out visible
+    slavesVisible.resize(alignmentSet->alignments.size());
+    for (int i=0; i<slavesVisible.size(); i++) slavesVisible[i] = true;
+    NewMultipleWithRows(slavesVisible);
 }
 
 void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple)
@@ -346,6 +350,57 @@ void AlignmentManager::RealignAllSlaves(void) const
     delete slaveCoords;
     delete weights;
     return;
+}
+
+void AlignmentManager::GetAlignmentSetSlaveSequences(std::vector < const Sequence * >& sequences) const
+{
+    sequences.resize(alignmentSet->alignments.size());
+
+    AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
+    int i = 0;
+    for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
+        sequences[i] = (*a)->slave;
+    }
+}
+
+void AlignmentManager::GetAlignmentSetSlaveVisibilities(std::vector < bool >& visibilities) const
+{
+    // copy visibility list
+    visibilities = slavesVisible;
+}
+
+void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnabled)
+{
+    slavesVisible = itemsEnabled;
+    NewMultipleWithRows(slavesVisible);
+
+    // do necessary redraws: sequences + chains in the alignment
+    sequenceViewer->Refresh();
+    AlignmentSet::AlignmentList::const_iterator
+        a = alignmentSet->alignments.begin(), ae = alignmentSet->alignments.end();
+    if ((*a)->master->molecule) messenger->PostRedrawMolecule((*a)->master->molecule);
+    for (; a!=ae; a++)
+        if ((*a)->slave->molecule) messenger->PostRedrawMolecule((*a)->slave->molecule);
+}
+
+void AlignmentManager::NewMultipleWithRows(const std::vector < bool >& visibilities)
+{
+    if (visibilities.size() != alignmentSet->alignments.size()) {
+        ERR_POST(Error << "AlignmentManager::NewMultipleWithRows() - wrong size visibility vector");
+        return;
+    }
+
+    // make a multiple from all visible rows
+    AlignmentList alignments;
+    AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
+    int i = 0;
+    for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
+        if (visibilities[i])
+            alignments.push_back(*a);
+    }
+
+    // sequenceViewer will own the resulting alignment
+    sequenceViewer->DisplayAlignment(CreateMultipleFromPairwiseWithIBM(alignments));
 }
 
 

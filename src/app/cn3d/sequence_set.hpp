@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/17 19:47:37  thiessen
+* working show/hide alignment row
+*
 * Revision 1.8  2000/11/11 21:12:07  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -110,6 +113,8 @@ public:
     int Length(void) const { return sequenceString.size(); }
 
 	ncbi::objects::CSeq_id * CreateSeqId(void) const;
+
+    void Sequence::GetTitle(std::string *title) const;
 };
 
 END_SCOPE(Cn3D)

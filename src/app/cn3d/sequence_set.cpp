@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/17 19:48:13  thiessen
+* working show/hide alignment row
+*
 * Revision 1.8  2000/11/11 21:15:54  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -71,7 +74,10 @@
 #include <objects/seq/NCBI2na.hpp>
 #include <objects/seq/IUPACna.hpp>
 
+#include <strstream>
+
 #include "cn3d/sequence_set.hpp"
+#include "cn3d/molecule.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -252,6 +258,21 @@ CSeq_id * Sequence::CreateSeqId(void) const
         sid->SetGi(gi);
     }
     return sid;
+}
+
+void Sequence::GetTitle(std::string *title) const
+{
+    ostrstream oss;
+    if (molecule) {
+        oss << pdbID;
+        if (molecule->pdbChain != ' ') {
+            oss <<  '_' << (char) molecule->pdbChain;
+        }
+    } else {
+        oss << "gi " << gi;
+    }
+    oss << '\0';
+    *title = oss.str();
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/11/17 19:47:37  thiessen
+* working show/hide alignment row
+*
 * Revision 1.21  2000/11/13 18:05:57  thiessen
 * working structure re-superpositioning
 *
@@ -105,6 +108,7 @@
 #include <vector>
 
 #include "cn3d/vector_math.hpp"
+#include "cn3d/show_hide_callback.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -348,7 +352,7 @@ public:
 
 ///// The next class is the actual AlignmentManager implementation /////
 
-class AlignmentManager
+class AlignmentManager : public ShowHideCallback
 {
 public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *messenger);
@@ -373,6 +377,8 @@ private:
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
 
+    std::vector < bool > slavesVisible;
+
     // viewer for the current alignment - will own the current alignment (if any)
     SequenceViewer *sequenceViewer;
     
@@ -380,6 +386,12 @@ private:
 
 public:
     const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
+
+    // stuff relating to show/hide of alignment rows (slaves)
+    void GetAlignmentSetSlaveSequences(std::vector < const Sequence * >& sequences) const;
+    void GetAlignmentSetSlaveVisibilities(std::vector < bool >& visibilities) const;
+    void SelectionCallback(const std::vector < bool >& itemsEnabled);
+    void NewMultipleWithRows(const std::vector < bool >& visibilities);
 
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/17 19:48:14  thiessen
+* working show/hide alignment row
+*
 * Revision 1.26  2000/11/12 04:02:59  thiessen
 * working file save including alignment edits
 *
@@ -122,6 +125,7 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/vector_math.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/show_hide_dialog.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -138,6 +142,7 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_CLOSE     (                                     SequenceViewerWindow::OnCloseWindow)
     EVT_MENU_RANGE(MID_SHOW_TITLES, MID_HIDE_TITLES,    SequenceViewerWindow::OnTitleView)
+    EVT_MENU      (MID_SHOW_HIDE_ROWS,                  SequenceViewerWindow::OnShowHideRows)
     EVT_MENU_RANGE(MID_ENABLE_EDIT, MID_SYNC_STRUCS_ON, SequenceViewerWindow::OnEditMenu)
     EVT_MENU_RANGE(MID_SELECT_RECT, MID_DRAG_HORIZ,     SequenceViewerWindow::OnMouseMode)
     EVT_MENU_RANGE(MID_LEFT,        MID_SPLIT,          SequenceViewerWindow::OnJustification)
@@ -147,6 +152,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(1000,200)),
     viewerWidget(NULL), viewer(parent)
 {
+    SetSizeHints(200, 150);
+
     // status bar with a single field
     CreateStatusBar(2);
     int widths[2] = { 150, -1 };
@@ -159,6 +166,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     wxMenu *menu = new wxMenu;
     menu->Append(MID_SHOW_TITLES, "&Show Titles");
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
+    menu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
     menuBar->Append(menu, "&View");
 
     menu = new wxMenu;
@@ -223,7 +231,6 @@ void SequenceViewerWindow::NewAlignment(ViewableAlignment *newAlignment)
         menuBar->Enable(MID_ENABLE_EDIT, true);
     else
         menuBar->Enable(MID_ENABLE_EDIT, false);
-    Show(true);
 }
 
 void SequenceViewerWindow::UpdateAlignment(ViewableAlignment *alignment)
@@ -251,6 +258,10 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
     switch (event.GetId()) {
         case MID_ENABLE_EDIT:
             if (turnEditorOn) {
+                if (!QueryShowAllRows()) { // make sure all rows are visible
+                    menuBar->Check(MID_ENABLE_EDIT, false);
+                    break;
+                }
                 TESTMSG("turning on editor");
                 viewer->PushAlignment();    // keep copy of original at bottom of the stack
                 viewer->AddBlockBoundaryRow();
@@ -266,10 +277,12 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             }
             EnableEditorMenuItems(turnEditorOn);
             break;
+
         case MID_UNDO:
             TESTMSG("undoing...");
             viewer->PopAlignment();
             break;
+
         case MID_SPLIT_BLOCK:
             if (DoCreateBlock()) CreateBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
@@ -279,6 +292,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             else
                 SplitBlockOff();
             break;
+
         case MID_MERGE_BLOCKS:
             if (DoSplitBlock()) SplitBlockOff();
             if (DoCreateBlock()) CreateBlockOff();
@@ -290,6 +304,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             } else
                 MergeBlocksOff();
             break;
+
         case MID_CREATE_BLOCK:
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
@@ -301,6 +316,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             } else
                 CreateBlockOff();
             break;
+
         case MID_DELETE_BLOCK:
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
@@ -310,10 +326,9 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             else
                 DeleteBlockOff();
             break;
+
         case MID_SYNC_STRUCS:
             viewer->RedrawAlignedMolecules();
-            break;
-        case MID_SYNC_STRUCS_ON:
             break;
     }
 }
@@ -331,6 +346,7 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
         if (DoDeleteBlock()) DeleteBlockOff();
     }
     menuBar->Enable(MID_UNDO, false);
+    menuBar->Enable(MID_SHOW_HIDE_ROWS, !enabled);  // can't show/hide when editor is on
 }
 
 void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
@@ -391,6 +407,52 @@ bool SequenceViewerWindow::SaveDialog(bool canCancel)
     else
         viewer->RevertAlignment();  // revert to original
 
+    return true;
+}
+
+void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
+{
+    std::vector < const Sequence * > slaveSequences;
+    viewer->alignmentManager->GetAlignmentSetSlaveSequences(slaveSequences);
+    wxString *titleStrs = new wxString[slaveSequences.size()];
+    for (int i=0; i<slaveSequences.size(); i++) {
+        std::string str;
+        slaveSequences[i]->GetTitle(&str);
+        titleStrs[i] = str.c_str();
+	}
+
+    std::vector < bool > visibilities;
+    viewer->alignmentManager->GetAlignmentSetSlaveVisibilities(visibilities);
+
+    ShowHideDialog dialog(
+        titleStrs,
+        visibilities,
+        viewer->alignmentManager,
+        NULL, -1, "Show/Hide Slaves", wxPoint(400, 50), wxSize(200, 300));
+    dialog.Activate();
+
+	delete titleStrs;
+}
+
+bool SequenceViewerWindow::QueryShowAllRows(void)
+{
+    std::vector < bool > visibilities;
+    viewer->alignmentManager->GetAlignmentSetSlaveVisibilities(visibilities);
+    
+    int i;
+    for (i=0; i<visibilities.size(); i++) if (!visibilities[i]) break;
+    if (i == visibilities.size()) return true;  // we're okay if all rows already visible
+
+    // if some rows hidden, ask user whether to show all rows, or cancel
+    wxMessageDialog query(NULL, 
+        "This operation requires all alignment rows to be visible. Do you wish to show all rows now?",
+        "Query", wxOK | wxCANCEL | wxCENTRE | wxICON_QUESTION);
+
+    if (query.ShowModal() == wxID_CANCEL) return false;   // user cancelled
+
+    // show all rows
+    for (i=0; i<visibilities.size(); i++) visibilities[i] = true;
+    viewer->alignmentManager->SelectionCallback(visibilities);
     return true;
 }
 
@@ -524,13 +586,13 @@ SequenceDisplay * SequenceDisplay::Clone(BlockMultipleAlignment *newAlignment) c
 void SequenceDisplay::AddRow(DisplayRow *row)
 {
     rows.push_back(row);
-    UpdateMaxRowWidth();
+    if (row->Width() > maxRowWidth) maxRowWidth = row->Width();
 }
 
 void SequenceDisplay::PrependRow(DisplayRow *row)
 {
     rows.insert(rows.begin(), row);
-    UpdateMaxRowWidth();
+    if (row->Width() > maxRowWidth) maxRowWidth = row->Width();
 }
 
 void SequenceDisplay::RemoveRow(DisplayRow *row)
@@ -551,8 +613,7 @@ void SequenceDisplay::UpdateMaxRowWidth(void)
     RowVector::iterator r, re = rows.end();
     maxRowWidth = 0;
     for (r=rows.begin(); r!=re; r++)
-        if ((*r)->Size() > maxRowWidth) maxRowWidth = (*r)->Size();
-    if (*viewerWindow) (*viewerWindow)->UpdateAlignment(this);
+        if ((*r)->Width() > maxRowWidth) maxRowWidth = (*r)->Width();
 }
 
 void SequenceDisplay::AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment)
@@ -597,18 +658,9 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
     if (!sequence) return false;
 
     // set title
-    if (sequence->molecule) {
-        wxString pdbID(sequence->molecule->pdbID.data(), sequence->molecule->pdbID.size());
-        if (sequence->molecule->pdbChain != ' ') {
-            wxString chain;
-            chain.Printf("_%c", sequence->molecule->pdbChain);
-            pdbID += chain;
-        }
-        *title = pdbID;
-    } else {
-        title->clear();
-        title->Printf("gi %i", sequence->gi);
-    }
+    std::string titleStr;
+    sequence->GetTitle(&titleStr);
+    *title = titleStr.c_str();
 
     // set color
     const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment*>(displayRow);
@@ -631,7 +683,7 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
 
     const DisplayRow *displayRow = rows[row];
 
-    if (column >= displayRow->Size())
+    if (column >= displayRow->Width())
         return false;
 
     Vector colorVec;
@@ -656,7 +708,7 @@ void SequenceDisplay::MouseOver(int column, int row) const
         wxString message;
         if (column >= 0 && row >= 0) {
             const DisplayRow *displayRow = rows[row];
-            if (column < displayRow->Size()) {
+            if (column < displayRow->Width()) {
                 const Sequence *sequence;
                 int index;
                 if (displayRow->GetSequenceAndIndexAt(column,
@@ -885,6 +937,8 @@ void SequenceViewer::ClearStacks(void)
     while (alignmentStack.size() > 0) {
         delete alignmentStack.back();
         alignmentStack.pop_back();
+    }
+    while (displayStack.size() > 0) {
         delete displayStack.back();
         displayStack.pop_back();
     }
@@ -902,7 +956,7 @@ void SequenceViewer::RevertAlignment(void)
 
     if (viewerWindow) {
         viewerWindow->UpdateAlignment(displayStack.back());
-      if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
+        if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
     }
 }
 
@@ -945,6 +999,8 @@ void SequenceViewer::NewDisplay(SequenceDisplay *display)
 
 void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 {
+    ClearStacks();
+
     SequenceDisplay *display = new SequenceDisplay(&viewerWindow, messenger);
     for (int row=0; row<alignment->NRows(); row++)
         display->AddRowFromAlignment(row, alignment);
@@ -959,6 +1015,8 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
+    ClearStacks();
+
     SequenceDisplay *display = new SequenceDisplay(&viewerWindow, messenger);
     // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
