@@ -264,22 +264,19 @@ bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
     double precursor(0.0L);
 
     // read in precursor
-    DTA >> precursor;
-    if (precursor <= 0) {
+    if(!(DTA >> precursor) || precursor < 0) {
         return false;
     }
 
     // read in pkl intensity
     if(isPKL) {
-        DTA >> dummy;
-        if (dummy <= 0) {
+        if(!(DTA >> dummy) || dummy < 0) {
             return false;
         }
     }
 
     // read in charge
-    DTA >> dummy;
-    if (dummy <= 0) {
+    if(!(DTA >> dummy) || dummy < 0) {
         return false;
     }
     MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
@@ -336,14 +333,12 @@ bool CSpectrumSet::GetDTABody(std::istream& DTA, TInputPeaks& InputPeaks)
     float dummy(0.0);
     TInputPeak InputPeak;
 
-    DTA >> dummy;
-    if (dummy <= 0) 
+    if(!(DTA >> dummy) || dummy < 0)
         return false;
     if (dummy > kMax_Int) dummy = kMax_Int/MSSCALE;
     InputPeak.mz = static_cast <int> (dummy*MSSCALE);
 
-    DTA >> dummy;
-    if (dummy <= 0) 
+    if(!(DTA >> dummy) || dummy < 0)
         return false;
     InputPeak.Intensity = dummy;
 
@@ -480,9 +475,11 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
             string LastLine(Line.substr(8, Line.size()-8));
             CNcbiIstrstream istr(LastLine.c_str());
             double precursor;
-            istr >> precursor;
-            MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
-            MySpectrum->SetCharge().push_back(1);   // required in asn.1 (but shouldn't be)
+            if(istr >> precursor) {
+                MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
+                MySpectrum->SetCharge().push_back(1);   // required in asn.1 (but shouldn't be)
+                }
+            else return 1;
             }
         // keep looping while the first character is not numeric
     } while (Line.substr(0, 1).find_first_not_of("0123456789.-") == 0);
@@ -520,6 +517,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/03/22 19:30:00  lewisg
+ * add better iostream error checking
+ *
  * Revision 1.18  2005/03/15 20:47:55  lewisg
  * fix bug in pkl import
  *
