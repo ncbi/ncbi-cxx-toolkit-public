@@ -282,6 +282,7 @@ on SetProjectData()
 		AddObject("biblio")
 		AddSimpleProjectListFiles("xnetblast", {}, "objects:blast", {"blast__", "blast___"})
 		AddSimpleProjectListFiles("xnetblastcli", {}, "objects:blast", {"blastclient", "blastclient_"})
+		AddObject("blastdb")
 		AddObject("cdd")
 		AddObject("cn3d")
 		AddObject("docsum")
@@ -293,6 +294,7 @@ on SetProjectData()
 		AddObject("general")
 		AddObject("id1")
 		AddSimpleProjectListFiles("id1cli", {}, "objects:id1", {"id1_client", "id1_client_"})
+		AddObject("id2")
 		AddObject("medlars")
 		AddObject("medline")
 		AddObject("mim")
@@ -360,6 +362,7 @@ on SetProjectData()
 		AddGuiProject("gui_print", {}, "print")
 		
 		-- widgets
+		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
@@ -407,13 +410,14 @@ on SetProjectData()
 			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "w_fltable"})
+		AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
