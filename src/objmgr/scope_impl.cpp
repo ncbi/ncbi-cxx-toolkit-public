@@ -1328,18 +1328,22 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
 }
 
 
-CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id& id)
+CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id& id,
+                                                 int get_flag)
 {
-    return GetSynonyms(CSeq_id_Handle::GetHandle(id));
+    return GetSynonyms(CSeq_id_Handle::GetHandle(id), get_flag);
 }
 
 
-CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id_Handle& id)
+CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id_Handle& id,
+                                                 int get_flag)
 {
     _ASSERT(id);
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    CRef<CBioseq_ScopeInfo> info =
-        x_GetBioseq_Info(id, CScope::eGetBioseq_All);
+    CRef<CBioseq_ScopeInfo> info = x_GetBioseq_Info(id, get_flag);
+    if ( !info ) {
+        return CConstRef<CSynonymsSet>(0);
+    }
     return x_GetSynonyms(*info);
 }
 
@@ -1457,6 +1461,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/09/27 14:31:05  grichenk
+* Added GetSynonyms() with get-flag
+*
 * Revision 1.25  2004/09/01 17:54:52  vasilche
 * Fixed couple of warnings from Sun C++.
 * Fixed loading of annotations from split chunks.

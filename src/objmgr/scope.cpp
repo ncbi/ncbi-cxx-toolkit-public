@@ -213,13 +213,13 @@ CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
 
 CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id& id)
 {
-    return m_Impl->GetSynonyms(id);
+    return m_Impl->GetSynonyms(id, eGetBioseq_All);
 }
 
 
 CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id_Handle& id)
 {
-    return m_Impl->GetSynonyms(id);
+    return m_Impl->GetSynonyms(id, eGetBioseq_All);
 }
 
 
@@ -331,6 +331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2004/09/27 14:31:05  grichenk
+* Added GetSynonyms() with get-flag
+*
 * Revision 1.108  2004/08/31 21:03:49  grichenk
 * Added GetIds()
 *

@@ -229,8 +229,10 @@ public:
     TIds GetIds(const CSeq_id_Handle& idh);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
-    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
-    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
+    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id,
+                                        int get_flag);
+    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,
+                                        int get_flag);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
 
     typedef vector<CSeq_entry_Handle> TTSE_Handles;
@@ -398,6 +400,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/09/27 14:31:05  grichenk
+* Added GetSynonyms() with get-flag
+*
 * Revision 1.12  2004/08/31 21:03:48  grichenk
 * Added GetIds()
 *
