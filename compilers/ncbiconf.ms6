@@ -25,11 +25,14 @@
 #define HOST_VENDOR "pc"
 #define HOST_OS "cygwin32"
 
-/* Define if C++ namespaces are not supported */
-/* #undef HAVE_NO_NAMESPACE */
+/* Platform info */
+#define NCBI_OS "MSWIN"
+/* #undef NCBI_OS_UNIX */
+#define NCBI_OS_MSWIN 1
+/* #undef NCBI_OS_MAC */
 
-/* Define if C++ namespace std:: is used */
-/* #undef HAVE_NO_STD */
+/* There is gethostbyname_r() */
+/* #undef HAVE_GETHOSTBYNAME_R */
 
 /* Does not give enough support to the in-class template functions */
 /* #undef NO_INCLASS_TMPL */
@@ -108,12 +111,6 @@
 
 /* Define if you have the <iostream.h> header file.  */
 #define HAVE_IOSTREAM_H 1
-
-/* Define if you have the <limits> header file.  */
-#define HAVE_LIMITS 1
-
-/* Define if you have the <string> header file.  */
-#define HAVE_STRING 1
 
 /* Define if you have the <strstrea.h> header file.  */
 #define HAVE_STRSTREA_H 1
