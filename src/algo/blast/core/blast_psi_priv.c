@@ -762,13 +762,6 @@ s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa, double identity_threshold)
     }
 }
 
-/** Counts the number of sequences matching the query per query position
- * (columns of the multiple alignment) as well as the number of residues
- * present in each position of the query.
- * Should be called after multiple alignment data has been purged from biased
- * sequences.
- * @param msa multiple sequence alignment structure [in]
- */
 void
 _PSIUpdatePositionCounts(_PSIMsa* msa)
 {
@@ -776,6 +769,16 @@ _PSIUpdatePositionCounts(_PSIMsa* msa)
     Uint4 p = 0;        /* index on positions */
 
     ASSERT(msa);
+
+    /* Reset the data in case this function is being called multiple times
+     * after the initial counts were done (i.e.: structure group's ignore
+     * consensus option) */
+    memset((void*) msa->num_matching_seqs, 0, 
+           sizeof(Uint4)*msa->dimensions->query_length);
+    for (p = 0; p < msa->dimensions->query_length; p++) {
+        memset((void*) msa->residue_counts[p], 0, 
+               sizeof(Uint4)*msa->alphabet_size);
+    }
 
     for (s = 0; s < msa->dimensions->num_seqs + 1; s++) {
 
@@ -2357,6 +2360,12 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/12/08 15:06:01  camacho
+ * Call _PSIUpdatePositionCounts is needed after purging query sequence for
+ * structure group customization, thus this function has been changed to reset the
+ * appropriate _PSIMsa fields so that residue counts/aligned sequences are
+ * reported accurately.
+ *
  * Revision 1.39  2004/12/07 22:07:34  camacho
  * Add sanity checks for purge identity threshold
  *

@@ -427,10 +427,12 @@ _PSIPurgeAlignedRegion(_PSIMsa* msa,
                        unsigned int start,
                        unsigned int stop);
 
-/** This function is called after the biased sequences and regions have
- * been purged from PSIPurgeBiasedSegments. Its provided as public for
- * convenience in testing.
- * @param msa multiple sequence alignment data  [in|out]
+/** Counts the number of sequences matching the query per query position
+ * (columns of the multiple alignment) as well as the number of residues
+ * present in each position of the query.
+ * Should be called after multiple alignment data has been purged from biased
+ * sequences.
+ * @param msa multiple sequence alignment structure [in|out]
  */
 void
 _PSIUpdatePositionCounts(_PSIMsa* msa);
@@ -539,6 +541,12 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2004/12/08 15:06:02  camacho
+ * Call _PSIUpdatePositionCounts is needed after purging query sequence for
+ * structure group customization, thus this function has been changed to reset the
+ * appropriate _PSIMsa fields so that residue counts/aligned sequences are
+ * reported accurately.
+ *
  * Revision 1.19  2004/12/07 22:07:34  camacho
  * Add sanity checks for purge identity threshold
  *

@@ -115,6 +115,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         _PSIPurgeAlignedRegion(msa, kQueryIndex, 0,
                                msa->dimensions->query_length);
         ASSERT(msa->use_sequence[kQueryIndex] == FALSE);
+        _PSIUpdatePositionCounts(msa);
     }
 
     status = _PSIValidateMSA(msa, options->nsg_ignore_consensus);
