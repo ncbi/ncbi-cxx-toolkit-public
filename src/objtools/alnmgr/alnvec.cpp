@@ -807,7 +807,7 @@ string& CAlnVec::GetColumnVector(string& buffer,
                 }
             }
 
-            if (gaps_in_count) {
+            if (gaps_in_count  &&  residue_count) {
                 (*residue_count)[FromIupac(buffer[row])]++;
             }
         }
@@ -844,6 +844,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/10/28 21:03:53  todorov
+* +argument check for GetColumnVector
+*
 * Revision 1.61  2004/09/13 14:33:58  todorov
 * TranslateNAToAA now can use the same string buffer for both aa & na; Added translation for GetAlnSeqString
 *
