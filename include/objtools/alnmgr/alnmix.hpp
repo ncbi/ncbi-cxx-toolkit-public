@@ -29,46 +29,39 @@
 * Author:  Kamen Todorov, NCBI
 *
 * File Description:
-*   Alignment merger
+*   Alignment mix
 *
 */
 
-#include <objtools/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <serial/iterator.hpp>
+#include <objtools/alnmgr/alnmatch.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-// forward declarations
 class CScope;
-class CSeq_id;
-
-class CAlnMixSegment;
 class CAlnMixSeq;
-class CAlnMixMatch;
+class CAlnMixMerger;
+
 
 class NCBI_XALNMGR_EXPORT CAlnMix : public CSeq_align::SSeqIdChooser
 // Note that SSeqIdChooser derives from CObject, so CAlnMix *is* also a CObject.
 {
 public:
 
-    // constructor
+    typedef CAlnMixMatches::TCalcScoreMethod TCalcScoreMethod;
+
+    // Constructors
     CAlnMix(void);
-
-    typedef int (*TCalcScoreMethod)(const string& s1,
-                                    const string& s2,
-                                    bool s1_is_prot,
-                                    bool s2_is_prot);
-
     CAlnMix(CScope& scope,
             TCalcScoreMethod calc_score = 0);
                  
-
-    // destructor
+    // Destructor
     ~CAlnMix(void);
+
 
     enum EAddFlags {
         // Determine score of each aligned segment in the process of mixing
@@ -78,12 +71,28 @@ public:
         // Force translation of nucleotide rows
         // This will result in an output Dense-seg that has Widths,
         // no matter if the whole alignment consists of nucleotides only.
-        fForceTranslation     = 0x02
-    };
-    typedef int TAddFlags; // binary OR of EMergeFlags
+        fForceTranslation     = 0x02,
 
+        // Used for mapping sequence to itself
+        fPreserveRows         = 0x04 
+    };
+    typedef int TAddFlags;
+
+    // Iteratively building the mix
     void Add(const CDense_seg& ds, TAddFlags flags = 0);
     void Add(const CSeq_align& aln, TAddFlags flags = 0);
+
+
+
+    typedef vector<CConstRef<CDense_seg> >         TConstDSs;
+    typedef vector<CConstRef<CSeq_align> >         TConstAlns;
+
+    // Input accessors
+    CScope&            GetScope         (void) const;
+    const TConstDSs&   GetInputDensegs  (void) const;
+    const TConstAlns&  GetInputSeqAligns(void) const;
+
+    
 
     enum EMergeFlags {
         fGen2EST              = 0x0001, // otherwise Nucl2Nucl
@@ -95,72 +104,32 @@ public:
         fSortSeqsByScore      = 0x0040, // Seqs with better scoring aligns on top
         fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
                                         // other seqs from diff densegs go to diff rows
-        fPreserveRows         = 0x0100, // Used for mapping sequence to itself
-        fFillUnalignedRegions = 0x0200
+        fFillUnalignedRegions = 0x0100
     };
-    typedef int TMergeFlags; // binary OR of EMergeFlags
+    typedef int TMergeFlags;
 
-    void Merge(TMergeFlags flags = 0);
+    // Merge the mix
+    void               Merge            (TMergeFlags flags = 0);
 
-    typedef vector<CConstRef<CDense_seg> >         TConstDSs;
-    typedef vector<CConstRef<CSeq_align> >         TConstAlns;
 
-    CScope&            GetScope         (void) const;
-    const TConstDSs&   GetInputDensegs  (void) const;
-    const TConstAlns&  GetInputSeqAligns(void) const;
+
+    // Obtain the resulting alignment
     const CDense_seg&  GetDenseg        (void) const;
     const CSeq_align&  GetSeqAlign      (void) const;
 
+
+
 private:
+
     // Prohibit copy constructor and assignment operator
     CAlnMix(const CAlnMix& value);
     CAlnMix& operator=(const CAlnMix& value);
 
-    // CRef<Seq-id> comparison predicate
-    struct SSeqIds {
-        bool 
-        operator() (const CRef<CSeq_id>& id1, const CRef<CSeq_id>& id2) const {
-            return (*id1 < *id2);
-        }
-    };
-
-
     typedef map<void *, CConstRef<CDense_seg> >           TConstDSsMap;
     typedef map<void *, CConstRef<CSeq_align> >           TConstAlnsMap;
-    typedef vector<CRef<CAlnMixSeq> >                     TSeqs;
-    typedef map<CBioseq_Handle, CRef<CAlnMixSeq> >        TBioseqHandleMap;
-    typedef map<CRef<CSeq_id>, CRef<CAlnMixSeq>, SSeqIds> TSeqIdMap;
-    typedef vector<CRef<CAlnMixMatch> >                   TMatches;
-    typedef list<CAlnMixSegment*>                         TSegments;
-    typedef list<CRef<CAlnMixSegment> >                   TSegmentsContainer;
 
-    enum ESecondRowFits {
-        eSecondRowFitsOk,
-        eForceSeparateRow,
-        eInconsistentStrand,
-        eInconsistentFrame,
-        eFirstRowOverlapBelow,
-        eFirstRowOverlapAbove,
-        eInconsistentOverlap,
-        eSecondRowOverlap,
-        eSecondRowInconsistency,
-        eIgnoreMatch
-    };
-    typedef int TSecondRowFits;
-
-    TSecondRowFits x_SecondRowFits(CAlnMixMatch * match) const;
-
-
+    void x_Init                (void);
     void x_Reset               (void);
-    void x_InitBlosum62Map     (void);
-    void x_Merge               (void);
-    void x_CreateRowsVector    (void);
-    void x_CreateSegmentsVector(void);
-    void x_CreateDenseg        (void);
-    void x_ConsolidateGaps     (TSegmentsContainer& gapped_segs);
-    void x_MinimizeGaps        (TSegmentsContainer& gapped_segs);
-    void x_IdentifyAlnMixSeq   (CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id);
-    void x_SetSeqFrame         (CAlnMixMatch* match, CAlnMixSeq*& seq);
 
     // SChooseSeqId implementation
     virtual void ChooseSeqId(CSeq_id& id1, const CSeq_id& id2);
@@ -169,127 +138,20 @@ private:
     CRef<CDense_seg> x_ExtendDSWithWidths(const CDense_seg& ds);
 
 
-    static bool x_CompareAlnSeqScores  (const CRef<CAlnMixSeq>& aln_seq1,
-                                        const CRef<CAlnMixSeq>& aln_seq2);
-    static bool x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
-                                        const CRef<CAlnMixMatch>& aln_match2);
-        
-    
-    void x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
-                                           const CAlnMixSeq&     seq,
-                                           const TSeqPos&        start);
-
-
     mutable CRef<CScope>        m_Scope;
+    TCalcScoreMethod            x_CalculateScore;
     TConstDSs                   m_InputDSs;
     TConstAlns                  m_InputAlns;
     TConstDSsMap                m_InputDSsMap;
     TConstAlnsMap               m_InputAlnsMap;
-    CRef<CDense_seg>            m_DS;
-    CRef<CSeq_align>            m_Aln;
+
     TAddFlags                   m_AddFlags;
-    TMergeFlags                 m_MergeFlags;
-    TSeqs                       m_Seqs;
-    TMatches                    m_Matches;
-    TSegments                   m_Segments;
-    TSeqs                       m_Rows;
-    list<CRef<CAlnMixSeq> >     m_ExtraRows;
-    bool                        m_SingleRefseq;
-    bool                        m_IndependentDSs;
-    TBioseqHandleMap            m_BioseqHandles;
-    TSeqIdMap                   m_SeqIds;
-    bool                        m_ContainsAA;
-    bool                        m_ContainsNA;
-    size_t                      m_MatchIdx;
-    TCalcScoreMethod            x_CalculateScore;
+
+    CRef<CAlnMixSequences>      m_AlnMixSequences;
+    CRef<CAlnMixMatches>        m_AlnMixMatches;
+    CRef<CAlnMixMerger>         m_AlnMixMerger;
 };
 
-
-///////////////////////////////////////////////////////////
-///////////////////// Helper Classes //////////////////////
-///////////////////////////////////////////////////////////
-
-class CAlnMixSegment : public CObject
-{
-public:
-    // TStarts really belongs in CAlnMixSeq, but had to move here as
-    // part of a workaround for Compaq's compiler's bogus behavior
-    typedef map<TSeqPos, CRef<CAlnMixSegment> > TStarts;
-    typedef map<CAlnMixSeq*, TStarts::iterator> TStartIterators;
-        
-    TSeqPos         m_Len;
-    TStartIterators m_StartIts;
-    int             m_DsIdx; // used by the truncate algorithm
-};
-
-
-class CAlnMixSeq : public CObject
-{
-public:
-    CAlnMixSeq(void) 
-        : m_DsCnt(0),
-          m_Score(0),
-          m_StrandScore(0),
-          m_Width(1),
-          m_Frame(-1),
-          m_RefBy(0),
-          m_ExtraRow(0),
-          m_ExtraRowIdx(0),
-          m_AnotherRow(0),
-          m_DsIdx(0),
-          m_RowIdx(-1)
-    {};
-
-    typedef CAlnMixSegment::TStarts TStarts;
-    typedef list<CAlnMixMatch *>    TMatchList;
-
-    int                   m_DsCnt;
-    const CBioseq_Handle* m_BioseqHandle;
-    CRef<CSeq_id>         m_SeqId;
-    int                   m_Score;
-    int                   m_StrandScore;
-    bool                  m_IsAA;
-    unsigned              m_Width;
-    int                   m_Frame;
-    bool                  m_PositiveStrand;
-    TStarts               m_Starts;
-    CAlnMixSeq *          m_RefBy;
-    CAlnMixSeq *          m_ExtraRow;
-    int                   m_ExtraRowIdx;
-    CAlnMixSeq *          m_AnotherRow;
-    int                   m_SeqIdx;
-    int                   m_DsIdx;
-    int                   m_RowIdx;
-    TStarts::iterator     m_StartIt;
-    TMatchList            m_MatchList;
-
-    CSeqVector& GetSeqVector(void) {
-        if ( !m_SeqVector ) {
-            m_SeqVector = new CSeqVector
-                (m_BioseqHandle->GetSeqVector(CBioseq_Handle::eCoding_Iupac));
-        }
-        return *m_SeqVector;
-    }
-private:
-    CRef<CSeqVector> m_SeqVector;
-};
-
-
-class CAlnMixMatch : public CObject
-{
-public:
-    CAlnMixMatch(void)
-        : m_Score(0), m_Start1(0), m_Start2(0),
-          m_Len(0), m_StrandsDiffer(false), m_DsIdx(0)
-    {};
-        
-    int                              m_Score;
-    CAlnMixSeq                       * m_AlnSeq1, * m_AlnSeq2;
-    TSeqPos                          m_Start1, m_Start2, m_Len;
-    bool                             m_StrandsDiffer;
-    int                              m_DsIdx;
-    CAlnMixSeq::TMatchList::iterator m_MatchIter1, m_MatchIter2;
-};
 
 
 ///////////////////////////////////////////////////////////
@@ -317,34 +179,10 @@ const CAlnMix::TConstAlns& CAlnMix::GetInputSeqAligns() const
 }
 
 
-inline
-const CDense_seg& CAlnMix::GetDenseg() const
-{
-    if (!m_DS) {
-        NCBI_THROW(CAlnException, eMergeFailure,
-                   "CAlnMix::GetDenseg(): "
-                   "Dense_seg is not available until after Merge()");
-    }
-    return *m_DS;
-}
-
-
-inline
-const CSeq_align& CAlnMix::GetSeqAlign() const
-{
-    if (!m_Aln) {
-        NCBI_THROW(CAlnException, eMergeFailure,
-                   "CAlnMix::GetSeqAlign(): "
-                   "Seq_align is not available until after Merge()");
-    }
-    return *m_Aln;
-}
-
-
-
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -354,6 +192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2005/03/01 17:28:49  todorov
+* Rearranged CAlnMix classes
+*
 * Revision 1.49  2005/02/16 21:27:48  todorov
 * Abstracted the CalculateScore method so that it could be delegated to
 * the caller.
