@@ -314,7 +314,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
          Blast_HSPListsMerge(hsp_list, &combined_hsp_list, hsp_num_max, offset,
-            (prelim_traceback || !score_options->gapped_calculation));
+            (Boolean)(prelim_traceback || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
       
       Blast_HSPListAppend(combined_hsp_list, hsp_list_out, hsp_num_max);
