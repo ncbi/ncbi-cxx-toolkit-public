@@ -63,6 +63,7 @@ class CTitle;
 class CDesc_CI;
 class CMolInfo;
 class CUser_object;
+class CSeqdesc_CI;
 
 BEGIN_SCOPE(validator)
 
@@ -139,6 +140,7 @@ enum EErrType {
     eErr_SEQ_DESCR_StructuredSourceNote,
     eErr_SEQ_DESCR_MultipleTitles,
     eErr_SEQ_DESCR_Obsolete,
+    eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
 
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
@@ -334,7 +336,7 @@ public:
     inline bool IsOvlPepErr(void) const { return m_OvlPepErr; }
     inline bool IsRequireTaxonID(void) const { return m_RequireTaxonID; }
     inline bool IsRequireISOJTA(void) const { return m_RequireISOJTA; }
-    inline bool IsValidateIdSet(void) const { return m_ValidaetIdSet; }
+    inline bool IsValidateIdSet(void) const { return m_ValidateIdSet; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -420,7 +422,7 @@ private:
     bool m_OvlPepErr;           // Peptide overlap error if true, else warn
     bool m_RequireTaxonID;      // BioSource requires taxonID dbxref
     bool m_RequireISOJTA;       // Journal requires ISO JTA
-    bool m_ValidaetIdSet;       // validate update against ID set in database
+    bool m_ValidateIdSet;       // validate update against ID set in database
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -567,9 +569,8 @@ private:
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateUpdateDateContext(const CDate& update,const CDate& create,
         const CBioseq& seq, const CSeqdesc& desc);
-    void ValidateOrgContext(const COrg_ref& this_org, const COrg_ref& org,
-        const CBioseq& seq, const CSeqdesc& desc);
-
+    void ValidateOrgContext(const CSeqdesc_CI& iter, const COrg_ref& this_org,
+        const COrg_ref& org, const CBioseq& seq, const CSeqdesc& desc);
 
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
@@ -752,6 +753,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/03/21 21:12:17  shomrat
+* Added eErr_SEQ_DESCR_UnnecessaryBioSourceFocus; Change to signature of ValidateOrgContext
+*
 * Revision 1.18  2003/03/21 19:37:04  shomrat
 * Added IsNucAcc and IsFlybaseDbxrefs
 *
