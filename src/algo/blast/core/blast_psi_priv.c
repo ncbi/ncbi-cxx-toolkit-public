@@ -2089,22 +2089,6 @@ _IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
     retval = Kappa_impalaScaling(posSearch, compactSearch,
                                  scaling_factor, TRUE, sbp);
 
-#if 0
-    /* FIXME: there are differences between this and what formatrspdb's scaling
-     * produces */
-    {
-        unsigned int i, j;
-        FILE* fp = fopen("scaled_pssm.txt", "w");
-        for (i = 0; i < internal_pssm->ncols; i++) {
-            for (j = 0; j < internal_pssm->nrows; j++) {
-                fprintf(fp, "%d ", internal_pssm->scaled_pssm[i][j]);
-            }
-            fprintf(fp, "\n");
-        }
-        fclose(fp);
-    }
-#endif
-
     /* Overwrite unscaled PSSM with scaled PSSM */
     _PSICopyMatrix_int(internal_pssm->pssm, internal_pssm->scaled_pssm,
                        internal_pssm->ncols, internal_pssm->nrows);
@@ -2378,6 +2362,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/03/07 18:46:05  camacho
+ * Removed dead code
+ *
  * Revision 1.50  2005/02/23 17:32:57  camacho
  * Minor
  *

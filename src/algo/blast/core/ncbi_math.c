@@ -45,11 +45,6 @@ static char const rcsid[] =
 
 #include <algo/blast/core/ncbi_math.h>
 
-#if 0
-extern char * g_corelib;
-static char * _this_file = __FILE__;
-#endif
-
 
 /*
     BLAST_Expm1(x)
@@ -554,6 +549,9 @@ double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/03/07 18:46:05  camacho
+ * Removed dead code
+ *
  * Revision 1.11  2004/11/18 21:26:15  dondosha
  * Added BLAST_Gdb3, needed for greedy alignment; removed extern from function signatures; renamed static functions according to C++ toolkit guidelines
  *
