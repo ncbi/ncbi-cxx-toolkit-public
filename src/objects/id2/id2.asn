@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -149,7 +149,7 @@ ID2S-Request-Get-Chunks ::= SEQUENCE {
         tse-id          ID2-TSE-Id,
 
         -- requests for specific chunks of splitted blob
-        chunks          SET OF ID2S-Chunk-Id
+        chunks          SET OF INTEGER --ID2S-Chunk-Id
 }
 
 
@@ -180,7 +180,7 @@ ID2-TSE-Id ::= SEQUENCE {
 }
 
 
-ID2S-Chunk-Id ::= INTEGER
+--ID2S-Chunk-Id ::= INTEGER
 
 
 ID2-Reply ::= SEQUENCE {
@@ -306,7 +306,7 @@ ID2S-Reply-Get-TSE-Info ::= SEQUENCE {
 ID2S-Reply-Get-Chunk ::= SEQUENCE {
         tse-id          ID2-TSE-Id,
 
-        chunk-id        ID2S-Chunk-Id,
+        chunk-id        INTEGER, --ID2S-Chunk-Id,
 
         -- chunk data
         -- not set if error occured
@@ -333,7 +333,7 @@ ID2-Reply-Data ::= SEQUENCE {
 
 
 ID2S-Split-Info ::= SEQUENCE {
-        bioseqs-info    SET OF ID2S-Bioseqs-Info,
+        bioseqs-info    SET OF ID2S-Bioseqs-Info OPTIONAL,
         chunks          SET OF ID2S-Chunk-Info
 }
 
@@ -353,13 +353,13 @@ ID2S-Bioseq-Info ::= SEQUENCE {
 
 ID2S-Sequence-Split-Info ::= SEQUENCE {
         block-size      INTEGER,
-        chunk-start     ID2S-Chunk-Id,
+        chunk-start     INTEGER, --ID2S-Chunk-Id,
         chunk-blocks    SEQUENCE OF INTEGER
 }
 
 
 ID2S-Chunk-Info ::= SEQUENCE {
-        id              ID2S-Chunk-Id,
+        id              INTEGER, --ID2S-Chunk-Id,
         content         SET OF ID2S-Chunk-Content
 }
 
@@ -368,8 +368,8 @@ ID2S-Chunk-Content ::= CHOICE {
         seq-descr       ID2S-Seq-descr-Info,
         seq-annot       ID2S-Seq-annot-Info,
         seq-assembly    ID2S-Seq-assembly-Info,
-        seq-map         ID2S-Seq-map-Info,
-        seq-data        ID2S-Seq-data-Info
+        seq-map         ID2-Seq-loc, --ID2S-Seq-map-Info,
+        seq-data        ID2-Seq-loc  --ID2S-Seq-data-Info
 }
 
 
@@ -381,9 +381,19 @@ ID2S-Seq-descr-Info ::= SEQUENCE {
 
 
 ID2S-Seq-annot-Info ::= SEQUENCE {
-        annot-type      INTEGER,          -- ftable, graph, align
-        feat-type-mask  INTEGER OPTIONAL, -- for ftable only
-        seq-loc         ID2-Seq-loc OPTIONAL
+        -- name is set if this is named annot
+        -- name may be empty which differ from unnamed annot
+        name            VisibleString OPTIONAL,
+        align           NULL OPTIONAL,
+        graph           NULL OPTIONAL,
+        feat            SET OF ID2S-Feat-type-Info OPTIONAL,
+        seq-loc         ID2-Seq-loc
+}
+
+
+ID2S-Feat-type-Info ::=  SEQUENCE {
+        type            INTEGER,
+        subtypes        SET OF INTEGER OPTIONAL
 }
 
 
@@ -392,10 +402,10 @@ ID2S-Seq-assembly-Info ::= SEQUENCE {
 }
 
 
-ID2S-Seq-map-Info ::= ID2-Seq-loc
+--ID2S-Seq-map-Info ::= ID2-Seq-loc
 
 
-ID2S-Seq-data-Info ::= ID2-Seq-loc
+--ID2S-Seq-data-Info ::= ID2-Seq-loc
 
 
 ID2-Id-Range ::= SEQUENCE {

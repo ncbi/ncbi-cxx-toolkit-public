@@ -1,2 +1,5 @@
 [-]
 _export = NCBI_ID2_EXPORT
+
+[ID2S-Chunk-Id]
+_type = int
