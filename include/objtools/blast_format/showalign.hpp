@@ -313,7 +313,7 @@ private:
 
     int getNumGaps();               // Count number of total gaps
     const CRef < CBlast_def_line_set >
-        GetBlastDefline(const CBioseq & cbsp) const;
+        GetBlastDefline(const CBioseq_Handle& handle) const;
     void AddLinkout(const CBioseq & cbsp, const CBlast_def_line & bdl,
                     int firstGi, int gi, CNcbiOstream & out) const;
     string getUrl(const list < CRef < CSeq_id > >&ids, int row) const;
@@ -354,6 +354,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.18  2004/04/14 16:29:46  jianye
+*change GetBlastDefline parameter
+*
 *Revision 1.17  2004/02/10 22:00:05  jianye
 *Clean up some defs
 *
