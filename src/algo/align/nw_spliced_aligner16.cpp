@@ -109,11 +109,13 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     const size_t N1 = len1 + 1;
     const size_t N2 = len2 + 1;
 
-    TScore* rowV    = new TScore [N2];
-    TScore* rowF    = new TScore [N2];
+    vector<TScore> stl_rowV (N2), stl_rowF (N2);
+    TScore* rowV    = &stl_rowV[0];
+    TScore* rowF    = &stl_rowF[0];
 
     // index calculation: [i,j] = i*n2 + j
-    Uint2* backtrace_matrix = new Uint2 [N1*N2];
+    vector<Uint2> stl_bm (N1*N2);
+    Uint2* backtrace_matrix = &stl_bm[0];
 
     TScore* pV = rowV - 1;
 
@@ -140,9 +142,11 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     // store candidate donors
     size_t* jAllDonors [splice_type_count_16];
     TScore* vAllDonors [splice_type_count_16];
+    vector<size_t> stl_jAllDonors (splice_type_count_16 * N2);
+    vector<TScore> stl_vAllDonors (splice_type_count_16 * N2);
     for(unsigned char st = 0; st < splice_type_count_16; ++st) {
-        jAllDonors[st] = new size_t [N2];
-        vAllDonors[st] = new TScore [N2];
+        jAllDonors[st] = &stl_jAllDonors[st*N2];
+        vAllDonors[st] = &stl_vAllDonors[st*N2];
     }
     size_t  jTail[splice_type_count_16], jHead[splice_type_count_16];
     TScore  vBestDonor [splice_type_count_16];
@@ -310,16 +314,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
 
     }
 
-    for(unsigned char st = 0; st < splice_type_count_16; ++st) {
-        delete[] jAllDonors[st];
-        delete[] vAllDonors[st];
-    }
-    delete[] rowV;
-    delete[] rowF;
-
     x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
-
-    delete[] backtrace_matrix;
 
     return V;
 }
@@ -525,6 +520,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/04 16:07:38  kapustin
+ * Use STL vectors for exception-safe dynamic arrays and matrices
+ *
  * Revision 1.1  2003/09/02 22:34:49  kapustin
  * Initial revision
  *

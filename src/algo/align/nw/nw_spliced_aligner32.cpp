@@ -134,11 +134,13 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
     const size_t N1 = len1 + 1;
     const size_t N2 = len2 + 1;
 
-    TScore* rowV    = new TScore [N2];
-    TScore* rowF    = new TScore [N2];
+    vector<TScore> stl_rowV (N2), stl_rowF (N2);
+    TScore* rowV    = &stl_rowV[0];
+    TScore* rowF    = &stl_rowF[0];
 
     // index calculation: [i,j] = i*n2 + j
-    Uint4* backtrace_matrix = new Uint4 [N1*N2];
+    vector<Uint4> stl_bm (N1*N2);
+    Uint4* backtrace_matrix = &stl_bm[0];
 
     TScore* pV = rowV - 1;
 
@@ -165,9 +167,11 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
     // store candidate donors
     size_t* jAllDonors [splice_type_count_32];
     TScore* vAllDonors [splice_type_count_32];
+    vector<size_t> stl_jAllDonors (splice_type_count_32 * N2);
+    vector<TScore> stl_vAllDonors (splice_type_count_32 * N2);
     for(unsigned char st = 0; st < splice_type_count_32; ++st) {
-        jAllDonors[st] = new size_t [N2];
-        vAllDonors[st] = new TScore [N2];
+        jAllDonors[st] = &stl_jAllDonors[st*N2];
+        vAllDonors[st] = &stl_vAllDonors[st*N2];
     }
     size_t  jTail[splice_type_count_32], jHead[splice_type_count_32];
     TScore  vBestDonor   [splice_type_count_32];
@@ -187,7 +191,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
     size_t i, j = 0, k0;
     char ci;
     for(i = 0;  i < N1;  ++i, j = 0) {
-       
+
         V = i > 0? (V0 += wsleft2) : 0;
         E = kInfMinus;
         k0 = k;
@@ -356,16 +360,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
 
     }
 
-    for(unsigned char st = 0; st < splice_type_count_32; ++st) {
-        delete[] jAllDonors[st];
-        delete[] vAllDonors[st];
-    }
-    delete[] rowV;
-    delete[] rowF;
-
     x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
-
-    delete[] backtrace_matrix;
 
     return V;
 }
@@ -390,7 +385,14 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
         Uint4 type = Key & mask_type;
 
         if(type == kTypeI) {  // intron
-            for(size_t k2 = (Key & mask_jump); k != k2; --k) {
+	    size_t k2 = (Key & mask_jump);
+	    if( k2 > k || k - k2 > k % N2 ) {
+	        NCBI_THROW(
+		    CAlgoAlignException,
+		    eInternal,
+		    "Incorrect backtrace jump detected");
+	    }
+            for(; k != k2; --k) {
                 transcript->push_back(eTS_Intron);
             }
         }
@@ -555,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/04 16:07:38  kapustin
+ * Use STL vectors for exception-safe dynamic arrays and matrices
+ *
  * Revision 1.1  2003/09/02 22:34:49  kapustin
  * Initial revision
  *

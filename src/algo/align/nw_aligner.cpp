@@ -217,8 +217,10 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     const size_t N1 = len1 + 1;
     const size_t N2 = len2 + 1;
 
-    TScore* rowV    = new TScore [N2];
-    TScore* rowF    = new TScore [N2];
+    vector<TScore> stl_rowV (N2), stl_rowF(N2);
+
+    TScore* rowV    = &stl_rowV[0];
+    TScore* rowF    = &stl_rowF[0];
 
     TScore* pV = rowV - 1;
 
@@ -245,7 +247,8 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     TScore wg1 = m_Wg, ws1 = m_Ws;
 
     // index calculation: [i,j] = i*n2 + j
-    unsigned char* backtrace_matrix = new unsigned char [N1*N2];
+    vector<unsigned char> stl_bm (N1*N2);
+    unsigned char* backtrace_matrix = &stl_bm[0];
 
     // first row
     size_t k;
@@ -346,10 +349,6 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
     }
-
-    delete[] backtrace_matrix;
-    delete[] rowV;
-    delete[] rowF;
 
     return V;
 }
@@ -808,7 +807,7 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
     size_t cur = 0, maxseg = 0;
     const char* p1 = m_Seq1;
     const char* p2 = m_Seq2;
-    size_t i0 = 0, j0 = 0, imax = 0, jmax = 0;
+    size_t i0 = 0, j0 = 0, imax = i0, jmax = j0;
 
     for(int k = trdim - 1; k >= 0; --k) {
 
@@ -860,6 +859,7 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
                 ++p2;
             }
             break;
+
             default: {
                 NCBI_THROW(
                            CAlgoAlignException,
@@ -867,6 +867,12 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
                            "Invalid transcript symbol");
             }
         }
+    }
+
+    if(cur > maxseg) {
+      maxseg = cur;
+      imax = i0;
+      jmax = j0;
     }
 
  ret_point:
@@ -889,7 +895,8 @@ size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
     const char* seq2_end = m_Seq2 + m_SeqLen2;
     const char* p1 = seq1_end - 1;
     const char* p2 = seq2_end - 1;
-    size_t i0 = 0, j0 = 0, imax = 0, jmax = 0;
+    size_t i0 = m_SeqLen1 - 1, j0 = m_SeqLen2 - 1,
+           imax = i0, jmax = j0;
 
     for(size_t k = 0; k < trdim; ++k) {
 
@@ -913,7 +920,8 @@ size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
                     maxseg = cur;
                     imax = i0;
                     jmax = j0;
-                    if(maxseg >= min_size) goto ret_point;            }
+                    if(maxseg >= min_size) goto ret_point;
+		}
                 cur = 0;
             }
             break;
@@ -940,6 +948,7 @@ size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
                 --p2;
             }
             break;
+
             default: {
                 NCBI_THROW(
                            CAlgoAlignException,
@@ -947,6 +956,12 @@ size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
                            "Invalid transcript symbol");
             }
         }
+    }
+
+    if(cur > maxseg) {
+      maxseg = cur;
+      imax = i0;
+      jmax = j0;
     }
 
  ret_point:
@@ -966,7 +981,7 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
     size_t cur = 0, maxseg = 0;
     const char* p1 = m_Seq1;
     const char* p2 = m_Seq2;
-    size_t i0 = 0, j0 = 0, imax = 0, jmax = 0;
+    size_t i0 = 0, j0 = 0, imax = i0, jmax = j0;
 
     for(int k = trdim-1; k >= 0; --k) {
 
@@ -1004,7 +1019,7 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
                     ++cur;
                 }
                 else {
-                    if(cur > maxseg) {
+		    if(cur > maxseg) {
                         maxseg = cur;
                         imax = i0;
                         jmax = j0;
@@ -1015,6 +1030,7 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
                 ++p2;
             }
             break;
+
             default: {
                 NCBI_THROW(
                            CAlgoAlignException,
@@ -1023,7 +1039,13 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
             }
         }
     }
-
+    
+    if(cur > maxseg) {
+        maxseg = cur;
+        imax = i0;
+        jmax = j0;
+    }
+    
     *q0 = imax; *s0 = jmax;
     *q1 = *q0 + maxseg - 1;
     *s1 = *s0 + maxseg - 1;
@@ -1038,6 +1060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/09/04 16:07:38  kapustin
+ * Use STL vectors for exception-safe dynamic arrays and matrices
+ *
  * Revision 1.34  2003/09/03 17:28:40  kapustin
  * Clean the list of includes
  *

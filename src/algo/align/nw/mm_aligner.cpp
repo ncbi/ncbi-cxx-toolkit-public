@@ -467,8 +467,9 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
     const size_t N1   = dim1 + 1;
     const size_t N2   = dim2 + 1;
 
-    TScore* rowV    = new TScore [N2];
-    TScore* rowF    = new TScore [N2];
+    vector<TScore> stl_rowV (N2), stl_rowF (N2);
+    TScore* rowV    = &stl_rowV [0];
+    TScore* rowF    = &stl_rowF [0];
 
     TScore* pV = rowV - 1;
 
@@ -618,9 +619,6 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
         m_prg_info.m_iter_done += (i % prg_rep_rate)*N2;
         m_terminate = m_prg_callback(&m_prg_info);
     }
-
-    delete[] rowV;
-    delete[] rowF;
 }
 
  
@@ -637,8 +635,9 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
     const size_t N1   = dim1 + 1;
     const size_t N2   = dim2 + 1;
 
-    TScore* rowV    = new TScore [N2];
-    TScore* rowF    = new TScore [N2];
+    vector<TScore> stl_rowV (N2), stl_rowF (N2);
+    TScore* rowV    = &stl_rowV [0];
+    TScore* rowF    = &stl_rowF [0];
 
     TScore* pV = rowV + 1;
 
@@ -790,9 +789,6 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
         m_prg_info.m_iter_done += (N1 - i) % prg_rep_rate;
         m_terminate = m_prg_callback(&m_prg_info);
     }
-    
-    delete[] rowV;
-    delete[] rowF;
 }
 
 
@@ -807,11 +803,13 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
     const size_t N1 = rect.i2 - rect.i1 + 2;
     const size_t N2 = rect.j2 - rect.j1 + 2;
 
-    TScore* rowV    = new TScore [N2];
-    TScore* rowF    = new TScore [N2];
+    vector<TScore> stl_rowV (N2), stl_rowF (N2);
+    TScore* rowV    = &stl_rowV [0];
+    TScore* rowF    = &stl_rowF [0];
 
     // index calculation: [i,j] = i*n2 + j
-    unsigned char* backtrace = new unsigned char [N1*N2];
+    vector<unsigned char> stl_bm (N1*N2);
+    unsigned char* backtrace = &stl_bm[0];
 
     TScore* pV = rowV - 1;
 
@@ -941,10 +939,6 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
         }
     }
 
-    delete[] backtrace;
-    delete[] rowV;
-    delete[] rowF;
-
     return V;
 }
 
@@ -961,6 +955,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/09/04 16:07:38  kapustin
+ * Use STL vectors for exception-safe dynamic arrays and matrices
+ *
  * Revision 1.14  2003/09/02 22:36:57  kapustin
  * Adjust for transcript symbol name changes
  *
