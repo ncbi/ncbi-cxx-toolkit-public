@@ -99,7 +99,7 @@ void CAlignmentFile::Read(CNcbiIstream& is, const CSequenceInfo& info,
         if (afp->organisms[i]) {
             result.SetOrganisms()[i] = afp->organisms[i];
         } else {
-            result.SetOrganisms()[i].clear();
+            result.SetOrganisms()[i].erase();
         }
     }
     result.SetDeflines().resize(afp->num_deflines);
@@ -107,7 +107,7 @@ void CAlignmentFile::Read(CNcbiIstream& is, const CSequenceInfo& info,
         if (afp->deflines[i]) {
             result.SetDeflines()[i] = afp->deflines[i];
         } else {
-            result.SetDeflines()[i].clear();
+            result.SetDeflines()[i].erase();
         }
     }
 
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 02:58:09  ucko
+ * erase() strings rather than clear()ing them for compatibility with G++ 2.95.
+ *
  * Revision 1.1  2004/02/09 16:02:34  jcherry
  * Initial versionnnn
  *
