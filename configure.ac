@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.347 2005/02/03 17:13:07 ucko Exp $
+#  $Id: configure.ac,v 1.348 2005/02/03 18:42:09 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -420,7 +420,7 @@ fi
 
 #### Detect ICC compiler (newer versions of which configure can mis-ID as GCC)
 if test "$KCC" != "yes"; then
-   icc_ver="`$real_CC -V 2>&1 | grep '^Intel(R) C++ Compiler'`"
+   icc_ver="`$real_CC -V 2>&1 | grep '^Intel(R) C'`"
    icc_license="`$real_CC -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
    case "$icc_ver" in
       Intel*C*Compiler* )  ICC="yes"; GCC="no" ;;

@@ -11,7 +11,7 @@
 
 ## Path to the compiler
 CC="icc"
-CXX="icpc"
+CXX="icpc -cxxlib-icc"
 
 $CXX -V -help >/dev/null 2>&1
 if test "$?" -ne 0 ; then
