@@ -51,7 +51,6 @@
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 
 
 using namespace ncbi;
@@ -261,6 +260,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2003/04/24 16:17:10  vasilche
+ * Added '-repeat' option.
+ * Updated includes.
+ *
  * Revision 1.10  2003/04/15 14:25:06  vasilche
  * Added missing includes.
  *

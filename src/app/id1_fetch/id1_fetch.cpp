@@ -62,7 +62,6 @@
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/gbloader.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -233,6 +232,11 @@ void CId1FetchApp::Init(void)
                               prog_description, false);
 
 
+    arg_desc->AddDefaultKey
+        ("repeat", "repeat",
+         "Repeat fetch number of times",
+         CArgDescriptions::eInteger, "1");
+
     // Pass argument descriptions to the application
     //
 
@@ -307,6 +311,8 @@ int CId1FetchApp::Run(void)
     m_ObjMgr->RegisterDataLoader( *new CGBDataLoader("GENBANK"));
     m_Scope->AddDataLoader("GENBANK");
 
+    int repeat = args["repeat"].AsInteger();
+    for ( int pass = 0; pass < repeat; ++pass ) {
     if (args["gi"]) {
         if ( !LookUpGI(args["gi"].AsInteger()) )
             return -1;
@@ -391,7 +397,7 @@ int CId1FetchApp::Run(void)
             }
         }
     }
-
+    }
     return 0;
 }
 
@@ -738,6 +744,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/04/24 16:17:10  vasilche
+* Added '-repeat' option.
+* Updated includes.
+*
 * Revision 1.42  2003/04/09 16:00:15  ucko
 * Give all RPC clients unique basenames.
 *
