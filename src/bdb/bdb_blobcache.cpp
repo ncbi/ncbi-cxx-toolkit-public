@@ -47,11 +47,14 @@ BEGIN_NCBI_SCOPE
 
 // Mutex to sync cache requests coming from different threads
 // All requests are protected with one mutex
-static CFastMutex x_BDB_BLOB_CacheMutex;
+// mutex guarding access to our images
+DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 // Mutex to sync int cache requests coming from different threads
 // All requests are protected with one mutex
-static CFastMutex x_BDB_IntCacheMutex;
+// mutex guarding access to our images
+DEFINE_STATIC_FAST_MUTEX(x_BDB_IntCacheMutex);
+
 
 static const unsigned int s_WriterBufferSize = 256 * 1024;
 
@@ -2019,6 +2022,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/03/23 19:22:08  friedman
+ * Replaced 'static CFastMutex' with DEFINE_STATIC_FAST_MUTEX
+ *
  * Revision 1.43  2004/02/27 17:29:50  kuznets
  * +CBDB_CacheHolder
  *
