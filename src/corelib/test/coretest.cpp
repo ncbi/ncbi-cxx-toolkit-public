@@ -30,6 +30,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/10 01:17:38  vakatov
+* Cleaned, adopted to the standard NCBI C++ framework and incorporated
+* the "hardware exceptions" code and tests(originally written by
+* V.Sandomirskiy).
+* Only tested for MSVC++ compiler yet -- to be continued for SunPro...
+*
 * Revision 1.6  1998/11/06 22:42:42  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -86,6 +92,7 @@ static void TestDiag(void)
          << Info  << "This message has severity \"Info\"" << Endm;
 }
 
+
 /////////////////////////////////
 // Exceptions
 //
@@ -132,7 +139,38 @@ static void TestException(void)
     try { TE_logic(); }
     catch (logic_error& e) {
         NcbiCerr << "CATCH TE_logic" << e.what() << NcbiEndl; }
-    STD_CATCH_ALL ("try { TE_logic(); }  SOMETHING IS WRONG!");    
+    STD_CATCH_ALL ("try { TE_logic(); }  SOMETHING IS WRONG!");
+
+
+    // CNcbiOSException
+
+    CNcbiOSException::Initialize();  // Initialize
+
+    try { // Memory Access Violation
+        int* i_ptr = 0;
+        int i_val = *i_ptr;
+    } catch (CNcbiMemException& e) {
+        NcbiCerr << e.what() << NcbiEndl;
+    }
+
+    try { // Bad Instruction
+        static int i_arr[32];
+        void *i_arr_ptr = i_arr;
+        memset((void*)i_arr, '\0xFF', sizeof(i_arr)/2);
+        typedef void (*TBadFunc)(void);
+        TBadFunc bad_func = 0;
+        memcpy((void*)&bad_func, i_arr_ptr, sizeof(i_arr_ptr));
+        bad_func();
+    } catch (CNcbiOSException& e) {
+        NcbiCerr << e.what() << NcbiEndl;
+    }
+
+    try { // Divide by Zero
+        int i1 = 1;
+        i1 /= (i1 - i1);
+    } catch (exception& e) {
+        NcbiCerr << e.what() << NcbiEndl;
+    }
 }
 
 
