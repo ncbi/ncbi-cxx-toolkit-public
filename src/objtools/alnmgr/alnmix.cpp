@@ -153,6 +153,12 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     }
     x_Reset();
 
+    if (flags & fDontUseObjMgr  &&  flags & fCalcScore) {
+        NCBI_THROW(CAlnException, eMergeFailure, "CAlnMix::Add(): "
+                   "fCalcScore cannot be used together with fDontUseObjMgr");
+    }
+    m_AddFlags = flags;
+
     m_InputDSsMap[(void *)&ds] = &ds;
     m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
 
@@ -161,40 +167,72 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     //store the bioseq handles
     for (CAlnMap::TNumrow row = 0;  row < ds.GetDim();  row++) {
 
-        CBioseq_Handle bioseq_handle = 
-            GetScope().GetBioseqHandle(*(ds.GetIds())[row]);
-
-        if ( !bioseq_handle ) {
-            string errstr = string("CAlnMix::Add(): ") 
-                + "Seq-id cannot be rosolved: "
-                + (ds.GetIds())[row]->AsFastaString();
-        
-            NCBI_THROW(CAlnException, eMergeFailure, errstr);
-        }
-
         CRef<CAlnMixSeq> aln_seq;
 
-        TBioseqHandleMap::iterator it = m_BioseqHandles.find(bioseq_handle);
-        if (it == m_BioseqHandles.end()) {
-            // add this bioseq handle
-            aln_seq = new CAlnMixSeq();
-            m_BioseqHandles[bioseq_handle] = aln_seq;
-            aln_seq->m_BioseqHandle = 
-                &m_BioseqHandles.find(bioseq_handle)->first;
-            aln_seq->m_DS_Count = 1;
+        if (m_AddFlags & fDontUseObjMgr) {
+            // identify sequences by their seq ids as provided by
+            // the dense seg (not as reliable as with OM, but faster)
+            CRef<CSeq_id> seq_id(new CSeq_id);
+            seq_id->Assign(*ds.GetIds()[row]);
 
-            // add this sequence
-            m_Seqs.push_back(aln_seq);
+            TSeqIdMap::iterator it = m_SeqIds.find(seq_id);
+            if (it == m_SeqIds.end()) {
+                // add this seq id
+                aln_seq = new CAlnMixSeq();
+                m_SeqIds[seq_id] = aln_seq;
+                aln_seq->m_SeqId = seq_id;
+                aln_seq->m_DS_Count = 1;
+
+                // add this sequence
+                m_Seqs.push_back(aln_seq);
             
-            // mark if protein sequence
-            aln_seq->m_IsAA = aln_seq->m_BioseqHandle->GetBioseqCore()
-                ->GetInst().GetMol() == CSeq_inst::eMol_aa;
+                // mark if protein sequence
+                aln_seq->m_IsAA = false;
 
+            } else {
+                aln_seq = it->second;
+                aln_seq->m_DS_Count++;
+            }
+            
         } else {
-            aln_seq = it->second;
-            aln_seq->m_DS_Count++;
-        }
+            // uniquely identify the bioseq
+            CBioseq_Handle bioseq_handle = 
+                GetScope().GetBioseqHandle(*(ds.GetIds())[row]);
 
+            if ( !bioseq_handle ) {
+                string errstr = string("CAlnMix::Add(): ") 
+                    + "Seq-id cannot be rosolved: "
+                    + (ds.GetIds())[row]->AsFastaString();
+                
+                NCBI_THROW(CAlnException, eMergeFailure, errstr);
+            }
+
+            TBioseqHandleMap::iterator it = m_BioseqHandles.find(bioseq_handle);
+            if (it == m_BioseqHandles.end()) {
+                // add this bioseq handle
+                aln_seq = new CAlnMixSeq();
+                m_BioseqHandles[bioseq_handle] = aln_seq;
+                aln_seq->m_BioseqHandle = 
+                    &m_BioseqHandles.find(bioseq_handle)->first;
+                
+                CRef<CSeq_id> seq_id(new CSeq_id);
+                seq_id->Assign(*aln_seq->m_BioseqHandle->GetSeqId());
+                m_SeqIds[seq_id] = aln_seq;
+                aln_seq->m_SeqId = seq_id;
+                aln_seq->m_DS_Count = 1;
+
+                // add this sequence
+                m_Seqs.push_back(aln_seq);
+            
+                // mark if protein sequence
+                aln_seq->m_IsAA = aln_seq->m_BioseqHandle->GetBioseqCore()
+                    ->GetInst().GetMol() == CSeq_inst::eMol_aa;
+
+            } else {
+                aln_seq = it->second;
+                aln_seq->m_DS_Count++;
+            }
+        }
         ds_seq.push_back(aln_seq);
     }
 
@@ -271,7 +309,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
 
                         //Determine the score
-                        if (flags & fCalcScore) {
+                        if (m_AddFlags & fCalcScore) {
                             // calc the score by seq comp
                             string s1, s2;
 
@@ -661,6 +699,7 @@ void CAlnMix::x_Merge()
                         // create an extra row
                         CRef<CAlnMixSeq> row (new CAlnMixSeq);
                         row->m_BioseqHandle = seq2->m_BioseqHandle;
+                        row->m_SeqId = seq2->m_SeqId;
                         row->m_Factor = seq2->m_Factor;
                         row->m_SeqIndex = seq2->m_SeqIndex;
                         if (m_MergeFlags & fQuerySeqMergeOnly) {
@@ -1114,13 +1153,13 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
             }
 
             // check if score is sufficient
-            if (possible) {
+            if (possible  &&  m_AddFlags & fCalcScore) {
                 if (!cache) {
 
                     seq1 = seg1->m_StartIts.begin()->first;
                     
                     start1 = seg1->m_StartIts[seq1]->first;
-
+                        
                     if (seq1->m_PositiveStrand) {
                         seq1->m_BioseqHandle->GetSeqVector
                             (CBioseq_Handle::eCoding_Iupac,
@@ -1139,8 +1178,8 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
 
                     score1 = 
                         CAlnVec::CalculateScore(s1, s1,
-                                                seq1->m_IsAA, seq1->m_IsAA);
-
+                                                seq1->m_IsAA,
+                                                seq1->m_IsAA);
                     cache = true;
                 }
                 
@@ -1332,9 +1371,7 @@ void CAlnMix::x_CreateDenseg()
 
     // ids
     for (numrow = 0;  numrow < numrows;  numrow++) {
-        CRef<CSeq_id> seq_id(new CSeq_id);
-        seq_id->Assign(*(m_Rows[numrow]->m_BioseqHandle->GetSeqId()));
-        ids[numrow] = seq_id;
+        ids[numrow] = m_Rows[numrow]->m_SeqId;
     }
 
     int offset = 0;
@@ -1403,6 +1440,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2003/06/09 20:54:20  todorov
+* Use of ObjMgr is now optional
+*
 * Revision 1.54  2003/06/03 20:56:52  todorov
 * Bioseq handle validation
 *

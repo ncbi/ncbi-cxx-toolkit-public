@@ -45,6 +45,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // forward declarations
 class CScope;
 class CObjectManager;
+class CSeq_id;
 
 class CAlnMixSegment;
 class CAlnMixSeq;
@@ -62,8 +63,13 @@ public:
     ~CAlnMix(void);
 
     enum EAddFlags {
+        // ObjMgr is used to identify sequences and obtain a bioseqhandle.
+        // Also used to calc scores and determine the type of molecule
+        fDontUseObjMgr            = 0x01,
+
         // Determine score of each aligned segment in the process of mixing
-        fCalcScore            = 0x01
+        // (can only be set in addition to fUseObjMgr)
+        fCalcScore            = 0x02
     };
     typedef int TAddFlags; // binary OR of EMergeFlags
 
@@ -99,13 +105,22 @@ private:
     CAlnMix(const CAlnMix& value);
     CAlnMix& operator=(const CAlnMix& value);
 
-    typedef map<void *, CConstRef<CDense_seg> >    TConstDSsMap;
-    typedef map<void *, CConstRef<CSeq_align> >    TConstAlnsMap;
-    typedef vector<CAlnMixSeq*>                    TSeqs;
-    typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
-    typedef vector<CRef<CAlnMixMatch> >            TMatches;
-    typedef vector<CAlnMixSegment*>                TSegments;
-    typedef vector<CRef<CAlnMixSegment> >          TSegmentsContainer;
+    // CRef<Seq-id> comparison predicate
+    struct SSeqIds {
+        bool 
+        operator() (const CRef<CSeq_id>& id1, const CRef<CSeq_id>& id2) const {
+            return (*id1 < *id2);
+        }
+    };
+
+    typedef map<void *, CConstRef<CDense_seg> >           TConstDSsMap;
+    typedef map<void *, CConstRef<CSeq_align> >           TConstAlnsMap;
+    typedef vector<CAlnMixSeq*>                           TSeqs;
+    typedef map<CBioseq_Handle, CRef<CAlnMixSeq> >        TBioseqHandleMap;
+    typedef map<CRef<CSeq_id>, CRef<CAlnMixSeq>, SSeqIds> TSeqIdMap;
+    typedef vector<CRef<CAlnMixMatch> >                   TMatches;
+    typedef vector<CAlnMixSegment*>                       TSegments;
+    typedef vector<CRef<CAlnMixSegment> >                 TSegmentsContainer;
 
     void x_Reset               (void);
     void x_InitBlosum62Map     (void);
@@ -126,6 +141,8 @@ private:
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
 
+
+
     CRef<CObjectManager>        m_ObjMgr;
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
@@ -134,6 +151,7 @@ private:
     TConstAlnsMap               m_InputAlnsMap;
     CRef<CDense_seg>            m_DS;
     CRef<CSeq_align>            m_Aln;
+    TAddFlags                   m_AddFlags;
     TMergeFlags                 m_MergeFlags;
     TSeqs                       m_Seqs;
     TMatches                    m_Matches;
@@ -143,6 +161,7 @@ private:
     bool                        m_SingleRefseq;
     bool                        m_IndependentDSs;
     TBioseqHandleMap            m_BioseqHandles;
+    TSeqIdMap                   m_SeqIds;
 
 };
 
@@ -181,6 +200,7 @@ public:
 
     int                   m_DS_Count;
     const CBioseq_Handle* m_BioseqHandle;
+    CRef<CSeq_id>         m_SeqId;
     int                   m_Score;
     bool                  m_IsAA;
     int                   m_Factor;
@@ -299,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/06/09 20:54:12  todorov
+* Use of ObjMgr is now optional
+*
 * Revision 1.24  2003/06/02 16:01:38  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
