@@ -1213,6 +1213,8 @@ void CValidError_imp::ValidateBioSource
 	bool chrom_conflict = false;
     const CSubSource *chromosome = 0;
 	string countryname;
+    bool germline = false;
+    bool rearranged = false;
 
     if ( bsrc.IsSetSubtype() ) {
         ITERATE( CBioSource::TSubtype, ssit, bsrc.GetSubtype() ) {
@@ -1255,8 +1257,23 @@ void CValidError_imp::ValidateBioSource
             case CSubSource::eSubtype_other:
                 ValidateSourceQualTags((**ssit).GetName(), obj);
                 break;
+
+            case CSubSource::eSubtype_germline:
+                germline = true;
+                break;
+
+            case CSubSource::eSubtype_rearranged:
+                rearranged = true;
+                break;
+
+            default:
+                break;
             }
         }
+    }
+    if ( germline  &&  rearranged ) {
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSubSource,
+            "Germline and rearranged should not both be present", obj);
     }
 	if ( chrom_count > 1 ) {
 		string msg = 
@@ -2360,6 +2377,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/06/18 20:58:44  shomrat
+* germline and rearranged are mutually exclusive - proviral and virion are because there is only one biop->genome
+*
 * Revision 1.36  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
