@@ -35,6 +35,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
 #include <memory>
 #include <map>
 
@@ -236,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/02/05 22:41:11  ucko
+ * +ncbi_limits.h (for FindBestChoice)
+ *
  * Revision 1.27  2003/01/03 01:19:58  ucko
  * Change default fallback for GetMapElement to 0, since "Element()"
  * seems to confuse at least some compilers.
