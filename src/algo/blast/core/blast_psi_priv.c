@@ -124,7 +124,7 @@ _PSIMsaNew(const PSIMsa* msa, Uint4 alphabet_size)
         return NULL;
     }
 
-    retval = (_PSIMsa*) malloc(sizeof(_PSIMsa));
+    retval = (_PSIMsa*) calloc(1, sizeof(_PSIMsa));
     if ( !retval ) {
         return _PSIMsaFree(retval);
     }
@@ -240,7 +240,7 @@ _PSIInternalPssmDataNew(Uint4 query_length, Uint4 alphabet_size)
 {
     _PSIInternalPssmData* retval = NULL;
 
-    retval = (_PSIInternalPssmData*) malloc(sizeof(_PSIInternalPssmData));
+    retval = (_PSIInternalPssmData*) calloc(1, sizeof(_PSIInternalPssmData));
     if ( !retval ) {
         return NULL;
     }
@@ -312,13 +312,13 @@ _PSIAlignedBlockNew(Uint4 num_positions)
         return NULL;
     }
 
-    retval->pos_extnt = (SSeqRange*) calloc(num_positions, sizeof(SSeqRange));
-    if ( !retval->pos_extnt ) {
+    retval->size = (Uint4*) calloc(num_positions, sizeof(Uint4));
+    if ( !retval->size ) {
         return _PSIAlignedBlockFree(retval);
     }
 
-    retval->size = (Uint4*) calloc(num_positions, sizeof(Uint4));
-    if ( !retval->size ) {
+    retval->pos_extnt = (SSeqRange*) malloc(num_positions * sizeof(SSeqRange));
+    if ( !retval->pos_extnt ) {
         return _PSIAlignedBlockFree(retval);
     }
 
@@ -336,12 +336,12 @@ _PSIAlignedBlockFree(_PSIAlignedBlock* aligned_blocks)
         return NULL;
     }
 
-    if (aligned_blocks->pos_extnt) {
-        sfree(aligned_blocks->pos_extnt);
-    }
-
     if (aligned_blocks->size) {
         sfree(aligned_blocks->size);
+    }
+
+    if (aligned_blocks->pos_extnt) {
+        sfree(aligned_blocks->pos_extnt);
     }
 
     sfree(aligned_blocks);
@@ -2062,6 +2062,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/10/01 13:59:22  camacho
+ * Use calloc where needed
+ *
  * Revision 1.26  2004/09/23 19:51:44  camacho
  * Added sanity checks
  *
