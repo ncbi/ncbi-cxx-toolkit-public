@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/28 13:08:13  thiessen
+* store alt conf ensembles
+*
 * Revision 1.1  2000/06/27 20:08:14  thiessen
 * initial checkin
 *
@@ -101,6 +104,8 @@ public:
     ~AtomSet(void);
 
     // public data
+    typedef LIST_TYPE < const string * > EnsembleList;
+    EnsembleList ensembles;
 
     // public methods
     void Draw(void) const;

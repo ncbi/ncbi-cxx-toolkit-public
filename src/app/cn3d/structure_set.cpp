@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/28 13:07:55  thiessen
+* store alt conf ensembles
+*
 * Revision 1.1  2000/06/27 20:09:40  thiessen
 * initial checkin
 *
@@ -55,6 +58,7 @@
 #include <objects/mmdb2/Alternate_conformation_id.hpp>
 #include <objects/mmdb2/Anisotro_temperatu_factors.hpp>
 #include <objects/mmdb2/Isotropi_temperatu_factors.hpp>
+#include <objects/mmdb2/Conformation_ensemble.hpp>
 
 #include "cn3d/structure_set.hpp"
 
@@ -258,7 +262,7 @@ AtomSet::AtomSet(const CAtomic_coordinates& coords)
         }
     }
 
-    // unpack serial atom data into Atom objects
+    // actually do the work of unpacking serial atom data into Atom objects
     for (int i=0; i<nAtoms; i++) {
         moleculeID[i] = (*(i_mID++)).GetObject().Get();
         residueID[i] = (*(i_rID++)).GetObject().Get();
@@ -272,15 +276,16 @@ AtomSet::AtomSet(const CAtomic_coordinates& coords)
             atomList[i].altConfID = (*((*i_alt)++)).GetObject().Get()[0];
         if (haveTemp) {
             if (coords.GetTemperature_factors().IsIsotropic()) {
-                atomList[i].averageTemperature = (static_cast<double>(*((*i_tempI)++)))/tempScale;
+                atomList[i].averageTemperature =
+                    (static_cast<double>(*((*i_tempI)++)))/tempScale;
             } else {
                 atomList[i].averageTemperature = (
-                        (static_cast<double>(*((*i_tempA11)++))) +
-                        (static_cast<double>(*((*i_tempA12)++))) +
-                        (static_cast<double>(*((*i_tempA13)++))) +
-                        (static_cast<double>(*((*i_tempA22)++))) +
-                        (static_cast<double>(*((*i_tempA23)++))) +
-                        (static_cast<double>(*((*i_tempA33)++)))) / (tempScale * 6.0);
+                    (static_cast<double>(*((*i_tempA11)++))) +
+                    (static_cast<double>(*((*i_tempA12)++))) +
+                    (static_cast<double>(*((*i_tempA13)++))) +
+                    (static_cast<double>(*((*i_tempA22)++))) +
+                    (static_cast<double>(*((*i_tempA23)++))) +
+                    (static_cast<double>(*((*i_tempA33)++)))) / (tempScale * 6.0);
             }
         }
     }
@@ -292,6 +297,25 @@ AtomSet::AtomSet(const CAtomic_coordinates& coords)
 			", occup " << atomList[0].occupancy <<
             ", altConfId '" << atomList[0].altConfID << "'" <<
             ", temp " << atomList[0].averageTemperature);
+
+    // get alternate conformer ensembles
+    if (haveAlt && coords.IsSetConf_ensembles()) {
+        CAtomic_coordinates::TConf_ensembles::const_iterator i_ensemble, 
+            e_ensemble = coords.GetConf_ensembles().end();
+        for (i_ensemble=coords.GetConf_ensembles().begin();
+             i_ensemble!=e_ensemble; i_ensemble++) {
+            const CConformation_ensemble& ensemble = (*i_ensemble).GetObject();
+            string *ensembleStr = new string();
+            CConformation_ensemble::TAlt_conf_ids::const_iterator i_altIDs,
+                e_altIDs = ensemble.GetAlt_conf_ids().end();
+            for (i_altIDs=ensemble.GetAlt_conf_ids().begin();
+                 i_altIDs!=e_altIDs; i_altIDs++) {
+                (*ensembleStr) += ((*i_altIDs).GetObject().Get())[0];
+            }
+            ensembles.push_back(ensembleStr);
+            TESTMSG("alt conf ensemble '" << (*ensembleStr) << "'");
+        }
+    }
 }
 
 AtomSet::~AtomSet(void)
@@ -300,6 +324,7 @@ AtomSet::~AtomSet(void)
     delete residueID;
     delete atomID;
     delete atomList;
+    DELETE_ALL(EnsembleList, ensembles);
 }
 
 void AtomSet::Draw(void) const
