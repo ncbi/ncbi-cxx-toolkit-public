@@ -1,4 +1,4 @@
---$Revision: 6.4 $
+--$Revision: 6.5 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -123,6 +123,7 @@ MolInfo ::= SEQUENCE {
         fli-cdna (17) ,         -- full length insert cDNA
         htgs-0 (18) ,           -- single genomic reads for coordination
         htc (19) ,              -- high throughput cDNA
+        wgs (20) ,              -- whole genome shotgun sequencing
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
