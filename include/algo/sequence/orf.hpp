@@ -76,6 +76,7 @@ public:
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1);
 
+    /**
     /// This version returns an annot full of CDS features.
     /// Optionally takes a CSeq_id (by CRef) for use in
     /// the feature table; otherwise ids are left unset.
@@ -91,6 +92,7 @@ public:
         FindOrfs(seq, orfs, min_length_bp, genetic_code);
         return MakeCDSAnnot(orfs, genetic_code, id);
     }
+    **/
 
     /// Build an annot full of CDS features from CSeq_loc's.
     /// Optionally takes a CSeq_id (by CRef) for use in
@@ -108,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/03/03 15:41:27  dicuccio
+ * COmmented template definition of FindOrfs() - it is giving MSVC fits
+ *
  * Revision 1.15  2003/10/15 20:26:28  dicuccio
  * Changed API of MakeCDSAnnot() to take a seq-id pointer rather than a CRef<>
  *
