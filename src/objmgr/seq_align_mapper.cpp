@@ -159,7 +159,7 @@ void CSeq_align_Mapper::x_Init(const TDendiag& diags)
 {
     ITERATE(TDendiag, diag_it, diags) {
         const CDense_diag& diag = **diag_it;
-        unsigned int dim = (unsigned int)diag.GetDim();
+        size_t dim = diag.GetDim();
         if (dim != diag.GetIds().size()) {
             ERR_POST(Warning << "Invalid 'ids' size in dendiag");
             dim = min(dim, diag.GetIds().size());
@@ -184,7 +184,7 @@ void CSeq_align_Mapper::x_Init(const TDendiag& diags)
         if ( diag.IsSetScores() ) {
             seg.SetScores(diag.GetScores());
         }
-        for (unsigned int row = 0; row < dim; ++row) {
+        for (size_t row = 0; row < dim; ++row) {
             if ( m_HaveStrands ) {
                 strand = diag.GetStrands()[row];
             }
@@ -201,8 +201,8 @@ void CSeq_align_Mapper::x_Init(const TDendiag& diags)
 
 void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
 {
-    m_Dim = (unsigned int)denseg.GetDim();
-    unsigned int numseg = (unsigned int)denseg.GetNumseg();
+    m_Dim = denseg.GetDim();
+    size_t numseg = denseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if (numseg != denseg.GetLens().size()) {
         ERR_POST(Warning << "Invalid 'lens' size in denseg");
@@ -223,7 +223,7 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
     }
     m_HaveWidths = denseg.IsSetWidths();
     ENa_strand strand = eNa_strand_unknown;
-    for (unsigned int seg = 0;  seg < numseg;  seg++) {
+    for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg = x_PushSeg(denseg.GetLens()[seg], m_Dim);
         if ( seg == 0  &&  denseg.IsSetScores() ) {
             // Set scores for the first segment only to avoid multiple copies
@@ -251,7 +251,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
 
     ITERATE ( CSeq_align::C_Segs::TStd, it, sseg ) {
         const CStd_seg& stdseg = **it;
-        unsigned int dim = stdseg.GetDim();
+        size_t dim = stdseg.GetDim();
         if (stdseg.IsSetIds()
             && dim != stdseg.GetIds().size()) {
             ERR_POST(Warning << "Invalid 'ids' size in std-seg");
@@ -336,8 +336,8 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
 
 void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
 {
-    m_Dim = (unsigned int)pseg.GetDim();
-    unsigned int numseg = (unsigned int)pseg.GetNumseg();
+    m_Dim = pseg.GetDim();
+    size_t numseg = pseg.GetNumseg();
     // claimed dimension may not be accurate :-/
     if (numseg != pseg.GetLens().size()) {
         ERR_POST(Warning << "Invalid 'lens' size in packed-seg");
@@ -357,7 +357,7 @@ void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
         m_Dim = min(m_Dim*numseg, pseg.GetStrands().size()) / numseg;
     }
     ENa_strand strand = eNa_strand_unknown;
-    for (unsigned int seg = 0;  seg < numseg;  seg++) {
+    for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg = x_PushSeg(pseg.GetLens()[seg], m_Dim);
         if ( seg == 0  &&  pseg.IsSetScores() ) {
             // Set scores for the first segment only to avoid multiple copies
@@ -1188,6 +1188,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/26 14:57:47  ucko
+* Change some types from unsigned int to size_t for consistency with STL
+* containers' size() methods.
+*
 * Revision 1.8  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.
