@@ -66,7 +66,7 @@ public:
     
     /// Override to provide the alias file KEY name for the type of
     /// summary data you want to gather, for example "NSEQ".
-    virtual const char * GetFileKey(void) const = 0;
+    virtual const char * GetFileKey() const = 0;
     
     /// This will be called with each CVolume that is in the alias
     /// file tree structure.
@@ -219,7 +219,7 @@ public:
         m_Node.GetVolumeNames(m_VolumeNames);
     }
     
-    const vector<string> & GetVolumeNames(void) const
+    const vector<string> & GetVolumeNames() const
     {
         return m_VolumeNames;
     }

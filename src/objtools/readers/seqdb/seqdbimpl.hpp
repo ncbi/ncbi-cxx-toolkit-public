@@ -59,7 +59,7 @@ using namespace ncbi::objects;
 
 class CSeqDBImplFlush : public CSeqDBFlushCB {
 public:
-    CSeqDBImplFlush(void)
+    CSeqDBImplFlush()
         : m_Impl(0)
     {
     }
@@ -69,7 +69,7 @@ public:
         m_Impl = impl;
     }
     
-    virtual void operator()(void);
+    virtual void operator()();
     
 private:
     CSeqDBImpl * m_Impl;
@@ -259,7 +259,7 @@ public:
     Uint4 GetNumSeqs() const;
     
     /// Returns the size of the (possibly sparse) OID range.
-    Uint4 GetNumOIDs(void) const;
+    Uint4 GetNumOIDs() const;
     
     /// Returns the sum of the lengths of all available sequences.
     ///
@@ -275,7 +275,7 @@ public:
     /// without iterating over individual sequences.  It includes all
     /// OIDs regardless of inclusion by the filtering mechanisms of
     /// the alias files.
-    Uint8 GetVolumeLength(void) const;
+    Uint8 GetVolumeLength() const;
     
     /// Returns the length of the largest sequence in the database.
     ///
@@ -355,7 +355,7 @@ public:
     /// volset.  Thus, the no-longer-in-action volumes can be flushed
     /// out (currently, idx files are still kept for all volumes).
     /// The atlas should be locked when calling this method.
-    void FlushSeqMemory(void);
+    void FlushSeqMemory();
     
     /// Translate a PIG to an OID.
     bool PigToOid(Uint4 pig, Uint4 & oid) const;

@@ -396,7 +396,7 @@ void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols) const
 
 class CSeqDB_TitleWalker : public CSeqDB_AliasWalker {
 public:
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         return "TITLE";
     }
@@ -411,7 +411,7 @@ public:
         SeqDB_JoinDelim(m_Value, value, "; ");
     }
     
-    string GetTitle(void)
+    string GetTitle()
     {
         return m_Value;
     }
@@ -432,12 +432,12 @@ private:
 
 class CSeqDB_MaxLengthWalker : public CSeqDB_AliasWalker {
 public:
-    CSeqDB_MaxLengthWalker(void)
+    CSeqDB_MaxLengthWalker()
     {
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         // This field is not overrideable.
         
@@ -457,7 +457,7 @@ public:
         m_Value = NStr::StringToUInt(value);
     }
     
-    Uint4 GetMaxLength(void)
+    Uint4 GetMaxLength()
     {
         return m_Value;
     }
@@ -469,12 +469,12 @@ private:
 
 class CSeqDB_NSeqsWalker : public CSeqDB_AliasWalker {
 public:
-    CSeqDB_NSeqsWalker(void)
+    CSeqDB_NSeqsWalker()
     {
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         return "NSEQ";
     }
@@ -489,7 +489,7 @@ public:
         m_Value += NStr::StringToUInt(value);
     }
     
-    Uint4 GetNum(void) const
+    Uint4 GetNum() const
     {
         return m_Value;
     }
@@ -501,7 +501,7 @@ private:
 
 class CSeqDB_NOIDsWalker : public CSeqDB_NSeqsWalker {
 public:
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         // Override to disable the key.  (The embedded spaces would
         // break the parse, so the following non-key is safe.)
@@ -513,12 +513,12 @@ public:
 
 class CSeqDB_TotalLengthWalker : public CSeqDB_AliasWalker {
 public:
-    CSeqDB_TotalLengthWalker(void)
+    CSeqDB_TotalLengthWalker()
     {
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         return "LENGTH";
     }
@@ -533,7 +533,7 @@ public:
         m_Value += NStr::StringToUInt8(value);
     }
     
-    Uint8 GetLength(void) const
+    Uint8 GetLength() const
     {
         return m_Value;
     }
@@ -545,7 +545,7 @@ private:
 
 class CSeqDB_VolumeLengthWalker : public CSeqDB_TotalLengthWalker {
 public:
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         // Override to disable the key.  (The embedded spaces would
         // break the parse, so the following non-key is safe.)
@@ -557,12 +557,12 @@ public:
 
 class CSeqDB_MembBitWalker : public CSeqDB_AliasWalker {
 public:
-    CSeqDB_MembBitWalker(void)
+    CSeqDB_MembBitWalker()
     {
         m_Value = 0;
     }
     
-    virtual const char * GetFileKey(void) const
+    virtual const char * GetFileKey() const
     {
         return "MEMB_BIT";
     }
@@ -577,7 +577,7 @@ public:
         m_Value = NStr::StringToUInt(value);
     }
     
-    Uint4 GetMembBit(void) const
+    Uint4 GetMembBit() const
     {
         return m_Value;
     }

@@ -184,37 +184,37 @@ Uint4 CSeqDB::GetAmbigSeqAlloc(TOID            oid,
     return m_Impl->GetAmbigSeq(oid, buffer, nucl_code, strategy);
 }
 
-string CSeqDB::GetTitle(void) const
+string CSeqDB::GetTitle() const
 {
     return m_Impl->GetTitle();
 }
 
-string CSeqDB::GetDate(void) const
+string CSeqDB::GetDate() const
 {
     return m_Impl->GetDate();
 }
 
-Uint4 CSeqDB::GetNumSeqs(void) const
+Uint4 CSeqDB::GetNumSeqs() const
 {
     return m_Impl->GetNumSeqs();
 }
 
-Uint4 CSeqDB::GetNumOIDs(void) const
+Uint4 CSeqDB::GetNumOIDs() const
 {
     return m_Impl->GetNumOIDs();
 }
 
-Uint8 CSeqDB::GetTotalLength(void) const
+Uint8 CSeqDB::GetTotalLength() const
 {
     return m_Impl->GetTotalLength();
 }
 
-Uint8 CSeqDB::GetVolumeLength(void) const
+Uint8 CSeqDB::GetVolumeLength() const
 {
     return m_Impl->GetVolumeLength();
 }
 
-Uint4 CSeqDB::GetMaxLength(void) const
+Uint4 CSeqDB::GetMaxLength() const
 {
     return m_Impl->GetMaxLength();
 }
@@ -225,7 +225,7 @@ CSeqDB::~CSeqDB()
         delete m_Impl;
 }
 
-CSeqDBIter CSeqDB::Begin(void) const
+CSeqDBIter CSeqDB::Begin() const
 {
     return CSeqDBIter(this, 0);
 }
@@ -244,7 +244,7 @@ CSeqDB::GetNextOIDChunk(TOID         & begin,
     return m_Impl->GetNextOIDChunk(begin, end, lst, state);
 }
 
-const string & CSeqDB::GetDBNameList(void) const
+const string & CSeqDB::GetDBNameList() const
 {
     return m_Impl->GetDBNameList();
 }
@@ -327,7 +327,7 @@ CSeqDBIter::CSeqDBIter(const CSeqDB * db, TOID oid)
     }
 }
 
-CSeqDBIter & CSeqDBIter::operator++(void)
+CSeqDBIter & CSeqDBIter::operator++()
 {
     x_RetSeq();
     

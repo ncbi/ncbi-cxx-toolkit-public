@@ -92,12 +92,12 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas   & atlas,
     }
 }
 
-char CSeqDBVol::GetSeqType(void) const
+char CSeqDBVol::GetSeqType() const
 {
     return x_GetSeqType();
 }
 
-char CSeqDBVol::x_GetSeqType(void) const
+char CSeqDBVol::x_GetSeqType() const
 {
     return m_Idx.GetSeqType();
 }
@@ -260,7 +260,7 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
 /// @return
 ///    The NA2 to NA8 translation table
 static vector<Uint1>
-s_SeqDBMapNA2ToNA8Setup(void)
+s_SeqDBMapNA2ToNA8Setup()
 {
     // Builds a table; each two bit slice holds 0,1,2 or 3.  These are
     // converted to whole bytes containing 1,2,4, or 8, respectively.
@@ -791,17 +791,17 @@ s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
 ///
 /// @param seqids
 ///     A list of Seq-ids to search
-/// @param seqid
+/// @param target
 ///     The Seq-id to search for
 /// @return
 ///     True if the Seq-id was found
 static bool
-s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & seqid)
+s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 {
     typedef list< CRef<CSeq_id> > TSeqidList;
     
-    for(TSeqidList::const_iterator now = a.begin(); now != a.end(); now++) {
-        CSeq_id::E_SIC rv = (*now)->Compare(b);
+    ITERATE(TSeqidList, iter, seqids) {
+        CSeq_id::E_SIC rv = (**iter).Compare(target);
         
         switch(rv) {
         case CSeq_id::e_YES:
@@ -1383,7 +1383,7 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4            oid,
     return seqids;
 }
 
-Uint8 CSeqDBVol::GetVolumeLength(void) const
+Uint8 CSeqDBVol::GetVolumeLength() const
 {
     return m_Idx.GetVolumeLength();
 }
@@ -1542,22 +1542,22 @@ void CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
     }
 }
 
-Uint4 CSeqDBVol::GetNumOIDs(void) const
+Uint4 CSeqDBVol::GetNumOIDs() const
 {
     return m_Idx.GetNumOIDs();
 }
 
-string CSeqDBVol::GetTitle(void) const
+string CSeqDBVol::GetTitle() const
 {
     return m_Idx.GetTitle();
 }
 
-string CSeqDBVol::GetDate(void) const
+string CSeqDBVol::GetDate() const
 {
     return m_Idx.GetDate();
 }
 
-Uint4 CSeqDBVol::GetMaxLength(void) const
+Uint4 CSeqDBVol::GetMaxLength() const
 {
     return m_Idx.GetMaxLength();
 }
