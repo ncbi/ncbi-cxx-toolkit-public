@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/06/07 11:24:24  clausen
+ * Added related function comment
+ *
  * Revision 1.5  2002/06/06 20:48:38  clausen
  * Moved IsValid to objects/util/sequence.hpp
  *
@@ -71,6 +74,12 @@ class CSeq_interval : public CSeq_interval_Base
 {
     typedef CSeq_interval_Base Tparent;
 public:
+
+    // See also related function in util/sequence.hpp:
+    //
+    //   bool IsValid(const CSeq_interval&, CScope*)
+    //
+
     // constructor
     CSeq_interval(void);
     // destructor

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/06/07 11:19:37  clausen
+ * Added related function comment
+ *
  * Revision 1.2  2002/06/06 20:46:16  clausen
  * Moved IsValid to objects/util/sequence.hpp
  *
@@ -62,6 +65,13 @@ class CPacked_seqpnt : public CPacked_seqpnt_Base
 {
     typedef CPacked_seqpnt_Base Tparent;
 public:
+
+    //
+    // See CPacked_seqpnt related function in util/sequence.hpp:
+    //
+    //   bool IsValid(const CPacked_seqpnt&, CScope*);
+    //
+
     // constructor
     CPacked_seqpnt(void);
     // destructor
