@@ -43,6 +43,8 @@ BEGIN_NCBI_SCOPE
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
+#elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
+#  define CPushback_StreambufBase CShowmanycStreambuf
 #else
 #  define CPushback_StreambufBase CNcbiStreambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
@@ -409,9 +411,9 @@ static streamsize s_Readsome(CNcbiIstream& is,
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
     streamsize avail = is.rdbuf()->in_avail();
     if ( !avail ) {
-#ifdef NCBI_COMPILER_GCC
-        CGCC_ShowmanycStreambuf* sb
-            = dynamic_cast<CGCC_ShowmanycStreambuf*>(is.rdbuf());
+#if defined(NCBI_COMPILER_MIPSPRO)  ||  defined(NCBI_COMPILER_GCC)
+        CShowmanycStreambuf* sb
+            = dynamic_cast<CShowmanycStreambuf*>(is.rdbuf());
 #else
         CNcbiStreambuf* sb = is.rdbuf();
 #endif
@@ -472,6 +474,12 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.34  2003/12/18 13:24:46  ucko
+ * It seems MIPSpro also lacks showmanyc, so extend our
+ * streambuf-with-showmanyc class to cover it as well and make it
+ * CMIPSPRO_ReadsomeTolerantStreambuf's base class; also use it as
+ * CPushback_StreambufBase's base class with GCC 2.9x.
+ *
  * Revision 1.33  2003/12/18 03:44:29  ucko
  * s_Readsome(): If in_avail() and showmanyc() both return 0, do likewise
  * rather than potentially blocking.
