@@ -530,7 +530,7 @@ int CTestSerial::Run(void)
 
         NcbiCerr << "OK" << endl;
     }
-    catch (exception& e) {
+    catch (NCBI_NS_STD::exception& e) {
         ERR_POST(typeid(e).name() << ": " << e.what());
     }
     catch (...) {
