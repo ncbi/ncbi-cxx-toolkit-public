@@ -14,6 +14,7 @@ OBJ = \
 	block_multiple_alignment \
 	bond \
 	chemical_graph \
+	cdd_annot_dialog \
 	cn3d_colors \
 	cn3d_main_wxwin \
 	cn3d_threader \
