@@ -410,8 +410,6 @@ private:
     /// Prohibit assignment operator
     CBlastOptionsLocal& operator=(const CBlastOptionsLocal& bo);
 
-    friend class CBl2Seq;
-    friend class CDbBlast;
 };
 
 
@@ -1662,6 +1660,12 @@ public:
     bool operator==(const CBlastOptions& rhs) const;
     bool operator!=(const CBlastOptions& rhs) const;
     
+    friend class CBl2Seq;
+    friend class CDbBlast;
+
+    friend class ::CBlastDbTest;        // unit test class
+    friend class ::CBlastGapAlignTest;  // unit test class
+
 protected:
     QuerySetUpOptions * GetQueryOpts() const
     {
@@ -1713,12 +1717,6 @@ private:
     CBlastOptions(const CBlastOptions& bo);
     /// Prohibit assignment operator
     CBlastOptions& operator=(const CBlastOptions& bo);
-
-    friend class CBl2Seq;
-    friend class CDbBlast;
-
-    friend class CBlastGapAlignTest;
-    friend class CBlastDbTest;
 
     // Pointers to local and remote objects
     
@@ -2434,6 +2432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/02/20 19:54:26  camacho
+* Correct friendship declarations for unit test classes
+*
 * Revision 1.47  2004/02/17 23:52:08  dondosha
 * Added methods to get/set preliminary hitlist size
 *
