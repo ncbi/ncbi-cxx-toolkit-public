@@ -24,7 +24,8 @@ do_test() {
     file="$1"
     shift
     echo "$tool" -m "$asn" $args out "$@"
-    time "$tool" -m "$asn" $args out "$@"
+    cmd=`echo "$tool" -m "$asn" $args out "$@"`
+    time $cmd
     if test "$?" != 0; then
         echo "datatool failed!"
         exit 1
