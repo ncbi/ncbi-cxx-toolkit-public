@@ -58,6 +58,8 @@ test2 iterator_minus_minus "" "iterator minus minus"
 
 # test2 blast "-queryseqmergeonly t" "blast output merge"
 
+test2 seg_overlap "overlapping segments"
+
 rm $tmp_out
 
 echo "Done!"
