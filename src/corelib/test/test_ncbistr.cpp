@@ -372,7 +372,7 @@ int CTestApplication::Run(void)
     assert(NStr::PrintableString("AB\\CD\nAB\rCD\vAB\tCD\'AB\"").
             compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"") == 0);
     assert(NStr::PrintableString("A\020B" + string(1, '\0') + "CD").
-            compare("A\\x10B\\0CD") == 0);
+            compare("A\\x10B\\x00CD") == 0);
 
 
     // NStr::Compare()
@@ -616,6 +616,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/03/25 22:16:11  lavr
+ * Conform to new NUL char representation from NStr::PrintableString()
+ *
  * Revision 6.17  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
