@@ -324,117 +324,6 @@ CPssmEngine::x_Validate()
         NCBI_THROW(CBlastException, eBadParameter, msg);
     }
 
-    x_ValidateNoFlankingGaps();
-    x_ValidateNoGapsInQuery();
-    x_ValidateAlignedColumns();
-}
-
-void
-CPssmEngine::x_ValidateNoFlankingGaps()
-{
-    const PSIMsa* msa = m_PssmInput->GetData();
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
-    ostringstream os;
-
-    ASSERT(msa);
-
-    // Look for starting gaps in alignments
-    unsigned int i = 
-        m_PssmInput->GetOptions()->nsg_compatibility_mode == TRUE ? 1 : 0;
-    for ( ; i < msa->dimensions->num_seqs + 1; i++) {
-        // find the first aligned residue
-        for (unsigned int j = 0; j < m_PssmInput->GetQueryLength(); j++) {
-            if (msa->data[i][j].is_aligned) {
-                if (msa->data[i][j].letter == GAP) {
-                    os << "Gap at start of alignment is not allowed: "
-                       << "sequence " << i << " position " << j << endl;
-                }
-                break;
-            }
-        }
-    }
-
-    // Look for ending gaps in alignments
-    i = m_PssmInput->GetOptions()->nsg_compatibility_mode == TRUE ? 1 : 0;
-    for ( ; i < msa->dimensions->num_seqs + 1; i++) {
-        // find the last aligned residue
-        for (unsigned int j = m_PssmInput->GetQueryLength() - 1; j >= 0; j--) {
-            if (msa->data[i][j].is_aligned) {
-                if (msa->data[i][j].letter == GAP) {
-                    os << "Gap at end of alignment is not allowed: "
-                       << "sequence " << i << " position " << j << endl;
-                }
-                break;
-            }
-        }
-    }
-
-    if (os.str().length() != 0) {
-        NCBI_THROW(CBlastException, eBadParameter, os.str());
-    }
-}
-
-void
-CPssmEngine::x_ValidateNoGapsInQuery()
-{
-    if (m_PssmInput->GetOptions()->nsg_compatibility_mode) {
-        return;
-    }
-
-    const PSIMsa* msa = m_PssmInput->GetData();
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
-    ostringstream os;
-
-    ASSERT(msa);
-
-    // Look for gaps in query sequence
-    for (unsigned int i = 0; i < m_PssmInput->GetQueryLength(); i++) {
-        if (m_PssmInput->GetQuery()[i] == GAP ||
-            msa->data[kQueryIndex][i].letter == GAP) {
-            os << "Found GAP at query position " << i << endl;
-            break;
-        }
-    }
-
-    if (os.str().length() != 0) {
-        NCBI_THROW(CBlastException, eBadParameter, os.str());
-    }
-}
-
-void
-CPssmEngine::x_ValidateAlignedColumns()
-{
-    const PSIMsa* msa = m_PssmInput->GetData();
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
-    ostringstream os;
-
-    for (unsigned int i = 0; i < m_PssmInput->GetQueryLength(); i++) {
-        bool found_aligned_sequence = false;
-        bool found_non_gap_residue = false;
-
-        unsigned int j = 
-            m_PssmInput->GetOptions()->nsg_compatibility_mode == TRUE ? 1 : 0;
-        for ( ; j < msa->dimensions->num_seqs + 1; j++) {
-            if (msa->data[j][i].is_aligned) {
-                found_aligned_sequence = true;
-                if (msa->data[j][i].letter != GAP) {
-                    found_non_gap_residue = true;
-                    break;
-                }
-            }
-        }        
-        if (!found_aligned_sequence) {
-            os << "Found completely unaligned column at position " << i << endl;
-            continue;
-        }
-        if (!found_non_gap_residue) {
-            os << "Found column of all GAP residues at position " << i << endl;
-        }
-    }
-
-    if (os.str().length() != 0) {
-        NCBI_THROW(CBlastException, eBadParameter, os.str());
-    }
 }
 
 CRef<CPssmWithParameters>
@@ -527,6 +416,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2004/12/13 23:07:36  camacho
+ * Remove validation functions moved to algo/blast/core
+ *
  * Revision 1.26  2004/12/13 22:27:06  camacho
  * Consolidated structure group customizations in option: nsg_compatibility_mode
  *

@@ -130,23 +130,6 @@ private:
     void
     x_Validate();
 
-    /// Make sure that there are no flanking gaps in multiple sequence
-    /// alignment data structure.
-    /// @throws CBlastException if validation fails
-    void
-    x_ValidateNoFlankingGaps();
-
-    /// Make sure that there are no gaps in the query sequence.
-    /// @throws CBlastException if validation fails
-    void
-    x_ValidateNoGapsInQuery();
-
-    /// Make sure that there are no columns where no sequences are aligned or
-    /// where all aligned sequences contain gaps.
-    /// @throws CBlastException if validation fails
-    void
-    x_ValidateAlignedColumns();
-
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
     /// @param opts options to be used in the PSSM engine [in]
@@ -186,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/12/13 23:07:24  camacho
+ * Remove validation functions moved to algo/blast/core
+ *
  * Revision 1.17  2004/11/22 14:38:06  camacho
  * + option to set % identity threshold to PSSM engine
  *
