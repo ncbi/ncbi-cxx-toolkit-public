@@ -43,6 +43,19 @@ class IDataSource;
 class IConnection;
 class IStatement;
 
+enum ETransBehavior { eNoTrans, eTransCommit, eTransRollback };
+
+class CTestTransaction
+{
+public:
+    CTestTransaction(IConnection& conn, ETransBehavior tb = eTransCommit);
+    ~CTestTransaction(void);
+
+private:
+    auto_ptr<IStatement> m_Stmt;
+    ETransBehavior  m_TransBehavior;
+};
+
 class CDBAPIUnitTest : public CPPUNIT_NS::TestFixture
 {
   CPPUNIT_TEST_SUITE( CDBAPIUnitTest );
@@ -57,10 +70,13 @@ public:
   void tearDown();
 
 public:
+
+public:
     // Test IStatement interface.
 
     // Test particular methods.
     void TestGetRowCount();
+    void CheckGetRowCount(int row_count, ETransBehavior tb = eNoTrans);
 
     // Test scenarios.
 
@@ -81,6 +97,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/02/11 16:12:02  ssikorsk
+ * Improved GetRowCount test
+ *
  * Revision 1.1  2005/02/04 17:25:02  ssikorsk
  * Renamed dbapi-unit-test to dbapi_unit_test.
  * Added dbapi_unit_test to the test suite.

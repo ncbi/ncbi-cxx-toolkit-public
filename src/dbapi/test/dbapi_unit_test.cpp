@@ -46,6 +46,32 @@ BEGIN_NCBI_SCOPE
 CPPUNIT_TEST_SUITE_REGISTRATION( CDBAPIUnitTest );
 
 
+CTestTransaction::CTestTransaction(
+    IConnection& conn,
+    ETransBehavior tb
+    )
+    : m_TransBehavior( tb )
+{
+    if ( m_TransBehavior != eNoTrans ) {
+        m_Stmt.reset( conn.CreateStatement() );
+        m_Stmt->ExecuteUpdate( "BEGIN TRANSACTION" );
+    }
+}
+
+CTestTransaction::~CTestTransaction(void)
+{
+    try {
+        if ( m_TransBehavior == eTransCommit ) {
+            m_Stmt->ExecuteUpdate( "COMMIT TRANSACTION" );
+        } else if ( m_TransBehavior == eTransRollback ) {
+            m_Stmt->ExecuteUpdate( "ROLLBACK TRANSACTION" );
+        }
+    }
+    catch( ... ) {
+        // Just ignore ...
+    }
+}
+///////////////////////////////////////////////////////////////////////////////
 CDBAPIUnitTest::CDBAPIUnitTest()
 : m_DM( CDriverManager::GetInstance() )
 , m_DS( NULL )
@@ -53,7 +79,7 @@ CDBAPIUnitTest::CDBAPIUnitTest()
 {
 }
 
-void 
+void
 CDBAPIUnitTest::setUp()
 {
     if ( m_DS == NULL ) {
@@ -76,25 +102,36 @@ CDBAPIUnitTest::setUp()
 }
 
 
-void 
+void
 CDBAPIUnitTest::tearDown()
 {
 }
 
 
-void 
+void
 CDBAPIUnitTest::TestGetRowCount()
 {
-    string sql;
+    for ( int i = 0; i < 5; ++i ) {
+        CheckGetRowCount( i, eNoTrans );
+        CheckGetRowCount( i, eTransCommit );
+        CheckGetRowCount( i, eTransRollback );
+    }
+}
 
-    // sql  = " INSERT INTO " + m_TableName + "(int_val) SELECT id FROM sysobjects \n";
+void
+CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
+{
+    // Transaction ...
+    CTestTransaction transaction(*m_Conn, tb);
+    string sql;
     sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES(1) \n";
 
-    m_Stmt->ExecuteUpdate( "BEGIN TRANSACTION" );
-
-    // Insert TWO records ...
-    m_Stmt->ExecuteUpdate(sql);
-    m_Stmt->ExecuteUpdate(sql);
+    // Insert row_count records into the table ...
+    for ( size_t i = 0; i < row_count; ++i ) {
+        m_Stmt->ExecuteUpdate(sql);
+        int nRows = m_Stmt->GetRowCount();
+        CPPUNIT_ASSERT_EQUAL( nRows, 1 );
+    }
 
     // Check a SELECT statement
     {
@@ -103,26 +140,55 @@ CDBAPIUnitTest::TestGetRowCount()
 
         int nRows = m_Stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( nRows, 2 );
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
 
-    // Check a DML statement
+    // Check an UPDATE statement
+    {
+        sql  = " UPDATE " + m_TableName + " SET int_val = 0 ";
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+    }
+
+    // Check a SELECT statement again
+    {
+        sql  = " SELECT * FROM " + m_TableName + " WHERE int_val = 0";
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
+    }
+
+    // Check a DELETE statement
     {
         sql  = " DELETE FROM " + m_TableName;
         m_Stmt->ExecuteUpdate(sql);
 
         int nRows = m_Stmt->GetRowCount();
 
-        CPPUNIT_ASSERT_EQUAL( nRows, 2 );
+        CPPUNIT_ASSERT_EQUAL( row_count, nRows );
     }
 
-    m_Stmt->ExecuteUpdate( "ROLLBACK TRANSACTION" );
+    // Check a SELECT statement again and again ...
+    {
+        sql  = " SELECT * FROM " + m_TableName;
+        m_Stmt->ExecuteUpdate(sql);
+
+        int nRows = m_Stmt->GetRowCount();
+
+        CPPUNIT_ASSERT_EQUAL( 0, nRows );
+    }
+
 }
 
 END_NCBI_SCOPE
 
 
-int 
+int
 main(int argc, char* argv[])
 {
   // Get the top level suite from the registry
@@ -146,6 +212,9 @@ main(int argc, char* argv[])
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/02/11 16:12:02  ssikorsk
+ * Improved GetRowCount test
+ *
  * Revision 1.1  2005/02/04 17:25:02  ssikorsk
  * Renamed dbapi-unit-test to dbapi_unit_test.
  * Added dbapi_unit_test to the test suite.
