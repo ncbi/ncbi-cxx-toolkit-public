@@ -154,6 +154,28 @@ double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp);
 void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
 
 
+/** Reevaluate all HSPs in an HSP list, using ambiguity information. 
+ * This is/can only done either for an ungapped search, or if traceback is 
+ * already available.
+ * Subject sequence is uncompressed and saved here. Number of identities is
+ * calculated for each HSP along the way. 
+ * @param hsp_list The list of HSPs for one subject sequence [in] [out]
+ * @param query_blk The query sequence [in]
+ * @param subject_blk The subject sequence [in] [out]
+ * @param hit_options The options related to saving hits [in]
+ * @param query_info Auxiliary query information [in]
+ * @param sbp The statistical information [in]
+ * @param score_options The scoring options [in]
+ * @param seq_src The BLAST database structure (for retrieving uncompressed
+ *             sequence) [in]
+ */
+Int2 
+ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
+   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
+   const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
+   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   const BlastSeqSrc* seq_src);
+
 /** Discard the HSPs above the e-value threshold from the HSP list 
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param hit_options Options block containing the e-value cut-off [in]

@@ -712,22 +712,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
    return delete_hsp;
 } 
 
-/** Reevaluate all HSPs in an HSP list, using ambiguity information. 
- * This is/can only done either for an ungapped search, or if traceback is 
- * already available.
- * Subject sequence is uncompressed and saved here. Number of identities is
- * calculated for each HSP along the way. 
- * @param hsp_list The list of HSPs for one subject sequence [in] [out]
- * @param query_blk The query sequence [in]
- * @param subject_blk The subject sequence [in] [out]
- * @param hit_options The options related to saving hits [in]
- * @param query_info Auxiliary query information [in]
- * @param sbp The statistical information [in]
- * @param score_options The scoring options [in]
- * @param bssp The BLAST database structure (for retrieving uncompressed
- *             sequence) [in]
- */
-static Int2 
+Int2 
 ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
