@@ -15,7 +15,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 src_tree=`pwd`
 bld_tree=`(cd "${script_dir}/.." ; pwd)`
 
-if test -x "$src_tree/configure"  &&  test -f "$bld_tree/inc/ncbiconf.h" ; then
+if test -x "$src_tree/scripts/hello.sh"  &&  test -f "$bld_tree/inc/ncbiconf.h" ; then
    cat <<EOF
 Adjusting makefiles for:
   - source tree:  $src_tree
