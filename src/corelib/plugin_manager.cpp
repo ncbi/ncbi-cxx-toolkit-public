@@ -84,8 +84,8 @@ CPluginManager_DllResolver::Resolve(const vector<string>& paths,
     // Generate DLL masks
 
     // Ignore version to find dlls having no version in their names
-    string mask = GetDllNameMask(m_InterfaceName, drv, CVersionInfo::kAny);
     vector<string> masks;
+    string mask = GetDllNameMask(m_InterfaceName, drv, version);
     masks.push_back(mask);
 
     resolver->FindCandidates(paths, masks, 
@@ -540,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/08/11 14:09:33  grichenk
+ * Improved DLL version matching
+ *
  * Revision 1.12  2004/08/09 16:43:43  grichenk
  * Ignore version when resolving DLL name
  *

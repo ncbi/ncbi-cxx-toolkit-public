@@ -754,9 +754,20 @@ void CPluginManager<TClass, TIfVer>::Resolve(const string&       driver,
 
     // Run all resolvers to search for driver
     ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
-        CDllResolver& dll_resolver = 
-            (*it)->Resolve(m_DllSearchPaths, driver, version);
-        resolvers.push_back(&dll_resolver);
+        CDllResolver* dll_resolver =
+            &(*it)->Resolve(m_DllSearchPaths, driver, version);
+        if ( !version.IsAny()  &&
+            dll_resolver->GetResolvedEntries().empty() ) {
+            // Try to ignore version
+            dll_resolver =
+                &(*it)->Resolve(m_DllSearchPaths, driver, CVersionInfo::kAny);
+            if ( dll_resolver->GetResolvedEntries().empty() ) {
+                dll_resolver = 0;
+            }
+        }
+        if ( dll_resolver ) {
+            resolvers.push_back(dll_resolver);
+        }
     }
 
     // Now choose the DLL entry point to register the class factory
@@ -850,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/08/11 14:09:33  grichenk
+ * Improved DLL version matching
+ *
  * Revision 1.29  2004/08/10 16:54:09  grichenk
  * Replaced CFastMutex with CMutex
  *
