@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/09/05 21:20:24  vasilche
+* Added mutex for items map
+*
 * Revision 1.19  2001/01/05 20:10:35  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -199,7 +202,7 @@ protected:
 private:
     const TItemsByName& GetItemsByName(void) const;
     const TItemsByOffset& GetItemsByOffset(void) const;
-    void UpdateTagMap(void) const;
+	pair<TMemberIndex, const TItemsByTag*> GetItemsByTagInfo(void) const;
 
     // items
     TItems m_Items;

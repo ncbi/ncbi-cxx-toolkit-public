@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/09/05 21:21:44  vasilche
+* Added mutex for items map
+*
 * Revision 1.26  2002/01/24 23:30:01  vakatov
 * Note for ourselves that the bug workaround "BW_010" is not needed
 * anymore, and we should get rid of it in about half a year
@@ -148,6 +151,7 @@
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -197,18 +201,25 @@ void CItemsInfo::AddItem(CItemInfo* item)
     item->m_Index = LastIndex();
 }
 
+static CFastMutex s_ItemsMapMutex;
+
 const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
 {
     TItemsByName* items = m_ItemsByName.get();
     if ( !items ) {
-        m_ItemsByName.reset(items = new TItemsByName);
-        for ( CIterator i(*this); i.Valid(); ++i ) {
-            const CItemInfo* itemInfo = GetItemInfo(i);
-            const string& name = itemInfo->GetId().GetName();
-            if ( !items->insert(TItemsByName::value_type(name, *i)).second ) {
-                if ( !name.empty() )
-                    THROW1_TRACE(runtime_error, "duplicated member name");
+        CFastMutexGuard GUARD(s_ItemsMapMutex);
+        items = m_ItemsByName.get();
+        if ( !items ) {
+            auto_ptr<TItemsByName> keep(items = new TItemsByName);
+            for ( CIterator i(*this); i.Valid(); ++i ) {
+                const CItemInfo* itemInfo = GetItemInfo(i);
+                const string& name = itemInfo->GetId().GetName();
+                if ( !items->insert(TItemsByName::value_type(name, *i)).second ) {
+                    if ( !name.empty() )
+                        THROW1_TRACE(runtime_error, "duplicated member name");
+                }
             }
+            m_ItemsByName = keep;
         }
     }
     return *items;
@@ -219,16 +230,19 @@ CItemsInfo::GetItemsByOffset(void) const
 {
     TItemsByOffset* items = m_ItemsByOffset.get();
     if ( !items ) {
-        // create map
-        m_ItemsByOffset.reset(items = new TItemsByOffset);
-        // fill map
-        for ( CIterator i(*this); i.Valid(); ++i ) {
-            const CItemInfo* itemInfo = GetItemInfo(i);
-            size_t offset = itemInfo->GetOffset();
-            if ( !items->insert(TItemsByOffset::value_type(offset, *i)).second ) {
-                THROW1_TRACE(runtime_error, "conflict member offset");
+        CFastMutexGuard GUARD(s_ItemsMapMutex);
+        items = m_ItemsByOffset.get();
+        if ( !items ) {
+            // create map
+            auto_ptr<TItemsByOffset> keep(items = new TItemsByOffset);
+            // fill map 
+            for ( CIterator i(*this); i.Valid(); ++i ) {
+                const CItemInfo* itemInfo = GetItemInfo(i);
+                size_t offset = itemInfo->GetOffset();
+                if ( !items->insert(TItemsByOffset::value_type(offset, *i)).second ) {
+                    THROW1_TRACE(runtime_error, "conflict member offset");
+                }
             }
-        }
 /*
         // check overlaps
         size_t nextOffset = 0;
@@ -242,39 +256,50 @@ CItemsInfo::GetItemsByOffset(void) const
             nextOffset = offset + m_Members[m->second]->GetSize();
         }
 */
+            m_ItemsByOffset = keep;
+        }
     }
     return *items;
 }
 
-void CItemsInfo::UpdateTagMap(void) const
+pair<TMemberIndex, const CItemsInfo::TItemsByTag*>
+CItemsInfo::GetItemsByTagInfo(void) const
 {
-    TMemberIndex zeroTagIndex = kInvalidMember;
-
-    for ( CIterator i(*this); i.Valid(); ++i ) {
-        const CItemInfo* itemInfo = GetItemInfo(i);
-        TTag tag = itemInfo->GetId().GetTag();
-        if ( zeroTagIndex == kInvalidMember ) {
-            if ( *i == FirstIndex() )
-                zeroTagIndex = *i - tag;
-        }
-        else {
-            if ( zeroTagIndex != *i - tag )
-                zeroTagIndex = kInvalidMember;
-        }
-    }
-
-    m_ZeroTagIndex = zeroTagIndex;
-    if ( zeroTagIndex == kInvalidMember ) {
-        TItemsByTag* items;
-        m_ItemsByTag.reset(items = new TItemsByTag);
-        for ( CIterator i(*this); i.Valid(); ++i ) {
-            const CItemInfo* itemInfo = GetItemInfo(i);
-            TTag tag = itemInfo->GetId().GetTag();
-            if ( !items->insert(TItemsByTag::value_type(tag, *i)).second ) {
-                THROW1_TRACE(runtime_error, "duplicated member tag");
+    pair<TMemberIndex, const TItemsByTag*> ret(m_ZeroTagIndex, m_ItemsByTag.get());
+    if ( ret.first == kInvalidMember && ret.second == 0 ) {
+        CFastMutexGuard GUARD(s_ItemsMapMutex);
+        ret = make_pair(m_ZeroTagIndex, m_ItemsByTag.get());
+        if ( ret.first == kInvalidMember && ret.second == 0 ) {
+            {
+                CIterator i(*this);
+                if ( i.Valid() ) {
+                    ret.first = *i-GetItemInfo(i)->GetId().GetTag();
+                    for ( ++i; i.Valid(); ++i ) {
+                        if ( ret.first != *i-GetItemInfo(i)->GetId().GetTag() ) {
+                            ret.first = kInvalidMember;
+                            break;
+                        }
+                    }
+                }
+            }
+            if ( ret.first != kInvalidMember ) {
+                m_ZeroTagIndex = ret.first;
+            }
+            else {
+                auto_ptr<TItemsByTag> items(new TItemsByTag);
+                for ( CIterator i(*this); i.Valid(); ++i ) {
+                    const CItemInfo* itemInfo = GetItemInfo(i);
+                    TTag tag = itemInfo->GetId().GetTag();
+                    if ( !items->insert(TItemsByTag::value_type(tag, *i)).second ) {
+                        THROW1_TRACE(runtime_error, "duplicated member tag");
+                    }
+                }
+                ret.second = items.get();
+                m_ItemsByTag = items;
             }
         }
     }
+    return ret;
 }
 
 TMemberIndex CItemsInfo::Find(const CLightString& name) const
@@ -297,32 +322,37 @@ TMemberIndex CItemsInfo::Find(const CLightString& name, TMemberIndex pos) const
 
 TMemberIndex CItemsInfo::Find(TTag tag) const
 {
-    if ( m_ZeroTagIndex != kInvalidMember ) {
+	pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
+    if ( info.first != kInvalidMember ) {
         TMemberIndex index = tag + m_ZeroTagIndex;
         if ( index < FirstIndex() || index > LastIndex() )
             return kInvalidMember;
         return index;
     }
-
-    TItemsByTag* items = m_ItemsByTag.get();
-    if ( !items ) {
-        UpdateTagMap();
-        return Find(tag);
+    else {
+        TItemsByTag::const_iterator mi = info.second->find(tag);
+        if ( mi == info.second->end() )
+            return kInvalidMember;
+        return mi->second;
     }
-
-    TItemsByTag::const_iterator mi = items->find(tag);
-    if ( mi == items->end() )
-        return kInvalidMember;
-    return mi->second;
 }
 
 TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
 {
-    for ( CIterator i(*this, pos); i.Valid(); ++i ) {
-        if ( GetItemInfo(i)->GetId().GetTag() == tag )
-            return *i;
+	pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
+    if ( info.first != kInvalidMember ) {
+        TMemberIndex index = tag + m_ZeroTagIndex;
+        if ( index < pos || index > LastIndex() )
+            return kInvalidMember;
+        return index;
     }
-    return kInvalidMember;
+    else {
+        for ( CIterator i(*this, pos); i.Valid(); ++i ) {
+            if ( GetItemInfo(i)->GetId().GetTag() == tag )
+                return *i;
+        }
+        return kInvalidMember;
+    }
 }
 
 END_NCBI_SCOPE
