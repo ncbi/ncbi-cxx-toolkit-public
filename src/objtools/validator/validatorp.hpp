@@ -750,6 +750,7 @@ private:
     bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
     bool IsTransgenic(const CBioSource& bsrc);
     bool IsSameAsCDS(const CSeq_feat& feat);
+    bool IsCDDFeat(const CSeq_feat& feat) const;
 };
 
 
@@ -883,6 +884,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/10/01 22:42:45  ucko
+* Actually declare CValidError_feat::IsCDDFeat....
+*
 * Revision 1.40  2003/09/23 13:25:55  shomrat
 * Added IsDeltaSeqOnly test
 *
