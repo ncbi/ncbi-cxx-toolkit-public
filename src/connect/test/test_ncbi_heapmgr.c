@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/29 18:23:42  lavr
+ * getpagesize() replaced by a constant 4096, which is "more portable".
+ *
  * Revision 6.3  2000/05/31 23:12:32  lavr
  * First try to assemble things together to get working service mapper
  *
@@ -46,7 +49,6 @@
 #include "../ncbi_misc.h"
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
 
 
 #ifdef __cplusplus
@@ -77,9 +79,9 @@ int main(void)
     char *c;
 
     for (j = 1; j <= 3; j++) {
-        srand((int)time(0) + (int)getpid());
+        srand((int)time(0));
         Message("Creating heap %d\n", j);
-        heap = HEAP_Create(0, 0, getpagesize(), s_Expand);
+        heap = HEAP_Create(0, 0, 4096, s_Expand);
         while (rand() != 12345) {
             r = rand() & 7;
             if (r == 2 || r == 4) {
