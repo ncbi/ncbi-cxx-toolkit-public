@@ -231,14 +231,14 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                  pipename.c_str(),              // pipe name 
                  PIPE_ACCESS_DUPLEX,            // read/write access 
                  PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 
-                 1,                             // 1 instance only 
+                 1,                             // one instance only 
                  bufsize,                       // output buffer size 
                  bufsize,                       // input buffer size 
                  INFINITE,                      // client time-out by default
                  &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            throw "Cannot create named pipe \"" + pipename + "\"";
+            throw "Create named pipe \"" + pipename + "\" failed";
         }
         return eIO_Success;
     }
@@ -309,7 +309,7 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
         }
         FlushFileBuffers(m_Pipe); 
         if (!DisconnectNamedPipe(m_Pipe)) {
-            throw "Failed DisconnectNamedPipe()";
+            throw "DisconnectNamedPipe() failed";
         } 
         Close();
         return Create(m_PipeName, m_Bufsize);
@@ -562,13 +562,13 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                            &m_Bufsize, sizeof(m_Bufsize)) < 0  ||
                 setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
                            &m_Bufsize, sizeof(m_Bufsize)) < 0) {
-                throw "Cannot set socket buffer size";
+                throw "UNIX socket set socket buffer size failed";
             }
         }
 
         if (fcntl(sock, F_SETFL,
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-            throw "Cannot set socket to non-blocking mode";
+            throw "UNIX socket set to non-blocking failed";
         }
         
         // Connect to server
@@ -1137,6 +1137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/19 21:02:12  ivanov
+ * Other fix for error messages and comments.
+ *
  * Revision 1.5  2003/08/19 20:52:45  ivanov
  * UNIX: Fixed a waiting method for socket connection in the
  * CNamedPipeHandle::Open() (by Anton Lavrentiev). Fixed some error
