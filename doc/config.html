@@ -1128,6 +1128,29 @@ enable internal projects.
           prompt for libraries that are up-to-date.)
 </ul>
 
+Here's a more detailed explanation of
+<i><b>--with-lib-rebuilds</b></i>:  There are three modes of operation.
+<ul>
+<li> In the default mode (<i><b>--without-lib-rebuilds</b></i>),
+  starting a build from within a subtree (such as internal) will not
+  attempt to build anything outside of that subtree.
+
+<li> In the unconditional mode (<i><b>--with-lib-rebuilds</b></i>),
+  building an application will make the system rebuild any libraries
+  it requires that are older than their sources.  This can be useful
+  if you have made a change that affects everything under objects but
+  your project only needs a few of those libraries; in that case, you
+  can save time by starting the build in your project's directory
+  rather than at the top level.
+
+<li> The conditional mode (<i><b>--with-lib-rebuilds=ask</b></i>) is like the
+  unconditional mode, except that when the system discovers that a
+  needed library is out of date, it asks you about it.  You can then
+  choose between keeping your current version (because you prefer it
+  or because nothing relevant has changed) and building an updated
+  version.
+</ul>
+
 
 <p>
 <br>
