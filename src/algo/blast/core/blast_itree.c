@@ -341,8 +341,6 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
  *  all such HSPs that are "worse" than the input (do not delete the HSPs
  *  themselves)
  *  @param tree Interval tree to search [in]
- *  @param root_index The offset into the list of tree nodes that
- *                    represents the root of the subtree [in]
  *  @param in_hsp The input HSP [in]
  *  @param query_info Information on all the queries in a concatenated set [in]
  *  @param which_end Whether to match the left or right HSP endpoint [in]
