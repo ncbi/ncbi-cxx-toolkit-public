@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/03/26 20:59:22  grichenk
+* Removed commented-out code
+*
 * Revision 1.11  2003/03/11 14:15:49  grichenk
 * +Data-source priority
 *
@@ -161,12 +164,6 @@ protected:
     void AddDataLoader(
         TDataSourceSet& sources, CDataLoader& loader,
         SDataSourceRec::TPriority priority);
-/*
-    void RemoveDataLoader(
-        set< CDataSource* >& sources, CDataLoader& loader);
-    void RemoveDataLoader(
-        set< CDataSource* >& sources, const string& loader_name);
-*/
     void AddTopLevelSeqEntry(
         TDataSourceSet& sources, CSeq_entry& top_entry,
         SDataSourceRec::TPriority priority);
