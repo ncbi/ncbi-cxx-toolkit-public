@@ -46,7 +46,7 @@ void CAlnMap::x_CreateAlnStarts(void)
     for (int i = 0;  i < GetNumSegs();  ++i) {
         start += len;
         m_AlnStarts.push_back(start);
-        len = m_DS->GetLens()[i];
+        len = m_Lens[i];
     }
 }
 
@@ -73,7 +73,7 @@ void CAlnMap::SetAnchor(TNumrow anchor)
         UnsetAnchor();
         return;
     }
-    if (anchor < 0  ||  anchor >= m_DS->GetDim()) {
+    if (anchor < 0  ||  anchor >= m_NumRows) {
         NCBI_THROW(CAlnException, eInvalidRow,
                    "CAlnVec::SetAnchor(): "
                    "Invalid row");
@@ -89,16 +89,16 @@ void CAlnMap::SetAnchor(TNumrow anchor)
     int start = 0, len = 0, aln_seg = -1, offset = 0;
     
     m_Anchor = anchor;
-    for (int i = 0, pos = m_Anchor;  i < m_DS->GetNumseg();
-         ++i, pos += m_DS->GetDim()) {
-        if (m_DS->GetStarts()[pos] != -1) {
+    for (int i = 0, pos = m_Anchor;  i < m_NumSegs;
+         ++i, pos += m_NumRows) {
+        if (m_Starts[pos] != -1) {
             ++aln_seg;
             offset = 0;
             m_AlnSegIdx.push_back(i);
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg));
             start += len;
             m_AlnStarts.push_back(start);
-            len = m_DS->GetLens()[i];
+            len = m_Lens[i];
         } else {
             ++offset;
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg, offset));
@@ -120,35 +120,38 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     TSeqPos       cont_next_start, cont_prev_stop;
 
     l_seg = r_seg = seg;
-    l_index = r_index = index = seg * m_DS->GetDim() + row;
+    l_index = r_index = index = seg * m_NumRows + row;
 
-    TSignedSeqPos start = m_DS->GetStarts()[index];
+    TSignedSeqPos start = m_Starts[index];
 
     // is it seq or gap?
     if (start >= 0) {
         flags |= fSeq;
-        cont_next_start = start + m_DS->GetLens()[seg];
+        cont_next_start = start + m_Lens[seg];
         cont_prev_stop  = start;
     }
 
     // is it aligned to sequence on the anchor?
     if (IsSetAnchor()) {
         flags |= fNotAlignedToSeqOnAnchor;
-        if (m_DS->GetStarts()[seg * m_DS->GetDim() + m_Anchor] >= 0) {
+        if (m_Starts[seg * m_NumRows + m_Anchor] >= 0) {
             flags &= ~(flags & fNotAlignedToSeqOnAnchor);
         }
     }
 
     // what's on the right?
-    flags |= fEndOnRight | fNoSeqOnRight;
-    while (++r_seg < m_DS->GetNumseg()) {
+    if (r_seg < m_NumSegs - 1) {
+        flags |= fEndOnRight;
+    }
+    flags |= fNoSeqOnRight;
+    while (++r_seg < m_NumSegs) {
         flags &= ~(flags & fEndOnRight);
-        r_index += m_DS->GetDim();
-        if ((start = m_DS->GetStarts()[r_index]) >= 0) {
+        r_index += m_NumRows;
+        if ((start = m_Starts[r_index]) >= 0) {
             if ((flags & fSeq) && 
                 (IsPositiveStrand(row) ?
                  start != (TSignedSeqPos)cont_next_start :
-                 start + m_DS->GetLens()[r_seg] != cont_prev_stop)) {
+                 start + m_Lens[r_seg] != cont_prev_stop)) {
                 flags |= fUnalignedOnRight;
             }
             flags &= ~(flags & fNoSeqOnRight);
@@ -157,14 +160,17 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     }
 
     // what's on the left?
-    flags |= fEndOnLeft | fNoSeqOnLeft;
+    if (l_seg > 0) {
+        flags |= fEndOnLeft;
+    }
+    flags |= fNoSeqOnLeft;
     while (--l_seg >= 0) {
         flags &= ~(flags & fEndOnLeft);
-        l_index -= m_DS->GetDim();
-        if ((start = m_DS->GetStarts()[l_index]) >= 0) {
+        l_index -= m_NumRows;
+        if ((start = m_Starts[l_index]) >= 0) {
             if ((flags & fSeq) && 
                 (IsPositiveStrand(row) ?
-                 start + m_DS->GetLens()[l_seg] != cont_prev_stop :
+                 start + m_Lens[l_seg] != cont_prev_stop :
                  start != (TSignedSeqPos)cont_next_start)) {
                 flags |= fUnalignedOnLeft;
             }
@@ -178,9 +184,9 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
         // Using kZero for 0 works around a bug in Compaq's C++ compiler.
         static const TSegTypeFlags kZero = 0;
         m_RawSegTypes = new vector<TSegTypeFlags>
-            (m_DS->GetDim() * m_DS->GetNumseg(), kZero);
+            (m_NumRows * m_NumSegs, kZero);
     }
-    (*m_RawSegTypes)[row + m_DS->GetDim() * seg] = flags | fTypeIsSet;
+    (*m_RawSegTypes)[row + m_NumRows * seg] = flags | fTypeIsSet;
 
     return flags;
 }
@@ -194,7 +200,7 @@ CAlnMap::TNumseg CAlnMap::GetSeg(TSeqPos aln_pos) const
     top = m_AlnStarts.size() - 1;
 
     if (aln_pos > m_AlnStarts[top] +
-        m_DS->GetLens()[x_GetRawSegFromSeg(top)] - 1) 
+        m_Lens[x_GetRawSegFromSeg(top)] - 1) 
         return -1; // out of range
 
     while (btm < top) {
@@ -219,8 +225,8 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
     TSignedSeqPos start = -1, sseq_pos = seq_pos;
     TNumseg       btm, top, mid, cur, last, cur_top, cur_btm;
     TNumrow       dim;
-    btm = cur_btm = 0; cur = top = last = cur_top = m_DS->GetNumseg() - 1;
-    dim = m_DS->GetDim();
+    btm = cur_btm = 0; cur = top = last = cur_top = m_NumSegs - 1;
+    dim = m_NumRows;
 
     bool plus = IsPositiveStrand(row);
 
@@ -234,15 +240,15 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             TNumseg seg;
             if (plus) {
                 seg = -1;
-                while (++seg < m_DS->GetNumseg()) {
-                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                while (++seg < m_NumSegs) {
+                    if (m_Starts[seg * dim + row] >= 0) {
                         return seg;
                     }
                 }
             } else {
-                seg = m_DS->GetNumseg();
+                seg = m_NumSegs;
                 while (seg--) {
-                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                    if (m_Starts[seg * dim + row] >= 0) {
                         return seg;
                     }
                 }
@@ -256,16 +262,16 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
                    try_reverse_dir) {
             TNumseg seg;
             if (plus) {
-                seg = m_DS->GetNumseg();
+                seg = m_NumSegs;
                 while (seg--) {
-                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                    if (m_Starts[seg * dim + row] >= 0) {
                         return seg;
                     }
                 }
             } else {
                 seg = -1;
-                while (++seg < m_DS->GetNumseg()) {
-                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                while (++seg < m_NumSegs) {
+                    if (m_Starts[seg * dim + row] >= 0) {
                         return seg;
                     }
                 }
@@ -278,13 +284,13 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
         cur = mid = (top + btm) / 2;
 
         while (cur <= top
-               &&  (start = m_DS->GetStarts()[(plus ? cur : last - cur) 
+               &&  (start = m_Starts[(plus ? cur : last - cur) 
                                              * dim + row]) < 0) {
             ++cur;
         }
         if (cur <= top && start >= 0) {
             if (sseq_pos >= start &&
-                seq_pos < start + m_DS->GetLens()[plus ? cur : last - cur]) {
+                seq_pos < start + m_Lens[plus ? cur : last - cur]) {
                 return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
@@ -298,13 +304,13 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
 
         cur = mid-1;
         while (cur >= btm &&
-               (start = m_DS->GetStarts()[(plus ? cur : last - cur)
+               (start = m_Starts[(plus ? cur : last - cur)
                                          * dim + row]) < 0) {
             --cur;
         }
         if (cur >= btm && start >= 0) {
             if (sseq_pos >= start
-                &&  seq_pos < start + m_DS->GetLens()[plus ? cur : last - cur]) {
+                &&  seq_pos < start + m_Lens[plus ? cur : last - cur]) {
                 return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
@@ -334,15 +340,15 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
                                            ESearchDirection dir,
                                            bool try_reverse_dir) const
 {
-    TNumrow dim = m_DS->GetDim();
+    TNumrow dim = m_NumRows;
 
     TNumseg raw_seg = GetRawSeg(row, seq_pos, dir, try_reverse_dir);
     if (raw_seg < 0) { // out of seq range
         return -1;
     }
 
-    TSeqPos start = m_DS->GetStarts()[raw_seg * dim + row];
-    TSeqPos len   = m_DS->GetLens()[raw_seg];
+    TSeqPos start = m_Starts[raw_seg * dim + row];
+    TSeqPos len   = m_Lens[raw_seg];
     TSeqPos stop  = start + len -1;
     bool    plus  = IsPositiveStrand(row);
 
@@ -425,7 +431,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
                         pos = x_GetRawStop(for_row, seg);
                     }
                 } else {
-                    while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
+                    while (++seg < m_NumSegs  &&  pos == -1) {
                         pos = x_GetRawStart(for_row, seg);
                     }
                 }
@@ -435,7 +441,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
                         pos = x_GetRawStart(for_row, seg);
                     }
                 } else {
-                    while (++seg < m_DS->GetNumseg()  &&  pos == -1) {
+                    while (++seg < m_NumSegs  &&  pos == -1) {
                         pos = x_GetRawStop(for_row, seg);
                     } 
                 }
@@ -475,30 +481,30 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
 {
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
     TSeqPos delta
-        = seq_pos - m_DS->GetStarts()[raw_seg * m_DS->GetDim() + row];
+        = seq_pos - m_Starts[raw_seg * m_NumRows + row];
 
     return (GetStart(for_row, raw_seg)
             + (StrandSign(row) == StrandSign(for_row) ? delta
-               : m_DS->GetLens()[raw_seg] - 1 - delta));
+               : m_Lens[raw_seg] - 1 - delta));
 }
 
 
 TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 {
     int seg, dim, start;
-    dim = m_DS->GetDim();
+    dim = m_NumRows;
     
     if (IsPositiveStrand(row)) {
         seg = -1;
-        while (++seg < m_DS->GetNumseg()) {
-            if ((start = m_DS->GetStarts()[seg * dim + row]) >= 0) {
+        while (++seg < m_NumSegs) {
+            if ((start = m_Starts[seg * dim + row]) >= 0) {
                 return start;
             }
         }
     } else {
-        seg = m_DS->GetNumseg();
+        seg = m_NumSegs;
         while (seg--) {
-            if ((start = m_DS->GetStarts()[seg * dim + row]) >= 0) {
+            if ((start = m_Starts[seg * dim + row]) >= 0) {
                 return start;
             }
         }
@@ -510,20 +516,20 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
 {
     int seg, dim, start;
-    dim = m_DS->GetDim();
+    dim = m_NumRows;
     
     if (IsPositiveStrand(row)) {
-        seg = m_DS->GetNumseg();
+        seg = m_NumSegs;
         while (seg--) {
-            if ((start = m_DS->GetStarts()[seg * dim + row]) >= 0) {
-                return start + m_DS->GetLens()[seg] - 1;
+            if ((start = m_Starts[seg * dim + row]) >= 0) {
+                return start + m_Lens[seg] - 1;
             }
         }
     } else {
         seg = -1;
-        while (++seg < m_DS->GetNumseg()) {
-            if ((start = m_DS->GetStarts()[seg * dim + row]) >= 0) {
-                return start + m_DS->GetLens()[seg] - 1;
+        while (++seg < m_NumSegs) {
+            if ((start = m_Starts[seg * dim + row]) >= 0) {
+                return start + m_Lens[seg] - 1;
             }
         }
     }
@@ -581,7 +587,7 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
         vec->m_LeftDelta = range.GetFrom() - GetAlnStart(aln_seg);
     }
     if ((TSeqPos)range.GetTo() > GetAlnStop(GetNumSegs()-1)) {
-        last_seg = m_DS->GetNumseg()-1;
+        last_seg = m_NumSegs-1;
     } else {
         last_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetTo()));
         vec->m_RightDelta = GetAlnStop(aln_seg) - range.GetTo();
@@ -611,7 +617,7 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
         if (IsPositiveStrand(row)) {
             first_seg = 0;
         } else {
-            last_seg = m_DS->GetNumseg() - 1;
+            last_seg = m_NumSegs - 1;
         }
     } else {        
         if (IsPositiveStrand(row)) {
@@ -624,7 +630,7 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
     }
     if (range.GetTo() > GetSeqStop(row)) {
         if (IsPositiveStrand(row)) {
-            last_seg = m_DS->GetNumseg() - 1;
+            last_seg = m_NumSegs - 1;
         } else {
             first_seg = 0;
         }
@@ -759,10 +765,10 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
 
     CRef<CAlnChunk>  chunk(new CAlnChunk());
     TSignedSeqPos from, to;
-    from = m_AlnMap.m_DS->GetStarts()[start_seg * m_AlnMap.m_DS->GetDim()
+    from = m_AlnMap.m_Starts[start_seg * m_AlnMap.m_NumRows
                                      + m_Row];
     if (from >= 0) {
-        to = from + m_AlnMap.m_DS->GetLens()[start_seg] - 1;
+        to = from + m_AlnMap.m_Lens[start_seg] - 1;
     } else {
         from = -1;
         to = -1;
@@ -778,10 +784,10 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom(),
                                       chunk->GetRange().GetTo()
-                                      + m_AlnMap.m_DS->GetLens()[seg]);
+                                      + m_AlnMap.m_Lens[seg]);
             } else {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom()
-                                      - m_AlnMap.m_DS->GetLens()[seg],
+                                      - m_AlnMap.m_Lens[seg],
                                       chunk->GetRange().GetTo());
             }
         }
@@ -867,6 +873,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/06/05 19:03:12  todorov
+* Added const refs to Dense-seg members as a speed optimization
+*
 * Revision 1.29  2003/06/02 16:06:40  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -217,17 +217,17 @@ void CAlnVec::CreateConsensus(void)
     int j;
 
     // temporary storage for our consensus
-    vector<string> consens(m_DS->GetNumseg());
+    vector<string> consens(m_NumSegs);
 
     // determine what the number of segments required for a gapped consensus
     // segment is.  this must be rounded to be at least 50%.
-    int gap_seg_thresh = m_DS->GetDim() - m_DS->GetDim() / 2;
+    int gap_seg_thresh = m_NumRows - m_NumRows / 2;
 
-    for (j = 0;  j < m_DS->GetNumseg();  ++j) {
+    for (j = 0;  j < m_NumSegs;  ++j) {
         // evaluate for gap / no gap
         int gap_count = 0;
-        for (i = 0;  i < m_DS->GetDim();  ++i) {
-            if (m_DS->GetStarts()[ j*m_DS->GetDim() + i ] == -1) {
+        for (i = 0;  i < m_NumRows;  ++i) {
+            if (m_Starts[ j*m_NumRows + i ] == -1) {
                 ++gap_count;
             }
         }
@@ -236,14 +236,14 @@ void CAlnVec::CreateConsensus(void)
         // gap seg
         if ( gap_count <= gap_seg_thresh ) {
             // we will build a segment with enough bases to match
-            consens[j].resize(m_DS->GetLens()[j]);
+            consens[j].resize(m_Lens[j]);
 
             // retrieve all sequences for this segment
-            vector<string> segs(m_DS->GetDim());
-            for (i = 0;  i < m_DS->GetDim();  ++i) {
-                if (m_DS->GetStarts()[ j*m_DS->GetDim() + i ] != -1) {
-                    TSeqPos start = m_DS->GetStarts()[j*m_DS->GetDim()+i];
-                    TSeqPos stop  = start + m_DS->GetLens()[j];
+            vector<string> segs(m_NumRows);
+            for (i = 0;  i < m_NumRows;  ++i) {
+                if (m_Starts[ j*m_NumRows + i ] != -1) {
+                    TSeqPos start = m_Starts[j*m_NumRows+i];
+                    TSeqPos stop  = start + m_Lens[j];
 
                     if (IsPositiveStrand(i)) {
                         x_GetSeqVector(i).GetSeqData(start, stop, segs[i]);
@@ -263,13 +263,13 @@ void CAlnVec::CreateConsensus(void)
             // 
             // evaluate for a consensus
             //
-            for (i = 0;  i < m_DS->GetLens()[j];  ++i) {
+            for (i = 0;  i < m_Lens[j];  ++i) {
                 // first, we record which bases occur and how often
                 // this is computed in NCBI4na notation
                 int base_count[4];
                 base_count[0] = base_count[1] =
                     base_count[2] = base_count[3] = 0;
-                for (int row = 0;  row < m_DS->GetDim();  ++row) {
+                for (int row = 0;  row < m_NumRows;  ++row) {
                     if (segs[row] != "") {
                         for (int pos = 0;  pos < 4;  ++pos) {
                             if (segs[row][i] & (1<<pos)) {
@@ -297,7 +297,7 @@ void CAlnVec::CreateConsensus(void)
                 // the base threshold for being considered unique is at least
                 // 70% of the available sequences
                 int base_thresh =
-                    ((m_DS->GetDim() - gap_count) * 7 + 5) / 10;
+                    ((m_NumRows - gap_count) * 7 + 5) / 10;
 
                 // now, the first element here contains the best frequency
                 // we scan for the appropriate bases
@@ -343,22 +343,22 @@ void CAlnVec::CreateConsensus(void)
     TSignedSeqPos total_bases = 0;
 
     CRef<CDense_seg> new_ds(new CDense_seg());
-    new_ds->SetDim(m_DS->GetDim() + 1);
-    new_ds->SetNumseg(m_DS->GetNumseg());
-    new_ds->SetLens() = m_DS->GetLens();
-    new_ds->SetStarts().reserve(m_DS->GetStarts().size() + m_DS->GetNumseg());
-    if ( !m_DS->GetStrands().empty() ) {
-        new_ds->SetStrands().reserve(m_DS->GetStrands().size() +
-                                     m_DS->GetNumseg());
+    new_ds->SetDim(m_NumRows + 1);
+    new_ds->SetNumseg(m_NumSegs);
+    new_ds->SetLens() = m_Lens;
+    new_ds->SetStarts().reserve(m_Starts.size() + m_NumSegs);
+    if ( !m_Strands.empty() ) {
+        new_ds->SetStrands().reserve(m_Strands.size() +
+                                     m_NumSegs);
     }
 
     for (i = 0;  i < consens.size();  ++i) {
         // copy the old entries
-        for (j = 0;  j < m_DS->GetDim();  ++j) {
-            int idx = i * m_DS->GetDim() + j;
-            new_ds->SetStarts().push_back(m_DS->GetStarts()[idx]);
-            if ( !m_DS->GetStrands().empty() ) {
-                new_ds->SetStrands().push_back(m_DS->GetStrands()[idx]);
+        for (j = 0;  j < m_NumRows;  ++j) {
+            int idx = i * m_NumRows + j;
+            new_ds->SetStarts().push_back(m_Starts[idx]);
+            if ( !m_Strands.empty() ) {
+                new_ds->SetStrands().push_back(m_Strands[idx]);
             }
         }
 
@@ -373,7 +373,7 @@ void CAlnVec::CreateConsensus(void)
             new_ds->SetStarts().push_back(-1);
         }
         
-        if ( !m_DS->GetStrands().empty() ) {
+        if ( !m_Strands.empty() ) {
             new_ds->SetStrands().push_back(eNa_strand_unknown);
         }
 
@@ -382,8 +382,8 @@ void CAlnVec::CreateConsensus(void)
     }
 
     // copy our IDs
-    for (i = 0;  i < m_DS->GetIds().size();  ++i) {
-        new_ds->SetIds().push_back(m_DS->GetIds()[i]);
+    for (i = 0;  i < m_Ids.size();  ++i) {
+        new_ds->SetIds().push_back(m_Ids[i]);
     }
 
     // now, we construct a new Bioseq and add it to our scope
@@ -427,7 +427,7 @@ void CAlnVec::CreateConsensus(void)
 
     // make sure that the consensus sequence row indicator is saved
     // by default, this is placed in the last row of the alignment
-    m_ConsensusSeq = m_DS->GetDim() - 1;
+    m_ConsensusSeq = m_NumRows - 1;
     
 #if 0
 
@@ -435,15 +435,15 @@ void CAlnVec::CreateConsensus(void)
     cerr << data << endl;
 
     cerr << "dense-seg:" << endl;
-    for (i = 0;  i < m_DS->GetDim();  ++i) {
-        if (i != m_DS->GetDim()-1) {
-            cerr << m_DS->GetIds()[i]->GetGi() << ": ";
+    for (i = 0;  i < m_NumRows;  ++i) {
+        if (i != m_NumRows-1) {
+            cerr << m_Ids[i]->GetGi() << ": ";
         }
         else {
             cerr << "consensus : ";
         }
-        for (j = 0;  j < m_DS->GetNumseg();  ++j) {
-            cerr << m_DS->GetStarts()[ j*m_DS->GetDim() + i ] << ", ";
+        for (j = 0;  j < m_NumSegs;  ++j) {
+            cerr << m_Starts[ j*m_NumRows + i ] << ", ";
         }
         cerr << endl;
     }
@@ -571,7 +571,7 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
 
 int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
 {
-    TNumrow       numrows = m_DS->GetDim();
+    TNumrow       numrows = m_NumRows;
     TNumrow       index1 = row1, index2 = row2;
     TSeqPos       start1, start2;
     string        buff1, buff2;
@@ -590,12 +590,12 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
     CSeqVector &  seq_vec2 = x_GetSeqVector(row2);
     TSeqPos       size2    = seq_vec2.size();
 
-    for (TNumseg seg = 0; seg < m_DS->GetNumseg(); seg++) {
-        start1 = m_DS->GetStarts()[index1];
-        start2 = m_DS->GetStarts()[index2];
+    for (TNumseg seg = 0; seg < m_NumSegs; seg++) {
+        start1 = m_Starts[index1];
+        start2 = m_Starts[index2];
 
         if (start1 >=0  &&  start2 >= 0) {
-            len = m_DS->GetLens()[seg];
+            len = m_Lens[seg];
 
             if (IsPositiveStrand(row1)) {
                 seq_vec1.GetSeqData(start1,
@@ -631,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/06/05 19:03:12  todorov
+* Added const refs to Dense-seg members as a speed optimization
+*
 * Revision 1.27  2003/06/02 16:06:40  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

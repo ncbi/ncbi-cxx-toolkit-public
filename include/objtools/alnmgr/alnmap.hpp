@@ -312,6 +312,13 @@ protected:
     // returns true if types are the same (as specified by flags)
 
     CConstRef<CDense_seg>           m_DS;
+    TNumrow                         m_NumRows;
+    TNumseg                         m_NumSegs;
+    const CDense_seg::TIds&         m_Ids;
+    const CDense_seg::TStarts&      m_Starts;
+    const CDense_seg::TLens&        m_Lens;
+    const CDense_seg::TStrands&     m_Strands;
+    const CDense_seg::TScores&      m_Scores;
     TNumrow                         m_Anchor;
     vector<TNumseg>                 m_AlnSegIdx;
     CDense_seg::TStarts             m_AlnStarts;
@@ -327,7 +334,16 @@ protected:
 
 inline
 CAlnMap::CAlnMap(const CDense_seg& ds) 
-    : m_DS(&ds), m_Anchor(-1), m_RawSegTypes(0)
+    : m_DS(&ds),
+      m_NumRows(m_DS->GetDim()),
+      m_NumSegs(m_DS->GetNumseg()),
+      m_Ids(m_DS->GetIds()),
+      m_Starts(m_DS->GetStarts()),
+      m_Lens(m_DS->GetLens()),
+      m_Strands(m_DS->GetStrands()),
+      m_Scores(m_DS->GetScores()),
+      m_Anchor(-1),
+      m_RawSegTypes(0)
 {
     x_CreateAlnStarts();
 }
@@ -335,7 +351,16 @@ CAlnMap::CAlnMap(const CDense_seg& ds)
 
 inline
 CAlnMap::CAlnMap(const CDense_seg& ds, TNumrow anchor)
-    : m_DS(&ds), m_Anchor(-1), m_RawSegTypes(0)
+    : m_DS(&ds),
+      m_NumRows(m_DS->GetDim()),
+      m_NumSegs(m_DS->GetNumseg()),
+      m_Ids(m_DS->GetIds()),
+      m_Starts(m_DS->GetStarts()),
+      m_Lens(m_DS->GetLens()),
+      m_Strands(m_DS->GetStrands()),
+      m_Scores(m_DS->GetScores()),
+      m_Anchor(-1),
+      m_RawSegTypes(0)
 {
     SetAnchor(anchor);
 }
@@ -366,7 +391,7 @@ inline TSeqPos CAlnMap::GetAlnStart(TNumseg seg) const
 inline
 TSeqPos CAlnMap::GetAlnStop(TNumseg seg) const
 {
-    return m_AlnStarts[seg] + m_DS->GetLens()[x_GetRawSegFromSeg(seg)] - 1;
+    return m_AlnStarts[seg] + m_Lens[x_GetRawSegFromSeg(seg)] - 1;
 }
 
 
@@ -388,14 +413,14 @@ CAlnMap::GetSegType(TNumrow row, TNumseg seg, int offset) const
 inline
 CAlnMap::TNumseg CAlnMap::GetNumSegs(void) const
 {
-    return IsSetAnchor() ? m_AlnSegIdx.size() : m_DS->GetNumseg();
+    return IsSetAnchor() ? m_AlnSegIdx.size() : m_NumSegs;
 }
 
 
 inline
 CAlnMap::TDim CAlnMap::GetNumRows(void) const
 {
-    return m_DS->GetDim();
+    return m_NumRows;
 }
 
 
@@ -432,13 +457,13 @@ CAlnMap::x_GetRawSegFromSeg(TNumseg seg) const
 inline
 TSignedSeqPos CAlnMap::x_GetRawStart(TNumrow row, TNumseg seg) const
 {
-    return m_DS->GetStarts()[seg * m_DS->GetDim() + row];
+    return m_Starts[seg * m_NumRows + row];
 }
 
 inline
 TSeqPos CAlnMap::x_GetRawLen(TNumseg seg) const
 {
-    return m_DS->GetLens()[seg];
+    return m_Lens[seg];
 }
 
 
@@ -461,8 +486,7 @@ int CAlnMap::StrandSign(TNumrow row) const
 inline
 bool CAlnMap::IsPositiveStrand(TNumrow row) const
 {
-    const CDense_seg::TStrands& strands = m_DS->GetStrands();
-    return (strands.empty()  ||  strands[row] != eNa_strand_minus);
+    return (m_Strands.empty()  ||  m_Strands[row] != eNa_strand_minus);
 }
 
 
@@ -476,14 +500,14 @@ bool CAlnMap::IsNegativeStrand(TNumrow row) const
 inline
 TSignedSeqPos CAlnMap::GetStart(TNumrow row, TNumseg seg, int offset) const
 {
-    return m_DS->GetStarts()
-        [(x_GetRawSegFromSeg(seg) + offset) * m_DS->GetDim() + row];
+    return m_Starts
+        [(x_GetRawSegFromSeg(seg) + offset) * m_NumRows + row];
 }
 
 inline
 TSeqPos CAlnMap::GetLen(TNumseg seg, int offset) const
 {
-    return m_DS->GetLens()[x_GetRawSegFromSeg(seg) + offset];
+    return m_Lens[x_GetRawSegFromSeg(seg) + offset];
 }
 
 
@@ -499,7 +523,7 @@ TSignedSeqPos CAlnMap::GetStop(TNumrow row, TNumseg seg, int offset) const
 inline
 const CSeq_id& CAlnMap::GetSeqId(TNumrow row) const
 {
-    return *(m_DS->GetIds()[row]);
+    return *(m_Ids[row]);
 }
 
 
@@ -545,7 +569,7 @@ CAlnMap::x_GetRawSegType(TNumrow row, TNumseg seg) const
 {
     TSegTypeFlags type;
     if (m_RawSegTypes &&
-        (type = (*m_RawSegTypes)[row + m_DS->GetDim() * seg]) & fTypeIsSet) {
+        (type = (*m_RawSegTypes)[row + m_NumRows * seg]) & fTypeIsSet) {
         return type & (~ fTypeIsSet);
     } else {
         return x_SetRawSegType(row, seg);
@@ -579,6 +603,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/06/05 19:03:29  todorov
+* Added const refs to Dense-seg members as a speed optimization
+*
 * Revision 1.21  2003/06/02 16:01:38  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
