@@ -33,6 +33,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifloat.h>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/serialdef.hpp>
@@ -480,6 +481,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/02/04 18:15:22  gouriano
+* added reference to corelib/ncbifloat.h
+*
 * Revision 1.67  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
