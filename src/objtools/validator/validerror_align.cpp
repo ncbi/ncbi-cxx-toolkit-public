@@ -492,7 +492,7 @@ void CValidError_align::x_ValidateStrand
         if ( present[i] == 0 ) {   // no bits in this char
             continue;
         }
-        for ( size_t shift = 7; shift >= 0; --shift ) {
+        for ( int shift = 7; shift >= 0; --shift ) {
             if ( present[i] & (mask << shift) ) {
                 size_t id = i * 8 + 7 - shift;
                 if ( *strand == eNa_strand_unknown  ||  
@@ -1068,6 +1068,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/09/30 18:30:38  shomrat
+* changed unsigned to signed to eliminate infinite loop
+*
 * Revision 1.6  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
