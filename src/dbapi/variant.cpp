@@ -31,6 +31,11 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/09/16 19:30:58  kholodov
+* Added: Numeric datatype support
+* Added: CVariant::operator=() methods for working with bulk insert
+* Added: Methods for writing BLOBs during bulk insert
+*
 * Revision 1.9  2002/09/10 16:54:15  kholodov
 * Modified: using CDB_Object::operator=() for CVariant assignments
 *
@@ -158,7 +163,7 @@ CVariant CVariant::DateTime(CTime *p)
 
 CVariant CVariant::Numeric(unsigned int precision,
                            unsigned int scale,
-                           const char*  p)
+                           const char* p)
 {
     return CVariant(p ? new CDB_Numeric(precision, scale, p) 
                     : new CDB_Numeric());
@@ -345,6 +350,8 @@ string CVariant::GetString(void) const
     case eDB_Bit:
         s << GetBit(); 
         return CNcbiOstrstreamToString(s);
+    case eDB_Numeric:
+        return ((CDB_Numeric*)GetData())->Value(); 
     case eDB_DateTime:
     case eDB_SmallDateTime:
         return GetCTime().AsString();
@@ -453,6 +460,12 @@ bool CVariant::GetBit() const
     return ((CDB_Bit*)GetData())->Value() != 0;
 }
 
+string CVariant::GetNumeric() const
+{
+    VerifyType( GetType() == eDB_Numeric );
+    return ((CDB_Numeric*)GetData())->Value();
+}
+
 const CTime& CVariant::GetCTime() const
 {
     switch(GetType()) {
@@ -470,9 +483,131 @@ bool CVariant::IsNull() const
     return GetData() == 0 ? true : GetData()->IsNULL();
 }
 
+size_t CVariant::Read(void* buf, size_t len)
+{
+
+    switch(GetType()) {
+    case eDB_Image:
+        return ((CDB_Image*)GetData())->Read(buf, len);
+        
+    case eDB_Text:
+        return ((CDB_Text*)GetData())->Read(buf, len);
+
+    default:
+        throw CVariantException("CVariant::Read(): invalid type");
+    }
+}
+
+size_t CVariant::Append(const void* buf, size_t len)
+{
+
+    switch(GetType()) {
+    case eDB_Image:
+        return ((CDB_Image*)GetData())->Append(buf, len);
+        
+    case eDB_Text:
+        return ((CDB_Text*)GetData())->Append(buf, len);
+
+    default:
+        throw CVariantException("CVariant::Append(): invalid type");
+    }
+}
+
+void CVariant::Truncate(size_t len)
+{
+
+    switch(GetType()) {
+    case eDB_Image:
+        return ((CDB_Image*)GetData())->Truncate(len);
+        
+    case eDB_Text:
+        return ((CDB_Text*)GetData())->Truncate(len);
+
+    default:
+        throw CVariantException("CVariant::TruncateRight(): invalid type");
+    }
+}
+
+template<class I, class T>
+void CVariant::Assign(const T& v)
+{
+    *((I*)GetData()) = v;
+}
+
+CVariant& CVariant::operator=(const Int8& v)
+{
+    VerifyType(GetType() == eDB_BigInt);
+    Assign<CDB_BigInt>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const Int4& v)
+{
+    VerifyType(GetType() == eDB_Int);
+    Assign<CDB_Int>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const Int2& v)
+{
+    VerifyType(GetType() == eDB_SmallInt);
+    Assign<CDB_SmallInt>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const Uint1& v)
+{
+    VerifyType(GetType() == eDB_TinyInt);
+    Assign<CDB_TinyInt>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const float& v)
+{
+    VerifyType(GetType() == eDB_Float);
+    Assign<CDB_Float>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const double& v)
+{
+    VerifyType(GetType() == eDB_Double);
+    Assign<CDB_Double>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const string& v)
+{
+    VerifyType(GetType() == eDB_VarChar);
+    Assign<CDB_VarChar>(v);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const bool& v)
+{
+    VerifyType(GetType() == eDB_Bit);
+    Assign<CDB_Bit>(v ? 1 : 0);
+    return *this;
+}
+
+CVariant& CVariant::operator=(const CTime& v)
+{
+    switch(GetType()) {
+    case eDB_DateTime:
+        Assign<CDB_DateTime>(v);
+        break;
+    case eDB_SmallDateTime:
+        Assign<CDB_SmallDateTime>(v);
+        break;
+    default:
+        VerifyType(false);
+    }
+    return *this;
+}
+
 CVariant& CVariant::operator=(const CVariant& v)
 {
-    *(m_data) = *(v.m_data);
+    *(GetData()) = *(v.GetData());
     return *this;
 }
 

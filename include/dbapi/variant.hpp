@@ -140,6 +140,7 @@ public:
     float         GetFloat(void) const;
     double        GetDouble(void) const;
     bool          GetBit(void) const;
+    string        GetNumeric(void) const;
     const CTime&  GetCTime(void) const;
 
 
@@ -148,7 +149,21 @@ public:
 
     // operators
     CVariant& operator=(const CVariant& v);
+    CVariant& operator=(const Int8& v);
+    CVariant& operator=(const Int4& v);
+    CVariant& operator=(const Int2& v);
+    CVariant& operator=(const Uint1& v);
+    CVariant& operator=(const float& v);
+    CVariant& operator=(const double& v);
+    CVariant& operator=(const string& v);
+    CVariant& operator=(const bool& v);
+    CVariant& operator=(const CTime& v);
+    
     bool operator<(const CVariant& v) const;
+
+    // Assign template
+    template<class I, class T>
+    void Assign(const T& v);
 
     // Get pointer to the data buffer
     // NOTE: internal use only!
@@ -157,6 +172,13 @@ public:
     // Get pointer to the data buffer, throws CVariantException if buffer is 0
     // NOTE: internal use only!
     CDB_Object* GetNonNullData() const;
+
+    // Methods to work with BLOB data (Text and Image)
+    size_t Read(void* buf, size_t len);
+    size_t Append(const void* buf, size_t len);
+    // Truncates from buffer end to buffer start. 
+    // Truncates everything if no argument
+    void Truncate(size_t len = kMax_UInt);
 
 protected:
     // Set methods
@@ -204,6 +226,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.8  2002/09/16 19:31:08  kholodov
+ * Added: Numeric datatype support
+ * Added: CVariant::operator=() methods for working with bulk insert
+ * Added: Methods for writing BLOBs during bulk insert
+ *
  * Revision 1.7  2002/05/16 21:59:55  kholodov
  * Added: _TRACE() message to VerifyType()
  *
