@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --****************************************************************
 --
 --  NCBI Project Definition Module
@@ -16,26 +16,31 @@ IMPORTS Date FROM NCBI-General
         Seq-id, Seq-loc FROM NCBI-Seqloc
         Seq-annot, Pubdesc FROM NCBI-Sequence
         Seq-entry FROM NCBI-Seqset
-        Pubmed-entry FROM NCBI-PubMed
-        Biostruc, Biostruc-id FROM MMDB;
+        Pubmed-entry FROM NCBI-PubMed;
 
 Project ::= SEQUENCE {
     descr Project-descr OPTIONAL ,
     data Project-item }
 
 Project-item ::= CHOICE {
+    pmuid SET OF INTEGER ,
+    protuid SET OF INTEGER ,
+    nucuid SET OF INTEGER ,
+    sequid SET OF INTEGER ,
+    genomeid SET OF INTEGER ,
+    structuid SET OF INTEGER ,
     pmid SET OF PubMedId ,
     protid SET OF Seq-id ,
     nucid SET OF Seq-id ,
     seqid SET OF Seq-id ,
     genomeid SET OF Seq-id ,
-    structid SET OF Biostruc-id ,
+    structid NULL ,
     pment SET OF Pubmed-entry ,
     protent SET OF Seq-entry ,
     nucent SET OF Seq-entry ,
     seqent SET OF Seq-entry ,
     genomeent SET OF Seq-entry ,
-    structent SET OF Biostruc ,
+    structent NULL ,
     seqannot SET OF Seq-annot ,
     loc SET OF Seq-loc ,
     proj SET OF Project
