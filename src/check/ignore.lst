@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.1 2002/06/17 21:17:43 ivanov Exp $
+# $Id: ignore.lst,v 1.2 2002/06/18 14:01:21 ivanov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -10,6 +10,12 @@
 ; Corelib
 
 corelib/test/test_ncbidll   KCC_400-Release--i686-pc-linux-gnuaout
+corelib/test/test_ncbidll   KCC_400-Debug--i686-pc-linux-gnuaout
+corelib/test/test_ncbidll   ICC_500-Debug--i686-pc-linux-gnu
+corelib/test/test_ncbidll   ICC_500-Release--i686-pc-linux-gnu
+corelib/test/test_ncbiexec  ICC_500-Debug--i686-pc-linux-gnu
+corelib/test/test_ncbiexec  ICC_500-Release--i686-pc-linux-gnu
+corelib/test/test_ncbipipe  ICC_500-Debug--i686-pc-linux-gnu
+corelib/test/test_ncbipipe  ICC_500-Release--i686-pc-linux-gnu
 
 ; Other
-
