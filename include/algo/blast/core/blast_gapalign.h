@@ -83,7 +83,6 @@ typedef struct BlastGapDP {
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
    Boolean positionBased; /**< Is this PSI-BLAST? */
-   Boolean rps_blast; /**< Is this RPS-BLAST? */
    Int4 position_offset; /**< Offset into the PSSM for the present sequence */
    GapStateArrayStruct* state_struct; /**< Structure to keep extension 
                                                 state information */
