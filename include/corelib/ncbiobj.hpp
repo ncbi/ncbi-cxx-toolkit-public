@@ -226,39 +226,42 @@ private:
     /// - [0]1c...cc0 : object not in heap -> cannot be referenced.
     /// - [0]1c...cc1 : object in heap -> can be referenced.
     enum EObjectState {
-        eStateBitsInHeap  = 1 << 0,
+        eStateBitsInHeap        = 1 << 0, ///< Detected as in heap
+        eStateBitsHeapSignature = 1 << 1, ///< Heap signature was found
+        eStateBitsMemory        = eStateBitsInHeap | eStateBitsHeapSignature,
+
 #ifdef NCBI_COUNTER_UNSIGNED
+        /// 1 in the left most of the valid bits -- unsigned case
         eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 1)),
-            ///< 1 in the left most of the valid bits -- unsigned case
 #else
+        /// 1 in the left most of the valid bits -- signed case
         eStateBitsValid   = (unsigned int)(1 << (sizeof(TCount) * 8 - 2)),
-            ///< 1 in the left most of the valid bits -- signed case
 #endif
-        eStateMask        = eStateBitsValid | eStateBitsInHeap,
-            ///< Valid object, and object in heap. 
+        /// Valid object, and object in heap. 
+        eStateMask        = eStateBitsValid | eStateBitsMemory,
 
-        eCounterStep      = 1 << 1, 
-            ///< Shift one bit left over the "heap" bit
+        /// Shift one bit left over the "heap" bit
+        eCounterStep      = 1 << 2, 
 
+        /// Mask for testing if counter is for valid object, not in heap
         eCounterNotInHeap = eStateBitsValid,
-            ///< Mask for testing if counter is for valid object, not in heap
 
+        /// Mask for testing if counter is for valid object, in heap
         eCounterInHeap    = eStateBitsValid | eStateBitsInHeap,
-            ///< Mask for testing if counter is for valid object, in heap
 
+        /// Mask for testing if counter is for a valid object
         eCounterValid     = eStateBitsValid,
-            ///< Mask for testing if counter is for a valid object
 
+        /// Special mask value: lsb three bits 0, and msb (or one bit after)
+        /// is 0 and all other bits are 1
         eSpecialValueMask = (unsigned int)eStateBitsValid -
                             (unsigned int)eCounterStep,
-            ///< Special mask value: lsb two bits 0, and msb (or one bit after)
-            ///< is 0 and all other bits are 1
 
+        /// Mask for testing if counter is for a deleted object
         eCounterDeleted   = (unsigned int)(0x5b4d9f34 & eSpecialValueMask),
-            ///< Mask for testing if counter is for a deleted object
 
+        /// Mask for testing if counter is for a new object
         eCounterNew       = (unsigned int)(0x3423cb13 & eSpecialValueMask)
-            ///< Mask for testing if counter is for a new object
     };
 
     // special methods for parsing object state number
@@ -268,6 +271,9 @@ private:
 
     /// Check if object can be deleted.
     static bool ObjectStateCanBeDeleted(TCount count);
+
+    /// Check if object can not be deleted (stack object)
+    static bool ObjectStateCanNotBeDeleted(TCount count);
 
     /// Check if object can be referenced.
     static bool ObjectStateReferenced(TCount count);
@@ -1478,6 +1484,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/03/17 19:54:30  grichenk
+ * DoDeleteThisObject() fails for objects not in heap.
+ *
  * Revision 1.60  2005/03/03 18:45:02  didenko
  * Added Swap method and std::swap functions for
  * CRef and CConstRef classes

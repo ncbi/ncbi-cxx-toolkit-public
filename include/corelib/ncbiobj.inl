@@ -43,6 +43,13 @@ bool CObject::ObjectStateCanBeDeleted(TCount count)
 
 
 inline
+bool CObject::ObjectStateCanNotBeDeleted(TCount count)
+{
+    return (count & eStateBitsMemory) == 0;
+}
+
+
+inline
 bool CObject::ObjectStateValid(TCount count)
 {
     return count >= TCount(eCounterValid);
@@ -123,6 +130,9 @@ void CObject::RemoveReference(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/17 19:54:30  grichenk
+ * DoDeleteThisObject() fails for objects not in heap.
+ *
  * Revision 1.10  2003/10/20 20:35:31  ucko
  * Make include guards consistent with ncbiobj.hpp's again, so the build
  * doesn't totally break.

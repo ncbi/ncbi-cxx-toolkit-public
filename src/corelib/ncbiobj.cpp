@@ -300,9 +300,9 @@ void CObject::InitCounter(void)
 
         // surely not in heap
         if ( inStack )
-            m_Counter.Set(eCounterNotInHeap);
+            m_Counter.Set(eCounterNotInHeap | eStateBitsHeapSignature);
         else
-            m_Counter.Set(eCounterInHeap);
+            m_Counter.Set(eCounterInHeap | eStateBitsHeapSignature);
     }
 }
 
@@ -328,8 +328,9 @@ CObject::CObject(const CObject& /*src*/)
 CObject::~CObject(void)
 {
     TCount count = m_Counter.Get();
-    if ( count == TCount(eCounterInHeap)  ||
-         count == TCount(eCounterNotInHeap) ) {
+    TCount count_no_sig = count & (~eStateBitsHeapSignature);
+    if ( count_no_sig == TCount(eCounterInHeap)  ||
+         count_no_sig == TCount(eCounterNotInHeap) ) {
         // reference counter is zero -> ok
     }
     else if ( ObjectStateValid(count) ) {
@@ -378,17 +379,8 @@ void CObject::RemoveLastReference(void) const
     TCount count = m_Counter.Get();
     if ( ObjectStateCanBeDeleted(count) ) {
         if ( ObjectStateValid(count) ) {
-            if ( count == TCount(eCounterInHeap) ) {
-                // last reference to heap object -> delete
-                delete this;
-                return;
-            }
-            else {
-                // the reference can be temporarily acquired in
-                // AddReferenceIfAlreadyReferenced()
-                delete this;
-                return;
-            }
+            delete this;
+            return;
         }
     }
     else {
@@ -434,12 +426,13 @@ void CObject::DoNotDeleteThisObject(void)
         TCount count = m_Counter.Get();
         is_valid = ObjectStateValid(count);
         if (is_valid  &&  !ObjectStateReferenced(count)) {
-            m_Counter.Set(eCounterNotInHeap);
+            // Preserve heap signature flag
+            m_Counter.Set(eCounterNotInHeap |
+                (count & eStateBitsHeapSignature));
             return;
         }
     }}
     
-
     if ( is_valid ) {
         NCBI_THROW(CObjectException, eRefUnref,
                    "Referenced CObject cannot be made unreferenced one");
@@ -456,6 +449,8 @@ void CObject::DoDeleteThisObject(void)
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
         TCount count = m_Counter.Get();
+        // DoDeleteThisObject is not allowed for stack objects
+        _ASSERT(count & eStateBitsHeapSignature);
         if ( ObjectStateValid(count) ) {
             if ( !(count & eStateBitsInHeap) ) {
                 m_Counter.Add(eStateBitsInHeap);
@@ -801,6 +796,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/03/17 19:54:30  grichenk
+ * DoDeleteThisObject() fails for objects not in heap.
+ *
  * Revision 1.48  2005/03/14 17:03:37  vasilche
  * Allow to set NCBI_ABORT_ON_NULL and NCBI_ABORT_ON_COBJECT_THROW via registry.
  *
