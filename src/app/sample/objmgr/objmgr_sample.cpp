@@ -128,6 +128,18 @@ int CSampleObjmgrApplication::Run(void)
     seq_id.SetGi(gi);
 
     /////////////////////////////////////////////////////////////////////////
+    // Get list of synonyms for the Seq-id.
+    // * With GenBank loader this request should not load the whole Bioseq.
+    CBioseq_Handle::TId ids = scope.GetIds(seq_id);
+    NcbiCout << "ID: ";
+    ITERATE (CBioseq_Handle::TId, id_it, ids) {
+        if (id_it != ids.begin())
+            NcbiCout << " + "; // print id separator
+        NcbiCout << id_it->AsString();
+    }
+    NcbiCout << NcbiEndl;
+
+    /////////////////////////////////////////////////////////////////////////
     // Get Bioseq handle for the Seq-id.
     // * Most of requests will use this handle.
     CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
@@ -201,7 +213,7 @@ int CSampleObjmgrApplication::Run(void)
     for (CFeat_CI feat_it(scope, seq_loc, sel); feat_it; ++feat_it) {
         feat_count++;
         // Get Seq-annot containing the feature
-        CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
+        CSeq_annot_Handle annot = feat_it.GetAnnot();
     }
     NcbiCout << "   [whole]           Any:    " << feat_count << NcbiEndl;
 
@@ -274,6 +286,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2004/09/07 14:12:35  grichenk
+ * Use GetIds() and Seq-annot handle.
+ *
  * Revision 1.18  2004/08/31 21:05:35  grichenk
  * Updated seq-vector coding
  *
