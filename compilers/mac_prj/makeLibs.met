@@ -462,7 +462,7 @@ on SetProjectData()
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"w_fltable", "w_table"})
+			{"w_fltable", "w_table", "xflat", "ncbi_xloader_lds", "gbseq"})
 		
 		-- until we have sqlite 
 		-- AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
@@ -471,7 +471,7 @@ on SetProjectData()
 			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table"})
 		
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic", "w_fltable"})
+			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_graphic", "w_fltable"})
 		
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
 			{"w_seq", "w_seq_icon", "w_seq_info"})
