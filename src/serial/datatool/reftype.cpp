@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/12/03 14:49:04  juran
+* Eliminate warning.
+*
 * Revision 1.24  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -239,6 +242,8 @@ CDataType* CReferenceDataType::ResolveOrThrow(void) const
     catch (CTypeNotFound& exc) {
         THROW1_TRACE(CTypeNotFound, LocationString()+": "+exc.what());
     }
+    // ASSERT("Not reached" == 0);
+    return static_cast<CDataType*>(NULL);  // Happy compiler fix
 }
 
 CDataType* CReferenceDataType::Resolve(void)
