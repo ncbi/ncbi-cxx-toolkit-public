@@ -182,7 +182,7 @@ static void s_FormatSecondaryAccessions
     }
     
     ITERATE (TAccBins, bin_it, bins) {
-        if (bin_it->size() < kBinCutoff) {
+        if (bin_it->size() <= kBinCutoff) {
             s_PrintAccessions(os, *bin_it, separator);
         } else {
             os << separator<< bin_it->front() << '-' << bin_it->back();
@@ -545,7 +545,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         if (!authstr.empty()) {
             jour << authstr;
             size_t num_auth = s_NumAuthors(auth);
-            jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << endl;
+            jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << Endl();
         }
     }
     jour << NStr::ToUpper(title);
@@ -571,7 +571,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         }
     }
 
-    jour << ';' << endl;
+    jour << ';' << Endl();
 
     if (imp.CanGetPub()) {
         string affil;
@@ -865,7 +865,7 @@ static void s_FormatPatent
     }
     
     
-    /* Date */
+    // Date 
     string date;
     if (pat.IsSetDate_issue()) {
         DateToString(pat.GetDate_issue(), date);        
@@ -885,7 +885,7 @@ static void s_FormatPatent
     if (pat.IsSetAuthors()  &&  pat.GetAuthors().IsSetAffil()) {
         const CAffil& affil = pat.GetAuthors().GetAffil();
         if (affil.IsStr()  &&  !NStr::IsBlank(affil.GetStr())) {
-            jour << endl << affil.GetStr();
+            jour << Endl() << affil.GetStr();
         } else if (affil.IsStd()) {
             const CAffil::TStd& std = affil.GetStd();
 
@@ -896,7 +896,7 @@ static void s_FormatPatent
                 (std.IsSetCity()     &&  !NStr::IsBlank(std.GetCity()))    ||
                 (std.IsSetSub()      &&  !NStr::IsBlank(std.GetSub()))     ||
                 (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry()))) {
-                jour << endl;
+                jour << Endl();
             }
 
             // Write out the affiliation fields
@@ -921,11 +921,69 @@ static void s_FormatPatent
                 jour << prefix << std.GetSub();
             }
             if (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry())) {
-                jour << ';' << endl << std.GetCountry() << ';';
+                jour << ';' << Endl() << std.GetCountry() << ';';
             }
         }
     }
  
+    if (pat.IsSetAssignees()  &&  pat.GetAssignees().IsSetAffil()) {
+        const CCit_pat::TAssignees& assignees = pat.GetAssignees();
+        const CAffil& affil = assignees.GetAffil();
+        string authors;
+        CReferenceItem::FormatAuthors(assignees, authors);
+
+        if (affil.IsStr()) {
+            if (!NStr::IsBlank(authors)  ||  !NStr::IsBlank(affil.GetStr())) {
+                jour << Endl() << authors << Endl() << affil.GetStr();
+            }
+        } else if (affil.IsStd()) {
+            const CAffil::TStd& std = affil.GetStd();
+
+            // if affiliation fields are non-blank, put them on a new line.
+            if (!NStr::IsBlank(authors)                                    ||
+                (std.IsSetAffil()    &&  !NStr::IsBlank(std.GetAffil()))   ||
+                (std.IsSetStreet()   &&  !NStr::IsBlank(std.GetStreet()))  ||
+                (std.IsSetDiv()      &&  !NStr::IsBlank(std.GetDiv()))     ||
+                (std.IsSetCity()     &&  !NStr::IsBlank(std.GetCity()))    ||
+                (std.IsSetSub()      &&  !NStr::IsBlank(std.GetSub()))     ||
+                (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry()))) {
+                jour << Endl();
+            }
+
+            // Write out the affiliation fields
+            string prefix;
+            if (!NStr::IsBlank(authors)) {
+                jour << authors << ';';
+                prefix = ' ';
+            }
+
+            // !!! add consortium
+            
+            if (std.IsSetAffil()  &&  !NStr::IsBlank(std.GetAffil())) {
+                jour << prefix << std.GetAffil() << ';';
+                prefix = ' ';
+            }
+            if (std.IsSetStreet()  &&  !NStr::IsBlank(std.GetStreet())) {
+                jour << prefix << std.GetStreet() << ';';
+                prefix = ' ';
+            }
+            if (std.IsSetDiv()  &&  !NStr::IsBlank(std.GetDiv())) {
+                jour << prefix << std.GetDiv() << ';';
+                prefix = ' ';
+            }
+            if (std.IsSetCity()  &&  !NStr::IsBlank(std.GetCity())) {
+                jour << prefix << std.GetCity();
+                prefix = ", ";
+            }
+            if (std.IsSetSub()  &&  !NStr::IsBlank(std.GetSub())) {
+                jour << prefix << std.GetSub();
+            }
+            if (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry())) {
+                jour << ';' << Endl() << std.GetCountry() << ';';
+            }
+        }
+    }
+
     journal = CNcbiOstrstreamToString(jour);
 }
 
@@ -1157,6 +1215,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/03/28 17:22:57  shomrat
+* Added assignees for Cit-pat
+*
 * Revision 1.22  2005/03/02 16:32:08  shomrat
 * Implement range format for secondary accessions
 *
