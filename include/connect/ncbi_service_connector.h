@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/04/26 16:27:13  lavr
+ * SSERVICE_Params: reset added for use in open/close pairs
+ *
  * Revision 6.5  2001/09/24 20:25:11  lavr
  * +SSERVICE_Extra, +4th parameter for SERVICE_CreateConnectorEx()
  * -SERVICE_CreateConnector() - now implemented as macro
@@ -65,11 +68,13 @@ extern "C" {
 
 typedef const SSERV_Info* (*FSERVICE_GetNextInfo)(SERV_ITER iter, void* data);
 typedef void              (*FSERVICE_CleanupData)(void* data);
+typedef void              (*FSERVICE_ResetData)(void* data);
 
 typedef struct {
     void*                data;
-    FSERVICE_CleanupData cleanup;
-    FSERVICE_GetNextInfo get_next_info;
+    FSERVICE_ResetData   reset;         /* called at each close     */
+    FSERVICE_CleanupData cleanup;       /* called at destruction    */
+    FSERVICE_GetNextInfo get_next_info; /* called to get conn point */
 } SSERVICE_Extra;
 
 
