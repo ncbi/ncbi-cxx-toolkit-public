@@ -822,6 +822,7 @@ CTL_RowResult::~CTL_RowResult()
 {
     if ( m_ColFmt ) {
         delete[] m_ColFmt;
+	m_ColFmt= 0;
     }
 
     if ( m_EOR ) {
@@ -876,6 +877,7 @@ CTL_CursorResult::~CTL_CursorResult()
 {
     if ( m_ColFmt) {
         delete[] m_ColFmt;
+	m_ColFmt= 0;
     }
 
     if ( m_EOR ) {
@@ -906,6 +908,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/10/01 19:13:56  soussov
+ * Eliminates double deletes in results destructor
+ *
  * Revision 1.4  2001/09/27 23:01:07  vakatov
  * CTL_***Result::  virtual methods' implementation moved away from the header
  *
