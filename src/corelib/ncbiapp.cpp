@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/02/02 16:19:27  vasilche
+* Fixed reading program arguments on Mac
+*
 * Revision 1.28  2001/02/01 19:53:26  vasilche
 * Reading program arguments from file moved to CNcbiApplication::AppMain.
 *
@@ -235,7 +238,7 @@ int CNcbiApplication::AppMain
     // and name equal to name of program (name argument of AppMain).
 #define MAX_ARGC 256
 #define MAX_ARG_LEN 1024
-    if ( argc == 1 ) {
+    if ( argc <= 1 ) {
         string fileName = name;
         fileName += ".args";
         CNcbiIfstream in(fileName.c_str());
