@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/09/05 18:38:57  thiessen
+* add sort by highlights
+*
 * Revision 1.23  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -284,12 +287,13 @@ public:
     void RowsRemoved(const std::vector < int >& rowsRemoved, const BlockMultipleAlignment *multiple);
 
     // row scoring and sorting functions - only for single-alignment displays!
-    // sorting always leaves master at the top, regardless of scores
+    // sorting necessarily always leaves master at the top
     bool CalculateRowScoresWithThreader(double weightPSSM);
     void SortRowsByIdentifier(void);
     void SortRowsByThreadingScore(double weightPSSM);
     void SortRowsBySelfHit(void);
     void FloatPDBRowsToTop(void);
+    void FloatHighlightsToTop(void);
 
     // a sort of clustering of similar sequences around a particular row
     bool ProximitySort(int displayRow);

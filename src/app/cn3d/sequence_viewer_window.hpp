@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/09/05 18:38:58  thiessen
+* add sort by highlights
+*
 * Revision 1.19  2002/09/03 13:15:58  thiessen
 * add A2M export
 *
@@ -134,6 +137,7 @@ private:
             MID_SORT_IDENT,
             MID_SORT_THREADER,
             MID_FLOAT_PDBS,
+            MID_FLOAT_HIGHLIGHTS,
             MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
         // mouse mode

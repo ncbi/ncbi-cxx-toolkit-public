@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/09/05 18:38:57  thiessen
+* add sort by highlights
+*
 * Revision 1.30  2002/08/15 22:13:14  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -289,6 +292,8 @@ bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, int index) c
     MoleculeHighlightMap::const_iterator h = highlights.find(identifier);
     if (h == highlights.end()) return false;
 
+    if (index == -1) return true;   // special check for highlight anywhere
+
     if (index < 0 || index >= h->second.size()) {
         ERR_POST(Error << "Messenger::IsHighlighted() - index out of range");
         return false;
@@ -305,6 +310,12 @@ bool Messenger::IsHighlighted(const Sequence *sequence, int seqIndex) const
 {
     return IsHighlighted(sequence->identifier, seqIndex);
 }
+
+bool Messenger::IsHighlightedAnywhere(const MoleculeIdentifier *identifier) const
+{
+    return IsHighlighted(identifier, -1);
+}
+
 
 void Messenger::RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifier, const StructureSet *set)
 {

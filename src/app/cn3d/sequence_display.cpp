@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2002/09/05 18:38:57  thiessen
+* add sort by highlights
+*
 * Revision 1.57  2002/08/28 20:30:33  thiessen
 * fix proximity sort bug
 *
@@ -1068,6 +1071,12 @@ static bool CompareRowsFloatPDB(const DisplayRowFromAlignment *a, const DisplayR
             b->alignment->GetSequenceOfRow(b->row)->identifier->pdbID.size() == 0);
 }
 
+static bool CompareRowsFloatHighlights(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
+{
+    return (GlobalMessenger()->IsHighlightedAnywhere(a->alignment->GetSequenceOfRow(a->row)->identifier) &&
+            !GlobalMessenger()->IsHighlightedAnywhere(b->alignment->GetSequenceOfRow(b->row)->identifier));
+}
+
 static CompareRows rowComparisonFunction = NULL;
 
 void SequenceDisplay::SortRowsByIdentifier(void)
@@ -1089,6 +1098,13 @@ void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
 void SequenceDisplay::FloatPDBRowsToTop(void)
 {
     rowComparisonFunction = CompareRowsFloatPDB;
+    SortRows();
+    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+}
+
+void SequenceDisplay::FloatHighlightsToTop(void)
+{
+    rowComparisonFunction = CompareRowsFloatHighlights;
     SortRows();
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
 }

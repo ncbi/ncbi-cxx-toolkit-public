@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/09/05 18:38:57  thiessen
+* add sort by highlights
+*
 * Revision 1.36  2002/09/03 13:15:58  thiessen
 * add A2M export
 *
@@ -204,6 +207,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
+    subMenu->Append(MID_FLOAT_HIGHLIGHTS, "Float H&ighlights");
     subMenu->Append(MID_SORT_SELF_HIT, "By Self-&Hit");
     subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
@@ -458,6 +462,10 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             }
             break;
         }
+        case MID_FLOAT_HIGHLIGHTS:
+            if (DoProximitySort()) ProximitySortOff();
+            sequenceViewer->GetCurrentDisplay()->FloatHighlightsToTop();
+            break;
         case MID_FLOAT_PDBS:
             if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();

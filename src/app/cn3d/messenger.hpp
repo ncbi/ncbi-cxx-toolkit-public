@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/09/05 18:38:57  thiessen
+* add sort by highlights
+*
 * Revision 1.20  2002/06/05 14:28:39  thiessen
 * reorganize handling of window titles
 *
@@ -163,6 +166,7 @@ public:
     // check for highlight
     bool IsHighlighted(const Molecule *molecule, int residueID) const;
     bool IsHighlighted(const Sequence *sequence, int seqIndex) const;
+    bool IsHighlightedAnywhere(const MoleculeIdentifier *identifier) const;
 
     // clear all highlight stores - and optionally post redraws. Returns 'true'
     // if there were actually any highlights to remove
