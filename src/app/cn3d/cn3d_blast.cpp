@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/09/05 13:04:33  thiessen
+* restore output stream precision
+*
 * Revision 1.20  2002/09/04 15:51:52  thiessen
 * turn off options->tweak_parameters
 *
@@ -616,9 +619,9 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
             nSelfHits++;
     }
-    ERR_POST(Info << "Self hits with E-value <= " << setprecision(3) << threshold << ": "
+    TESTMSG("Self hits with E-value <= " << setprecision(3) << threshold << ": "
         << (100.0*nSelfHits/multiple->NRows()) << "% ("
-        << nSelfHits << '/' << multiple->NRows() << ')');
+        << nSelfHits << '/' << multiple->NRows() << ')' << setprecision(6));
 
     BLASTOptionDelete(options);
     BLAST_MatrixDestruct(BLASTmatrix);
