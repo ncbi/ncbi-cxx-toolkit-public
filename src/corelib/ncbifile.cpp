@@ -54,6 +54,7 @@
 #  endif
 
 #elif defined(NCBI_OS_MAC)
+#  include <fcntl.h>
 #  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
 #  include <Gestalt.h>
@@ -696,9 +697,6 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 bool CDirEntry::GetTime(CTime *modification,
                         CTime *creation, CTime *last_access) const
 {
-#if defined(NCBI_OS_MAC)
-    ???
-#else
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
@@ -712,7 +710,7 @@ bool CDirEntry::GetTime(CTime *modification,
     if (last_access) {
         last_access->SetTimeT(st.st_atime);
     }
-#  endif
+
     return true;
 }
 
@@ -1315,14 +1313,14 @@ bool CMemoryFile::Unmap(void)
     // If file is not mapped do nothing
     if ( !m_Handle )
         return true;
-
+    bool status = false;
 #if defined(NCBI_OS_MSWIN)
-    bool status = (UnmapViewOfFile(m_DataPtr) != 0);
+    status = (UnmapViewOfFile(m_DataPtr) != 0);
     if ( status  &&  m_Handle->hMap )
         status = (CloseHandle(m_Handle->hMap) != 0);
 
 #elif defined(NCBI_OS_UNIX)
-    bool status = (munmap((char*) m_DataPtr, (size_t) m_Size) == 0);
+    status = (munmap((char*) m_DataPtr, (size_t) m_Size) == 0);
 
 #endif
 
@@ -1383,6 +1381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/07/18 20:22:59  lebedev
+ * NCBI_OS_MAC: fcntl.h added
+ *
  * Revision 1.28  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *
