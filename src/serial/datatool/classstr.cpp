@@ -683,11 +683,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "the only member of adaptor class is optional");
                 }
                 code.ClassPublic() <<
-                    "    operator const "<<cType<<"& (void) const;\n"
-                    "    operator "<<cType<<"& (void);\n";
+                    "    operator const "<<i->tName<<"& (void) const;\n"
+                    "    operator "<<i->tName<<"& (void);\n";
                 inlineMethods <<
                     "inline\n"<<
-                    methodPrefix<<"operator const "<<methodPrefix<<i->tName<<"& (void) const\n"
+                    methodPrefix<<"operator const "<<rType<<"& (void) const\n"
                     "{\n";
                 if ( i->delayed ) {
                     inlineMethods <<
@@ -699,13 +699,36 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 inlineMethods <<
                     i->mName<<";\n"
                     "}\n"
-                    "\n"
+                    "\n";
+                inlineMethods <<
                     "inline\n"<<
-                    methodPrefix<<"operator "<<methodPrefix<<i->tName<<"& (void)\n"
+                    methodPrefix<<"operator "<<rType<<"& (void)\n"
                     "{\n";
                 if ( i->delayed ) {
                     inlineMethods <<
                         "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                }
+                if ( i->haveFlag ) {
+
+                    if ((kind == eKindStd) || (kind == eKindEnum) || (kind == eKindString)) {
+                        inlineMethods <<
+                            "#ifdef _DEBUG\n"
+                            "    if (!IsSet"<<i->cName<<"()) {\n"
+                            "        ";
+                        if (kind == eKindString) {
+                            inlineMethods <<
+                                i->valueName << " = ms_UnassignedStr;\n";
+                        } else {
+                            inlineMethods <<
+                                "memset(&"<<i->valueName<<",ms_UnassignedByte,sizeof("<<i->valueName<<"));\n";
+                        }
+                        inlineMethods <<
+                            "    }\n"
+                            "#endif\n";
+                    }
+
+                    inlineMethods <<
+                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                 }
                 inlineMethods << "    return ";
                 if ( i->ref )
@@ -1196,6 +1219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2003/06/03 15:06:46  gouriano
+* corrected generation of conversion operator for implicit members
+*
 * Revision 1.56  2003/05/08 16:59:08  gouriano
 * added comment about the meaning of typedef for each class member
 *
