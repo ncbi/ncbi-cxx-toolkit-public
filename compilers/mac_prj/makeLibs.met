@@ -458,14 +458,11 @@ on SetProjectData()
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_gl", {}, "widgets:gl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
-		-- AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
-		-- AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
 		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
 			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
 		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
 		AddGuiProject("w_flu", {}, "widgets:FLU")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
-		-- AddGuiProject("w_toplevel", {}, "widgets:toplevel")
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
 		AddGuiProject("w_taxtree", {}, "widgets:tax_tree")
@@ -478,13 +475,6 @@ on SetProjectData()
 		AddGuiProject("w_phylo_tree", {}, "widgets:phylo_tree")
 		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
 		
-		-- AddGuiProject("w_dock", {}, "widgets:dock") -- not ready yet.
-		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
-		--AddGuiProject("w_seq_icon", {}, "widgets:seq_icon") -- empty
-		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
-		-- AddGuiProject("w_table", {}, "widgets:table") -- merged into w_fltk
-		
-		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
 		set pCPlusPlusExt to ".cxx"
@@ -495,9 +485,8 @@ on SetProjectData()
 				"fl_font_xft.cxx", "Fl_get_key_mac.cxx", "Fl_get_key_win32.cxx", "Fl_mac.cxx", Â
 				"fl_read_image_mac.cxx", "fl_read_image_win32.cxx", "fl_set_fonts_mac.cxx", Â
 				"fl_set_fonts_win32.cxx", "fl_set_fonts_x.cxx", "fl_set_fonts_xft.cxx", Â
-				"fl_set_gray.cxx", "fl_vertex_quartz.cxx", "Fl_win32.cxx", "scandir_win32.c"})})) --"Fl_Sys_Menu_Bar.cxx", 
+				"fl_set_gray.cxx", "fl_vertex_quartz.cxx", "Fl_win32.cxx", "scandir_win32.c"})}))
 		set pCPlusPlusExt to saveCppExt
-		
 		
 	end if
 	
@@ -808,11 +797,11 @@ on CopyHeaders()
 		
 		set confFolder to folder "compilers" of folder (my ModuleRoot())
 		set prefixFolder to folder "mac_prj" of confFolder
-		
+		(*
 		if gFLTKRootFolder is not "" then
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
-		
+		*)
 		my UpdateHeader("db.h", prefixFolder)
 		my UpdateHeader("db_int.h", prefixFolder)
 		my UpdateHeader("db_config.h", prefixFolder)
@@ -972,6 +961,12 @@ on SetupTarget(proj, targetIndex)
 			Set Preferences of panel targetPanelName to ppcProject of projSettings
 		end if
 		
+		if projFeatures contains "fltklib" then
+			-- path for our special fltk config.h file.
+			my AppendAccessPath(gRsrcsDir & "fltk:", false, false)
+			-- erase the stuff in the preprocesser panel so we do not depend on the ncbi tree.
+			Set Preferences of panel "C/C++ Preprocessor" to {Prefix Text:""}
+		end if
 		if projFeatures contains "fltk" or projFeatures contains "fltklib" then
 			my AppendAccessPath(gFLTKRootFolder & "FL:", false, true)
 			my AppendAccessPath(gFLTKRootFolder, false, false)
@@ -983,11 +978,11 @@ on SetupTarget(proj, targetIndex)
 		if projFeatures contains "bdb" then
 			my PushAccessPath(gDistribRoot & "include:", false, false)
 		end if
-		if projFeatures contains "sqlite" then
-			my AppendAccessPath(gSqliteRootFolder & "include:", false, false)
-		end if
 		if projFeatures contains "sqlitelib" then
 			my AppendAccessPath(gSqliteRootFolder & "lib:", false, false)
+		end if
+		if projFeatures contains "sqlite" then
+			my AppendAccessPath(gSqliteRootFolder & "include:", false, false)
 		end if
 		if projFeatures contains "images" then
 			my PushAccessPath(pImageLibsFolder & "include", false, false)
@@ -1034,7 +1029,9 @@ on SetupTarget(proj, targetIndex)
 		end tell
 	end repeat
 	
-	my AppendAccessPath(gDistribRoot & "include:", true, false)
+	if projFeatures does not contain "fltklib" then
+		my AppendAccessPath(gDistribRoot & "include:", true, false)
+	end if
 	
 	tell application "CodeWarrior IDE"
 		
