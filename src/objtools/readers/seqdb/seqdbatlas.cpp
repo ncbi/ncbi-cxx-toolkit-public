@@ -152,7 +152,7 @@ const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLo
     // It should be mentioned that this will not (greatly) affect
     // users who are using the round-to-chunk-size allocator.
     
-    if (length > eTriggerGC) {
+    if (TIndx(length) > TIndx(eTriggerGC)) {
         Lock(locked);
         x_GarbageCollect(0);
     }
