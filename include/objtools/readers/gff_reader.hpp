@@ -62,7 +62,7 @@ BEGIN_SCOPE(objects)
  * @{
  */
 
-class CGFFReader
+class NCBI_XOBJREAD_EXPORT CGFFReader
 {
 public:
     enum EFlags {
@@ -173,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/03 21:03:19  ucko
+ * Add Windows export specifier.
+ *
  * Revision 1.1  2003/12/03 20:56:19  ucko
  * Initial commit.
  *
