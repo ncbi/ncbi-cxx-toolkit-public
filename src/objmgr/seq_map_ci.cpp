@@ -34,7 +34,7 @@
 
 #include <objects/objmgr/seq_map_ci.hpp>
 #include <objects/objmgr/seq_map.hpp>
-#include "data_source.hpp"
+#include <objects/objmgr/impl/data_source.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -398,6 +398,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.5  2003/02/05 15:55:26  vasilche
 * Added eSeqEnd segment at the beginning of seq map.
 * Added flags to CSeqMap_CI to stop on data, gap, or references.

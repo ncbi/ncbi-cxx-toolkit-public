@@ -36,7 +36,7 @@
 */
 
 #include <objects/objmgr/object_manager.hpp>
-#include "data_source.hpp"
+#include <objects/objmgr/impl/data_source.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <corelib/ncbithr.hpp>
 
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.18  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *

@@ -33,8 +33,8 @@
 
 #include <objects/objmgr/seqmatch_info.hpp>
 
-#include "data_source.hpp"
-#include <objects/objmgr/tse_info.hpp>
+#include <objects/objmgr/impl/data_source.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.6  2002/12/26 20:55:18  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

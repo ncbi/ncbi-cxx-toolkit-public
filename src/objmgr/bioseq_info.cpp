@@ -31,13 +31,7 @@
 */
 
 
-#include <objects/objmgr/bioseq_info.hpp>
-
-//#include <corelib/ncbistd.hpp>
-
-//#include <objects/seqset/Seq_entry.hpp>
-
-//#include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/objmgr/impl/bioseq_info.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -118,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.6  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

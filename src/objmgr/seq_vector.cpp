@@ -33,7 +33,7 @@
 
 #include <objects/objmgr/seq_vector.hpp>
 #include <corelib/ncbimtx.hpp>
-#include "data_source.hpp"
+#include <objects/objmgr/impl/data_source.hpp>
 #include <objects/seq/NCBI8aa.hpp>
 #include <objects/seq/NCBIpaa.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
@@ -614,6 +614,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.42  2003/02/05 15:05:28  vasilche
 * Added string::reserve()
 *

@@ -32,8 +32,8 @@
 
 #include <objects/objmgr/annot_ci.hpp>
 #include "annot_object.hpp"
-#include "handle_range_map.hpp"
-#include <objects/objmgr/tse_info.hpp>
+#include <objects/objmgr/impl/handle_range_map.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/05 17:59:16  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.15  2003/02/04 21:46:32  grichenk
 * Added map of annotations by intervals (the old one was
 * by total ranges)

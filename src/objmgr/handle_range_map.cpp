@@ -31,7 +31,7 @@
 *
 */
 
-#include "handle_range_map.hpp"
+#include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/objmgr/seq_id_mapper.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -234,6 +234,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.10  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *

@@ -31,7 +31,7 @@
 */
 
 
-#include <objects/objmgr/tse_info.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 
 #include "annot_object.hpp"
 
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.14  2003/02/04 21:46:32  grichenk
 * Added map of annotations by intervals (the old one was
 * by total ranges)

@@ -31,9 +31,9 @@
 */
 
 
-#include "data_source.hpp"
+#include <objects/objmgr/impl/data_source.hpp>
 #include "annot_object.hpp"
-#include "handle_range_map.hpp"
+#include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -2459,6 +2459,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.79  2003/02/04 22:01:26  grichenk
 * Fixed annotations loading/indexing order
 *

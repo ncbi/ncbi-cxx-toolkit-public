@@ -33,8 +33,8 @@
 *
 */
 
-#include "data_source.hpp"
-#include "handle_range_map.hpp"
+#include <objects/objmgr/impl/data_source.hpp>
+#include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -408,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/05 17:59:16  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.13  2003/02/04 21:45:19  grichenk
 * Added IsPartial(), IsMapped(), GetMappedLoc()
 *

@@ -37,8 +37,8 @@
 */
 
 #include <objects/objmgr/scope.hpp>
-#include "data_source.hpp"
-#include <objects/objmgr/tse_info.hpp>
+#include <objects/objmgr/impl/data_source.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/objmgr/object_manager.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
@@ -453,6 +453,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.40  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *

@@ -32,8 +32,8 @@
 
 #include <objects/objmgr/annot_types_ci.hpp>
 #include "annot_object.hpp"
-#include <objects/objmgr/tse_info.hpp>
-#include "handle_range_map.hpp"
+#include <objects/objmgr/impl/tse_info.hpp>
+#include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -623,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/02/05 17:59:16  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.36  2003/02/04 21:44:11  grichenk
 * Convert seq-loc instead of seq-annot to the master coordinates
 *

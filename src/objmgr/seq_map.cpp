@@ -38,7 +38,7 @@
 #include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/seq_map_ext.hpp>
 #include <objects/objmgr/seq_id_mapper.hpp>
-#include "data_source.hpp"
+#include <objects/objmgr/impl/data_source.hpp>
 #include <objects/objmgr/scope.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 
@@ -804,6 +804,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.30  2003/02/05 15:55:26  vasilche
 * Added eSeqEnd segment at the beginning of seq map.
 * Added flags to CSeqMap_CI to stop on data, gap, or references.

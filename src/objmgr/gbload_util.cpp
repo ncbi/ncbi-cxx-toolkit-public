@@ -30,7 +30,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include "handle_range.hpp"
+#include <objects/objmgr/impl/handle_range.hpp>
 #include <objects/objmgr/gbloader.hpp>
 #include "gbload_util.hpp"
 
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.10  2002/07/22 22:53:24  kimelman
 * exception handling fixed: 2level mutexing moved to Guard class + added
 * handling of confidential data.

@@ -32,7 +32,7 @@
 *
 */
 
-#include "handle_range.hpp"
+#include <objects/objmgr/impl/handle_range.hpp>
 
 #include <algorithm>
 
@@ -156,6 +156,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/05 17:59:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.12  2003/01/23 18:26:02  ucko
 * Explicitly #include <algorithm>
 *

@@ -36,7 +36,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/seq_id_handle.hpp>
-#include <objects/objmgr/tse_info.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/02/05 17:58:17  dicuccio
+* Moved formerly private headers into include/objects/objmgr/impl
+*
 * Revision 1.7  2002/12/26 20:41:22  dicuccio
 * Added Win32 export specifier.  Converted predeclaration (CTSE_Info) into
 * #include for tse_info.hpp.
