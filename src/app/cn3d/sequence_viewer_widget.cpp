@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/07 21:41:40  thiessen
+* fix return type of min_max
+*
 * Revision 1.2  2000/09/07 17:37:35  thiessen
 * minor fixes
 *
@@ -252,7 +255,7 @@ void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, bool redrawBackgroun
     );
 }
 
-static inline int min_max(int a, int b, int *c, int *d)
+static inline void min_max(int a, int b, int *c, int *d)
 {
     if (a <= b) {
         *c = a;
