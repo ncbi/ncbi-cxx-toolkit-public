@@ -285,8 +285,8 @@ CBl2Seq::x_SetupQuery()
         buf = BLASTGetSequence(*m_Query, encoding, buflen, m_Scope, strand, 
                 true);
         // Sentinel bytes are not counted in the sequence block
-        buflen = (strand == eNa_strand_both) ? buflen - 3 : buflen - 2;
-        BlastSetUp_SeqBlkNew(buf, buflen, 0, &mi_Query, true);
+        //buflen = (strand == eNa_strand_both) ? buflen - 3 : buflen - 2;
+        BlastSetUp_SeqBlkNew(buf, buflen - 2, 0, &mi_Query, true);
 
     }
 
@@ -323,7 +323,9 @@ CBl2Seq::x_SetupSubjects()
 
     Uint1 encoding = (subj_is_na ? NCBI2NA_ENCODING : BLASTP_ENCODING);
 
-    ENa_strand strand = m_Options->GetStrandOption();
+    //ENa_strand strand = m_Options->GetStrandOption(); // allow subject strand
+    // selection?
+    ENa_strand strand = eNa_strand_unknown;
     Int8 dblength = 0;
 
     ITERATE(TSeqLocVector, itr, m_Subjects) {
@@ -348,7 +350,7 @@ CBl2Seq::x_SetupSubjects()
             buf = BLASTGetSequence(**itr, encoding, buflen, m_Scope, strand, 
                     use_sentinels);
             subj->sequence_start = buf;
-            subj->length = buflen;
+            subj->length = use_sentinels ? buflen - 2 : buflen;
             subj->sequence_start_allocated = TRUE;
         } else {
             subj->sequence_start_allocated = TRUE;
@@ -455,6 +457,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/15 19:21:36  camacho
+* Use correct strands and sequence buffer length
+*
 * Revision 1.2  2003/07/14 22:16:37  camacho
 * Added interface to retrieve masked regions
 *
