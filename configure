@@ -1125,7 +1125,7 @@ case "$host:$compiler" in
 
  *:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
-   CFLAGS="$COMMON_FLAGS -ansi"
+   CFLAGS="$COMMON_FLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    LDFLAGS="-LANG:std $LDFLAGS"
