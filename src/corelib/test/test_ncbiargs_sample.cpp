@@ -174,6 +174,13 @@ int CArgTestApplication::Run(void)
 
         const CArgValue::TStringArray& ko_values = 
             args["ko"].GetStringList();
+        if (!ko_values.empty()) {
+            lg << "ko list:";
+            ITERATE(CArgValue::TStringArray, it, ko_values) {
+                lg << *it << ", ";
+            }
+            lg << endl;
+        }
 
     } else {
         lg << "ko:        not provided" << endl;
@@ -242,6 +249,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2004/12/03 14:49:56  kuznets
+ * Better example on how multiple arguments work
+ *
  * Revision 6.8  2004/12/03 14:31:27  kuznets
  * Use multiple args
  *
