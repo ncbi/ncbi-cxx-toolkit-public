@@ -135,6 +135,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -158,6 +159,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -171,6 +173,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -184,6 +187,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -195,6 +199,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
     : m_Scope(&target_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -225,6 +230,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -237,6 +243,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
     : m_Scope(&source_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -271,6 +278,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_KeepNonmapping(false),
       m_UseWidth(false),
       m_Dst_width(0)
 {
@@ -1155,12 +1163,15 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
         }
         TSeqPos from = src_rg.GetFrom();
         TSeqPos to = src_rg.GetTo();
+        TPartialFlags fuzz = 0;
         if (from < cvt.m_Src_from) {
             from = cvt.m_Src_from;
+            fuzz |= cvt.m_Reverse ? fPartialRight : fPartialLeft;
             m_Partial = true;
         }
         if ( to > cvt.m_Src_to ) {
             to = cvt.m_Src_to;
+            fuzz |= cvt.m_Reverse ? fPartialLeft : fPartialRight;
             m_Partial = true;
         }
         if ( from > to ) {
@@ -1171,7 +1182,8 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
         bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
             src_strand, &dst_strand);
         x_GetMappedRanges(CSeq_id_Handle::GetHandle(*cvt.m_Dst_id),
-            is_set_dst_strand ? int(dst_strand) + 1 : 0).push_back(rg);
+            is_set_dst_strand ? int(dst_strand) + 1 : 0)
+            .push_back(TRangeWithFuzz(rg, fuzz));
         res = true;
     }
     return res;
@@ -1251,13 +1263,21 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             if ( cvt.GoodSrcId(src_loc.GetEmpty()) ) {
                 x_GetMappedRanges(
                     CSeq_id_Handle::GetHandle(src_loc.GetEmpty()), 0)
-                    .push_back(TRange::GetEmpty());
+                    .push_back(TRangeWithFuzz(TRange::GetEmpty(), 0));
                 res = true;
                 break;
             }
         }
         if ( !res ) {
-            m_Partial = true;
+            if ( m_KeepNonmapping ) {
+                x_PushRangesToDstMix();
+                CRef<CSeq_loc> loc(new CSeq_loc);
+                loc->Assign(src_loc);
+                x_PushLocToDstMix(loc);
+            }
+            else {
+                m_Partial = true;
+            }
         }
         break;
     }
@@ -1273,26 +1293,56 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         bool res = x_MapInterval(src_id, TRange(0, src_to),
             false, eNa_strand_unknown);
         if ( !res ) {
-            m_Partial = true;
+            if ( m_KeepNonmapping ) {
+                x_PushRangesToDstMix();
+                CRef<CSeq_loc> loc(new CSeq_loc);
+                loc->Assign(src_loc);
+                x_PushLocToDstMix(loc);
+            }
+            else {
+                m_Partial = true;
+            }
         }
         break;
     }
     case CSeq_loc::e_Int:
     {
         const CSeq_interval& src_int = src_loc.GetInt();
-        x_MapInterval(src_int.GetId(),
+        bool res = x_MapInterval(src_int.GetId(),
             TRange(src_int.GetFrom(), src_int.GetTo()),
             src_int.IsSetStrand(),
             src_int.IsSetStrand() ? src_int.GetStrand() : eNa_strand_unknown);
+        if ( !res ) {
+            if ( m_KeepNonmapping ) {
+                x_PushRangesToDstMix();
+                CRef<CSeq_loc> loc(new CSeq_loc);
+                loc->Assign(src_loc);
+                x_PushLocToDstMix(loc);
+            }
+            else {
+                m_Partial = true;
+            }
+        }
         break;
     }
     case CSeq_loc::e_Pnt:
     {
         const CSeq_point& pnt = src_loc.GetPnt();
-        x_MapInterval(pnt.GetId(),
+        bool res = x_MapInterval(pnt.GetId(),
             TRange(pnt.GetPoint(), pnt.GetPoint()),
             pnt.IsSetStrand(),
             pnt.IsSetStrand() ? pnt.GetStrand() : eNa_strand_unknown);
+        if ( !res ) {
+            if ( m_KeepNonmapping ) {
+                x_PushRangesToDstMix();
+                CRef<CSeq_loc> loc(new CSeq_loc);
+                loc->Assign(src_loc);
+                x_PushLocToDstMix(loc);
+            }
+            else {
+                m_Partial = true;
+            }
+        }
         break;
     }
     case CSeq_loc::e_Packed_int:
@@ -1300,10 +1350,22 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         const CPacked_seqint::Tdata& src_ints = src_loc.GetPacked_int().Get();
         ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
             const CSeq_interval& si = **i;
-            x_MapInterval(si.GetId(),
+            bool res = x_MapInterval(si.GetId(),
                 TRange(si.GetFrom(), si.GetTo()),
                 si.IsSetStrand(),
                 si.IsSetStrand() ? si.GetStrand() : eNa_strand_unknown);
+            if ( !res ) {
+                if ( m_KeepNonmapping ) {
+                    x_PushRangesToDstMix();
+                    x_GetMappedRanges(CSeq_id_Handle::GetHandle(si.GetId()),
+                        si.IsSetStrand() ? int(si.GetStrand()) + 1 : 0)
+                        .push_back(TRangeWithFuzz(
+                        TRange(si.GetFrom(), si.GetTo()), 0));
+                }
+                else {
+                    m_Partial = true;
+                }
+            }
         }
         break;
     }
@@ -1312,11 +1374,24 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         const CPacked_seqpnt& src_pack_pnts = src_loc.GetPacked_pnt();
         const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
         ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
-            x_MapInterval(
+            bool res = x_MapInterval(
                 src_pack_pnts.GetId(),
                 TRange(*i, *i), src_pack_pnts.IsSetStrand(),
                 src_pack_pnts.IsSetStrand() ?
                 src_pack_pnts.GetStrand() : eNa_strand_unknown);
+            if ( !res ) {
+                if ( m_KeepNonmapping ) {
+                    x_PushRangesToDstMix();
+                    x_GetMappedRanges(
+                        CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
+                        src_pack_pnts.IsSetStrand() ?
+                        int(src_pack_pnts.GetStrand()) + 1 : 0)
+                        .push_back(TRangeWithFuzz(TRange(*i, *i), 0));
+                }
+                else {
+                    m_Partial = true;
+                }
+            }
         }
         break;
     }
@@ -1403,7 +1478,7 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             pntB->SetPnt().Assign(src_bond.GetB());
         }
         m_Dst_loc = prev;
-        if ( resA || resB ) {
+        if ( resA  ||  resB  ||  m_KeepNonmapping ) {
             CSeq_bond& dst_bond = dst_loc->SetBond();
             dst_bond.SetA(pntA->SetPnt());
             if ( src_bond.IsSetB() ) {
@@ -1424,7 +1499,8 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                                  TSeqPos from,
                                                  TSeqPos to,
-                                                 int strand_idx)
+                                                 int strand_idx,
+                                                 TPartialFlags fuzz_flag)
 {
     if (m_UseWidth  &&  (m_Widths[idh] & fWidthNucToProt)) {
         from = from/3;
@@ -1432,12 +1508,18 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
     }
 
     CRef<CSeq_loc> loc(new CSeq_loc);
-    if (from == to) {
+    if (from == to  &&  fuzz_flag != fPartialBoth) {
         // point
         loc->SetPnt().SetId().Assign(*idh.GetSeqId());
         loc->SetPnt().SetPoint(from);
         if (strand_idx > 0) {
             loc->SetPnt().SetStrand(ENa_strand(strand_idx - 1));
+        }
+        if (fuzz_flag & fPartialLeft) {
+            loc->SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+        }
+        else if (fuzz_flag & fPartialRight) {
+            loc->SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
         }
     }
     else {
@@ -1447,6 +1529,12 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
         loc->SetInt().SetTo(to);
         if (strand_idx > 0) {
             loc->SetInt().SetStrand(ENa_strand(strand_idx - 1));
+        }
+        if (fuzz_flag & fPartialLeft) {
+            loc->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        }
+        if (fuzz_flag & fPartialRight) {
+            loc->SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
         }
     }
     return loc;
@@ -1516,9 +1604,11 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
             }
             TSeqPos from = kInvalidSeqPos;
             TSeqPos to = kInvalidSeqPos;
+            TPartialFlags fuzz_from = 0;
+            TPartialFlags fuzz_to = 0;
             id_it->second[str].sort();
             NON_CONST_ITERATE(TMappedRanges, rg_it, id_it->second[str]) {
-                if ( rg_it->Empty() ) {
+                if ( rg_it->first.Empty() ) {
                     // Empty seq-loc
                     CRef<CSeq_loc> loc(new CSeq_loc);
                     loc->SetEmpty().Assign(*id_it->first.GetSeqId());
@@ -1526,29 +1616,37 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
                     continue;
                 }
                 if (to == kInvalidSeqPos) {
-                    from = rg_it->GetFrom();
-                    to = rg_it->GetTo();
+                    from = rg_it->first.GetFrom();
+                    to = rg_it->first.GetTo();
+                    fuzz_from = rg_it->second & fPartialLeft;
+                    fuzz_to = rg_it->second & fPartialRight;
                     continue;
                 }
                 if (m_MergeFlag == eMergeAbutting) {
-                    if (rg_it->GetFrom() == to + 1) {
-                        to = rg_it->GetTo();
+                    if (rg_it->first.GetFrom() == to + 1) {
+                        to = rg_it->first.GetTo();
+                        fuzz_to = rg_it->second & fPartialRight;
                         continue;
                     }
                 }
                 if (m_MergeFlag == eMergeAll) {
-                    if (rg_it->GetFrom() <= to + 1) {
-                        to = rg_it->GetTo();
+                    if (rg_it->first.GetFrom() <= to + 1) {
+                        to = rg_it->first.GetTo();
+                        fuzz_to = rg_it->second & fPartialRight;
                         continue;
                     }
                 }
                 // Add new interval or point
-                dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to, str));
-                from = rg_it->GetFrom();
-                to = rg_it->GetTo();
+                dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
+                    str, fuzz_from | fuzz_to));
+                from = rg_it->first.GetFrom();
+                to = rg_it->first.GetTo();
+                fuzz_from = rg_it->second & fPartialLeft;
+                fuzz_to = rg_it->second & fPartialRight;
             }
             // last interval or point
-            dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to, str));
+            dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
+                str, fuzz_from | fuzz_to));
         }
     }
     m_MappedLocs.clear();
@@ -1576,6 +1674,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/05/05 14:04:22  grichenk
+* Use fuzz to indicate truncated intervals. Added KeepNonmapping flag.
+*
 * Revision 1.14  2004/04/23 15:34:49  grichenk
 * Added PreserveDestinationLocs().
 *

@@ -159,6 +159,12 @@ public:
     // already on the target sequence(s).
     void PreserveDestinationLocs(void);
 
+    // Keep ranges which can not be mapped. Does not affect truncation
+    // of partially mapped ranges. By default nonmapping ranges are
+    // truncated.
+    void KeepNonmappingRanges(void);
+    void TruncateNonmappingRanges(void);
+
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
     CRef<CSeq_align> Map(const CSeq_align& src_align);
 
@@ -198,7 +204,14 @@ private:
     typedef vector<TDstIdMap>               TDstStrandMap;
 
     // Destination locations arranged by ID/range
-    typedef list<TRange>                         TMappedRanges;
+    enum EPartialFlags {
+        fPartialLeft  = 1,
+        fPartialRight = 2,
+        fPartialBoth  = fPartialLeft | fPartialRight
+    };
+    typedef int TPartialFlags;
+    typedef pair<TRange, TPartialFlags>          TRangeWithFuzz;
+    typedef list<TRangeWithFuzz>                 TMappedRanges;
     // 0 = not set, any other index = na_strand + 1
     typedef vector<TMappedRanges>                TRangesByStrand;
     typedef map<CSeq_id_Handle, TRangesByStrand> TRangesById;
@@ -273,7 +286,8 @@ private:
     CRef<CSeq_loc> x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                     TSeqPos               from,
                                     TSeqPos               to,
-                                    int                   strand_idx);
+                                    int                   strand_idx,
+                                    TPartialFlags         fuzz_flag);
 
     // Check location type, optimize if possible (empty mix to NULL,
     // mix with a single element to this element etc.).
@@ -285,6 +299,7 @@ private:
     // CSeq_loc_Conversion_Set m_Cvt;
     EMergeFlags       m_MergeFlag;
     EGapFlags         m_GapFlag;
+    bool              m_KeepNonmapping;
 
     // Sources may have different widths, e.g. in an alignment
     TWidthById      m_Widths;
@@ -360,12 +375,29 @@ bool CSeq_loc_Mapper::LastIsPartial(void)
 }
 
 
+inline
+void CSeq_loc_Mapper::KeepNonmappingRanges(void)
+{
+    m_KeepNonmapping = true;
+}
+
+
+inline
+void CSeq_loc_Mapper::TruncateNonmappingRanges(void)
+{
+    m_KeepNonmapping = false;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/05/05 14:04:22  grichenk
+* Use fuzz to indicate truncated intervals. Added KeepNonmapping flag.
+*
 * Revision 1.10  2004/04/23 15:34:49  grichenk
 * Added PreserveDestinationLocs().
 *
