@@ -4,7 +4,7 @@
 #################################
 
 APP = cgidemo
-OBJ = cgidemo
+SRC = cgidemo
 LIB = xcgi xncbi
 
 CHECK_CMD =

@@ -7,5 +7,5 @@
 #################################
 
 APP = htmldemo
-OBJ = htmldemo
+SRC = htmldemo
 LIB = xhtml xcgi xncbi

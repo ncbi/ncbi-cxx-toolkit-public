@@ -7,7 +7,7 @@
 
 include $(srcdir)/Makefile.connect.lib
 
-LIBOBJ = $(LIBOBJ_C) \
+SRC = $(LIBOBJ_C) \
       ncbi_conn_streambuf ncbi_conn_stream ncbi_core_cxx email_diag_handler \
       threaded_server
 

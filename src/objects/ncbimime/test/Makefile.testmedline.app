@@ -7,7 +7,7 @@
 #################################
 
 APP = testmedline
-OBJ = testmedline
+SRC = testmedline
 LIB = ncbimime mmdb1 mmdb2 mmdb3 seqset $(SEQ_LIBS) \
 	pub medline medlars biblio general \
 	xser xutil xncbi

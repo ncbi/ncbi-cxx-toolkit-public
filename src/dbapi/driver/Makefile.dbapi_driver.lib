@@ -1,6 +1,6 @@
 # $Id$
 
-LIBOBJ = handle_stack numeric_convert parameters \
+SRC = handle_stack numeric_convert parameters \
          exception interfaces public types \
          memory_store pointer_pot
 

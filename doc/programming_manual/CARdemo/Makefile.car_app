@@ -23,7 +23,7 @@ LOCAL_CPPFLAGS = -I.
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ###</font> 
 APP = car.cgi
-OBJ = car car_cgi
+SRC = car car_cgi
 
 <font color = red># PRE_LIBS = $(NCBI_C_LIBPATH) .....</font>
 LIB        = xhtml xcgi xncbi 

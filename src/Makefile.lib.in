@@ -3,16 +3,16 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 # This can be used to build/install/clean
-# a single(sic!) library [LIB] made of object files [LIBOBJ] and [LOBJ]
-# where [LIBOBJ].o will be automagically compiled from [LIBOBJ].cpp or
-# [LIBOBJ].c, and [LOBJ].o must be already compiled by this time.
+# a single(sic!) library [LIB] made of object files [SRC] and [OBJ]
+# where [SRC].o will be automagically compiled from [SRC].cpp or
+# [SRC].c, and [OBJ].o must be already compiled by this time.
 #
 # srcdir = @srcdir@
 # include @builddir@/Makefile.mk
 #
-# LIB     = p1
-# LIBOBJ  = p1_src1 p1_src2
-# LOBJ    = p1_myobj
+# LIB = p1
+# SRC = p1_src1 p1_src2
+# OBJ = p1_myobj
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 # .....
@@ -26,26 +26,32 @@ default_rule: all
 
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = @UNIX_SRC@ $(SRC) $(LIBOBJ)
+SOURCES      = @UNIX_SRC@ $(LIBOBJ) $(SRC)
 include $(builddir)/Makefile.$(Rules)
 
 
 ### The library build rule
 
-XLIBOBJ = $(SOURCES:=@obj_ext@)
-XLOBJ   = $(LOBJ:=@obj_ext@)
-XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
-XLIBDEP = .$(LIB).dep
+XLIBOBJ     = $(SOURCES:=@obj_ext@)
+XOBJ        = $(OBJ:=@obj_ext@)
+XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
+XLIBDEP     = .$(LIB).dep
+XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
+XLIBDEPLINK = .$(LIB)-static.dep
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
-	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XLOBJ) | @TSORT@`
+	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@`
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
 	@$(BINCOPY) $(XLIBDEP) $(libdir)
 	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
+	-$(RM) $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK)
+	@(cd $(libdir) && [ -f $(XLIBLINK) ] || $(LN_S) $(XLIB) $(XLIBLINK))
+	@(cd $(libdir) && [ -f $(XLIBDEPLINK) ] || \
+		 $(LN_S) $(XLIBDEP) $(XLIBDEPLINK))
 
 
 ### Standard targets

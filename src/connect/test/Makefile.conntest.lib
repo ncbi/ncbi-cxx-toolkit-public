@@ -1,4 +1,4 @@
 # $Id$
 
-LIBOBJ = ncbi_conntest
+SRC = ncbi_conntest
 LIB    = xconntest

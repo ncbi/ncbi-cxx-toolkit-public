@@ -9,7 +9,7 @@
 # include @builddir@/Makefile.mk
 #
 # APP = my_app
-# OBJ = my_main my_obj1 my_obj2
+# SRC = my_main my_obj1 my_obj2
 # LIB = foo bar
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_MY_APP
@@ -24,7 +24,7 @@ default_rule: all
 
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = @UNIX_SRC@ $(SRC) $(OBJ)
+SOURCES      = @UNIX_SRC@ $(SRC)
 include $(builddir)/Makefile.$(Rules)
 
 
@@ -32,6 +32,7 @@ include $(builddir)/Makefile.$(Rules)
 
 XAPP = $(APP)@exe_ext@
 XOBJ = $(SOURCES:=@obj_ext@)
+XOBJ2 = $(OBJ:=@obj_ext@)
 XLIB = $(runpath) @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(LIB:%=$(libdir)/.%.dep)
 
@@ -50,7 +51,6 @@ ASK_REBUILD = \
 SKIP_REBUILD = true
 @IF_REBUILDING_LIBS@ SKIP_REBUILD = false
 @IF_REBUILDING_CONDITIONALLY@ SKIP_REBUILD = ($(ASK_REBUILD))
-# The parens in the above line work around lossage with Solaris's native make.
 
 $(XAPP)::
 	@for l in $(XLIBDEP) /dev/null ; do \
@@ -60,7 +60,7 @@ $(XAPP)::
 	done
 
 $(XAPP):: $(XOBJ) $(XLIBDEP)
-	$(LINK) $(LDFLAGS) $(XOBJ) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
+	$(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
 	@$(STRIP) $(XAPP)
 	$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)
 

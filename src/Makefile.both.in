@@ -4,17 +4,15 @@
 #################################
 # This can be used to build/install/clean BOTH
 #
-# a single(sic!) library [LIB] made of object files [LIBOBJ] and [LOBJ]
-# where [LIBOBJ].o will be automagically compiled from [LIBOBJ].cpp or
-# [LIBOBJ].c, and [LOBJ].o must be already compiled by this time.
+# a single(sic!) library [LIB] made of object files [SRC] and [OBJ]
+# where [SRC].o will be automagically compiled from [SRC].cpp or
+# [SRC].c, and [OBJ].o must be already compiled by this time.
 #
 # AND
 #
-# a single shared(DLL) library [LIB] made of object files
-# shared/[LIBOBJ] and shared/[LOBJ] where shared/[LIBOBJ].o will be
-# automagically compiled from [LIBOBJ].cpp or [LIBOBJ].c, and
-# shared/[LOBJ].o must be already compiled by this time.
-
+# a single shared(DLL) library [LIB] made of object files [SRC] and [OBJ]
+# where [SRC].o will be automagically compiled from [SRC].cpp or
+# [SRC].c, and [OBJ].o must be already compiled by this time.
 # The following libs will be used to resolve external referencies:
 #   [DLL_LIB]  -- libs located in the NCBI C++ "lib/" dir;
 #   [DLL_LIBS] -- 3rd-party libs
@@ -25,9 +23,9 @@
 # srcdir = @srcdir@
 # include @builddir@/Makefile.mk
 #
-# LIB      = p1
-# LIBOBJ   = p1_src1 p1_src2
-# LOBJ     = p1_myobj
+# LIB = p1
+# SRC = p1_src1 p1_src2
+# OBJ = p1_myobj
 #
 # DLL_LIB  = xncbi
 # LIBS = $(NETWORK_LIBS)
@@ -49,14 +47,14 @@ CXXFLAGS_ALL = @f_compile@ \
 	$(CXXFLAGS) $(CXXFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ \
 	$(CFLAGS) $(CFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-SOURCES      = @UNIX_SRC@ $(SRC) $(LIBOBJ)
+SOURCES      = @UNIX_SRC@ $(LIBOBJ) $(SRC)
 include $(builddir)/Makefile.$(Rules)
 
 
 ### The static library build rule
 
 XLIBOBJ     = $(SOURCES:=@obj_ext@)
-XLOBJ       = $(LOBJ:=@obj_ext@)
+XOBJ        = $(OBJ:=@obj_ext@)
 XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
 XLIBDEP     = .$(LIB).dep
 XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
@@ -64,7 +62,7 @@ XLIBDEPLINK = .$(LIB)-static.dep
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
-	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XLOBJ) | @TSORT@`
+	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@`
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
@@ -79,8 +77,8 @@ $(XLIB): $(XLIBOBJ)
 
 ### The shared library build rule
 
-#XDLLOBJ     = $(SOURCES:%=shared/%@obj_ext@) $(LOBJ:%=shared/%@obj_ext@)
-XDLLOBJ     = $(XLIBOBJ) $(XLOBJ)
+#XDLLOBJ     = $(SOURCES:%=shared/%@obj_ext@) $(OBJ:%=shared/%@obj_ext@)
+XDLLOBJ     = $(XLIBOBJ) $(XOBJ)
 XDLL        = $(LIB:%=@lib_pre@%@dll_ext@)
 XDLLDEP     = .$(LIB).dep
 XDLL_LIB    = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)

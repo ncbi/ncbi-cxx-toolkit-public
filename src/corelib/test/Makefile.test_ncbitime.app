@@ -1,7 +1,7 @@
 # $Id$
 
 APP = test_ncbitime
-OBJ = test_ncbitime
+SRC = test_ncbitime
 LIB = xncbi
 
 #LIBS = -lrt $(ORIG_LIBS)

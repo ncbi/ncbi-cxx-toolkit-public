@@ -7,7 +7,7 @@
 #################################
 
 APP = datatool
-OBJ = datatool \
+SRC = datatool \
 	type namespace statictype enumtype reftype unitype blocktype choicetype \
 	typestr ptrstr stdstr classstr enumstr stlstr choicestr choiceptrstr \
 	value mcontainer module moduleset generate filecode code \

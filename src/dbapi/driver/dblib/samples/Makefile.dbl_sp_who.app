@@ -1,7 +1,7 @@
 # $Id$
 
 APP = dbl_sp_who
-OBJ = dbl_sp_who
+SRC = dbl_sp_who
 
 LIB        = dbapi_driver_samples dbapi_driver_dblib dbapi_driver xncbi
 LIBS       = $(SYBASE_DBLIBS) $(NETWORK_LIBS) $(ORIG_LIBS)

@@ -4,7 +4,7 @@
 #################################
 
 APP = htmltest
-OBJ = htmltest
+SRC = htmltest
 LIB = xhtml xcgi xncbi
 
 CHECK_CMD =

@@ -7,7 +7,7 @@
 #################################
 
 APP = testrangemap
-OBJ = testrangemap
+SRC = testrangemap
 LIB = xutil xncbi
 
 CHECK_CMD = testrangemap

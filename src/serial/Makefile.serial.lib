@@ -3,7 +3,7 @@
 # Build library "XSER"
 #################################
 
-LIBOBJ = \
+SRC = \
 	hookdata typeinfo objectinfo objectiter objectio typeref typemap \
     stdtypes enumerated ptrinfo autoptrinfo continfo stltypes asntypes \
 	memberid memberlist item classinfob member classinfo \

@@ -4,7 +4,7 @@
 #################################
 
 APP = test_jsmenu
-OBJ = test_jsmenu
+SRC = test_jsmenu
 LIB = xhtml xncbi
 
 CHECK_CMD  = test_jsmenu html

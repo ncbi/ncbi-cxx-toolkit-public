@@ -3,6 +3,6 @@
 # Build library "XHTML"
 #################################
 
-LIBOBJ = node html htmlhelper page nodemap pager selection components \
+SRC = node html htmlhelper page nodemap pager selection components \
          querypages linkbar jsmenu commentdiag
 LIB    = xhtml

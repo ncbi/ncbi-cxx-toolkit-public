@@ -1,7 +1,7 @@
 # $Id$
 
 APP = test_ncbifile
-OBJ = test_ncbifile
+SRC = test_ncbifile
 LIB = xncbi
 
 # LINK = purify $(ORIG_LINK)

@@ -7,7 +7,7 @@
 #################################
 
 APP = serialtest
-OBJ = serialobject serialobject_Base testserial cppwebenv twebenv \
+SRC = serialobject serialobject_Base testserial cppwebenv twebenv \
       we_cpp__ we_cpp___
 LIB = xser xutil xncbi
 

@@ -1,7 +1,7 @@
 # $Id$
 
 APP = id1_fetch
-OBJ = id1_fetch
+SRC = id1_fetch
 LIB = xobjutil id1 xobjmgr seqset $(SEQ_LIBS) pub medline biblio general \
       entrez2 xser xconnect xutil xncbi
 

@@ -1,6 +1,6 @@
 # $Id$
 
-LIBOBJ = test_mt
+SRC = test_mt
 LIB    = test_mt
 
 REQUIRES = MT

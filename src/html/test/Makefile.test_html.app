@@ -4,7 +4,7 @@
 #################################
 
 APP = test_html
-OBJ = test_html
+SRC = test_html
 LIB = xhtml xncbi
 
 CHECK_CMD =

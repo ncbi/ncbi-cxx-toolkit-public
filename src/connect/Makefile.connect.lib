@@ -7,7 +7,7 @@ LIBOBJ_C = ncbi_buffer ncbi_priv ncbi_core ncbi_util_ ncbi_socket_ \
       ncbi_service_dispd ncbi_ansi_ext ncbi_service_connector \
       ncbi_sendmail_
 
-LIBOBJ   = $(LIBOBJ_C)
+SRC   = $(LIBOBJ_C)
 UNIX_SRC = $(LOCAL_LBSM)
 
 LIB    = connect

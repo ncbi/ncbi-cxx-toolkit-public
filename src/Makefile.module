@@ -42,7 +42,7 @@ Makefile.in:
 	@if test ! -f $@ ; then echo Creating $@ ;  ( echo "LIB_PROJ = $(MODULE)"; echo "srcdir = @srcdir@"; echo "include @builddir@/Makefile.meta"; ) > $@ ; fi
 
 Makefile.$(MODULE).lib:
-	@if test ! -f $@ ; then echo Creating $@ ; ( echo 'LIB = $$(TMPL)'; echo 'LIBOBJ = $$(LIB)__ $$(LIB)___'; ) > $@ ; fi
+	@if test ! -f $@ ; then echo Creating $@ ; ( echo 'LIB = $$(TMPL)'; echo 'SRC = $$(LIB)__ $$(LIB)___'; ) > $@ ; fi
 
 $(MODULE).def:
 

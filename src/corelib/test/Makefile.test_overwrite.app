@@ -7,5 +7,5 @@
 #################################
 
 APP = test_overwrite
-OBJ = overwrite
+SRC = overwrite
 LIB = xncbi

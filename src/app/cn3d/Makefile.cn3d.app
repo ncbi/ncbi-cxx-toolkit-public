@@ -8,7 +8,7 @@ REQUIRES = gui ctools
 
 APP = cn3d
 
-OBJ = \
+SRC = \
 	alignment_manager \
 	alignment_set \
 	annotate_dialog \

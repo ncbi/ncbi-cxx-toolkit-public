@@ -4,7 +4,7 @@
 # NOTE:  see also makefile for lib "XFCGI" -- these two should be kept in-sync!
 #################################
 
-LIBOBJ = ncbicgi cgiapp cgictx ncbicgir ncbires dbres \
+SRC = ncbicgi cgiapp cgictx ncbicgir ncbires dbres \
 	cgi_run
 LIB    = xcgi
 

@@ -3,7 +3,7 @@
 # Build library "XASN"
 #################################
 
-LIBOBJ = asnio asnwrite
+SRC = asnio asnwrite
 LIB    = xasn
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \

@@ -7,7 +7,7 @@
 #################################
 
 APP = coretest
-OBJ = coretest
+SRC = coretest
 LIB = xncbi
 
 CHECK_CMD =
