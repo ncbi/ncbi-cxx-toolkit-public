@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/21 16:18:21  gouriano
+* *** empty log message ***
+*
 * Revision 1.1  2002/03/20 21:25:00  gouriano
 * *** empty log message ***
 *
@@ -70,22 +73,34 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
     {
         CRef< CObjectManager> pOm = new CObjectManager;
         {
-            CRef< CGBDataLoader> pLoader = new CGBDataLoader;
-            pOm->RegisterDataLoader( *pLoader, CObjectManager::eDefault);
-//            pOm->RegisterDataLoader( *(new CGBDataLoader()), CObjectManager::eDefault);
+//            CRef< CGBDataLoader> pLoader = new CGBDataLoader;
+//            pOm->RegisterDataLoader( *pLoader, CObjectManager::eDefault);
+            pOm->RegisterDataLoader( *(new CGBDataLoader()), CObjectManager::eDefault);
             
-            int i = 2;
+            int i = 16;
             while(i<1800)
             {
-                CScope scope2(*pOm);
-                scope2.AddDefaults();
+                CScope scope(*pOm);
+                scope.AddDefaults();
                 NcbiCout << "gi " << i << NcbiEndl;
                 CSeq_id x;
                 x.SetGi(i);
                 CObjectOStreamAsn oos(NcbiCout);
-                oos << scope2.GetBioseqHandle(x).GetBioseq();
+                try
+                {
+                    iterate(list< CRef< CSeq_id > >, it, scope.GetBioseqHandle(x).GetBioseq().GetId())
+                    {
+                        oos << **it;
+                        NcbiCout << NcbiEndl;
+                    }
+                    NcbiCout << NcbiEndl;
+                }
+                catch (exception e)
+                {
+                    cout << e.what();
+                }
                 NcbiCout << NcbiEndl;
-                i=1801;
+                i++;
             }
         }
     }
