@@ -85,7 +85,8 @@ enum EFlags {
     fHideGeneRIFs         = 0x200000,
     fOnlyGeneRIFs         = 0x400000,
     fLatestGeneRIFs       = 0x800000,
-    fShowContigAndSeq     = 0x1000000
+    fShowContigAndSeq     = 0x1000000,
+    fHideSourceFeats      = 0x2000000
 };
 
 enum EFilterFlags {
@@ -109,6 +110,9 @@ typedef EFilterFlags    TFilter;
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/19 17:56:49  shomrat
+* add flag for skipping gathering of source features
+*
 * Revision 1.1  2004/02/11 22:45:13  shomrat
 * flat file flags moved here from flag_file_generator.hpp
 *

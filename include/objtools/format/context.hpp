@@ -47,7 +47,6 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 
-//#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/flat_file_flags.hpp>
 #include <objtools/format/items/reference_item.hpp>
 
@@ -161,7 +160,6 @@ public:
     bool IsRSPredictedProtein (void) const;  // XP_
     bool IsRSWGSNuc           (void) const;  // NZ_
     bool IsRSWGSProt          (void) const;  // ZP_
-    bool IsRSGenome           (void) const;  // NS_ (?)
     
 private:
     SIZE_TYPE  x_CountSegs(const CBioseq& seq) const;
@@ -363,7 +361,6 @@ public:
     bool IsRSPredictedProtein (void) const;  // XP_
     bool IsRSWGSNuc           (void) const;  // NZ_
     bool IsRSWGSProt          (void) const;  // ZP_
-    bool IsRSGenome           (void) const;  // NS_ (?)
     
     const CMasterContext* Master(void) const { return m_Master; }
     const CBioseqContext* Bioseq(void) const { return m_Bioseq; }
@@ -399,11 +396,11 @@ public:
     bool ForGBRelease      (void) const { return x_Flags().ForGBRelease();       }
     bool HideUnclassPartial(void) const { return x_Flags().HideUnclassPartial(); }
 
-    bool HideImpFeat       (void) const { return x_Flags().HideImpFeat();        }
-    bool HideSnpFeat       (void) const { return x_Flags().HideSnpFeat();        }
-    bool HideExonFeat      (void) const { return x_Flags().HideExonFeat();       }
-    bool HideIntronFeat    (void) const { return x_Flags().HideIntronFeat();     }
-    bool HideRemImpFeat    (void) const { return x_Flags().HideRemImpFeat();     }
+    bool HideImpFeats      (void) const { return x_Flags().HideImpFeats();       }
+    bool HideSnpFeats      (void) const { return x_Flags().HideSnpFeats();       }
+    bool HideExonFeats     (void) const { return x_Flags().HideExonFeats();      }
+    bool HideIntronFeats   (void) const { return x_Flags().HideIntronFeats();    }
+    bool HideRemImpFeats   (void) const { return x_Flags().HideRemImpFeats();    }
     bool HideGeneRIFs      (void) const { return x_Flags().HideGeneRIFs();       }
     bool OnlyGeneRIFs      (void) const { return x_Flags().OnlyGeneRIFs();       }
     bool HideCDSProdFeats  (void) const { return x_Flags().HideCDSProdFeats();   }
@@ -414,6 +411,7 @@ public:
     bool ShowContigAndSeq  (void) const { return x_Flags().ShowContigAndSeq();   }
     bool CopyGeneToCDNA    (void) const { return x_Flags().CopyGeneToCDNA();     }
     bool CopyCDSFromCDNA   (void) const { return x_Flags().CopyCDSFromCDNA();    }
+    bool HideSourceFeats   (void) const { return x_Flags().HideSourceFeats();    }
     bool DoHtml            (void) const { return x_Flags().DoHtml();             }
 
     bool ShowGBBSource(void) const;
@@ -454,11 +452,11 @@ private:
         bool HideUnclassPartial(void) const { return m_HideUnclassPartial; }
 
         // custumizable flags
-        bool HideImpFeat       (void) const  { return m_HideImpFeat;        }
-        bool HideSnpFeat       (void) const  { return m_HideSnpFeat;        }
-        bool HideExonFeat      (void) const  { return m_HideExonFeat;       }
-        bool HideIntronFeat    (void) const  { return m_HideIntronFeat;     }
-        bool HideRemImpFeat    (void) const  { return m_HideRemImpFeat;     }
+        bool HideImpFeats      (void) const  { return m_HideImpFeats;        }
+        bool HideSnpFeats      (void) const  { return m_HideSnpFeats;        }
+        bool HideExonFeats     (void) const  { return m_HideExonFeats;       }
+        bool HideIntronFeats   (void) const  { return m_HideIntronFeats;     }
+        bool HideRemImpFeats   (void) const  { return m_HideRemImpFeats;     }
         bool HideGeneRIFs      (void) const  { return m_HideGeneRIFs;       }
         bool OnlyGeneRIFs      (void) const  { return m_OnlyGeneRIFs;       }
         bool HideCDSProdFeats  (void) const  { return m_HideCDSProdFeats;   }
@@ -469,6 +467,7 @@ private:
         bool ShowContigAndSeq  (void) const  { return m_ShowContigAndSeq;   }
         bool CopyGeneToCDNA    (void) const  { return m_CopyGeneToCDNA;     }
         bool CopyCDSFromCDNA   (void) const  { return m_CopyCDSFromCDNA;    }
+        bool HideSourceFeats   (void) const  { return m_HideSourceFeats;    }
         bool DoHtml            (void) const  { return m_DoHtml;             }
         
     private:
@@ -506,11 +505,11 @@ private:
         bool m_HideUnclassPartial;   // hide unclassified partial
 
         // custom flags
-        bool m_HideImpFeat;
-        bool m_HideSnpFeat;
-        bool m_HideExonFeat;
-        bool m_HideIntronFeat;
-        bool m_HideRemImpFeat;
+        bool m_HideImpFeats;
+        bool m_HideSnpFeats;
+        bool m_HideExonFeats;
+        bool m_HideIntronFeats;
+        bool m_HideRemImpFeats;
         bool m_HideGeneRIFs;
         bool m_OnlyGeneRIFs;
         bool m_HideCDSProdFeats;
@@ -521,6 +520,7 @@ private:
         bool m_ShowContigAndSeq;
         bool m_CopyGeneToCDNA;
         bool m_CopyCDSFromCDNA;
+        bool m_HideSourceFeats;
         bool m_DoHtml;
     };
 
@@ -952,13 +952,6 @@ bool CFFContext::IsRSWGSProt(void) const
 
 
 inline
-bool CFFContext::IsRSGenome(void) const
-{
-    return m_Bioseq->IsRSGenome();
-}
-
-
-inline
 bool CFFContext::IsGbGenomeProject(void) const
 {
     return m_Bioseq->IsGbGenomeProject();
@@ -1324,13 +1317,6 @@ bool CBioseqContext::IsRSWGSProt(void)  const
 
 
 inline
-bool CBioseqContext::IsRSGenome(void)  const
-{
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_genome) != 0;  // NS_ (?)
-}
-
-
-inline
 bool CBioseqContext::IsGbGenomeProject(void)  const
 {
     return m_IsGbGenomeProject;
@@ -1428,6 +1414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/19 17:56:21  shomrat
+* add flag for skipping gathering of source features
+*
 * Revision 1.4  2004/02/11 22:47:41  shomrat
 * using types in flag file
 *
