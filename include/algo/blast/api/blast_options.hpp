@@ -206,9 +206,6 @@ public:
     double GetGapXDropoffFinal() const;
     void SetGapXDropoffFinal(double x);
 
-    double GetGapTrigger() const;
-    void SetGapTrigger(double g);
-
     EBlastPrelimGapExt GetGapExtnAlgorithm() const;
     void SetGapExtnAlgorithm(EBlastPrelimGapExt a);
 
@@ -265,6 +262,9 @@ public:
     /// Returns true if gapped BLAST is set, false otherwise
     bool GetGappedMode() const;
     void SetGappedMode(bool m = true);
+
+    double GetGapTrigger() const;
+    void SetGapTrigger(double g);
 
     /************************ Scoring options ************************/
     const char* GetMatrixName() const;
@@ -2000,6 +2000,18 @@ CBlastOptionsLocal::SetXDropoff(double x)
     m_InitWordOpts->x_dropoff = x;
 }
 
+inline double
+CBlastOptionsLocal::GetGapTrigger() const
+{
+    return m_InitWordOpts->gap_trigger;
+}
+
+inline void
+CBlastOptionsLocal::SetGapTrigger(double g)
+{
+    m_InitWordOpts->gap_trigger = g;
+}
+
 /******************* Gapped extension options *******************/
 inline double
 CBlastOptionsLocal::GetGapXDropoff() const
@@ -2023,18 +2035,6 @@ inline void
 CBlastOptionsLocal::SetGapXDropoffFinal(double x)
 {
     m_ExtnOpts->gap_x_dropoff_final = x;
-}
-
-inline double
-CBlastOptionsLocal::GetGapTrigger() const
-{
-    return m_ExtnOpts->gap_trigger;
-}
-
-inline void
-CBlastOptionsLocal::SetGapTrigger(double g)
-{
-    m_ExtnOpts->gap_trigger = g;
 }
 
 inline EBlastPrelimGapExt
@@ -2434,6 +2434,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2004/11/02 18:25:49  madden
+* Move gap_trigger to m_InitWordOpts
+*
 * Revision 1.75  2004/09/08 18:32:23  camacho
 * Doxygen fixes
 *
