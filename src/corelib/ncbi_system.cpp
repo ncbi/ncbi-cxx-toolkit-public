@@ -30,9 +30,13 @@
 *   System functions:
 *      SetHeapLimit()
 *      SetCpuTimeLimit()
+*      GetCPUNumber()
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/11/08 21:10:04  ivanov
+* Added function GetCPUNumber()
+*
 * Revision 1.10  2001/09/10 17:15:51  grichenk
 * Added definition of CLK_TCK (absent on some systems).
 *
@@ -359,6 +363,36 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 }
 
 #endif /* USE_SETCPULIMIT */
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  GetCPUNumber
+//
+
+/*  Return number of active CPUs */
+
+int GetCPUNumber(void)
+{
+#if defined NCBI_OS_MSWIN
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    return sysInfo.dwNumberOfProcessors;
+
+#elif defined NCBI_OS_UNIX
+    #if defined(_SC_NPROC_ONLN)
+    int nproc = sysconf(_SC_NPROC_ONLN);
+    #else
+    int nproc = sysconf(_SC_NPROCESSORS_ONLN);
+    #endif /* _SC_NPROC_ONLN */
+    return  nproc <= 0 ? 1 : nproc;
+
+#elif defined NCBI_OS_MAC
+
+#endif
+    return 1;
+
+}
 
 
 END_NCBI_SCOPE

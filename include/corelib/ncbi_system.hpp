@@ -33,9 +33,13 @@
 *   System functions:
 *      SetHeapLimit()
 *      SetCpuTimeLimit()
+*      GetCPUNumber()
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/11/08 21:10:22  ivanov
+* Added function GetCPUNumber()
+*
 * Revision 1.3  2001/07/23 15:59:36  ivanov
 * Added possibility using user defined dump print handler
 *
@@ -106,6 +110,12 @@ extern bool SetHeapLimit(size_t max_heap_size,
 extern bool SetCpuTimeLimit(size_t max_cpu_time,
                          TLimitsPrintHandler handler = 0, 
                          TLimitsPrintParameter parameter = 0);
+
+/* [UNIX & Windows]
+ * Return number of active CPUs
+ */
+
+extern int GetCPUNumber(void);
 
 
 END_NCBI_SCOPE
