@@ -24,7 +24,7 @@ property pAlwaysCreateProjects : false
 property pCreateProfiledTargets : false
 
 -- Whether to compile anything.
-property pShouldBuild : false
+property pShouldBuild : true
 
 property pStationeryName : "ApplicationStationery"
 
