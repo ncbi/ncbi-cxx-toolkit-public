@@ -1,5 +1,5 @@
-#ifndef ALGO_BLAST_API___SEQDB_SRC__HPP
-#define ALGO_BLAST_API___SEQDB_SRC__HPP
+#ifndef ALGO_BLAST_API___SEQSRC_SEQDB__HPP
+#define ALGO_BLAST_API___SEQSRC_SEQDB__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -30,7 +30,7 @@
  *
  */
 
-/// @file seqdb_src.hpp
+/// @file seqsrc_seqdb.hpp
 /// Implementation of the BlastSeqSrc interface using the C++ BLAST databases
 /// API
 
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/19 14:57:57  dondosha
+ * Corrected file name
+ *
  * Revision 1.4  2004/06/15 16:23:10  dondosha
  * Added SeqDbSrcCopy function, to implement BlastSeqSrcCopy interface
  *
@@ -119,4 +122,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* ALGO_BLAST_API___SEQDB_SRC__HPP */
+#endif /* ALGO_BLAST_API___SEQSRC_SEQDB__HPP */

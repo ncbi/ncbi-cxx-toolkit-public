@@ -1,5 +1,5 @@
-#ifndef ALGO_BLAST_API___MULTISEQ_SRC__HPP
-#define ALGO_BLAST_API___MULTISEQ_SRC__HPP
+#ifndef ALGO_BLAST_API___SEQSRC_MULTISEQ__HPP
+#define ALGO_BLAST_API___SEQSRC_MULTISEQ__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -30,7 +30,7 @@
 *
 */
 
-/// @file multiseq_src.hpp
+/// @file seqsrc_multiseq.hpp
 /// Implementation of the BlastSeqSrc interface for a vector of sequence 
 /// locations.
 
@@ -161,6 +161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/19 14:57:57  dondosha
+ * Corrected file name
+ *
  * Revision 1.7  2004/07/19 13:53:49  dondosha
  * Removed GetSeqLoc method
  *
@@ -182,4 +185,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* ALGO_BLAST_API___MULTISEQ_SRC__HPP */
+#endif /* ALGO_BLAST_API___SEQSRC_MULTISEQ__HPP */
