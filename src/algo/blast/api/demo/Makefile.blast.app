@@ -1,9 +1,7 @@
-# $Id$
-
 APP = blast
 SRC = blast_app blast_input blast_tabular
 LIB = xblast xnetblastcli xnetblast scoremat ncbi_xloader_blastdb \
-      xblastformat xalnutil seqdb blastdb xalnmgr xobjutil xobjread connect tables $(OBJMGR_LIBS)
+      xalnutil seqdb blastdb xalnmgr xblastformat xobjutil xobjread connect tables $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
