@@ -203,7 +203,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          return_stats->db_hits +=
             aux_struct->WordFinder(subject, query, lookup, 
                gap_align->sbp->matrix, word_params, ewp, query_offsets, 
-               subject_offsets, GetOffsetArraySize(lookup), init_hitlist);
+               subject_offsets, OFFSET_ARRAY_SIZE, init_hitlist);
             
          if (init_hitlist->total == 0)
             continue;
