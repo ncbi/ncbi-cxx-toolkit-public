@@ -289,6 +289,12 @@ public:
     ///    - name of the DLL entry point
     CDllResolver(const string& entry_point_name);
 
+    /// Constructor
+    ///
+    /// @param entry_point_names
+    ///    - list of alternative DLL entry points
+    CDllResolver(const vector<string>& entry_poin_names); 
+
     
     ~CDllResolver();
 
@@ -353,8 +359,8 @@ private:
     CDllResolver& operator=(const CDllResolver&);
 
 protected:
-    string      m_EntryPoinName;
-    TEntries    m_ResolvedEntries;
+    vector<string>  m_EntryPoinNames;   ///! Candidate entry points
+    TEntries        m_ResolvedEntries;
 };
 
 /* @} */
@@ -367,6 +373,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/11/10 15:04:35  kuznets
+ * CDllResolver changed to inspect DLL candidate for several alternative
+ * entry points
+ *
  * Revision 1.14  2003/11/07 17:11:53  kuznets
  * Minor cleanup.
  *
