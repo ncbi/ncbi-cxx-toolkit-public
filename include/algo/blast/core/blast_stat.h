@@ -193,11 +193,11 @@ typedef struct BLAST_ResComp {
     Int4*   comp0;	/* Same array as above, starts at zero. */
 } BLAST_ResComp;
 
-typedef struct BLAST_ResFreq {
+typedef struct Blast_ResFreq {
     Uint1		alphabet_code;
     double* prob;	/* probs, (possible) non-zero offset. */
     double* prob0; /* probs, zero offset. */
-} BLAST_ResFreq;
+} Blast_ResFreq;
 
 BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
 
@@ -296,6 +296,25 @@ BLAST_ComputeLengthAdjustment(double K,
                               Int8 db_length,
                               Int4 db_num_seqs,
                               Int4 * length_adjustment);
+
+
+/** Allocates a new Blast_ResFreq structure and fills in the prob element
+    based upon the contents of sbp.
+ * @param sbp The BlastScoreBlk* used to init prob [in]
+*/
+Blast_ResFreq* Blast_ResFreqNew(const BlastScoreBlk* sbp);
+
+/** Deallocates Blast_ResFreq and prob0 element.
+ * @param rfp the Blast_ResFreq to be deallocated.
+*/
+Blast_ResFreq* Blast_ResFreqDestruct(Blast_ResFreq* rfp);
+
+
+/** Calculates residues frequencies given a standard distribution.
+ * @param sbp the BlastScoreBlk provides information on alphabet.
+ * @param rfp the prob element on this Blast_ResFreq is used.
+*/
+Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
 
 #ifdef __cplusplus
 }
