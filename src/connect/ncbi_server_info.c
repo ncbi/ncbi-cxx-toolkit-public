@@ -23,13 +23,17 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Anton Lavrentiev
+ * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   NCBI server meta-address info
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2000/12/29 17:59:38  lavr
+ * Reading and writing of SERV_Info now use SOCK_* utility functions
+ * SOCK_gethostaddr and SOCK_ntoa. More clean code for reading.
+ *
  * Revision 6.17  2000/12/06 22:19:02  lavr
  * Binary host addresses are now explicitly stated to be in network byte
  * order, whereas binary port addresses now use native (host) representation
@@ -89,16 +93,13 @@
  */
 
 #include <connect/ncbi_ansi_ext.h>
-#include "ncbi_misc.h"
 #include <connect/ncbi_server_info.h>
+#include <connect/ncbi_socket.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 
 /*****************************************************************************
@@ -184,7 +185,7 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
             return 0;
         strncpy(abuf, str, alen);
         abuf[alen] = '\0';
-        if (strchr(abuf, ' ') || (h = inet_addr(abuf)) == (unsigned int)(-1))
+        if (strchr(abuf, ' ') || !(h = SOCK_gethostaddr(abuf)))
             return 0;
     } else if (s && s != str) {
         return 0;
@@ -211,8 +212,17 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
  */
 static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
 {
-    return sprintf(str, "%s:%hu", host ? my_ntoa(host) : "", port);
+    char abuf[MAX_IP_ADDRESS_LEN + 1];
+
+    if (host) {
+        if (SOCK_ntoa(host, abuf, sizeof(abuf)) != 0)
+            *abuf = '\0';
+    } else
+        *abuf = '\0';
+
+    return sprintf(str, "%s:%hu", abuf, port);
 }
+
 
 #define N_FLAG_TAGS 2
 static const char *k_FlagTag[N_FLAG_TAGS] = {
@@ -251,8 +261,9 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         assert(info->flag < N_FLAG_TAGS);
         if (k_FlagTag[info->flag])
             s += sprintf(s, "%s ", k_FlagTag[info->flag]);
-        sprintf(s, "T=%lu R=%.2f S=%s", (unsigned long)info->time, info->rate,
-                info->sful ? "yes" : "no");
+        s += sprintf(s, "T=%lu R=%.2f", (unsigned long)info->time, info->rate);
+        if (!(info->type & fSERV_Http))
+            sprintf(s, " S=%s", info->sful ? "yes" : "no");
     }
     return str;
 }
@@ -263,6 +274,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
     /* detect server type */
     ESERV_Type  type;
     const char* str = SERV_ReadType(info_str, &type);
+    int/*bool*/ sful, rate, time;
     int/*bool*/ default_port;
     unsigned short port;                /* host (native) byte order */
     unsigned int host;                  /* network byte order       */
@@ -281,68 +293,72 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
     while (*str && isspace((unsigned char)(*str)))
         str++;
     /* read server-specific info according to the detected type */
-    if ((info = s_GetAttrByType(type)->vtable.Read(&str)) != 0) {
-        info->host = host;
-        if (!default_port)
-            info->port = port;
-        /* continue reading server info: optional parts: ... */
+    if (!(info = s_GetAttrByType(type)->vtable.Read(&str)))
+        return 0;
+    info->host = host;
+    if (!default_port)
+        info->port = port;
+    time = rate = sful = 0; /* unassigned */
+    /* continue reading server info: optional parts: ... */
+    while (*str && isspace((unsigned char)(*str)))
+        str++;
+    while (*str) {
+        if (*(str + 1) == '=') {
+            unsigned long t;
+            char s[4];
+            double r;
+            
+            switch (toupper(*str++)) {
+            case 'T':
+                if (!time && sscanf(str, "=%lu%n", &t, &n) >= 1) {
+                    str += n;
+                    info->time = (time_t)t;
+                    time = 1;
+                }
+                break;
+            case 'R':
+                if (!rate && sscanf(str, "=%lf%n", &r, &n) >= 1) {
+                    str += n;
+                    info->rate = r;
+                    rate = 1;
+                }
+                break;
+            case 'S':
+                if ((type & fSERV_Http) != 0)
+                    break;
+                if (!sful && sscanf(str, "=%3s%n", s, &n) >= 1) {
+                    if (strcasecmp(s, "YES") == 0) {
+                        info->sful = 1/*true */;
+                        str += n;
+                        sful = 1;
+                    } else if (strcasecmp(s, "NO") == 0) {
+                        info->sful = 0/* false */;
+                        str += n;
+                        sful = 1;
+                    }
+                }
+                break;
+            }
+        } else {
+            size_t i;
+            for (i = 0; i < N_FLAG_TAGS; i++) {
+                n = strlen(k_FlagTag[i]);
+                if (strncasecmp(str, k_FlagTag[i],n) == 0)
+                    break;
+            }
+            if (i < N_FLAG_TAGS) {
+                info->flag = (ESERV_Flags)i;
+                str += n;
+            }
+        }
+        if (*str && !isspace((unsigned char)(*str)))
+            break;
         while (*str && isspace((unsigned char)(*str)))
             str++;
-        while (*str) {
-            if (*(str + 1) == '=') {
-                unsigned long time;
-                double rate;
-                char ans[4];
-
-                switch (toupper(*str++)) {
-                case 'T':
-                    if (!info->time && sscanf(str, "=%lu%n", &time, &n) >= 1) {
-                        str += n;
-                        info->time = (time_t)time;
-                    }
-                    break;
-                case 'R':
-                    if (!info->rate && sscanf(str, "=%lf%n", &rate, &n) >= 1) {
-                        str += n;
-                        info->rate = rate;
-                    }
-                    break;
-                case 'S':
-                    if (sscanf(str, "=%3s%n", ans, &n) >= 1) {
-                        if (strcasecmp(ans, "YES") == 0) {
-                            info->sful = 1 /*true */;
-                            str += n;
-                        } else if (strcasecmp(ans, "NO") == 0) {
-                            info->sful = 0 /* false */;
-                            str += n;
-                        }
-                    }
-                    break;
-                }
-            } else {
-                size_t i;
-                for (i = 0; i < N_FLAG_TAGS; i++) {
-                    n = strlen(k_FlagTag[i]);
-                    if (strncasecmp(str, k_FlagTag[i],n) == 0)
-                        break;
-                }
-                if (i < N_FLAG_TAGS) {
-                    info->flag = (ESERV_Flags)i;
-                    str += n;
-                }
-            }
-            if (*str && !isspace((unsigned char)(*str)))
-                break;
-            while (*str && isspace((unsigned char)(*str)))
-                str++;
-        }
-        if (*str) {
-            free(info);
-            info = 0;
-        }
-    } else {
-        /* Apply defaults */
-        info->flag = SERV_DEFAULT_FLAG;
+    }
+    if (*str) {
+        free(info);
+        info = 0;
     }
     return info;
 }
@@ -425,7 +441,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->host         = host;
         info->port         = port;
         info->sful         = 0;
-        info->flag         = fSERV_Regular;
+        info->flag         = SERV_DEFAULT_FLAG;
         info->time         = 0;
         info->rate         = 0;
         info->u.ncbid.args = sizeof(info->u.ncbid);
@@ -479,8 +495,8 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->type = fSERV_Standalone;
         info->host = host;
         info->port = port;
-        info->sful = 1;
-        info->flag = fSERV_Regular;
+        info->sful = 0;
+        info->flag = SERV_DEFAULT_FLAG;
         info->time = 0;
         info->rate = 0;
     }
@@ -585,7 +601,7 @@ SSERV_Info* SERV_CreateHttpInfo
         info->host        = host;
         info->port        = port;
         info->sful        = 0;
-        info->flag        = fSERV_Regular;
+        info->flag        = SERV_DEFAULT_FLAG;
         info->time        = 0;
         info->rate        = 0;
         info->u.http.path = sizeof(info->u.http);
