@@ -633,7 +633,7 @@ public:
     {
         bool local_okay  = m_Local  ? (m_Local ->Validate()) : true;
         
-        return local_okay && remote_okay;
+        return local_okay;
     }
     
     /// Accessors/Mutators for individual options
@@ -2416,6 +2416,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/02/24 23:22:59  bealer
+* - Fix glitch in Validate().
+*
 * Revision 1.50  2004/02/24 22:42:11  bealer
 * - Remove undefined methods from CBlastOptionsRemote.
 *
