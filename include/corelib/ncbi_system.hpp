@@ -181,6 +181,11 @@ public:
     /// Removes the file.
     void Release(void);
 
+    /// @param pid the new process ID to store (defaults to the
+    /// current PID); useful when the real work occurs in a child
+    /// process that outlives the parent.
+    void UpdatePID(TPid pid = 0);
+
 private:
     string m_Path;
     TPid   m_OldPID;
@@ -192,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/09/23 21:13:44  ucko
+ * +CPIDGuard::UpdatePID
+ *
  * Revision 1.12  2003/08/12 17:37:45  ucko
  * Cleaned up CPIDGuardException a bit.
  *
