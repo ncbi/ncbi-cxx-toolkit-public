@@ -158,7 +158,7 @@ void CScope_Impl::x_DetachFromOM(void)
 }
 
 
-void CScope_Impl::AddDefaults(CPriorityTree::TPriority priority)
+void CScope_Impl::AddDefaults(TPriority priority)
 {
     CObjectManager::TDataSourcesLock ds_set;
     m_pObjMgr->AcquireDefaultDataSources(ds_set);
@@ -210,7 +210,7 @@ void CScope_Impl::AddScope(CScope_Impl& scope,
 
 
 CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
-                                 CPriorityNode::TPriority priority)
+                                      TPriority priority)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq(bioseq);
@@ -605,17 +605,14 @@ CBioseq_Handle CScope_Impl::GetBioseqHandleFromTSE(const CSeq_id& id,
 
 CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc)
 {
+    CBioseq_Handle bh;
     for (CSeq_loc_CI citer (loc); citer; ++citer) {
-        CBioseq_Handle bh = GetBioseqHandle(citer.GetSeq_id());
+        bh = GetBioseqHandle(citer.GetSeq_id());
         if ( bh ) {
-            return bh;
+            break;
         }
     }
-
-    string label;
-    loc.GetLabel(&label);
-    NCBI_THROW(CObjMgrException, eFindFailed,
-               "GetBioseqHandle by location failed: seq-loc = " + label);
+    return bh;
 }
 
 
@@ -627,9 +624,7 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CBioseq& seq)
             return bh;
         }
     }
-
-    NCBI_THROW(CObjMgrException, eFindFailed,
-               "GetBioseqHandle from bioseq failed");
+    return CBioseq_Handle();
 }
 
 
@@ -661,11 +656,11 @@ CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
 {
     CDataSource_ScopeInfo* ret = 0;
     // Process sub-tree
-    CPriorityTree::TPriority last_priority = 0;
+    TPriority last_priority = 0;
     ITERATE( CPriorityTree::TPriorityMap, mit, tree.GetTree() ) {
         // Search in all nodes of the same priority regardless
         // of previous results
-        CPriorityTree::TPriority new_priority = mit->first;
+        TPriority new_priority = mit->first;
         if ( new_priority != last_priority ) {
             // Don't process lower priority nodes if something
             // was found
@@ -1033,6 +1028,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2003/10/22 13:54:36  vasilche
+* All CScope::GetBioseqHandle() methods return 'null' CBioseq_Handle object
+* instead of throwing an exception.
+*
 * Revision 1.85  2003/10/20 18:23:54  vasilche
 * Make CScope::GetSynonyms() to skip conflicting ids.
 *
