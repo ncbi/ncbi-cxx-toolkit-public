@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeqdesc : public CSeqdesc_Base
+class NCBI_SEQ_EXPORT CSeqdesc : public CSeqdesc_Base
 {
     typedef CSeqdesc_Base Tparent;
 public:
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/27 21:46:59  kuznets
+* class Seqdesc received NCBI_SEQ_EXPORT declaration.
+*
 * Revision 1.2  2002/10/03 19:04:17  clausen
 * Removed extra whitespace
 *
