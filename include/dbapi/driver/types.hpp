@@ -760,7 +760,7 @@ protected:
 class CDB_Numeric : public CDB_Object
 {
 public:
-    CDB_Numeric() : CDB_Object(true)  { return; }
+    CDB_Numeric() : CDB_Object(true)  { m_Precision= m_Scale= 0; return; }
     CDB_Numeric(unsigned int precision, unsigned int scale)
         : CDB_Object(false) {
         m_Precision = precision;
@@ -824,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/02/06 22:21:58  soussov
+ * fixes the numeric default constructor
+ *
  * Revision 1.4  2001/12/28 21:22:39  sapojnik
  * Made compatible with MS compiler: long long to Int8, static const within class def to enum
  *
