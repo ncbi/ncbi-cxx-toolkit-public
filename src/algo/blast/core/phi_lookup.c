@@ -689,8 +689,8 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
       offset = 0;
       sequence = query->sequence + from;
       
-      twiceNumHits = find_hits(hitArray, sequence, loc_length, is_dna,
-                               pattern_info);
+      twiceNumHits = FindPatternHits(hitArray, sequence, loc_length, is_dna,
+                                     pattern_info);
       
       for (i = 0; i < twiceNumHits; i += 2) {
          PHIBlastAddPatternHit(lookup, hitArray[i+1]+from, 
@@ -734,8 +734,8 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
    */
    *offset_ptr = subject_blk->length;
 
-   twiceNumHits = find_hits(hitArray, subject, subject_blk->length, 
-                            lookup->is_dna, lookup->pattern_info);
+   twiceNumHits = FindPatternHits(hitArray, subject, subject_blk->length, 
+                                  lookup->is_dna, lookup->pattern_info);
 
 
    for (i = 0; i < twiceNumHits; i += 2) {

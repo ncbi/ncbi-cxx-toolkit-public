@@ -386,7 +386,7 @@ static Int4 find_hitsLL(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_d
     return twiceNumHits;
 }
 
-Int4 find_hits(Int4 *hitArray, const Uint1* seq, Int4 len, 
+Int4 FindPatternHits(Int4 *hitArray, const Uint1* seq, Int4 len, 
                Boolean is_dna, patternSearchItems * patternSearch)
 {
     if (patternSearch->flagPatternLength == ONE_WORD_PATTERN) 
