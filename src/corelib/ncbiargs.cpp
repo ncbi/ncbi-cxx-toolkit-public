@@ -699,15 +699,17 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
 
 CArgValue* CArgDescMandatory::ProcessDefault(void) const
 {
-    NCBI_THROW(CArgException, eNoArg, s_ArgExptMsg(GetName(),
-        "Required argument missing", GetUsageCommentAttr()));
+    NCBI_THROW(CArgException, eNoArg,
+               s_ArgExptMsg(GetName(), "Mandatory value is missing",
+                            GetUsageCommentAttr()));
 }
 
 
-void CArgDescMandatory::SetConstraint(CArgAllow* constraint,
-                                      CArgDescriptions::EConstraintNegate negate)
+void CArgDescMandatory::SetConstraint
+(CArgAllow*                          constraint,
+ CArgDescriptions::EConstraintNegate negate)
 {
-    m_Constraint = constraint;
+    m_Constraint       = constraint;
     m_NegateConstraint = negate;
 }
 
@@ -1146,25 +1148,26 @@ const CArgValue& CArgs::operator[] (const string& name) const
                 idx = kMax_UInt;
             }
             if (idx == kMax_UInt) {
-                NCBI_THROW(CArgException,eInvalidArg,
-                    "Argument of invalid name requested: "+ name);
-
+                NCBI_THROW(CArgException, eInvalidArg,
+                           "Asked for an argument with invalid name: \"" +
+                           name + "\"");
             }
             if (m_nExtra == 0) {
-                NCBI_THROW(CArgException,eInvalidArg,
-                    "No \"extra\" (unnamed positional) arguments "
-                    "provided, cannot Get: "+ s_ComposeNameExtra(idx));
+                NCBI_THROW(CArgException, eInvalidArg,
+                           "No \"extra\" (unnamed positional) arguments "
+                           "provided, cannot Get: " + s_ComposeNameExtra(idx));
             }
             if (idx == 0  ||  idx >= m_nExtra) {
-                NCBI_THROW(CArgException,eInvalidArg,
-                    "\"Extra\" (unnamed positional) arg is "
-                    "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
-                    + "): "+ s_ComposeNameExtra(idx));
+                NCBI_THROW(CArgException, eInvalidArg,
+                           "\"Extra\" (unnamed positional) arg is "
+                           "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
+                           + "): " + s_ComposeNameExtra(idx));
             }
         }
+
         // Diagnostics for all other argument classes
-        NCBI_THROW(CArgException,eInvalidArg,
-            "Undescribed argument requested: "+ name);
+        NCBI_THROW(CArgException, eInvalidArg,
+                   "Unknown argument requested: \"" + name + "\"");
     }
 
     // Found arg with name "name"
@@ -1198,12 +1201,20 @@ string& CArgs::Print(string& str) const
     return str;
 }
 
+
 void CArgs::Remove(const string& name)
 {
-    CArgs::TArgsI it = 
-        m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+    CArgs::TArgsI it =  m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
     m_Args.erase(it);
 }
+
+
+void CArgs::Reset(void)
+{
+    m_nExtra = 0;
+    m_Args.clear();
+}
+
 
 void CArgs::Add(CArgValue* arg, bool update, bool add_value)
 {
@@ -1277,35 +1288,43 @@ CArgDescriptions::~CArgDescriptions(void)
     return;
 }
 
+
 void CArgDescriptions::SetArgsType(EArgSetType args_type)
 {
     m_ArgsType = args_type;
 
     // Run args check for a CGI application
     if (m_ArgsType == eCgiArgs) {
-        if (!m_PosArgs.empty()) {
+        // Must have no named positional arguments
+        if ( !m_PosArgs.empty() ) {
             NCBI_THROW(CArgException, eInvalidArg,
-                "CGI application cannot have positional arguments.");
+                       "CGI application cannot have positional arguments, "
+                       "name of the offending argument: '"
+                       + *m_PosArgs.begin() + "'.");
         }
+
+        // Must have no flag arguments
         ITERATE (TArgs, it, m_Args) {
-            const CArgDesc* arg = it->get();
-            if (s_IsFlag(*arg)) {
-                const string& name = arg->GetName();
+            const CArgDesc& arg = **it;
+            if ( s_IsFlag(arg) ) {
+                const string& name = arg.GetName();
 
                 if (name == s_AutoHelp || name == s_AutoHelpFull)  // help
                     continue;
 
-                string err = 
-                    "CGI application cannot have flag arguments.";
-                err += "Offending flag:";
-                err += name;
-
-                NCBI_THROW(CArgException, eInvalidArg, err);
+                NCBI_THROW(CArgException, eInvalidArg,
+                           "CGI application cannot have flag arguments, "
+                           "name of the offending flag: '" + name + "'.");
             }
-        } // ITERATE
+        }
+
+        // Must have no unnamed positional arguments
+        if (m_nExtra  ||  m_nExtraOpt) {
+            NCBI_THROW(CArgException, eInvalidArg,
+                       "CGI application cannot have unnamed positional "
+                       "arguments.");
+        }
     }
-
-
 }
 
 
@@ -1682,11 +1701,11 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     if (it == m_Args.end()) {
         if ( name.empty() ) {
             NCBI_THROW(CArgException,eInvalidArg,
-                "Unexpected extra argument, at position # " +
-                NStr::UIntToString(n_plain));
+                       "Unexpected extra argument, at position # " +
+                       NStr::UIntToString(n_plain));
         } else {
             NCBI_THROW(CArgException,eInvalidArg,
-                "Unknown argument: "+ name);
+                       "Unknown argument: \"" + name + "\"");
         }
     }
     _ASSERT(*it);
@@ -1756,7 +1775,10 @@ bool CArgDescriptions::x_IsMultiArg(const string& name) const
     return (adm->GetFlags() & CArgDescriptions::fAllowMultiple) != 0;
 }
 
-void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
+void CArgDescriptions::x_PostCheck(CArgs&           args,
+                                   unsigned int     n_plain,
+                                   EPostCheckCaller caller)
+    const
 {
     // If explicitly specified, printout usage and exit in case there
     // was no args passed to the application
@@ -1800,12 +1822,11 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
             // Add the value to "args"
             args.Add(arg_value);
         } 
-        catch (CArgException&)
-        {
-            // mandatory argument, for CGI is taken not from the
-            // command line but from the request
-            if (GetArgsType() != eCgiArgs) {
-                throw; // non-CGI application, error!
+        catch (CArgException&) {
+            // mandatory argument, for CGI can be taken not only from the
+            // command line but also from the HTTP request
+            if (GetArgsType() != eCgiArgs  ||  caller == eConvertKeys) {
+                throw;
             }
         }
     }
@@ -2404,6 +2425,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/03/10 17:59:55  vakatov
+ * Improved and extended diagnostics.
+ * Prohibit positional arguments in the CGI application
+ *
  * Revision 1.57  2005/02/11 18:10:22  gouriano
  * Fix checking for help command line args
  *
