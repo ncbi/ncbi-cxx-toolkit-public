@@ -38,6 +38,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <set>
 
@@ -125,6 +126,11 @@ private:
 
 struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
 {
+    SSeq_id_ScopeInfo(void);
+    ~SSeq_id_ScopeInfo(void);
+    SSeq_id_ScopeInfo(const SSeq_id_ScopeInfo& info);
+    const SSeq_id_ScopeInfo& operator=(const SSeq_id_ScopeInfo& info);
+
     typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
     typedef CObjectFor<TTSE_LockSet>                 TAnnotRefSet;
@@ -234,6 +240,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/19 19:08:31  vasilche
+* Added include to make MSVC happy.
+*
 * Revision 1.1  2003/06/19 18:23:45  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
