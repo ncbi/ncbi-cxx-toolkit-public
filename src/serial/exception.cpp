@@ -27,37 +27,6 @@
 *
 * File Description:
 *   Standard serialization exceptions
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/12/23 18:41:19  dicuccio
-* Added previously unimplemented class ctors / dtors (classes declared but not
-* defined)
-*
-* Revision 1.6  2001/04/17 03:58:39  vakatov
-* CSerialNotImplemented:: -- constructor and destructor added
-*
-* Revision 1.5  2001/01/05 20:10:50  vasilche
-* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
-* were moved to util.
-*
-* Revision 1.4  2000/07/05 13:20:22  vasilche
-* Fixed bug on 64 bit compilers.
-*
-* Revision 1.3  2000/07/03 20:47:22  vasilche
-* Removed unused variables/functions.
-*
-* Revision 1.2  2000/07/03 18:42:43  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.1  2000/02/17 20:02:43  vasilche
-* Added some standard serialization exceptions.
-* Optimized text/binary ASN.1 reading.
-* Fixed wrong encoding of StringStore in ASN.1 binary format.
-* Optimized logic of object collection.
-*
-* ===========================================================================
 */
 
 #include <serial/exception.hpp>
@@ -74,7 +43,8 @@ CSerialException::~CSerialException(void) THROWS_NONE
 }
 
 
-CSerialOverflowException::CSerialOverflowException(const string& msg) THROWS_NONE
+CSerialOverflowException::CSerialOverflowException(const string& msg)
+    THROWS_NONE
     : CSerialException(msg)
 {
 }
@@ -141,3 +111,38 @@ CInvalidChoiceSelection::~CInvalidChoiceSelection(void) THROWS_NONE
 }
 
 END_NCBI_SCOPE
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/12/23 18:59:52  dicuccio
+* Fixed an 80-chr boundary violation.  Log to end.
+*
+* Revision 1.7  2002/12/23 18:41:19  dicuccio
+* Added previously unimplemented class ctors / dtors (classes declared but not
+* defined)
+*
+* Revision 1.6  2001/04/17 03:58:39  vakatov
+* CSerialNotImplemented:: -- constructor and destructor added
+*
+* Revision 1.5  2001/01/05 20:10:50  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
+* Revision 1.4  2000/07/05 13:20:22  vasilche
+* Fixed bug on 64 bit compilers.
+*
+* Revision 1.3  2000/07/03 20:47:22  vasilche
+* Removed unused variables/functions.
+*
+* Revision 1.2  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.1  2000/02/17 20:02:43  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
+* ===========================================================================
+*/
