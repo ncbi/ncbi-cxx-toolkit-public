@@ -121,15 +121,14 @@ const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
 
 string CSeq_id_Handle::AsString() const
 {
-    ostrstream os;
+    CNcbiOstrstream os;
     const CSeq_id* seqid = x_GetSeqId();
     if (seqid) {
         seqid->WriteAsFasta(os);
     } else {
         os << "unknown";
     }
-    os << '\0';
-    return os.str();
+    return CNcbiOstrstreamToString(os);
 }
 
 END_SCOPE(objects)
@@ -138,6 +137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.7  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

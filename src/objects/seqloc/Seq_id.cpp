@@ -572,6 +572,13 @@ void CSeq_id::WriteAsFasta(ostream& out)
 }
 
 
+const string CSeq_id::AsFastaString(void) const
+{
+    CNcbiOstrstream str;
+    WriteAsFasta(str);
+    return CNcbiOstrstreamToString(str);
+}
+
 //
 // Local functions for producing a sequence ID 'score'
 // These functions produce scores in FastA order
@@ -1069,6 +1076,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.43  2002/12/26 16:39:25  vasilche
+ * Object manager class CSeqMap rewritten.
+ *
  * Revision 6.42  2002/12/03 15:55:12  dicuccio
  * Corrected processing of text id accessions with no accession set (in
  * GetSeqIdString()) - use name instead.

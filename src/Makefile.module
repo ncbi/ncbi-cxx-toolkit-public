@@ -44,6 +44,7 @@ Makefile.$(MODULE).lib:
 	@if test ! -f $@ ; then echo Creating $@ ; ( echo 'LIB = $$(TMPL)'; echo 'SRC = $$(LIB)__ $$(LIB)___'; ) > $@ ; fi
 
 $(MODULE).def:
+	@touch $@
 
 directories:
 	mkdir -p $(top_srcdir)/src/$(MODULE_PATH)

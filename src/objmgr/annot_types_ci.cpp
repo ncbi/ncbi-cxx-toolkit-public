@@ -82,7 +82,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
       m_ResolveMethod(resolve),
       m_OverlapType(overlap_type)
 {
-    x_Initialize(loc);
+    try {
+        x_Initialize(loc);
+    }
+    catch (...) {
+        x_ReleaseAll();
+        throw;
+    }
 }
 
 
@@ -112,40 +118,54 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
         loc->SetInt().SetFrom(start);
         loc->SetInt().SetTo(stop);
     }
-    x_Initialize(*loc);
+    try {
+        x_Initialize(*loc);
+    }
+    catch (...) {
+        x_ReleaseAll();
+        throw;
+    }
 }
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
 {
-    *this = it;
+    try {
+        *this = it;
+    }
+    catch (...) {
+        x_ReleaseAll();
+        throw;
+    }
 }
 
 
 CAnnotTypes_CI::~CAnnotTypes_CI(void)
 {
+    x_ReleaseAll();
+}
+
+void CAnnotTypes_CI::x_ReleaseAll(void)
+{
     non_const_iterate (TTSESet, tse_it, m_TSESet) {
         (*tse_it)->UnlockCounter();
     }
+    m_TSESet.clear();
 }
 
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
-    {{
-        //### CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
-        non_const_iterate (TTSESet, tse_it, m_TSESet) {
-            (*tse_it)->UnlockCounter();
-        }
-    }}
+    x_ReleaseAll();
     m_Selector = it.m_Selector;
     m_Scope = it.m_Scope;
     m_ResolveMethod = it.m_ResolveMethod;
     m_AnnotSet.clear();
     // Copy TSE list, set TSE locks
     iterate (TTSESet, tse_it, it.m_TSESet) {
-        m_TSESet.insert(*tse_it);
-        (*tse_it)->LockCounter();
+        if ( m_TSESet.insert(*tse_it).second ) {
+            (*tse_it)->LockCounter();
+        }
     }
     // Copy annotations (non_const to compare iterators)
     iterate (TAnnotSet, an_it, it.m_AnnotSet) {
@@ -244,8 +264,8 @@ has_references = true;
 }
 
 
-void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
-                                         CSeq_id_Handle ref_idh,
+void CAnnotTypes_CI::x_ResolveReferences(const CSeq_id_Handle& master_idh,
+                                         const CSeq_id_Handle& ref_idh,
                                          TSeqPos rmin,
                                          TSeqPos rmax,
                                          ENa_strand strand,
@@ -277,10 +297,11 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
         return;
     }
     CSeqMap& ref_map = ref_seq.x_GetDataSource().x_GetSeqMap(ref_seq);
-    ref_map.x_Resolve(rmax, *m_Scope);
-    for (size_t i = ref_map.x_FindSegment(rmin); i < ref_map.size(); i++) {
+    //ref_map.x_Resolve(rmax, *m_Scope);
+    for (CSeqMap::const_iterator seg = ref_map.FindSegment(rmin, m_Scope);
+         seg != ref_map.End(m_Scope); seg++) {
         // Check each map segment for intersections with the range
-        const CSeqMap::CSegmentInfo& seg = ref_map[i];
+        //const CSeqMap::CSegmentInfo& seg = ref_map[i];
         if (rmin >= seg.GetPosition() + seg.GetLength())
             continue; // Go to the next segment
         if (rmax < seg.GetPosition())
@@ -289,7 +310,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
             // Check for valid TSE
             if (m_ResolveMethod == eResolve_TSE) {
                 CBioseq_Handle check_seq = m_Scope->GetBioseqHandle(
-                        m_Scope->x_GetIdMapper().GetSeq_id(seg.m_RefSeq));
+                        m_Scope->x_GetIdMapper().GetSeq_id(seg.GetRefSeqid()));
                 // The referenced sequence must be in the same TSE as the master one
                 CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(
                         m_Scope->x_GetIdMapper().GetSeq_id(master_idh));
@@ -306,16 +327,17 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                 seg_min = rmin;
             if (rmax < seg_max)
                 seg_max = rmax;
-            TSignedSeqPos rshift = shift + seg.GetPosition() - seg.m_RefPos;
+            TSignedSeqPos rshift =
+                shift + seg.GetPosition() - seg.GetRefPosition();
             // Adjust strand
             ENa_strand adj_strand = eNa_strand_unknown;
-            if ( seg.m_MinusStrand ) {
+            if ( seg.GetRefMinusStrand() ) {
                 if (strand == eNa_strand_minus)
                     adj_strand = eNa_strand_plus;
                 else
                     adj_strand = eNa_strand_minus;
             }
-            x_ResolveReferences(master_idh, seg.m_RefSeq,
+            x_ResolveReferences(master_idh, seg.GetRefSeqid(),
                 seg_min - rshift, seg_max - rshift, adj_strand, rshift);
         }
     }
@@ -602,6 +624,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/12/26 16:39:23  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.30  2002/12/24 15:42:45  grichenk
 * CBioseqHandle argument to annotation iterators made const
 *

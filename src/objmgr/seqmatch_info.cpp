@@ -46,7 +46,7 @@ CSeqMatch_Info::CSeqMatch_Info(void)
 }
 
 
-CSeqMatch_Info::CSeqMatch_Info(CSeq_id_Handle h,
+CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
                                CTSE_Info& tse,
                                CDataSource& ds)
     : m_Handle(h), m_TSE(&tse), m_DataSource(&ds)
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.4  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

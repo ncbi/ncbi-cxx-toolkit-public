@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.18  2002/11/04 21:29:14  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -200,9 +203,9 @@ bool CTestObjectManager::Thread_Run(int idx)
         CSeq_id id;
         id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id, 22,
-            "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
-            "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
+          "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
+          "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
+          1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
 
         // add more data to the scope - to make references resolvable
         CRef<CSeq_entry> entry1a(&CDataGenerator::CreateTestEntry1a(idx));

@@ -56,7 +56,7 @@ class CDataSource;
 class CSeqMatch_Info {
 public:
     CSeqMatch_Info(void);
-    CSeqMatch_Info(CSeq_id_Handle h, CTSE_Info& tse, CDataSource& ds);
+    CSeqMatch_Info(const CSeq_id_Handle& h, CTSE_Info& tse, CDataSource& ds);
     CSeqMatch_Info(const CSeqMatch_Info& info);
     
     CSeqMatch_Info& operator= (const CSeqMatch_Info& info);
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/26 16:39:22  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.5  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

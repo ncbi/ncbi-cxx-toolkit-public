@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.25  2002/11/08 22:15:53  grichenk
 * Added methods for removing/replacing annotations
 *
@@ -250,7 +253,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 22,
             "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
             "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
+            1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
 
         // add more data to the scope - to make references resolvable
         CRef<CSeq_entry> entry1a(&CDataGenerator::CreateTestEntry1a(idx));

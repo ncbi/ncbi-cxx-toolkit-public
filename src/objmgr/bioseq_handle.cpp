@@ -72,6 +72,7 @@ const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
     return x_GetDataSource().GetTSE(*this);
 }
 
+
 CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 {
     return x_GetDataSource().GetBioseqCore(*this);
@@ -209,12 +210,12 @@ void CBioseq_Handle::x_ResolveTo(
     m_TSE->Add(1);
 }
 
-
+/*
 const CSeqMap& CBioseq_Handle::CreateResolvedSeqMap(void) const
 {
     return x_GetDataSource().GetResolvedSeqMap(*this);
 }
-
+*/
 
 void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
 {
@@ -245,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.25  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

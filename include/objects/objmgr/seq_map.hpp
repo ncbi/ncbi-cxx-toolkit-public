@@ -30,6 +30,7 @@
 *           Aleksey Grichenko
 *           Michael Kimelman
 *           Andrei Gourianov
+*           Eugene Vasilchenko
 *
 * File Description:
 *   CSeqMap -- formal sequence map to describe sequence parts in general,
@@ -38,34 +39,28 @@
 */
 
 #include <objects/objmgr/seq_id_handle.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <vector>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CBioseq;
+class CDelta_seq;
+class CSeq_loc;
+class CSeq_point;
+class CSeq_interval;
+class CSeq_loc_mix;
+class CSeq_loc_equiv;
+class CSeq_literal;
+class CSeq_data;
+class CPacked_seqint;
+class CPacked_seqpnt;
 
 // Provided for compatibility with old code; new code should just use TSeqPos.
 typedef TSeqPos TSeqPosition;
 typedef TSeqPos TSeqLength;
-
-
-// Interval in the sequence
-struct SSeqInterval {
-    TSeqPos start;
-    TSeqPos length;
-};
-
-
-// Sequence data
-struct SSeqData {
-    TSeqPos              length;      /// Length of the sequence data piece
-    TSeqPos              dest_start;  /// Starting pos in the dest. Bioseq
-    TSeqPos              src_start;   /// Starting pos in the source Bioseq
-    CConstRef<CSeq_data> src_data;    /// Source sequence data
-};
 
 
 ////////////////////////////////////////////////////////////////////
@@ -75,290 +70,213 @@ struct SSeqData {
 
 
 class CScope;
+class CDataSource;
+class CSeqMap_CI;
+class CSeqMapResolved_CI;
+class CSeqMap_Delta_seqs;
 
 class CSeqMap : public CObject
 {
 public:
     // typedefs
     enum ESegmentType {
-        eSeqData,  // real sequence data
-        eSeqRef,   // reference to another sequence (if length = 0, then
-                   // the whole sequence is referenced)
-        eSeqGap,   // gap (no data at all)
-        eSeqEnd    // last element in every map (pos = sequence length)
+        eSeqData,             // real sequence data (m_Object: CSeq_data)
+        eSeqGap,              // gap                (m_Object: null)
+        eSeqSubMap,           // sub seqmap         (m_Object: CSeqMap)
+        eSeqEnd,
+        eSeqRef,              // virtual type
+        eSeqRef_id,           // real sequence ref  (m_Object: CSeq_id)
+        eSeqRef_point,        // real sequence ref  (m_Object: CSeq_point)
+        eSeqRef_interval,     // real sequence ref  (m_Object: CSeq_interval)
+        eSeqRef_packed_point  // real sequence ref  (m_Object: null)
     };
 
-    class CSegmentInfo : public CObject
+protected:
+    class CSegment;
+    class SPosLessSegment;
+    friend class CSegment;
+    friend class SPosLessSegment;
+
+    class CSegment
     {
     public:
-        CSegmentInfo(ESegmentType seg_type,
-                     TSeqPos position, TSeqPos length,
-                     bool minus_strand /*= false*/);
-        CSegmentInfo(const CSegmentInfo& seg);
-        ~CSegmentInfo(void);
+        CSegment(ESegmentType seg_type = eSeqEnd,
+                 TSeqPos length = kInvalidSeqPos);
 
-        CSegmentInfo& operator= (const CSegmentInfo& seg);
-        bool operator== (const CSegmentInfo& seg) const;
-        bool operator<  (const CSegmentInfo& seg) const;
-
-        ESegmentType GetType(void) const;
-        TSeqPos      GetPosition(void) const;
-        TSeqPos      GetLength(void) const;
-        // The following function makes sense only
-        // when the segment is a reference to another seq.
-        const CSeq_id& GetRefSeqid(void) const;
-
-        virtual void DebugDump(CDebugDumpContext ddc,
-                               unsigned int depth) const;
-
-    private:
-        // Type of map segment
+        // Segment type
         ESegmentType         m_SegType;
-        // Position of the segment
-        TSeqPos              m_Position;
-        // Length of the segment or 0 for unknown length
-        TSeqPos              m_Length;
-        // Referenced bioseq information
-        CSeq_id_Handle       m_RefSeq;
-        // Seq-data (m_RefPos and m_RefLen must be also set)
-        CConstRef<CSeq_data> m_RefData;
-        // Referenced location -- position on the source sequence
-        TSeqPos      m_RefPos;
-        bool         m_MinusStrand;
-        bool         m_Resolved;
+        // Relative position of the segment in seqmap
+        mutable TSeqPos      m_Position;
+        // Length of the segment (kInvalidSeqPos if unresolved)
+        mutable TSeqPos      m_Length;
 
-        friend class CDataSource;
-        friend class CSeqVector;
+        typedef list<TSeqPos>::iterator TList0_I;
+        
+        struct {
+            char                 m_I[sizeof(TList0_I)];
+        } m_Iterator;
+        
+        CRef<CObject>        m_Object;
+        
         friend class CSeqMap;
-        friend class CAnnotTypes_CI;
+        friend class CSeqMap_CI;
+        friend class SPosLessSegment;
     };
 
-    // 'ctors
-    CSeqMap(void);
+    class SPosLessSegment
+    {
+    public:
+        bool operator()(TSeqPos pos, const CSegment& seg)
+            {
+                return pos < seg.m_Position + seg.m_Length;
+            }
+    };
+
+public:
+    typedef CSeqMap_CI CSegmentInfo; // for compatibility
+
+    typedef CSeqMap_CI const_iterator;
+    typedef CSeqMap_CI TSegment_CI;
+    typedef CSeqMapResolved_CI resolved_const_iterator;
+    typedef CSeqMapResolved_CI TResolvedSegment_CI;
+    
     ~CSeqMap(void);
+    
+    // new interface
+    // STL style methods
+    const_iterator begin(CScope* scope = 0) const;
+    const_iterator end(CScope* scope = 0) const;
+    const_iterator find(TSeqPos pos, CScope* scope = 0) const;
+    // NCBI style methods
+    TSegment_CI Begin(CScope* scope = 0) const;
+    TSegment_CI End(CScope* scope = 0) const;
+    TSegment_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
 
-    size_t size(void) const;
-
-    // Get all intervals
-    const CSegmentInfo& operator[] (size_t seg_idx) const;
-
+    // resolved iterators
+    const_iterator begin_resolved(CScope* scope) const;
+    pair<const_iterator, TSeqPos> find_resolved(TSeqPos pos,
+                                                CScope* scope) const;
+    const_iterator end_resolved(CScope* scope) const;
+    TSegment_CI BeginResolved(CScope* scope) const;
+    pair<TSegment_CI, TSeqPos> FindResolvedSegment(TSeqPos pos,
+                                                   CScope* scope) const;
+    TSegment_CI EndResolved(CScope* scope) const;
+    
+    // deprecated interface
+    //size_t size(void) const;
+    CSeqMap_CI operator[] (size_t seg_idx) const;
+    
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    static CSeqMap* CreateSeqMapForBioseq(CBioseq& seq,
+                                          CDataSource* source = 0);
+    static TSeqPos ResolveBioseqLength(const CSeq_id& id, CScope* scope);
+
+protected:
+    // 'ctors
+    CSeqMap(CSeqMap* parent, size_t index);
+    CSeqMap(CDataSource* source = 0);
+    CSeqMap(CSeq_data& data, TSeqPos len, CDataSource* source = 0);
+    CSeqMap(CSeq_loc& ref, CDataSource* source = 0);
+    CSeqMap(TSeqPos len, CDataSource* source = 0); // gap
+
+    void x_AddEnd(void);
+    CSegment& x_AddSegment(ESegmentType type, TSeqPos len);
+    CSegment& x_AddSegment(ESegmentType type, TSeqPos len, CObject* object);
+    CSegment& x_AddGap(TSeqPos len);
+    CSegment& x_Add(CSeqMap* submap);
+    CSegment& x_Add(CSeq_data& data, TSeqPos len);
+    CSegment& x_Add(CPacked_seqint& seq);
+    CSegment& x_Add(CPacked_seqpnt& seq);
+    CSegment& x_Add(CSeq_loc_mix& seq);
+    CSegment& x_Add(CSeq_loc_equiv& seq);
+    CSegment& x_Add(CSeq_literal& seq);
+    CSegment& x_Add(CDelta_seq& seq);
+    CSegment& x_Add(CSeq_loc& seq);
+    CSegment& x_Add(CSeq_id& seq);
+    CSegment& x_Add(CSeq_point& seq);
+    CSegment& x_Add(CSeq_interval& seq);
+    CSegment& x_AddUnloadedSubMap(TSeqPos len);
+    CSegment& x_AddUnloadedSeq_data(TSeqPos len);
+
 private:
-    // Add interval to the map.
-    // Throw an exception if there is an "equal" interval.
-    void Add(CSegmentInfo& interval);
-    void Add(ESegmentType seg_type,
-             TSeqPos position, TSeqPos length,
-             bool minus_strand = false);
+    void ResolveAll(void) const;
+    
+    void x_SetParent(CSeqMap* parent, size_t index);
 
 private:
     // Prohibit copy operator and constructor
     CSeqMap(const CSeqMap&);
     CSeqMap& operator= (const CSeqMap&);
-    // Get the segment containing point "pos"
-    size_t x_FindSegment(TSeqPos pos);
-    // Try to resolve segment lengths up to the "pos". Return index of the
-    // segment containing "pos".
-    CSegmentInfo x_Resolve(TSeqPos pos, CScope& scope);
+    
+protected:    
+    // interface for iterators
+    TSeqPos x_GetLength(CScope* scope) const;
+    size_t x_GetSegmentsCount(void) const;
+    const CSegment& x_GetSegment(size_t index) const;
+    CSegment& x_SetSegment(size_t index);
+    size_t x_FindSegment(TSeqPos position, CScope* scope) const;
+    
+    TSeqPos x_GetSegmentLength(size_t index, CScope* scope) const;
+    TSeqPos x_GetSegmentPosition(size_t index, CScope* scope) const;
+    TSeqPos x_ResolveSegmentLength(const CSegment& seg, CScope* scope) const;
 
-    vector< CRef<CSegmentInfo> > m_Data;
-    // Segment lengths are resolved up to this index
-    size_t m_FirstUnresolvedPos;
+    const CSeqMap* x_GetSubSeqMap(const CSegment& seg) const;
+    CSeqMap* x_GetSubSeqMap(CSegment& seg);
+    virtual const CSeq_data& x_GetSeq_data(const CSegment& seg) const;
+    virtual const CSeq_id& x_GetRefSeqid(const CSegment& seg) const;
+    virtual TSeqPos x_GetRefPosition(const CSegment& seg) const;
+    virtual bool x_GetRefMinusStrand(const CSegment& seg) const;
+    
+    void x_LoadObject(const CSegment& seg) const;
+    const CObject* x_GetObject(const CSegment& seg) const;
+    CObject* x_GetObject(CSegment& seg);
+    virtual void x_SetSeq_data(size_t index, CSeq_data& data);
+    virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
+
+    void x_Lock(void) const;
+    void x_Unlock(void) const;
+    
+    typedef vector<CSegment> TSegments;
+    
+    // parent CSeqMap
+    const CSeqMap*   m_ParentSeqMap;
+    // index of first segment in parent sequence
+    size_t           m_ParentIndex;
+    
+    // segments in this seqmap
+    vector<CSegment> m_Segments;
+    
+    // index of last resolved segment position
+    mutable size_t   m_Resolved;
+    
+    CRef<CObject>    m_Delta;
+    CDataSource*     m_Source;
+    
+    mutable CAtomicCounter m_LockCounter; // usage lock counter
+
     // MT-protection
-    static CMutex sm_SeqMap_Mtx;
-
+    mutable CFastMutex   m_SeqMap_Mtx;
+    
+    friend class CSeqMap_CI;
     friend class CDataSource;
-    friend class CAnnotTypes_CI;
 };
 
 
-
-/////////////////////////////////////////////////////////////////////
-//  Inline methods
-
-
-inline
-bool operator< (const CSeqMap::CSegmentInfo& int1,
-                const CSeqMap::CSegmentInfo& int2)
-{
-    // Ignore type, only position is important
-    return int1.GetPosition() < int2.GetPosition();
-}
-
-
-
-/////////////////////////////////////////////////////////////////////
-//  CSeqMap::CSegmentInfo: inline methods
-
-
-inline
-CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type,
-                                    TSeqPos position, TSeqPos length,
-                                    bool minus_strand)
-    : m_SegType(seg_type),
-      m_Position(position),
-      m_Length(length),
-      m_RefData(0),
-      m_RefPos(0),
-      m_MinusStrand(minus_strand),
-      m_Resolved(false)
-{
-    return;
-}
-
-
-inline
-CSeqMap::CSegmentInfo::CSegmentInfo(const CSegmentInfo& seg)
-    : m_SegType(seg.m_SegType),
-      m_Position(seg.m_Position),
-      m_Length(seg.m_Length),
-      m_RefSeq(seg.m_RefSeq),
-      m_RefData(seg.m_RefData),
-      m_RefPos(seg.m_RefPos),
-      m_MinusStrand(seg.m_MinusStrand),
-      m_Resolved(seg.m_Resolved)
-{
-    return;
-}
-
-
-inline
-CSeqMap::CSegmentInfo::~CSegmentInfo(void)
-{
-    return;
-}
-
-
-inline
-CSeqMap::CSegmentInfo&
-CSeqMap::CSegmentInfo::operator= (const CSegmentInfo& seg)
-{
-    m_SegType     = seg.m_SegType;
-    m_Position    = seg.m_Position;
-    m_Length      = seg.m_Length;
-    m_RefSeq      = seg.m_RefSeq;
-    m_RefData     = seg.m_RefData;
-    m_RefPos      = seg.m_RefPos;
-    m_Resolved    = seg.m_Resolved;
-    m_MinusStrand = seg.m_MinusStrand;
-    return *this;
-}
-
-
-inline
-bool CSeqMap::CSegmentInfo::operator== (const CSegmentInfo& seg) const
-{
-    //### Some segments may still look the same although they are not
-    return
-        m_Position    == seg.m_Position &&
-        m_SegType     == seg.m_SegType  &&
-        m_RefSeq      == seg.m_RefSeq   &&
-        m_RefData     == seg.m_RefData  &&
-        m_RefPos      == seg.m_RefPos   &&
-        m_MinusStrand == seg.m_MinusStrand;
-    // Do not check m_Resolved and m_Length
-}
-
-
-inline
-bool CSeqMap::CSegmentInfo::operator< (const CSegmentInfo& seg) const
-{
-    if (m_SegType < seg.m_SegType)
-        return true;
-    if (m_SegType > seg.m_SegType)
-        return false;
-    if (m_RefSeq < seg.m_RefSeq)
-        return true;
-    if (m_RefSeq > seg.m_RefSeq)
-        return false;
-    //###if (m_RefData < seg.m_RefData)
-    //###    return true;
-    //###if (m_RefData > seg.m_RefData)
-    //###    return false;
-    if (m_RefPos < seg.m_RefPos)
-        return true;
-    if (m_RefPos > seg.m_RefPos)
-        return false;
-    if (m_Length < seg.m_Length)
-        return true;
-    if (m_Length > seg.m_Length)
-        return false;
-    if (m_MinusStrand < seg.m_MinusStrand)
-        return true;
-    return false;
-}
-
-
-inline
-CSeqMap::ESegmentType CSeqMap::CSegmentInfo::GetType(void) const
-{
-    return m_SegType;
-}
-
-
-inline
-TSeqPosition CSeqMap::CSegmentInfo::GetPosition(void) const
-{
-    return m_Position;
-}
-
-
-inline
-TSeqLength   CSeqMap::CSegmentInfo::GetLength(void) const
-{
-    return m_Length;
-}
-
-
-
-/////////////////////////////////////////////////////////////////////
-//  CSeqMap: inline methods
-
-inline
-CSeqMap::CSeqMap(void)
-    : m_FirstUnresolvedPos(0)
-{
-    return;
-}
-
-
-inline
-CSeqMap::~CSeqMap(void)
-{
-    return;
-}
-
-
-inline
-size_t CSeqMap::size(void) const
-{
-    return m_Data.size();
-}
-
-
-inline
-const CSeqMap::CSegmentInfo& CSeqMap::operator[] (size_t seg_idx) const
-{
-    return *m_Data[seg_idx];
-}
-
-
-inline
-void CSeqMap::Add(ESegmentType seg_type, TSeqPos position, TSeqPos length,
-                  bool minus_strand)
-{
-    Add(*new CSegmentInfo(seg_type, position, length, minus_strand));
-}
-
+#include <objects/objmgr/seq_map.inl>
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+#include <objects/objmgr/seq_map_ci.hpp>
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/12/26 16:39:21  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.21  2002/10/18 19:12:39  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

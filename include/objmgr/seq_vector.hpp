@@ -33,17 +33,24 @@
 *
 */
 
-#include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <util/range.hpp>
-#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+// Sequence data
+struct SSeqData {
+    TSeqPos              length;      /// Length of the sequence data piece
+    TSeqPos              dest_start;  /// Starting pos in the dest. Bioseq
+    TSeqPos              src_start;   /// Starting pos in the source Bioseq
+    CConstRef<CSeq_data> src_data;    /// Source sequence data
+};
+
 class CScope;
 class CSeq_loc;
+class CSeqMap;
 
 class CSeqVector : public CObject
 {
@@ -141,12 +148,6 @@ private:
 
 
 inline
-CSeqVector::CSeqVector(const CSeqVector& vec)
-{
-    *this = vec;
-}
-
-inline
 TSeqPos CSeqVector::size(void) const
 {
     if (m_RangeSize == kPosUnknown)
@@ -209,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/12/26 16:39:22  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.19  2002/10/03 13:45:37  grichenk
 * CSeqVector::size() made const
 *

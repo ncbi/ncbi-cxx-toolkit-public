@@ -59,6 +59,20 @@ CTSE_Info::~CTSE_Info(void)
 }
 
 
+void CTSE_Info::CounterOverflow(void) const
+{
+    THROW1_TRACE(runtime_error,
+                 "CTSE_Info::Lock() -- TSE lock counter overflow");
+}
+
+
+void CTSE_Info::CounterUnderflow(void) const
+{
+    THROW1_TRACE(runtime_error,
+                 "CTSE_Info::Unlock() -- The TSE is not locked");
+}
+
+
 void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CTSE_Info");
@@ -133,6 +147,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.9  2002/10/18 19:12:40  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

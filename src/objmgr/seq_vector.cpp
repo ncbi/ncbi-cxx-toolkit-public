@@ -59,6 +59,11 @@ BEGIN_SCOPE(objects)
 
 const TSeqPos CSeqVector::kPosUnknown = numeric_limits<TSeqPos>::max();
 
+CSeqVector::CSeqVector(const CSeqVector& vec)
+{
+    *this = vec;
+}
+
 CSeqVector::CSeqVector(const CBioseq_Handle& handle,
                        CBioseq_Handle::EVectorCoding coding,
                        CBioseq_Handle::EVectorStrand strand,
@@ -84,8 +89,8 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
         x_SetVisibleArea(*view_loc);
     }
     else {
-        m_Ranges[TRange::GetWholeTo()] = TRangeWithStrand(TRange(
-            TRange::GetWholeFrom(), TRange::GetWholeTo()), true);
+        m_Ranges[TRange::GetWholeTo()] =
+            TRangeWithStrand(TRange::GetWhole(), true);
     }
     m_SelRange = m_Ranges.end();
     if (coding == CBioseq_Handle::eCoding_Iupac)
@@ -153,14 +158,15 @@ TSeqPos CSeqVector::x_GetTotalSize(void) const
 {
     if (m_Size == kPosUnknown) {
         // Calculate total sequence size
-        m_Size = 0;
+        m_Size = m_SeqMap->End(m_Scope).GetPosition();
+/*
         for (size_t i = 0; i < m_SeqMap->size(); i++) {
-            if ((*m_SeqMap)[i].m_Length > 0) {
+            if ((*m_SeqMap)[i].GetLength() > 0) {
                 // Use explicit segment size
-                m_Size += (*m_SeqMap)[i].m_Length;
+                m_Size += (*m_SeqMap)[i].GetLength();
             }
             else {
-                switch ((*m_SeqMap)[i].m_SegType) {
+                switch ((*m_SeqMap)[i].GetType()) {
                 case CSeqMap::eSeqData:
                     {
                         break;
@@ -170,7 +176,7 @@ TSeqPos CSeqVector::x_GetTotalSize(void) const
                         // Zero length stands for "whole" reference
                         const CSeq_id* id =
                             &CSeq_id_Mapper::GetSeq_id(
-                            (*m_SeqMap)[i].m_RefSeq);
+                            (*m_SeqMap)[i].GetRefSeqid());
                         CBioseq_Handle bh = m_Scope->GetBioseqHandle(*id);
                         if (bh) {
                             CBioseq_Handle::TBioseqCore ref_seq =
@@ -193,6 +199,7 @@ TSeqPos CSeqVector::x_GetTotalSize(void) const
                 }
             }
         }
+*/
     }
     return m_Size;
 }
@@ -539,6 +546,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.35  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

@@ -113,11 +113,37 @@ CHECK_ADD_KET = ||  exit 5 ; \
 fi
 
 
-all:
-	@$(USRP_BRA) all   $(USRP_KET)
-	@$(ASNP_BRA) all   $(ASNP_KET)
-	@$(LIBP_BRA) all   $(LIBP_KET)
-	@$(APPP_BRA) all   $(APPP_KET)
+PRE_LIB_PROJ = $(USR_PROJ) $(UNIX_USR_PROJ) $(EXPENDABLE_USR_PROJ)
+PRE_APP_PROJ = $(LIB_PROJ) $(EXPENDABLE_LIB_PROJ) $(ASN_PROJ) $(PRE_LIB_PROJ)
+ALL_PROJ = $(APP_PROJ) $(EXPENDABLE_APP_PROJ) $(PRE_APP_PROJ)
+
+all:	$(ALL_PROJ)
+
+# we must rebuild all projects unconditionally
+$(ALL_PROJ) ALL_PROJ: FORCE
+
+$(APP_PROJ) APP_PROJ: $(PRE_APP_PROJ)
+	@$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$@"  $(MFLAGS) all
+
+$(EXPENDABLE_APP_PROJ) EXPENDABLE_APP_PROJ: $(PRE_APP_PROJ)
+	@-$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$@"  $(MFLAGS) all
+
+$(LIB_PROJ) LIB_PROJ: $(PRE_LIB_PROJ)
+	@$(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$@" $(MFLAGS) all
+
+$(EXPENDABLE_LIB_PROJ) EXPENDABLE_LIB_PROJ: $(PRE_LIB_PROJ)
+	@-$(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$@" $(MFLAGS) all
+
+$(USR_PROJ) $(UNIX_USR_PROJ) USR_PROJ:
+	@$(MAKE) -f "$(srcdir)/Makefile.$@" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS) all
+
+$(EXPENDABLE_USR_PROJ) EXPENDABLE_USR_PROJ:
+	@-$(MAKE) -f "$(srcdir)/Makefile.$@" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS) all
+
+$(ASN_PROJ) ASN_PROJ: $(PRE_LIB_PROJ)
+	+cd $(srcdir) && $(builddir)/new_module.sh "$@" all
+	@$(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$@" $(MFLAGS) all
+
 clean:
 	@$(USRP_BRA) clean $(USRP_KET)
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
@@ -156,8 +182,16 @@ SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
     done ; \
 fi
 
-all_r: all
-	@$(SUB_BRA) all_r   $(SUB_KET)
+all_r: all $(SUB_PROJ) $(EXPENDABLE_SUB_PROJ)
+
+# we must rebuild all subprojects unconditionally
+$(SUB_PROJ) $(EXPENDABLE_SUB_PROJ) SUB_PROJ: FORCE
+
+$(SUB_PROJ) SUB_PROJ: $(ALL_PROJ)
+	@cd $@ && $(MAKE) $(MFLAGS) all_r
+$(EXPENDABLE_SUB_PROJ) EXPENDABLE_SUB_PROJ: $(ALL_PROJ)
+	@-cd $@ && $(MAKE) $(MFLAGS) all_r
+
 clean_r: clean
 	@$(SUB_BRA) clean_r $(SUB_KET)
 purge_r: purge 
@@ -225,3 +259,6 @@ check_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 check_add_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
+
+# special FORCE target to force rebuild of all dependant targets
+FORCE:

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.9  2002/11/04 21:29:14  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -100,7 +103,7 @@ CRef<CSeq_entry> CTestApplication::CreateTestEntry(void)
 //---------------------------------------------------------------------------
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
-    CBioseq& seq = entry->SetSeq();
+    entry->SetSeq();
     return entry;
 }
 

@@ -46,7 +46,7 @@ unsigned int  s_NumThreads    = 34;
 int           s_SpawnBy       = 6;
 
 // Next test thread index
-static unsigned int  s_NextIndex = 0;
+static volatile unsigned int  s_NextIndex = 0;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -110,7 +110,7 @@ void* CTestThread::Main(void)
     if ( s_Application != 0 )
         assert(s_Application->Thread_Run(m_Idx));
 
-    return 0;
+    return this;
 }
 
 
@@ -192,7 +192,9 @@ int CThreadedApp::Run(void)
 
     // Wait for all threads
     for (unsigned int i=0; i<s_NumThreads; i++) {
-        thr[i]->Join();
+        void* ok;
+        thr[i]->Join(&ok);
+        assert(ok);
     }
 
     assert(TestApp_Exit());
@@ -251,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/12/26 16:39:23  vasilche
+ * Object manager class CSeqMap rewritten.
+ *
  * Revision 1.3  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *

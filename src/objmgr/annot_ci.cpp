@@ -89,16 +89,18 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
       m_OverlapType(iter.m_OverlapType)
 {
     //### Prevent TSE destruction between "if" and "lock"
-    if ( m_TSEInfo )
+    if ( m_TSEInfo ) {
         m_TSEInfo->LockCounter();
+    }
     return;
 }
 
 
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
-    if ( m_TSEInfo )
+    if ( m_TSEInfo ) {
         m_TSEInfo->UnlockCounter();
+    }
     m_TSEInfo = iter.m_TSEInfo;
     m_Selector = iter.m_Selector;
     m_RangeMap = iter.m_RangeMap;
@@ -108,16 +110,18 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
     m_CurrentHandle = iter.m_CurrentHandle;
     m_OverlapType = iter.m_OverlapType;
     //### Prevent TSE destruction between "if" and "lock"
-    if ( m_TSEInfo )
+    if ( m_TSEInfo ) {
         m_TSEInfo->LockCounter();
+    }
     return *this;
 }
 
 
 CAnnot_CI::~CAnnot_CI(void)
 {
-    if ( m_TSEInfo )
+    if ( m_TSEInfo ) {
         m_TSEInfo->UnlockCounter();
+    }
     return;
 }
 
@@ -199,6 +203,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/26 16:39:23  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.10  2002/12/20 20:54:24  grichenk
 * Added optional location/product switch to CFeat_CI
 *

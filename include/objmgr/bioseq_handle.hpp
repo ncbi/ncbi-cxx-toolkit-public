@@ -88,9 +88,9 @@ public:
     // Declared "virtual" to avoid circular dependencies with seqloc
     virtual TBioseqCore GetBioseqCore(void) const;
 
-    // Get sequence map. References to the whole bioseqs may have
-    // length of 0 unless GetSeqVector() has been called for the handle.
+    // Get sequence map.
     virtual const CSeqMap& GetSeqMap(void) const;
+
     // Get sequence map with resolved multi-level references.
     // The resulting map should contain regions of literals, gaps
     // and references to literals only (but not gaps or refs) of other
@@ -98,7 +98,7 @@ public:
     // WARNING: the returned object should be stored as a CRef<> or
     // deleted manually. Do not assign the returned value to a simple
     // reference.
-    virtual const CSeqMap& CreateResolvedSeqMap(void) const;
+    //virtual const CSeqMap& CreateResolvedSeqMap(void) const;
 
     // CSeqVector constructor flags
     enum EVectorCoding {
@@ -148,10 +148,10 @@ public:
     void ReplaceAnnot(const CSeq_annot& old_annot, CSeq_annot& new_annot);
 
 private:
-    CBioseq_Handle(CSeq_id_Handle value);
+    CBioseq_Handle(const CSeq_id_Handle& value);
 
     // Get the internal seq-id handle
-    const CSeq_id_Handle  GetKey(void) const;
+    const CSeq_id_Handle&  GetKey(void) const;
 
     // Get data source
     CDataSource& x_GetDataSource(void) const;
@@ -178,7 +178,7 @@ private:
 
 
 inline
-CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
+CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value)
     : m_Value(value),
       m_Scope(0),
       m_DataSource(0),
@@ -215,7 +215,7 @@ CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 }
 
 inline
-const CSeq_id_Handle CBioseq_Handle::GetKey(void) const
+const CSeq_id_Handle& CBioseq_Handle::GetKey(void) const
 {
     return m_Value;
 }
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/26 16:39:21  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.25  2002/11/08 22:15:50  grichenk
 * Added methods for removing/replacing annotations
 *

@@ -147,22 +147,23 @@ bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
     return false;
 }
 
-
+#if 0
 bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
-                             TSeqPosition start, TSeqLength length)
+                           size_t index,
+                           TSeqPosition start, TSeqLength length)
 {
     CMutexGuard guard(m_Scope_Mtx);
     CRef<CDelta_seq> dseq(new CDelta_seq);
     dseq->SetLiteral().SetSeq_data(seq);
     dseq->SetLiteral().SetLength(length);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachSeqData(bioseq, *dseq, start, length) ) {
+        if ( (*it)->AttachSeqData(bioseq, *dseq, index, start, length) ) {
             return true;
         }
     }
     return false;
 }
-
+#endif
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
@@ -289,7 +290,7 @@ void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
                               CSeq_annot::C_Data::E_Choice sel,
                               CAnnotTypes_CI::TTSESet& tse_set)
 {
-    CMutexGuard guard(m_Scope_Mtx);
+    //CMutexGuard guard(m_Scope_Mtx);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         (*it)->PopulateTSESet(loc, tse_set, sel, *this);
     }
@@ -321,8 +322,15 @@ void CScope::SetFindMode(EFindMode mode)
 }
 
 
-CSeq_id_Mapper& CScope::x_GetIdMapper(void) const {
+CSeq_id_Mapper& CScope::x_GetIdMapper(void) const
+{
     return *m_pObjMgr->m_IdMapper;
+}
+
+
+CSeq_id_Handle CScope::GetIdHandle(const CSeq_id& id) const
+{
+    return x_GetIdMapper().GetHandle(id);
 }
 
 
@@ -396,7 +404,7 @@ CScope::x_DetachFromOM(void)
     if(!m_History.empty())
       {
         iterate(TRequestHistory, it, m_History) {
-          (*it)->UnlockCounter();
+            (*it)->UnlockCounter();
         }
         m_History.clear();
       }
@@ -437,6 +445,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.36  2002/11/08 22:15:51  grichenk
 * Added methods for removing/replacing annotations
 *

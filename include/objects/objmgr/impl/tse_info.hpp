@@ -89,7 +89,10 @@ public:
     TBioseqMap m_BioseqMap;
     TAnnotMap  m_AnnotMap;
 
+    void CounterOverflow(void) const;
+    void CounterUnderflow(void) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
 private:
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
@@ -127,18 +130,20 @@ private:
 inline
 void CTSE_Info::LockCounter(void) const
 {
-    Add(1);
+    if ( Add(1) == 0 ) {
+        // rollback
+        Add(-1);
+        CounterOverflow();
+    }
 }
 
 inline
 void CTSE_Info::UnlockCounter(void) const
 {
-    if (Get() > 0) {
-        Add(-1);
-    }
-    else {
-        THROW1_TRACE(runtime_error,
-            "CTSE_Info::Unlock() -- The TSE is not locked");
+    if ( Add(-1)+1 == 0 ) {
+        // rollback
+        Add(1);
+        CounterUnderflow();
     }
 }
 
@@ -180,6 +185,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.11  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

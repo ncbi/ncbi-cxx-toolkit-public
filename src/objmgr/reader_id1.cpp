@@ -329,6 +329,7 @@ void CId1Reader::SetParallelLevel(size_t size)
 
 CConn_ServiceStream *CId1Reader::NewID1Service()
 {
+    _TRACE("CId1Reader("<<this<<")->NewID1Service()");
   STimeout tmout;
   tmout.sec = 20;
   tmout.usec = 0;
@@ -337,6 +338,7 @@ CConn_ServiceStream *CId1Reader::NewID1Service()
 
 void CId1Reader::Reconnect(size_t conn)
 {
+    _TRACE("Reconnect("<<conn<<")");
   conn = conn % m_Pool.size();
   delete m_Pool[conn];
   m_Pool[conn] = NewID1Service();
@@ -347,6 +349,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.24  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.23  2002/11/18 19:48:43  grichenk
 * Removed "const" from datatool-generated setters
 *

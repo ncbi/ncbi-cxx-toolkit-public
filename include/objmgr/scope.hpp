@@ -56,7 +56,7 @@ class CObjectManager;
 class CDataLoader;
 class CDataSource;
 class CTSE_Info;
-
+struct SSeqData;
 
 class CScope : public CObject
 {
@@ -89,6 +89,7 @@ public:
     bool AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap);
     // Add seq-data to a bioseq if it is in this scope
     bool AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
+                       size_t index,
                        TSeqPos start, TSeqPos length);
 
     // Get bioseq handle by seq-id
@@ -123,6 +124,8 @@ public:
     void ResetHistory(void);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+    CSeq_id_Handle GetIdHandle(const CSeq_id& id) const;
 
 private:
     void x_DetachFromOM(void);
@@ -182,6 +185,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/26 16:39:21  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.25  2002/11/08 22:15:50  grichenk
 * Added methods for removing/replacing annotations
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.20  2002/12/20 20:54:25  grichenk
 * Added optional location/product switch to CFeat_CI
 *
@@ -96,6 +99,7 @@
 */
 
 #include "test_helper.hpp"
+#include <sstream>
 #include <objects/seqloc/Seq_point.hpp>
 #include <serial/object.hpp>
 #include <serial/objistr.hpp>
@@ -131,6 +135,7 @@
 #include <objects/objmgr/desc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
+#include <objects/objmgr/seq_map_rci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/util/sequence.hpp>
@@ -842,16 +847,36 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         enumerate alignments for the whole sequence
         enumerate alignments for an interval
 ************************************************************************/
+#define CHECK_WRAP() \
+    {{ \
+        bool got_exception = false; \
+        try {
+#define CHECK_END(MSG) \
+        } catch (runtime_error) { \
+            got_exception = true; \
+            if ( !have_errors ) { \
+                LOG_POST("Can not " MSG); throw; \
+            } \
+        } \
+        if ( have_errors && !got_exception ) { \
+            THROW1_TRACE(runtime_error, \
+                         "Managed to " MSG " of erroneous sequence"); \
+        } \
+    }}
+#define CHECK_END_ALWAYS(MSG) got_exception = have_errors; CHECK_END(MSG)
+
+
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
-                             TSeqPos seq_len,
-                             string seq_str, string seq_str_compl,
-                             int seq_desc_cnt,
-                             int seq_feat_cnt, int seq_featrg_cnt,
-                             int seq_align_cnt, int seq_alignrg_cnt,
-                             size_t feat_annots_cnt, size_t featrg_annots_cnt,
-                             size_t align_annots_cnt,
-                             size_t alignrg_annots_cnt,
-                             bool tse_feat_test)
+                                TSeqPos seq_len,
+                                string seq_str, string seq_str_compl,
+                                int seq_desc_cnt,
+                                int seq_feat_cnt, int seq_featrg_cnt,
+                                int seq_align_cnt, int seq_alignrg_cnt,
+                                size_t feat_annots_cnt, size_t featrg_annots_cnt,
+                                size_t align_annots_cnt,
+                                size_t alignrg_annots_cnt,
+                                bool tse_feat_test,
+                                bool have_errors)
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
     if ( !handle ) {
@@ -860,57 +885,96 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
 
     handle.GetTopLevelSeqEntry();
+    CHECK_WRAP();
     sequence::GetTitle(handle);
-    CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
-    {{
-        try {
-            CConstRef<CSeqMap> seq_map(&handle.CreateResolvedSeqMap());
-            // Iterate seq-map except the last element
-            TSeqPos len = 0;
-            for (size_t i = 0; i < seq_map->size(); i++) {
-                switch ((*seq_map)[i].GetType()) {
-                case CSeqMap::eSeqData:
-                    len += (*seq_map)[i].GetLength();
-                    break;
-                case CSeqMap::eSeqRef:
-                    len += (*seq_map)[i].GetLength();
-                    break;
-                case CSeqMap::eSeqGap:
-                    len += (*seq_map)[i].GetLength();
-                    break;
-                case CSeqMap::eSeqEnd:
-                    break;
-                default:
-                    break;
-                }
-            }
-            _ASSERT((*seq_map)[seq_map->size()-1].GetType() ==
-                    CSeqMap::eSeqEnd);
-            _ASSERT(len == seq_len);
-        }
-        catch (runtime_error) {
-            // Error in resolving seq-map
-            LOG_POST("Can not get resolved sequence map");
-        }
-    }}
+    CHECK_END("get sequence title");
 
-    {{
-        CSeqVector seq_vect = handle.GetSeqVector();
-        string sout = "";
-        for (TSeqPos i = 0; i < seq_vect.size(); i++) {
-            sout += seq_vect[i];
+    CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
+    CHECK_WRAP();
+    CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+    TSeqPos len = 0;
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<"):");
+    // Iterate seq-map except the last element
+    len = 0;
+    for ( CSeqMap::const_iterator seg = seq_map->begin(&scope);
+          seg != seq_map->end(&scope); ++seg ) {
+        switch (seg.GetType()) {
+        case CSeqMap::eSeqData:
+            _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqRef:
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqGap:
+            _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqEnd:
+            _ASSERT("Unexpected END segment" && 0);
+            break;
+        default:
+            break;
         }
-        _ASSERT(NStr::PrintableString(sout) == seq_str);
-    }}
+    }
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
+    _ASSERT(len == seq_len);
+    CHECK_END("get sequence map");
+
+    CHECK_WRAP();
+    CConstRef<CSeqMap> seq_map(&handle.GetSeqMap());
+    TSeqPos len = 0;
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<") resolved:");
+    // Iterate seq-map except the last element
+    len = 0;
+    for ( CSeqMap::resolved_const_iterator seg = seq_map->begin_resolved(&scope);
+          seg != seq_map->end_resolved(&scope); ++seg ) {
+        switch (seg.GetType()) {
+        case CSeqMap::eSeqData:
+            _TRACE('@'<<len<<": seqData("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqRef:
+            _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqGap:
+            _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
+            len += seg.GetLength();
+            break;
+        case CSeqMap::eSeqEnd:
+            _ASSERT("Unexpected END segment" && 0);
+            break;
+        default:
+            break;
+        }
+    }
+    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
+    _ASSERT(len == seq_len);
+    CHECK_END("get resolved sequence map");
+
+    CHECK_WRAP();
+    CSeqVector seq_vect = handle.GetSeqVector();
+    string sout = "";
+    for (TSeqPos i = 0; i < seq_vect.size(); i++) {
+        sout += seq_vect[i];
+    }
+    _ASSERT(NStr::PrintableString(sout) == seq_str);
+    CHECK_END("get seq vector");
+
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
-        CSeqVector seq_vect_rev = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
-            CBioseq_Handle::eStrand_Minus);
+        CHECK_WRAP();
+        CSeqVector seq_vect_rev =
+            handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
+                                CBioseq_Handle::eStrand_Minus);
         string sout_rev = "";
         for (TSeqPos i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];
         }
         _ASSERT(NStr::PrintableString(sout_rev) == seq_str_compl);
+        CHECK_END("get reverse seq vector");
     }
     else {
         _ASSERT(seq_str_compl.empty());
@@ -919,14 +983,16 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CConstRef<CBioseq> bioseq(&(handle.GetBioseq()));
 
     int count = 0;
+    CHECK_WRAP();
     // Test CSeq_descr iterator
-    for (CDesc_CI desc_it(handle);
-        desc_it;  ++desc_it) {
+    for (CDesc_CI desc_it(handle); desc_it;  ++desc_it) {
         count++;
         //### _ASSERT(desc_it->
     }
     _ASSERT(count == seq_desc_cnt);
+    CHECK_END_ALWAYS("count CSeq_descr");
 
+    CHECK_WRAP();
     // Test CSeq_feat iterator
     CSeq_loc loc;
     loc.SetWhole(id);
@@ -934,7 +1000,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     set<const CSeq_annot*> annot_set;
     if ( !tse_feat_test ) {
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-            feat_it;  ++feat_it) {
+             feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
@@ -953,7 +1019,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     else {
         for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
-            feat_it;  ++feat_it) {
+             feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
@@ -972,17 +1038,20 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_feat_cnt);
     _ASSERT(annot_set.size() == feat_annots_cnt);
+    CHECK_END("get annot set");
 
+    CHECK_WRAP();
     // Test CSeq_feat iterator for the specified range
     // Copy location seq-id
+    count = 0;
+    set<const CSeq_annot*> annot_set;
+    CSeq_loc loc;
     loc.SetInt().SetId().Assign(id);
     loc.SetInt().SetFrom(0);
     loc.SetInt().SetTo(10);
-    count = 0;
-    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-            feat_it;  ++feat_it) {
+             feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
@@ -990,7 +1059,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     else {
         for (CFeat_CI feat_it(handle, 0, 10, CSeqFeatData::e_not_set);
-            feat_it;  ++feat_it) {
+             feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
@@ -998,14 +1067,17 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_featrg_cnt);
     _ASSERT(annot_set.size() == featrg_annots_cnt);
+    CHECK_END("get annot set");
 
+    CHECK_WRAP();
     // Test CSeq_align iterator
-    loc.SetWhole(id);
     count = 0;
-    annot_set.clear();
+    set<const CSeq_annot*> annot_set;
+    CSeq_loc loc;
+    loc.SetWhole(id);
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
-            align_it;  ++align_it) {
+             align_it;  ++align_it) {
             count++;
             annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
@@ -1013,7 +1085,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     else {
         for (CAlign_CI align_it(handle, 0, 0);
-            align_it;  ++align_it) {
+             align_it;  ++align_it) {
             count++;
             annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
@@ -1021,17 +1093,20 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_align_cnt);
     _ASSERT(annot_set.size() == align_annots_cnt);
+    CHECK_END("get align set");
 
+    CHECK_WRAP();
     // Test CSeq_align iterator for the specified range
     // Copy location seq-id
+    count = 0;
+    set<const CSeq_annot*> annot_set;
+    CSeq_loc loc;
     loc.SetInt().SetId().Assign(id);
     loc.SetInt().SetFrom(10);
     loc.SetInt().SetTo(20);
-    count = 0;
-    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
-            align_it;  ++align_it) {
+             align_it;  ++align_it) {
             count++;
             annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
@@ -1039,7 +1114,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     else {
         for (CAlign_CI align_it(handle, 10, 20);
-            align_it;  ++align_it) {
+             align_it;  ++align_it) {
             count++;
             annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
@@ -1047,11 +1122,12 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_alignrg_cnt);
     _ASSERT(annot_set.size() == alignrg_annots_cnt);
+    CHECK_END("get align set");
 }
 
 
-void CTestHelper::TestDataRetrieval( CScope& scope, int idx,
-    int delta)
+void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
+                                    int delta)
 {
     CSeq_id id;
 

@@ -51,9 +51,9 @@ int main()
   CSeq_id seqId;
   seqId.SetGi(5);
 
+  CId1Reader reader;
   for(int k = 0; k < 500; k++)
   {
-    CId1Reader reader;
     for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
     {
       CId1Seqref *seqRef = static_cast<CId1Seqref *>(reader.RetrieveSeqref(srs));
@@ -78,6 +78,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.10  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.9  2002/11/04 21:29:14  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

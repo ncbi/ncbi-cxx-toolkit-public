@@ -250,6 +250,7 @@ public:
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
+    const string AsFastaString(void) const;
 
     //Return seqid string with optional version for text seqid type
     const string GetSeqIdString(bool with_version = false) const;
@@ -360,6 +361,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2002/12/26 16:39:22  vasilche
+ * Object manager class CSeqMap rewritten.
+ *
  * Revision 1.29  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *

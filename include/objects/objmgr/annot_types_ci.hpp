@@ -132,6 +132,8 @@ private:
 
     // Initialize the iterator
     void x_Initialize(const CSeq_loc& loc);
+    // Release all locked resources TSE etc
+    void x_ReleaseAll(void);
     // Search the location for annotations, add all to the annot-set,
     // lock all TSEs found. Do nothing with the convertions map.
     // Return "true" only if annotations were found on the location.
@@ -141,8 +143,8 @@ private:
     // The master location needs to be mapped too, since iterations are made
     // over the map.
     // Return "true" only if annotations were found on referenced sequences.
-    void x_ResolveReferences(CSeq_id_Handle master_idh, // master id
-                             CSeq_id_Handle ref_idh,    // ref. id
+    void x_ResolveReferences(const CSeq_id_Handle& master_idh, // master id
+                             const CSeq_id_Handle& ref_idh,    // ref. id
                              TSeqPos rmin, TSeqPos rmax,// ref. interval
                              ENa_strand strand,         // ref. strand
                              TSignedSeqPos shift);      // shift to master
@@ -190,6 +192,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/12/26 16:39:21  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.23  2002/12/24 15:42:44  grichenk
 * CBioseqHandle argument to annotation iterators made const
 *

@@ -48,7 +48,7 @@ BEGIN_SCOPE(objects)
 
 
 class CDelta_seq;
-
+class CSeq_interval;
 
 class CDataSource : public CObject
 {
@@ -82,7 +82,8 @@ public:
     /// "seq_seg" must be allocated on the heap, since it will be referenced
     /// by the bioseq (except the case of a non-segmented bioseq, when only
     /// seq-data part of the seq_seg will be locked).
-    bool AttachSeqData(const CSeq_entry& bioseq, CDelta_seq& seq_seg,
+    bool AttachSeqData(const CSeq_entry& bioseq, const CDelta_ext& seq_seg,
+                       size_t index,
                        TSeqPosition start, TSeqLength length);
 
     /// Add annotations to a Seq-entry.
@@ -125,7 +126,8 @@ public:
     /// Get sequence map
     const CSeqMap& GetSeqMap(const CBioseq_Handle& handle);
     /// Get sequence map with resolved multi-level references
-    const CSeqMap& GetResolvedSeqMap(CBioseq_Handle handle);
+    //const CSeqMap& GetResolvedSeqMap(const CBioseq_Handle& handle);
+    //const CSeqMap& GetResolvedSeqMap(const CBioseq_Handle& handle, CScope& scope);
 
     /// Get a piece of seq. data ("seq_piece"), which the "point" belongs to:
     ///   "length"     -- length   of the data piece the "point" is found in;
@@ -191,17 +193,24 @@ private:
     // The best bioseq is the bioseq from the live TSE or from the
     // only one TSE containing the ID (no matter live or dead).
     // If no matches were found, return 0.
-    CTSE_Info* x_FindBestTSE(CSeq_id_Handle handle,
+    CTSE_Info* x_FindBestTSE(const CSeq_id_Handle& handle,
         const CScope::TRequestHistory& history) const;
 
     // Create CSeqMap for a bioseq
-    void x_CreateSeqMap(const CBioseq& seq);
+    void x_CreateSeqMap(const CBioseq& seq, CScope& scope);
+    //const CSeqMap& x_CreateResolvedSeqMap(const CSeqMap& rmap, CScope& scope);
     void x_LocToSeqMap(const CSeq_loc& loc, TSeqPos& pos, CSeqMap& seqmap);
+#if 0
     void x_DataToSeqMap(const CSeq_data& data,
                         TSeqPos& pos, TSeqPos len,
                         CSeqMap& seqmap);
+#endif
+    void x_AppendDataToSeqMap(const CSeq_data& data,
+                              TSeqPos len,
+                              CSeqMap& seqmap);
     // Non-const version of GetSeqMap()
     CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
+    //const CSeqMap& x_GetResolvedSeqMap(const CBioseq_Handle& handle);
 
     // Process a single data element
     void x_MapFeature(const CSeq_feat& feat,
@@ -251,11 +260,39 @@ private:
     // Resolve the reference to rh, add the resolved interval(s) to dmap.
     // "start" is referenced region position on the "rh" sequence.
     // "dpos" is the starting point on the master sequence.
-    void x_ResolveMapSegment(CSeq_id_Handle rh,
+    void x_ResolveMapSegment(const CSeq_id_Handle& rh,
                              TSeqPos start, TSeqPos len,
                              CSeqMap& dmap, TSeqPos& dpos, TSeqPos dstop,
                              CScope& scope);
 
+    void x_AppendLoc(const CSeq_loc& loc,
+                     vector<CSeqMap::CSegment>& segments);
+    void x_AppendRef(const CSeq_id_Handle& ref,
+                     TSeqPos from,
+                     TSeqPos length,
+                     bool minus_strand,
+                     vector<CSeqMap::CSegment>& segments);
+    void x_AppendRef(const CSeq_id_Handle& ref,
+                     TSeqPos from,
+                     TSeqPos length,
+                     ENa_strand strand,
+                     vector<CSeqMap::CSegment>& segments);
+    void x_AppendRef(const CSeq_id_Handle& ref,
+                     const CSeq_interval& interval,
+                     vector<CSeqMap::CSegment>& segments);
+    void x_AppendRef(const CSeq_interval& interval,
+                     vector<CSeqMap::CSegment>& segments);
+/*
+    void x_AppendResolved(const CSeq_id_Handle& seqid,
+                          TSeqPos ref_pos,
+                          TSeqPos ref_len,
+                          bool minus_strand,
+                          vector<CSeqMap::CSegment>& segments,
+                          CScope& scope);
+*/
+    void x_AppendDelta(const CDelta_ext& delta,
+                       vector<CSeqMap::CSegment>& segments);
+    
     // Used to lock: m_Entries, m_TSE_seq, m_TSE_ref, m_SeqMaps
     mutable CMutex m_DataSource_Mtx;
 
@@ -276,32 +313,6 @@ private:
     friend class CBioseq_Handle; // using mutex
     friend class CGBDataLoader;  //
 };
-
-inline
-CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
-    : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
-{
-    m_Loader->SetTargetDataSource(*this);
-}
-
-inline
-CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
-    : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr),
-      m_IndexedAnnot(false)
-{
-    x_AddToBioseqMap(entry, false, 0);
-}
-
-inline
-CDataSource::~CDataSource(void)
-{
-    // Find and drop each TSE
-    while (m_Entries.size() > 0) {
-        _ASSERT( !m_Entries.begin()->second->CounterLocked() );
-        DropTSE(*(m_Entries.begin()->second->m_TSE));
-    }
-    if(m_Loader) delete m_Loader;
-}
 
 inline
 CDataLoader* CDataSource::GetDataLoader(void)
@@ -334,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.31  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/26 16:39:24  vasilche
+* Object manager class CSeqMap rewritten.
+*
 * Revision 1.6  2002/05/09 14:21:50  grichenk
 * Turned GetTitle() test on, removed unresolved seq-map test
 *
@@ -84,14 +87,15 @@ class CTestHelper
 {
 public:
     static void ProcessBioseq(CScope& scope, CSeq_id& id,
-        TSeqPos seq_len,
-        string seq_str, string seq_str_compl,
-        int seq_desc_cnt,
-        int seq_feat_cnt, int seq_featrg_cnt,
-        int seq_align_cnt, int seq_alignrg_cnt,
-        size_t feat_annots_cnt, size_t featrg_annots_cnt,
-        size_t align_annots_cnt, size_t alignrg_annots_cnt,
-        bool tse_feat_test = false);
+                              TSeqPos seq_len,
+                              string seq_str, string seq_str_compl,
+                              int seq_desc_cnt,
+                              int seq_feat_cnt, int seq_featrg_cnt,
+                              int seq_align_cnt, int seq_alignrg_cnt,
+                              size_t feat_annots_cnt, size_t featrg_annots_cnt,
+                              size_t align_annots_cnt, size_t alignrg_annots_cnt,
+                              bool tse_feat_test = false,
+                              bool have_errors = false);
 
     static void TestDataRetrieval( CScope& scope, int idx, int delta);
 };
