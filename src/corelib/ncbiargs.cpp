@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2000/09/12 15:00:30  butanaev
+ * Fixed bug with stdin, stdout caused compilation errors on IRIX.
+ *
  * Revision 1.2  2000/09/06 18:56:04  butanaev
  * Added stdin, stdout support. Fixed bug in PrintOut.
  *
@@ -45,9 +48,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <algorithm>
 
-
 BEGIN_NCBI_SCOPE
-
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -67,15 +68,10 @@ CArgException::CArgException(const string& what, const string& arg_value)
     return;
 }
 
-
-
-
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 //  Internal classes:
 //    CArg_***::
-
-
 
 ///////////////////////////////////////////////////////
 //  CArgValue::
@@ -115,7 +111,6 @@ CNcbiOstream &CArgValue::AsOutputFile(void) const
     ARG_THROW("Not implemented", AsString());
 }
 
-
 ///////////////////////////////////////////////////////
 //  CArg_String::
 
@@ -125,13 +120,11 @@ public:
     CArg_String(const string& value);
 };
 
-
 inline CArg_String::CArg_String(const string& value)
     : CArgValue(value)
 {
     return;
 }
-
 
 ///////////////////////////////////////////////////////
 //  CArg_Alnum::
@@ -142,7 +135,6 @@ public:
     CArg_Alnum(const string& value);
 };
 
-
 inline CArg_Alnum::CArg_Alnum(const string& value)
     : CArgValue(value)
 {
@@ -152,7 +144,6 @@ inline CArg_Alnum::CArg_Alnum(const string& value)
         }
     }
 }
-
 
 ///////////////////////////////////////////////////////
 //  CArg_Integer::
@@ -183,7 +174,6 @@ long CArg_Integer::AsInteger(void) const
     return m_Integer;
 }
 
-
 ///////////////////////////////////////////////////////
 //  CArg_Double::
 
@@ -213,7 +203,6 @@ double CArg_Double::AsDouble(void) const
     return m_Double;
 }
 
-
 ///////////////////////////////////////////////////////
 //  CArg_Boolean::
 
@@ -227,13 +216,11 @@ private:
     bool m_Boolean;
 };
 
-
 inline CArg_Boolean::CArg_Boolean(bool value)
     : CArgValue( NStr::BoolToString(value) )
 {
     m_Boolean = value;
 }
-
 
 inline CArg_Boolean::CArg_Boolean(const string& value)
     : CArgValue(value)
@@ -251,8 +238,6 @@ bool CArg_Boolean::AsBoolean(void) const
     return m_Boolean;
 }
 
-
-
 ///////////////////////////////////////////////////////
 //  CArg_InputFile::
 
@@ -262,39 +247,54 @@ public:
     CArg_InputFile(const string&       value,
                    IOS_BASE::openmode  openmode  = 0,
                    bool                delay_open = false);
+    ~CArg_InputFile();
     virtual CNcbiIstream& AsInputFile(void) const;
 
 private:
     void Open(void) const;
-    IOS_BASE::openmode              m_OpenMode;
-    mutable auto_ptr<CNcbiIstream> m_InputFile;
+    IOS_BASE::openmode   m_OpenMode;
+    mutable CNcbiIstream *m_InputFile;
+    mutable bool m_DeleteFlag;
 };
-
 
 inline void CArg_InputFile::Open(void) const
 {
-  if (m_InputFile.get())
+  if(m_InputFile)
     return;
 
   string fileName = AsString();
   if(fileName == "stdin")
-    m_InputFile.reset(new CNcbiIfstream(0));
+  {
+    m_InputFile = &cin;
+    m_DeleteFlag = false;
+  }
   else
-    m_InputFile.reset(new CNcbiIfstream(fileName.c_str(), IOS_BASE::in | m_OpenMode));
+  {
+    m_InputFile = new CNcbiIfstream(fileName.c_str(), IOS_BASE::in | m_OpenMode);
+    m_DeleteFlag = true;
+  }
 
-  if (! m_InputFile.get() || !*m_InputFile)
+  if (! m_InputFile || ! *m_InputFile)
     ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
 }
 
 inline CArg_InputFile::CArg_InputFile(const string&      value,
                                       IOS_BASE::openmode openmode,
                                       bool               delay_open)
-    : CArgValue(value),
-      m_OpenMode(openmode),
-      m_InputFile(0)
+:
+CArgValue(value),
+m_OpenMode(openmode),
+m_InputFile(0),
+m_DeleteFlag(true)
 {
-    if ( !delay_open )
-        Open();
+  if(! delay_open )
+    Open();
+}
+
+CArg_InputFile::~CArg_InputFile()
+{
+  if(m_InputFile && m_DeleteFlag)
+    delete m_InputFile;
 }
 
 CNcbiIstream& CArg_InputFile::AsInputFile(void) const
@@ -310,41 +310,58 @@ CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 class CArg_OutputFile : public CArgValue
 {
 public:
-    CArg_OutputFile(const string&      value,
-                    IOS_BASE::openmode openmode,
-                    bool               delay_open);
-    virtual CNcbiOstream& AsOutputFile(void) const;
+  CArg_OutputFile(const string&      value,
+                  IOS_BASE::openmode openmode,
+                  bool               delay_open);
+  ~CArg_OutputFile();
+
+  virtual CNcbiOstream& AsOutputFile(void) const;
 private:
-    void Open(void) const;
-    IOS_BASE::openmode              m_OpenMode;
-    mutable auto_ptr<CNcbiOstream> m_OutputFile;
+  void Open(void) const;
+  IOS_BASE::openmode              m_OpenMode;
+  mutable CNcbiOstream *m_OutputFile;
+  mutable bool m_DeleteFlag;
 };
 
 
 inline void CArg_OutputFile::Open(void) const
 {
-  if(m_OutputFile.get())
+  if(m_OutputFile)
     return;
 
   string fileName = AsString();
   if(fileName == "stdout")
-    m_OutputFile.reset(new CNcbiOfstream(1));
+  {
+    m_OutputFile = &cout;
+    m_DeleteFlag = false;
+  }
   else
-    m_OutputFile.reset(new CNcbiOfstream(AsString().c_str(), IOS_BASE::out | m_OpenMode));
+  {
+    m_OutputFile = new CNcbiOfstream(AsString().c_str(), IOS_BASE::out | m_OpenMode);
+    m_DeleteFlag = true;
+  }
 
-  if (!m_OutputFile.get()  ||  !*m_OutputFile)
+  if (!m_OutputFile || ! *m_OutputFile)
     ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
 }
 
 inline CArg_OutputFile::CArg_OutputFile(const string&      value,
                                         IOS_BASE::openmode openmode,
                                         bool               delay_open)
-    : CArgValue(value),
-      m_OpenMode(openmode),
-      m_OutputFile(0)
+:
+CArgValue(value),
+m_OpenMode(openmode),
+m_OutputFile(0),
+m_DeleteFlag(true)
 {
-    if ( !delay_open )
-        Open();
+  if (! delay_open )
+    Open();
+}
+
+CArg_OutputFile::~CArg_OutputFile()
+{
+  if(m_OutputFile && m_DeleteFlag)
+    delete m_OutputFile;
 }
 
 CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
@@ -352,8 +369,6 @@ CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
     Open();
     return *m_OutputFile;
 }
-
-
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -363,7 +378,6 @@ CArgDesc::~CArgDesc(void)
 {
     return;
 }
-
 
 
 ///////////////////////////////////////////////////////
