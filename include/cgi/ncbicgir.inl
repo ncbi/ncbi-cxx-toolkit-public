@@ -33,65 +33,23 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/10 19:58:19  vasilche
+* Header option made more generic
+*
 * Revision 1.1  1998/12/09 20:18:11  vasilche
 * Initial implementation of CGI response generator
 *
 * ===========================================================================
 */
 
-void CCgiResponse::SetContentType(const string& type)
+inline void CCgiResponse::SetContentType(const string& type)
 {
-    m_ContentType = type;
+    SetHeaderValue(sm_ContentTypeName, type);
 }
 
-void CCgiResponse::SetDate(const tm& date)
+inline string CCgiResponse::GetContentType() const
 {
-    m_Date = date;
-}
-
-void CCgiResponse::SetLastModified(const tm& date)
-{
-    m_LastModified = date;
-}
-
-void CCgiResponse::SetExpires(const tm& date)
-{
-    m_Expires = date;
-}
-
-bool CCgiResponse::GetContentType(string& type) const
-{
-    return s_GetString(type, m_ContentType);
-}
-
-bool CCgiResponse::GetDate(string &date) const
-{
-    return s_GetDate(date, m_Date);
-}
-
-bool CCgiResponse::GetLastModified(string &date) const
-{
-    return s_GetDate(date, m_LastModified);
-}
-
-bool CCgiResponse::GetExpires(string &date) const
-{
-    return s_GetDate(date, m_Expires);
-}
-
-bool CCgiResponse::GetDate(tm &date) const
-{
-    return s_GetDate(date, m_Date);
-}
-
-bool CCgiResponse::GetLastModified(tm &date) const
-{
-    return s_GetDate(date, m_LastModified);
-}
-
-bool CCgiResponse::GetExpires(tm &date) const
-{
-    return s_GetDate(date, m_Expires);
+    return GetHeaderValue(sm_ContentTypeName);
 }
 
 #endif /* def NCBICGIR__HPP  &&  ndef NCBICGIR__INL */

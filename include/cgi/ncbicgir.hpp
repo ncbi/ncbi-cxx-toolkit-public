@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/10 19:58:18  vasilche
+* Header option made more generic
+*
 * Revision 1.1  1998/12/09 20:18:10  vasilche
 * Initial implementation of CGI response generator
 *
@@ -61,37 +64,29 @@ public:
     // Copy assignement operator
     CCgiResponse &operator=(const CCgiResponse& response);
 
-    // Attribute setters:
+    // Header setters
+    void SetHeaderValue(const string& name, const string& value);
+    void SetHeaderValue(const string& name, const tm& value);
+    void RemoveHeaderValue(const string& name);
 
+    // Header getter
+    string GetHeaderValue(const string& name) const;
+    bool HaveHeader(const string& name) const;
+
+    // Specific header setters:
     // Set content type
     void SetContentType(const string &type);
 
-    // Set document generation date
-    void SetDate(const tm& date);
-
-    // Set document modification date
-    void SetLastModified(const tm& date);
-
-    // Set expiration date
-    void SetExpires(const tm& date);
-
-    // Attribute getters:
-    // return false if this attribute was not set (have default value)
-
+    // Specific header getters:
     // Get content type
-    bool GetContentType(string& type) const;
+    string GetContentType() const;
 
-    // Get document generation date
-    bool GetDate(tm& date) const;
-    bool GetDate(string& date) const;
 
-    // Get document modification date
-    bool GetLastModified(tm& date) const;
-    bool GetLastModified(string& date) const;
+    // Write HTTP response header
+    virtual CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
 
-    // Get expiration date
-    bool GetExpires(tm& date) const;
-    bool GetExpires(string& date) const;
+    // Write HTTP response body
+    virtual CNcbiOstream& WriteBody(CNcbiOstream& out) const;
 
     // Writes generated HTTP response
     // throws
@@ -99,16 +94,13 @@ public:
     void Write(CNcbiOstream& out) const;
 
 protected:
-    
-    string m_ContentType;
-    tm m_Date;
-    tm m_LastModified;
-    tm m_Expires;
 
-    // helpers
-    static bool s_GetString(string &out, const string& value);
-    static bool s_GetDate(string &out, const tm& date);
-    static bool s_GetDate(tm &out, const tm& date);
+    static const string sm_ContentTypeName;
+    static const string sm_ContentTypeDefault;
+    
+    typedef map<string, string> TMap;
+    TMap m_HeaderValues;
+
 };
 
 

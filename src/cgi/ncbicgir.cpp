@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/10 19:58:22  vasilche
+* Header option made more generic
+*
 * Revision 1.1  1998/12/09 20:18:18  vasilche
 * Initial implementation of CGI response generator
 *
@@ -54,24 +57,21 @@ BEGIN_NCBI_SCOPE
 
 static const tm kZeroTime = { 0 };
 
+const string CCgiResponse::sm_ContentTypeName = "Content-type";
+const string CCgiResponse::sm_ContentTypeDefault = "text/html";
+
 inline bool s_ZeroTime(const tm& date)
 {
     return ::memcmp(&date, &kZeroTime, sizeof(tm)) == 0;
 }
 
-CCgiResponse::CCgiResponse() :
-    m_Date(kZeroTime),
-    m_LastModified(kZeroTime),
-    m_Expires(kZeroTime)
+CCgiResponse::CCgiResponse()
 {
 }
 
-CCgiResponse::CCgiResponse(const CCgiResponse& response) :
-    m_ContentType(response.m_ContentType),
-    m_Date(response.m_Date),
-    m_LastModified(response.m_LastModified),
-    m_Expires(response.m_Expires)
+CCgiResponse::CCgiResponse(const CCgiResponse& response)
 {
+    m_HeaderValues = response.m_HeaderValues;
 }
 
 CCgiResponse::~CCgiResponse()
@@ -80,42 +80,68 @@ CCgiResponse::~CCgiResponse()
 
 CCgiResponse& CCgiResponse::operator=(const CCgiResponse& response)
 {
-    m_ContentType = response.m_ContentType;
-    m_Date = response.m_Date;
-    m_LastModified = response.m_LastModified;
-    m_Expires = response.m_Expires;
+    m_HeaderValues = response.m_HeaderValues;
     return *this;
 }
 
-bool CCgiResponse::s_GetString(string &out, const string& value)
+bool CCgiResponse::HaveHeader(const string& name) const
+{
+    TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
+    return xx_HeaderValues.find(name) != xx_HeaderValues.end();
+}
+
+string CCgiResponse::GetHeaderValue(const string &name) const
+{
+    TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
+    TMap::const_iterator ptr = xx_HeaderValues.find(name);
+    
+    if ( ptr == xx_HeaderValues.end() )
+        return string();
+
+    return ptr->second;
+}
+
+void CCgiResponse::RemoveHeaderValue(const string& name)
+{
+    m_HeaderValues.erase(name);
+}
+
+void CCgiResponse::SetHeaderValue(const string &name, const string& value)
 {
     if ( value.empty() ) {
-        return false;
+        RemoveHeaderValue(name);
+    } else {
+        m_HeaderValues.insert(TMap::value_type(name, value));
     }
-    
-    out = value;
-    return true;
 }
 
-bool CCgiResponse::s_GetDate(string &out, const tm& date)
+void CCgiResponse::SetHeaderValue(const string &name, const tm& date)
 {
-    if ( s_ZeroTime(date) )
-        return false;
-
-    char buff[64];
-    if ( !::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", &date) )
-        throw runtime_error("CCgiResponse::s_GetDate() -- strftime() failed");
-    out = buff;
-    return true;
+    if ( s_ZeroTime(date) ) {
+        RemoveHeaderValue(name);
+    } else {
+        char buff[64];
+        if ( !::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", &date) )
+            throw runtime_error("CCgiResponse::SetHeaderValue() -- strftime() failed");
+        SetHeaderValue(name, buff);
+    }
 }
 
-bool CCgiResponse::s_GetDate(tm &out, const tm& date)
+CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
 {
-    if ( s_ZeroTime(date) )
-        return false;
+    TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
+    for ( TMap::const_iterator i = xx_HeaderValues.begin();
+          i != xx_HeaderValues.end(); ++i ) {
+        out << i->first << ": " << i->second << endl;
+    }
+    if ( !HaveHeader(sm_ContentTypeName) )
+        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << endl;
+    return out << endl;
+}
 
-    out = date;
-    return true;
+CNcbiOstream& CCgiResponse::WriteBody(CNcbiOstream& out) const
+{
+    return out;
 }
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
