@@ -69,19 +69,115 @@ int main(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
+        if (s == "-iter2") {
+            {
+                CSeqDB phil(dbpath, "swissprot pataa", 'p', true);
+            
+                {
+                    CSeqDBIter skywalk = phil.Begin();
+
+                    for(int i = 0; i<20; i++) {
+                        cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                        ++skywalk;
+                    }
+                }
+            
+                {
+                    CSeqDBIter skywalk = phil.Begin();
+
+                    for(int i = 0; i<20; i++) {
+                        cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                        CRef<CBioseq> bioseq = phil.GetBioseq(skywalk.GetOID());
+                        auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                        *outpstr << *bioseq;
+                        ++skywalk;
+                    }
+                }
+            }
+            {
+                CSeqDB phil(dbpath, "pataa swissprot", 'p', true);
+            
+                {
+                    CSeqDBIter skywalk = phil.Begin();
+
+                    for(int i = 0; i<20; i++) {
+                        cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                        ++skywalk;
+                    }
+                }
+            
+                {
+                    CSeqDBIter skywalk = phil.Begin();
+
+                    for(int i = 0; i<20; i++) {
+                        cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                        CRef<CBioseq> bioseq = phil.GetBioseq(skywalk.GetOID());
+                        auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                        *outpstr << *bioseq;
+                        ++skywalk;
+                    }
+                }
+            }
+            
+            return 0;
+        } else desc += " [-iter2]";
+        
         if (s == "-iter") {
-            CSeqDB phil(dbpath, "swissprot", 'p', true);
-             
+            CSeqDB phil(dbpath, "swissprot pdb", 'p', true);
+            
             {
                 CSeqDBIter skywalk = phil.Begin();
 
-                for(int i = 0; i<10; i++) {
-                    cout << "\n### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << "\n" << endl;
+                for(int i = 0; i<200; i++) {
+                    cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
                     ++skywalk;
                 }
             }
+            
+            if (0) {
+                for(int i = 0; i<200; i++) {
+                    cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
+                    CRef<CBioseq> bioseq = phil.GetBioseq(i);
 
+                    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                    *outpstr << *bioseq;
+                }
+            }
+            
             {
+                CSeqDBIter skywalk = phil.Begin();
+
+                for(int i = 0; i<200; i++) {
+                    cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                    CRef<CBioseq> bioseq = phil.GetBioseq(skywalk.GetOID());
+                    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                    *outpstr << *bioseq;
+                    ++skywalk;
+                }
+            }
+            
+            if (0) {
+                for(int i = 0; i<200; i++) {
+                    cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-iter]";
+        
+        if (s == "-iterpdb") {
+            CSeqDB phil(dbpath, "pdb", 'p', true);
+            
+            {
+                CSeqDBIter skywalk = phil.Begin();
+
+                for(int i = 0; i<200; i++) {
+                    cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                    ++skywalk;
+                }
+            }
+            
+            if (0) {
                 for(int i = 0; i<100; i++) {
                     cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
                     CRef<CBioseq> bioseq = phil.GetBioseq(i);
@@ -90,9 +186,34 @@ int main(int argc, char ** argv)
                     *outpstr << *bioseq;
                 }
             }
-
+            
             return 0;
-        } else desc += " [-iter]";
+        } else desc += " [-iterpdb]";
+        
+        if (s == "-itersp") {
+            CSeqDB phil(dbpath, "swissprot", 'p', true);
+            
+            {
+                CSeqDBIter skywalk = phil.Begin();
+
+                for(int i = 0; i<200; i++) {
+                    cout << "### Seq [" << skywalk.GetOID() << "] length = " << skywalk.GetLength() << endl;
+                    ++skywalk;
+                }
+            }
+            
+            if (0) {
+                for(int i = 0; i<100; i++) {
+                    cout << "\n### Seq [" << i << "] length = " << phil.GetSeqLength(i) << "\n" << endl;
+                    CRef<CBioseq> bioseq = phil.GetBioseq(i);
+
+                    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                    *outpstr << *bioseq;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-itersp]";
         
         if (s == "-spcount") {
             CSeqDB phil(dbpath, "swissprot", 'p', true);
@@ -109,7 +230,7 @@ int main(int argc, char ** argv)
                 
                 while(skywalk) {
                     int this_oid = 0;
-                    int this_len = 0;
+                    //int this_len = 0;
                     
                     //mylen += (this_len = phil.GetSeqLength( this_oid = skywalk.GetOID() ));
                     this_oid = skywalk.GetOID();
@@ -185,10 +306,10 @@ int main(int argc, char ** argv)
              
             return 0;
         } else desc += " [-swiss]";
-         
-         
+        
+        
         if (s == "-lib") {
-            CSeqDB phil(dbpath, "month month month nt nt nt", 'n', true);
+            CSeqDB phil(dbpath, "nt nt month est", 'n', true);
             phil.GetSeqLength(123);
             phil.GetSeqLengthApprox(123);
             phil.GetHdr(123);
@@ -198,13 +319,13 @@ int main(int argc, char ** argv)
             phil.GetSequence(123, & buffer);
             phil.RetSequence(& buffer);
 
-            phil.GetSeqType();
-
-            phil.GetTitle();
-            phil.GetDate();
-            phil.GetNumSeqs();
-            phil.GetTotalLength();
-            phil.GetMaxLength();
+            cout << "\nSeq type:    " << phil.GetSeqType();
+            cout << "\nTitle:       " << phil.GetTitle();
+            cout << "\nDate:        " << phil.GetDate();
+            cout << "\nNumSeqs:     " << phil.GetNumSeqs();
+            cout << "\nTotalLength: " << phil.GetTotalLength();
+            cout << "\nMax Length:  " << phil.GetMaxLength() << endl;
+            cout << endl;
             
             return 0;
         } else desc += " [-lib]";
