@@ -224,6 +224,19 @@ int CTestNetScheduleStress::Run(void)
     string job_key = cl.SubmitJob(input);
     NcbiCout << job_key << NcbiEndl;
 
+    string err = "test error\r\nmessage";
+    cl.PutFailure(job_key, err);
+    string err_msg;
+    status = cl.GetStatus(job_key, &ret_code, &output, &err_msg);
+    if (status != CNetScheduleClient::eFailed) {
+        NcbiCerr << "Job " << job_key << " not failed!" << NcbiEndl;
+    } else {
+        NcbiCout << err_msg << NcbiEndl;
+        if (err_msg != err) {
+            NcbiCerr << "Incorrect error message: " << err_msg << NcbiEndl;
+        }
+    }
+
     cl.DropJob(job_key);
     status = cl.GetStatus(job_key, &ret_code, &output);
 
@@ -233,6 +246,11 @@ int CTestNetScheduleStress::Run(void)
         NcbiCout << "Job " << job_key << " has been deleted." << NcbiEndl;
     }
     
+
+
+
+
+
     vector<string> jobs;
     jobs.reserve(jcount);
 
@@ -411,6 +429,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/17 20:37:41  kuznets
+ * test for PutFailure()
+ *
  * Revision 1.7  2005/03/17 17:19:54  kuznets
  * Add LB test
  *
