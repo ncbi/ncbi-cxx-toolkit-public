@@ -247,7 +247,7 @@ static int s_Client(int x_port)
                                (unsigned long) n));
         return 1;
     } else {
-        CORE_LOGF(eLOG_Note, ("[Client]  Received message back, %lu bytes",
+        CORE_LOGF(eLOG_Note, ("[Client]  Received the message back, %lu bytes",
                               (unsigned long) n));
     }
     assert(SOCK_Read(client, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
@@ -326,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/05/29 18:03:06  lavr
+ * Changed one client's message
+ *
  * Revision 6.10  2003/05/14 03:58:43  lavr
  * Match changes in respective APIs of the tests
  *
