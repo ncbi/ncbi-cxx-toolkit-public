@@ -119,7 +119,6 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         Finalize(CCompressionStream::eWrite);
         return;
     }
-
     if ( !IsOkay() ) {
         return;
     }
@@ -171,9 +170,12 @@ int CCompressionStreambuf::sync()
     if ( !IsOkay() ) {
         return -1;
     }
-    // Sync write processor buffers
-    if ( Sync(CCompressionStream::eWrite) != 0 ) {
-        return -1;
+    // If not yet finalized, sync write processor buffers
+    CCompressionStreamProcessor* sp = GetStreamProcessor(CCompressionStream::eWrite);
+    if ( sp  &&  !sp->m_Finalized  ) {
+        if ( Sync(CCompressionStream::eWrite) != 0 ) {
+            return -1;
+        }
     }
     // Sync the underlying stream
     return m_Stream->rdbuf()->PUBSYNC();
@@ -455,6 +457,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/02/25 15:43:06  ivanov
+ * Restore and fix change introduced in R1.14.
+ * CCompressionStreambuf::sync(): do not forget to sync underlying stream
+ * buffer even if compression stream is already finalized.
+ *
  * Revision 1.16  2005/02/24 15:23:05  ivanov
  * Rollback to R1.13
  *
