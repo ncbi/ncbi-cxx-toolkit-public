@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2001/09/20 14:07:08  thiessen
+* remove visual selection stuff
+*
 * Revision 1.83  2001/09/18 03:10:45  thiessen
 * add preliminary sequence import pipeline
 *
@@ -583,11 +586,7 @@ Cn3DApp::Cn3DApp() : wxApp()
     SetDiagPostLevel(eDiag_Info); // report all messages
 
     // try to force all windows to use best (TrueColor) visuals
-#if wxVERSION_NUMBER >= 2302 && !defined(__WXMAC__)
-    if (!ChooseGLVisual(NULL)) SetUseBestVisual(true);
-#else
     SetUseBestVisual(true);
-#endif
 }
 
 void Cn3DApp::InitRegistry(void)
