@@ -1977,7 +1977,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStruct* gap_align,
    const BlastHitSavingOptions* hit_options, Int2 frame)
 {
    BlastHSP** hsp_array,* new_hsp;
-   Int4 highscore, lowscore, score;
+   Int4 highscore, lowscore, score = 0;
    Int4 hspcnt, hspmax, index, new_index, high_index, old_index, low_index;
    Int4 new_hspmax;
 
@@ -2472,7 +2472,7 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    Boolean found_start, found_end;
    Int4 q_length=0, s_length=0, score_right, score_left;
    Int4 private_q_start, private_s_start;
-   Uint1* query,* subject;
+   Uint1* query=NULL,* subject=NULL;
    Boolean switch_seq = FALSE;
     
    if (gap_align == NULL)
@@ -3066,7 +3066,7 @@ Int2 PHIGetGappedScore (Uint1 program_number,
    BlastInitHSP* init_hsp;
    Int4 index;
    Int4 q_start, s_start, q_end, s_end;
-   Int2 status;
+   Int2 status = 0;
    BlastHitSavingOptions* hit_options = hit_params->options;
 
    if (!query || !subject || !gap_align || !score_options || !ext_params ||

@@ -1057,7 +1057,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    BlastHSP* hsp,* head_hsp,* best_hsp,* var_hsp;
    Int4 hspcnt, index, index1, i;
    double best_evalue, evalue;
-   Int4 sumscore, best_sumscore;
+   Int4 sumscore, best_sumscore = 0;
    Boolean reverse_link;
    Uint1* subject_seq = NULL;
    Int4 longest_intron = hit_params->options->longest_intron;

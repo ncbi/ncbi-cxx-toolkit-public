@@ -319,7 +319,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
 {
    double alpha, beta; /*alpha and beta for new scoring system */
    Int4 min_query_length;   /* lower bound on query length. */
-   Int4 length_adjustment;  /* length adjustment for current iteration. */
+   Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
    Int4 last_length_adjustment;/* length adjustment in previous iteration.*/
    Int4 index;		/* loop index. */
    Int4	db_num_seqs;	/* number of sequences in database. */

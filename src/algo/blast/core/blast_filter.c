@@ -183,7 +183,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
 {
    Int4 start_offset, end_offset, filter_start, filter_end;
    Int4 context, index;
-   BlastSeqLoc* loc,* last_loc = NULL,* start_loc;
+   BlastSeqLoc* loc,* last_loc = NULL,* start_loc = NULL;
    DoubleInt* double_int = NULL,* di;
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */

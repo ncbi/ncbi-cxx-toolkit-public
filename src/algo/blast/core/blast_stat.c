@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.38  2003/10/16 15:52:08  coulouri
+ * fix uninitialized variables
+ *
  * Revision 1.37  2003/10/15 16:59:43  coulouri
  * type correctness fixes
  *
@@ -2358,14 +2361,6 @@ BlastMatrixAllocate(Int2 alphabet_size)
 	return matrix_struct;
 }
 
-static void BlastResFreqFree(BLAST_ResFreq* rfp)
-{
-    sfree(rfp->prob0);
-    sfree(rfp);
-
-    return;
-}
-
 /*
 	Deallocates MatrixInfo*
 */
@@ -2555,24 +2550,6 @@ BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4*
 	BlastMatrixValuesDestruct(head);
 
 	return max_number_values;
-}
-
-/*
-Int2
-BlastKarlinGetMatrixValues(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
-	
-Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
-the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
-are not required should be set to NULL.  The Int2 return value is the length of the
-arrays.
-*/
-
-static Int2
-BlastKarlinGetMatrixValues(char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags)
-
-{
-	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, NULL, lambda, K, H, NULL, NULL, pref_flags);
-
 }
 
 /*Extract the alpha and beta settings for this matrixName, and these

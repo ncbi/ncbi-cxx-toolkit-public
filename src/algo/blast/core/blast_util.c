@@ -775,7 +775,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
         Uint1** mixed_seq_ptr)
 {
    Uint1* translation_buffer,* mixed_seq;
-   Uint1* translation_table,* translation_table_rc;
+   Uint1* translation_table = NULL,* translation_table_rc;
    Uint1* nucl_seq_rev;
    Int4 offset = 0, length;
    Int2 context, frame;

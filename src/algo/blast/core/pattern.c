@@ -217,7 +217,7 @@ static void or(Int4 *a, Int4 *b, patternSearchItems *patternSearch)
 
 /*Do a word-by-word bit-wise or of a and b and put the result in
   result; return 1 if there are any non-zero words*/
-static and(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearch)
+static Int4 and(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearch)
 {
     Int4 i; /*index over words*/
     Int4 returnValue = 0;

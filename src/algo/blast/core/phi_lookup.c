@@ -413,7 +413,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
                         set of characters*/
     Int4 minWildcard, maxWildcard; /*used for variable number of wildcard
                                      positions*/
-    Uint4  tj; /*temporary copy of j*/
+    Uint4  tj=0; /*temporary copy of j*/
     Int4 tempInputPatternMasked[MaxP]; /*local copy of parts
             of inputPatternMasked*/
     Uint1 c;  /*character occuring in pattern*/
