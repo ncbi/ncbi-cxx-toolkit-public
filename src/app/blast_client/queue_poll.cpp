@@ -302,7 +302,7 @@ s_QueueSearch(string              & program,
         qsr->SetQueries(*myset2);
     }
                 
-    list< CRef<CBlast4_parameter> > & l = qsr->SetParams().Set();
+    list< CRef<CBlast4_parameter> > & l = qsr->SetAlgorithm_options().Set();
     
     s_SetSearchParams(opts, l);
         
@@ -532,6 +532,11 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2003/12/24 01:01:56  ucko
+ * Bandaid to compile with current ASN.1 spec.  All parameters are
+ * currently classified as algorithm options, and still need to be
+ * divided up properly.
+ *
  * Revision 1.3  2003/11/05 19:17:45  bealer
  * - Remove .data() from string argument passing.
  *
