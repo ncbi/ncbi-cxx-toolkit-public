@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/08/30 16:18:25  vasilche
+* Avoid MT lock in CTypeRef::Get()
+*
 * Revision 1.4  1999/12/17 19:04:55  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -47,5 +50,63 @@
 *
 * ===========================================================================
 */
+
+inline
+CTypeRef::CTypeRef(void)
+    : m_Getter(sx_GetAbort), m_ReturnData(0)
+{
+}
+
+inline
+CTypeRef::CTypeRef(TTypeInfo typeInfo)
+    : m_Getter(sx_GetReturn), m_ReturnData(typeInfo)
+{
+}
+
+inline
+CTypeRef::CTypeRef(TGetProc getProc)
+    : m_Getter(sx_GetProc), m_ReturnData(0)
+{
+    m_GetProcData = getProc;
+}
+
+inline
+CTypeRef::CTypeRef(CTypeInfoSource* source)
+    : m_Getter(sx_GetResolve), m_ReturnData(0)
+{
+    m_ResolveData = source;
+}
+
+inline
+CTypeRef::CTypeRef(const CTypeRef& typeRef)
+    : m_Getter(sx_GetAbort), m_ReturnData(0)
+{
+    Assign(typeRef);
+}
+
+inline
+CTypeRef::~CTypeRef(void)
+{
+    Unref();
+}
+
+inline
+TTypeInfo CTypeRef::Get(void) const
+{
+    TTypeInfo ret = m_ReturnData;
+    return ret? ret: m_Getter(*this);
+}
+
+inline
+CTypeRef::operator bool(void) const
+{
+    return m_Getter != sx_GetAbort;
+}
+
+inline
+bool CTypeRef::operator!(void) const
+{
+    return m_Getter == sx_GetAbort;
+}
 
 #endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */

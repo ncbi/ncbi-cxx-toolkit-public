@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/08/30 16:18:25  vasilche
+* Avoid MT lock in CTypeRef::Get()
+*
 * Revision 1.10  2002/08/13 13:56:04  grichenk
 * Improved MT-safety in CTypeInfo and CTypeRef
 *
@@ -95,59 +98,42 @@ private:
 class CTypeRef
 {
 public:
-    CTypeRef(void)
-        : m_Getter(sx_Abort)
-        {
-        }
-    CTypeRef(TTypeInfo typeInfo)
-        : m_Getter(sx_Return)
-        {
-            m_Return = typeInfo;
-        }
+    CTypeRef(void);
+    CTypeRef(TTypeInfo typeInfo);
+
     typedef TTypeInfo (*TGetProc)(void);
-    CTypeRef(TGetProc getProc)
-        : m_Getter(sx_GetProc)
-        {
-            m_GetProc = getProc;
-        }
+    CTypeRef(TGetProc getProc);
+
     typedef TTypeInfo (*TGet1Proc)(TTypeInfo arg);
     CTypeRef(TGet1Proc getter, const CTypeRef& arg);
+
     typedef TTypeInfo (*TGet2Proc)(TTypeInfo arg1, TTypeInfo arg2);
     CTypeRef(TGet2Proc getter, const CTypeRef& arg1, const CTypeRef& arg2);
+
     CTypeRef(CTypeInfoSource* source);
     CTypeRef(const CTypeRef& typeRef);
     CTypeRef& operator=(const CTypeRef& typeRef);
     ~CTypeRef(void);
 
-    TTypeInfo Get(void) const
-        {
-            return m_Getter(*this);
-        }
-
-    operator bool(void) const
-        {
-            return m_Getter != sx_Abort;
-        }
-    bool operator!(void) const
-        {
-            return m_Getter == sx_Abort;
-        }
+    TTypeInfo Get(void) const;
+    operator bool(void) const;
+    bool operator!(void) const;
 
 private:
 
     void Unref(void);
     void Assign(const CTypeRef& typeRef);
     
-    static TTypeInfo sx_Abort(const CTypeRef& typeRef);
-    static TTypeInfo sx_Return(const CTypeRef& typeRef);
+    static TTypeInfo sx_GetAbort(const CTypeRef& typeRef);
+    static TTypeInfo sx_GetReturn(const CTypeRef& typeRef);
     static TTypeInfo sx_GetProc(const CTypeRef& typeRef);
-    static TTypeInfo sx_Resolve(const CTypeRef& typeRef);
+    static TTypeInfo sx_GetResolve(const CTypeRef& typeRef);
 
     TTypeInfo (*m_Getter)(const CTypeRef& );
+    TTypeInfo m_ReturnData;
     union {
-        TTypeInfo m_Return;
-        TGetProc m_GetProc;
-        CTypeInfoSource* m_Resolve;
+        TGetProc m_GetProcData;
+        CTypeInfoSource* m_ResolveData;
     };
 };
 
@@ -179,7 +165,7 @@ private:
     CTypeRef m_Argument2;
 };
 
-//#include <serial/typeref.inl>
+#include <serial/typeref.inl>
 
 END_NCBI_SCOPE
 

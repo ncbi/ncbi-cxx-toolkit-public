@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/08/30 16:20:56  vasilche
+* Avoid MT lock in CTypeRef::Get()
+*
 * Revision 1.7  2002/08/14 17:14:57  grichenk
 * Another improvement to MT-safety
 *
@@ -66,37 +69,17 @@ BEGIN_NCBI_SCOPE
 static CMutex s_TypeRefMutex;
 
 
-CTypeRef::CTypeRef(CTypeInfoSource* source)
-    : m_Getter(sx_Abort)
-{
-    m_Resolve = source;
-    m_Getter = sx_Resolve;
-}
-
 CTypeRef::CTypeRef(TGet1Proc getProc, const CTypeRef& arg)
-    : m_Getter(sx_Abort)
+    : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
-    m_Resolve = new CGet1TypeInfoSource(getProc, arg);
-    m_Getter = sx_Resolve;
+    m_ResolveData = new CGet1TypeInfoSource(getProc, arg);
 }
 
 CTypeRef::CTypeRef(TGet2Proc getProc,
                    const CTypeRef& arg1, const CTypeRef& arg2)
-    : m_Getter(sx_Abort)
+    : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
-    m_Resolve = new CGet2TypeInfoSource(getProc, arg1, arg2);
-    m_Getter = sx_Resolve;
-}
-
-CTypeRef::CTypeRef(const CTypeRef& typeRef)
-    : m_Getter(sx_Abort)
-{
-    Assign(typeRef);
-}
-
-CTypeRef::~CTypeRef(void)
-{
-    Unref();
+    m_ResolveData = new CGet2TypeInfoSource(getProc, arg1, arg2);
 }
 
 CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
@@ -110,46 +93,50 @@ CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
 
 void CTypeRef::Unref(void)
 {
-    CMutexGuard guard(s_TypeRefMutex);
-    if ( m_Getter == sx_Resolve ) {
-        m_Getter = sx_Abort;
-        if ( m_Resolve->m_RefCount.Add(-1) <= 0 ) {
-            delete m_Resolve;
+    if ( m_Getter == sx_GetResolve ) {
+        CMutexGuard guard(s_TypeRefMutex);
+        if ( m_Getter == sx_GetResolve ) {
+            m_Getter = sx_GetAbort;
+            if ( m_ResolveData->m_RefCount.Add(-1) <= 0 ) {
+                delete m_ResolveData;
+                m_ResolveData = 0;
+            }
         }
     }
-    else {
-        m_Getter = sx_Abort;
-    }
+    m_Getter = sx_GetAbort;
+    m_ReturnData = 0;
 }
 
 void CTypeRef::Assign(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(s_TypeRefMutex);
-    if ( typeRef.m_Getter == sx_Return ) {
-        m_Return = typeRef.m_Return;
-        m_Getter = sx_Return;
+    if ( typeRef.m_ReturnData ) {
+        m_ReturnData = typeRef.m_ReturnData;
+        m_Getter = sx_GetReturn;
     }
-    else if ( typeRef.m_Getter == sx_GetProc ) {
-        m_GetProc = typeRef.m_GetProc;
-        m_Getter = sx_GetProc;
-    }
-    else if ( typeRef.m_Getter == sx_Resolve ) {
-        (m_Resolve = typeRef.m_Resolve)->m_RefCount.Add(1);
-        m_Getter = sx_Resolve;
+    else {
+        CMutexGuard guard(s_TypeRefMutex);
+        m_ReturnData = typeRef.m_ReturnData;
+        m_Getter = typeRef.m_Getter;
+        if ( m_Getter == sx_GetProc ) {
+            m_GetProcData = typeRef.m_GetProcData;
+        }
+        else if ( m_Getter == sx_GetResolve ) {
+            (m_ResolveData = typeRef.m_ResolveData)->m_RefCount.Add(1);
+        }
     }
 }
 
-TTypeInfo CTypeRef::sx_Abort(const CTypeRef& typeRef)
+TTypeInfo CTypeRef::sx_GetAbort(const CTypeRef& typeRef)
 {
     CMutexGuard guard(s_TypeRefMutex);
-    if (typeRef.m_Getter != sx_Abort)
+    if (typeRef.m_Getter != sx_GetAbort)
         return typeRef.m_Getter(typeRef);
     THROW1_TRACE(runtime_error, "uninitialized type ref");
 }
 
-TTypeInfo CTypeRef::sx_Return(const CTypeRef& typeRef)
+TTypeInfo CTypeRef::sx_GetReturn(const CTypeRef& typeRef)
 {
-    return typeRef.m_Return;
+    return typeRef.m_ReturnData;
 }
 
 TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
@@ -157,25 +144,28 @@ TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
     CMutexGuard guard(s_TypeRefMutex);
     if (typeRef.m_Getter != sx_GetProc)
         return typeRef.m_Getter(typeRef);
-    TTypeInfo typeInfo = typeRef.m_GetProc();
+    TTypeInfo typeInfo = typeRef.m_GetProcData();
     if ( !typeInfo )
         THROW1_TRACE(runtime_error, "cannot resolve type ref");
-    const_cast<CTypeRef&>(typeRef).m_Return = typeInfo;
-    const_cast<CTypeRef&>(typeRef).m_Getter = sx_Return;
+    const_cast<CTypeRef&>(typeRef).m_ReturnData = typeInfo;
+    const_cast<CTypeRef&>(typeRef).m_Getter = sx_GetReturn;
     return typeInfo;
 }
 
-TTypeInfo CTypeRef::sx_Resolve(const CTypeRef& typeRef)
+TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
 {
     CMutexGuard guard(s_TypeRefMutex);
-    if (typeRef.m_Getter != sx_Resolve)
+    if (typeRef.m_Getter != sx_GetResolve)
         return typeRef.m_Getter(typeRef);
-    TTypeInfo typeInfo = typeRef.m_Resolve->GetTypeInfo();
+    TTypeInfo typeInfo = typeRef.m_ResolveData->GetTypeInfo();
     if ( !typeInfo )
         THROW1_TRACE(runtime_error, "cannot resolve type ref");
-    const_cast<CTypeRef&>(typeRef).Unref();
-    const_cast<CTypeRef&>(typeRef).m_Return = typeInfo;
-    const_cast<CTypeRef&>(typeRef).m_Getter = sx_Return;
+    if ( typeRef.m_ResolveData->m_RefCount.Add(-1) <= 0 ) {
+        delete typeRef.m_ResolveData;
+        const_cast<CTypeRef&>(typeRef).m_ResolveData = 0;
+    }
+    const_cast<CTypeRef&>(typeRef).m_ReturnData = typeInfo;
+    const_cast<CTypeRef&>(typeRef).m_Getter = sx_GetReturn;
     return typeInfo;
 }
 
