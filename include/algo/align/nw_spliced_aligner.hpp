@@ -100,8 +100,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.9  2004/04/23 14:35:43  kapustin
- * *** empty log message ***
+ * Revision 1.10  2004/04/23 14:39:22  kapustin
+ * Add Splign librry and other changes
  *
  * Revision 1.6  2003/12/12 19:41:46  kapustin
  * Valuable comments added

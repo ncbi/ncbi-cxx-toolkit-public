@@ -91,8 +91,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.7  2004/04/23 14:35:43  kapustin
- * *** empty log message ***
+ * Revision 1.8  2004/04/23 14:39:22  kapustin
+ * Add Splign librry and other changes
  *
  * Revision 1.4  2003/12/29 13:02:03  kapustin
  * Make x_GetElemSize() public and rename.
