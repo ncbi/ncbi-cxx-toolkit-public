@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -15,7 +15,6 @@ BEGIN
 EXPORTS Seq-submission, Feat-submission;
 
 IMPORTS Cit-sub FROM NCBI-Biblio
-        Pub FROM NCBI-Pub
         Seq-annot FROM NCBI-Seq
         Seq-entry FROM NCBI-Seqset;
 
