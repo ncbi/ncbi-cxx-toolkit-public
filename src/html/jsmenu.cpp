@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  JavaScript menu support (Smith's menu)
+ * File Description:  JavaScript menu support
  *
  */
 
@@ -36,13 +36,25 @@ BEGIN_NCBI_SCOPE
 
 
 // URL to menu library (default)
-const string kJSMenuDefaultURL
-  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dyn.js";
 
+// Smith's menu 
+const string kJSMenuDefaultURL_Smith
+    = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js";
 
-CHTMLPopupMenu::CHTMLPopupMenu(const string& name)
+// Sergey Kurdin's menu
+const string kJSMenuDefaultURL_Kurdin  // URL base
+    = "http://www.ncbi.nlm.nih.gov/projects/webdev/javascript/popupmenu2";
+const string kJSMenuDefaultURL_Kurdin_files[3] = {
+    "popupmenu2_styles.css",    // styles
+    "popupmenu2.js",            // main menu script
+    "popupmenu2_layers.js"      // auxiliary script
+};
+ 
+
+CHTMLPopupMenu::CHTMLPopupMenu(const string& name, EType type)
 {
     m_Name = name;
+    m_Type = type;
 }
 
 
@@ -65,6 +77,7 @@ CHTMLPopupMenu::SItem::SItem(const string& v_title,
     mouseout  = v_mouseout;
 }
 
+
 CHTMLPopupMenu::SItem::SItem()
 {
     title = kEmptyStr;
@@ -76,7 +89,11 @@ void CHTMLPopupMenu::AddItem(const string& title,
                              const string& color,
                              const string& mouseover, const string& mouseout)
 {
-    SItem item(title, action, color, mouseover, mouseout);
+    string x_action = action;
+    if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
+        x_action = "window.location='" + action + "'";
+    }
+    SItem item(title, x_action, color, mouseover, mouseout);
     m_Items.push_back(item);
 }
 
@@ -104,7 +121,7 @@ void CHTMLPopupMenu::AddItem(CNCBINode& node,
     CNcbiOstrstream out;
     node.Print(out, eHTML);
     string title = CNcbiOstrstreamToString(out);
-    // Replace " to '
+    // Shielding double quotes
     title = NStr::Replace(title,"\"","'");
     // Add menu item
     AddItem(title, action, color, mouseover, mouseout);
@@ -113,24 +130,78 @@ void CHTMLPopupMenu::AddItem(CNCBINode& node,
 
 void CHTMLPopupMenu::AddSeparator(void)
 {
+    if ( m_Type != eSmith ) {
+        return;
+    }
     SItem item;
     m_Items.push_back(item);
 } 
 
 
-CHTMLPopupMenu::SAttribute::SAttribute(EHTML_PM_Attribute v_name, 
-                                      const string& v_value)
+string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute) const
 {
-    name   = v_name;
-    value  = v_value;
+    switch ( attribute ) {
+    case eHTML_PM_enableTracker:
+        return "enableTracker"; 
+    case eHTML_PM_disableHide:
+        return "disableHide"; 
+    case eHTML_PM_fontSize:
+        return "fontSize"; 
+    case eHTML_PM_fontWeigh:
+        return "fontWeigh"; 
+    case eHTML_PM_fontFamily:
+        return "fontFamily"; 
+    case eHTML_PM_fontColor:
+        return "fontColor"; 
+    case eHTML_PM_fontColorHilite:
+        return "fontColorHilite"; 
+    case eHTML_PM_menuBorder:
+        return "menuBorder"; 
+    case eHTML_PM_menuItemBorder:
+        return "menuItemBorder"; 
+    case eHTML_PM_menuItemBgColor:
+        return "menuItemBgColor"; 
+    case eHTML_PM_menuLiteBgColor:
+        return "menuLiteBgColor"; 
+    case eHTML_PM_menuBorderBgColor:
+        return "menuBorderBgColor"; 
+    case eHTML_PM_menuHiliteBgColor:
+        return "menuHiliteBgColor"; 
+    case eHTML_PM_menuContainerBgColor:
+        return "menuContainerBgColor"; 
+    case eHTML_PM_childMenuIcon:
+        return "childMenuIcon"; 
+    case eHTML_PM_childMenuIconHilite:
+        return "childMenuIconHilite"; 
+    case eHTML_PM_bgColor:
+        return "bgColor"; 
+    case eHTML_PM_titleColor:
+        return "titleColor";
+    case eHTML_PM_borderColor:
+        return "borderColor";
+    case eHTML_PM_alignH:
+        return "alignH";
+    case eHTML_PM_alignV:
+        return "alignV";
+    }
+    _TROUBLE;
+    return kEmptyStr;
 }
 
 
 void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
                                   const string&      value)
 {
-    SAttribute attr(attribute, value);
-    m_Attrs.push_back(attr);
+    m_Attrs[attribute] = value;
+}
+
+
+string CHTMLPopupMenu::GetAttribute(EHTML_PM_Attribute attribute) const
+{
+    TAttributes::const_iterator i = m_Attrs.find(attribute);
+    if ( i != m_Attrs.end() )
+        return i->second;
+    return kEmptyStr;
 }
 
 
@@ -140,92 +211,80 @@ string CHTMLPopupMenu::GetName(void) const
 }
 
 
-string CHTMLPopupMenu::ShowMenu(void)
+CHTMLPopupMenu::EType CHTMLPopupMenu::GetType(void) const
 {
-    return "window.showMenu(window." + m_Name + ");";
+    return m_Type;
 }
 
 
-string CHTMLPopupMenu::GetCodeMenuItems(void)
+string CHTMLPopupMenu::ShowMenu(void) const
 {
-    string code = "window." + m_Name + " = new Menu();\n";
-
-    // Write menu items
-    iterate (TItems, i, m_Items) {
-        if ( (i->title).empty() ) {
-            code += m_Name + ".addMenuSeparator();\n";
-        }
-        else {
-            code += m_Name + ".addMenuItem(\"" +
-                i->title     + "\",\""  +
-                i->action    + "\",\""  +
-                i->color     + "\",\""  +
-                i->mouseover + "\",\""  +
-                i->mouseout  + "\");\n";
-        }
+    switch (m_Type) {
+    case eSmith:
+        return "window.showMenu(window." + m_Name + ");";
+    case eKurdin:
+        string align_h      = GetAttribute(eHTML_PM_alignH);
+        string align_v      = GetAttribute(eHTML_PM_alignV);
+        string color_border = GetAttribute(eHTML_PM_borderColor);
+        string color_title  = GetAttribute(eHTML_PM_titleColor);
+        string color_back   = GetAttribute(eHTML_PM_bgColor);
+        string s = "','"; 
+        return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
+                color_border + s + color_title + s + color_back + "');";
     }
+    _TROUBLE;
+    return kEmptyStr;
+}
 
-    // Write properties
-    string attr; 
 
-    iterate (TAttributes, i, m_Attrs) {
-        switch ( i->name ) {
-        case eHTML_PM_enableTracker:
-            attr = "enableTracker"; 
-            break;
-        case eHTML_PM_disableHide:
-            attr = "disableHide"; 
-            break;
-        case eHTML_PM_fontSize:
-            attr = "fontSize"; 
-            break;
-        case eHTML_PM_fontWeigh:
-            attr = "fontWeigh"; 
-            break;
-        case eHTML_PM_fontFamily:
-            attr = "fontFamily"; 
-            break;
-        case eHTML_PM_fontColor:
-            attr = "fontColor"; 
-            break;
-        case eHTML_PM_fontColorHilite:
-            attr = "fontColorHilite"; 
-            break;
-        case eHTML_PM_bgColor:
-            attr = "bgColor"; 
-            break;
-        case eHTML_PM_menuBorder:
-            attr = "menuBorder"; 
-            break;
-        case eHTML_PM_menuItemBorder:
-            attr = "menuItemBorder"; 
-            break;
-        case eHTML_PM_menuItemBgColor:
-            attr = "menuItemBgColor"; 
-            break;
-        case eHTML_PM_menuLiteBgColor:
-            attr = "menuLiteBgColor"; 
-            break;
-        case eHTML_PM_menuBorderBgColor:
-            attr = "menuBorderBgColor"; 
-            break;
-        case eHTML_PM_menuHiliteBgColor:
-            attr = "menuHiliteBgColor"; 
-            break;
-        case eHTML_PM_menuContainerBgColor:
-            attr = "menuContainerBgColor"; 
-            break;
-        case eHTML_PM_childMenuIcon:
-            attr = "childMenuIcon"; 
-            break;
-        case eHTML_PM_childMenuIconHilite:
-            attr = "childMenuIconHilite"; 
-            break;
-        default:
-            _TROUBLE;
+string CHTMLPopupMenu::GetCodeMenuItems(void) const
+{
+    string code;
+    switch (m_Type) {
+    case eSmith: 
+        {
+            code = "window." + m_Name + " = new Menu();\n";
+
+            // Write menu items
+            iterate (TItems, i, m_Items) {
+                if ( (i->title).empty() ) {
+                    code += m_Name + ".addMenuSeparator();\n";
+                }
+                else {
+                    code += m_Name + ".addMenuItem(\"" +
+                        i->title     + "\",\""  +
+                        i->action    + "\",\""  +
+                        i->color     + "\",\""  +
+                        i->mouseover + "\",\""  +
+                        i->mouseout  + "\");\n";
+                }
+            }
+            // Write properties
+            iterate (TAttributes, i, m_Attrs) {
+                string name  = GetAttributeName(i->first);
+                string value = i->second;
+                code += m_Name + "." + name + " = \"" + value + "\";\n";
+            }
         }
+        break;
 
-        code += m_Name + "." + attr + " = \"" + i->value + "\";\n";
+    case eKurdin: 
+        {
+            code = "var " + m_Name + " = [\n";
+            // Write menu items
+            iterate (TItems, i, m_Items) {
+                if ( i != m_Items.begin()) {
+                    code += ",\n";
+                }
+                code += "[\"" +
+                    i->title     + "\",\""  +
+                    i->action    + "\",\""  +
+                    i->mouseover + "\",\""  +
+                    i->mouseout  + "\"]";
+            }
+            code += "\n]\n";
+        }
+        break;
     }
 
     return code;
@@ -242,18 +301,39 @@ CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
 }
 
 
-string CHTMLPopupMenu::GetCodeHead(const string& menu_lib_url)
+string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
 {
-    // If URL not defined, then use default value
-    string url = menu_lib_url.empty() ? kJSMenuDefaultURL : menu_lib_url;
+    string url, code;
 
-    // Include the menu script loading
-    return "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
+    switch (type) {
+
+    case eSmith:
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Smith : menu_lib_url;
+        code = "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
+        break;
+
+    case eKurdin:
+        url = menu_lib_url.empty() ? kJSMenuDefaultURL_Kurdin : menu_lib_url;
+        if (url[url.length()-1] != '/') {
+            url += '/';
+        }
+        code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + url + 
+                    kJSMenuDefaultURL_Kurdin_files[0] + "\">\n" \
+               "<script language=\"JavaScript1.2\" src=\"" + url + 
+                    kJSMenuDefaultURL_Kurdin_files[1] + "\"></script>\n" \
+               "<script language=\"JavaScript1.2\" src=\"" + url + 
+                    kJSMenuDefaultURL_Kurdin_files[2] + "\"></script>\n";
+        break;
+    }
+    return code;
 }
 
 
-string CHTMLPopupMenu::GetCodeBody(bool use_dynamic_menu)
+string CHTMLPopupMenu::GetCodeBody(EType type, bool use_dynamic_menu)
 {
+    if ( type != eSmith ) {
+        return kEmptyStr;
+    }
     string use_dm = use_dynamic_menu ? "true" : "false";
     return "<script language=\"JavaScript1.2\">\n"
         "<!--\nfunction onLoad() {\n"
@@ -266,12 +346,34 @@ string CHTMLPopupMenu::GetCodeBody(bool use_dynamic_menu)
 }
 
 
+string CHTMLPopupMenu::GetCodeBodyTagHandler(EType type)
+{
+    if ( type == eKurdin ) {
+        return "onClick";
+    }
+    return kEmptyStr;
+}
+
+
+string CHTMLPopupMenu::GetCodeBodyTagAction(EType type)
+{
+    if ( type == eKurdin ) {
+        return "PopUpMenu2_Stop()";
+    }
+    return kEmptyStr;
+}
+
+
 END_NCBI_SCOPE
+
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2002/12/09 22:11:59  ivanov
+ * Added support for Sergey Kurdin's popup menu
+ *
  * Revision 1.7  2002/04/29 18:07:21  ucko
  * Make GetName const.
  *

@@ -1,34 +1,33 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Lewis Geer
-*
-* File Description:
-*   Page Classes
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Lewis Geer
+ *
+ * File Description:   Page Classes
+ *
+ */
 
 #include <html/components.hpp>
 #include <html/page.hpp>
@@ -151,11 +150,8 @@ void CHTMLPage::Init(void)
     m_TemplateStream     = 0;
     m_TemplateBuffer     = 0;
     m_TemplateBufferSize = 0;
-
-    // Init popup menu variables
-    m_UsePopupMenu = false;
-    m_UsePopupMenuDynamic = false;
-    m_PopupMenuLibUrl = kEmptyStr;
+    
+    m_UsePopupMenus      = false;
 
     AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
     AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
@@ -211,7 +207,7 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
-    if ( m_UsePopupMenu ) {
+    if ( m_UsePopupMenus ) {
         // a "do ... while (false)" lets us avoid a goto
         do {
             string strl = str;
@@ -227,10 +223,39 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
                 break;
             }
 
+            SIZE_TYPE script_length = 0;
             // Insert code for load popup menu library
-            string script = CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl);
-            SIZE_TYPE length = script.length();
-            str.insert(pos, script);
+            for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
+                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
+                if ( info != m_PopupMenus.end() ) {
+                    string script = CHTMLPopupMenu::GetCodeHead(type, info->second.m_Url);
+                    script_length += script.length();
+                    str.insert(pos, script);
+                }
+            }
+
+            // Search <BODY> tag
+            pos = strl.find("<body", pos);
+            if ( pos == NPOS) {
+                break;
+            }
+            pos = strl.find(">", pos);
+            if ( pos == NPOS) {
+                break;
+            }
+            for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
+                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
+                if ( info != m_PopupMenus.end() ) {
+                    if ( CHTMLPopupMenu::GetCodeBodyTagHandler(type) != kEmptyStr ) {
+                        string script = " "+CHTMLPopupMenu::GetCodeBodyTagHandler(type) + "=\"" +
+                                        CHTMLPopupMenu::GetCodeBodyTagAction(type) + "\"" ;
+                        str.insert(pos + script_length, script);
+                        script_length += script.length();
+                    }
+                }
+            }
 
             // Search </BODY> tag
             pos = strl.rfind("/body");
@@ -243,8 +268,15 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
             }
 
             // Insert code for init popup menus
-            script = CHTMLPopupMenu::GetCodeBody(m_UsePopupMenuDynamic);
-            str.insert(pos+length, script);
+            for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
+                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
+                if ( info != m_PopupMenus.end() ) {
+                    string script = CHTMLPopupMenu::GetCodeBody(type,
+                        info->second.m_UseDynamicMenu);
+                    str.insert(pos + script_length, script);
+                }
+            }
         }
         while (false);
     }
@@ -267,26 +299,28 @@ CNCBINode* CHTMLPage::CreateView(void)
 }
 
 
-void CHTMLPage::EnablePopupMenu(const string& menu_script_url,
-                                bool use_dynamic_menu)
+void CHTMLPage::EnablePopupMenu(CHTMLPopupMenu::EType type,
+                                 const string& menu_script_url,
+                                 bool use_dynamic_menu)
 {
-    m_UsePopupMenu = true;
-    m_PopupMenuLibUrl = menu_script_url;
-    m_UsePopupMenuDynamic = use_dynamic_menu;
+    SPopupMenuInfo info(menu_script_url, use_dynamic_menu);
+    m_PopupMenus[type] = info;
 }
 
 
-static bool s_CheckUsePopupMenus(CNCBINode* node)
+static bool s_CheckUsePopupMenus(const CNCBINode* node, CHTMLPopupMenu::EType type)
 {
     if ( !node  ||  !node->HaveChildren() ) {
         return false;
     }
-    non_const_iterate ( CNCBINode::TChildren, i, node->Children() ) {
-        CNCBINode* cnode = node->Node(i);
-        if ( dynamic_cast<CHTMLPopupMenu*>(cnode) ) {
-            return true;
+    iterate ( CNCBINode::TChildren, i, node->Children() ) {
+        const CNCBINode* cnode = node->Node(i);
+        if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
+            const CHTMLPopupMenu* menu = dynamic_cast<const CHTMLPopupMenu*>(cnode);
+            if ( menu->GetType() == type )
+                return true;
         }
-        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode)) {
+        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode, type)) {
             return true;
         }
     }
@@ -298,13 +332,16 @@ void CHTMLPage::AddTagMap(const string& name, CNCBINode* node)
 {
     CParent::AddTagMap(name, node);
 
-    // If already defined usage popup menus
-    if ( m_UsePopupMenu ) {
-        return;
-    }
-    // If "node" contains popup menu, then automaticly enable it
-    if ( s_CheckUsePopupMenus(node) ) {
-        EnablePopupMenu();
+    for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
+        CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+        if ( m_PopupMenus.find(type) == m_PopupMenus.end() ) {
+            if ( s_CheckUsePopupMenus(node, type) ) {
+                EnablePopupMenu(type);
+                m_UsePopupMenus = true;
+            }
+        } else {
+            m_UsePopupMenus = true;
+        }
     }
 }
 
@@ -317,92 +354,96 @@ void CHTMLPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 
 END_NCBI_SCOPE
 
+
 /*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.30  2002/09/16 22:24:52  vakatov
-* Formal fix to get rid of an "unused func arg" warning
-*
-* Revision 1.29  2002/09/11 16:09:27  dicuccio
-* fixed memory leak in CreateTemplate(): added x_CreateTemplate() to get
-* around heap allocation of stream.
-* moved cvs log to the bottom of the page.
-*
-* Revision 1.28  2002/08/09 21:12:02  ivanov
-* Added stuff to read template from a stream and string
-*
-* Revision 1.27  2002/02/23 04:08:25  vakatov
-* Commented out "// template struct TagMapper<CHTMLPage>;" to see if it's
-* still needed for any compiler
-*
-* Revision 1.26  2002/02/13 20:16:45  ivanov
-* Added support of dynamic popup menus. Changed EnablePopupMenu().
-*
-* Revision 1.25  2001/08/14 16:56:42  ivanov
-* Added support for work HTML templates with JavaScript popup menu.
-* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
-*
-* Revision 1.24  2000/03/31 17:08:43  kans
-* cast ifstr.rdstate() to int
-*
-* Revision 1.23  1999/10/28 13:40:36  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.22  1999/09/27 16:17:18  vasilche
-* Fixed several incompatibilities with Windows
-*
-* Revision 1.21  1999/09/23 15:51:42  vakatov
-* Added <unistd.h> for the getcwd() proto
-*
-* Revision 1.20  1999/09/17 14:16:09  sandomir
-* tmp diagnostics to find error
-*
-* Revision 1.19  1999/09/15 15:04:47  sandomir
-* minor memory leak in tag mapping
-*
-* Revision 1.18  1999/07/19 21:05:02  pubmed
-* minor change in CHTMLPage::CreateTemplate() - show file name
-*
-* Revision 1.17  1999/05/28 20:43:10  vakatov
-* ::~CHTMLBasicPage(): MSVC++ 6.0 SP3 cant compile:  DeleteElements(m_TagMap);
-*
-* Revision 1.16  1999/05/28 16:32:16  vasilche
-* Fixed memory leak in page tag mappers.
-*
-* Revision 1.15  1999/05/27 21:46:25  vakatov
-* CHTMLPage::CreateTemplate():  throw exception if cannot open or read
-* the page template file specified by user
-*
-* Revision 1.14  1999/04/28 16:52:45  vasilche
-* Restored optimized code for reading from file.
-*
-* Revision 1.13  1999/04/27 16:48:44  vakatov
-* Rollback of the buggy "optimization" in CHTMLPage::CreateTemplate()
-*
-* Revision 1.12  1999/04/26 21:59:31  vakatov
-* Cleaned and ported to build with MSVC++ 6.0 compiler
-*
-* Revision 1.11  1999/04/19 16:51:36  vasilche
-* Fixed error with member pointers detected by GCC.
-*
-* Revision 1.10  1999/04/15 22:10:43  vakatov
-* Fixed "class TagMapper<>" to "struct ..."
-*
-* Revision 1.9  1998/12/28 23:29:10  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.8  1998/12/28 21:48:17  vasilche
-* Made Lewis's 'tool' compilable
-*
-* Revision 1.7  1998/12/28 16:48:09  vasilche
-* Removed creation of QueryBox in CHTMLPage::CreateView()
-* CQueryBox extends from CHTML_form
-* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
-*
-* Revision 1.6  1998/12/22 16:39:15  vasilche
-* Added ReadyTagMapper to map tags to precreated nodes.
-*
-* Revision 1.3  1998/12/01 19:10:39  lewisg
-* uses CCgiApplication and new page factory
-* ===========================================================================
-*/
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.31  2002/12/09 22:11:59  ivanov
+ * Added support for Sergey Kurdin's popup menu
+ *
+ * Revision 1.30  2002/09/16 22:24:52  vakatov
+ * Formal fix to get rid of an "unused func arg" warning
+ *
+ * Revision 1.29  2002/09/11 16:09:27  dicuccio
+ * fixed memory leak in CreateTemplate(): added x_CreateTemplate() to get
+ * around heap allocation of stream.
+ * moved cvs log to the bottom of the page.
+ *
+ * Revision 1.28  2002/08/09 21:12:02  ivanov
+ * Added stuff to read template from a stream and string
+ *
+ * Revision 1.27  2002/02/23 04:08:25  vakatov
+ * Commented out "// template struct TagMapper<CHTMLPage>;" to see if it's
+ * still needed for any compiler
+ *
+ * Revision 1.26  2002/02/13 20:16:45  ivanov
+ * Added support of dynamic popup menus. Changed EnablePopupMenu().
+ *
+ * Revision 1.25  2001/08/14 16:56:42  ivanov
+ * Added support for work HTML templates with JavaScript popup menu.
+ * Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
+ *
+ * Revision 1.24  2000/03/31 17:08:43  kans
+ * cast ifstr.rdstate() to int
+ *
+ * Revision 1.23  1999/10/28 13:40:36  vasilche
+ * Added reference counters to CNCBINode.
+ *
+ * Revision 1.22  1999/09/27 16:17:18  vasilche
+ * Fixed several incompatibilities with Windows
+ *
+ * Revision 1.21  1999/09/23 15:51:42  vakatov
+ * Added <unistd.h> for the getcwd() proto
+ *
+ * Revision 1.20  1999/09/17 14:16:09  sandomir
+ * tmp diagnostics to find error
+ *
+ * Revision 1.19  1999/09/15 15:04:47  sandomir
+ * minor memory leak in tag mapping
+ *
+ * Revision 1.18  1999/07/19 21:05:02  pubmed
+ * minor change in CHTMLPage::CreateTemplate() - show file name
+ *
+ * Revision 1.17  1999/05/28 20:43:10  vakatov
+ * ::~CHTMLBasicPage(): MSVC++ 6.0 SP3 cant compile:  DeleteElements(m_TagMap);
+ *
+ * Revision 1.16  1999/05/28 16:32:16  vasilche
+ * Fixed memory leak in page tag mappers.
+ *
+ * Revision 1.15  1999/05/27 21:46:25  vakatov
+ * CHTMLPage::CreateTemplate():  throw exception if cannot open or read
+ * the page template file specified by user
+ *
+ * Revision 1.14  1999/04/28 16:52:45  vasilche
+ * Restored optimized code for reading from file.
+ *
+ * Revision 1.13  1999/04/27 16:48:44  vakatov
+ * Rollback of the buggy "optimization" in CHTMLPage::CreateTemplate()
+ *
+ * Revision 1.12  1999/04/26 21:59:31  vakatov
+ * Cleaned and ported to build with MSVC++ 6.0 compiler
+ *
+ * Revision 1.11  1999/04/19 16:51:36  vasilche
+ * Fixed error with member pointers detected by GCC.
+ *
+ * Revision 1.10  1999/04/15 22:10:43  vakatov
+ * Fixed "class TagMapper<>" to "struct ..."
+ *
+ * Revision 1.9  1998/12/28 23:29:10  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.8  1998/12/28 21:48:17  vasilche
+ * Made Lewis's 'tool' compilable
+ *
+ * Revision 1.7  1998/12/28 16:48:09  vasilche
+ * Removed creation of QueryBox in CHTMLPage::CreateView()
+ * CQueryBox extends from CHTML_form
+ * CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+ *
+ * Revision 1.6  1998/12/22 16:39:15  vasilche
+ * Added ReadyTagMapper to map tags to precreated nodes.
+ *
+ * Revision 1.3  1998/12/01 19:10:39  lewisg
+ * uses CCgiApplication and new page factory
+ * ===========================================================================
+ */
