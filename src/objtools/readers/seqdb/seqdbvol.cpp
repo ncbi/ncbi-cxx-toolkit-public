@@ -103,7 +103,7 @@ char CSeqDBVol::x_GetSeqType() const
     return m_Idx.GetSeqType();
 }
 
-Int4 CSeqDBVol::GetSeqLengthProt(Uint4 oid) const
+int CSeqDBVol::GetSeqLengthProt(int oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -111,15 +111,15 @@ Int4 CSeqDBVol::GetSeqLengthProt(Uint4 oid) const
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(kSeqTypeProt == m_Idx.GetSeqType());
-
+    
     // Subtract one, for the inter-sequence null.
-    return end_offset - start_offset - 1;
+    return int(end_offset - start_offset - 1);
 }
 
 
 // Assumes locked.
 
-Int4 CSeqDBVol::GetSeqLengthExact(Uint4 oid) const
+int CSeqDBVol::GetSeqLengthExact(int oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -128,7 +128,7 @@ Int4 CSeqDBVol::GetSeqLengthExact(Uint4 oid) const
     
     _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
     
-    Int4 whole_bytes = Int4(end_offset - start_offset - 1);
+    int whole_bytes = int(end_offset - start_offset - 1);
     
     // The last byte is partially full; the last two bits of
     // the last byte store the number of nucleotides in the
@@ -138,12 +138,12 @@ Int4 CSeqDBVol::GetSeqLengthExact(Uint4 oid) const
     
     m_Seq.ReadBytes(& amb_char, end_offset - 1, end_offset);
     
-    Int4 remainder = amb_char & 3;
+    int remainder = amb_char & 3;
     return (whole_bytes * 4) + remainder;
 }
 
 
-Int4 CSeqDBVol::GetSeqLengthApprox(Uint4 oid) const
+int CSeqDBVol::GetSeqLengthApprox(int oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -152,7 +152,7 @@ Int4 CSeqDBVol::GetSeqLengthApprox(Uint4 oid) const
     
     _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
     
-    Int4 whole_bytes = Int4(end_offset - start_offset - 1);
+    int whole_bytes = int(end_offset - start_offset - 1);
     
     // Same principle as below - but use lower bits of oid
     // instead of fetching the actual last byte.  this should
@@ -218,7 +218,7 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
 {
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA4Setup();
     
-    Uint4 estimated_length = (base_length + 1)/2;
+    int estimated_length = (base_length + 1)/2;
     buf4bit.reserve(estimated_length);
     
     int inp_chars = base_length/4;
@@ -266,11 +266,11 @@ s_SeqDBMapNA2ToNA8Setup()
     vector<Uint1> translated;
     translated.reserve(1024);
     
-    for(Uint4 i = 0; i<256; i++) {
-        Uint4 p1 = (i >> 6) & 0x3;
-        Uint4 p2 = (i >> 4) & 0x3;
-        Uint4 p3 = (i >> 2) & 0x3;
-        Uint4 p4 = i & 0x3;
+    for(int i = 0; i<256; i++) {
+        int p1 = (i >> 6) & 0x3;
+        int p2 = (i >> 4) & 0x3;
+        int p3 = (i >> 2) & 0x3;
+        int p4 = i & 0x3;
         
         translated.push_back(1 << p1);
         translated.push_back(1 << p2);
@@ -299,7 +299,7 @@ s_SeqDBMapNA2ToNA8Setup()
 static void
 s_SeqDBMapNA2ToNA8(const char   * buf2bit,
                    vector<char> & buf8bit,
-                   Uint4          base_length,
+                   int            base_length,
                    bool           sentinel_bytes)
 {
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
@@ -323,7 +323,7 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
     // from a vector.
     
     for(int i = 0; i < whole_input_chars; i++) {
-        Uint4 table_offset = (buf2bit[i] & 0xFF) * 4;
+        int table_offset = (buf2bit[i] & 0xFF) * 4;
         
         buf8bit.push_back(expanded[ table_offset ]);
         buf8bit.push_back(expanded[ table_offset + 1 ]);
@@ -337,7 +337,7 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
         // We use the last byte of the input to look up a four byte
         // translation; but we only use the bytes of it that we need.
         
-        Uint4 table_offset = (buf2bit[whole_input_chars] & 0xFF) * 4;
+        int table_offset = (buf2bit[whole_input_chars] & 0xFF) * 4;
         
         while(bases_remain--) {
             buf8bit.push_back(expanded[ table_offset++ ]);
@@ -381,8 +381,8 @@ s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
         14  /* N,  15 */
     };
     
-    for(Uint4 i = 0; i < buf.size(); i++) {
-        buf[i] = trans_ncbina8_to_blastna8[ (Uint4) buf[i] ];
+    for(size_t i = 0; i < buf.size(); i++) {
+        buf[i] = trans_ncbina8_to_blastna8[ (size_t) buf[i] ];
     }
 }
 
@@ -623,7 +623,7 @@ s_SeqDBRebuildDNA_NA8(vector<char>       & buf8bit,
 static void
 s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
                         const char * seq_buffer,
-                        Int4         length)
+                        int          length)
 {
     // stuff - ncbistdaa
     // mol = aa
@@ -660,10 +660,10 @@ s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
 static void
 s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
                         const char   * seq_buffer,
-                        Int4           length)
+                        int            length)
 {
-    Int4 whole_bytes  = length / 4;
-    Int4 partial_byte = ((length & 0x3) != 0) ? 1 : 0;
+    int whole_bytes  = length / 4;
+    int partial_byte = ((length & 0x3) != 0) ? 1 : 0;
     
     vector<char> na_data;
     na_data.resize(whole_bytes + partial_byte);
@@ -698,7 +698,7 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
 static void
 s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
                         const char   * seq_buffer,
-                        Int4           length,
+                        int            length,
                         vector<Int4> & amb_chars)
 {
     vector<char> buffer_4na;
@@ -817,10 +817,10 @@ s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetTaxDefline(Uint4            oid,
+CSeqDBVol::x_GetTaxDefline(int              oid,
                            bool             have_oidlist,
-                           Uint4            membership_bit,
-                           Uint4            preferred_gi,
+                           int              membership_bit,
+                           int              preferred_gi,
                            CSeqDBLockHold & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
@@ -858,17 +858,17 @@ CSeqDBVol::x_GetTaxDefline(Uint4            oid,
 }
 
 list< CRef<CSeqdesc> >
-CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
+CSeqDBVol::x_GetTaxonomy(int                   oid,
                          bool                  have_oidlist,
-                         Uint4                 membership_bit,
-                         Uint4                 preferred_gi,
+                         int                   membership_bit,
+                         int                   preferred_gi,
                          CRef<CSeqDBTaxInfo>   tax_info,
                          CSeqDBLockHold      & locked) const
 {
-    const bool  provide_old_taxonomy_info = false;
-    const bool  provide_new_taxonomy_info = true;
-    const bool  use_taxinfo_cache         = false;
-    const Uint4 max_taxcache_size         = 200;
+    const bool provide_old_taxonomy_info = false;
+    const bool provide_new_taxonomy_info = true;
+    const bool use_taxinfo_cache         = false;
+    const int  max_taxcache_size         = 200;
     
     const char * TAX_DATA_OBJ_LABEL = "TaxNamesData";
     const char * TAX_ORGREF_DB_NAME = "taxon";
@@ -914,7 +914,7 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
     m_Atlas.Lock(locked);
     
     for(TBDLLConstIter iter = dl.begin(); iter != dl.end(); iter ++) {
-        Uint4 taxid = (*iter)->GetTaxid();
+        int taxid = (*iter)->GetTaxid();
         
         bool have_org_desc = false;
         
@@ -1007,9 +1007,9 @@ CSeqDBVol::x_GetTaxonomy(Uint4                 oid,
 }
 
 CRef<CSeqdesc>
-CSeqDBVol::x_GetAsnDefline(Uint4            oid,
+CSeqDBVol::x_GetAsnDefline(int              oid,
                            bool             have_oidlist,
-                           Uint4            memb_bit,
+                           int              memb_bit,
                            CSeqDBLockHold & locked) const
 {
     const char * ASN1_DEFLINE_LABEL = "ASN1_BlastDefLine";
@@ -1048,10 +1048,10 @@ CSeqDBVol::x_GetAsnDefline(Uint4            oid,
 }
 
 CRef<CBioseq>
-CSeqDBVol::GetBioseq(Uint4                 oid,
+CSeqDBVol::GetBioseq(int                   oid,
                      bool                  have_oidlist,
-                     Uint4                 memb_bit,
-                     Uint4                 target_gi,
+                     int                   memb_bit,
+                     int                   target_gi,
                      CRef<CSeqDBTaxInfo>   tax_info,
                      CSeqDBLockHold      & locked) const
 {
@@ -1106,7 +1106,7 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
     
     const char * seq_buffer = 0;
     
-    Int4 length = x_GetSequence(oid, & seq_buffer, false, locked, false);
+    int length = x_GetSequence(oid, & seq_buffer, false, locked, false);
     
     if (length < 1) {
         return null_result;
@@ -1197,7 +1197,7 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
     return bioseq;
 }
 
-char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLockHold & locked) const
+char * CSeqDBVol::x_AllocType(size_t length, ESeqDBAllocType alloc_type, CSeqDBLockHold & locked) const
 {
     // Allocation using the atlas is not intended for the end user.
     
@@ -1220,26 +1220,26 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLo
     return retval;
 }
 
-Int4 CSeqDBVol::GetAmbigSeq(Int4               oid,
-                            char            ** buffer,
-                            Uint4              nucl_code,
-                            ESeqDBAllocType    alloc_type,
-                            CSeqDBLockHold   & locked) const
+int CSeqDBVol::GetAmbigSeq(int                oid,
+                           char            ** buffer,
+                           int                nucl_code,
+                           ESeqDBAllocType    alloc_type,
+                           CSeqDBLockHold   & locked) const
 {
     char * buf1 = 0;
-    Int4 baselen = x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, locked);
+    int baselen = x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, locked);
     
     *buffer = buf1;
     return baselen;
 }
 
-Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
-                              char            ** buffer,
-                              Uint4              nucl_code,
-                              ESeqDBAllocType    alloc_type,
-                              CSeqDBLockHold   & locked) const
+int CSeqDBVol::x_GetAmbigSeq(int                oid,
+                             char            ** buffer,
+                             int                nucl_code,
+                             ESeqDBAllocType    alloc_type,
+                             CSeqDBLockHold   & locked) const
 {
-    Int4 base_length = -1;
+    int base_length = -1;
     
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
         if (alloc_type == eAtlas) {
@@ -1291,7 +1291,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
             }
         }
         
-        int bytelen = buffer_na8.size();
+        size_t bytelen = buffer_na8.size();
         char * uncomp_buf = x_AllocType(bytelen, alloc_type, locked);
         
         for(int i = 0; i < bytelen; i++) {
@@ -1304,16 +1304,16 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
     return base_length;
 }
 
-Int4 CSeqDBVol::x_GetSequence(Int4             oid,
-                              const char    ** buffer,
-                              bool             keep,
-                              CSeqDBLockHold & locked,
-                              bool             can_release) const
+int CSeqDBVol::x_GetSequence(int              oid,
+                             const char    ** buffer,
+                             bool             keep,
+                             CSeqDBLockHold & locked,
+                             bool             can_release) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    Int4 length = -1;
+    int length = -1;
     
     m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
@@ -1324,7 +1324,7 @@ Int4 CSeqDBVol::x_GetSequence(Int4             oid,
         
         end_offset --;
         
-        length = end_offset - start_offset;
+        length = int(end_offset - start_offset);
         
         *buffer = m_Seq.GetRegion(start_offset, end_offset, keep, locked);
     } else if (kSeqTypeNucl == seqtype) {
@@ -1345,20 +1345,20 @@ Int4 CSeqDBVol::x_GetSequence(Int4             oid,
             m_Atlas.Unlock(locked);
         }
         
-        Int4 whole_bytes = end_offset - start_offset - 1;
+        int whole_bytes = int(end_offset - start_offset - 1);
         
         char last_char = (*buffer)[whole_bytes];
         
-        Int4 remainder = last_char & 3;
+        int remainder = last_char & 3;
         length = (whole_bytes * 4) + remainder;
     }
     
     return length;
 }
 
-list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4            oid,
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int              oid,
                                            bool             have_oidlist,
-                                           Uint4            membership_bit,
+                                           int              membership_bit,
                                            CSeqDBLockHold & locked) const
 {
     list< CRef< CSeq_id > > seqids;
@@ -1387,15 +1387,15 @@ Uint8 CSeqDBVol::GetVolumeLength() const
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
+CSeqDBVol::GetHdr(int oid, CSeqDBLockHold & locked) const
 {
     return x_GetHdrAsn1(oid, locked);
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetHdrMembBit(Uint4            oid,
+CSeqDBVol::x_GetHdrMembBit(int              oid,
                            bool             have_oidlist,
-                           Uint4            membership_bit,
+                           int              membership_bit,
                            CSeqDBLockHold & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
@@ -1409,7 +1409,7 @@ CSeqDBVol::x_GetHdrMembBit(Uint4            oid,
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
         
-        Uint4 memb_mask = 0x1 << (membership_bit-1);
+        int memb_mask = 0x1 << (membership_bit-1);
         
         TBDLL & dl = BDLS->Set();
         
@@ -1422,7 +1422,7 @@ CSeqDBVol::x_GetHdrMembBit(Uint4            oid,
                 (! defline.GetMemberships().empty());
             
             if (have_memb) {
-                Uint4 bits = defline.GetMemberships().front();
+                int bits = defline.GetMemberships().front();
                 
                 if ((bits & memb_mask) == 0) {
                     have_memb = false;
@@ -1442,7 +1442,7 @@ CSeqDBVol::x_GetHdrMembBit(Uint4            oid,
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetHdrAsn1(Uint4 oid, CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> nullret;
     
@@ -1478,10 +1478,10 @@ CSeqDBVol::x_GetHdrAsn1(Uint4 oid, CSeqDBLockHold & locked) const
 }
 
 void
-CSeqDBVol::x_GetHdrBinaryMembBit(Uint4            oid,
+CSeqDBVol::x_GetHdrBinaryMembBit(int              oid,
                                  vector<char>   & hdr_data,
                                  bool             have_oidlist,
-                                 Uint4            membership_bit,
+                                 int              membership_bit,
                                  CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> dls =
@@ -1504,7 +1504,7 @@ CSeqDBVol::x_GetHdrBinaryMembBit(Uint4            oid,
     hdr_data.assign(str.data(), str.data() + str.length());
 }
 
-void CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
+void CSeqDBVol::x_GetAmbChar(int oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -1516,10 +1516,10 @@ void CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
                    "File error: could not get ambiguity data.");
     }
     
-    Int4 length = Int4(end_offset - start_offset);
+    int length = int(end_offset - start_offset);
     
     if (length) {
-        Int4 total = length / 4;
+        int total = length / 4;
         
         Int4 * buffer =
             (Int4*) m_Seq.GetRegion(start_offset,
@@ -1533,14 +1533,14 @@ void CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> & ambchars, CSeqDBLockHold 
         ambchars.resize(total);
         
         for(int i = 0; i<total; i++) {
-            ambchars[i] = SeqDB_GetStdOrd((const Uint4 *)(& buffer[i]));
+            ambchars[i] = SeqDB_GetStdOrd((const int *)(& buffer[i]));
         }
     } else {
         ambchars.clear();
     }
 }
 
-Uint4 CSeqDBVol::GetNumOIDs() const
+int CSeqDBVol::GetNumOIDs() const
 {
     return m_Idx.GetNumOIDs();
 }
@@ -1555,12 +1555,12 @@ string CSeqDBVol::GetDate() const
     return m_Idx.GetDate();
 }
 
-Uint4 CSeqDBVol::GetMaxLength() const
+int CSeqDBVol::GetMaxLength() const
 {
     return m_Idx.GetMaxLength();
 }
 
-bool CSeqDBVol::PigToOid(Uint4 pig, Uint4 & oid, CSeqDBLockHold & locked) const
+bool CSeqDBVol::PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const
 {
     if (m_IsamPig.Empty()) {
         return false;
@@ -1569,9 +1569,9 @@ bool CSeqDBVol::PigToOid(Uint4 pig, Uint4 & oid, CSeqDBLockHold & locked) const
     return m_IsamPig->PigToOid(pig, oid, locked);
 }
 
-bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
+bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
 {
-    pig = (Uint4) -1;
+    pig = -1;
     
     if (m_IsamPig.Empty()) {
         return false;
@@ -1605,7 +1605,7 @@ bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
     return false;
 }
 
-bool CSeqDBVol::GiToOid(Uint4 gi, Uint4 & oid, CSeqDBLockHold & locked) const
+bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
 {
     if (m_IsamGi.Empty()) {
         return false;
@@ -1614,9 +1614,9 @@ bool CSeqDBVol::GiToOid(Uint4 gi, Uint4 & oid, CSeqDBLockHold & locked) const
     return m_IsamGi->GiToOid(gi, oid, locked);
 }
 
-bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
+bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const
 {
-    gi = (Uint4) -1;
+    gi = -1;
     
     if (m_IsamGi.Empty()) {
         return false;
@@ -1655,11 +1655,11 @@ bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
 }
 
 void CSeqDBVol::AccessionToOids(const string   & acc,
-                                vector<Uint4>  & oids,
+                                vector<int>    & oids,
                                 CSeqDBLockHold & locked) const
 {
-    bool  simpler (false);
-    Uint4 ident   (Uint4(-1));
+    bool   simpler (false);
+    int    ident   (-1);
     string str_id;
     
     switch(CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler)) {
@@ -1673,7 +1673,7 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
     case CSeqDBIsam::ePig:
         // Converted to PIG type.
         if (! m_IsamPig.Empty()) {
-            Uint4 oid(Uint4(-1));
+            int oid(-1);
             
             if (m_IsamPig->PigToOid(ident, oid, locked)) {
                 oids.push_back(oid);
@@ -1684,7 +1684,7 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
     case CSeqDBIsam::eGi:
         // Converted to GI type.
         if (! m_IsamGi.Empty()) {
-            Uint4 oid(Uint4(-1));
+            int oid(-1);
             
             if (m_IsamGi->GiToOid(ident, oid, locked)) {
                 oids.push_back(oid);
@@ -1700,11 +1700,11 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
 }
 
 void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
-                            vector<Uint4>  & oids,
+                            vector<int>    & oids,
                             CSeqDBLockHold & locked) const
 {
-    bool  simpler (false);
-    Uint4 ident   (Uint4(-1));
+    bool simpler (false);
+    int  ident   (-1);
     string str_id;
     
     switch(CSeqDBIsam::SimplifySeqid(seqid, 0, ident, str_id, simpler)) {
@@ -1718,7 +1718,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
     case CSeqDBIsam::ePig:
         // Converted to PIG type.
         if (! m_IsamPig.Empty()) {
-            Uint4 oid(Uint4(-1));
+            int oid(-1);
             
             if (m_IsamPig->PigToOid(ident, oid, locked)) {
                 oids.push_back(oid);
@@ -1729,7 +1729,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
     case CSeqDBIsam::eGi:
         // Converted to GI type.
         if (! m_IsamGi.Empty()) {
-            Uint4 oid(Uint4(-1));
+            int oid(-1);
             
             if (m_IsamGi->GiToOid(ident, oid, locked)) {
                 oids.push_back(oid);
@@ -1761,7 +1761,7 @@ void CSeqDBVol::UnLease()
     }
 }
 
-Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
+int CSeqDBVol::GetOidAtOffset(int first_seq, Uint8 residue) const
 {
     // This method compensates for representation in two ways.
     //
@@ -1771,7 +1771,7 @@ Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
     // 2. For nucleotide, the input value is 0..(num residues).  We
     // scale this value to the length of the byte data.
     
-    Uint4 vol_cnt = GetNumOIDs();
+    int   vol_cnt = GetNumOIDs();
     Uint8 vol_len = GetVolumeLength();
     
     if (first_seq >= vol_cnt) {
@@ -1808,12 +1808,12 @@ Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
     // First seq limit handled right here.
     // oid_end refers to first disincluded oid.
     
-    Uint4 oid_beg = first_seq;
-    Uint4 oid_end = vol_cnt-1;
+    int oid_beg = first_seq;
+    int oid_end = vol_cnt-1;
     
     // Residue limit we need to search for.
     
-    Uint4 oid_mid = (oid_beg + oid_end)/2;
+    int oid_mid = (oid_beg + oid_end)/2;
     
     while(oid_beg < oid_end) {
         Uint8 offset = x_GetSeqResidueOffset(oid_mid);
@@ -1834,7 +1834,7 @@ Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
     return oid_mid;
 }
 
-Uint8 CSeqDBVol::x_GetSeqResidueOffset(Uint4 oid) const
+Uint8 CSeqDBVol::x_GetSeqResidueOffset(int oid) const
 {
     TIndx start_offset = 0;
     m_Idx.GetSeqStart(oid, start_offset);

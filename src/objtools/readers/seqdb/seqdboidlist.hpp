@@ -63,7 +63,10 @@ using namespace ncbi::objects;
 class CSeqDBOIDList : public CObject {
 public:
     /// A large enough type to span all OIDs.
-    typedef Uint4 TOID;
+    typedef int TOID;
+    
+    /// A type which spans possible file offsets.
+    typedef CSeqDBAtlas::TIndx TIndx;
     
     /// Constructor
     /// 
@@ -215,9 +218,9 @@ private:
     /// @param locked
     ///   The lock holder object for this thread.
     void x_OrMaskBits(const string   & mask_fname,
-                      Uint4            vol_start,
-                      Uint4            oid_start,
-                      Uint4            oid_end,
+                      int              vol_start,
+                      int              oid_start,
+                      int              oid_end,
                       CSeqDBLockHold & locked);
     
     /// Add bits corresponding to a GI list.
@@ -242,10 +245,10 @@ private:
     ///   The lock holder object for this thread.
     void x_OrGiFileBits(const string    & gilist_fname,
                         const CSeqDBVol * volp,
-                        Uint4             vol_start,
-                        Uint4             vol_end,
-                        Uint4             oid_start,
-                        Uint4             oid_end,
+                        int               vol_start,
+                        int               vol_end,
+                        int               oid_start,
+                        int               oid_end,
                         CSeqDBLockHold  & locked);
     
     /// Read a binary GI list.
@@ -266,8 +269,8 @@ private:
     ///   The lock holder object for this thread.
     void x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
                             CSeqDBMemLease & lease,
-                            Uint4            num_gis,
-                            vector<Uint4>  & gis,
+                            int              num_gis,
+                            vector<int>    & gis,
                             CSeqDBLockHold & locked);
     
     /// Read a binary GI list.
@@ -285,7 +288,7 @@ private:
     ///   The lock holder object for this thread.
     void x_ReadTextGiList(CSeqDBRawFile  & gilist,
                           CSeqDBMemLease & lease,
-                          vector<Uint4>  & gis,
+                          vector<int>    & gis,
                           CSeqDBLockHold & locked);
     
     /// Set all bits in a range.
@@ -298,7 +301,7 @@ private:
     ///   The volume's starting oid.
     /// @param oid_end
     ///   The volume's ending oid.
-    void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);
+    void x_SetBitRange(int oid_start, int oid_end);
     
     /// Apply a filter to a volume
     ///
@@ -326,7 +329,7 @@ private:
     CSeqDBMemLease   m_Lease;
     
     /// The total number of OIDs represented in the bit array.
-    Uint4            m_NumOIDs;
+    int              m_NumOIDs;
     
     /// A pointer to the top of the bit array.
     TUC            * m_Bits;

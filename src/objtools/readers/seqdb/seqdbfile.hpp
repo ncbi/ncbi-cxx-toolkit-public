@@ -339,8 +339,8 @@ protected:
     ///     True if an extra hold should be acquired on the data.
     /// @param locked
     ///     The lock holder object for this thread.
-    const char * x_GetRegion(Uint4            start,
-                             Uint4            end,
+    const char * x_GetRegion(TIndx            start,
+                             TIndx            end,
                              bool             keep,
                              CSeqDBLockHold & locked) const
     {
@@ -370,8 +370,8 @@ protected:
     /// @param end
     ///     The offset for the first byte after the area to read.
     void x_ReadBytes(char  * buf,
-                     Uint4   start,
-                     Uint4   end) const
+                     TIndx   start,
+                     TIndx   end) const
     {
         m_File.ReadBytes(m_Lease, buf, start, end);
     }
@@ -526,9 +526,9 @@ public:
     /// @return
     ///   true if the sequence has ambiguity data.
     inline bool
-    GetAmbStartEnd(Uint4   oid,
-                   Uint4 & start,
-                   Uint4 & end) const;
+    GetAmbStartEnd(int     oid,
+                   TIndx & start,
+                   TIndx & end) const;
     
     /// Get the location of a sequence's header data
     ///
@@ -544,9 +544,9 @@ public:
     /// @param end
     ///   The returned end offset of the sequence.
     inline void
-    GetHdrStartEnd(Uint4   oid,
-                   Uint4 & start,
-                   Uint4 & end) const;
+    GetHdrStartEnd(int     oid,
+                   TIndx & start,
+                   TIndx & end) const;
     
     /// Get the location of a sequence's packed sequence data
     ///
@@ -565,9 +565,9 @@ public:
     /// @param end
     ///   The returned end offset of the sequence.
     inline void
-    GetSeqStartEnd(Uint4   oid,
-                   Uint4 & start,
-                   Uint4 & end) const;
+    GetSeqStartEnd(int     oid,
+                   TIndx & start,
+                   TIndx & end) const;
     
     /// Get the location of a sequence's packed sequence data
     ///
@@ -584,8 +584,8 @@ public:
     /// @param start
     ///   The returned start offset of the sequence.
     inline void
-    GetSeqStart(Uint4   oid,
-                Uint4 & start) const;
+    GetSeqStart(int     oid,
+                TIndx & start) const;
     
     /// Get the sequence data type.
     char GetSeqType() const
@@ -606,7 +606,7 @@ public:
     }
     
     /// Get the number of oids in this volume.
-    Uint4 GetNumOIDs() const
+    int GetNumOIDs() const
     {
         return m_NumOIDs;
     }
@@ -618,7 +618,7 @@ public:
     }
     
     /// Get the length of the longest sequence in this volume.
-    Uint4 GetMaxLength() const
+    int GetMaxLength() const
     {
         return m_MaxLen;
     }
@@ -667,7 +667,7 @@ private:
 };
 
 bool
-CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
+CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 {
     if (kSeqTypeNucl == x_GetSeqType()) {
         start = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
@@ -680,14 +680,14 @@ CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 }
 
 void
-CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
+CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 {
     start = SeqDB_GetStdOrd(& m_HdrRegion[oid]);
     end   = SeqDB_GetStdOrd(& m_HdrRegion[oid+1]);
 }
 
 void
-CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
+CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 {
     start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
     
@@ -699,7 +699,7 @@ CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 }
 
 void
-CSeqDBIdxFile::GetSeqStart(Uint4 oid, Uint4 & start) const
+CSeqDBIdxFile::GetSeqStart(int oid, TIndx & start) const
 {
     start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
 }

@@ -215,7 +215,7 @@ private:
 class CRegionMap {
 public:
     /// The type used for file offsets.
-    typedef Uint4 TIndx;
+    typedef CNcbiStreamoff TIndx;
     
     /// Constructor
     /// 
@@ -232,7 +232,7 @@ public:
     /// @param end
     ///   The offset of the end of the byte range.
     CRegionMap(const string * fname,
-               Uint4          fid,
+               int            fid,
                TIndx          begin,
                TIndx          end);
     
@@ -405,7 +405,7 @@ public:
     /// 
     /// @return
     ///   An integer identifying the file this mapping is of.
-    Uint4 Fid()
+    int Fid()
     {
         return m_Fid;
     }
@@ -462,7 +462,7 @@ public:
     /// @return
     ///   Pointer to the requested portion of the region.
     inline const char *
-    MatchAndUse(Uint4            fid,
+    MatchAndUse(int              fid,
                 TIndx          & begin,
                 TIndx          & end,
                 const char    ** start);
@@ -533,7 +533,7 @@ private:
     ///   A pointer to the atlas object.
     static void x_Roundup(TIndx       & begin,
                           TIndx       & end,
-                          Int4        & penalty,
+                          int         & penalty,
                           TIndx         file_size,
                           bool          use_mmap,
                           CSeqDBAtlas * atlas);
@@ -554,16 +554,16 @@ private:
     TIndx m_End;
     
     /// An integer identifying this object to the atlas code.
-    Uint4 m_Fid;
+    int m_Fid;
     
     /// Number of current users of this object.
-    Int4 m_Ref;
+    int m_Ref;
     
     /// GC uses this to rank how recently this range was used.
-    Int4 m_Clock;
+    int m_Clock;
     
     /// Adjustment to m_Clock to bias region collection.
-    Int4 m_Penalty;
+    int m_Penalty;
 };
 
 
@@ -915,7 +915,7 @@ public:
     ///   Pointer to the data to release or deallocate.
     void RetRegion(const char * datap)
     {
-        for(Uint4 i = 0; i<eNumRecent; i++) {
+        for(int i = 0; i<eNumRecent; i++) {
             CRegionMap * rec_map = m_Recent[i];
             
             if (! rec_map)
@@ -984,7 +984,7 @@ public:
     ///   The lock hold object for this thread.
     /// @return
     ///   A pointer to the allocation region of memory.
-    char * Alloc(Uint4 length, CSeqDBLockHold & locked);
+    char * Alloc(size_t length, CSeqDBLockHold & locked);
     
     /// Return allocated memory.
     /// 
@@ -1113,7 +1113,7 @@ private:
     CSeqDBAtlas(const CSeqDBAtlas &);
     
     /// Iterator type for m_Pool member.
-    typedef map<const char *, Uint4>::iterator TPoolIter;
+    typedef map<const char *, size_t>::iterator TPoolIter;
     
     /// Finds a matching region if any exists.
     /// 
@@ -1139,7 +1139,7 @@ private:
     ///   Returned pointer to the CRegionMap object.
     /// @return
     ///   Pointer to the requested portion of the region.
-    const char * x_FindRegion(Uint4            fid,
+    const char * x_FindRegion(int              fid,
                               TIndx          & begin,
                               TIndx          & end,
                               const char    ** startp,
@@ -1216,7 +1216,7 @@ private:
     ///   The address of the filename key in the lookup table.
     /// @return
     ///   The fid
-    Uint4 x_LookupFile(const string  & fname,
+    int x_LookupFile(const string  & fname,
                        const string ** map_fname_ptr);
     
     /// Releases or deletes a memory region.
@@ -1265,9 +1265,9 @@ private:
         if (m_Recent[0] == r)
             return;
         
-        Uint4 found_at = eNumRecent-1;
+        int found_at = eNumRecent-1;
         
-        for(Uint4 i = 0; i < eNumRecent-1; i++) {
+        for(int i = 0; i < eNumRecent-1; i++) {
             if (m_Recent[i] == r) {
                 found_at = i;
                 break;
@@ -1293,20 +1293,20 @@ private:
     
     /// Bytes of "data" currently known to SeqDBAtlas.  This does not
     /// include metadata, such as the region map class itself..
-    Uint4 m_CurAlloc;
+    TIndx m_CurAlloc;
     
     /// All of the SeqDB region maps.
     vector<CRegionMap*> m_Regions;
 
     /// Maps from pointers to dynamically allocated blocks to the byte
     /// size of the allocation.
-    map<const char *, Uint4> m_Pool;
+    map<const char *, size_t> m_Pool;
     
     /// The most recently assigned FID.
-    Uint4 m_LastFID;
+    int m_LastFID;
     
     /// Lookup table of fids by filename.
-    map<string, Uint4> m_FileIDs;
+    map<string, int> m_FileIDs;
     
     /// RegionMapLess
     /// 
@@ -1365,7 +1365,7 @@ private:
     
     /// Atlas will try to garbage collect if more than this many
     /// regions are opened.
-    Uint4 m_OpenRegionsTrigger;
+    int m_OpenRegionsTrigger;
     
     /// Callback to flush memory leases before a garbage collector.
     CSeqDBFlushCB * m_FlushCB;
@@ -1389,7 +1389,7 @@ inline bool CSeqDBMemLease::Contains(TIndx begin, TIndx end) const
 
 
 const char *
-CRegionMap::MatchAndUse(Uint4            fid,
+CRegionMap::MatchAndUse(int              fid,
                         TIndx          & begin,
                         TIndx          & end,
                         const char    ** start)

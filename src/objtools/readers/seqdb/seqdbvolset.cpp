@@ -43,7 +43,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     CSeqDBLockHold locked(atlas);
     
     try {
-        for(Uint4 i = 0; i < vol_names.size(); i++) {
+        for(int i = 0; i < vol_names.size(); i++) {
             x_AddVolume(atlas, vol_names[i], prot_nucl, locked);
         
             if (prot_nucl == kSeqTypeUnkn) {
@@ -58,7 +58,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     catch(CSeqDBException&) {
         // For SeqDB's own exceptions, we'll keep the error message.
         
-        for(Uint4 i = 0; i < m_VolList.size(); i++) {
+        for(int i = 0; i < m_VolList.size(); i++) {
             m_VolList[i].Free();
         }
         throw;
@@ -66,7 +66,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     catch(...) {
         // For other exceptions, we'll provide a message.
         
-        for(Uint4 i = 0; i < m_VolList.size(); i++) {
+        for(int i = 0; i < m_VolList.size(); i++) {
             m_VolList[i].Free();
         }
         NCBI_THROW(CSeqDBException,
@@ -77,7 +77,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
 
 CSeqDBVolSet::~CSeqDBVolSet()
 {
-    for(Uint4 i = 0; i < m_VolList.size(); i++) {
+    for(int i = 0; i < m_VolList.size(); i++) {
         m_VolList[i].Free();
     }
 }
@@ -96,14 +96,17 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas    & atlas,
 
 CSeqDBVolFilter::CSeqDBVolFilter(const string & oid_fn,
                                  const string & gi_fn,
-                                 Uint4          start,
-                                 Uint4          end)
+                                 int            start,
+                                 int            end)
     : m_OIDMask  (oid_fn),
       m_GIList   (gi_fn),
       m_BeginOID (start),
       m_EndOID   (end)
 {
     _ASSERT(oid_fn.empty() || gi_fn.empty());
+    if (!(start < end)) {
+        cout << "Start=" << start << ", end=" << end << endl;
+    }
     _ASSERT(start < end);
 }
 
@@ -120,10 +123,10 @@ bool CSeqDBVolFilter::IsSimple() const
     return (m_OIDMask.empty() == false     &&
             m_GIList.empty()  == true      &&
             m_BeginOID        == 0         &&
-            m_EndOID          == UINT_MAX);
+            m_EndOID          == INT_MAX);
 }
 
-void CSeqDBVolEntry::AddMask(const string & mask_file, Uint4 begin, Uint4 end)
+void CSeqDBVolEntry::AddMask(const string & mask_file, int begin, int end)
 {
     if (! m_AllOIDs) {
         //m_MaskFiles.insert(mask_file);
@@ -134,7 +137,7 @@ void CSeqDBVolEntry::AddMask(const string & mask_file, Uint4 begin, Uint4 end)
     }
 }
 
-void CSeqDBVolEntry::AddGiList(const string & gilist_file, Uint4 begin, Uint4 end)
+void CSeqDBVolEntry::AddGiList(const string & gilist_file, int begin, int end)
 {
     if (! m_AllOIDs) {
         //m_GiListFiles.insert(gilist_file);
@@ -145,7 +148,7 @@ void CSeqDBVolEntry::AddGiList(const string & gilist_file, Uint4 begin, Uint4 en
     }
 }
 
-void CSeqDBVolEntry::AddRange(Uint4 begin, Uint4 end)
+void CSeqDBVolEntry::AddRange(int begin, int end)
 {
     if (! m_AllOIDs) {
         //m_GiListFiles.insert(gilist_file);

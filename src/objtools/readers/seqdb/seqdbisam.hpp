@@ -80,13 +80,13 @@ public:
     typedef CSeqDBAtlas::TIndx TIndx;
     
     /// This class works with OIDs relative to a specific volume.
-    typedef Uint4 TOid;
+    typedef int TOid;
     
     /// PIG identifiers for numeric indices over protein volumes.
-    typedef Uint4 TPig;
+    typedef int TPig;
     
     /// Genomic IDs, the most common numerical identifier.
-    typedef Uint4 TGi;
+    typedef int TGi;
     
     /// Constructor
     /// 
@@ -218,7 +218,7 @@ public:
     ///   The resulting identifier type.
     static EIdentType
     TryToSimplifyAccession(const string & acc,
-                           Uint4        & num_id,
+                           int          & num_id,
                            string       & str_id,
                            bool         & simpler);
     
@@ -251,7 +251,7 @@ public:
     static EIdentType
     SimplifySeqid(CSeq_id       & bestid,
                   const string  * acc,
-                  Uint4         & num_id,
+                  int           & num_id,
                   string        & str_id,
                   bool          & simpler);
     
@@ -286,7 +286,7 @@ private:
     ///   The lock holder object for this thread.
     /// @return
     ///   true if the identifier was found.
-    bool x_IdentToOid(Uint4            id,
+    bool x_IdentToOid(int              id,
                       TOid           & oid,
                       CSeqDBLockHold & locked);
     
@@ -310,8 +310,8 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_SearchIndexNumeric(Uint4            Number, 
-                         Uint4          * Data,
+    x_SearchIndexNumeric(int              Number, 
+                         int            * Data,
                          Uint4          * Index,
                          Int4           & SampleNum,
                          bool           & done,
@@ -335,8 +335,8 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_SearchDataNumeric(Uint4            Number,
-                        Uint4          * Data,
+    x_SearchDataNumeric(int              Number,
+                        int            * Data,
                         Uint4          * Index,
                         Int4             SampleNum,
                         CSeqDBLockHold & locked);
@@ -356,8 +356,8 @@ private:
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
-    x_NumericSearch(Uint4            Number,
-                    Uint4          * Data,
+    x_NumericSearch(int              Number,
+                    int            * Data,
                     Uint4          * Index,
                     CSeqDBLockHold & locked);
     
@@ -381,7 +381,7 @@ private:
     x_StringSearch(const string   & term_in,
                    vector<string> & term_out,
                    vector<string> & value_out,
-                   vector<Uint4>  & index_out,
+                   vector<TIndx>  & index_out,
                    CSeqDBLockHold & locked);
     
     /// Initialize the search object
@@ -408,8 +408,8 @@ private:
     ///   The returned index of the start of the page.
     /// @return
     ///   The number of elements in this data page.
-    Int4 x_GetPageNumElements(Int4   SampleNum,
-                              Int4 * Start);
+    int x_GetPageNumElements(Int4   SampleNum,
+                             Int4 * Start);
     
     /// Lookup a string in a sparse table
     /// 
@@ -428,7 +428,7 @@ private:
     /// @return
     ///   true if results were found
     bool x_SparseStringToOids(const string   & acc,
-                              vector<Uint4>  & oids,
+                              vector<int>    & oids,
                               bool             adjusted,
                               CSeqDBLockHold & locked);
     
@@ -457,13 +457,13 @@ private:
     ///   The lock holder object for this thread.
     /// @return
     ///   The position of the first difference.
-    Int4
+    int
     x_DiffCharLease(const string   & term_in,
                     CSeqDBMemLease & lease,
                     const string   & file_name,
-                    Uint4            file_length,
+                    TIndx            file_length,
                     Uint4            at_least,
-                    Uint4            KeyOffset,
+                    TIndx            KeyOffset,
                     bool             ignore_case,
                     CSeqDBLockHold & locked);
     
@@ -484,7 +484,7 @@ private:
     ///   Whether to treat the search as case-sensitive
     /// @return
     ///   The position of the first difference.
-    Int4
+    int
     x_DiffChar(const string & term_in,
                const char   * begin,
                const char   * end,
@@ -523,7 +523,7 @@ private:
     ///   This thread's lock holder object.
     /// @return
     ///   The offset of the sample in the index file.
-    Uint4 x_GetIndexKeyOffset(Uint4            sample_offset,
+    TIndx x_GetIndexKeyOffset(TIndx            sample_offset,
                               Uint4            sample_num,
                               CSeqDBLockHold & locked);
     
@@ -542,8 +542,8 @@ private:
     ///   Whether to search for a null and return only that much data.
     /// @param locked
     ///   This thread's lock holder object.
-    void x_GetIndexString(Uint4            key_offset,
-                          Uint4            length,
+    void x_GetIndexString(TIndx            key_offset,
+                          int              length,
                           string         & prefix,
                           bool             trim_to_null,
                           CSeqDBLockHold & locked);
@@ -563,10 +563,10 @@ private:
     ///   The returned offset of the key that was used.
     /// @param locked
     ///   This thread's lock holder object.
-    Int4 x_DiffSample(const string   & term_in,
-                      Uint4            SampleNum,
-                      Uint4          & KeyOffset,
-                      CSeqDBLockHold & locked);
+    int x_DiffSample(const string   & term_in,
+                     Uint4            SampleNum,
+                     TIndx          & KeyOffset,
+                     CSeqDBLockHold & locked);
     
     /// Find matches in the given page of a string ISAM file.
     /// 
@@ -587,8 +587,8 @@ private:
     /// @param locked
     ///   This thread's lock holder object.
     void x_ExtractAllData(const string   & term_in,
-                          Uint4            sample_index,
-                          vector<Uint4>  & indices_out,
+                          TIndx            sample_index,
+                          vector<TIndx>  & indices_out,
                           vector<string> & keys_out,
                           vector<string> & data_out,
                           CSeqDBLockHold & locked);
@@ -613,10 +613,10 @@ private:
     /// @param data_out
     ///   The value of each match.
     void x_ExtractPageData(const string   & term_in,
-                           Uint4            page_index,
+                           TIndx            page_index,
                            const char     * beginp,
                            const char     * endp,
-                           vector<Uint4>  & indices_out,
+                           vector<TIndx>  & indices_out,
                            vector<string> & keys_out,
                            vector<string> & data_out);
     
@@ -637,8 +637,8 @@ private:
     ///   The returned ending offset of the mapped area.
     /// @param locked
     ///   This thread's lock holder object.
-    void x_LoadPage(Uint4             SampleNum1,
-                    Uint4             SampleNum2,
+    void x_LoadPage(TIndx             SampleNum1,
+                    TIndx             SampleNum2,
                     const char     ** beginp,
                     const char     ** endp,
                     CSeqDBLockHold &  locked);
@@ -658,7 +658,7 @@ private:
     CSeqDBMemLease m_DataLease;
     
     /// The format type of database files found.
-    Int4 m_Type;
+    int m_Type;
     
     /// The filename of the ISAM data file.
     string m_DataFname;
@@ -667,10 +667,10 @@ private:
     string m_IndexFname;
     
     /// The length of the ISAM data file.
-    Uint4 m_DataFileLength;
+    TIndx m_DataFileLength;
     
     /// The length of the ISAM index file.
-    Uint4 m_IndexFileLength;
+    TIndx m_IndexFileLength;
     
     /// Number of terms in database
     Int4 m_NumTerms;

@@ -74,8 +74,8 @@ public:
     ///     OID past the last OID to consider, or UINT_MAX
     CSeqDBVolFilter(const string & oid_fn,
                     const string & gi_fn,
-                    Uint4          start,
-                    Uint4          end);
+                    int            start,
+                    int            end);
     
     /// Destructor
     virtual ~CSeqDBVolFilter()
@@ -130,7 +130,7 @@ public:
     ///
     /// @return
     ///   The starting OID of the range.
-    Uint4 BeginOID()
+    int BeginOID()
     {
         return m_BeginOID;
     }
@@ -143,7 +143,7 @@ public:
     ///
     /// @return
     ///   The ending OID of the range.
-    Uint4 EndOID()
+    int EndOID()
     {
         return m_EndOID;
     }
@@ -156,10 +156,10 @@ private:
     string m_GIList;
     
     /// First OID to consider
-    Uint4 m_BeginOID;
+    int m_BeginOID;
     
     /// OID past the last OID to consider, or UINT_MAX
-    Uint4 m_EndOID;
+    int m_EndOID;
 };
 
 
@@ -214,7 +214,7 @@ public:
     ///
     /// @param start
     ///   The first OID in the range.
-    void SetStartEnd(Uint4 start)
+    void SetStartEnd(int start)
     {
         m_OIDStart = start;
         m_OIDEnd   = start + m_Vol->GetNumOIDs();
@@ -231,7 +231,7 @@ public:
     ///   The first OID to include in the range.
     /// @param end
     ///   The first OID after the included range.
-    void AddMask(const string & mask_file, Uint4 begin, Uint4 end);
+    void AddMask(const string & mask_file, int begin, int end);
     
     /// Filter the volume with a GI list file
     /// 
@@ -244,7 +244,7 @@ public:
     ///   The first OID to include in the range.
     /// @param end
     ///   The first OID after the included range.
-    void AddGiList(const string & gilist_file, Uint4 begin, Uint4 end);
+    void AddGiList(const string & gilist_file, int begin, int end);
     
     /// Filter the volume with a GI list file
     /// 
@@ -255,7 +255,7 @@ public:
     ///   The first OID to include in the range.
     /// @param end
     ///   The first OID after the included range.
-    void AddRange(Uint4 begin, Uint4 end);
+    void AddRange(int begin, int end);
     
     /// Set this volume to an unfiltered state
     /// 
@@ -312,7 +312,7 @@ public:
     /// 
     /// @return
     ///   The starting OID of the range
-    Uint4 OIDStart() const
+    int OIDStart() const
     {
         return m_OIDStart;
     }
@@ -324,7 +324,7 @@ public:
     /// 
     /// @return
     ///   The ending OID of the range
-    Uint4 OIDEnd() const
+    int OIDEnd() const
     {
         return m_OIDEnd;
     }
@@ -376,10 +376,10 @@ private:
     CSeqDBVol     * m_Vol;
     
     /// The start of the OID range.
-    Uint4           m_OIDStart;
+    int             m_OIDStart;
     
     /// The end of the OID range.
-    Uint4           m_OIDEnd;
+    int             m_OIDEnd;
     
     /// True if all OIDs are included.
     bool            m_AllOIDs;
@@ -441,9 +441,9 @@ public:
     ///   The returned OID within the relevant volume.
     /// @return
     ///   A pointer to the volume containing the oid, or NULL.
-    const CSeqDBVol * FindVol(Uint4 oid, Uint4 & vol_oid) const
+    const CSeqDBVol * FindVol(int oid, int & vol_oid) const
     {
-        Uint4 rec_indx = m_RecentVol;
+        int rec_indx = m_RecentVol;
         
         if (rec_indx < m_VolList.size()) {
             const CSeqDBVolEntry & rvol = m_VolList[rec_indx];
@@ -457,7 +457,7 @@ public:
             }
         }
         
-        for(Uint4 index = 0; index < m_VolList.size(); index++) {
+        for(int index = 0; index < m_VolList.size(); index++) {
             if ((m_VolList[index].OIDStart() <= oid) &&
                 (m_VolList[index].OIDEnd()   >  oid)) {
                 
@@ -481,7 +481,7 @@ public:
     ///   The index of the volume to return.
     /// @return
     ///   A pointer to the indicated volume, or NULL.
-    const CSeqDBVol * GetVol(Uint4 i) const
+    const CSeqDBVol * GetVol(int i) const
     {
         if (m_VolList.empty()) {
             return 0;
@@ -505,7 +505,7 @@ public:
     ///   The index of the volume entry to return.
     /// @return
     ///   A pointer to the indicated volume entry, or NULL.
-    const CSeqDBVolEntry * GetVolEntry(Uint4 i) const
+    const CSeqDBVolEntry * GetVolEntry(int i) const
     {
         if (m_VolList.empty()) {
             return 0;
@@ -562,10 +562,10 @@ public:
     /// 
     /// This returns the number of volumes available from this set.
     /// It would be needed, for example, in order to iterate over all
-    /// volumes with the GetVol(Uint4) method.
+    /// volumes with the GetVol(int) method.
     /// @return
     ///   The number of volumes available from this set.
-    Uint4 GetNumVols() const
+    size_t GetNumVols() const
     {
         return m_VolList.size();
     }
@@ -579,7 +579,7 @@ public:
     ///   true if any filtering is present.
     bool HasFilter() const
     {
-        for(Uint4 i = 0; i < m_VolList.size(); i++) {
+        for(int i = 0; i < m_VolList.size(); i++) {
             if (0 != m_VolList[i].HasFilter()) {
                 return true;
             }
@@ -620,7 +620,7 @@ public:
     ///
     /// @return
     ///   The number of OIDs.
-    Uint4 GetNumOIDs() const
+    int GetNumOIDs() const
     {
         return x_GetNumOIDs();
     }
@@ -642,8 +642,8 @@ public:
     ///   End of OID range to use (non-inclusive).
     void AddGiListVolume(const string & volname,
                          const string & gilist,
-                         Uint4          begin,
-                         Uint4          end)
+                         int            begin,
+                         int            end)
     {
         CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
@@ -671,8 +671,8 @@ public:
     ///   End of OID range to use (non-inclusive).
     void AddMaskedVolume(const string & volname,
                          const string & maskfile,
-                         Uint4          begin,
-                         Uint4          end)
+                         int            begin,
+                         int            end)
     {
         CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
@@ -694,8 +694,8 @@ public:
     /// @param end
     ///   The oid after the last oid to include.
     void AddRangedVolume(const string & volname,
-                         Uint4          begin,
-                         Uint4          end)
+                         int            begin,
+                         int            end)
     {
         CSeqDBVolEntry * v = x_FindVolName(volname);
         if (! v) {
@@ -729,7 +729,7 @@ public:
     /// be reacquired by the volumes if the data is requested again.
     void UnLease()
     {
-        for(Uint4 index = 0; index < m_VolList.size(); index++) {
+        for(int index = 0; index < m_VolList.size(); index++) {
             m_VolList[index].Vol()->UnLease();
         }
     }
@@ -743,7 +743,7 @@ public:
     /// 
     /// @param i
     ///   The index of the volume.
-    const Uint4 GetVolOIDStart(Uint4 i) const
+    const int GetVolOIDStart(int i) const
     {
         if (m_VolList.empty()) {
             return 0;
@@ -771,7 +771,7 @@ public:
     {
         Uint8 vol_total = 0;
         
-        for(Uint4 index = 0; index < m_VolList.size(); index++) {
+        for(int index = 0; index < m_VolList.size(); index++) {
             vol_total += m_VolList[index].Vol()->GetVolumeLength();
         }
         
@@ -791,7 +791,7 @@ public:
     ///   The index of the volume.
     /// @return
     ///   True if this volume is fully included.
-    bool GetIncludeAllOIDs(Uint4 i) const
+    bool GetIncludeAllOIDs(int i) const
     {
         return m_VolList[i].GetIncludeAll();
     }
@@ -817,7 +817,7 @@ public:
     ///   This indicates which volume of the database to deal with.
     /// @return
     ///   The set of all filter objects for the specified volume.
-    const TFilters & GetFilterSet(Uint4 index) const
+    const TFilters & GetFilterSet(int index) const
     {
         return m_VolList[index].GetFilterSet();
     }
@@ -830,7 +830,7 @@ private:
     CSeqDBVolSet & operator=(const CSeqDBVolSet &);
     
     /// Get the size of the entire OID range.
-    Uint4 x_GetNumOIDs() const
+    int x_GetNumOIDs() const
     {
         if (m_VolList.empty())
             return 0;
@@ -866,7 +866,7 @@ private:
     ///   A const pointer to the CSeqDBVolEntry object, or NULL.
     const CSeqDBVolEntry * x_FindVolName(const string & volname) const
     {
-        for(Uint4 i = 0; i<m_VolList.size(); i++) {
+        for(int i = 0; i<m_VolList.size(); i++) {
             if (volname == m_VolList[i].Vol()->GetVolName()) {
                 return & m_VolList[i];
             }
@@ -886,7 +886,7 @@ private:
     ///   A non-const pointer to the CSeqDBVolEntry object, or NULL.
     CSeqDBVolEntry * x_FindVolName(const string & volname)
     {
-        for(Uint4 i = 0; i<m_VolList.size(); i++) {
+        for(int i = 0; i<m_VolList.size(); i++) {
             if (volname == m_VolList[i].Vol()->GetVolName()) {
                 return & m_VolList[i];
             }
@@ -907,7 +907,7 @@ private:
     /// 2. Secondly, the range is always checked.
     /// 3. It is always treated as a hint; there is always fallback
     ///    code to search for the correct volume.
-    mutable volatile Uint4   m_RecentVol;
+    mutable volatile int m_RecentVol;
 };
 
 END_NCBI_SCOPE

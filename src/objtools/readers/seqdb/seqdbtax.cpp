@@ -96,7 +96,7 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     // Skip the four reserved fields
     magic_num_ptr += 4;
     
-    Int4 taxid_array_size = (idx_file_len - data_start)/sizeof(CSeqDBTaxId);
+    int taxid_array_size = int((idx_file_len - data_start)/sizeof(CSeqDBTaxId));
     
     if (taxid_array_size != m_AllTaxidCount) {
         ERR_POST("SeqDB: Taxid metadata indicates (" << m_AllTaxidCount

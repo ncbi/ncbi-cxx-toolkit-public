@@ -267,7 +267,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of included sequences
-    Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const;
+    int GetNumSeqs(const CSeqDBVolSet & volset) const;
     
     /// Get the size of the OID range
     ///
@@ -280,7 +280,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of OIDs found during traversal
-    Uint4 GetNumOIDs(const CSeqDBVolSet & volset) const;
+    int GetNumOIDs(const CSeqDBVolSet & volset) const;
     
     /// Get the total length of the set of databases
     ///
@@ -324,7 +324,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The membership bit, or zero if none was found.
-    Uint4 GetMembBit(const CSeqDBVolSet & volset) const;
+    int GetMembBit(const CSeqDBVolSet & volset) const;
     
     /// Apply a visitor to each node of the alias node tree
     ///
@@ -518,8 +518,8 @@ private:
     /// @param oidfile
     ///   The name of the OID mask file.
     void x_SetOIDMask(CSeqDBVolSet & volset,
-                      Uint4          begin,
-                      Uint4          end,
+                      int            begin,
+                      int            end,
                       const string & oidfile);
 
     /// Add a GI list filter to a volume
@@ -539,8 +539,8 @@ private:
     /// @param gilist
     ///   The name of the GI list file.
     void x_SetGiListMask(CSeqDBVolSet & volset,
-                         Uint4          begin,
-                         Uint4          end,
+                         int            begin,
+                         int            end,
                          const string & gilist);
     
     /// Add an OID range to a volume
@@ -555,7 +555,7 @@ private:
     ///   The first OID in the OID range.
     /// @param end
     ///   The OID after the last OID in the range.
-    void x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
+    void x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end);
     
     
     /// Type of set used for KEY/VALUE pairs within each node
@@ -661,7 +661,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of included sequences
-    Uint4 GetNumSeqs(const CSeqDBVolSet & volset) const
+    int GetNumSeqs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumSeqs(volset);
     }
@@ -677,7 +677,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of OIDs found during traversal
-    Uint4 GetNumOIDs(const CSeqDBVolSet & volset) const
+    int GetNumOIDs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumOIDs(volset);
     }
@@ -729,7 +729,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The membership bit, or zero if none was found.
-    Uint4 GetMembBit(const CSeqDBVolSet & volset) const
+    int GetMembBit(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetMembBit(volset);
     }

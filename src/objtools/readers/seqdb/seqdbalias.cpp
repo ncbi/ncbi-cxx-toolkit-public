@@ -115,7 +115,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
 {
     m_DBPath = ".";
     
-    Uint4 i = 0;
+    size_t i = 0;
     
     for(i = 0; i < m_DBList.size(); i++) {
         string resolved_name =
@@ -152,7 +152,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     if (m_DBList.empty())
         return;
     
-    Uint4 common = m_DBList[0].size();
+    size_t common = m_DBList[0].size();
     
     // Reduce common length to length of min db path.
     
@@ -219,7 +219,7 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     
     string value(spacep, ep);
     
-    for(Uint4 i = 0; i<value.size(); i++) {
+    for(size_t i = 0; i<value.size(); i++) {
         if (value[i] == '\t') {
             value[i] = ' ';
         }
@@ -285,7 +285,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string     & this_name,
                    string("No database names were ") + situation);
     }
     
-    for(Uint4 i = 0; i<m_DBList.size(); i++) {
+    for(size_t i = 0; i<m_DBList.size(); i++) {
         if (m_DBList[i] == SeqDB_GetBaseName(this_name)) {
             // If the base name of the alias file is also listed in
             // "dblist", it is assumed to refer to a volume instead of
@@ -444,7 +444,7 @@ public:
     ///   A database volume
     virtual void Accumulate(const CSeqDBVol & vol)
     {
-        Uint4 new_max = vol.GetMaxLength();
+        int new_max = vol.GetMaxLength();
         
         if (new_max > m_Value)
             m_Value = new_max;
@@ -459,21 +459,21 @@ public:
     ///   A database volume
     virtual void AddString(const string & value)
     {
-        Uint4 new_max = NStr::StringToUInt(value);
+        int new_max = NStr::StringToUInt(value);
         
         if (new_max > m_Value)
             m_Value = new_max;
     }
     
     /// Returns the maximum sequence length.
-    Uint4 GetMaxLength()
+    int GetMaxLength()
     {
         return m_Value;
     }
     
 private:
     /// The maximum sequence length.
-    Uint4 m_Value;
+    int m_Value;
 };
 
 
@@ -523,14 +523,14 @@ public:
     }
     
     /// Returns the accumulated number of OIDs.
-    Uint4 GetNum() const
+    int GetNum() const
     {
         return m_Value;
     }
     
 private:
     /// The accumulated number of OIDs.
-    Uint4 m_Value;
+    int m_Value;
 };
 
 
@@ -667,14 +667,14 @@ public:
     }
     
     /// Returns the membership bit.
-    Uint4 GetMembBit() const
+    int GetMembBit() const
     {
         return m_Value;
     }
     
 private:
     /// The membership bit.
-    Uint4 m_Value;
+    int m_Value;
 };
 
 
@@ -702,8 +702,8 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
 }
 
 void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset,
-                                   Uint4          begin,
-                                   Uint4          end,
+                                   int            begin,
+                                   int            end,
                                    const string & oidfile)
 {
     if (m_DBList.size() != 1) {
@@ -723,8 +723,8 @@ void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset,
 }
 
 void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset,
-                                      Uint4          begin,
-                                      Uint4          end,
+                                      int            begin,
+                                      int            end,
                                       const string & gilist)
 {
     string resolved_gilist;
@@ -769,7 +769,7 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset,
     }
 }
 
-void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
+void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end)
 {
     if (m_DBList.size() != 1) {
         ostringstream oss;
@@ -802,8 +802,8 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
             f_oid_iter != m_Values.end() ||
             l_oid_iter != m_Values.end()) {
             
-            Uint4 first_oid = 0;
-            Uint4 last_oid  = UINT_MAX;
+            int first_oid = 0;
+            int last_oid  = INT_MAX;
             
             if (f_oid_iter != m_Values.end()) {
                 first_oid = NStr::StringToUInt(f_oid_iter->second);
@@ -861,7 +861,7 @@ string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
     return walk.GetTitle();
 }
 
-Uint4 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
+int CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
 {
     CSeqDB_NSeqsWalker walk;
     WalkNodes(& walk, vols);
@@ -869,7 +869,7 @@ Uint4 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
     return walk.GetNum();
 }
 
-Uint4 CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
+int CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
 {
     CSeqDB_NOIDsWalker walk;
     WalkNodes(& walk, vols);
@@ -893,7 +893,7 @@ Uint8 CSeqDBAliasNode::GetVolumeLength(const CSeqDBVolSet & volset) const
     return walk.GetLength();
 }
 
-Uint4 CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
+int CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
 {
     CSeqDB_MembBitWalker walk;
     WalkNodes(& walk, volset);

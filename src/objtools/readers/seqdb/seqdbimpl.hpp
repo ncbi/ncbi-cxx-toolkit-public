@@ -108,7 +108,7 @@ private:
 class CSeqDBImpl {
 public:
     /// Numeric type that can span all OIDs for one instance of SeqDB.
-    typedef Uint4 TOID;
+    typedef int TOID;
     
     /// Constructor
     ///
@@ -132,8 +132,8 @@ public:
     ///   efficient read and write calls are used instead.
     CSeqDBImpl(const string & db_name_list,
                char           prot_nucl,
-               Uint4          oid_begin,
-               Uint4          oid_end,
+               int            oid_begin,
+               int            oid_end,
                bool           use_mmap);
     
     /// Destructor
@@ -148,7 +148,7 @@ public:
     ///   The ordinal id of the sequence.
     /// @return
     ///   The length of the sequence in bases.
-    Uint4 GetSeqLength(Uint4 oid) const;
+    int GetSeqLength(int oid) const;
     
     /// Get the approximate sequence length.
     ///
@@ -159,7 +159,7 @@ public:
     ///   The ordinal id of the sequence.
     /// @return
     ///   The approximate length of the sequence in bases.
-    Uint4 GetSeqLengthApprox(Uint4 oid) const;
+    int GetSeqLengthApprox(int oid) const;
     
     /// Get the sequence header data.
     ///
@@ -170,7 +170,7 @@ public:
     ///   The ordinal id of the sequence.
     /// @return
     ///   The length of the sequence in bases.
-    CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
+    CRef<CBlast_def_line_set> GetHdr(int oid) const;
     
     /// Get the sequence type.
     ///
@@ -194,7 +194,7 @@ public:
     ///   The target gi to filter the header information by.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(Uint4 oid, Uint4 target_gi) const;
+    CRef<CBioseq> GetBioseq(int oid, int target_gi) const;
     
     /// Get the sequence data for a sequence.
     ///
@@ -208,7 +208,7 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    Uint4 GetSequence(Uint4 oid, const char ** buffer) const;
+    int GetSequence(int oid, const char ** buffer) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -233,9 +233,9 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    Uint4 GetAmbigSeq(Uint4           oid,
+    int GetAmbigSeq(int             oid,
                       char         ** buffer,
-                      Uint4           nucl_code,
+                      int             nucl_code,
                       ESeqDBAllocType strategy) const;
     
     /// Returns any resources associated with the sequence.
@@ -262,7 +262,7 @@ public:
     ///   The oid of the sequence.
     /// @return
     ///   A list of Seq-id objects for this sequence.
-    list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid) const;
+    list< CRef<CSeq_id> > GetSeqIDs(int oid) const;
     
     /// Returns the database title.
     ///
@@ -279,10 +279,10 @@ public:
     string GetDate() const;
     
     /// Returns the number of sequences available.
-    Uint4 GetNumSeqs() const;
+    int GetNumSeqs() const;
     
     /// Returns the size of the (possibly sparse) OID range.
-    Uint4 GetNumOIDs() const;
+    int GetNumOIDs() const;
     
     /// Returns the sum of the lengths of all available sequences.
     ///
@@ -304,7 +304,7 @@ public:
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  This might be used to chose buffer sizes.
-    Uint4 GetMaxLength() const;
+    int GetMaxLength() const;
     
     /// Find an included OID, incrementing next_oid if necessary.
     ///
@@ -315,7 +315,7 @@ public:
     ///
     /// @return
     ///   True if a valid OID was found, false otherwise.
-    bool CheckOrFindOID(Uint4 & next_oid) const;
+    bool CheckOrFindOID(int & next_oid) const;
     
     /// Return a chunk of OIDs, and update the OID bookmark.
     /// 
@@ -331,7 +331,7 @@ public:
     /// the last chunk).  In some cases it may be desireable to have
     /// several concurrent, independent iterations over the same database
     /// object.  If this is required, the caller should specify the address
-    /// of a Uint4 to the optional parameter oid_state.  This should be
+    /// of an int to the optional parameter oid_state.  This should be
     /// initialized to zero (before the iteration begins) but should
     /// otherwise not be modified by the calling code (except that it can
     /// be reset to zero to restart the iteration).  For the normal case of
@@ -350,7 +350,7 @@ public:
     GetNextOIDChunk(TOID         & begin_chunk,
                     TOID         & end_chunk,
                     vector<TOID> & oid_list,
-                    Uint4        * oid_state);
+                    int          * oid_state);
     
     /// Get list of database names.
     ///
@@ -381,16 +381,16 @@ public:
     void FlushSeqMemory();
     
     /// Translate a PIG to an OID.
-    bool PigToOid(Uint4 pig, Uint4 & oid) const;
+    bool PigToOid(int pig, int & oid) const;
     
     /// Translate a PIG to an OID.
-    bool OidToPig(Uint4 oid, Uint4 & pig) const;
+    bool OidToPig(int oid, int & pig) const;
     
     /// Translate a GI to an OID.
-    bool GiToOid(Uint4 gi, Uint4 & oid) const;
+    bool GiToOid(int gi, int & oid) const;
     
     /// Translate a GI to an OID.
-    bool OidToGi(Uint4 oid, Uint4 & gi) const;
+    bool OidToGi(int oid, int & gi) const;
     
     /// Find OIDs matching the specified string.
     void AccessionToOids(const string & acc, vector<TOID> & oids) const;
@@ -400,7 +400,7 @@ public:
     
     /// Find the OID corresponding to the offset given in residues,
     /// into the database as a whole.
-    Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+    int GetOidAtOffset(int first_seq, Uint8 residue) const;
     
     /// Find volume paths
     ///
@@ -449,10 +449,10 @@ private:
     string x_FixString(const string & s) const;
     
     /// Returns the number of sequences available.
-    Uint4 x_GetNumSeqs() const;
+    int x_GetNumSeqs() const;
     
     /// Returns the size of the (possibly sparse) OID range.
-    Uint4 x_GetNumOIDs() const;
+    int x_GetNumOIDs() const;
     
     /// Returns the sum of the lengths of all available sequences.
     ///
@@ -491,7 +491,7 @@ private:
     ///   The next oid to check and to return to the user.
     /// @param locked
     ///   The lock hold object for this thread.
-    bool x_CheckOrFindOID(Uint4 & next_oid, CSeqDBLockHold & locked) const;
+    bool x_CheckOrFindOID(int & next_oid, CSeqDBLockHold & locked) const;
     
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.
@@ -516,22 +516,22 @@ private:
     CRef<CSeqDBTaxInfo> m_TaxInfo;
     
     /// Starting OID as provided to the constructor.
-    Uint4 m_RestrictBegin;
+    int m_RestrictBegin;
     
     /// Ending OID as provided to the constructor.
-    Uint4 m_RestrictEnd;
+    int m_RestrictEnd;
     
     /// Mutex which synchronizes access to the OID list.
     CFastMutex m_OIDLock;
     
     /// "Bookmark" for multithreaded chunk-type OID iteration.
-    Uint4 m_NextChunkOID;
+    int m_NextChunkOID;
     
     /// Number of sequences in the overall database.
-    Uint4 m_NumSeqs;
+    int m_NumSeqs;
     
     /// Size of databases OID range.
-    Uint4 m_NumOIDs;
+    int m_NumOIDs;
     
     /// Total length of database (in bases).
     Uint8 m_TotalLength;

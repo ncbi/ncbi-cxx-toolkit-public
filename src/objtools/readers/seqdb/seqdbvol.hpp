@@ -93,7 +93,7 @@ public:
     ///   The OID of the sequence
     /// @return
     ///   The length in bases of the sequence
-    Int4 GetSeqLengthProt(Uint4 oid) const;
+    int GetSeqLengthProt(int oid) const;
     
     /// Approximate sequence length for nucleotide databases
     /// 
@@ -108,7 +108,7 @@ public:
     ///   The OID of the sequence
     /// @return
     ///   The approximate length in bases of the sequence
-    Int4 GetSeqLengthApprox(Uint4 oid) const;
+    int GetSeqLengthApprox(int oid) const;
     
     /// Exact sequence length for nucleotide databases
     /// 
@@ -121,7 +121,7 @@ public:
     ///   The OID of the sequence
     /// @return
     ///   The length in bases of the sequence
-    Int4 GetSeqLengthExact(Uint4 oid) const;
+    int GetSeqLengthExact(int oid) const;
     
     /// Get sequence header information
     /// 
@@ -135,7 +135,7 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   The set of blast-def-lines describing this sequence
-    CRef<CBlast_def_line_set> GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
+    CRef<CBlast_def_line_set> GetHdr(int oid, CSeqDBLockHold & locked) const;
     
     /// Get the sequence type stored in this database
     /// 
@@ -174,10 +174,10 @@ public:
     /// @return
     ///   A CBioseq describing this sequence
     CRef<CBioseq>
-    GetBioseq(Uint4                 oid,
+    GetBioseq(int                   oid,
               bool                  have_oidlist,
-              Uint4                 memb_bit,
-              Uint4                 pref_gi,
+              int                   memb_bit,
+              int                   pref_gi,
               CRef<CSeqDBTaxInfo>   tax_info,
               CSeqDBLockHold      & locked) const;
     
@@ -203,7 +203,7 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   The length of this sequence in bases
-    Int4 GetSequence(Int4 oid, const char ** buffer, CSeqDBLockHold & locked) const
+    int GetSequence(int oid, const char ** buffer, CSeqDBLockHold & locked) const
     {
         return x_GetSequence(oid, buffer, true, locked, true);
     }
@@ -231,9 +231,9 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   The length of this sequence in bases
-    Int4 GetAmbigSeq(Int4              oid,
+    int GetAmbigSeq(int              oid,
                      char           ** buffer,
-                     Uint4             nucl_code,
+                     int               nucl_code,
                      ESeqDBAllocType   alloc_type,
                      CSeqDBLockHold  & locked) const;
     
@@ -252,9 +252,9 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   The list of Seq-id objects for this sequences
-    list< CRef<CSeq_id> > GetSeqIDs(Uint4            oid,
+    list< CRef<CSeq_id> > GetSeqIDs(int              oid,
                                     bool             have_oidlist,
-                                    Uint4            membership_bit,
+                                    int              membership_bit,
                                     CSeqDBLockHold & locked) const;
     
     /// Get the volume title
@@ -264,13 +264,13 @@ public:
     string GetDate() const;
     
     /// Get the number of OIDs for this volume
-    Uint4  GetNumOIDs() const;
+    int    GetNumOIDs() const;
     
     /// Get the total length of this volume (in bases)
     Uint8  GetVolumeLength() const;
     
     /// Get the length of the largest sequence in this volume
-    Uint4  GetMaxLength() const;
+    int    GetMaxLength() const;
     
     /// Get the volume name
     string GetVolName() const
@@ -298,7 +298,7 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   True if the PIG was found
-    bool PigToOid(Uint4 pig, Uint4 & oid, CSeqDBLockHold & locked) const;
+    bool PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const;
     
     /// Find the PIG given an OID
     /// 
@@ -312,7 +312,7 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   True if a PIG was returned
-    bool GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const;
+    bool GetPig(int oid, int & pig, CSeqDBLockHold & locked) const;
     
     /// Find the OID given a GI
     ///
@@ -327,7 +327,7 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   True if an OID was returned
-    bool GiToOid(Uint4 gi, Uint4 & oid, CSeqDBLockHold & locked) const;
+    bool GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const;
     
     /// Find the GI given an OID
     ///
@@ -341,7 +341,7 @@ public:
     ///   The lock holder object for this thread
     /// @return
     ///   True if a GI was returned
-    bool GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const;
+    bool GetGi(int oid, int & gi, CSeqDBLockHold & locked) const;
     
     /// Find OIDs for the specified accession or formatted Seq-id
     ///
@@ -359,7 +359,7 @@ public:
     /// @param locked
     ///   The lock holder object for this thread
     void AccessionToOids(const string   & acc,
-                         vector<Uint4>  & oids,
+                         vector<int>    & oids,
                          CSeqDBLockHold & locked) const;
     
     /// Find OIDs for the specified Seq-id
@@ -376,7 +376,7 @@ public:
     /// @param locked
     ///   The lock holder object for this thread
     void SeqidToOids(CSeq_id        & seqid,
-                     vector<Uint4>  & oids,
+                     vector<int>    & oids,
                      CSeqDBLockHold & locked) const;
     
     /// Find the OID at a given index into the database
@@ -396,7 +396,7 @@ public:
     ///   The position to find relative to the total length
     /// @return
     ///   The OID of the sequence nearest the specified residue
-    Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+    int GetOidAtOffset(int first_seq, Uint8 residue) const;
     
 private:
     /// Get sequence header object
@@ -411,7 +411,7 @@ private:
     /// @return
     ///   The Blast-def-line-set describing this sequence
     CRef<CBlast_def_line_set>
-    x_GetHdrAsn1(Uint4 oid,
+    x_GetHdrAsn1(int oid,
                  CSeqDBLockHold & locked) const;
     
     /// Get binary sequence header information
@@ -425,7 +425,7 @@ private:
     ///   The returned binary ASN.1 of the Blast-def-line-set
     /// @param locked
     ///   The lock holder object for this thread
-    void x_GetHdrBinary(Uint4            oid,
+    void x_GetHdrBinary(int              oid,
                         vector<char>   & hdr_data,
                         CSeqDBLockHold & locked) const;
     
@@ -445,10 +445,10 @@ private:
     /// @param locked
     ///   The lock holder object for this thread
     void
-    x_GetHdrBinaryMembBit(Uint4            oid,
+    x_GetHdrBinaryMembBit(int              oid,
                           vector<char>   & hdr_data,
                           bool             have_oidlist,
-                          Uint4            membership_bit,
+                          int              membership_bit,
                           CSeqDBLockHold & locked) const;
     
     /// Get sequence header information
@@ -470,9 +470,9 @@ private:
     /// @return
     ///   The set of blast-def-lines describing this sequence
     CRef<CBlast_def_line_set>
-    x_GetHdrMembBit(Uint4            oid,
+    x_GetHdrMembBit(int              oid,
                     bool             have_oidlist,
-                    Uint4            membership_bit,
+                    int              membership_bit,
                     CSeqDBLockHold & locked) const;
     
     /// Get sequence header information structures
@@ -492,9 +492,9 @@ private:
     ///   The lock holder object for this thread
     /// @return
     ///   The CSeqdesc to include in the CBioseq
-    CRef<CSeqdesc> x_GetAsnDefline(Uint4            oid,
+    CRef<CSeqdesc> x_GetAsnDefline(int              oid,
                                    bool             have_oidlist,
-                                   Uint4            membership_bit,
+                                   int              membership_bit,
                                    CSeqDBLockHold & locked) const;
     
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
@@ -517,7 +517,7 @@ private:
     ///   The returned array of ambiguity descriptors
     /// @param locked
     ///   The lock holder object for this thread
-    void x_GetAmbChar(Uint4            oid,
+    void x_GetAmbChar(int              oid,
                       vector<Int4>   & ambchars,
                       CSeqDBLockHold & locked) const;
     
@@ -544,11 +544,11 @@ private:
     ///   The lock holder object for this thread
     /// @return
     ///   The length of this sequence in bases
-    Int4 x_GetAmbigSeq(Int4               oid,
-                       char            ** buffer,
-                       Uint4              nucl_code,
-                       ESeqDBAllocType    alloc_type,
-                       CSeqDBLockHold   & locked) const;
+    int x_GetAmbigSeq(int                oid,
+                      char            ** buffer,
+                      int                nucl_code,
+                      ESeqDBAllocType    alloc_type,
+                      CSeqDBLockHold   & locked) const;
     
     /// Allocate memory in one of several ways
     ///
@@ -565,7 +565,7 @@ private:
     ///     The lock holder object for this thread
     /// @return
     ///     A pointer to the allocated memory
-    char * x_AllocType(Uint4             length,
+    char * x_AllocType(size_t            length,
                        ESeqDBAllocType   alloc_type,
                        CSeqDBLockHold  & locked) const;
     
@@ -592,13 +592,13 @@ private:
     ///     Specify true if the atlas lock can be released
     /// @return
     ///     The length of the sequence in bases
-    Int4 x_GetSequence(Int4             oid,
-                       const char    ** buffer,
-                       bool             keep,
-                       CSeqDBLockHold & locked,
-                       bool             can_release) const;
+  int x_GetSequence(int              oid,
+                    const char    ** buffer,
+                    bool             keep,
+                    CSeqDBLockHold & locked,
+                    bool             can_release) const;
     
-    /// Get defline filtered by several criteria
+  /// Get defline filtered by several criteria
     ///
     /// This method returns the set of deflines for a sequence.  If
     /// there is an OID list and membership bit, these will be
@@ -619,10 +619,10 @@ private:
     /// @return
     ///     The defline set for the specified oid
     CRef<CBlast_def_line_set>
-    x_GetTaxDefline(Uint4            oid,
+    x_GetTaxDefline(int              oid,
                     bool             have_oidlist,
-                    Uint4            membership_bit,
-                    Uint4            preferred_gi,
+                    int              membership_bit,
+                    int              preferred_gi,
                     CSeqDBLockHold & locked) const;
     
     /// Get taxonomic descriptions of a sequence
@@ -650,10 +650,10 @@ private:
     /// @return
     ///     A list of CSeqdesc objects for the specified oid
     list< CRef<CSeqdesc> >
-    x_GetTaxonomy(Uint4                 oid,
+    x_GetTaxonomy(int                   oid,
                   bool                  have_oidlist,
-                  Uint4                 membership_bit,
-                  Uint4                 preferred_gi,
+                  int                   membership_bit,
+                  int                   preferred_gi,
                   CRef<CSeqDBTaxInfo>   tax_info,
                   CSeqDBLockHold      & locked) const;
     
@@ -671,7 +671,7 @@ private:
     ///     The sequence of which to get the starting offset
     /// @return
     ///     The offset in the volume of that sequence in bytes
-    Uint8 x_GetSeqResidueOffset(Uint4 oid) const;
+    Uint8 x_GetSeqResidueOffset(int oid) const;
     
     /// The memory management layer
     CSeqDBAtlas & m_Atlas;
@@ -700,7 +700,7 @@ private:
     mutable CRef<CSeqDBIsam> m_IsamStr;
     
     /// This cache allows CBioseqs to share taxonomic objects.
-    mutable map< Uint4, CRef<CSeqdesc> > m_TaxCache;
+    mutable map< int, CRef<CSeqdesc> > m_TaxCache;
 };
 
 END_NCBI_SCOPE

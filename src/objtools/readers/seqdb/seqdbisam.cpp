@@ -98,7 +98,7 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
         // Special case of memory-only index
         m_DataFileLength = SeqDB_GetStdOrd(& FileInfo[2]);
         
-        Uint4 disk_file_length(0);
+        TIndx disk_file_length(0);
         bool found_data_file =
             m_Atlas.GetFileSize(m_DataFname, disk_file_length, locked);
         
@@ -135,8 +135,8 @@ Int4 CSeqDBIsam::x_GetPageNumElements(Int4   SampleNum,
 }
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_SearchIndexNumeric(Uint4            Number, 
-                                 Uint4          * Data,
+CSeqDBIsam::x_SearchIndexNumeric(int              Number, 
+                                 int            * Data,
                                  Uint4          * Index,
                                  Int4           & SampleNum,
                                  bool           & done,
@@ -160,7 +160,7 @@ CSeqDBIsam::x_SearchIndexNumeric(Uint4            Number,
     Int4 Start     (0);
     Int4 Stop      (m_NumSamples - 1);
     
-    Uint4 obj_size = NoData ? sizeof(Int4) : sizeof(SNumericKeyData);
+    int obj_size = int(NoData ? sizeof(Int4) : sizeof(SNumericKeyData));
     
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
@@ -233,8 +233,8 @@ CSeqDBIsam::x_SearchIndexNumeric(Uint4            Number,
 }
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_SearchDataNumeric(Uint4            Number,
-                                Uint4          * Data,
+CSeqDBIsam::x_SearchDataNumeric(int              Number,
+                                int            * Data,
                                 Uint4          * Index,
                                 Int4             SampleNum,
                                 CSeqDBLockHold & locked)
@@ -356,8 +356,8 @@ CSeqDBIsam::x_SearchDataNumeric(Uint4            Number,
 // ----------------------------------------------------------------
 
 CSeqDBIsam::EErrorCode
-CSeqDBIsam::x_NumericSearch(Uint4            Number, 
-                            Uint4          * Data,
+CSeqDBIsam::x_NumericSearch(int              Number, 
+                            int            * Data,
                             Uint4          * Index,
                             CSeqDBLockHold & locked)
 {
@@ -374,32 +374,32 @@ CSeqDBIsam::x_NumericSearch(Uint4            Number,
     return error;
 }
 
-Int4 CSeqDBIsam::x_DiffCharLease(const string   & term_in,
-                                 CSeqDBMemLease & lease,
-                                 const string   & file_name,
-                                 Uint4            file_length,
-                                 Uint4            at_least,
-                                 Uint4            KeyOffset,
-                                 bool             ignore_case,
-                                 CSeqDBLockHold & locked)
+int CSeqDBIsam::x_DiffCharLease(const string   & term_in,
+                                CSeqDBMemLease & lease,
+                                const string   & file_name,
+                                TIndx            file_length,
+                                Uint4            at_least,
+                                TIndx            KeyOffset,
+                                bool             ignore_case,
+                                CSeqDBLockHold & locked)
 {
-    Int4 result(-1);
+    int result(-1);
     
     m_Atlas.Lock(locked);
     
     // Add one to term_end to insure we don't consider "AA" and "AAB"
     // as equal.
     
-    Uint4 offset_begin = KeyOffset;
-    Uint4 term_end     = KeyOffset + term_in.size() + 1;
-    Uint4 map_end      = term_end + at_least;
+    TIndx offset_begin = KeyOffset;
+    TIndx term_end     = KeyOffset + term_in.size() + 1;
+    TIndx map_end      = term_end + at_least;
     
     if (map_end > file_length) {
         map_end = file_length;
         
         if (term_end > map_end) {
             term_end = map_end;
-            result = file_length - offset_begin;
+            result = int(file_length - offset_begin);
         }
     }
     
@@ -459,11 +459,11 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
                             const char   * end,
                             bool           ignore_case)
 {
-    Int4 result(-1);
-    Uint4 i(0);
+    int result(-1);
+    int i(0);
     
     const char * file_data = begin;
-    Uint4 bytes = end-begin;
+    int bytes = int(end - begin);
     
     for(i = 0; (i < bytes) && i < term_in.size(); i++) {
         char ch1 = term_in[i];
@@ -500,10 +500,10 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
 }
 
 void CSeqDBIsam::x_ExtractPageData(const string   & term_in,
-                                   Uint4            page_index,
+                                   TIndx            page_index,
                                    const char     * beginp,
                                    const char     * endp,
-                                   vector<Uint4>  & indices_out,
+                                   vector<TIndx>  & indices_out,
                                    vector<string> & keys_out,
                                    vector<string> & data_out)
 {
@@ -554,8 +554,8 @@ void CSeqDBIsam::x_ExtractPageData(const string   & term_in,
 }
 
 void CSeqDBIsam::x_ExtractAllData(const string   & term_in,
-                                  Uint4            sample_index,
-                                  vector<Uint4>  & indices_out,
+                                  TIndx            sample_index,
+                                  vector<TIndx>  & indices_out,
                                   vector<string> & keys_out,
                                   vector<string> & data_out,
                                   CSeqDBLockHold & locked)
@@ -566,16 +566,16 @@ void CSeqDBIsam::x_ExtractAllData(const string   & term_in,
     
     bool ignore_case = true;
     
-    Uint4 pre_amt  = 1;
-    Uint4 post_amt = 1;
+    int pre_amt  = 1;
+    int post_amt = 1;
     
     bool done_b(false), done_e(false);
     
     const char * beginp(0);
     const char * endp(0);
     
-    Uint4 beg_off(0);
-    Uint4 end_off(0);
+    TIndx beg_off(0);
+    TIndx end_off(0);
     
     while(! (done_b && done_e)) {
         if (sample_index < pre_amt) {
@@ -687,8 +687,8 @@ void CSeqDBIsam::x_ExtractData(const char     * key_start,
     }
 }
 
-Uint4
-CSeqDBIsam::x_GetIndexKeyOffset(Uint4            sample_offset,
+CSeqDBIsam::TIndx
+CSeqDBIsam::x_GetIndexKeyOffset(TIndx            sample_offset,
                                 Uint4            sample_num,
                                 CSeqDBLockHold & locked)
 {
@@ -710,8 +710,8 @@ CSeqDBIsam::x_GetIndexKeyOffset(Uint4            sample_offset,
 }
 
 void
-CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
-                             Uint4            length,
+CSeqDBIsam::x_GetIndexString(TIndx            key_offset,
+                             int              length,
                              string         & str,
                              bool             trim_to_null,
                              CSeqDBLockHold & locked)
@@ -731,7 +731,7 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
         (const char *) m_IndexLease.GetPtr(key_offset);
     
     if (trim_to_null) {
-        for(Uint4 i = 0; i<length; i++) {
+        for(int i = 0; i<length; i++) {
             if (! key_offset_addr[i]) {
                 length = i;
                 break;
@@ -745,10 +745,10 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
 // Given an index, this computes the diff from the input term.  It
 // also returns the offset for that sample's key in KeyOffset.
 
-Int4 CSeqDBIsam::x_DiffSample(const string   & term_in,
-                              Uint4            SampleNum,
-                              Uint4          & KeyOffset,
-                              CSeqDBLockHold & locked)
+int CSeqDBIsam::x_DiffSample(const string   & term_in,
+                             Uint4            SampleNum,
+                             TIndx          & KeyOffset,
+                             CSeqDBLockHold & locked)
 {
     // Meaning:
     // a. Compute SampleNum*4
@@ -758,7 +758,7 @@ Int4 CSeqDBIsam::x_DiffSample(const string   & term_in,
     
     bool ignore_case(true);
     
-    Uint4 SampleOffset(m_KeySampleOffset);
+    TIndx SampleOffset(m_KeySampleOffset);
     
     if(m_PageSize != MEMORY_ONLY_PAGE_SIZE) {
         SampleOffset += (m_NumSamples + 1) * sizeof(Uint4);
@@ -790,8 +790,8 @@ Int4 CSeqDBIsam::x_DiffSample(const string   & term_in,
                            locked);
 }
 
-void CSeqDBIsam::x_LoadPage(Uint4             SampleNum1,
-                            Uint4             SampleNum2,
+void CSeqDBIsam::x_LoadPage(TIndx             SampleNum1,
+                            TIndx             SampleNum2,
                             const char     ** beginp,
                             const char     ** endp,
                             CSeqDBLockHold &  locked)
@@ -800,8 +800,8 @@ void CSeqDBIsam::x_LoadPage(Uint4             SampleNum1,
     
     _ASSERT(SampleNum2 > SampleNum1);
     
-    Uint4 begin_offset = m_KeySampleOffset + SampleNum1       * sizeof(Uint4);
-    Uint4 end_offset   = m_KeySampleOffset + (SampleNum2 + 1) * sizeof(Uint4);
+    TIndx begin_offset = m_KeySampleOffset + SampleNum1       * sizeof(Uint4);
+    TIndx end_offset   = m_KeySampleOffset + (SampleNum2 + 1) * sizeof(Uint4);
     
     m_Atlas.Lock(locked);
     
@@ -839,7 +839,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
                            //bool             short_match,
                            vector<string> & terms_out,
                            vector<string> & values_out,
-                           vector<Uint4>  & indices_out,
+                           vector<TIndx>  & indices_out,
                            CSeqDBLockHold & locked)
 {
     // These are always false; They may relate to the prior find_one /
@@ -848,7 +848,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
     bool short_match(false);
     bool follow_match(false);
     
-    Uint4 preexisting_data_count = values_out.size();
+    size_t preexisting_data_count = values_out.size();
     
     if (m_Initialized == false) {
         EErrorCode error = x_InitSearch(locked);
@@ -863,33 +863,33 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
     
     // search the sample file first
     
-    Int4 Start(0);
-    Int4 Stop(m_NumSamples - 1);
+    TIndx Start(0);
+    TIndx Stop(m_NumSamples - 1);
     
-    Int4 Length    = term_in.size();
+    int Length = (int) term_in.size();
     
-    Uint4 SampleOffset(m_KeySampleOffset);
+    TIndx SampleOffset(m_KeySampleOffset);
     
     if(m_PageSize != MEMORY_ONLY_PAGE_SIZE) {
         SampleOffset += (m_NumSamples + 1) * sizeof(Uint4);
     }
     
-    Int4 found_short(-1);
+    int found_short(-1);
     
     string short_term;
-    Int4 SampleNum(-1);
+    int SampleNum(-1);
     
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
         
-        Uint4 KeyOffset(0);
+        TIndx KeyOffset(0);
         
-        Int4 diff = x_DiffSample(term_in, SampleNum, KeyOffset, locked);
+        int diff = x_DiffSample(term_in, SampleNum, KeyOffset, locked);
         
         // If this is an exact match, return the master term number.
         
         const char * KeyData = m_IndexLease.GetPtr(KeyOffset);
-        Uint4 BytesToEnd = m_IndexFileLength - KeyOffset;
+        TIndx BytesToEnd = m_IndexFileLength - KeyOffset;
         
         Uint4 max_lines_2 = m_MaxLineSize * 2;
         
@@ -927,7 +927,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
                 SampleNum--;
             
             while(SampleNum > 0) {
-                Uint4 key_offset =
+                TIndx key_offset =
                     x_GetIndexKeyOffset(SampleOffset,
                                         SampleNum,
                                         locked);
@@ -950,7 +950,7 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
             
             found_short = SampleNum + 1;
             
-            Uint4 key_offset =
+            TIndx key_offset =
                 x_GetIndexKeyOffset(SampleOffset,
                                     SampleNum + 1,
                                     locked);
@@ -1108,7 +1108,7 @@ void CSeqDBIsam::UnLease()
     }
 }
 
-bool CSeqDBIsam::x_IdentToOid(Uint4 ident, TOid & oid, CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_IdentToOid(int ident, TOid & oid, CSeqDBLockHold & locked)
 {
     EErrorCode err =
         x_NumericSearch(ident, & oid, 0, locked);
@@ -1161,7 +1161,7 @@ s_SeqDB_EndOfFastaID(const string & str, size_t pos)
                 break;
             }
             
-            int start_pt = vbar_prev + 1;
+            int start_pt = int(vbar_prev + 1);
             string element(str, start_pt, vbar - start_pt);
             
             choice = CSeq_id::WhichInverseSeqId(element.c_str());
@@ -1258,7 +1258,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         
         vector<string> keys_out;
         vector<string> data_out;
-        vector<Uint4>  indices_out;
+        vector<TIndx>  indices_out;
         
         if (! adjusted) {
             if ((err = x_StringSearch(accession,
@@ -1302,14 +1302,14 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         
         if (found) {
             ITERATE(vector<string>, iter, data_out) {
-                oids.push_back(atol((*iter).c_str()));
+                oids.push_back(atoi((*iter).c_str()));
             }
         }
     }
 }
 
 bool CSeqDBIsam::x_SparseStringToOids(const string   &,
-                                      vector<Uint4>  &,
+                                      vector<int>    &,
                                       bool,
                                       CSeqDBLockHold &)
 {
@@ -1321,7 +1321,7 @@ bool CSeqDBIsam::x_SparseStringToOids(const string   &,
 CSeqDBIsam::EIdentType
 CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
                           const string  * acc,
-                          Uint4         & num_id,
+                          int           & num_id,
                           string        & str_id,
                           bool          & simpler)
 {
@@ -1480,7 +1480,7 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
 
 CSeqDBIsam::EIdentType
 CSeqDBIsam::TryToSimplifyAccession(const string & acc,
-                                   Uint4        & num_id,
+                                   int          & num_id,
                                    string       & str_id,
                                    bool         & simpler)
 {

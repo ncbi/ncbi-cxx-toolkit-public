@@ -88,7 +88,7 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap, CSeqDBFlushCB * cb)
       m_OpenRegionsTrigger(eOpenRegionsWindow),
       m_FlushCB           (cb)
 {
-    for(Uint4 i = 0; i < eNumRecent; i++) {
+    for(int i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
     }
 }
@@ -124,7 +124,7 @@ CSeqDBAtlas::~CSeqDBAtlas()
 
 bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
 {
-    Uint4 length(0);
+    TIndx length(0);
     return GetFileSize(fname, length, locked);
 }
 
@@ -281,7 +281,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
     while(num_gcs >= 0) {
         num_gcs --;
         
-        unsigned i = 0;
+        size_t i = 0;
         
         while(i < m_Regions.size()) {
             CRegionMap * mr = m_Regions[i];
@@ -291,7 +291,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
                 continue;
             }
             
-            unsigned last = m_Regions.size() - 1;
+            size_t last = m_Regions.size() - 1;
             
             if (i != last) {
                 m_Regions[i] = m_Regions[last];
@@ -368,10 +368,10 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     // These should be made available to some kind of interface to
     // allow memory-usage tuning.
     
-    const Uint4 block_size  = 1024 * 512;
-    Uint4 large_slice = (Uint4)atlas->GetLargeSliceSize();
-    Uint4 overhang    = (Uint4)atlas->GetOverhang();
-    Uint4 small_slice = (Uint4)large_slice / 16;
+    const TIndx block_size  = 1024 * 512;
+    TIndx large_slice = (size_t)atlas->GetLargeSliceSize();
+    TIndx overhang    = (size_t)atlas->GetOverhang();
+    TIndx small_slice = (size_t)large_slice / 16;
     
     if (small_slice < block_size) {
         small_slice = block_size;
@@ -386,7 +386,7 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     
     penalty = 0;
     
-    int align = 1;
+    TIndx align = 1;
     
     if (use_mmap) {
         TIndx page_b = begin / large_slice;
@@ -467,7 +467,7 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     }
 }
 
-const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
+const char * CSeqDBAtlas::x_FindRegion(int           fid,
                                        TIndx       & begin,
                                        TIndx       & end,
                                        const char ** start,
@@ -475,7 +475,7 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
 {
     // Try recent matches first.
     
-    for(Uint4 i = 0; i<eNumRecent; i++) {
+    for(int i = 0; i<eNumRecent; i++) {
         if (! m_Recent[i])
             break;
         
@@ -563,7 +563,7 @@ void CSeqDBAtlas::PossiblyGarbageCollect(Uint8 space_needed)
         
         x_GarbageCollect(0);
         
-        m_OpenRegionsTrigger = m_Regions.size() + eOpenRegionsWindow;
+        m_OpenRegionsTrigger = int(m_Regions.size()) + eOpenRegionsWindow;
         
         if (m_OpenRegionsTrigger > eMaxOpenRegions) {
             m_OpenRegionsTrigger = eMaxOpenRegions;
@@ -598,7 +598,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     
     const string * strp = 0;
     
-    Uint4 fid = x_LookupFile(fname, & strp);
+    int fid = x_LookupFile(fname, & strp);
     
     const char * retval = 0;
     
@@ -783,7 +783,7 @@ void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
 // This does not attempt to garbage collect, but it will influence
 // garbage collection if it is used enough.
 
-char * CSeqDBAtlas::Alloc(Uint4 length, CSeqDBLockHold & locked)
+char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked)
 {
     // What should/will happen on allocation failure?
     
@@ -848,7 +848,7 @@ bool CSeqDBAtlas::x_Free(const char * freeme)
         return false;
     }
     
-    Uint4 sz = (*i).second;
+    size_t sz = (*i).second;
     
     _ASSERT(m_CurAlloc >= sz);
     m_CurAlloc -= sz;
@@ -886,7 +886,7 @@ void CRegionMap::Show()
     }
 }
 
-CRegionMap::CRegionMap(const string * fname, Uint4 fid, TIndx begin, TIndx end)
+CRegionMap::CRegionMap(const string * fname, int fid, TIndx begin, TIndx end)
     : m_Data     (0),
       m_MemFile  (0),
       m_Fname    (fname),
@@ -1033,12 +1033,12 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
                    "CSeqDBAtlas::MapFile: allocation failed.");
     }
     
-    unsigned amt_read = 0;
+    TIndx amt_read = 0;
     
     while((amt_read < rdsize) && istr) {
         istr.read(newbuf + amt_read, rdsize - amt_read);
         
-        int count = istr.gcount();
+        size_t count = istr.gcount();
         if (! count) {
             delete[] newbuf;
             return false;
@@ -1065,10 +1065,10 @@ const char * CRegionMap::Data(TIndx begin, TIndx end)
     return m_Data + begin - m_Begin;
 }
 
-Uint4 CSeqDBAtlas::x_LookupFile(const string  & fname,
-                                const string ** map_fname_ptr)
+int CSeqDBAtlas::x_LookupFile(const string  & fname,
+                              const string ** map_fname_ptr)
 {
-    map<string, Uint4>::iterator i = m_FileIDs.find(fname);
+    map<string, int>::iterator i = m_FileIDs.find(fname);
     
     if (i == m_FileIDs.end()) {
         m_FileIDs[fname] = ++ m_LastFID;

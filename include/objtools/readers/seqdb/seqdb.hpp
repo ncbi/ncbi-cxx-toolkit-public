@@ -67,9 +67,6 @@ class CSeqDB;
 
 class NCBI_XOBJREAD_EXPORT CSeqDBIter {
 public:
-    /// Defines the type used to select which sequence to get.
-    typedef Uint4 TOID;
-    
     /// Destructor
     virtual ~CSeqDBIter()
     {
@@ -83,7 +80,7 @@ public:
     CSeqDBIter & operator++();
     
     /// Get the OID of the currently held sequence.
-    TOID GetOID()
+    int GetOID()
     {
         return m_OID;
     }
@@ -95,13 +92,13 @@ public:
     }
     
     /// Get the length (in base pairs) of the currently held sequence.
-    Uint4 GetLength()
+    int GetLength()
     {
         return m_Length;
     }
     
     /// Returns true if the iterator points to a valid sequence.
-    DECLARE_OPERATOR_BOOL(m_Length != (Uint4)-1);
+    DECLARE_OPERATOR_BOOL(m_Length != -1);
     
     /// Construct one iterator from another.
     CSeqDBIter(const CSeqDBIter &);
@@ -120,19 +117,19 @@ private:
     friend class CSeqDB;
     
     /// Build an iterator (called only from CSeqDB).
-    CSeqDBIter(const CSeqDB *, TOID oid);
+    CSeqDBIter(const CSeqDB *, int oid);
     
     /// The CSeqDB object which this object iterates over.
     const CSeqDB     * m_DB;
     
     /// The OID this iterator is currently accessing.
-    TOID               m_OID;
+    int                m_OID;
     
     /// The sequence data for this OID.
     const char       * m_Data;
     
     /// The length of this OID.
-    Uint4              m_Length;
+    int                m_Length;
 };
 
 
@@ -161,13 +158,13 @@ public:
     };
     
     /// Sequence type accepted and returned for OID indexes.
-    typedef Uint4 TOID;
+    typedef int TOID;
     
-    /// Sequence type accepted and returned for OID indexes.
-    typedef Uint4 TPIG;
+    /// Sequence type accepted and returned for PIG indexes.
+    typedef int TPIG;
     
-    /// Sequence type accepted and returned for OID indexes.
-    typedef Uint4 TGI;
+    /// Sequence type accepted and returned for GI indexes.
+    typedef int TGI;
     
     /// @deprecated
     /// Short Constructor
@@ -224,8 +221,8 @@ public:
     ///   read and write calls are used instead.
     CSeqDB(const string & dbname,
            char           seqtype,
-           TOID           oid_begin,
-           TOID           oid_end,
+           int            oid_begin,
+           int            oid_end,
            bool           use_mmap);
     
     /// Constructor with MMap Flag and OID Range.
@@ -255,8 +252,8 @@ public:
     ///   read and write calls are used instead.
     CSeqDB(const string & dbname,
            ESeqType       seqtype,
-           TOID           oid_begin,
-           TOID           oid_end,
+           int            oid_begin,
+           int            oid_end,
            bool           use_mmap);
     
     /// Destructor.
@@ -268,7 +265,7 @@ public:
     
     
     /// Returns the sequence length in base pairs or residues.
-    Uint4 GetSeqLength(TOID oid) const;
+    int GetSeqLength(int oid) const;
     
     /// Returns an unbiased, approximate sequence length.
     ///
@@ -277,10 +274,10 @@ public:
     /// examination of the sequence data.  This method avoids doing
     /// that, returning an approximation ranging from L-3 to L+3
     /// (where L indicates the exact length), and unbiased on average.
-    Uint4 GetSeqLengthApprox(TOID oid) const;
+    int GetSeqLengthApprox(int oid) const;
     
     /// Get the ASN.1 header for the sequence.
-    CRef<CBlast_def_line_set> GetHdr(TOID oid) const;
+    CRef<CBlast_def_line_set> GetHdr(int oid) const;
     
     /// Get a CBioseq for a sequence.
     ///
@@ -291,7 +288,7 @@ public:
     ///   The ordinal id of the sequence.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(TOID oid) const;
+    CRef<CBioseq> GetBioseq(int oid) const;
     
     /// Get a CBioseq for a sequence.
     ///
@@ -306,7 +303,7 @@ public:
     ///   The target gi to filter the header information by.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(TOID oid, TGI target_gi) const;
+    CRef<CBioseq> GetBioseq(int oid, int target_gi) const;
     
     /// Get a pointer to raw sequence data.
     ///
@@ -320,7 +317,7 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    Uint4 GetSequence(TOID oid, const char ** buffer) const;
+    int GetSequence(int oid, const char ** buffer) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -339,7 +336,7 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    Uint4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code) const;
+    int GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const;
     
     /// Get a pointer to sequence data with embedded ambiguities.
     ///
@@ -364,10 +361,10 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    Uint4 GetAmbigSeqAlloc(TOID               oid,
-                           char            ** buffer,
-                           Uint4              nucl_code,
-                           ESeqDBAllocType    strategy) const;
+    int GetAmbigSeqAlloc(int                oid,
+                         char            ** buffer,
+                         int                nucl_code,
+                         ESeqDBAllocType    strategy) const;
     
     /// Returns any resources associated with the sequence.
     /// 
@@ -393,7 +390,7 @@ public:
     ///   The oid of the sequence.
     /// @return
     ///   A list of Seq-id objects for this sequence.
-    list< CRef<CSeq_id> > GetSeqIDs(TOID oid) const;
+    list< CRef<CSeq_id> > GetSeqIDs(int oid) const;
     
     /// Returns the type of database opened - protein or nucleotide..
     /// [This method is obsolete; use GetSequenceType() instead.]
@@ -421,10 +418,10 @@ public:
     string GetDate() const;
     
     /// Returns the number of sequences available.
-    Uint4 GetNumSeqs() const;
+    int GetNumSeqs() const;
     
     /// Returns the size of the (possibly sparse) OID range.
-    Uint4 GetNumOIDs() const;
+    int GetNumOIDs() const;
     
     /// Returns the sum of the lengths of all available sequences.
     ///
@@ -446,7 +443,7 @@ public:
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  This might be used to chose buffer sizes.
-    Uint4 GetMaxLength() const;
+    int GetMaxLength() const;
     
     /// Returns a sequence iterator.
     ///
@@ -459,11 +456,23 @@ public:
     /// If the specified OID is not included in the set (i.e. the OID
     /// mask), the input parameter is incremented until one is found
     /// that is.  The user will probably want to increment between
+    /// calls, if iterating over the db.  [This version of this method
+    /// is deprecated.]
+    ///
+    /// @return
+    ///   True if a valid OID was found, false otherwise.
+    bool CheckOrFindOID(Uint4 & next_oid) const;
+    
+    /// Find an included OID, incrementing next_oid if necessary.
+    ///
+    /// If the specified OID is not included in the set (i.e. the OID
+    /// mask), the input parameter is incremented until one is found
+    /// that is.  The user will probably want to increment between
     /// calls, if iterating over the db.
     ///
     /// @return
     ///   True if a valid OID was found, false otherwise.
-    bool CheckOrFindOID(TOID & next_oid) const;
+    bool CheckOrFindOID(int & next_oid) const;
     
     /// Return a chunk of OIDs, and update the OID bookmark.
     /// 
@@ -479,11 +488,13 @@ public:
     /// the last chunk).  In some cases it may be desireable to have
     /// several concurrent, independent iterations over the same database
     /// object.  If this is required, the caller should specify the address
-    /// of a Uint4 to the optional parameter oid_state.  This should be
+    /// of an int to the optional parameter oid_state.  This should be
     /// initialized to zero (before the iteration begins) but should
     /// otherwise not be modified by the calling code (except that it can
     /// be reset to zero to restart the iteration).  For the normal case of
-    /// one iteration per program, this parameter can be omitted.
+    /// one iteration per program, this parameter can be omitted.  [This
+    /// version of this method is deprecated.]
+    ///
     /// @param begin_chunk
     ///   First included oid (if eOidRange is returned).
     /// @param end_chunk
@@ -495,10 +506,46 @@ public:
     /// @return
     ///   eOidList in enumeration case, or eOidRange in begin/end range case.
     EOidListType
-    GetNextOIDChunk(TOID         & begin_chunk,       // out
-                    TOID         & end_chunk,         // out
-                    vector<TOID> & oid_list,          // out
-                    Uint4        * oid_state = NULL); // in+out
+    GetNextOIDChunk(Uint4         & begin_chunk,       // out
+                    Uint4         & end_chunk,         // out
+                    vector<Uint4> & oid_list,          // out
+                    Uint4         * oid_state = NULL); // in+out
+    
+    /// Return a chunk of OIDs, and update the OID bookmark.
+    /// 
+    /// This method allows the caller to iterate over the database by
+    /// fetching batches of OIDs.  It will either return a list of OIDs in
+    /// a vector, or set a pair of integers to indicate a range of OIDs.
+    /// The return value will indicate which technique was used.  The
+    /// caller sets the number of OIDs to get by setting the size of the
+    /// vector.  If eOidRange is returned, the first included oid is
+    /// oid_begin and oid_end is the oid after the last included oid.  If
+    /// eOidList is returned, the vector contain the included OIDs, and may
+    /// be resized to a smaller value if fewer entries are available (for
+    /// the last chunk).  In some cases it may be desireable to have
+    /// several concurrent, independent iterations over the same database
+    /// object.  If this is required, the caller should specify the address
+    /// of an int to the optional parameter oid_state.  This should be
+    /// initialized to zero (before the iteration begins) but should
+    /// otherwise not be modified by the calling code (except that it can
+    /// be reset to zero to restart the iteration).  For the normal case of
+    /// one iteration per program, this parameter can be omitted.
+    ///
+    /// @param begin_chunk
+    ///   First included oid (if eOidRange is returned).
+    /// @param end_chunk
+    ///   OID after last included (if eOidRange is returned).
+    /// @param oid_list
+    ///   List of oids (if eOidList is returned).  Set size before call.
+    /// @param oid_state
+    ///   Optional address of a state variable (for concurrent iterations).
+    /// @return
+    ///   eOidList in enumeration case, or eOidRange in begin/end range case.
+    EOidListType
+    GetNextOIDChunk(int         & begin_chunk,       // out
+                    int         & end_chunk,         // out
+                    vector<int> & oid_list,          // out
+                    int         * oid_state = NULL); // in+out
     
     /// Get list of database names.
     ///
@@ -519,29 +566,53 @@ public:
     /// of your application.
     void SetMemoryBound(Uint8 membound, Uint8 slice_size);
     
-    /// Translate a PIG to an OID.
-    bool PigToOid(TPIG pig, TOID & oid) const;
+    /// Translate a PIG to an OID. [This version is deprecated.]
+    bool PigToOid(Uint4 pig, Uint4 & oid) const;
     
     /// Translate a PIG to an OID.
-    bool OidToPig(TOID oid, TPIG & pig) const;
+    bool PigToOid(int pig, int & oid) const;
+    
+    /// Translate an OID to a PIG. [This version is deprecated.]
+    bool OidToPig(Uint4 oid, Uint4 & pig) const;
+    
+    /// Translate an OID to a PIG.
+    bool OidToPig(int oid, int & pig) const;
+    
+    /// Translate a GI to an OID. [This version is deprecated.]
+    bool OidToGi(Uint4 oid, Uint4 & gi) const;
     
     /// Translate a GI to an OID.
-    bool OidToGi(TOID oid, TGI & gi) const;
+    bool OidToGi(int oid, int & gi) const;
+    
+    /// Translate a GI to an OID. [This version is deprecated.]
+    bool GiToOid(Uint4 gi, Uint4 & oid) const;
     
     /// Translate a GI to an OID.
-    bool GiToOid(TGI gi, TOID & oid) const;
+    bool GiToOid(int gi, int & oid) const;
+    
+    /// Translate a GI to a PIG. [This version is deprecated.]
+    bool GiToPig(Uint4 gi, Uint4 & pig) const;
     
     /// Translate a GI to a PIG.
-    bool GiToPig(TGI gi, TPIG & pig) const;
+    bool GiToPig(int gi, int & pig) const;
+    
+    /// Translate a PIG to a GI. [This version is deprecated.]
+    bool PigToGi(Uint4 pig, Uint4 & gi) const;
     
     /// Translate a PIG to a GI.
-    bool PigToGi(TPIG pig, TGI & gi) const;
+    bool PigToGi(int pig, int & gi) const;
+    
+    /// Translate an Accession to a list of OIDs. [This version is deprecated.]
+    void AccessionToOids(const string & acc, vector<Uint4> & oids) const;
     
     /// Translate an Accession to a list of OIDs.
-    void AccessionToOids(const string & acc, vector<TOID> & oids) const;
+    void AccessionToOids(const string & acc, vector<int> & oids) const;
+    
+    /// Translate a Seq-id to a list of OIDs. [This version is deprecated.]
+    void SeqidToOids(const CSeq_id & seqid, vector<Uint4> & oids) const;
     
     /// Translate a Seq-id to a list of OIDs.
-    void SeqidToOids(const CSeq_id & seqid, vector<TOID> & oids) const;
+    void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;
     
     /// Find the sequence closest to the given offset into the database.
     /// 
@@ -558,7 +629,7 @@ public:
     ///   The approximate number residues offset to search for.
     /// @return
     ///   An OID near the specified residue offset.
-    Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+    int GetOidAtOffset(int first_seq, Uint8 residue) const;
 
     /// Get a CBioseq for a given GI
     ///
@@ -569,7 +640,7 @@ public:
     ///   The GI of the sequence.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GiToBioseq(TGI gi) const;
+    CRef<CBioseq> GiToBioseq(int gi) const;
     
     /// Get a CBioseq for a given PIG
     ///
@@ -581,7 +652,7 @@ public:
     ///   The protein identifier group id of the sequence.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> PigToBioseq(TPIG pig) const;
+    CRef<CBioseq> PigToBioseq(int pig) const;
     
     /// Get a CBioseq for a given Seq-id
     ///
@@ -670,7 +741,7 @@ public:
     typedef CSeqDB::TOID TOID;
     
     /// Get a hold a database sequence.
-    CSeqDBSequence(CSeqDB * db, TOID oid)
+    CSeqDBSequence(CSeqDB * db, int oid)
         : m_DB    (db),
           m_Data  (0),
           m_Length(0)
@@ -693,7 +764,7 @@ public:
     }
     
     /// Get sequence length.
-    Uint4 GetLength()
+    int GetLength()
     {
         return m_Length;
     }
@@ -712,7 +783,7 @@ private:
     const char * m_Data;
     
     /// The length of this sequence.
-    Uint4        m_Length;
+    int          m_Length;
 };
 
 // Inline methods for CSeqDBIter

@@ -74,7 +74,7 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
     
     m_Atlas.GetFile(m_Lease, filename, file_length, locked);
     
-    m_NumOIDs = SeqDB_GetStdOrd((Uint4 *) m_Lease.GetPtr(0)) + 1;
+    m_NumOIDs = SeqDB_GetStdOrd((int *) m_Lease.GetPtr(0)) + 1;
     m_Bits    = (unsigned char*) m_Lease.GetPtr(sizeof(Uint4));
     m_BitEnd  = m_Bits + file_length - sizeof(Uint4);
 }
@@ -96,8 +96,8 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
     // other destination element.  Rather than sprinkle this code with range
     // checks, padding is used.
     
-    Uint4 num_oids = volset.GetNumOIDs();
-    Uint4 byte_length = ((num_oids + 31) / 32) * 4 + 8;
+    int num_oids = volset.GetNumOIDs();
+    int byte_length = ((num_oids + 31) / 32) * 4 + 8;
     
     m_Bits   = (TUC*) m_Atlas.Alloc(byte_length, locked);
     m_BitEnd = m_Bits + byte_length;
@@ -108,7 +108,7 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
         
         // Then get the list of filenames and offsets to overlay onto it.
         
-        for(Uint4 i = 0; i < volset.GetNumVols(); i++) {
+        for(int i = 0; i < volset.GetNumVols(); i++) {
             if (volset.GetIncludeAllOIDs(i)) {
                 const CSeqDBVolEntry * ve = volset.GetVolEntry(i);
                 x_SetBitRange(ve->OIDStart(), ve->OIDEnd());
@@ -142,13 +142,13 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
 {
     // Volume-relative OIDs
     
-    Uint4 start_vr = filter->BeginOID();
-    Uint4 end_vr   = filter->EndOID();
+    int start_vr = filter->BeginOID();
+    int end_vr   = filter->EndOID();
     
     // Global OIDs
     
-    Uint4 vol_start = vol->OIDStart();
-    Uint4 vol_end   = vol->OIDEnd();
+    int vol_start = vol->OIDStart();
+    int vol_end   = vol->OIDEnd();
     
     // Adjust oids from volume to global, avoiding overflow, and
     // trimming ranges.
@@ -156,8 +156,8 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
     
     // Global OIDs
     
-    Uint4 start_g(0);
-    Uint4 end_g(0);
+    int start_g(0);
+    int end_g(0);
     
     if (end_vr < (vol_end - vol_start)) {
         end_g = end_vr + vol_start;
@@ -234,9 +234,9 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
 //   .. Later cases would probably devolve to earlier ones internally?
 
 void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
-                                 Uint4            vol_start,
-                                 Uint4            oid_start,
-                                 Uint4            oid_end,
+                                 int              vol_start,
+                                 int              oid_start,
+                                 int              oid_end,
                                  CSeqDBLockHold & locked)
 {
     _ASSERT(oid_end > oid_start);
@@ -261,7 +261,7 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
         // This is the index of the last oid, not the count of oids...
         num_oids++;
         
-        Uint4 file_length = (Uint4) volmask.GetFileLength();
+        size_t file_length = (size_t) volmask.GetFileLength();
         
         // Cast forces signed/unsigned conversion.
         
@@ -447,7 +447,7 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
 
 // 5. ON THE OTHER HAND: How long does the translation of a gilist to
 // an OIDLIST take?  It seems like nothing is gained above the volume
-// level, except the swapping of GIs.  So, the gilist->vector<Uint4>
+// level, except the swapping of GIs.  So, the gilist -> vector<int>
 // can be done in one fell swoop.  After that, the gilist must be
 // searched seperately against each volume, because doing a single
 // translation would have to do that internally anyway.
@@ -455,10 +455,10 @@ void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
 
 void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
                                    const CSeqDBVol * volp,
-                                   Uint4             vol_start,
-                                   Uint4             vol_end,
-                                   Uint4             oid_start,
-                                   Uint4             oid_end,
+                                   int               vol_start,
+                                   int               vol_end,
+                                   int               oid_start,
+                                   int               oid_end,
                                    CSeqDBLockHold  & locked)
 {
     _ASSERT(volp);
@@ -471,14 +471,14 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
     CSeqDBMemLease lease(m_Atlas);
     
     Uint4 num_gis(0);
-    Uint4 file_length(0);
-    bool is_binary(false);
+    TIndx file_length(0);
+    bool  is_binary(false);
     
     try {
         // Take exception to empty file
         
         gilist.Open(gilist_fname, locked);
-        file_length = (Uint4) gilist.GetFileLength();
+        file_length = (TIndx) gilist.GetFileLength();
         
         if (! file_length) {
             NCBI_THROW(CSeqDBException,
@@ -521,7 +521,7 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
         
         // Now we have either a text or binary GI file -- read in the gis.
         
-        vector<Uint4> gis;
+        vector<int> gis;
     
         if (is_binary) {
             gis.reserve(num_gis);
@@ -535,16 +535,16 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
         // Iterate over the gis from the file, look up the
         // corresponding oid, and turn on that mask bit.
         
-        Uint4 vol_size = vol_end - vol_start;
+        int vol_size = vol_end - vol_start;
         
-        ITERATE(vector<Uint4>, gi_iter, gis) {
-            Uint4 vol_oid(0);
+        ITERATE(vector<int>, gi_iter, gis) {
+            int vol_oid(0);
             
             volp->GiToOid(*gi_iter, vol_oid, locked);
             
-            if (vol_oid != Uint4(-1)) {
+            if (vol_oid != -1) {
                 if (vol_oid < vol_size) {
-                    Uint4 oid = vol_oid + vol_start;
+                    int oid = vol_oid + vol_start;
                     
                     if ((oid >= oid_start) && (oid < oid_end)) {
                         x_SetBit(oid);
@@ -561,8 +561,8 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
     m_Atlas.RetRegion(lease);
 }
 
-void CSeqDBOIDList::x_SetBitRange(Uint4 oid_start,
-                                  Uint4 oid_end)
+void CSeqDBOIDList::x_SetBitRange(int oid_start,
+                                  int oid_end)
 {
     // Set bits at the front and back, closing to a range of full-byte
     // addresses.
@@ -646,15 +646,15 @@ bool CSeqDBOIDList::x_FindNext(TOID & oid) const
 
 void CSeqDBOIDList::x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
                                        CSeqDBMemLease & lease,
-                                       Uint4            num_gis,
-                                       vector<Uint4>  & gis,
+                                       int              num_gis,
+                                       vector<int>    & gis,
                                        CSeqDBLockHold & locked)
 {
-    Uint4 gisize = sizeof(Uint4);
-    Uint4 start = 8;
-    Uint4 end = num_gis * gisize + start;
+    int gisize = (int) sizeof(Uint4);
+    int start = 8;
+    TIndx end = num_gis * gisize + start;
     
-    for(Uint4 offset = start; offset < end; offset += gisize) {
+    for(TIndx offset = start; offset < end; offset += gisize) {
         Uint4 elem(0);
         gilist.ReadSwapped(lease, offset, & elem, locked);
         gis.push_back(elem);
@@ -663,7 +663,7 @@ void CSeqDBOIDList::x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
 
 void CSeqDBOIDList::x_ReadTextGiList(CSeqDBRawFile  & gilist,
                                      CSeqDBMemLease & lease,
-                                     vector<Uint4>  & gis,
+                                     vector<int>    & gis,
                                      CSeqDBLockHold & locked)
 {
     Uint4 file_length = (Uint4) gilist.GetFileLength();
