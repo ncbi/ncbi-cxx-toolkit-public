@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/02/05 16:06:41  lavr
+ * List of included header files revised; Use macro IOS_BASE instead of raw ios
+ *
  * Revision 1.3  2002/02/04 20:23:40  lavr
  * Long comment and workaround for MSVC putback()/unget() bug/feature
  * Additional test for stream positioning during read back
@@ -45,11 +48,15 @@
 
 #include "../../connect/test/test_assert.h"
 
-#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <util/stream_pushback.hpp>
 #include "pbacktest.hpp"
 #include <stdlib.h>
 #include <time.h>
+
+#define _GLUE2(a, b) a ## b
+#define _GLUE1(a, b) _GLUE2(#a, b)
+#define   GLUE(a, b) _GLUE1( a, b)
 
 
 BEGIN_NCBI_SCOPE
@@ -151,8 +158,9 @@ extern int TEST_StreamPushback(iostream&    ios,
         buflen += j;
 
         if (rewind && rand() % 7 == 0 && buflen < kBufferSize) {
-            LOG_POST(Info << "Testing seekg(" << buflen << ", ios::beg)");
-            ios.seekg(buflen, ios::beg);
+            LOG_POST(Info << "Testing seekg(" << buflen <<
+                     ", " << GLUE(IOS_BASE, "::beg)"));
+            ios.seekg(buflen, IOS_BASE::beg);
             if (!ios.good()) {
                 ERR_POST("Error in stream re-positioning");
                 return 2;

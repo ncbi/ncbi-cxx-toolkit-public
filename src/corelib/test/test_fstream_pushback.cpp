@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/02/05 16:06:41  lavr
+ * List of included header files revised; Use macro IOS_BASE instead of raw ios
+ *
  * Revision 1.2  2002/02/04 20:24:04  lavr
  * Remove data file if successful
  *
@@ -40,8 +43,8 @@
  */
 
 #include <corelib/ncbidiag.hpp>
-#include <stdio.h>                 // remove()
 #include "pbacktest.hpp"
+#include <stdio.h>                 // remove()
 
 
 int main(int argc, char* argv[])
@@ -53,7 +56,7 @@ int main(int argc, char* argv[])
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 
-    fstream fs(filename, ios::in | ios::out | ios::trunc);
+    fstream fs(filename, IOS_BASE::in | IOS_BASE::out | IOS_BASE::trunc);
 
     int ret = TEST_StreamPushback(fs,
                                   argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
