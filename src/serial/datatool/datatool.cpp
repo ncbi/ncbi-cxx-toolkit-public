@@ -131,7 +131,9 @@ void CDataTool::Init(void)
                       "code definition file",
                       CArgDescriptions::eInputFile);
     d->AddFlag("odi",
-               "ignore absent code definition file");
+               "silently ignore absent code definition file");
+    d->AddFlag("odw",
+               "issue a warning about absent code definition file");
     d->AddOptionalKey("of", "listFile",
                       "write list of generated C++ files",
                       CArgDescriptions::eOutputFile);
@@ -374,7 +376,7 @@ bool CDataTool::GenerateCode(void)
 
     // load generator config
     if ( const CArgValue& od = args["od"] )
-        generator.LoadConfig(od.AsString(), args["odi"]);
+        generator.LoadConfig(od.AsString(), args["odi"], args["odw"]);
     //if ( const CArgValue& oD = args["oD"] )
     //    generator.AddConfigLine(oD.AsString());
 
@@ -487,6 +489,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2003/02/24 21:57:46  gouriano
+* added odw flag - to issue a warning about missing DEF file
+*
 * Revision 1.59  2003/02/10 17:56:15  gouriano
 * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
 *

@@ -54,7 +54,8 @@ public:
 
     // setup interface
     void LoadConfig(CNcbiIstream& in);
-    void LoadConfig(const string& fileName, bool ignoreAbsense = false);
+    void LoadConfig(const string& fileName, bool ignoreAbsense = false,
+                    bool warningAbsense = true);
     void AddConfigLine(const string& s);
 
     void IncludeTypes(const string& types);
@@ -166,6 +167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/02/24 21:56:38  gouriano
+* added odw flag - to issue a warning about missing DEF file
+*
 * Revision 1.8  2002/12/17 16:21:20  gouriano
 * separated class name from the name of the file in which it will be written
 *

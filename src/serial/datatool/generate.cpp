@@ -114,7 +114,8 @@ void CCodeGenerator::LoadConfig(CNcbiIstream& in)
     m_Config.Read(in);
 }
 
-void CCodeGenerator::LoadConfig(const string& fileName, bool ignoreAbsense)
+void CCodeGenerator::LoadConfig(const string& fileName,
+    bool ignoreAbsense, bool warningAbsense)
 {
     // load descriptions from registry file
     if ( fileName == "stdin" || fileName == "-" ) {
@@ -123,8 +124,13 @@ void CCodeGenerator::LoadConfig(const string& fileName, bool ignoreAbsense)
     else {
         CNcbiIfstream in(fileName.c_str());
         if ( !in ) {
-            if ( !ignoreAbsense )
+            if ( ignoreAbsense ) {
+                return;
+            } else if (warningAbsense) {
                 ERR_POST(Warning << "cannot open file " << fileName);
+            } else {
+                ERR_POST(Fatal << "cannot open file " << fileName);
+            }
         }
         else {
             LoadConfig(in);
@@ -632,6 +638,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/02/24 21:57:46  gouriano
+* added odw flag - to issue a warning about missing DEF file
+*
 * Revision 1.46  2002/12/17 19:03:26  gouriano
 * corrected ResolveFileName for external definitions
 *
