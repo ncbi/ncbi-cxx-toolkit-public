@@ -531,7 +531,7 @@ BEGIN_TEST_FUNCTION(UnsignedInt)
     CRef < CSeq_loc > seqloc4(new CSeq_loc());
     if (!ReadASNFromFile("seqLocTest.txt", seqloc4.GetPointer(), false, &err))
         ADD_ERR_RETURN("reading seqLocTest.txt failed: " << err);
-    if (seqloc4->GetInt().GetFrom() != ((unsigned int) 4294967295))
+    if (seqloc4->GetInt().GetFrom() != 4294967295U)
         ADD_ERR("seqloc unsigned int value test failed");
 
 END_TEST_FUNCTION
@@ -671,6 +671,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/12/22 15:56:42  vasilche
+* Fixed warning about too big unsigned value.
+*
 * Revision 1.23  2004/12/17 19:18:06  ucko
 * Restore HTTPLoad test, as MMDBSRV is back in order.
 *
