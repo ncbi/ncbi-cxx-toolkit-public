@@ -42,6 +42,27 @@ BEGIN_NCBI_SCOPE
 ///
 /// Class encapsulates byte swapping functions to convert between 
 /// big endian - little endian architectures
+///
+/// Get and Put functions always do the byte swapping 
+/// (change the byte order). If the input is BIG ENDIAN it is
+/// converted to LITTLE ENDIAN and vice versa.
+/// This group of functions is used when we know upfront that the 
+/// incoming data were created on architecture with a different byte order 
+/// and byte swapping is necessary.
+///
+///
+/// Use case:
+///
+/// Usually it means sender writes all the data without conversion to network 
+/// byte order, instead adds a small characteristic word describing the 
+/// original byte order. Reader checks the byte order first and if it is 
+/// the same just interprets the data in the regular manner without any 
+/// conversion. 
+/// In most cases when the data does not cross the border we have no 
+/// performance impact (do not call CByteSwap::Get & Put methods).
+/// Such "on demand" conversion scheme has potential performance advantage 
+/// over the unconditional conversion to network byte order.
+///
 
 class CByteSwap
 {
@@ -205,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/03 17:23:06  kuznets
+ * Improved comments describing CByteSwap design
+ *
  * Revision 1.7  2004/01/29 18:53:33  siyan
  * Prefixed conditional compilation macro with CORELIB___ since this is now
  * part of Corelib.
