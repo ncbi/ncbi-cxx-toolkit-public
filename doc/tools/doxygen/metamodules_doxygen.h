@@ -79,6 +79,11 @@
  *  @ingroup CORELIB
  */
 
+/** @defgroup ModuleConfig Configuration Utilities
+ *  @ingroup CORELIB
+ */
+
+
 /** @defgroup Exec Process Creation and Execution
  *  @ingroup CORELIB
  */
