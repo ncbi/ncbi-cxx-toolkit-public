@@ -30,53 +30,6 @@
 *
 * File Description:
 *   Main generator: collects types, classes and files.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2002/10/22 15:07:00  gouriano
-* added possibillity to use quoted syntax form for generated include files
-*
-* Revision 1.5  2000/11/27 18:19:31  vasilche
-* Datatool now conforms CNcbiApplication requirements.
-*
-* Revision 1.4  2000/08/25 15:58:46  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.3  2000/06/16 16:31:13  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.2  2000/04/07 19:26:09  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.1  2000/02/01 21:46:19  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.11  1999/12/28 18:55:58  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.10  1999/12/21 17:18:34  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* Revision 1.9  1999/12/20 21:00:18  vasilche
-* Added generation of sources in different directories.
-*
-* Revision 1.8  1999/12/09 20:01:23  vasilche
-* Fixed bug with missed internal classes.
-*
-* Revision 1.7  1999/11/15 19:36:15  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -137,6 +90,10 @@ public:
         {
             return m_MainFiles;
         }
+    const CFileSet& GetMainModules(void) const
+        {
+            return m_MainFiles;
+        }
     CFileSet& GetImportModules(void)
         {
             return m_ImportFiles;
@@ -145,6 +102,7 @@ public:
     bool Check(void) const;
 
     void GenerateCode(void);
+    bool GenerateClientCode(void);
 
     bool Imported(const CDataType* type) const;
 
@@ -202,5 +160,58 @@ private:
 };
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.7  2002/11/13 00:46:06  ucko
+* Add RPC client generator; CVS logs to end in generate.?pp
+*
+* Revision 1.6  2002/10/22 15:07:00  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
+* Revision 1.5  2000/11/27 18:19:31  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
+* Revision 1.4  2000/08/25 15:58:46  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.3  2000/06/16 16:31:13  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.2  2000/04/07 19:26:09  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.1  2000/02/01 21:46:19  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.11  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.10  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* Revision 1.9  1999/12/20 21:00:18  vasilche
+* Added generation of sources in different directories.
+*
+* Revision 1.8  1999/12/09 20:01:23  vasilche
+* Fixed bug with missed internal classes.
+*
+* Revision 1.7  1999/11/15 19:36:15  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/
 
 #endif

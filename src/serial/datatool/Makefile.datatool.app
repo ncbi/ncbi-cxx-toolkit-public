@@ -12,7 +12,7 @@ SRC = datatool \
 	typestr ptrstr stdstr classstr enumstr stlstr choicestr choiceptrstr \
 	value mcontainer module moduleset generate filecode code \
 	fileutil alexer aparser parser lexer exceptions comments srcutil \
-	dtdlexer dtdparser
+	dtdlexer dtdparser rpcgen
 LIB = xser xutil xncbi
 
 CHECK_CMD = datatool.sh

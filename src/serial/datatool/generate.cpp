@@ -27,101 +27,6 @@
 *
 * File Description:
 *   Main generator: collects all types, classes and files.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.43  2002/10/22 15:06:13  gouriano
-* added possibillity to use quoted syntax form for generated include files
-*
-* Revision 1.42  2002/10/01 17:04:31  gouriano
-* corrections to eliminate redundant info in the generation report
-*
-* Revision 1.41  2002/10/01 14:20:30  gouriano
-* added more generation report data
-*
-* Revision 1.40  2002/09/30 19:16:10  gouriano
-* changed location of "*.files" and "combining" files to CPP dir
-*
-* Revision 1.39  2001/12/07 18:56:51  grichenk
-* Paths in "#include"-s made system-independent
-*
-* Revision 1.38  2001/12/03 14:50:27  juran
-* Eliminate "return value expected" warning.
-*
-* Revision 1.37  2001/10/22 15:18:19  grichenk
-* Fixed combined HPP generation.
-*
-* Revision 1.36  2001/10/18 20:10:34  grichenk
-* Save combining header on -oc
-*
-* Revision 1.35  2001/08/31 20:05:46  ucko
-* Fix ICC build.
-*
-* Revision 1.34  2000/11/27 18:19:48  vasilche
-* Datatool now conforms CNcbiApplication requirements.
-*
-* Revision 1.33  2000/08/25 15:59:22  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.32  2000/06/16 16:31:39  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.31  2000/05/24 20:57:14  vasilche
-* Use new macro _DEBUG_ARG to avoid warning about unused argument.
-*
-* Revision 1.30  2000/05/24 20:09:28  vasilche
-* Implemented DTD generation.
-*
-* Revision 1.29  2000/04/10 19:33:22  vakatov
-* Get rid of a minor compiler warning
-*
-* Revision 1.28  2000/04/07 19:26:27  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.27  2000/03/07 14:06:32  vasilche
-* Added generation of reference counted objects.
-*
-* Revision 1.26  2000/02/01 21:48:00  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.25  2000/01/06 16:13:18  vasilche
-* Fail of file generation now fatal.
-*
-* Revision 1.24  1999/12/28 18:55:57  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.23  1999/12/21 17:18:34  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* Revision 1.22  1999/12/20 21:00:18  vasilche
-* Added generation of sources in different directories.
-*
-* Revision 1.21  1999/12/17 19:05:19  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.20  1999/12/09 20:01:23  vasilche
-* Fixed bug with missed internal classes.
-*
-* Revision 1.19  1999/12/03 21:42:12  vasilche
-* Fixed conflict of enums in choices.
-*
-* Revision 1.18  1999/12/01 17:36:25  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.17  1999/11/15 19:36:15  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -141,6 +46,7 @@
 #include <serial/datatool/generate.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/rpcgen.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -471,6 +377,26 @@ void CCodeGenerator::GenerateCode(void)
         if ( !out )
             ERR_POST(Fatal << "Error writing file " << fileName);
     }
+
+    GenerateClientCode();
+}
+
+bool CCodeGenerator::GenerateClientCode(void)
+{
+    string class_name = m_Config.Get("client", "class");
+    if (class_name.empty()) {
+        return false; // not configured
+    }
+    CFileCode code(Path(m_FileNamePrefix, "client"));
+    code.UseQuotedForm(m_UseQuotedForm);
+    code.AddType(new CClientPseudoDataType(*this, class_name));
+    code.GenerateCode();
+    string filename;
+    code.GenerateHPP(m_HPPDir, filename);
+    code.GenerateCPP(m_CPPDir, filename);
+    code.GenerateUserHPP(m_HPPDir, filename);
+    code.GenerateUserCPP(m_CPPDir, filename);
+    return true;
 }
 
 bool CCodeGenerator::AddType(const CDataType* type)
@@ -668,3 +594,104 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
 #endif
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.44  2002/11/13 00:46:07  ucko
+* Add RPC client generator; CVS logs to end in generate.?pp
+*
+* Revision 1.43  2002/10/22 15:06:13  gouriano
+* added possibillity to use quoted syntax form for generated include files
+*
+* Revision 1.42  2002/10/01 17:04:31  gouriano
+* corrections to eliminate redundant info in the generation report
+*
+* Revision 1.41  2002/10/01 14:20:30  gouriano
+* added more generation report data
+*
+* Revision 1.40  2002/09/30 19:16:10  gouriano
+* changed location of "*.files" and "combining" files to CPP dir
+*
+* Revision 1.39  2001/12/07 18:56:51  grichenk
+* Paths in "#include"-s made system-independent
+*
+* Revision 1.38  2001/12/03 14:50:27  juran
+* Eliminate "return value expected" warning.
+*
+* Revision 1.37  2001/10/22 15:18:19  grichenk
+* Fixed combined HPP generation.
+*
+* Revision 1.36  2001/10/18 20:10:34  grichenk
+* Save combining header on -oc
+*
+* Revision 1.35  2001/08/31 20:05:46  ucko
+* Fix ICC build.
+*
+* Revision 1.34  2000/11/27 18:19:48  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
+* Revision 1.33  2000/08/25 15:59:22  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.32  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.31  2000/05/24 20:57:14  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
+* Revision 1.30  2000/05/24 20:09:28  vasilche
+* Implemented DTD generation.
+*
+* Revision 1.29  2000/04/10 19:33:22  vakatov
+* Get rid of a minor compiler warning
+*
+* Revision 1.28  2000/04/07 19:26:27  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.27  2000/03/07 14:06:32  vasilche
+* Added generation of reference counted objects.
+*
+* Revision 1.26  2000/02/01 21:48:00  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.25  2000/01/06 16:13:18  vasilche
+* Fail of file generation now fatal.
+*
+* Revision 1.24  1999/12/28 18:55:57  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.23  1999/12/21 17:18:34  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* Revision 1.22  1999/12/20 21:00:18  vasilche
+* Added generation of sources in different directories.
+*
+* Revision 1.21  1999/12/17 19:05:19  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
+* Revision 1.20  1999/12/09 20:01:23  vasilche
+* Fixed bug with missed internal classes.
+*
+* Revision 1.19  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
+* Revision 1.18  1999/12/01 17:36:25  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.17  1999/11/15 19:36:15  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/
