@@ -330,8 +330,7 @@ string CGen_code_table::IndexToCodon(int index)
 {
     if ( index < 0 || index > 63 ) return CNcbiEmptyString::Get();
 
-    static char na[4] = { 'T', 'C', 'A', 'G' };
-    
+    static char na[4] = { 'T', 'C', 'A', 'G' };    
     string codon;
     codon.resize(3);
     int total = index;
@@ -697,6 +696,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.13  2003/04/29 22:12:35  tolstoy
+* Comments for two previous commit from Tolstoy : 2 bugs fixed in function IndexToCodon
+* 1) incorrect order of letters in the table na - was TCGA
+* 2) incorrect operation for bit counting - was total % div
+* cofirmation from Johnatan Kans
+*
 * Revision 6.12  2003/04/29 14:35:16  tolstoy
 * *** empty log message ***
 *
