@@ -8,8 +8,8 @@
 # Using DOC++:
 #    http://src.doc.ic.ac.uk/packages/Linux/sunsite.unc-mirror/apps/doctools/
 
-retrieve();
-genlists();
+#retrieve();
+#genlists();
 preprocess();
 docxx();
 exit;
@@ -70,33 +70,48 @@ sub preprocess
       s/\/\*+/\/\*/;
       s/BEGIN_NCBI_SCOPE//;
       s/END_NCBI_SCOPE//;
+      s/BEGIN_objects_SCOPE//;
+      s/END_objects_SCOPE//;
       s/^(namespace [a-zA-Z]+)//;
-      s/^extern/\n\/\/\/\nextern/;
-      s/^typedef/\n\/\/\/\ntypedef/;
+      s/^typedef enum/enum/;
 
       next if(/def.*_HP*$/);
-
+      
+      $prefix = '';
       if(/^template/)
       {
-        s/^template/\n\/\/\/\ntemplate/;
-        print OUT;
+        $prefix = $_;
         $_ = <IN>;
-        print OUT;
-        next;
       }
       
-      if(/ *class/)
+      if(/ *class/ && ! /;\n$/)
       {
-        s/^( *class +([_A-Za-z][<>:_A-Za-z0-9]*) .*[^;]\n)$/\n\/\/\/$href1$2$href2$2$href3\n$1/;
+        s/^( *class +([_A-Za-z][_A-Za-z0-9]*))/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
-      elsif(/ *struct/)
+      elsif(/ *struct/ && ! /;\n$/)
       {
-        s/^( *struct +([_A-Za-z][<>:_A-Za-z0-9]*) .*[^;]\n)$/\n\/\/\/$href1$2$href2$2$href3\n$1/;
+        s/^( *struct +([_A-Za-z][_A-Za-z0-9]*))/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
       }
-      else
+      elsif(/ *enum/ && ! /;\n$/)
       {
-        s/^(    [a-zA-Z])/\n    \/\/\/\n$1/;
-        s/^(        [a-zA-Z])/\n        \/\/\/\n$1/;
+        s/^( *enum +([_A-Za-z][_A-Za-z0-9]*))/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
+      }
+      elsif(/ *typedef/)
+      {
+        s/^( *typedef.* +([_A-Za-z][_A-Za-z0-9]*));$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
+      }
+      elsif(/ *extern/)
+      {
+        s/^( *extern.* +([_A-Za-z][_A-Za-z0-9]*) *\(.*)$/\n\/\/\/$href1$2$href2$2$href3\n$prefix$1/;
+      }
+      {
+        if(! /^ *if[^A-Za-z_]/ && ! /^ *return[^A-Za-z_]/ && 
+           ! /^ *while[^A-Za-z_]/ && ! / *for[^A-Za-z_]/ && ! / *throw[^A-Za-z_]/)
+        {
+          s/^(    [a-zA-Z])/\n    \/\/\/\n$1/;
+          s/^(        [a-zA-Z])/\n        \/\/\/\n$1/;
+        }
+        $_ = $prefix . $_;
       }
 
       print OUT;
