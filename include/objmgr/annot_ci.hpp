@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJMGR_EXPORT CAnnot_CI : public CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CAnnot_CI : CAnnotTypes_CI
 {
 public:
     CAnnot_CI(void);
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/08/27 21:08:03  grichenk
+* CAnnotTypes_CI made private
+*
 * Revision 1.21  2003/08/22 15:00:47  grichenk
 * Redesigned CAnnot_CI to iterate over seq-annots, containing
 * given location.
