@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/03/22 18:14:49  thiessen
+* fix null-pointer error in alignment retrieval
+*
 * Revision 1.47  2001/03/22 00:33:16  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -251,7 +254,8 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
 
 const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
 {
-    return sequenceViewer->GetCurrentAlignments()->front();
+    const ViewerBase::AlignmentList *currentAlignments = sequenceViewer->GetCurrentAlignments();
+    return (currentAlignments ? currentAlignments->front() : NULL);
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
