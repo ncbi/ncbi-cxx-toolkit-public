@@ -694,6 +694,17 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
                             (CS_VOID*) &value, CS_UNUSED, indicator);
         break;
     }
+    case eDB_Bit: {
+        CDB_Bit& par = dynamic_cast<CDB_Bit&> (param);
+        param_fmt.datatype = CS_BIT_TYPE;
+        if ( declare_only )
+            break;
+
+        CS_BIT value = (CS_BIT) par.Value();
+        ret_code = ct_param(cmd, &param_fmt,
+                            (CS_VOID*) &value, CS_UNUSED, indicator);
+        break;
+    }
     case eDB_BigInt: {
         CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
         param_fmt.datatype = CS_NUMERIC_TYPE;
@@ -885,6 +896,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/05/27 21:12:03  soussov
+ * bit type param added
+ *
  * Revision 1.23  2003/05/15 21:54:30  soussov
  * fixed bug in timeout handling
  *
