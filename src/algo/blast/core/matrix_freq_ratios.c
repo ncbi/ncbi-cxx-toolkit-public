@@ -333,7 +333,8 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
 
     ASSERT(matrix_name);
 
-    if ( !(retval = (SFreqRatios*) malloc(sizeof(SFreqRatios)))) {
+    retval = (SFreqRatios*) malloc(sizeof(SFreqRatios));
+    if ( !retval ) {
         return NULL;
     }
 
@@ -441,6 +442,9 @@ _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/06/09 14:21:03  camacho
+ * Removed msvc compiler warnings
+ *
  * Revision 1.2  2004/05/13 14:56:05  camacho
  * Fix for retrieving frequency ratios matrices
  *

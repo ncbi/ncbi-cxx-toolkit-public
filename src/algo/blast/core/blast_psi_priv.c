@@ -52,11 +52,14 @@ _PSIAllocateMatrix(unsigned int ncols, unsigned int nrows,
     void** retval = NULL;
     unsigned int i = 0;
 
-    if ( !(retval = (void**) malloc(sizeof(void*) * ncols)))
+    retval = (void**) malloc(sizeof(void*) * ncols);
+    if ( !retval ) {
         return NULL;
+    }
 
     for (i = 0; i < ncols; i++) {
-        if ( !(retval[i] = (void*) calloc(nrows, data_type_sz))) {
+        retval[i] = (void*) calloc(nrows, data_type_sz);
+        if ( !retval ) {
             retval = _PSIDeallocateMatrix(retval, i);
             break;
         }
@@ -101,7 +104,8 @@ _PSIAlignedBlockNew(Uint4 num_positions)
     PsiAlignedBlock* retval = NULL;
     Uint4 i = 0;
 
-    if ( !(retval = (PsiAlignedBlock*) calloc(1, sizeof(PsiAlignedBlock)))) {
+    retval = (PsiAlignedBlock*) calloc(1, sizeof(PsiAlignedBlock));
+    if ( !retval ) {
         return NULL;
     }
 
@@ -381,8 +385,6 @@ _PSIPurgeSimilarAlignments(PsiAlignmentData* alignment,
         {
             double percent_identity = (double) nidentical / align_length;
 
-                fprintf(stderr, "%f%% for seqs %d and %d\n",
-                        percent_identity, seq_index1, seq_index2);
             if (percent_identity >= max_percent_identity) {
                 int rv = _PSIPurgeAlignedRegion(alignment, seq_index2, 
                                                 align_start, 
@@ -1188,7 +1190,7 @@ PSIScaleMatrix(const Uint1* query,              /* [in] */
     /* FIXME: need to take scaling_factor into account */
 
     factor = 1.0;
-    while (1) {
+    for ( ; ; ) {
         Uint4 i = 0;
         Uint4 j = 0;
 
@@ -1355,8 +1357,10 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
         }
     }
 
-    if ( !(score_freqs = Blast_ScoreFreqNew(min_score, max_score)))
+    score_freqs = Blast_ScoreFreqNew(min_score, max_score);
+    if ( !score_freqs ) {
         return NULL;
+    }
 
     score_freqs->obs_min = min_score;
     score_freqs->obs_max = max_score;
@@ -1438,7 +1442,6 @@ _PSIPurgeAlignedRegion(PsiAlignmentData* alignment,
 
 
     sequence_position = alignment->desc_matrix[seq_index];
-    fprintf(stderr, "NEW purge %d (%d-%d)\n", seq_index, start, stop);
     for (i = start; i < stop; i++) {
         sequence_position[i].letter = (unsigned char) -1;
         sequence_position[i].used = FALSE;
@@ -1468,7 +1471,6 @@ _PSIDiscardIfUnused(PsiAlignmentData* alignment, unsigned int seq_index)
 
     if ( !contains_aligned_regions ) {
         alignment->use_sequences[seq_index] = FALSE;
-        fprintf(stderr, "NEW Removing sequence %d\n", seq_index);
     }
 }
 
@@ -1480,8 +1482,10 @@ _PSIGetStandardProbabilities(const BlastScoreBlk* sbp)
     Uint4 i = 0;
     double* retval = NULL;
 
-    if ( !(retval = (double*) malloc(sbp->alphabet_size * sizeof(double))))
+    retval = (double*) malloc(sbp->alphabet_size * sizeof(double));
+    if ( !retval ) {
         return NULL;
+    }
 
     standard_probabilities = Blast_ResFreqNew(sbp);
     Blast_ResFreqStdComp(sbp, standard_probabilities);
@@ -1508,6 +1512,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/09 14:21:03  camacho
+ * Removed msvc compiler warnings
+ *
  * Revision 1.8  2004/06/08 17:30:06  dondosha
  * Compiler warnings fixes
  *

@@ -107,7 +107,8 @@ PSIAlignmentDataNew(const Uint1* query, const PsiInfo* info)
         return NULL;
     }
 
-    if ( !(retval = (PsiAlignmentData*) calloc(1, sizeof(PsiAlignmentData)))) {
+    retval = (PsiAlignmentData*) calloc(1, sizeof(PsiAlignmentData));
+    if ( !retval ) {
          return NULL;
     }
 
@@ -211,7 +212,8 @@ PSIMatrixNew(Uint4 query_sz, Uint4 alphabet_size)
 {
     PsiMatrix* retval = NULL;
 
-    if ( !(retval = (PsiMatrix*) calloc(1, sizeof(PsiMatrix)))) {
+    retval = (PsiMatrix*) calloc(1, sizeof(PsiMatrix));
+    if ( !retval ) {
         return NULL;
     }
     retval->ncols = query_sz + 1;
@@ -268,7 +270,8 @@ PSIDiagnosticsNew(Uint4 query_sz, Uint4 alphabet_size)
 {
     PsiDiagnostics* retval = NULL;
 
-    if ( !(retval = (PsiDiagnostics*) calloc(1, sizeof(PsiDiagnostics)))) {
+    retval = (PsiDiagnostics*) calloc(1, sizeof(PsiDiagnostics));
+    if ( !retval ) {
         return NULL;
     }
 
