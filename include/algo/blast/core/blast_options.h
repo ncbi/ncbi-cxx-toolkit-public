@@ -657,13 +657,12 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
  * @param variable_wordsize Are only full bytes of a compressed sequence 
  *        checked to find initial words? [in]
  * @param use_pssm Use PSSM rather than (protein) query to build lookup table.
- * @param rps_blast Build an RPS Blast lookup table
  */
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
-   Boolean use_pssm, Boolean rps_blast);
+   Boolean use_pssm);
 
 
 /** Deallocates memory for LookupTableOptions*.
