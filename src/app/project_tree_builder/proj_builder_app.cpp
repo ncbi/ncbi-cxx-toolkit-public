@@ -566,14 +566,8 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 
         GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
 
-        m_MsvcRegSettings->m_ProjectEngineName = 
-            GetConfig().GetString("msvc7", "Name", "VisualStudioProject");
-    
-        m_MsvcRegSettings->m_Encoding = 
-            GetConfig().GetString("msvc7", "encoding","Windows-1252");
-
         m_MsvcRegSettings->m_CompilersSubdir  = 
-            GetConfig().GetString("msvc7", "compilers", "msvc7_prj");
+            GetConfig().GetString("msvc7", "compilers", "msvc710_prj");
     
         m_MsvcRegSettings->m_ProjectsSubdir  = 
             GetConfig().GetString("msvc7", "Projects", "build");
@@ -583,6 +577,9 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 
         m_MsvcRegSettings->m_MetaMakefile = 
             GetConfig().GetString("msvc7", "MetaMakefile", "");
+
+        m_MsvcRegSettings->m_DllInfo = 
+            GetConfig().GetString("msvc7", "DllInfo", "");
     }
     return *m_MsvcRegSettings;
 }
@@ -726,8 +723,18 @@ const CBuildType& CProjBulderApp::GetBuildType(void)
 const CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
 {
     if ( !m_DllsInfo.get() ) {
+        string site_ini_dir = GetProjectTreeInfo().m_Compilers;
+        site_ini_dir = 
+                CDirEntry::ConcatPath(site_ini_dir, 
+                                      GetRegSettings().m_CompilersSubdir);
+        site_ini_dir = 
+            CDirEntry::ConcatPath(site_ini_dir, 
+                                  GetBuildType().GetTypeStr());
+        string dll_info_file_name = GetRegSettings().m_DllInfo;
+        dll_info_file_name =
+            CDirEntry::ConcatPath(site_ini_dir, dll_info_file_name);
         m_DllsInfo = 
-            auto_ptr<CMsvcDllsInfo>(new CMsvcDllsInfo(GetConfig()));
+            auto_ptr<CMsvcDllsInfo>(new CMsvcDllsInfo(dll_info_file_name));
     }    
     return *m_DllsInfo;
 }
@@ -805,6 +812,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/06/07 13:57:43  gorelenk
+ * Changed implementation of CProjBulderApp::GetRegSettings and
+ * CProjBulderApp::GetDllsInfo.
+ *
  * Revision 1.39  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
