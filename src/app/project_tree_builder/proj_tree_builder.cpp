@@ -1092,8 +1092,16 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         ProcessMakeInFile(makefilein_path, makefiles);
         TFiles::const_iterator p = makefiles->m_In.find(makefilein_path);
         const CSimpleMakeFileContents& makefile = p->second;
+
         CSimpleMakeFileContents::TContents::const_iterator k = 
             makefile.m_Contents.find("SUB_PROJ");
+        if (k != makefile.m_Contents.end()) {
+            const list<string>& values = k->second;
+            copy(values.begin(), 
+                 values.end(), 
+                 inserter(subprojects, subprojects.end()));
+        }
+        k = makefile.m_Contents.find("EXPENDABLE_SUB_PROJ");
         if (k != makefile.m_Contents.end()) {
             const list<string>& values = k->second;
             copy(values.begin(), 
@@ -1294,6 +1302,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/14 18:57:59  gorelenk
+ * Changed CProjectTreeBuilder::ProcessDir
+ * - added support of EXPENDABLE_SUB_PROJ .
+ *
  * Revision 1.9  2004/06/14 14:18:21  gorelenk
  * Changed CProjectTreeBuilder::ProcessDir - added SUB_PROJ processing.
  *
