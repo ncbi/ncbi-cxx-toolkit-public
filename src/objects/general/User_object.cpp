@@ -38,6 +38,8 @@
 
 // generated includes
 #include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <corelib/ncbiexpt.hpp>
 
 // generated classes
@@ -564,6 +566,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.6  2004/01/20 20:38:09  vasilche
+* Added required includes.
+*
 * Revision 6.5  2003/11/21 14:45:01  grichenk
 * Replaced runtime_error with CException
 *
