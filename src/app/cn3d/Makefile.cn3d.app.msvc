@@ -7,6 +7,11 @@ PreprocessorDefinitions=__WXMSW__,__WIN32__,_WINDOWS,__WINDOWS__,WINVER=0x0400
 [Compiler.release.ReleaseDLL]
 PreprocessorDefinitions=__WXMSW__,__WIN32__,_WINDOWS,__WINDOWS__,WINVER=0x0400,WXUSINGDLL=1
 
+
+[AddToProject]
+ResourceFiles=cn3d.rc
+
+
 [Linker]
 SubSystem=2
 AdditionalOptions=comctl32.lib Rpcrt4.lib
