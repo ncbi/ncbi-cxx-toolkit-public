@@ -48,8 +48,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#if !defined(NDEBUG) //&& defined(DEBUG_SYNC)
+#if !defined(NDEBUG) // && defined(DEBUG_SYNC)
+#if defined(_REENTRANT)
 #define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
+#else
+#define GBLOG_POST(x) LOG_POST("0:: " << x)
+#endif 
 #else
 #define GBLOG_POST(x)
 #endif
@@ -239,6 +243,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.12  2002/04/05 23:47:17  kimelman
+ * playing around tests
+ *
  * Revision 1.11  2002/04/04 01:35:33  kimelman
  * more MT tests
  *

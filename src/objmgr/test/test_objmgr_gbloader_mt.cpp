@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 23:47:20  kimelman
+* playing around tests
+*
 * Revision 1.5  2002/04/05 19:53:13  gouriano
 * reset scope history more accurately (was incorrect)
 *
@@ -138,9 +141,9 @@ void* CTestThread::Main(void)
 
     CScope *s;
     switch(m_mode&3) {
-    case 0: s =  &*m_Scope; break;
+    case 2: s =  &*m_Scope; break;
     case 1: s =  &scope1;   break;
-    case 2: s =  &scope2;   break;
+    case 0: s =  &scope2;   break;
     default:
       throw runtime_error("unexpected mode");
     }
@@ -240,18 +243,17 @@ int CTestApplication::Run()
         }
   
   for(int thr=tc-1 ; thr >= 0 ; --thr)
-    for(int global_om=(thr>0?0:1);global_om<=1 ; ++global_om)
-      for(int global_scope=(thr==0?2:(global_om==0?1:2));global_scope<=2 ; ++global_scope)
+    for(int global_om=1;global_om>=(thr>0?0:1); --global_om)
+      for(int global_scope=2;global_scope>=(thr==0?1:(global_om==0?1:0)); --global_scope)
         {
           LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local") <<
-                   ", scope=" << (global_scope==2?"auto":(global_scope==1?"per thread":"global")) <<
+                   ", scope=" << (global_scope==0?"auto":(global_scope==1?"per thread":"global")) <<
                    " ==>> " << timing[thr][global_om][global_scope] << " sec");
         }
   
   LOG_POST("Tests completed");
   return 0;
 }
-
 
 END_NCBI_SCOPE
 

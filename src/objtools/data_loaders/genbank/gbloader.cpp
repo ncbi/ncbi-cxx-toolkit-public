@@ -432,7 +432,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
   m_LookupMutex.Lock("x_GetRecords");
   if(!x_ResolveHandle(sih,sr))
     return false;// mutex has already been unlocked
-
+  
   if(!sr->m_Sr) // no data for given seqid
     {
       m_LookupMutex.Unlock();
@@ -691,7 +691,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
               else
                 {
                   tse_up->m_mode   = CTSEUpload::eDone;
-                  GBLOG_POST( "GetBlob(" << s << ") " << "- retrieval of the whole blob failed - no data available");
+                  LOG_POST( "GetBlob(" << s << ") " << "- retrieval of the whole blob failed - no data available");
                 }
             }
           else
@@ -727,6 +727,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/04/05 23:47:18  kimelman
+* playing around tests
+*
 * Revision 1.22  2002/04/04 01:35:35  kimelman
 * more MT tests
 *
