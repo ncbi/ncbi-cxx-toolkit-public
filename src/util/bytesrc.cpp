@@ -432,7 +432,7 @@ CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
 
 CMemoryChunk::~CMemoryChunk(void)
 {
-    delete m_Data;
+    delete[] m_Data;
     CRef<CMemoryChunk> next = m_NextChunk;
     m_NextChunk.Reset();
     while ( bool(next) && next->ReferencedOnlyOnce() ) {
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/09/13 18:41:59  vasilche
+ * Fixed mismatched new[]/delete[].
+ *
  * Revision 1.37  2004/09/07 14:27:41  vasilche
  * Allow nested CSubSourceCollectors.
  *
