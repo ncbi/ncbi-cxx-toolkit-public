@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/04/22 14:20:11  vasilche
+* Now CHTML_select::AppendOption and CHTML_option constructor accept option
+* name always as first argument.
+*
 * Revision 1.14  1999/04/15 19:48:17  vasilche
 * Fixed several warnings detected by GCC
 *
@@ -363,14 +367,14 @@ inline CHTML_a::CHTML_a(const string& href, const string& text)
     SetOptionalAttribute(KHTMLAttributeName_href, href);
 }
 
-inline CHTML_option::CHTML_option(const string& content, bool selected)
-    : CParent(content)
+inline CHTML_option::CHTML_option(const string& value, bool selected)
+    : CParent(value)
 {
     SetOptionalAttribute(KHTMLAttributeName_selected, selected);
 };
 
-inline CHTML_option::CHTML_option(const string& content, const string& value, bool selected)
-    : CParent(content)
+inline CHTML_option::CHTML_option(const string& value, const string& label, bool selected)
+    : CParent(label)
 {
     SetAttribute(KHTMLAttributeName_value, value);
     SetOptionalAttribute(KHTMLAttributeName_selected, selected);
@@ -389,16 +393,16 @@ inline CHTML_select::CHTML_select(const string& name, int size, bool multiple)
     SetOptionalAttribute(KHTMLAttributeName_multiple, multiple);
 }
 
-inline CHTML_select* CHTML_select::AppendOption(const string& option, bool selected)
+inline CHTML_select* CHTML_select::AppendOption(const string& value, bool selected)
 {
-    AppendChild(new CHTML_option(option, selected));
+    AppendChild(new CHTML_option(value, selected));
     return this;
 };
 
 
-inline CHTML_select* CHTML_select::AppendOption(const string& option, const string& value, bool selected)
+inline CHTML_select* CHTML_select::AppendOption(const string& value, const string& label, bool selected)
 {
-    AppendChild(new CHTML_option(option, value, selected));
+    AppendChild(new CHTML_option(value, label, selected));
     return this;
 };
 

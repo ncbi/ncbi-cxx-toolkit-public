@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/04/22 14:20:10  vasilche
+* Now CHTML_select::AppendOption and CHTML_option constructor accept option
+* name always as first argument.
+*
 * Revision 1.30  1999/04/15 22:05:16  vakatov
 * Include NCBI C++ headers before the standard ones
 *
@@ -813,9 +817,9 @@ public:
     CHTML_select(const string& name, int size, bool multiple = false);
 
     // return 'this' to allow chained AppendOption
-    CHTML_select* AppendOption(const string& option, bool selected = false);
-    CHTML_select* AppendOption(const string& option, const string& value, bool selected = false);
-    
+    CHTML_select* AppendOption(const string& value, bool selected = false);
+    CHTML_select* AppendOption(const string& value, const string& label,
+                               bool selected = false);
 };
 
 //option tag.  rarely used alone.  see select tag
@@ -824,9 +828,9 @@ class CHTML_option: public CHTML_option_Base
     typedef CHTML_option_Base CParent;
 
 public:
-    CHTML_option(const string& content, bool selected = false);
-    CHTML_option(const string& content, const string& value, bool selected = false);
-
+    CHTML_option(const string& value, bool selected = false);
+    CHTML_option(const string& value, const string& label,
+                 bool selected = false);
 };
 
 // break

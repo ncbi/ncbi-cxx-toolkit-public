@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/04/22 14:20:19  vasilche
+* Now CHTML_select::AppendOption and CHTML_option constructor accept option
+* name always as first argument.
+*
 * Revision 1.27  1999/04/15 19:56:23  vasilche
 * More warnings fixed
 *
@@ -167,7 +171,7 @@ CNCBINode* COptionDescription::CreateComponent(const string& def) const
     else if ( m_Label.empty() )
         return new CHTML_option(m_Value, m_Value == def);
     else
-        return new CHTML_option(m_Label, m_Value, m_Value == def);
+        return new CHTML_option(m_Value, m_Label, m_Value == def);
 }
 
 CSelectDescription::CSelectDescription(void)
