@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/12/03 22:24:14  vakatov
+* Rollback R1.25
+*
 * Revision 1.25  2001/12/03 22:03:37  juran
 * #include <corelib/ncbistl.hpp>
 *
@@ -124,7 +127,6 @@
 */
 
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbistl.hpp>
 #include <string>
 #include <stdexcept>
 
