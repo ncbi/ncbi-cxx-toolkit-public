@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/05/06 19:17:04  lavr
+ * +SERV_ServiceName() - translation of service name
+ *
  * Revision 6.13  2001/09/28 20:50:41  lavr
  * Update VT method changed - now called on per-line basis
  *
@@ -133,6 +136,16 @@ char* SERV_Print(SERV_ITER iter);
 /* Get name of underlying service mapper.
  */
 const char* SERV_MapperName(SERV_ITER iter);
+
+
+/* Get final service name, using CONN_SERVICE_NAME_service environment
+ * variable, then (if not found) registry section [service] and a key
+ * CONN_SERVICE_NAME. Return resulting name (perhaps, an exact copy of
+ * "service" if no override name was found in environment/registry),
+ * which must be freed by a caller. Return 0 on error.
+ * NOTE: This procedure does not detect cyclical redefinitions.
+ */
+const char* SERV_ServiceName(const char* service);
 
 
 #ifdef __cplusplus
