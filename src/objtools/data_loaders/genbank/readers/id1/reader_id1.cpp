@@ -74,6 +74,8 @@
 #include <memory>
 #include <iomanip>
 
+//#define GENBANK_ID1_RANDOM_FAILS 1
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -564,7 +566,6 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
         }
         ids.AddBlob_id(blob_id, fBlobHasAllLocal);
     }
-    ids.SetLoaded();
 }
 
 
@@ -881,6 +882,11 @@ void CId1Reader::x_SendRequest(const CBlob_id& blob_id,
 void CId1Reader::x_SendRequest(CConn_ServiceStream* stream,
                                const CID1server_request& request)
 {
+#if GENBANK_ID1_RANDOM_FAILS
+    if ( random() % 64 == 0 ) {
+        stream->setstate(ios::badbit);
+    }
+#endif
     int conn = -1;
     if ( GetDebugLevel() >= eTraceConn ) {
         ITERATE ( vector<CConn_ServiceStream*>, it, m_Pool ) {
@@ -911,6 +917,11 @@ void CId1Reader::x_SendRequest(CConn_ServiceStream* stream,
 void CId1Reader::x_ReceiveReply(CConn_ServiceStream* stream,
                                 CID1server_back& reply)
 {
+#if GENBANK_ID1_RANDOM_FAILS
+    if ( random() % 64 == 0 ) {
+        stream->setstate(ios::badbit);
+    }
+#endif
     int conn = -1;
     if ( GetDebugLevel() >= eTraceConn ) {
         ITERATE ( vector<CConn_ServiceStream*>, it, m_Pool ) {
