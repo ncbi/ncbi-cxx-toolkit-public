@@ -194,7 +194,7 @@ PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
 export PATH
 
 # Define time-guard script to run tests from other scripts
-CHECK_EXEC="\${x_root_dir}/scripts/check/check_exec_test.sh"
+CHECK_EXEC="\${root_dir}/scripts/check/check_exec_test.sh"
 export CHECK_EXEC
 
 count_ok=0
