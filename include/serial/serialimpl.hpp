@@ -113,45 +113,45 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     &NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_multiset(Type,Args) \
-    NCBI_NS_STD::multiset<SERIAL_TYPE(Type)Args>
+    NCBI_NS_STD::multiset<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_multiset(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfo_multiset<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_multiset<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_set(Type,Args) \
-    NCBI_NS_STD::set<SERIAL_TYPE(Type)Args>
+    NCBI_NS_STD::set<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_set(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfo_set<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_set<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_multimap(KeyType,KeyArgs,ValueType,ValueArgs) \
-    NCBI_NS_STD::multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>
+    NCBI_NS_STD::multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs >
 #define SERIAL_REF_STL_multimap(KeyType,KeyArgs,ValueType,ValueArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_multimap<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs >::GetTypeInfo,\
     SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs
 
 #define SERIAL_TYPE_STL_map(KeyType,KeyArgs,ValueType,ValueArgs) \
-    NCBI_NS_STD::map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>
+    NCBI_NS_STD::map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs >
 #define SERIAL_REF_STL_map(KeyType,KeyArgs,ValueType,ValueArgs) \
-    &NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyType)KeyArgs,SERIAL_TYPE(ValueType)ValueArgs >::GetTypeInfo,\
     SERIAL_REF(KeyType)KeyArgs,SERIAL_REF(ValueType)ValueArgs
 
 #define SERIAL_TYPE_STL_list(Type,Args) \
-    NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
+    NCBI_NS_STD::list<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_list(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_list_set(Type,Args) \
-    NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
+    NCBI_NS_STD::list<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_list_set(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args>::GetSetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args >::GetSetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_vector(Type,Args) \
-    NCBI_NS_STD::vector<SERIAL_TYPE(Type)Args>
+    NCBI_NS_STD::vector<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_vector(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_vector<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_CHAR_vector(Type) NCBI_NS_STD::vector<Type>
@@ -159,19 +159,19 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     &NCBI_NS_NCBI::CStlClassInfoChar_vector<Type>::GetTypeInfo
 
 #define SERIAL_TYPE_STL_auto_ptr(Type,Args) \
-    NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
+    NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_auto_ptr(Type,Args) \
-    &NCBI_NS_NCBI::CStlClassInfo_auto_ptr<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CStlClassInfo_auto_ptr<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
-#define SERIAL_TYPE_STL_AutoPtr(Type,Args) NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(Type)Args>
+#define SERIAL_TYPE_STL_AutoPtr(Type,Args) NCBI_NS_NCBI::AutoPtr<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_AutoPtr(Type,Args) \
-    &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CAutoPtrTypeInfo<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
-#define SERIAL_TYPE_STL_CRef(Type,Args) NCBI_NS_NCBI::CRef<SERIAL_TYPE(Type)Args>
+#define SERIAL_TYPE_STL_CRef(Type,Args) NCBI_NS_NCBI::CRef<SERIAL_TYPE(Type)Args >
 #define SERIAL_REF_STL_CRef(Type,Args) \
-    &NCBI_NS_NCBI::CRefTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CRefTypeInfo<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_REF_CHOICE_POINTER(Type,Args) \
@@ -179,11 +179,11 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     SERIAL_REF(Type)Args
 
 #define SERIAL_REF_CHOICE_STL_auto_ptr(Type,Args) \
-    &NCBI_NS_NCBI::CChoiceStlClassInfo_auto_ptr<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CChoiceStlClassInfo_auto_ptr<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_REF_CHOICE_STL_AutoPtr(Type,Args) \
-    &NCBI_NS_NCBI::CChoiceAutoPtrTypeInfo<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    &NCBI_NS_NCBI::CChoiceAutoPtrTypeInfo<SERIAL_TYPE(Type)Args >::GetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_CHOICE(Type,Args) SERIAL_TYPE(Type)Args
@@ -251,7 +251,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // macros for specifying differents members
 #define SERIAL_MEMBER(Name,Type,Args) \
-    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Ptr(MEMBER_PTR(Name)),\
+    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args >::Ptr(MEMBER_PTR(Name)),\
     SERIAL_REF(Type)Args
 #define SERIAL_STD_MEMBER(Name) \
     MEMBER_PTR(Name),NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR(Name))
@@ -266,7 +266,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SERIAL_REF_MEMBER(Name,Class) \
     SERIAL_MEMBER(Name,STL_CRef,(CLASS,(Class)))
 #define SERIAL_PTR_CHOICE_VARIANT(Name,Type,Args) \
-    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::PtrPtr(MEMBER_PTR(Name)),\
+    NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args >::PtrPtr(MEMBER_PTR(Name)),\
     SERIAL_REF(Type)Args
 #define SERIAL_REF_CHOICE_VARIANT(Name,Class) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(CLASS)(Class)>::ObjectPtrPtr(MEMBER_PTR(Name)),\
