@@ -41,7 +41,7 @@ USING_SCOPE(objects);
 
 
 void
-CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth)
+CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     const
 {
     ddc.SetFrame("CQuerySetUpOptions");
@@ -54,7 +54,7 @@ CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth)
 }
 
 void
-CBLAST_SequenceBlk::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBLAST_SequenceBlk::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBLAST_SequenceBlk");
     if (!m_Ptr)
@@ -69,7 +69,7 @@ CBLAST_SequenceBlk::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 }
 
 void
-CBlastQueryInfo::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastQueryInfo::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastQueryInfo");
     if (!m_Ptr)
@@ -77,7 +77,7 @@ CBlastQueryInfo::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 }
 void
-CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CLookupTableOptions");
     if (!m_Ptr)
@@ -94,7 +94,7 @@ CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 }
 
 void
-CLookupTableWrap::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CLookupTableWrap::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CLookupTableWrap");
     if (!m_Ptr)
@@ -102,7 +102,7 @@ CLookupTableWrap::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 }
 void
-CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("BlastInitialWordOptions");
     if (!m_Ptr)
@@ -116,7 +116,7 @@ CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
     ddc.Log("x_dropoff", m_Ptr->x_dropoff);
 }
 void
-CBlastInitialWordParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastInitialWordParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastInitialWordParameters");
     if (!m_Ptr)
@@ -124,7 +124,7 @@ CBlastInitialWordParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth
 
 }
 void
-CBLAST_ExtendWord::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBLAST_ExtendWord::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBLAST_ExtendWord");
     if (!m_Ptr)
@@ -133,7 +133,7 @@ CBLAST_ExtendWord::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 }
 
 void
-CBlastExtensionOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastExtensionOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastExtensionOptions");
     if (!m_Ptr)
@@ -146,7 +146,7 @@ CBlastExtensionOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
 }
 
 void
-CBlastExtensionParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastExtensionParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastExtensionParameters");
     if (!m_Ptr)
@@ -155,7 +155,7 @@ CBlastExtensionParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) 
 }
 
 void
-CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastHitSavingOptions");
     if (!m_Ptr)
@@ -179,7 +179,7 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     ddc.Log("is_neighboring", m_Ptr->is_neighboring);
 }
 void
-CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastHitSavingParameters");
     if (!m_Ptr)
@@ -187,7 +187,7 @@ CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) 
 
 }
 void
-CPSIBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CPSIBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CPSIBlastOptions");
     if (!m_Ptr)
@@ -195,7 +195,7 @@ CPSIBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
 }
 void
-CBlastGapAlignStruct::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastGapAlignStruct::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastGapAlignStruct");
     if (!m_Ptr)
@@ -204,7 +204,7 @@ CBlastGapAlignStruct::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 }
 
 void
-CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastEffectiveLengthsOptions");
     if (!m_Ptr)
@@ -217,7 +217,7 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int dep
 }
 
 void
-CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastScoringOptions");
     if (!m_Ptr)
@@ -236,7 +236,7 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 }
 
 void
-CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
 	ddc.SetFrame("CBlastDatabaseOptions");
     if (!m_Ptr)
