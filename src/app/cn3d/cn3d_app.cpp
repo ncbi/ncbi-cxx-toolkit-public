@@ -324,6 +324,8 @@ bool Cn3DApp::OnInit(void)
             wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
         { wxCMD_LINE_OPTION, "m", "message", "message file",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
+        { wxCMD_LINE_OPTION, "a", "targetapp", "messaging target application name",
+            wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
         { wxCMD_LINE_PARAM, NULL, NULL, "input file",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL},
         { wxCMD_LINE_NONE }
@@ -418,11 +420,15 @@ bool Cn3DApp::OnInit(void)
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
     }
 
-    // set up messaging file
+    // set up messaging file communication
     wxString messageFilename;
-    if (commandLine.Found("m", &messageFilename))
+    if (commandLine.Found("m", &messageFilename)) {
+        wxString messageApp;
+        if (!commandLine.Found("a", &messageApp))
+            messageApp = "Listener";
         structureWindow->SetupFileMessenger(
-            messageFilename.c_str(), commandLine.Found("r"));
+            messageFilename.c_str(), messageApp.c_str(), commandLine.Found("r"));
+    }
 
     // optionally show alignment window
     if (!commandLine.Found("n") && structureWindow->glCanvas->structureSet)
@@ -482,6 +488,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/01/08 15:31:02  thiessen
+* remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
+*
 * Revision 1.10  2003/12/03 15:46:36  thiessen
 * adjust so spin increment is accurate
 *

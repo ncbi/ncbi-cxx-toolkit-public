@@ -144,7 +144,7 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_MENU      (MID_ABOUT,                               StructureWindow::OnHelp)
     EVT_TIMER     (MID_ANIMATE,                             StructureWindow::OnAnimationTimer)
     EVT_TIMER     (MID_MESSAGING,                           StructureWindow::OnFileMessagingTimer)
-    EVT_MENU      (MID_CDTREE_SELECT,                       StructureWindow::OnCDTreeSelect)
+    EVT_MENU      (MID_SEND_SELECTION,                      StructureWindow::OnSendSelection)
 END_EVENT_TABLE()
 
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
@@ -381,10 +381,14 @@ void StructureWindow::OnExit(wxCommandEvent& event)
 {
     animationTimer.Stop();
     fileMessagingTimer.Stop();
+
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
     GlobalMessenger()->SequenceWindowsSave(true);   // save any edited alignment and updates first
     SaveDialog(true, false);                        // give structure window a chance to save data
     SaveFavorites();
+
+    if (IsFileMessengerActive())
+        SendCommand(messageTargetApp, "Cn3DTerminated", "");
 
     // remove help window if present
     if (helpController) {
@@ -399,7 +403,8 @@ void StructureWindow::OnExit(wxCommandEvent& event)
     Destroy();
 }
 
-void StructureWindow::SetupFileMessenger(const std::string& messageFilename, bool readOnly)
+void StructureWindow::SetupFileMessenger(const std::string& messageFilename,
+    const std::string& messageApp, bool readOnly)
 {
     if (fileMessenger) return;
 
@@ -408,9 +413,10 @@ void StructureWindow::SetupFileMessenger(const std::string& messageFilename, boo
     fileMessagingTimer.SetOwner(this, MID_MESSAGING);
     fileMessagingTimer.Start(200, false);
 
-    // add menu item for CDTree selection
+    // add menu item for file messaging selection
+    messageTargetApp = messageApp;
     windowMenu->AppendSeparator();
-    windowMenu->Append(MID_CDTREE_SELECT, "Send Selection to &CDTree");
+    windowMenu->Append(MID_SEND_SELECTION, (string("Sen&d Selection to ") + messageTargetApp).c_str());
 }
 
 void StructureWindow::OnFileMessagingTimer(wxTimerEvent& event)
@@ -464,7 +470,7 @@ void StructureWindow::SendCommand(const std::string& toApp,
     fileMessenger->SendCommand(toApp, nextCommandID++, command, data);
 }
 
-void StructureWindow::OnCDTreeSelect(wxCommandEvent& event)
+void StructureWindow::OnSendSelection(wxCommandEvent& event)
 {
     if (!fileMessenger) {
         ERRORMSG("Can't send messages when return messaging is off");
@@ -472,8 +478,8 @@ void StructureWindow::OnCDTreeSelect(wxCommandEvent& event)
     }
 
     string data;
-    if (GlobalMessenger()->GetHighlightsForCDTree(&data))
-        SendCommand("CDTree2", "Select", data);
+    if (GlobalMessenger()->GetHighlightsForSelectionMessage(&data))
+        SendCommand(messageTargetApp, "Select", data);
 }
 
 void StructureWindow::SetWindowTitle(void)
@@ -1438,7 +1444,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
 
     if (!outputFilename.IsEmpty()) {
 
-        // save and send FileSaved command to CDTree
+        // save and send FileSaved command
         unsigned int changeFlags;
         if (glCanvas->structureSet->SaveASNData(
                 outputFilename.c_str(), (outputFilename.Right(4) == ".val"), &changeFlags) &&
@@ -1457,7 +1463,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
                 data += "DescriptionChanged\n";
             if ((changeFlags & StructureSet::eUpdateData) > 0)
                 data += "PendingAlignmentsChanged\n";
-            SendCommand("CDTree2", "FileSaved", data);
+            SendCommand(messageTargetApp, "FileSaved", data);
         }
 
 #ifdef __WXMAC__
@@ -1486,6 +1492,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/01/08 15:31:03  thiessen
+* remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
+*
 * Revision 1.23  2003/12/03 15:46:36  thiessen
 * adjust so spin increment is accurate
 *

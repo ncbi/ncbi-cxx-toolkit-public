@@ -466,7 +466,7 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     return bas.Release();
 }
 
-bool Messenger::GetHighlightsForCDTree(string *data) const
+bool Messenger::GetHighlightsForSelectionMessage(string *data) const
 {
     data->erase();
     if (!IsAnythingHighlighted()) return false;
@@ -486,7 +486,7 @@ bool Messenger::GetHighlightsForCDTree(string *data) const
         } else if (h->first->accession.size() > 0) {
             oss << "acc " << h->first->accession;
         } else {
-            WARNINGMSG("Messenger::GetHighlightsForCDTree() - unimplemented identifier type");
+            WARNINGMSG("Messenger::GetHighlightsForSelectionMessage() - unimplemented identifier type");
             continue;
         }
 
@@ -544,6 +544,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/01/08 15:31:02  thiessen
+* remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
+*
 * Revision 1.38  2003/11/15 16:08:36  thiessen
 * add stereo
 *

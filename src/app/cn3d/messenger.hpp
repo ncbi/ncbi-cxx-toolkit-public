@@ -165,9 +165,9 @@ public:
     // (for cdd annotations) - returns NULL if highlights aren't from one structure
     ncbi::objects::CBiostruc_annot_set * CreateBiostrucAnnotSetForHighlightsOnSingleObject(void) const;
 
-    // formats list of highlighted residues for CDTree's Select command; returns true if
+    // formats list of highlighted residues for selection messaging; returns true if
     // there are any highlights
-    bool GetHighlightsForCDTree(std::string *data) const;
+    bool GetHighlightsForSelectionMessage(std::string *data) const;
 
     // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(ViewerBase *sequenceViewer)
@@ -195,6 +195,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/01/08 15:31:03  thiessen
+* remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
+*
 * Revision 1.26  2003/07/10 18:47:29  thiessen
 * add CDTree->Select command
 *

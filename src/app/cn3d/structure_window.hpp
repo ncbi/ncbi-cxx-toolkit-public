@@ -74,7 +74,8 @@ public:
         const std::string& command, const std::string& data);
     void ReceivedReply(const std::string& fromApp, unsigned long id,
 		ncbi::MessageResponder::ReplyStatus status, const std::string& data);
-    void SetupFileMessenger(const std::string& messageFilename, bool readOnly);
+    void SetupFileMessenger(const std::string& messageFilename,
+        const std::string& messageApp, bool readOnly);
     bool IsFileMessengerActive(void) const { return (fileMessenger != NULL); }
     void SendCommand(const std::string& toApp, const std::string& command, const std::string& data);
 
@@ -167,7 +168,7 @@ public:
             MID_SHOW_LOG,
             MID_SHOW_LOG_START,
             MID_SHOW_SEQ_V,
-            MID_CDTREE_SELECT,
+            MID_SEND_SELECTION,
         // CDD menu
             MID_CDD_OVERVIEW,
             MID_EDIT_CDD_NAME,
@@ -229,7 +230,7 @@ private:
     void OnAnimate(wxCommandEvent& event);
     void OnAnimationTimer(wxTimerEvent& event);
     void OnHelp(wxCommandEvent& event);
-    void OnCDTreeSelect(wxCommandEvent& event);
+    void OnSendSelection(wxCommandEvent& event);
 
     wxMenuBar *menuBar;
     wxMenu *fileMenu, *favoritesMenu, *windowMenu;
@@ -249,6 +250,7 @@ private:
     wxTimer fileMessagingTimer;
     ncbi::FileMessenger *fileMessenger;
     void OnFileMessagingTimer(wxTimerEvent& event);
+    std::string messageTargetApp;
 
     CommandProcessor *commandProcessor;
 
@@ -262,6 +264,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/01/08 15:31:03  thiessen
+* remove hard-coded CDTree references in messaging; add Cn3DTerminated message upon exit
+*
 * Revision 1.8  2003/12/03 15:07:10  thiessen
 * add more sophisticated animation controls
 *
