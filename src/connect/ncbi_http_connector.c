@@ -976,8 +976,10 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
- * Revision 6.60  2003/11/03 17:34:01  lavr
- * Print strerror() along with most  syscall-related errors
+ * Revision 6.61  2003/11/03 17:37:42  lavr
+ * Fix previous accidental commit and provide corrent change log info:
+ * 1. Added more notes about SOCK_Shutdown() being left commented out;
+ * 2. Do not print HTTP error body if data trace mode set to "DATA".
  *
  * Revision 6.59  2003/10/29 14:09:08  lavr
  * Log levels and messages changed in some error reports
