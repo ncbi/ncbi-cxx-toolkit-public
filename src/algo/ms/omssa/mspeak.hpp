@@ -653,7 +653,7 @@ private:
     bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
     bool *Match;    // is a peak matched or not?
     CMZI ** IntensitySort;  // points to CMZI original, sorted.
-    int TotalMass;  // singly protonated m/z
+    int TotalMass;  // neutral mass
     int Charge;    // Charge from input file
     int Charges[MSMAXCHARGE];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
@@ -905,6 +905,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.18  2004/10/20 22:24:48  lewisg
+  neutral mass bugfix, concatenate result and response
+
   Revision 1.17  2004/09/15 18:35:00  lewisg
   cz ions
 

@@ -158,12 +158,16 @@ void COMSSA::Init()
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
 			   CArgDescriptions::eString, "");
+    argDesc->AddFlag("w", "include spectra and search params in search results");
+
+#if 0
     argDesc->AddDefaultKey("wi", "textasninfile", "filename to _write_ text asn.1 formatted search input",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("wib", "binaryasninfile", "filename to _write_ binary asn.1 formatted search input",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("wix", "xmlinfile", "filename to _write_ xml formatted search input",
 			   CArgDescriptions::eString, "");
+#endif
 #if MSGRAPH
     argDesc->AddDefaultKey("g", "graph", "graph file to write out",
 			   CArgDescriptions::eString, "");
@@ -437,29 +441,51 @@ int COMSSA::Run()
 	}
 
 	// output
+    auto_ptr <CObjectOStream> txt_out;  
+    CNcbiOfstream os;
 
 	if(args["o"].AsString() != "") {
-	    auto_ptr<CObjectOStream>
-		txt_out(CObjectOStream::Open(args["o"].AsString().c_str(),
+//	    auto_ptr<CObjectOStream>
+		txt_out.reset(CObjectOStream::Open(args["o"].AsString().c_str(),
 					     eSerial_AsnText));
-	    txt_out->Write(ObjectInfo(Response));
+//	    txt_out->Write(ObjectInfo(Response));
 	}
 	else if(args["ob"].AsString() != "") {
-	    auto_ptr<CObjectOStream>
-		txt_out(CObjectOStream::Open(args["ob"].AsString().c_str(),
+//	    auto_ptr<CObjectOStream>
+		txt_out.reset(CObjectOStream::Open(args["ob"].AsString().c_str(),
 					     eSerial_AsnBinary));
-	    txt_out->Write(ObjectInfo(Response));
+//	    txt_out->Write(ObjectInfo(Response));
 	}
 	else if(args["ox"].AsString() != "") {
-	    CNcbiOfstream os(args["ox"].AsString().c_str());
-	    auto_ptr<CObjectOStreamXml>
-		txt_out(new CObjectOStreamXml(os, false));
-        txt_out->SetReferenceSchema();
-	    txt_out->Write(ObjectInfo(Response));
+//	    CNcbiOfstream os(args["ox"].AsString().c_str());
+//	    auto_ptr<CObjectOStreamXml>
+ //   	txt_out(new CObjectOStreamXml(os, false));
+        txt_out.reset(CObjectOStream::Open(args["ox"].AsString().c_str(), eSerial_Xml));
+        // turn on xml schema
+        CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
+        xml_out->SetReferenceSchema();
 	}
 
-	// write out input 
+    if(args["w"]) {
+        // make complex object
+        CMSSearch MySearch;
+        CRef<CMSRequest> requestref(&Request);
+        MySearch.SetRequest().push_back(requestref);
+        CRef<CMSResponse> responseref(&Response);
+        MySearch.SetResponse().push_back(responseref);
+        // write out
+        txt_out->Write(ObjectInfo(MySearch));
+        requestref.Release();
+        responseref.Release();
+        MySearch.SetRequest().begin()->Release();
+        MySearch.SetResponse().begin()->Release();
+    }
+    else {
+        txt_out->Write(ObjectInfo(Response));
+    }
 
+#if 0
+	// write out input 
 	if(args["wi"].AsString() != "") {
 	    auto_ptr<CObjectOStream>
 		txt_out(CObjectOStream::Open(args["wi"].AsString().c_str(),
@@ -479,7 +505,7 @@ int COMSSA::Run()
 		txt_out->SetReferenceSchema();
 	    txt_out->Write(ObjectInfo(Request));
 	}
-
+#endif
 #if MSGRAPH
 	if(args["g"].AsString() != "") {
 	    CMSDrawSpectra DrawIt(kMSWIDTH, kMSHEIGHT);
@@ -505,6 +531,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.19  2004/10/20 22:24:48  lewisg
+  neutral mass bugfix, concatenate result and response
+
   Revision 1.18  2004/09/29 19:43:09  lewisg
   allow setting of ions
 

@@ -548,7 +548,7 @@ void CMSPeak::InitHitList(int Minhit)
 
 void CMSPeak::xWrite(std::ostream& FileOut, CMZI *Temp, int Num)
 {
-    FileOut << (double)TotalMass/MSSCALE << " " << Charge << endl;
+    FileOut << (double)(TotalMass+kProton)/MSSCALE << " " << Charge << endl;
 
     int i;
     unsigned Intensity;

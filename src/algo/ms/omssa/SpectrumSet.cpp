@@ -178,7 +178,7 @@ void CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
     double dummy;
 
     DTA >> dummy;
-    MySpectrum->SetPrecursormz(static_cast <int> (dummy*MSSCALE));
+    MySpectrum->SetPrecursormz(static_cast <int> ((dummy-1.008)*MSSCALE));
     DTA >> dummy;
     MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
 }
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/10/20 22:24:48  lewisg
+ * neutral mass bugfix, concatenate result and response
+ *
  * Revision 1.9  2004/06/08 19:46:21  lewisg
  * input validation, additional user settable parameters
  *

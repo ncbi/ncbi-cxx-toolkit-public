@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.14 2004/09/29 19:43:52 lewisg Exp $
+-- $Id: omssa.asn,v 1.15 2004/10/20 22:24:51 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -254,4 +254,10 @@ MSResponse ::= SEQUENCE {
 	email VisibleString OPTIONAL  -- email address for notification
 	}	
 	
+
+MSSearch ::= SEQUENCE {
+	request SEQUENCE OF MSRequest OPTIONAL,
+	response SEQUENCE OF MSResponse OPTIONAL
+	}
+
 END
