@@ -159,8 +159,9 @@ public:
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
     /// @param prot_nucl
-    ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
-    ///   for nucleotide.  These can also be specified as 'p' or 'n'.
+    ///   Either kSeqTypeProt for a protein database, kSeqTypeNucl for
+    ///   nucleotide, or kSeqTypeUnkn to ask CSeqDB to try each one.
+    ///   These can also be specified as 'p', 'n', or '-'.
     CSeqDB(const string & dbname, char prot_nucl);
     
     /// Constructor with MMap Flag and OID Range.
