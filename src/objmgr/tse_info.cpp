@@ -110,83 +110,68 @@ SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& _DEBUG_ARG(objs))
 
 
 CTSE_Info::CTSE_Info(void)
-    : m_DataSource(0),
-      m_BlobId(0),
-      m_BlobVersion(-1),
-      m_SuppressionLevel(eSuppression_none),
-      m_UsedMemory(0),
-      m_LoadState(eNotLoaded),
-      m_CacheState(eNotInCache)
 {
-    m_LockCounter.Set(0);
+    x_Initialize();
+
     x_TSEAttach(*this);
 }
 
 
 CTSE_Info::CTSE_Info(const TBlobId& blob_id,
                      TBlobVersion blob_version)
-    : m_DataSource(0),
-      m_BlobId(blob_id),
-      m_BlobVersion(blob_version),
-      m_SuppressionLevel(eSuppression_none),
-      m_UsedMemory(0),
-      m_LoadState(eNotLoaded),
-      m_CacheState(eNotInCache)
 {
-    m_LockCounter.Set(0);
+    x_Initialize();
+
+    m_BlobId = blob_id;
+    m_BlobVersion = blob_version;
+
     x_TSEAttach(*this);
 }
 
 
 CTSE_Info::CTSE_Info(CSeq_entry& entry,
-                     ESuppression_Level level,
+                     TBlobState blob_state,
                      const TBlobId& blob_id,
                      TBlobVersion blob_version)
-    : m_DataSource(0),
-      m_BlobId(blob_id),
-      m_BlobVersion(blob_version),
-      m_SuppressionLevel(level),
-      m_UsedMemory(0),
-      m_LoadState(eLoaded),
-      m_CacheState(eNotInCache)
 {
-    m_LockCounter.Set(0);
-    entry.Parentize();
-    x_SetObject(entry);
+    x_Initialize();
+
+    m_BlobId = blob_id;
+    m_BlobVersion = blob_version;
+    m_BlobState = blob_state;
+
+    SetSeq_entry(entry);
+    m_LoadState = eLoaded;
+
     x_TSEAttach(*this);
 }
 
 
 CTSE_Info::CTSE_Info(CSeq_entry& entry,
-                     ESuppression_Level level)
-    : m_DataSource(0),
-      m_BlobId(0),
-      m_BlobVersion(-1),
-      m_SuppressionLevel(level),
-      m_UsedMemory(0),
-      m_LoadState(eLoaded),
-      m_CacheState(eNotInCache)
+                     TBlobState blob_state)
 {
-    m_LockCounter.Set(0);
-    entry.Parentize();
-    x_SetObject(entry);
+    x_Initialize();
+
+    m_BlobState = blob_state;
+
+    SetSeq_entry(entry);
+    m_LoadState = eLoaded;
+
     x_TSEAttach(*this);
 }
 
 
 CTSE_Info::CTSE_Info(const CTSE_Info& info)
-    : TParent(info),
-      m_DataSource(0),
-      m_BlobId(0),
-      m_BlobVersion(-1),
-      m_SuppressionLevel(info.m_SuppressionLevel),
-      m_Name(info.m_Name),
-      m_UsedMemory(info.m_UsedMemory),
-      m_LoadState(eLoaded),
-      m_CacheState(eNotInCache),
-      m_Split(info.m_Split)
+    : TParent(info)
 {
-    m_LockCounter.Set(0);
+    x_Initialize();
+
+    m_BlobState = info.m_BlobState;
+    m_Name = info.m_Name;
+    m_UsedMemory = info.m_UsedMemory;
+    m_LoadState = eLoaded;
+    m_Split = info.m_Split;
+
     x_TSEAttach(*this);
 }
 
@@ -198,9 +183,15 @@ CTSE_Info::~CTSE_Info(void)
 }
 
 
-CTSE_Info::TBlobVersion CTSE_Info::GetBlobVersion(void) const
+void CTSE_Info::x_Initialize(void)
 {
-    return m_BlobVersion;
+    m_DataSource = 0;
+    m_BlobVersion = -1;
+    m_BlobState = fState_none;
+    m_UsedMemory = 0;
+    m_LoadState = eNotLoaded;
+    m_CacheState = eNotInCache;
+    m_LockCounter.Set(0);
 }
 
 
@@ -215,18 +206,6 @@ void CTSE_Info::SetBlobVersion(TBlobVersion version)
 void CTSE_Info::SetName(const CAnnotName& name)
 {
     m_Name = name;
-}
-
-
-bool CTSE_Info::IsDead(void) const
-{
-    return GetSuppressionLevel() >= eSuppression_dead;
-}
-
-
-bool CTSE_Info::IsUnavailable(void) const
-{
-    return GetSuppressionLevel() >= eSuppression_private;
 }
 
 
@@ -246,10 +225,7 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps)
                 (GetDataSource().m_DSMainLock);
             SetSeq_entry(entry);
         }}
-        {{
-            CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
-            UpdateAnnotIndex(*this);
-        }}
+        UpdateAnnotIndex();
     }
     else {
         SetSeq_entry(entry);
@@ -275,7 +251,7 @@ CRef<CSeq_annot_SNP_Info> CTSE_Info::x_GetSNP_Info(const TSNP_InfoKey& annot)
 
 bool CTSE_Info::HasAnnot(const CAnnotName& name) const
 {
-    _ASSERT(!x_DirtyAnnotIndex());
+    TAnnotLockReadGuard guard(GetAnnotLock());
     return m_NamedAnnotObjs.find(name) != m_NamedAnnotObjs.end();
 }
 
@@ -368,7 +344,7 @@ void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
                                 const CSeq_id_Handle& id)
 {
-    if ( ContainsBioseqMatch(id) ) {
+    if ( ContainsMatchingBioseq(id) ) {
         return;
     }
     TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
@@ -418,21 +394,23 @@ bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 }
 
 
-bool CTSE_Info::ContainsBioseqMatch(const CSeq_id_Handle& id) const
+bool CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
 {
-    if ( id.GetMapper().HaveMatchingHandles(id) ) {
-        TSeq_id_HandleSet hset;
-        id.GetMapper().GetMatchingHandles(id, hset);
-        ITERATE ( TSeq_id_HandleSet, match_it, hset ) {
-            if ( ContainsBioseq(*match_it) ) {
-                return true;
+    if ( ContainsBioseq(id) ) {
+        return true;
+    }
+    else if ( id.HaveMatchingHandles() ) {
+        CSeq_id_Handle::TMatches ids;
+        id.GetMatchingHandles(ids);
+        ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
+            if ( *match_it != id ) {
+                if ( ContainsBioseq(*match_it) ) {
+                    return true;
+                }
             }
         }
-        return false;
     }
-    else {
-        return ContainsBioseq(id);
-    }
+    return false;
 }
 
 
@@ -448,21 +426,33 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
 
 
 CConstRef<CBioseq_Info>
-CTSE_Info::FindBioseqMatch(const CSeq_id_Handle& id) const
+CTSE_Info::FindMatchingBioseq(const CSeq_id_Handle& id) const
 {
-    CConstRef<CBioseq_Info> ret;
-    if ( id.GetMapper().HaveMatchingHandles(id) ) {
-        TSeq_id_HandleSet hset;
-        id.GetMapper().GetMatchingHandles(id, hset);
-        ITERATE ( TSeq_id_HandleSet, match_it, hset ) {
-            ret = FindBioseq(*match_it);
-            if ( ret ) {
-                break;
+    return GetSeqMatch(id).m_Bioseq;
+}
+
+
+SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
+{
+    SSeqMatch_TSE ret;
+    TBioseqs::const_iterator it = m_Bioseqs.find(id);
+    if ( it != m_Bioseqs.end() ) {
+        ret.m_Seq_id = it->first;
+        ret.m_Bioseq = it->second;
+    }
+    else if ( id.HaveMatchingHandles() ) {
+        CSeq_id_Handle::TMatches ids;
+        id.GetMatchingHandles(ids);
+        ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
+            if ( *match_it != id ) {
+                it = m_Bioseqs.find(*match_it);
+                if ( it != m_Bioseqs.end() ) {
+                    ret.m_Seq_id = it->first;
+                    ret.m_Bioseq = it->second;
+                    break;
+                }
             }
         }
-    }
-    else {
-        ret = FindBioseq(id);
     }
     return ret;
 }
@@ -566,7 +556,6 @@ void CTSE_Info::x_ResetDirtyAnnotIndexNoParent(void)
 void CTSE_Info::UpdateAnnotIndex(void) const
 {
     const_cast<CTSE_Info*>(this)->UpdateAnnotIndex();
-    _ASSERT(!x_DirtyAnnotIndex());
 }
 
 
@@ -574,12 +563,12 @@ void CTSE_Info::UpdateAnnotIndex(const CTSE_Info_Object& object) const
 {
     const_cast<CTSE_Info*>(this)->
         UpdateAnnotIndex(const_cast<CTSE_Info_Object&>(object));
-    _ASSERT(!object.x_DirtyAnnotIndex());
 }
 
 
 void CTSE_Info::UpdateAnnotIndex(void)
 {
+    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
     UpdateAnnotIndex(*this);
 }
 
@@ -705,10 +694,10 @@ CTSE_Info::x_GetUnnamedIdObjects(const CSeq_id_Handle& idh) const
 inline
 void CTSE_Info::x_MapAnnotObject(TRangeMap& rangeMap,
                                  const SAnnotObject_Key& key,
-                                 const SAnnotObject_Index& annotRef)
+                                 const SAnnotObject_Index& index)
 {
-    _ASSERT(annotRef.m_AnnotObject_Info == key.m_AnnotObject_Info);
-    rangeMap.insert(TRangeMap::value_type(key.m_Range, annotRef));
+    _ASSERT(index.m_AnnotObject_Info == key.m_AnnotObject_Info);
+    rangeMap.insert(TRangeMap::value_type(key.m_Range, index));
 }
 
 
@@ -730,7 +719,7 @@ bool CTSE_Info::x_UnmapAnnotObject(TRangeMap& rangeMap,
 
 void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
                                  const SAnnotObject_Key& key,
-                                 const SAnnotObject_Index& annotRef)
+                                 const SAnnotObject_Index& index)
 {
     if ( key.m_AnnotObject_Info->IsLocs() ) {
         // Locs may contain multiple indexes
@@ -738,13 +727,13 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
         key.m_AnnotObject_Info->GetLocsTypes(idx_set);
         ITERATE(CAnnotObject_Info::TTypeIndexSet, idx_rg, idx_set) {
             for (size_t idx = idx_rg->first; idx < idx_rg->second; ++idx) {
-                x_MapAnnotObject(objs.x_GetRangeMap(idx), key, annotRef);
+                x_MapAnnotObject(objs.x_GetRangeMap(idx), key, index);
             }
         }
     }
     else {
-        size_t index = CAnnotType_Index::GetTypeIndex(key);
-        x_MapAnnotObject(objs.x_GetRangeMap(index), key, annotRef);
+        size_t idx = CAnnotType_Index::GetTypeIndex(key);
+        x_MapAnnotObject(objs.x_GetRangeMap(idx), key, index);
     }
 }
 
@@ -766,9 +755,9 @@ bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
 void CTSE_Info::x_MapAnnotObject(TAnnotObjs& objs,
                                  const CAnnotName& name,
                                  const SAnnotObject_Key& key,
-                                 const SAnnotObject_Index& annotRef)
+                                 const SAnnotObject_Index& index)
 {
-    x_MapAnnotObject(x_SetIdObjects(objs, name, key.m_Handle), key, annotRef);
+    x_MapAnnotObject(x_SetIdObjects(objs, name, key.m_Handle), key, index);
 }
 
 
@@ -810,38 +799,41 @@ void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
 }
 
 
-void CTSE_Info::x_MapAnnotObject(TAnnotObjs& index,
-                                 const SAnnotObject_Key& key,
-                                 const SAnnotObject_Index& annotRef,
-                                 SAnnotObjects_Info& infos)
+void CTSE_Info::x_MapAnnotObjects(const SAnnotObjectsIndex& infos)
 {
-    _ASSERT(&index == x_GetAnnotObjs(infos.GetName()));
-    infos.AddKey(key);
-    x_MapAnnotObject(index, infos.GetName(), key, annotRef);
+    size_t count = infos.GetKeys().size();
+    if ( count == 0 ) {
+        return;
+    }
+    _ASSERT(infos.GetIndices().size() == count);
+
+    const CAnnotName& name = infos.GetName();
+    TAnnotObjs& index = x_SetAnnotObjs(name);
+
+    for ( size_t i = 0; i < count; ++i ) {
+        x_MapAnnotObject(index, name, infos.GetKeys()[i],
+                         infos.GetIndices()[i]);
+    }
 }
 
 
-void CTSE_Info::x_MapAnnotObject(const SAnnotObject_Key& key,
-                                 const SAnnotObject_Index& annotRef,
-                                 SAnnotObjects_Info& infos)
+void CTSE_Info::x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos)
 {
-    x_MapAnnotObject(x_SetAnnotObjs(infos.GetName()), key, annotRef, infos);
-}
+    size_t count = infos.GetKeys().size();
+    if ( count == 0 ) {
+        return;
+    }
 
+    const CAnnotName& name = infos.GetName();
+    TAnnotObjs& index = x_SetAnnotObjs(name);
 
-void CTSE_Info::x_UnmapAnnotObjects(SAnnotObjects_Info& infos)
-{
-    TAnnotObjs& index = x_SetAnnotObjs(infos.GetName());
-
-    ITERATE( SAnnotObjects_Info::TObjectKeys, it, infos.GetKeys() ) {
-        x_UnmapAnnotObject(index, infos.GetName(), *it);
+    for ( size_t i = 0; i < count; ++i ) {
+        x_UnmapAnnotObject(index, name, infos.GetKeys()[i]);
     }
 
     if ( index.empty() ) {
-        x_RemoveAnnotObjs(infos.GetName());
+        x_RemoveAnnotObjs(name);
     }
-
-    infos.Clear();
 }
 
 

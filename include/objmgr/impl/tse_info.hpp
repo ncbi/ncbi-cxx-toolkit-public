@@ -35,6 +35,7 @@
 
 
 #include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/annot_name.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
@@ -113,31 +114,46 @@ private:
 };
 
 
+struct SSeqMatch_TSE
+{
+    CSeq_id_Handle          m_Seq_id;
+    CConstRef<CBioseq_Info> m_Bioseq;
+
+    operator bool(void) const
+        {
+            return m_Bioseq;
+        }
+    bool operator!(void) const
+        {
+            return !m_Bioseq;
+        }
+};
+
+
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
     typedef CSeq_entry_Info TParent;
 public:
-    enum ESuppression_Level {
-        eSuppression_none,
-        eSuppression_temporary,
-        eSuppression_permanent,
-        eSuppression_dead,
-        eSuppression_private,
-        eSuppression_withdrawn,
-        eSuppression_no_data
+    enum EBlobState {
+        fState_none      = 0,
+        fState_dead      = 1 << 0,
+        fState_withdrawn = 1 << 1,
+        fState_private   = 1 << 2,
+        fState_no_data   = 1 << 3
     };
-    typedef CConstRef<CObject> TBlobId;
-    typedef int                TBlobVersion;
+    typedef CConstRef<CObject>              TBlobId;
+    typedef int                             TBlobState;
+    typedef int                             TBlobVersion;
+    typedef pair<TBlobState, TBlobVersion>  TBlobOrder;
 
     // 'ctors
     // Argument tse will be parentized.
     explicit CTSE_Info(void);
     explicit CTSE_Info(const TBlobId& blob_id,
                        TBlobVersion blob_version = -1);
+    explicit CTSE_Info(CSeq_entry& tse, TBlobState state = fState_none);
     explicit CTSE_Info(CSeq_entry& tse,
-                       ESuppression_Level level = eSuppression_none);
-    explicit CTSE_Info(CSeq_entry& tse,
-                       ESuppression_Level level,
+                       TBlobState blob_state,
                        const TBlobId& blob_id,
                        TBlobVersion blob_version = -1);
     explicit CTSE_Info(const CTSE_Info& info);
@@ -159,10 +175,17 @@ public:
     TBlobVersion GetBlobVersion(void) const;
     void SetBlobVersion(TBlobVersion version);
 
-    ESuppression_Level GetSuppressionLevel(void) const;
-    void SetSuppressionLevel(ESuppression_Level level);
+    TBlobState GetBlobState(void) const;
+    void ResetBlobState(TBlobState state = fState_none);
+    void SetBlobState(TBlobState state);
     bool IsDead(void) const;
     bool IsUnavailable(void) const;
+
+    // return bits used to determine best TSE, less is better
+    TBlobState GetBlobStateOrder(void) const;
+
+    // return full blob order object, less is better
+    TBlobOrder GetBlobOrder(void) const;
 
     const CAnnotName& GetName(void) const;
     void SetName(const CAnnotName& name);
@@ -195,10 +218,16 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
+    // find bioseq with exactly the same id
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
-    bool ContainsBioseqMatch(const CSeq_id_Handle& id) const;
-    CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& key) const;
-    CConstRef<CBioseq_Info> FindBioseqMatch(const CSeq_id_Handle& key) const;
+    CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& id) const;
+
+    // find bioseq with matching id
+    bool ContainsMatchingBioseq(const CSeq_id_Handle& id) const;
+    CConstRef<CBioseq_Info> FindMatchingBioseq(const CSeq_id_Handle& id) const;
+    SSeqMatch_TSE GetSeqMatch(const CSeq_id_Handle& id) const;
+
+    const TBioseqs& GetBioseqsMap(void) const;
 
     void UpdateAnnotIndex(void) const;
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
@@ -233,7 +262,8 @@ private:
     friend class CTSE_Chunk_Info;
     friend class CTSE_Split_Info;
     friend class CSeq_annot_SNP_Info;
-    friend class CSeqMatch_Info;
+
+    void x_Initialize(void);
 
     CBioseq_set_Info& x_GetBioseq_set(int id);
     CBioseq_Info& x_GetBioseq(const CSeq_id_Handle& id);
@@ -274,30 +304,24 @@ private:
 
     void x_MapAnnotObject(TRangeMap& rangeMap,
                           const SAnnotObject_Key& key,
-                          const SAnnotObject_Index& annotRef);
+                          const SAnnotObject_Index& index);
     bool x_UnmapAnnotObject(TRangeMap& rangeMap,
                             const SAnnotObject_Key& key);
     void x_MapAnnotObject(SIdAnnotObjs& objs,
                           const SAnnotObject_Key& key,
-                          const SAnnotObject_Index& annotRef);
+                          const SAnnotObject_Index& index);
     bool x_UnmapAnnotObject(SIdAnnotObjs& objs,
                             const SAnnotObject_Key& key);
     void x_MapAnnotObject(TAnnotObjs& objs,
                           const CAnnotName& name,
                           const SAnnotObject_Key& key,
-                          const SAnnotObject_Index& annotRef);
-    void x_MapAnnotObject(TAnnotObjs& index,
-                          const SAnnotObject_Key& key,
-                          const SAnnotObject_Index& annotRef,
-                          SAnnotObjects_Info& infos);
-    void x_MapAnnotObject(const SAnnotObject_Key& key,
-                          const SAnnotObject_Index& annotRef,
-                          SAnnotObjects_Info& infos);
+                          const SAnnotObject_Index& index);
+    void x_MapAnnotObjects(const SAnnotObjectsIndex& infos);
 
     bool x_UnmapAnnotObject(TAnnotObjs& objs,
                             const CAnnotName& name,
                             const SAnnotObject_Key& key);
-    void x_UnmapAnnotObjects(SAnnotObjects_Info& infos);
+    void x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos);
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
@@ -326,7 +350,7 @@ private:
     TBlobVersion           m_BlobVersion;
 
     // Suppression level
-    ESuppression_Level     m_SuppressionLevel;
+    TBlobState             m_BlobState;
 
     // TSE has name
     CAnnotName             m_Name;
@@ -426,16 +450,60 @@ CTSE_Info& CTSE_Info::GetTSE_Info(void)
 
 
 inline
-CTSE_Info::ESuppression_Level CTSE_Info::GetSuppressionLevel(void) const
+CTSE_Info::TBlobState CTSE_Info::GetBlobState(void) const
 {
-    return m_SuppressionLevel;
+    return m_BlobState;
 }
 
 
 inline
-void CTSE_Info::SetSuppressionLevel(ESuppression_Level level)
+void CTSE_Info::ResetBlobState(TBlobState state)
 {
-    m_SuppressionLevel = level;
+    m_BlobState = state;
+}
+
+
+inline
+void CTSE_Info::SetBlobState(TBlobState state)
+{
+    m_BlobState |= state;
+}
+
+
+inline
+bool CTSE_Info::IsDead(void) const
+{
+    return (m_BlobState & fState_dead) != 0;
+}
+
+
+inline
+bool CTSE_Info::IsUnavailable(void) const
+{
+    return (m_BlobState & fState_no_data) != 0;
+}
+
+
+inline
+CTSE_Info::TBlobState CTSE_Info::GetBlobStateOrder(void) const
+{
+    return m_BlobState & (fState_dead | fState_no_data);
+}
+
+
+inline
+CTSE_Info::TBlobVersion CTSE_Info::GetBlobVersion(void) const
+{
+    return m_BlobVersion;
+}
+
+
+inline
+CTSE_Info::TBlobOrder CTSE_Info::GetBlobOrder(void) const
+{
+    // less blob state order first,
+    // higher blob version second
+    return TBlobOrder(GetBlobStateOrder(), -GetBlobVersion());
 }
 
 
@@ -464,6 +532,13 @@ inline
 CTSE_Info::TAnnotLock& CTSE_Info::GetAnnotLock(void) const
 {
     return m_AnnotLock;
+}
+
+
+inline
+const CTSE_Info::TBioseqs& CTSE_Info::GetBioseqsMap(void) const
+{
+    return m_Bioseqs;
 }
 
 
