@@ -817,8 +817,9 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
          index = 0;
          for (i = 0; i < compressed_wordsize; ++i)
             index = ((index)<<FULL_BYTE_SHIFT) | (*s++);
+
          adjusted_index = 
-            (((index)<<bit) & lookup->mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
+            BlastNaLookupAdjustIndex(s, index, lookup->mask, bit);
          
          if (NA_PV_TEST(pv_array, adjusted_index, PV_ARRAY_BTS)) {
             num_hits = lookup->thick_backbone[adjusted_index].num_used;
@@ -864,7 +865,6 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    Int4 q_off;
    PV_ARRAY_TYPE *pv_array = lookup->pv;
    Int4 total_hits = 0;
-   Boolean full_byte_scan = (lookup->scan_step % COMPRESSION_RATIO == 0);
    Int4 reduced_word_length = lookup->reduced_wordsize*COMPRESSION_RATIO;
    Int4 i;
 
@@ -878,90 +878,40 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    for (i = 0; i < lookup->reduced_wordsize; ++i)
       index = ((index)<<FULL_BYTE_SHIFT) | *s++;
 
-   if (full_byte_scan) {
-      /* s points to the byte right after the end of the current word */
-      while (s <= s_end) {
-         if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-            num_hits = lookup->thick_backbone[index].num_used;
-            ASSERT(num_hits != 0);
-            if (num_hits > (max_hits - total_hits))
-               break;
-            if ( num_hits <= HITS_ON_BACKBONE )
-               /* hits live in thick_backbone */
-               lookup_pos = lookup->thick_backbone[index].payload.entries;
-            else
-               /* hits live in overflow array */
-               lookup_pos = 
-                  (Int4*)(lookup->thick_backbone[index].payload.overflow);
-            
-            /* Save the hits offsets */
-            s_off = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
-            while (num_hits) {
-               q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-               lookup_pos++;
-               num_hits--;
-               
-               q_offsets[total_hits] = q_off;
-               s_offsets[total_hits++] = s_off;
-            }
-         }
-
-         /* Compute the next value of the index */
-         index = (((index)<<FULL_BYTE_SHIFT) & lookup->mask) | (*s++);  
-
-      }
-      /* Ending offset should point to the start of the word that ends 
-         at s */
-      *end_offset = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
-   } else {
-      Int4 scan_shift = 2*lookup->scan_step;
-      Uint1 bit = 2*(start_offset % COMPRESSION_RATIO);
-      Int4 adjusted_index;
-
-      /* s points to the byte right after the end of the current word */
-      while (s <= s_end) {
-         /* Adjust the word index by the base within a byte */
-         adjusted_index = BlastNaLookupAdjustIndex(s, index, lookup->mask,
-                                                   bit);
+   /* s points to the byte right after the end of the current word */
+   while (s <= s_end) {
+      if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
+         num_hits = lookup->thick_backbone[index].num_used;
+         ASSERT(num_hits != 0);
+         if (num_hits > (max_hits - total_hits))
+            break;
+         if ( num_hits <= HITS_ON_BACKBONE )
+            /* hits live in thick_backbone */
+            lookup_pos = lookup->thick_backbone[index].payload.entries;
+         else
+            /* hits live in overflow array */
+            lookup_pos = 
+               (Int4*)(lookup->thick_backbone[index].payload.overflow);
          
-         if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
-            num_hits = lookup->thick_backbone[index].num_used;
-            ASSERT(num_hits != 0);
-            if (num_hits > (max_hits - total_hits))
-               break;
-            if ( num_hits <= HITS_ON_BACKBONE )
-               /* hits live in thick_backbone */
-               lookup_pos = lookup->thick_backbone[index].payload.entries;
-            else
-               /* hits live in overflow array */
-               lookup_pos = 
-                  (Int4*)(lookup->thick_backbone[index].payload.overflow);
+         /* Save the hits offsets */
+         s_off = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
+         while (num_hits) {
+            q_off = *((Uint4 *) lookup_pos); /* get next query offset */
+            lookup_pos++;
+            num_hits--;
             
-            /* Save the hits offsets */
-            s_off = (s - abs_start)*COMPRESSION_RATIO + bit/2
-               - reduced_word_length;
-            while (num_hits) {
-               q_off = *((Uint4 *) lookup_pos); /* get next query offset */
-               lookup_pos++;
-               num_hits--;
-               
-               q_offsets[total_hits] = q_off;
-               s_offsets[total_hits++] = s_off;
-            }
-         }
-         bit += scan_shift;
-         if (bit >= FULL_BYTE_SHIFT) {
-            /* Advance to the next full byte */
-            bit -= FULL_BYTE_SHIFT;
-            index = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
-                                lookup->mask, s++, index);
+            q_offsets[total_hits] = q_off;
+            s_offsets[total_hits++] = s_off;
          }
       }
-      /* Ending offset should point to the start of the word that ends 
-         at s */
-      *end_offset = 
-         (s - abs_start)*COMPRESSION_RATIO + bit/2 - reduced_word_length;
+
+      /* Compute the next value of the index */
+      index = (((index)<<FULL_BYTE_SHIFT) & lookup->mask) | (*s++);  
+
    }
+   /* Ending offset should point to the start of the word that ends 
+      at s */
+   *end_offset = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
 
    return total_hits;
 }
