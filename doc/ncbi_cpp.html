@@ -6,6 +6,7 @@
   <h1> NCBI SWG C++ Style Conventions </h1>
   <ul>
     <li> <a href=#ref_About>About</a>
+    <li> <a href=#ref_Header>Standard Copyright header and CVS info</a>
     <li> <a href=#ref_FileExt>C++ file extensions</a>
     <li> <a href=#ref_Indent>Code indentation and Bracing</a>
     <li> <a href=#ref_Naming>Naming conventions</a>
@@ -26,14 +27,30 @@
     The formal rules only concern to the code appearance and designed to
     make the code itself more uniform and readable.
 
+<a name=ref_Header>
+    <h2> Standard Copyright header and CVS  info</h2>
+
+    Each and every source file must include NCBI header and (preferably)
+    CVS info. Here are the standard startup frameworks for:
+    <ul>
+      <li> <a href="framewrk.hpp">Header files(*.hpp)</a>
+      <li> <a href="framewrk.inl">Inline files(*.inl)</a>
+      <li> <a href="framewrk.cpp">Source files(*.cpp)</a>
+    </ul>
+    Just cut&amp;paste one of them to start your new C++ file;
+    then replace the "framewrk" stub by your own name(usually a
+    filename without an extension).
+
 <a name=ref_FileExt>
     <h2> C++ file extensions </h2>
     <i>*.cpp,  *.hpp,  *.inl</i>
 
     <br><br>An "inline implementaion file" with extension <i>*.inl</i>
-    can be used in order to avoid the clogging of a class interface
+    can be used in order to avoid the clogging of external class interfaces
     (in header <i>*.hpp</i>) by numerous(and sometimes bulky) inline function
-    definitions.  Thus, the <i>*.hpp</i> file will be easier to read.
+    definitions and auxiliary structures and classes that are not supposed
+    to be in the common public use.  Thus, the <i>*.hpp</i> file will be
+    easier to read.
     The appropriate <i>*.inl</i> file should be included in the
     very end of <i>*.hpp</i>, like:
 
@@ -132,11 +149,11 @@ public:
       <tr><th>Constants</th></tr>
       <tr><td><i><b>k</b>ConstantName</i></td><td>const Int2 kMyConst;</td></tr>
       <tr><td><i><b>e</b>EnumConstantName</i></td>
-      <td>enum EMyEnum { <br>
+	<td>enum EMyEnum { <br>
 	     &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
-	      &nbsp;&nbsp;&nbsp;&nbsp;eMyEnum2 = 22, <br>
-		&nbsp;&nbsp;&nbsp;&nbsp;   eMyEnum3 = 33  <br>
-		    };</td></tr>
+	      &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
+		&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
+		  };</td></tr>
 
 <a name=ref_NamingVar>
       <tr><th>Variable scope</th></tr>
