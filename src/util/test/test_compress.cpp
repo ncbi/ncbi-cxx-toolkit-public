@@ -224,6 +224,8 @@ void CTestCompressor<TCompression, TCompressionFile,
             dst_len += ics_zip.gcount();
         }
         PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, dst_len);
+        assert(ics_zip.GetProcessedSize() == kDataLen);
+        assert(ics_zip.GetOutputSize() == dst_len);
 
         // Compress the data
         TCompression c;
@@ -260,6 +262,10 @@ void CTestCompressor<TCompression, TCompressionFile,
                                     CCompressionStream::fOwnReader);
             ids_zip.read(cmp_buf, kDataLen);
             ids_zip_len = ids_zip.gcount();
+            // For majority of decompressors we should have all unpacked data
+            // here, before the finalization.
+            assert(ids_zip.GetProcessedSize() == out_len);
+            assert(ids_zip.GetOutputSize() == kDataLen);
             // Finalize decompression stream in the destructor
         }}
 
@@ -335,6 +341,8 @@ void CTestCompressor<TCompression, TCompressionFile,
         const char*  str = os_str.str();
         size_t os_str_len = os_str.pcount();
         PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, os_str_len);
+        assert(os_zip.GetProcessedSize() == out_len);
+        assert(os_zip.GetOutputSize() == kDataLen);
 
         // Compare original and uncompressed data
         assert(os_str_len == kDataLen);
@@ -360,6 +368,11 @@ void CTestCompressor<TCompression, TCompressionFile,
             zip.Finalize(CCompressionStream::eWrite);
             assert(!stm.eof()  &&  stm.good());
             assert(!zip.eof()  &&  zip.good());
+            assert(zip.GetProcessedSize(CCompressionStream::eWrite)
+				   == kDataLen);
+            assert(zip.GetProcessedSize(CCompressionStream::eRead) == 0);
+            assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
+            assert(zip.GetOutputSize(CCompressionStream::eRead) == 0);
 
             // Read as much as possible
             zip.read(cmp_buf, kDataLen);
@@ -376,7 +389,13 @@ void CTestCompressor<TCompression, TCompressionFile,
                 assert(out_len == kDataLen);
             }
             assert(!zip.eof());
+            assert(zip.GetProcessedSize(CCompressionStream::eWrite)
+				   == kDataLen);
+            assert(zip.GetProcessedSize(CCompressionStream::eRead) > 0);
+            assert(zip.GetOutputSize(CCompressionStream::eWrite) > 0);
+            assert(zip.GetOutputSize(CCompressionStream::eRead) == kDataLen);
 
+            // Check on EOF
             char c;
             zip >> c;
             assert(zip.eof());
@@ -460,25 +479,20 @@ template<class TCompression,
          class TCompressionFile,
          class TStreamCompressor,
          class TStreamDecompressor>
-void CTestCompressor<TCompression, TCompressionFile, TStreamCompressor, TStreamDecompressor>
+void CTestCompressor<TCompression, TCompressionFile,
+                     TStreamCompressor, TStreamDecompressor>
     ::PrintResult(EPrintType type, int last_errcode, 
-                  unsigned int src_len, unsigned int dst_len,
+                  unsigned int src_len,
+                  unsigned int dst_len,
                   unsigned int out_len)
 {
-    if ( type == eCompress ) {
-        cout << "Compress   ";
-    } else {
-        cout << "Decompress ";
-    }
-    cout << "errcode = ";
-    if ( last_errcode == kUnknownErr ) cout << '?'; else  cout << last_errcode;
-    cout << ", ";
-    if ( src_len == kUnknown ) cout << '?'; else  cout << src_len;
-    cout << " -> ";
-    if ( out_len == kUnknown ) cout << '?'; else  cout << out_len;
-    cout << ", limit ";
-    if ( dst_len == kUnknown ) cout << '?'; else  cout << dst_len;
-    cout << endl;
+    cout << (type == eCompress) ? "Compress   ": 
+                                  "Decompress ";
+	cout << "errcode = ";
+	cout << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", ";
+	cout << ((src_len == kUnknown) ? '?' : src_len) << " -> ";
+	cout << ((out_len == kUnknown) ? '?' : out_len) << ", limit ";
+	cout << ((dst_len == kUnknown) ? '?' : dst_len) << endl;
 }
 
 
@@ -546,12 +560,16 @@ int main(int argc, const char* argv[])
 {
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/10 12:07:26  ivanov
+ * Added tests for GetProcessedSize() and GetOutputSize()
+ *
  * Revision 1.6  2004/04/09 11:48:26  ivanov
  * Added ownership parameter to CCompressionStream constructors.
  *
