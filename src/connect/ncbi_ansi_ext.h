@@ -33,9 +33,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/22 16:53:36  lavr
+ * Minor change
+ *
  * Revision 6.3  2000/05/17 18:51:28  vakatov
  * no HAVE_SIGACTION
- * no HAVE_STRCASECMP
  *
  * Revision 6.2  2000/05/17 16:09:57  lavr
  * Define prototypes of functions, usually defined but hidden in ANSI mode
