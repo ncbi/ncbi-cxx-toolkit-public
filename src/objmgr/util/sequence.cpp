@@ -2099,14 +2099,15 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 END_SCOPE(sequence)
 
 
-void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
+void CFastaOstream::Write(const CBioseq_Handle& handle,
+                          const CSeq_loc* location)
 {
     WriteTitle(handle);
     WriteSequence(handle, location);
 }
 
 
-void CFastaOstream::WriteTitle(CBioseq_Handle& handle)
+void CFastaOstream::WriteTitle(const CBioseq_Handle& handle)
 {
     m_Out << '>' << CSeq_id::GetStringDescr(handle.GetBioseq(),
                                             CSeq_id::eFormat_FastA)
@@ -2264,7 +2265,7 @@ static TGaps s_AdjustGaps(const TGaps& gaps, const CSeq_loc& location)
 }
 
 
-void CFastaOstream::WriteSequence(CBioseq_Handle& handle,
+void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                                   const CSeq_loc* location)
 {
     const CBioseq&   seq  = handle.GetBioseq();
@@ -2921,6 +2922,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.50  2003/05/09 15:37:00  ucko
+* Take const CBioseq_Handle references in CFastaOstream::Write et al.
+*
 * Revision 1.49  2003/05/06 19:34:36  grichenk
 * Fixed GetStrand() (worked fine only for plus and unknown strands)
 *

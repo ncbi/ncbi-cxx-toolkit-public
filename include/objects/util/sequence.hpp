@@ -288,9 +288,11 @@ public:
     CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
 
     // Unspecified locations designate complete sequences
-    void Write        (CBioseq_Handle& handle, const CSeq_loc* location = 0);
-    void WriteTitle   (CBioseq_Handle& handle);
-    void WriteSequence(CBioseq_Handle& handle, const CSeq_loc* location = 0);
+    void Write        (const CBioseq_Handle& handle,
+                       const CSeq_loc* location = 0);
+    void WriteTitle   (const CBioseq_Handle& handle);
+    void WriteSequence(const CBioseq_Handle& handle,
+                       const CSeq_loc* location = 0);
 
     // These versions set up a temporary object manager
     void Write(CSeq_entry& entry, const CSeq_loc* location = 0);
@@ -495,6 +497,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.28  2003/05/09 15:36:55  ucko
+* Take const CBioseq_Handle references in CFastaOstream::Write et al.
+*
 * Revision 1.27  2003/02/13 14:35:23  grichenk
 * + eOverlap_Contains
 *
