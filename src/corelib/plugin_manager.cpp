@@ -51,13 +51,15 @@ CPluginManager_DllResolver::CPluginManager_DllResolver(void)
 CPluginManager_DllResolver::CPluginManager_DllResolver(
                     const string& interface_name,
                     const string& driver_name,
-                    const CVersionInfo& version)
+                    const CVersionInfo& version,
+                    CDll::EAutoUnload unload_dll)
  : m_DllNamePrefix("ncbi_plugin"),
    m_EntryPointPrefix("NCBI_EntryPoint"),
    m_InterfaceName(interface_name),
    m_DriverName(driver_name),
    m_Version(version),
-   m_DllResolver(0)
+   m_DllResolver(0),
+   m_AutoUnloadDll(unload_dll)
 {
 }
 
@@ -291,7 +293,8 @@ CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
         entry_point_names.push_back(entry_name);
     }
 
-    CDllResolver* resolver = new CDllResolver(entry_point_names);
+    CDllResolver* resolver = new CDllResolver(entry_point_names, 
+                                              m_AutoUnloadDll);
 
     return resolver;
  }
@@ -311,6 +314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/03 19:03:43  ssikorsk
+ * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
+ *
  * Revision 1.17  2005/01/24 17:53:09  grichenk
  * Add lib prefix to dll name mask
  *

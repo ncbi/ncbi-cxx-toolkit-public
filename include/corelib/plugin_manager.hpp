@@ -501,7 +501,8 @@ public:
     CPluginManager_DllResolver
     (const string&       interface_name,
      const string&       driver_name = kEmptyStr,
-     const CVersionInfo& version     = CVersionInfo::kAny);
+     const CVersionInfo& version     = CVersionInfo::kAny,
+     CDll::EAutoUnload unload_dll = CDll::eAutoUnload);
 
     //
     virtual ~CPluginManager_DllResolver(void);
@@ -592,12 +593,13 @@ protected:
     CDllResolver* CreateDllResolver() const;
 
 protected:
-    string          m_DllNamePrefix;
-    string          m_EntryPointPrefix;
-    string          m_InterfaceName;
-    string          m_DriverName;
-    CVersionInfo    m_Version;
-    CDllResolver*   m_DllResolver;
+    string              m_DllNamePrefix;
+    string              m_EntryPointPrefix;
+    string              m_InterfaceName;
+    string              m_DriverName;
+    CVersionInfo        m_Version;
+    CDllResolver*       m_DllResolver;
+    CDll::EAutoUnload   m_AutoUnloadDll;
 };
 
 /* @} */
@@ -926,6 +928,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/03/03 19:03:16  ssikorsk
+ * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
+ *
  * Revision 1.41  2005/03/02 16:16:26  ssikorsk
  * Fixed GCC compilation issues
  *

@@ -334,13 +334,19 @@ public:
     ///
     /// @param entry_point_name
     ///   Name of the DLL entry point.
-    NCBI_XNCBI_EXPORT CDllResolver(const string& entry_point_name);
+    /// @param unload
+    ///   Whether to unload loaded DLLs in the destructor
+    NCBI_XNCBI_EXPORT CDllResolver(const string& entry_point_name, 
+                                   CDll::EAutoUnload unload = CDll::eAutoUnload);
 
     /// Constructor.
     ///
     /// @param entry_point_names
     ///   List of alternative DLL entry points.
-    NCBI_XNCBI_EXPORT CDllResolver(const vector<string>& entry_point_names); 
+    /// @param unload
+    ///   Whether to unload loaded DLLs in the destructor
+    NCBI_XNCBI_EXPORT CDllResolver(const vector<string>& entry_point_names,
+                                   CDll::EAutoUnload unload = CDll::eAutoUnload); 
 
     /// Destructor.
     NCBI_XNCBI_EXPORT ~CDllResolver();
@@ -473,8 +479,9 @@ private:
     CDllResolver& operator=(const CDllResolver&);
 
 protected:
-    vector<string>  m_EntryPoinNames;   ///< Candidate entry points
-    TEntries        m_ResolvedEntries;
+    vector<string>    m_EntryPoinNames;   ///< Candidate entry points
+    TEntries          m_ResolvedEntries;
+    CDll::EAutoUnload m_AutoUnloadDll;
 };
 
 /* @} */
@@ -487,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/03/03 19:03:16  ssikorsk
+ * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
+ *
  * Revision 1.26  2004/08/10 16:52:54  grichenk
  * Removed debug output
  *

@@ -228,12 +228,16 @@ void CDll::x_ThrowException(const string& what)
 }
 
 
-CDllResolver::CDllResolver(const string& entry_point_name)
+CDllResolver::CDllResolver(const string& entry_point_name, 
+                           CDll::EAutoUnload unload)
+    : m_AutoUnloadDll( unload )
 {    
     m_EntryPoinNames.push_back(entry_point_name);
 }
 
-CDllResolver::CDllResolver(const vector<string>& entry_point_names)
+CDllResolver::CDllResolver(const vector<string>& entry_point_names, 
+                           CDll::EAutoUnload unload)
+    : m_AutoUnloadDll( unload )
 {
     m_EntryPoinNames = entry_point_names;
 }
@@ -247,7 +251,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
                                 const string& driver_name)
 {
     try {
-        CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eAutoUnload);
+        CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eNoAutoUnload);
         CDll::TEntryPoint p;
 
         SResolvedEntry entry_point(dll);
@@ -280,6 +284,7 @@ bool CDllResolver::TryCandidate(const string& file_name,
         } // ITERATE
 
         if ( entry_point.entry_points.empty() ) {
+            dll->Unload();
             delete dll;
             return false;
         }
@@ -371,6 +376,9 @@ void CDllResolver::AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 void CDllResolver::Unload()
 {
     NON_CONST_ITERATE(TEntries, it, m_ResolvedEntries) {
+        if ( m_AutoUnloadDll == CDll::eAutoUnload ) {
+            it->dll->Unload();
+        }
         delete it->dll;
     }
     m_ResolvedEntries.resize(0);    
@@ -383,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/03/03 19:03:43  ssikorsk
+ * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
+ *
  * Revision 1.26  2005/02/18 14:29:19  ivanov
  * CDllResolver::AddExtraDllPath() -- added support of multiply pathes in
  * the NCBI runpath.
