@@ -171,7 +171,11 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menuBar = new wxMenuBar;
     fileMenu = new wxMenu;
     fileMenu->Append(MID_OPEN, "&Open\tCtrl+O");
+#ifdef __WXMAC__
+    fileMenu->Append(MID_NETWORK_OPEN, "&Network Load\tCtrl+L");
+#else
     fileMenu->Append(MID_NETWORK_OPEN, "&Network Load\tCtrl+N");
+#endif
     fileMenu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
     fileMenu->Append(MID_SAVE_AS, "Save &As...");
     fileMenu->Append(MID_PNG, "&Export PNG");
@@ -1614,6 +1618,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/08/19 16:22:48  thiessen
+* change network load hotkey on mac
+*
 * Revision 1.34  2004/08/04 18:58:30  thiessen
 * add -s command line option for preferred favorite style
 *
