@@ -215,19 +215,17 @@ RunTest() {
 
    x_work_dir="\$build_dir/\$x_wdir"
 
+   # Features detection
+   features="ODBC OpenGL serial objects dbapi app ctools gui algo"
+   if test \`echo \$x_conf | grep DLL\`; then
+      features=\`echo "MT \$features"\`
+   fi
+   export features
+
    # Check application requirements
    for x_req in \$x_requires; do
-      case "\$x_req" in
-         MT )
-            test \`echo \$x_conf | grep DLL\`  ||  return 0  
-            ;;
-         unix )
-            return 0;
-            ;;
-      esac
+      (echo " \$features " | grep " \$x_req " > /dev/null)  ||  return 0
    done
-   features="\$x_requires"
-   export features
 
    # Determine test directory
    result=1
