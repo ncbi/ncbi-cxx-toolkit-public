@@ -109,10 +109,15 @@ void CAlnMgrTestApp::Init(void)
          "Name of file to read the Dense-seg from (standard input by default)",
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
+        ("se_in", "SeqEntryInputFile",
+         "An optional Seq-entry file to load a local top level seq entry from.",
+         CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+
+    arg_desc->AddOptionalKey
         ("log", "LogFile",
          "Name of log file to write to",
-         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
+         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddOptionalKey
         ("a", "AnchorRow",
@@ -210,6 +215,33 @@ void CAlnMgrTestApp::LoadDenseg(void)
         cerr << "Cannot read: " << asn_type;
         return;
     }
+
+    if ( args["se_in"] ) {
+        CNcbiIstream& se_is = args["se_in"].AsInputFile();
+        bool done = false;
+    
+        string se_asn_type;
+        {{
+            auto_ptr<CObjectIStream> se_in
+                (CObjectIStream::Open(eSerial_AsnText, se_is));
+            
+            se_asn_type = se_in->ReadFileHeader();
+            se_in->Close();
+            se_is.seekg(0);
+        }}
+        
+        auto_ptr<CObjectIStream> se_in
+            (CObjectIStream::Open(eSerial_AsnText, se_is));
+        
+        if (se_asn_type == "Seq-entry") {
+            CRef<CSeq_entry> se (new CSeq_entry);
+            *se_in >> *se;
+            m_Scope->AddTopLevelSeqEntry(*se);
+        } else {
+            cerr << "se_in only accepts a Seq-entry asn text file.";
+            return;
+        }
+    }
 }
 
 void CAlnMgrTestApp::View1()
@@ -242,7 +274,7 @@ void CAlnMgrTestApp::View2(int screen_width)
         aln_seq_str.reserve(screen_width + 1);
         // for each sequence
         for (CAlnMap::TNumrow row = 0; row < m_AV->GetNumRows(); row++) {
-            cout << m_AV->GetSeqId(row)
+            cout << m_AV->GetSeqId(row).AsFastaString()
                  << "\t" 
                  << m_AV->GetSeqPosFromAlnPos(row, rng.GetFrom(),
                                               CAlnMap::eLeft)
@@ -315,7 +347,7 @@ void CAlnMgrTestApp::View3(int screen_width)
     TSeqPos pos = 0;
     do {
         for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
-            cout << m_AV->GetSeqId(row).DumpAsFasta()
+            cout << m_AV->GetSeqId(row).AsFastaString()
                  << "\t"
                  << m_AV->GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
                  << "\t"
@@ -364,7 +396,7 @@ void CAlnMgrTestApp::View4(int scrn_width)
         for (row = 0; row < nrows; row++) {
             cout << row 
                  << "\t"
-                 << m_AV->GetSeqId(row)
+                 << m_AV->GetSeqId(row).AsFastaString()
                  << "\t" 
                  << scrn_lefts[row].front()
                  << "\t"
@@ -603,6 +635,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/02/12 22:51:27  todorov
+* +optinal seq-entry input file to read a local seq
+*
 * Revision 1.19  2004/02/03 19:52:25  todorov
 * m_AV declared after m_OM so that its ref to scope is distroyed first
 *
