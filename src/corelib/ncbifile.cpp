@@ -1424,7 +1424,7 @@ static bool s_CopyAttrs(const char* from, const char* to,
 
     // Permissions
     if ( F_ISSET(flags, CDirEntry::fCF_PreservePerm) ) {
-        TMode user_mode, group_mode, other_mode;
+        CDirEntry::TMode user_mode, group_mode, other_mode;
         if ( !efrom.GetMode(&user_mode, &group_mode, &other_mode)  ||
             !eto.SetMode(user_mode, group_mode, other_mode) ) {
             return false;
@@ -2911,6 +2911,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2005/03/22 15:58:53  ivanov
+ * Fixed MSVC compilation error
+ *
  * Revision 1.90  2005/03/22 15:45:57  ucko
  * Always use regular chown rather than lchown when the latter is unavailable.
  *
