@@ -88,8 +88,11 @@ typedef void (ALIGNMENT_CALLBACK *FReportErrorFunction) (
   void *        userdata /* data supplied by calling program to library */
 );
 
-extern NCBI_CREADERS_EXPORT TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list);
-extern NCBI_CREADERS_EXPORT void ErrorInfoFree (TErrorInfoPtr eip);
+NCBI_CREADERS_EXPORT 
+extern TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list);
+
+NCBI_CREADERS_EXPORT 
+extern void ErrorInfoFree (TErrorInfoPtr eip);
 
 typedef struct SSequenceInfo {
     char * missing;
@@ -141,6 +144,9 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile (
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/11/24 15:26:18  dicuccio
+ * Swap extern and export specifier; white space changes
+ *
  * Revision 1.3  2004/05/20 19:39:40  bollin
  * added num_segments member to SAlignmentFile structure to allow reading of
  * alignments of segmented sets.
