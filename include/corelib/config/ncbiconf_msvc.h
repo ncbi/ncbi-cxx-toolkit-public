@@ -46,7 +46,8 @@
 #define SIZEOF_VOIDP        4
 #define NCBI_PLATFORM_BITS  32
 
-#define STDC_HEADERS  1
+#define STDC_HEADERS     1
+#define USE_LOCAL_ZLIB   1
 
 #define HAVE_FSTREAM     1
 #define HAVE_FSTREAM_H   1
