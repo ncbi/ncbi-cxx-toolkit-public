@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2002/04/26 16:31:41  lavr
+ * Add more space between functions to separate them better
+ *
  * Revision 6.32  2002/04/13 06:36:36  lavr
  * Fix for empty path parsing in HTTP URL
  *
@@ -789,6 +792,7 @@ static EIO_Status s_StripToPattern
     free(buffer);
     return status;
 }
+
 
 static EIO_Status s_CONN_Read
 (void*          source,
