@@ -13,14 +13,15 @@
 
 <p>The build script is currently using a hard-coded search path for the source tree.</p>
 <ul>
-	<li>The original location requires renaming <b>c++</b> to <b>cxx</b> and moving it to the folder <b>Metrowerks CodeWarrior 6.0</b> at the root level of the startup disk.  (Whether this is actually an installation of CodeWarrior or an otherwise empty folder doesn't matter, as long as you have CodeWarrior installed somewhere.)
-	<li>An alternate location is the following:  <i>&lt;startup-disk&gt;</i><b>:Development:Trees:NCBI:ncbi.vault:internal:c++</b>.  In this case, any of these folders can may be replaced with an alias to a folder.  This arrangement is intended to complement the use of a <a href="mac_cvs.html">Mac CVS client</a>.
+	<li>The preferred location for downloaded archive distributions is  <i>&lt;startup-disk&gt;</i><b>:Development:NCBI:c++</b>.  Any of these folders can may be replaced with an alias to a folder.  This is the first location searched.
+	<li>An alternate location is the following:  <i>&lt;startup-disk&gt;</i><b>:Development:Trees:NCBI:vault.ncbi:internal:c++</b>.  Again, any of these folders can may be replaced with an alias to a folder.  This arrangement is intended to complement the use of a <a href="mac_cvs.html">Mac CVS client</a>.
+	<li>The original location requires renaming <b>c++</b> to <b>cxx</b> and moving it to the folder <b>Metrowerks CodeWarrior 6.0</b> at the root level of the startup disk, and in this case aliases are <em>not</em> resolved.  (Whether this is actually an installation of CodeWarrior or an otherwise empty folder doesn't matter, as long as you have CodeWarrior installed somewhere.)  This is the last location searched.
 </ul>
 
 <p>To build the toolkit libraries and test programs:
 <ol>
 	<li>Open the folder <b>mac_prj</b>, which is in the folder <b>compilers</b> (inside <b>c++</b>).
-	<li>Open the file <b>makelibs.met</b> with Script Editor (e.g. by dragging the file's icon onto an icon for Script Editor).  Click <b>Run</b>.  There may be some compiler warnings in CodeWarrior, but this is not a problem.  A beep signals completion of the script.
+	<li>Open the file <b>makelibs.met</b> with Script Editor (e.g. by dragging the file's icon onto an icon for Script Editor).  Click <b>Run</b>.  There may be some compiler warnings in CodeWarrior, but this is not a problem.  The script will speak (or possibly just beep) to signal completion.
 	<li>Then do the same thing with <b>maketests.met</b>.
 </ol>
 
