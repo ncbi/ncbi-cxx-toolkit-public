@@ -69,6 +69,7 @@ struct SSERV_IterTag {
     const SSERV_VTable* op;      /* table of virtual functions             */
 
     void*        data;           /* private data field                     */
+    int/*bool*/  external;       /* true for mapping of external requests  */
 };
 
 
@@ -77,18 +78,19 @@ struct SSERV_IterTag {
  * For now, this call is to exclusively support MYgethostbyname() replacement
  * of standard gethostbyname() libcall in apache Web daemon (see in daemons/).
  *
- * NOTE: Preference 0 does not prohibit the preferred_host to be selected;
- *       nor preference 100 ultimately opts for the preferred_host; rather,
+ * NOTE: Preference 0.0 does not prohibit the preferred_host to be selected;
+ *       nor preference 100.0 ultimately opts for the preferred_host; rather,
  *       the preference is considered as an estimate for the selection
  *       probability when all other conditions for favoring the host are
- *       optimal, i.e., preference 0 actually means not to favor the preferred
- *       host at all, while 100 means to opt for one as much as possible.
+ *       optimal, i.e. preference 0.0 actually means not to favor the preferred
+ *       host at all, while 100.0 means to opt for that as much as possible.
  */
 SSERV_Info* SERV_GetInfoP
 (const char*         service,       /* service name                          */
  TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
- double              preference     /* [0=min..100=max] preference in %%     */
+ double              preference,    /* [0=min..100=max] preference in %%     */
+ int/*bool*/         external       /* whether mapping is not local to NCBI  */
  );
 
 /* same as above but creates an iterator to get services one by one */
@@ -96,7 +98,8 @@ SERV_ITER SERV_OpenP
 (const char*         service,
  TSERV_Type          type,
  unsigned int        preferred_host,
- double              preference
+ double              preference,
+ int/*bool*/         external
  );
 
 
@@ -150,6 +153,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/06/26 15:19:56  lavr
+ * Additional parameter "external" for SERV_{Open|GetInfo}P()
+ *
  * Revision 6.22  2003/06/09 19:53:11  lavr
  * +SERV_OpenP()
  *
