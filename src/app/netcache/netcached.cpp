@@ -319,12 +319,15 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 {
     STimeout to = {time_to_wait, 0};
     EIO_Status io_st = sock.Wait(eIO_Read, &to);
-    switch (io_st) {
+    switch (io_st) {    
     case eIO_Success:
-        return true;
+    case eIO_Closed: // following read will return EOF
+        return true;  
     case eIO_Timeout:
         NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
     default:
+        NCBI_THROW(CNetCacheException, 
+                   eCommunicationError, "Socket Wait error.");
         return false;
     }
     return false;
@@ -690,8 +693,10 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
     } while (not_eof);
 
-    iwrt->Flush();
-    iwrt.reset(0);
+    if (iwrt.get()) {
+        iwrt->Flush();
+        iwrt.reset(0);
+    }
 }
 
 void CNetCacheServer::WriteMsg(CSocket&       sock, 
@@ -1133,8 +1138,8 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.30  2004/12/28 17:00:12  kuznets
- * Performance tuning (PUT)
+ * Revision 1.31  2004/12/29 15:35:37  kuznets
+ * Fixed bug in comm. protocol
  *
  * Revision 1.29  2004/12/27 19:14:07  kuznets
  * Use NStr::strcasecmp instead of stricmp
