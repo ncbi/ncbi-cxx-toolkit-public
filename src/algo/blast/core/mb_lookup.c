@@ -39,7 +39,6 @@ Detailed Contents:
 #include <blast_options.h>
 #include <blast_def.h>
 #include <mb_lookup.h>
-#include <blast_extend.h>
 
 static char const rcsid[] = "$Id$";
 
@@ -111,7 +110,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    Int4 query_length;
    Uint1Ptr seq, pos;
    Int4 index;
-   Int4 ecode, extra_code;
+   Int4 ecode;
    Int4 mask;
    Int4 ecode1, ecode2;
    Uint1 val, nuc_mask = 0xfc;
@@ -243,7 +242,6 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
          if ((val & nuc_mask) != 0) { /* ambiguity or gap */
             ecode = 0;
             pos = seq + word_length;
-            extra_code = 0;
          } else {
             /* get next base */
             ecode = ((ecode & mask) << 2) + val;

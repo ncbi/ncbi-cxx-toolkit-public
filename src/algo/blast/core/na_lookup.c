@@ -292,7 +292,7 @@ Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
        Int4Ptr end_offset)
 {
    Uint1Ptr s;
-   Uint1Ptr s_start, abs_start, s_end;
+   Uint1Ptr abs_start, s_end;
    Int4  index=0, s_off;
    LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
    Int4Ptr lookup_pos;

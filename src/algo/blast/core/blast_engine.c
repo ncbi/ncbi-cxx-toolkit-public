@@ -39,7 +39,6 @@ static char const rcsid[] = "$Id$";
 
 #include <blast_engine.h>
 #include <readdb.h>
-#include <util.h>
 #include <aa_ungapped.h>
 #include <blast_util.h>
 #include <blast_gapalign.h>

@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.21  2003/05/30 15:52:11  coulouri
+* various lint-induced cleanups
+*
 * Revision 1.20  2003/05/21 22:29:04  dondosha
 * Fix for two sequences tblastn traceback
 *
@@ -269,8 +272,6 @@ static char const rcsid[] = "$Id$";
 #include <seqport.h>
 #include <sequtil.h>
 #include <objloc.h>
-#include <mb_lookup.h>
-#include <aa_lookup.h>
 #include <blast_util.h>
 
 extern Uint1 FrameToDefine PROTO((Int2 frame));

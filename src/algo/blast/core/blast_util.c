@@ -653,7 +653,6 @@ BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop,
    Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info)
 {
     Boolean done=FALSE;
-    Int4 ordinal_id;
     OIDListPtr virtual_oidlist = NULL;
     *id_list_number = 0;
     
@@ -760,8 +759,6 @@ BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
 
 void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
 {
-    VoidPtr status=NULL;
-
     if (thr_info == NULL)
 	return;
 

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.21  2003/05/30 15:52:11  coulouri
+ * various lint-induced cleanups
+ *
  * Revision 1.20  2003/05/21 22:31:53  dondosha
  * Added forcing of ungapped search for tblastx to option validation
  *
@@ -190,7 +193,6 @@ static char const rcsid[] = "$Id$";
 #include <blast_extend.h>
 #include <blast_gapalign.h>
 #include <blastkar.h>
-#include <blast_util.h>
 #include <mb_lookup.h>
 
 /**************************************************************************
