@@ -643,11 +643,6 @@ void CAlnMix::x_Merge()
                  
             // try to resolve the second row
             if (seq2) {
-                seq2->m_PositiveStrand = 
-                    (seq1->m_PositiveStrand ?
-                     !match->m_StrandsDiffer :
-                     match->m_StrandsDiffer);
-
                 while (!x_SecondRowFits(match)) {
                     if (!seq2->m_ExtraRow) {
                         // create an extra row
@@ -662,6 +657,14 @@ void CAlnMix::x_Merge()
                         break;
                     }
                     seq2 = match->m_AlnSeq2 = seq2->m_ExtraRow;
+                }
+
+                // set the strand if first time
+                if (seq2->m_Starts.empty()) {
+                    seq2->m_PositiveStrand = 
+                        (seq1->m_PositiveStrand ?
+                         !match->m_StrandsDiffer :
+                         match->m_StrandsDiffer);
                 }
 
                 // create row info
@@ -753,6 +756,14 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
     CAlnMixSeq::TStarts::iterator start_i;
         
     if ( !starts2.empty() ) {
+
+        // check strand
+        if (seq2->m_PositiveStrand !=
+            (seq1->m_PositiveStrand ?
+             !match->m_StrandsDiffer :
+             match->m_StrandsDiffer)) {
+            return false;
+        }
 
         start_i = starts2.lower_bound(start2);
 
@@ -1114,6 +1125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/01/02 20:03:48  todorov
+* Row strand init & check
+*
 * Revision 1.14  2003/01/02 16:40:11  todorov
 * Added accessors to the input data
 *
