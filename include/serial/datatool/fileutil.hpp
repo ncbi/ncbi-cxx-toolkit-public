@@ -53,7 +53,15 @@ public:
             return *m_StreamPtr;
         }
 
+    enum EType {
+        eUnknown,  // Unknown type
+        eASN,      // ASN file
+        eDTD       // DTD file
+    };
+    EType GetType(void) const;
+
 private:
+    string m_Name;
     CNcbiIstream* m_StreamPtr;
     bool m_Open;
 
@@ -139,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2002/10/15 13:52:09  gouriano
+* added "GetType" method - module file type by extension
+*
 * Revision 1.13  2002/08/06 17:03:48  ucko
 * Let -opm take a comma-delimited list; move relevant CVS logs to end.
 *
