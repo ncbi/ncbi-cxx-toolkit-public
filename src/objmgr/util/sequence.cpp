@@ -3262,11 +3262,14 @@ void CCdregion_translate::TranslateCdregion (string& prot,
                                              const CSeq_loc& loc,
                                              const CCdregion& cdr,
                                              bool include_stop,
-                                             bool remove_trailing_X)
-
+                                             bool remove_trailing_X,
+                                             bool* alt_start)
 {
     // clear contents of result string
     prot.erase();
+    if ( alt_start != 0 ) {
+        *alt_start = false;
+    }
 
     // copy bases from coding region location
     string bases = "";
@@ -3293,34 +3296,47 @@ void CCdregion_translate::TranslateCdregion (string& prot,
     // pad bases string if last codon is incomplete
     bool incomplete_last_codon = false;
     int mod = dnalen % 3;
-    if (mod == 1) {
-        bases += "NN";
+    if ( mod != 0 ) {
         incomplete_last_codon = true;
-    } else if (mod == 2) {
-        bases += "N";
-        incomplete_last_codon = true;
+        bases += (mod == 1) ? "NN" : "N";
+        dnalen += 3 - mod;
     }
+    _ASSERT((dnalen >= 3)  &&  ((dnalen % 3) == 0));
 
     // resize output protein translation string
-    prot.resize ((dnalen) / 3);
+    prot.resize(dnalen / 3);
 
     // get appropriate translation table
-    const CTrans_table & tbl = (cdr.IsSetCode () ?
-                                CGen_code_table::GetTransTable (cdr.GetCode ()) :
-                                CGen_code_table::GetTransTable (1));
+    const CTrans_table& tbl = cdr.IsSetCode() ?
+        CGen_code_table::GetTransTable(cdr.GetCode()) :
+        CGen_code_table::GetTransTable(1);
 
     // main loop through bases
-    unsigned int i, j, state;
-    for (i = offset, j = 0, state = 0; i < bases.size (); j++) {
-
-        // loop through one codon at a time
-        for (unsigned int k = 0; k < 3; i++, k++) {
-            char ch = bases [i];
-            state = tbl.NextCodonState (state, ch);
-        }
+    string::const_iterator it = bases.begin();
+    string::const_iterator end = bases.end();
+    for ( int i = 0; i < offset; ++i ) {
+        ++it;
+    }
+    unsigned int state = 0, j = 0;
+    while ( it != end ) {
+        // get one codon at a time
+        state = tbl.NextCodonState(state, *it++);
+        state = tbl.NextCodonState(state, *it++);
+        state = tbl.NextCodonState(state, *it++);
 
         // save translated amino acid
-        prot [j] = tbl.GetCodonResidue (state);
+        prot[j++] = tbl.GetCodonResidue(state);
+    }
+
+    // check for alternative start codon
+    if ( alt_start != 0 ) {
+        state = 0;
+        state = tbl.NextCodonState (state, bases[0]);
+        state = tbl.NextCodonState (state, bases[1]);
+        state = tbl.NextCodonState (state, bases[2]);
+        if ( tbl.IsAltStart(state) ) {
+            *alt_start = true;
+        }
     }
 
     // if complete at 5' end, require valid start codon
@@ -3337,7 +3353,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
             const CSeq_loc& cbk_loc = brk->GetLoc ();
             TSeqPos seq_pos = sequence::LocationOffset (loc, cbk_loc, sequence::eOffset_FromStart, &bsh.GetScope ());
             seq_pos -= offset;
-            i = seq_pos / 3;
+            SIZE_TYPE i = seq_pos / 3;
             if (i >= 0 && i < protlen) {
               const CCode_break::C_Aa& c_aa = brk->GetAa ();
               if (c_aa.IsNcbieaa ()) {
@@ -3350,7 +3366,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
     // optionally truncate at first terminator
     if (! include_stop) {
         SIZE_TYPE protlen = prot.size ();
-        for (i = 0; i < protlen; i++) {
+        for (SIZE_TYPE i = 0; i < protlen; i++) {
             if (prot [i] == '*') {
                 prot.resize (i);
                 return;
@@ -3375,6 +3391,34 @@ void CCdregion_translate::TranslateCdregion (string& prot,
         }
         prot.resize (protlen);
     }
+}
+
+
+void CCdregion_translate::TranslateCdregion
+(string& prot,
+ const CSeq_feat& cds,
+ CScope& scope,
+ bool include_stop,
+ bool remove_trailing_X,
+ bool* alt_start)
+{
+    _ASSERT(cds.GetData().IsCdregion());
+
+    prot.erase();
+
+    CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
+    if ( !bsh ) {
+        return;
+    }
+
+    CCdregion_translate::TranslateCdregion(
+        prot,
+        bsh,
+        cds.GetLocation(),
+        cds.GetData().GetCdregion(),
+        include_stop,
+        remove_trailing_X,
+        alt_start);
 }
 
 
@@ -4013,6 +4057,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.74  2004/03/01 18:24:22  shomrat
+* Removed branching in the main cdregion translation loop; Added alternative start flag
+*
 * Revision 1.73  2004/02/19 18:16:48  shomrat
 * Implemented SeqlocRevCmp
 *
