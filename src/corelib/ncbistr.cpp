@@ -403,7 +403,7 @@ Int8 NStr::StringToInt8(const string& str)
 }
 
 
-Uint8 NStr::StringToUInt8(const string& str, const int base /* = 10  */)
+Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
 {
     const char* pc = str.c_str();
 
@@ -1002,6 +1002,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2003/02/26 21:07:52  siyan
+ * Remove const for base parameter for StringToUInt8
+ *
  * Revision 1.81  2003/02/26 20:34:11  siyan
  * Added/deleted whitespaces to conform to existing coding style
  *
