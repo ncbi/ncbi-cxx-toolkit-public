@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.11 2001/03/13 22:11:50 juran Exp $
+	$Id: makelibs.met,v 1.12 2001/03/16 20:09:41 juran Exp $
 	
 	Revision History:
 	----------------
@@ -599,6 +599,8 @@ with timeout of 60000 seconds
 		set DODEBUG to "FALSE"
 		my DoCompileLibraries()
 	end if
+	
+	beep
 	
 end timeout
 

@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.8 2001/01/25 00:13:34 vakatov Exp $
+	$Id: maketests.met,v 1.9 2001/03/16 20:09:44 juran Exp $
 	
    ================================================================================ *)
 
@@ -529,6 +529,8 @@ with timeout of 60000 seconds
 		set DODEBUG to "FALSE"
 		my DoCompileBinaries()
 	end if
+	
+	beep
 	
 end timeout
 
