@@ -258,6 +258,8 @@ void CTest_validatorApplication::ReadClassMember
     } else {
         in.ReadClassMember(member);
     }
+
+    m_Level--;
 }
 
 
@@ -488,6 +490,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2003/08/06 15:07:22  shomrat
+ * Added fix for batch processing
+ *
  * Revision 1.23  2003/06/02 16:06:43  dicuccio
  * Rearranged src/objects/ subtree.  This includes the following shifts:
  *     - src/objects/asn2asn --> arc/app/asn2asn
