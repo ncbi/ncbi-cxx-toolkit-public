@@ -42,7 +42,7 @@
 #include <objmgr/scope.hpp>
 
 #include <objtools/flat/flat_gbseq_formatter.hpp>
-#include <objtools/flat/flat_text_formatter.hpp>
+#include <objtools/flat/flat_gff_formatter.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -94,6 +94,10 @@ int CFlatteningApp::Run(void)
         if ( !NStr::CompareNocase(format, "gbseq") ) {
             oos.reset(CObjectOStream::Open(eSerial_Xml, cout));
             formatter.reset(new CFlatGBSeqFormatter(*oos, scope, mode));
+        } else if ( !NStr::CompareNocase(format, "gff") ) {
+            formatter.reset(new CFlatGFFFormatter
+                            (*new CFlatTextOStream(cout), scope, mode,
+                             CFlatGFFFormatter::fGTFCompat));
         } else {
             IFlatFormatter::EDatabase db;
             if        ( !NStr::CompareNocase(format, "genbank") ) {
@@ -127,6 +131,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/10/08 21:12:04  ucko
+* Support gtf format
+*
 * Revision 1.2  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
