@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.9 2001/01/08 17:52:56 vakatov Exp $
+	$Id: makelibs.met,v 1.10 2001/01/25 00:13:33 vakatov Exp $
 	
 	Revision History:
 	----------------
@@ -313,6 +313,7 @@ on DoCreateProjects()
 			
 			my DoSetPreferences()
 			Set Preferences of panel "PPC Project" to {File Name:"ncsasock"}
+			Set Preferences of panel "PPC CodeGen" to {Struct Alignment:Align_68k}
 			Set Preferences of panel "C/C++ Compiler" to Â
 				{Activate CPlusPlus:false Â
 					, Exception Handling:false Â
@@ -334,6 +335,7 @@ on DoCreateProjects()
 			
 			my DoSetPreferences()
 			Set Preferences of panel "PPC Project" to {File Name:"ncsasockOT"}
+			Set Preferences of panel "PPC CodeGen" to {Struct Alignment:Align_68k}
 			Set Preferences of panel "C/C++ Compiler" to Â
 				{Activate CPlusPlus:false Â
 					, Exception Handling:false Â
