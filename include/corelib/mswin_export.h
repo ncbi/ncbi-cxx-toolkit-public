@@ -255,7 +255,7 @@
  * Export specifier for library objects_mla
  */
 #ifdef NCBI_MLA_EXPORTS
-#  define NCBI_MEA_EXPORT           __declspec(dllexport)
+#  define NCBI_MLA_EXPORT           __declspec(dllexport)
 #else
 #  define NCBI_MLA_EXPORT           __declspec(dllimport)
 #endif
@@ -743,6 +743,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.23  2003/05/23 16:19:48  ivanov
+ * Fixed typo
+ *
  * Revision 1.22  2003/05/23 15:22:40  ivanov
  * Added export specifier NCBI_MLA_EXPORT
  *
