@@ -84,7 +84,7 @@ void AgpRead(CNcbiIstream& is,
     CRef<CSeq_inst> seq_inst;
     int last_to;
     int part_num, last_part_num;
-    TSeqPos length;
+    TSeqPos length = 0;  // initialize to avoid compilation warning
 
     int line_num = 0;
     while (NcbiGetlineEOL(is, line)) {
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.12  2005/02/28 16:05:31  jcherry
+ * Initialize variable to eliminate compilation warning
+ *
  * Revision 1.11  2005/01/26 21:24:58  jcherry
  * Fix for "force local id" case
  *
