@@ -31,6 +31,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/11/22 19:57:09  vakatov
+* TestCgiResponse() -- made "static"
+*
 * Revision 1.3  1999/11/12 17:50:05  vakatov
 * To be more careful with _DEBUG to suit some ugly MSVC++ features
 *
@@ -449,7 +452,7 @@ static void TestCgi(int argc, char* argv[])
 }
 
 
-void TestCgiResponse(int argc, char** argv)
+static void TestCgiResponse(int argc, char** argv)
 {
     NcbiCout << "Starting CCgiResponse test" << NcbiEndl;
 
