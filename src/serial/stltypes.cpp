@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/05/08 15:57:28  grichenk
+* Declared static maps as CSafeStaticPtr<>-s
+*
 * Revision 1.37  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -195,62 +198,64 @@
 #include <serial/classinfo.hpp>
 #include <serial/classinfohelper.hpp>
 #include <serial/typemap.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
-static CTypeInfoMap s_TypeMap_auto_ptr;
-static CTypeInfoMap s_TypeMap_CRef;
-static CTypeInfoMap s_TypeMap_CConstRef;
-static CTypeInfoMap s_TypeMap_AutoPtr;
-static CTypeInfoMap s_TypeMap_list;
-static CTypeInfoMap s_TypeMapSet_list;
-static CTypeInfoMap s_TypeMap_vector;
-static CTypeInfoMap s_TypeMap_set;
-static CTypeInfoMap s_TypeMap_multiset;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_auto_ptr;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_CRef;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_CConstRef;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_AutoPtr;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_list;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMapSet_list;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_vector;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_set;
+static CSafeStaticPtr<CTypeInfoMap> s_TypeMap_multiset;
 
 TTypeInfo CStlClassInfoUtil::Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_auto_ptr.GetTypeInfo(arg, f);
+    return s_TypeMap_auto_ptr->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_CRef(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_CRef.GetTypeInfo(arg, f);
+    return s_TypeMap_CRef->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_CConstRef(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_CConstRef.GetTypeInfo(arg, f);
+    return s_TypeMap_CConstRef->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_AutoPtr(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_AutoPtr.GetTypeInfo(arg, f);
+    return s_TypeMap_AutoPtr->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_list(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_list.GetTypeInfo(arg, f);
+    return s_TypeMap_list->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::GetSet_list(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMapSet_list.GetTypeInfo(arg, f);
+    return s_TypeMapSet_list->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_vector(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_vector.GetTypeInfo(arg, f);
+    return s_TypeMap_vector->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_set(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_set.GetTypeInfo(arg, f);
+    return s_TypeMap_set->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_multiset(TTypeInfo arg, TTypeInfoCreator1 f)
 {
-    return s_TypeMap_multiset.GetTypeInfo(arg, f);
+    return s_TypeMap_multiset->GetTypeInfo(arg, f);
 }
 
 TTypeInfo CStlClassInfoUtil::Get_map(TTypeInfo arg1, TTypeInfo arg2,
