@@ -32,9 +32,9 @@
 
 
 /// Utilits for Project Tree Builder:
+
+
 #include <corelib/ncbienv.hpp>
-
-
 BEGIN_NCBI_SCOPE
 
 /// Key Value struct
@@ -44,33 +44,14 @@ struct SKeyValue
     string m_Value;
 };
 
-/// Get parent_dir of the provided dir
-/// a/b/c/ -> a/b/
-inline string GetParentDir(const string& dir)
-{
-    string parent_dir;
-    CDirEntry::SplitPath( CDirEntry::DeleteTrailingPathSeparator(dir), 
-                          &parent_dir );
-    return parent_dir;
-}
 
-/// Get folder name of provided dir
-/// a/b/c/ -> c
-inline string GetFolder(const string& dir)
-{
-    string folder;
-    CDirEntry::SplitPath( CDirEntry::DeleteTrailingPathSeparator(dir), 
-                          NULL, &folder );
-    return folder;
-}
-
-///
+/// Abstraction of project tree general information
 struct SProjectTreeInfo
 {
     /// Root of the project tree
     string m_Root;
 
-    /// Subtree to buil (default is m_RootSrc).
+    /// Subtree to buil (default is m_Src).
     string m_SubTree;
 
     /// Branch of tree to be implicit exclude from build
@@ -91,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/04 23:13:24  gorelenk
+ * struct SProjectTreeInfo redesigned.
+ *
  * Revision 1.5  2004/02/03 17:03:39  gorelenk
  * Added members to struct SProjectTreeInfo
  *
