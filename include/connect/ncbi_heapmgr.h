@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/09 15:31:28  lavr
+ * Minor changes
+ *
  * Revision 6.1  2000/05/05 20:23:59  lavr
  * Initial revision
  *
@@ -87,7 +90,7 @@ HEAP HEAP_Attach
  );
 
 
-/* Allocate new block of memory in the heap
+/* Allocate a new block of memory in the heap
  */
 SHEAP_Block* HEAP_Alloc
 (HEAP   heap,  /* heap handle */
@@ -108,8 +111,8 @@ void HEAP_Free
  * Return NULL if "prev_block" is the last block of the heap.
  */
 SHEAP_Block* HEAP_Walk
-(HEAP         heap,       /* heap handle */
- SHEAP_Block* prev_block  /* (if NULL, then get the first block of the heap) */
+(HEAP               heap, /* heap handle */
+ const SHEAP_Block* prev  /* (if NULL, then get the first block of the heap) */
  );
 
 

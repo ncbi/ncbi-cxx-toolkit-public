@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/09 15:31:29  lavr
+ * Minor changes
+ *
  * Revision 6.1  2000/05/05 20:24:00  lavr
  * Initial revision
  *
@@ -44,6 +47,7 @@
  */
 
 #include <stddef.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,6 +113,7 @@ typedef union {
 
 typedef struct {
     TSERV_Type type;
+    time_t     expiration_time;
     USERV_Info u;
 } SSERV_Info;
 
