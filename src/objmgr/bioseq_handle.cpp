@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/19 19:16:28  gouriano
+* added const qualifier to GetTitle and GetSeqVector
+*
 * Revision 1.7  2002/03/15 18:10:07  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -131,7 +134,7 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 }
 
 
-CSeqVector CBioseq_Handle::GetSeqVector(bool plus_strand)
+CSeqVector CBioseq_Handle::GetSeqVector(bool plus_strand) const
 {
     return CSeqVector(*this, plus_strand, *m_Scope);
 }

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/03/19 19:17:33  gouriano
+* added const qualifier to GetTitle and GetSeqVector
+*
 * Revision 1.10  2002/03/15 18:10:04  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -128,7 +131,7 @@ public:
     virtual const CSeqMap& GetSeqMap(void) const;
 
     // Get sequence: Iupacna or Iupacaa
-    virtual CSeqVector GetSeqVector(bool plus_strand = true);
+    virtual CSeqVector GetSeqVector(bool plus_strand = true) const;
 
 
     // Get sequence's title (used in various flat-file formats.)
@@ -141,7 +144,7 @@ public:
         fGetTitle_Organism    = 0x4  // append [organism]
     };
     typedef int TGetTitleFlags;
-    virtual string GetTitle(TGetTitleFlags flags = 0);
+    virtual string GetTitle(TGetTitleFlags flags = 0) const;
 
 private:
     CBioseq_Handle(CSeq_id_Handle value);

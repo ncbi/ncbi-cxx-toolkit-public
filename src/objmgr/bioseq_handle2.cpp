@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/19 19:16:28  gouriano
+* added const qualifier to GetTitle and GetSeqVector
+*
 * Revision 1.2  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -100,7 +103,7 @@ static string s_TitleFromProtein   (const CBioseq_Handle& handle,
 static string s_TitleFromSegment   (const CBioseq_Handle& handle,
                                           CScope&        scope);
 
-string CBioseq_Handle::GetTitle(TGetTitleFlags flags)
+string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
 {
     string                    prefix, title, suffix;
     string                    organism;
