@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/12/17 19:04:32  gouriano
+* corrected reading/writing of character references
+*
 * Revision 1.32  2002/12/13 21:50:42  gouriano
 * corrected reading of choices
 *
@@ -552,12 +555,12 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
                     ThrowError(fFormatError, "invalid char reference");
                 do {
                     c = *p++;
-                    if ( c >= '0' || c <= '9' )
+                    if ( c >= '0' && c <= '9' )
                         v = v * 16 + (c - '0');
                     else if ( c >= 'A' && c <='F' )
-                        v = v * 16 + (c - 'A');
+                        v = v * 16 + (c - 'A' + 0xA);
                     else if ( c >= 'a' && c <='f' )
-                        v = v * 16 + (c - 'a');
+                        v = v * 16 + (c - 'a' + 0xA);
                     else
                         ThrowError(fFormatError, "bad char reference");
                 } while ( p < end );
@@ -568,7 +571,7 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
                     ThrowError(fFormatError, "invalid char reference");
                 do {
                     c = *p++;
-                    if ( c >= '0' || c <= '9' )
+                    if ( c >= '0' && c <= '9' )
                         v = v * 10 + (c - '0');
                     else
                         ThrowError(fFormatError, "bad char reference");

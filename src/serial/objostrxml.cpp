@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/12/17 19:04:32  gouriano
+* corrected reading/writing of character references
+*
 * Revision 1.40  2002/12/12 21:08:07  gouriano
 * implemented handling of complex XML containers
 *
@@ -390,7 +393,13 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
         m_Output.PutString("&quot;");
         break;
     default:
-        m_Output.PutChar(c);
+        if ((unsigned int)c < 0x20) {
+            ostrstream os;
+            os << "&#x" << hex << (unsigned int)c << ';' << '\0';
+            m_Output.PutString(os.str());
+        } else {
+            m_Output.PutChar(c);
+        }
         break;
     }
 }
