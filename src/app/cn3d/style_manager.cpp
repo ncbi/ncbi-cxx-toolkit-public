@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/03/23 15:14:07  thiessen
+* load sidechains in CDD's
+*
 * Revision 1.27  2001/03/23 04:18:53  thiessen
 * parse and display disulfides
 *
@@ -237,7 +240,7 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     proteinBackbone.colorScheme = protBBType;
     nucleotideBackbone.colorScheme = eObject;
 
-    proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+    proteinSidechains.isOn = nucleotideSidechains.isOn = (protBBType == eAligned);
     proteinSidechains.style = nucleotideSidechains.style = eWire;
     proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
 

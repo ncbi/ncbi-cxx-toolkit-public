@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/03/23 15:14:07  thiessen
+* load sidechains in CDD's
+*
 * Revision 1.31  2001/03/22 00:33:16  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -245,7 +248,7 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     std::string errMsg;
     diagMsg.Write(errMsg);
 
-    if (diagMsg.m_Severity >= eDiag_Error) {
+    if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace) {
         wxMessageDialog *dlg =
 			new wxMessageDialog(NULL, errMsg.c_str(), "Severe Error!",
 				wxOK | wxCENTRE | wxICON_EXCLAMATION);

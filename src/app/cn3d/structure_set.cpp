@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2001/03/23 15:14:07  thiessen
+* load sidechains in CDD's
+*
 * Revision 1.54  2001/03/23 04:18:52  thiessen
 * parse and display disulfides
 *
@@ -372,14 +375,14 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
 
     // create StructureObjects from (list of) biostruc
     if (mime->IsStrucseq()) {
-        object = new StructureObject(this, mime->GetStrucseq().GetStructure(), true);
+        object = new StructureObject(this, mime->GetStrucseq().GetStructure(), true, false);
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime->GetStrucseq().GetSequences());
         MatchSequencesToMolecules();
         alignmentManager = new AlignmentManager(sequenceSet, NULL);
 
     } else if (mime->IsStrucseqs()) {
-        object = new StructureObject(this, mime->GetStrucseqs().GetStructure(), true);
+        object = new StructureObject(this, mime->GetStrucseqs().GetStructure(), true, false);
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime->GetStrucseqs().GetSequences());
         MatchSequencesToMolecules();
@@ -389,13 +392,13 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
 
     } else if (mime->IsAlignstruc()) {
         TESTMSG("Master:");
-        object = new StructureObject(this, mime->GetAlignstruc().GetMaster(), true);
+        object = new StructureObject(this, mime->GetAlignstruc().GetMaster(), true, false);
         objects.push_back(object);
         const CBiostruc_align::TSlaves& slaves = mime->GetAlignstruc().GetSlaves();
 		CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
         for (i=slaves.begin(); i!=e; i++) {
             TESTMSG("Slave:");
-            object = new StructureObject(this, i->GetObject(), false);
+            object = new StructureObject(this, i->GetObject(), false, false);
             if (!object->SetTransformToMaster(
                     mime->GetAlignstruc().GetAlignments(),
                     objects.front()->mmdbID))
@@ -412,7 +415,7 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         structureAlignments = &(mime->GetAlignstruc().SetAlignments());
 
     } else if (mime->IsEntrez() && mime->GetEntrez().GetData().IsStructure()) {
-        object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true);
+        object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true, false);
         objects.push_back(object);
 
     } else {
@@ -430,17 +433,23 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
 
     // set up registry field to set GET connection method for HTTP
     CNcbiRegistry* reg = new CNcbiRegistry;
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "DATA");  // for debugging
-//    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
     CORE_SetREG(REG_cxx2c(reg, true));
+
+    // for network debugging
+//    SetDiagTrace(eDT_Enable);
+//    SetDiagPostFlag(eDPF_All);
+//    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "DATA");
+//    CORE_SetLOG(LOG_cxx2c());
 
     try {
         // create HHTP stream from mmdbsrv URL
         CNcbiOstrstream args;
         args << "uid=" << mmdbID
             << "&form=6&db=t&save=Save&dopt=i"
-            << "&Complexity=Virtual%20Bond%20Model"
+//            << "&Complexity=Virtual%20Bond%20Model"
+            << "&Complexity=Cn3D%20Subset"
             << '\0';
         std::string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
         TESTMSG("Trying to load Biostruc via " << host << path << '?' << args.str());
@@ -466,6 +475,7 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
     }
 
     CORE_SetREG(NULL);
+//    CORE_SetLOG(NULL);    // only when debugging
     return okay;
 }
 
@@ -540,7 +550,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
             std::string err;
             CNcbiOstrstream biostrucFile;
             biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
-            TESTMSG("trying to read ncbi-backbone model from Biostruc in '" << biostrucFile.str() << "'");
+            TESTMSG("trying to read model from Biostruc in '" << biostrucFile.str() << "'");
             gotBiostruc = ReadASNFromFile(biostrucFile.str(), biostruc, true, err);
             if (!gotBiostruc) {
                 ERR_POST(Warning << "Failed to read Biostruc from " << biostrucFile.str()
@@ -862,7 +872,7 @@ void StructureSet::SelectedAtom(unsigned int name)
 const int StructureObject::NO_MMDB_ID = -1;
 
 StructureObject::StructureObject(StructureBase *parent,
-    const CBiostruc& biostruc, bool master, bool doNCBIBackboneOnly) :
+    const CBiostruc& biostruc, bool master, bool isRawBiostrucFromMMDB) :
     StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL)
 {
     // set numerical id simply based on # objects in parentSet
@@ -901,7 +911,7 @@ StructureObject::StructureObject(StructureBase *parent,
                 i->GetObject().GetType() == eModel_type_other) continue;
 
             // special case, typically for loading CDD's, when we're only interested in a single model type
-            if (doNCBIBackboneOnly && i->GetObject().GetType() != eModel_type_ncbi_backbone) continue;
+            if (isRawBiostrucFromMMDB && i->GetObject().GetType() != eModel_type_ncbi_all_atom) continue;
 
             // otherwise, assume all models in this set are of same type
             if (i->GetObject().GetType() == eModel_type_ncbi_backbone)

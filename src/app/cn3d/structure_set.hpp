@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/03/23 15:13:46  thiessen
+* load sidechains in CDD's
+*
 * Revision 1.41  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -297,8 +300,9 @@ class CoordSet;
 class StructureObject : public StructureBase
 {
 public:
+    // isRawBiostrucFromMMDB says whether this is "raw" MMDB data - with all its various models
     StructureObject(StructureBase *parent,
-        const ncbi::objects::CBiostruc& biostruc, bool master, bool doNCBIBackboneOnly = false);
+        const ncbi::objects::CBiostruc& biostruc, bool isMaster, bool isRawBiostrucFromMMDB);
 
     // public data
 
