@@ -61,7 +61,7 @@ static bool s_IsVirtualId(const CSeq_id_Handle& id, const CBioseq_Handle& seq)
     }
     CBioseq_Handle::TId ids = seq.GetId();
     if (find(ids.begin(), ids.end(), id) == ids.end()) {
-        CBioseq_Handle bsh = seq.GetScope().GetBioseqHandleFromTSE(id, seq);
+        CBioseq_Handle bsh = seq.GetScope().GetBioseqHandle(id, CScope::eGetBioseq_Loaded);
         return bsh ? bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual : false;
     }
     return false;
@@ -72,7 +72,7 @@ static bool s_IsVirtualSeqInt
 (const CSeq_interval& seqint,
  const CBioseq_Handle& seq)
 {
-    return seqint.CanGetId() ?
+    return seqint.IsSetId() ?
         s_IsVirtualId(CSeq_id_Handle::GetHandle(seqint.GetId()), seq) :
         false;
 }
@@ -80,26 +80,8 @@ static bool s_IsVirtualSeqInt
 
 static bool s_IsVirtualLocation(const CSeq_loc& loc, const CBioseq_Handle& seq)
 {
-    const CSeq_id* id = 0;
-    try {
-        switch (loc.Which()) {
-        case CSeq_loc::e_Whole:
-            id = &loc.GetWhole();
-            break;
-        case CSeq_loc::e_Int:
-            id = &loc.GetInt().GetId();
-            break;
-        case CSeq_loc::e_Pnt:
-            id = &loc.GetPnt().GetId();
-            break;
-        default:
-            break;
-        }
-    } catch (CException&) {
-        id = 0;
-    }
-
-    return (id != 0) ?
+    const CSeq_id* id = loc.GetId();
+    return (id != NULL) ?
         s_IsVirtualId(CSeq_id_Handle::GetHandle(*id), seq) :
         false;
 }
@@ -134,7 +116,7 @@ bool CFlatSeqLoc::x_Add
             CRef<CSeq_loc> rev_loc(SeqLocRevCmp(loc, &scope));
             oss << "complement(";
             x_Add(*rev_loc, oss, ctx, type, false);
-            oss << ")";
+            oss << ')';
             return true;
         }
 
@@ -208,8 +190,9 @@ bool CFlatSeqLoc::x_Add
     case CSeq_loc::e_Packed_pnt:
     {{
         const CPacked_seqpnt& ppnt  = loc.GetPacked_pnt();
+        ENa_strand strand = ppnt.IsSetStrand() ? ppnt.GetStrand() : eNa_strand_unknown;
         x_AddID(ppnt.GetId(), oss, ctx, type);
-        if (ppnt.IsSetStrand() && ppnt.GetStrand() == eNa_strand_minus  &&  show_comp) {
+        if (strand == eNa_strand_minus  &&  show_comp) {
             oss << "complement(";
         }
         oss << "join(";
@@ -223,7 +206,7 @@ bool CFlatSeqLoc::x_Add
                 delim = ", \b";
             }
         }
-        if (ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())  &&  show_comp) {
+        if (strand == eNa_strand_minus  &&  show_comp) {
             oss << ")";
         }
         break;
@@ -431,7 +414,7 @@ void CFlatSeqLoc::x_AddID
     try {
         idp = GetId(id, ctx.GetScope(), eGetId_ForceAcc).GetSeqId();
     } catch (CException&) {
-        idp.Reset(NULL);
+        idp.Reset();
     }
     if (!idp) {
         idp.Reset(&id);
@@ -448,6 +431,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/03/28 17:19:56  shomrat
+* Minor bug fixing
+*
 * Revision 1.17  2005/02/17 15:58:42  grichenk
 * Changes sequence::GetId() to return CSeq_id_Handle
 *
