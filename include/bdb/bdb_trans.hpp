@@ -66,6 +66,17 @@ public:
     /// Rollback transaction (same as Abort)
     void Rollback() { Abort(); }
 
+    /// Get low level Berkeley DB transaction handle.
+    ///
+    /// Function uses lazy initialization paradigm, and actual
+    /// transaction is created "on demand". First call to GetTxn()
+    /// creates the handle which lives until commit or rollback point.
+    ///
+    /// @return Transaction handle
+    ///
+    DB_TXN*  GetTxn();
+
+
 protected:
 
     /// Add file to the list of connected files
@@ -78,16 +89,6 @@ protected:
     /// Return TRUE if transaction handle has been requested by some
     /// client (File)
     bool IsInProgress() const { return m_Txn != 0; }
-
-    /// Get transaction handle.
-    ///
-    /// Function uses lazy initialization paradigm, and actual
-    /// transaction is created "on demand". First call to GetTxn()
-    /// creates the handle which lives until commit or rollback point.
-    ///
-    /// @return Transaction handle
-    ///
-    DB_TXN*  GetTxn();
 
 private:
     /// Abort transaction with error checking or without
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/29 17:07:13  kuznets
+ * GetTxn() - relaxed function visibility restriction to public
+ *
  * Revision 1.1  2003/12/10 19:10:53  kuznets
  * Initial revision
  *
