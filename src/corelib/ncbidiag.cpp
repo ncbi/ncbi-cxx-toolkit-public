@@ -237,7 +237,7 @@ void CDiagBuffer::Flush(void)
         if (  m_Diag->CheckFilters()  ) {
             string dest;
             if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
-                string src(message,0,size);
+                string src(message, size);
                 NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
                 message = dest.c_str();
                 size = dest.length();
@@ -1367,6 +1367,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.85  2004/10/21 15:27:51  vakatov
+ * CDiagBuffer::Flush(), eDPF_PreMergeLines -- fixed incorrect construction
+ * of C++ string from not-NUL-terminated C string (reported by V.Chetvernin)
+ *
  * Revision 1.84  2004/10/05 16:42:21  shomrat
  * rollback last change
  *
