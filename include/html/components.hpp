@@ -33,37 +33,31 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/23 23:47:48  lewisg
+* *** empty log message ***
+*
 * Revision 1.1  1998/10/29 16:15:51  lewisg
 * version 2
 *
 * ===========================================================================
 */
 
-
-
+#include <ncbistd.hpp>
 #include <html.hpp>
 #include <page.hpp>
+BEGIN_NCBI_SCOPE
 
 const int kNoCOMMENTS = 0x2;
 const int kNoLIST = 0x1;
 
 class CQueryBox: public CHTMLBasicPage {
 public:
-    CQueryBox();
 
-    virtual void Init(int);
+    virtual void InitMembers(int);
+    virtual void InitSubPages(int);
     virtual void Draw(int);
 
-    // hiding error?
-    //    void Create(int style, const string & url)   // url input
-    //   {
-    //     Init(style);
-    //    m_URL = url;
-    //     Draw(style);
-    // }
-
-    virtual CHTMLNode * CreateComments();
-    CHTMLNode * m_Comments;  // extra comments
+    ////////  members
 
     string m_Width; // in pixels
     string m_BgColor;
@@ -76,6 +70,17 @@ public:
     list < string > m_Disp;  // the values in dispmax field
     string m_URL;
 
+    //////// subpages
+
+    virtual CHTMLNode * CreateComments(void);
+    CHTMLNode * m_Comments;  // extra comments
+
+    //////// 'tors
+
+    CQueryBox();
+    ~CQueryBox() { delete m_Comments; }
+ 
 };
 
+END_NCBI_SCOPE
 #endif

@@ -30,31 +30,89 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/23 23:42:37  lewisg
+* *** empty log message ***
+*
 * Revision 1.1  1998/10/29 16:13:11  lewisg
 * version 2
 *
 * ===========================================================================
 */
 
-#include <fstream.h>
-
-
+#include <ncbistd.hpp>
 #include <components.hpp>
 #include <page.hpp>
+BEGIN_NCBI_SCOPE
 
-
-
-void CHTMLPage::Init(int style)
+CHTMLBasicPage * CHTMLPageFactory::Create( multimap < string, string > & Cgi)
 {
-    if (!m_Template) m_Template = CreateTemplate();
+    list <CHTMLBasicPage *>::iterator iPage;
+    multimap < string, string >:: iterator iCgi, iRange;
+    map < string, string >:: iterator iPageCgi;
+    pair <multimap < string, string >:: iterator, multimap < string, string >:: iterator > Range;
 
-    if(!(style & kNoTITLE))
-	if (!m_Title) m_Title = CreateTitle();
-    else m_Title = new CHTMLNode;
+    for ( iPage = m_Pages.begin(); iPage != m_Pages.end(); iPage++) {
+	bool ThisPage = true;
+	for (iPageCgi = ((*iPage)->m_Cgi).begin(); iPageCgi != ((*iPage)->m_Cgi).end(); iPageCgi++) { 
+	    Range = Cgi.equal_range(iPageCgi->first);
+	    for(iRange = Range.first; iRange != Range.second; iRange++) {
+		if( iRange->second == ((*iPage)->m_Cgi)[iRange->first]) goto equality;
+		if(((*iPage)->m_Cgi)[iRange->first] == "") goto equality;
+	    }
+	    ThisPage = false;
+	equality:  // ugh
+	    ;
+	}
+	if(ThisPage) break;
+    }
+    if( iPage != m_Pages.end()) return (*iPage)->New();
+    else return m_DefaultPage->New();
+}
 
-    if(!(style & kNoVIEW))
-        if (!m_View) m_View = CreateView();
-    else m_View = new CHTMLNode;
+
+	    
+CHTMLPageFactory::~CHTMLPageFactory()
+{
+    list <CHTMLBasicPage *>::iterator iPage;
+    for ( iPage = m_Pages.begin(); iPage != m_Pages.end(); iPage++) {
+	delete *iPage;
+    }
+    delete m_DefaultPage;
+}	    
+	
+
+
+void CHTMLPage::InitMembers(int style)
+{
+    ////////// section for initializing members
+
+    m_PageName = "PubMed";
+    m_TemplateFile = "frontpage.html";
+}
+
+
+void CHTMLPage::InitSubPages(int style)
+{
+  ////////// section for initializing sub windows
+    try {
+	if (!m_Template) m_Template = CreateTemplate();
+
+	if(!(style & kNoTITLE)) {
+	    if (!m_Title) m_Title = CreateTitle();
+	    if (!m_Title) m_Title = new CHTMLNode;
+	}
+
+	if(!(style & kNoVIEW)) {
+	    if (!m_View) m_View = CreateView();
+	    if (!m_View) m_View = new CHTMLNode;
+	}
+    }
+    catch (...) {
+	delete m_Template;
+	delete m_Title;
+	delete m_View;
+	throw;
+    }
 }
 
 
@@ -63,38 +121,52 @@ void CHTMLPage::Draw(int style)
     if(m_Template)
 	AppendChild(m_Template);
 
-    if(!(style & kNoTITLE) && m_Title && m_Template)
-	m_Template->Rfind("<@TITLE@>", m_Title);
+    if(!(style & kNoTITLE) && m_Title)
+	Rfind("<@TITLE@>", m_Title);
 
-    if(!(style & kNoVIEW) && m_View && m_Template) 
-        m_Template->Rfind("<@VIEW@>", m_View);
+    if(!(style & kNoVIEW) && m_View) 
+        Rfind("<@VIEW@>", m_View);
 }
 
 
-CHTMLNode * CHTMLPage::CreateTitle() 
+CHTMLNode * CHTMLPage::CreateTitle(void) 
 {
-    return new CHTMLText("My Page");
+    return new CHTMLText(m_PageName);
 }
 
 
-CHTMLNode * CHTMLPage::CreateTemplate() 
+CHTMLNode * CHTMLPage::CreateTemplate(void) 
 {
     string input;  
     char ch;
+    CHTMLText * text;
 
-    // demo hack
-    ifstream inFile("frontpage.html");
-    while( inFile.get(ch)) input += ch;
-    CHTMLText * text = new CHTMLText;
-    text->Data(input); // some text
-    return text;
+    try {
+	CNcbiIfstream inFile(m_TemplateFile.c_str());
+	while( inFile.get(ch)) input += ch;
+	text = new CHTMLText;
+	text->Data(input); // some text
+	return text;
+    }
+    catch(...) {
+        delete text;
+        throw;
+    }
 }
 
 
-CHTMLNode * CHTMLPage::CreateView() 
+CHTMLNode * CHTMLPage::CreateView(void) 
 {
-    CQueryBox * querybox = new CQueryBox();
-    querybox->Create();
-    return querybox;
+    CQueryBox * querybox;
+    try {
+	querybox = new CQueryBox();
+	querybox->Create();
+	return querybox;
+    }
+    catch(...) {
+	delete querybox;
+	throw;
+    }
 }
 
+END_NCBI_SCOPE

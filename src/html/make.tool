@@ -1,11 +1,12 @@
 #include ../../makefile.in
 
-CCC = CC -xildoff
-
-SUFFIXES += .cpp
+CCC = CC -g
+SUFFIXES = .o .c .h .hpp .cpp
 .SUFFIXES: $(SUFFIXES)
 
-CFLAGS = -g -I/netopt/stlport/3.01 -I../include -I../../corelib/include -DNCBI_SGI_STL_PORT
+CFLAGS = -I../include -I../../corelib/include -I/netopt/ncbi_tools/ver0.0/ncbi/include 
+
+LDFLAGS = -L./ -lcgic -lncbi
 
 #CFLAGS = $(iLOCALINCPATH) $(iINCPATH) $(iCFLAGS)
 #LDFLAGS = $(iLDFLAGS) -L../../libs $(iLOCALLIBS) $(iLIBS) -lm
@@ -41,12 +42,13 @@ CFLAGS = -g -I/netopt/stlport/3.01 -I../include -I../../corelib/include -DNCBI_S
 #-lm \
 #-ldl
 
-EXE = frontpage
+EXE = tool
 
-OBJ =  frontpage.o page.o html.o node.o components.o
+OBJ =  tool.o page.o html.o node.o components.o toolpages.o
 
 .cpp.o:
 	$(CCC) $(CFLAGS) -c $<
+
 
 all: $(EXE)
 
@@ -69,3 +71,5 @@ purify:
 	$(MAKE) debug "CCC=purify CC"
 
 .KEEP_STATE:
+	
+

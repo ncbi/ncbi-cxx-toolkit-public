@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/23 23:47:50  lewisg
+* *** empty log message ***
+*
 * Revision 1.2  1998/10/29 16:15:53  lewisg
 * version 2
 *
@@ -41,25 +44,6 @@
 *
 * ===========================================================================
 */
-
-
-
-// include the standard library and sets some compiler specific macros
-
-#ifdef __SUNPRO_CC
-#include <iostream.h>
-#define SIZE_TYPE size_t
-#else
-#define SIZE_TYPE string::size_type
-#define NPOS string::npos
-#include <iostream>
-using namespace std;
-#endif
-
-#ifdef  _MSC_VER
-#pragma warning(disable: 4786)  // gets rid of the long identifier warnings for Visual C
-#endif
-
 
 
 // don't know if some of these are nested inside of each other

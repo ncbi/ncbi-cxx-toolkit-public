@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/23 23:42:29  lewisg
+* *** empty log message ***
+*
 * Revision 1.2  1998/10/29 16:13:06  lewisg
 * version 2
 *
@@ -38,8 +41,10 @@
 *
 * ===========================================================================
 */
-
+#include <ncbistd.hpp>
 #include <node.hpp>
+#include <html.hpp> //remove!
+BEGIN_NCBI_SCOPE
 
 // append a child
 CNCBINode * CNCBINode::AppendChild(CNCBINode * childNode)
@@ -57,14 +62,17 @@ CNCBINode * CNCBINode::InsertBefore(CNCBINode * newChild, CNCBINode * refChild)
 {
     if(!newChild | ! refChild) return NULL;
     ((CNCBINode *)newChild)->m_ParentNode = this;
-    ((CNCBINode *)newChild)->m_SelfIter = m_ChildNodes.insert(((CNCBINode *)refChild)->m_SelfIter, newChild);
+    ((CNCBINode *)newChild)->m_SelfIter = (list<CNCBINode *>::iterator) m_ChildNodes.insert(((CNCBINode *)refChild)->m_SelfIter, newChild);
     return newChild;
 }
 
 
+// we leak memory like crazy until the sunpro compiler is upgraded
+// it can't handle a virtual destructor in any form for some reason.
 
-CNCBINode::~CNCBINode()
+CNCBINode::~CNCBINode(void)
 {
+#if 0
     list <CNCBINode *>::iterator iChildren;
     CNCBINode * temp;
 
@@ -76,11 +84,13 @@ CNCBINode::~CNCBINode()
     }
 
     if(m_ParentNode) {
-        ((CNCBINode *)m_ParentNode)->m_ChildNodes.erase(m_SelfIter);
+         ((CNCBINode *)m_ParentNode)->m_ChildNodes.erase(m_SelfIter);
     }
+#endif
 }
 
 
+END_NCBI_SCOPE
 
 
 

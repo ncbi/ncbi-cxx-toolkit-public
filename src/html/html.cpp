@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/23 23:42:17  lewisg
+* *** empty log message ***
+*
 * Revision 1.2  1998/10/29 16:13:06  lewisg
 * version 2
 *
@@ -40,9 +43,10 @@
 */
 
 
-
+#include <ncbistd.hpp>
 #include <stl.hpp>
 #include <html.hpp>
+BEGIN_NCBI_SCOPE
 
 
 // serialize the node to the given string
@@ -67,8 +71,15 @@ void CHTMLNode::Rfind(const string & tagname, CNCBINode * replacenode)
 
 CNCBINode * CHTMLNode::AppendText(const string & appendstring)
 {
-    CHTMLText * text = new CHTMLText(appendstring);
-    return AppendChild(text);
+    CHTMLText * text;
+    try {  
+	text = new CHTMLText(appendstring);
+	return AppendChild(text);
+    }
+    catch (...) {
+	delete text;
+	throw;
+    }
 }
 
 
@@ -79,14 +90,20 @@ void CHTMLText::Print(string& output)
     for (; iChildren != m_ChildNodes.end(); iChildren++) ((CHTMLNode *)(* iChildren))->Print(output);
 }
 
+// splits a text node after the iSplit position
 
-CNCBINode * CHTMLText::Split(SIZE_TYPE iSplit)
+CNCBINode * CHTMLText::Split(SIZE_TYPE iSplit) // throw(out_of_range)
 {
-    // need to throw an exception here if iSplit > size()
     CHTMLText * outText;
-    outText = new CHTMLText;
-    outText->m_Datamember = m_Datamember.substr(0, iSplit); 
-    m_Datamember.erase(0, iSplit);
+    if(iSplit > m_Datamember.size()) throw out_of_range("CHTMLText::Split arg out of range");
+    try {
+	outText = new CHTMLText;
+	outText->m_Datamember = m_Datamember.substr(0, iSplit); 
+	m_Datamember.erase(0, iSplit);
+    }
+    catch(...) {
+        delete outText;
+    }
     return outText;
 }
 
@@ -139,6 +156,16 @@ void CHTMLElement::Print(string& output)
 }
 
 
+// pre element
+
+
+CHTML_pre::CHTML_pre(const string & Text)
+{
+    m_Name = "pre";
+    AppendText(Text);
+}
+
+
 // anchor element
 
 
@@ -146,6 +173,14 @@ CHTML_a::CHTML_a(const string & href)
 {
     m_Name = "a";
     m_Attributes["href"] = href;
+}
+
+
+CHTML_a::CHTML_a(const string & Href, const string & Text)
+{
+    m_Name = "a";
+    m_Attributes["href"] = Href;
+    AppendText(Text);
 }
 
 
@@ -168,17 +203,24 @@ CHTML_table::CHTML_table(const string & bgcolor, const string & width)
 
 
 // instantiates table rows and cells
-void CHTML_table::MakeTable(int row, int column)
+void CHTML_table::MakeTable(int row, int column)  // throw(bad_alloc)
 {
     int irow, icolumn;
     CHTML_tr * tr;
 
     for(irow = 0; irow < row; irow++)
-    {
-        tr = new CHTML_tr;
-        for (icolumn = 0; icolumn < column; icolumn++) tr->AppendChild(new CHTML_td);
-        this->AppendChild(tr);
-    }
+	{
+	    try {
+		tr = new CHTML_tr;
+		for (icolumn = 0; icolumn < column; icolumn++) tr->AppendChild(new CHTML_td);
+	    }
+	    catch(...) {
+		delete tr;
+		throw;
+	    }
+	
+	    this->AppendChild(tr);
+	}
 }
 
 
@@ -231,7 +273,7 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
     while (iy < y && iChildren != m_ChildNodes.end()) {
         if (((CHTMLNode *)(* iChildren))->NodeName() == "tr") iy++;           
         iChildren++;
-        }
+    }
 
     ix = 1;
     iyChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
@@ -239,16 +281,23 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
     while (ix < x && iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
         if (((CHTMLNode *)(* iyChildren))->NodeName() == "td") ix++;           
         iyChildren++;
-        }
+    }
 
     return ((CHTMLNode *)(* iyChildren))->AppendChild(Child);
 }
 
 
-CNCBINode * CHTML_table::InsertTextInTable(int x, int y, const string & appendstring)
+CNCBINode * CHTML_table::InsertTextInTable(int x, int y, const string & appendstring) // throw(bad_alloc)
 {
-CHTMLText * text = new CHTMLText(appendstring);
-return InsertInTable(x, y, text);
+    CHTMLText * text;
+    try {
+	text = new CHTMLText(appendstring);
+    }
+    catch (.../*bad_alloc &e*/) {
+	delete text;
+	throw;
+    }
+    return InsertInTable(x, y, text);
 }
 
 
@@ -338,6 +387,15 @@ CHTML_form::CHTML_form(const string & action, const string & method)
 }
 
 
+CHTML_form::CHTML_form (const string & action, const string & method, const string & name)
+{
+    m_Name = "form";
+    m_Attributes["action"] = action;
+    m_Attributes["method"] = method;
+    m_Attributes["name"] = name;
+}
+
+
 // textarea element
 CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const string & rows)
 {
@@ -345,6 +403,16 @@ CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const s
     m_Attributes["name"] = name;
     m_Attributes["cols"] = cols;
     m_Attributes["rows"] = rows;
+}
+
+
+CHTML_textarea::CHTML_textarea(const string & name, const string & cols, const string & rows, const string & value)
+{
+    m_Name = "textarea";
+    m_Attributes["name"] = name;
+    m_Attributes["cols"] = cols;
+    m_Attributes["rows"] = rows;
+    AppendText(value);  // an exception should propagate ok?
 }
 
 
@@ -379,6 +447,19 @@ CHTML_input::CHTML_input(const string & type, const string & name, const string 
 };
 
 
+
+CHTML_checkbox::CHTML_checkbox(const string & name, const string & value, const string & description, bool checked)
+{
+    m_Name = "input";
+    m_Attributes["type"] = "checkbox";
+    m_Attributes["name"] = name;
+    if(!value.empty()) m_Attributes["value"] = value;
+    if (checked) m_Attributes["checked"] = "";    
+    m_EndTag = false;  
+    AppendText(description);  // adds the description at the end
+}
+
+
 // option tag
 CHTML_option::CHTML_option(bool selected)    
 {
@@ -407,17 +488,30 @@ CHTML_select::CHTML_select(const string & name)
 
 CNCBINode * CHTML_select::AppendOption(const string & option)
 {
-    CNCBINode * retval = AppendChild(new CHTML_option);
-    ((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
-
+    CNCBINode * retval;
+    try {
+	retval = AppendChild(new CHTML_option);
+	((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
+    }
+    catch (...) {
+        delete retval;
+        throw;
+    }
     return retval;
 };
 
 
 CNCBINode * CHTML_select::AppendOption(const string & option, bool selected)
 {
-    CNCBINode *  retval = AppendChild(new CHTML_option(selected));
-    ((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
+    CNCBINode * retval;
+    try {
+	retval = AppendChild(new CHTML_option(selected));
+	((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
+    }
+    catch (...) {
+	delete retval;
+	throw;
+    }
 
     return retval;
 };
@@ -425,9 +519,17 @@ CNCBINode * CHTML_select::AppendOption(const string & option, bool selected)
 
 CNCBINode * CHTML_select::AppendOption(const string & option, bool selected, const string & value)
 {
-    CNCBINode * retval = AppendChild(new CHTML_option(selected, value));
-    ((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
+    CNCBINode * retval;
+    try {
+	retval = AppendChild(new CHTML_option(selected, value));
+	((CHTMLNode * )(retval))->AppendChild(new CHTMLText(option));
+    }
+    catch (...) {
+	delete retval;
+	throw;
+    }
 
     return retval;
 };
 
+END_NCBI_SCOPE

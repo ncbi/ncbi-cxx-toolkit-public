@@ -1,8 +1,4 @@
-#ifndef NODE__HPP
-#define NODE__HPP
-
-
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -27,47 +23,63 @@
 *
 * ===========================================================================
 *
-* Author:  Lewis Geer
+* Author:  !!! PUT YOUR NAME(s) HERE !!!
 *
 * File Description:
-*   standard node class
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/11/23 23:47:50  lewisg
+* Revision 1.1  1998/11/23 23:45:21  lewisg
 * *** empty log message ***
-*
-* Revision 1.2  1998/10/29 16:15:52  lewisg
-* version 2
-*
-* Revision 1.1  1998/10/06 20:34:31  lewisg
-* html library includes
 *
 * ===========================================================================
 */
 
+#include <stdio.h>
 #include <ncbistd.hpp>
-#include <stl.hpp>
+#include <ncbi.h>
+#include <ncbienv.h>
+#include <html.hpp>
+#include <page.hpp>
+#include <toolpages.hpp>
+#include <cgic.h>
+#include <runtime.hpp>
 BEGIN_NCBI_SCOPE
+ 
 
-// base class for a graph node
-
-class CNCBINode
+extern "C" int cgiMain(int argc, char *argv[])
 {
-public:    
-    list<CNCBINode *>::iterator ChildBegin(void) { return m_ChildNodes.begin(); }
-    list<CNCBINode *>::iterator ChildEnd(void) { return m_ChildNodes.end(); }
-    virtual CNCBINode * InsertBefore(CNCBINode * newChild, CNCBINode * refChild);  // adds a child to the child list at iterator.
-    virtual CNCBINode * AppendChild(CNCBINode *);  // add a Node * to the end of m_ChildNodes
-    CNCBINode(void) { m_ParentNode = NULL; }
-    virtual ~CNCBINode(); 
-    // need to include explicit copy and assignment op.  I don't think the child list should be copied, nor parent.
+    string output("");
+    CToolFactory Factory;
+    multimap < string, string > cgi;
+    CHTMLBasicPage * page;
+    CRuntime Runtime;
+    char buf[4096];
 
-protected:
-    list<CNCBINode *> m_ChildNodes;  // Child nodes.
-    CNCBINode * m_ParentNode;
-    list<CNCBINode *>::iterator m_SelfIter;  // points to self in *parent's* m_ChildNodes list.
-};
+    cgiHeaderContentType("text/html");
+
+    try {    
+	if(cgiFormString( "toolname", buf, 4096) == cgiFormSuccess) cgi.insert(pair<const string, string>("toolname", buf));
+	if(cgiFormString( "supplemental_input", buf, 4096) == cgiFormSuccess) cgi.insert(pair<const string, string>("supplemental_input", buf));
+	if (argc > 1) cgi.insert(pair<const string, string>("notcgi", ""));
+
+	Runtime.m_Cgi = & cgi;
+	Factory.Init();
+	page = Factory.Create(cgi);
+	page->m_Runtime = & Runtime;
+	page->Create();
+      
+	page->Print(output);  // serialize it
+	//	NcbiCout << output.c_str() << NcbiEndl;
+	fprintf(cgiOut, "%s", output.c_str());
+    }
+    catch (...) {
+	delete page;
+	exit (1);
+    }
+    delete page;
+    return 0;  
+}
 
 END_NCBI_SCOPE
-#endif

@@ -1,8 +1,7 @@
-#ifndef NODE__HPP
-#define NODE__HPP
+#ifndef RUNTIME__HPP
+#define RUNTIME__HPP
 
-
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -30,44 +29,26 @@
 * Author:  Lewis Geer
 *
 * File Description:
-*   standard node class
+*  Runtime class contains all runtime state info
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/11/23 23:47:50  lewisg
+* Revision 1.1  1998/11/23 23:47:21  lewisg
 * *** empty log message ***
-*
-* Revision 1.2  1998/10/29 16:15:52  lewisg
-* version 2
-*
-* Revision 1.1  1998/10/06 20:34:31  lewisg
-* html library includes
 *
 * ===========================================================================
 */
 
 #include <ncbistd.hpp>
-#include <stl.hpp>
+
 BEGIN_NCBI_SCOPE
 
-// base class for a graph node
-
-class CNCBINode
-{
-public:    
-    list<CNCBINode *>::iterator ChildBegin(void) { return m_ChildNodes.begin(); }
-    list<CNCBINode *>::iterator ChildEnd(void) { return m_ChildNodes.end(); }
-    virtual CNCBINode * InsertBefore(CNCBINode * newChild, CNCBINode * refChild);  // adds a child to the child list at iterator.
-    virtual CNCBINode * AppendChild(CNCBINode *);  // add a Node * to the end of m_ChildNodes
-    CNCBINode(void) { m_ParentNode = NULL; }
-    virtual ~CNCBINode(); 
-    // need to include explicit copy and assignment op.  I don't think the child list should be copied, nor parent.
-
-protected:
-    list<CNCBINode *> m_ChildNodes;  // Child nodes.
-    CNCBINode * m_ParentNode;
-    list<CNCBINode *>::iterator m_SelfIter;  // points to self in *parent's* m_ChildNodes list.
+class CRuntime {
+public:
+multimap <string, string> * m_Cgi;
+    // add environment, argv, arc, history
 };
+
 
 END_NCBI_SCOPE
 #endif
