@@ -416,9 +416,9 @@ public:
             _ASSERT(m_Scope);
         }
     CHeapScope(CScope* scope)
-        : m_Scope(scope->m_Impl->m_HeapScope)
+        : m_Scope(scope ? scope->m_Impl->m_HeapScope : 0)
         {
-            _ASSERT(m_Scope);
+            // _ASSERT(m_Scope);
         }
 
     
@@ -617,6 +617,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/12/29 20:04:52  grichenk
+* CHeapScope can be initialized with null pointer.
+*
 * Revision 1.66  2003/12/18 16:38:05  grichenk
 * Added CScope::RemoveEntry()
 *
