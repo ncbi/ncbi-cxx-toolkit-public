@@ -215,7 +215,7 @@ public:
             eState_Desc,
             eState_Descr,
             eState_Feat,
-            eState_Graph,
+            eState_Graph
         };
 
         CProgressInfo(void): m_State(eState_not_set), 
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/04/18 19:06:52  shomrat
+* redundant comma
+*
 * Revision 1.11  2003/04/15 14:55:02  shomrat
 * Added a progress callback mechanism
 *
