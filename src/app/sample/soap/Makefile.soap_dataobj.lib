@@ -1,0 +1,2 @@
+LIB = soap_dataobj
+SRC = soap_dataobj__ soap_dataobj___
