@@ -2725,7 +2725,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
         gene_feat =
             sequence::GetBestOverlappingFeat(mrna_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_gene,
-                                             sequence::eOverlap_Contained,
+                                             sequence::eOverlap_Contains,
                                              scope);
     }
 
@@ -2744,7 +2744,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
         feat =
             sequence::GetBestOverlappingFeat(cds_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_gene,
-                                             sequence::eOverlap_Contained,
+                                             sequence::eOverlap_Contains,
                                              scope);
     }
     return feat;
@@ -4796,6 +4796,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.97  2004/10/13 12:57:10  shomrat
+* Fixed overlap containmnet where applicable
+*
 * Revision 1.96  2004/10/12 18:57:57  dicuccio
 * Added variant of sequence::GetId() that takes a seq-id instead of a bioseq
 * handle
