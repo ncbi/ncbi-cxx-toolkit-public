@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/15 19:04:37  sandomir
+* GetSelfURL(() added in Context
+*
 * Revision 1.7  1999/06/29 20:04:37  pubmed
 * many changes due to query interface changes
 *
@@ -166,6 +169,9 @@ public:
     void RemoveRequestValues(const string& name);
     void ReplaceRequestValue(const string& name, const string& value);
 
+    // program name access
+    const string& GetSelfURL( void ) const;
+
 private:
     CNcbiRegistry& x_GetConfig(void) const;
     CNcbiResource& x_GetResource(void) const;
@@ -180,6 +186,8 @@ private:
     auto_ptr<CCgiServerContext> m_srvCtx; // application defined context
     
     TMsgList m_msg;
+
+    mutable string m_selfURL;
 
     friend class CCgiApplication;
 }; 

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/15 19:04:38  sandomir
+* GetSelfURL(() added in Context
+*
 * Revision 1.7  1999/07/08 16:14:55  vakatov
 * Fixed a warning
 *
@@ -451,15 +454,6 @@ public:
 
     virtual CNCBINode* GetLogo( void ) const { return 0; }
     virtual string GetName( void ) const = 0;
-
-#if 0 // generic object makes no sense in practice
-
-    virtual string GetLink( const CNcbiDataObject& obj ) const = 0;
-
-    virtual CNCBINode* CreateView( CCgiContext& ctx,
-                                   const CNcbiDataObject& obj
-                                   bool selected = false) const = 0;
-#endif
 
     virtual bool IsRequested( const CCgiContext& ctx ) const;
 

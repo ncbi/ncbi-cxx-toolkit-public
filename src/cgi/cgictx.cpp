@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/15 19:05:17  sandomir
+* GetSelfURL(() added in Context
+*
 * Revision 1.10  1999/07/07 14:23:37  pubmed
 * minor changes for VC++
 *
@@ -63,6 +66,8 @@
 *
 * ===========================================================================
 */
+
+#include <algorithm>
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
@@ -156,5 +161,29 @@ void CCgiContext::ReplaceRequestValue(const string& name,
     AddRequestValue(name, value);
 }
 
+const string& CCgiContext::GetSelfURL( void ) const
+{
+    if( m_selfURL.empty() ) {
+        m_selfURL = "http://";
+        m_selfURL += GetRequest().GetProperty(eCgi_ServerName);
+        m_selfURL += ':';
+        m_selfURL += GetRequest().GetProperty(eCgi_ServerPort);
+        
+        // bug in www.ncbi proxy - replace adjacent '//'
+        string script( GetRequest().GetProperty(eCgi_ScriptName) );
+        string::iterator b = script.begin(), it;
+        
+        while( ( it = adjacent_find( b, script.end() ) ) != script.end() ) {
+            if( *it == '/' ) {
+                b = script.erase( it );
+            } else {
+                b = it + 2;
+            }
+        } // while
+        
+        m_selfURL += script;
+    }
+    return m_selfURL;
+}
 
 END_NCBI_SCOPE
