@@ -154,7 +154,7 @@ function FillTreeStructure(oShell, oTree)
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/dll_main.cpp",         oTree.CompilersBranchDll);
     GetFileFromTree(oShell, oTree, oTask, "/compilers/msvc710_prj/dll/Makefile.mk",          oTree.CompilersBranchDll);
 
-    GetFileFromTree(oShell, oTree, oTask, "/include/corelib/config/ncbiconf_msvc_site.h",    oTree.IncludeConfig);
+    GetFileFromTree(oShell, oTree, oTask, "/include/corelib/config/ncbiconf_msvc_site.*",    oTree.IncludeConfig);
 }
 
 // check-out a subdir from CVS - oTree is supposed to have TreeRoot property
@@ -273,7 +273,7 @@ function AdjustLocalSiteDll(oShell, oTree, oTask)
     VerboseEcho("Modifying (appending): " + ptb_ini);
     var file = oFso.OpenTextFile(ptb_ini, 8);
     file.WriteLine("[CXX_Toolkit]");
-    var folder_root = oTask.ToolkitPath;
+    var folder_root = oTask.ToolkitSrcPath;
     var folder_include = folder_root + "\\include";
     while (!oFso.FolderExists(folder_include)) {
         VerboseEcho("Folder not found: " + folder_include);
@@ -324,7 +324,7 @@ function AdjustLocalSiteStatic(oShell, oTree, oTask)
     VerboseEcho("Modifying (appending): " + ptb_ini);
     var file = oFso.OpenTextFile(ptb_ini, 8)
         file.WriteLine("[CXX_Toolkit]");
-    var folder_root = oTask.ToolkitPath;
+    var folder_root = oTask.ToolkitSrcPath;
     var folder_include = folder_root + "\\include";
     while (!oFso.FolderExists(folder_include)) {
         VerboseEcho("Folder not found: " + folder_include);
@@ -487,7 +487,7 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
 
     // Try to get the file from the pre-built toolkit
-    var toolkit_file_path = BackSlashes(oTask.ToolkitPath + cvs_rel_path);
+    var toolkit_file_path = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
     var dir = oFso.GetFolder(oFso.GetParentFolderName(toolkit_file_path));
     var dir_files = new Enumerator(dir.files);
     if (!dir_files.atEnd()) {
