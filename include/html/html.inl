@@ -38,9 +38,21 @@ const string& CHTMLPlainText::GetText(void) const
 }
 
 inline
+void CHTMLPlainText::SetText(const string& text)
+{
+    m_Text = text;
+}
+
+inline
 const string& CHTMLText::GetText(void) const
 {
     return m_Text;
+}
+
+inline
+void CHTMLText::SetText(const string& text)
+{
+    m_Text = text;
 }
 
 inline
@@ -581,6 +593,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/02/04 12:45:11  ivanov
+ * Made CHTML[Plain]Text::SetText() inline.
+ *
  * Revision 1.34  2004/02/03 19:45:42  ivanov
  * Binded dummy names for the unnamed nodes
  *
