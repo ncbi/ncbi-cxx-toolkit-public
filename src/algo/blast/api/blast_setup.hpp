@@ -69,7 +69,7 @@ SetupSubjects(const TSeqLocVector& subjects,
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  * @return pair containing the buffer and its length. 
  */
-pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
+pair<Uint1*, TSeqPos>
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope, 
             objects::ENa_strand strand = objects::eNa_strand_plus, 
@@ -117,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/09/11 20:55:01  camacho
+* Temporary fix for AutoPtr return value
+*
 * Revision 1.13  2003/09/11 17:45:03  camacho
 * Changed CBlastOption -> CBlastOptions
 *

@@ -408,7 +408,7 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
    
 }
 
-pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
+pair<Uint1*, TSeqPos>
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, 
             ENa_strand strand, bool add_nucl_sentinel)
 {
@@ -498,7 +498,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>(buf, buflen);
+    return make_pair(buf, buflen);
 }
 
 #if 0
@@ -690,6 +690,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/09/11 20:55:01  camacho
+* Temporary fix for AutoPtr return value
+*
 * Revision 1.26  2003/09/11 17:45:03  camacho
 * Changed CBlastOption -> CBlastOptions
 *
