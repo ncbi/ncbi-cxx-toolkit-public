@@ -264,12 +264,13 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                         }
                     } else {
                         prev_aln_pos = aln_pos / width;
-                        prev_len = ttl_len = len;
-                        prev_start = start;
+                        ttl_len = len;
                         insert_starts->push_back(start);
                         insert_aln_starts->push_back(prev_aln_pos);
                         insert_lens->push_back(len);
                     }
+                    prev_start = start;
+                    prev_len = len;
 		}
             }
         } else {
@@ -768,6 +769,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2003/09/23 18:37:24  todorov
+* bug fix in GetWholeAlnSeqString
+*
 * Revision 1.49  2003/09/22 21:00:16  todorov
 * Consolidated adjacent inserts in GetWholeAlnSeqString
 *
