@@ -675,6 +675,7 @@
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGO_EXPORT
+#  define NCBI_FLAT_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XNCBI_EXPORT
@@ -692,6 +693,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.15  2003/03/28 20:29:42  kans
+ * define NCBI_FLAT_EXPORT at end
+ *
  * Revision 1.14  2003/03/28 17:44:54  dicuccio
  * Added export specifier for flatfile generator library.  Made this specifier
  * part of the NCBI_SEQ_EXPORTS master group
