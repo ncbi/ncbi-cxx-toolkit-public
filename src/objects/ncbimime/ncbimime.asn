@@ -1,4 +1,4 @@
---$Revision: 6.8 $
+--$Revision: 6.9 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -10,7 +10,7 @@ NCBI-Mime DEFINITIONS ::=
 BEGIN
 
 EXPORTS Ncbi-mime-asn1;
-IMPORTS Biostruc, Biostruc-id, Biostruc-annot-set FROM MMDB
+IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
     Cdd FROM NCBI-Cdd
 	Seq-entry FROM NCBI-Seqset
 	Seq-annot FROM NCBI-Sequence
@@ -35,17 +35,12 @@ Bundle-seqs-aligns ::= SEQUENCE {
     imports SET OF Seq-annot OPTIONAL           -- imports (updates in Cn3D)
 }
 
-Biostruc-or-id ::= CHOICE {
-    biostruc Biostruc,
-    id Biostruc-id
-}
-
 Biostruc-seqs-aligns-cdd ::= SEQUENCE {
     seq-align-data CHOICE {
         bundle Bundle-seqs-aligns,          -- either seqs + alignments
         cdd Cdd                             -- or CDD (which contains these)
     },
-    structures SET OF Biostruc-or-id OPTIONAL,          -- structures
+    structures SET OF Biostruc OPTIONAL,          -- structures
     style-dictionary Cn3d-style-dictionary OPTIONAL,    -- Cn3D stuff
 	user-annotations Cn3d-user-annotations OPTIONAL
 }
