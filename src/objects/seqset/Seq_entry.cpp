@@ -80,6 +80,7 @@ void CSeq_entry::Parentize(void)
             SetSet().SetSeq_set().end();
         for (CBioseq_set::TSeq_set::iterator si =
             SetSet().SetSeq_set().begin(); si != s_end; si++) {
+            (*si)->SetParentEntry(0);
             (*si)->Parentize();
             (*si)->SetParentEntry(this);
         }
@@ -371,6 +372,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.16  2003/03/10 21:18:27  grichenk
+ * Fixed Parentize()
+ *
  * Revision 6.15  2003/03/10 21:08:19  grichenk
  * UserOp_Assign resets m_Parent
  *
