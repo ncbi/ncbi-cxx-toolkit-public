@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 #################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
