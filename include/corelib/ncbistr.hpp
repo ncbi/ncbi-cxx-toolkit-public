@@ -1937,7 +1937,7 @@ public:
             message), m_Pos(pos)
     {
         this->x_Init(info,
-                     string("{") + NStr::UIntToString(m_Pos) + "} " + message,
+                     string("{") + NStr::UIntToString((unsigned long)m_Pos) + "} " + message,
                      prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
@@ -1956,7 +1956,7 @@ public:
     /// Report error position.
     virtual void ReportExtra(ostream& out) const
     {
-        out << "m_Pos = " << m_Pos;
+        out << "m_Pos = " << (unsigned long)m_Pos;
     }
 
     // Attributes.
@@ -2596,6 +2596,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2005/02/23 15:34:18  gouriano
+ * Type cast to get rid of compiler warnings
+ *
  * Revision 1.76  2005/02/16 15:04:35  ssikorsk
  * Tweaked kEmptyStr with Linux GCC
  *
