@@ -305,6 +305,29 @@ recompiling all sources:
   <li> re-configure the toolkit with "<i><b>--with-dll</b></i>"
   <li> build the toolkit again
 </ol>
+We've succeeded in building NCBI C++ libs as DLLs on at least
+the following platforms:
+<ul>
+  <li> <a href="http://egcs.cygnus.com/">
+       <b>GCC 2.95.[1,2]</b></a>
+    <ul>
+      <li> Linux RedHat 5.2 --- <i>PC-Intel</i>
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
+    </ul>
+
+  <li> <a href="http://www.sun.com/workshop/visual/">
+       <b>Sun WorkShop 5.0</b></a>
+    <ul>
+      <li> 32-bit: Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i>
+      <li> 64-bit: Solaris 2.7 --- <i>SUN-Sparc</i>
+    </ul>
+
+  <li> <b>MIPSpro-7.30 (-n32)</b>
+    <ul>
+      <li> IRIX64 6.5 --- <i>SGI-Mips</i>
+    </ul>
+</ul>
+
 
 
 <p>
@@ -684,11 +707,12 @@ compiler-specific pre-initialization for the used
 <b><i>configure</i></b>.
 <br>
 These wrapper scripts are located in the <i><b>compilers/</b></i>
-directory, and now we have such wrappers for WorkShop 5.0, MIPSpro 7.20
-and MSVC++ compilers:
+directory, and now we have such wrappers for WorkShop 5.0, MIPSpro 7.30,
+GCC/Cygwin-NT, and MSVC++ compilers:
   <ul>
     <li> <i><b>WorkShop5.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>MIPSpro73.sh</b></i> [--configure-flags]
+    <li> <i><b>gcc_nt.bash</b></i> [--configure-flags]
     <li> <i><b>msvc_nt.bash</b></i> [--configure-flags]
   </ul>
 Note, that these scripts accept all regular <b><i>configure</i></b> flags
@@ -848,7 +872,7 @@ Suppose you have deployed the NCBI C++ tree on your local PC, in directory
 <i><b>C:\foo</b></i> (you can do it by either performing the
 <a href="win_cvs.html">CVS checkout</a>
 of <i><b>internal/c++</b></i> or by expanding the distributed self-extracting
-NCBI C++ source archive) and you want to use MSVC++ to work with these
+NCBI C++ source archive), and you want to use MSVC++ to work with these
 sources.
 
 <p>
