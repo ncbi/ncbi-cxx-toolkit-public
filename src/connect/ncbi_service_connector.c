@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/02/09 17:35:45  lavr
+ * Modified: fSERV_StatelessOnly overrides info->stateless
+ * Bug fixed: free(type) -> free(name)
+ *
  * Revision 6.8  2001/01/25 17:04:43  lavr
  * Reversed:: DESTROY method calls free() to delete connector structure
  *
@@ -75,7 +79,7 @@
 typedef struct SServiceConnectorTag {
     const char*         name;           /* Textual connector type            */
     const char*         serv;           /* Requested service name            */
-    TSERV_Type          type;           /* Accepted server types             */
+    TSERV_Type          type;           /* Server types, record keeping only */
     SConnNetInfo*       info;           /* Connection information            */
     SERV_ITER           iter;           /* Dispatcher information            */
     CONNECTOR           conn;           /* Low level communication connector */
@@ -235,13 +239,12 @@ extern "C" {
 static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                                 unsigned int n)
 {
-    static const char stateless[] = "Connection-Mode: STATELESS\r\n";
     SServiceConnector* uuu = (SServiceConnector*) data;
     const char* header = 0;
     const SSERV_Info* info;
     
     if (!n || !(info = SERV_GetNextInfo(uuu->iter)))
-        return 0;
+        return 0/*false - not adjusted*/;
     
     switch (info->type) {
     case fSERV_Ncbid:
@@ -249,7 +252,8 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                         NCBID_NAME,
                         SERV_NCBID_ARGS(&info->u.ncbid),
                         "service", uuu->serv);
-        header = stateless;
+        /* Required NCBID tag */
+        header = "Connection-Mode: STATELESS\r\n";
         break;
     case fSERV_Http:
     case fSERV_HttpGet:
@@ -266,21 +270,19 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
         s_AdjustNetInfo(net_info, eReqMethod_Post,
                         uuu->info->path, 0,
                         "service", uuu->serv);
-        header = stateless;
         break;
     default:
-        return 0;
+        assert(0);
+        return 0/*false - not adjusted*/;
     }
 
-    if (header) {
-        ConnNetInfo_SetUserHeader(net_info, header);
-        assert(strcmp(net_info->http_user_header, header) == 0);
-    }
+    ConnNetInfo_SetUserHeader(net_info, header);
+    assert(header && strcmp(net_info->http_user_header, header) == 0);
 
     if (net_info->http_proxy_adjusted)
         net_info->http_proxy_adjusted = 0/*false*/;
 
-    return 1;
+    return 1/*true - adjusted*/;
 }
 
 
@@ -296,7 +298,7 @@ static EIO_Status s_VT_Open
     EIO_Status status;
     CONNECTOR conn;
 
-    assert(uuu->conn == 0 && uuu->type == 0);
+    assert(!uuu->conn && !uuu->name);
     
     if (!uuu->iter && !s_OpenDispatcher(uuu))
         return eIO_Unknown;
@@ -316,6 +318,7 @@ static EIO_Status s_VT_Open
         net_info->port = info->port;
         switch (info->type) {
         case fSERV_Ncbid:
+            /* Connection directly to NCBID, add NCBID-specific tags */
             if (net_info->stateless) {
                 /* Connection request with data */
                 req_method = eReqMethod_Post;
@@ -333,6 +336,7 @@ static EIO_Status s_VT_Open
         case fSERV_Http:
         case fSERV_HttpGet:
         case fSERV_HttpPost:
+            /* Connection directly to CGI, no specific tags required */
             header = "";
             req_method =
                 info->type == fSERV_HttpGet
@@ -346,7 +350,7 @@ static EIO_Status s_VT_Open
             break;
         case fSERV_Standalone:
             if (net_info->stateless) {
-                /* This will be a pass-thru connection */
+                /* This will be a pass-thru connection, socket otherwise */
                 header = "";
                 s_AdjustNetInfo(net_info, eReqMethod_Post,
                                 0, 0,
@@ -354,10 +358,11 @@ static EIO_Status s_VT_Open
             }
             break;
         default:
+            assert(0);
             break;
         }
     } else {
-        /* Firewall */
+        /* Firewall, connection to dispatcher, spec. tags */
         s_AdjustNetInfo(net_info,
                         net_info->stateless ? eReqMethod_Post : eReqMethod_Get,
                         0, 0, "service", uuu->serv);
@@ -455,12 +460,12 @@ static EIO_Status s_VT_Open
         status = (*uuu->meta.open)(uuu->meta.c_open, timeout);
     
     if (uuu->meta.get_type) {
-        const char *type;
+        const char* type;
         if ((type = (*uuu->meta.get_type)(uuu->meta.c_get_type)) != 0) {
-            char *name = (char *)malloc(strlen(type) +
-                                        8/*strlen("SERVICE/")*/ + 1);
+            static const char prefix[] = "SERVICE/";
+            char* name = (char*) malloc(strlen(type) + sizeof(prefix));
             if (name) {
-                strcpy(name, "SERVICE/");
+                strcpy(name, prefix);
                 strcat(name, type);
                 uuu->name = name;
             }
@@ -489,9 +494,9 @@ static EIO_Status s_VT_Close
     if (uuu->meta.close)
         status = (*uuu->meta.close)(uuu->meta.c_close, timeout);
 
-    if (uuu->type) {
-        free((void*) uuu->type);
-        uuu->type = 0;
+    if (uuu->name) {
+        free((void*) uuu->name);
+        uuu->name = 0;
     }
 
     SERV_Close(uuu->iter);
@@ -550,7 +555,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     CONNECTOR          ccc;
     SServiceConnector* xxx;
 
-    if (!service)
+    if (!service || !*service)
         return 0;
     
     ccc = (SConnector*)        malloc(sizeof(SConnector));
@@ -558,6 +563,8 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     xxx->name = 0;
     xxx->serv = strcpy((char *)malloc(strlen(service) + 1), service);
     xxx->info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create(service);
+    if (type & fSERV_StatelessOnly)
+        xxx->info->stateless = 1/*true*/;
     xxx->type = type;
     xxx->iter = 0;
     xxx->conn = 0;
