@@ -45,6 +45,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include "win_mask_app.hpp"
 #include "win_mask_config.hpp"
@@ -52,7 +53,6 @@
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_writer.hpp"
 #include "win_mask_gen_counts.hpp"
-#include "win_mask_seq_title.hpp"
 
 #include <algo/winmask/seq_masker.hpp>
 #include <algo/winmask/dust_masker.hpp>
@@ -256,6 +256,9 @@ void CWinMaskApplication::Init(void)
 int CWinMaskApplication::Run (void)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CGBDataLoader::RegisterInObjectManager(*om, 0, CObjectManager::eDefault);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
 
 #if 0
     if( GetArgs()["dbg"].AsBoolean() )
@@ -306,8 +309,8 @@ int CWinMaskApplication::Run (void)
     CRef< CSeq_entry > aSeqEntry( 0 );
     Uint4 total = 0, total_masked = 0;
     CDustMasker * duster( 0 );
-    set< string > ids( aConfig.Ids() );
-    set< string > exclude_ids( aConfig.ExcludeIds() );
+    set< CSeq_id_Handle > ids( aConfig.Ids() );
+    set< CSeq_id_Handle > exclude_ids( aConfig.ExcludeIds() );
 
     if( aConfig.UseDust() )
         duster = new CDustMasker( aConfig.DustWindow(),
@@ -316,40 +319,53 @@ int CWinMaskApplication::Run (void)
 
     while( (aSeqEntry = theReader.GetNextSequence()).NotEmpty() )
     {
+        CSeq_entry_Handle seh;
+        try {
+            seh = scope->GetSeq_entryHandle(*aSeqEntry);
+        }
+        catch (CException&) {
+            seh = scope->AddTopLevelSeqEntry(*aSeqEntry);
+        }
+
         Uint4 masked = 0;
-        const CBioseq & bioseq = aSeqEntry->GetSeq();
 
-        if(    bioseq.CanGetInst() 
-               && bioseq.GetInst().CanGetLength()
-               && bioseq.GetInst().CanGetSeq_data() )
-        {
-            CRef<CScope> scope(new CScope(*om));
-            CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry( *aSeqEntry );
+        CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
+        for ( ;  bs_iter;  ++bs_iter) {
+            CBioseq_Handle bsh = *bs_iter;
+            if (bsh.GetBioseqLength() == 0) {
+                continue;
+            }
+
             bool process( true );
-            string id( CWinMaskSeqTitle::GetId( seh, bioseq ) );
 
+            vector<CSeq_id_Handle> syns = scope->GetIds(*bsh.GetSeqId());
             if( !ids.empty() )
             {
                 process = false;
-
-                if( ids.find( id ) != ids.end() )
-                    process = true;
+                ITERATE (vector<CSeq_id_Handle>, iter, syns) {
+                    if (ids.find(*iter) != ids.end()) {
+                        process = true;
+                        break;
+                    }
+                }
             }
 
-            if( !exclude_ids.empty() )
-                if( exclude_ids.find( id ) != exclude_ids.end() )
-                    process = false;
+            if( !exclude_ids.empty() ) {
+                ITERATE (vector<CSeq_id_Handle>, iter, syns) {
+                    if (exclude_ids.find(*iter) != exclude_ids.end()) {
+                        process = false;
+                        break;
+                    }
+                }
+            }
 
             if( process )
             {
-                TSeqPos len = bioseq.GetInst().GetLength();
+                TSeqPos len = bsh.GetBioseqLength();
                 total += len;
                 _TRACE( "Sequence length " << len );
-                const CSeq_data & seqdata = bioseq.GetInst().GetSeq_data();
-                CRef< CSeq_data > dest( new CSeq_data );
-                CSeqportUtil::Convert( seqdata, dest, CSeq_data::e_Iupacna, 
-                                       0, len );
-                const string & data = dest->GetIupacna().Get();
+                CSeqVector data =
+                    bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                 auto_ptr< CSeqMasker::TMaskList > mask_info( theMasker( data ) );
 
                 if( duster != 0 ) // Dust and merge with mask_info
@@ -358,7 +374,7 @@ int CWinMaskApplication::Run (void)
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
 
-                theWriter.Print( seh, bioseq, *mask_info );
+                theWriter.Print( bsh, *mask_info );
 
                 for( CSeqMasker::TMaskList::const_iterator i = mask_info->begin();
                      i != mask_info->end(); ++i )
@@ -381,6 +397,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.3  2005/03/11 15:08:22  morgulis
  * 1. Made -window parameter optional and be default equal to unit_size + 4;
  * 2. Changed the name of -lstat parameter to -ustat.

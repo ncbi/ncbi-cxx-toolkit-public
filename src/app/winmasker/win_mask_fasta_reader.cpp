@@ -50,7 +50,6 @@ CRef< CSeq_entry > CWinMaskFastaReader::GetNextSequence()
             = ReadFasta( input_stream,
                          fReadFasta_AssumeNuc 
                          | fReadFasta_ForceType
-                         | fReadFasta_NoParseID 
                          | fReadFasta_OneSeq
                          | fReadFasta_AllSeqIds,
                          NULL, NULL );
@@ -68,6 +67,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

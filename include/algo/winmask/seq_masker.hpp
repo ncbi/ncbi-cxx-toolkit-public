@@ -184,7 +184,7 @@ public:
      **\return pointer to the list of masked intervals
      **
      **/
-    TMaskList * operator()( const string & data ) const;
+    TMaskList * operator()( const objects::CSeqVector & data ) const;
 
     /**
      **\brief Internal class encapsulating unit frequency information
@@ -317,7 +317,7 @@ private:
          **
          **/
         mitem( Uint4 start, Uint4 end, Uint1 unit_size, 
-               const string & data, const CSeqMasker & owner );
+               const objects::CSeqVector & data, const CSeqMasker & owner );
     };
 
     friend struct CSeqMasker::mitem;
@@ -458,6 +458,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.4  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

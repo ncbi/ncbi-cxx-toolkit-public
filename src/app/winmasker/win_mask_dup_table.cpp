@@ -43,16 +43,17 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_dup_table.hpp"
-#include "win_mask_seq_title.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-extern string mkdata( const CSeq_entry & entry );
 
 const Uint4 SAMPLE_LENGTH    = 100; /**<\internal length of a sample segment */
 const Uint4 SAMPLE_SKIP      = 10000;   /**<\internal distance between subsequent samples */
@@ -156,7 +157,7 @@ public:
      **\param seq_data new sequence data in IUPACNA format
      **/
     void add_seq_info( const string & seq_id,
-                       const string & seq_data );
+                       const objects::CSeqVector & seq_data );
 
     /**\internal
      **\brief Get the sequence id string from the sequence number.
@@ -244,16 +245,18 @@ inline bool operator==( const dup_lookup_table::sample_loc & lhs,
 
 //------------------------------------------------------------------------------
 void dup_lookup_table::add_seq_info( const string & seq_id, 
-                                     const string & seq_data )
+                                     const CSeqVector & seq_data )
 {
-    static string::size_type next_offset( 0 );
+    static TSeqPos next_offset( 0 );
 
     seq_id_list.push_back( seq_id );
-    string::size_type data_len( seq_data.length() );
+    TSeqPos data_len( seq_data.size() );
 
+    string sample;
     while( next_offset < data_len - SAMPLE_LENGTH )
     {
-        string sample( seq_data.substr( next_offset, SAMPLE_LENGTH ) );
+        sample.erase();
+        seq_data.GetSeqData(next_offset, next_offset + SAMPLE_LENGTH, sample);
         sample_loc loc( seq_id_list.size() - 1, next_offset );
         add_loc( sample, loc );
         next_offset += SAMPLE_SKIP;
@@ -495,6 +498,7 @@ void tracker::operator()( const string & index,
     }
 }
 
+#if 0
 //------------------------------------------------------------------------------
 /**\internal
  **\brief Get a FASTA formatted id string (the first available) from the 
@@ -524,6 +528,7 @@ static const string GetIdString( const CSeq_entry & entry )
     }
 */
 }
+#endif
 
 //------------------------------------------------------------------------------
 void CheckDuplicates( const vector< string > & input )
@@ -531,6 +536,9 @@ void CheckDuplicates( const vector< string > & input )
     typedef vector< string >::const_iterator input_iterator;
 
     dup_lookup_table table;
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
 
     for( input_iterator i( input.begin() ); i != input.end(); ++i )
     {
@@ -541,27 +549,44 @@ void CheckDuplicates( const vector< string > & input )
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            string data( mkdata( *entry ) );
-            string::size_type data_len( data.length() );
-
-            if( data_len < MIN_SEQ_LENGTH )
-                continue;
-
-            string id( GetIdString( *entry ) );
-            data_len -= SAMPLE_SKIP;
-            tracker track( table, id );
-
-            for( string::size_type i( 0 ); i < data_len; ++i )
-            {
-                string index( data.substr( i, SAMPLE_LENGTH ) );
-                const dup_lookup_table::sample * sample( table[index] );
-
-                if( sample != 0 )
-                    track( index, seqnum, i, sample->begin(), sample->end() );
+            CSeq_entry_Handle seh;
+            try {
+               seh = scope->GetSeq_entryHandle(*entry);
+            }
+            catch (CException&) {
+                seh = scope->AddTopLevelSeqEntry(*entry);
             }
 
-            table.add_seq_info( id, data );
-            ++seqnum;
+            CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
+            for ( ;  bs_iter;  ++bs_iter) {
+                CBioseq_Handle bsh = *bs_iter;
+
+                TSeqPos data_len = bsh.GetBioseqLength();
+                if( data_len < MIN_SEQ_LENGTH )
+                    continue;
+
+                string id;
+                sequence::GetId(bsh, sequence::eGetId_Best)
+                    .GetSeqId()->GetLabel(&id);
+                data_len -= SAMPLE_SKIP;
+                tracker track( table, id );
+
+                string index;
+                CSeqVector data =
+                    bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                for( TSeqPos i = 0;  i < data_len;  ++i )
+                {
+                    index.erase();
+                    data.GetSeqData(i, i + SAMPLE_LENGTH, index);
+                    const dup_lookup_table::sample * sample( table[index] );
+
+                    if( sample != 0 )
+                        track( index, seqnum, i, sample->begin(), sample->end() );
+                }
+
+                table.add_seq_info( id, data );
+                ++seqnum;
+            }
         }
     }
 }
@@ -572,6 +597,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.2  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

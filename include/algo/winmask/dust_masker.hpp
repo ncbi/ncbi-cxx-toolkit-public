@@ -78,7 +78,7 @@ public:
      **\return pointer to a list of dusted sequences
      **
      **/
-    TMaskList * operator()( const string & data );
+    TMaskList * operator()( const objects::CSeqVector & data );
 
 private:
 
@@ -92,6 +92,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *

@@ -41,7 +41,13 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/IUPACna.hpp>
 
-#include "algo/winmask/seq_masker_util.hpp"
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+
+#include <algo/winmask/seq_masker_util.hpp>
 
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_gen_counts.hpp"
@@ -71,6 +77,7 @@ static inline bool ambig( char c )
         && c != 'g' && c != 'G' && c != 't' && c != 'T';
 }
 
+#if 0
 //------------------------------------------------------------------------------
 string mkdata( const CSeq_entry & entry )
 {
@@ -90,6 +97,7 @@ string mkdata( const CSeq_entry & entry )
 
     return string( "" );
 }
+#endif
 
 //------------------------------------------------------------------------------
 Uint8 fastalen( const string & fname )
@@ -99,10 +107,23 @@ Uint8 fastalen( const string & fname )
     CRef< CSeq_entry > entry( 0 );
     Uint8 result = 0;
 
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
     while( (entry = reader.GetNextSequence()).NotEmpty() )
     {
-        string data( mkdata( *entry ) );
-        result += data.length();
+        CSeq_entry_Handle seh;
+        try {
+            seh = scope->GetSeq_entryHandle(*entry);
+        }
+        catch (CException&) {
+            seh = scope->AddTopLevelSeqEntry(*entry);
+        }
+
+        CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
+        for ( ;  bs_iter;  ++bs_iter) {
+            result += bs_iter->GetBioseqLength();
+        }
     }
 
     return result;
@@ -161,16 +182,17 @@ void CWinMaskCountsGenerator::operator()()
     // Generate a list of files to process.
     vector< string > file_list;
 
-    if( !use_list )
+    if( !use_list ) {
         file_list.push_back( input );
-    else
-    {
+    } else {
         string line;
         CNcbiIfstream fl_stream( input.c_str() );
 
-        while( getline( fl_stream, line ) )
-            if( !line.empty() )
+        while( getline( fl_stream, line ) ) {
+            if( !line.empty() ) {
                 file_list.push_back( line );
+            }
+        }
     }
 
     // Check for duplicates, if necessary.
@@ -198,9 +220,11 @@ void CWinMaskCountsGenerator::operator()()
             genome_size = total;
         }
 
-        for( unit_size = 15; unit_size >= 0; --unit_size )
-            if(   (genome_size>>(2*unit_size)) >= 5 )
+        for( unit_size = 15; unit_size >= 0; --unit_size ) {
+            if(   (genome_size>>(2*unit_size)) >= 5 ) {
                 break;
+            }
+        }
 
         ++unit_size;
         cerr << "Unit size is: " << unit_size << endl;
@@ -212,12 +236,15 @@ void CWinMaskCountsGenerator::operator()()
     Uint1 prefix_size( 0 ), suffix_size( 0 );
 
     for( Uint4 suffix_exp( 1 ); suffix_size <= unit_size; 
-         ++suffix_size, suffix_exp *= 4 )
-        if( suffix_exp >= max_mem/sizeof( Uint4 ) )
+         ++suffix_size, suffix_exp *= 4 ) {
+        if( suffix_exp >= max_mem/sizeof( Uint4 ) ) {
             prefix_size = unit_size - (--suffix_size);
+        }
+    }
 
-    if( prefix_size == 0 )
+    if( prefix_size == 0 ) {
         suffix_size = unit_size;
+    }
 
     *out_stream << unit_size << endl;
 
@@ -226,8 +253,9 @@ void CWinMaskCountsGenerator::operator()()
     Uint4 passno = 1;
     cerr << "Pass " << passno << flush;
 
-    for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
+    for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix ) {
         process( prefix, prefix_size, file_list, has_min_count );
+    }
 
     ++passno;
     cerr << endl;
@@ -324,6 +352,9 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
     prefix <<= (2*suffix_size);
 
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
     for( vector< string >::const_iterator it( input.begin() );
          it != input.end(); ++it )
     {
@@ -333,70 +364,81 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            string data( mkdata( *entry ) );
+            CSeq_entry_Handle seh;
+            try {
+                seh = scope->GetSeq_entryHandle(*entry);
+            }
+            catch (CException&) {
+                seh = scope->AddTopLevelSeqEntry(*entry);
+            }
 
-            if( data.empty() )
-                continue;
+            CBioseq_CI bs_iter(seh, CSeq_inst::eMol_na);
+            for ( ;  bs_iter;  ++bs_iter) {
+                CSeqVector data =
+                    bs_iter->GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
-            string::size_type length( data.length() );
-            Uint4 count( 0 );
-            Uint4 unit( 0 );
-
-            for( Uint4 i( 0 ); i < length; ++i )
-                if( ambig( data[i] ) )
-                {
-                    count = 0;
-                    unit = 0;
+                if( data.empty() )
                     continue;
-                }
-                else
-                {
-                    unit = ((unit<<2)&unit_mask) + letter( data[i] );
 
-                    if( count >= unit_size - 1 )
+                TSeqPos length( data.size() );
+                Uint4 count( 0 );
+                Uint4 unit( 0 );
+
+                for( Uint4 i( 0 ); i < length; ++i ) {
+                    if( ambig( data[i] ) )
                     {
-                        Uint4 runit( reverse_complement( unit, unit_size ) );
-
-                        if( unit <= runit && (unit&prefix_mask) == prefix )
-                            ++counts[unit&suffix_mask];
-
-                        if( runit <= unit && (runit&prefix_mask) == prefix )
-                            ++counts[runit&suffix_mask];
+                        count = 0;
+                        unit = 0;
+                        continue;
                     }
+                    else
+                    {
+                        unit = ((unit<<2)&unit_mask) + letter( data[i] );
 
-                    ++count;
+                        if( count >= unit_size - 1 )
+                        {
+                            Uint4 runit( reverse_complement( unit, unit_size ) );
+
+                            if( unit <= runit && (unit&prefix_mask) == prefix )
+                                ++counts[unit&suffix_mask];
+
+                            if( runit <= unit && (runit&prefix_mask) == prefix )
+                                ++counts[runit&suffix_mask];
+                        }
+                    }
                 }
+            }
+
+            cerr << "." << flush;
         }
 
-        cerr << "." << flush;
-    }
-
-    for( Uint4 i( 0 ); i < vector_size; ++i )
-    {
-        Uint4 ri = 0; 
-
-        if( counts[i] > 0 )
+        for( Uint4 i( 0 ); i < vector_size; ++i )
         {
-            ri = reverse_complement( i, unit_size );
-            
-            if( i == ri )
-                ++total_ecodes; 
-            else total_ecodes += 2;
-        }
+            Uint4 ri = 0; 
 
-        if( counts[i] >= min_count )
-        {
-            if( counts[i] >= max_count )
+            if( counts[i] > 0 )
+            {
+                ri = reverse_complement( i, unit_size );
+
                 if( i == ri )
-                    ++score_counts[max_count - 1];
-                else score_counts[max_count - 1] += 2;
-            else if( i == ri )
-                ++score_counts[counts[i] - 1];
-            else score_counts[counts[i] - 1] += 2;
+                    ++total_ecodes; 
+                else total_ecodes += 2;
+            }
 
-            if( do_output )
-                *out_stream << hex << prefix + i << " " 
-                            << dec << counts[i] << "\n";
+            if( counts[i] >= min_count )
+            {
+                if( counts[i] >= max_count )
+                    if( i == ri )
+                        ++score_counts[max_count - 1];
+                    else score_counts[max_count - 1] += 2;
+                else if( i == ri )
+                    ++score_counts[counts[i] - 1];
+                else score_counts[counts[i] - 1] += 2;
+
+                if( do_output )
+                    *out_stream << hex << prefix + i << " " 
+                        << dec << counts[i] << "\n";
+            }
         }
     }
 }
@@ -407,6 +449,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.5  2005/03/17 20:35:06  morgulis
  * *** empty log message ***
  *
@@ -447,4 +493,3 @@ END_NCBI_SCOPE
  *
  * ========================================================================
  */
-

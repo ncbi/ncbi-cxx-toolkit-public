@@ -41,18 +41,19 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
-#include "win_mask_seq_title.hpp"
 #include "win_mask_writer.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CWinMaskWriter::PrintId( CSeq_entry_Handle & seh, 
-                              const CBioseq & seq )
+void CWinMaskWriter::PrintId( CBioseq_Handle& bsh )
 {
-    string title( CWinMaskSeqTitle::GetTitle( seh, seq ) );
-    os << ">" << title << "\n";
+    os << ">"
+        << CSeq_id::GetStringDescr(*bsh.GetCompleteBioseq(),
+                                   CSeq_id::eFormat_FastA)
+        << " "
+        << sequence::GetTitle(bsh) << "\n";
 }
 
 END_NCBI_SCOPE
@@ -62,6 +63,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.1  2005/02/25 21:32:55  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

@@ -36,22 +36,25 @@
 #include <corelib/ncbi_limits.h>
 
 #include <algo/winmask/seq_masker_window.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
 
 //-------------------------------------------------------------------------
 Uint1 CSeqMaskerWindow::LOOKUP[kMax_UI1];
 
 //-------------------------------------------------------------------------
-CSeqMaskerWindow::CSeqMaskerWindow( const string & arg_data, 
+CSeqMaskerWindow::CSeqMaskerWindow( const CSeqVector & arg_data, 
                                     Uint1 arg_unit_size, 
                                     Uint1 arg_window_size,
                                     Uint4 arg_window_step,
                                     Uint1 arg_unit_step )
-: data( arg_data ), state( false ), 
-    unit_size( arg_unit_size ), unit_step( arg_unit_step ),
-    window_size( arg_window_size ), window_step( arg_window_step ),
-end( 0 ), first_unit( 0 ), unit_mask( 0 )
+    : data(arg_data), state( false ), 
+      unit_size( arg_unit_size ), unit_step( arg_unit_step ),
+      window_size( arg_window_size ), window_step( arg_window_step ),
+      end( 0 ), first_unit( 0 ), unit_mask( 0 )
 {
     static bool first_call = true;
 
@@ -70,6 +73,10 @@ end( 0 ), first_unit( 0 ), unit_mask( 0 )
     units.resize( NumUnits(), 0 );
     unit_mask = (1 << (unit_size << 1)) - 1;
     FillWindow( 0 );
+}
+
+CSeqMaskerWindow::~CSeqMaskerWindow()
+{
 }
 
 //-------------------------------------------------------------------------
@@ -146,6 +153,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

@@ -36,10 +36,10 @@
 BEGIN_NCBI_SCOPE
 
 //-------------------------------------------------------------------------
-void CWinMaskWriterInt::Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq, 
+void CWinMaskWriterInt::Print( objects::CBioseq_Handle& bsh,
                                const CSeqMasker::TMaskList & mask )
 {
-    PrintId( seh, seq );
+    PrintId( bsh );
 
     for( CSeqMasker::TMaskList::const_iterator i = mask.begin();
          i != mask.end(); ++i )
@@ -53,6 +53,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.1  2005/02/25 21:32:55  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

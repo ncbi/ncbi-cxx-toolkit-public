@@ -47,6 +47,8 @@
 #include <algo/winmask/seq_masker_util.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
 
 //-------------------------------------------------------------------------
 CSeqMasker::CSeqMasker( const string & lstat_name,
@@ -122,7 +124,7 @@ CSeqMasker::~CSeqMasker()
 
 //-------------------------------------------------------------------------
 CSeqMasker::TMaskList *
-CSeqMasker::operator()( const string & data ) const
+CSeqMasker::operator()( const CSeqVector& data ) const
 {
     Uint4 cutoff_score = lstat.cutoff_score;
     Uint4 textend = lstat.textend;
@@ -557,8 +559,8 @@ const char * CSeqMasker::CSeqMaskerException::GetErrCodeString() const
 
 //----------------------------------------------------------------------------
 CSeqMasker::mitem::mitem( Uint4 arg_start, Uint4 arg_end, Uint1 unit_size,
-                          const string & data, const CSeqMasker & owner )
-: start( arg_start ), end( arg_end ), avg( 0.0 )
+                          const CSeqVector & data, const CSeqMasker & owner )
+    : start( arg_start ), end( arg_end ), avg( 0.0 )
 {
     const Uint1 & window_size = owner.window_size;
     const CSeqMaskerWindow::TUnit & ambig_unit = owner.lstat.AmbigUnit();
@@ -646,6 +648,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.9  2005/03/17 20:21:22  morgulis
  * Only store half of the units in unit counts file.
  *

@@ -447,7 +447,7 @@ public:
      **
      **\return the list of query ids to process
      **/
-    const set< string > & Ids() const { return ids; }
+    const set< objects::CSeq_id_Handle > & Ids() const { return ids; }
 
     /**
      **\brief The list of query ids to exclude from processing.
@@ -458,7 +458,7 @@ public:
      **
      **\return the list of query ids to exclude from processing
      **/
-    const set< string > & ExcludeIds() const { return exclude_ids; }
+    const set< objects::CSeq_id_Handle > & ExcludeIds() const { return exclude_ids; }
 
 private:
 
@@ -613,7 +613,7 @@ private:
      **\param id_list where to store the ids
      **/
     static void FillIdList( const string & file_name, 
-                            set< string > & id_list );
+                            set< objects::CSeq_id_Handle > & id_list );
 
     /**\name Window based masker configuration.
      **/
@@ -654,8 +654,8 @@ private:
     Uint4 dust_level;               /**< level value for dusting */
     Uint4 dust_linker;              /**< number of bases to use for linking */
     bool checkdup;                  /**< check for duplicate contigs */
-    set< string > ids;              /**< list of ids to process */
-    set< string > exclude_ids;      /**< list of ids to exclude from processing */
+    set< objects::CSeq_id_Handle > ids;              /**< list of ids to process */
+    set< objects::CSeq_id_Handle > exclude_ids;      /**< list of ids to exclude from processing */
     //@}
 };
 
@@ -664,6 +664,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.2  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

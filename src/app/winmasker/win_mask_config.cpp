@@ -37,8 +37,10 @@
 #include "win_mask_writer_int.hpp"
 #include "win_mask_writer_fasta.hpp"
 #include "win_mask_config.hpp"
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 //----------------------------------------------------------------------------
 CWinMaskConfig::CWinMaskConfig( const CArgs & args )
@@ -155,18 +157,25 @@ void CWinMaskConfig::Validate() const
 
 //----------------------------------------------------------------------------
 void CWinMaskConfig::FillIdList( const string & file_name, 
-                                 set< string > & id_list )
+                                 set< objects::CSeq_id_Handle > & id_list )
 {
     CNcbiIfstream file( file_name.c_str() );
     string line;
 
-    while( getline( file, line ) )
+    while( NcbiGetlineEOL( file, line ) ) {
         if( !line.empty() )
         {
             string::size_type stop( line.find_first_of( " \t" ) );
             string::size_type start( line[0] == '>' ? 1 : 0 );
-            id_list.insert( line.substr( start, stop - start ) );
+            string id_str = line.substr( start, stop - start );
+            CRef<CSeq_id> id(new CSeq_id(id_str));
+            if (id->Which() == CSeq_id::e_not_set) {
+                LOG_POST(Error << "CWinMaskConfig::FillIdList(): can't understand id: " << id_str << ": ignoring");
+            } else {
+                id_list.insert(CSeq_id_Handle::GetHandle(*id));
+            }
         }
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -193,6 +202,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.4  2005/03/11 15:08:22  morgulis
  * 1. Made -window parameter optional and be default equal to unit_size + 4;
  * 2. Changed the name of -lstat parameter to -ustat.

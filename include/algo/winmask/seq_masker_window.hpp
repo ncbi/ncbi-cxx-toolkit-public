@@ -35,9 +35,11 @@
 
 #include <vector>
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
+
 
 /**
  **\brief Sliding window skipping over the ambiguities.
@@ -83,7 +85,7 @@ public:
      **                 units in a window
      **
      **/
-    CSeqMaskerWindow( const string & arg_data, 
+    CSeqMaskerWindow( const objects::CSeqVector & arg_data, 
                       Uint1 arg_unit_size, Uint1 arg_window_size,
                       Uint4 window_step, Uint1 unit_step = 1 );
 
@@ -91,7 +93,7 @@ public:
      **\brief Object destructor.
      **
      **/
-    virtual ~CSeqMaskerWindow() {}
+    virtual ~CSeqMaskerWindow();
 
     /**
      **\brief Check if the end of the sequence has been reached.
@@ -181,7 +183,7 @@ protected:
      **/
     virtual void Advance( Uint4 step );
 
-    const string & data;        /**< The sequence data in iupacna format. */
+    const objects::CSeqVector& data;        /**< The sequence data in iupacna format. */
     bool state;             /**< true, if the end of the sequence has not been reached. */
     Uint1 unit_size;            /**< The unit size. */
     Uint1 unit_step;            /**< The distance between consequtive units within a window. */
@@ -210,6 +212,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

@@ -83,7 +83,7 @@ public:
      **\param mask the resulting list of masked intervals
      **
      **/
-    virtual void Print( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq,
+    virtual void Print( objects::CBioseq_Handle & bsh,
                         const CSeqMasker::TMaskList & mask ) = 0;
 
 protected:
@@ -99,7 +99,7 @@ protected:
      **\param seq the sequence whose id is to be printed
      **
      **/
-    virtual void PrintId( objects::CSeq_entry_Handle & seh, const objects::CBioseq & seq );
+    virtual void PrintId( objects::CBioseq_Handle& bsh );
 
     /**
      **\brief the standard C++ ostream object 
@@ -115,6 +115,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.1  2005/02/25 21:32:55  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

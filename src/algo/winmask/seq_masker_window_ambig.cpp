@@ -34,17 +34,23 @@
 #include <string>
 
 #include <algo/winmask/seq_masker_window_ambig.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+
 
 //-------------------------------------------------------------------------
-CSeqMaskerWindowAmbig::CSeqMaskerWindowAmbig( 
-                                             const string & arg_data, Uint1 arg_unit_size, Uint1 arg_window_size,
-                                             Uint4 arg_window_step, TUnit arg_ambig_unit, Uint4 window_start,
+CSeqMaskerWindowAmbig::CSeqMaskerWindowAmbig(const CSeqVector& arg_data,
+                                             Uint1 arg_unit_size,
+                                             Uint1 arg_window_size,
+                                             Uint4 arg_window_step,
+                                             TUnit arg_ambig_unit,
+                                             Uint4 window_start,
                                              Uint1 arg_unit_step )
-: CSeqMaskerWindow( arg_data, arg_unit_size, 
-                    arg_window_size, arg_window_step, arg_unit_step ),
-ambig_unit( arg_ambig_unit ), ambig( false )
+    : CSeqMaskerWindow( arg_data, arg_unit_size, 
+                        arg_window_size, arg_window_step, arg_unit_step ),
+      ambig_unit( arg_ambig_unit ), ambig( false )
 {
     FillWindow( window_start );
 }
@@ -129,6 +135,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

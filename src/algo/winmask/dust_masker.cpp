@@ -39,6 +39,7 @@
 #include <algo/winmask/dust_masker.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 //------------------------------------------------------------------------------
 static inline char iupacna_to_blastna( char c )
@@ -73,7 +74,7 @@ CDustMasker::CDustMasker( Uint4 arg_window, Uint4 arg_level, Uint4 arg_linker )
 CDustMasker::~CDustMasker(){}
 
 //------------------------------------------------------------------------------
-CDustMasker::TMaskList * CDustMasker::operator()( const string & data )
+CDustMasker::TMaskList * CDustMasker::operator()( const CSeqVector & data )
 {
     // Transform to BLASTNA.
     string data_blastna;
@@ -113,6 +114,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.4  2005/03/01 16:07:42  ucko
  * Fix 64-bit builds by using TMaskedInterval rather than a hard-coded
  * type that may not be correct.

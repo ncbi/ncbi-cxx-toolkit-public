@@ -43,25 +43,22 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //-------------------------------------------------------------------------
-void CWinMaskWriterFasta::Print( CSeq_entry_Handle & seh, 
-                                 const CBioseq & seq,
+void CWinMaskWriterFasta::Print( CBioseq_Handle& bsh,
                                  const CSeqMasker::TMaskList & mask )
 {
-    PrintId( seh, seq );
-    TSeqPos len = seq.GetInst().GetLength();
-    const CSeq_data & seqdata = seq.GetInst().GetSeq_data();
-    auto_ptr< CSeq_data > dest( new CSeq_data );
-    CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
-                           0, len );
+    PrintId( bsh );
+    CSeqVector data = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    /// FIXME: this can be implemented as a call to CFastaOstream, which
+    /// understands masking via a seq-loc
 
     // if( dest->GetIupacna().CanGet() )
     if( true )
     {
-        const string & data = dest->GetIupacna().Get();
         string accumulator;
         CSeqMasker::TMaskList::const_iterator imask = mask.begin();
 
-        for( TSeqPos i = 0; i < len; ++i )
+        for( TSeqPos i = 0; i < data.size(); ++i )
         {
             char letter = data[i];
 
@@ -89,6 +86,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/21 13:19:26  dicuccio
+ * Updated API: use object manager functions to supply data, instead of passing
+ * data as strings.
+ *
  * Revision 1.1  2005/02/25 21:32:55  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)
