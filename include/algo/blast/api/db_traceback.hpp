@@ -25,17 +25,22 @@
 *
 * Author:  Ilya Dondoshansky
 *
-* File Description:
-*   Class interface for performing BLAST traceback only, when preliminary 
-*   BLAST results have already been found.
-*
 */
+
+/// @file db_traceback.hpp
+/// Declaration of a CDbBlastTraceback class for running BLAST traceback 
+/// only, given the precomputed preliminary HSP results.
 
 #ifndef ALGO_BLAST_API___DBTRACEBACK__HPP
 #define ALGO_BLAST_API___DBTRACEBACK__HPP
 
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/core/blast_gapalign.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -70,10 +75,15 @@ inline void CDbBlastTraceback::PartialRun()
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/06/24 15:55:16  dondosha
+* Added doxygen file description
+*
 * Revision 1.6  2004/06/08 15:18:39  dondosha
 * Use BlastHSPStream interface
 *

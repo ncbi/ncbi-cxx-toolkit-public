@@ -25,18 +25,24 @@
  *
  * Author:  Ilya Dondoshansky
  *
- * File Description:
- *   Class interface for running BLAST traceback only, given the precomputed
- *   preliminary HSP results.
- *
  * ===========================================================================
  */
+
+/// @file db_traceback.cpp
+/// Implementation of a CDbBlastTraceback class for running BLAST traceback 
+/// only, given the precomputed preliminary HSP results.
+
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/db_traceback.hpp>
 #include "blast_setup.hpp"
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_message.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -143,10 +149,15 @@ CDbBlastTraceback::x_ResetQueryDs()
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/06/24 15:54:59  dondosha
+ * Added doxygen file description
+ *
  * Revision 1.12  2004/06/15 18:46:38  dondosha
  * Access individual options structures through CBlastOptions class methods
  *

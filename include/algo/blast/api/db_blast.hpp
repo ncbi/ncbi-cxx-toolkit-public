@@ -25,10 +25,10 @@
 *
 * Author:  Ilya Dondoshansky
 *
-* File Description:
-*   Database BLAST class interface
-*
 */
+
+/// @file db_blast.hpp
+/// Declaration of the database BLAST class CDbBlast
 
 #ifndef ALGO_BLAST_API___DBBLAST__HPP
 #define ALGO_BLAST_API___DBBLAST__HPP
@@ -38,6 +38,11 @@
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_engine.h>
 #include <connect/ncbi_core.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -249,10 +254,15 @@ inline RPSInfo * CDbBlast::GetRPSInfo() const
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/06/24 15:55:16  dondosha
+* Added doxygen file description
+*
 * Revision 1.20  2004/06/23 14:02:36  dondosha
 * Added MT_LOCK argument with default 0 value in constructors
 *

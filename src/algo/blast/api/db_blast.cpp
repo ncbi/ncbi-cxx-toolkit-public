@@ -25,11 +25,11 @@
  *
  * Author:  Ilya Dondoshansky
  *
- * File Description:
- *   Database BLAST class interface
- *
  * ===========================================================================
  */
+
+/// @file db_blast.cpp
+/// Implemantation of a database BLAST class CDbBlast.
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -50,6 +50,11 @@
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/hspstream_collector.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -362,10 +367,15 @@ CDbBlast::x_Results2SeqAlign()
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2004/06/24 15:54:59  dondosha
+ * Added doxygen file description
+ *
  * Revision 1.34  2004/06/23 14:06:15  dondosha
  * Added MT_LOCK argument in constructors
  *
