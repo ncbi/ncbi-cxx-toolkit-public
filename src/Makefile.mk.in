@@ -350,8 +350,13 @@ IMAGE_LIBS    = $(JPEG_LIBS) $(PNG_LIBS) $(TIFF_LIBS) $(GIF_LIBS) $(XPM_LIBS)
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode sequtil
-OBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
-	general dbapi_driver xser xcompress z bz2 xconnect xutil xncbi
+COMPRESS_LIBS = xcompress z bz2
+GENBANK_LIBS = ncbi_xloader_genbank ncbi_xreader_id1 xconnect \
+	ncbi_xreader_pubseqos dbapi_driver $(COMPRESS_LIBS)
+SOBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
+	general xser xutil xncbi
+NOBJMGR_LIBS = $(GENBANK_LIBS) $(SOBJMGR_LIBS)
+OBJMGR_LIBS = $(SOBJMGR_LIBS) dbapi_driver $(COMPRESS_LIBS) xconnect xncbi
 # Overlapping with qall is poor, so we have a second macro to make it
 # easier to stay out of trouble.
 QOBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
