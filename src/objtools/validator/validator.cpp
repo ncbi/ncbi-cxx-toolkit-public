@@ -48,7 +48,7 @@ CValidError::CValidError
  const CSeq_entry& se,
  unsigned int      options)
 {
-    CValidError_imp imp(objmgr, m_ErrItems, options);
+    CValidError_imp imp(objmgr, this, options);
     imp.Validate(se);
 }
 
@@ -59,8 +59,14 @@ CValidError::CValidError
  unsigned int       options)
 {
 
-    CValidError_imp imp(objmgr, m_ErrItems, options);
+    CValidError_imp imp(objmgr, this, options);
     imp.Validate(ss);
+}
+
+
+void CValidError::AddValidErrItem(const CValidErrItem* item)
+{
+    m_ErrItems.push_back(CConstRef<CValidErrItem>(item));
 }
 
 
@@ -92,6 +98,21 @@ CValidErrItem::~CValidErrItem(void)
 EDiagSev CValidErrItem::GetSeverity(void) const
 {
     return m_Severity;
+}
+
+
+const string& CValidErrItem::GetSevAsStr(void) const
+{
+    static const string str_sev[] = {
+        "Info",
+        "Warning",
+        "Error",
+        "Critical",
+        "Fatal",
+        "Trace"
+    };
+
+    return str_sev[GetSeverity()];
 }
 
 
@@ -270,7 +291,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_GiWithoutAccession",
     "SEQ_INST_MultipleAccessions",
     "SEQ_INST_HistAssemblyMissing",
-    "eErr_SEQ_INST_TerminalNs",
+    "SEQ_INST_TerminalNs",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -296,7 +317,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_DESCR_ObsoleteSourceQual",
     "SEQ_DESCR_StructuredSourceNote",
     "SEQ_DESCR_MultipleTitles",
-    "eErr_SEQ_DESCR_Obsolete",
+    "SEQ_DESCR_Obsolete",
 
     "GENERIC_NonAsciiAsn",
     "GENERIC_Spell",
@@ -1014,6 +1035,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/02/24 20:20:18  shomrat
+* Pass the CValidError object to the implementation class instead of the internal TErrs vector
+*
 * Revision 1.9  2003/02/12 17:38:58  shomrat
 * Added eErr_SEQ_DESCR_Obsolete
 *

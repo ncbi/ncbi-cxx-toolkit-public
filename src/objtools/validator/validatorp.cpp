@@ -108,11 +108,12 @@ using namespace sequence;
 // Constructor
 CValidError_imp::CValidError_imp
 (CObjectManager&     objmgr,
- TErrs&              errs,
+ CValidError*        errs,
  unsigned int        options)
     : m_ObjMgr(&objmgr),
       m_Scope(0),
-      m_Errors(&errs),
+      m_TSE(0),
+      m_ErrRepository(errs),
       m_NonASCII((options & CValidError::eVal_non_ascii) != 0),
       m_SuppressContext((options & CValidError::eVal_no_context) != 0),
       m_ValidateAlignments((options & CValidError::eVal_val_align) != 0),
@@ -196,8 +197,7 @@ void CValidError_imp::PostErr
     string msg(message + " DESCRIPTOR: ");
     ds.GetLabel (&msg, CSeqdesc::eBoth);
 
-    m_Errors->push_back(CRef<CValidErrItem>
-        (new CValidErrItem(sv, et, msg, ds)));
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, ds));
 }
 
 
@@ -261,8 +261,7 @@ void CValidError_imp::PostErr
             msg += loc_label;
         }
     }
-    m_Errors->push_back(CRef<CValidErrItem>
-        (new CValidErrItem(sv, et, msg, ft)));
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, ft));
 }
 
 
@@ -279,8 +278,7 @@ void CValidError_imp::PostErr
     } else {
         sq.GetLabel(&msg, CBioseq::eBoth, false);
     }
-    m_Errors->push_back(CRef<CValidErrItem>
-        (new CValidErrItem(sv, et, msg, sq)));
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, sq));
 }
 
 
@@ -311,8 +309,7 @@ void CValidError_imp::PostErr
     } else {
         set.GetLabel(&msg, CBioseq_set::eBoth);
     }
-    m_Errors->push_back(CRef<CValidErrItem>
-                        (new CValidErrItem(sv, et, msg, set)));
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, set));
 }
 
 
@@ -341,8 +338,7 @@ void CValidError_imp::PostErr
 
     // !!! need to decide on the message
 
-    m_Errors->push_back(CRef<CValidErrItem>
-        (new CValidErrItem(sv, et, msg, an)));
+    m_ErrRepository->AddValidErrItem(new CValidErrItem(sv, et, msg, an));
 }
 
 
@@ -1802,6 +1798,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/02/24 20:18:09  shomrat
+* Pass the CValidError object to the implementation class instead of the internal TErrs vector
+*
 * Revision 1.18  2003/02/24 18:58:13  vasilche
 * Use faster version of CSeq_id::Assign().
 *
