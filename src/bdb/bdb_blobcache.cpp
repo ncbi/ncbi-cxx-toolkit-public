@@ -163,7 +163,7 @@ private:
 };
 
 
-static const int s_WriterBufferSize = 2 * (1024 * 1024);
+static const int s_WriterBufferSize = 1 * (1024 * 1024);
 
 class CBDB_BLOB_CacheIWriter : public IWriter
 {
@@ -313,13 +313,14 @@ void CBDB_BLOB_Cache::Open(const char* path)
 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+    m_Env.SetCacheSize(2 * s_WriterBufferSize);
+
     m_Env.OpenWithLocks(path);
     m_BlobDB.SetEnv(m_Env);
     m_AttrDB.SetEnv(m_Env);
     m_IntCacheDB.SetEnv(m_Env);
 
     m_BlobDB.SetPageSize(32 * 1024);
-    m_BlobDB.SetCacheSize(2 * s_WriterBufferSize);
 
     m_BlobDB.Open("lc_blob.db",          CBDB_RawFile::eReadWriteCreate);
     m_AttrDB.Open("lc_blob_attr.db",     CBDB_RawFile::eReadWriteCreate);
@@ -352,21 +353,37 @@ void CBDB_BLOB_Cache::Store(const string& key,
 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    m_BlobDB.key = key;
-    m_BlobDB.version = version;
+    if (size < s_WriterBufferSize) {  // inline BLOB
 
-    m_BlobDB.Insert(data, size);
+        m_BlobDB.key = key;
+        m_BlobDB.version = version;
 
-    x_UpdateAccessTime(key, version);
+        m_BlobDB.Insert(data, size);
 
-    m_AttrDB.key = key;
-    m_AttrDB.version = version;
+        m_AttrDB.key = key;
+        m_AttrDB.version = version;
 
-    CTime time_stamp(CTime::eCurrent);
-    m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
-    m_AttrDB.overflow = 0;
+        CTime time_stamp(CTime::eCurrent);
+        m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+        m_AttrDB.overflow = 0;
 
-    m_AttrDB.UpdateInsert();
+        m_AttrDB.UpdateInsert();
+    } else { // overflow BLOB
+        CNcbiOfstream     oveflow_file;
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version);
+
+        LOG_POST(Info << "LC: Making overflow file " << path);
+        oveflow_file.open(path.c_str(), 
+                          IOS_BASE::out | 
+                          IOS_BASE::trunc | 
+                          IOS_BASE::binary);
+        if (!oveflow_file.is_open()) {
+            LOG_POST(Error << "LC Error:Cannot create overflow file " << path);
+            return;
+        }
+        oveflow_file.write((char*)data, size);
+    }
 }
 
 
@@ -819,6 +836,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/10/20 16:34:20  kuznets
+ * BLOB cache Store operation reimplemented to use external files.
+ * BDB cache shared between tables by using common environment.
+ * Overflow file limit set to 1M (was 2M)
+ *
  * Revision 1.12  2003/10/17 14:11:41  kuznets
  * Implemented cached read from berkeley db BLOBs
  *
