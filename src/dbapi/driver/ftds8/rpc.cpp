@@ -220,6 +220,22 @@ bool CTDS_RPCCmd::HasMoreResults() const
     return m_WasSent;
 }
 
+void CTDS_RPCCmd::DumpResults()
+{
+    CDB_Result* dbres;
+    while(m_WasSent) {
+        dbres= Result();
+        if(dbres) {
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch());
+            }
+            delete dbres;
+        }
+    }
+}
 
 bool CTDS_RPCCmd::HasFailed() const
 {
@@ -528,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/06/05 16:01:40  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.9  2003/04/29 21:15:03  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *

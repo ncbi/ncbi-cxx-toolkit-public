@@ -100,6 +100,8 @@ CDB_Result* CTDS_CursorCmd::Open()
     try {
         m_LCmd = m_Connect->LangCmd(buff);
         m_LCmd->Send();
+        m_LCmd->DumpResults();
+#if 0
         while (m_LCmd->HasMoreResults()) {
             CDB_Result* r = m_LCmd->Result();
             if (r) {
@@ -108,6 +110,7 @@ CDB_Result* CTDS_CursorCmd::Open()
                 delete r;
             }
         }
+#endif
         delete m_LCmd;
     } catch (CDB_Exception& e) {
         if (m_LCmd) {
@@ -126,6 +129,8 @@ CDB_Result* CTDS_CursorCmd::Open()
     try {
         m_LCmd = m_Connect->LangCmd(buff);
         m_LCmd->Send();
+        m_LCmd->DumpResults();
+#if 0
         while (m_LCmd->HasMoreResults()) {
             CDB_Result* r = m_LCmd->Result();
             if (r) {
@@ -134,6 +139,7 @@ CDB_Result* CTDS_CursorCmd::Open()
                 delete r;
             }
         }
+#endif
         delete m_LCmd;
     } catch (CDB_Exception& e) {
         if (m_LCmd) {
@@ -170,6 +176,8 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
         string buff = upd_query + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
+        cmd->DumpResults();
+#if 0
         while (cmd->HasMoreResults()) {
             CDB_Result* r = cmd->Result();
             if (r) {
@@ -178,6 +186,7 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
                 delete r;
             }
         }
+#endif
         delete cmd;
     } catch (CDB_Exception& e) {
         if (cmd)
@@ -226,10 +235,13 @@ CDB_SendDataCmd* CTDS_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
     C_ITDescriptorGuard d_guard(desc);
 
     if(desc) {
+        m_LCmd->DumpResults();
+#if 0
         while(m_LCmd->HasMoreResults()) {
             CDB_Result* r= m_LCmd->Result();
             if(r) delete r;
         }
+#endif
         
         return m_Connect->SendDataCmd(*desc, size, log_it);
     }
@@ -252,6 +264,8 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
         string buff = "delete " + table_name + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
+        cmd->DumpResults();
+#if 0
         while (cmd->HasMoreResults()) {
             CDB_Result* r = cmd->Result();
             if (r) {
@@ -260,6 +274,7 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
                 delete r;
             }
         }
+#endif
         delete cmd;
     } catch (CDB_Exception& e) {
         if (cmd)
@@ -297,6 +312,8 @@ bool CTDS_CursorCmd::Close()
         try {
             m_LCmd = m_Connect->LangCmd(buff);
             m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
             while (m_LCmd->HasMoreResults()) {
                 CDB_Result* r = m_LCmd->Result();
                 if (r) {
@@ -305,6 +322,7 @@ bool CTDS_CursorCmd::Close()
                     delete r;
                 }
             }
+#endif
             delete m_LCmd;
         } catch (CDB_Exception& e) {
             if (m_LCmd)
@@ -324,6 +342,8 @@ bool CTDS_CursorCmd::Close()
         try {
             m_LCmd = m_Connect->LangCmd(buff);
             m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
             while (m_LCmd->HasMoreResults()) {
                 CDB_Result* r = m_LCmd->Result();
                 if (r) {
@@ -332,6 +352,7 @@ bool CTDS_CursorCmd::Close()
                     delete r;
                 }
             }
+#endif
             delete m_LCmd;
         } catch (CDB_Exception& e) {
             if (m_LCmd)
@@ -533,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/06/05 16:01:40  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.9  2003/04/29 21:15:03  soussov
  * new datatypes CDB_LongChar and CDB_LongBinary added
  *

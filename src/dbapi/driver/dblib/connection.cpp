@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 CDBL_Connection::CDBL_Connection(CDBLibContext* cntx, DBPROCESS* con,
                                  bool reusable, const string& pool_name) :
     m_Link(con), m_Context(cntx), m_Pool(pool_name), m_Reusable(reusable),
-    m_BCPAble(false), m_SecureLogin(false)
+    m_BCPAble(false), m_SecureLogin(false), m_ResProc(0)
 {
     dbsetuserdata(m_Link, (BYTE*) this);
 }
@@ -137,7 +137,8 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                     log_it ? TRUE : FALSE,
                     (DBINT) data_size, 0) != SUCCEED ||
         dbsqlok(m_Link) != SUCCEED ||
-        dbresults(m_Link) == FAIL) {
+        //        dbresults(m_Link) == FAIL) {
+        x_Results(m_Link) == FAIL) {
         throw CDB_ClientEx(eDB_Error, 210093, "CDBL_Connection::SendDataCmd",
                            "dbwritetext/dbsqlok/dbresults failed");
     }
@@ -237,6 +238,12 @@ void CDBL_Connection::PopMsgHandler(CDB_UserHandler* h)
     m_MsgHandlers.Pop(h);
 }
 
+CDB_ResultProcessor* CDBL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
+{
+    CDB_ResultProcessor* r= m_ResProc;
+    m_ResProc= rp;
+    return r;
+}
 
 void CDBL_Connection::Release()
 {
@@ -313,7 +320,8 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                     log_it ? TRUE : FALSE, (DBINT) size, 0) != SUCCEED ||
         dbsqlok(m_Link) != SUCCEED ||
-        dbresults(m_Link) == FAIL) {
+        //        dbresults(m_Link) == FAIL) {
+        x_Results(m_Link) == FAIL) {
         throw CDB_ClientEx(eDB_Error, 210031, "CDBL_Connection::SendData",
                            "dbwritetext/dbsqlok/dbresults failed");
     }
@@ -333,7 +341,8 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
         size -= s;
     }
 
-    if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
+    //    if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
+    if (dbsqlok(m_Link) != SUCCEED || x_Results(m_Link) == FAIL) {
         throw CDB_ClientEx(eDB_Error, 210034, "CDBL_Connection::SendData",
                            "dbsqlok/dbresults failed");
     }
@@ -389,6 +398,94 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     return descr;
 }
 
+RETCODE CDBL_Connection::x_Results(DBPROCESS* pLink)
+{
+    unsigned int x_Status= 0x1;
+    CDB_Result* dbres;
+    I_Result* res= 0;
+
+    while ((x_Status & 0x1) != 0) {
+        if ((x_Status & 0x20) != 0) { // check for return parameters from exec
+            x_Status ^= 0x20;
+            int n;
+            if (m_ResProc && (n = dbnumrets(pLink)) > 0) {
+                res = new CDBL_ParamResult(pLink, n);
+                dbres= Create_Result(*res);
+                m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+            }
+            continue;
+        }
+
+        if ((x_Status & 0x40) != 0) { // check for ret status
+            x_Status ^= 0x40;
+            if (m_ResProc && dbhasretstat(pLink)) {
+                res = new CDBL_StatusResult(pLink);
+                dbres= Create_Result(*res);
+                m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+            }
+            continue;
+        }
+        if ((x_Status & 0x10) != 0) { // we do have a compute result
+            res = new CDBL_ComputeResult(pLink, &x_Status);
+            dbres= Create_Result(*res);
+            if(m_ResProc) {
+                m_ResProc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch());
+            }
+            delete dbres;
+            delete res;
+        }
+        switch (dbresults(pLink)) {
+        case SUCCEED:
+            x_Status |= 0x60;
+            if (DBCMDROW(pLink) == SUCCEED) { // we could get rows in result
+                if(!m_ResProc) {
+                    while(1) {
+                        switch(dbnextrow(pLink)) {
+                        case NO_MORE_ROWS:
+                        case FAIL:
+                        case BUF_FULL: break;
+                        default: continue;
+                        }
+                        break;
+                    }
+                    continue;
+                }
+                            
+// This optimization is currently unavailable for MS dblib...
+#ifndef MS_DBLIB_IN_USE /*Text,Image*/
+                if (dbnumcols(pLink) == 1) {
+                    int ct = dbcoltype(pLink, 1);
+                    if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
+                        res = new CDBL_BlobResult(pLink);
+                    }
+                }
+#endif
+                if (!res)
+                    res = new CDBL_RowResult(pLink, &x_Status);
+                dbres= Create_Result(*res);
+                m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+            } else {
+                continue;
+            }
+        case NO_MORE_RESULTS:
+            x_Status = 2;
+            break;
+        default:
+            return FAIL;
+        }
+        break;
+    }
+    return SUCCEED;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -426,7 +523,8 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     m_Bytes2go -= nof_bytes;
 
     if (m_Bytes2go <= 0) {
-        if (dbsqlok(m_Cmd) != SUCCEED || dbresults(m_Cmd) == FAIL) {
+        //        if (dbsqlok(m_Cmd) != SUCCEED || dbresults(m_Cmd) == FAIL) {
+        if (dbsqlok(m_Cmd) != SUCCEED || m_Connect->x_Results(m_Cmd) == FAIL) {
             throw CDB_ClientEx(eDB_Error, 290002,
                                "CDBL_SendDataCmd::SendChunk",
                                "dbsqlok/results failed");
@@ -465,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/05 16:01:13  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.7  2002/08/23 16:31:47  soussov
  * fixes bug in ~CDBL_Connection()
  *

@@ -74,6 +74,7 @@ CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
     ct_con_props(m_Link, CS_GET, CS_SEC_ENCRYPTION, &flag, CS_UNUSED, &outlen);
     m_SecureLogin = (flag == CS_TRUE);
 
+    m_ResProc= 0;
 }
 
 
@@ -339,6 +340,12 @@ void CTL_Connection::PopMsgHandler(CDB_UserHandler* h)
     m_MsgHandlers.Pop(h);
 }
 
+CDB_ResultProcessor* CTL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
+{
+    CDB_ResultProcessor* r= m_ResProc;
+    m_ResProc= rp;
+    return r;
+}
 
 void CTL_Connection::Release()
 {
@@ -453,6 +460,31 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         CS_INT res_type;
         switch ( ct_results(cmd, &res_type) ) {
         case CS_SUCCEED: {
+            if(m_ResProc) {
+                I_Result* res= 0;
+                switch (res_type) {
+                case CS_ROW_RESULT:
+                    res = new CTL_RowResult(cmd);
+                    break;
+                case CS_PARAM_RESULT:
+                    res = new CTL_ParamResult(cmd);
+                    break;
+                case CS_COMPUTE_RESULT:
+                    res = new CTL_ComputeResult(cmd);
+                    break;
+                case CS_STATUS_RESULT:
+                    res = new CTL_StatusResult(cmd);
+                    break;
+                }
+                if(res) {
+                    CDB_Result* dbres= Create_Result(*res);
+                    m_ResProc->ProcessResult(*dbres);
+                    delete dbres;
+                    delete res;
+                    continue;
+                }
+            }
+                    
             switch (res_type) {
             case CS_COMPUTE_RESULT:
             case CS_CURSOR_RESULT:
@@ -596,6 +628,30 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         CS_INT res_type;
         switch ( ct_results(m_Cmd, &res_type) ) {
         case CS_SUCCEED: {
+            if(m_Connect->m_ResProc) {
+                I_Result* res= 0;
+                switch (res_type) {
+                case CS_ROW_RESULT:
+                    res = new CTL_RowResult(m_Cmd);
+                    break;
+                case CS_PARAM_RESULT:
+                    res = new CTL_ParamResult(m_Cmd);
+                    break;
+                case CS_COMPUTE_RESULT:
+                    res = new CTL_ComputeResult(m_Cmd);
+                    break;
+                case CS_STATUS_RESULT:
+                    res = new CTL_StatusResult(m_Cmd);
+                    break;
+                }
+                if(res) {
+                    CDB_Result* dbres= Create_Result(*res);
+                    m_Connect->m_ResProc->ProcessResult(*dbres);
+                    delete dbres;
+                    delete res;
+                    continue;
+                }
+            }
             switch ( res_type ) {
             case CS_COMPUTE_RESULT:
             case CS_CURSOR_RESULT:
@@ -672,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/06/05 16:00:31  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.13  2003/02/05 14:56:22  dicuccio
  * Fixed uninitialized read reported by valgrind.
  *

@@ -259,6 +259,104 @@ CDB_Result* CTL_LangCmd::Result()
     }
 }
 
+void CTL_LangCmd::DumpResults()
+{
+    if ( m_Res) {
+        delete m_Res;
+        m_Res = 0;
+    }
+
+    if ( !m_WasSent ) {
+        throw CDB_ClientEx(eDB_Error, 120010, "CTL_LangCmd::DumpResults",
+                           "you need to send a command first");
+    }
+    
+
+    for (;;) {
+        CS_INT res_type;
+
+        switch ( ct_results(m_Cmd, &res_type) ) {
+        case CS_SUCCEED:
+            break;
+        case CS_END_RESULTS:
+            m_WasSent = false;
+            return;
+        case CS_FAIL:
+            m_HasFailed = true;
+            if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
+                // we need to close this connection
+                throw CDB_ClientEx(eDB_Fatal, 120012, "CTL_LangCmd::DumpResults",
+                                   "Unrecoverable crash of ct_result. "
+                                   "Connection must be closed");
+            }
+            m_WasSent = false;
+            throw CDB_ClientEx(eDB_Error, 120013, "CTL_LangCmd::DumpResults",
+                               "ct_result failed");
+        case CS_CANCELED:
+            m_WasSent = false;
+            throw CDB_ClientEx(eDB_Error, 120011, "CTL_LangCmd::DumpResults",
+                               "your command has been canceled");
+        case CS_BUSY:
+            throw CDB_ClientEx(eDB_Error, 120014, "CTL_LangCmd::DumpResults",
+                               "connection has another request pending");
+        default:
+            throw CDB_ClientEx(eDB_Error, 120015, "CTL_LangCmd::DumpResults",
+                               "your request is pending");
+        }
+
+        switch ( res_type ) {
+        case CS_CMD_SUCCEED:
+        case CS_CMD_DONE: // done with this command
+            // check the number of affected rows
+            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            continue;
+        case CS_CMD_FAIL: // the command has failed
+            // check the number of affected rows
+            g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
+            m_HasFailed = true;
+            throw CDB_ClientEx(eDB_Warning, 120016, "CTL_LangCmd::DumpResults",
+                               "The server encountered an error while "
+                               "executing a command");
+        case CS_ROW_RESULT:
+            m_Res = new CTL_RowResult(m_Cmd);
+            break;
+        case CS_PARAM_RESULT:
+            m_Res = new CTL_ParamResult(m_Cmd);
+            break;
+        case CS_COMPUTE_RESULT:
+            m_Res = new CTL_ComputeResult(m_Cmd);
+            break;
+        case CS_STATUS_RESULT:
+            m_Res = new CTL_StatusResult(m_Cmd);
+            break;
+        case CS_COMPUTEFMT_RESULT:
+            throw CDB_ClientEx(eDB_Info, 120017, "CTL_LangCmd::Result",
+                               "CS_COMPUTEFMT_RESULT has arrived");
+        case CS_ROWFMT_RESULT:
+            throw CDB_ClientEx(eDB_Info, 120018, "CTL_LangCmd::Result",
+                               "CS_ROWFMT_RESULT has arrived");
+        case CS_MSG_RESULT:
+            throw CDB_ClientEx(eDB_Info, 120019, "CTL_LangCmd::Result",
+                               "CS_MSG_RESULT has arrived");
+        default:
+            throw CDB_ClientEx(eDB_Warning, 120020, "CTL_LangCmd::Result",
+                               "Unexpected result type has arrived");
+        }
+        if(m_Res) {
+            if(m_Connect->m_ResProc) {
+                CDB_Result* r= Create_Result(*m_Res);
+                m_Connect->m_ResProc->ProcessResult(*r);
+                delete r;
+            }
+            else {
+                while(m_Res->Fetch());
+            }
+            delete m_Res;
+            m_Res= 0;
+        }
+    }
+}
+
 
 bool CTL_LangCmd::HasMoreResults() const
 {
@@ -344,6 +442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/05 16:00:31  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.5  2003/05/16 20:24:24  soussov
  * adds code to skip parameters if it was not set
  *

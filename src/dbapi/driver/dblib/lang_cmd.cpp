@@ -235,6 +235,22 @@ bool CDBL_LangCmd::HasMoreResults() const
     return m_WasSent;
 }
 
+void CDBL_LangCmd::DumpResults()
+{
+    CDB_Result* dbres;
+    while(m_WasSent) {
+        dbres= Result();
+        if(dbres) {
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch());
+            }
+            delete dbres;
+        }
+    }
+}
 
 bool CDBL_LangCmd::HasFailed() const
 {
@@ -448,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/06/05 16:01:13  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.12  2003/05/16 20:25:20  soussov
  * adds code to skip parameter if it was not set
  *

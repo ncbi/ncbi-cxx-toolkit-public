@@ -288,6 +288,12 @@ void CODBC_Connection::PopMsgHandler(CDB_UserHandler* h)
     m_MsgHandlers.Pop(h);
 }
 
+CDB_ResultProcessor* CODBC_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
+{
+    CDB_ResultProcessor* r= m_ResProc;
+    m_ResProc= rp;
+    return r;
+}
 
 void CODBC_Connection::Release()
 {
@@ -593,6 +599,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/05 16:02:04  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.3  2003/05/05 20:47:45  ucko
  * Check HAVE_ODBCSS_H; regardless, disable BCP on Unix, since even
  * DataDirect's implementation lacks the relevant bcp_* functions.

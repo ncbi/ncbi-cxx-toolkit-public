@@ -225,6 +225,22 @@ bool CDBL_RPCCmd::HasMoreResults() const
     return m_WasSent;
 }
 
+void CDBL_RPCCmd::DumpResults()
+{
+    CDB_Result* dbres;
+    while(m_WasSent) {
+        dbres= Result();
+        if(dbres) {
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch());
+            }
+            delete dbres;
+        }
+    }
+}
 
 bool CDBL_RPCCmd::HasFailed() const
 {
@@ -296,6 +312,13 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBINT1, -1,
+                           is_null ? 0 : -1, (BYTE*) val.BindVal());
+            break;
+        }
+        case eDB_Bit: {
+            CDB_Bit& val = dynamic_cast<CDB_Bit&> (param);
+            r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
+                           status, SYBBIT, -1,
                            is_null ? 0 : -1, (BYTE*) val.BindVal());
             break;
         }
@@ -396,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/06/05 16:01:13  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.10  2003/05/16 20:25:20  soussov
  * adds code to skip parameter if it was not set
  *

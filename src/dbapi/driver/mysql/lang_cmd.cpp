@@ -116,6 +116,23 @@ bool CMySQL_LangCmd::HasMoreResults() const
     return m_HasResults;
 }
 
+void CMySQL_LangCmd::DumpResults()
+{
+    CDB_Result* dbres;
+    while(m_HasResults) {
+        dbres= Result();
+        if(dbres) {
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch());
+            }
+            delete dbres;
+        }
+    }
+}
+
 
 bool CMySQL_LangCmd::HasFailed() const
 {
@@ -143,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/05 16:02:48  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.5  2003/05/29 21:42:25  butanaev
  * Fixed Send, HasFailed functions.
  *

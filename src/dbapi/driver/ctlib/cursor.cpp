@@ -280,6 +280,30 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
                                "your request is pending");
         }
 
+        if(m_Connect->m_ResProc) {
+            I_Result* res= 0;
+            switch (res_type) {
+            case CS_ROW_RESULT:
+                res = new CTL_RowResult(m_Cmd);
+                break;
+            case CS_PARAM_RESULT:
+                res = new CTL_ParamResult(m_Cmd);
+                break;
+            case CS_COMPUTE_RESULT:
+                res = new CTL_ComputeResult(m_Cmd);
+                break;
+            case CS_STATUS_RESULT:
+                res = new CTL_StatusResult(m_Cmd);
+                break;
+            }
+            if(res) {
+                CDB_Result* dbres= Create_Result(*res);
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+                continue;
+            }
+        }
         switch ( res_type ) {
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE: // done with this command
@@ -405,6 +429,30 @@ bool CTL_CursorCmd::Delete(const string& table_name)
                                "your request is pending");
         }
 
+        if(m_Connect->m_ResProc) {
+            I_Result* res= 0;
+            switch (res_type) {
+            case CS_ROW_RESULT:
+                res = new CTL_RowResult(m_Cmd);
+                break;
+            case CS_PARAM_RESULT:
+                res = new CTL_ParamResult(m_Cmd);
+                break;
+            case CS_COMPUTE_RESULT:
+                res = new CTL_ComputeResult(m_Cmd);
+                break;
+            case CS_STATUS_RESULT:
+                res = new CTL_StatusResult(m_Cmd);
+                break;
+            }
+            if(res) {
+                CDB_Result* dbres= Create_Result(*res);
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+                continue;
+            }
+        }
         switch ( res_type ) {
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE: // done with this command
@@ -493,6 +541,30 @@ bool CTL_CursorCmd::Close()
                                "your request is pending");
         }
 
+        if(m_Connect->m_ResProc) {
+            I_Result* res= 0;
+            switch (res_type) {
+            case CS_ROW_RESULT:
+                res = new CTL_RowResult(m_Cmd);
+                break;
+            case CS_PARAM_RESULT:
+                res = new CTL_ParamResult(m_Cmd);
+                break;
+            case CS_COMPUTE_RESULT:
+                res = new CTL_ComputeResult(m_Cmd);
+                break;
+            case CS_STATUS_RESULT:
+                res = new CTL_StatusResult(m_Cmd);
+                break;
+            }
+            if(res) {
+                CDB_Result* dbres= Create_Result(*res);
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+                delete dbres;
+                delete res;
+                continue;
+            }
+        }
         switch ( res_type ) {
         case CS_CMD_SUCCEED:
         case CS_CMD_DONE:
@@ -597,6 +669,30 @@ CTL_CursorCmd::~CTL_CursorCmd()
                 continue;
             }
 
+            if(m_Connect->m_ResProc) {
+                I_Result* res= 0;
+                switch (res_type) {
+                case CS_ROW_RESULT:
+                    res = new CTL_RowResult(m_Cmd);
+                    break;
+                case CS_PARAM_RESULT:
+                    res = new CTL_ParamResult(m_Cmd);
+                    break;
+                case CS_COMPUTE_RESULT:
+                    res = new CTL_ComputeResult(m_Cmd);
+                    break;
+                case CS_STATUS_RESULT:
+                    res = new CTL_StatusResult(m_Cmd);
+                    break;
+                }
+                if(res) {
+                    CDB_Result* dbres= Create_Result(*res);
+                    m_Connect->m_ResProc->ProcessResult(*dbres);
+                    delete dbres;
+                    delete res;
+                    continue;
+                }
+            }
             switch ( res_type ) {
             case CS_CMD_SUCCEED:
             case CS_CMD_DONE: // done with this command
@@ -656,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/05 16:00:31  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.7  2003/05/16 20:24:24  soussov
  * adds code to skip parameters if it was not set
  *

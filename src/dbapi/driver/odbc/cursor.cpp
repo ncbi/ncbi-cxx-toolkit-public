@@ -68,6 +68,8 @@ CDB_Result* CODBC_CursorCmd::Open()
     // declare the cursor
     try {
         m_CursCmd.Send();
+        m_CursCmd.DumpResults();
+#if 0
         while (m_CursCmd.HasMoreResults()) {
             CDB_Result* r = m_CursCmd.Result();
             if (r) {
@@ -76,6 +78,7 @@ CDB_Result* CODBC_CursorCmd::Open()
                 delete r;
             }
         }
+#endif
     } catch (CDB_Exception& ) {
         throw CDB_ClientEx(eDB_Error, 422001, "CODBC_CursorCmd::Open",
                            "failed to declare cursor");
@@ -89,6 +92,8 @@ CDB_Result* CODBC_CursorCmd::Open()
     try {
         m_LCmd = m_Connect->xLangCmd("open " + m_Name);
         m_LCmd->Send();
+        m_LCmd->DumpResults();
+#if 0
         while (m_LCmd->HasMoreResults()) {
             CDB_Result* r = m_LCmd->Result();
             if (r) {
@@ -97,6 +102,7 @@ CDB_Result* CODBC_CursorCmd::Open()
                 delete r;
             }
         }
+#endif
         m_LCmd->Release();
     } catch (CDB_Exception& ) {
         if (m_LCmd) {
@@ -135,6 +141,8 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
         string buff = upd_query + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
+        cmd->DumpResults();
+#if 0
         while (cmd->HasMoreResults()) {
             CDB_Result* r = cmd->Result();
             if (r) {
@@ -143,6 +151,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
                 delete r;
             }
         }
+#endif
         delete cmd;
     } catch (CDB_Exception& ) {
         if (cmd)
@@ -202,6 +211,8 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
         string buff = "delete " + table_name + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
+        cmd->DumpResults();
+#if 0
         while (cmd->HasMoreResults()) {
             CDB_Result* r = cmd->Result();
             if (r) {
@@ -210,6 +221,7 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
                 delete r;
             }
         }
+#endif
         delete cmd;
     } catch (CDB_Exception& ) {
         if (cmd)
@@ -249,6 +261,8 @@ bool CODBC_CursorCmd::Close()
         try {
             m_LCmd = m_Connect->xLangCmd(buff);
             m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
             while (m_LCmd->HasMoreResults()) {
                 CDB_Result* r = m_LCmd->Result();
                 if (r) {
@@ -257,6 +271,7 @@ bool CODBC_CursorCmd::Close()
                     delete r;
                 }
             }
+#endif
             m_LCmd->Release();
         } catch (CDB_Exception& ) {
             if (m_LCmd)
@@ -276,6 +291,8 @@ bool CODBC_CursorCmd::Close()
         try {
             m_LCmd = m_Connect->xLangCmd(buff);
             m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
             while (m_LCmd->HasMoreResults()) {
                 CDB_Result* r = m_LCmd->Result();
                 if (r) {
@@ -284,6 +301,7 @@ bool CODBC_CursorCmd::Close()
                     delete r;
                 }
             }
+#endif
             m_LCmd->Release();
         } catch (CDB_Exception& ) {
             if (m_LCmd)
@@ -329,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/05 16:02:04  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.2  2003/01/31 16:51:03  lavr
  * Remove unused variable "e" from catch() clause
  *

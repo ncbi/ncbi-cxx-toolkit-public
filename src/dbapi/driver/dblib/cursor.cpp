@@ -85,6 +85,8 @@ CDB_Result* CDBL_CursorCmd::Open()
     try {
         m_LCmd = m_Connect->LangCmd(buff);
         m_LCmd->Send();
+        m_LCmd->DumpResults();
+#if 0
         while (m_LCmd->HasMoreResults()) {
             CDB_Result* r = m_LCmd->Result();
             if (r) {
@@ -93,6 +95,7 @@ CDB_Result* CDBL_CursorCmd::Open()
                 delete r;
             }
         }
+#endif
         delete m_LCmd;
     } catch (CDB_Exception& ) {
         if (m_LCmd) {
@@ -111,6 +114,8 @@ CDB_Result* CDBL_CursorCmd::Open()
     try {
         m_LCmd = m_Connect->LangCmd(buff);
         m_LCmd->Send();
+        m_LCmd->DumpResults();
+#if 0
         while (m_LCmd->HasMoreResults()) {
             CDB_Result* r = m_LCmd->Result();
             if (r) {
@@ -119,6 +124,7 @@ CDB_Result* CDBL_CursorCmd::Open()
                 delete r;
             }
         }
+#endif
         delete m_LCmd;
     } catch (CDB_Exception& ) {
         if (m_LCmd) {
@@ -150,6 +156,8 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
         string buff = upd_query + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
+        cmd->DumpResults();
+#if 0
         while (cmd->HasMoreResults()) {
             CDB_Result* r = cmd->Result();
             if (r) {
@@ -158,6 +166,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
                 delete r;
             }
         }
+#endif
         delete cmd;
     } catch (CDB_Exception& ) {
         if (cmd)
@@ -211,6 +220,8 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
         string buff = "delete " + table_name + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
         cmd->Send();
+        cmd->DumpResults();
+#if 0
         while (cmd->HasMoreResults()) {
             CDB_Result* r = cmd->Result();
             if (r) {
@@ -219,6 +230,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
                 delete r;
             }
         }
+#endif
         delete cmd;
     } catch (CDB_Exception& ) {
         if (cmd)
@@ -256,6 +268,8 @@ bool CDBL_CursorCmd::Close()
         try {
             m_LCmd = m_Connect->LangCmd(buff);
             m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
             while (m_LCmd->HasMoreResults()) {
                 CDB_Result* r = m_LCmd->Result();
                 if (r) {
@@ -264,6 +278,7 @@ bool CDBL_CursorCmd::Close()
                     delete r;
                 }
             }
+#endif
             delete m_LCmd;
         } catch (CDB_Exception& ) {
             if (m_LCmd)
@@ -283,6 +298,8 @@ bool CDBL_CursorCmd::Close()
         try {
             m_LCmd = m_Connect->LangCmd(buff);
             m_LCmd->Send();
+            m_LCmd->DumpResults();
+#if 0
             while (m_LCmd->HasMoreResults()) {
                 CDB_Result* r = m_LCmd->Result();
                 if (r) {
@@ -291,6 +308,7 @@ bool CDBL_CursorCmd::Close()
                     delete r;
                 }
             }
+#endif
             delete m_LCmd;
         } catch (CDB_Exception& ) {
             if (m_LCmd)
@@ -463,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/06/05 16:01:13  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.10  2003/01/31 16:50:12  lavr
  * Remove unused variable "e" from catch() clause
  *

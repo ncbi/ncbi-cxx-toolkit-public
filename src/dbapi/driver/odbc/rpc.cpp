@@ -284,6 +284,22 @@ bool CODBC_RPCCmd::HasMoreResults() const
     return m_hasResults;
 }
 
+void CODBC_RPCCmd::DumpResults()
+{
+    CDB_Result* dbres;
+    while(m_WasSent) {
+        dbres= Result();
+        if(dbres) {
+            if(m_Connect->m_ResProc) {
+                m_Connect->m_ResProc->ProcessResult(*dbres);
+            }
+            else {
+                while(dbres->Fetch());
+            }
+            delete dbres;
+        }
+    }
+}
 
 bool CODBC_RPCCmd::HasFailed() const
 {
@@ -542,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/05 16:02:04  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.4  2003/05/16 20:26:44  soussov
  * adds code to skip parameter if it was not set
  *

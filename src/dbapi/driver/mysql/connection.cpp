@@ -155,6 +155,12 @@ void CMySQL_Connection::PopMsgHandler (CDB_UserHandler* /*h*/)
 {
 }
 
+CDB_ResultProcessor* CMySQL_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
+{
+    CDB_ResultProcessor* r= m_ResProc;
+    m_ResProc= rp;
+    return r;
+}
 
 CDB_LangCmd* CMySQL_Connection::LangCmd(const string& lang_query,
                                         unsigned int  nof_parms)
@@ -194,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/05 16:02:48  soussov
+ * adds code for DumpResults and for the dumped results processing
+ *
  * Revision 1.3  2003/01/06 20:30:26  vakatov
  * Get rid of some redundant header(s).
  * Formally reformatted to closer meet C++ Toolkit/DBAPI style.
