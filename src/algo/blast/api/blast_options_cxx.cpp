@@ -533,6 +533,22 @@ operator!=(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs)
     return !(lhs == rhs);
 }
 
+bool
+operator==(const CBlastOptions& lhs, const CBlastOptions& rhs)
+{
+    if (lhs.m_Local && rhs.m_Local) {
+        return (*lhs.m_Local == *rhs.m_Local);
+    } else {
+        NCBI_THROW(CBlastException, eInternal, 
+                   "Equality operator unsupported for remote options");
+    }
+}
+
+bool
+operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs)
+{
+    return !(lhs == rhs);
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -541,6 +557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/01/20 15:59:40  camacho
+* Added missing implementations of overloaded operators
+*
 * Revision 1.34  2004/01/17 00:52:32  ucko
 * Remove redundant default argument specification.
 *
