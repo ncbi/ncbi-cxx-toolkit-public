@@ -40,6 +40,10 @@
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -297,32 +301,101 @@ bool s_FilterPubdesc(const CPubdesc& pubdesc, CBioseqContext& ctx)
 }
 
 
-void CFlatGatherer::x_GatherReferences(void) const
+void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) const
 {
-    CBioseqContext::TReferences& refs = m_Current->SetReferences();
+    CScope& scope = m_Current->GetScope();
+    
+    CBioseq_Handle seq = GetBioseqFromSeqLoc(loc, scope);
+    if (!seq) {
+        return;
+    }
 
     // gather references from descriptors
-    for (CSeqdesc_CI it(m_Current->GetHandle(), CSeqdesc::e_Pub); it; ++it) {
+    for (CSeqdesc_CI it(seq, CSeqdesc::e_Pub); it; ++it) {
         const CPubdesc& pubdesc = it->GetPub();
         if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
             continue;
         }
-        
+
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(*it, *m_Current)));
     }
 
+    // if near segmented, collect pubs from segments under location
+    CSeq_entry_Handle segset =
+        seq.GetExactComplexityLevel(CBioseq_set::eClass_segset);
+    if (segset  &&  seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
+        CConstRef<CSeqMap> seqmap = CSeqMap::CreateSeqMapForSeq_loc(loc, &scope);
+        if (seqmap) {
+            SSeqMapSelector mapsel;
+            mapsel.SetFlags(CSeqMap::eSeqRef)
+                  .SetResolveCount(1)
+                  .SetLimitTSE(m_Current->GetTopLevelEntry());
+            for (CSeqMap_CI smit(seqmap, &scope, mapsel); smit; ++smit) {
+                // NB: search already limited to TSE
+                CBioseq_Handle part = scope.GetBioseqHandle(smit.GetRefSeqid());
+                if (part) {
+                    for (CSeqdesc_CI dit(CSeq_descr_CI(part, 1), CSeqdesc::e_Pub); dit; ++dit) {
+                        const CPubdesc& pubdesc = dit->GetPub();
+                        if ( s_FilterPubdesc(pubdesc, *m_Current) ) {
+                            continue;
+                        }
+
+                        refs.push_back(CBioseqContext::TRef(new CReferenceItem(*dit, *m_Current)));
+                    }
+                }
+            }
+        }
+    }
+
     // gather references from features
-    SAnnotSelector sel(CSeqFeatData::e_Pub);
-    CFeat_CI it(m_Current->GetScope(), m_Current->GetLocation(), sel);
+    CFeat_CI it(scope, loc, SAnnotSelector(CSeqFeatData::e_Pub));
     for ( ; it; ++it) {
         CBioseqContext::TRef ref(new CReferenceItem(it->GetOriginalFeature(),
             *m_Current));
         refs.push_back(ref);
     }
+}
+
+
+void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
+{
+    _ASSERT(m_Current->IsProt());
+
+    const CSeq_feat* cds = GetCDSForProduct(m_Current->GetHandle());
+    if (cds == NULL) {
+        return;
+    }
+    const CSeq_loc& cds_loc = cds->GetLocation();
+    const CSeq_loc& cds_prod = cds->GetProduct();
+
+    CScope& scope = m_Current->GetScope();
+
+    SAnnotSelector sel(CSeqFeatData::e_Pub);
+    for (CFeat_CI it(m_Current->GetScope(), cds_loc, sel); it; ++it) {
+        const CSeq_feat& feat = it->GetOriginalFeature();
+        if (TestForOverlap(cds_loc, feat.GetLocation(), eOverlap_Contains, kInvalidSeqPos, &scope) > 0) {
+            CBioseqContext::TRef ref(new CReferenceItem(feat, *m_Current, &cds_prod));
+            refs.push_back(ref);
+        }
+    }
+}
+
+
+void CFlatGatherer::x_GatherReferences(void) const
+{
+    TReferences& refs = m_Current->SetReferences();
+
+    x_GatherReferences(m_Current->GetLocation(), refs);
+
+    // if protein with no pubs, get pubs applicable to DNA location of CDS
+    if (refs.empty()  &&  m_Current->IsProt()) {
+        x_GatherCDSReferences(refs);
+    }
+
     // re-sort references
     CReferenceItem::Rearrange(refs, *m_Current);
 
-    ITERATE (CBioseqContext::TReferences, ref, refs) {
+    ITERATE (TReferences, ref, refs) {
         *m_ItemOS << *ref;
     }
 }
@@ -331,6 +404,28 @@ void CFlatGatherer::x_GatherReferences(void) const
 /////////////////////////////////////////////////////////////////////////////
 //
 // COMMENTS
+
+static bool s_NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx)
+{
+    if (!seq.IsSetInst()  ||  !seq.IsSetInst_Ext()) {
+        return false;
+    }
+
+    if (ctx.IsDelta()  &&  ctx.IsWGS()  &&  seq.GetInst_Ext().IsDelta()) {
+        ITERATE (CDelta_ext::Tdata, iter, seq.GetInst_Ext().GetDelta().Get()) {
+            const CDelta_seq& dseg = **iter;
+            if (dseg.IsLiteral()) {
+                const CSeq_literal& lit = dseg.GetLiteral();
+                if (!lit.CanGetSeq_data()  &&  lit.CanGetLength()  &&
+                     lit.GetLength() > 0 ) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
 
 
 void CFlatGatherer::x_GatherComments(void) const
@@ -341,7 +436,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_IdComments(ctx);
     x_RefSeqComments(ctx);
 
-    if ( CCommentItem::NsAreGaps(ctx.GetHandle(), ctx) ) {
+    if ( s_NsAreGaps(ctx.GetHandle(), ctx) ) {
         x_AddComment(new CCommentItem(CCommentItem::GetNsAreGapsStr(), ctx));
     }
 
@@ -669,8 +764,9 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
         x_AddComment(new CCommentItem(
             CCommentItem::GetStringForHTGS(ctx), ctx, &(*desc)));
     } else {
-        const string& tech_str = GetTechString(tech);
-        if ( !tech_str.empty() ) {
+        string tech_str = GetTechString(tech);
+        if (!NStr::IsBlank(tech_str)) {
+            objects::AddPeriod(tech_str);
             x_AddComment(new CCommentItem("Method: " + tech_str, ctx, &(*desc)));
         }
     }
@@ -683,7 +779,8 @@ void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
     CScope *scope = &ctx.GetScope();
     const CSeq_loc& loc = ctx.GetLocation();
 
-    for (CFeat_CI it(ctx.GetScope(), loc, CSeqFeatData::e_Comment); it; ++it) {
+    for (CFeat_CI it(ctx.GetScope(), loc, SAnnotSelector(CSeqFeatData::e_Comment));
+        it; ++it) {
         ECompare comp = Compare(it->GetLocation(), loc, scope);
 
         if ((comp == eSame)  ||  (comp == eContains)) {
@@ -746,17 +843,14 @@ void CFlatGatherer::x_CollectSourceDescriptors
         }
     }
 
-    // if segmented collect descriptors from segments
-    if ( ctx.IsSegmented() ) {
-        const CSeqMap& seqmap = bh.GetSeqMap();
-
-        CSeqMap_CI smit = seqmap.BeginResolved(scope,
-                                               SSeqMapSelector()
-                                               .SetResolveCount(1)
-                                               .SetFlags(CSeqMap::fFindRef));
+    // if segmented collect descriptors from local segments
+    if (bh.GetInst_Repr() == CSeq_inst::eRepr_seg) {
+        CTSE_Handle tse = bh.GetTSE_Handle();
+        CSeqMap_CI smit(bh, SSeqMapSelector(CSeqMap::fFindRef));
         for (; smit; ++smit) {
-            // biosource descriptors only on parts within TSE
-            CBioseq_Handle segh = scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(), bh);
+            // biosource descriptors only on parts
+            CBioseq_Handle segh = 
+                scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(), tse);
             if (!segh) {
                 continue;
             }
@@ -986,6 +1080,9 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         if ( cfg.HideGapFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);
         }
+        if (ctx.IsNuc()) {
+            sel.ExcludeFeatType(CSeqFeatData::e_Het);
+        }
     }}
     // only for non-user selector
     if (ctx.GetAnnotSelector() == NULL) {
@@ -1015,12 +1112,6 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, const CBioseq_Handle& seq)
     }
     return (last  &&  seq.IsSynonym(last.GetSeq_id()));
 }
-
-
-//static bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
-//{
-//    return s_SeqLocEndsOnBioseq(feat.GetLocation(), seq);
-//}
 
 
 static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
@@ -1061,8 +1152,8 @@ CSeqMap_CI s_CreateGapMapIter(const CSeq_loc& loc, CBioseqContext& ctx)
 {
     CSeqMap_CI gap_it;
 
-    // for Genbank only
-    if (ctx.IsDDBJ()  ||  ctx.IsEMBL()) {
+    // EMBL and DDBJ have gap imp features
+    if (ctx.IsEMBL()  ||  ctx.IsDDBJ()) {
         return gap_it;
     }
     
@@ -1102,6 +1193,22 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
 }
 
 
+static bool s_IsDuplicateFeatures(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
+{
+    _ASSERT(f1  &&  f2);
+
+    CSeq_annot_Handle annot = f1.GetAnnot();
+    if (f1.GetFeatSubtype() == f2.GetFeatSubtype()) {
+        if (f1.GetAnnot() == f2.GetAnnot()) {
+            if (f1.GetSeq_feat()->Equals(*f2.GetSeq_feat())) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void CFlatGatherer::x_GatherFeaturesOnLocation
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -1116,83 +1223,82 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     CSeq_feat_Handle prev_feat;
     for (CFeat_CI it(scope, loc, sel); it; ++it) {
-        CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
-        if (!feat) {
-            continue;
-        }
-        const CSeq_feat& original_feat = it->GetOriginalFeature();
+        try {
+            CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
+            const CSeq_feat& original_feat = it->GetOriginalFeature();
 
-        // supress dupliacte features
-        CSeq_annot_Handle annot = feat.GetAnnot();
-        if (prev_feat) {
-            if (prev_feat.GetFeatSubtype() == feat.GetFeatSubtype()) {
-                if (annot == prev_feat.GetAnnot()) {
-                    if (prev_feat.GetSeq_feat()->Equals(*feat.GetSeq_feat())) {
-                        continue;
-                    }
-                }
-            }
-        }
-        prev_feat = feat;
-
-        // NB: map location (if necessary). mapping done by the
-        // feature iterator is inadequate for the flat-file needs.
-        CConstRef<CSeq_loc> feat_loc(&original_feat.GetLocation());
-        if (mapper) {
-            feat_loc.Reset(mapper->Map(*feat_loc));
-            //s_FixLocation(feat_loc, ctx);
-        }
-        if (!feat_loc  ||  feat_loc->IsNull()) {
-            continue;
-        }
-        
-        // make sure location ends on the current bioseq
-        if (ctx.IsPart()) {
-            if (!s_SeqLocEndsOnBioseq(*feat_loc, ctx.GetHandle())) {
-                // may need to map sig_peptide on a different segment
-                if (feat.GetData().IsCdregion()) {
-                    if (!ctx.Config().IsFormatFTable()) {
-                        x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
-                    }
-                }
+            // supress dupliacte features
+            if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
                 continue;
             }
-        }
-        
-        while (gap_it) {
-            if (feat_loc->GetStart() >= gap_it.GetPosition()) {
-                out << s_NewGapItem(gap_it, ctx);
-                ++gap_it;
-            } else {
-                break;
+            prev_feat = feat;
+
+            // NB: map location (if necessary). mapping done by the
+            // feature iterator is inadequate for the flat-file needs.
+            CConstRef<CSeq_loc> feat_loc(&original_feat.GetLocation());
+            if (mapper) {
+                feat_loc.Reset(mapper->Map(*feat_loc));
             }
-        }
-
-        out << new CFeatureItem(original_feat, ctx, feat_loc);
-
-        // Add more features depending on user preferences
-        switch (feat.GetFeatSubtype()) {
-        case CSeqFeatData::eSubtype_mRNA:
-            {{
-                // optionally map CDS from cDNA onto genomic
-                if (s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct()) {
-                    x_CopyCDSFromCDNA(original_feat, ctx);
+            if (!feat_loc  ||  feat_loc->IsNull()) {
+                continue;
+            }
+        
+            // make sure location ends on the current bioseq
+            if (ctx.IsPart()) {
+                if (!s_SeqLocEndsOnBioseq(*feat_loc, ctx.GetHandle())) {
+                    // may need to map sig_peptide on a different segment
+                    if (feat.GetData().IsCdregion()) {
+                        if (!ctx.Config().IsFormatFTable()) {
+                            x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
+                        }
+                    }
+                    continue;
                 }
-                break;
-            }}
-        case CSeqFeatData::eSubtype_cdregion:
-            {{  
-                // map features from protein
-                if (!ctx.Config().IsFormatFTable()) {
-                    x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
+            }
+        
+            // handle gaps
+            TSeqPos feat_start = feat_loc->GetStart();
+            while (gap_it) {
+                // if feature after gap first output the gap
+                if (feat_start >= gap_it.GetPosition()) {
+                    out << s_NewGapItem(gap_it, ctx);
+                    ++gap_it;
+                } else {
+                    break;
                 }
-                break;
-            }}
-        default:
-            break;
-        }
-    }
+            }
 
+            // format feature
+            out << new CFeatureItem(original_feat, ctx, feat_loc);
+
+            // Add more features depending on user preferences
+            switch (feat.GetFeatSubtype()) {
+                case CSeqFeatData::eSubtype_mRNA:
+                {{
+                    // optionally map CDS from cDNA onto genomic
+                    if (s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct()) {
+                        x_CopyCDSFromCDNA(original_feat, ctx);
+                    }
+                    break;
+                }}
+                case CSeqFeatData::eSubtype_cdregion:
+                    {{  
+                        // map features from protein
+                        if (!ctx.Config().IsFormatFTable()) {
+                            x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
+                        }
+                        break;
+                    }}
+                default:
+                    break;
+            }
+        } catch (CException& e) {
+            // post to log, go on to next feature
+            LOG_POST(Error << "Error processing feature [" << e.what() << "]");
+        }
+    }  //  end of for loop
+
+    // when all features are done, output remaining gaps
     while (gap_it) {
         out << s_NewGapItem(gap_it, ctx);
         ++gap_it;
@@ -1329,23 +1435,21 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
  CBioseqContext& ctx,
  CRef<CSeq_loc_Mapper>& mapper) const
 {
-    if (!feat.GetData().IsCdregion()) {
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    if (!feat.GetData().IsCdregion()  ||  !feat.CanGetProduct()) {
         return;
     }
 
-    const CFlatFileConfig& cfg = ctx.Config();
-    
     if (cfg.HideCDSProdFeatures()) {
         return;
     }
-    
-    if (!feat.CanGetProduct()) {
-        return;
-    }
+
     CScope& scope = ctx.GetScope();
     CConstRef<CSeq_id> prot_id;
-    if (IsOneBioseq(feat.GetProduct(), &scope)) {
+    try {
         prot_id.Reset(&GetId(feat.GetProduct(), &scope));
+    } catch (CException&) {
     }
     if (!prot_id) {
         return;
@@ -1361,8 +1465,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
 
     // map from cds product to nucleotide
     CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
-    prot_to_cds.SetMergeAbutting().SetMergeContained();
-
+    
     // explore mat_peptides, sites, etc.
     SAnnotSelector sel;
     sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry())
@@ -1400,6 +1503,11 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
         // possibly map again (e.g. from part to master)
         if ( loc.NotEmpty()  &&  mapper.NotEmpty() ) {
             loc.Reset(mapper->Map(*loc));
+        }
+        if (loc) {
+            if (loc->IsMix()  ||  loc->IsPacked_int()) {
+                loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_All, &scope);
+            }
         }
         if (!loc  ||  loc->IsNull()) {
             continue;
@@ -1452,6 +1560,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2005/01/12 16:44:35  shomrat
+* Added gap features; Fixed reference gathering
+*
 * Revision 1.35  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
