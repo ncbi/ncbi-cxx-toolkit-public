@@ -376,7 +376,7 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
         }
 
         const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
-        if ( ctx.GetFormat()  == CFlatFileGenerator::eFormat_EMBL ) {
+        if ( ctx.IsFormatEMBL() ) {
             for ( CSeqdesc_CI embl_desc(bsh, CSeqdesc::e_Embl); 
                   embl_desc; 
                   ++embl_desc ) {
@@ -524,6 +524,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 22:55:12  shomrat
+* use IsFormatEMBL method
+*
 * Revision 1.2  2003/12/18 17:43:35  shomrat
 * context.hpp moved
 *
