@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/15 21:09:03  vasilche
+* Fixed bug with lost const_iterator
+*
 * Revision 1.19  1999/09/15 18:28:32  vasilche
 * Fixed coredump occured in jrbrowser.
 *
@@ -234,12 +237,13 @@ int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
     }
     if ( entry != entries.end() ) {
         try {
-            int pageSize = NStr::StringToInt(entry->second);
+            string dispMax = entry->second;
+            int pageSize = NStr::StringToInt(dispMax);
             if( pageSize > 0 ) {
                 //replace dispmax for current page size
                 entries.erase(KParam_PageSize);
                 entries.insert(TCgiEntries::value_type(KParam_PageSize,
-                                                       entry->second));
+                                                       dispMax));
                 return pageSize;
             }	
             _TRACE( "Nonpositive page size in CPager::GetPageSize: " << pageSize );
