@@ -27,6 +27,7 @@
 /** @file blast_lookup.h
  *  Contains definitions and prototypes for the lookup table
  *  construction and scanning phase of blastn, blastp, RPS blast
+ * @todo: Re-examine code here and in unit tests for 32/64 bit portability.
  */
 
 #include <algo/blast/core/blast_def.h>
@@ -42,6 +43,10 @@ extern "C" {
 #endif
 
 /* some defines for the pv_array, as this changes from 32-bit to 64-bit systems. */
+
+#if 0
+/*The 64 bit versions are disabled for now.*/
+
 #if defined(LONG_BIT) && LONG_BIT==64
 
 #define PV_ARRAY_TYPE Uint8     /**< The pv_array 'native' type. */
@@ -50,22 +55,23 @@ extern "C" {
 #define PV_ARRAY_MASK 63        /**< amount to mask off. */
 
 #else
+#endif
 
 #define PV_ARRAY_TYPE Uint4     /**< The pv_array 'native' type. */
 #define PV_ARRAY_BYTES 4        /**< number of BYTES in 'native' type. */
 #define PV_ARRAY_BTS 5          /**< bits-to-shift from lookup_index to pv_array index. */
 #define PV_ARRAY_MASK 31        /**< amount to mask off. */
 
-#endif
+/*#endif*/
 
 /** Set the bit at position 'index' in the PV 
  *  array bitfield within 'lookup'
  */
-#define PV_SET(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] |= 1 << ((index) & PV_ARRAY_MASK) )
+#define PV_SET(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] |= (PV_ARRAY_TYPE)1 << ((index) & PV_ARRAY_MASK) )
 /** Test the bit at position 'index' in the PV 
  *  array bitfield within 'lookup'
  */
-#define PV_TEST(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] & 1 << ((index) & PV_ARRAY_MASK) )
+#define PV_TEST(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] & (PV_ARRAY_TYPE)1 << ((index) & PV_ARRAY_MASK) )
 
 #define FULL_BYTE_SHIFT 8 /**< Number of bits to shift in lookup 
                                index calculation when scanning 
