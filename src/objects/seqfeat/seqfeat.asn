@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -257,7 +257,8 @@ Org-ref ::= SEQUENCE {
     taxname VisibleString OPTIONAL ,   -- scientific name
     common VisibleString OPTIONAL ,    -- common name
     mod SET OF VisibleString OPTIONAL , -- modifier for tissue/strain/line
-    db SET OF Dbtag OPTIONAL }         -- ids in other dbases
+    db SET OF Dbtag OPTIONAL ,         -- ids in other dbases
+    syn SET OF VisibleString OPTIONAL }  -- synonyms for taxname or common
 
 END 
 
