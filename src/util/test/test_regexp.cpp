@@ -65,10 +65,11 @@ int CRegexApplication::Run(void)
     pattern.Set(pat);
     
     // String to find matching pattern in
-    string text("The quick brown fox jumped over the lazy dogs.\n");
-    text += "Now is the time for all good men to come to the aid of their ";
-    text += "country.\nTwas the night before Christmas and all through the ";
-    text += "house, not a\n creature was stirring, not even a mouse.\n";
+    string text("The quick brown fox jumped over the lazy dogs.\n" \
+                "Now is the time for all good men to come to the aid of " \
+                "their country.\nTwas the night before Christmas and all " \
+                "through the house, not a\n creature was stirring, not " \
+                "even a mouse.\n");
     
     // Display pattern and sub pattern matches
     cout << pattern.GetMatch(text.c_str()) << endl;
@@ -97,7 +98,7 @@ int CRegexApplication::Run(void)
     strcpy(txt, text.c_str());
     while (true)
     {
-        pattern.GetMatch(txt, start, 0, 0, true);
+        pattern.GetMatch(txt, start, 0, CRegexp::eMatch_default, true);
         if (pattern.NumFound() > 0) {
             const int *rslt = pattern.GetResults(0);
             start = rslt[1];
@@ -134,6 +135,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/11/22 16:47:57  ivanov
+ * Use CRegexp::eMatch_default instead of 0 as default pattern match flags.
+ *
  * Revision 1.4  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
