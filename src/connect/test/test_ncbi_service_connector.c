@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/23 23:22:34  lavr
+ * debug_printout was given an enum value (instead of "boolean" 1)
+ *
  * Revision 6.6  2001/01/09 15:35:20  lavr
  * Removed header <unistd.h>, unknown on WinNT
  *
@@ -76,7 +79,7 @@ int main(int argc, const char* argv[])
 
     info = ConnNetInfo_Create("io_bounce");
     strcpy(info->host, "ray");
-    info->debug_printout = 1;
+    info->debug_printout = eDebugPrintout_Some;
     info->stateless = 1;
     info->firewall = 1;
 
