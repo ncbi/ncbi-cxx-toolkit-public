@@ -492,6 +492,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_GenesInconsistent",
     "SEQ_FEAT_DuplicateTranslExcept",
     "SEQ_FEAT_TranslExceptAndRnaEditing",
+    "SEQ_FEAT_NoNameForProtein",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1086,6 +1087,8 @@ CDS but with different amino acids indicated.",
 editing indicates post-transcriptional changes prior to translation.  Use \
 /transl_except for individual codon exceptions such as selenocysteine or \
 other nonsense suppressors.",
+//  SEQ_FEAT_NoNameForProtein
+"A protein feature has a description, but no product name.",
 
 /* SEQ_ALIGN */
 
@@ -1185,6 +1188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/07/07 13:26:56  shomrat
+* + SEQ_FEAT_NoNameForProtein
+*
 * Revision 1.47  2004/06/25 15:59:18  shomrat
 * + eErr_SEQ_INST_MissingGaps
 *

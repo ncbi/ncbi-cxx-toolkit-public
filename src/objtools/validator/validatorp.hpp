@@ -272,6 +272,7 @@ enum EErrType {
     eErr_SEQ_FEAT_GenesInconsistent,
     eErr_SEQ_FEAT_DuplicateTranslExcept,
     eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
+    eErr_SEQ_FEAT_NoNameForProtein,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -936,6 +937,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2004/07/07 13:27:17  shomrat
+* + SEQ_FEAT_NoNameForProtein
+*
 * Revision 1.67  2004/06/25 15:58:27  shomrat
 * + eErr_SEQ_INST_MissingGaps
 *
