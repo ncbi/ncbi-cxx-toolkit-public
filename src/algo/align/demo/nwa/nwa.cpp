@@ -30,6 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <algo/align/nw_band_aligner.hpp>
 #include <algo/align/mm_aligner.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
@@ -98,6 +99,10 @@ void CAppNWA::Init()
         ("Ws", "space", "gap extension (space) penalty",
          CArgDescriptions::eInteger,
          NStr::IntToString(CNWAligner::GetDefaultWs()).c_str());
+
+    argdescr->AddDefaultKey
+        ("band", "band", "Band width for banded alignment",
+         CArgDescriptions::eInteger, "-1");
 
     argdescr->AddDefaultKey
         ("Wi0", "intron0", "type 0 (GT/AG) intron weight",
@@ -200,6 +205,8 @@ void CAppNWA::x_RunOnPair() const
     bool   output_fasta  ( args["ofasta"] );
     bool   output_exons  ( args["oexons"] );
 
+    int    band (args["band"].AsInteger());
+
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
@@ -233,17 +240,23 @@ void CAppNWA::x_RunOnPair() const
                    "for Myers-Miller method only (-mm flag)");
     }
 
+     
+    if(bMM && band >= 0) {
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "-mm and -band are inconsistent with each other");
+    }
+
 #ifndef NCBI_THREADS
     if(bMT) {
         NCBI_THROW(CAppNWAException,
-		   eNotSupported,
-                   "This application was built without multithreading support. "
-		   "To run in multiple threads, please re-configure and rebuild"
-		   " with proper option.");
+            eNotSupported,
+            "This application was built without multithreading support. "
+            "To run in multiple threads, please re-configure and rebuild"
+	    " with proper option.");
     }
     
 #endif
-
 
     // read input sequences
     vector<char> v1, v2;
@@ -262,17 +275,24 @@ void CAppNWA::x_RunOnPair() const
 
     // determine sequence/score matrix type
     const SNCBIPackedScoreMatrix* psm = 
-      (args["matrix"].AsString() == "blosum62")?
-      &NCBISM_Blosum62:
-      0;
+      (args["matrix"].AsString() == "blosum62")? &NCBISM_Blosum62: 0;
 
-    auto_ptr<CNWAligner> aligner (
-        bMrna2Dna? 
-        new SPLALIGNER (&v1[0], v1.size(), &v2[0], v2.size()):
-        (bMM?
-         new CMMAligner (&v1[0], v1.size(), &v2[0], v2.size(), psm):
-         new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), psm))
-        );
+    CNWAligner* pnwaligner = 0;
+    if(bMrna2Dna) {
+        pnwaligner = new SPLALIGNER(&v1[0], v1.size(), &v2[0], v2.size());
+    }
+    else if(bMM) {
+        pnwaligner = new CMMAligner(&v1[0], v1.size(), &v2[0], v2.size(), psm);
+    }
+    else if (band < 0) {
+        pnwaligner = new CNWAligner(&v1[0], v1.size(), &v2[0], v2.size(), psm);
+    }
+    else {
+        pnwaligner = new CBandAligner(&v1[0], v1.size(), &v2[0], v2.size(),
+                                      psm, band);
+    }
+
+    auto_ptr<CNWAligner> aligner (pnwaligner);
 
     aligner->SetWm  (args["Wm"]. AsInteger());
     aligner->SetWms (args["Wms"].AsInteger());
@@ -341,7 +361,7 @@ void CAppNWA::x_RunOnPair() const
     CNWFormatter formatter (*aligner);
     formatter.SetSeqIds(seqname1, seqname2);
 
-    const size_t line_width = 50;
+    const size_t line_width = 100;
     string s;
     if(pofs1.get()) {
         formatter.AsText(&s, CNWFormatter::eFormatType1, line_width);
@@ -428,6 +448,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/09/16 19:28:10  kapustin
+ * Add banded alignment option
+ *
  * Revision 1.28  2004/09/10 13:39:58  kapustin
  * Move code from starter.cpp to nwa.cpp. Remove starter.cpp
  *
