@@ -29,6 +29,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/06/19 23:03:46  juran
+* Replace timezone and daylight with macros.
+Implement for Mac OS.
+Note:  This compiles, but it may not work correctly yet.
+*
 * Revision 1.9  2001/05/29 20:14:03  ivanov
 * Added #include <sys/time.h> for UNIX platforms.
 *
@@ -69,11 +74,34 @@
 #include <stdlib.h>
 
 #if defined NCBI_OS_MSWIN
-#   include <sys/timeb.h> 
+#   include <sys/timeb.h>
 #elif defined NCBI_OS_UNIX
-#   include <sys/time.h> 
+#   include <sys/time.h>
 #endif
 
+#ifdef NCBI_OS_MAC
+#	include <OSUtils.h>
+typedef
+struct MyTZDLS {
+	long timezone;
+	bool daylight;
+} MyTZDLS;
+static MyTZDLS MyReadLocation()
+{
+	MachineLocation loc;
+	ReadLocation(&loc);
+	long tz = loc.u.gmtDelta & 0x00ffffff;
+	bool dls = (loc.u.dlsDelta != 0);
+	MyTZDLS tzdls = {tz, dls};
+	return tzdls;
+}
+static MyTZDLS sTZDLS = MyReadLocation();
+#	define TimeZone() sTZDLS.timezone
+#	define Daylight() sTZDLS.daylight
+#else
+#	define TimeZone() timezone
+#	define Daylight() daylight
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -93,7 +121,7 @@ static int s_DaysInMonth[] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 string CTime::sm_Format = "M/D/Y h:m:s";
 
 
-// Get number od days in "date"
+// Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
 {
     unsigned d = date.Day();
@@ -426,7 +454,7 @@ time_t CTime::GetTimeT(void) const
     time_t timer;
 
     // Convert time to time_t value at base local time
-    t.tm_sec   = Second() + (int) (IsGmtTime() ? (-timezone) : 0);
+    t.tm_sec   = Second() + (int) (IsGmtTime() ? -TimeZone() : 0);
     t.tm_min   = Minute();
     t.tm_hour  = Hour();
     t.tm_mday  = Day();
@@ -439,7 +467,7 @@ time_t CTime::GetTimeT(void) const
     if ( IsGmtTime() ) {
         if ((ttemp = localtime(&timer)) == NULL)
             return -1;
-        if (ttemp->tm_isdst > 0  &&  daylight)
+        if (ttemp->tm_isdst > 0  &&  Daylight())
             timer += 3600;
     }
     return timer;
