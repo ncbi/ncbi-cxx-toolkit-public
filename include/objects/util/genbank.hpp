@@ -73,7 +73,7 @@ public:
         m_Stream(stream), m_Scope(scope), m_Format(format), m_Version(version)
         { SetParameters(); }
 
-    bool Write(const CSeq_entry& entry); // returns true on success
+    bool Write(const CSeq_entry& entry) const; // returns true on success
 
 private:
     // useful constants
@@ -85,40 +85,43 @@ private:
 
     void SetParameters(void); // sets formatting parameters (below)
 
-    bool WriteLocus     (const CBioseq_Handle& handle);
-    bool WriteDefinition(const CBioseq_Handle& handle);
-    bool WriteAccession (const CBioseq_Handle& handle);
-    bool WriteID        (const CBioseq_Handle& handle);
-    bool WriteVersion   (const CBioseq_Handle& handle);
-    bool WriteDBSource  (const CBioseq_Handle& handle);
-    bool WriteKeywords  (const CBioseq_Handle& handle);
-    bool WriteSegment   (const CBioseq_Handle& handle);
-    bool WriteSource    (const CBioseq_Handle& handle);
-    bool WriteReference (const CBioseq_Handle& handle);
-    bool WriteComment   (const CBioseq_Handle& handle);
-    bool WriteFeatures  (const CBioseq_Handle& handle);
-    bool WriteSequence  (const CBioseq_Handle& handle);
+    bool WriteLocus     (const CBioseq_Handle& handle) const;
+    bool WriteDefinition(const CBioseq_Handle& handle) const;
+    bool WriteAccession (const CBioseq_Handle& handle) const;
+    bool WriteID        (const CBioseq_Handle& handle) const;
+    bool WriteVersion   (const CBioseq_Handle& handle) const;
+    bool WriteDBSource  (const CBioseq_Handle& handle) const;
+    bool WriteKeywords  (const CBioseq_Handle& handle) const;
+    bool WriteSegment   (const CBioseq_Handle& handle) const;
+    bool WriteSource    (const CBioseq_Handle& handle) const;
+    bool WriteReference (const CBioseq_Handle& handle) const;
+    bool WriteComment   (const CBioseq_Handle& handle) const;
+    bool WriteFeatures  (const CBioseq_Handle& handle) const;
+    bool WriteSequence  (const CBioseq_Handle& handle) const;
 
     void Wrap(const string& keyword, const string& contents,
-              unsigned int indent = sm_KeywordWidth);
+              unsigned int indent = sm_KeywordWidth) const;
     void WriteFeatureLocation(const string& name, const CSeq_loc& location,
-                              const CBioseq& default_seq);
-    void WriteFeatureLocation(const string& name, const string& location);
-    void WriteFeatureQualifier(const string& qual);
+                              const CBioseq& default_seq) const;
+    void WriteFeatureLocation(const string& name, const string& location)
+        const;
+    void WriteFeatureQualifier(const string& qual) const;
 
     void FormatIDPrefix(const CSeq_id& id, const CBioseq& default_seq,
-                        CNcbiOstream& dest);
+                        CNcbiOstream& dest) const;
     void FormatFeatureInterval(const CSeq_interval& interval,
-                               const CBioseq& default_seq, CNcbiOstream& dest);
+                               const CBioseq& default_seq, CNcbiOstream& dest)
+        const;
     void FormatFeatureLocation(const CSeq_loc& location,
-                               const CBioseq& default_seq, CNcbiOstream& dest);
+                               const CBioseq& default_seq, CNcbiOstream& dest)
+        const;
     const CSeq_feat& FindFeature(const CFeat_id& id,
-                                 const CBioseq& default_seq);
+                                 const CBioseq& default_seq) const;
 
-    CNcbiOstream&  m_Stream;
-    CScope&        m_Scope;
-    EFormat        m_Format;
-    EVersion       m_Version;
+    mutable CNcbiOstream& m_Stream;
+    CScope&               m_Scope;
+    EFormat               m_Format;
+    EVersion              m_Version;
     
     // formatting parameters; dependent on format and version
     unsigned int  m_LocusNameWidth;
@@ -138,6 +141,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2002/10/10 17:57:36  ucko
+* Make most methods const (and m_Stream consequently mutable) to keep
+* WorkShop from complaining when CGenbankWriter is used as a temporary.
+*
 * Revision 1.8  2002/05/06 16:11:12  ucko
 * Merge in Andrei Gourianov's changes to use the new OM (thanks!)
 * Move CVS log to end.
