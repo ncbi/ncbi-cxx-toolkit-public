@@ -12,3 +12,5 @@ reply.getseqidsfromgi = ids
 reply.getgihist       = gihist
 reply.getgirev        = girevhist
 reply.getgistate      = gistate
+reply.getsewithinfo   = gotsewithinfo
+reply.getblobinfo     = gotblobinfo
