@@ -1,30 +1,33 @@
---$Revision: 4.0 $
+--$Revision: 4.1 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
 --                A Molecular Modeling Database
 --
---  Definitions for structural features
+--  Definitions for structural features and biostruc addressing
 --
---  By Hitomi Ohkawa, Jim Ostell, and Steve Bryant 
+--  By Hitomi Ohkawa, Jim Ostell, Chris Hogue and Steve Bryant 
 --
 --  National Center for Biotechnology Information
 --  National Institutes of Health
 --  Bethesda, MD 20894 USA
 --
---  February, 1995
+--  July, 1995
 --
 --**********************************************************************
 
-MMDB-Structural-features DEFINITIONS ::=
+MMDB-features DEFINITIONS ::=
 
 BEGIN
 
-EXPORTS Model-feature, Density-coordinate-set, Surface-coordinate-set, 
-	Residue-pntrs, RealValue;
+EXPORTS Biostruc-feature-set, Chem-graph-pntrs, Atom-pntrs,
+	Chem-graph-alignment, Sphere, Cone, Cylinder, Brick, Rot-trans-matrix;
 
-IMPORTS Molecule-id, Residue-id FROM MMDB-Chemical-graph
-	Model-descr, Atom-pntrs, Component-pntr FROM MMDB-Structural-model;
+IMPORTS Biostruc-id FROM MMDB
+	Molecule-id, Residue-id, Atom-id FROM MMDB-Chemical-graph
+	Model-id, Model-coordinate-set-id FROM MMDB-Structural-model
+	User-object FROM NCBI-General
+	Pub FROM NCBI-Pub;
 
 -- Named model features refer to sets of residues or atoms, or a region in 
 -- the model space.  A few specific feature types are allowed for compatibility
@@ -32,97 +35,183 @@ IMPORTS Molecule-id, Residue-id FROM MMDB-Chemical-graph
 -- associate a text and/or citation-based description with a set of atoms or 
 -- residues, or a spatially-defined region of the model structure.  They also
 -- support association of numeric or character-defined properties with each
--- residue or atom of a set.
+-- residues or atoms of a set.
 
 -- PDB-derived secondary structure defines a single feature, represented as a
 -- sequence of residue motifs.  The contents of PDB SITE and FTNOTE records
--- define features represented as sequences of atom motifs.  NCBI-assigned core
--- and secondary structure descriptions are represented as a sequence of 
--- residue motifs, and cited as a data deposition in the feature description.
+-- define features represented as sequences of region motifs.  NCBI-assigned 
+-- core and secondary structure descriptions are represented as a sequence of 
+-- residue motifs, for the "NCBI" model types, and cited as a data deposition 
+-- in the feature description.
 
-Model-feature ::= SEQUENCE{
-	descr			Model-descr,
-	motif			SEQUENCE OF Structural-motif }
-	
-Structural-motif ::=	CHOICE {
-	residue-motif	Residue-motif,
-	atom-motif	Atom-motif,
-	region-motif	Region-motif } 
+Biostruc-feature-set ::= SEQUENCE {
+	id		Biostruc-feature-set-id,
+	descr		SEQUENCE OF Biostruc-feature-set-descr OPTIONAL,
+	features	SEQUENCE OF Biostruc-feature }
 
--- Residue motifs describe secondary structure or other features defined on a 
--- set of residues.  PDB secondary structure classifications from HELIX, SHEET,
--- and TURN records appear as residue motifs.  The residue motif name is in this
--- case derived from the PDB "identifier" field.
+Biostruc-feature-set-id ::= INTEGER
 
-Residue-motif ::= SEQUENCE {
-	descr			Model-descr,
-	type			ENUMERATED {
-					helix(1),
+Biostruc-feature-set-descr ::= CHOICE {
+	name			VisibleString,
+	pdb-comment		VisibleString,
+	other-comment		VisibleString,
+	attribution		Pub }
+
+Biostruc-feature ::= SEQUENCE {
+	id		Biostruc-feature-id,
+	name		VisibleString OPTIONAL,
+	type		INTEGER {	helix(1),
 					strand(2),
 					sheet(3),
 					turn(4),
-					other(255) },
-	residue-ids		Residue-pntrs,
-	residue-props		SEQUENCE OF Properties OPTIONAL }
+					site(5),
+					footnote(6),
+					subgraph(100),
+					region(101),
+					alignment(200),
+					similarity(201),
+					other(255) } OPTIONAL,
+	property	Property OPTIONAL,
+	location	CHOICE {
+				subgraph	Chem-graph-pntrs,
+				region		Region-pntrs,	
+				alignment	Chem-graph-alignment,
+				similarity	Region-similarity },
+	extension	User-object OPTIONAL }
+			
+Biostruc-feature-id ::= INTEGER
 
+-- Atom, residue or molecule motifs describe a substructure defined by a set
+-- of nodes from the chemical graph. PDB secondary structure features are
+-- described as a residue motif, since they are not associated with any one of
+-- the multiple models that may be provided in a PDB file.  NCBI-assigned
+-- secondary structure is represented in the same way, even though it is
+-- model specific, since this allows for simple mapping of the structural 
+-- feature onto a sequence-only representation. This addressing mode may also 
+-- be used to describe features to be assoicated with particular atoms, 
+-- as, for example, the chemical shift observed in an NMR experiment.
 
-Residue-pntrs ::= SEQUENCE {
+Chem-graph-pntrs ::= CHOICE {
+	atoms			Atom-pntrs,
+	residues		Residue-pntrs,
+	molecules		Molecule-pntrs }
+
+Atom-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id,
+	residue-ids		SEQUENCE OF Residue-id,
+	atom-ids		SEQUENCE OF Atom-id }
+
+Residue-pntrs ::= CHOICE {
+	explict			Residue-explicit-pntrs,
+	interval		SEQUENCE OF Residue-interval-pntr }
+
+Residue-explicit-pntrs ::= SEQUENCE {
 	number-of-ptrs		INTEGER,
 	molecule-ids		SEQUENCE OF Molecule-id,
 	residue-ids		SEQUENCE OF Residue-id }
 
+Residue-interval-pntr ::= SEQUENCE {
+	molecule-id		Molecule-id,
+	from			Residue-id,
+	to			Residue-id }
+
+Molecule-pntrs ::= SEQUENCE {
+	number-of-ptrs		INTEGER,
+	molecule-ids		SEQUENCE OF Molecule-id }
+
+
+-- Region motifs describe features defined by spatial location, such as the
+-- site specified by a coordiate value, or a rgeion within a bounding volume.
+
+Region-pntrs ::= SEQUENCE {
+	model-id	Model-id,
+	region 		CHOICE {
+				site		SEQUENCE OF Region-coordinates,
+				boundary	SEQUENCE OF Region-boundary } }
+	
+-- Coordinate sites describe a region in space by reference to individual 
+-- coordinates, in a particular model.  These coordinates may be either the
+-- x, y and z values of atomic coordinates, the triangles of a surface mesh, 
+-- or the grid points of a density model. All are addressed in the same manner,
+-- as coordinate indices which give offsets from the beginning of the 
+-- coordinate data arrays.  A coordinate-index of 5, for example, refers to 
+-- the 5th x, y and z values of an atomic coordiante set, the 5th v1, v2, and v3
+-- values of a triangle mesh, or the 5th value in a density grid.
+
+-- PDB SITE and FTNOTE records refer to particular atomic coordinates, and they
+-- are represented as a region motif with addresses of type Region-coordinates.
+-- Any names or descriptions provided by PDB are thus associated with the
+-- indicated sites, in the indicated model. 
+
+Region-coordinates ::= SEQUENCE {
+	model-coord-set-id	Model-coordinate-set-id,
+	number-of-coords	INTEGER OPTIONAL,
+	coordinate-indices	SEQUENCE OF INTEGER OPTIONAL }	
+
+
+-- Region boundaries are defined by regular solids located in the model space.  
+
+Region-boundary ::=	CHOICE {	sphere		Sphere,
+					cone		Cone,
+					cylinder	Cylinder,
+					brick		Brick }
+
+
+-- A biostruc alignment establishes an equivalence of nodes in the chemical
+-- graphs of two or more biostrucs. This may be mapped to a sequence alignment
+-- in the case of biopolymers. Note that a like number of biostruc-id's and 
+-- chem-graph-pntrs should be given, i.e. they are parallel arrays.  Similarly,
+-- within the chem-graph pntrs, a like number atoms, residues or moleclues 
+-- should be given.
+
+Chem-graph-alignment ::= SEQUENCE {
+	dimension		INTEGER DEFAULT 2,
+	biostruc-ids		SEQUENCE OF Biostruc-id,		
+	alignment		SEQUENCE OF Chem-graph-pntrs,
+	transform		SEQUENCE OF Rot-trans-matrix OPTIONAL }
+
+
+-- A biostruc similarity describes spatial features which are similar between
+-- two or more biostrucs.  Similarities are model dependent, and the model and
+-- coordinate set ids of the biostrucs must be specified.  They do not 
+-- necessarily map to a sequence alignment, as the regions referenced may
+-- be pieces of a surface or grid, and thus not uniquely mapable to particular
+-- chemical components.
+
+Region-similarity ::= SEQUENCE {
+	dimension		INTEGER DEFAULT 2,
+	biostruc-ids		SEQUENCE OF Biostruc-id,
+	similarity		SEQUENCE OF Region-pntrs,
+	transform		SEQUENCE OF Rot-trans-matrix }
+
+
 -- Properties are intended to represent anything describable by numbers or
 -- text, for example the surface accessibility of a residue, the chemical
 -- shift of an atom, or a code for a local environment category.  The intended
--- meaning must be specified by the name and description.  The number of
--- properties with a given description is assumed to be the same as the number
--- of residues, atoms, or surface points they describe, but this is not a
--- requirement of the specification.  No properties are defined for PDB-derived
--- structural features.
+-- meaning must be specified by the name and description.  Special types are
+-- provided for coloring and rendering, as needed by molecular graphic
+-- programs.
 
-Properties ::= SEQUENCE {
-	name			VisibleString,
-	descr			SEQUENCE OF VisibleString OPTIONAL,
-	number-of-props		INTEGER,
-	props			CHOICE {
-					numeric		Num-props,
-					text		Text-props } }
-Num-props ::= SEQUENCE {
-	scale-factor		INTEGER,
-	property		SEQUENCE OF INTEGER }
-
-Text-props ::= SEQUENCE OF VisibleString
-
--- Atom motifs describe binding sites, catalytic sites, or other features
--- defined on a set of atoms.  For PDB SITE and FTNOTE records atom motifs
--- are named according to "site identifier" or "footnote number" fields, and 
--- their description contains comments extracted from FTNOTE records, and from
--- REMARK records if these could be linked to a particular SITE record.
-
-Atom-motif ::= SEQUENCE {
-	descr			Model-descr,
-	atom-ids		Atom-pntrs,
-	atom-props		SEQUENCE OF Properties OPTIONAL }
-
--- Region motifs describe features of substructures defined by spatial location,
--- such as the portion of a density grid believed to contain a binding site.
-
-Region-motif ::= SEQUENCE {
-	descr			Model-descr,
-	region-boundary		CHOICE {
-					sphere		Sphere,
-					cylinder	Cylinder,
-					brick		Brick,
-					surface		Surface-grid },
-	region-props		SEQUENCE OF Properties OPTIONAL	}
+Property ::= SEQUENCE {
+	name		VisibleString,
+	prop		CHOICE {	
+				color		Color-prop,
+				render		Render-prop,
+				user		User-object } }
 
 -- Geometrical primitives are used in the definition of region motifs, and 
--- also non-atomic coordinates.  Spheres, cylinders and bricks are defined by 
--- a few points in the model space.
+-- also non-atomic coordinates.  Spheres, cones, cylinders and bricks are 
+-- defined by a few points in the model space.
 
 Sphere ::= SEQUENCE { 
 	center			Model-space-point,
 	radius			RealValue }
+
+Cone ::= SEQUENCE { 
+	axis-top		Model-space-point,
+	axis-bottom		Model-space-point,
+	radius-bottom		RealValue }
 
 Cylinder ::= SEQUENCE { 
 	axis-top		Model-space-point,
@@ -144,59 +233,99 @@ Brick ::= SEQUENCE {
 	corner-110		Model-space-point,
 	corner-111		Model-space-point}
 
--- A grid boundary is a set of points which are assumed to define a triangle
--- mesh surface when each is connected to it's 3 nearest neighbors.
-
-Surface-grid ::= SEQUENCE {
-	number-of-points	INTEGER,
-	scale-factor		INTEGER,
-	x			SEQUENCE OF INTEGER,
-	y			SEQUENCE OF INTEGER,
-	z			SEQUENCE OF INTEGER }
-
 Model-space-point ::= SEQUENCE {
-	x			RealValue,
-	y			RealValue,
-	z			RealValue } 
+	scale-factor		INTEGER,
+	x			INTEGER,
+	y			INTEGER,
+	z			INTEGER } 
 
 RealValue ::= SEQUENCE {
 	scale-factor		INTEGER,
 	scaled-integer-value	INTEGER }
 
--- Literal density coordinates define the chemical components whose structure
--- is described by a density grid, parameters of this grid, and density values.
 
-Density-coordinate-set ::= SEQUENCE {
-	descr			Model-descr,
-	contents		Component-pntr,
-	grid-corners		Brick,
-	grid-steps-x		INTEGER,
-	grid-steps-y		INTEGER,
-	grid-steps-z		INTEGER,
-	fastest-varying		ENUMERATED {
-					x(1),
-					y(2),
-					z(3)},
-	slowest-varying		ENUMERATED {
-					x(1),
-					y(2),
-					z(3)},
-	scale-factor		INTEGER,
-	density			SEQUENCE OF INTEGER }
+-- A rotation-translation matrix is defined by 12 numbers.  The first 9 are
+-- a rotation matrix given by rows, that is with column indices varying fastest.
+-- Coordinates, as a matrix with columns x, y, an z, are rotated to the target 
+-- reference frame when post-multiplied by the rotation matrix.  The last 3 
+-- numbers are a translation.  Addition to the rotated coordinates translates
+-- their origin to that of the reference frame.
 
--- Literal surface coordinates define the chemical components whose structure
--- is described by a surface, and the surface itself.  The surface may be
--- either a regular geometric solid or a triangle-mesh of arbitrary shape.
+Rot-trans-matrix ::= SEQUENCE {
+	rot-11			RealValue,
+	rot-12			RealValue,
+	rot-13			RealValue,
+	rot-21			RealValue,
+	rot-22			RealValue,
+	rot-23			RealValue,
+	rot-31			RealValue,
+	rot-32			RealValue,
+	rot-33			RealValue,
+	tran-1			RealValue,
+	tran-2			RealValue,
+	tran-3			RealValue }
 
-Surface-coordinate-set ::= SEQUENCE {
-	descr			Model-descr,
-	contents		Component-pntr,
-	surface			CHOICE {
-		sphere		Sphere,
-		cylinder	Cylinder,
-		brick		Brick,
-		surface		Surface-grid } ,
-	surface-props		SEQUENCE OF Properties OPTIONAL	}
 
+Color-prop ::= SEQUENCE {
+	r		INTEGER OPTIONAL, 
+	g		INTEGER OPTIONAL,
+	b		INTEGER OPTIONAL,
+	name		VisibleString OPTIONAL }
+
+Render-prop ::= INTEGER {
+	default		(0),  -- Default view
+	wire		(1),  -- use wireframe 
+	space		(2),  -- use spacefill
+	stick		(3),  -- use stick model (thin cylinders)
+	ballNStick	(4),  -- use ball & stick model
+	thickWire	(5),  -- thicker wireframe
+	bbOnly		(6),  -- show BB atoms only
+	bbVirtual	(7),  -- show BB as virtual c-alpha bonds
+	hide  		(9),  -- don't show this
+	name 		(10), -- display its name next to it
+	number		(11), -- display its number next to it 
+	pdbNumber	(12), -- display its PDB number next to it
+	hBond		(13), -- show any hBonds this forms
+	objWireFrame	(150), -- display MMDB surface object as wireframe
+	objPolygons	(151), -- display MMDB surface object as polygons
+	bbWire		(200), -- backbone in wireframe
+	bbSpace		(201), -- backbone in spacefill
+	bbStick		(202), -- backbone in stick (thin cylinders)
+	bbCurve		(203), -- backbone interpreted as a curve
+	bbWorm		(204), -- backbone interpreted like a worm
+	bbRibbon	(205), -- backbone as a ribbon (general)
+	bbLineRibbon	(206), -- backbone as a vectorized ribbon
+	bbCylRibbon	(207), -- bacbbone ribbon cyl-x-section
+	bbRectRibbon 	(208), -- backbone ribbon rect-x-section
+	bbOvalRibbon	(209), -- backbone ribbon oval-x-section
+	bbBallNStick	(210), -- backbone as ball and stick
+	bbThickWire	(211), -- backbone in thick wireframe
+	ssCylinder      (215), -- show helices as cylinders
+	ssRectArrow	(216), -- show sheets with rect-x-section arrows
+	ssSquareArrow	(217), -- show sheets with square-x-section arrows
+	ssOvalArrow	(218), -- show sheets with oval-x-section arrows
+	colorsetCPK     (225), -- color atoms like CPK models
+	colorsetbyChain (226), -- color each chain different
+	colorsetbyTemp  (227), -- color using isotropic Temp factors 
+	colorsetbyRes   (228), -- color using residue properties
+	colorsetbyLen	(229), -- color changes along chain length
+	colorsetbySStru (230), -- color by secondary structure
+	colorsetbyHydro (231), -- color by hydrophobicity
+	colorsetTurn	(232), -- color Turn
+	colorsetLoop	(233), -- color Loop
+	colorsetHelix   (234), -- color Helix
+	colorsetSheet   (235), -- color Sheet
+	colorsetSite    (236), -- color Site
+	colorsetHet     (237), -- color Het
+	colorsetIon     (238), -- color metal Ion
+	colorsetDNA     (239), -- color DNA
+	colorsetRNA     (240), -- color RNA
+	colorsetProtein (241), -- color Protein
+	colorsetSugar   (242), -- color Sugar
+	colorsetBasic	(243), -- color Basic pH
+	colorsetAcidic  (244), -- color Acidic pH
+	colorsetNeutr	(245), -- color Neutral pH
+	other	   	(255)  
+	}
 
 END
