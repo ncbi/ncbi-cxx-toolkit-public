@@ -212,8 +212,8 @@ private:
     /// TCounter is signed, the msb (most significant bit) is 0, and the bit
     /// after that is a 1; and if the counter is unsigned, then the msb is 1.
     ///
-    /// Least significant bit is the "heap" bit and the most significant bit
-    /// (or the one after it) is the "valid" bit.
+    /// Least significant bits are the "memory" bits and the most
+    /// significant bit (or the one after it) is the "valid" bit.
     ///
     /// The following bit positions have special signifcance:
     /// - Least significant bit = 0 means object not in heap.
@@ -222,9 +222,10 @@ private:
     /// - Most significant bit (or one after it) = 1 means object is valid 
     ///
     /// Possible bit patterns:
-    /// - [0]0x...xxx : non valid object -> cannot be referenced.
-    /// - [0]1c...cc0 : object not in heap -> cannot be referenced.
-    /// - [0]1c...cc1 : object in heap -> can be referenced.
+    /// - [0]0x...xxxx : non valid object -> cannot be referenced.
+    /// - [0]1c...ccx0 : object not in heap -> cannot be deleted.
+    /// - [0]1c...cc01 : illegal; should be impossible to achieve.
+    /// - [0]1c...cc11 : object in heap -> can be deleted.
     enum EObjectState {
         eStateBitsInHeap        = 1 << 0, ///< Detected as in heap
         eStateBitsHeapSignature = 1 << 1, ///< Heap signature was found
@@ -240,7 +241,7 @@ private:
         /// Valid object, and object in heap. 
         eStateMask        = eStateBitsValid | eStateBitsMemory,
 
-        /// Shift one bit left over the "heap" bit
+        /// Shift over the "memory" bits
         eCounterStep      = 1 << 2, 
 
         /// Mask for testing if counter is for valid object, not in heap
@@ -1484,6 +1485,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/03/17 20:24:29  ucko
+ * Update comments to reflect change in bit usage of counter.
+ *
  * Revision 1.61  2005/03/17 19:54:30  grichenk
  * DoDeleteThisObject() fails for objects not in heap.
  *
