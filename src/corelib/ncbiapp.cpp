@@ -456,11 +456,11 @@ int CNcbiApplication::AppMain
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("Application's initialization failed", e);
-            exit_code = -2;
+            exit_code = 2;
         }
         catch (exception& e) {
             ERR_POST("Application's initialization failed: " << e.what());
-            exit_code = -2;
+            exit_code = 2;
         }
 
         // Run application
@@ -473,11 +473,11 @@ int CNcbiApplication::AppMain
             }
             catch (CException& e) {
                 NCBI_REPORT_EXCEPTION("Application's execution failed", e);
-                exit_code = -3;
+                exit_code = 3;
             }
             catch (exception& e) {
                 ERR_POST("Application's execution failed: " << e.what());
-                exit_code = -3;
+                exit_code = 3;
             }
         }
 
@@ -503,7 +503,7 @@ int CNcbiApplication::AppMain
             LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
         NCBI_REPORT_EXCEPTION("", e);
-        exit_code = -1;
+        exit_code = 1;
     }
     catch (...) {
         // MSVC++ 6.0 in Debug mode does not call destructors when
@@ -979,6 +979,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2004/09/29 13:40:39  ivanov
+ * Changed standard exit code to positive values.
+ * Exit codes must be in range 0..255.
+ *
  * Revision 1.96  2004/09/24 17:47:46  gouriano
  * Enable treating standard input and output as binary
  *
@@ -988,7 +992,7 @@ END_NCBI_SCOPE
  * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
  * Module, class and function attribute added to CNcbiDiag and CException
  * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
- * 	CDiagCompileInfo + fixes on derived classes and their usage
+ *  CDiagCompileInfo + fixes on derived classes and their usage
  * Macro NCBI_MODULE can be used to set default module name in cpp files
  *
  * Revision 1.94  2004/08/09 20:05:32  ucko
