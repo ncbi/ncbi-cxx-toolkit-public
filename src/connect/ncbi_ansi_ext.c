@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/12/28 21:27:52  lavr
+ * ANSI C++ compliant use of malloc (explicit casting of result)
+ *
  * Revision 6.6  2000/11/07 21:45:16  lavr
  * Removed isupper/islower checking in strlwr/strupr
  *
@@ -60,7 +63,7 @@
 extern char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
-    return memcpy(malloc(size), str, size);
+    return (char *)memcpy(malloc(size), str, size);
 }
 
 
