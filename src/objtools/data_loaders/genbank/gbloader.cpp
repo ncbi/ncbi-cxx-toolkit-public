@@ -894,35 +894,35 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     }
     else {
         int gi = seq_id->GetGi();
-        
         //LOG_POST("ResolveHandle-b("<<h.AsString()<<") "<<sr->m_Sr.size());
-        
-        for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
-            CTimerGuard tg(m_Timer);
-            CReader::TConn conn = m_Locks.m_Pool.Select(key);
-            try {
-                osr.clear();
-                m_Driver->RetrieveSeqrefs(osr, gi, conn);
-                got = true;
-                break;
-            }
-            catch ( CLoaderException& e ) {
-                if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
-                    throw;
+        if ( gi != 0 ) {
+            for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
+                CTimerGuard tg(m_Timer);
+                CReader::TConn conn = m_Locks.m_Pool.Select(key);
+                try {
+                    osr.clear();
+                    m_Driver->RetrieveSeqrefs(osr, gi, conn);
+                    got = true;
+                    break;
                 }
-                LOG_POST(e.what());
+                catch ( CLoaderException& e ) {
+                    if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                        throw;
+                    }
+                    LOG_POST(e.what());
+                }
+                catch(const exception &e) {
+                    LOG_POST(e.what());
+                }
+                LOG_POST("GenBank connection failed: Reconnecting....");
+                m_Driver->Reconnect(conn);
             }
-            catch(const exception &e) {
-                LOG_POST(e.what());
+            if ( !got ) {
+                ERR_POST("CGBLoader:x_ResolveHandle: gi resolve failed: "
+                         "exceeded maximum attempts count");
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Multiple attempts to resolve Seq-id failed");
             }
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
-        }
-        if ( !got ) {
-            ERR_POST("CGBLoader:x_ResolveHandle: gi resolve failed: "
-                     "exceeded maximum attempts count");
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Multiple attempts to resolve Seq-id failed");
         }
     }
 
@@ -1084,6 +1084,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2003/12/02 23:17:34  vasilche
+* Fixed exception in ID1 reader when invalid Seq-id is supplied.
+*
 * Revision 1.92  2003/12/01 23:42:29  vasilche
 * Temporary fix for segfault in genbank data loader in multithreaded applications.
 *
