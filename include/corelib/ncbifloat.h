@@ -43,12 +43,20 @@
 #if defined(NCBI_OS_MSWIN)
 //Checks double-precision value for not a number (NaN)
 #   define isnan _isnan
+#elif defined(NCBI_OS_DARWIN)  &&  defined(MATH_ERRNO)  &&  !defined(isnan)
+// <math.h> changed a lot between 10.1 and 10.2; the presence of
+// MATH_ERRNO indicates 10.2, which needs this hack.
+#   define isnan __isnan
 #endif
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/02/14 15:48:44  ucko
+ * Add a workaround for Mac OS X 10.2, where <cmath> clobbers <math.h>'s
+ * #define of isnan but doesn't replace it with anything.
+ *
  * Revision 1.1  2003/02/04 17:02:07  gouriano
  * initial revision
  *
