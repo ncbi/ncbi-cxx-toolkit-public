@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.3 2003/11/10 22:24:12 lewisg Exp $
+-- $Id: omssa.asn,v 1.4 2003/12/04 23:39:07 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -79,14 +79,22 @@ MSRequest ::= SEQUENCE {
 	spectra MSSpectrumset,
 	peptol REAL,  -- peptide mass tolerance
 	msmstol REAL, -- msms mass tolerance
-    haircut REAL, -- the intensity fraction below which peaks will be discarded
+          -- next 3 fields define intensity fraction below
+          -- which peaks will be discard
+        cutlo REAL, -- the start of the cutoff, fraction of most intense peak
+        cuthi REAL, -- the end of the cutoff
+        cutinc REAL, -- the increment of the cutoff
+        singlewin INTEGER,  -- the size of the single charge filtering window
+        doublewin INTEGER,  -- the size of the double charge filtering window
+	singlenum INTEGER,  -- the number of peaks allowed in the single window
+        doublenum INTEGER,  -- the number of peaks allowed in the double window
 	fixed SEQUENCE OF MSMod,
 	variable SEQUENCE OF MSMod,
 	enzyme MSEnzymes,
 	missedcleave INTEGER, 
 	hitlistlen INTEGER DEFAULT 25,  -- the number of hits kept in memory
 	                                -- for a spectrum
-	db VisibleString,  -- database to search, e.g. "nr"
+	db VisibleString,  -- sequence set to search, e.g. "nr"
 	cull INTEGER,  -- parameter for s/n cutoff
 	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search
 	rid VisibleString OPTIONAL,  -- request id
@@ -99,7 +107,7 @@ MSRequest ::= SEQUENCE {
 MSIonType ::= INTEGER {
 	a (1),
 	b (2),
-    c (3),
+        c (3),
 	x (4),
 	y (5),
 	z (6)

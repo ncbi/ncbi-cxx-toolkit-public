@@ -41,6 +41,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <cstring>
 
 #include <msms.hpp>
 #include <msladder.hpp>
@@ -337,8 +338,7 @@ public:
     // iterate thru peaks, deleting ones that pass the test
     void CullIterate(CMZI *Temp, int& TempLen, TMZIbool FCN);
     // cull precursors
-    void CullPrecursor(CMZI *Temp, int& TempLen, double Precursor1,
-		       double Precursor2);
+    void CullPrecursor(CMZI *Temp, int& TempLen, double Precursor);
     // take out peaks below a threshold
     void CullBaseLine(double Threshold, CMZI *Temp, int& TempLen);
     // cull isotopes using the Markey Method
@@ -348,17 +348,26 @@ public:
     // less intensity
     void CullH20NH3(CMZI *Temp, int& TempLen);
     // recursively culls the peaks
-    void SmartCull(double Threshold, int Charge, int SingleWindow,
-		   int DoubleWindow);
+    void SmartCull(double Threshold, int Charge,
+		   int SingleWindow,  // size of the charge 1 window in Da
+		   int DoubleWindow,  // size of the charge 2 window in Da
+		   int SingleNum,     // number of peaks allowed in charge 1 window
+		   int DoubleNum);    // number of peaks allowed in charge 2 window
     // use smartcull on all charges
-    void CullAll(double Threshold, int SingleWindow,
-		 int DoubleWindow);
+    void CullAll(double Threshold, 
+		 int SingleWindow,
+		 int DoubleWindow,
+		 int SingleNum,
+		 int DoubleNum);
 
 
     // return the lowest culled peak and the highest culled peak less than the
     // precursor mass passed in
     void HighLow(int& High, int& Low, int& NumPeaks, int PrecursorMass, int Charge,
-		 double Threshold);
+		 double Threshold,
+		 int& NumLo,  // number of peak below mh/2
+		 int& NumHi   // number of peaks above mh/2 and below mh
+		 );
 
     // count number of AA intervals in spectum.
     int CountAAIntervals(CMassArray& MassArray, bool Nodup=true, int Which = MSCULLED1);
@@ -431,7 +440,13 @@ public:
     // set the mass tolerance.  input in Daltons.
     void SetTolerance(double tolin);
     int GetTol(void);
+    const char *GetUsed(int Which) const;
+    char *SetUsed(int Which);
 
+    // clear used arrays for one cull type
+    void ClearUsed(int Which);
+    // clear used arrays for all cull types
+    void ClearUsedAll(void);
 
     // functions for testing if peaks are h2o or nh3 losses
     // check to see if TestMZ is Diff away from BigMZ
@@ -441,8 +456,9 @@ public:
 
 private:
     CMZI *MZI[MSNUMDATA]; // m/z values and intensities, sorted by m/z.  first is original, second is culled
-    unsigned Num[MSNUMDATA];   // number of CMZI.  first is original, second is culled
-    bool Sorted[MSNUMDATA];    // have the CMZI been sorted?
+    char *Used[MSNUMDATA];  // used to mark m/z values as used in a match
+    unsigned Num[MSNUMDATA]; // number of CMZI.  first is original, second is culled
+    bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
     bool *Match;    // is a peak matched or not?
     CMZI ** IntensitySort;  // points to CMZI original, sorted.
     int TotalMass;  // singly protonated m/z
@@ -567,6 +583,33 @@ inline int CMSPeak::GetTol(void)
     return tol; 
 }
 
+inline const char *CMSPeak::GetUsed(int Which) const
+{
+}
+
+inline char *CMSPeak::SetUsed(int Which)
+{
+    return Used[Which];
+}
+
+inline void CMSPeak::ClearUsed(int Which)
+{
+    memset(Used[Which], 0, Num[Which]);
+}
+
+inline void CMSPeak::ClearUsedAll(void)
+{
+    int iCharges;
+    for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
+	ClearUsed(GetWhich(GetCharges()[iCharges]));
+}
+
+// returns the cull array index
+inline int CMSPeak::GetWhich(int Charge)
+{
+    if(Charge < 3) return MSCULLED1;
+    else return MSCULLED2;
+}
 
 /////////////////// end of  CMSPeak  inline methods
 
@@ -656,6 +699,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.7  2003/12/04 23:39:08  lewisg
+  no-overlap hits and various bugfixes
+
   Revision 1.6  2003/11/14 20:28:05  lewisg
   scale precursor tolerance by charge
 

@@ -90,8 +90,12 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("p", "ptol", "peptide mass tolerance",
 			   CArgDescriptions::eDouble, "2.0");
-    argDesc->AddDefaultKey("i", "baseline", "baseline cutoff by fraction of max intensity",
-			   CArgDescriptions::eDouble, "0.025");
+    argDesc->AddDefaultKey("cl", "cutlo", "low end of intensity cutoff",
+			   CArgDescriptions::eDouble, "0.0");
+    argDesc->AddDefaultKey("ch", "cuthi", "high end of intensity cutoff",
+			   CArgDescriptions::eDouble, "0.2");
+    argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment",
+			   CArgDescriptions::eDouble, "0.0005");
     argDesc->AddDefaultKey("c", "cull", 
 			   "number of peaks to leave in each 100Da bin",
 			   CArgDescriptions::eInteger, "3");
@@ -110,6 +114,12 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("w2", "window2", 
 			   "double charge window",
 			   CArgDescriptions::eInteger, "14");
+    argDesc->AddDefaultKey("h1", "hit1", 
+			   "number of peaks allowed in single charge window",
+			   CArgDescriptions::eInteger, "2");
+    argDesc->AddDefaultKey("h2", "hit2", 
+			   "number of peaks allowed in double charge window",
+			   CArgDescriptions::eInteger, "2");
     argDesc->AddDefaultKey("hl", "hitlist", 
 			   "number of hits kept for spectrum",
 			   CArgDescriptions::eInteger, "100");
@@ -169,7 +179,13 @@ int COMSSA::Run()
 
     Request.SetPeptol(args["p"].AsDouble());
     Request.SetMsmstol(args["t"].AsDouble());
-    Request.SetHaircut(args["i"].AsDouble());
+    Request.SetCutlo(args["cl"].AsDouble());
+    Request.SetCuthi(args["ch"].AsDouble());
+    Request.SetCutinc(args["ci"].AsDouble());
+    Request.SetSinglewin(args["w1"].AsInteger());
+    Request.SetDoublewin(args["w2"].AsInteger());
+    Request.SetSinglenum(args["h1"].AsInteger());
+    Request.SetDoublenum(args["h2"].AsInteger());
     Request.SetEnzyme(eMSEnzymes_trypsin);
     Request.SetMissedcleave(args["l"].AsInteger());
     Request.SetSpectra(*Spectrumset);
@@ -183,9 +199,7 @@ int COMSSA::Run()
 
 
     _TRACE("omssa: search begin");
-    Search.Search(Request, Response, 50, 
-		  args["w1"].AsInteger(), 
-		  args["w2"].AsInteger());
+    Search.Search(Request, Response);
     _TRACE("omssa: search end");
 
     // read out hits
@@ -244,6 +258,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.8  2003/12/04 23:39:09  lewisg
+  no-overlap hits and various bugfixes
+
   Revision 1.7  2003/11/20 15:40:53  lewisg
   fix hitlist bug, change defaults
 

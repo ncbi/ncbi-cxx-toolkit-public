@@ -160,6 +160,9 @@ void CMSPeak::xCMSPeak(void)
     MZI[MSCULLED1] = 0;
     MZI[MSCULLED2] = 0;
     MZI[MSORIGINAL] = 0;
+    Used[MSCULLED1] = 0;
+    Used[MSCULLED2] = 0;
+    Used[MSORIGINAL] = 0;    
     PlusOne = 0.8L;
     ComputedCharge = eChargeUnknown;
     Error = eMSHitError_none;
@@ -178,7 +181,9 @@ CMSPeak::CMSPeak(int HitListSizeIn): HitListSize(HitListSizeIn)
 CMSPeak::~CMSPeak(void)
 {  
     delete [] MZI[MSCULLED1];
+    delete [] Used[MSCULLED1];
     delete [] MZI[MSCULLED2];
+    delete [] Used[MSCULLED2];
     delete [] MZI[MSORIGINAL];
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
@@ -272,6 +277,8 @@ bool CMSPeak::ContainsFast(int value, int Which)
 }
 
 // compare assuming all lists are sorted
+// the intensity array holds the intensity if there is a match to the ladder
+// returns total number of matches, which may be more than is recorded in the ladder due to overlap
 int CMSPeak::CompareSorted(CLadder& Ladder, int Which, unsigned* Intensity)
 {
     unsigned i(0), j(0);
@@ -290,8 +297,11 @@ int CMSPeak::CompareSorted(CLadder& Ladder, int Which, unsigned* Intensity)
 	    continue;
 	}
 	else {
+	    if(Used[Which][j] == 0) {
+		Used[Which][j] = 1;
+		Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
+	    }
 	    retval++;
-	    Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
 	    // record the intensity if requested, used for auto adjust
 	    if(Intensity) {
 		Intensity[i] = MZI[Which][j].Intensity;
@@ -525,16 +535,14 @@ void CMSPeak::CullBaseLine(double Threshold, CMZI *Temp, int& TempLen)
 
 
 // cull precursors
-void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, double Precursor1, double Precursor2)
+void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, double Precursor)
 {
     // chop out precursors
     int iTemp(0), iMZI;
     
     for(iMZI = 0; iMZI < TempLen; iMZI++) { 
-	if((Temp[iMZI].MZ > Precursor1 - tol && 
-	    Temp[iMZI].MZ < Precursor1 + tol) ||   
-	   (Temp[iMZI].MZ > Precursor2 - tol && 
-	    Temp[iMZI].MZ < Precursor2 + tol)) continue;
+	if(Temp[iMZI].MZ > Precursor - tol && 
+	    Temp[iMZI].MZ < Precursor + tol) continue;
 	
 	Temp[iTemp] = Temp[iMZI];
 	iTemp++;
@@ -606,12 +614,12 @@ void CMSPeak::CullH20NH3(CMZI *Temp, int& TempLen)
 
 // use smartcull on all charges
 void CMSPeak::CullAll(double Threshold, int SingleWindow,
-		      int DoubleWindow)
+		      int DoubleWindow, int SingleHit, int DoubleHit)
 {    
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
 	SmartCull(Threshold, GetCharges()[iCharges], SingleWindow,
-		  DoubleWindow);
+		  DoubleWindow, SingleHit, DoubleHit);
 }
 
 // check to see if TestMZ is Diff away from BigMZ
@@ -635,29 +643,14 @@ bool CMSPeak::IsMajorPeak(int BigMZ, int TestMZ, int tol)
 
 // recursively culls the peaks
 void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
-			int DoubleWindow)
+			int DoubleWindow, int SingleNum, int DoubleNum)
 {
     sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompare());
     sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompareIntensity());
     Sorted[MSORIGINAL] = false;
-    double Precursor1, Precursor2;
-    int Which;
-
-    if(Charge == 1) {
-	Precursor1 = GetMass();
-	Precursor2 = Precursor1;
-	Which = MSCULLED1;
-    }
-    else if (Charge == 2) {
-	Precursor1 = GetMass()/2.0L;
-	Precursor2 = Precursor1;
-	Which = MSCULLED1;
-    }
-    else {
-	Precursor1 = GetMass()/3.0L;
-	Precursor2 = Precursor1;
-	Which = MSCULLED2;
-    }
+    double Precursor;
+    int Which = GetWhich(Charge);
+    Precursor = GetMass()/(double)Charge;
 
     int iMZI = 0;  // starting point
 
@@ -674,7 +667,7 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
 	sort(Temp, Temp+TempLen , CMZICompareIntensity());
     }
 #endif
-    CullPrecursor(Temp, TempLen, Precursor1, Precursor2);
+    CullPrecursor(Temp, TempLen, Precursor);
 #ifdef DEBUG_PEAKS1
     {
 	sort(Temp, Temp+TempLen , CMZICompare());
@@ -711,15 +704,15 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
 	if(Deleted.count(iMZI) != 0) continue;
 	HitCount = 0;
-	if(Charge < 3 || Temp[iMZI].MZ > Precursor1) {
+	if(Charge < 3 || Temp[iMZI].MZ > Precursor) {
 	    // if charge 1 region, allow fewer peaks
 	    Window = SingleWindow; //27;
-	    HitsAllowed = 2;
+	    HitsAllowed = SingleNum;
 	}
 	else {
 	    // otherwise allow a greater number
 	    Window = DoubleWindow; //14;
-	    HitsAllowed = 2;
+	    HitsAllowed = DoubleNum;
 	}
 	// go over smaller peaks
 	set <int> Considered;
@@ -761,8 +754,11 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
 
     // make the array of culled peaks
     if(MZI[Which]) delete [] MZI[Which];
-    MZI[Which] = new CMZI [TempLen];
+    if(Used[Which]) delete [] Used[Which];
     Num[Which] = TempLen;
+    MZI[Which] = new CMZI [TempLen];
+    Used[Which] = new char [TempLen];
+    ClearUsed(Which);
     copy(Temp, Temp+TempLen, MZI[Which]);
     Sort(Which);
 #ifdef DEBUG_PEAKS1
@@ -775,30 +771,25 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
     delete [] Temp;
 }
 
-// returns the cull array index
-int CMSPeak::GetWhich(int Charge)
-{
-    if(Charge < 3) return MSCULLED1;
-    else return MSCULLED2;
-}
-
 // return the lowest culled peak and the highest culled peak less than the
 // +1 precursor mass
 void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, int PrecursorMass,
-		      int Charge, double Threshold)
+		      int Charge, double Threshold, int& NumLo, int& NumHi)
 {
     int Which = GetWhich(Charge);
 
     if(!Sorted[Which]) Sort(Which);
     if(Num[Which] < 2) {
 	High = Low = -1;
-	NumPeaks = 0;
+	NumPeaks = NumLo = NumHi = 0;
 	return;
     }
 
     Low = PrecursorMass;
     High = 0;
     NumPeaks = 0;
+    NumLo = 0;
+    NumHi = 0;
 
     int MaxI = GetMaxI(Which);
 
@@ -813,6 +804,8 @@ void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, int PrecursorMass,
 		Low = MZI[Which][iMZI].MZ;
 	    }
 	    NumPeaks++;
+	    if(MZI[Which][iMZI].MZ < PrecursorMass/2.0) NumLo++;
+	    else NumHi++;
 	}
     }
 }

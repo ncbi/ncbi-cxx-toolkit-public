@@ -72,10 +72,8 @@ public:
     int InitBlast(const char *blastdb, bool InitDb);
 
     // loads spectra into peaks
-    void Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet,
-		       int SingleWindow, int DoubleWindow);
-    int Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
-	       int SingleWindow, int DoubleWindow);
+    void Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet);
+    int Search(CMSRequest& MyRequest, CMSResponse& MyResponse);
 
     // create the ladders from sequence
     int CreateLadders(unsigned char *Sequence, int iSearch, int position,
@@ -106,7 +104,7 @@ public:
 
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
-		   int Cutoff, double ThreshStart, double ThreshEnd,
+		   double ThreshStart, double ThreshEnd,
 		   double ThreshInc);
     // calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks);
@@ -170,6 +168,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.4  2003/12/04 23:39:08  lewisg
+  no-overlap hits and various bugfixes
+
   Revision 1.3  2003/10/24 21:28:41  lewisg
   add omssa, xomssa, omssacl to win32 build, including dll
 

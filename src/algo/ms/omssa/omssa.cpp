@@ -151,7 +151,7 @@ int CSearch::CompareLadders(CLadder& BLadder,
 #ifdef CHECKGI
 static void CheckGi(int gi)
 {
-    if(gi == 4388856 ) {
+    if(gi == 28393739 ) {
 	ERR_POST(Info << "test seq");
     }
 }
@@ -159,8 +159,7 @@ static void CheckGi(int gi)
 #endif
 
 // loads spectra into peaks
-void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet, 
-							int SingleWindow, int DoubleWindow)
+void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 {
     CSpectrumSet::Tdata::const_iterator iSpectrum;
     CMSPeak* Peaks;
@@ -182,7 +181,9 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet,
 	Peaks->Sort();
 	Peaks->SetComputedCharge(3);
 	Peaks->InitHitList();
-	Peaks->CullAll(/*MyRequest.GetHaircut()*/0.0, SingleWindow, DoubleWindow);
+	Peaks->CullAll(MyRequest.GetCutlo(), MyRequest.GetSinglewin(),
+		       MyRequest.GetDoublewin(), MyRequest.GetSinglenum(),
+		       MyRequest.GetDoublenum());
 		
 	if(Peaks->GetNum(MSCULLED1) < MSHITMIN)  {
 	    ERR_POST(Info << "omssa: not enough peaks in spectra");
@@ -196,8 +197,7 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet,
 }
 
 
-int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
-					int SingleWindow, int DoubleWindow)
+int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 {
     int length;
     CTrypsin trypsin;
@@ -242,7 +242,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
     TMassPeak *MassPeak; // peak currently in consideration
     CMSPeak* Peaks;
 	
-    Spectrum2Peak(MyRequest, PeakSet, SingleWindow, DoubleWindow);
+    Spectrum2Peak(MyRequest, PeakSet);
 		
     // iterate through sequences
     for(iSearch = 0; iSearch < numseq; iSearch++) {
@@ -401,6 +401,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 			    }
 							
 			    Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+			    Peaks->ClearUsedAll();
 			    CompareLadders(BLadder[LadderVal], 
 					   YLadder[LadderVal],
 					   B2Ladder[LadderVal], 
@@ -421,6 +422,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 				    NewHitOut->SetSeqIndex(iSearch);
 				    NewHitOut->SetMass(MassPeak->Mass);
 				    // record the hits
+				    Peaks->ClearUsedAll();
 				    NewHitOut->
 					RecordMatches(BLadder[LadderVal],
 						      YLadder[LadderVal],
@@ -457,15 +459,16 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
     free_imatrix(Masses, 0, MAXMISSEDCLEAVE, 0, MAXMOD);
 	
     // read out hits
-    SetResult(PeakSet, MyResponse, Cutoff, 0.0, 0.2, 0.005);
+    SetResult(PeakSet, MyResponse, MyRequest.GetCutlo(), 
+	      MyRequest.GetCuthi(), MyRequest.GetCutinc());
 	
     return 0;
 }
 
 
 void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
-						int Cutoff, double ThreshStart, double ThreshEnd,
-						double ThreshInc)
+			double ThreshStart, double ThreshEnd,
+			double ThreshInc)
 {
     CMSPeak* Peaks;
     TPeakSet::iterator iPeakSet;
@@ -524,7 +527,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 	map <string, CRef< CMSHits > > PepDone;
 	// add to hitset by score
 	for(iScoreList = ScoreList.begin(), iSearch = 0;
-	    iScoreList != ScoreList.end() && iSearch < Cutoff;
+	    iScoreList != ScoreList.end();
 	    iScoreList++, iSearch++) {
 	    
 	    CRef< CMSHits > Hit;
@@ -671,25 +674,39 @@ double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
     double m; // mass of ladder
     double o; // min m/z value of peaks
     double r; // max m/z value of peaks
-    double h; // number of experimental m/z values
-    double v; // number of m/z values in theoretical peptide
+    double h; // number of calculated m/z values in one ion series
+    double v1; // number of m/z values above mh/2 and below mh (+1 product ions)
+    double v2; // number of m/z value below mh/2
+    double v;  // number of peaks
     double t; // mass tolerance width
 	
-    int High, Low, NumPeaks;
-    Peaks->HighLow(High, Low, NumPeaks, Mass, Charge, Threshold);
+    int High, Low, NumPeaks, NumLo, NumHi;
+    Peaks->HighLow(High, Low, NumPeaks, Mass, Charge, Threshold, NumLo, NumHi);
     if(High == -1) return -1.0; // error
     o = (double)Low/MSSCALE;
     r = (double)High/MSSCALE;
-    h = NumPeaks;
-    m = (double)Mass/MSSCALE;
-    v = 2.0 * (Stop - Start);
-    t = (2.0*Peaks->GetTol())/MSSCALE;
+    v1 = NumHi;
+    v2 = NumLo;
+    v = NumPeaks;
+    m = Mass/(double)MSSCALE;
+    h = Stop - Start;
+    t = (Peaks->GetTol())/(double)MSSCALE;
     // see 12/13/02 notebook, pg. 127
 	
-    retval = t * h * v / m;
+    retval = 4.0 * t * h * v / m;
     if(Charge > 2) {
-		retval *= (m - 3*o + r)/(r - o);
+	retval *= (m - 3*o + r)/(r - o);
+    }    
+#if 0
+    // variation that counts +1 and +2 separately
+    // see 8/19/03 notebook, pg. 71
+    retval = 4.0 * t * h / m;
+    if(Charge > 2) {
+	//		retval *= (m - 3*o + r)/(r - o);
+	retval *= (3 * v2 + v1);
     }
+    else retval *= (v2 + v1);
+#endif
 #ifdef DEBUG_PEAKS
     _TRACE("o:" << o << " r:" << r << " h:" << h << " m:" << m << " v:" << v << " t:" << t);
     _TRACE("charge:" << Peaks->GetCharge() <<  "  Calculated average:" << retval);
@@ -707,6 +724,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.11  2003/12/04 23:39:08  lewisg
+no-overlap hits and various bugfixes
+
 Revision 1.10  2003/11/20 22:32:50  lewisg
 fix end of sequence X bug
 
