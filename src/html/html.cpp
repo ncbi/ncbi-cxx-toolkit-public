@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1998/12/24 16:15:41  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.13  1998/12/23 21:51:44  vasilche
 * Added missing constructors to checkbox.
 *
@@ -184,6 +188,15 @@ const string KHTMLAttributeName_type = "TYPE";
 const string KHTMLAttributeName_value = "VALUE";
 const string KHTMLAttributeName_width = "WIDTH";
 
+// HTML input type names
+const string KHTMLInputTypeName_text = "TEXT";
+const string KHTMLInputTypeName_radio = "RADIO";
+const string KHTMLInputTypeName_checkbox = "CHECKBOX";
+const string KHTMLInputTypeName_hidden = "HIDDEN";
+const string KHTMLInputTypeName_button = "BUTTON";
+const string KHTMLInputTypeName_submit = "SUBMIT";
+const string KHTMLInputTypeName_reset = "RESET";
+
 
 string CHTMLHelper::HTMLEncode(const string& input)
 {
@@ -269,11 +282,6 @@ NcbiOstream& CHTMLHelper::PrintEncoded(NcbiOstream& out, const string& input)
     return out;
 }
 */
-
-CHTMLNode::CHTMLNode(const string& name)
-    : CParent(name)
-{
-}
 
 void CHTMLNode::AppendPlainText(const string& appendstring)
 {
@@ -442,6 +450,36 @@ CNCBINode* CHTMLElement::CloneSelf(void) const
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out)
 {
     return out << "</" << m_Name << ">\n";
+}
+
+// HTML comment class
+CHTMLComment::CHTMLComment(void)
+{
+}
+
+CHTMLComment::CHTMLComment(CNCBINode* node)
+{
+    AppendChild(node);
+}
+
+CHTMLComment::CHTMLComment(const string& text)
+{
+    AppendPlainText(text);
+}
+
+CNCBINode* CHTMLComment::CloneSelf(void) const
+{
+    return new CHTMLComment(*this);
+}
+
+CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out)
+{
+    return out << "<!--";
+}
+
+CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out)
+{
+    return out << "-->";
 }
 
 // TABLE element
@@ -666,25 +704,25 @@ CHTML_input::CHTML_input(const string& type, const string& name)
 // checkbox tag 
 
 CHTML_checkbox::CHTML_checkbox(const string& name)
-    : CParent("CHECKBOX", name)
+    : CParent(KHTMLInputTypeName_checkbox, name)
 {
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value)
-    : CParent("CHECKBOX", name)
+    : CParent(KHTMLInputTypeName_checkbox, name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& description)
-    : CParent("CHECKBOX", name)
+    : CParent(KHTMLInputTypeName_checkbox, name)
 {
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
     AppendHTMLText(description);  // adds the description at the end
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
-    : CParent("CHECKBOX", name)
+    : CParent(KHTMLInputTypeName_checkbox, name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
@@ -695,7 +733,7 @@ CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool che
 // radio tag 
 
 CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
-    : CParent("RADIO", name)
+    : CParent(KHTMLInputTypeName_radio, name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
     SetAttribute(KHTMLAttributeName_checked, checked);
@@ -705,24 +743,24 @@ CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, 
 // hidden tag 
 
 CHTML_hidden::CHTML_hidden(const string& name, const string& value)
-    : CParent("HIDDEN", name)
+    : CParent(KHTMLInputTypeName_hidden, name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_submit::CHTML_submit(const string& name)
-    : CParent("SUBMIT", name)
+    : CParent(KHTMLInputTypeName_submit, name)
 {
 }
 
 CHTML_submit::CHTML_submit(const string& name, const string& label)
-    : CParent("SUBMIT", name)
+    : CParent(KHTMLInputTypeName_submit, name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, label);
 }
 
 CHTML_reset::CHTML_reset(const string& label)
-    : CParent("RESET", NcbiEmptyString)
+    : CParent(KHTMLInputTypeName_reset, NcbiEmptyString)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, label);
 }
@@ -730,20 +768,20 @@ CHTML_reset::CHTML_reset(const string& label)
 // text tag 
 
 CHTML_text::CHTML_text(const string& name, const string& value)
-    : CParent("TEXT", name)
+    : CParent(KHTMLInputTypeName_text, name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, const string& value)
-    : CParent("TEXT", name)
+    : CParent(KHTMLInputTypeName_text, name)
 {
     SetAttribute(KHTMLAttributeName_size, size);
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
-    : CParent("TEXT", name)
+    : CParent(KHTMLInputTypeName_text, name)
 {
     SetAttribute(KHTMLAttributeName_size, size);
     SetAttribute(KHTMLAttributeName_maxlength, maxlength);

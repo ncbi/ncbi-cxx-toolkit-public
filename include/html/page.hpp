@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/24 16:15:38  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.10  1998/12/23 21:21:00  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -76,11 +80,22 @@ BEGIN_NCBI_SCOPE
 
 class BaseTagMapper;
 
+inline BaseTagMapper* CreateTagMapper(CNCBINode* node);
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void));
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(const string& name));
+
+template<class C>
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node));
+
+template<class C>
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name));
+
 template<class C>
 BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(void));
 
 template<class C>
 BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(const string& name));
+
 
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/24 16:15:38  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.3  1998/12/23 21:20:59  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -47,7 +51,31 @@
 */
 
 template<class C>
-inline TagMapper<C>::TagMapper<C>(CNCBINode* (C::*method)(void))
+inline StaticTagMapperByNode<C>::StaticTagMapperByNode(CNCBINode* (*function)(C* node))
+    : m_Function(function)
+{
+}
+
+template<class C>
+inline CNCBINode* StaticTagMapperByNode<C>::MapTag(CNCBINode* _this, const string&) const
+{
+    return m_Function(dynamic_cast<C*>(_this));
+}
+
+template<class C>
+inline StaticTagMapperByNodeAndName<C>::StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name))
+    : m_Function(function)
+{
+}
+
+template<class C>
+inline CNCBINode* StaticTagMapperByNodeAndName<C>::MapTag(CNCBINode* _this, const string&) const
+{
+    return m_Function(dynamic_cast<C*>(_this), name);
+}
+
+template<class C>
+inline TagMapper<C>::TagMapper(CNCBINode* (C::*method)(void))
     : m_Method(method)
 {
 }
@@ -59,7 +87,7 @@ inline CNCBINode* TagMapper<C>::MapTag(CNCBINode* _this, const string&) const
 }
 
 template<class C>
-inline TagMapperByName<C>::TagMapperByName<C>(CNCBINode* (C::*method)(const string& name))
+inline TagMapperByName<C>::TagMapperByName(CNCBINode* (C::*method)(const string& name))
     : m_Method(method)
 {
 }

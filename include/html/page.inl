@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/24 16:15:39  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.3  1998/12/23 21:21:00  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -64,6 +68,28 @@ inline int CHTMLBasicPage::GetStyle(void) const
 inline BaseTagMapper* CreateTagMapper(CNCBINode* node)
 {
     return new ReadyTagMapper(node);
+}
+
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void))
+{
+    return new StaticTagMapper(function);
+}
+
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(const string& name))
+{
+    return new StaticTagMapperByName(function);
+}
+
+template<class C>
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node))
+{
+    return new StaticTagMapperByNode<C>(function);
+}
+
+template<class C>
+inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name))
+{
+    return new StaticTagMapperByNodeAndName<C>(function);
 }
 
 template<class C>

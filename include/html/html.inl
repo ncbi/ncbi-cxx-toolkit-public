@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/24 16:15:36  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.2  1998/12/23 21:20:57  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -42,6 +46,15 @@
 *
 * ===========================================================================
 */
+
+inline CHTMLNode::CHTMLNode(void)
+{
+}
+
+inline CHTMLNode::CHTMLNode(const string& name)
+    : CParent(name)
+{
+}
 
 inline CHTMLNode* CHTMLNode::SetWidth(int width)
 {

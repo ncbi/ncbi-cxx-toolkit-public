@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/24 16:15:42  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.1  1998/12/22 16:39:15  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -51,6 +55,26 @@ BEGIN_NCBI_SCOPE
 
 BaseTagMapper::~BaseTagMapper()
 {
+}
+
+StaticTagMapper::StaticTagMapper(CNCBINode* (*function)(void))
+    : m_Function(function)
+{
+}
+
+CNCBINode* StaticTagMapper::MapTag(CNCBINode*, const string&) const
+{
+    return (*m_Function)();
+}
+
+StaticTagMapperByName::StaticTagMapperByName(CNCBINode* (*function)(const string& name))
+    : m_Function(function)
+{
+}
+
+CNCBINode* StaticTagMapperByName::MapTag(CNCBINode*, const string& name) const
+{
+    return (*m_Function)(name);
 }
 
 ReadyTagMapper::ReadyTagMapper(CNCBINode* node)

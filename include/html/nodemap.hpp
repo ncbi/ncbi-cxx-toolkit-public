@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/24 16:15:37  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.3  1998/12/23 21:20:59  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -57,10 +61,53 @@ BEGIN_NCBI_SCOPE
 
 class CNCBINode;
 
-struct BaseTagMapper {
+struct BaseTagMapper
+{
     virtual ~BaseTagMapper(void);
 
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
+};
+
+struct StaticTagMapper : BaseTagMapper
+{
+    StaticTagMapper(CNCBINode* (*function)(void));
+    
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+
+private:
+    CNCBINode* (*m_Function)(void);
+};
+
+struct StaticTagMapperByName : BaseTagMapper
+{
+    StaticTagMapperByName(CNCBINode* (*function)(const string& name));
+    
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+
+private:
+    CNCBINode* (*m_Function)(const string& name);
+};
+
+template<class C>
+struct StaticTagMapperByNode : BaseTagMapper
+{
+    StaticTagMapperByNode(CNCBINode* (*function)(C* node));
+    
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+
+private:
+    CNCBINode* (*m_Function)(C* node);
+};
+
+template<class C>
+struct StaticTagMapperByNodeAndName : BaseTagMapper
+{
+    StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name));
+    
+    virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
+
+private:
+    CNCBINode* (*m_Function)(C* node, const string& name);
 };
 
 struct ReadyTagMapper : BaseTagMapper

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/24 16:15:36  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.10  1998/12/23 21:20:56  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -85,11 +89,13 @@ public:
 
 
 // base class for html node
-class CHTMLNode : public CNCBINode {
+class CHTMLNode : public CNCBINode
+{
     // parent class
     typedef CNCBINode CParent;
 
 public:
+    CHTMLNode(void);
     CHTMLNode(const string& name);
 
     // convenient way to set some common attributes
@@ -106,9 +112,8 @@ public:
 };
 
 // <@XXX@> mapping node
-
-class CHTMLTagNode : public CNCBINode {
-    // parent class
+class CHTMLTagNode : public CNCBINode
+{
     typedef CNCBINode CParent;
 
 public:
@@ -123,7 +128,8 @@ protected:
 
 
 // A text node that contains plain text
-class CHTMLPlainText : public CNCBINode {
+class CHTMLPlainText : public CNCBINode
+{
     // parent class
     typedef CNCBINode CParent;
 
@@ -143,8 +149,8 @@ protected:
 };
 
 // A text node that contains html text with tags and possibly <@TAG@>
-class CHTMLText : public CNCBINode {
-    // parent class
+class CHTMLText : public CNCBINode
+{
     typedef CNCBINode CParent;
 
 public:
@@ -163,8 +169,8 @@ protected:
 };
 
 // An html tag
-class CHTMLOpenElement: public CHTMLNode {
-    // parent class
+class CHTMLOpenElement: public CHTMLNode
+{
     typedef CHTMLNode CParent;
 
 public:
@@ -180,8 +186,8 @@ protected:
 };
 
 // An html tag
-class CHTMLElement: public CHTMLOpenElement {
-    // parent class
+class CHTMLElement: public CHTMLOpenElement
+{
     typedef CHTMLOpenElement CParent;
 
 public:
@@ -190,6 +196,23 @@ public:
     CHTMLElement(const string& name, const string& text);
 
     virtual CNcbiOstream& PrintEnd(CNcbiOstream &);   // prints tag close
+
+protected:
+    // cloning
+    virtual CNCBINode* CloneSelf() const;
+};
+
+class CHTMLComment : public CHTMLNode
+{
+    typedef CHTMLNode CParent;
+
+public:
+    CHTMLComment();
+    CHTMLComment(CNCBINode* node);
+    CHTMLComment(const string& text);
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &);
 
 protected:
     // cloning
@@ -302,7 +325,8 @@ extern const string KHTMLAttributeName_width;
 
 // template for simple closed tag
 template<const string* TagName>
-class CHTMLElementTmpl : public CHTMLElement {
+class CHTMLElementTmpl : public CHTMLElement
+{
     typedef CHTMLElement CParent;
 
 public:
@@ -321,7 +345,8 @@ public:
 
 // template for open tag
 template<const string* TagName>
-class CHTMLOpenElementTmpl : public CHTMLOpenElement {
+class CHTMLOpenElementTmpl : public CHTMLOpenElement
+{
     typedef CHTMLOpenElement CParent;
 
 public:
@@ -340,7 +365,8 @@ public:
 
 // template for lists (OL, UL, DIR, MENU)
 template<const string* TagName>
-class CHTMLListElementTmpl : public CHTMLElement {
+class CHTMLListElementTmpl : public CHTMLElement
+{
     typedef CHTMLElement CParent;
 
 public:
@@ -430,7 +456,8 @@ typedef CHTMLElementTmpl<&KHTMLTagName_map> CHTML_map;
 typedef CHTMLElementTmpl<&KHTMLTagName_area> CHTML_area;
 
 // the a tag
-class CHTML_a : public CHTML_a_Base {
+class CHTML_a : public CHTML_a_Base
+{
     typedef CHTML_a_Base CParent;
 
 public:
@@ -439,8 +466,8 @@ public:
 };
 
 // the table tag
-class CHTML_table : public CHTML_table_Base {
-    // parent class
+class CHTML_table : public CHTML_table_Base
+{
     typedef CHTML_table_Base CParent;
 
 public:
@@ -463,8 +490,8 @@ protected:
 };
 
 // the form tag
-class CHTML_form : public CHTML_form_Base {
-    // parent class
+class CHTML_form : public CHTML_form_Base
+{
     typedef CHTML_form_Base CParent;
 
 public:
@@ -474,8 +501,8 @@ public:
 };
 
 // the textarea tag
-class CHTML_textarea : public CHTML_textarea_Base {
-    // parent class
+class CHTML_textarea : public CHTML_textarea_Base
+{
     typedef CHTML_textarea_Base CParent;
 
 public:
@@ -485,8 +512,8 @@ public:
 };
 
 // input tag
-class CHTML_input : public CHTML_input_Base {
-    // parent class
+class CHTML_input : public CHTML_input_Base
+{
     typedef CHTML_input_Base CParent;
 
 public:
@@ -494,8 +521,8 @@ public:
 };
 
 // input type=checkbox tag
-class CHTML_checkbox : public CHTML_input {
-    // parent class
+class CHTML_checkbox : public CHTML_input
+{
     typedef CHTML_input CParent;
 
 public:
@@ -507,8 +534,8 @@ public:
 };
 
 // input type=hidden tag
-class CHTML_hidden : public CHTML_input {
-    // parent class
+class CHTML_hidden : public CHTML_input
+{
     typedef CHTML_input CParent;
 
 public:
@@ -517,8 +544,8 @@ public:
 };
 
 // input type=radio tag
-class CHTML_radio : public CHTML_input {
-    // parent class
+class CHTML_radio : public CHTML_input
+{
     typedef CHTML_input CParent;
 
 public:
@@ -528,8 +555,8 @@ public:
 };
 
 // input type=text tag
-class CHTML_reset : public CHTML_input {
-    // parent class
+class CHTML_reset : public CHTML_input
+{
     typedef CHTML_input CParent;
 
 public:
@@ -538,8 +565,8 @@ public:
 };
 
 // input type=submit tag
-class CHTML_submit : public CHTML_input {
-    // parent class
+class CHTML_submit : public CHTML_input
+{
     typedef CHTML_input CParent;
 
 public:
@@ -549,8 +576,8 @@ public:
 };
 
 // input type=text tag
-class CHTML_text : public CHTML_input {
-    // parent class
+class CHTML_text : public CHTML_input
+{
     typedef CHTML_input CParent;
 
 public:
@@ -561,8 +588,8 @@ public:
 };
 
 // select tag
-class CHTML_select : public CHTML_select_Base {
-    // parent class
+class CHTML_select : public CHTML_select_Base
+{
     typedef CHTML_select_Base CParent;
 
 public:
@@ -576,8 +603,8 @@ public:
 };
 
 //option tag.  rarely used alone.  see select tag
-class CHTML_option: public CHTML_option_Base {
-    // parent class
+class CHTML_option: public CHTML_option_Base
+{
     typedef CHTML_option_Base CParent;
 
 public:
@@ -587,31 +614,29 @@ public:
 };
 
 // break
-class CHTML_br : public CHTML_br_Base {
-    // parent class
+class CHTML_br : public CHTML_br_Base
+{
     typedef CHTML_br_Base CParent;
 
 public:
     CHTML_br(void);
     // create <number> of <br> tags
     CHTML_br(int number);
-
 };
 
 
-class CHTML_img : public CHTML_img_Base {
-    // parent class
+class CHTML_img : public CHTML_img_Base
+{
     typedef CHTML_img_Base CParent;
 
 public:
     CHTML_img(const string& url);
     CHTML_img(const string& url, int width, int height);
-
 };
 
 // dl tag
-class CHTML_dl : public CHTML_dl_Base {
-    // parent class
+class CHTML_dl : public CHTML_dl_Base
+{
     typedef CHTML_dl_Base CParent;
 
 public:

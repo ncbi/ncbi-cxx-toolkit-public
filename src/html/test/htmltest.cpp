@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/24 16:15:43  vasilche
+* Added CHTMLComment class.
+* Added TagMappers from static functions.
+*
 * Revision 1.5  1998/12/23 21:21:06  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -109,6 +113,7 @@ int CMyApp::Run(void)
         form->AppendChild(new CHTML_textarea("area1", 10, 10, "area1"));
         form->AppendChild(new CHTML_select("Select")->AppendOption("One", "ONE")->AppendOption("Two")->AppendOption("THREE", "Three"));
         Page->AppendChild(new CHTML_ol("A")->AppendItem("item 1")->AppendItem("item 2")->AppendItem("Item 3")->AppendItem("Fourth item"));
+        Page->AppendChild(new CHTMLComment("this is comment"));
         Page->Print(NcbiCout);  // serialize it
         delete Page;
     }
