@@ -44,6 +44,7 @@ srcdir="$target"/src
 dbgdir="$target"/Debug
 libdir="$target"/Release
 bindir="$target"/bin
+cldir="$target"/compilers
 
 
 # Check
@@ -103,6 +104,17 @@ for i in 'DLL' '' ; do
       break
     fi
   fi
+done
+
+
+# Compilers dir (copy all .pdb files for debug purposes)
+makedir "$cldir" -p
+pdb_files=`find "$builddir"/compilers -type f -name '*.pdb' 2>/dev/null`
+cd "$cldir"
+for pdb in $pdb_files ; do
+  rel_dir=`echo $pdb | sed -e "s|$builddir/compilers/||" -e 's|/[^/]*$||'`
+  mkdir -p $rel_dir -p > /dev/null 2>&1
+  cp -pr "$pdb" "$rel_dir"
 done
 
 
