@@ -519,16 +519,18 @@ int CSplignApp::Run()
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
     }
-    else {
+    else { // kStrandBoth
 
         CSplign::THits hits0 (hits.begin(), hits.end());
-        size_t mid = 0;
+        static size_t mid = 1;
+        size_t mid_plus, mid_minus;
         {{
         splign.SetStrand(true);
+        splign.SetStartModelId(mid);
         splign.Run(&hits);
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
-        mid = splign.GetNextModelId();
+        mid_plus = splign.GetNextModelId();
         }}
         {{
         splign.SetStrand(false);
@@ -536,12 +538,15 @@ int CSplignApp::Run()
         splign.Run(&hits0);
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
+        mid_minus = splign.GetNextModelId();
         }}
+        mid = max(mid_plus, mid_minus);
     }
 
     cout << formatter.AsText(&splign_results);
 
     if(asn_ofs.get()) {
+
         CRef<CSeq_align_set> sa_set = formatter.AsSeqAlignSet(&splign_results);
         auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText,
                                                          *asn_ofs));
@@ -642,6 +647,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/06/23 19:30:44  kapustin
+ * Tweak model id substitution when doing both strands
+ *
  * Revision 1.28  2004/06/23 19:24:59  ucko
  * GetLastModelID() --> GetNextModelID()
  *
