@@ -2,8 +2,6 @@
 
 APP = project_tree_builder
 
-LIB = xser xutil xncbi
-
 SRC = file_contents \
       msvc71_project__ \
       msvc71_project___ \
@@ -17,7 +15,7 @@ SRC = file_contents \
       msvc_sln_generator \
       proj_builder_app \
       proj_datatool_generated_src \
-      proj_item \ 
+      proj_item \
       proj_tree \
       proj_tree_builder \
       proj_src_resolver \
@@ -29,3 +27,6 @@ SRC = file_contents \
       msvc_prj_files_collector
 
 DATATOOL_SRC = msvc71_project
+
+
+LIB = xser xutil xncbi
