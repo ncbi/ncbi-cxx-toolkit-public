@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.234 2003/11/14 04:29:29 ucko Exp $
+#  $Id: configure.ac,v 1.235 2003/11/14 19:15:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -239,7 +239,7 @@ AC_ARG_WITH(gui,
 AC_ARG_WITH(algo,
    [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
-   [ --with-internal         build all internal projects])
+   [ --without-internal      do not build internal projects])
 
 ## Manuals
 AC_ARG_WITH(manuals,
@@ -3382,11 +3382,11 @@ fi
 
 ## `internal' project cluster
 
-if test "$with_internal" = "no" ; then
+if test "$with_internal" = "no"  -o  ! -f ${srcdir}/src/internal/Makefile.in \
+    -o  ! -d ${srcdir}/include/internal; then
    NoConfProjects="$NoConfProjects internal"
-fi
-
-if test "$with_internal" = "yes" ; then
+   internal=
+else
    OPT_GROUPS="$OPT_GROUPS internal"
    internal="internal"
    reason=""
@@ -3407,16 +3407,13 @@ if test "$with_internal" = "yes" ; then
      reason="$reason${sep}PubMed"
      sep=", "
    fi
-   if test -n "$reason"; then
+   if test -n "$reason" -a "$with_internal" = "yes"; then
       if test -z "$with_projects"  -o  "$with_projects" = "no"; then
          AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
       else
          AC_MSG_WARN(["--with-internal:  Cannot build all INTERNAL projects: missing $reason"])
       fi
    fi
-else
-   WithoutProjects="$WithoutProjects internal"
-   internal=
 fi
 
 

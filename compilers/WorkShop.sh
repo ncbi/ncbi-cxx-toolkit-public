@@ -80,4 +80,4 @@ fi
 ## Configure
 export CC CXX CCC
 
-${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $BUILD_ROOT $ARCH --with-internal "$@"
+${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $BUILD_ROOT $ARCH "$@"
