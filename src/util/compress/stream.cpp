@@ -110,8 +110,12 @@ CCompressionStream::~CCompressionStream(void)
 #endif
     // Delete owned objects
     if ( m_Stream  &&  m_Ownership & fOwnStream ) {
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
+       // On GCC 2.9x ios::~ios() is protected
+#else
         delete m_Stream;
         m_Stream = 0;
+#endif
     }
     if ( m_Reader  &&  m_Ownership & fOwnReader ) {
         if ( m_Reader == m_Writer  &&  m_Ownership & fOwnWriter ) {
@@ -141,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/09 14:02:29  ivanov
+ * Added workaround fix for GCC 2.95. The ios::~ios() is protected here.
+ *
  * Revision 1.6  2004/04/09 11:47:29  ivanov
  * Added ownership parameter for automaticaly destruction underlying stream
  * and read/write compression processors.
