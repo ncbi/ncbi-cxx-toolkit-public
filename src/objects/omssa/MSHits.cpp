@@ -66,7 +66,7 @@ void CMSHits::MakeModString(string& StringOut) const
             if(!StringOut.empty()) StringOut += " ,";
             if((*i)->GetModtype() < eMSMod_max) StringOut += kModNames[(*i)->GetModtype()];
             else StringOut += NStr::IntToString((*i)->GetModtype());
-            StringOut += ":" + NStr::IntToString((*i)->GetSite());
+            StringOut += ":" + NStr::IntToString((*i)->GetSite()+1);
         }
     }
 }
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/12/08 19:21:12  lewisg
+* start sequence position by 1
+*
 * Revision 1.3  2004/12/08 19:12:43  lewisg
 * const
 *
