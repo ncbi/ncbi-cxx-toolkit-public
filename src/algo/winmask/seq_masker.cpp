@@ -65,20 +65,20 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                         Uint1 tmin_count,
                         bool arg_discontig,
                         Uint4 arg_pattern )
-: lstat( lstat_name, arg_max_score, arg_min_score,
-         arg_set_max_score, arg_set_min_score ),
-         score( NULL ), score_p3( NULL ), trigger_score( NULL ),
-         window_size( arg_window_size ), window_step( arg_window_step ),
-         unit_step( arg_unit_step ), xdrop( arg_xdrop ), 
-         cutoff_score( arg_cutoff_score ),
-         merge_pass( arg_merge_pass ),
-         merge_cutoff_score( arg_merge_cutoff_score ),
-         abs_merge_cutoff_dist( arg_abs_merge_cutoff_dist ),
-         mean_merge_cutoff_dist( arg_mean_merge_cutoff_dist ),
-         merge_unit_step( arg_merge_unit_step ),
-         trigger( arg_trigger == "mean" ? eTrigger_Mean
-                  : eTrigger_Min ),
-discontig( arg_discontig ), pattern( arg_pattern )
+    : lstat( lstat_name, arg_max_score, arg_min_score,
+             arg_set_max_score, arg_set_min_score ),
+      score( NULL ), score_p3( NULL ), trigger_score( NULL ),
+      window_size( arg_window_size ), window_step( arg_window_step ),
+      unit_step( arg_unit_step ), xdrop( arg_xdrop ), 
+      cutoff_score( arg_cutoff_score ),
+      merge_pass( arg_merge_pass ),
+      merge_cutoff_score( arg_merge_cutoff_score ),
+      abs_merge_cutoff_dist( arg_abs_merge_cutoff_dist ),
+      mean_merge_cutoff_dist( arg_mean_merge_cutoff_dist ),
+      merge_unit_step( arg_merge_unit_step ),
+      trigger( arg_trigger == "mean" ? eTrigger_Mean
+               : eTrigger_Min ),
+      discontig( arg_discontig ), pattern( arg_pattern )
 {
     trigger_score = score = new CSeqMaskerScoreMean( lstat );
 
@@ -374,9 +374,13 @@ ambig_unit( 0 )
     Uint4 linenum = 0UL;
     Uint4 ambig_len = set_max_score;
 
+    units.reserve(1024*1024);
+    lengths.reserve(1024*1024);
+    string line;
+
     while( lstat_stream )
     {
-        string line;
+        line.erase();
         NcbiGetlineEOL( lstat_stream, line );
         ++linenum;
 
@@ -517,23 +521,28 @@ void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
 
     while( true )
     {
-        if( si != send )
-            if( di != dend )
-                if( si->first < di->first )
+        if( si != send ) {
+            if( di != dend ) {
+                if( si->first < di->first ) {
                     next_seg = *(si++);
-                else next_seg = *(di++);
-            else next_seg = *(si++);
-        else if( di != dend )
+                } else {
+                    next_seg = *(di++);
+                }
+            } else {
+                next_seg = *(si++);
+            }
+        } else if( di != dend ) {
             next_seg = *(di++);
-        else break;
+        } else {
+            break;
+        }
 
-        if( seg.second < next_seg.first )
-        {
+        if( seg.second < next_seg.first ) {
             res->push_back( seg );
             seg = next_seg;
-        }
-        else if( seg.second < next_seg.second )
+        } if( seg.second < next_seg.second ) {
             seg.second = next_seg.second;
+        }
     }
 
     res->push_back( seg );
@@ -547,6 +556,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/02/13 18:27:21  dicuccio
+ * Formatting changes (ctor initializer list properly indented; braces added in
+ * complex if/else series).  Opitmization in LStat ctor - hoist string out of
+ * frequently executed loop to amortize its allocation costs
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *
