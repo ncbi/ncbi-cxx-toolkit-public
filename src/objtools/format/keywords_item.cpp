@@ -107,7 +107,7 @@ static const CStaticArraySet<string> sc_STS_kw(sc_STS, sizeof(sc_STS));
 static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
 {
     if (tech == eEST) {
-        if (sc_STS_kw.find(keyword) != sc_EST_kw.end()) {
+        if (sc_STS_kw.find(keyword) != sc_STS_kw.end()) {
             return false;
         }
         if (sc_GSS_kw.find(keyword) != sc_GSS_kw.end()) {
@@ -128,7 +128,7 @@ static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
         if (sc_EST_kw.find(keyword) != sc_EST_kw.end()) {
             return false;
         }
-        if (sc_STS_kw.find(keyword) != sc_GSS_kw.end()) {
+        if (sc_STS_kw.find(keyword) != sc_STS_kw.end()) {
             return false;
         }
     }
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/10/18 17:48:43  shomrat
+* Bug Fix
+*
 * Revision 1.8  2004/10/05 15:53:14  shomrat
 * Add only unique keywords (case insensitive test)
 *
