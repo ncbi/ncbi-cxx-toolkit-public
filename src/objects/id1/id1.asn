@@ -1,4 +1,4 @@
---$Revision: 1.9 $
+--$Revision: 1.10 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -46,13 +46,12 @@ ID1server-maxcomplex ::= SEQUENCE {
 		sat VisibleString OPTIONAL  -- satellite 0-id,1-dbEST
 }
 
-Entry-complexities ::= INTEGER {
-		entry (0) ,             -- the "natural" entry for this (nuc-prot) 
-		bioseq (1) ,            -- only the bioseq identified
-		bioseq-set (2) ,        -- any seg-set it may be part of
-		nuc-prot (3) ,            -- any nuc-prot it may be part of
-		pub-set (4) 
-}
+Entry-complexities ::= INTEGER 
+--		entry (0) ,              the "natural" entry for this (nuc-prot) 
+--		bioseq (1) ,             only the bioseq identified
+--		bioseq-set (2) ,         any seg-set it may be part of
+--		nuc-prot (3) ,           any nuc-prot it may be part of
+--		pub-set (4) 
 
 ID1Seq-hist ::= SEQUENCE {
 	hist Seq-hist
