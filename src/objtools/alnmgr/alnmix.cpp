@@ -665,7 +665,7 @@ void CAlnMix::x_Merge()
                         break;
                     } else {
                         if (seq1->m_ExtraRow) {
-                            seq1 = match->m_AlnSeq2 = seq1->m_ExtraRow;
+                            seq1 = match->m_AlnSeq1 = seq1->m_ExtraRow;
                         } else {
                             break;
                         }
@@ -727,6 +727,9 @@ void CAlnMix::x_Merge()
                 seg->m_StartIts[seq1] = 
                     lo_start_i = hi_start_i = starts.begin();
 
+                if (m_MergeFlags & fQuerySeqMergeOnly) {
+                    seq2->m_DSIndex = match->m_DSIndex;
+                }
                 second_row_fits = eSecondRowFitsOk;
                 // DONE!
             } else {
@@ -2044,6 +2047,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.101  2004/06/28 20:09:27  todorov
+* Initialize m_DSIndex. Also bug fix when shifting to extra row
+*
 * Revision 1.100  2004/06/23 22:22:23  todorov
 * Fixed condition logic
 *
