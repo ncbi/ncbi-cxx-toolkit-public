@@ -42,6 +42,9 @@ public:
     CDataToolGeneratedSrc& operator= (const CDataToolGeneratedSrc& src);
     ~CDataToolGeneratedSrc(void);
 
+    bool operator== (const CDataToolGeneratedSrc& src) const;
+    bool operator<  (const CDataToolGeneratedSrc& src) const;
+
     string       m_SourceFile;
     string       m_SourceBaseDir;
 
@@ -72,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/10 16:48:14  gorelenk
+ * Added declarations of operators == and < to class CDataToolGeneratedSrc.
+ *
  * Revision 1.2  2004/02/13 23:06:45  gorelenk
  * Added data members-abstraction of datatool generated files.
  *
