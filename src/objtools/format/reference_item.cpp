@@ -510,11 +510,16 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
                 m_Title = cit.substr(pos, end - pos);
             }
         }
+        if ( !m_Title.empty()  &&  m_Category == eUnknown ) {
+            m_Category = ePublished;
+        }
     }
 
     if ( gen.CanGetPmid()  &&  m_PMID == 0 ) {
         m_PMID = gen.GetPmid();
     }
+
+    
 
     x_SetJournal(gen, ctx);
 }
@@ -1027,6 +1032,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/05 18:42:59  shomrat
+* Set category to Published if title exist
+*
 * Revision 1.5  2004/02/24 17:24:27  vasilche
 * Added missing include <Pub.hpp>
 *
