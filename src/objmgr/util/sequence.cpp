@@ -3908,7 +3908,7 @@ int CSeqSearch::Search
     // report any matches at current state to the client object
     if ( m_Fsa.IsMatchFound(next_state) ) {
         ITERATE( vector<CMatchInfo>, it, m_Fsa.GetMatches(next_state) ) {
-	  //const CMatchInfo& match = *it;
+            //const CMatchInfo& match = *it;
             int start = position - it->GetPattern().length() + 1;    
 
             // prevent multiple reports of patterns for circular sequences.
@@ -4113,6 +4113,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.86  2004/08/24 16:42:03  vasilche
+* Removed TAB symbols in sources.
+*
 * Revision 1.85  2004/08/19 15:26:56  shomrat
 * Use Seq_loc_Mapper in SeqLocMerge
 *

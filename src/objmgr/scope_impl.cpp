@@ -1173,24 +1173,24 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     TSeq_idMapValue& info = x_GetSeq_id_Info(idh);
     CRef<CBioseq_ScopeInfo> binfo = x_InitBioseq_Info(info,
-        CScope::eGetBioseq_All);
+                                                      CScope::eGetBioseq_All);
     {{
         CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
         if ( init ) {
             CRef<TAnnotRefMap> ref_map(new TAnnotRefMap);
             TTSE_LockMap with_ref;
-	    if ( binfo->HasBioseq() ) {
-		const CBioseq_Info::TId& syns =
-		    binfo->GetBioseq_Info().GetId();
-		ITERATE(CBioseq_Info::TId, syn_it, syns) {
-		    // Search current id
-		    GetTSESetWithAnnotsRef(*binfo, *syn_it, *ref_map);
-		}
-	    }
-	    else {
-		GetTSESetWithAnnotsRef(*binfo, idh, *ref_map);
-	    }
-	    info.second.m_AllAnnotRef_Info = ref_map;
+            if ( binfo->HasBioseq() ) {
+                const CBioseq_Info::TId& syns =
+                    binfo->GetBioseq_Info().GetId();
+                ITERATE(CBioseq_Info::TId, syn_it, syns) {
+                    // Search current id
+                    GetTSESetWithAnnotsRef(*binfo, *syn_it, *ref_map);
+                }
+            }
+            else {
+                GetTSESetWithAnnotsRef(*binfo, idh, *ref_map);
+            }
+            info.second.m_AllAnnotRef_Info = ref_map;
         }
     }}
     return info.second.m_AllAnnotRef_Info;
@@ -1426,6 +1426,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/08/24 16:42:03  vasilche
+* Removed TAB symbols in sources.
+*
 * Revision 1.22  2004/08/13 16:13:49  vasilche
 * Use safe method to lock TSEs with fat annotations (from scope's history).
 *

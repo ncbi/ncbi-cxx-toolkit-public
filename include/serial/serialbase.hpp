@@ -255,7 +255,7 @@ public:
 
     static TConstObjectPtr GetDataPtr(const TThis* alias)
         {
-			return &alias->m_Data;
+            return &alias->m_Data;
         }
 
 protected:
@@ -270,7 +270,7 @@ class NCBI_XSERIAL_EXPORT CStdAliasBase : public CAliasBase<TStd>
     typedef CStdAliasBase<TStd> TThis;
 public:
     CStdAliasBase(void)
-		: TParent(0) {}
+        : TParent(0) {}
     explicit CStdAliasBase(const TStd& value)
         : TParent(value) {}
 };
@@ -283,7 +283,7 @@ class NCBI_XSERIAL_EXPORT CStringAliasBase : public CAliasBase<TString>
     typedef CStringAliasBase<TString> TThis;
 public:
     CStringAliasBase(void)
-		: TParent() {}
+        : TParent() {}
     explicit CStringAliasBase(const TString& value)
         : TParent(value) {}
 };
@@ -436,6 +436,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/08/24 16:42:03  vasilche
+* Removed TAB symbols in sources.
+*
 * Revision 1.35  2004/08/05 18:32:12  vasilche
 * Added EXPORT to CStdAliasBase<> and CStringAliasBase<>.
 *

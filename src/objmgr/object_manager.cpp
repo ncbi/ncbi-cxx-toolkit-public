@@ -54,40 +54,40 @@ DEFINE_STATIC_MUTEX(s_ObjectManagerInstanceMutex);
 
 CRef<CObjectManager> CObjectManager::GetInstance(void)
 {
-	CRef<CObjectManager> ret;
-	{{
-		CMutexGuard guard(s_ObjectManagerInstanceMutex);
-		ret.Reset(s_ObjectManager);
-		if ( !ret || ret->ReferencedOnlyOnce() ) {
-			if ( ret ) {
-				ret.Release();
-			}
-			ret.Reset(new CObjectManager);
-		}
-	}}
-	return ret;
+    CRef<CObjectManager> ret;
+    {{
+        CMutexGuard guard(s_ObjectManagerInstanceMutex);
+        ret.Reset(s_ObjectManager);
+        if ( !ret || ret->ReferencedOnlyOnce() ) {
+            if ( ret ) {
+                ret.Release();
+            }
+            ret.Reset(new CObjectManager);
+        }
+    }}
+    return ret;
 }
 
 
 CObjectManager::CObjectManager(void)
     : m_Seq_id_Mapper(CSeq_id_Mapper::GetInstance())
 {
-	{{
-		CMutexGuard guard(s_ObjectManagerInstanceMutex);
-		s_ObjectManager = this;
-	}}
+    {{
+        CMutexGuard guard(s_ObjectManagerInstanceMutex);
+        s_ObjectManager = this;
+    }}
 }
 
 
 CObjectManager::~CObjectManager(void)
 {
-	{{
-		CMutexGuard guard(s_ObjectManagerInstanceMutex);
-		if ( s_ObjectManager == this ) {
-			s_ObjectManager = 0;
-		}
-	}}
-	// delete scopes
+    {{
+        CMutexGuard guard(s_ObjectManagerInstanceMutex);
+        if ( s_ObjectManager == this ) {
+            s_ObjectManager = 0;
+        }
+    }}
+    // delete scopes
     TWriteLockGuard guard(m_OM_Lock);
 
     if(!m_setScope.empty()) {
@@ -503,6 +503,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/08/24 16:42:03  vasilche
+* Removed TAB symbols in sources.
+*
 * Revision 1.41  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
