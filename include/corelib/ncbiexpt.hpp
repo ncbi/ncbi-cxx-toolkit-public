@@ -652,8 +652,8 @@ public: \
 /// the warning.
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(exception_class, base_class) \
     { \
-        x_Init(file,line,message, prev_exception); \
-        x_InitErrCode((typename CException::EErrCode) err_code); \
+        this->x_Init(file,line,message, prev_exception); \
+        this->x_InitErrCode((typename CException::EErrCode) err_code); \
     } \
     exception_class(const exception_class& other) throw() \
        : base_class(other) \
@@ -666,7 +666,7 @@ public: \
     BaseClassEErrCode GetErrCode(void) const \
     { \
         return typeid(*this) == typeid(exception_class) ? \
-            (typename exception_class::EErrCode) x_GetErrCode() : \
+            (typename exception_class::EErrCode) this->x_GetErrCode() : \
             (typename exception_class::EErrCode) CException::eInvalid; \
     } \
 protected: \
@@ -799,20 +799,10 @@ public:
 
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CStrErrAdapt --
-///
-/// Auxiliary class to wrap up strerror function.
-
-class CStrErrAdapt
-{
-public:
-    /// Inlined conditionally at end of file due to a weird
-    /// platform-specific GCC bug
-    static const char* strerror(int errnum);
-};
-
+// Some implementations return char*, so strict compilers may refuse
+// to let them satisfy TStrerror without a wrapper.
+inline
+const char* NcbiStrerror(int errnum) { return ::strerror(errnum); }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -832,7 +822,7 @@ typedef const char* (*TStrerror)(int errnum);
 ///
 /// Define template class for easy generation of Errno-like exception classes.
 
-template <class TBase, TStrerror PErrstr=CStrErrAdapt::strerror >
+template <class TBase, TStrerror PErrstr=ncbi::NcbiStrerror >
 class CErrnoTemplExceptionEx : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
@@ -859,8 +849,9 @@ public:
             message)
     {
         m_Errno = errno;
-        x_Init(file,line,message + ": " + PErrstr(m_Errno),prev_exception);
-        x_InitErrCode((CException::EErrCode) err_code);
+        this->x_Init(file, line, message + ": " + PErrstr(m_Errno),
+                     prev_exception);
+        this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
     /// Constructor.
@@ -874,8 +865,9 @@ public:
             message),
             m_Errno(errnum)
     {
-        x_Init(file,line,message + ": " + PErrstr(m_Errno),prev_exception);
-        x_InitErrCode((CException::EErrCode) err_code);
+        this->x_Init(file, line, message + ": " + PErrstr(m_Errno),
+                     prev_exception);
+        this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
     /// Copy constructor.
@@ -906,9 +898,9 @@ public:
     {
         return typeid(*this) == 
             typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
-               (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) 
-                  x_GetErrCode() :
-               (CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode)
+               (typename CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode) 
+                  this->x_GetErrCode() :
+               (typename CErrnoTemplExceptionEx<TBase, PErrstr>::EErrCode)
                   CException::eInvalid;
     }
 
@@ -938,11 +930,11 @@ private:
 /// Define template class for easy generation of Errno-like exception classes.
 
 template<class TBase> class CErrnoTemplException :
-                        public CErrnoTemplExceptionEx<TBase, CStrErrAdapt::strerror>
+                        public CErrnoTemplExceptionEx<TBase, ncbi::NcbiStrerror>
 {
 public:
     /// Parent class type.
-    typedef CErrnoTemplExceptionEx<TBase, CStrErrAdapt::strerror> CParent;
+    typedef CErrnoTemplExceptionEx<TBase, ncbi::NcbiStrerror> CParent;
 
     /// Constructor.
     CErrnoTemplException<TBase>(const char* file,int line,
@@ -952,105 +944,6 @@ public:
                  (typename CParent::EErrCode) CException::eInvalid, message)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>,
                                                 CParent)
-};
-
-
-
-class NStr;
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CParseTemplException --
-///
-/// Define template class for parsing exception. This class is used to define
-/// exceptions for complex parsing tasks and includes an additional m_Pos
-/// data member. The constructor requires that an additional postional
-/// parameter be supplied along with the description message.
-
-template <class TBase>
-class CParseTemplException : EXCEPTION_VIRTUAL_BASE public TBase
-{
-public:
-    /// Error types that for exception class.
-    enum EErrCode {
-        eErr        ///< Generic error 
-    };
-
-    /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eErr: return "eErr";
-        default:   return CException::GetErrCodeString();
-        }
-    }
-
-    /// Constructor.
-    ///
-    /// Report "pos" along with "what".
-    CParseTemplException(const char* file,int line,
-        const CException* prev_exception,
-        EErrCode err_code,const string& message,
-        string::size_type pos) throw()
-          : TBase(file, line,prev_exception,
-            (typename TBase::EErrCode)(CException::eInvalid),
-            message), m_Pos(pos)
-    {
-        x_Init(file,line,
-            string("{") + NStr::UIntToString(m_Pos) + "} " + message,
-            prev_exception);
-        x_InitErrCode((CException::EErrCode) err_code);
-    }
-
-    /// Constructor.
-    CParseTemplException(const CParseTemplException<TBase>& other) throw()
-        : TBase(other)
-    {
-        m_Pos = other.m_Pos;
-        x_Assign(other);
-    }
-
-    /// Destructor.
-    virtual ~CParseTemplException(void) throw() {}
-
-    /// Report error position.
-    virtual void ReportExtra(ostream& out) const
-    {
-        out << "m_Pos = " << m_Pos;
-    }
-
-    // Attributes.
-
-    /// Get exception class type.
-    virtual const char* GetType(void) const { return "CParseTemplException"; }
-
-    /// Get error code.
-    EErrCode GetErrCode(void) const
-    {
-        return typeid(*this) == typeid(CParseTemplException<TBase>) ?
-            (CParseTemplException<TBase>::EErrCode) x_GetErrCode() :
-            (CParseTemplException<TBase>::EErrCode) CException::eInvalid;
-    }
-
-    /// Get error position.
-    string::size_type GetPos(void) const throw() { return m_Pos; }
-
-protected:
-    /// Constructor.
-    CParseTemplException(void) throw()
-    {
-        m_Pos = 0;
-    }
-
-    /// Helper clone method.
-    virtual const CException* x_Clone(void) const
-    {
-        return new CParseTemplException<TBase>(*this);
-    }
-
-private:
-    string::size_type m_Pos;    ///< Error position
 };
 
 
@@ -1086,27 +979,6 @@ public: \
             (message), extra_param) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
-
-// For some reason, making this an inline function fails when building
-// with GCC 2.95 on OSF/1.... :-/
-#ifndef INLINE_CSTRERRADAPT
-# if !defined(NCBI_COMPILER_GCC)
-#  define INLINE_CSTRERRADAPT
-# elif NCBI_COMPILER_VERSION >= 300
-#  define INLINE_CSTRERRADAPT
-# elif !defined(NCBI_OS_OSF1)
-#  define INLINE_CSTRERRADAPT
-# endif
-#endif
-#ifdef INLINE_CSTRERRADAPT
-inline
-const char* CStrErrAdapt::strerror(int errnum)
-{
-    return ::strerror(errnum);
-}
-#endif
-
-
 END_NCBI_SCOPE
 
 
@@ -1116,6 +988,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/04/26 14:43:56  ucko
+ * Handle GCC 3.4's stricter treatment of templates:
+ * - Wrap strerror with an ordinary function rather than a static method.
+ * - Qualify dependent names with "this->" as needed.
+ * - Move CParseTemplException to ncbistr.hpp.
+ *
  * Revision 1.50  2004/03/10 19:57:40  gorelenk
  * Added NCBI_XNCBI_EXPORT prefix to function DoThrowTraceAbort.
  *
