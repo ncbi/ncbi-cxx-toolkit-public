@@ -99,6 +99,12 @@ void CSampleObjmgrApplication::Init(void)
 
 int CSampleObjmgrApplication::Run(void)
 {
+    // Setup application registry and logs for CONNECT library
+    CORE_SetLOG(LOG_cxx2c());
+    CORE_SetREG(REG_cxx2c(&GetConfig(), false));
+    // Setup MT-safety for CONNECT library
+    // CORE_SetLOCK(MT_LOCK_cxx2c());
+
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
     int gi = args["gi"].AsInteger();
@@ -134,10 +140,14 @@ int CSampleObjmgrApplication::Run(void)
 
     // Get the Bioseq object.
     CConstRef<CBioseq> bioseq = &bioseq_handle.GetBioseq();
-    // Printout the first Seq-id from the Bioseq.
-    cout << "First ID:  "
-         << (*bioseq->GetId().begin())->DumpAsFasta()
-         << endl;
+    // Printout each Seq-id from the Bioseq.
+    cout << "ID: ";
+    iterate (CBioseq::TId, id_it, bioseq->GetId()) {
+        if (id_it != bioseq->GetId().begin())
+            cout << " + "; // print id separator
+        cout << (*id_it)->DumpAsFasta();
+    }
+    cout << endl;
 
     // Get the sequence using CSeqVector.
     // Use default encoding:  CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
@@ -251,6 +261,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2002/05/22 14:29:25  grichenk
+ * +registry and logs setup; +iterating over CRef<> container
+ *
  * Revision 1.2  2002/05/10 16:57:10  kimelman
  * upper gi bound increased twice
  *
