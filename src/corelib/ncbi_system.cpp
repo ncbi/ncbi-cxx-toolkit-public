@@ -349,7 +349,7 @@ unsigned int GetCpuCount(void)
                    (host_info_t)&hinfo, &hinfo_count);
 
     if (rc != KERN_SUCCESS) {
-        return -1;
+        return 1;
     }
     return hinfo.avail_cpus;
 
@@ -417,6 +417,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/05/18 17:57:21  ucko
+ * GetCpuCount(): return 1 rather than -1 (-> UINT_MAX !) if host_info
+ * fails on Darwin.
+ *
  * Revision 1.37  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *
