@@ -210,8 +210,8 @@ Stage 2 Options
 
         default: interval
 
-        The possible values are "interval" and "fasta". If fasta 
-        format is selected the output is a fasta file with masked
+        The possible values are "interval" and "fasta". If FASTA 
+        format is selected the output is a FASTA file with masked
         regions in lower case letters. If the interval format is
         selected the output is a file containing, for each processed
         sequence, a sorted set of continuous masked subsequences.
@@ -270,7 +270,7 @@ Stage 2 Options
 
         This parameter overrides the value contained in the unit
         counts file. Since the unit counts file does not keep counts
-        of the units theat appear fewer than T_low times in the
+        of the units that appear fewer than T_low times in the
         genome, it only makes sense to specify a T_low value that is 
         greater than the one in the unit counts file. In that case 
         unit with counts that are less than T_low will not be read 
@@ -316,7 +316,7 @@ FILES
     files, then "-fa_list true" should be used and the value of 
     "-input" option should name the file containing the list of the 
     required FASTA files, one file per line. For example, for human 
-    genome build 34, one could have one fasta file per chromosome 
+    genome build 34, one could have one FASTA file per chromosome 
     named chrX.fa, chrY.fa, chr1.fa, chr2.fa, ..., chr22.fa located 
     in the /human34 directory. Then the file given to the "-input" 
     option should look like this:
