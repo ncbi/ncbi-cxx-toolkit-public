@@ -435,6 +435,13 @@ CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
 CMemoryChunk::~CMemoryChunk(void)
 {
     delete m_Data;
+    CRef<CMemoryChunk> next = m_NextChunk;
+    m_NextChunk.Reset();
+    while ( bool(next) && next->ReferencedOnlyOnce() ) {
+        CRef<CMemoryChunk> cur = next;
+        next = cur->m_NextChunk;
+        cur->m_NextChunk.Reset();
+    }
 }
 
 
@@ -658,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/08/09 14:19:42  vasilche
+ * Fixed excessive stack memory usage in ~CMemoryChunk().
+ *
  * Revision 1.34  2004/08/04 14:32:18  vasilche
  * Fixed bug detected by MSVC 7.
  *
