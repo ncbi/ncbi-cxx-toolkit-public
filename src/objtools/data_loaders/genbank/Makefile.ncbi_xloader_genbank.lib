@@ -10,4 +10,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = $(GENBANK_LDEP)
+DLL_LIB = 
+#$(GENBANK_LDEP)

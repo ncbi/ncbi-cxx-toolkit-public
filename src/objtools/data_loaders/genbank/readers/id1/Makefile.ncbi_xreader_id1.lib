@@ -12,4 +12,5 @@ REQUIRES =
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = $(GENBANK_READER_ID1_LDEP)
+DLL_LIB = 
+#$(GENBANK_READER_ID1_LDEP)
