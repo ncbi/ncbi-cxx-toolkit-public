@@ -80,9 +80,10 @@ public:
     const TObjTypeMap& GetObjTypeMap() const { return m_ObjTypeMap; }
 
     const string& GetAlias() const { return m_Alias; }
-private:
+
     // Loads types map from m_ObjectTypeDB to memory.
-    void x_LoadTypeMap();
+    void LoadTypeMap();
+
 private:
     CLDS_Database(const CLDS_Database&);
     CLDS_Database& operator=(const CLDS_Database&);
@@ -125,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/10/09 18:10:50  kuznets
+ * LoadTypeMap() made public
+ *
  * Revision 1.15  2003/10/09 16:44:48  kuznets
  * Added Sync() method for LDS database to be able explicitly flush cache buffer
  * (when we at the DB update checkpoint)
