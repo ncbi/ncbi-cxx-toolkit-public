@@ -401,7 +401,7 @@ CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const char* SeqIdCode)
     // Last item in list has null byte for first character, so
     // *s_TextId[dex] will be zero at end.
     for (dex = 0;  *s_TextId[dex];  dex++) {
-        if ( PNocase().Equals(s_TextId[dex],SeqIdCode) ) {
+        if ( !NStr::CompareNocase(s_TextId[dex], SeqIdCode) ) {
             break;
         }
     }
@@ -959,7 +959,7 @@ CSeq_id::CSeq_id( const string& the_id )
     string the_type_in, acc_in, name_in, version_in, release_in;
 
     // Read the part of the_id up to the vertical bar ( "|" )
-    getline(myin, the_type_in, '|');
+    NcbiGetline(myin, the_type_in, '|');
     // Remove spaces from front and back of the_type_in
     string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
 
@@ -968,17 +968,17 @@ CSeq_id::CSeq_id( const string& the_id )
 
     // Construct according to type
     if ( the_type == CSeq_id::e_Local ) {
-        getline( myin, acc_in ); // take rest
+        NcbiGetline( myin, acc_in, 0 ); // take rest
         x_Init( the_type, acc_in );
         return;
     }
 
-    if ( !getline( myin, acc_in,'|' ) )
+    if ( !NcbiGetline( myin, acc_in, '|' ) )
         return;
 
     if ( the_type == CSeq_id::e_General  ||  the_type == CSeq_id::e_Pdb ) {
         //Take the rest of the line
-        getline( myin, name_in );
+        NcbiGetline( myin, name_in, 0 );
         x_Init( the_type, acc_in, name_in );
         return;
     } else if ( the_type == CSeq_id::e_Gi ) {
@@ -986,9 +986,9 @@ CSeq_id::CSeq_id( const string& the_id )
         return;
     }
 
-    if ( getline(myin, name_in, '|') ) {
-        if ( getline(myin, version_in, '|') ) {
-            getline(myin, release_in, '|');
+    if ( NcbiGetline(myin, name_in, '|') ) {
+        if ( NcbiGetline(myin, version_in, '|') ) {
+            NcbiGetline(myin, release_in, '|');
         }
     }
 
@@ -1346,6 +1346,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.61  2003/08/25 21:15:41  ucko
+ * Tweak slightly for efficiency.
+ *
  * Revision 6.60  2003/08/22 15:16:48  dondosha
  * Correction in CSeq_id constructor, to allow id strings starting with a gi id
  *
