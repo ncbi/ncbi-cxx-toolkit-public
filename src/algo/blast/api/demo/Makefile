@@ -1,8 +1,6 @@
-.PHONY: all install clean blast2seq blast2seq.pure
+.PHONY: all install clean blast2seq.pure
 
-all: blast2seq
-
-blast2seq:
+all:
 	cd ../../lib && make
 	cd .. && make
 	make -f Makefile.blast2seq_app
