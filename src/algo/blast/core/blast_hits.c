@@ -116,7 +116,7 @@ BlastHSP* BlastHSPFree(BlastHSP* hsp)
 }
 
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, BlastScoringOptions* score_options, 
+        BlastHSPList* hsp_list, const BlastScoringOptions* score_options, 
         BlastScoreBlk* sbp)
 {
    BlastHSP* hsp;

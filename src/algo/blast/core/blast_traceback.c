@@ -724,7 +724,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
            PHIGetEvalue(hsp_list, sbp);
         } else {
            BLAST_GetNonSumStatsEvalue(program_number, query_info, hsp_list, 
-                                      hit_options, sbp);
+                                      score_options, sbp);
         }
         
         BLAST_ReapHitlistByEvalue(hsp_list, hit_options);

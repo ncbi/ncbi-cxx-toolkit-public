@@ -259,7 +259,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
             /* Calculate e-values for all HSPs */
             status = 
                BLAST_GetNonSumStatsEvalue(program_number, query_info, 
-                  hsp_list, hit_options, gap_align->sbp);
+                  hsp_list, score_options, gap_align->sbp);
          }
 
          /* Discard HSPs that don't pass the e-value test */
@@ -521,8 +521,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
                                query_info, hit_params);
 
    BlastInitialWordParametersNew(program_number, word_options, *hit_params, 
-      *ext_params, sbp, query_info, eff_len_options, word_params, 
-      scoring_options->gapped_calculation);
+      *ext_params, sbp, query_info, eff_len_options, 
+      scoring_options->gapped_calculation, word_params);
 
    if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 
                     max_subject_length, query->length, sbp, gap_align))) {
