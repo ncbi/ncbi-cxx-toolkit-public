@@ -877,8 +877,10 @@ bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
             }
         } while (m_Sem->count == 0);
         m_Sem->wait_count--;
-        m_Sem->count--;
-        retval = true;
+        if (m_Sem->count != 0) {
+            m_Sem->count--;
+            retval = true;
+        }
     }
 
     xncbi_Validate(pthread_mutex_unlock(&m_Sem->mutex) == 0,
@@ -980,6 +982,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/30 15:51:43  kuznets
+ * Fixed timeout of CSemaphore::TryWait() on Posix.
+ *
  * Revision 1.17  2004/06/02 16:27:06  ucko
  * SSystemFastMutex::InitializeDynamic: drop gratuituous and potentially
  * error-prone check for double initialization after discussion with
