@@ -211,29 +211,15 @@ void CDebugDumpContext::Log(const string& name, unsigned long value,
     Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
-#if (SIZEOF_LONG_LONG != 0)
-void CDebugDumpContext::Log(const string& name, long long value,
+#if (SIZEOF_LONG < 8)
+void CDebugDumpContext::Log(const string& name, Int8 value,
                             const string& comment)
 {
     Log(name, NStr::Int8ToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
-void CDebugDumpContext::Log(const string& name, unsigned long long value,
-                            const string& comment)
-{
-    Log(name, NStr::UInt8ToString(value), CDebugDumpFormatter::eValue, comment);
-}
-#endif
-#if (SIZEOF___INT64 != 0)
-void CDebugDumpContext::Log(const string& name, __int64 value,
-                            const string& comment)
-{
-    Log(name, NStr::Int8ToString(value), CDebugDumpFormatter::eValue, comment);
-}
-
-
-void CDebugDumpContext::Log(const string& name, unsigned __int64 value,
+void CDebugDumpContext::Log(const string& name, Uint8 value,
                             const string& comment)
 {
     Log(name, NStr::UInt8ToString(value), CDebugDumpFormatter::eValue, comment);
@@ -403,6 +389,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/09 21:13:49  ucko
+ * Re-tweak logging of 64-bit numbers, as the previous revision broke
+ * when __int64 and long long were synonymous.  (Now uses Int8/Uint8
+ * everywhere, but only when sizeof(long) < 8.)
+ *
  * Revision 1.9  2003/12/09 17:27:22  gouriano
  * Corrected previously defined Log() functions to avoid conflicts
  * on 64 bit platforms

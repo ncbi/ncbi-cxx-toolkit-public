@@ -104,16 +104,10 @@ public:
              const string& comment = kEmptyStr);
     void Log(const string& name, unsigned long value,
              const string& comment = kEmptyStr);
-#if (SIZEOF_LONG_LONG != 0)
-    void Log(const string& name, long long value,
+#if (SIZEOF_LONG < 8)
+    void Log(const string& name, Int8 value,
              const string& comment = kEmptyStr);
-    void Log(const string& name, unsigned long long value,
-             const string& comment = kEmptyStr);
-#endif
-#if (SIZEOF___INT64 != 0)
-    void Log(const string& name, __int64 value,
-             const string& comment = kEmptyStr);
-    void Log(const string& name, unsigned __int64 value,
+    void Log(const string& name, Uint8 value,
              const string& comment = kEmptyStr);
 #endif
     void Log(const string& name, double value,
@@ -355,6 +349,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/09 21:13:27  ucko
+ * Re-tweak logging of 64-bit numbers, as the previous revision broke
+ * when __int64 and long long were synonymous.  (Now uses Int8/Uint8
+ * everywhere, but only when sizeof(long) < 8.)
+ *
  * Revision 1.8  2003/12/09 17:25:51  gouriano
  * Corrected previously defined Log() functions to avoid conflicts
  * on 64 bit platforms
