@@ -373,8 +373,6 @@ typedef struct BlastEffectiveLengthsOptions {
                            statistical calculations */
    Int8 searchsp_eff; /**< Search space to be used for statistical
                            calculations */
-   Boolean use_real_db_size; /**< Use real database size instead of virtual
-                                database size for statistical calculations */
 } BlastEffectiveLengthsOptions;
 
 /** Options used in protein BLAST only (PSI, PHI, RPS and translated BLAST)

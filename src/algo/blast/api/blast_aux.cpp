@@ -222,7 +222,6 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*d
     ddc.Log("db_length", (unsigned long)m_Ptr->db_length); // Int8
     ddc.Log("dbseq_num", m_Ptr->dbseq_num);
     ddc.Log("searchsp_eff", (unsigned long)m_Ptr->searchsp_eff); // Int8
-    ddc.Log("use_real_db_size", m_Ptr->use_real_db_size);
 }
 
 void
@@ -495,6 +494,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.68  2005/03/02 16:45:36  camacho
+ * Remove use_real_db_size
+ *
  * Revision 1.67  2005/02/14 14:09:37  camacho
  *  Removed obsolete fields from the BlastScoreBlk
  *

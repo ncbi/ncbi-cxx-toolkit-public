@@ -133,7 +133,6 @@ enum EBlastOptIdx {
     eBlastOpt_DbLength,
     eBlastOpt_DbSeqNum,
     eBlastOpt_EffectiveSearchSpace,
-    eBlastOpt_UseRealDbSize,
     eBlastOpt_DbGeneticCode,
     eBlastOpt_PHIPattern,
     eBlastOpt_InclusionThreshold,
@@ -341,9 +340,6 @@ public:
 
     Int8 GetEffectiveSearchSpace() const;
     void SetEffectiveSearchSpace(Int8 eff);
-
-    bool GetUseRealDbSize() const;
-    void SetUseRealDbSize(bool u = true);
 
     int GetDbGeneticCode() const;
 
@@ -1675,23 +1671,6 @@ public:
         }
     }
 
-    bool GetUseRealDbSize() const
-    {
-        if (! m_Local) {
-            x_Throwx("Error: GetUseRealDbSize() not available.");
-        }
-        return m_Local->GetUseRealDbSize();
-    }
-    void SetUseRealDbSize(bool u = true)
-    {
-        if (m_Local) {
-            m_Local->SetUseRealDbSize(u);
-        }
-        if (m_Remote) {
-            m_Remote->SetValue(eBlastOpt_UseRealDbSize, u);
-        }
-    }
-
     int GetDbGeneticCode() const
     {
         if (! m_Local) {
@@ -2735,18 +2714,6 @@ CBlastOptionsLocal::SetEffectiveSearchSpace(Int8 eff)
     m_EffLenOpts->searchsp_eff = eff;
 }
 
-inline bool 
-CBlastOptionsLocal::GetUseRealDbSize() const
-{
-    return m_EffLenOpts->use_real_db_size ? true : false;
-}
-
-inline void 
-CBlastOptionsLocal::SetUseRealDbSize(bool u)
-{
-    m_EffLenOpts->use_real_db_size = u;
-}
-
 inline int 
 CBlastOptionsLocal::GetDbGeneticCode() const
 {
@@ -2809,6 +2776,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2005/03/02 16:45:24  camacho
+* Remove use_real_db_size
+*
 * Revision 1.85  2005/03/02 13:56:49  madden
 * Rename Filtering option funcitons to standard naming convention
 *

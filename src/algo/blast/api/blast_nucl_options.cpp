@@ -219,7 +219,6 @@ CBlastNucleotideOptionsHandle::SetEffectiveLengthsOptionsDefaults()
     SetDbLength(0);
     SetDbSeqNum(0);
     SetEffectiveSearchSpace(0);
-    SetUseRealDbSize();
 }
 
 void
@@ -236,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/03/02 16:45:36  camacho
+ * Remove use_real_db_size
+ *
  * Revision 1.20  2005/02/24 13:46:54  madden
  * Changes to use structured filteing options instead of string
  *

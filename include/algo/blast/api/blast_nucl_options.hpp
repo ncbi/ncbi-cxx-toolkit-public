@@ -258,13 +258,6 @@ public:
         m_Opts->SetEffectiveSearchSpace(eff);
     }
 
-    /// Returns UseRealDbSize
-    bool GetUseRealDbSize() const { return m_Opts->GetUseRealDbSize(); }
-    /// Sets UseRealDbSize
-    /// @param u UseRealDbSize [in]
-    void SetUseRealDbSize(bool u = true) { m_Opts->SetUseRealDbSize(u); }
-
-
     /// Sets TraditionalBlastnDefaults
     void SetTraditionalBlastnDefaults();
     /// Sets TraditionalMegablastDefaults
@@ -320,6 +313,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/03/02 16:45:24  camacho
+ * Remove use_real_db_size
+ *
  * Revision 1.22  2005/02/24 13:46:20  madden
  * Add setters and getters for filtering options
  *
