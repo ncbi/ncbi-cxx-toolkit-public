@@ -41,10 +41,13 @@ BEGIN_NCBI_SCOPE
 
 
 #ifdef NCBI_COMPILER_MIPSPRO
-class CConn_Streambuf : public CMIPSPRO_ReadsomeTolerantStreambuf
+#  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
-class CConn_Streambuf : public streambuf
+#  define CConn_StreambufBase streambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
+
+
+class CConn_Streambuf : public CConn_StreambufBase
 {
 public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
@@ -84,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/04/22 18:29:38  lavr
+ * Conditionally define CConn_Streambuf's base class (to help Doc++ SB)
+ *
  * Revision 6.16  2003/04/11 17:57:11  lavr
  * Define xsgetn() unconditionally
  *
