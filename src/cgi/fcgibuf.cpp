@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/08 21:36:29  vakatov
+* #HAVE_NO_CHAR_TRAITS::  use "CT_XXX_TYPE" instead of "xxx_type" for
+* xxx = { "int", "char", "pos", "off" }
+*
 * Revision 1.5  1999/05/17 00:26:18  vakatov
 * Use double-quote rather than angle-brackets for the private headers
 *
@@ -75,10 +79,10 @@ CCgiObuffer::CCgiObuffer(FCGX_Stream* out)
     }
 }
 
-CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
+CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
 {
     FCGX_Stream* out = m_out;
-    const char_type* from = pbase(), * to = pptr();
+    const CT_CHAR_TYPE* from = pbase(), * to = pptr();
     streamsize count = to - from;
     streamsize bumpCount = count;
     while ( count > 0 ) {
@@ -86,7 +90,7 @@ CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
         if ( chunk == 0 ) {
             // output stream overflow - we need flush
             if ( out->isClosed || out->isReader ) {
-                return traits_type::eof();
+                return CT_EOF;
             }
             out->emptyBuffProc(out, false);
             if (out->stop == out->wrNext  &&  !out->isClosed) {
@@ -103,8 +107,8 @@ CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
     }
     pbump(bumpCount);
 
-    if ( c == traits_type::eof() ) {
-        return traits_type::eof();
+    if ( c == CT_EOF ) {
+        return CT_EOF;
     }
 
     if ( out->wrNext == out->stop ) {
@@ -114,11 +118,11 @@ CCgiObuffer::int_type CCgiObuffer::overflow(int_type c)
                 THROW1_TRACE(runtime_error,
                              "CCgiObuffer::overflow: error in emptyBuffProc");
             }
-            return traits_type::eof();
+            return CT_EOF;
         }
     }
 
-    return traits_type::not_eof(*out->wrNext++ = c);
+    return CT_NOT_EOF(*out->wrNext++ = c);
 }
 
 CCgiIbuffer::CCgiIbuffer(FCGX_Stream* in)
@@ -129,13 +133,13 @@ CCgiIbuffer::CCgiIbuffer(FCGX_Stream* in)
     }
 }
 
-CCgiObuffer::int_type CCgiIbuffer::uflow(void)
+CT_INT_TYPE CCgiIbuffer::uflow(void)
 {
     FCGX_Stream* in = m_in;
 
     if ( in->rdNext == in->stop ) {
         if ( in->isClosed || !in->isReader ) {
-            return traits_type::eof();
+            return CT_EOF;
         }
 
         in->fillBuffProc(in);
@@ -143,20 +147,20 @@ CCgiObuffer::int_type CCgiIbuffer::uflow(void)
 
         if ( in->rdNext == in->stop ) {
             _ASSERT(in->isClosed); /* bug in fillBufProc if not */
-            return traits_type::eof();
+            return CT_EOF;
         }
     }
 
-    return traits_type::not_eof(*in->rdNext++);
+    return CT_NOT_EOF(*in->rdNext++);
 }
 
-CCgiObuffer::int_type CCgiIbuffer::underflow(void)
+CT_INT_TYPE CCgiIbuffer::underflow(void)
 {
     FCGX_Stream* in = m_in;
 
     if ( in->rdNext == in->stop ) {
         if ( in->isClosed || !in->isReader ) {
-            return traits_type::eof();
+            return CT_EOF;
         }
 
         in->fillBuffProc(in);
@@ -164,11 +168,11 @@ CCgiObuffer::int_type CCgiIbuffer::underflow(void)
 
         if ( in->rdNext == in->stop ) {
             _ASSERT(in->isClosed); /* bug in fillBufProc if not */
-            return traits_type::eof();
+            return CT_EOF;
         }
     }
 
-    return traits_type::not_eof(*in->rdNext);
+    return CT_NOT_EOF(*in->rdNext);
 }
 
 END_NCBI_SCOPE

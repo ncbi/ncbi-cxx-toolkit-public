@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/08 21:36:29  vakatov
+* #HAVE_NO_CHAR_TRAITS::  use "CT_XXX_TYPE" instead of "xxx_type" for
+* xxx = { "int", "char", "pos", "off" }
+*
 * Revision 1.2  1999/04/28 16:54:19  vasilche
 * Implemented stream input processing for FastCGI applications.
 *
@@ -54,7 +58,7 @@ class CCgiObuffer : public IO_PREFIX::streambuf
 public:
     CCgiObuffer(FCGX_Stream* out);
 
-    virtual int_type overflow(int_type c);
+    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
 
 private:
 
@@ -66,8 +70,8 @@ class CCgiIbuffer : public IO_PREFIX::streambuf
 public:
     CCgiIbuffer(FCGX_Stream* in);
 
-    virtual int_type uflow(void);
-    virtual int_type underflow(void);
+    virtual CT_INT_TYPE uflow(void);
+    virtual CT_INT_TYPE underflow(void);
 
 private:
 
