@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJUTIL_EXPORT CGenbankWriter
+class CGenbankWriter
 {
 public:
     enum EFormat {
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2004/08/17 14:36:01  dicuccio
+* Don't export CGenbankWriter - it's all inline
+*
 * Revision 1.14  2003/11/05 15:32:29  ucko
 * Make Write non-const per IFlatFormatter::Format.
 *
