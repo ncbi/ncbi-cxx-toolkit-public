@@ -515,40 +515,42 @@ CDbBlast::TrimBlastHSPResults()
     if (total_hsp_limit == 0)
         return;
 
-    Int4 total_hsps = 0;
-    Int4 allowed_hsp_num, hsplist_count;
+    // Retrieve results from the HSP stream, if it has not been done yet, e.g.
+    // if this method is called after a preliminary search.
+    if (!m_ipResults)
+        GetResults();
+
     bool hsp_limit_exceeded = false;
-    BlastHitList* hit_list;
-    BlastHSPList* hsp_list;
-    BlastHSPList** hsplist_array;
-    int query_index, subject_index, hsp_index;
     
-    for (query_index = 0; query_index < m_ipResults->num_queries; 
+    for (int query_index = 0; query_index < m_ipResults->num_queries; 
          ++query_index) {
+        BlastHitList* hit_list;
         if (!(hit_list = m_ipResults->hitlist_array[query_index]))
             continue;
         /* The count of HSPs is separate for each query. */
-        total_hsps = 0;
-        hsplist_count = hit_list->hsplist_count;
-        hsplist_array = (BlastHSPList**) 
+        Int4 total_hsps = 0;
+        Int4 hsplist_count = hit_list->hsplist_count;
+        BlastHSPList** hsplist_array = (BlastHSPList**) 
             malloc(hsplist_count*sizeof(BlastHSPList*));
         
-        for (subject_index = 0; subject_index < hsplist_count; ++subject_index)
+        for (int subject_index = 0; subject_index < hsplist_count; 
+             ++subject_index) {
             hsplist_array[subject_index] = 
                 hit_list->hsplist_array[subject_index];
-        
+        }
+ 
         qsort((void*)hsplist_array, hsplist_count,
               sizeof(BlastHSPList*), s_CompareHsplistHspcnt);
         
-        for (subject_index = 0; subject_index < hsplist_count; 
+        for (int subject_index = 0; subject_index < hsplist_count; 
              ++subject_index) {
-            allowed_hsp_num = 
+            Int4 allowed_hsp_num = 
                 ((subject_index+1)*total_hsp_limit)/hsplist_count - total_hsps;
-            hsp_list = hsplist_array[subject_index];
+            BlastHSPList* hsp_list = hsplist_array[subject_index];
             if (hsp_list->hspcnt > allowed_hsp_num) {
                 hsp_limit_exceeded = true;
                 /* Free the extra HSPs */
-                for (hsp_index = allowed_hsp_num; 
+                for (int hsp_index = allowed_hsp_num; 
                      hsp_index < hsp_list->hspcnt; ++hsp_index)
                     Blast_HSPFree(hsp_list->hsp_array[hsp_index]);
                 hsp_list->hspcnt = allowed_hsp_num;
@@ -601,6 +603,9 @@ void CDbBlast::RunPreliminarySearch()
                        "Preliminary search failed");
     }
 
+    /* If a limit is provided for number of HSPs to return, trim the extra
+       HSPs here */
+    TrimBlastHSPResults();
 }
 
 TSeqAlignVector 
@@ -671,6 +676,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2005/01/04 16:55:51  dondosha
+ * Adjusted TrimBlastHSPResults so it can be called after preliminary search
+ *
  * Revision 1.47  2004/12/21 17:17:42  dondosha
  * Use Blast_RunPreliminarySearch and Blast_RunTracebackSearch core functions for respective stages; no longer need to branch code for RPS BLAST
  *
