@@ -481,7 +481,9 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
     CBioseq_Handle handle = scope->GetBioseqHandle(sl); // might throw exception
 
     // Retrieves the correct strand (plus or minus), but not both
-    CSeqVector sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi, strand);
+    CSeqVector sv =
+        handle.GetSequenceView(sl, CBioseq_Handle::eViewConstructed,
+                               CBioseq_Handle::eCoding_Ncbi, strand);
 
     switch (encoding) {
     // Protein sequences (query & subject) always have sentinels around sequence
@@ -507,11 +509,15 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         if (add_nucl_sentinel)
             *buf_var++ = sentinel;
-        for (i = 0; i < sv.size(); i++) {
-            if (encoding == BLASTNA_ENCODING)
+
+        if (encoding == BLASTNA_ENCODING) {
+            for (i = 0; i < sv.size(); i++) {
                 *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-            else
+            }
+        } else {
+            for (i = 0; i < sv.size(); i++) {
                 *buf_var++ = sv[i];
+            }
         }
         if (add_nucl_sentinel)
             *buf_var++ = sentinel;
@@ -521,14 +527,18 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
             sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi,
                     eNa_strand_minus);
             sv.SetCoding(CSeq_data::e_Ncbi4na);
-            for (i = 0; i < sv.size(); i++) {
-                if (encoding == BLASTNA_ENCODING)
+            if (encoding == BLASTNA_ENCODING) {
+                for (i = 0; i < sv.size(); i++) {
                     *buf_var++ = NCBI4NA_TO_BLASTNA[sv[i]];
-                else
+                }
+            } else {
+                for (i = 0; i < sv.size(); i++) {
                     *buf_var++ = sv[i];
+                }
             }
-            if (add_nucl_sentinel)
+            if (add_nucl_sentinel) {
                 *buf_var++ = sentinel;
+            }
         }
         break;
 
@@ -748,6 +758,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/10/15 15:09:32  camacho
+* Changes from Mike DiCuccio to use GetSequenceView to retrieve sequences.
+*
 * Revision 1.37  2003/10/08 15:13:56  dondosha
 * Test if subject mask is not NULL before converting to a C structure
 *
