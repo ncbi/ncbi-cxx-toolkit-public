@@ -164,8 +164,8 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
     TScore* pV = rowV - 1;
 
-    const char* seq1 = data->m_seg1 - 1;
-    const char* seq2 = data->m_seg2 - 1;
+    const char* seq1 = m_Seq1 + data->m_offset1 - 1;
+    const char* seq2 = m_Seq2 + data->m_offset2 - 1;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
@@ -179,13 +179,13 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 	}
     }
 
-    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_seg1 == m_Seq1;
+    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_offset1 == 0;
     bool bFreeGapRight1 = data->m_esf_R1 &&
-                          m_Seq1 + m_SeqLen1 - data->m_len1 == data->m_seg1;
+                          m_SeqLen1 == data->m_offset1 + data->m_len1; 
 
-    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_seg2 == m_Seq2;
+    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_offset2 == 0;
     bool bFreeGapRight2 = data->m_esf_R2 &&
-                          m_Seq2 + m_SeqLen2 - data->m_len2 == data->m_seg2;
+                          m_SeqLen2 == data->m_offset2 + data->m_len2; 
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -322,8 +322,8 @@ CNWAligner::TScore CNWAligner::x_Run()
     
         if(m_guides.size() == 0) {
 
-            SAlignInOut data (m_Seq1, m_SeqLen1, m_esf_L1, m_esf_R1,
-                              m_Seq2, m_SeqLen2, m_esf_L2, m_esf_R2);
+            SAlignInOut data (0, m_SeqLen1, m_esf_L1, m_esf_R1,
+                              0, m_SeqLen2, m_esf_L2, m_esf_R2);
             m_score = x_Align(&data);
             m_Transcript = data.m_transcript;
         }
@@ -353,8 +353,8 @@ CNWAligner::TScore CNWAligner::x_Run()
                         esf_R2 = m_esf_R2;
                     }
                     
-                    SAlignInOut data (m_Seq1 + q0, dim_query, esf_L1, esf_R1,
-                                      m_Seq2 + s0, dim_subj, esf_L2, esf_R2);
+                    SAlignInOut data (q0, dim_query, esf_L1, esf_R1,
+                                      s0, dim_subj, esf_L2, esf_R2);
                     
                     vdata.push_back(data);
                     seed_dims.push_back(m_guides[i-3] - m_guides[i-4] + 1);
@@ -362,8 +362,8 @@ CNWAligner::TScore CNWAligner::x_Run()
                     q1 = m_guides[i - 4];
                     s1 = m_guides[i - 2];
                 }
-                SAlignInOut data(m_Seq1, q1, m_esf_L1, false,
-                                 m_Seq2, s1, m_esf_L2, false);
+                SAlignInOut data(0, q1, m_esf_L1, false,
+                                 0, s1, m_esf_L2, false);
                 vdata.push_back(data);
             }}
 
@@ -456,8 +456,8 @@ CNWAligner::TScore CNWAligner::x_Run()
                     esf_R2 = m_esf_R2;
                 }
 
-                SAlignInOut data (m_Seq1 + q0, dim_query, esf_L1, esf_R1,
-                                  m_Seq2 + s0, dim_subj, esf_L2, esf_R2);
+                SAlignInOut data (q0, dim_query, esf_L1, esf_R1,
+                                  s0, dim_subj, esf_L2, esf_R2);
 
                 x_Align(&data);
                 copy(data.m_transcript.begin(), data.m_transcript.end(),
@@ -470,8 +470,8 @@ CNWAligner::TScore CNWAligner::x_Run()
                 q1 = m_guides[i - 4];
                 s1 = m_guides[i - 2];
             }
-            SAlignInOut data(m_Seq1, q1, m_esf_L1, false,
-                             m_Seq2, s1, m_esf_L2, false);
+            SAlignInOut data(0, q1, m_esf_L1, false,
+                             0, s1, m_esf_L2, false);
             x_Align(&data);
             copy(data.m_transcript.begin(), data.m_transcript.end(),
                  back_inserter(m_Transcript));
@@ -1108,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2004/08/31 16:17:21  papadopo
+ * make SAlignInOut work with sequence offsets rather than char pointers
+ *
  * Revision 1.56  2004/08/30 18:27:31  kapustin
  * Avoid dynamic double-dimension for iupacna to make msvc happy
  *

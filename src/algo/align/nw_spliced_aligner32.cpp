@@ -150,18 +150,18 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
 
     TScore* pV = rowV - 1;
 
-    const char* seq1   = data->m_seg1 - 1;
-    const char* seq2   = data->m_seg2 - 1;
+    const char* seq1   = m_Seq1 + data->m_offset1 - 1;
+    const char* seq2   = m_Seq2 + data->m_offset2 - 1;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
-    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_seg1 == m_Seq1;
+    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_offset1 == 0;
     bool bFreeGapRight1 = data->m_esf_R1 &&
-                          m_Seq1 + m_SeqLen1 - data->m_len1 == data->m_seg1;
+                          m_SeqLen1 == data->m_offset1 + data->m_len1;
 
-    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_seg2 == m_Seq2;
+    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_offset1 == 0;
     bool bFreeGapRight2 = data->m_esf_R2 &&
-                          m_Seq2 + m_SeqLen2 - data->m_len2 == data->m_seg2;
+                          m_SeqLen2 == data->m_offset2 + data->m_len2;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -601,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/08/31 16:17:21  papadopo
+ * make SAlignInOut work with sequence offsets rather than char pointers
+ *
  * Revision 1.16  2004/06/29 20:51:21  kapustin
  * Support simultaneous segment computing
  *
