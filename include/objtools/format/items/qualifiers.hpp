@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, NCBI
+* Author:  Aaron Ucko, Mati Shomrat
 *
 * File Description:
 *   new (early 2003) flat-file generator -- qualifier types
@@ -58,7 +58,9 @@ BEGIN_SCOPE(objects)
 class CFFContext;
 
 
+/////////////////////////////////////////////////////////////////////////////
 // low-level formatted qualifier
+
 class CFlatQual : public CObject
 {
 public:
@@ -68,22 +70,30 @@ public:
         eUnquoted // /name=value
     };
 
+    CFlatQual(const string& name, const string& value, 
+        const string& suffix, EStyle style = eQuoted)
+        : m_Name(name), m_Value(value), m_Suffix(suffix), m_Style(style)
+        { }
     CFlatQual(const string& name, const string& value, EStyle style = eQuoted)
-        : m_Name(name), m_Value(value), m_Style(style)
+        : m_Name(name), m_Value(value), m_Suffix(kEmptyStr), m_Style(style)
         { }
 
-    const string& GetName (void) const { return m_Name;  }
-    const string& GetValue(void) const { return m_Value; }
-    EStyle        GetStyle(void) const { return m_Style; }
+    const string& GetName (void) const  { return m_Name;  }
+    const string& GetValue(void) const  { return m_Value; }
+    EStyle        GetStyle(void) const  { return m_Style; }
+    const string& GetSuffix(void) const { return m_Suffix; }
 
 private:
-    string m_Name, m_Value;
+    string m_Name, m_Value, m_Suffix;
     EStyle m_Style;
 };
-typedef vector<CRef<CFlatQual> > TFlatQuals;
+typedef CRef<CFlatQual>      TFlatQual;
+typedef vector<TFlatQual>    TFlatQuals;
 
 
-// abstract qualifier value -- see flat_quals.hpp for derived classes
+/////////////////////////////////////////////////////////////////////////////
+// abstract qualifier value
+
 class IFlatQVal : public CObject
 {
 public:
@@ -94,14 +104,20 @@ public:
     typedef int TFlags; // binary OR of EFlags
 
     virtual void Format(TFlatQuals& quals, const string& name,
-                        CFFContext& ctx, TFlags flags = 0) const = 0;
+        CFFContext& ctx, TFlags flags = 0) const = 0;
 
 protected:
     static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
                         CFlatQual::EStyle st = CFlatQual::eQuoted)
-        { q.push_back(CRef<CFlatQual>(new CFlatQual(n, v, st))); }
+        { q.push_back(TFlatQual(new CFlatQual(n, v, st))); }
+    static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
+                        const string& s, CFlatQual::EStyle st = CFlatQual::eQuoted)
+        { q.push_back(TFlatQual(new CFlatQual(n, v, s, st))); }
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+// concrete qualifiers
 
 class CFlatBoolQVal : public IFlatQVal
 {
@@ -109,7 +125,6 @@ public:
     CFlatBoolQVal(bool value) : m_Value(value) { }
     void Format(TFlatQuals& q, const string& n, CFFContext&, TFlags) const
         { if (m_Value) { x_AddFQ(q, n, kEmptyStr, CFlatQual::eEmpty); } }
-
 private:
     bool m_Value;
 };
@@ -121,7 +136,6 @@ public:
     CFlatIntQVal(int value) : m_Value(value) { }
     void Format(TFlatQuals& q, const string& n, CFFContext&, TFlags) const
         { x_AddFQ(q, n, NStr::IntToString(m_Value), CFlatQual::eUnquoted); }
-
 private:
     int m_Value;
 };
@@ -142,6 +156,21 @@ public:
 
 private:
     string            m_Value;
+    CFlatQual::EStyle m_Style;
+};
+
+
+class CFlatStringListQVal : public IFlatQVal
+{
+public:
+    CFlatStringListQVal(const list<string>& value,
+                  CFlatQual::EStyle style = CFlatQual::eQuoted)
+        : m_Value(value), m_Style(style) { }
+    void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
+                TFlags flags) const;
+
+private:
+    list<string>      m_Value;
     CFlatQual::EStyle m_Style;
 };
 
@@ -328,6 +357,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/11 16:37:20  shomrat
+* added CFlatStringListQVal class and an optional suffix to CFlatQual
+*
 * Revision 1.1  2003/12/17 19:49:19  shomrat
 * Initial revision (adapted from flat lib)
 *
