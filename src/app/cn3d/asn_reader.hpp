@@ -67,9 +67,8 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
     err->erase();
 
     // initialize the binary input stream
-    NS_AUTO_PTR<ncbi::CNcbiIstream> inStream;
-    inStream.reset(new ncbi::CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
-    if (!(*inStream)) {
+    ncbi::CNcbiIfstream inStream(filename, IOS_BASE::in | IOS_BASE::binary);
+    if (!inStream) {
         *err = "Cannot open file for reading";
         return false;
     }
@@ -77,10 +76,10 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
     NS_AUTO_PTR<ncbi::CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
-        inObject.reset(new ncbi::CObjectIStreamAsnBinary(*inStream));
+        inObject.reset(new ncbi::CObjectIStreamAsnBinary(inStream));
     } else {
         // Associate ASN.1 text serialization methods with the input
-        inObject.reset(new ncbi::CObjectIStreamAsn(*inStream));
+        inObject.reset(new ncbi::CObjectIStreamAsn(inStream));
     }
 
     // Read the asn data
@@ -94,6 +93,7 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
     }
     SetDiagTrace(eDT_Default);
 
+    inStream.close();
     return okay;
 }
 
@@ -105,10 +105,9 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
     err->erase();
 
     // initialize a binary output stream
-    NS_AUTO_PTR<ncbi::CNcbiOstream> outStream;
-    outStream.reset(new ncbi::CNcbiOfstream(filename,
-        isBinary ? (IOS_BASE::out | IOS_BASE::binary) : IOS_BASE::out));
-    if (!(*outStream)) {
+    ncbi::CNcbiOfstream outStream(filename,
+        isBinary ? (IOS_BASE::out | IOS_BASE::binary) : IOS_BASE::out);
+    if (!outStream) {
         *err = "Cannot open file for writing";
         return false;
     }
@@ -116,10 +115,10 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
     NS_AUTO_PTR<ncbi::CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
-        outObject.reset(new ncbi::CObjectOStreamAsnBinary(*outStream, fixNonPrint));
+        outObject.reset(new ncbi::CObjectOStreamAsnBinary(outStream, fixNonPrint));
     } else {
         // Associate ASN.1 text serialization methods with the input
-        outObject.reset(new ncbi::CObjectOStreamAsn(*outStream, fixNonPrint));
+        outObject.reset(new ncbi::CObjectOStreamAsn(outStream, fixNonPrint));
     }
 
     // write the asn data
@@ -127,13 +126,14 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
     SetDiagTrace(eDT_Disable);
     try {
         *outObject << ASNobject;
-        outStream->flush();
+        outStream.flush();
     } catch (std::exception& e) {
         *err = e.what();
         okay = false;
     }
     SetDiagTrace(eDT_Default);
 
+    outStream.close();
     return okay;
 }
 
@@ -181,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/01/27 22:56:55  thiessen
+* remove auto_ptr from stream objects
+*
 * Revision 1.17  2003/10/20 16:53:54  thiessen
 * flush output after writing
 *
