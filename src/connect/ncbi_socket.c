@@ -166,6 +166,7 @@ typedef SOCKET TSOCK_Handle;
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
 #  define SOCK_SHUTDOWN_RD    SD_RECEIVE
 #  define SOCK_SHUTDOWN_WR    SD_SEND
+#  define SOCK_SHUTDOWN_RDWR  SD_BOTH
 #  define SOCK_STRERROR(err)  s_StrError(err)
 /* NCBI_OS_MSWIN */
 
@@ -196,6 +197,10 @@ typedef int TSOCK_Handle;
 #    define SHUT_WR           1
 #  endif /*SHUT_WR*/
 #  define SOCK_SHUTDOWN_WR    SHUT_WR
+#  ifndef SHUT_RDWR
+#    define SHUT_RDWR         2
+#  endif
+#  define SOCK_SHUTDOWN_RDWR  SHUT_RDWR
 #  ifndef INADDR_NONE
 #    define INADDR_NONE       (unsigned int)(-1)
 #  endif /*INADDR_NONE*/
@@ -225,6 +230,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
 #  define SOCK_SHUTDOWN_RD    0
 #  define SOCK_SHUTDOWN_WR    1
+#  define SOCK_SHUTDOWN_RDWR  2
 #  define SOCK_STRERROR(err)  s_StrError(err)
 #  ifdef NETDB_INTERNAL
 #    undef NETDB_INTERNAL
@@ -312,7 +318,7 @@ typedef struct SOCK_tag {
  * 1. w_buf is used for stream sockets to keep initial data segment
  *    that has to be sent upon the connection establishment.
  *
- * 2. is_eof is used differently for stream and datagram sockets:
+ * 2. eof is used differently for stream and datagram sockets:
  *    =1 for stream sockets means that read had hit EOF;
  *    =1 for datagram sockets means that the message in w_buf is complete.
  *
@@ -323,12 +329,12 @@ typedef struct SOCK_tag {
  * 4. w_status keeps completion code of the last low-level write call;
  *    however, eIO_Closed is there when the socket is shut down for writing.
  *
- * 5. The following table depicts r_status and is_eof combinations and their
+ * 5. The following table depicts r_status and eof combinations and their
  *    meanings for stream sockets:
  * -------------------------------+------------------------------------------
  *              Field             |
  * ---------------+---------------+                  Meaning
- * sock->r_status | sock->is_eof  |           (stream sockets only)
+ * sock->r_status |   sock->eof   |           (stream sockets only)
  * ---------------+---------------+------------------------------------------
  * eIO_Closed     |       0       |  Socket shut down for reading
  * eIO_Closed     |       1       |  Read severely failed
@@ -2029,7 +2035,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                                      s_ID(sock, _id)));
         }
         how = SOCK_SHUTDOWN_RDWR;
-        sock->is_eof = 0/*false*/;
+        sock->eof = 0/*false*/;
         sock->r_status = sock->w_status = eIO_Closed;
         break;
 #else
@@ -3579,6 +3585,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.103  2003/05/14 13:19:18  lavr
+ * Define SOCK_SHUTDOWN_RDWR for MSVC compilation
+ *
  * Revision 6.102  2003/05/14 05:24:36  lavr
  * FIX: Yet another MSVC compilation fix
  *
