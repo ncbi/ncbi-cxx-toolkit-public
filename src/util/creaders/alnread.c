@@ -1915,26 +1915,31 @@ s_GetOneNexusSizeComment
  * alignment file.  If the function finds these comments, it returns eTrue,
  * otherwise it returns eFalse.
  */
-static EBool 
+static void 
 s_GetNexusSizeComments 
 (char *           str,
+ EBool *          found_ntax,
+ EBool *          found_nchar,
  SAlignRawFilePtr afrp)
 {
     int  num_sequences;
     int  num_chars;
   
-    if (str == NULL  ||  afrp == NULL) {
-        return eFalse;
+    if (str == NULL  ||  found_nchar == NULL  
+        ||  found_ntax == NULL  ||  afrp == NULL) {
+        return;
     }
-    if ((s_GetOneNexusSizeComment (str, "ntax", &num_sequences)
-            ||   s_GetOneNexusSizeComment (str, "NTAX", &num_sequences))
-        &&  (s_GetOneNexusSizeComment (str, "nchar", &num_chars)
-            ||  s_GetOneNexusSizeComment (str, "NCHAR", &num_chars))) {
+    if (! *found_ntax  && 
+        (s_GetOneNexusSizeComment (str, "ntax", &num_sequences)
+        ||   s_GetOneNexusSizeComment (str, "NTAX", &num_sequences))) {
         afrp->expected_num_sequence = num_sequences;
+        *found_ntax = eTrue;
+    }
+    if (! *found_nchar  &&
+        (s_GetOneNexusSizeComment (str, "nchar", &num_chars)
+        ||  s_GetOneNexusSizeComment (str, "NCHAR", &num_chars))) {
         afrp->expected_sequence_len = num_chars;
-        return eTrue;
-    } else {
-        return eFalse;
+        *found_nchar = eTrue;
     }
 }
 
@@ -2953,13 +2958,15 @@ s_ReadAlignFileRaw
     char *           tmp;
     EBool            found_stop;
     int              overall_line_count;
-    EBool            found_expected;
+    EBool            found_expected_ntax = eFalse;
+    EBool            found_expected_nchar = eFalse;
     EBool            found_char_comment = eFalse;
     SLengthListPtr   pattern_list = NULL;
     SLengthListPtr   this_pattern;
     char *           cp;
     int              len;
     TIntLinkPtr      new_offset;
+    EBool            in_taxa_comment;
 
     if (readfunc == NULL  ||  sequence_info == NULL) {
         return NULL;
@@ -2976,7 +2983,7 @@ s_ReadAlignFileRaw
 
     overall_line_count = 0;
     found_stop = eFalse;
-    found_expected = eFalse;
+    in_taxa_comment = eFalse;
     linestring = readfunc (userdata);
     while (linestring != NULL  &&  linestring [0] != EOF) {
         s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
@@ -2991,16 +2998,18 @@ s_ReadAlignFileRaw
             return NULL;
         }
  
-        if (! found_stop) {
+        if (! found_stop && ! in_taxa_comment) {
             found_stop = s_FoundStopLine (tmp);
         }
         if (! found_stop) {
-            if (! found_expected) {
+            if (! found_expected_ntax  ||  ! found_expected_nchar) {
                 if (s_IsTwoNumbersSeparatedBySpace (tmp)) {
                     s_GetFASTAExpectedNumbers (tmp, afrp);
-                    found_expected = eTrue;
-                } else {
-                    found_expected = s_GetNexusSizeComments (tmp, afrp);
+                    found_expected_ntax = eTrue;
+                    found_expected_nchar = eTrue;
+               } else {
+                    s_GetNexusSizeComments (tmp, &found_expected_ntax,
+                                            &found_expected_nchar, afrp);
                 }
             }
             if (! found_char_comment) {
@@ -3008,6 +3017,17 @@ s_ReadAlignFileRaw
                                                    afrp->report_error,
                                                    afrp->report_error_userdata);
             }
+            
+            if (in_taxa_comment) {
+                if (strncmp (tmp, "end;", 4) == 0) {
+                    in_taxa_comment = eFalse;
+                } 
+                tmp [0] = 0;
+            } else if (strncmp (tmp, "begin taxa;", 11) == 0) {
+                tmp [0] = 0;
+                in_taxa_comment = eTrue;
+            }
+
             s_RemoveCommentFromLine (tmp);
             if (s_SkippableString (tmp)) {
                 tmp [0] = 0;
@@ -5131,6 +5151,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/04 16:29:32  bollin
+ * added skip of taxa comment for PAUP format alignment files
+ *
  * Revision 1.4  2004/02/10 16:15:13  bollin
  * now checks for unused lines when finding interleaved blocks, will reject and try other methods if unused lines found after first block found.
  *
