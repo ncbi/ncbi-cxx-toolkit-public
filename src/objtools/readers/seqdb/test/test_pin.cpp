@@ -943,8 +943,13 @@ int test1(int argc, char ** argv)
         } else desc += " [-xlate4]";
         
         if (s == "-gilist") {
-            string dbname("genomes/barley_est");
-            CSeqDB db(dbname, '-');
+            CStopWatch sw;
+            
+            double e1 = sw.Elapsed();
+            CSeqDB db(dbname, seqtype);
+            double e2 = sw.Elapsed();
+            
+            cout << "Time to construct: " << (e2 - e1) << endl;
             
             vector<Uint4> oids;
             oids.resize(10000);
@@ -962,8 +967,18 @@ int test1(int argc, char ** argv)
                 
                 if (range_type == CSeqDB::eOidList) {
                     num_found = oids.size();
+//                     ITERATE(vector<Uint4>, iter, oids) {
+//                         Uint4 iter_gi(0);
+//                         db.OidToGi(*iter, iter_gi);
+//                         cout << *iter << ":" << iter_gi << endl;
+//                    }
                 } else {
                     num_found = oend-obegin;
+//                     for(Uint4 iter = obegin; iter < oend; iter++) {
+//                         Uint4 iter_gi(0);
+//                         db.OidToGi(iter, iter_gi);
+//                         cout << iter << ":" << iter_gi << endl;
+//                     }
                 }
                 
                 if (! num_found) {
@@ -978,6 +993,7 @@ int test1(int argc, char ** argv)
             }
             
             cout << "Found " << numseq << " oids in [" << dbname << "], title = " << db.GetTitle() << endl;
+            cout << "Total oids in db  " << db.GetNumOIDs() << endl;
             
             return 0;
         } else desc += " [-gilist]";
@@ -2657,6 +2673,13 @@ int main(int argc, char ** argv)
         cout << "--one--" << endl;
         rc = test1(argc, argv);
         cout << "--two--" << endl;
+    }
+    catch(CSeqDBException e) {
+        cout << "--three--" << endl;
+        cout << "Caught a SeqDB exception: {" << e.GetErrCodeString() << "}" << endl;
+        cout << "Actual Message : " << e.GetMsg() << endl;
+        rc = 1;
+        cout << "--four--" << endl;
     }
     catch(exception e) {
         cout << "--three--" << endl;
