@@ -67,6 +67,9 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
     else if (CDirEntry(CDirEntry::ConcatPath
                (base_dir, fname + ".app")).Exists() )
         return CProjKey::eApp;
+    else if (CDirEntry(CDirEntry::ConcatPath
+               (base_dir, fname + ".msvcproj")).Exists() )
+        return CProjKey::eMsvc;
 
     LOG_POST(Error << "No .lib or .app projects for : " + projname +
                       " in directory: " + base_dir);
@@ -91,6 +94,13 @@ bool SMakeProjectT::IsMakeAppFile(const string& name)
 {
     return NStr::StartsWith(name, "Makefile")  &&  
 	       NStr::EndsWith(name, ".app");
+}
+
+
+bool SMakeProjectT::IsUserProjFile(const string& name)
+{
+    return NStr::StartsWith(name, "Makefile")  &&  
+	       NStr::EndsWith(name, ".msvcproj");
 }
 
 
@@ -266,6 +276,12 @@ void SMakeProjectT::AnalyzeMakeIn
         info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second)); 
     }
 
+    p = makein_contents.m_Contents.find("MSVC_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eMsvc, p->second)); 
+    }
+
     //TODO - DLL_PROJ
 }
 
@@ -278,8 +294,17 @@ string SMakeProjectT::CreateMakeAppLibFileName
             SMakeProjectT::GetProjType(base_dir, projname);
 
     string fname = "Makefile." + projname;
-    fname += proj_type==CProjKey::eLib? ".lib": ".app";
-    return fname;
+    
+    if (proj_type==CProjKey::eLib)
+        return fname + ".lib";
+
+    if (proj_type==CProjKey::eApp)
+        return fname + ".app";
+
+    if (proj_type==CProjKey::eMsvc)
+        return fname + ".msvcproj";
+
+    return "";
 }
 
 
@@ -811,7 +836,97 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     return proj_id;
 }
 
+//-----------------------------------------------------------------------------
+CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
+                                 const string&      proj_name,
+                                 const string&      applib_mfilepath,
+                                 const TFiles&      makemsvc, 
+                                 CProjectItemsTree* tree)
+{
+    TFiles::const_iterator m = makemsvc.find(applib_mfilepath);
+    if (m == makemsvc.end()) {
 
+        LOG_POST(Info << "No User makefile.*.* for Makefile.in :"
+                  + applib_mfilepath);
+        return CProjKey();
+    }
+
+    // VCPROJ - will map to src
+    CSimpleMakeFileContents::TContents::const_iterator k = 
+        m->second.m_Contents.find("VCPROJ");
+    if (k == m->second.m_Contents.end()) {
+
+        LOG_POST(Warning << "No VCPROJ key in User Makefile.*.* :"
+                  + applib_mfilepath);
+        return CProjKey();
+    }
+    list<string> sources = k->second;
+
+    // depends - 
+    list<CProjKey> depends_ids;
+    k = m->second.m_Contents.find("LIB_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        ITERATE(list<string>, p, deps) {
+            depends_ids.push_back(CProjKey(CProjKey::eLib, *p));
+        }
+    }
+    k = m->second.m_Contents.find("APP_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        ITERATE(list<string>, p, deps) {
+            depends_ids.push_back(CProjKey(CProjKey::eApp, *p));
+        }
+    }
+    k = m->second.m_Contents.find("DLL_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        ITERATE(list<string>, p, deps) {
+            depends_ids.push_back(CProjKey(CProjKey::eDll, *p));
+        }
+    }
+    k = m->second.m_Contents.find("MSVC_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        ITERATE(list<string>, p, deps) {
+            depends_ids.push_back(CProjKey(CProjKey::eMsvc, *p));
+        }
+    }
+
+    //requires
+    list<string> requires;
+    k = m->second.m_Contents.find("REQUIRES");
+    if (k != m->second.m_Contents.end())
+        requires = k->second;
+
+    //project id
+    k = m->second.m_Contents.find("MSVC_PROJ");
+    if (k == m->second.m_Contents.end()  ||  
+                                           k->second.empty()) {
+
+        LOG_POST(Error << "No LIB key or empty in Makefile.*.lib :"
+                  + applib_mfilepath);
+        return CProjKey();
+    }
+    string proj_id = k->second.front();
+
+    list<string> libs_3_party;
+    list<string> include_dirs;
+    list<string> defines;
+
+    CProjKey proj_key(CProjKey::eMsvc, proj_id);
+    tree->m_Projects[proj_key] = CProjItem(CProjKey::eMsvc,
+                                           proj_name, 
+                                           proj_id,
+                                           source_base_dir,
+                                           sources, 
+                                           depends_ids,
+                                           requires,
+                                           libs_3_party,
+                                           include_dirs,
+                                           defines);
+    return proj_key;
+}
 //-----------------------------------------------------------------------------
 void 
 CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
@@ -838,7 +953,8 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     CProjectItemsTree::CreateFrom(root_src_path,
                                   subtree_makefiles.m_In, 
                                   subtree_makefiles.m_Lib, 
-                                  subtree_makefiles.m_App, tree);
+                                  subtree_makefiles.m_App,
+                                  subtree_makefiles.m_User, tree);
 }
 
 
@@ -920,6 +1036,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 	            ProcessMakeLibFile(path, makefiles);
             else if ( SMakeProjectT::IsMakeAppFile(name) )
 	            ProcessMakeAppFile(path, makefiles);
+            else if ( SMakeProjectT::IsUserProjFile(name) )
+	            ProcessUserProjFile(path, makefiles);
         } 
         else if ( (*i)->IsDir() ) {
 
@@ -959,6 +1077,17 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
 	    makefiles->m_App[file_name] = fc;
+}
+
+
+void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name, 
+                                             SMakeFiles*   makefiles)
+{
+    LOG_POST(Info << "Processing MakeApp: " + file_name);
+
+    CSimpleMakeFileContents fc(file_name);
+    if ( !fc.m_Contents.empty() )
+	    makefiles->m_User[file_name] = fc;
 }
 
 
@@ -1078,6 +1207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/10 19:50:42  gorelenk
+ * Implemented SMsvcProjectT .
+ *
  * Revision 1.5  2004/04/06 17:15:47  gorelenk
  * Implemented member-functions IsConfigurableDefine and
  * StripConfigurableDefine of struct SMakeProjectT.
