@@ -37,17 +37,8 @@
 #include <corelib/ncbi_system.hpp>
 
 // Objects
-#include <objects/blast/Blast4_subject.hpp>
-#include <objects/blast/Blast4_queue_search_reques.hpp>
-#include <objects/blast/Blast4_parameter.hpp>
-#include <objects/blast/Blast4_parameters.hpp>
-#include <objects/blast/Blast4_value.hpp>
+#include <objects/blast/blast__.hpp>
 #include <objects/blast/blastclient.hpp>
-#include <objects/blast/Blast4_queue_search_reply.hpp>
-#include <objects/blast/Blas_get_searc_resul_reque.hpp>
-#include <objects/blast/Blas_get_searc_resul_reply.hpp>
-#include <objects/blast/Blast4_error.hpp>
-#include <objects/blast/Blast4_error_code.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
 // Object Manager
@@ -302,6 +293,23 @@ s_SetSearchParams(CNetblastSearchOpts             & opts,
     opts.Apply(spb);
 }
 
+// Stolen from: CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
+
+bool s_SetQueries(CRef<CBlast4_queue_search_request> qsr,
+                  CRef<CBioseq_set>                  bioseqs)
+{
+    if (bioseqs.Empty()) {
+        return false;
+    }
+    
+    CRef<CBlast4_queries> queries_p(new CBlast4_queries);
+    queries_p->SetBioseq_set(*bioseqs);
+    
+    qsr->SetQueries(*queries_p);
+    
+    return true;
+}
+
 static string
 s_QueueSearch(string              & program,
               string              & database,
@@ -323,12 +331,11 @@ s_QueueSearch(string              & program,
     qsr->SetSubject(*subject);
     
     if (query->GetSeq_set().front()->IsSeq()) {
-        qsr->SetQueries(*query);
+        //qsr->SetQueries(*query);
+        s_SetQueries(qsr, query);
     } else {
-        const CBioseq_set * myset = & query->GetSeq_set().front()->GetSet();
-        CBioseq_set * myset2 = (CBioseq_set *) myset;
-        
-        qsr->SetQueries(*myset2);
+        CRef<CBioseq_set> myset(& query->SetSeq_set().front()->SetSet());
+        s_SetQueries(qsr, myset);
     }
     
     list< CRef<CBlast4_parameter> > & algo = qsr->SetAlgorithm_options().Set();
@@ -569,6 +576,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/05/05 18:20:39  bealer
+ * - Update for new ASN.1
+ *
  * Revision 1.7  2004/01/30 23:49:59  bealer
  * - Add better handling for results-not-found case.
  *
