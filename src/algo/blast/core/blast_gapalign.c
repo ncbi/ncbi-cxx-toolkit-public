@@ -2812,6 +2812,19 @@ score_compare_match(const void* v1, const void* v2)
 	if (h1->ungapped_data->score > h2->ungapped_data->score)
 		return -1;
 
+   /* Tie breaks: starting offset in subject; then length
+    * (equivalent to ending offset in subject).
+    */
+   if (h1->ungapped_data->s_start < h2->ungapped_data->s_start)
+      return 1;
+   if (h1->ungapped_data->s_start > h2->ungapped_data->s_start )
+      return -1;
+
+   if (h1->ungapped_data->length < h2->ungapped_data->length)
+      return 1;
+   if (h1->ungapped_data->length > h2->ungapped_data->length)
+      return -1;
+
 	return 0;
 }
 
