@@ -152,6 +152,8 @@ public:
     virtual void DropTSE(const CTSE_Info& tse_info);
     virtual void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
+    virtual CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
+    CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
   
     virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle& handle,
                                                  const TTSE_LockSet& tse_set);
@@ -249,6 +251,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.46  2003/12/30 19:51:24  vasilche
+ * Implemented CGBDataLoader::GetSatSatkey() method.
+ *
  * Revision 1.45  2003/12/03 15:13:38  kuznets
  * CReader management re-written to use plugin manager
  *

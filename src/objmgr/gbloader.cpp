@@ -339,6 +339,30 @@ void CGBDataLoader::GetChunk(CTSE_Chunk_Info& chunk_info)
 }
 
 
+CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
+{
+    return GetSatSatkey(CSeq_id_Handle::GetHandle(id));
+}
+
+
+CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeqref> ret;
+    {{
+        CMutexGuard guard(m_Locks.m_Lookup);
+        CRef<SSeqrefs> srs = x_ResolveHandle(idh);
+        ITERATE ( SSeqrefs::TSeqrefs, it, srs->m_Sr ) {
+            const CSeqref& sr = **it;
+            if ( sr.GetFlags() & CSeqref::fHasCore ) {
+                ret = &sr;
+                break;
+            }
+        }
+    }}
+    return ret;
+}
+
+
 void CGBDataLoader::x_GetRecords(const char*
 #ifdef DEBUG_SYNC
                                  type_name
@@ -1233,6 +1257,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2003/12/30 19:51:24  vasilche
+* Implemented CGBDataLoader::GetSatSatkey() method.
+*
 * Revision 1.97  2003/12/30 17:43:17  vasilche
 * Fixed warning about unused variable.
 *
