@@ -62,6 +62,9 @@ public:
 
 void CSampleCgiApplication::Init()
 {
+    // Standard CGI framework initialization
+    CCgiApplication::Init();
+
     // Allows CGI client to put the diagnostics to:
     //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
     RegisterDiagFactory("comments", new CCommentDiagFactory);
@@ -142,6 +145,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/04 14:45:22  vakatov
+ * In Init() -- don't forget to call CCgiApplication::Init()
+ *
  * Revision 1.4  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
