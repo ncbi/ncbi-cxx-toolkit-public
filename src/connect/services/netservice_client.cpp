@@ -244,6 +244,7 @@ void CNetServiceClient::TrimErr(string* err_msg)
     _ASSERT(err_msg);
     if (err_msg->find("ERR:") == 0) {
         err_msg->erase(0, 4);
+        *err_msg = NStr::ParseEscapes(*err_msg);
     }
 }
 
@@ -252,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/28 12:19:15  kuznets
+ * +Unescaping error messages
+ *
  * Revision 1.4  2005/02/14 13:49:33  kuznets
  * Added delay if client cannot connect to the server when there are no available TCP/IP ports
  *
