@@ -410,6 +410,20 @@ int CBlastApplication::BlastSearch()
     return status;
 }
 
+static CDisplaySeqalign::TranslatedFrames 
+Context2TranslatedFrame(int context)
+{
+    switch (context) {
+    case 1: return CDisplaySeqalign::ePlusStrand1;
+    case 2: return CDisplaySeqalign::ePlusStrand2;
+    case 3: return CDisplaySeqalign::ePlusStrand3;
+    case 4: return CDisplaySeqalign::eMinusStrand1;
+    case 5: return CDisplaySeqalign::eMinusStrand2;
+    case 6: return CDisplaySeqalign::eMinusStrand3;
+    default: return CDisplaySeqalign::eFrameNotSet;
+    }
+}
+
 #define NUM_FRAMES 6
 
 static TSeqLocInfoVector
@@ -446,7 +460,7 @@ BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector &slp,
 
 
             for (loc = mask->loc_list; loc; loc = loc->next) {
-                seqloc_info->frame = frame;
+                seqloc_info->frame = Context2TranslatedFrame(frame);
                 CRef<CSeq_loc> seqloc(new CSeq_loc());
                 seqloc->SetInt().SetFrom(((DoubleInt*) loc->ptr)->i1);
                 seqloc->SetInt().SetTo(((DoubleInt*) loc->ptr)->i2);
