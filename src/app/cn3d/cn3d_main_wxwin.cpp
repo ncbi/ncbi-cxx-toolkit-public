@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/16 14:25:48  thiessen
+* working alignment fit coloring
+*
 * Revision 1.11  2000/10/02 23:25:20  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -294,6 +297,7 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
     subMenu->Append(MID_IDENT, "&Identity");
     subMenu->Append(MID_VARIETY, "&Variety");
     subMenu->Append(MID_WGHT_VAR, "&Weighted Variety");
+    subMenu->Append(MID_FIT, "&Fit");
     menu->Append(MID_CONS, "&Conservation", subMenu);
     menuBar->Append(menu, "&Style");
 
@@ -382,6 +386,9 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 break;
             case MID_WGHT_VAR:
                 glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eWeightedVariety);
+                break;
+            case MID_FIT:
+                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eFit);
                 break;
             case MID_WIREFRAME:
                 glCanvas->structureSet->styleManager->SetToWireframe();

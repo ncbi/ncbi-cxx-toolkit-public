@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/16 14:25:48  thiessen
+* working alignment fit coloring
+*
 * Revision 1.17  2000/10/05 18:34:43  thiessen
 * first working editing operation
 *
@@ -416,6 +419,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         case StyleSettings::eIdentity:
         case StyleSettings::eVariety:
         case StyleSettings::eWeightedVariety:
+        case StyleSettings::eFit:
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
                     IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/16 14:25:19  thiessen
+* working alignment fit coloring
+*
 * Revision 1.8  2000/09/20 22:22:02  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -161,6 +164,7 @@ public:
                     MID_IDENT,
                     MID_VARIETY,
                     MID_WGHT_VAR,
+                    MID_FIT,
             MID_WIREFRAME,
         // Quality menu
             MID_QLOW,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/16 14:25:48  thiessen
+* working alignment fit coloring
+*
 * Revision 1.2  2000/10/04 17:41:30  thiessen
 * change highlight color (cell background) handling
 *
@@ -41,6 +44,7 @@
 
 #include "cn3d/conservation_colorer.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/structure_base.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -111,15 +115,22 @@ typedef std::map < char, int > ColumnProfile;
 
 void ConservationColorer::CalculateConservationColors(void)
 {
+    TESTMSG("calculating conservation colors");
+
     ColumnProfile profile;
     ColumnProfile::iterator p, pe, p2;
+    int row, profileColumn;
 
     typedef std::vector < int > IntVector;
     IntVector varieties(nColumns, 0), weightedVarieties(nColumns, 0);
     identities.resize(nColumns);
     int minVariety, maxVariety, minWeightedVariety, maxWeightedVariety;
 
-    int profileColumn;
+    int nRows = blocks.begin()->first->NSequences();
+    typedef std::map < char, int > CharMap;
+    std::vector < CharMap > fitSums(nColumns);
+    IntVector minFit(nColumns), maxFit(nColumns);
+
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
         for (int blockColumn=0; blockColumn<b->first->width; blockColumn++) {
@@ -127,7 +138,7 @@ void ConservationColorer::CalculateConservationColors(void)
 
             // create profile for this column
             profile.clear();
-            for (int row=0; row<b->first->NSequences(); row++) {
+            for (row=0; row<nRows; row++) {
                 char ch = toupper(b->first->GetCharacterAt(blockColumn, row));
                 switch (ch) {
                     case 'A': case 'R': case 'N': case 'D': case 'C': 
@@ -151,36 +162,50 @@ void ConservationColorer::CalculateConservationColors(void)
                 identities[profileColumn] = false;
 
             // variety for this column
-            varieties[profileColumn] = profile.size();
+            int& variety = varieties[profileColumn];
+            variety = profile.size();
             if (profile.find('X') != profile.end())
-                varieties[profileColumn] += profile['X'] - 1; // each 'X' counts as one variety
+                variety += profile['X'] - 1; // each 'X' counts as one variety
             if (b == blocks.begin() && blockColumn == 0) {
-                minVariety = maxVariety = varieties[profileColumn];
+                minVariety = maxVariety = variety;
             } else {
-                if (varieties[profileColumn] < minVariety)
-                    minVariety = varieties[profileColumn];
-                if (varieties[profileColumn] > maxVariety)
-                    maxVariety = varieties[profileColumn];
+                if (variety < minVariety) minVariety = variety;
+                else if (variety > maxVariety) maxVariety = variety;
             }
 
             // weighted variety for this column
             pe = profile.end();
-            for (p=profile.begin(); p!=pe; p++)
-                weightedVarieties[profileColumn] +=
-                    (p->second * (p->second - 1) / 2) * Blosum62Map[p->first][p->first];
+            int& weightedVariety = weightedVarieties[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
+                weightedVariety +=
+                    (p->second * (p->second - 1) / 2) * Blosum62Map[p->first][p->first];
                 p2 = p;
                 for (p2++; p2!=pe; p2++)
-                    weightedVarieties[profileColumn] +=
+                    weightedVariety +=
                         p->second * p2->second * Blosum62Map[p->first][p2->first];
             }
             if (b == blocks.begin() && blockColumn == 0) {
-                minWeightedVariety = maxWeightedVariety = weightedVarieties[profileColumn];
+                minWeightedVariety = maxWeightedVariety = weightedVariety;
             } else {
-                if (weightedVarieties[profileColumn] < minWeightedVariety)
-                    minWeightedVariety = weightedVarieties[profileColumn];
-                if (weightedVarieties[profileColumn] > maxWeightedVariety)
-                    maxWeightedVariety = weightedVarieties[profileColumn];
+                if (weightedVariety < minWeightedVariety) minWeightedVariety = weightedVariety;
+                else if (weightedVariety > maxWeightedVariety) maxWeightedVariety = weightedVariety;
+            }
+
+            // fit for each residue in this column
+            for (p=profile.begin(); p!=pe; p++) {
+                int& sum = fitSums[profileColumn][p->first];
+                for (p2=profile.begin(); p2!=pe; p2++) {
+                    if (p2 == p)
+                        sum += (p->second - 1) * Blosum62Map[p->first][p->first];
+                    else
+                        sum += p2->second * Blosum62Map[p->first][p2->first];
+                }
+                if (p == profile.begin()) {
+                    minFit[profileColumn] = maxFit[profileColumn] = sum;
+                } else {
+                    if (sum < minFit[profileColumn]) minFit[profileColumn] = sum;
+                    else if (sum > maxFit[profileColumn]) maxFit[profileColumn] = sum;
+                }
             }
         }
     }
@@ -188,20 +213,52 @@ void ConservationColorer::CalculateConservationColors(void)
     // now assign colors
     varietyColors.resize(nColumns);
     weightedVarietyColors.resize(nColumns);
+    fitColors.resize(nRows * nColumns);
+
     double scale;
     for (profileColumn=0; profileColumn<nColumns; profileColumn++) {
 
         // variety
-        scale = 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
-        varietyColors[profileColumn] =
-            MaximumConservationColor + (MinimumConservationColor - MaximumConservationColor) * scale;
+        if (maxVariety == minVariety) {
+            varietyColors[profileColumn] = MaximumConservationColor;
+        } else {
+            scale = 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
+            varietyColors[profileColumn] =
+                MaximumConservationColor + (MinimumConservationColor - MaximumConservationColor) * scale;
+        }
 
         // weighted variety
-        scale = 1.0 * (weightedVarieties[profileColumn] - minWeightedVariety) /
-            (maxWeightedVariety - minWeightedVariety);
-        weightedVarietyColors[profileColumn] =
-            MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
+        if (maxWeightedVariety == minWeightedVariety) {
+            weightedVarietyColors[profileColumn] = MaximumConservationColor;
+        } else {
+            scale = 1.0 * (weightedVarieties[profileColumn] - minWeightedVariety) /
+                (maxWeightedVariety - minWeightedVariety);
+            weightedVarietyColors[profileColumn] =
+                MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
+        }
+
+        // fit
+        CharMap::const_iterator c, ce = fitSums[profileColumn].end();
+        for (c=fitSums[profileColumn].begin(); c!=ce; c++) {
+            if (maxFit[profileColumn] == minFit[profileColumn]) {
+                fitColors[profileColumn][c->first] = MaximumConservationColor;
+            } else {
+                scale = 1.0 * (c->second - minFit[profileColumn]) /
+                    (maxFit[profileColumn] - minFit[profileColumn]);
+                fitColors[profileColumn][c->first] =
+                    MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
+            }
+        }
     }
+}
+
+void ConservationColorer::GetProfileIndexAndResidue(
+    const UngappedAlignedBlock *block, int blockColumn, int row,
+    int *profileIndex, char *residue) const
+{
+    BlockMap::const_iterator b = blocks.find(block);
+    *profileIndex = b->second.at(blockColumn);
+    *residue = toupper(b->first->GetCharacterAt(blockColumn, row));
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/16 14:25:20  thiessen
+* working alignment fit coloring
+*
 * Revision 1.16  2000/10/04 17:40:48  thiessen
 * rearrange STL #includes
 *
@@ -136,7 +139,8 @@ public:
         eAligned,
         eIdentity,
         eVariety,
-        eWeightedVariety
+        eWeightedVariety,
+        eFit
     };
 
     typedef struct {

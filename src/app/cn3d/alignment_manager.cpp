@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/16 14:25:47  thiessen
+* working alignment fit coloring
+*
 * Revision 1.17  2000/10/12 19:20:45  thiessen
 * working block deletion
 *
@@ -525,6 +528,10 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
         case StyleSettings::eWeightedVariety:
             alignedColor = conservationColorer->
                 GetWeightedVarietyColor(block, seqIndex - block->GetRangeOfRow(row)->from);
+            break;
+        case StyleSettings::eFit:
+            alignedColor = conservationColorer->
+                GetFitColor(block, seqIndex - block->GetRangeOfRow(row)->from, row);
             break;
         default:
             alignedColor = &noColor;

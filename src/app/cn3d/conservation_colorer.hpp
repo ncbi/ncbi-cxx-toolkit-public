@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/16 14:25:20  thiessen
+* working alignment fit coloring
+*
 * Revision 1.3  2000/10/05 18:34:35  thiessen
 * first working editing operation
 *
@@ -75,15 +78,22 @@ public:
 private:
     typedef std::map < const UngappedAlignedBlock *, std::vector < int > > BlockMap;
     BlockMap blocks;
+
     int GetProfileIndex(const UngappedAlignedBlock *block, int blockColumn) const
         { return blocks.find(block)->second.at(blockColumn); }
+    void GetProfileIndexAndResidue(const UngappedAlignedBlock *block, int blockColumn, int row,
+        int *profileIndex, char *residue) const;
 
     int nColumns;
 
     std::vector < bool > identities;
 
-    typedef std::vector < Vector > AlignmentColors;
-    AlignmentColors varietyColors, weightedVarietyColors;
+    typedef std::vector < Vector > ColumnColors;
+    ColumnColors varietyColors, weightedVarietyColors;
+
+    typedef std::map < char, Vector > ResidueColors;
+    typedef std::vector < ResidueColors > FitColors;
+    FitColors fitColors;
 
 public:
 
@@ -103,6 +113,14 @@ public:
 
     const Vector *GetWeightedVarietyColor(const UngappedAlignedBlock *block, int blockColumn) const
         { return &(weightedVarietyColors[GetProfileIndex(block, blockColumn)]); }
+
+    const Vector *GetFitColor(const UngappedAlignedBlock *block, int blockColumn, int row) const
+    { 
+        int profileIndex;
+        char residue;
+        GetProfileIndexAndResidue(block, blockColumn, row, &profileIndex, &residue);
+        return &(fitColors[profileIndex].find(residue)->second);
+    }    
 };
 
 END_SCOPE(Cn3D)
