@@ -51,7 +51,7 @@ Contents</h2>
 <a href="#ref_Cursors">Cursors</a></li>
 
 <li>
-<a href="#ref_Libraries">Libraries</a></li>
+<a href="#ref_Libraries">Updating BLOBs using cursors</a></li>
 </ul>
 
 <hr><!-- List of different sections to get indentation of text from heading
@@ -83,9 +83,8 @@ This is because most of the objects share the same internal structures.
 There is no need to delete every object explicitly, as all created objects
 will be deleted upon program exit. Specifically, all objects are derived
 from the static CDriverManager object, and will be destroyed when CDriverManager
-is destroyed. Thus it is recommended to reuse the objects such as <tt><a href="../docxx/IStatement.html">IStatement,</a>
-<a href="../docxx/ICallableStatement.html">ICallableStatement</a> </tt>or
-delete them explicitly, if otherwise is not possible.
+is destroyed. Thus it is recommended to reuse the objects such as <tt><a href="../docxx/IStatement.html">IStatement,</a><a href="../docxx/ICallableStatement.html">ICallableStatement</a>
+</tt>or delete them explicitly, if otherwise is not possible.
 <br><a NAME="ref_CVariant"></a>
 <h3>
 CVariant type</h3>
@@ -103,8 +102,8 @@ is thrown.
 <br>There is a set of factory methods (static functions) for creating <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
 objects of a particular type, such as <tt><a href="../docxx/CVariant.html">CVariant</a>::BigInt(),
 <a href="../docxx/CVariant.html">CVariant</a>::SmallDateTime(),
-<a href="../docxx/CVariant.html">CVariant</a>::VarBinary()</tt>, etc. For
-more details please see the comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a>
+<a href="../docxx/CVariant.html">CVariant</a>::VarBinary()</tt>,
+etc. For more details please see the comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a>
 file.
 <br><a NAME="ref_ChooseDriver"></a>
 <h3>
@@ -173,8 +172,9 @@ while( stmt->HasMoreResults() ) {
 This method should be called until it returns false, which means that no
 more results is available. It returns as soon as a result is ready. The
 type of the result can be obtained by calling the <tt><a href="../docxx/IResultSet.html">IResultSet</a>::GetResultType()</tt>
-method. Supported result types are <tt>eDB_RowResult, eDB_ParamResult, eDB_ComputeResult,
-eDB_StatusResult, eDB_CursorResult</tt>. The method <tt><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</tt>
+method. Supported result types are <tt>eDB_RowResult, eDB_ParamResult,
+eDB_ComputeResult, eDB_StatusResult, eDB_CursorResult</tt>. The method
+<tt><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</tt>
 returns the number of updated or deleted rows.
 <p>The <tt><a href="../docxx/IStatement.html">IStatement</a>::ExecuteUpdate()</tt>
 method is used for SQL statements that do not return rows:
@@ -276,23 +276,30 @@ cur->Close();
 </blockquote>
 <a NAME="ref_Libraries"></a>
 <h3>
-Libraries</h3>
-The following libraries should be used (the order is significant):
-<dl>
-<dt>
-for <b>ctlib</b> (Sybase):</dt>
-
-<br>&nbsp;
-<p>&nbsp;
-<p><font face="Courier New">dbapi dbapi_driver_ctlib dbapi_driver</font>
-<p>plus corresponding Sybase libraries.
-<dt>
-for <b>dblib</b> (MS SQL):</dt>
-
-<br>&nbsp;
-<p>&nbsp;
-<p><font face="Courier New">dbapi dbapi_driver_dblib dbapi_driver</font>
-<p>plus Sybase <font face="Courier New">sybdb</font></dl>
+Updating BLOBs using cursors</h3>
+It is recommended to update BLOBs using cursors, because this is the only
+way to work with ODBC driver and no additional connection is open.
+<dl><font face="Courier New,Courier"><font size=-1></font></font>&nbsp;
+<br><font face="Courier New,Courier"><font size=-1>&nbsp; ICursor *blobCur
+= conn->CreateCursor("test",</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp;&nbsp; "select
+id, blob from BlobSample for update of blob");</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp;</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp; IResultSet *blobRs
+= blobCur->Open();</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp; while(blobRs->Next())
+{</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ostream&amp; out = blobCur->GetBlobOStream(2, blob.size());</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+out.write(buf, blob.size());</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+out.flush();</font></font>
+<br><font face="Courier New,Courier"><font size=-1>&nbsp; </font></font><font face="Courier New">}</font>
+<br><font face="Courier New"></font>&nbsp;<font face="Courier New"></font>
+<p>Note that GetBlobOStream() takes the column number as the first argument
+and this call is invalid untill the cursor is open.
+<br>&nbsp;</dl>
 </dl>
 <!--#include virtual="../ssi/navlinks.shtml" --><!-- Begin footer content -->
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
