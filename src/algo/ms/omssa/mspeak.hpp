@@ -582,7 +582,7 @@ inline int CMSPeak::GetTol(void)
 typedef deque <CMSPeak *> TPeakSet;
 
 typedef struct _MassPeak {
-    int Mass;
+    int Mass, Peptol;
     int Charge;
     CMSPeak *Peak;
 } TMassPeak;
@@ -598,7 +598,9 @@ public:
     void AddPeak(CMSPeak *PeakIn);
 
     // put the pointers into an array sorted by mass
-    void SortPeaks(void);
+    void SortPeaks(
+		   int Peptol  // the precursor mass tolerance
+		   );
 
     int GetArraySize(void);
     // Get the first index into the sorted array where the mass
@@ -654,6 +656,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.6  2003/11/14 20:28:05  lewisg
+  scale precursor tolerance by charge
+
   Revision 1.5  2003/11/10 22:24:12  lewisg
   allow hitlist size to vary
 

@@ -885,21 +885,22 @@ CMSPeakSet::~CMSPeakSet()
 }
 
 // compares m/z.  Lower m/z first in sort.
-struct CMassPeakCompare {
+struct CMassPeakCompareHi {
     bool operator() (TMassPeak x, TMassPeak y)
     {
-	if(x.Mass < y.Mass) return true;
+	if(x.Mass + x.Peptol < y.Mass + y.Peptol) return true;
 	return false;
     }
 };
 
-void CMSPeakSet::SortPeaks(void)
+void CMSPeakSet::SortPeaks(int Peptol)
 {
     int iCharges;
     CMSPeak* Peaks;
     TPeakSet::iterator iPeakSet;
     int CalcMass; // the calculated mass
     TMassPeak temp;
+    int ptol; // charge corrected mass tolerance
 
     // first sort
     for(iPeakSet = GetPeaks().begin();
@@ -913,14 +914,17 @@ void CMSPeakSet::SortPeaks(void)
 	for(iCharges = 0; iCharges < Peaks->GetNumCharges(); iCharges++) {
 	    // correction for incorrect charge determination.
 	    // see 12/13/02 notebook, pg. 135
+	    ptol = Peaks->GetCharges()[iCharges] * Peptol;
 	    CalcMass = static_cast <int> ((Peaks->GetMass() +
 					   Peaks->GetCharge()*kProton*MSSCALE) * 
 					  Peaks->GetCharges()[iCharges]/(double)(Peaks->GetCharge()) - 
 					  Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
 	    temp.Mass = CalcMass;
+	    temp.Peptol = ptol;
 	    temp.Charge = Peaks->GetCharges()[iCharges];
 	    temp.Peak = Peaks;
-	    MassMap.insert(pair <const int, TMassPeak>(CalcMass, temp)); 
+	    // order by upper bound
+	    MassMap.insert(pair <const int, TMassPeak>(temp.Mass + temp.Peptol, temp)); 
 	}
     } 
 
@@ -933,6 +937,7 @@ void CMSPeakSet::SortPeaks(void)
     int i(0);
     for(iMassMap = MassMap.begin(); iMassMap != MassMap.end(); iMassMap++, i++) {
 	MassPeak[i].Mass = iMassMap->second.Mass;
+	MassPeak[i].Peptol = iMassMap->second.Peptol;
 	MassPeak[i].Peak = iMassMap->second.Peak;
 	MassPeak[i].Charge = iMassMap->second.Charge;
     }
@@ -943,15 +948,16 @@ void CMSPeakSet::SortPeaks(void)
 
 
 // Get the first index into the sorted array where the mass
-// is >= the given mass.  Remember to subtract the tolerance and
-// check for out of bounds
+// + tolerance is >= the given calculated mass. 
 TMassPeak *CMSPeakSet::GetIndexLo(int Mass)
 {
     TMassPeak temp;
     TMassPeak *retval;
     temp.Mass = Mass;
+    temp.Peptol = 0;
+    // look for first spectrum whose upper mass value + tolerance exceeds calculated mass
     retval = lower_bound(MassPeak, MassPeak + ArraySize, temp, 
-			 CMassPeakCompare());
+			 CMassPeakCompareHi());
     return retval;
 }
 

@@ -124,9 +124,9 @@ int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
 
 // compare ladders to experiment
 int CSearch::CompareLadders(CLadder& BLadder,
-							CLadder& YLadder, CLadder& B2Ladder,
-							CLadder& Y2Ladder, CMSPeak *Peaks,
-							bool OrLadders,  TMassPeak *MassPeak)
+			    CLadder& YLadder, CLadder& B2Ladder,
+			    CLadder& Y2Ladder, CMSPeak *Peaks,
+			    bool OrLadders,  TMassPeak *MassPeak)
 {
     if(MassPeak && MassPeak->Charge > 2 ) {
 		Peaks->CompareSorted(BLadder, MSCULLED2, 0); 
@@ -179,7 +179,7 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet,
 		PeakSet.AddPeak(Peaks);
 		
     }
-    PeakSet.SortPeaks();
+    PeakSet.SortPeaks(static_cast <int> (MyRequest.GetPeptol()*MSSCALE));
 	
 }
 
@@ -195,9 +195,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
     CLadder BLadder[MAXMOD2], YLadder[MAXMOD2], B2Ladder[MAXMOD2], Y2Ladder[MAXMOD2];
     bool LadderCalc[MAXMOD2];  // have the ladders been calculated?
     CAA AA;
-	
-    int ptol =  (int)(MyRequest.GetPeptol()*MSSCALE);
-	
+		
     int Missed = MyRequest.GetMissedcleave()+1;  // number of missed cleaves allowed + 1
     int iMissed; // iterate thru missed cleavages
     
@@ -256,7 +254,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 			
 #if 0
 			SeqId *bestid = SeqIdFindBest(sip, SEQID_GI);
-			if(bestid->data.intvalue == 31204477 ) {
+			if(bestid->data.intvalue ==  70561) {
 				ERR_POST(Info << "test seq" << iSearch);
 			}
 #endif 
@@ -347,14 +345,14 @@ TaxContinue:
 				// go thru total number of mods
 				for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
 					
-					// need to go through allowed charges
+					// return peak where theoretical mass is < precursor mass + tol
 					MassPeak = PeakSet.GetIndexLo(Masses[iMissed][iMod] + 
-						EndMasses[iMissed] - ptol);
+						EndMasses[iMissed]);
 					
 					for(;MassPeak < PeakSet.GetEndMassPeak() && 
-						MassPeak->Mass < Masses[iMissed][iMod] +
-						EndMasses[iMissed] + ptol;
-					MassPeak++) {
+						Masses[iMissed][iMod] +	EndMasses[iMissed] >
+						MassPeak->Mass - MassPeak->Peptol;
+					     MassPeak++) {
 						Peaks = MassPeak->Peak;
 						
 						
@@ -364,9 +362,10 @@ TaxContinue:
 						header = 0;
 						readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
 						bestid = SeqIdFindBest(sip, SEQID_GI);
-						if(bestid->data.intvalue ==  6321352 || bestid->data.intvalue ==  6322648 /* ||bestid->data.intvalue == 6322790 || bestid->data.intvalue == 68202 ||  bestid->data.intvalue == 433637 ||  bestid->data.intvalue == 486081 ||  bestid->data.intvalue == 1587557*/) {
-							ERR_POST(Info << "test seq " << iSearch);
-						}
+			if(bestid->data.intvalue ==  70561) {
+				ERR_POST(Info << "test seq" << iSearch);
+			}
+
 						MemFree(blastdefline);
 						SeqIdSetFree(sip);
 #endif
@@ -568,8 +567,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 					seqstring += UniqueAA[Sequence[iseq]];
 				}
 #if 0
-				if(bestid->data.intvalue == 6321737 || bestid->data.intvalue ==6322014  ||
-					bestid->data.intvalue == 6322017)
+				if(bestid->data.intvalue ==  70561 )
 					ERR_POST(Info << "test seq");
 #endif
 				if(PepDone.find(seqstring) != PepDone.end()) {
@@ -626,8 +624,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
 				&header, &sip,&blastdefline);
 			bestid = SeqIdFindBest(sip, SEQID_GI);
 			if(!bestid) continue;
-			if(bestid->data.intvalue ==   6321352
-				|| bestid->data.intvalue == 6322648 ) {
+			if(bestid->data.intvalue ==  70561) {
 				ERR_POST(Info << "test seq");
 			}
 			MemFree(blastdefline);
@@ -730,6 +727,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.7  2003/11/14 20:28:06  lewisg
+scale precursor tolerance by charge
+
 Revision 1.6  2003/11/13 19:07:38  lewisg
 bugs: iterate completely over nr, don't initialize blastdb by iteration
 
