@@ -38,10 +38,9 @@
 BEGIN_NCBI_SCOPE
 
 CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
-                                       const char* seq2, size_t len2,
-                                       EScoringMatrixType matrix_type)
+                                       const char* seq2, size_t len2)
     throw(CNWAlignerException)
-    : CNWAligner(seq1, len1, seq2, len2, matrix_type), 
+    : CNWAligner(seq1, len1, seq2, len2, eNucl), 
     m_Wi(GetDefaultWi()),  
     m_IntronMinSize(GetDefaultIntronMinSize())
 {
@@ -289,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/17 21:50:05  kapustin
+ * Remove unnecesary seq type parameter from the constructor
+ *
  * Revision 1.1  2002/12/12 17:57:41  kapustin
  * Initial revision
  *

@@ -48,8 +48,7 @@ class CNWAlignerMrna2Dna: public CNWAligner
 public:
 
     CNWAlignerMrna2Dna(const char* seq1, size_t len1,
-                       const char* seq2, size_t len2,
-                       EScoringMatrixType matrix_type)
+                       const char* seq2, size_t len2)
         throw(CNWAlignerException);
 
     // Run the algorithm, return the alignment's score
@@ -78,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/17 21:49:40  kapustin
+ * Remove unnecesary seq type parameter from the constructor
+ *
  * Revision 1.1  2002/12/12 17:54:16  kapustin
  * Initial revision
  *
