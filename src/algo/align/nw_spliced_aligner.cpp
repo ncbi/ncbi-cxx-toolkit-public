@@ -252,8 +252,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.5  2004/04/23 14:33:31  kapustin
- * *** empty log message ***
+ * Revision 1.6  2004/04/23 14:39:47  kapustin
+ * Add Splign library and other changes
  *
  * Revision 1.4  2003/10/27 21:00:17  kapustin
  * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.

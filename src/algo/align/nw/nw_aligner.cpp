@@ -992,8 +992,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.43  2004/04/23 14:33:31  kapustin
- * *** empty log message ***
+ * Revision 1.44  2004/04/23 14:39:47  kapustin
+ * Add Splign library and other changes
  *
  * Revision 1.42  2003/12/29 13:03:48  kapustin
  * Return string from GetTranscriptString().

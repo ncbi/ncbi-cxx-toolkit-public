@@ -534,8 +534,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.9  2004/04/23 14:33:31  kapustin
- * *** empty log message ***
+ * Revision 1.10  2004/04/23 14:39:47  kapustin
+ * Add Splign library and other changes
  *
  * Revision 1.8  2003/11/20 17:54:23  kapustin
  * Alternative conventional splice penalty adjusted
