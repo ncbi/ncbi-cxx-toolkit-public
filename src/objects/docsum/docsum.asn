@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.4 2000/10/20 19:21:41 sherry Exp $
+-- $Id: docsum.asn,v 1.5 2000/11/03 15:26:41 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.5  2000/11/03 15:26:41  sherry
+-- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
+--
 -- Revision 1.4  2000/10/20 19:21:41  sherry
 -- added ambiguousloc and lowmapquality to legal withdrawn reasons
 --
@@ -109,7 +112,7 @@ NCBI-RefSNPlink ::= SEQUENCE {			-- link data for anther resource
 NCBI-SubSNPid ::= SEQUENCE {
 	subsnp-id INTEGER,			-- dbSNP ss# (dbSNP assay ID) for submission			SubSNP.subsnp_id
 	handle	VisibleString,			-- submitter handle						Batch.handle
-	loc-snp-id VisibleString,		-- submitter local ID for subsnp				SubSNP.loc_snp_id
+	loc-snp-id VisibleString OPTIONAL,	-- submitter local ID for subsnp				SubSNP.loc_snp_id
 	subsnp-class ENUMERATED {		-- SubSNP classification by type of variation			SubSNP.subsnp_class
 		snp         (1),		-- alleles of length=1 and from set of {A,T,C,G}
 		in-del      (2),		-- alleles of different length or include '-' character
