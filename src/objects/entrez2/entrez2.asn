@@ -1,4 +1,4 @@
---$Revision: 1.5 $********************************************
+--$Revision: 1.6 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -40,6 +40,7 @@ Entrez2-id-list ::= SEQUENCE  {          -- list of record UIDs
        --    a single string, a fully structured query, or a mixture.
        --    The UID list feature means one can also perform refinements
        --    on UID lists from links, neighbors, or other operations.
+       --    UID list query now returns a history key for subsequent use.
        --*****************************************
 
 Entrez2-boolean-exp ::= SEQUENCE {
@@ -51,7 +52,8 @@ Entrez2-boolean-element ::= CHOICE {
   str VisibleString ,                       -- unparsed query string
   op Entrez2-operator ,                     -- logical operator
   term Entrez2-boolean-term ,               -- fielded term
-  ids Entrez2-id-list }                     -- list of UIDs
+  ids Entrez2-id-list ,                     -- list of UIDs - returns history key
+  key VisibleString }                       -- history key for uploaded UID list
 
        --*****************************************
        -- the term is both sent and received as parts of
@@ -87,12 +89,14 @@ Entrez2-operator ::= INTEGER {
        --   allow the server to support older clients
        -- The tool parameter allows us to log the client types for
        --   debugging and tuning
+       -- The cookie is a session ID returned by the first Entrez2-reply
        --****************************************
        
 Entrez2-request ::= SEQUENCE {           -- a standard request
   request E2Request ,                    -- the actual request
   version INTEGER ,                      -- ASN1 spec version
-  tool VisibleString OPTIONAL }          -- tool making request
+  tool VisibleString OPTIONAL ,          -- tool making request
+  cookie VisibleString OPTIONAL }        -- history session cookie
 
 E2Request ::= CHOICE {                   -- request types
   get-info NULL ,                        -- ask for info block
@@ -162,13 +166,15 @@ Entrez2-get-links ::= SEQUENCE {         -- request links of one type
   --  all replies contain the date/time stamp when they were executed
   --  to do reqular date bounded searches use this value+1 to search
   --  again later instead of recording the date/time on the client machine
+  --  the cookie allows a simple key string to represent UID lists in the history
   --**********************************************************
   
 Entrez2-reply ::= SEQUENCE {
   reply E2Reply ,                       -- the actual reply
   dt Entrez2-dt ,                       -- date/time stamp from server
   server VisibleString ,                -- server version info
-  msg VisibleString OPTIONAL }          -- possibly a message to the user
+  msg VisibleString OPTIONAL ,          -- possibly a message to the user
+  cookie VisibleString OPTIONAL }       -- history session cookie
 
 E2Reply ::= CHOICE {
   error VisibleString ,                 -- if nothing can be returned
