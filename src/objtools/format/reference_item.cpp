@@ -832,6 +832,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
         const string& cit = gen.GetCit();
 
         if ( ctx.NoAffilOnUnpub() ) {
+            m_Category = eUnpublished;
             m_Journal = "Unpublished";
             return;
         }
@@ -840,6 +841,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
             string affil;
             (gen.GetAuthors().GetAffil(), affil);
             if ( !affil.empty() ) {
+                m_Category = eUnpublished;
                 m_Journal = "Unpublished " + affil;
                 return;
             }
@@ -966,7 +968,7 @@ string CReferenceItem::GetAuthString(const CAuth_list* alp)
         if ( it == last ) {
             separator = " and ";
         }
-        auth_line << (first ? "" : separator) << *it;
+        auth_line << (first ? kEmptyStr : separator) << *it;
         separator = ", ";
         first = false;
     }
@@ -1209,6 +1211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/26 17:26:34  shomrat
+* Set category to unpublished where needed
+*
 * Revision 1.8  2004/03/18 15:44:21  shomrat
 * Fixes to REFERENCE formatting
 *
