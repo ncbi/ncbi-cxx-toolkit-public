@@ -1035,7 +1035,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         TNumseg l_seg = start_seg;
         while (--l_seg >= 0) {
             type = m_AlnMap.x_GetRawSegType(m_Row, l_seg);
-            if (type & fSeq) {
+            if (type & fSeq  &&  l_from == -1) {
                 l_from = m_AlnMap.m_Starts[l_seg * m_AlnMap.m_NumRows
                                          + m_Row];
                 l_to = l_from + m_AlnMap.x_GetLen(m_Row, l_seg) - 1;
@@ -1043,7 +1043,8 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                     break;
                 }
             }
-            if ( !(type & fNotAlignedToSeqOnAnchor) ) {
+            if ( !(type & fNotAlignedToSeqOnAnchor)  &&  type & fSeq  &&
+                 aln_to == -1) {
                 aln_to = m_AlnMap.GetAlnStop
                     (m_AlnMap.x_GetSegFromRawSeg(l_seg).GetAlnSeg());
                 if (l_from != - 1) {
@@ -1056,7 +1057,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         TNumseg r_seg = stop_seg;
         while (++r_seg < m_AlnMap.m_NumSegs) {
             type = m_AlnMap.x_GetRawSegType(m_Row, r_seg);
-            if (type & fSeq) {
+            if (type & fSeq  &&  r_from == -1) {
                 r_from = m_AlnMap.m_Starts[r_seg * m_AlnMap.m_NumRows
                                          + m_Row];
                 r_to = r_from + m_AlnMap.x_GetLen(m_Row, r_seg) - 1;
@@ -1064,7 +1065,8 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                     break;
                 }
             }
-            if ( !(type & fNotAlignedToSeqOnAnchor) ) {
+            if ( !(type & fNotAlignedToSeqOnAnchor)  &&  type & fSeq  &&
+                 aln_from == -1) {
                 aln_from = m_AlnMap.GetAlnStart
                     (m_AlnMap.x_GetSegFromRawSeg(r_seg).GetAlnSeg());
                 if (r_from != - 1) {
@@ -1199,6 +1201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/10/18 16:29:17  todorov
+* Fixed the range of the Unaligned chunk in case it spans over multiple gaps.
+*
 * Revision 1.49  2004/09/15 20:09:52  todorov
 * Extended Get{Aln,Seq}Chunks with the ability to obtain [implicit] unaligned regions. Also completed AlnRange swapping (rev 1.42).
 *
