@@ -127,41 +127,15 @@ CDbBlastPrelim::~CDbBlastPrelim()
 /// Perform the preliminary stage of a BLAST search
 int CDbBlastPrelim::Run()
 {
-    int status = 0;
-    BlastScoringParameters* score_params = NULL; ///< Scoring parameters 
-    BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
-                                                    parameters */
-    BlastHitSavingParameters* hit_params = NULL; ///< Hit saving parameters
-    BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters 
-                                          for effective lengths calculations */
-    BlastGapAlignStruct* gap_align = NULL; ///< Gapped alignment structure
+    return 
+        Blast_RunPreliminarySearch(m_Options->GetProgramType(),
+            m_pQueries, m_iclsQueryInfo, m_ipSeqSrc,
+            m_Options->GetScoringOpts(), m_pScoreBlock, m_pLookupTable, 
+            m_Options->GetInitWordOpts(), m_Options->GetExtnOpts(), 
+            m_Options->GetHitSaveOpts(), m_Options->GetEffLenOpts(), 
+            m_Options->GetPSIBlastOpts(), m_Options->GetDbOpts(),
+            m_pHspStream, m_pDiagnostics);
 
-    status = 
-        BLAST_GapAlignSetUp(m_Options->GetProgramType(), m_ipSeqSrc, 
-            m_Options->GetScoringOpts(), m_Options->GetEffLenOpts(), 
-            m_Options->GetExtnOpts(), m_Options->GetHitSaveOpts(),
-            m_iclsQueryInfo, m_pScoreBlock, &score_params, &ext_params, 
-            &hit_params, &eff_len_params, &gap_align);
-    if (status)
-        return status;
-
-    status = BLAST_PreliminarySearchEngine(m_Options->GetProgramType(),
-                 m_pQueries, m_iclsQueryInfo, m_ipSeqSrc, gap_align, 
-                 score_params, m_pLookupTable, m_Options->GetInitWordOpts(), 
-                 ext_params, hit_params, eff_len_params, 
-                 m_Options->GetPSIBlastOpts(), m_Options->GetDbOpts(),
-                 m_pHspStream, m_pDiagnostics);
-
-    /* Do not destruct score block here */
-    gap_align->sbp = NULL;
-    gap_align = BLAST_GapAlignStructFree(gap_align);
-
-    score_params = BlastScoringParametersFree(score_params);
-    hit_params = BlastHitSavingParametersFree(hit_params);
-    ext_params = BlastExtensionParametersFree(ext_params);
-    eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
-    
-    return status;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -449,40 +423,30 @@ void CDbBlast::SetupSearch()
                                 m_ipLookupSegments, m_ipScoreBlock, 
                                 &m_ipLookupTable, m_ipRpsInfo);
         }
+
+        // Fill the effective search space values in the BlastQueryInfo
+        // structure, so it doesn't have to be done separately by each thread.
+        Int8 total_length = BLASTSeqSrcGetTotLen(m_pSeqSrc);
+        Int4 num_seqs = BLASTSeqSrcGetNumSeqs(m_pSeqSrc);
+        BlastEffectiveLengthsParameters* eff_len_params = NULL;
+
+        /* Initialize the effective length parameters with real values of
+           database length and number of sequences */
+        BlastEffectiveLengthsParametersNew(GetOptions().GetEffLenOpts(),
+                                           total_length, num_seqs, 
+                                           &eff_len_params);
+        status = 
+            BLAST_CalcEffLengths(x_eProgram, GetOptions().GetScoringOpts(), 
+                                 eff_len_params, m_ipScoreBlock, 
+                                 m_iclsQueryInfo);
+        BlastEffectiveLengthsParametersFree(eff_len_params);
+        if (status) {
+            NCBI_THROW(CBlastException, eInternal, 
+                       "BLAST_CalcEffLengths failed");
+        }        
+
         m_ibQuerySetUpDone = true;
     }
-}
-
-void CDbBlast::RunRPSSearch()
-{
-    int status = 0;
-    BlastHSPResults** results_ptr = NULL;
-
-    ASSERT(m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE);
-
-    // If HSP stream has been passed from the user, it means that results are
-    // handled outside of the BLAST engine, and hence we need to pass a NULL 
-    // results pointer to the engine.
-    if (m_ibLocalResults) {
-        results_ptr = &m_ipResults;
-    }
-
-    status = BLAST_RPSSearchEngine(GetOptions().GetProgramType(), 
-                 m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock,
-                 GetOptions().GetScoringOpts(), m_ipLookupTable, 
-                 GetOptions().GetInitWordOpts(), GetOptions().GetExtnOpts(), 
-                 GetOptions().GetHitSaveOpts(), GetOptions().GetEffLenOpts(),
-                 GetOptions().GetPSIBlastOpts(), m_pHspStream, m_ipDiagnostics, 
-                 results_ptr);
-
-    if (status) {
-        NCBI_THROW(CBlastException, eInternal, 
-                   "RPS BLAST search engine failed");
-    }
-
-    /* If a limit is provided for number of HSPs to return, trim the extra
-       HSPs here */
-    TrimBlastHSPResults();
 }
 
 void CDbBlast::PartialRun()
@@ -490,14 +454,8 @@ void CDbBlast::PartialRun()
     GetOptions().Validate();
     SetupSearch();
 
-    // For RPS BLAST traceback and preliminary engine are not separated
-    // FIXME: @todo Implement separation, similar to other types of searches.
-    if (m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) {
-        RunRPSSearch();
-    } else {
-        RunPreliminarySearch();
-        x_RunTracebackEngine();
-    }
+    RunPreliminarySearch();
+    x_RunTracebackSearch();
 }
 
 TSeqAlignVector
@@ -524,6 +482,24 @@ s_CompareHsplistHspcnt(const void* v1, const void* v2)
       return 1;
    else
       return 0;
+}
+
+BlastHSPResults* 
+CDbBlast::GetResults()
+{
+    // If results are not ready, extract them from the HSP stream
+    if (!m_ipResults) {
+        BlastHSPStream* hsp_stream = GetHSPStream();
+        BlastHSPList* hsp_list = NULL;
+        Int4 hitlist_size = GetOptionsHandle().GetHitlistSize();
+
+        m_ipResults = Blast_HSPResultsNew(GetQueries().size());
+        while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
+               != kBlastHSPStream_Eof) {
+            Blast_HSPResultsInsertHSPList(m_ipResults, hsp_list, hitlist_size);
+        }
+    }
+    return m_ipResults;
 }
 
 
@@ -632,59 +608,28 @@ CDbBlast::RunTraceback()
 {
     m_ibTracebackOnly = true;
     SetupSearch();
-    x_RunTracebackEngine();
+    x_RunTracebackSearch();
     return x_Results2SeqAlign();
 }
 
-void CDbBlast::x_RunTracebackEngine()
+void CDbBlast::x_RunTracebackSearch()
 {
     Int2 status = 0;
-    BlastScoringParameters* score_params = NULL; ///< Scoring parameters 
-    BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
-                                                    parameters */
-    BlastHitSavingParameters* hit_params = NULL; ///< Hit saving parameters
-    BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters 
-                                          for effective lengths calculations */
-    BlastGapAlignStruct* gap_align = NULL; ///< Gapped alignment structure
 
-    // If results are handled outside of the BLAST engine, traceback stage 
-    // should be skipped, so just return. This condition is satisfied when 
-    // HSP stream was passed to the CDbBlast object from outside, but this
-    // is not a traceback only search.
+    // If results are handled outside of the CDbBlast class, traceback stage 
+    // cannot be performed, so just return. This condition is satisfied when 
+    // HSP stream was passed to the CDbBlast object from outside, and it is 
+    // not a traceback only search.
     if (!m_ibLocalResults && !m_ibTracebackOnly)
         return;
 
-    /* Prohibit any subsequent writing to the HSP stream. */
-    BlastHSPStreamClose(m_pHspStream);
-
-    status = 
-        BLAST_GapAlignSetUp(GetOptions().GetProgramType(), m_pSeqSrc, 
-            GetOptions().GetScoringOpts(), GetOptions().GetEffLenOpts(), 
-            GetOptions().GetExtnOpts(), GetOptions().GetHitSaveOpts(),
-            m_iclsQueryInfo, m_ipScoreBlock, &score_params, &ext_params, 
-            &hit_params, &eff_len_params, &gap_align);
-    if (status) {
-        NCBI_THROW(CBlastException, eInternal, 
-                   "Setup failed for gapped alignment with traceback"); 
-    }
-
-    status = 
-        BLAST_ComputeTraceback(GetOptions().GetProgramType(), m_pHspStream, 
-            m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, gap_align, 
-            score_params, ext_params, hit_params, eff_len_params,
-            GetOptions().GetDbOpts(), GetOptions().GetPSIBlastOpts(), 
-            &m_ipResults);
-
-    /* Do not destruct score block here */
-    gap_align->sbp = NULL;
-    gap_align = BLAST_GapAlignStructFree(gap_align);
-    
-    score_params = BlastScoringParametersFree(score_params);
-    hit_params = BlastHitSavingParametersFree(hit_params);
-    ext_params = BlastExtensionParametersFree(ext_params);
-    eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
-    
-    if (status)
+    if ((status = 
+         Blast_RunTracebackSearch(GetOptions().GetProgramType(), 
+             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, 
+             GetOptions().GetScoringOpts(), GetOptions().GetExtnOpts(), 
+             GetOptions().GetHitSaveOpts(), GetOptions().GetEffLenOpts(), 
+             GetOptions().GetDbOpts(), GetOptions().GetPSIBlastOpts(), 
+             m_ipScoreBlock, m_pHspStream, m_ipRpsInfo, &m_ipResults)) != 0)
         NCBI_THROW(CBlastException, eInternal, "Traceback failed"); 
 
     /* If a limit is provided for number of HSPs to return, trim the extra
@@ -726,6 +671,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2004/12/21 17:17:42  dondosha
+ * Use Blast_RunPreliminarySearch and Blast_RunTracebackSearch core functions for respective stages; no longer need to branch code for RPS BLAST
+ *
  * Revision 1.46  2004/11/30 17:01:14  dondosha
  * Use Blast_DiagnosticsInitMT for multi-threaded search; always perform traceback if m_ibTracebackOnly field is set
  *
