@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/04/19 17:34:03  thiessen
+* fix for alpha-only nucleotides
+*
 * Revision 1.36  2002/02/01 13:55:31  thiessen
 * fix labeling bug when domain hidden
 *
@@ -272,10 +275,11 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
                 } while (!foundReal && j != jOrig);
             }
 
-            // for C-alpha only protein models, there are no inter-residue bonds in the
+            // for alpha only models, there are no inter-residue bonds in the
             // chemical graph, so check inter-atomic distances for cases where either one
-            // of the two residues is C-alpha only.
-            if (!foundReal && IsProtein() && (residue->NAtoms() == 1 || prevResidue->NAtoms() == 1)) {
+            // of the two residues is alpha only.
+            if (!foundReal && (IsProtein() || IsNucleotide()) &&
+                (residue->NAtoms() == 1 || prevResidue->NAtoms() == 1)) {
 
                 // get atom coordinates
                 AtomPntr ap1(id, residue->id, residue->alphaID);
@@ -283,8 +287,10 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
                 AtomPntr ap2(id, prevResidue->id, prevResidue->alphaID);
                 const AtomCoord* atom2 = object->coordSets.front()->atomSet->GetAtom(ap2, true, true);
 
-                // check distance - ok if <= 5.0 Angstroms
-                if (atom1 && atom2 && (atom1->site - atom2->site).length() <= 5.0)
+                // check distance - ok if <= 5.0 Angstroms (or 10.0 for nucleotides)
+                if (atom1 && atom2 &&
+                        (atom1->site - atom2->site).length() <=
+                            (IsProtein() ? 5.0 : 10.0))
                     foundReal = true;
             }
 
