@@ -251,7 +251,7 @@ that actually use the server.
 <p>
 The daemon can be configured by a dozen of switches, which modify certain
 parameters from their default values. To see all command-line switches, switch <tt>-h</tt> may be used,
-or NCBI Intranet users <i>only</i> can click <a href="http://pluto.nlm.nih.gov/Service/lbsmd.cgi">here</a>.
+or NCBI Intranet users <i>only</i> can click <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi">here</a>.
 Also, daemon reacts on <tt>HUP</tt> signal to reload its configuration,
 and both <tt>INT</tt> and <tt>TERM</tt> signals to gracefully quit. Despite very high stability, usually
 the daemon is forcedly started from <tt>crontab</tt> each every few minutes on all production hosts to ensure
@@ -261,8 +261,8 @@ is permitted on a certain host, and any attempt to start more than one is reject
 <p>
 <tt>LBSMD</tt> can generate output to the logfile, which can be limited in size to prevent
 disk from flooding with messages. NCBI Intranet users <i>only</i>
-<a href="http://pluto.nlm.nih.gov/Service/lbsmd.cgi?log">can take a look</a>
-at (no more than 100) recent lines of the logfile on host <tt>pluto</tt>.
+<a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi?log">can take a look</a>
+at (no more than 100) recent lines of the logfile on host <tt>ray</tt>.
 Signal <tt>USR1</tt> can be used to toggle verbosity level between less verbose (default) and
 more verbose (when every warning generated is stored) modes.
 
@@ -319,8 +319,8 @@ ForeignService [0] STANDALONE foreignhost:7777 R=300
 # end of configuration
 </pre>
 
-NCBI Intranet users <i>only</i> can take a look at a real configuration file on the host <tt>pluto</tt>
-by clicking <a href="http://pluto.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
+NCBI Intranet users <i>only</i> can take a look at a real configuration file on the host <tt>ray</tt>
+by clicking <a href="http://ray.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
 
 <p><hr><p>
 
@@ -331,7 +331,7 @@ This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program
 dumps onto the screen a table representing current contents of shared memory segment, where the daemon
 collects all information about hosts and services. The client's output can be controlled by a number
 of switches, full list of which can be obtained via switch <tt>-h</tt> alone, or NCBI Intranet users can click
-<a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
+<a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h">here</a>. For example, to print only
 the hosts currently running the daemon one can use the following command:
 <pre>
 >./lbsmc -s none 0
@@ -350,9 +350,9 @@ schroeder         60/8     0.45   0.00   285.72  8000.00  0  0  0  0  0  0  0  0
 </pre>
 For NCBI Intranet users <i>only</i> the following live lists are available for browsing:
 <ul type=circle>
-<li><a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-s_none_-w">Currently running hosts</a>;
-<li><a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
-<li><a href="http://pluto.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w_-d">Currently dead servers</a>.
+<li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-s_none_-w">Currently running hosts</a>;
+<li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w">Currently configured services and servers</a>;
+<li><a href="http://ray.nlm.nih.gov/Service/lbsmc.cgi?-h_none_-w_-d">Currently dead servers</a>.
 </ul>
 
 <p>Some explanation to the client's output. The output usually contains 2 parts:
