@@ -173,6 +173,12 @@ public:
                                    CSeq_loc& location,
                                    const CFeature_table_reader::TFlags flags);
 
+    // add single qualifier to feature
+    void AddFeatQual (CRef<CSeq_feat> sfp,
+                      const string& qual,
+                      const string& val,
+                      const CFeature_table_reader::TFlags flags);
+
 private:
     // Prohibit copy constructor and assignment operator
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
@@ -1540,6 +1546,46 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
 }
 
 
+void CFeature_table_reader_imp::AddFeatQual (
+    CRef<CSeq_feat> sfp,
+    const string& qual,
+    const string& val,
+    const CFeature_table_reader::TFlags flags
+)
+
+{
+    if ((! qual.empty ()) && (! val.empty ())) {
+
+        if (! x_AddQualifierToFeature (sfp, qual, val)) {
+
+            // unrecognized qualifier key
+
+            if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                ERR_POST (Warning << "Unrecognized qualifier " << qual);
+            }
+
+            if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+                CSeq_feat::TQual& qlist = sfp->SetQual ();
+                CRef<CGb_qual> gbq (new CGb_qual);
+                gbq->SetQual (qual);
+                gbq->SetVal (val);
+                qlist.push_back (gbq);
+            }
+        }
+
+    } else if ((! qual.empty ()) && (val.empty ())) {
+
+        // check for the few qualifiers that do not need a value
+
+        if (find (m_SingleKeys.begin (), m_SingleKeys.end (), qual) != m_SingleKeys.end ()) {
+
+            x_AddQualifierToFeature (sfp, qual, val);
+
+        }
+    }
+}
+
+
 // public access functions
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
@@ -1616,12 +1662,21 @@ CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
 )
 
 {
-    // just read features from 5-column table
-
-    CRef<CSeq_feat> sfp = x_GetImplementation ().CreateSeqFeat (feat, location, flags);
-
-    return sfp;
+    return x_GetImplementation ().CreateSeqFeat (feat, location, flags);
 }
+
+
+void CFeature_table_reader::AddFeatQual (
+    CRef<CSeq_feat> sfp,
+    const string& qual,
+    const string& val,
+    const CFeature_table_reader::TFlags flags
+)
+
+{
+    x_GetImplementation ().AddFeatQual (sfp, qual, val, flags);
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

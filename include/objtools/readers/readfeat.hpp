@@ -66,9 +66,16 @@ public:
                                                     const string& annotname,
                                                     const TFlags flags = 0);
 
+    // create single feature from key
     static CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                           CSeq_loc& location,
                                           const TFlags flags = 0);
+
+    // add single qualifier to feature
+    static void AddFeatQual (CRef<CSeq_feat> sfp,
+                             const string& qual,
+                             const string& val,
+                             const TFlags flags = 0);
 
 private:
     // this class uses a singleton internally to manage the specifics
