@@ -468,14 +468,13 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
    Int4** matrix;
    Uint1* query,* subject;
    Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
-   Int4 index, i;
+   Int4 i;
    Int2 factor = 1;
    Uint1 mask = 0x0f;
    GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
    Boolean delete_hsp;
    double searchsp_eff;
    Int4 last_esp_num = 0;
-   Int2 status = 0;
    Int4 align_length;
    BLAST_KarlinBlk* kbp;
    Boolean gapped_calculation = score_options->gapped_calculation;
@@ -659,10 +658,9 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
 {
    BlastHSP** hsp_array,* hsp;
    Uint1* query_start,* subject_start = NULL;
-   Int4 index, context, hspcnt, i;
+   Int4 index, context, hspcnt;
    Boolean purge, delete_hsp;
    Int2 status = 0;
-   Int4 align_length;
    GetSeqArg seq_arg;
    Boolean gapped_calculation = score_options->gapped_calculation;
 
