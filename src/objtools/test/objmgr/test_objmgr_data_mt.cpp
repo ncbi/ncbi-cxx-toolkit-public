@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/12/22 15:56:43  vasilche
+* Add options -pass_count and -no_reset.
+*
 * Revision 1.8  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *
@@ -146,6 +149,9 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 
+#include <objmgr/impl/data_source.hpp> // for GetBlobId()
+#include <objmgr/impl/tse_info.hpp> // for GetBlobId()
+
 #include <map>
 #include <vector>
 
@@ -174,6 +180,7 @@ DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 //  Test application
 //
 
+
 class CTestOM : public CThreadedApp
 {
 protected:
@@ -182,26 +189,34 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
-    typedef vector<CConstRef<CSeq_feat> > TFeats;
-    typedef map<CSeq_id_Handle, TFeats> TFeatMap;
-    typedef map<CSeq_id_Handle, int> TValueMap;
-    typedef vector<CSeq_id_Handle> TIds;
+    typedef vector<CConstRef<CSeq_feat> >   TFeats;
+    typedef pair<CSeq_id_Handle, bool>      TMapKey;
+    typedef map<TMapKey, TFeats>            TFeatMap;
+    typedef map<TMapKey, int>               TIntMap;
+    typedef map<TMapKey, CBlobIdKey>        TBlobIdMap;
+    typedef vector<CSeq_id_Handle>          TIds;
 
-    CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 
-    TValueMap m_mapGiToDesc;
-    TFeatMap m_mapGiToFeat0;
-    TFeatMap m_mapGiToFeat1;
+    TBlobIdMap  m_BlobIdMap;
+    TIntMap     m_DescMap;
+    TFeatMap    m_Feat0Map;
+    TFeatMap    m_Feat1Map;
 
-    void SetValue(TFeatMap& vm, const CSeq_id_Handle& id,
-                  const TFeats& value);
-    void SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value);
+    void SetValue(TBlobIdMap& vm, const TMapKey& key, const CBlobIdKey& value);
+    void SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value);
+    void SetValue(TIntMap& vm, const TMapKey& key, int value);
 
     TIds m_Ids;
 
     bool m_load_only;
+    bool m_no_seq_map;
     bool m_no_snp;
+    bool m_no_named;
+    bool m_adaptive;
+    int  m_pass_count;
+    bool m_no_reset;
+    bool m_keep_handles;
 
     bool failed;
 };
@@ -210,41 +225,65 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 
 
-void CTestOM::SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value)
+void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
+                       const CBlobIdKey& value)
+{
+    const CBlobIdKey* old_value;
+    {{
+        CFastMutexGuard guard(s_GlobalLock);
+        TBlobIdMap::iterator it = vm.lower_bound(key);
+        if ( it == vm.end() || it->first != key ) {
+            it = vm.insert(it, TBlobIdMap::value_type(key, value));
+        }
+        old_value = &it->second;
+    }}
+    if ( *old_value != value ) {
+        string name;
+        if ( &vm == &m_BlobIdMap ) name = "blob-id";
+        ERR_POST("Inconsistent "<<name<<" on "<<
+                 key.first.AsString()<<" "<<key.second<<
+                 " was "<<old_value->ToString()<<" now "<<value.ToString());
+    }
+    _ASSERT(*old_value == value);
+}
+
+
+void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
 {
     int old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
-        old_value = vm.insert(TValueMap::value_type(id, value)).first->second;
+        old_value = vm.insert(TIntMap::value_type(key, value)).first->second;
     }}
     if ( old_value != value ) {
         string name;
-        if ( &vm == &m_mapGiToDesc ) name = "desc";
-        ERR_POST("Inconsistent "<<name<<" on "<<id.AsString()<<
+        if ( &vm == &m_DescMap ) name = "desc";
+        ERR_POST("Inconsistent "<<name<<" on "<<
+                 key.first.AsString()<<" "<<key.second<<
                  " was "<<old_value<<" now "<<value);
     }
     _ASSERT(old_value == value);
 }
 
 
-void CTestOM::SetValue(TFeatMap& vm, const CSeq_id_Handle& id,
-                       const TFeats& value)
+void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
 {
     const TFeats* old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
-        TFeatMap::iterator it = vm.lower_bound(id);
-        if ( it == vm.end() || it->first != id ) {
-            it = vm.insert(it, TFeatMap::value_type(id, value));
+        TFeatMap::iterator it = vm.lower_bound(key);
+        if ( it == vm.end() || it->first != key ) {
+            it = vm.insert(it, TFeatMap::value_type(key, value));
         }
         old_value = &it->second;
     }}
     if ( old_value->size() != value.size() ) {
         CNcbiOstrstream s;
         string name;
-        if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
-        if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
-        s << "Inconsistent "<<name<<" on "<<id.AsString()<<
+        if ( &vm == &m_Feat0Map ) name = "feat0";
+        if ( &vm == &m_Feat1Map ) name = "feat1";
+        s << "Inconsistent "<<name<<" on "<<
+            key.first.AsString()<<" "<<key.second<<
             " was "<<old_value->size()<<" now "<<value.size() << NcbiEndl;
         ITERATE ( TFeats, it, *old_value ) {
             s << " old: " << MSerial_AsnText << **it;
@@ -275,84 +314,109 @@ bool CTestOM::Thread_Run(int idx)
     }
     int delta = (to > from) ? 1 : -1;
 
+    set<CBioseq_Handle> handles;
+
     bool ok = true;
-    const int kMaxErrorCount = 3;
-    static int error_count = 0;
-    TFeats feats;
-    for (int i = from;
-         ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
-        CSeq_id_Handle sih = m_Ids[i];
-        try {
-            // load sequence
-            CBioseq_Handle handle = scope.GetBioseqHandle(sih);
-            if (!handle) {
+    for ( int pass = 0; pass < m_pass_count; ++pass ) {
+        const int kMaxErrorCount = 3;
+        static int error_count = 0;
+        TFeats feats;
+        for ( int i = from, end = to+delta; i != end; i += delta ) {
+            CSeq_id_Handle sih = m_Ids[i];
+            TMapKey key(sih, delta>0);
+            try {
+                // load sequence
+                CBioseq_Handle handle = scope.GetBioseqHandle(sih);
+                SetValue(m_BlobIdMap, key, handle.GetTSE_Handle().GetBlobId());
+                if (!handle) {
+                    LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                             ": INVALID HANDLE");
+                    SetValue(m_DescMap, key, -1);
+                    continue;
+                }
+
+                if ( !m_load_only ) {
+                    int count = 0;
+
+                    // check CSeqMap_CI
+                    if ( !m_no_seq_map ) {
+                        SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
+                        for ( CSeqMap_CI it(handle, sel); it; ++it ) {
+                            _ASSERT(it.GetType() == CSeqMap::eSeqRef);
+                        }
+                    }
+
+                    // enumerate descriptions
+                    // Seqdesc iterator
+                    for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
+                        count++;
+                    }
+                    // verify result
+                    SetValue(m_DescMap, key, count);
+
+                    // enumerate features
+                    CSeq_loc loc;
+                    loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
+                    SAnnotSelector sel(CSeqFeatData::e_not_set);
+                    if ( m_no_named ) {
+                        sel.ResetAnnotsNames().AddUnnamedAnnots();
+                    }
+                    else if ( m_no_snp ) {
+                        sel.ExcludeNamedAnnots("SNP");
+                    }
+                    if ( m_adaptive ) {
+                        sel.SetAdaptiveDepth();
+                    }
+                    if ( idx%2 == 0 ) {
+                        sel.SetOverlapType(sel.eOverlap_Intervals);
+                        sel.SetResolveMethod(sel.eResolve_All);
+                    }
+
+                    feats.clear();
+                    if ( idx%2 == 0 ) {
+                        for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+                            feats.push_back(ConstRef(&it->GetOriginalFeature()));
+                        }
+                        // verify result
+                        SetValue(m_Feat0Map, key, feats);
+                    }
+                    else {
+                        for ( CFeat_CI it(handle, sel); it;  ++it ) {
+                            feats.push_back(ConstRef(&it->GetOriginalFeature()));
+                        }
+                        // verify result
+                        SetValue(m_Feat1Map, key, feats);
+                    }
+                }
+                if ( m_no_reset && m_keep_handles ) {
+                    handles.insert(handle);
+                }
+            }
+            catch (CLoaderException& e) {
                 LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                         ": INVALID HANDLE");
-                SetValue(m_mapGiToDesc, sih, -1);
-                continue;
+                         ": EXCEPTION = " << e.what());
+                ok = false;
+                if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                    break;
+                }
+                if ( ++error_count > kMaxErrorCount ) {
+                    break;
+                }
             }
-
-            if ( !m_load_only ) {
-                int count = 0;
-
-                // enumerate descriptions
-                // Seqdesc iterator
-                for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                    count++;
+            catch (exception& e) {
+                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                         ": EXCEPTION = " << e.what());
+                ok = false;
+                if ( ++error_count > kMaxErrorCount ) {
+                    break;
                 }
-                // verify result
-                SetValue(m_mapGiToDesc, sih, count);
-
-                // enumerate features
-                CSeq_loc loc;
-                loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
-                SAnnotSelector sel(CSeqFeatData::e_not_set);
-                if ( idx%2 == 0 ) {
-                    sel.SetOverlapType(sel.eOverlap_Intervals);
-                    sel.SetResolveMethod(sel.eResolve_All);
-                }
-                if ( m_no_snp ) {
-                    sel.ExcludedAnnotName("SNP");
-                }
-
-                feats.clear();
-                if ( idx%2 == 0 ) {
-                    for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
-                        feats.push_back(ConstRef(&it->GetOriginalFeature()));
-                    }
-                    // verify result
-                    SetValue(m_mapGiToFeat0, sih, feats);
-                }
-                else {
-                    for ( CFeat_CI it(handle, sel); it;  ++it ) {
-                        feats.push_back(ConstRef(&it->GetOriginalFeature()));
-                    }
-                    // verify result
-                    SetValue(m_mapGiToFeat1, sih, feats);
-                }
+            }
+            if ( !m_no_reset ) {
+                scope.ResetHistory();
             }
         }
-        catch (CLoaderException& e) {
-            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                     ": EXCEPTION = " << e.what());
-            ok = false;
-            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
-                break;
-            }
-            if ( ++error_count > kMaxErrorCount ) {
-                break;
-            }
-        }
-        catch (exception& e) {
-            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                     ": EXCEPTION = " << e.what());
-            ok = false;
-            if ( ++error_count > kMaxErrorCount ) {
-                break;
-            }
-        }
-        scope.ResetHistory();
     }
+
     if ( !ok ) {
         failed = true;
     }
@@ -374,7 +438,16 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
          "File with list of Seq-ids to test",
          CArgDescriptions::eInputFile);
     args.AddFlag("load_only", "Do not work with sequences - only load them");
+    args.AddFlag("no_seq_map", "Do not scan CSeqMap on the sequence");
     args.AddFlag("no_snp", "Exclude SNP features from processing");
+    args.AddFlag("no_named", "Exclude features from named Seq-annots");
+    args.AddFlag("adaptive", "Use adaptive depth for feature iteration");
+    args.AddDefaultKey("pass_count", "PassCount",
+                       "Run test several times",
+                       CArgDescriptions::eInteger, "1");
+    args.AddFlag("no_reset", "Do not reset scope history after each id");
+    args.AddFlag("keep_handles",
+                 "Remember bioseq handles if not resetting scope history");
     return true;
 }
 
@@ -420,16 +493,17 @@ bool CTestOM::TestApp_Init(void)
             "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
     }
     m_load_only = args["load_only"];
+    m_no_seq_map = args["no_seq_map"];
     m_no_snp = args["no_snp"];
+    m_no_named = args["no_named"];
+    m_adaptive = args["adaptive"];
+    m_pass_count = args["pass_count"].AsInteger();
+    m_no_reset = args["no_reset"];
+    m_keep_handles = args["keep_handles"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
-    // Scope shared by all threads
-/*
-    m_Scope = new CScope(*m_ObjMgr);
-    m_Scope->AddDefaults();
-*/
     return true;
 }
 
@@ -444,12 +518,12 @@ bool CTestOM::TestApp_Exit(void)
 
 /*
     map<int, int>::iterator it;
-    for (it = m_mapGiToDesc.begin(); it != m_mapGiToDesc.end(); ++it) {
+    for (it = m_DescMap.begin(); it != m_DescMap.end(); ++it) {
         LOG_POST(
             "gi = "         << it->first
             << ": desc = "  << it->second
-            << ", feat0 = " << m_mapGiToFeat0[it->first]
-            << ", feat1 = " << m_mapGiToFeat1[it->first]
+            << ", feat0 = " << m_Feat0Map[it->first]
+            << ", feat1 = " << m_Feat1Map[it->first]
             );
     }
 */

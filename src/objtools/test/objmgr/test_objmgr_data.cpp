@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/12/22 15:56:43  vasilche
+* Add options -pass_count and -no_reset.
+*
 * Revision 1.13  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
@@ -208,7 +211,6 @@ protected:
     typedef map<CSeq_id_Handle, int> TValueMap;
     typedef vector<CSeq_id_Handle> TIds;
 
-    CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 
     TValueMap m_mapGiToDesc;
@@ -227,6 +229,9 @@ protected:
     int  m_pause;
     bool m_prefetch;
     bool m_verbose;
+    int  m_pass_count;
+    bool m_no_reset;
+    bool m_keep_handles;
 };
 
 
@@ -302,144 +307,148 @@ bool CTestOM::Thread_Run(int idx)
     int delta = (to > from) ? 1 : -1;
     int pause = m_pause;
 
-    CPrefetchToken token;
-    if (m_prefetch) {
-        LOG_POST("Using prefetch");
-        // Initialize prefetch token;
-        token = CPrefetchToken(scope, m_Ids);
-    }
+    set<CBioseq_Handle> handles;
 
     bool ok = true;
-    const int kMaxErrorCount = 30;
-    int error_count = 0;
-    for ( int i = from, end = to+delta; i != end; i += delta ) {
-        CSeq_id_Handle sih = m_Ids[i];
-        if ( i != from && pause ) {
-            SleepSec(pause);
+    for ( int pass = 0; pass < m_pass_count; ++pass ) {
+        CPrefetchToken token;
+        if (m_prefetch) {
+            LOG_POST("Using prefetch");
+            // Initialize prefetch token;
+            token = CPrefetchToken(scope, m_Ids);
         }
-        if ( m_verbose ) {
-            NcbiCout << CTime(CTime::eCurrent).AsString() << " " <<
-                abs(i-from) << ": " << sih.AsString() << NcbiFlush;
-        }
-        try {
-            // load sequence
-            CBioseq_Handle handle;
-            if (m_prefetch) {
-                if (!token) {
-                    LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                             ": INVALID PREFETCH TOKEN");
-                    continue;
-                }
-                handle = token.NextBioseqHandle(scope);
+
+        const int kMaxErrorCount = 30;
+        int error_count = 0;
+        for ( int i = from, end = to+delta; i != end; i += delta ) {
+            CSeq_id_Handle sih = m_Ids[i];
+            if ( i != from && pause ) {
+                SleepSec(pause);
             }
-            else {
-                handle = scope.GetBioseqHandle(sih);
+            if ( m_verbose ) {
+                NcbiCout << CTime(CTime::eCurrent).AsString() << " " <<
+                    abs(i-from) << ": " << sih.AsString() << NcbiFlush;
             }
-            if (!handle) {
-                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                         ": INVALID HANDLE");
-                continue;
-            }
-
-            if ( !m_load_only ) {
-                int count = 0;
-
-                // check CSeqMap_CI
-                if ( !m_no_seq_map ) {
-                    CSeqMap_CI it(ConstRef(&handle.GetSeqMap()),
-                                  &scope,
-                                  SSeqMapSelector()
-                                  .SetFlags(CSeqMap::fFindRef),
-                                  0);
-                    while ( it ) {
-                        _ASSERT(it.GetType() == CSeqMap::eSeqRef);
-                        ++it;
+            try {
+                // load sequence
+                CBioseq_Handle handle;
+                if (m_prefetch) {
+                    if (!token) {
+                        LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                                 ": INVALID PREFETCH TOKEN");
+                        continue;
                     }
-                }
-
-                // check seqvector
-                if ( 0 ) {{
-                    string buff;
-                    CSeqVector sv =
-                        handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
-                                            CBioseq_Handle::eStrand_Plus);
-
-                    int start = max(0, int(sv.size()-600000));
-                    int stop  = sv.size();
-
-                    sv.GetSeqData(start, stop, buff);
-                    //cout << "POS: " << buff << endl;
-
-                    sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
-                                             CBioseq_Handle::eStrand_Minus);
-                    sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
-                    //cout << "NEG: " << buff << endl;
-                }}
-
-                // enumerate descriptions
-                // Seqdesc iterator
-                for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                    count++;
-                }
-                // verify result
-                SetValue(m_mapGiToDesc, sih, count);
-
-                // enumerate features
-                SAnnotSelector sel(CSeqFeatData::e_not_set);
-                if ( m_no_named ) {
-                    sel.ResetAnnotsNames().AddUnnamedAnnots();
-                }
-                else if ( m_no_snp ) {
-                    sel.ExcludeNamedAnnots("SNP");
-                }
-                if ( m_adaptive ) {
-                    sel.SetAdaptiveDepth();
-                }
-
-                count = 0;
-                if ( idx%2 == 0 ) {
-                    sel.SetResolveMethod(sel.eResolve_All);
-                    for ( CFeat_CI it(handle, sel); it; ++it ) {
-                        count++;
-                    }
-                    if ( m_verbose ) {
-                        NcbiCout << " features: " << count << NcbiEndl;
-                    }
-                    // verify result
-                    SetValue(m_mapGiToFeat0, sih, count);
+                    handle = token.NextBioseqHandle(scope);
                 }
                 else {
-                    sel.SetOverlapType(sel.eOverlap_Intervals);
-                    CSeq_loc loc;
-                    loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
-                    for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+                    handle = scope.GetBioseqHandle(sih);
+                }
+                if (!handle) {
+                    LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                             ": INVALID HANDLE");
+                    continue;
+                }
+
+                if ( !m_load_only ) {
+                    int count = 0;
+
+                    // check CSeqMap_CI
+                    if ( !m_no_seq_map ) {
+                        SSeqMapSelector sel(CSeqMap::fFindRef, kMax_UInt);
+                        for ( CSeqMap_CI it(handle, sel); it; ++it ) {
+                            _ASSERT(it.GetType() == CSeqMap::eSeqRef);
+                        }
+                    }
+
+                    // check seqvector
+                    if ( 0 ) {{
+                        string buff;
+                        CSeqVector sv =
+                            handle.GetSeqVector(handle.eCoding_Iupac, 
+                                                handle.eStrand_Plus);
+
+                        int start = max(0, int(sv.size()-600000));
+                        int stop  = sv.size();
+
+                        sv.GetSeqData(start, stop, buff);
+                        //cout << "POS: " << buff << endl;
+
+                        sv = handle.GetSeqVector(handle.eCoding_Iupac, 
+                                                 handle.eStrand_Minus);
+                        sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
+                        //cout << "NEG: " << buff << endl;
+                             }}
+
+                    // enumerate descriptions
+                    // Seqdesc iterator
+                    for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
                         count++;
                     }
                     // verify result
-                    SetValue(m_mapGiToFeat1, sih, count);
+                    SetValue(m_mapGiToDesc, sih, count);
+
+                    // enumerate features
+                    SAnnotSelector sel(CSeqFeatData::e_not_set);
+                    if ( m_no_named ) {
+                        sel.ResetAnnotsNames().AddUnnamedAnnots();
+                    }
+                    else if ( m_no_snp ) {
+                        sel.ExcludeNamedAnnots("SNP");
+                    }
+                    if ( m_adaptive ) {
+                        sel.SetAdaptiveDepth();
+                    }
+
+                    count = 0;
+                    if ( idx%2 == 0 ) {
+                        sel.SetResolveMethod(sel.eResolve_All);
+                        for ( CFeat_CI it(handle, sel); it; ++it ) {
+                            count++;
+                        }
+                        if ( m_verbose ) {
+                            NcbiCout << " features: " << count << NcbiEndl;
+                        }
+                        // verify result
+                        SetValue(m_mapGiToFeat0, sih, count);
+                    }
+                    else {
+                        sel.SetOverlapType(sel.eOverlap_Intervals);
+                        CSeq_loc loc;
+                        loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
+                        for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+                            count++;
+                        }
+                        // verify result
+                        SetValue(m_mapGiToFeat1, sih, count);
+                    }
+                }
+                if ( m_no_reset && m_keep_handles ) {
+                    handles.insert(handle);
                 }
             }
-        }
-        catch (CLoaderException& e) {
-            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                     ": EXCEPTION = " << e.what());
-            ok = false;
-            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
-                break;
+            catch (CLoaderException& e) {
+                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                         ": EXCEPTION = " << e.what());
+                ok = false;
+                if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                    break;
+                }
+                if ( ++error_count > kMaxErrorCount ) {
+                    break;
+                }
             }
-            if ( ++error_count > kMaxErrorCount ) {
-                break;
+            catch (exception& e) {
+                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                         ": EXCEPTION = " << e.what());
+                ok = false;
+                if ( ++error_count > kMaxErrorCount ) {
+                    break;
+                }
+            }
+            if ( !m_no_reset ) {
+                scope.ResetHistory();
             }
         }
-        catch (exception& e) {
-            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                     ": EXCEPTION = " << e.what());
-            ok = false;
-            if ( ++error_count > kMaxErrorCount ) {
-                break;
-            }
-        }
-        scope.ResetHistory();
     }
 
     if ( ok ) {
@@ -477,6 +486,12 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
          "Pause between requests in seconds",
          CArgDescriptions::eInteger, "0");
     args.AddFlag("prefetch", "Use prefetching");
+    args.AddDefaultKey("pass_count", "PassCount",
+                       "Run test several times",
+                       CArgDescriptions::eInteger, "1");
+    args.AddFlag("no_reset", "Do not reset scope history after each id");
+    args.AddFlag("keep_handles",
+                 "Remember bioseq handles if not resetting scope history");
     return true;
 }
 
@@ -528,15 +543,13 @@ bool CTestOM::TestApp_Init(void)
     m_pause    = args["pause"].AsInteger();
     m_prefetch = args["prefetch"];
     m_verbose = args["verbose"];
+    m_pass_count = args["pass_count"].AsInteger();
+    m_no_reset = args["no_reset"];
+    m_keep_handles = args["keep_handles"];
 
     m_ObjMgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
-    // Scope shared by all threads
-/*
-    m_Scope = new CScope(*m_ObjMgr);
-    m_Scope->AddDefaults();
-*/
     return true;
 }
 
