@@ -1,15 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if using `getloadavg.c'. */
-#undef C_GETLOADAVG
-
-/* Define to 1 for DGUX with <sys/dg_sys_info.h>. */
-#undef DGUX
-
-/* Define to 1 if the `getloadavg' function needs to be run setuid or setgid.
-   */
-#undef GETLOADAVG_PRIVILEGED
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -51,9 +41,6 @@
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBCRYPT
-
-/* Define to 1 if you have the `dgc' library (-ldgc). */
-#undef HAVE_LIBDGC
 
 /* Define to 1 if DL is available, either in its own library or as part of the
    standard libraries. */
@@ -98,20 +85,17 @@
 /* Define to 1 if SYBASE DBLib is available. */
 #undef HAVE_LIBSYBDB
 
+/* Define to 1 if you have the <limits> header file. */
+#undef HAVE_LIMITS
+
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
-
-/* Define to 1 if you have the <mach/mach.h> header file. */
-#undef HAVE_MACH_MACH_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if the NCBI C toolkit is available. */
 #undef HAVE_NCBI_C
-
-/* Define to 1 if you have the <nlist.h> header file. */
-#undef HAVE_NLIST_H
 
 /* Define to 1 if `auto_ptr<T>' is missing or broken. */
 #undef HAVE_NO_AUTO_PTR
@@ -128,9 +112,6 @@
 /* Define to 1 if the ORBacus CORBA package is available. */
 #undef HAVE_ORBACUS
 
-/* Define to 1 if you have the `pstat_getdynamic' function. */
-#undef HAVE_PSTAT_GETDYNAMIC
-
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
@@ -145,9 +126,6 @@
 
 /* Define to 1 if you have `union semun'. */
 #undef HAVE_SEMUN
-
-/* Define to 1 if you have the `setlocale' function. */
-#undef HAVE_SETLOCALE
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #undef HAVE_SIN_LEN
@@ -181,9 +159,6 @@
 
 /* Define to 1 if you have the <strstrea.h> header file. */
 #undef HAVE_STRSTREA_H
-
-/* Define to 1 if `n_un.n_name' is member of `struct nlist'. */
-#undef HAVE_STRUCT_NLIST_N_UN_N_NAME
 
 /* Define to 1 if SYBASE has reentrant libraries. */
 #undef HAVE_SYBASE_REENTRANT
@@ -308,10 +283,6 @@
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC
 
-/* Define to 1 if your `struct nlist' has an `n_un' member. Obsolete, depend
-   on `HAVE_STRUCT_NLIST_N_UN_N_NAME */
-#undef NLIST_NAME_UNION
-
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -365,16 +336,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define to 1 on System V Release 4. */
-#undef SVR4
-
-/* Define to 1 for Encore UMAX. */
-#undef UMAX
-
-/* Define to 1 for Encore UMAX 4.3 that has <inq_status/cpustats.h> instead of
-   <sys/cpustats.h>. */
-#undef UMAX4_3
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */

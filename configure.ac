@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.126 2002/09/11 20:26:42 ucko Exp $
+#  $Id: configure.ac,v 1.127 2002/09/24 14:20:21 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -38,7 +38,7 @@
 #
 #############################################################################
 
-AC_PREREQ(2.53)
+AC_PREREQ(2.54)
 
 dnl Set up lock.  The diversion magic lets this occur before AC_INIT, which
 dnl already interferes with other configure processes.
@@ -106,7 +106,7 @@ AC_ARG_WITH(hostspec,
 AC_ARG_WITH(execopy,
    [ --without-execopy       do not copy built executables to the BIN area])
 AC_ARG_WITH(bincopy,
-   [ --without-bincopy       no check if libs or apps need to be copied to BIN])
+   [ --with-bincopy          populate lib and bin with copies, not hard links])
 AC_ARG_WITH(lib-rebuilds,
    [ --with-lib-rebuilds     ensure that apps use up-to-date libraries])
 AC_ARG_WITH(lib-rebuilds2,
@@ -385,7 +385,7 @@ else
           ncbi_compiler_ver="7.3" ;;
       esac ;;
 
-    cygwin32 )
+    cygwin* )
       case "$real_CC" in
         *cl\.exe* | cl)
           compiler="MSVC" 
@@ -549,7 +549,6 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:WorkShop* )
-   with_bincopy=${with_bincopy:="no"}
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
@@ -564,10 +563,6 @@ case "$host_os:$compiler" in
    ncbicntr="ncbicntr_workshop"
    ;;
 
- solaris*:KCC )
-   with_bincopy=${with_bincopy:="no"}
-   ;;
-
  irix*:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
    CFLAGS="$COMMON_FLAGS $CFLAGS"
@@ -577,13 +572,13 @@ case "$host_os:$compiler" in
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    ;;
 
- cygwin32:GCC )
+ cygwin*:GCC )
    with_dll="no"
    NETWORK_LIBS=${NETWORK_LIBS:="-lwsock32"}
    CONF_exe_ext=".exe"
    ;;
 
- cygwin32:MSVC )
+ cygwin*:MSVC )
    with_dll="no"
    CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
@@ -1177,12 +1172,19 @@ if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
-#### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
-#### old object/lib/binary file with the new one -- they will always be
-#### different because of some timestamp or smth. else ("--without-bincopy")
 BINCOPY="${CONFIG_SHELL-/bin/sh} \$(top_srcdir)/scripts/if_diff.sh \"cp -p\""
-if test "$with_bincopy" = "no" ; then
-   BINCOPY="cp -p"
+if test "$with_bincopy" != "yes"; then
+   AC_CACHE_CHECK([whether cross-directory hard links work],
+      ncbi_cv_sys_xdir_ln,
+      [mkdir conftestdir
+       touch conftestdir/conftestfile
+       if ln -f conftestdir/conftestfile .; then
+          ncbi_cv_sys_xdir_ln=yes
+       else
+          ncbi_cv_sys_xdir_ln=no
+       fi
+       rm -rf conftestdir conftestfile])
+   test "$ncbi_cv_sys_xdir_ln" = "yes" && BINCOPY="ln -f"
 fi
 
 
@@ -1246,12 +1248,13 @@ AC_CHECK_HEADERS(iostream  iostream.h)
 AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
 
+AC_CHECK_HEADERS(limits)
 
 ### Check for the platform (very roughly)
 AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
 AC_CHECK_HEADERS(windows.h, x_have_windows="yes")
 
-if test "$x_have_windows" = "yes" -a "x$host_os" != "xcygwin32"; then
+if test "$x_have_windows" = "yes" -a "x$host_os" != "xcygwin32" -a "x$host_os" != "xcygwin"; then
    AC_DEFINE(NCBI_OS_MSWIN, 1, [Define to 1 on Windows.])
    AC_DEFINE(NCBI_OS, "MSWIN", [Operating system name])
 elif test "$x_have_unistd" = "yes" ; then
@@ -1407,8 +1410,9 @@ if test "$ncbi_cv_func_sysinfo_1" = yes; then
              [Define to 1 if Linux-like 1-arg sysinfo exists.])
 fi
 
-# Overkill in some ways...
-AC_FUNC_GETLOADAVG
+dnl Too much overkill, and now wants getloadavg.c to exist.
+dnl AC_FUNC_GETLOADAVG
+AC_CHECK_FUNCS(getloadavg)
 
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
@@ -1913,6 +1917,7 @@ else
       FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
       FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
    fi
+   FLTK_POST_LINK="$FLTK_BINPATH/fltk-config --post"
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
 
@@ -2329,7 +2334,7 @@ local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
 
 # The IPC stuff doesn't build on Cygwin or Darwin.
 case "$host_os" in
-  cygwin32 | darwin* ) with_local_lbsm="no" ;;
+  cygwin* | darwin* ) with_local_lbsm="no" ;;
 esac
 
 for fff in $local_lbsm ; do
@@ -2669,7 +2674,7 @@ changequote(<<, >>)dnl
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
 changequote([, ])dnl
-configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | egrep -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
@@ -2774,6 +2779,7 @@ AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)
+AC_SUBST(FLTK_POST_LINK)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
 AC_SUBST(FASTCGI_INCLUDE)
