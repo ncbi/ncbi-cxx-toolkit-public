@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2001/11/08 21:10:59  ivanov
+* Added test for GetCPUNumber()
+*
 * Revision 6.3  2001/07/23 15:24:06  ivanov
 * Fixed bug in Get/Set times in DB-format (1 day difference)
 *
@@ -55,6 +58,19 @@
 
 
 USING_NCBI_SCOPE;
+
+
+/////////////////////////////////
+// General tests
+//
+
+static void Test_General(void)
+{
+    LOG_POST("\nGeneral tests\n");
+
+    // Number of processors
+    cout << "Number of processors: " << GetCPUNumber() << endl;
+}
 
 
 /////////////////////////////////
@@ -151,7 +167,10 @@ void CTestApplication::Init(void)
 
 int CTestApplication::Run(void)
 {
-    // Get arguments
+    // General tests
+    Test_General();
+
+    // Specific tests
     CArgs args = GetArgs();
 
     if (args["feature"].AsString() == "mem") {
