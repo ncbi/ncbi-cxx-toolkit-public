@@ -82,7 +82,7 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
     Uint4 num_oids = volset.GetNumSeqs();
     Uint4 byte_length = ((num_oids + 31) / 32) * 4;
     
-    m_HeldData = m_Bits = new (unsigned char)[byte_length];
+    m_HeldData = m_Bits = new TUC[byte_length];
     m_BitEnd   = m_Bits + byte_length;
     
     memset((void*) m_Bits, 0, byte_length);
