@@ -175,12 +175,17 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
 
 void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
 {
-    // set up the default search path:
-    //    - The current working directory.
-    //    - The directory, if any, given by the environment variable "NCBI".
-    //    - The user's home directory.
-    //    - The directory containing the application, if known
-    path.push_back(".");
+    const char* cfg_path = getenv("NCBI_CONFIG_PATH");
+    if (cfg_path) {
+        path.push_back(cfg_path);
+        return;
+    }
+
+    if (getenv("NCBI_DONT_USE_LOCAL_CONFIG") == NULL) {
+        path.push_back(".");
+        path.push_back(CDir::GetHome());
+    }
+
     {{
         const char* ncbi = getenv("NCBI");
         if (ncbi  &&  *ncbi) {
@@ -188,7 +193,17 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
         }
     }}
 
-    path.push_back(CDir::GetHome());
+#ifdef NCBI_OS_MSWIN
+    {{
+        const char* sysroot = getenv("SYSTEMROOT");
+        if (sysroot  &&  *sysroot) {
+            path.push_back(sysroot);
+        }
+    }}
+#else
+    path.push_back("/etc");
+#endif
+
     {{
         CNcbiApplication* the_app = CNcbiApplication::Instance();
         if ( the_app ) {
@@ -244,6 +259,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/01/10 16:23:05  ucko
+ * Adjust default search path (now ordered like the C Toolkit's), and add
+ * support for NCBI_CONFIG_PATH and NCBI_DONT_USE_LOCAL_CONFIG.
+ *
  * Revision 1.12  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *

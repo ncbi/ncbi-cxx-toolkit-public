@@ -103,13 +103,19 @@ public:
                        TRegFlags      reg_flags = 0,
                        CNcbiRegistry* reg       = 0);
 
-    /// Accessors for the search path for unqualified names.
-    /// By default, the path list contains the following dirs in this order:
+    /// Accessors for the search path for unqualified names.  If the
+    /// environment NCBI_CONFIG_PATH is set, the default is to look there
+    /// exclusively; otherwise, the default list contains the following
+    /// directories in order:
     ///    - The current working directory.
-    ///    - The directory, if any, given by the environment variable "NCBI".
     ///    - The user's home directory.
-    ///    - The directory containing the application, if known
-    ///      (requires use of CNcbiApplication)
+    ///    - The directory, if any, given by the environment variable "NCBI".
+    ///    - The standard system directory (/etc on Unix, and given by the
+    ///      environment variable "SYSTEMROOT" on Windows).
+    ///    - The directory containing the application, if known.
+    ///      (Requires use of CNcbiApplication.)
+    /// The first two directories are skipped if the environment variable
+    /// NCBI_DONT_USE_LOCAL_CONFIG is set.
     typedef vector<string> TSearchPath;
     static const TSearchPath& GetSearchPath(void);
     static       TSearchPath& SetSearchPath(void);
@@ -216,6 +222,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/01/10 16:22:56  ucko
+* Adjust default search path (now ordered like the C Toolkit's), and add
+* support for NCBI_CONFIG_PATH and NCBI_DONT_USE_LOCAL_CONFIG.
+*
 * Revision 1.8  2003/12/08 18:40:13  ucko
 * Use DECLARE_CLASS_STATIC_MUTEX to avoid possible premature locking.
 *
