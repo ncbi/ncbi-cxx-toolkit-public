@@ -109,8 +109,6 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
     }
 
-    
-
     // Generate include dirs:
     // Include dirs for appropriate src dirs
     set<string> include_dirs;
@@ -138,10 +136,33 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         impl_dir = CDirEntry::AddTrailingPathSeparator(impl_dir);
         include_dirs.insert(impl_dir);
     }
-    copy(include_dirs.begin(), 
-         include_dirs.end(), 
-         back_inserter(m_IncludeDirsAbs));
-
+    SConfigInfo cfg_info; // default is enough
+    list<string> headers_in_include;
+    list<string> inlines_in_include;
+    set<string>::const_iterator i;
+    list<string>::const_iterator h, hs;
+    GetMsvcProjectMakefile().GetHeadersInInclude( cfg_info, &headers_in_include);
+    GetMsvcProjectMakefile().GetInlinesInInclude( cfg_info, &inlines_in_include);
+    for (i = include_dirs.begin(); i != include_dirs.end(); ++i) {
+        for (h = headers_in_include.begin(); h != headers_in_include.end(); ++h) {
+            m_IncludeDirsAbs.push_back(CDirEntry::ConcatPath(*i, *h));
+        }
+        for (h = inlines_in_include.begin(); h != inlines_in_include.end(); ++h) {
+            m_InlineDirsAbs.push_back(CDirEntry::ConcatPath(*i, *h));
+        }
+    }
+    list<string> headers_in_src;
+    list<string> inlines_in_src;
+    GetMsvcProjectMakefile().GetHeadersInSrc( cfg_info, &headers_in_src);
+    GetMsvcProjectMakefile().GetInlinesInSrc( cfg_info, &inlines_in_src);
+    for (hs = m_SourcesDirsAbs.begin(); hs != m_SourcesDirsAbs.end(); ++hs) {
+        for (h = headers_in_src.begin(); h != headers_in_src.end(); ++h) {
+            m_IncludeDirsAbs.push_back(CDirEntry::ConcatPath(*hs, *h));
+        }
+        for (h = inlines_in_src.begin(); h != inlines_in_src.end(); ++h) {
+            m_InlineDirsAbs.push_back(CDirEntry::ConcatPath(*hs, *h));
+        }
+    }
 
     // Get custom build files and adjust pathes 
     GetMsvcProjectMakefile().GetCustomBuildInfo(&m_CustomBuildInfo);
@@ -875,6 +896,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/10/12 13:27:36  gouriano
+ * Added possibility to specify which headers to include into project
+ *
  * Revision 1.36  2004/08/25 19:38:40  gouriano
  * Implemented optional dependency on a third party library
  *

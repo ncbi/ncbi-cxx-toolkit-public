@@ -81,6 +81,22 @@ public:
                                   (const SConfigInfo& config, 
                                    list<string>*      files)     const = 0;
 
+    virtual void GetHeadersInInclude
+                                  (const SConfigInfo& config, 
+                                   list<string>*      files)     const = 0;
+
+    virtual void GetHeadersInSrc
+                                  (const SConfigInfo& config, 
+                                   list<string>*      files)     const = 0;
+
+    virtual void GetInlinesInInclude
+                                  (const SConfigInfo& config, 
+                                   list<string>*      files)     const = 0;
+
+    virtual void GetInlinesInSrc
+                                  (const SConfigInfo& config, 
+                                   list<string>*      files)     const = 0;
+
     virtual void GetCustomBuildInfo
                                   (list<SCustomBuildInfo>* info) const = 0;
 
@@ -193,6 +209,18 @@ public:
     virtual void GetAdditionalIncludeDirs(const SConfigInfo& config, 
                                           list<string>*      files) const;
 
+    virtual void GetHeadersInInclude     (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
+    virtual void GetHeadersInSrc         (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
+    virtual void GetInlinesInInclude     (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
+    virtual void GetInlinesInSrc         (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
     virtual void GetCustomBuildInfo      (list<SCustomBuildInfo>* info) const;
 
     virtual void GetResourceFiles        (const SConfigInfo& config, 
@@ -207,6 +235,8 @@ private:
     CMsvcProjectMakefile(void);
     CMsvcProjectMakefile(const CMsvcProjectMakefile&);
     CMsvcProjectMakefile& operator= (const CMsvcProjectMakefile&);
+    void x_GetHeaders(const SConfigInfo& config, const string& entry,
+                      list<string>* files) const;
 };
 
 
@@ -274,6 +304,18 @@ public:
     virtual void GetAdditionalIncludeDirs(const SConfigInfo& config, 
                                           list<string>*      files) const;
 
+    virtual void GetHeadersInInclude     (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
+    virtual void GetHeadersInSrc         (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
+    virtual void GetInlinesInInclude     (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
+    virtual void GetInlinesInSrc         (const SConfigInfo& config, 
+                                          list<string>*      files) const;
+
     virtual void GetCustomBuildInfo      (list<SCustomBuildInfo>* info) const;
 
     virtual void GetResourceFiles        (const SConfigInfo& config, 
@@ -335,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/10/12 13:27:02  gouriano
+ * Added possibility to specify which headers to include into project
+ *
  * Revision 1.11  2004/08/04 13:24:58  gouriano
  * Added processing of EXPENDABLE projects
  *

@@ -38,7 +38,6 @@ BEGIN_NCBI_SCOPE
 
 static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
-                               const list<string>&  file_exts,
                                list<string>*        rel_pathes);
 
 
@@ -216,18 +215,7 @@ CMsvcPrjFilesCollector::CollectHeaders(const CProjItem&              project,
                                        list<string>*                 rel_pathes)
 {
     rel_pathes->clear();
-
-    // .h and .hpp files may be in include or source dirs:
-    list<string> abs_dirs(context.IncludeDirsAbs());
-    copy(context.SourcesDirsAbs().begin(), 
-         context.SourcesDirsAbs().end(), 
-         back_inserter(abs_dirs));
-
-    //collect *.h and *.hpp files
-    list<string> exts;
-    exts.push_back(".h");
-    exts.push_back(".hpp");
-    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, rel_pathes);
+    s_CollectRelPathes(context.ProjectDir(), context.IncludeDirsAbs(), rel_pathes);
 }
 
 
@@ -238,16 +226,7 @@ CMsvcPrjFilesCollector::CollectInlines(const CProjItem&              project,
                                        list<string>*                 rel_pathes)
 {
     rel_pathes->clear();
-
-    // .inl files may be in include or source dirs:
-    list<string> abs_dirs(context.IncludeDirsAbs());
-    copy(context.SourcesDirsAbs().begin(), 
-         context.SourcesDirsAbs().end(), 
-         back_inserter(abs_dirs));
-
-    //collect *.inl files
-    list<string> exts(1, ".inl");
-    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, rel_pathes);
+    s_CollectRelPathes(context.ProjectDir(), context.InlineDirsAbs(), rel_pathes);
 }
 
 
@@ -305,24 +284,40 @@ CMsvcPrjFilesCollector::CollectResources
 // Collect all files from specified dirs having specified exts
 static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
-                               const list<string>&  file_exts,
                                list<string>*        rel_pathes)
 {
     rel_pathes->clear();
 
     list<string> pathes;
-    ITERATE(list<string>, p, file_exts) {
-        const string& ext = *p;
-        ITERATE(list<string>, n, abs_dirs) {
-            CDir dir(*n);
-            if ( !dir.Exists() )
+    ITERATE(list<string>, n, abs_dirs) {
+        string value(*n), pdir, base, ext;
+        if (value.empty()) {
+            continue;
+        }
+        
+        SIZE_TYPE negation_pos = value.find('!');
+        bool remove = negation_pos != NPOS;
+        if (remove) {
+            value = NStr::Replace(value,"!",kEmptyStr);
+            if (value.empty() ||
+                value[value.length()-1] == CDirEntry::GetPathSeparator()) {
                 continue;
-            CDir::TEntries contents = dir.GetEntries("*" + ext);
-            ITERATE(CDir::TEntries, i, contents) {
-                if ( (*i)->IsFile() ) {
-                    string path  = (*i)->GetPath();
-                    if ( NStr::EndsWith(path, ext, NStr::eNocase) )
+            }
+        }
+        CDirEntry::SplitPath(value, &pdir, &base, &ext);
+        CDir dir(pdir);
+        if ( !dir.Exists() )
+            continue;
+        CDir::TEntries contents = dir.GetEntries(base + ext);
+        ITERATE(CDir::TEntries, i, contents) {
+            if ( (*i)->IsFile() ) {
+                string path  = (*i)->GetPath();
+                if ( NStr::EndsWith(path, ext, NStr::eNocase) ) {
+                    if (remove) {
+                        pathes.remove(path);
+                    } else {
                         pathes.push_back(path);
+                    }
                 }
             }
         }
@@ -338,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/12 13:27:35  gouriano
+ * Added possibility to specify which headers to include into project
+ *
  * Revision 1.6  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *

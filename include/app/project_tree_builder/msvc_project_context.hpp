@@ -102,6 +102,11 @@ public:
         return m_IncludeDirsAbs;
     }
 
+    const list<string>& InlineDirsAbs(void) const
+    {
+        return m_InlineDirsAbs;
+    }
+
 
     const CMsvcCombinedProjectMakefile& GetMsvcProjectMakefile(void) const;
 
@@ -148,6 +153,7 @@ private:
 
     list<string> m_SourcesDirsAbs;
     list<string> m_IncludeDirsAbs;
+    list<string> m_InlineDirsAbs;
 
     list<string> m_ProjectIncludeDirs;
     list<string> m_ProjectLibs;
@@ -517,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/10/12 13:27:02  gouriano
+ * Added possibility to specify which headers to include into project
+ *
  * Revision 1.18  2004/08/04 13:24:58  gouriano
  * Added processing of EXPENDABLE projects
  *

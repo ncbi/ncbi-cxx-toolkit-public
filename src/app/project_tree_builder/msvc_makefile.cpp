@@ -278,6 +278,48 @@ void CMsvcProjectMakefile::GetAdditionalIncludeDirs(const SConfigInfo& config,
     NStr::Split(dirs_string, LIST_SEPARATOR, *dirs);
 }
 
+void CMsvcProjectMakefile::GetHeadersInInclude(const SConfigInfo& config, 
+                                               list<string>*  files) const
+{
+    x_GetHeaders(config, "HeadersInInclude", files);
+}
+
+void CMsvcProjectMakefile::GetHeadersInSrc(const SConfigInfo& config, 
+                                           list<string>*  files) const
+{
+    x_GetHeaders(config, "HeadersInSrc", files);
+}
+
+void CMsvcProjectMakefile::x_GetHeaders(
+    const SConfigInfo& config, const string& entry, list<string>* files) const
+{
+    string dirs_string =  GetOpt(m_MakeFile, "AddToProject", entry, config);
+    string separator;
+    separator += CDirEntry::GetPathSeparator();
+    dirs_string = NStr::Replace(dirs_string,"/",separator);
+    dirs_string = NStr::Replace(dirs_string,"\\",separator);
+    
+    files->clear();
+    NStr::Split(dirs_string, LIST_SEPARATOR, *files);
+    if (files->empty()) {
+        files->push_back("*.h");
+        files->push_back("*.hpp");
+    }
+}
+
+void CMsvcProjectMakefile::GetInlinesInInclude(const SConfigInfo& , 
+                                               list<string>*  files) const
+{
+    files->clear();
+    files->push_back("*.inl");
+}
+
+void CMsvcProjectMakefile::GetInlinesInSrc(const SConfigInfo& , 
+                                           list<string>*  files) const
+{
+    files->clear();
+    files->push_back("*.inl");
+}
 
 void 
 CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
@@ -498,6 +540,10 @@ IMPLEMENT_COMBINED_MAKEFILE_VALUES   (GetAdditionalLIB)
 IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetExcludedSourceFiles)
 IMPLEMENT_COMBINED_MAKEFILE_VALUES   (GetExcludedLIB)
 IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetAdditionalIncludeDirs)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetHeadersInInclude)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetHeadersInSrc)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetInlinesInInclude)
+IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetInlinesInSrc)
 IMPLEMENT_COMBINED_MAKEFILE_FILESLIST(GetResourceFiles)
 
 
@@ -564,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/10/12 13:27:35  gouriano
+ * Added possibility to specify which headers to include into project
+ *
  * Revision 1.16  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *
