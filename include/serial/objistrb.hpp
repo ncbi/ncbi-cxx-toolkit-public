@@ -1,5 +1,5 @@
-#ifndef SERIAL__HPP
-#define SERIAL__HPP
+#ifndef OBJISTRB__HPP
+#define OBJISTRB__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,61 +29,55 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Serialization classes.
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/05/19 19:56:28  vasilche
+* Revision 1.1  1999/05/19 19:56:25  vasilche
 * Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:11:58  vasilche
-* Beginning of serialization library.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/stltypes.hpp>
+#include <serial/objistr.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectIStream;
-class CObjectOStream;
-
-template<class CLASS>
-inline
-CObjectIStream& Read(CObjectIStream& in, CLASS& object)
+class CObjectIStreamBinary : public CObjectIStream
 {
-    in.Read(&object, GetTypeInfo(object));
-    return in;
-}
+public:
+    CObjectIStream(CNcbiIstream* in);
 
-template<class CLASS>
-inline
-CObjectOStream& Write(CObjectOStream& out, const CLASS& object)
-{
-    out.Write(&object, GetTypeInfo(object));
-    return out;
-}
+    virtual void ReadStd(char& data);
+    virtual void ReadStd(unsigned char& data);
+    virtual void ReadStd(signed char& data);
+    virtual void ReadStd(short& data);
+    virtual void ReadStd(unsigned short& data);
+    virtual void ReadStd(int& data);
+    virtual void ReadStd(unsigned int& data);
+    virtual void ReadStd(long& data);
+    virtual void ReadStd(unsigned long& data);
+    virtual void ReadStd(float& data);
+    virtual void ReadStd(double& data);
+    virtual void ReadStd(string& data);
 
-template<class CLASS>
-inline
-CObjectOStream& operator<<(CObjectOStream& out, const CLASS& object)
-{
-    return Write(out, object);
-}
+    virtual TTypeInfo ReadTypeInfo(void);
 
-template<class CLASS>
-inline
-CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
-{
-    return Read(in, object);
-}
+protected:
+    unsigned char ReadByte(void);
+    int ReadInt(void);
+    unsigned ReadUInd(void);
 
-#include <serial/serial.inl>
+private:
+    vector<string> m_Strings;
+
+    CNcbiIstream* m_In;
+};
+
+//#include <objistrb.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* SERIAL__HPP */
+#endif  /* OBJISTRB__HPP */

@@ -1,6 +1,3 @@
-#ifndef SERIAL__HPP
-#define SERIAL__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -29,61 +26,36 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Serialization classes.
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/05/19 19:56:28  vasilche
+* Revision 1.1  1999/05/19 19:56:56  vasilche
 * Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:11:58  vasilche
-* Beginning of serialization library.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
+#include <serial/objstrb.hpp>
 #include <serial/stdtypes.hpp>
-#include <serial/stltypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectIStream;
-class CObjectOStream;
-
-template<class CLASS>
-inline
-CObjectIStream& Read(CObjectIStream& in, CLASS& object)
+const CTypeInfo::TTypeInfo CObjectStreamBinaryDefs::sm_StdTypes[] =
 {
-    in.Read(&object, GetTypeInfo(object));
-    return in;
-}
-
-template<class CLASS>
-inline
-CObjectOStream& Write(CObjectOStream& out, const CLASS& object)
-{
-    out.Write(&object, GetTypeInfo(object));
-    return out;
-}
-
-template<class CLASS>
-inline
-CObjectOStream& operator<<(CObjectOStream& out, const CLASS& object)
-{
-    return Write(out, object);
-}
-
-template<class CLASS>
-inline
-CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
-{
-    return Read(in, object);
-}
-
-#include <serial/serial.inl>
+    CStdTypeInfo<char>::sm_TypeInfo,
+    CStdTypeInfo<unsigned char>::sm_TypeInfo,
+    CStdTypeInfo<signed char>::sm_TypeInfo,
+    CStdTypeInfo<short>::sm_TypeInfo,
+    CStdTypeInfo<unsigned short>::sm_TypeInfo,
+    CStdTypeInfo<int>::sm_TypeInfo,
+    CStdTypeInfo<unsigned int>::sm_TypeInfo,
+    CStdTypeInfo<long>::sm_TypeInfo,
+    CStdTypeInfo<unsigned long>::sm_TypeInfo,
+    CStdTypeInfo<float>::sm_TypeInfo,
+    CStdTypeInfo<double>::sm_TypeInfo,
+    CStdTypeInfo<string>::sm_TypeInfo
+};
 
 END_NCBI_SCOPE
-
-#endif  /* SERIAL__HPP */

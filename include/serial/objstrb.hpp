@@ -1,5 +1,5 @@
-#ifndef SERIAL__HPP
-#define SERIAL__HPP
+#ifndef OBJSTRB__HPP
+#define OBJSTRB__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,61 +29,45 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Serialization classes.
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/05/19 19:56:28  vasilche
+* Revision 1.1  1999/05/19 19:56:27  vasilche
 * Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:11:58  vasilche
-* Beginning of serialization library.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/stltypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectIStream;
-class CObjectOStream;
-
-template<class CLASS>
-inline
-CObjectIStream& Read(CObjectIStream& in, CLASS& object)
+class CObjectStreamBinaryDefs
 {
-    in.Read(&object, GetTypeInfo(object));
-    return in;
-}
+    enum {
+        eNull = 0,
 
-template<class CLASS>
-inline
-CObjectOStream& Write(CObjectOStream& out, const CLASS& object)
-{
-    out.Write(&object, GetTypeInfo(object));
-    return out;
-}
+        eStd_char = 0xC0,
+        eStd_unumber,
+        eStd_snumber,
+        eStd_float,
+        eStd_double,
+        eStd_string,
 
-template<class CLASS>
-inline
-CObjectOStream& operator<<(CObjectOStream& out, const CLASS& object)
-{
-    return Write(out, object);
-}
+        eClass = 0xE0,
+        eClassDefinition,
+        eTemplate,
+        eClassReference,
+        eObjectReference,
+        eMember,
+    };
 
-template<class CLASS>
-inline
-CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
-{
-    return Read(in, object);
-}
+    static const CTypeInfo::TTypeInfo sm_StdTypes[eStd_last - eStd_first + 1];
+};
 
-#include <serial/serial.inl>
+//#include <objstrb.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* SERIAL__HPP */
+#endif  /* OBJSTRB__HPP */

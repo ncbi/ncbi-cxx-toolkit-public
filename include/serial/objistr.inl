@@ -1,5 +1,5 @@
-#ifndef SERIAL__HPP
-#define SERIAL__HPP
+#if defined(OBJISTR__HPP)  &&  !defined(OBJISTR__INL)
+#define OBJISTR__INL
 
 /*  $Id$
 * ===========================================================================
@@ -29,61 +29,16 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Serialization classes.
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/05/19 19:56:28  vasilche
+* Revision 1.1  1999/05/19 19:56:24  vasilche
 * Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:11:58  vasilche
-* Beginning of serialization library.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/stltypes.hpp>
 
-BEGIN_NCBI_SCOPE
 
-class CObjectIStream;
-class CObjectOStream;
-
-template<class CLASS>
-inline
-CObjectIStream& Read(CObjectIStream& in, CLASS& object)
-{
-    in.Read(&object, GetTypeInfo(object));
-    return in;
-}
-
-template<class CLASS>
-inline
-CObjectOStream& Write(CObjectOStream& out, const CLASS& object)
-{
-    out.Write(&object, GetTypeInfo(object));
-    return out;
-}
-
-template<class CLASS>
-inline
-CObjectOStream& operator<<(CObjectOStream& out, const CLASS& object)
-{
-    return Write(out, object);
-}
-
-template<class CLASS>
-inline
-CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
-{
-    return Read(in, object);
-}
-
-#include <serial/serial.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* SERIAL__HPP */
+#endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */

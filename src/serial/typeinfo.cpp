@@ -26,68 +26,106 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Serialization classes.
+*   !!! PUT YOUR DESCRIPTION HERE !!!
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/05/19 19:56:57  vasilche
+* Revision 1.1  1999/05/19 19:56:59  vasilche
 * Commit just in case.
-*
-* Revision 1.1  1999/03/25 19:12:04  vasilche
-* Beginning of serialization library.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/serial.hpp>
+#include <serial/typeinfo.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
+CTypeInfo::CTypeInfo(const string& name)
+    : m_Name(name)
+{
+    if ( !sm_Types.insert(TTypes::value_type(name, this)).second )
+        throw runtime_error("duplicated types: " + name);
+}
 
 CTypeInfo::~CTypeInfo(void)
 {
+    sm_Types.erase(m_Name);
 }
 
-const CTypeInfo& CTypeInfo::GetPointerTypeInfo(void) const
+CTypeInfo::TTypes CTypeInfo::sm_Types;
+
+CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfo(const string& name)
+{
+    TTypes::iterator i = sm_Types.find(name);
+    if ( i == sm_Types.end() )
+        throw runtime_error("type not found: "+name);
+    return i->second;
+}
+
+CTypeInfo::TTypeInfo CTypeInfo::GetPointerTypeInfo(void) const
 {
     CTypeInfo* info = m_PointerTypeInfo.get();
     if ( !info ) {
-        m_PointerTypeInfo.reset(info = new CPointerTypeInfo(*this));
+        m_PointerTypeInfo.reset(info = new CPointerTypeInfo(this));
     }
-    return *info;
+    return info;
 }
 
-
-
-void* CPointerTypeInfo::Create(void) const
+void CTypeInfo::AddObject(CObjectList& list,
+                          TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    return new void*;
+    if ( list.Add(object, typeInfo) ) {
+        // new object
+        typeInfo->CollectMembers(list, object);
+    }
 }
 
-void CPointerTypeInfo::Read(CArchiver& archiver, TObjectPtr object) const
+void CTypeInfo::CollectMembers(CObjectList& , TConstObjectPtr ) const
 {
-    Get(object) = m_ObjectTypeInfo.Create();
-    m_ObjectTypeInfo.Read(archiver, Get(object));
+    // there is no members by default
 }
 
-void CPointerTypeInfo::Write(CArchiver& archiver, TConstObjectPtr object) const
+size_t CPointerTypeInfo::GetSize(void) const
 {
-    if ( Get(object) == 0 )
-        throw runtime_error("cannot write null pointer");
-
-    m_ObjectTypeInfo.Write(archiver, Get(object));
+    return sizeof(void*);
 }
 
-bool CPointerTypeInfo::HasDefaultValue(TConstObjectPtr object) const
+CTypeInfo::TObjectPtr CPointerTypeInfo::Create(void) const
 {
-    return Get(object) == 0;
+    return new(void*);
 }
 
+void CPointerTypeInfo::CollectMembers(CObjectList& list,
+                                      TConstObjectPtr object) const
+{
+    AddObject(list, *static_cast<TConstObjectPtr*>(object),
+              GetRealDataTypeInfo(object));
+}
+
+void CPointerTypeInfo::WriteData(CObjectOStream& out,
+                                 TConstObjectPtr object) const
+{
+    out.WriteObject(*static_cast<TConstObjectPtr*>(object),
+                    GetRealDataTypeInfo(object));
+}
+
+void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+    *static_cast<TConstObjectPtr*>(object) = in.ReadObject(GetDataTypeInfo());
+}
+
+CTypeInfo::TTypeInfo CPointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr ) const
+{
+    return GetDataTypeInfo();
+}
+
+/*
 
 
-CClassInfo::TTypeByType CClassInfo::sm_Types;
+
 
 CClassInfo::CClassInfo(const type_info& info, const CClassInfo* parent,
                        void* (*creator)())
@@ -115,7 +153,6 @@ void CClassInfo::Write(CArchiver& archiver, TConstObjectPtr object) const
 {
     archiver.WriteClass(object, *this);
 }
-
-
+*/
 
 END_NCBI_SCOPE

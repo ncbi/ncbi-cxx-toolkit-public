@@ -3,5 +3,5 @@
 # Build library "XSER"
 #################################
 
-LIBOBJ = serial
+LIBOBJ = typeinfo stdtypes classinfo stltypes objistr objostr objistrb
 LIB    = xser
