@@ -36,7 +36,7 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 
-#include <BlastOption.hpp>
+#include <algo/blast/api/blast_option.hpp>
 
 USING_SCOPE(objects);
 
@@ -219,6 +219,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/08 19:42:14  dicuccio
+* Compilation fixes: #include file relocation; fixed use of 'list' and 'vector'
+* as variable names
+*
 * Revision 1.6  2003/08/01 17:40:56  dondosha
 * Use renamed functions and structures from local blastkar.h
 *

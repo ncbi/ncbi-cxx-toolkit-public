@@ -33,8 +33,8 @@
 #ifndef BLAST_OPTION__HPP
 #define BLAST_OPTION__HPP
 
-#include <BlastAux.hpp>
-#include <BlastException.hpp>
+#include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -671,7 +671,7 @@ CBlastOption::SetTotalHspLimit(int l)
 inline bool
 CBlastOption::GetCullingMode() const
 {
-    return m_HitSaveOpts->perform_culling;
+    return m_HitSaveOpts->perform_culling ? true : false;
 }
 
 inline void
@@ -757,7 +757,7 @@ CBlastOption::SetPercentIdentity(double p)
 inline bool
 CBlastOption::GetSumStatisticsMode() const
 {
-    return m_HitSaveOpts->do_sum_stats;
+    return m_HitSaveOpts->do_sum_stats ? true : false;
 }
 
 inline void
@@ -805,7 +805,7 @@ CBlastOption::SetLongestIntronLength(int l)
 inline bool
 CBlastOption::GetGappedMode() const
 {
-    return m_HitSaveOpts->is_gapped;
+    return m_HitSaveOpts->is_gapped ? true : false;
 }
 
 inline void
@@ -818,7 +818,7 @@ CBlastOption::SetGappedMode(bool m)
 inline bool
 CBlastOption::GetNeighboringMode() const
 {
-    return m_HitSaveOpts->is_neighboring;
+    return m_HitSaveOpts->is_neighboring ? true : false;
 }
 
 inline void
@@ -903,7 +903,7 @@ CBlastOption::SetDecline2AlignPenalty(int p)
 inline bool 
 CBlastOption::GetOutOfFrameMode() const
 {
-    return m_ScoringOpts->is_ooframe;
+    return m_ScoringOpts->is_ooframe ? true : false;
 }
 
 inline void 
@@ -957,7 +957,7 @@ CBlastOption::SetEffectiveSearchSpace(Int8 eff)
 inline bool 
 CBlastOption::GetUseRealDbSize() const
 {
-    return m_EffLenOpts->use_real_db_size;
+    return m_EffLenOpts->use_real_db_size ? true : false;
 }
 
 inline void 
@@ -999,6 +999,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/08 19:42:14  dicuccio
+* Compilation fixes: #include file relocation; fixed use of 'list' and 'vector'
+* as variable names
+*
 * Revision 1.9  2003/08/01 22:34:11  camacho
 * Added accessors/mutators/defaults for matrix_path
 *
