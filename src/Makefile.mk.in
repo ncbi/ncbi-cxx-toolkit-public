@@ -222,4 +222,4 @@ LIBIMR          = @LIBIMR@
 #################################
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
-SEQ_LIBS = seq seqalign seqblock seqfeat seqloc seqres seqcode
+SEQ_LIBS = seqfeat seq seqalign seqblock seqfeat seq seqloc seqres seqcode
