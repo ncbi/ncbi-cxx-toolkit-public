@@ -15,6 +15,7 @@ USAGE: Go to the root c++ directory and run:
   build_dir           - name of the target build directory(e.g. just ".")
   --without-debug     - to build the release versions of libs and apps
   --without-fastcgi   - to explicitely prohibit the use of Fast-CGI library
+  --without-internal  - do not build internal projects
 EOF
 
 exit 1
@@ -59,4 +60,4 @@ FASTCGI_LIBS="-lfcgi5.0"
 KeepStateTarget=".KEEP_STATE:"
 
 if test $# -gt 0; then shift ; fi
-sh configure --exec_prefix=${USR_BUILD_DIR:=$DEF_BUILD_DIR} $*
+sh configure --exec_prefix=${USR_BUILD_DIR:=$DEF_BUILD_DIR} --with-internal $*
