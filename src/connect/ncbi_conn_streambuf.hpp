@@ -51,9 +51,9 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
-#if defined(NCBI_COMPILER_GCC)      || \
-    defined(NCBI_COMPILER_WORKSHOP) || \
-    defined(NCBI_COMPILER_MIPSPRO)
+#if 1/* defined(NCBI_COMPILER_GCC)      || \
+        defined(NCBI_COMPILER_WORKSHOP) || \
+        defined(NCBI_COMPILER_MIPSPRO) */
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
 #endif
     virtual streamsize  showmanyc(void);
@@ -84,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/03/28 03:30:36  lavr
+ * Define CConn_Streambuf::xsgetn() unconditionally of compiler
+ *
  * Revision 6.13  2002/06/12 19:20:50  lavr
  * Guard macro name standardized
  *

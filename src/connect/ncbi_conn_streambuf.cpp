@@ -150,9 +150,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-#if defined(NCBI_COMPILER_GCC)      || \
-    defined(NCBI_COMPILER_WORKSHOP) || \
-    defined(NCBI_COMPILER_MIPSPRO)
+#if 1/*defined(NCBI_COMPILER_GCC)      || \
+       defined(NCBI_COMPILER_WORKSHOP) || \
+       defined(NCBI_COMPILER_MIPSPRO)*/
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     static const STimeout s_ZeroTmo = {0, 0};
@@ -193,19 +193,19 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     CONN_Read(m_Conn, x_buf, x_read*sizeof(CT_CHAR_TYPE),
               &x_read, eIO_ReadPlain);
     if (x_read /= sizeof(CT_CHAR_TYPE)) {
-        if (x_buf == buf) {
-            // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-            *m_ReadBuf = buf[x_read - 1];
-            setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1);
-        } else {
+        // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
+        if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
             if (x_read > n)
                 x_read = n;
             memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
+        } else {
+            size_t xx_read = x_read > m_BufSize ? m_BufSize : x_read;
+            memcpy(m_ReadBuf, buf + x_read - xx_read, xx_read);
+            setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
     }
-
     return (streamsize)(n_read + x_read);
 }
 #endif
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/03/28 03:30:36  lavr
+ * Define CConn_Streambuf::xsgetn() unconditionally of compiler
+ *
  * Revision 6.22  2002/12/19 17:24:08  lavr
  * Take advantage of new CConnException
  *
