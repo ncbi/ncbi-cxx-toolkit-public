@@ -70,6 +70,12 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
                        const char *cmdname, const char *const *argv, 
                        const char *const *envp = 0)
 {
+    // Empty environment for Spawn*E
+    const char* empty_env[] = { 0 };
+    if ( !envp ) {
+        envp = empty_env;
+    }
+
     // Replace the current process image with a new process image.
     if (mode == CExec::eOverlay) {
         switch (func) {
@@ -95,17 +101,21 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
             fclose(stdin);
             fclose(stdout);
             fclose(stderr);
+            setsid();
         }
         int status =-1;
         switch (func) {
         case eV:
             status = execv(cmdname, const_cast<char**>(argv));
+            break;
         case eVP:
             status = execvp(cmdname, const_cast<char**>(argv));
+            break;
         case eVE:
         case eVPE:
             status = execve(cmdname, const_cast<char**>(argv),
                             const_cast<char**>(envp));
+            break;
         }
         _exit(status);
     }
@@ -342,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/08/15 18:26:29  ivanov
+ * Changed s_SpawnUnix() -- empty environment, setsid() for eDetach mode
+ *
  * Revision 1.9  2002/07/17 15:12:34  ivanov
  * Changed method of obtaining parameters in the SpawnLE/LPE functions
  * under MS Windows
