@@ -107,7 +107,7 @@ enum EBlastOptIdx {
     eBlastOpt_EffectiveSearchSpace,
     eBlastOpt_UseRealDbSize,
     eBlastOpt_DbGeneticCode,
-    eBlastOpt_PHIPattern,
+    eBlastOpt_PHIPattern
 };
 
 
@@ -2414,6 +2414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/01/17 00:52:18  ucko
+* Remove excess comma at the end of EBlastOptIdx (problematic on WorkShop)
+*
 * Revision 1.39  2004/01/17 00:15:06  ucko
 * Substitute Int8 for non-portable "long long"
 *
