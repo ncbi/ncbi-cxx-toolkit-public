@@ -43,9 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-#ifdef HAVE_OBJECTS
-using namespace ncbi::objects;
-#endif //HAVE_OBJECTS
+USING_SCOPE(objects);
 
 /// CSeqDBVolSet
 /// 
