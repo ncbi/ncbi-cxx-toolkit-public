@@ -53,13 +53,11 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_NumOIDs      (0),
       m_TotalLength  (0),
       m_VolumeLength (0),
-      m_SeqType      (prot_nucl)
+      m_SeqType      (prot_nucl),
+      m_OidListSetup (false)
 {
     m_Aliases.SetMasks(m_VolSet);
-    
-    if ( m_VolSet.HasFilter() ) {
-        m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet) );
-    }
+    m_OidListSetup = ! m_VolSet.HasFilter();
     
     if ((oid_begin == 0) && (oid_end == 0)) {
         m_RestrictEnd = m_VolSet.GetNumOIDs();
@@ -108,7 +106,26 @@ CSeqDBImpl::~CSeqDBImpl(void)
     }
 }
 
+void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
+{
+    if (! m_OidListSetup) {
+        m_Atlas.Lock(locked);
+        
+        if (m_OIDList.Empty()) {
+            m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet, locked) );
+        }
+        
+        m_OidListSetup = true;
+    }
+}
+
 bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    return x_CheckOrFindOID(next_oid, locked);
+}
+
+bool CSeqDBImpl::x_CheckOrFindOID(Uint4 & next_oid, CSeqDBLockHold & locked) const
 {
     bool success = true;
     
@@ -118,6 +135,10 @@ bool CSeqDBImpl::CheckOrFindOID(Uint4 & next_oid) const
     
     if (next_oid >= m_RestrictEnd) {
         success = false;
+    }
+    
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
     }
     
     if (success && m_OIDList.NotEmpty()) {
@@ -162,6 +183,11 @@ CSeqDBImpl::GetNextOIDChunk(TOID         & begin_chunk, // out
     }
     
     // Case 2: Return a range
+    
+    if (! m_OidListSetup) {
+        CSeqDBLockHold locked(m_Atlas);
+        x_GetOidList(locked);
+    }
     
     if (m_OIDList.Empty()) {
         begin_chunk = * state_obj;
@@ -249,6 +275,10 @@ CSeqDBImpl::GetBioseq(Uint4 oid, Uint4 target_gi) const
 {
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
+    
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
     
     bool have_oidlist = m_OIDList.NotEmpty();
     Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
@@ -545,7 +575,7 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
             
             // Filter out any oids not in the virtual oid bitmaps.
             
-            if (CheckOrFindOID(oid2) && (oid1 == oid2)) {
+            if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
                 oids.push_back(oid1);
             }
         }
@@ -587,7 +617,7 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<Uint4> & oids) con
             
             // Filter out any oids not in the virtual oid bitmaps.
             
-            if (CheckOrFindOID(oid2) && (oid1 == oid2)) {
+            if (x_CheckOrFindOID(oid2, locked) && (oid1 == oid2)) {
                 oids.push_back(oid1);
             }
         }

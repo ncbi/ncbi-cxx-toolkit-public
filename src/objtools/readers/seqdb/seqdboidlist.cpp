@@ -38,8 +38,9 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas  & atlas,
-                             CSeqDBVolSet & volset)
+CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
+                             const CSeqDBVolSet & volset,
+                             CSeqDBLockHold     & locked)
     : m_Atlas   (atlas),
       m_Lease   (atlas),
       m_NumOIDs (0),
@@ -47,7 +48,6 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas  & atlas,
       m_BitEnd  (0),
       m_BitOwner(false)
 {
-    CSeqDBLockHold locked(m_Atlas);
     _ASSERT( volset.HasFilter() );
     
     if (volset.HasSimpleMask()) {
@@ -83,8 +83,8 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
 // The general rule I am following in these methods is to use byte
 // computations except during actual looping.
 
-void CSeqDBOIDList::x_Setup(CSeqDBVolSet   & volset,
-                            CSeqDBLockHold & locked)
+void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
+                            CSeqDBLockHold     & locked)
 {
     _ASSERT(volset.HasFilter() && (! volset.HasSimpleMask()));
     

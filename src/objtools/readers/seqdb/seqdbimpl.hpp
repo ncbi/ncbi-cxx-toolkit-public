@@ -193,12 +193,33 @@ private:
     
     Uint8 x_GetVolumeLength() const;
     
+    /// Build the OID list
+    ///
+    /// OID list setup is done once, but not until needed.
+    /// 
+    /// @param locked
+    ///   The lock hold object for this thread.
+    void x_GetOidList(CSeqDBLockHold & locked) const;
+    
+    /// Get the next included oid
+    ///
+    /// This method checks if the OID list has the specified OID, and
+    /// if not, finds the next one it does have, if any.
+    /// 
+    /// @param next_oid
+    ///   The next oid to check and to return to the user.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    bool x_CheckOrFindOID(Uint4 & next_oid, CSeqDBLockHold & locked) const;
+    
     CSeqDBImplFlush       m_FlushCB;
     mutable CSeqDBAtlas   m_Atlas;
     string                m_DBNames;
     CSeqDBAliasFile       m_Aliases;
     CSeqDBVolSet          m_VolSet;
-    CRef<CSeqDBOIDList>   m_OIDList;
+    
+    /// The list of included OIDs
+    mutable CRef<CSeqDBOIDList> m_OIDList;
     CRef<CSeqDBTaxInfo>   m_TaxInfo;
     Uint4                 m_RestrictBegin;
     Uint4                 m_RestrictEnd;
@@ -210,6 +231,9 @@ private:
     Uint8                 m_TotalLength;
     Uint8                 m_VolumeLength;
     char                  m_SeqType;
+    
+    /// True if OID list setup is done.
+    mutable bool          m_OidListSetup;
 };
 
 END_NCBI_SCOPE

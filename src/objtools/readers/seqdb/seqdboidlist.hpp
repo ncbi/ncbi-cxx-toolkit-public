@@ -76,7 +76,9 @@ public:
     ///   The CSeqDBAtlas object.
     /// @param volumes
     ///   The set of database volumes.
-    CSeqDBOIDList(CSeqDBAtlas & atlas, CSeqDBVolSet & volumes);
+    CSeqDBOIDList(CSeqDBAtlas        & atlas,
+                  const CSeqDBVolSet & volumes,
+                  CSeqDBLockHold     & locked);
     
     /// Destructor
     /// 
@@ -190,8 +192,8 @@ private:
     ///   The set of volumes to build an oid mask for.
     /// @param locked
     ///   The lock hold object for this thread.
-    void x_Setup(CSeqDBVolSet   & volset,
-                 CSeqDBLockHold & locked);
+    void x_Setup(const CSeqDBVolSet & volset,
+                 CSeqDBLockHold     & locked);
     
     /// Copy data from an OID mask into the bit array.
     /// 
