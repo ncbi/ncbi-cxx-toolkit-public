@@ -709,6 +709,7 @@ private:
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
+    void ValidateOperon(const CSeq_feat& feat);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat);
@@ -894,6 +895,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/10/24 17:56:07  shomrat
+* added ValidateOperon
+*
 * Revision 1.44  2003/10/20 18:30:43  shomrat
 * added x_IsArtificial
 *
