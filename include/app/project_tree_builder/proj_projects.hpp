@@ -127,7 +127,8 @@ private:
 
 
     static bool CmpLstElementWithPath(const SLstElement& elt, 
-                                      const TPath&       path);
+                                      const TPath&       path,
+                                      bool* weak);
     // Prohibited to:
     CProjectsLstFileFilter(void);
     CProjectsLstFileFilter(const CProjectsLstFileFilter&);
@@ -141,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/14 17:27:28  gouriano
+ * Corrected ProjectsLstFileFilter
+ *
  * Revision 1.8  2004/09/13 13:49:36  gouriano
  * Make it to rely more on UNIX makefiles
  *

@@ -115,27 +115,35 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
 
 
 bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt, 
-                                                   const TPath&       path)
+                                                   const TPath&       path,
+                                                   bool* weak)
 {
     if (path.size() < elt.m_Path.size())
-        return false;
+        if (!weak) {
+            return false;
+        }
 
     if ( !elt.m_Recursive  && path.size() != elt.m_Path.size())
-        return false;
+        if (!weak) {
+            return false;
+        }
 
     TPath::const_iterator i = path.begin();
-    ITERATE(TPath, p, elt.m_Path) {
+    TPath::const_iterator p = elt.m_Path.begin();
+    for (; i != path.end() && p != elt.m_Path.end(); ++i, ++p) {
         const string& elt_i  = *p;
         const string& path_i = *i;
-        if (NStr::CompareNocase(elt_i, path_i) != 0)
+        if (NStr::CompareNocase(elt_i, path_i) != 0) {
+            if (weak) {weak=false;}
             return false;
-        ++i;
+        }
     }
-    return true;
+    if (weak) {*weak = (i == path.end());}
+    return p == elt.m_Path.end();
 }
 
 
-bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool*) const
+bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* weak) const
 {
     TPath project_path;
     CProjectTreeFolders::CreatePath(m_RootSrcDir, 
@@ -145,7 +153,7 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool*)
     bool include_ok = false;
     ITERATE(TLstFileContents, p, m_LstFileContentsInclude) {
         const SLstElement& elt = *p;
-        if ( CmpLstElementWithPath(elt, project_path) ) {
+        if ( CmpLstElementWithPath(elt, project_path, weak) ) {
             include_ok =  true;
             break;
         }
@@ -155,7 +163,7 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool*)
 
     ITERATE(TLstFileContents, p, m_LstFileContentsExclude) {
         const SLstElement& elt = *p;
-        if ( CmpLstElementWithPath(elt, project_path) ) {
+        if ( CmpLstElementWithPath(elt, project_path, weak) ) {
             return false;
         }
     }
@@ -169,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/14 17:28:07  gouriano
+ * Corrected ProjectsLstFileFilter
+ *
  * Revision 1.8  2004/09/13 13:49:08  gouriano
  * Make it to rely more on UNIX makefiles
  *
