@@ -59,8 +59,10 @@ class CSeq_id_Which_Tree;
 class NCBI_SEQ_EXPORT CSeq_id_Info : public CObject
 {
 public:
-    explicit CSeq_id_Info(CSeq_id::E_Choice type);
-    explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
+    explicit CSeq_id_Info(CSeq_id::E_Choice type,
+                          CSeq_id_Mapper* mapper);
+    explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
+                          CSeq_id_Mapper* mapper);
     ~CSeq_id_Info(void);
 
     CConstRef<CSeq_id> GetSeqId(void) const
@@ -117,6 +119,11 @@ public:
     // Reset the handle (remove seq-id reference)
     void Reset(void);
 
+    // True if *this matches to h.
+    // This mean that *this is either the same as h,
+    // or more generic version of h.
+    bool MatchesTo(const CSeq_id_Handle& h) const;
+
     // True if "this" is a better bioseq than "h".
     bool IsBetter(const CSeq_id_Handle& h) const;
 
@@ -128,6 +135,8 @@ public:
     CConstRef<CSeq_id> GetSeqId(void) const;
     CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
 
+    CSeq_id_Mapper& GetMapper(void) const;
+
     static void DumpRegister(const char* msg);
 
 private:
@@ -135,12 +144,6 @@ private:
     void x_Deregister(void);
     
     friend class CSeq_id_Mapper;
-
-    // Comparison methods
-    // True if handles are strictly equal
-    bool x_Equal(const CSeq_id_Handle& handle) const;
-    // True if "this" may be resolved to "handle"
-    bool x_Match(const CSeq_id_Handle& handle) const;
 
     // Seq-id info
     CConstRef<CSeq_id_Info>    m_Info;
@@ -320,6 +323,13 @@ int CSeq_id_Handle::GetGi(void) const
 
 
 inline
+CSeq_id_Mapper& CSeq_id_Handle::GetMapper(void) const
+{
+    return m_Info->GetMapper();
+}
+
+
+inline
 unsigned CSeq_id_Handle::GetHash(void) const
 {
     unsigned hash = m_Gi;
@@ -337,6 +347,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/09/30 18:40:33  vasilche
+* Added CSeq_id_Handle::GetMapper() and MatchesTo().
+*
 * Revision 1.26  2004/07/12 17:24:06  grichenk
 * Fixed export name
 *

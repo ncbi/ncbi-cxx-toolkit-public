@@ -53,19 +53,23 @@ DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
 #endif
 
 
-CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type)
+CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type,
+                           CSeq_id_Mapper* mapper)
     : m_Seq_id_Type(type),
-      m_Mapper(CSeq_id_Mapper::GetInstance())
+      m_Mapper(mapper)
 {
+    _ASSERT(mapper);
     m_LockCounter.Set(0);
 }
 
 
-CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
+CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
+                           CSeq_id_Mapper* mapper)
     : m_Seq_id_Type(seq_id->Which()),
       m_Seq_id(seq_id),
-      m_Mapper(CSeq_id_Mapper::GetInstance())
+      m_Mapper(mapper)
 {
+    _ASSERT(mapper);
     m_LockCounter.Set(0);
 }
 
@@ -260,21 +264,15 @@ void CSeq_id_Handle::DumpRegister(const char* _DEBUG_ARG(msg))
 }
 
 
-bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
+bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 {
-    // Different mappers -- handle can not be equal
-    if ( !*this ) {
-        return !handle;
-    }
-    if ( !handle )
-        return false;
-    return GetSeqId()->Match(*handle.GetSeqId());
+    return GetMapper().x_IsBetter(*this, h);
 }
 
 
-bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
+bool CSeq_id_Handle::MatchesTo(const CSeq_id_Handle& h) const
 {
-    return m_Info->GetMapper().x_IsBetter(*this, h);
+    return GetMapper().x_Match(*this, h);
 }
 
 
@@ -283,7 +281,7 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
     if ( IsGi() ) {
         return id.IsGi() && id.GetGi() == GetGi();
     }
-    return *this == m_Info->GetMapper().GetHandle(id);
+    return *this == GetMapper().GetHandle(id);
 }
 
 
@@ -308,6 +306,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/09/30 18:41:04  vasilche
+* Added CSeq_id_Handle::GetMapper() and MatchesTo().
+*
 * Revision 1.26  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

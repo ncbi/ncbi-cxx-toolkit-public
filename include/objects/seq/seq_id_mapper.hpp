@@ -99,6 +99,9 @@ private:
     // References to each handle must be tracked to re-use their values
     // Each CSeq_id_Handle locks itself in the constructor and
     // releases in the destructor.
+
+
+    bool x_Match(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2);
     bool x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2);
 
 
@@ -153,6 +156,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/09/30 18:41:20  vasilche
+* Added CSeq_id_Handle::GetMapper() and MatchesTo().
+*
 * Revision 1.28  2004/07/12 17:24:06  grichenk
 * Fixed export name
 *

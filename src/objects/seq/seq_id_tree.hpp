@@ -80,10 +80,11 @@ class CSeq_id_Which_Tree : public CObject
 {
 public:
     // 'ctors
-    CSeq_id_Which_Tree(void);
+    CSeq_id_Which_Tree(CSeq_id_Mapper* mapper);
     virtual ~CSeq_id_Which_Tree(void);
 
-    static void Initialize(vector<CRef<CSeq_id_Which_Tree> >& v);
+    static void Initialize(CSeq_id_Mapper* mapper,
+                           vector<CRef<CSeq_id_Which_Tree> >& v);
 
     virtual bool Empty(void) const = 0;
 
@@ -99,9 +100,13 @@ public:
     // Get the list of matching seq-id.
     virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const = 0;
+                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const = 0;
+
+    // returns true if FindMatch(h1, id_list) will put h2 in id_list.
+    virtual bool Match(const CSeq_id_Handle& h1,
+                       const CSeq_id_Handle& h2) const;
 
     virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
                                  const CSeq_id_Handle& h2) const;
@@ -128,6 +133,7 @@ protected:
     typedef CMutexGuard TWriteLockGuard;
 
     mutable TRWLock m_TreeLock;
+    CSeq_id_Mapper* m_Mapper;
 
 private:
     CSeq_id_Which_Tree(const CSeq_id_Which_Tree& tree);
@@ -143,7 +149,7 @@ private:
 class CSeq_id_not_set_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_not_set_Tree(void);
+    CSeq_id_not_set_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_not_set_Tree(void);
 
     virtual bool Empty(void) const;
@@ -153,7 +159,6 @@ public:
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -175,7 +180,7 @@ protected:
 class CSeq_id_int_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_int_Tree(void);
+    CSeq_id_int_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_int_Tree(void);
 
     virtual bool Empty(void) const;
@@ -183,9 +188,6 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -206,6 +208,8 @@ private:
 
 class CSeq_id_Gibbsq_Tree : public CSeq_id_int_Tree
 {
+public:
+    CSeq_id_Gibbsq_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual int  x_Get(const CSeq_id& id) const;
@@ -218,6 +222,8 @@ protected:
 
 class CSeq_id_Gibbmt_Tree : public CSeq_id_int_Tree
 {
+public:
+    CSeq_id_Gibbmt_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual int  x_Get(const CSeq_id& id) const;
@@ -231,7 +237,7 @@ protected:
 class CSeq_id_Gi_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_Gi_Tree(void);
+    CSeq_id_Gi_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_Gi_Tree(void);
 
     virtual bool Empty(void) const;
@@ -242,9 +248,6 @@ public:
 
     virtual void DropInfo(const CSeq_id_Info* info);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -266,7 +269,7 @@ protected:
 class CSeq_id_Textseq_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_Textseq_Tree(void);
+    CSeq_id_Textseq_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_Textseq_Tree(void);
 
     virtual bool Empty(void) const;
@@ -274,11 +277,14 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
+    virtual bool Match(const CSeq_id_Handle& h1,
+                       const CSeq_id_Handle& h2) const;
     virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
                                  const CSeq_id_Handle& h2) const;
 
@@ -289,18 +295,21 @@ protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
     virtual bool x_Check(const CSeq_id& id) const = 0;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const = 0;
-    CSeq_id_Info* x_FindInfo(const CTextseq_id& tid) const;
+    CSeq_id_Info* x_FindInfo(CSeq_id::E_Choice type,
+                             const CTextseq_id& tid) const;
 
 private:
     typedef vector<CSeq_id_Info*>   TVersions;
     typedef map<string, TVersions, PNocase> TStringMap;
 
     CSeq_id_Info* x_FindVersionEqual(const TVersions& ver_list,
+                                     CSeq_id::E_Choice type,
                                      const CTextseq_id& tid) const;
 
     void x_FindVersionMatch(const TVersions& ver_list,
                             const CTextseq_id& tid,
-                            TSeq_id_MatchList& id_list) const;
+                            TSeq_id_MatchList& id_list,
+                            bool by_accession) const;
 
     TStringMap m_ByAccession;
     TStringMap m_ByName; // Used for searching by string
@@ -313,6 +322,8 @@ private:
 
 class CSeq_id_GB_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_GB_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -325,6 +336,8 @@ protected:
 
 class CSeq_id_Pir_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Pir_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -337,6 +350,8 @@ protected:
 
 class CSeq_id_Swissprot_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Swissprot_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -349,6 +364,8 @@ protected:
 
 class CSeq_id_Prf_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Prf_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -361,6 +378,8 @@ protected:
 
 class CSeq_id_Tpg_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Tpg_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -373,6 +392,8 @@ protected:
 
 class CSeq_id_Tpe_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Tpe_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -385,6 +406,8 @@ protected:
 
 class CSeq_id_Tpd_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Tpd_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -397,6 +420,8 @@ protected:
 
 class CSeq_id_Other_Tree : public CSeq_id_Textseq_Tree
 {
+public:
+    CSeq_id_Other_Tree(CSeq_id_Mapper* mapper);
 protected:
     virtual bool x_Check(const CSeq_id& id) const;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
@@ -410,7 +435,7 @@ protected:
 class CSeq_id_Local_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_Local_Tree(void);
+    CSeq_id_Local_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_Local_Tree(void);
 
     virtual bool Empty(void) const;
@@ -418,9 +443,6 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -443,7 +465,7 @@ private:
 class CSeq_id_General_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_General_Tree(void);
+    CSeq_id_General_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_General_Tree(void);
 
     virtual bool Empty(void) const;
@@ -451,9 +473,6 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -482,7 +501,7 @@ private:
 class CSeq_id_Giim_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_Giim_Tree(void);
+    CSeq_id_Giim_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_Giim_Tree(void);
 
     virtual bool Empty(void) const;
@@ -490,9 +509,6 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& ) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -515,7 +531,7 @@ private:
 class CSeq_id_Patent_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_Patent_Tree(void);
+    CSeq_id_Patent_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_Patent_Tree(void);
 
     virtual bool Empty(void) const;
@@ -523,9 +539,6 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
-    virtual bool HaveMatch(const CSeq_id_Handle& ) const;
-    virtual void FindMatch(const CSeq_id_Handle& id,
-                           TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
 
@@ -555,7 +568,7 @@ private:
 class CSeq_id_PDB_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_PDB_Tree(void);
+    CSeq_id_PDB_Tree(CSeq_id_Mapper* mapper);
     ~CSeq_id_PDB_Tree(void);
 
     virtual bool Empty(void) const;
@@ -563,6 +576,7 @@ public:
     virtual CSeq_id_Handle FindInfo(const CSeq_id& id) const;
     virtual CSeq_id_Handle FindOrCreate(const CSeq_id& id);
 
+    virtual bool HaveMatch(const CSeq_id_Handle& id) const;
     virtual void FindMatch(const CSeq_id_Handle& id,
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
@@ -609,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/09/30 18:43:20  vasilche
+* Added CSeq_id_Handle::GetMapper() and MatchesTo().
+*
 * Revision 1.9  2004/07/12 18:17:31  grichenk
 * Fixed export macro
 *
