@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.94  2004/04/07 03:06:16  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
  * Revision 1.93  2004/03/26 20:46:00  dondosha
  * Made gap_trigger parameter an integer, as in the old code
  *
@@ -408,6 +411,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_filter.h>
+#include <algo/blast/core/blast_encoding.h>
 
 QuerySetUpOptions*
 BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)

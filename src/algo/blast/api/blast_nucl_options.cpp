@@ -30,6 +30,7 @@
 /// @file blast_nucl_options.cpp
 /// Implements the CBlastNucleotideOptionsHandle class.
 
+#include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
@@ -244,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/04/07 03:06:15  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
  * Revision 1.8  2004/03/22 20:15:26  dondosha
  * Set final x-dropoff for MB extension defaults
  *

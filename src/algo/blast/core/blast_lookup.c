@@ -31,6 +31,7 @@
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/blast_rps.h>
 #include <algo/blast/core/lookup_util.h>
+#include <algo/blast/core/blast_encoding.h>
 
 static char const rcsid[] = "$Id$";
 

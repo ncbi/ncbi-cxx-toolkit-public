@@ -67,11 +67,6 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #define CODON_LENGTH 3
 #endif
 
-/** Gap character in ncbistdaa */
-#ifndef GAP_CHAR
-#define GAP_CHAR 0
-#endif
-
 /** Compression ratio of nucleotide bases (4 bases in 1 byte) */
 #ifndef COMPRESSION_RATIO
 #define COMPRESSION_RATIO 4

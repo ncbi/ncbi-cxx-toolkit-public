@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.54  2004/04/07 03:06:16  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
  * Revision 1.53  2004/04/05 18:53:35  madden
  * Set dimensions if matrix from memory
  *
@@ -217,6 +220,7 @@ Detailed Contents:
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_util.h>
 #include <util/tables/raw_scoremat.h>
+#include <algo/blast/core/blast_encoding.h>
 
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
@@ -241,83 +245,6 @@ static double BlastSumPCalc (int r, double s);
 	(it's four, of course).
 */
 #define NUMBER_NON_AMBIG_BP 4
-
-/** Translates between ncbi4na and blastna. The first four elements
- *	of this array match ncbi2na.
- */
-Uint1 NCBI4NA_TO_BLASTNA[] = {
-15,/* Gap, 0 */
-0, /* A,   1 */
-1, /* C,   2 */
-6, /* M,   3 */
-2, /* G,   4 */
-4, /* R,   5 */
-9, /* S,   6 */
-13, /* V,   7 */
-3, /* T,   8 */
-8, /* W,   9 */
- 5, /* Y,  10 */
- 12, /* H,  11 */
- 7, /* K,  12 */
- 11, /* D,  13 */
- 10, /* B,  14 */
- 14  /* N,  15 */
-};
-
-static Uint1 blastna_to_ncbi4na[] = {
-         	 1, /* A, 0 */
-				 2, /* C, 1 */
-				 4, /* G, 2 */
-				 8, /* T, 3 */
-				 5, /* R, 4 */
-				10, /* Y, 5 */
-				 3, /* M, 6 */
-				12, /* K, 7 */
-				 9, /* W, 8 */
-				 6, /* S, 9 */
-				14, /* B, 10 */
-				13, /* D, 11 */
-				11, /* H, 12 */
-				 7, /* V, 13 */
-				15, /* N, 14 */
-				 0  /* Gap, 15 */
-};
-
-static Uint1 iupacna_to_blastna[128]={
-15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-15, 0,10, 1,11,15,15, 2,12,15,15, 7,15, 6,14,15,
-15,15, 4, 9, 3,15,13, 8,15, 5,15,15,15,15,15,15,
-15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
-15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15};
-
-static Uint1 iupacna_to_ncbi4na[128]={
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 1,14, 2,13, 0, 0, 4,11, 0, 0,12, 0, 3,15, 0,
- 0, 0, 5, 6, 8, 0, 7, 9, 0,10, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-static Uint1 ncbieaa_to_ncbistdaa[128]={
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,25, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0,10,11,12,13, 0,
-14,15,16,17,18,24,19,20,21,22,23, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-#if 0  /* Is this really needed ? */
-static Uint1 ncbistdaa_to_ncbieaa[BLASTAA_SIZE]={
-'-','A','B','C','D','E','F','G','H','I','K','L','M',
-'N','P','Q','R','S','T','V','W','X','Y','Z','U','*'};
-#endif
 
 /* Used in BlastKarlinBlkGappedCalc */
 typedef double array_of_8[8];
@@ -959,15 +886,15 @@ BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
 	if (sbp->alphabet_code == BLASTAA_SEQ_CODE)
 	{
 		sbp->ambiguous_res[sbp->ambig_occupy] = 
-         ncbieaa_to_ncbistdaa[toupper(ambiguous_res)];
+         AMINOACID_TO_NCBISTDAA[toupper(ambiguous_res)];
 	}
 	else {
       if (sbp->alphabet_code == BLASTNA_SEQ_CODE)
          sbp->ambiguous_res[sbp->ambig_occupy] = 
-            iupacna_to_blastna[toupper(ambiguous_res)];
+            IUPACNA_TO_BLASTNA[toupper(ambiguous_res)];
       else if (sbp->alphabet_code == NCBI4NA_SEQ_CODE)
          sbp->ambiguous_res[sbp->ambig_occupy] = 
-            iupacna_to_ncbi4na[toupper(ambiguous_res)];
+            IUPACNA_TO_NCBI4NA[toupper(ambiguous_res)];
    }
 	(sbp->ambig_occupy)++;
 	
@@ -1014,7 +941,7 @@ static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty,
 		degen=0;
 		for (index2=0; index2<NUMBER_NON_AMBIG_BP; index2++) /* ncbi2na */
 		{
-			if (blastna_to_ncbi4na[index1] & blastna_to_ncbi4na[index2])
+			if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2])
 				degen++;
 		}
 		degeneracy[index1] = degen;
@@ -1025,7 +952,7 @@ static Int4 **BlastScoreBlkMatCreateEx(Int4 **matrix,Int4 penalty,
 	{
 		for (index2=index1; index2<BLASTNA_SIZE; index2++) /* blastna */
 		{
-			if (blastna_to_ncbi4na[index1] & blastna_to_ncbi4na[index2])
+			if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2])
 			{ /* round up for positive scores, down for negatives. */
 				matrix[index1][index2] = BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty + reward))/degeneracy[index2];
 				if (index1 != index2)
@@ -1129,9 +1056,9 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
             continue;
         while (lp != NULL) {
            if (sbp->alphabet_code == BLASTAA_SEQ_CODE)
-              ch = ncbieaa_to_ncbistdaa[toupper(*lp)];
+              ch = AMINOACID_TO_NCBISTDAA[toupper(*lp)];
            else if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
-              ch = iupacna_to_blastna[toupper(*lp)];
+              ch = IUPACNA_TO_BLASTNA[toupper(*lp)];
            } else {
               ch = *lp;
            }
@@ -1168,10 +1095,10 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         }
 
         if (sbp->alphabet_code == BLASTAA_SEQ_CODE) {
-           ch = ncbieaa_to_ncbistdaa[toupper(ch)];
+           ch = AMINOACID_TO_NCBISTDAA[toupper(ch)];
         } else {
             if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
-                ch = iupacna_to_blastna[toupper(ch)];
+                ch = IUPACNA_TO_BLASTNA[toupper(ch)];
             }
         }
         a1chars[a1cnt++] = ch;
@@ -1287,8 +1214,11 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
 
     for (i = 0; i < sbp->alphabet_size; i++) {
         for (j = 0; j < sbp->alphabet_size; j++) {
-            if (i == 24 || i == GAP_CHAR ||
-                j == 24 || j == GAP_CHAR) {  /* skip selenocysteine and gap */
+            /* skip selenocysteine and gap */
+            if (i == AMINOACID_TO_NCBISTDAA['U'] || 
+                i == AMINOACID_TO_NCBISTDAA['-'] ||
+                j == AMINOACID_TO_NCBISTDAA['U'] || 
+                j == AMINOACID_TO_NCBISTDAA['-']) {
                 continue;
             }
             matrix[i][j] = NCBISM_GetScore((const SNCBIPackedScoreMatrix*) psm,
@@ -1540,7 +1470,7 @@ BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size)
 		if (alphabet_code == BLASTAA_SEQ_CODE)
 		{
 	 		residues[index] = 
-            ncbieaa_to_ncbistdaa[toupper(STD_AMINO_ACID_FREQS[index].ch)];
+            AMINOACID_TO_NCBISTDAA[toupper(STD_AMINO_ACID_FREQS[index].ch)];
 		}
 		else
 		{
@@ -3332,7 +3262,6 @@ BLAST_LargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate,
 /*------------------- RPS BLAST functions --------------------*/
 
 #define PRO_K_MULTIPLIER 1.2
-#define UNDETERMINED_CHAR 21
 #define MAX_SCORE_RANGE 10000
 #define RPS_SCORE_MIN -32767  /* inconsistent with BLAST_SCORE_MIN */
 
@@ -3388,7 +3317,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
 
     for (i = 0; i < matrixLength; i++) {
         for (j = 0 ; j < PSI_ALPHABET_SIZE; j++) {
-            if (j == UNDETERMINED_CHAR)
+            if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if ((matrix[i][j] > RPS_SCORE_MIN) && 
                 (matrix[i][j] < minScore))
@@ -3407,7 +3336,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
     recipLength = 1.0 / (double) matrixLength;
     for(i = 0; i < matrixLength; i++) {
         for (j = 0; j < PSI_ALPHABET_SIZE; j++) {
-            if (j == UNDETERMINED_CHAR)
+            if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
             if(matrix[i][j] >= minScore)
                 return_sfp->sprob[matrix[i][j]] += recipLength * 
@@ -3435,7 +3364,7 @@ RPSFillResidueProbability(Uint1 * sequence, Int4 length, double * resProb)
         frequency[i] = 0;
 
     for(i = 0; i < length; i++) {
-        if (sequence[i] != UNDETERMINED_CHAR)
+        if (sequence[i] != AMINOACID_TO_NCBISTDAA['X'])
             frequency[sequence[i]]++;
         else
             denominator--;
@@ -3528,7 +3457,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     for (index = 0; index < db_seq_length+1; index++) {
         for (inner_index = 0; inner_index < PSI_ALPHABET_SIZE; inner_index++) {
             if (posMatrix[index][inner_index] <= RPS_SCORE_MIN || 
-                inner_index == UNDETERMINED_CHAR) {
+                inner_index == AMINOACID_TO_NCBISTDAA['X']) {
                 returnMatrix[index][inner_index] = 
                     posMatrix[index][inner_index];
             }

@@ -78,22 +78,6 @@ of K, so high accuracy is generally unwarranted.
 */
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix"
 
-#define BLASTNA_SIZE 16
-#define BLASTAA_SIZE 26
-/* Identifies the blastna alphabet, for use in blast only. */
-#define BLASTNA_SEQ_CODE 99
-#define BLASTAA_SEQ_CODE 11 /* == Seq_code_ncbistdaa */
-#define NCBI4NA_SEQ_CODE 4  /* == Seq_code_ncbi4na */	
-
-#define PSI_ALPHABET_SIZE  26 /* For PSI Blast this is the only 26 */
-
-/*
-	Maps the ncbi4na alphabet to blastna, an alphabet that blastn uses
-	as the first four characters have the same representation as in
-	ncbi2na.
-*/
-extern Uint1 NCBI4NA_TO_BLASTNA[BLASTNA_SIZE];
-	
 /*************************************************************************
 	Structure to the Karlin-Blk parameters.
 

@@ -30,6 +30,7 @@
 /// @file blast_prot_options.cpp
 /// Implements the CBlastProteinOptionsHandle class.
 
+#include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
@@ -149,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/07 03:06:15  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
  * Revision 1.6  2004/03/19 15:13:34  camacho
  * Move to doxygen group AlgoBlast
  *

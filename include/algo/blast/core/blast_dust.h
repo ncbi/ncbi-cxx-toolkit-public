@@ -44,7 +44,6 @@ extern "C" {
 #endif
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_stat.h>  /* Needed for NCBI4NA_TO_BLASTNA definition only */
 
 Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 minwin, Int2 linker,

@@ -41,6 +41,7 @@ static char const rcsid[] = "$Id$";
 
 #include <algo/blast/core/blast_dust.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_encoding.h>
 
 /* local, file scope, structures and variables */
 

@@ -51,7 +51,7 @@
 #include "blast_setup.hpp"
 
 #include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/blast_encoding.h>
 
 #include <algorithm>
 
@@ -925,6 +925,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2004/04/07 03:06:15  camacho
+* Added blast_encoding.[hc], refactoring blast_stat.[hc]
+*
 * Revision 1.64  2004/04/06 20:45:28  dondosha
 * Added function FindBlastDbPath: should be moved to seqdb library
 *
