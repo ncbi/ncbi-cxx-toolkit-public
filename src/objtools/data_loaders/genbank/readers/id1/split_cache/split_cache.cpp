@@ -229,8 +229,8 @@ void CSplitCacheApp::Init(void)
                       "do not strip sequence data");
     arg_desc->AddFlag("keep_annotations",
                       "do not strip annotations");
-    arg_desc->AddFlag("no_join_small_chunks",
-                      "do not try to join too small chunks after split");
+    arg_desc->AddFlag("join_small_chunks",
+                      "attach very small chunks to skeleton");
 
     arg_desc->AddFlag("resplit",
                       "resplit already split data");
@@ -471,7 +471,7 @@ void CSplitCacheApp::Process(void)
     m_SplitterParams.m_DisableSplitAnnotations |= args["keep_annotations"];
     m_Resplit = args["resplit"];
     m_Recurse = args["recurse"];
-    m_SplitterParams.m_JoinSmallChunks = !args["no_join_small_chunks"];
+    m_SplitterParams.m_JoinSmallChunks = args["join_small_chunks"];
     m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
 
     if ( args["gi"] ) {
@@ -800,6 +800,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/09/01 19:07:29  vasilche
+* By default do not join small chunks.
+*
 * Revision 1.27  2004/08/24 16:45:55  vasilche
 * Removed TAB symbols from sources.
 * Seq-id cache is put in the same directory as blob cache.
