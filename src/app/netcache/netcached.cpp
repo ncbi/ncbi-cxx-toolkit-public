@@ -197,6 +197,26 @@ bool s_WaitForReadSocket(CSocket& sock)
     return false;
 }        
 
+/// Thread specific data for threaded server
+///
+/// @internal
+///
+struct ThreadData
+{
+    ThreadData() : buffer(new char[kNetCacheBufSize*2]) {}
+    AutoPtr<char, ArrayDeleter<char> >  buffer;
+};
+
+///@internal
+static
+void TlsCleanup(ThreadData* p_value, void* /* data */ )
+{
+    delete p_value;
+}
+
+static
+CRef< CTls<ThreadData> > s_tls(new CTls<ThreadData>);
+
 
 void CNetCacheServer::Process(SOCK sock)
 {
@@ -207,8 +227,14 @@ void CNetCacheServer::Process(SOCK sock)
         socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
         socket.DisableOSSendDelay();
 
-        string auth, request;
+        ThreadData* tdata = s_tls->GetValue();
+        if (tdata) {
+        } else {
+            tdata = new ThreadData();
+            s_tls->SetValue(tdata, TlsCleanup);
+        }
 
+        string auth, request;
         s_WaitForReadSocket(socket);
 
         if (ReadStr(socket, &auth)) {
@@ -326,13 +352,16 @@ blob_not_found:
         return;
     }
     
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[kNetCacheBufSize+1]);
+    ThreadData* tdata = s_tls->GetValue();
+    _ASSERT(tdata);
+    char* buf = tdata->buffer.get();
+
 
     bool read_flag = false;
     size_t bytes_read;
     do {
         ERW_Result io_res =
-         rdr->Read(buf.get(), kNetCacheBufSize, &bytes_read);
+         rdr->Read(buf, kNetCacheBufSize, &bytes_read);
         if (io_res == eRW_Success) {
             if (bytes_read) {
                 if (!read_flag) {
@@ -343,7 +372,7 @@ blob_not_found:
                 size_t n_written;
 
                 EIO_Status io_st = 
-                  sock.Write(buf.get(), bytes_read, &n_written);
+                  sock.Write(buf, bytes_read, &n_written);
                 if (io_st != eIO_Success) {
                     break;
                 }
@@ -378,15 +407,18 @@ void CNetCacheServer::ProcessPut(CSocket& sock, const Request& req)
     to.sec = to.usec = 0;
     sock.SetTimeout(eIO_Read, &to);
 
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[kNetCacheBufSize+1]);
+    ThreadData* tdata = s_tls->GetValue();
+    _ASSERT(tdata);
+    char* buf = tdata->buffer.get();
+
     size_t buffer_length = 0;
 
-    while (ReadBuffer(sock, buf.get(), &buffer_length)) {
+    while (ReadBuffer(sock, buf, &buffer_length)) {
         if (buffer_length) {
 
             size_t bytes_written;
             ERW_Result res = 
-                iwrt->Write(buf.get(), buffer_length, &bytes_written);
+                iwrt->Write(buf, buffer_length, &bytes_written);
             if (res != eRW_Success) {
                 WriteMsg(sock, "Err:", "Server I/O error");
                 return;
@@ -770,6 +802,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/10/21 17:21:42  kuznets
+ * Reallocated buffer replaced with TLS data
+ *
  * Revision 1.14  2004/10/21 15:51:21  kuznets
  * removed unused variable
  *
