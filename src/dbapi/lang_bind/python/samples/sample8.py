@@ -63,6 +63,7 @@ sql = "insert into #sale_stat(year, month, stat) values (@year, @month, @stat)"
 
 # Check that the temporary table was successfully created and we can get data from it
 cursor.execute("select * from #sale_stat")
+print "Empty table contains", len( cursor.fetchall() ), "records"
 
 # Start transaction
 cursor.execute('BEGIN TRANSACTION')
@@ -72,7 +73,15 @@ cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat i
 
 # Check how many records we have inserted
 cursor.execute("select * from #sale_stat")
-print len( cursor.fetchall() )
+print "We have inserted", len( cursor.fetchall() ), "records"
+
+# "Standard interface" rollback
+conn.rollback();
+
+# Check how many records left after "standard" ROLLBACK
+# "Standard interface" rollback command is not supposed to affect current transaction.
+cursor.execute("select * from #sale_stat")
+print "After a 'standard' rollback command the table contains", len( cursor.fetchall() ), "records"
 
 # Rollback transaction
 cursor.execute('ROLLBACK TRANSACTION')
@@ -81,25 +90,28 @@ cursor.execute('BEGIN TRANSACTION')
 
 # Check how many records left after ROLLBACK
 cursor.execute("select * from #sale_stat")
-print len( cursor.fetchall() )
+print "After a 'manual' rollback command the table contains", len( cursor.fetchall() ), "records"
 
 # Insert records again
 cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])
 
 # Check how many records we have inserted
 cursor.execute("select * from #sale_stat")
-print len( cursor.fetchall() )
+print "We have inserted", len( cursor.fetchall() ), "records"
 
 # Commit transaction
 cursor.execute('COMMIT TRANSACTION')
 
 # Check how many records left after COMMIT
 cursor.execute("select * from #sale_stat")
-print len( cursor.fetchall() )
+print "After a 'manual' commit command the table contains", len( cursor.fetchall() ), "records"
 
 # ===========================================================================
 #
 # $Log$
+# Revision 1.2  2005/02/10 16:52:42  ssikorsk
+# Added demonstration of difference between 'standard' and 'manual' transaction processing in the 'simple' mode.
+#
 # Revision 1.1  2005/02/08 21:16:48  ssikorsk
 # New Python code example
 #
