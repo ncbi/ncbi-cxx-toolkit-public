@@ -122,6 +122,10 @@ public:
     // given row and sequence index, return alignment index; not the most efficient function - use sparingly
     unsigned int GetAlignmentIndex(unsigned int row, unsigned int seqIndex, eUnalignedJustification justification);
 
+    // get list of all blocks
+    typedef std::list < ncbi::CRef < Block > > BlockList;
+    const BlockList& GetBlockList() const { return m_blocks;}
+
     // fill in a vector of UngappedAlignedBlocks
     typedef std::vector < const UngappedAlignedBlock * > UngappedAlignedBlockList;
     void GetUngappedAlignedBlocks(UngappedAlignedBlockList *blocks) const;
@@ -218,7 +222,6 @@ public:
 private:
     SequenceList m_sequences;
 
-    typedef std::list < ncbi::CRef < Block > > BlockList;
     BlockList m_blocks;
 
     typedef struct {
@@ -367,6 +370,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/08/19 20:44:37  lanczyck
+* add accessor to return list of all blocks
+*
 * Revision 1.2  2004/07/28 19:31:33  thiessen
 * expose a few useful functions
 *
