@@ -575,6 +575,33 @@ Int2 BlastFormattingOptionsNew(CharPtr program, CharPtr file_out,
 BlastFormattingOptionsPtr 
 BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options);
 
+
+/** Initialize all the BLAST search options structures with the default
+ * values.
+ * @param blast_program Type of blast program: blastn, blastp, blastx, 
+ *                      tblastn, tblastx) [in]
+ * @param database BLAST database name [in]
+ * @param lookup_options Lookup table options [out]
+ * @param query_setup_options Query options [out]
+ * @param word_options Initial word processing options [out]
+ * @param ext_options Extension options [out]
+ * @param hit_options Hit saving options [out]
+ * @param score_options Scoring options [out]
+ * @param effective_length_options Effective length options [out]
+ * @param protein_options Protein BLAST options [out]
+ * @param db_options BLAST database options [out]
+ */
+Int2 BLAST_InitAllDefaultOptions(CharPtr blast_program, CharPtr database,
+   LookupTableOptionsPtr PNTR lookup_options,
+   QuerySetUpOptionsPtr PNTR query_setup_options, 
+   BlastInitialWordOptionsPtr PNTR word_options,
+   BlastExtensionOptionsPtr PNTR ext_options,
+   BlastHitSavingOptionsPtr PNTR hit_options,
+   BlastScoringOptionsPtr PNTR score_options,
+   BlastEffectiveLengthsOptionsPtr PNTR effective_length_options,
+   ProteinBlastOptionsPtr PNTR protein_options,
+   BlastDatabaseSetUpOptionsPtr PNTR db_options);
+
 #ifdef __cplusplus
 }
 #endif

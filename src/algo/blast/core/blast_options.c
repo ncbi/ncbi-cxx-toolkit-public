@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.9  2003/04/23 20:04:49  dondosha
+ * Added a function BLAST_InitAllDefaultOptions to initialize all various options structures with only default values
+ *
  * Revision 1.8  2003/04/17 21:14:41  dondosha
  * Added cutoff score hit parameters that is calculated from e-value
  *
@@ -1052,4 +1055,54 @@ BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options)
 {
    FileClose(format_options->outfp);
    return MemFree(format_options);
+}
+
+
+Int2 BLAST_InitAllDefaultOptions(CharPtr blast_program, CharPtr database,
+   LookupTableOptionsPtr PNTR lookup_options,
+   QuerySetUpOptionsPtr PNTR query_setup_options, 
+   BlastInitialWordOptionsPtr PNTR word_options,
+   BlastExtensionOptionsPtr PNTR ext_options,
+   BlastHitSavingOptionsPtr PNTR hit_options,
+   BlastScoringOptionsPtr PNTR score_options,
+   BlastEffectiveLengthsOptionsPtr PNTR effective_length_options,
+   ProteinBlastOptionsPtr PNTR protein_options,
+   BlastDatabaseSetUpOptionsPtr PNTR db_options)
+{
+   Int2 status;
+   Boolean is_protein;
+
+   if ((status = LookupTableOptionsNew(blast_program, FALSE, 0, 0, TRUE, 
+                                       FALSE, lookup_options)))
+      return status;
+
+   if ((status=BlastQuerySetUpOptionsNew(blast_program, NULL, 0,
+                                         &query_setup_options)))
+      return status;
+
+   if ((status=BlastInitialWordOptionsNew(blast_program, FALSE, 0, FALSE, 
+                                          TRUE, FALSE, 0, &word_options)))
+      return status;
+
+   if ((status = BlastExtensionOptionsNew(blast_program, FALSE, 0, 0, 
+                                          &ext_options)))
+      return status;
+
+   if ((status=BlastHitSavingOptionsNew(blast_program, TRUE, 0, 0. 
+                                        &hit_options)))
+      return status;
+
+   if ((status=BlastScoringOptionsNew(blast_program, FALSE, 0, 0, NULL, 0, 0, 
+                                      &score_options)))
+      return status;
+
+   is_protein = (!StrCmp(blast_program, "blastp") || 
+                 !StrCmp(blast_program, "blastx"));
+
+   if ((status=BlastEffectiveLengthsOptionsNew(database, is_protein, 0, 0,
+                                               0, &effective_length_options)))
+      return status;
+   
+   return 0;
+
 }
