@@ -235,6 +235,7 @@ RunTest() {
       # And run test if it exist
       if test -f "\$x_app"; then
          # NOTE: Run SH need to correct run tests with parameters in single quotes
+         x_run="PATH='.:\$PATH'; \$x_run" 
          (sh -c "\$x_run") >> \$x_test_out 2>&1
          result=\$?
 
