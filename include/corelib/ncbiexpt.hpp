@@ -409,7 +409,7 @@ public: \
     virtual const char* GetType(void) const {return #exception_class;} \
     EErrCode GetErrCode(void) const \
     { \
-        return typeid(*this) == typeid(##exception_class) ? \
+        return typeid(*this) == typeid(exception_class) ? \
             (exception_class::EErrCode) x_GetErrCode() : \
             (exception_class::EErrCode) CNcbiException::eInvalid; \
     } \
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2002/07/11 19:33:11  gouriano
+ * minor fix in NCBI_EXCEPTION_DEFAULT definition
+ *
  * Revision 1.31  2002/07/11 14:17:54  gouriano
  * exceptions replaced by CNcbiException-type ones
  *
