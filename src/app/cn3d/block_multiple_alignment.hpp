@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/10/23 01:29:25  thiessen
+* fix block cache bug
+*
 * Revision 1.30  2002/07/26 15:28:44  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -339,9 +342,9 @@ private:
     void RemoveBlock(Block *block);
 
     // for cacheing of residue->block lookups
-    mutable int prevRow;
-    mutable const Block *prevBlock;
-    mutable BlockList::const_iterator blockIterator;
+    mutable int cachePrevRow;
+    mutable const Block *cachePrevBlock;
+    mutable BlockList::const_iterator cacheBlockIterator;
     void InitCache(void);
 
     // given a row and seqIndex, find block that contains that residue

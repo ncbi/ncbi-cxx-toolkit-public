@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/10/23 01:29:25  thiessen
+* fix block cache bug
+*
 * Revision 1.38  2002/08/28 20:30:33  thiessen
 * fix proximity sort bug
 *
@@ -193,9 +196,9 @@ BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, Align
 
 void BlockMultipleAlignment::InitCache(void)
 {
-    prevRow = -1;
-    prevBlock = NULL;
-    blockIterator = blocks.begin();
+    cachePrevRow = -1;
+    cachePrevBlock = NULL;
+    cacheBlockIterator = blocks.begin();
 }
 
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
@@ -534,16 +537,16 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
         return -1;
     }
 
-    if (prevRow < 0 || sequence != (*sequences)[prevRow]) {
+    if (cachePrevRow < 0 || sequence != (*sequences)[cachePrevRow]) {
         int row;
         for (row=0; row<NRows(); row++) if ((*sequences)[row] == sequence) break;
         if (row == NRows()) {
 //            ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
             return -1;
         }
-        prevRow = row;
+        cachePrevRow = row;
     }
-    return prevRow;
+    return cachePrevRow;
 }
 
 const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) const
@@ -623,24 +626,24 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
     const Block::Range *range;
 
     // first check to see if it's in the same block as last time.
-    if (prevBlock) {
-        range = prevBlock->GetRangeOfRow(row);
-        if (seqIndex >= range->from && seqIndex <= range->to) return prevBlock;
-        blockIterator++; // start search at next block
+    if (cachePrevBlock) {
+        range = cachePrevBlock->GetRangeOfRow(row);
+        if (seqIndex >= range->from && seqIndex <= range->to) return cachePrevBlock;
+        cacheBlockIterator++; // start search at next block
     } else {
-        blockIterator = blocks.begin();
+        cacheBlockIterator = blocks.begin();
     }
 
     // otherwise, perform block search. This search is most efficient when queries
     // happen in order from left to right along a given row.
     do {
-        if (blockIterator == blocks.end()) blockIterator = blocks.begin();
-        range = (*blockIterator)->GetRangeOfRow(row);
+        if (cacheBlockIterator == blocks.end()) cacheBlockIterator = blocks.begin();
+        range = (*cacheBlockIterator)->GetRangeOfRow(row);
         if (seqIndex >= range->from && seqIndex <= range->to) {
-            prevBlock = *blockIterator; // cache this block
-            return prevBlock;
+            cachePrevBlock = *cacheBlockIterator; // cache this block
+            return cachePrevBlock;
         }
-        blockIterator++;
+        cacheBlockIterator++;
     } while (1);
 }
 
@@ -1416,6 +1419,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
         } else
             b++;
     }
+    InitCache();
 
     // update this alignment, but leave row scores/status alone
     if (!AddUnalignedBlocks() || !UpdateBlockMapAndColors(false)) {
