@@ -11,10 +11,10 @@
 # Usage:
 #    check_make_win.sh <in_test_list> <out_check_script> <build_dir> <cfgs>
 #
-#    in_test_list     - list of tests (it build with "make check_r"
+#    in_test_list     - list of tests (it building with "make check_r"
 #                       under UNIX)
 #                       (default: "<build_dir>/check.sh.list")
-#    out_check_script - name of the output test script
+#    out_check_script - full path to the output test script
 #                       (default: "<build_dir>/check.sh")
 #    build_dir        - path to MSVC build tree like".../msvc_prj/..."
 #                       (default: will try determine path from current work
@@ -34,10 +34,6 @@
 
 
 # Process and check parameters
-
-res_out="check.sh"
-res_list="$res_out.list"
-res_bin="bin"
 
 # Field delimiters in the list (this symbols used directly in the "sed" command)
 x_delim=" ____ "
@@ -64,11 +60,11 @@ fi
 x_root_dir=`echo "$x_build_dir" | sed -e 's%/compilers/.*$%%'`
 
 if test -z "$x_list"; then
-   x_list="$x_build_dir/$res_list"
+   x_list="$x_build_dir/check.sh.list"
 fi
 
 if test -z "$x_out"; then
-   x_out="$x_build_dir/$res_out"
+   x_out="$x_build_dir/check.sh"
 fi
 
 x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
@@ -85,10 +81,15 @@ fi
 cat > $x_out <<EOF
 #! /bin/sh
 
-res_journal="$x_out.journal"
-res_log="$x_out.log"
-res_list="$x_list"
-res_concat="$x_out.out"
+root_dir="$x_root_dir"
+build_dir="\$root_dir/compilers/msvc_prj"
+src_dir="\$root_dir/src"
+
+res_script="$x_out"
+res_journal="\$res_script.journal"
+res_log="\$res_script.log"
+res_list="\$res_script.list"
+res_concat="\$res_script.out"
 
 
 ##  Printout USAGE info and exit
@@ -98,7 +99,7 @@ Usage() {
 
 USAGE:  $x_script_name {run | clean | concat | concat_err}
 
- run         Run the tests. Create output file ("*.test_out") for each test, 
+ run         Run the tests. Create output file ("*.out") for each test, 
              plus journal and log files. 
  clean       Remove all files created during the last "run" and this script 
              itself.
@@ -137,7 +138,7 @@ case "\$method" in
          rm -f \$x_file > /dev/null 2>&1
       done
       rm -f \$res_journal \$res_log \$res_list \$res_concat > /dev/null 2>&1
-      rm -f $x_out > /dev/null 2>&1
+      rm -f \$res_script > /dev/null 2>&1
       exit 0
       ;;
 #----------------------------------------------------------
@@ -181,11 +182,11 @@ case "\$method" in
       ;;
 esac
 
-# Add current, build and scripts directories to PATH
-PATH=".:$x_build_dir:$x_root_dir/scripts:\$PATH"
-export PATH
-
 # Run
+
+# Add current, build and scripts directories to PATH
+PATH=".:\$build_dir:\$root_dir/scripts:\$PATH"
+export PATH
 
 count_ok=0
 count_err=0
@@ -199,7 +200,7 @@ rm -f "\$res_log"
 
 RunTest() {
    # Parameters
-   x_work_dir="\$1"
+   x_wdir="\$1"
    x_test="\$2"
    x_app="\$3"
    x_run="\$4"
@@ -207,6 +208,8 @@ RunTest() {
    x_timeout="\$6"
    x_requires="\$7"
    x_conf="\$8"
+
+   x_work_dir="\$build_dir/\$x_wdir"
 
    # Check application requirements
    for x_req in \$x_requires; do
@@ -222,21 +225,23 @@ RunTest() {
 
    # Determine test directory
    result=1
-   x_path="\$x_work_dir/\$x_test/\$x_conf"
-   if test ! -d "\$x_path"; then
-      x_path="\$x_work_dir/\$x_app/\$x_conf"
-      if test ! -d "\$x_path"; then
-         x_path="\$x_work_dir/\$x_conf"
-         if test ! -d "\$x_path"; then
+   x_path_test="\$x_work_dir/\$x_test/\$x_conf"
+
+   if test ! -d "\$x_path_test"; then
+      x_path_test="\$x_work_dir/\$x_app/\$x_conf"
+      if test ! -d "\$x_path_test"; then
+         x_path_test="\$x_work_dir/\$x_conf"
+         if test ! -d "\$x_path_test"; then
             result=0
          fi
       fi
    fi
-   # Determine the test application name
+   # Determine test application name
+   x_path_run="\$build_dir/bin/\$x_conf"
    if test \$result -eq 1; then
-      x_path_app="\$x_path/\$x_app"
+      x_path_app="\$x_path_run/\$x_app"
       if test ! -f "\$x_path_app"; then
-         x_path_app="\$x_path/\$x_test"
+         x_path_app="\$x_path_run/\$x_test"
          if test ! -f "\$x_path_app"; then
             result=0
          fi
@@ -244,15 +249,14 @@ RunTest() {
    fi
 
    if test \$result -eq 0; then
-      x_cmd=\`echo "\$x_work_dir" | sed -e 's%^.*/msvc_prj/%%' -e 's%/.*$/%%'\`
-      echo "ABS --  \$x_cmd, \$x_conf - \$x_app"
-      echo "ABS --  \$x_cmd, \$x_conf - \$x_app" >> \$res_log
+      echo "ABS --  \$x_wdir, \$x_conf - \$x_app"
+      echo "ABS --  \$x_wdir, \$x_conf - \$x_app" >> \$res_log
       count_absent=\`expr \$count_absent + 1\`
       return 0
    fi
 
    # Generate name of the output file
-   x_test_out="\$x_path_app.\$x_conf.\$x_ext"
+   x_test_out="\$x_path_run/check/\$x_app.\$x_ext"
 
    # Write header to output file 
    echo "\$x_test_out" >> \$res_journal
@@ -264,7 +268,7 @@ RunTest() {
    ) > \$x_test_out 2>&1
 
    # Goto the test's directory 
-   cd "\$x_path"
+   cd "\$x_path_test"
 
    # Fix empty parameters (replace "" to \"\", '' to \'\')
    x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
@@ -272,7 +276,7 @@ RunTest() {
    x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
 
    # Run check
-   check_exec="$x_root_dir/scripts/check/check_exec.sh"
+   check_exec="\$root_dir/scripts/check/check_exec.sh"
    \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
    result=\$?
    sed -e '/ ["][$][@]["].*\$/ {
@@ -286,8 +290,7 @@ RunTest() {
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
    # And write result also on the screen and into the log
-   x_path_tail=\`echo "\$x_path" | sed 's%^.*/msvc_prj/%%'\` 
-   x_cmd="[\$x_path_tail] \$x_run"
+   x_cmd="[\$x_wdir] \$x_run"
    if test \$result -eq 0; then
       echo "OK  --  \$x_cmd"
       echo "OK  --  \$x_cmd" >> \$res_log
@@ -307,41 +310,15 @@ saved_path="\$PATH"
 for x_conf in \$configurations; do
 
 # Restore saved PATH environment variable
-PATH=".:$x_build_dir/bin/\$x_conf:\$saved_path"
+PATH=".:\$build_dir/bin/\$x_conf:\$saved_path"
 export PATH
+
+# Create directory for tests output
+mkdir -p "\$build_dir/bin/\$x_conf/check" > /dev/null 2>&1
 
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
-
-
-
-# For each configuration make links to binary files 
-# (compilers/msvc_prj/bin/<x_conf>/<link>)
-
-
-rm -rf "$x_build_dir/$res_bin" > /dev/null 2>&1
-mkdir -p "$x_build_dir/$res_bin" > /dev/null 2>&1
-
-for x_conf in $x_confs; do
-   # Create directory is it not exist
-   if test ! -d "$x_build_dir/$res_bin/$x_conf"; then
-      mkdir -p "$x_build_dir/$res_bin/$x_conf" > /dev/null 2>&1
-      if test $? -ne 0; then
-         echo "Unable to create directory \"$x_build_dir/$res_bin/$x_conf\"."
-      fi
-   fi
-   # Copy all binaries in <x_conf> folders
-   x_files=`find . -name "*.exe" | grep "/$x_conf/"`
-   for x_file in $x_files; do
-      cp "$x_file" "$x_build_dir/$res_bin/$x_conf" > /dev/null 2>&1
-   done 
-   x_files=`find . -name "*.dll" | grep "/$x_conf/"`
-   for x_file in $x_files; do
-      cp "$x_file" "$x_build_dir/$res_bin/$x_conf" > /dev/null 2>&1
-   done 
-done
-
 
 
 # Read list with tests and write commands to script file.
@@ -358,7 +335,8 @@ for x_row in $x_tests; do
    x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g'`
 
    # Split it to parts
-   x_src_dir="$x_root_dir/src/`echo \"$x_row\" | sed -e 's/~.*$//'`"
+   x_rel_dir=`echo \$x_row | sed -e 's/~.*$//'`
+   x_src_dir="$x_root_dir/src/$x_rel_dir"
    x_test=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_app=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_cmd=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
@@ -367,7 +345,7 @@ for x_row in $x_tests; do
    x_requires=`echo "$x_row" | sed -e 's/.*~//'`
 
    # Application base build directory
-   x_work_dir="$x_build_dir/`echo \"$x_row\" | sed -e 's/~.*$//'`"
+   x_work_dir="$x_build_dir/$x_rel_dir"
 
    # Copy specified files to the each build directory
 
@@ -402,10 +380,10 @@ for x_row in $x_tests; do
    # Generate extension for tests output file
    if test "$x_test" != "$x_test_prev" ; then 
       x_cnt=1
-      x_test_out="test_out"
+      x_test_out="out"
    else
       x_cnt=`expr $x_cnt + 1`
-      x_test_out="test_out$x_cnt"
+      x_test_out="out$x_cnt"
    fi
    x_test_prev="$x_test"
 
@@ -414,7 +392,7 @@ for x_row in $x_tests; do
    # Write test commands for current test into a shell script file
    cat >> $x_out <<EOF
 ######################################################################
-RunTest "$x_work_dir" \\
+RunTest "$x_rel_dir" \\
         "$x_test" \\
         "$x_app" \\
         "$x_cmd" \\
