@@ -36,11 +36,13 @@
 #include <corelib/plugin_manager_impl.hpp>
 
 
+#include <db.h>
+
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_trans.hpp>
-#include <corelib/ncbimtx.hpp>
 
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 
 
@@ -475,7 +477,7 @@ void CBDB_Cache::Open(const char* cache_path,
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
-        m_Env->OpenWithTrans(cache_path);
+        m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
     } else {
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
@@ -488,9 +490,20 @@ void CBDB_Cache::Open(const char* cache_path,
                          "LC: Warning: Joined non-transactional environment ");
             }
         } 
+        catch (CBDB_ErrnoException& err_ex) 
+        {
+            if (err_ex.BDB_GetErrno() == DB_RUNRECOVERY) {
+                LOG_POST(Warning << 
+                         "LC: Warning: DB_ENV returned DB_RUNRECOVERY code."
+                         " Running the recovery procedure.");
+                m_Env->OpenWithTrans(cache_path, 
+                                      CBDB_Env::eThreaded | 
+                                      CBDB_Env::eRunRecovery);
+            }
+        }
         catch (CBDB_Exception&)
         {
-            m_Env->OpenWithTrans(cache_path);
+            m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
         }
     }
 
@@ -1314,6 +1327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2004/06/21 15:10:32  kuznets
+ * Added support of db environment recovery procedure
+ *
  * Revision 1.57  2004/06/16 13:12:40  kuznets
  * Fixed bug in opening of read-only cache
  *
