@@ -218,10 +218,21 @@ public:
                 return eTreeTraverse;
 
         if (qnode.HasValue()) {
-            const string& fname = qnode.GetValue();
-            CBDB_File::TUnifiedFieldIndex fidx = m_File.GetFieldIdx(fname);
-            if (fidx) {
-                qnode.SetField(fidx);
+            string& fvalue = qnode.GetValue();
+            int len = fvalue.length(); 
+            // if string value is in apostrophe marks: remove it
+            if (fvalue[0] == '\'' && fvalue[len-1] == '\'') {
+                len -= 2;
+                if (len) {
+                    qnode.SetValue(fvalue.substr(1, len));
+                } else {
+                    qnode.SetValue(kEmptyStr);
+                }
+            } else {
+                CBDB_File::TUnifiedFieldIndex fidx = m_File.GetFieldIdx(fvalue);
+                if (fidx) {
+                    qnode.SetField(fidx);
+                }
             }
         }
         return eTreeTraverse;
@@ -695,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/01 14:03:57  kuznets
+ * CQueryTreeFieldResolveFunc improved to remove string marks
+ *
  * Revision 1.3  2004/02/24 14:12:45  kuznets
  * CBDB_Query add new constructor parameter and several helper functions
  *
