@@ -86,7 +86,6 @@ public:
 
     bool HaveSetFlag(void) const;
     CMemberInfo* SetSetFlag(const bool* setFlag);
-    CMemberInfo* SetCallback(void);
     CMemberInfo* SetOptional(const bool* setFlag);
 
     bool GetSetFlag(TConstObjectPtr object) const;
@@ -100,8 +99,6 @@ public:
 
     void SetParentClass(void);
 
-    bool VerifyAssigned(CObjectOStream& out, TConstObjectPtr classPtr) const;
-    void SetAssigned(CObjectIStream& in, TConstObjectPtr classPtr) const;
     // I/O
     void ReadMember(CObjectIStream& in, TObjectPtr classPtr) const;
     void ReadMissingMember(CObjectIStream& in, TObjectPtr classPtr) const;
@@ -193,8 +190,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.24  2003/04/03 21:46:09  gouriano
-* verify initialization of data members
+* Revision 1.25  2003/04/10 20:13:37  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
 *
 * Revision 1.23  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.

@@ -30,11 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.76  2003/04/08 15:18:16  gouriano
-* disable data assignment verification
-*
-* Revision 1.75  2003/04/03 21:47:24  gouriano
-* verify initialization of data members
+* Revision 1.77  2003/04/10 20:13:39  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
 *
 * Revision 1.74  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
@@ -405,7 +403,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
     : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
-      m_Separator(""), m_AutoSeparator(false), m_VerifyData(false)
+      m_Separator(""), m_AutoSeparator(false)
 {
 }
 

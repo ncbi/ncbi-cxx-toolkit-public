@@ -49,10 +49,6 @@ class NCBI_XSERIAL_EXPORT CClassInfoHelperBase
 {
 protected:
     typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
-    typedef bool (*TVerifyAssigned)(TConstObjectPtr object,
-                                    TMemberIndex index);
-    typedef void (*TSetAssigned)(TConstObjectPtr object,
-                                 TMemberIndex index);
     typedef CTypeInfo::TTypeCreate TCreateFunction; 
     typedef TMemberIndex (*TWhichFunction)(const CChoiceTypeInfo* choiceType,
                                            TConstObjectPtr choicePtr);
@@ -96,9 +92,7 @@ protected:
                                            const CObject* cObject,
                                            TCreateFunction createFunc,
                                            const type_info& id,
-                                           TGetTypeIdFunction func,
-                                           TVerifyAssigned verifyFunc,
-                                           TSetAssigned setFunc);
+                                           TGetTypeIdFunction func);
 };
 
 // template collecting all helper methods for generated classes
@@ -131,14 +125,6 @@ public:
     static const type_info* GetTypeId(const void* object)
         {
             return &typeid(Get(object));
-        }
-    static bool VerifyAssigned(const void* object, TMemberIndex index)
-        {
-            return Get(object).VerifyAssigned(index);
-        }
-    static void SetAssigned(const void* object, TMemberIndex index)
-        {
-            Get(const_cast<void*>(object)).SetAssigned(index);
         }
 
     enum EGeneratedChoiceValues {
@@ -234,8 +220,7 @@ private:
         {
             return CParent::CreateClassInfo(name, sizeof(CClassType),
                                             cObject, &CreateCObject,
-                                            typeid(CClassType), &GetTypeId,
-                                            &VerifyAssigned, &SetAssigned);
+                                            typeid(CClassType), &GetTypeId);
         }
     static CChoiceTypeInfo* CreateChoiceInfo(const char* name,
                                              const void* nonCObject)
@@ -267,8 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  2003/04/03 21:46:09  gouriano
-* verify initialization of data members
+* Revision 1.7  2003/04/10 20:13:37  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
 *
 * Revision 1.5  2003/03/27 19:26:48  ucko
 * WhichChoice(): cast Which() to TMemberIndex.  (Avoids new WorkShop warnings.)

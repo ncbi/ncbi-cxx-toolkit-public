@@ -30,8 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.44  2003/04/03 21:48:46  gouriano
-* verify initialization of data members
+* Revision 1.45  2003/04/10 20:13:41  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
 *
 * Revision 1.43  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
@@ -353,7 +354,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
     ITERATE ( TMembers, i, GetMembers() ) {
         ++itemCount;
         CDataMember* mem = i->get();
-//        if ( mem->Optional() )
+        if ( mem->Optional() )
             ++itemCount;
     }
     auto_ptr<CAnyTypeClassInfo> typeInfo(new CAnyTypeClassInfo(GlobalName(),
@@ -375,8 +376,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
             else {
                 memInfo->SetOptional();
             }
-//            memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
-            memInfo->SetCallback();
+            memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
         }
         if (mem->NoPrefix()) {
             memInfo->SetNoPrefix();

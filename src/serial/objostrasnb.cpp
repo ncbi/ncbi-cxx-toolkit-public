@@ -30,8 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.74  2003/04/03 21:47:24  gouriano
-* verify initialization of data members
+* Revision 1.75  2003/04/10 20:13:39  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
 *
 * Revision 1.73  2003/03/26 16:14:23  vasilche
 * Removed TAB symbols. Some formatting.
@@ -371,12 +372,8 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
 {
 #if CHECK_STREAM_INTEGRITY
-    if ( !m_Limits.empty() || m_CurrentTagState != eTagStart ) {
-// throwing an exception from destructor is probably a bad idea
-// we could be in the middle of proccesing another exception
-//        ThrowError(fFail, "CObjectOStreamAsnBinary not finished");
-        ERR_POST(Error << "CObjectOStreamAsnBinary not finished");
-    }
+    if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
+        ThrowError(fFail, "CObjectOStreamAsnBinary not finished");
 #endif
 }
 

@@ -30,8 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.24  2003/04/03 21:47:26  gouriano
-* verify initialization of data members
+* Revision 1.25  2003/04/10 20:13:39  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
 *
 * Revision 1.23  2003/03/06 21:48:41  grichenk
 * Removed type-info cleanup code
@@ -476,12 +477,9 @@ CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
                                       const CObject* cObject,
                                       TCreateFunction createFunc,
                                       const type_info& id,
-                                      TGetTypeIdFunction idFunc,
-                                      TVerifyAssigned verifyFunc,
-                                      TSetAssigned setFunc)
+                                      TGetTypeIdFunction idFunc)
 {
-    return new CClassTypeInfo(size, name, cObject, createFunc, id, idFunc,
-                              verifyFunc, setFunc);
+    return new CClassTypeInfo(size, name, cObject, createFunc, id, idFunc);
 }
 
 void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction func)
@@ -507,7 +505,7 @@ void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)
 
 // Functions preventing memory leaks due to undestroyed type info objects
 
-void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object)
+void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* /*object*/)
 {
 /*
     typedef AutoPtr<CEnumeratedTypeValues> TEnumTypePtr;
@@ -520,7 +518,7 @@ void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object)
 */
 }
 
-void RegisterTypeInfoObject(CTypeInfo* object)
+void RegisterTypeInfoObject(CTypeInfo* /*object*/)
 {
 /*
     typedef AutoPtr<CTypeInfo> TTypeInfoPtr;
