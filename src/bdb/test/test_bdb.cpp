@@ -489,6 +489,22 @@ static void s_TEST_BDB_IdTable_FillStress(void)
 
     cout << "Table loaded..." << endl;    
 
+    for (i = 1; i < recs; ++i) {
+
+        {{
+            CBDB_FileCursor cur(dbf1, CBDB_FileCursor::eReadModifyUpdate);
+            cur.SetCondition(CBDB_FileCursor::eEQ);
+
+            cur.From << i+ (1 * 1000000);
+            EBDB_ErrCode ret = cur.FetchFirst();
+            assert (ret == eBDB_Ok);
+        }}
+
+
+    } // for
+
+
+
     // Read the table check if all records are in place
 
     dbf1.Reopen(CBDB_File::eReadOnly);
@@ -1793,6 +1809,25 @@ static void s_TEST_ICache(void)
 
     const void* dp = &data[0];
 
+    {{
+     CBDB_Cache  bdb_cache;
+     int top = bdb_cache.GetTimeStampPolicy();
+     bdb_cache.SetTimeStampPolicy(top, 30);
+     bdb_cache.SetVersionRetention( ICache::eDropAll );
+
+     bdb_cache.Open("nt_cache", "bcache", 
+                    CBDB_Cache::ePidLock, 1024*1024 * 100,
+                    CBDB_Cache::eNoTrans);
+
+     char buf[100] = {0,};
+ 	 bdb_cache.Store("a", 0, "", buf, 1 );
+ 	 bdb_cache.Store("b", 0, "", buf, 1 );
+     size_t sz = bdb_cache.GetSize("a", 0, "");
+     assert(sz == 1);
+
+    }}
+
+
     CBDB_Cache  bdb_cache;
     int top = bdb_cache.GetTimeStampPolicy();
     bdb_cache.SetTimeStampPolicy(top, 30);
@@ -1951,6 +1986,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/11/01 16:55:15  kuznets
+ * test for RMW locks
+ *
  * Revision 1.53  2004/10/14 17:45:50  vasilche
  * Use IOS_BASE instead of non-portable ios_base.
  *
