@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/22 17:33:46  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.9  1999/07/21 20:02:16  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 *
@@ -105,11 +108,11 @@ public:
 
 protected:
 
-    virtual void WriteMemberPrefix(COObjectInfo& info);
+    virtual void WriteMemberPrefix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
-    virtual void WriteThisTypeReference(TTypeInfo typeInfo);
-    virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
+    virtual void WriteThis(TConstObjectPtr object, TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
 
     virtual void FBegin(Block& block);
     virtual void VNext(const Block& block);

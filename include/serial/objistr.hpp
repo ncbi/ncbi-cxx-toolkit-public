@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/22 17:33:40  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.16  1999/07/21 14:19:55  vasilche
 * Added serialization of bool.
 *
@@ -148,7 +151,7 @@ public:
     // object level readers
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
     // reads type info
-    virtual TObjectPtr ReadPointer(TTypeInfo declaredType) = 0;
+    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
 
     virtual void SkipValue(void);
 
@@ -344,6 +347,24 @@ protected:
 
 protected:
     // low level readers
+    CIObjectInfo ReadObjectInfo(void);
+    enum EPointerType {
+        eNullPointer,
+        eMemberPointer,
+        eObjectPointer,
+        eThisPointer,
+        eOtherPointer
+    };
+    virtual EPointerType ReadPointerType(void) = 0;
+    virtual string ReadMemberPointer(void);
+    virtual void ReadMemberPointerEnd(void);
+    virtual TIndex ReadObjectPointer(void) = 0;
+    virtual void ReadThisPointerEnd(void);
+    virtual string ReadOtherPointer(void) = 0;
+    virtual void ReadOtherPointerEnd(void);
+    virtual bool HaveMemberSuffix(void);
+    virtual string ReadMemberSuffix(void);
+
     virtual string ReadString(void) = 0;
     virtual char* ReadCString(void);
 

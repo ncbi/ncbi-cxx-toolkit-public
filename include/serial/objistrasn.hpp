@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/22 17:33:41  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.12  1999/07/21 14:19:57  vasilche
 * Added serialization of bool.
 *
@@ -117,8 +120,6 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
 
-    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
-
     virtual void SkipValue(void);
 
     TByte ReadByte(void);
@@ -140,7 +141,11 @@ protected:
 	virtual void End(const ByteBlock& block);
 
 private:
-    CIObjectInfo ReadObjectPointer(void);
+    virtual EPointerType ReadPointerType(void);
+    virtual TIndex ReadObjectPointer(void);
+    virtual string ReadOtherPointer(void);
+    virtual bool HaveMemberSuffix(void);
+    virtual string ReadMemberSuffix(void);
 
     void SkipObjectData(void);
     void SkipObjectPointer(void);
@@ -158,7 +163,7 @@ private:
     bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
     bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
-    void ExpectString(const string& s, bool skipWhiteSpace = false);
+    void ExpectString(const char* s, bool skipWhiteSpace = false);
     bool ReadEscapedChar(char& out, char terminator);
 
     char SkipWhiteSpace(void);

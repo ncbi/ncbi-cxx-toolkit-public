@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/22 17:33:47  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.2  1999/07/21 14:20:01  vasilche
 * Added serialization of bool.
 *
@@ -89,6 +92,9 @@ namespace CObjectStreamAsnBinaryDefs
         eVisibleString = 26,
         eISO646String = 26,
         eGeneralString = 27,
+
+        eMemberReference = 29, // non standard use with eApplication class
+        eObjectReference = 30, // non standard use with eApplication class
 
         eLongTag = 31
     };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/07/22 17:33:51  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.18  1999/07/21 14:20:04  vasilche
 * Added serialization of bool.
 *
@@ -189,30 +192,6 @@ char CObjectIStreamAsn::GetChar0(void)
 #endif
 }
 
-/*
-inline
-CNcbiIstream& CObjectIStreamAsn::SkipWhiteSpace0(void)
-{
-    switch ( m_UngetChar ) {
-    case -1:
-        break;
-    case ' ':
-    case '\n':
-    case '\r':
-    case '\t':
-    case '\v':
-        _TRACE("SkipWhiteSpace0: '" << char(m_UngetChar) << "'");
-        m_UngetChar = -1;
-        break;
-    default:
-        _TRACE("SkipWhiteSpace0: '" << char(m_UngetChar) << "'");
-        throw runtime_error("bad SkipWhiteSpace0 call");
-    }
-    m_GetChar = -1;
-    return m_Input;
-}
-*/
-
 inline
 void CObjectIStreamAsn::UngetChar(void)
 {
@@ -295,12 +274,13 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
                  "' or '" + choiceFalse + "' expected");
 }
 
-void CObjectIStreamAsn::ExpectString(const string& s, bool skipWhiteSpace)
+void CObjectIStreamAsn::ExpectString(const char* s, bool skipWhiteSpace)
 {
     if ( skipWhiteSpace )
         SkipWhiteSpace();
-    for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
-        Expect(*i);
+    char c;
+    while ( (c = *s++) ) {
+        Expect(c);
     }
 }
 
@@ -619,73 +599,47 @@ size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& , char* dst, size_t length)
 
 void CObjectIStreamAsn::End(const ByteBlock& )
 {
-	Expect('\'');
-	Expect('H');
+	ExpectString("\'H");
 }
 
-TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
+CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
 {
-    _TRACE("CObjectIStreamAsn::ReadPointer(" << declaredType->GetName() << ")");
-    char c = GetChar(true);
-    CIObjectInfo info;
-    switch ( c ) {
-    case '0':
-        _TRACE("CObjectIStreamAsn::ReadPointer: null");
-        return 0;
-    case '{':
-        {
-            _TRACE("CObjectIStreamAsn::ReadPointer: new");
-            UngetChar();
-            TObjectPtr object = declaredType->Create();
-            ReadExternalObject(object, declaredType);
-            return object;
-        }
+    char c;
+    switch ( (c = GetChar(true)) ) {
+    case 'N':
+        ExpectString("ULL");
+        return eNullPointer;
     case '@':
-        {
-            TIndex index = ReadIndex();
-            _TRACE("CObjectIStreamAsn::ReadPointer: @" << index);
-            info = GetRegisteredObject(index);
-            break;
-        }
+        return eObjectPointer;
+    case '{':
+        UngetChar();
+        return eThisPointer;
+    case ':':
+        return eOtherPointer;
     default:
         UngetChar();
-        if ( IsAlpha(c) || c == '[' ) {
-            string className = ReadId();
-            if ( className == "NULL" )
-                return 0;
-            ExpectString("::=", true);
-            _TRACE("CObjectIStreamAsn::ReadPointer: new " << className);
-            TTypeInfo typeInfo = CClassInfoTmpl::GetClassInfoByName(className);
-            TObjectPtr object = typeInfo->Create();
-            ReadExternalObject(object, typeInfo);
-            info = CIObjectInfo(object, typeInfo);
-            break;
-        }
-        else {
-            _TRACE("CObjectIStreamAsn::ReadPointer: default new");
-            TObjectPtr object = declaredType->Create();
-            ReadExternalObject(object, declaredType);
-            return object;
-        }
+        return eThisPointer;
     }
-    while ( GetChar('.', true) ) {
-        string memberName = ReadId();
-        _TRACE("CObjectIStreamAsn::ReadObjectPointer: member " << memberName);
-        CTypeInfo::TMemberIndex index =
-            info.GetTypeInfo()->FindMember(memberName);
-        if ( index < 0 ) {
-            THROW1_TRACE(runtime_error, "member not found: " +
-                         info.GetTypeInfo()->GetName() + "." + memberName);
-        }
-        const CMemberInfo* memberInfo =
-            info.GetTypeInfo()->GetMemberInfo(index);
-        info = CIObjectInfo(memberInfo->GetMember(info.GetObject()),
-                            memberInfo->GetTypeInfo());
-    }
-    if ( info.GetTypeInfo() != declaredType ) {
-        THROW1_TRACE(runtime_error, "incompatible member type");
-    }
-    return info.GetObject();
+}
+
+CObjectIStream::TIndex CObjectIStreamAsn::ReadObjectPointer(void)
+{
+    return ReadIndex();
+}
+
+string CObjectIStreamAsn::ReadOtherPointer(void)
+{
+    return ReadId();
+}
+
+bool CObjectIStreamAsn::HaveMemberSuffix(void)
+{
+    return GetChar('.', true);
+}
+
+string CObjectIStreamAsn::ReadMemberSuffix(void)
+{
+    return ReadId();
 }
 
 void CObjectIStreamAsn::SkipValue()

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/22 17:33:55  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.14  1999/07/19 15:50:35  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -148,36 +151,40 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         return;
     }
 
-    COObjectInfo info(m_Objects, object, typeInfo);
+    WritePointer(COObjectInfo(m_Objects, object, typeInfo), typeInfo);
+}
 
-    // find if this object is part of another object
+void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
+{
     if ( info.IsMember() ) {
-        WriteMemberPrefix(info);
-    }
-
-    const CORootObjectInfo& root = info.GetRootObjectInfo();
-    if ( root.IsWritten() ) {
-        // put reference on it
-        _TRACE("WritePointer: " << unsigned(object) << ": @" << root.GetIndex());
-        WriteObjectReference(root.GetIndex());
+        CMemberId memberId = info.GetMemberId();
+        info.ToContainerObject();
+        WriteMemberPrefix(memberId);
+        WritePointer(info, 0);
+        WriteMemberSuffix(memberId);
     }
     else {
-        // new object
-        TTypeInfo realTypeInfo = root.GetTypeInfo();
-        if ( typeInfo == realTypeInfo ) {
-            _TRACE("WritePointer: " << unsigned(object) << ": new");
-            WriteThisTypeReference(realTypeInfo);
+        const CORootObjectInfo& root = info.GetRootObjectInfo();
+        if ( root.IsWritten() ) {
+            // put reference on it
+            _TRACE("WritePointer: " << unsigned(info.GetRootObject()) <<
+                   ": @" << root.GetIndex());
+            WriteObjectReference(root.GetIndex());
         }
         else {
-            _TRACE("WritePointer: " << unsigned(object) << ": new "
-                   << realTypeInfo->GetName());
-            WriteOtherTypeReference(realTypeInfo);
+            // new object
+            TTypeInfo realTypeInfo = root.GetTypeInfo();
+            if ( typeInfo == realTypeInfo ) {
+                _TRACE("WritePointer: " << unsigned(info.GetRootObject())
+                       << ": new");
+                WriteThis(info.GetRootObject(), realTypeInfo);
+            }
+            else {
+                _TRACE("WritePointer: " << unsigned(info.GetRootObject())
+                       << ": new " << realTypeInfo->GetName());
+                WriteOther(info.GetRootObject(), realTypeInfo);
+            }
         }
-        WriteExternalObject(info.GetRootObject(), realTypeInfo);
-    }
-
-    if ( info.IsMember() ) {
-        WriteMemberSuffix(info);
     }
 }
 
@@ -201,16 +208,18 @@ void CObjectOStream::WriteCString(const char* str)
 	WriteString(str);
 }
 
-void CObjectOStream::WriteMemberPrefix(COObjectInfo& )
+void CObjectOStream::WriteMemberPrefix(const CMemberId& )
 {
 }
 
-void CObjectOStream::WriteMemberSuffix(COObjectInfo& )
+void CObjectOStream::WriteMemberSuffix(const CMemberId& )
 {
 }
 
-void CObjectOStream::WriteThisTypeReference(TTypeInfo )
+void CObjectOStream::WriteThis(TConstObjectPtr object,
+                               TTypeInfo typeInfo)
 {
+    WriteExternalObject(object, typeInfo);
 }
 
 void CObjectOStream::EndMember(const Member& )

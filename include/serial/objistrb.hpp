@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/22 17:33:43  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.11  1999/07/21 20:02:15  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 *
@@ -97,8 +100,6 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
 
-    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
-
     virtual void SkipValue(void);
 
     TByte ReadByte(void);
@@ -113,6 +114,11 @@ public:
     virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
 
 protected:
+    virtual EPointerType ReadPointerType(void);
+    virtual string ReadMemberPointer(void);
+    virtual TIndex ReadObjectPointer(void);
+    virtual string ReadOtherPointer(void);
+    
     virtual void FBegin(Block& block);
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member);
@@ -120,7 +126,7 @@ protected:
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
 
 private:
-    CIObjectInfo ReadObjectPointer(void);
+    CIObjectInfo ReadObjectInfo(void);
 
     void SkipObjectData(void);
     void SkipObjectPointer(void);

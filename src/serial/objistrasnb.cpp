@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/22 17:33:52  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.5  1999/07/21 20:02:54  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 * Fixed bugs with storing pointers into binary ASN.1
@@ -51,6 +54,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrasnb.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/member.hpp>
+#include <serial/memberid.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
@@ -90,32 +96,18 @@ void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
         THROW1_TRACE(runtime_error, "expected");
 }
 
-ETag CObjectIStreamAsnBinary::ReadSysTag(bool allowLong)
+ETag CObjectIStreamAsnBinary::ReadSysTag(void)
 {
     _TRACE("ReadSysTag...");
     switch ( m_LastTagState ) {
     case eNoTagRead:
-        if ( ((m_LastTagByte = ReadByte()) & 0x1f) == eLongTag ) {
-            if ( !allowLong ) {
-                m_LastTagState = eLongTagBack;
-                THROW1_TRACE(runtime_error, "unexpected long tag");
-            }
-            m_LastTagState = eLongTagRead;
-        }
-        else {
-            m_LastTagState = eSysTagRead;
-        }
+        m_LastTagState = eSysTagRead;
+        m_LastTagByte = ReadByte();
         break;
     case eSysTagRead:
-    case eLongTagRead:
         THROW1_TRACE(runtime_error, "double tag read");
     case eSysTagBack:
         m_LastTagState = eSysTagRead;
-        break;
-    case eLongTagBack:
-        if ( !allowLong )
-            THROW1_TRACE(runtime_error, "unexpected long tag");
-        m_LastTagState = eLongTagRead;
         break;
     }
     _TRACE("ReadSysTag: " << (m_LastTagByte >> 6) << ", " <<
@@ -131,13 +123,9 @@ void CObjectIStreamAsnBinary::BackSysTag(void)
     case eNoTagRead:
         THROW1_TRACE(runtime_error, "tag back without read");
     case eSysTagBack:
-    case eLongTagBack:
         THROW1_TRACE(runtime_error, "double tag back");
     case eSysTagRead:
         m_LastTagState = eSysTagBack;
-        break;
-    case eLongTagRead:
-        m_LastTagState = eLongTagBack;
         break;
     }
 }
@@ -150,10 +138,8 @@ void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
     case eNoTagRead:
         THROW1_TRACE(runtime_error, "length read without tag");
     case eSysTagRead:
-    case eLongTagRead:
         break;
     case eSysTagBack:
-    case eLongTagBack:
         THROW1_TRACE(runtime_error, "length read with tag back");
     }
     if ( constructed && (m_LastTagByte & 0x20) == 0 )
@@ -167,7 +153,7 @@ void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
 
 TTag CObjectIStreamAsnBinary::ReadTag(void)
 {
-    ETag sysTag = ReadSysTag(true);
+    ETag sysTag = ReadSysTag();
     if ( sysTag != eLongTag )
         return sysTag;
     TTag tag = 0;
@@ -184,18 +170,40 @@ TTag CObjectIStreamAsnBinary::ReadTag(void)
 inline
 bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed)
 {
-    return (m_LastTagByte >> 5) == ((c << 1) | (constructed? 1: 0));
+    return m_LastTagState == eSysTagRead &&
+        (m_LastTagByte >> 5) == ((c << 1) | (constructed? 1: 0));
+}
+
+inline
+bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed, ETag tag)
+{
+    return m_LastTagState == eSysTagRead &&
+        m_LastTagByte == ((c << 6) | (constructed? 0x20: 0) | tag);
 }
 
 inline
 ETag CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
 {
     ETag tag = ReadSysTag();
+    if ( tag == eLongTag )
+        THROW1_TRACE(runtime_error, "unexpected long tag");
+
     if ( !LastTagWas(c, constructed) )
         THROW1_TRACE(runtime_error,
                      "unexpected tag class/type: should be: " +
                      NStr::IntToString(c) +  (constructed? "C": "p"));
     return tag;
+}
+
+string CObjectIStreamAsnBinary::ReadClassTag(void)
+{
+    _ASSERT(LastTagWas(eApplication, true, eLongTag));
+    string name;
+    TByte c;
+    while ( (c = ReadByte()) & 0x80 == 0 ) {
+        name += char(c);
+    }
+    return name + char(c & 0x7f);
 }
 
 inline
@@ -509,47 +517,63 @@ size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& , char* dst, size_t l
 	return length;
 }
 
-TObjectPtr CObjectIStreamAsnBinary::ReadPointer(TTypeInfo declaredType)
+CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
 {
-    _TRACE("CObjectIStreamAsnBinary::ReadPointer:" << declaredType->GetName());
-    ETag tag = ReadSysTag(true);
+    ETag tag = ReadSysTag();
     if ( LastTagWas(eUniversal, false) ) {
         switch ( tag ) {
         case eNull:
             ExpectShortLength(0);
-            _TRACE("CObjectIStreamAsnBinary::ReadPointer: null");
-            return 0;
-        case eObjectIdentifier:
-            {
-                TIndex index;
-                ReadStdNumberValue(*this, index);
-                _TRACE("CObjectIStreamBinary::ReadPointer: @" << index);
-                const CIObjectInfo& info = GetRegisteredObject(index);
-                if ( info.GetTypeInfo() != declaredType ) {
-                    THROW1_TRACE(runtime_error, "incompatible object type");
-                }
-                return info.GetObject();
-            }
-        case eLongTag:
-            {
-                // other class
-                THROW1_TRACE(runtime_error, "not implemented");
-            }
+            return eNullPointer;
         }
     }
-    // this class
+    else if ( LastTagWas(eApplication, true) ) {
+        switch ( tag ) {
+        case eMemberReference:
+            return eMemberPointer;
+        case eLongTag:
+            return eOtherPointer;
+        }
+    }
+    else if ( LastTagWas(eApplication, false) ) {
+        switch ( tag) {
+        case eObjectReference:
+            return eObjectPointer;
+        }
+    }
+    // by default: try this class
     BackSysTag();
-    _TRACE("CObjectIStreamAsnBinary::ReadPointer: new");
-    TObjectPtr object = declaredType->Create();
-    RegisterObject(object, declaredType);
-    Read(object, declaredType);
-    return object;
+    return eThisPointer;
 }
 
-CIObjectInfo CObjectIStreamAsnBinary::ReadObjectPointer(void)
+string CObjectIStreamAsnBinary::ReadMemberPointer(void)
 {
-    _TRACE("CObjectIStreamAsnBinary::ReadObjectPointer");
-    THROW1_TRACE(runtime_error, "not implemented");
+    ExpectIndefiniteLength();
+    return ReadString();
+}
+
+void CObjectIStreamAsnBinary::ReadMemberPointerEnd(void)
+{
+    ExpectEndOfContent();
+}
+
+CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)
+{
+    TIndex index;
+    ReadStdNumberValue(*this, index);
+    return index;
+}
+
+string CObjectIStreamAsnBinary::ReadOtherPointer(void)
+{
+    string className = ReadClassTag();
+    ExpectIndefiniteLength();
+    return className;
+}
+
+void CObjectIStreamAsnBinary::ReadOtherPointerEnd(void)
+{
+    ExpectEndOfContent();
 }
 
 void CObjectIStreamAsnBinary::SkipValue()
@@ -569,10 +593,17 @@ unsigned CObjectIStreamAsnBinary::GetAsnFlags(void)
 
 void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
 {
+    if ( m_LastTagByte == eSysTagRead )
+        THROW1_TRACE(runtime_error, "double tag read");
 }
 
 size_t CObjectIStreamAsnBinary::AsnRead(AsnIo& , char* data, size_t )
 {
+    if ( m_LastTagState == eSysTagBack ) {
+        m_LastTagByte = eNoTagRead;
+        *data = m_LastTagByte;
+        return 1;
+    }
     *data = ReadByte();
     return 1;
 }

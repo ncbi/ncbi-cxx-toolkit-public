@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/22 17:33:56  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.17  1999/07/21 14:20:07  vasilche
 * Added serialization of bool.
 *
@@ -122,7 +125,7 @@ CObjectOStreamAsn::~CObjectOStreamAsn(void)
 void CObjectOStreamAsn::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     if ( m_Ident == 0 ) {
-        WriteOtherTypeReference(typeInfo);
+        m_Output << typeInfo->GetName() << " ::= ";
     }
     CObjectOStream::Write(object, typeInfo);
 }
@@ -260,14 +263,9 @@ void CObjectOStreamAsn::WriteId(const string& str)
 	}
 }
 
-void CObjectOStreamAsn::WriteMemberSuffix(COObjectInfo& info)
+void CObjectOStreamAsn::WriteMemberSuffix(const CMemberId& id)
 {
-    string memberName = info.GetMemberId().GetName();
-    info.ToContainerObject();
-    if ( info.IsMember() ) {
-        WriteMemberSuffix(info);
-    }
-    m_Output << '.' << memberName;
+    m_Output << '.' << id.GetName();
 }
 
 void CObjectOStreamAsn::WriteNullPointer(void)
@@ -280,10 +278,11 @@ void CObjectOStreamAsn::WriteObjectReference(TIndex index)
     m_Output << '@' << index;
 }
 
-void CObjectOStreamAsn::WriteOtherTypeReference(TTypeInfo typeInfo)
+void CObjectOStreamAsn::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
 {
+    m_Output << " : ";
     WriteId(typeInfo->GetName());
-    m_Output << " ::= ";
+    WriteExternalObject(object, typeInfo);
 }
 
 void CObjectOStreamAsn::WriteNewLine(void)

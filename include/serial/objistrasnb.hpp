@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/22 17:33:42  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.5  1999/07/21 20:02:14  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 *
@@ -80,8 +83,6 @@ public:
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
 
-    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
-
     virtual void SkipValue(void);
 
     unsigned char ReadByte(void);
@@ -92,7 +93,7 @@ public:
 
     void ExpectByte(TByte byte);
 
-    ETag ReadSysTag(bool allowLong = false);
+    ETag ReadSysTag(void);
     void BackSysTag(void);
     void FlushSysTag(bool constructed = false);
     TTag ReadTag(void);
@@ -103,6 +104,7 @@ public:
     void ExpectSysTag(ETag tag);
     void ExpectSysTag(EClass c, bool constructed, ETag tag);
     bool LastTagWas(EClass c, bool constructed);
+    bool LastTagWas(EClass c, bool constructed, ETag tag);
 
     size_t ReadShortLength(void);
     size_t ReadLength(void);
@@ -124,7 +126,14 @@ protected:
     virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
 
 private:
-    CIObjectInfo ReadObjectPointer(void);
+    virtual EPointerType ReadPointerType(void);
+    virtual string ReadMemberPointer(void);
+    virtual void ReadMemberPointerEnd(void);
+    virtual TIndex ReadObjectPointer(void);
+    virtual string ReadOtherPointer(void);
+    virtual void ReadOtherPointerEnd(void);
+
+    string ReadClassTag(void);
 
     void SkipObjectData(void);
     void SkipObjectPointer(void);
@@ -136,9 +145,7 @@ private:
     enum ELastTagState {
         eNoTagRead,
         eSysTagRead,
-        eLongTagRead,
-        eSysTagBack,
-        eLongTagBack
+        eSysTagBack
     };
     ELastTagState m_LastTagState;
 };

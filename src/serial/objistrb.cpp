@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/07/22 17:33:53  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.21  1999/07/21 20:02:55  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 * Fixed bugs with storing pointers into binary ASN.1
@@ -686,94 +689,38 @@ size_t CObjectIStreamBinary::ReadBytes(const ByteBlock& ,
 	return length;
 }
 
-TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
+CObjectIStream::EPointerType CObjectIStreamBinary::ReadPointerType(void)
 {
-    _TRACE("CObjectIStreamBinary::ReadPointer(" << declaredType->GetName() << ")");
+    _TRACE("CObjectIStreamBinary::ReadPointerType");
     switch ( ReadByte() ) {
     case eNull:
-        _TRACE("CObjectIStreamBinary::ReadPointer: null");
-        return 0;
+        return eNullPointer;
     case eMemberReference:
-        {
-            string memberName = ReadStringValue();
-            _TRACE("CObjectIStreamBinary::ReadPointer: member " << memberName);
-            CIObjectInfo info = ReadObjectPointer();
-            CTypeInfo::TMemberIndex index =
-                info.GetTypeInfo()->FindMember(memberName);
-            if ( index < 0 ) {
-                THROW1_TRACE(runtime_error, "member not found: " +
-                             info.GetTypeInfo()->GetName() + "." + memberName);
-            }
-            const CMemberInfo* memberInfo =
-                info.GetTypeInfo()->GetMemberInfo(index);
-            if ( memberInfo->GetTypeInfo() != declaredType ) {
-                THROW1_TRACE(runtime_error, "incompatible member type");
-            }
-            return memberInfo->GetMember(info.GetObject());
-        }
+        return eMemberPointer;
     case eObjectReference:
-        {
-            TIndex index = ReadIndex();
-            _TRACE("CObjectIStreamBinary::ReadPointer: @" << index);
-            const CIObjectInfo& info = GetRegisteredObject(index);
-            if ( info.GetTypeInfo() != declaredType ) {
-                THROW1_TRACE(runtime_error, "incompatible object type");
-            }
-            return info.GetObject();
-        }
+        return eObjectPointer;
     case eThisClass:
-        {
-            _TRACE("CObjectIStreamBinary::ReadPointer: new");
-            TObjectPtr object = declaredType->Create();
-            RegisterObject(object, declaredType);
-            Read(object, declaredType);
-            return object;
-        }
+        return eThisPointer;
+    case eOtherClass:
+        return eOtherPointer;
     default:
         THROW1_TRACE(runtime_error, "invalid object reference code");
     }
 }
 
-CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
+string CObjectIStreamBinary::ReadMemberPointer(void)
 {
-    _TRACE("CObjectIStreamBinary::ReadObjectPointer()");
-    switch ( ReadByte() ) {
-    case eMemberReference:
-        {
-            string memberName = ReadStringValue();
-            _TRACE("CObjectIStreamBinary::ReadObjectPointer: member " <<
-                   memberName);
-            CIObjectInfo info = ReadObjectPointer();
-            CTypeInfo::TMemberIndex index =
-                info.GetTypeInfo()->FindMember(memberName);
-            if ( index < 0 ) {
-                THROW1_TRACE(runtime_error, "member not found: " +
-                             info.GetTypeInfo()->GetName() + "." + memberName);
-            }
-            const CMemberInfo* memberInfo =
-                info.GetTypeInfo()->GetMemberInfo(index);
-            return CIObjectInfo(memberInfo->GetMember(info.GetObject()),
-                                memberInfo->GetTypeInfo());
-        }
-    case eObjectReference:
-        {
-            TIndex index = ReadIndex();
-            _TRACE("CObjectIStreamBinary::ReadObjectPointer: @" << index);
-            return GetRegisteredObject(index);
-        }
-    case eOtherClass:
-        {
-            const string& className = ReadStringValue();
-            _TRACE("CObjectIStreamBinary::ReadPointer: new " << className);
-            TTypeInfo typeInfo = CClassInfoTmpl::GetClassInfoByName(className);
-            TObjectPtr object = typeInfo->Create();
-            RegisterObject(object, typeInfo);
-            Read(object, typeInfo);
-            return CIObjectInfo(object, typeInfo);
-        }
-    default:
-        THROW1_TRACE(runtime_error, "invalid object reference code");
-    }
+    return ReadStringValue();
+}
+
+CObjectIStream::TIndex CObjectIStreamBinary::ReadObjectPointer(void)
+{
+    return ReadIndex();
+}
+
+string CObjectIStreamBinary::ReadOtherPointer(void)
+{
+    return ReadStringValue();
 }
 
 void CObjectIStreamBinary::SkipValue()

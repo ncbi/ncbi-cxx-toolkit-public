@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/22 17:33:45  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.8  1999/07/21 14:20:00  vasilche
 * Added serialization of bool.
 *
@@ -112,11 +115,11 @@ public:
 
 protected:
 
-    virtual void WriteMemberPrefix(COObjectInfo& info);
+    virtual void WriteMemberPrefix(const CMemberId& id);
+    virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
-    virtual void WriteThisTypeReference(TTypeInfo typeInfo);
-    virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
 
     virtual void VBegin(Block& block);
     virtual void VEnd(const Block& block);

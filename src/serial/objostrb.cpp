@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/22 17:33:58  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.15  1999/07/21 20:02:58  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 * Fixed bugs with storing pointers into binary ASN.1
@@ -328,13 +331,10 @@ void CObjectOStreamBinary::WriteStringValue(const string& str)
     }
 }
 
-void CObjectOStreamBinary::WriteMemberPrefix(COObjectInfo& info)
+void CObjectOStreamBinary::WriteMemberPrefix(const CMemberId& id)
 {
-    while ( info.IsMember() ) {
-        WriteByte(eMemberReference);
-        WriteStringValue(info.GetMemberId().GetName());
-        info.ToContainerObject();
-    }
+    WriteByte(eMemberReference);
+    WriteStringValue(id.GetName());
 }
 
 void CObjectOStreamBinary::WriteNullPointer(void)
@@ -348,15 +348,17 @@ void CObjectOStreamBinary::WriteObjectReference(TIndex index)
     WriteIndex(index);
 }
 
-void CObjectOStreamBinary::WriteThisTypeReference(TTypeInfo )
+void CObjectOStreamBinary::WriteThis(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     WriteByte(eThisClass);
+    WriteExternalObject(object, typeInfo);
 }
 
-void CObjectOStreamBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
+void CObjectOStreamBinary::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     WriteByte(eOtherClass);
     WriteStringValue(typeInfo->GetName());
+    WriteExternalObject(object, typeInfo);
 }
 
 void CObjectOStreamBinary::FBegin(Block& block)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/22 17:33:57  vasilche
+* Unified reading/writing of objects in all three formats.
+*
 * Revision 1.10  1999/07/21 20:02:57  vasilche
 * Added embedding of ASN.1 binary output from ToolKit to our binary format.
 * Fixed bugs with storing pointers into binary ASN.1
@@ -123,13 +126,13 @@ void CObjectOStreamAsnBinary::WriteTag(EClass c, bool constructed, TTag tag)
     if ( tag < 0 )
         THROW1_TRACE(runtime_error, "negative tag number");
 
-    if ( tag < 31 ) {
+    if ( tag < eLongTag ) {
         // short form
         WriteShortTag(c, constructed, tag);
     }
     else {
         // long form
-        WriteShortTag(c, constructed, 31);
+        WriteShortTag(c, constructed, eLongTag);
         bool write = false;
         size_t shift;
         for ( shift = (sizeof(TTag) * 8 - 1) / 7 * 7; shift != 0; shift -= 7 ) {
@@ -151,11 +154,11 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
     if ( tag.empty() )
         THROW1_TRACE(runtime_error, "empty tag string");
 
-    if ( tag[0] <= 31 )
+    if ( tag[0] <= eLongTag )
         THROW1_TRACE(runtime_error, "bad tag string start");
 
     // long form
-    WriteShortTag(eApplication, true, 31);
+    WriteShortTag(eApplication, true, eLongTag);
     SIZE_TYPE last = tag.size() - 1;
     for ( SIZE_TYPE i = 0; i < last; ++i ) {
         char c = tag[i];
@@ -227,9 +230,8 @@ void CObjectOStreamAsnBinary::WriteStd(const bool& data)
 
 template<typename T>
 static inline
-void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
+void WriteNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 {
-    out.WriteSysTag(eInteger);
     if ( data >= -0x80 && data < 0x80 ) {
         // one byte
         out.WriteShortLength(1);
@@ -259,6 +261,14 @@ void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
         out.WriteShortLength(sizeof(data));
         WriteBytesOf(out, data);
     }
+}
+
+template<typename T>
+static inline
+void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
+{
+    out.WriteSysTag(eInteger);
+    WriteNumberValue(out, data);
 }
 
 void CObjectOStreamAsnBinary::WriteStd(const char& data)
@@ -352,26 +362,22 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
 	}
 }
 
-void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)
+void CObjectOStreamAsnBinary::WriteMemberPrefix(const CMemberId& id)
 {
-    THROW1_TRACE(runtime_error, "not implemented");
-/*
-    if ( info.IsMember() ) {
-        WriteSysTag(eObjectIdentifier);
-        WriteIndefiniteLength();
-        WriteString(info.GetMemberId().GetName());
-        info.ToContainerObject();
-        WriteMemberPrefix(info);
-        WriteEndOfContent();
-    }
-*/
+    WriteTag(eApplication, true, eMemberReference);
+    WriteIndefiniteLength();
+    WriteString(id.GetName());
+}
+
+void CObjectOStreamAsnBinary::WriteMemberSuffix(const CMemberId& )
+{
+    WriteEndOfContent();
 }
 
 void CObjectOStreamAsnBinary::WriteObjectReference(TIndex index)
 {
-    WriteSysTag(eObjectIdentifier);
-    WriteShortLength(sizeof(index));
-    WriteBytesOf(*this, index);
+    WriteTag(eApplication, false, eObjectReference);
+    WriteNumberValue(*this, index);
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)
@@ -380,18 +386,14 @@ void CObjectOStreamAsnBinary::WriteNullPointer(void)
     WriteShortLength(0);
 }
 
-void CObjectOStreamAsnBinary::WriteThisTypeReference(TTypeInfo typeInfo)
-{
-/*
-    WriteClassTag(typeInfo);
-    WriteIndefiniteLength();
-*/
-}
-
-void CObjectOStreamAsnBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
+void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
+                                         TTypeInfo typeInfo)
 {
     WriteClassTag(typeInfo);
     WriteIndefiniteLength();
+    WriteString(typeInfo->GetName());
+    WriteExternalObject(object, typeInfo);
+    WriteEndOfContent();
 }
 
 void CObjectOStreamAsnBinary::VBegin(Block& block)
