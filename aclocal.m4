@@ -121,39 +121,51 @@ AC_CACHE_CHECK([for working const], ac_cv_c_const,
 [AC_TRY_COMPILE(,
 changequote(<<, >>)dnl
 <<
-/* Ultrix mips cc rejects this.  */
-/* ...and maybe he is right(Denis Vakatov) :-) */
-typedef int charset[2];
+{ /* Ultrix mips cc rejects this.  */
+  /* ...and maybe he is right(Denis Vakatov) :-) */
+  typedef int charset[2];
 #ifdef __cplusplus
-extern const charset x1;
-const charset x2 = {1,2};
+  extern const charset x1;
+  const charset x2 = {1,2};
+  int xx2 = 0;
+  xx2 = x2[0];
 #else
-const charset x;
+  const charset x;
+  int xx = 0;
+  xx = x[0];
 #endif
-/* SunOS 4.1.1 cc rejects this.  */
-char const *const *ccp;
-char **p;
-/* NEC SVR4.0.2 mips cc rejects this.  */
-struct point {int x, y;};
-static struct point const zero = {0,0};
-/* AIX XL C 1.02.0.0 rejects this.
+}
+{ /* SunOS 4.1.1 cc rejects this.  */
+  char const *const *ccp;
+  char **p;
+
+  /* NEC SVR4.0.2 mips cc rejects this.  */
+  struct point {int x, y;};
+  static struct point const zero = {0,0};
+
+  /* AIX XL C 1.02.0.0 rejects this.
    It does not let you subtract one const X* pointer from another in an arm
    of an if-expression whose if-part is not a constant expression */
-const char *g = "string";
-ccp = &g + (g ? g-g : 0);
-/* HPUX 7.0 cc rejects these. */
-++ccp;
-p = (char**) ccp;
-ccp = (char const *const *) p;
-{ /* SCO 3.2v4 cc rejects this.  */
-  char *t;
-  char const *s = 0 ? (char *) 0 : (char const *) 0;
+  const char *g = "string";
+  ccp = &g + (g ? g-g : 0);
 
+  /* HPUX 7.0 cc rejects these. */
+  ++ccp;
+  p = (char**) ccp;
+  ccp = (char const *const *) p;
+}
+{ /* SCO 3.2v4 cc rejects this.  */
+  char *t = 0;
+  char const *s = 0 ? (char *) 0 : (char const *) 0;
+  char c = '\0';
+  c = *s;
   *t++ = 0;
 }
 { /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
   int x[] = {25, 17};
   const int *foo = &x[0];
+  const int *bar = 0;
+  bar = foo;
   ++foo;
 }
 { /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
@@ -164,10 +176,12 @@ ccp = (char const *const *) p;
 { /* AIX XL C 1.02.0.0 rejects this saying
      "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
   struct s { int j; const int *ap[3]; };
-  struct s *b; b->j = 5;
+  struct s *b = 0; b->j = 5;
 }
 { /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
   const int foo = 10;
+  int bar = 0;
+  bar = foo;
 }
 >>,
 changequote([, ])dnl
