@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.13 2004/08/25 21:09:13 vakatov Exp $
+# $Id: ignore.lst,v 1.14 2004/08/25 21:21:52 vakatov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -12,3 +12,10 @@
 
 ;; kernel issue, should be fixed in 2.6.8
 connect/test/test_ncbi_dsock  GCC_340-Debug--x86_64-unknown-linux2.6.7-gnu2.3.3
+
+
+; OBJMGR
+
+;; looks like some exception throwing glitch, Eugene looks into it but if it
+;; cannot be easily fixed, no big problem;  GCC295 is closing to retirement
+objtools/test/objmgr/test_objmgr_loaders_pubseqos GCC_295-Release--i686-pc-linux2.4.23-gnu2.2.5
