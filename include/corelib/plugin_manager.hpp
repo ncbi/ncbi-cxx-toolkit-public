@@ -138,13 +138,13 @@ public:
                                    (CInterfaceVersion<TClass>::eMajor,
                                     CInterfaceVersion<TClass>::eMinor,
                                     CInterfaceVersion<TClass>::ePatchLevel))
-        = 0;
+        const = 0;
 
     // Name of the interface provided by the factory
-    virtual string GetName(void) = 0;
+    virtual string GetName(void) const = 0;
 
     // Versions of the interface exported by the factory
-    virtual list<const CVersionInfo&> GetDriverVersions(void) = 0;
+    virtual list<const CVersionInfo&> GetDriverVersions(void) const = 0;
 
     virtual ~IClassFactory(void) {}
 };
@@ -175,6 +175,7 @@ public:
                            (CInterfaceVersion<TClass>::eMajor,
                             CInterfaceVersion<TClass>::eMinor,
                             CInterfaceVersion<TClass>::ePatchLevel))
+        const
     {
         return GetFactory(name, version)->CreateInstance(version);
     }
@@ -196,7 +197,8 @@ public:
                               const CVersionInfo& version = CVersionInfo
                               (CInterfaceVersion<TClass>::eMajor,
                                CInterfaceVersion<TClass>::eMinor,
-                               CInterfaceVersion<TClass>::ePatchLevel));
+                               CInterfaceVersion<TClass>::ePatchLevel))
+        const;
 
     /// Information about a driver, with maybe a pointer to an instantiated
     /// class factory that contains the driver.
@@ -299,7 +301,8 @@ public:
     virtual string<list> Resolve
     (const string&       interface,
      const string&       driver,
-     const CVersionInfo& version = CVersionInfo::kAny);
+     const CVersionInfo& version = CVersionInfo::kAny)
+        const;
   
 
 protected:
@@ -333,13 +336,15 @@ protected:
     virtual list<string> GetDllNames
     (const string&       plugin,
      const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = CVersionInfo::kAny);
+     const CVersionInfo& version = CVersionInfo::kAny)
+        const;
 
     // default:
     //  - "NCBI_EntryPoint_<TClassFactory::GetName()>_<name>"
     virtual string GetEntryPointName
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = CVersionInfo::kAny);
+     const CVersionInfo& version = CVersionInfo::kAny)
+        const;
 
     // ctors
     CDllResolver_PluginManager(void) :
@@ -355,38 +360,67 @@ protected:
 ///
 /// The DLL search criteria include:
 ///  - search path(s)
-///  - name mask(s)
+///  - DLL file name mask(s)
 ///  - entry point name mask(s)
 
 class NCBI_XNCBI_EXPORT CDllResolver
 {
 public:
-    /// Adjustment of the DLL search path
-    /// @sa SetDllSearchPath()
-    enum ESetPath {
-        eOverride,  //<! Override the existing DLL search path with "path"
-        ePrepend,   //<! Add "path" to the head of the existing DLL search path
-        eAppend     //<! Add "path" to the tail of the existing DLL search path
+    ///
+    typedef list<string> TPath;
+
+    /// 
+    typedef list<string> TMask;
+
+    /// How to set a path or a mask list
+    /// @sa SetPath(), SetMask()
+    enum ESet {
+        eOverride,  //<! Override the existing list
+        ePrepend,   //<! Add to the head of the existing list
+        eAppend     //<! Add to the tail of the existing list
     };
 
     /// Change DLL search path.
+    void SetPath(const TPath& path, ESetOrder method);
+
+    /// Get the current DLL serach path.
     ///
-    /// By default, search paths are regular system-dependent DLL search paths.
-    void SetDllSearchPath(const string& path, EModifyDllPath method);
+    /// By default, it is set to the standard system-dependent DLL search path.
+    /// @sa GetStdPath
+    const TPath& GetPath(void) const;
+
+    /// Get the standard OS- and program-environment specific DLL search path.
+    static const TPath& GetStdPath(void);
+
+    /// Change filename mask(s)
+    void SetMask(const TMask& path, ESet method);
+
+    /// Get the current filename mask(s)
+    ///
+    /// By default, it is set to the standard mask which can be obtained
+    /// by calling GetStdMask() without arguments.
+    /// @sa GetStdMask()
+    const TMask& GetMask(void) const;
+
+    /// Get the standard mask, composed according to standard rules.
+    ///
+    /// Default:  "ncbi_plugin_*<sfx>*",
+    ///           where <sfx> is OS-dependent (such as '.dll', '.so')
+    static const TMask& GetStdMask(const string& prefix  = kEmptyStr,
+                                   const string& family  = kEmptyStr,
+                                   const string& family  = kEmptyStr,
+                                   CVersionInfo& version = CVersionInfo::kAny);
 
 protected:
-    /// 
-    ///
-    /// Default:  "ncbi_plugin_"
-    virtual string GetDllPrefix(void);
-
     // ctors
     CDllResolver(void);
     virtual ~CDllResolver();
 
 private:
-    /// List of dirs to scan in for the DLLs
-    string m_DllPath;
+    /// Directories to scan for the DLLs
+    TPath m_Path;
+    /// DLL filename mask(s) to match
+    TMask m_Mask;
 };
 
 #endif /* NOT READY YET */
@@ -401,6 +435,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/29 23:35:46  vakatov
+ * Just starting with CDllResolver...
+ *
  * Revision 1.3  2003/10/29 19:34:43  vakatov
  * Comment out unfinished defined APIs (using "#if 0")
  *
