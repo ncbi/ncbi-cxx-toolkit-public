@@ -43,7 +43,7 @@ CSerialObject::~CSerialObject(void)
 string Ptr(const void* p)
 {
     CNcbiOstrstream b;
-    b << hex << long(p);
+    b << "0x" << hex << long(p);
     return string(b.str(), b.pcount());
 }
 
