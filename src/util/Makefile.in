@@ -1,10 +1,10 @@
 # $Id$
 
-# Meta-makefile("CACHE" project)
+# Meta-makefile("UTIL" project)
 #################################
 
 LIB_PROJ = util
-SUB_PROJ = test
+SUB_PROJ = regexp test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
