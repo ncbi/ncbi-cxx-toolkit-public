@@ -125,17 +125,18 @@ public:
       <tr><td><i><b>S</b>StructTypeName</i></td><td>struct SMyStruct { ..... };</td></tr>
       <tr><td><i><b>U</b>UnionTypeName</i></td><td>union UMyUnion { ..... };</td></tr>
       <tr><td><i><b>E</b>EnumTypeName</i></td><td>enum EMyEnum { ..... };</td></tr>
-      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)() { ..... };</td></tr>
+      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)(void) { ..... };</td></tr>
+      <tr><td><i><b>T</b>AuxiliaryTypedef</i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
 
 <a name=ref_NamingConst>
       <tr><th>Constants</th></tr>
       <tr><td><i><b>k</b>ConstantName</i></td><td>const Int2 kMyConst;</td></tr>
       <tr><td><i><b>e</b>EnumConstantName</i></td>
-	<td>enum EMyEnum { <br>
+      <td>enum EMyEnum { <br>
 	     &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
-	      &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
-		&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
-		  };</td></tr>
+	      &nbsp;&nbsp;&nbsp;&nbsp;eMyEnum2 = 22, <br>
+		&nbsp;&nbsp;&nbsp;&nbsp;   eMyEnum3 = 33  <br>
+		    };</td></tr>
 
 <a name=ref_NamingVar>
       <tr><th>Variable scope</th></tr>
