@@ -293,6 +293,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'G': case 'P':           return eAcc_ddbj_genome;
             case 'H':                     return eAcc_gb_segset;
             case 'J': case 'M':           return eAcc_embl_dirsub;
+            case 'L':                     return eAcc_embl_genome;
             case 'N':                     return eAcc_embl_con;
             case 'Q': case 'Z':           return eAcc_gb_gss;
             case 'R':                     return eAcc_gb_patent;
@@ -1084,6 +1085,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.46  2003/01/08 16:48:03  ucko
+ * +AL (accidentally skipped earlier)
+ *
  * Revision 6.45  2003/01/07 19:52:15  ucko
  * Add more refseq types (NR_, NS_, NW_).
  *
