@@ -226,7 +226,7 @@ private:
 
     bool x_AddQualifierToGene (CSeqFeatData& sfdata,
                                EQual qtype, const string& val);
-    bool x_AddQualifierToCdregion (CSeqFeatData& sfdata,
+    bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToRna (CSeqFeatData& sfdata,
                               EQual qtype, const string& val);
@@ -618,11 +618,18 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
         case eQual_gene_desc:
             grp.SetDesc (val);
             return true;
+        case eQual_gene_syn:
+            CGene_ref::TSyn& synlist = grp.SetSyn ();
+            synlist.push_back (val);
+            return true;
         case eQual_map:
             grp.SetMaploc (val);
             return true;
         case eQual_locus_tag:
             grp.SetLocus_tag (val);
+            return true;
+        case eQual_pseudo:
+            grp.SetPseudo (true);
             return true;
         default:
             break;
@@ -631,7 +638,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToGene (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CSeqFeatData& sfdata,
+bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                                           EQual qtype, const string& val)
 
 {
@@ -644,6 +651,38 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
 
 {
     CRNA_ref& rrp = sfdata.SetRna ();
+    CRNA_ref::EType rnatyp = rrp.GetType ();
+    switch (rnatyp) {
+        case CRNA_ref::eType_premsg:
+        case CRNA_ref::eType_mRNA:
+        case CRNA_ref::eType_rRNA:
+        case CRNA_ref::eType_snRNA:
+        case CRNA_ref::eType_scRNA:
+        case CRNA_ref::eType_snoRNA:
+        case CRNA_ref::eType_other:
+            switch (qtype) {
+                case eQual_product:
+                    CRNA_ref::TExt& tex = rrp.SetExt ();
+                    CRNA_ref::C_Ext::E_Choice exttype = tex.Which ();
+                    if (exttype == CRNA_ref::C_Ext::e_TRNA) return false;
+                    tex.SetName (val);
+                    return true;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case CRNA_ref::eType_tRNA:
+            switch (qtype) {
+                case eQual_product:
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
     return false;
 }
 
@@ -665,7 +704,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     if (x_AddQualifierToGene (sfdata, qtyp, val)) return true;
                     break;
                 case CSeqFeatData::e_Cdregion:
-                    if (x_AddQualifierToCdregion (sfdata, qtyp, val)) return true;
+                    if (x_AddQualifierToCdregion (sfp, sfdata, qtyp, val)) return true;
                     break;
                 case CSeqFeatData::e_Rna:
                     if (x_AddQualifierToRna (sfdata, qtyp, val)) return true;
