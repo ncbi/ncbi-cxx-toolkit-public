@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.69  2001/07/17 14:52:39  kholodov
 * Fixed: replaced int argument by size_t in CheckVisibleChar() and
 * ReplaceVisibleChar to avoid truncation in 64 bit mode.
@@ -612,6 +615,33 @@ public:
 
 		friend class CObjectIStream;
 	};
+	class CharBlock
+    {
+	public:
+		CharBlock(CObjectIStream& in);
+		~CharBlock(void);
+
+        void End(void);
+
+        CObjectIStream& GetStream(void) const;
+
+		size_t Read(char* dst, size_t length, bool forceLength = false);
+
+        bool KnownLength(void) const;
+		size_t GetExpectedLength(void) const;
+
+        void SetLength(size_t length);
+        void EndOfBlock(void);
+        
+	private:
+        CObjectIStream& m_Stream;
+		bool m_KnownLength;
+        bool m_Ended;
+		size_t m_Length;
+
+		friend class CObjectIStream;
+	};
+
 
 #if HAVE_NCBI_C
     // ASN.1 interface
@@ -703,6 +733,11 @@ public:
 	virtual void BeginBytes(ByteBlock& block) = 0;
 	virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count) = 0;
 	virtual void EndBytes(const ByteBlock& block);
+
+    // char block
+	virtual void BeginChars(CharBlock& block) = 0;
+	virtual size_t ReadChars(CharBlock& block, char* buffer, size_t count) = 0;
+	virtual void EndChars(const CharBlock& block);
 
     // report error about unended block
     void Unended(const string& msg);

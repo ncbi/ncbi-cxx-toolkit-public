@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/10/17 20:41:20  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.17  2001/10/17 18:18:28  grichenk
 * Added CObjectOStreamXml::xxxFilePrefix() and
 * CObjectOStreamXml::xxxFileName()
@@ -233,6 +236,8 @@ protected:
 
 	virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
+	virtual void WriteChars(const CharBlock& block,
+                            const char* chars, size_t length);
 
 private:
     void WriteString(const char* str, size_t length);

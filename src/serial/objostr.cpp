@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/10/17 20:41:25  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.61  2001/07/30 14:42:46  lavr
 * eDiag_Trace and eDiag_Fatal always print as much as possible
 *
@@ -946,6 +949,30 @@ CObjectOStream::ByteBlock::~ByteBlock(void)
 {
     if ( !m_Ended )
         GetStream().Unended("byte block not fully written");
+}
+
+void CObjectOStream::BeginChars(const CharBlock& )
+{
+}
+
+void CObjectOStream::EndChars(const CharBlock& )
+{
+}
+
+void CObjectOStream::CharBlock::End(void)
+{
+    _ASSERT(!m_Ended);
+    _ASSERT(m_Length == 0);
+    if ( GetStream().InGoodState() ) {
+        GetStream().EndChars(*this);
+        m_Ended = true;
+    }
+}
+
+CObjectOStream::CharBlock::~CharBlock(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("char block not fully written");
 }
 
 #if HAVE_NCBI_C

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.13  2001/01/05 20:10:36  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -208,6 +211,9 @@ protected:
     void BeginBytes(ByteBlock& );
     int GetHexChar(void);
     size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
+
+    void BeginChars(CharBlock& );
+    size_t ReadChars(CharBlock& block, char* dst, size_t length);
 
 private:
     bool OutsideTag(void) const;

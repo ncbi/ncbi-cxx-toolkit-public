@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/10/17 20:41:24  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.53  2001/06/07 17:12:51  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -1072,6 +1075,24 @@ size_t CObjectIStreamAsnBinary::ReadBytes(ByteBlock& ,
 }
 
 void CObjectIStreamAsnBinary::EndBytes(const ByteBlock& )
+{
+    EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::BeginChars(CharBlock& block)
+{
+    ExpectSysTag(eVisibleString);
+	block.SetLength(ReadLength());
+}
+
+size_t CObjectIStreamAsnBinary::ReadChars(CharBlock& ,
+                                          char* dst, size_t length)
+{
+	ReadBytes(dst, length);
+	return length;
+}
+
+void CObjectIStreamAsnBinary::EndChars(const CharBlock& )
 {
     EndOfTag();
 }

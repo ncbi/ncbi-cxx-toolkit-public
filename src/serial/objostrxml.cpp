@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/10/17 20:41:26  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.27  2001/10/17 18:18:30  grichenk
 * Added CObjectOStreamXml::xxxFilePrefix() and
 * CObjectOStreamXml::xxxFileName()
@@ -843,5 +846,13 @@ void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
 	}
 }
 
+void CObjectOStreamXml::WriteChars(const CharBlock& ,
+                                   const char* chars, size_t length)
+{
+	while ( length-- > 0 ) {
+		char c = *chars++;
+        WriteEscapedChar(c);
+	}
+}
 
 END_NCBI_SCOPE

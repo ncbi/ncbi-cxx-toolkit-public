@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/10/17 20:41:24  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.19  2001/08/08 18:35:09  grichenk
 * ReadTagData() -- added memory pre-allocation for long strings
 *
@@ -1158,6 +1161,27 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
             *dst++ = (c1 << 4) | c2;
             count++;
         }
+	}
+	return count;
+}
+
+void CObjectIStreamXml::BeginChars(CharBlock& )
+{
+    BeginData();
+}
+
+size_t CObjectIStreamXml::ReadChars(CharBlock& block,
+                                    char* dst, size_t length)
+{
+	size_t count = 0;
+	while ( length-- > 0 ) {
+        char c = m_Input.GetChar();
+        if (c == '<') {
+            block.EndOfBlock();
+            break;
+        }
+        *dst++ = c;
+        count++;
 	}
 	return count;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2001/10/17 20:41:25  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.66  2001/07/27 18:25:32  grichenk
 * Removed commented code
 *
@@ -915,6 +918,31 @@ void CObjectOStreamAsn::EndBytes(const ByteBlock& )
 {
     m_Output.WrapAt(78, false);
 	m_Output.PutString("\'H");
+}
+
+void CObjectOStreamAsn::BeginChars(const CharBlock& )
+{
+    m_Output.PutChar('"');
+}
+
+void CObjectOStreamAsn::WriteChars(const CharBlock& ,
+                                   const char* chars, size_t length)
+{
+    while ( length > 0 ) {
+        char c = *chars++;
+        CheckVisibleChar(c, m_FixMethod, m_Output.GetLine());
+        --length;
+        m_Output.WrapAt(78, true);
+        m_Output.PutChar(c);
+        if ( c == '"' )
+            m_Output.PutChar('"');
+    }
+}
+
+void CObjectOStreamAsn::EndChars(const CharBlock& )
+{
+    m_Output.WrapAt(78, false);
+    m_Output.PutChar('"');
 }
 
 #if HAVE_NCBI_C

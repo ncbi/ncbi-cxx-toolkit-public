@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2001/10/17 20:41:23  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.72  2001/10/16 17:15:47  grichenk
 * Fixed bug in CObjectIStreamAsn::ReadString()
 *
@@ -1393,6 +1396,54 @@ size_t CObjectIStreamAsn::ReadBytes(ByteBlock& block,
 void CObjectIStreamAsn::EndBytes(const ByteBlock& )
 {
 	Expect('H');
+}
+
+void CObjectIStreamAsn::BeginChars(CharBlock& )
+{
+	Expect('\"', true);
+}
+
+size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
+                                    char* dst, size_t length)
+{
+    size_t count = 0;
+    try {
+        while (length-- > 0) {
+            char c = m_Input.GetChar();
+            switch ( c ) {
+            case '\r':
+            case '\n':
+                break;
+            case '\"':
+                if ( m_Input.PeekCharNoEOF() == '\"' ) {
+                    m_Input.SkipChar();
+                    dst[count++] = c;
+                }
+                else {
+                    // end of string
+                    // Check the string for non-printable characters
+                    for (int i = 0; i < count; i++) {
+                        CheckVisibleChar(dst[i], m_FixMethod,
+                            m_Input.GetLine());
+                    }
+                    block.EndOfBlock();
+                    return count;
+                }
+                break;
+            default:
+                // ok: append char
+                {
+                    dst[count++] = c;
+                }
+                break;
+            }
+        }
+    }
+    catch ( CEofException& ) {
+        UnendedString(m_Input.GetLine());
+        throw;
+    }
+    return count;
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.50  2001/06/11 14:34:55  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -359,6 +362,9 @@ protected:
     int GetHexChar(void);
 	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
 	virtual void EndBytes(const ByteBlock& block);
+
+	virtual void BeginChars(CharBlock& block);
+	virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
 
 private:
     virtual EPointerType ReadPointerType(void);

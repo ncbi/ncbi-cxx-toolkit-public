@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.17  2001/07/17 14:52:39  kholodov
 * Fixed: replaced int argument by size_t in CheckVisibleChar() and
 * ReplaceVisibleChar to avoid truncation in 64 bit mode.
@@ -201,6 +204,38 @@ void CObjectIStream::ByteBlock::SetLength(size_t length)
 
 inline
 void CObjectIStream::ByteBlock::EndOfBlock(void)
+{
+    _ASSERT(!KnownLength());
+    m_Length = 0;
+}
+
+inline
+CObjectIStream& CObjectIStream::CharBlock::GetStream(void) const
+{
+    return m_Stream;
+}
+
+inline
+bool CObjectIStream::CharBlock::KnownLength(void) const
+{
+    return m_KnownLength;
+}
+
+inline
+size_t CObjectIStream::CharBlock::GetExpectedLength(void) const
+{
+    return m_Length;
+}
+
+inline
+void CObjectIStream::CharBlock::SetLength(size_t length)
+{
+    m_Length = length;
+    m_KnownLength = true;
+}
+
+inline
+void CObjectIStream::CharBlock::EndOfBlock(void)
 {
     _ASSERT(!KnownLength());
     m_Length = 0;

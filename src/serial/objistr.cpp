@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2001/10/17 20:41:23  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.84  2001/10/15 23:30:10  vakatov
 * Get rid of extraneous "break;" after "throw"
 *
@@ -1111,6 +1114,11 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
     END_OBJECT_FRAME();
 }
 
+///////////////////////////////////////////////////////////////////////
+//
+// CObjectIStream::ByteBlock
+//
+
 CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
     : m_Stream(in), m_KnownLength(false), m_Ended(false), m_Length(1)
 {
@@ -1163,7 +1171,69 @@ size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
     return length;
 }
 
+///////////////////////////////////////////////////////////////////////
+//
+// CObjectIStream::CharBlock
+//
+
+CObjectIStream::CharBlock::CharBlock(CObjectIStream& in)
+    : m_Stream(in), m_KnownLength(false), m_Ended(false), m_Length(1)
+{
+    in.BeginChars(*this);
+}
+
+CObjectIStream::CharBlock::~CharBlock(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("char block not fully read");
+}
+
+void CObjectIStream::CharBlock::End(void)
+{
+    _ASSERT(!m_Ended);
+    if ( m_Length == 0 ) {
+        GetStream().EndChars(*this);
+        m_Ended = true;
+    }
+}
+
+size_t CObjectIStream::CharBlock::Read(char* dst, size_t needLength,
+                                       bool forceLength)
+{
+    size_t length;
+    if ( KnownLength() ) {
+        if ( m_Length < needLength )
+            length = m_Length;
+        else
+            length = needLength;
+    }
+    else {
+        if ( m_Length == 0 )
+            length = 0;
+        else
+            length = needLength;
+    }
+    
+    if ( length == 0 ) {
+        if ( forceLength && needLength != 0 )
+            GetStream().ThrowError(eReadError, "read fault");
+        return 0;
+    }
+
+    length = GetStream().ReadChars(*this, dst, length);
+    if ( KnownLength() )
+        m_Length -= length;
+    if ( forceLength && needLength != length )
+        GetStream().ThrowError(eReadError, "read fault");
+    return length;
+}
+
+
 void CObjectIStream::EndBytes(const ByteBlock& /*b*/)
+{
+}
+
+void CObjectIStream::EndChars(const CharBlock& /*b*/)
 {
 }
 

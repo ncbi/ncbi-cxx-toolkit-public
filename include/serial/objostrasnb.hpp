@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/10/17 20:41:20  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.36  2001/06/07 20:36:31  grichenk
 * Fixed location of m_FixMethod member
 *
@@ -305,6 +308,10 @@ protected:
 	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
+
+	virtual void BeginChars(const CharBlock& block);
+	virtual void WriteChars(const CharBlock& block,
+                            const char* chars, size_t length);
 
 private:
 

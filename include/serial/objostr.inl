@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/10/17 20:41:20  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.11  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -324,6 +327,33 @@ void CObjectOStream::ByteBlock::Write(const void* bytes, size_t length)
 {
     _ASSERT( length <= m_Length );
     GetStream().WriteBytes(*this, static_cast<const char*>(bytes), length);
+    m_Length -= length;
+}
+
+inline
+CObjectOStream::CharBlock::CharBlock(CObjectOStream& out, size_t length)
+    : m_Stream(out), m_Length(length), m_Ended(false)
+{
+    out.BeginChars(*this);
+}
+
+inline
+CObjectOStream& CObjectOStream::CharBlock::GetStream(void) const
+{
+    return m_Stream;
+}
+
+inline
+size_t CObjectOStream::CharBlock::GetLength(void) const
+{
+    return m_Length;
+}
+
+inline
+void CObjectOStream::CharBlock::Write(const char* chars, size_t length)
+{
+    _ASSERT( length <= m_Length );
+    GetStream().WriteChars(*this, chars, length);
     m_Length -= length;
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.58  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -505,6 +508,27 @@ public:
 		size_t m_Length;
         bool m_Ended;
 	};
+	class CharBlock;
+	friend class CharBlock;
+	class CharBlock
+    {
+	public:
+		CharBlock(CObjectOStream& out, size_t length);
+		~CharBlock(void);
+
+        CObjectOStream& GetStream(void) const;
+
+		size_t GetLength(void) const;
+
+		void Write(const char* chars, size_t length);
+
+        void End(void);
+
+	private:
+        CObjectOStream& m_Stream;
+		size_t m_Length;
+        bool m_Ended;
+	};
 
 #if HAVE_NCBI_C
     class AsnIo
@@ -610,6 +634,12 @@ public:
 	virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length) = 0;
 	virtual void EndBytes(const ByteBlock& block);
+
+	// write char blocks
+	virtual void BeginChars(const CharBlock& block);
+	virtual void WriteChars(const CharBlock& block,
+                            const char* chars, size_t length) = 0;
+	virtual void EndChars(const CharBlock& block);
 
     void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 protected:

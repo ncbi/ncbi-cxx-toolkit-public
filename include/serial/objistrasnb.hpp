@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.34  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -270,6 +273,10 @@ protected:
 	virtual void BeginBytes(ByteBlock& block);
 	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
 	virtual void EndBytes(const ByteBlock& block);
+
+	virtual void BeginChars(CharBlock& block);
+	virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
+	virtual void EndChars(const CharBlock& block);
 
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);

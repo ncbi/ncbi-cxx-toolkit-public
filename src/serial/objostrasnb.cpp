@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/10/17 20:41:25  grichenk
+* Added CObjectOStream::CharBlock class
+*
 * Revision 1.60  2001/06/07 17:12:51  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -1295,6 +1298,37 @@ void CObjectOStreamAsnBinary::WriteBytes(const ByteBlock& ,
                                          const char* bytes, size_t length)
 {
 	WriteBytes(bytes, length);
+}
+
+void CObjectOStreamAsnBinary::BeginChars(const CharBlock& block)
+{
+    if ( block.GetLength() == 0 ) {
+        WriteSysTag(eNull);
+        WriteShortLength(0);
+        return;
+    }
+	WriteSysTag(eVisibleString);
+	WriteLength(block.GetLength());
+}
+
+void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
+                                         const char* chars, size_t length)
+{
+    char* strcopy = new char[length+1];
+    try {
+        // Check the string for non-printable characters
+        for (int i = 0; i < length; i++) {
+            strcopy[i] = chars[i];
+            CheckVisibleChar(strcopy[i], m_FixMethod);
+        }
+        strcopy[length] = 0;
+        WriteBytes(strcopy, length);
+    }
+    catch (...) {
+        delete[] strcopy;
+        throw;
+    }
+    delete[] strcopy;
 }
 
 #if HAVE_NCBI_C
