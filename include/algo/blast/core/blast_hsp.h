@@ -41,7 +41,6 @@ Detailed Contents:
 
 #include <ncbi.h>
 #include <blastkar.h>
-#include <gapxdrop.h>
 
 #ifdef __cplusplus
 extern "C" {
