@@ -166,7 +166,7 @@ void CMasterContext::x_SetBaseName(const CBioseq& seq)
 
 CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
     m_Repr(CSeq_inst::eRepr_not_set),
-    m_Tech(CMolInfo::eTech_unknown),
+    m_Mol(CSeq_inst::eMol_not_set),
     m_Accession(kEmptyStr),
     m_PrimaryId(0),
     m_WGSMasterAccn(kEmptyStr),
@@ -180,32 +180,25 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
     m_IsGPS(false),
     m_IsGED(false),
     m_IsPDB(false),
+    m_IsSP(false),
     m_IsTPA(false),
-    m_IsNC(false),
-    m_IsNG(false),
-    m_IsNM(false),
-    m_IsNR(false),
-    m_IsNP(false),
-    m_IsNT(false),
-    m_IsNW(false),
-    m_IsXM(false),
-    m_IsXR(false),
-    m_IsXP(false),
-    m_IsNZ(false),
-    m_IsZP(false),
-    m_IsNS(false),
-    m_IsAE(false),
-    m_IsCH(false),
-    m_IsPatent(false),
     m_IsRefSeq(false),
+    m_RefseqInfo(0),
+    m_IsGbGenomeProject(false),       // GenBank Genome project data (AE)
+    m_IsNcbiCONDiv(false),            // NCBI CON division (CH)
+    m_IsPatent(false),
+    m_IsGI(false),
+    m_IsWGS(false),
     m_IsWGSMaster(false),
     m_IsHup(false),
     m_GI(0),
+    m_ShowGBBSource(false),
     m_Location(0),
     m_Ctx(&ctx),
     m_Master(ctx.Master())
 {
     if ( !seq.CanGetInst() ) {
+        return;
         //NCBI_THROW(...) !!!
     }
 
@@ -216,7 +209,10 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
 
     // NB: order of execution is important
     m_Repr = x_GetRepr(seq);
-    m_Tech = x_GetTech();
+    m_Molinfo.Reset(x_GetMolinfo());
+    if ( seq.GetInst().CanGetMol() ) {
+        m_Mol  = seq.GetInst().GetMol();
+    }
     if ( IsSegmented() ) {
         //m_SegsCount = x_CountSegs(seq);
         m_HasParts = x_HasParts(seq);
@@ -296,12 +292,20 @@ CSeq_inst::TRepr CBioseqContext::x_GetRepr(const CBioseq& seq) const
 }
 
 
+const CMolInfo* CBioseqContext::x_GetMolinfo(void) 
+{
+    CSeqdesc_CI mi(GetHandle(), CSeqdesc::e_Molinfo);
+    return mi ? &(mi->GetMolinfo()) : 0;
+}
+
+/*
 CMolInfo::TTech CBioseqContext::x_GetTech(void)
 {
     CSeqdesc_CI mi(GetHandle(), CSeqdesc::e_Molinfo);
     return mi->GetMolinfo().CanGetTech() ? mi->GetMolinfo().GetTech() :
         CMolInfo::eTech_unknown;
 }
+*/
 
 
 bool CBioseqContext::x_IsPart(const CBioseq& seq) const
@@ -346,15 +350,10 @@ const CBioseq& CBioseqContext::x_GetMasterForPart(const CBioseq& part) const
 }
 
 
-/*
-void CBioseqContext::x_SetAccession(const CBioseq& seq)
-{
-}
-*/
-
 void CBioseqContext::x_SetId(const CBioseq& seq)
 {
     m_PrimaryId.Reset(FindBestChoice(seq.GetId(), CSeq_id::Score));
+    m_Accession = m_PrimaryId->GetSeqIdString(true);
 
     ITERATE(CBioseq::TId, id_iter, seq.GetId()) {
         const CSeq_id& id = **id_iter;
@@ -362,17 +361,20 @@ void CBioseqContext::x_SetId(const CBioseq& seq)
         const string& acc = (tsip != 0  &&  tsip->CanGetAccession()) ?
             tsip->GetAccession() : kEmptyStr;
 
+        CSeq_id::EAccessionInfo acc_info = id.IdentifyAccession();
+        unsigned int acc_type = acc_info & CSeq_id::eAcc_type_mask;
+        unsigned int acc_div =  acc_info & CSeq_id::eAcc_division_mask;
+
         switch ( id.Which() ) {
         // Genbank, Embl or Ddbj
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
         case CSeq_id::e_Ddbj:
             m_IsGED = true;
-            if ( NStr::StartsWith(acc, "AE") ) {
-              m_IsAE = true;
-            } else if ( NStr::StartsWith(acc, "CH") ) {
-              m_IsCH = true;
-            }
+            m_IsGbGenomeProject = m_IsGbGenomeProject  ||
+                ((acc_type & CSeq_id::eAcc_gb_genome) != 0);
+            m_IsNcbiCONDiv = m_IsNcbiCONDiv  ||
+                ((acc_type & CSeq_id::eAcc_gb_con) != 0);
             break;
         // Patent
         case CSeq_id::e_Patent:
@@ -381,38 +383,7 @@ void CBioseqContext::x_SetId(const CBioseq& seq)
         // RefSeq
         case CSeq_id::e_Other:
             m_IsRefSeq = true;
-            // and do RefSeq subclasses up front as well
-            if ( !acc.empty() ) {
-                string acc_prefix = acc.substr(0, 3);
-                
-                if (acc_prefix == "NC_") {
-                    m_IsNC = true;
-                } else if (acc_prefix == "NG_") {
-                    m_IsNG = true;
-                } else if (acc_prefix == "NM_") {
-                    m_IsNM = true;
-                } else if (acc_prefix == "NR_") {
-                    m_IsNR = true;
-                } else if (acc_prefix == "NP_") {
-                    m_IsNP = true;
-                } else if (acc_prefix == "NT_") {
-                    m_IsNT = true;
-                } else if (acc_prefix == "NW_") {
-                    m_IsNW = true;
-                } else if (acc_prefix == "XM_") {
-                    m_IsXM = true;
-                } else if (acc_prefix == "XR_") {
-                    m_IsXR = true;
-                } else if (acc_prefix == "XP_") {
-                    m_IsXP = true;
-                } else if (acc_prefix == "NZ_") {
-                    m_IsNZ = true;
-                } else if (acc_prefix == "ZP_") {
-                    m_IsZP = true;
-                } else if (acc_prefix == "NS_") {
-                    m_IsNS = true;
-                }
-            }
+            m_RefseqInfo = acc_type;
             break;
         // Gi
         case CSeq_id::e_Gi:
@@ -444,14 +415,15 @@ void CBioseqContext::x_SetId(const CBioseq& seq)
         case CSeq_id::e_Giim:
         case CSeq_id::e_Pir:
         case CSeq_id::e_Swissprot:
+            m_IsSP = true;
+            break;
         case CSeq_id::e_Prf:
         default:
             break;
         }
 
-        CSeq_id::EAccessionInfo ai = id.IdentifyAccession();
         // WGS
-        m_IsWGS = ((ai & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs);
+        m_IsWGS = m_IsWGS  ||  ((acc_div & CSeq_id::eAcc_wgs) != 0);
         
         if ( m_IsWGS  &&  !acc.empty() ) {
             size_t len = acc.length();
@@ -465,7 +437,25 @@ void CBioseqContext::x_SetId(const CBioseq& seq)
         } 
 
         // GBB source
-        m_ShowGBBSource = ((ai & CSeq_id::eAcc_gsdb_dirsub) != 0);
+        m_ShowGBBSource = m_ShowGBBSource  ||  
+                          ((acc_type & CSeq_id::eAcc_gsdb_dirsub) != 0);
+    }
+}
+
+
+const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
+{
+    if ( id.IsGi()  &&  id.GetGi() == m_GI ) {
+        return *m_PrimaryId;
+    }
+
+    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandle(id);
+    if ( h == m_Handle ) {
+        return *m_PrimaryId;
+    } else if ( h  &&  h.GetSeqId().NotEmpty() ) {
+        return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
+    } else {
+        return id;
     }
 }
 
@@ -678,6 +668,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:09:04  shomrat
+* multiple changes (work in progress)
+*
 * Revision 1.2  2003/12/18 17:43:31  shomrat
 * context.hpp moved
 *
