@@ -66,35 +66,6 @@ private:
 class CFlatSeqLoc : public CObject // derived from CObject to allow for caching
 {
 public:
-    /*
-    struct SInterval
-    {
-        enum EFlags {
-            fReversed     = 0x1,
-            fPartialLeft  = 0x2,
-            fPartialRight = 0x4,
-        };
-        typedef int TFlags; // binary OR of EFlags
-
-        TSeqPos GetStart(void) const
-          { return m_Flags & fReversed ? m_Range.GetTo() : m_Range.GetFrom(); }
-        TSeqPos GetStop(void) const
-          { return m_Flags & fReversed ? m_Range.GetFrom() : m_Range.GetTo(); }
-
-        bool IsReversed    (void) const
-            { return (m_Flags & fReversed) != 0; }
-        bool IsPartialLeft (void) const
-            { return (m_Flags & fPartialLeft) != 0; }
-        bool IsPartialRight(void) const
-            { return (m_Flags & fPartialRight) != 0; }
-
-        string          m_Accession;
-        CRange<TSeqPos> m_Range; // 1-based, L->R; should be finite
-        TFlags          m_Flags;
-    };
-    typedef vector<SInterval> TIntervals;
-    */
-
     enum EType
     {
         eType_location,     // Seq-loc
@@ -106,7 +77,6 @@ public:
         TType type = eType_location);
 
     const string&     GetString(void)    const { return m_String;    }
-    //const TIntervals& GetIntervals(void) const { return m_Intervals; }
     
 private:
     void x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
@@ -120,13 +90,8 @@ private:
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CFFContext& ctx, TType type);
 
-    //void x_AddInt(TSeqPos from, TSeqPos to, const string& accn,
-    //              SInterval::TFlags flags = 0);
-
-    
-
+    // data
     string     m_String;    // whole location, as a GB-style string
-    //TIntervals m_Intervals; // individual intervals/points
 };
 
 
@@ -137,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/05 18:50:25  shomrat
+* clean code
+*
 * Revision 1.2  2004/02/19 17:53:47  shomrat
 * add flag to differentiate between loaction and genome assembly formatting
 *
