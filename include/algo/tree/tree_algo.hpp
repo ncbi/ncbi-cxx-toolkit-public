@@ -573,8 +573,30 @@ template<class TNode, class TSet, class TNodeList>
 class CTreeMinimalSet
 {
 public:
+
+    /// Compute minimal set.
+    ///
+    /// @param src_nlist
+    ///    Source node list
+    /// @param dst_nlist
+    ///    Destination node list
+    /// @param ignore_set
+    ///    Set of node ids to ignore when we do reduction
+    ///
     void operator()(const TNodeList& src_nlist,
-                    TNodeList&       dst_nlist)
+                    TNodeList&       dst_nlist,
+                    const TSet*      ignore_set = 0)
+    {
+        MinimalSet(src_nlist, dst_nlist, ignore_set);
+    }
+
+
+protected:
+
+    // The main workhorse function
+    void MinimalSet(const TNodeList& src_nlist,
+                    TNodeList&       dst_nlist,
+                    const TSet*      ignore_set = 0)
     {
         TSet src_set;
         TreeListToSet(src_nlist, src_set.inserter());
@@ -587,12 +609,12 @@ public:
         do {
             moved_up = 
                 CheckNodeList(src_nlist, dst_nlist, 
-                              src_set,   tmp_set, child_set);
+                              src_set,   tmp_set, child_set, ignore_set);
 
             if (moved_up) {
                 moved_up =
                  CheckNodeList(dst_nlist, dst_nlist, 
-                               src_set,   tmp_set, child_set);
+                               src_set,   tmp_set, child_set, ignore_set);
             }
         } while (moved_up); // repeat while we can move nodes up
 
@@ -623,13 +645,14 @@ public:
         }
 
     }
-protected:
+
 
     bool CheckNodeList(const TNodeList& nlist, 
                        TNodeList&       dst_nlist,
                        TSet&            src_set,
                        TSet&            tmp_set,
-                       TSet&            child_set)
+                       TSet&            child_set,
+                       const TSet*      ignore_set)
     {
         TNodeList  tmp_nlist; // (to avoid problems when &nlist == &dst_nlist)
 
@@ -653,6 +676,10 @@ protected:
             TreeMakeSubNodesSet(*parent, child_set.inserter());
             tmp_set = child_set;
             tmp_set -= src_set;
+
+            if (ignore_set) {
+                tmp_set -= *ignore_set;
+            }
 
             if (tmp_set.none()) {  // we can move up to the parent
 
@@ -828,6 +855,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/27 12:39:34  kuznets
+ * Minimal set changed to work with ignore list of ids
+ *
  * Revision 1.6  2004/04/22 17:58:07  kuznets
  * + more comments on minimal set
  *
