@@ -615,7 +615,7 @@ EBDB_ErrCode CBDB_File::Insert(EAfterWrite write_flag)
     if (DuplicatesAllowed()) {
         flags = 0;
     } else {
-        flags = DB_NODUPDATA | DB_NOOVERWRITE;
+        flags = /*DB_NODUPDATA |*/ DB_NOOVERWRITE;
     }
     return x_Write(flags, write_flag);
 }
@@ -848,6 +848,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/03/12 15:08:36  kuznets
+ * Removed unnecessary DB_NODUPDATA flag (db->put)
+ *
  * Revision 1.34  2004/03/08 13:32:43  kuznets
  * Code clean-up
  *

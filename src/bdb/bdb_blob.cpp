@@ -235,7 +235,7 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
                         0,     // DB_TXN*
                         m_DBT_Key,
                         m_DBT_Data,
-                        DB_NOOVERWRITE | DB_NODUPDATA
+                        DB_NOOVERWRITE /*| DB_NODUPDATA*/
                         );
     if (ret == DB_KEYEXIST)
         return eBDB_KeyDup;
@@ -362,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/03/12 15:08:04  kuznets
+ * Removed unnecessary DB_NODUPDATA flag (db->put)
+ *
  * Revision 1.15  2003/12/29 17:06:24  kuznets
  * +CBDB_BlobStream::SetTransaction()
  *
