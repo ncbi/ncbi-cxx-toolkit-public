@@ -73,6 +73,7 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/ostream", line 331: Warning: The else-branch should return a value/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line (130|165|207): .*::rdbuf hides/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
+      m ~ /^".*\/include\/FL\/Fl_.+\.H", line [0-9]+: Warning: Fl_.+ hides the function Fl_.+/ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: Comparing different enum types "enum" and "enum"\./ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: FX.+ hides the function FX/ ||
       m ~ /^".*\/include\/fox\/FXObject\.h".+two consecutive underbars in "__FXMETACLASSINITIALIZER__"\./ ||
