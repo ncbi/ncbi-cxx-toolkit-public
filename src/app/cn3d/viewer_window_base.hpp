@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/02 03:26:36  thiessen
+* fix dangling pointer upon app close
+*
 * Revision 1.1  2001/03/01 20:15:30  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -144,6 +147,11 @@ protected:
 public:
 
     void Refresh(void) { viewerWidget->Refresh(false); }
+    void KillWindow(void)
+    {
+        viewer = NULL;
+        Destroy();
+    }
 
     bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
 

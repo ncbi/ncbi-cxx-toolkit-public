@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/02 03:26:59  thiessen
+* fix dangling pointer upon app close
+*
 * Revision 1.1  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -81,16 +84,17 @@ SequenceViewerWindow::~SequenceViewerWindow(void)
 
 void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
 {
-    if (!SaveDialog(event.CanVeto())) {
-        event.Veto();       // cancelled
-        return;
+    if (viewer) {
+        if (!SaveDialog(event.CanVeto())) {
+            event.Veto();       // cancelled
+            return;
+        }
+        viewer->GetCurrentDisplay()->RemoveBlockBoundaryRow();
+        viewer->GUIDestroyed(); // make sure SequenceViewer knows the GUI is gone
+        GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
-    viewer->GetCurrentDisplay()->RemoveBlockBoundaryRow();
-    viewer->GUIDestroyed(); // make sure SequenceViewer knows the GUI is gone
-    GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     Destroy();
 }
-
 
 void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
 {

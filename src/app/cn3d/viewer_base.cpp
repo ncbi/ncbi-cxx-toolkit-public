@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/02 03:26:59  thiessen
+* fix dangling pointer upon app close
+*
 * Revision 1.1  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -67,8 +70,8 @@ ViewerBase::~ViewerBase(void)
 void ViewerBase::DestroyGUI(void)
 {
     if ((*viewerWindow)) {
-        (*viewerWindow)->Destroy();
-        *viewerWindow = NULL;
+        (*viewerWindow)->KillWindow();
+        GUIDestroyed();
     }
 }
 
