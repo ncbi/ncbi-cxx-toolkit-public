@@ -13,3 +13,6 @@ SRC = align_ci annot_ci annot_object annot_types_ci bioseq_handle \
       gbloader strstreambuf
 
 LIB    = xobjmgr1
+
+# Dependencies for shared library
+DLL_LIB = dbapi_driver
