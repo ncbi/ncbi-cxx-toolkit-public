@@ -698,6 +698,13 @@
 #  define NCBI_LDS_EXPORT     __declspec(dllimport)
 #endif
 
+#ifdef NCBI_XLOADER_LDS_EXPORTS
+#  define NCBI_XLOADER_LDS_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_LDS_EXPORTS    __declspec(dllimport)
+#endif
+
+
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
 /*
@@ -764,6 +771,7 @@
 #  define NCBI_XUTIL_EXPORT
 #  define NCBI_LDS_EXPORT
 #  define NCBI_BDB_EXPORT
+#  define NCBI_XLOADER_LDS_EXPORTS
 
 #endif
 
@@ -773,6 +781,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.29  2003/07/16 20:15:00  kuznets
+ * + NCBI_XLOADER_LDS_EXPORTS (export/import macro for lds dataloader)
+ *
  * Revision 1.28  2003/06/27 19:00:08  dicuccio
  * Moved BLAST, scoremat, and ID1 from ncbi_seq.dll to ncbi_seqext.dll
  *
