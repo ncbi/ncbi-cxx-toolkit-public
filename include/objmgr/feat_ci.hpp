@@ -133,6 +133,9 @@ public:
     const string& GetExcept_text(void) const
         { return GetOriginalFeature().GetExcept_text(); }
 
+    const CSeq_annot& GetSeq_annot(void) const
+        { return m_AnnotObject_Ref.GetSeq_annot(); }
+
 private:
     friend class CFeat_CI;
     friend class CAnnot_CI;
@@ -356,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/11/07 16:01:26  vasilche
+* Added CMappedFeat::GetSeq_annot().
+*
 * Revision 1.33  2003/08/27 14:28:50  vasilche
 * Reduce amount of object allocations in feature iteration.
 *
