@@ -1,0 +1,7 @@
+# $Id$
+
+ASN_DEP = seq
+
+LIB = xobjwrite
+SRC = agp_write
+
