@@ -171,6 +171,6 @@ void debruijn(Int4 n, Int4 k, Uint1Ptr output, Uint1Ptr alphabet)
  
   fkm(a,n,k,output,&cursor,alphabet);
   
-  Free(a);
+  MemFree(a);
   return;
 }
