@@ -26,6 +26,12 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.39  2003/07/25 17:25:43  coulouri
+ * in progres:
+ *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
+ *  * add sfree() macro and __sfree() helper function to util.[ch]
+ *  * use sfree() instead of MemFree()
+ *
  * Revision 1.38  2003/07/23 17:31:10  camacho
  * BlastDatabaseParameters struct is deprecated
  *
@@ -246,9 +252,9 @@ BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
 
 {
    BlastMaskFree(options->lcase_mask);
-   MemFree(options->filter_string);
+   sfree(options->filter_string);
 
-   return (QuerySetUpOptionsPtr) MemFree(options);
+   return (QuerySetUpOptionsPtr) sfree(options);
 }
 
 Int2
@@ -292,7 +298,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
 
 {
 
-	MemFree(options);
+	sfree(options);
 
 	return NULL;
 }
@@ -358,7 +364,7 @@ BlastInitialWordParametersPtr
 BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 
 {
-	return MemFree(parameters);
+	return sfree(parameters);
 	
 
 }
@@ -429,7 +435,7 @@ BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
 
 {
 
-	MemFree(options);
+	sfree(options);
 
 	return NULL;
 }
@@ -534,7 +540,7 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
    }
    
    *parameters = params = (BlastExtensionParametersPtr) 
-      Malloc(sizeof(BlastExtensionParameters));
+      malloc(sizeof(BlastExtensionParameters));
 
    params->options = options;
    params->gap_x_dropoff = 
@@ -551,7 +557,7 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
 BlastExtensionParametersPtr
 BlastExtensionParametersFree(BlastExtensionParametersPtr parameters)
 {
-   return MemFree(parameters);
+   return sfree(parameters);
 }
 
 
@@ -562,9 +568,9 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 	if (options == NULL)
 		return NULL;
 
-	MemFree(options->matrix);
+	sfree(options->matrix);
 
-	MemFree(options);
+	sfree(options);
 
 	return NULL;
 }
@@ -659,7 +665,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 
 				buffer = PrintMatrixMessage(options->matrix); 
                                 Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
-				buffer = MemFree(buffer);
+				buffer = sfree(buffer);
 				return (Int2) code;
 				
 			}
@@ -671,7 +677,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 
 				buffer = PrintAllowedValuesMessage(options->matrix, options->gap_open, options->gap_extend, options->decline_align); 
                                 Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
-				buffer = MemFree(buffer);
+				buffer = sfree(buffer);
 				return (Int2) code;
 			}
 		}
@@ -697,7 +703,7 @@ BlastEffectiveLengthsOptionsPtr
 BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options)
 
 {
-	MemFree(options);
+	sfree(options);
 
 	return NULL;
 }
@@ -744,10 +750,10 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 
 	if (options)
 	{
-		options->matrixname = MemFree(options->matrixname);
+		options->matrixname = sfree(options->matrixname);
 	}
 
-	return (LookupTableOptionsPtr) MemFree(options);
+	return (LookupTableOptionsPtr) sfree(options);
 }
 
 Int2 
@@ -897,7 +903,7 @@ BlastHitSavingOptionsPtr
 BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 
 {
-	return MemFree(options);
+	return sfree(options);
 }
 
 
@@ -973,7 +979,7 @@ BlastHitSavingParametersPtr
 BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 
 {
-	return MemFree(parmameters);
+	return sfree(parmameters);
 }
 
 
@@ -1042,9 +1048,9 @@ Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options)
 PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
 {
    if (psi_options->isPatternSearch)
-      MemFree(psi_options->phi_pattern);
+      sfree(psi_options->phi_pattern);
    
-   return (PSIBlastOptionsPtr) MemFree(psi_options);
+   return (PSIBlastOptionsPtr) sfree(psi_options);
 }
 
 Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
@@ -1061,9 +1067,9 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
 BlastDatabaseOptionsPtr 
 BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
 {
-   MemFree(db_options->gen_code_string);
+   sfree(db_options->gen_code_string);
    
-   return (BlastDatabaseOptionsPtr) MemFree(db_options);
+   return (BlastDatabaseOptionsPtr) sfree(db_options);
 }
 
 Int2 BLAST_InitDefaultOptions(Uint1 program_number,

@@ -55,15 +55,15 @@ BlastInitHitListPtr BLAST_InitHitListNew(void)
    init_hitlist->allocated = MIN_INIT_HITLIST_SIZE;
 
    init_hitlist->init_hsp_array = (BlastInitHSPPtr)
-      Malloc(MIN_INIT_HITLIST_SIZE*sizeof(BlastInitHSP));
+      malloc(MIN_INIT_HITLIST_SIZE*sizeof(BlastInitHSP));
 
    return init_hitlist;
 }
 
 BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist)
 {
-  MemFree(init_hitlist->init_hsp_array);
-  MemFree(init_hitlist);
+  sfree(init_hitlist->init_hsp_array);
+  sfree(init_hitlist);
   return NULL;
 }
 
@@ -123,19 +123,19 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
       MB_StackTablePtr stack_table;
 
       ewp->stack_table = stack_table = 
-         (MB_StackTablePtr) Malloc(sizeof(MB_StackTable));
+         (MB_StackTablePtr) malloc(sizeof(MB_StackTable));
 
       av_search_space = 
          ((FloatHi) query->length) * dblen / dbseq_num;
       num_stacks = MIN(1 + (Int4) (sqrt(av_search_space)/100), 500);
       stack_size = 5000/num_stacks;
       stack_table->stack_index = (Int4Ptr) MemNew(num_stacks*sizeof(Int4));
-      stack_table->stack_size = (Int4Ptr) Malloc(num_stacks*sizeof(Int4));
+      stack_table->stack_size = (Int4Ptr) malloc(num_stacks*sizeof(Int4));
       stack_table->estack = 
-         (MbStackPtr PNTR) Malloc(num_stacks*sizeof(MbStackPtr));
+         (MbStackPtr PNTR) malloc(num_stacks*sizeof(MbStackPtr));
       for (index=0; index<num_stacks; index++) {
          stack_table->estack[index] = 
-            (MbStackPtr) Malloc(stack_size*sizeof(MbStack));
+            (MbStackPtr) malloc(stack_size*sizeof(MbStack));
          stack_table->stack_size[index] = stack_size;
       }
       stack_table->num_stacks = num_stacks;
@@ -152,7 +152,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
          (Int4Ptr) MemNew(diag_table->diag_array_length*sizeof(DiagStruct));
       
       if (buffer == NULL)	{
-         ewp = (BLAST_ExtendWordPtr) MemFree(ewp);
+         ewp = (BLAST_ExtendWordPtr) sfree(ewp);
          return -1;
       }
          
@@ -183,7 +183,7 @@ Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist,
          return FALSE;
       num_avail *= 2;
       match_array = (BlastInitHSPPtr) 
-         Realloc(match_array, num_avail*sizeof(BlastInitHSP));
+         realloc(match_array, num_avail*sizeof(BlastInitHSP));
       if (!match_array) {
          init_hitlist->do_not_reallocate = TRUE;
          return FALSE;
@@ -295,7 +295,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
              ungapped_data->score >= word_params->cutoff_score) {
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
          } else {
-            ungapped_data = (BlastUngappedDataPtr) MemFree(ungapped_data);
+            ungapped_data = (BlastUngappedDataPtr) sfree(ungapped_data);
             /* Set diag_level to 0, indicating that any hit after this will 
                be new */
             diag_array_elem->diag_level = 0;
@@ -363,7 +363,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
                                        ungapped_data);
                } else {
                   ungapped_data = 
-                     (BlastUngappedDataPtr) MemFree(ungapped_data);
+                     (BlastUngappedDataPtr) sfree(ungapped_data);
                   /* Set hit length back to 0 after ungapped extension 
                      failure */
                   estack[index].length = 0;
@@ -397,7 +397,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
       if (++stack_top >= stack_table->stack_size[index1]) {
          /* Stack about to overflow - reallocate memory */
          MbStackPtr ptr;
-         if (!(ptr = (MbStackPtr)Realloc(estack,
+         if (!(ptr = (MbStackPtr)realloc(estack,
                      2*stack_table->stack_size[index1]*sizeof(MbStack)))) {
             return 1;
          } else {
@@ -428,7 +428,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
             BLAST_SaveInitialHit(init_hitlist, q_off, s_off, 
                                  ungapped_data);
          } else {
-            ungapped_data = (BlastUngappedDataPtr) MemFree(ungapped_data);
+            ungapped_data = (BlastUngappedDataPtr) sfree(ungapped_data);
             /* Set hit length back to 0 after ungapped extension 
                failure */
             estack[index].length = 0;
@@ -616,7 +616,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
 
 	if (ungapped_data) {
            *ungapped_data = (BlastUngappedDataPtr) 
-              Malloc(sizeof(BlastUngappedData));
+              malloc(sizeof(BlastUngappedData));
 	   (*ungapped_data)->q_start = q_beg - query->sequence;
 	   (*ungapped_data)->s_start = 
 	      s_off - (q_off - (*ungapped_data)->q_start);
@@ -752,7 +752,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
             saved */
          diag_array_elem->diag_level = 1;
       } else {
-         ungapped_data = (BlastUngappedDataPtr) MemFree(ungapped_data);
+         ungapped_data = (BlastUngappedDataPtr) sfree(ungapped_data);
          /* Set diag_level to 0, indicating that any hit after this will 
             be new */
          diag_array_elem->diag_level = 0;
@@ -1137,8 +1137,8 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
 static BLAST_DiagTablePtr BlastDiagTableFree(BLAST_DiagTablePtr diag_table)
 {
    if (diag_table) {
-      MemFree(diag_table->diag_array);
-      MemFree(diag_table);
+      sfree(diag_table->diag_array);
+      sfree(diag_table);
    }
    return NULL;
 }
@@ -1152,11 +1152,11 @@ static MB_StackTablePtr MBStackTableFree(MB_StackTablePtr stack_table)
       return NULL;
 
    for (index = 0; index < stack_table->num_stacks; ++index)
-      MemFree(stack_table->estack[index]);
-   MemFree(stack_table->estack);
-   MemFree(stack_table->stack_index);
-   MemFree(stack_table->stack_size);
-   MemFree(stack_table);
+      sfree(stack_table->estack[index]);
+   sfree(stack_table->estack);
+   sfree(stack_table->stack_index);
+   sfree(stack_table->stack_size);
+   sfree(stack_table);
    return NULL;
 }
 
@@ -1164,5 +1164,5 @@ BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp)
 {
    BlastDiagTableFree(ewp->diag_table);
    MBStackTableFree(ewp->stack_table);
-   return (BLAST_ExtendWordPtr) MemFree(ewp);
+   return (BLAST_ExtendWordPtr) sfree(ewp);
 }

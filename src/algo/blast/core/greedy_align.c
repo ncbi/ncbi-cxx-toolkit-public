@@ -76,7 +76,7 @@ static Int4 edit_script_ready(MBGapEditScript *es, Uint4 n)
     Uint4 m = n + n/2;
     
     if (es->size <= n) {
-        p = Realloc(es->op, m*sizeof(edit_op_t));
+        p = realloc(es->op, m*sizeof(edit_op_t));
         if (p == 0) {
             return 0;
         } else {
@@ -169,9 +169,9 @@ MBGapEditScript *MBGapEditScriptFree(MBGapEditScript *es)
 {
     if (es) {
         if (es->op)
-            MemFree(es->op);
+            sfree(es->op);
         MemSet(es, 0, sizeof(*es));
-        MemFree(es);
+        sfree(es);
     }
     return 0;
 }
@@ -210,11 +210,11 @@ MBSpacePtr MBSpaceNew()
     MBSpacePtr p;
     Int4 amount;
     
-    p = (MBSpacePtr) Malloc(sizeof(MBSpace));
+    p = (MBSpacePtr) malloc(sizeof(MBSpace));
     amount = MAX_SPACE;
-    p->space_array = (ThreeValPtr) Malloc(sizeof(ThreeVal)*amount);
+    p->space_array = (ThreeValPtr) malloc(sizeof(ThreeVal)*amount);
     if (p->space_array == NULL) {
-       p = MemFree(p);
+       p = sfree(p);
        return NULL;
     }
     p->used = 0; 
@@ -238,8 +238,8 @@ void MBSpaceFree(MBSpacePtr sp)
 
    while (sp) {
       next_sp = sp->next;
-      sp->space_array = MemFree(sp->space_array);
-      sp = MemFree(sp);
+      sp->space_array = sfree(sp->space_array);
+      sp = sfree(sp);
       sp = next_sp;
    }
 }

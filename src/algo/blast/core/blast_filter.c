@@ -50,7 +50,7 @@ Contents: All code related to query sequence masking/filtering for BLAST
 BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to)
 {
    BlastSeqLocPtr loc = (BlastSeqLocPtr) MemNew(sizeof(BlastSeqLoc));
-   DoubleIntPtr di = (DoubleIntPtr) Malloc(sizeof(DoubleInt));
+   DoubleIntPtr di = (DoubleIntPtr) malloc(sizeof(DoubleInt));
 
    di->i1 = from;
    di->i2 = to;
@@ -66,8 +66,8 @@ BlastSeqLocPtr BlastSeqLocFree(BlastSeqLocPtr loc)
    while (loc) {
       next_loc = loc->next;
       dintp = (DoubleIntPtr) loc->data.ptrvalue;
-      MemFree(dintp);
-      MemFree(loc);
+      sfree(dintp);
+      sfree(loc);
       loc = next_loc;
    }
    return NULL;
@@ -79,7 +79,7 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
    while (mask_loc) {
       next_loc = mask_loc->next;
       BlastSeqLocFree(mask_loc->loc_list);
-      MemFree(mask_loc);
+      sfree(mask_loc);
       mask_loc = next_loc;
    }
    return NULL;
@@ -150,7 +150,7 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
       if (di_next && stop+1 >= di_next->i1) {
          stop = MAX(stop, di_next->i2);
       } else {
-         di_tmp = (DoubleIntPtr) Malloc(sizeof(DoubleInt));
+         di_tmp = (DoubleIntPtr) malloc(sizeof(DoubleInt));
          di_tmp->i1 = start;
          di_tmp->i2 = stop;
          if (!new_loc)
@@ -171,7 +171,7 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
    /* Free memory allocated for the temporary list of SeqLocs */
    while (loc_head) {
       loc_var = loc_head->next;
-      MemFree(loc_head);
+      sfree(loc_head);
       loc_head = loc_var;
    }
    return status;
@@ -681,7 +681,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 				ptr++;
 			}
 		}
-		buffer = (CharPtr) MemFree(buffer);
+		buffer = (CharPtr) sfree(buffer);
 	}
 
 	seqloc_num = 0;
@@ -703,7 +703,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 			scores = PredictCCSeqLoc(slp, pccp);
 			cc_slp = FilterCC(scores, cutoff_cc, length, linker_cc,
                                           SeqIdDup(sip), FALSE);
-			MemFree(scores);
+			sfree(scores);
 			PccDatFree (pccp);
 #endif
 			seqloc_num++;
@@ -736,7 +736,7 @@ start_timer;
 			repeat_slp = BioseqHitRangeEngineByLoc(myslp, "blastn", repeat_database, repeat_options, NULL, NULL, NULL, NULL, NULL, 0);
 stop_timer("after repeat filtering");
 			repeat_options = BLASTOptionDelete(repeat_options);
-			repeat_database = MemFree(repeat_database);
+			repeat_database = sfree(repeat_database);
 			if (myslp_allocated)
 				SeqLocFree(myslp);
 			seqloc_num++;
@@ -776,7 +776,7 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 			}
 			vnp = ValNodeFree(vnp);
 			seqalign = SeqAlignSetFree(seqalign);
-			vs_database = MemFree(vs_database);
+			vs_database = sfree(vs_database);
 			if (myslp_allocated)
 				SeqLocFree(myslp);
 			seqloc_num++;

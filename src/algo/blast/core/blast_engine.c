@@ -53,11 +53,11 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
    BlastExtendWordFree(aux_struct->ewp);
    BLAST_InitHitListDestruct(aux_struct->init_hitlist);
    BlastHSPListFree(aux_struct->hsp_list);
-   MemFree(aux_struct->query_offsets);
-   MemFree(aux_struct->subject_offsets);
+   sfree(aux_struct->query_offsets);
+   sfree(aux_struct->subject_offsets);
    BlastSeqSrcFree(aux_struct->bssp);
    
-   return (BlastCoreAuxStructPtr) MemFree(aux_struct);
+   return (BlastCoreAuxStructPtr) sfree(aux_struct);
 }
 
 /** Adjust HSP coordinates for out-of-frame gapped extension.
@@ -504,9 +504,9 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    }
 
    aux_struct->query_offsets = 
-      (Uint4Ptr) Malloc(offset_array_size * sizeof(Uint4));
+      (Uint4Ptr) malloc(offset_array_size * sizeof(Uint4));
    aux_struct->subject_offsets = 
-      (Uint4Ptr) Malloc(offset_array_size * sizeof(Uint4));
+      (Uint4Ptr) malloc(offset_array_size * sizeof(Uint4));
 
    aux_struct->init_hitlist = BLAST_InitHitListNew();
    aux_struct->hsp_list = BlastHSPListNew();
@@ -649,7 +649,7 @@ static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
     NlmMutexDestroy(thr_info->results_mutex);
     NlmMutexDestroy(thr_info->callback_mutex);
 #endif
-    MemFree(thr_info);
+    sfree(thr_info);
     
     return;
 }
@@ -736,7 +736,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 #endif
 
    BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
-   oid_list = (Int4Ptr) MemFree(oid_list);
+   oid_list = (Int4Ptr) sfree(oid_list);
    BlastSequenceBlkFree(seq_arg.seq);
 
    /* Now sort the hit lists for all queries */
@@ -754,9 +754,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
 
-   hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
-   ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
-   word_params = (BlastInitialWordParametersPtr) MemFree(word_params);
+   hit_params = (BlastHitSavingParametersPtr) sfree(hit_params);
+   ext_params = (BlastExtensionParametersPtr) sfree(ext_params);
+   word_params = (BlastInitialWordParametersPtr) sfree(word_params);
 
    return status;
 }
@@ -809,7 +809,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
          score_options, NULL, NULL);
    }
    BlastCoreAuxStructFree(aux_struct);
-   word_params = (BlastInitialWordParametersPtr) MemFree(word_params);
+   word_params = (BlastInitialWordParametersPtr) sfree(word_params);
 
    if (hit_options->is_gapped) {
       status = 
@@ -822,8 +822,8 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
 
-   ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
-   hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
+   ext_params = (BlastExtensionParametersPtr) sfree(ext_params);
+   hit_params = (BlastHitSavingParametersPtr) sfree(hit_params);
 
    return status;
 }

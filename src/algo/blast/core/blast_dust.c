@@ -117,7 +117,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
             regold = reg;
             reg = (DREGION PNTR) MemNew (sizeof (DREGION));
             if (!reg) {
-               MemFree(seq);
+               sfree(seq);
                return -1;
             }
             reg->next = NULL;
@@ -129,7 +129,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
             i += (cloc.curend - windowhalf);
       }				/* end 'if' high score	*/
    }					/* end for */
-   MemFree (seq);
+   sfree (seq);
    return nreg;
 }
 
@@ -309,7 +309,7 @@ Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
 	{
 		regold = reg;
 		reg = reg->next;
-		MemFree (regold);
+		sfree (regold);
 	}
 
 	return status;

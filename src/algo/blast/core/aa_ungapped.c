@@ -345,7 +345,7 @@ BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start
 {
   BlastUngappedDataPtr ungapped_data = NULL;
 
-  ungapped_data = (BlastUngappedDataPtr) Malloc(sizeof(BlastUngappedData));
+  ungapped_data = (BlastUngappedDataPtr) malloc(sizeof(BlastUngappedData));
 
   ungapped_data->q_start = q_start;
   ungapped_data->s_start = s_start;
@@ -545,11 +545,11 @@ static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offs
 
 Int4 DiagNew(BLAST_DiagTablePtr * diag, Int4 window_size, Int4 longest_seq)
 {
-  *diag = (BLAST_DiagTablePtr) Malloc(sizeof(BLAST_DiagTable));
+  *diag = (BLAST_DiagTablePtr) malloc(sizeof(BLAST_DiagTable));
 
   (*diag)->diag_array_length = 2 * longest_seq;
   (*diag)->diag_array = (DiagStructPtr) 
-     Malloc( (*diag)->diag_array_length * sizeof(DiagStruct));
+     malloc( (*diag)->diag_array_length * sizeof(DiagStruct));
   (*diag)->window = window_size;
   DiagClear(*diag);
 

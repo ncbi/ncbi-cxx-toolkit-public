@@ -95,9 +95,9 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
       return 1;
 
    if (seq_blk->sequence_allocated) 
-      seq_blk->sequence = MemFree(seq_blk->sequence);
+      seq_blk->sequence = sfree(seq_blk->sequence);
    if (seq_blk->sequence_start_allocated)
-      seq_blk->sequence_start = MemFree(seq_blk->sequence_start);
+      seq_blk->sequence_start = sfree(seq_blk->sequence_start);
 
    return 0;
 }
@@ -109,7 +109,7 @@ BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
 
    BlastSequenceBlkClean(seq_blk);
 
-   return (BLAST_SequenceBlkPtr) MemFree(seq_blk);
+   return (BLAST_SequenceBlkPtr) sfree(seq_blk);
 }
 
 Int2 BlastProgram2Number(const Char *program, Uint1 *number)
@@ -564,7 +564,7 @@ Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length,
    if (!rev_sequence_ptr)
       return -1;
 
-   rev_sequence = (Uint1Ptr) Malloc(length + 2);
+   rev_sequence = (Uint1Ptr) malloc(length + 2);
    
    rev_sequence[0] = rev_sequence[length+1] = NULLB;
 
@@ -607,10 +607,10 @@ Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context)
 
 BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
 {
-   MemFree(query_info->context_offsets);
-   MemFree(query_info->length_adjustments);
-   MemFree(query_info->eff_searchsp_array);
-   return (BlastQueryInfoPtr) MemFree(query_info);
+   sfree(query_info->context_offsets);
+   sfree(query_info->length_adjustments);
+   sfree(query_info->eff_searchsp_array);
+   return (BlastQueryInfoPtr) sfree(query_info);
 }
 
 #define PACK_MASK 0x03
@@ -622,7 +622,7 @@ Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding,
                           Uint1Ptr PNTR packed_seq)
 {
    Int4 new_length = (length+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
-   Uint1Ptr new_buffer = (Uint1Ptr) Malloc(new_length);
+   Uint1Ptr new_buffer = (Uint1Ptr) malloc(new_length);
    Int4 index, new_index;
    Uint1 remainder;
    Uint1 shift;     /* bit shift to pack bases */
@@ -686,7 +686,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
 
    total_length = context_offsets[query_info->last_context+1] + 1;
 
-   buffer = (Uint1Ptr) Malloc(total_length);
+   buffer = (Uint1Ptr) malloc(total_length);
 
    for (index = 0; index <= query_info->last_context; index += CODON_LENGTH) {
       seq = &buffer[context_offsets[index]];
@@ -794,7 +794,7 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
       return -1;
 
    if ((*translation_buffer_ptr = translation_buffer = 
-        (Uint1Ptr) Malloc(2*(nucl_length+1)+1)) == NULL)
+        (Uint1Ptr) malloc(2*(nucl_length+1)+1)) == NULL)
       return -1;
 
    if (encoding == NCBI4NA_ENCODING) {
@@ -806,7 +806,7 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
       translation_table_rc = BLAST_GetTranslationTable(genetic_code, TRUE);
    } 
 
-   *frame_offsets_ptr = frame_offsets = (Int4Ptr) Malloc(7*sizeof(Int4));
+   *frame_offsets_ptr = frame_offsets = (Int4Ptr) malloc(7*sizeof(Int4));
    frame_offsets[0] = 0;
    
    for (context = 0; context < 6; ++context) {
@@ -834,10 +834,10 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
    }
 
    if (encoding == NCBI4NA_ENCODING) {
-      nucl_seq_rev = (Uint1Ptr) MemFree(nucl_seq_rev);
+      nucl_seq_rev = (Uint1Ptr) sfree(nucl_seq_rev);
    } else { 
-      translation_table = (Uint1Ptr) MemFree(translation_table);
-      translation_table_rc = (Uint1Ptr) MemFree(translation_table_rc);
+      translation_table = (Uint1Ptr) sfree(translation_table);
+      translation_table_rc = (Uint1Ptr) sfree(translation_table_rc);
    }
 
    /* All frames are ready. For the out-of-frame gapping option, allocate 
@@ -846,7 +846,7 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
       Uint1Ptr seq;
       Int4 index, i;
 
-      *mixed_seq_ptr = mixed_seq = (Uint1Ptr) Malloc(2*(nucl_length+1));
+      *mixed_seq_ptr = mixed_seq = (Uint1Ptr) malloc(2*(nucl_length+1));
       seq = mixed_seq;
       for (index = 0; index < 6; index += CODON_LENGTH) {
          for (i = 0; i <= nucl_length; ++i) {

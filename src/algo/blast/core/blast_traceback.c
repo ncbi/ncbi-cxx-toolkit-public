@@ -295,9 +295,9 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
       hsp_array[index]->ordering_method = 3;
    }
 
-   score_hsp_array = (BlastHSPPtr PNTR) Malloc(hspcnt*sizeof(BlastHSPPtr));
-   offset_hsp_array = (BlastHSPPtr PNTR) Malloc(hspcnt*sizeof(BlastHSPPtr));
-   end_hsp_array = (BlastHSPPtr PNTR) Malloc(hspcnt*sizeof(BlastHSPPtr));
+   score_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
+   offset_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
+   end_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
 
    MemCpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
    MemCpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
@@ -455,10 +455,10 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
       hsp->next = score_hsp_array[index];
    }
 
-   MemFree(subject_seq);
-   MemFree(score_hsp_array);
-   MemFree(offset_hsp_array);
-   MemFree(end_hsp_array);
+   sfree(subject_seq);
+   sfree(score_hsp_array);
+   sfree(offset_hsp_array);
+   sfree(end_hsp_array);
 
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp_list->hsp_array[index] = head_hsp;
@@ -1226,7 +1226,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
    /* For traceback, dynamic programming structure will be allocated on
       the fly, proportionally to the subject length */
-   gap_align->dyn_prog = MemFree(gap_align->dyn_prog);
+   gap_align->dyn_prog = sfree(gap_align->dyn_prog);
 
    sbp = gap_align->sbp;
    
@@ -1296,7 +1296,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
    /* For traceback, dynamic programming structure will be allocated on
       the fly, proportionally to the subject length */
-   gap_align->dyn_prog = MemFree(gap_align->dyn_prog);
+   gap_align->dyn_prog = sfree(gap_align->dyn_prog);
 
    sbp = gap_align->sbp;
 
@@ -1304,7 +1304,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
 
    if (db_is_na) {
       /* Two sequences case: free the compressed sequence */
-      MemFree(subject->sequence);
+      sfree(subject->sequence);
       subject->sequence = subject->sequence_start + 1;
       subject->sequence_allocated = FALSE;
    }

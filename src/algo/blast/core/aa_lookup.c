@@ -62,7 +62,7 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
 		      Boolean is_protein)
 {
    LookupTablePtr lookup = *lut = 
-      (LookupTablePtr) Malloc(sizeof(LookupTable));
+      (LookupTablePtr) malloc(sizeof(LookupTable));
 
   if (is_protein) {
     lookup->charsize = ilog2(opt->alphabet_size) + 1;
@@ -115,7 +115,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
     {
       chain_size = 8;
       hits_in_chain = 0;
-      chain = (Int4Ptr) Malloc( chain_size * sizeof(Int4) );
+      chain = (Int4Ptr) malloc( chain_size * sizeof(Int4) );
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
       lookup->thin_backbone[index] = chain;
@@ -132,7 +132,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
   if ( (hits_in_chain + 2) == chain_size )
     {
       chain_size = chain_size * 2;
-      chain = (Int4Ptr) Realloc(chain, chain_size * sizeof(Int4) );
+      chain = (Int4Ptr) realloc(chain, chain_size * sizeof(Int4) );
       lookup->thin_backbone[index] = chain;
       chain[0] = chain_size;
     }
@@ -175,7 +175,7 @@ Int4 _BlastAaLookupFinalize(LookupTablePtr lookup)
  lookup->longest_chain = longest_chain;
 
  /* allocate the overflow array */
- lookup->overflow = (Int4Ptr) Malloc( overflow_cells_needed * sizeof(Int4) );
+ lookup->overflow = (Int4Ptr) malloc( overflow_cells_needed * sizeof(Int4) );
 
 /* for each position in the lookup table backbone, */
 for(i=0;i<lookup->backbone_size;i++)
@@ -216,7 +216,7 @@ for(i=0;i<lookup->backbone_size;i++)
             }
 
     /* done with this chain- free it */
-        MemFree(lookup->thin_backbone[i]);
+        sfree(lookup->thin_backbone[i]);
 	lookup->thin_backbone[i]=NULL;
         }
 
@@ -228,7 +228,7 @@ for(i=0;i<lookup->backbone_size;i++)
     } /* end for */
 
 /* done copying hit info- free the backbone */
- MemFree(lookup->thin_backbone);
+ sfree(lookup->thin_backbone);
  lookup->thin_backbone=NULL;
 
 #ifdef LOOKUP_VERBOSE
@@ -385,7 +385,7 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
     }
 
   /* free neighbor array*/
-  MemFree(lookup->neighbors);
+  sfree(lookup->neighbors);
   lookup->neighbors=NULL;
 
   return 0;
@@ -430,7 +430,7 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup)
   
   lookup->neighbors_length = len;
 
-  lookup->neighbors = (Uint1Ptr) Malloc( len );
+  lookup->neighbors = (Uint1Ptr) malloc( len );
 
   /* generate the de Bruijn sequence */
 

@@ -72,10 +72,10 @@ static void AlphaFree (AlphaPtr palpha)
   {
    if (!palpha) return;
 
-   MemFree (palpha->alphaindex);
-   MemFree (palpha->alphaflag);
-   MemFree (palpha->alphachar);
-   MemFree (palpha);
+   sfree (palpha->alphaindex);
+   sfree (palpha->alphaflag);
+   sfree (palpha->alphachar);
+   sfree (palpha);
 
    return;
  }
@@ -86,11 +86,11 @@ static void SeqFree(SequencePtr seq)
 {
    if (seq==NULL) return;
 
-   MemFree(seq->seq);
+   sfree(seq->seq);
    AlphaFree(seq->palpha);
-   MemFree(seq->composition);
-   MemFree(seq->state);
-   MemFree(seq);
+   sfree(seq->composition);
+   sfree(seq->state);
+   sfree(seq);
    return;
 }
 
@@ -103,7 +103,7 @@ static void SegFree(SegPtr seg)
    while (seg)
      {
       nextseg = seg->next;
-      MemFree(seg);
+      sfree(seg);
       seg = nextseg;
      }
 
@@ -335,10 +335,10 @@ static void closewin(SequencePtr win)
 {
    if (win==NULL) return;
 
-   if (win->state!=NULL)       MemFree(win->state);
-   if (win->composition!=NULL) MemFree(win->composition);
+   if (win->state!=NULL)       sfree(win->state);
+   if (win->composition!=NULL) sfree(win->composition);
 
-   MemFree(win);
+   sfree(win);
    return;
 }
 
@@ -699,7 +699,7 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
 /*       i = hii;     this ignores the trimmed residues... */
         }
      }
-   MemFree(H);
+   sfree(H);
    return;
 }
 
@@ -731,7 +731,7 @@ static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
       if (seg->end>=nextseg->begin && seg->end>=nextseg->end)
         {
          seg->next = nextseg->next;
-         MemFree(nextseg);
+         sfree(nextseg);
          nextseg = seg->next;
          continue;
         }
@@ -739,7 +739,7 @@ static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
         {
          seg->end = nextseg->end;
          seg->next = nextseg->next;
-         MemFree(nextseg);
+         sfree(nextseg);
          nextseg = seg->next;
          continue;
         }
@@ -748,7 +748,7 @@ static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
         {
          seg->end = nextseg->end;
          seg->next = nextseg->next;
-         MemFree(nextseg);
+         sfree(nextseg);
          nextseg = seg->next;
          continue;
         }
@@ -879,7 +879,7 @@ void SegParametersFree(SegParametersPtr sparamsp)
 {
    if (!sparamsp) return;
    AlphaFree(sparamsp->palpha);
-   MemFree(sparamsp);
+   sfree(sparamsp);
    return;
 }
 

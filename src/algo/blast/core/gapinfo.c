@@ -48,8 +48,8 @@ GapStateFree(GapStateArrayStructPtr state_struct)
 	while (state_struct)
 	{
 		next = state_struct->next;
-		MemFree(state_struct->state_array);
-		MemFree(state_struct);
+		sfree(state_struct->state_array);
+		sfree(state_struct);
 		state_struct = next;
 		
 	}
@@ -92,7 +92,7 @@ GapEditScriptDelete(GapEditScriptPtr old)
 	while (old)
 	{
 		next = old->next;
-		old = MemFree(old);
+		old = sfree(old);
 		old = next;
 	}
 	return old;
@@ -120,7 +120,7 @@ GapEditBlockDelete(GapEditBlockPtr edit_block)
 
 	edit_block->esp = GapEditScriptDelete(edit_block->esp);
 
-	edit_block = MemFree(edit_block);
+	edit_block = sfree(edit_block);
 
 	return edit_block;
 }

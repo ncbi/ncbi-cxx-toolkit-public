@@ -51,6 +51,12 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.8  2003/07/25 17:25:43  coulouri
+ * in progres:
+ *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
+ *  * add sfree() macro and __sfree() helper function to util.[ch]
+ *  * use sfree() instead of MemFree()
+ *
  * Revision 1.7  2003/07/24 22:37:33  dondosha
  * Removed some unused function parameters
  *
@@ -1190,34 +1196,34 @@ BLAST_ScoreBlkDestruct(BLAST_ScoreBlkPtr sbp)
     }
     if (sbp->kbp_ideal)
         sbp->kbp_ideal = BlastKarlinBlkDestruct(sbp->kbp_ideal);
-    sbp->sfp = MemFree(sbp->sfp);
-    sbp->kbp_std = MemFree(sbp->kbp_std);
-    sbp->kbp_psi = MemFree(sbp->kbp_psi);
-    sbp->kbp_gap_std = MemFree(sbp->kbp_gap_std);
-    sbp->kbp_gap_psi = MemFree(sbp->kbp_gap_psi);
+    sbp->sfp = sfree(sbp->sfp);
+    sbp->kbp_std = sfree(sbp->kbp_std);
+    sbp->kbp_psi = sfree(sbp->kbp_psi);
+    sbp->kbp_gap_std = sfree(sbp->kbp_gap_std);
+    sbp->kbp_gap_psi = sfree(sbp->kbp_gap_psi);
     sbp->matrix_struct = BlastMatrixDestruct(sbp->matrix_struct);
-    sbp->maxscore = MemFree(sbp->maxscore);
+    sbp->maxscore = sfree(sbp->maxscore);
     sbp->comments = ValNodeFreeData(sbp->comments);
-    sbp->name = MemFree(sbp->name);
-    sbp->ambiguous_res = MemFree(sbp->ambiguous_res);
+    sbp->name = sfree(sbp->name);
+    sbp->ambiguous_res = sfree(sbp->ambiguous_res);
     
     /* Removing posMatrix and posFreqs if any */
     rows = sbp->query_length + 1;
     if(sbp->posMatrix != NULL) {
         for (index=0; index < rows; index++) {
-            MemFree(sbp->posMatrix[index]);
+            sfree(sbp->posMatrix[index]);
         }
-        MemFree(sbp->posMatrix);
+        sfree(sbp->posMatrix);
     }
     
     if(sbp->posFreqs != NULL) {
         for (index = 0; index < rows; index++) {
-            MemFree(sbp->posFreqs[index]);
+            sfree(sbp->posFreqs[index]);
         }
-        MemFree(sbp->posFreqs);
+        sfree(sbp->posFreqs);
     }
     
-    sbp = MemFree(sbp);
+    sbp = sfree(sbp);
     
     return sbp;
 }
@@ -1244,7 +1250,7 @@ BlastScoreSetAmbigRes(BLAST_ScoreBlkPtr sbp, Char ambiguous_res)
 		{
 			ambig_buffer[index] = sbp->ambiguous_res[index];
 		}
-		sbp->ambiguous_res = MemFree(sbp->ambiguous_res);
+		sbp->ambiguous_res = sfree(sbp->ambiguous_res);
 		sbp->ambiguous_res = ambig_buffer;
 	}
 
@@ -1284,27 +1290,27 @@ BLAST_MatrixDestruct(BLAST_MatrixPtr blast_matrix)
     if(blast_matrix->original_matrix && 
        blast_matrix->original_matrix != blast_matrix->matrix) {
         for (index=0; index < 26; index++) {
-            MemFree(blast_matrix->original_matrix[index]);
+            sfree(blast_matrix->original_matrix[index]);
         }
-        MemFree(blast_matrix->original_matrix);
+        sfree(blast_matrix->original_matrix);
     }
     
-    blast_matrix->name = MemFree(blast_matrix->name);
+    blast_matrix->name = sfree(blast_matrix->name);
     if (blast_matrix->matrix) {
 	for (index=0; index<blast_matrix->rows; index++) {
-	    MemFree(blast_matrix->matrix[index]);
+	    sfree(blast_matrix->matrix[index]);
 	}
-	MemFree(blast_matrix->matrix);
+	sfree(blast_matrix->matrix);
     }
     
     if(blast_matrix->posFreqs != NULL) {
         for (index = 0; index < blast_matrix->rows; index++) {
-            MemFree(blast_matrix->posFreqs[index]);
+            sfree(blast_matrix->posFreqs[index]);
         }
-        MemFree(blast_matrix->posFreqs);
+        sfree(blast_matrix->posFreqs);
     }
 
-    MemFree(blast_matrix);
+    sfree(blast_matrix);
 
     return NULL;
 }
@@ -1534,7 +1540,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix)
                   if(FileLength(string) > 0)
                      fp = FileOpen(string, "r");
                }
-               matrix_dir = MemFree(matrix_dir);
+               matrix_dir = sfree(matrix_dir);
             }
         }
         /* Trying to use local "data" directory */
@@ -1736,7 +1742,7 @@ BLAST_KarlinBlkPtr
 BlastKarlinBlkDestruct(BLAST_KarlinBlkPtr kbp)
 
 {
-	kbp = MemFree(kbp);
+	kbp = sfree(kbp);
 
 	return kbp;
 }
@@ -2027,7 +2033,7 @@ BlastMatrixDestruct(BLASTMatrixStructurePtr matrix_struct)
 	if (matrix_struct == NULL)
 		return NULL;
 
-	matrix_struct = MemFree(matrix_struct);
+	matrix_struct = sfree(matrix_struct);
 
 	return matrix_struct;
 }
@@ -2070,9 +2076,9 @@ BlastResCompDestruct(BLAST_ResCompPtr rcp)
 		return NULL;
 
 	if (rcp->comp0 != NULL)
-		rcp->comp0 = MemFree(rcp->comp0);
+		rcp->comp0 = sfree(rcp->comp0);
 
-	return MemFree(rcp);
+	return sfree(rcp);
 }
 
 /*
@@ -2163,8 +2169,8 @@ BlastScoreFreqDestruct(BLAST_ScoreFreqPtr sfp)
 		return NULL;
 
 	if (sfp->sprob0 != NULL)
-		sfp->sprob0 = MemFree(sfp->sprob0);
-	sfp = MemFree(sfp);
+		sfp->sprob0 = sfree(sfp->sprob0);
+	sfp = sfree(sfp);
 	return sfp;
 }
 
@@ -2356,8 +2362,8 @@ BlastResFreqNew(BLAST_ScoreBlkPtr sbp)
 
 void BlastResFreqFree(BLAST_ResFreqPtr rfp)
 {
-    MemFree(rfp->prob0);
-    MemFree(rfp);
+    sfree(rfp->prob0);
+    sfree(rfp);
 
     return;
 }
@@ -2443,7 +2449,7 @@ BlastResFreqStdComp(BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp)
 		{
 			rfp->prob[residues[index]] = STD_AMINO_ACID_FREQS[index].p;
 		}
-		residues = MemFree(residues);
+		residues = sfree(residues);
 	}
 	else
 	{	/* beginning of blastna and ncbi2na are the same. */
@@ -2513,9 +2519,9 @@ BlastResFreqDestruct(BLAST_ResFreqPtr rfp)
 		return NULL;
 
 	if (rfp->prob0 != NULL)
-		MemFree(rfp->prob0);
+		sfree(rfp->prob0);
 
-	rfp = MemFree(rfp);
+	rfp = sfree(rfp);
 
 	return rfp;
 }
@@ -2574,8 +2580,8 @@ MatrixInfoDestruct(MatrixInfoPtr matrix_info)
 	if (matrix_info == NULL)
 		return NULL;
 
-	MemFree(matrix_info->name);
-	return MemFree(matrix_info);
+	sfree(matrix_info->name);
+	return sfree(matrix_info);
 }
 
 /*
@@ -2824,11 +2830,11 @@ FloatHi *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
      (*beta) = beta_arr[0];
    }
 
-   MemFree(gapOpen_arr);
-   MemFree(gapExtend_arr);
-   MemFree(pref_flags);
-   MemFree(alpha_arr);
-   MemFree(beta_arr);
+   sfree(gapOpen_arr);
+   sfree(gapExtend_arr);
+   sfree(pref_flags);
+   sfree(alpha_arr);
+   sfree(beta_arr);
 }
 
 /*
@@ -2866,12 +2872,12 @@ BlastKarlinGetDefaultMatrixValues(CharPtr matrix, Int4Ptr open, Int4Ptr extensio
                 i+=n;
             }
         }
-        MemFree(gapOpen_arr);
-        MemFree(gapExtend_arr);
-        MemFree(Kappa_arr);
-        MemFree(Lambda_arr);
-        MemFree(H_arr);
-        MemFree(pref_flags);
+        sfree(gapOpen_arr);
+        sfree(gapExtend_arr);
+        sfree(Kappa_arr);
+        sfree(Lambda_arr);
+        sfree(H_arr);
+        sfree(pref_flags);
         return 1;
     } else
         return 0;
@@ -3391,7 +3397,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreqPtr sfp, FloatHi	lambda, FloatHi H)
 CleanUp:
 #ifndef BLAST_KARLIN_K_STACKP
 	if (P0 != NULL)
-		MemFree(P0);
+		sfree(P0);
 #endif
 	return K;
 }
@@ -4197,10 +4203,10 @@ Int4Ptr PNTR BlastMatrixToTxMatrix(BLAST_MatrixPtr blast_matrix)
    if (!blast_matrix->is_prot || matrix == NULL) 
       return NULL;
 
-   txmatrix = Malloc(TX_MATRIX_SIZE*sizeof(Int4Ptr));
+   txmatrix = malloc(TX_MATRIX_SIZE*sizeof(Int4Ptr));
 
    for (i=0; i<TX_MATRIX_SIZE; i++) {
-      txmatrix[i] = Malloc(TX_MATRIX_SIZE*sizeof(Int4));
+      txmatrix[i] = malloc(TX_MATRIX_SIZE*sizeof(Int4));
       for (j=0; j<TX_MATRIX_SIZE; j++) 
          txmatrix[i][j] = BLAST_SCORE_MIN;
    }
@@ -4224,8 +4230,8 @@ Int4Ptr PNTR TxMatrixDestruct(Int4Ptr PNTR txmatrix)
       return NULL;
 
    for (i=0; i<TX_MATRIX_SIZE; i++)
-      MemFree(txmatrix[i]);
+      sfree(txmatrix[i]);
 
-   MemFree(txmatrix);
+   sfree(txmatrix);
    return NULL;
 }

@@ -30,6 +30,12 @@ static char const rcsid[] = "$Id$";
 
 #include "util.h"
 
+void __sfree(void **x)
+{
+  free(*x);
+  *x=NULL;
+  return;
+}
 
 static void fkm_output(Int4Ptr a, Int4 n, Int4 p, Uint1Ptr output, Int4Ptr cursor, Uint1Ptr alphabet);
 static void fkm(Int4Ptr a, Int4 n, Int4 k, Uint1Ptr output, Int4Ptr cursor, Uint1Ptr alphabet);
@@ -165,12 +171,12 @@ void debruijn(Int4 n, Int4 k, Uint1Ptr output, Uint1Ptr alphabet)
   Int4 cursor=0;
 
   /* n+1 because the array is indexed from one, not zero */
-  a = (Int4Ptr) Calloc( (n+1), sizeof(Int4));
+  a = (Int4Ptr) calloc( (n+1), sizeof(Int4));
 
   /* compute the (n,k) de Bruijn sequence and store it in output */
  
   fkm(a,n,k,output,&cursor,alphabet);
   
-  MemFree(a);
+  sfree(a);
   return;
 }

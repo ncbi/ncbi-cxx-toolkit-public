@@ -26,6 +26,12 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.3  2003/07/25 17:25:43  coulouri
+ * in progres:
+ *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
+ *  * add sfree() macro and __sfree() helper function to util.[ch]
+ *  * use sfree() instead of MemFree()
+ *
  * Revision 1.2  2003/05/15 22:01:22  coulouri
  * add rcsid string to sources
  *
@@ -55,9 +61,9 @@ Blast_MessageFree(Blast_MessagePtr blast_msg)
 	if (blast_msg == NULL)
 		return NULL;
 
-	blast_msg->message = MemFree(blast_msg->message);
+	blast_msg->message = sfree(blast_msg->message);
 
-	return MemFree(blast_msg);
+	return sfree(blast_msg);
 }
 
 /*

@@ -47,14 +47,14 @@ MBLookupTablePtr MBLookupTableDestruct(MBLookupTablePtr mb_lt)
    if (!mb_lt)
       return NULL;
    if (mb_lt->hashtable)
-      MemFree(mb_lt->hashtable);
+      sfree(mb_lt->hashtable);
    if (mb_lt->next_pos)
-      MemFree(mb_lt->next_pos);
+      sfree(mb_lt->next_pos);
    if (mb_lt->next_pos2)
-      MemFree(mb_lt->next_pos2);
-   MemFree(mb_lt->pv_array);
+      sfree(mb_lt->next_pos2);
+   sfree(mb_lt->pv_array);
 
-   mb_lt = MemFree(mb_lt);
+   mb_lt = sfree(mb_lt);
    return mb_lt;
 }
 

@@ -115,7 +115,7 @@ BlastHSPPtr BlastHSPFree(BlastHSPPtr hsp)
    if (!hsp)
       return NULL;
    hsp->gap_info = GapEditBlockDelete(hsp->gap_info);
-   return (BlastHSPPtr) MemFree(hsp);
+   return (BlastHSPPtr) sfree(hsp);
 }
 
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfoPtr query_info,
@@ -753,9 +753,9 @@ BlastHSPListPtr BlastHSPListFree(BlastHSPListPtr hsp_list)
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       BlastHSPFree(hsp_list->hsp_array[index]);
    }
-   MemFree(hsp_list->hsp_array);
+   sfree(hsp_list->hsp_array);
 
-   return MemFree(hsp_list);
+   return sfree(hsp_list);
 }
 
 /** Given a BlastHitListPtr with a heapified HSP list array, remove
@@ -802,7 +802,7 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
          do it here */
       if (!hit_list->hsplist_array)
          hit_list->hsplist_array = (BlastHSPListPtr PNTR)
-            Malloc(hit_list->hsplist_max*sizeof(BlastHSPListPtr));
+            malloc(hit_list->hsplist_max*sizeof(BlastHSPListPtr));
       /* Just add to the end; sort later */
       hit_list->hsplist_array[hit_list->hsplist_count++] = hsp_list;
       hit_list->worst_evalue = 
@@ -849,8 +849,8 @@ static BlastHitListPtr BLAST_HitListFree(BlastHitListPtr hitlist)
 
    for (index = 0; index < hitlist->hsplist_count; ++index)
       BlastHSPListFree(hitlist->hsplist_array[index]);
-   MemFree(hitlist->hsplist_array);
-   return (BlastHitListPtr) MemFree(hitlist);
+   sfree(hitlist->hsplist_array);
+   return (BlastHitListPtr) sfree(hitlist);
 }
 
 static BlastHSPListPtr BlastHSPListDup(BlastHSPListPtr hsp_list)
@@ -935,7 +935,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
             if (new_size == tmp_hsp_list->hsp_max)
                tmp_hsp_list->do_not_reallocate = TRUE;
             
-            new_hsp_array = Realloc(tmp_hsp_list->hsp_array, 
+            new_hsp_array = realloc(tmp_hsp_list->hsp_array, 
                                     new_size*sizeof(BlastHSPPtr));
             if (!new_hsp_array) {
                tmp_hsp_list->allocated = tmp_hsp_list->hspcnt;
@@ -966,7 +966,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
                                 hsp_list_array[index], thr_info);
          }
       }
-      MemFree(hsp_list_array);
+      sfree(hsp_list_array);
       /* All HSPs from the hsp_list structure are now moved to the results 
          structure, so set the HSP count back to 0 */
       hsp_list->hspcnt = 0;
@@ -990,7 +990,7 @@ Int2 BLAST_ResultsInit(Int4 num_queries, BlastResultsPtr PNTR results_ptr)
    BlastResultsPtr results;
    Int2 status = 0;
 
-   results = (BlastResultsPtr) Malloc(sizeof(BlastResults));
+   results = (BlastResultsPtr) malloc(sizeof(BlastResults));
 
    results->num_queries = num_queries;
    results->hitlist_array = (BlastHitListPtr PNTR) 
@@ -1005,8 +1005,8 @@ BlastResultsPtr BLAST_ResultsFree(BlastResultsPtr results)
    Int4 index;
    for (index = 0; index < results->num_queries; ++index)
       BLAST_HitListFree(results->hitlist_array[index]);
-   MemFree(results->hitlist_array);
-   return (BlastResultsPtr) MemFree(results);
+   sfree(results->hitlist_array);
+   return (BlastResultsPtr) sfree(results);
 }
 
 Int2 BLAST_SortResults(BlastResultsPtr results)
@@ -1342,7 +1342,7 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
       if (new_hspcnt > combined_hsp_list->allocated) {
          Int4 new_allocated = MIN(2*new_hspcnt, combined_hsp_list->hsp_max);
          new_hsp_array = (BlastHSPPtr PNTR) 
-            Realloc(combined_hsp_list->hsp_array, 
+            realloc(combined_hsp_list->hsp_array, 
                     new_allocated*sizeof(BlastHSPPtr));
 
          if (new_hsp_array) {
@@ -1430,7 +1430,7 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
    if (new_hspcnt >= combined_hsp_list->allocated-1 && 
        combined_hsp_list->do_not_reallocate == FALSE) {
       new_hsp_array = (BlastHSPPtr PNTR) 
-         Realloc(combined_hsp_list->hsp_array, 
+         realloc(combined_hsp_list->hsp_array, 
                  new_hspcnt*2*sizeof(BlastHSPPtr));
       if (new_hsp_array == NULL) {
          combined_hsp_list->do_not_reallocate = TRUE; 
@@ -1461,9 +1461,9 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
          BlastHSPFree(hsp_list->hsp_array[index]);
    }
 
-   hspp1 = MemFree(hspp1);
-   hspp2 = MemFree(hspp2);
-   index_array = MemFree(index_array);
+   hspp1 = sfree(hspp1);
+   hspp2 = sfree(hspp2);
+   index_array = sfree(index_array);
    
    return 1;
 }

@@ -63,7 +63,7 @@ BlastSeqSrcPtr BlastSeqSrcNew(BlastSeqSrcNewInfoPtr bssn_info)
     if ((retval->NewFnPtr = bssn_info->constructor))
         retval = (*retval->NewFnPtr)(retval, bssn_info->ctor_argument);
     else
-        retval = (BlastSeqSrcPtr) MemFree(retval);
+        retval = (BlastSeqSrcPtr) sfree(retval);
 
     return retval;
 }
@@ -78,7 +78,7 @@ BlastSeqSrcPtr BlastSeqSrcFree(BlastSeqSrcPtr bssp)
     /* This could leave a memory leak if destructor function pointer is not
      * initialized! It is the implementation's resposibility to provide this */
     if ( !(destructor_fnptr = (*bssp->DeleteFnPtr)))
-        return (BlastSeqSrcPtr) MemFree(bssp);
+        return (BlastSeqSrcPtr) sfree(bssp);
 
     return (BlastSeqSrcPtr) (*destructor_fnptr)(bssp);
 }

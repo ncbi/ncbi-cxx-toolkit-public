@@ -404,10 +404,10 @@ Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
 
 static LookupTablePtr LookupTableDestruct(LookupTablePtr lookup)
 {
-   MemFree(lookup->thick_backbone);
-   MemFree(lookup->overflow);
-   MemFree(lookup->pv);
-   MemFree(lookup);
+   sfree(lookup->thick_backbone);
+   sfree(lookup->overflow);
+   sfree(lookup->pv);
+   sfree(lookup);
    return NULL;
 }
 
@@ -421,7 +421,7 @@ LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup)
       lookup->lut = (VoidPtr) 
          LookupTableDestruct((LookupTablePtr)lookup->lut);
    }
-   MemFree(lookup);
+   sfree(lookup);
    return NULL;
 }
   
@@ -476,7 +476,7 @@ static Int4 BlastNaLookupAddWordHit(LookupTablePtr lookup, Uint1Ptr w,
     {
       chain_size = 8;
       hits_in_chain = 0;
-      chain = Malloc( chain_size * sizeof(Int4) );
+      chain = malloc( chain_size * sizeof(Int4) );
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
       lookup->thin_backbone[index] = chain;
@@ -493,7 +493,7 @@ static Int4 BlastNaLookupAddWordHit(LookupTablePtr lookup, Uint1Ptr w,
   if ( (hits_in_chain + 2) == chain_size )
     {
       chain_size = chain_size * 2;
-      chain = Realloc(chain, chain_size * sizeof(Int4) );
+      chain = realloc(chain, chain_size * sizeof(Int4) );
       lookup->thin_backbone[index] = chain;
       chain[0] = chain_size;
     }
