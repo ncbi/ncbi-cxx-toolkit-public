@@ -82,8 +82,13 @@ static void s_TEST_Tree()
     
     TTree* tr = new TTree(0);
     
-    tr->AddNode(10);
+    TTree* tr10 = tr->AddNode(10);
     tr->AddNode(11);
+
+//    TreePrint(cout, *tr, (IntConvType) NStr::IntToString);
+//    TreeReRoot(*tr10);
+//    TreePrint(cout, *tr10, (IntConvType) NStr::IntToString);
+
 
     TreeDepthFirstTraverse(*tr, TestFunctor1);
     cout << endl;
@@ -198,11 +203,15 @@ static void s_TEST_Tree()
     assert(parent_node);
     assert(parent_node->GetValue() == 3);
 
-    // NStr::IntToString's extra argument is problematic, so we supply
-    // and use a trivial wrapper.
-    TreePrint(cout, *str, s_IntToStr);
 
-    delete str;
+    TreePrint(cout, *str, s_IntToStr);
+    cout << endl;
+
+    TreeReRoot(*tr5);
+    TreePrint(cout, *tr5, s_IntToStr);
+
+
+    delete tr5;
 }
 
 
@@ -322,6 +331,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2004/04/09 14:40:33  kuznets
+ * TreeReRoot tested
+ *
  * Revision 1.10  2004/04/08 21:46:35  ucko
  * Use a more foolproof method of supplying NStr::IntToString to TreePrint.
  *
