@@ -4919,7 +4919,7 @@ fi
 done
 
 
-if test "$x_have_windows" = "yes" ; then
+if test "$x_have_windows" = "yes" -a "x$host_os" != "xcygwin32"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_MSWIN 1
@@ -7829,6 +7829,11 @@ CPPFLAGS="$orig_CPPFLAGS"
 ## `local_lbsm' support
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
+
+# The IPC stuff doesn't build on Cygwin.
+if test "x$host_os" = "xcygwin32"; then
+    with_local_lbsm="no"
+fi
 
 for fff in $local_lbsm ; do
    if test ! -f ${srcdir}/src/connect/${fff}.c ; then

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.49 2002/03/23 20:29:40 vakatov Exp $
+#  $Id: configure.ac,v 1.50 2002/03/25 17:07:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1087,7 +1087,7 @@ AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
 AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
 AC_CHECK_HEADERS(windows.h, x_have_windows="yes")
 
-if test "$x_have_windows" = "yes" ; then
+if test "$x_have_windows" = "yes" -a "x$host_os" != "xcygwin32"; then
    AC_DEFINE(NCBI_OS_MSWIN, 1, [Define to 1 on Windows.])
    AC_DEFINE(NCBI_OS, "MSWIN", [Operating system name])
 elif test "$x_have_unistd" = "yes" ; then
@@ -2073,6 +2073,11 @@ CPPFLAGS="$orig_CPPFLAGS"
 ## `local_lbsm' support
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
+
+# The IPC stuff doesn't build on Cygwin.
+if test "x$host_os" = "xcygwin32"; then
+    with_local_lbsm="no"
+fi
 
 for fff in $local_lbsm ; do
    if test ! -f ${srcdir}/src/connect/${fff}.c ; then
