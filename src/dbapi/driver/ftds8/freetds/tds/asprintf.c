@@ -7,6 +7,8 @@
  * on systems with unusual protection semantics.
  */
 
+#include <tds_config.h>
+
 #if !HAVE_VASPRINTF
 
 #include <stdio.h>
