@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.319 2004/09/07 21:27:46 ucko Exp $
+#  $Id: configure.ac,v 1.320 2004/09/08 18:23:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -756,7 +756,7 @@ case "$host_os:$compiler" in
    ;;
 
  *:Compaq)
-   CPPFLAGS="-D__USE_STD_IOSTREAM -D_XOPEN_SOURCE=500 $CPPFLAGS"
+   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
    CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
    DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
    case "$host_os" in
