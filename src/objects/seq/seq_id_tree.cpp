@@ -517,6 +517,41 @@ bool CSeq_id_Textseq_Tree::Empty(void) const
 }
 
 
+bool CSeq_id_Textseq_Tree::x_Equals(const CTextseq_id& id1,
+                                    const CTextseq_id& id2)
+{
+    if ( id1.IsSetAccession() != id2.IsSetAccession() ) {
+        return false;
+    }
+    if ( id1.IsSetName() != id2.IsSetName() ) {
+        return false;
+    }
+    if ( id1.IsSetVersion() != id2.IsSetVersion() ) {
+        return false;
+    }
+    if ( id1.IsSetRelease() != id2.IsSetRelease() ) {
+        return false;
+    }
+    if ( id1.IsSetAccession() &&
+         !NStr::EqualNocase(id1.GetAccession(), id2.GetAccession()) ) {
+        return false;
+    }
+    if ( id1.IsSetName() &&
+         !NStr::EqualNocase(id1.GetName(), id2.GetName()) ) {
+        return false;
+    }
+    if ( id1.IsSetVersion() &&
+         id1.GetVersion() != id2.GetVersion() ) {
+        return false;
+    }
+    if ( id1.IsSetRelease() &&
+         id1.GetRelease() != id2.GetRelease() ) {
+        return false;
+    }
+    return true;
+}
+
+
 CSeq_id_Info*
 CSeq_id_Textseq_Tree::x_FindVersionEqual(const TVersions& ver_list,
                                          CSeq_id::E_Choice type,
@@ -524,7 +559,7 @@ CSeq_id_Textseq_Tree::x_FindVersionEqual(const TVersions& ver_list,
 {
     ITERATE(TVersions, vit, ver_list) {
         CConstRef<CSeq_id> id = (*vit)->GetSeqId();
-        if ( id->Which() == type && x_Get(*id).Equals(tid) ) {
+        if ( id->Which() == type && x_Equals(tid, x_Get(*id)) ) {
             return *vit;
         }
     }
@@ -634,7 +669,7 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
         const CTextseq_id& tst = x_Get(*(*vit)->GetSeqId());
         if ( by_accession ) {
             // acc.ver should match
-            _ASSERT(tst.GetAccession() == tid.GetAccession());
+            _ASSERT(NStr::EqualNocase(tst.GetAccession(), tid.GetAccession()));
             if ( tid.IsSetVersion() ) {
                 if ( !tst.IsSetVersion() ||
                      tst.GetVersion() != tid.GetVersion() ) {
@@ -644,7 +679,7 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
         }
         else {
             // name.rel should match
-            _ASSERT(tst.GetName() == tid.GetName());
+            _ASSERT(NStr::EqualNocase(tst.GetName(), tid.GetName()));
             if ( tst.IsSetAccession() && tid.IsSetAccession() ) {
                 continue;
             }
@@ -1670,6 +1705,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/10/01 20:28:29  vasilche
+* Accession and name are case insensitive.
+*
 * Revision 1.17  2004/09/30 18:44:40  vasilche
 * Added CSeq_id_Handle::GetMapper() and MatchesTo().
 * Fixed matching of Genbank, Embl, and Ddbj Seq-ids.

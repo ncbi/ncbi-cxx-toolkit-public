@@ -302,6 +302,7 @@ private:
     typedef vector<CSeq_id_Info*>   TVersions;
     typedef map<string, TVersions, PNocase> TStringMap;
 
+    static bool x_Equals(const CTextseq_id& id1, const CTextseq_id& id2);
     CSeq_id_Info* x_FindVersionEqual(const TVersions& ver_list,
                                      CSeq_id::E_Choice type,
                                      const CTextseq_id& tid) const;
@@ -623,6 +624,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/10/01 20:28:29  vasilche
+* Accession and name are case insensitive.
+*
 * Revision 1.10  2004/09/30 18:43:20  vasilche
 * Added CSeq_id_Handle::GetMapper() and MatchesTo().
 *
