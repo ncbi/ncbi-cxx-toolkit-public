@@ -468,6 +468,9 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
                 }
             }
         }
+        if ( m_NoWrap ) {
+            out << " nowrap";
+        }
         out << '>';
         CHECK_STREAM_WRITE(out);
     }
@@ -2269,6 +2272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2004/01/26 16:26:47  ivanov
+ * Added NOWRAP attribute support
+ *
  * Revision 1.93  2003/12/18 20:15:42  golikov
  * use HideMenu() call, CHTMLComment::PrintBegin fix
  *

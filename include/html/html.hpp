@@ -324,33 +324,42 @@ class NCBI_XHTML_EXPORT CHTMLOpenElement: public CHTMLNode
     typedef CHTMLNode CParent;
 public:
     CHTMLOpenElement(const char* tagname)
-        : CParent(tagname)
+        : CParent(tagname), m_NoWrap(false)
     { }
     CHTMLOpenElement(const char* tagname, const char* text)
-        : CParent(tagname, text)
+        : CParent(tagname, text), m_NoWrap(false)
     { }
     CHTMLOpenElement(const char* tagname, const string& text)
-        : CParent(tagname, text)
+        : CParent(tagname, text), m_NoWrap(false)
     { }
     CHTMLOpenElement(const char* tagname, CNCBINode* node)
-        : CParent(tagname, node)
+        : CParent(tagname, node), m_NoWrap(false)
     { }
     CHTMLOpenElement(const string& tagname)
-        : CParent(tagname)
+        : CParent(tagname), m_NoWrap(false)
     { }
     CHTMLOpenElement(const string& tagname, const char* text)
-        : CParent(tagname, text)
+        : CParent(tagname, text), m_NoWrap(false)
     { }
     CHTMLOpenElement(const string& tagname, const string& text)
-        : CParent(tagname, text)
+        : CParent(tagname, text), m_NoWrap(false)
     { }
     CHTMLOpenElement(const string& tagname, CNCBINode* node)
-        : CParent(tagname, node)
+        : CParent(tagname, node), m_NoWrap(false)
     { }
     ~CHTMLOpenElement(void);
 
     // Print tag itself.
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);   
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
+
+    // Set NOWRAP attribute (NOTE: it is depricated in HTML 4.0)
+    virtual void SetNoWrap(bool noWrap = true)
+        { m_NoWrap = noWrap; }
+
+protected:
+    bool m_NoWrap;
+
+
 };
 
 
@@ -1344,6 +1353,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2004/01/26 16:26:42  ivanov
+ * Added NOWRAP attribute support
+ *
  * Revision 1.70  2003/12/31 19:00:45  ivanov
  * Added default constructor for CHTML_a
  *
