@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/06/08 14:46:47  thiessen
+* fully functional (modal) render settings panel
+*
 * Revision 1.4  2001/05/23 17:43:29  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -66,6 +69,7 @@ static const int SPIN_CTRL_HEIGHT = 20;
 static const int SPIN_CTRL_HEIGHT = 20;
 #endif
 
+static const WXTYPE WX_TOOLS_NOTIFY_CHANGED = wxEVT_USER_FIRST;
 
 /////////////////////////////////////////////////////////////////////////////////////
 // a wxTextCtrl that only accepts valid floating point values (turns red otherwise)
@@ -85,6 +89,7 @@ private:
     int minVal, maxVal;
 
     void Validate(wxCommandEvent& event);
+    void OnChange(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 };
@@ -102,7 +107,7 @@ public:
         const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
 
     bool GetInteger(int *value) const;
-    void SetInteger(int value);
+    bool SetInteger(int value);
 
 private:
     IntegerTextCtrl *iTextCtrl;
@@ -111,7 +116,6 @@ private:
 
     void OnSpinButtonUp(wxSpinEvent& event);
     void OnSpinButtonDown(wxSpinEvent& event);
-    void InterceptChar(wxKeyEvent& event);
 
     DECLARE_EVENT_TABLE()
 
@@ -139,6 +143,7 @@ private:
     double minVal, maxVal;
 
     void Validate(wxCommandEvent& event);
+    void OnChange(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 };
@@ -156,7 +161,7 @@ public:
         const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
 
     bool GetDouble(double *value) const;
-    void SetDouble(double value);
+    bool SetDouble(double value);
 
 private:
     FloatingPointTextCtrl *fpTextCtrl;
@@ -165,7 +170,6 @@ private:
 
     void OnSpinButtonUp(wxSpinEvent& event);
     void OnSpinButtonDown(wxSpinEvent& event);
-    void InterceptChar(wxKeyEvent& event);
 
     DECLARE_EVENT_TABLE()
 

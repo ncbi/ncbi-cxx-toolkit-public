@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/06/08 14:47:06  thiessen
+* fully functional (modal) render settings panel
+*
 * Revision 1.4  2001/05/23 17:45:41  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -56,18 +59,23 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
+#define SEND_CHANGED_EVENT do { \
+    wxCommandEvent notify(WX_TOOLS_NOTIFY_CHANGED); \
+    AddPendingEvent(notify); } while (0)
+
 /////////////////////////////////////////////////////////////////////////////////
 // IntegerTextCtrl implementation
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(IntegerTextCtrl, wxTextCtrl)
-    EVT_TEXT (-1, IntegerTextCtrl::Validate)
+    EVT_TEXT        (-1, IntegerTextCtrl::Validate)
+    EVT_TEXT_ENTER  (-1, IntegerTextCtrl::OnChange)
 END_EVENT_TABLE()
 
 IntegerTextCtrl::IntegerTextCtrl(wxWindow* parent, wxWindowID id, const wxString& value,
     const wxPoint& pos, const wxSize& size, long style,
     const wxValidator& validator, const wxString& name) :
-        wxTextCtrl(parent, id, value, pos, size, style, validator, name),
+        wxTextCtrl(parent, id, value, pos, size, style | wxTE_PROCESS_ENTER, validator, name),
         minVal(kMin_Long), maxVal(kMax_Long)
 {
 }
@@ -79,6 +87,11 @@ void IntegerTextCtrl::Validate(wxCommandEvent& event)
     else
         SetBackgroundColour(*wxRED);
     Refresh();
+}
+
+void IntegerTextCtrl::OnChange(wxCommandEvent& event)
+{
+    SEND_CHANGED_EVENT;
 }
 
 void IntegerTextCtrl::SetAllowedRange(int min, int max)
@@ -109,7 +122,7 @@ END_EVENT_TABLE()
 IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
     int min, int max, int increment, int initial,
     const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
-    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
+    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) : wxEvtHandler(),
         minVal(min), maxVal(max), incrVal(increment)
 {
     iTextCtrl = new IntegerTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
@@ -122,30 +135,36 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
     SetInteger(initial);
 }
 
-void IntegerSpinCtrl::SetInteger(int value)
+bool IntegerSpinCtrl::SetInteger(int value)
 {
-    // clamp to allowed range
-    if (value < minVal) value = minVal;
-    else if (value > maxVal) value = maxVal;
+    // check allowed range
+    if (value < minVal || value > maxVal) return false;
 
     wxString strVal;
     strVal.Printf("%i", value);
     iTextCtrl->SetValue(strVal);
     spinButton->SetValue(0);
+    return true;
 }
 
 void IntegerSpinCtrl::OnSpinButtonUp(wxSpinEvent& event)
 {
     int value;
     if (!GetInteger(&value)) return;
-    SetInteger(value + incrVal);
+    value += incrVal;
+    if (value > maxVal) value = maxVal;
+    SetInteger(value);
+    SEND_CHANGED_EVENT;
 }
 
 void IntegerSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
 {
     int value;
     if (!GetInteger(&value)) return;
-    SetInteger(value - incrVal);
+    value -= incrVal;
+    if (value < minVal) value = minVal;
+    SetInteger(value);
+    SEND_CHANGED_EVENT;
 }
 
 bool IntegerSpinCtrl::GetInteger(int *value) const
@@ -162,13 +181,14 @@ bool IntegerSpinCtrl::GetInteger(int *value) const
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(FloatingPointTextCtrl, wxTextCtrl)
-    EVT_TEXT (-1, FloatingPointTextCtrl::Validate)
+    EVT_TEXT        (-1, FloatingPointTextCtrl::Validate)
+    EVT_TEXT_ENTER  (-1, FloatingPointTextCtrl::OnChange)
 END_EVENT_TABLE()
 
 FloatingPointTextCtrl::FloatingPointTextCtrl(wxWindow* parent, wxWindowID id, const wxString& value,
     const wxPoint& pos, const wxSize& size, long style,
     const wxValidator& validator, const wxString& name) :
-        wxTextCtrl(parent, id, value, pos, size, style, validator, name),
+        wxTextCtrl(parent, id, value, pos, size, style | wxTE_PROCESS_ENTER, validator, name),
         minVal(kMin_Double), maxVal(kMax_Double)
 {
 }
@@ -180,6 +200,11 @@ void FloatingPointTextCtrl::Validate(wxCommandEvent& event)
     else
         SetBackgroundColour(*wxRED);
     Refresh();
+}
+
+void FloatingPointTextCtrl::OnChange(wxCommandEvent& event)
+{
+    SEND_CHANGED_EVENT;
 }
 
 void FloatingPointTextCtrl::SetAllowedRange(double min, double max)
@@ -207,7 +232,7 @@ END_EVENT_TABLE()
 FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
     double min, double max, double increment, double initial,
     const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
-    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
+    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) : wxEvtHandler(),
         minVal(min), maxVal(max), incrVal(increment)
 {
     fpTextCtrl = new FloatingPointTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
@@ -220,30 +245,36 @@ FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
     SetDouble(initial);
 }
 
-void FloatingPointSpinCtrl::SetDouble(double value)
+bool FloatingPointSpinCtrl::SetDouble(double value)
 {
-    // clamp to allowed range
-    if (value < minVal) value = minVal;
-    else if (value > maxVal) value = maxVal;
+    // check allowed range
+    if (value < minVal || value > maxVal) return false;
 
     wxString strVal;
     strVal.Printf("%g", value);
     fpTextCtrl->SetValue(strVal);
     spinButton->SetValue(0);
+    return true;
 }
 
 void FloatingPointSpinCtrl::OnSpinButtonUp(wxSpinEvent& event)
 {
     double value;
     if (!GetDouble(&value)) return;
-    SetDouble(value + incrVal);
+    value += incrVal;
+    if (value > maxVal) value = maxVal;
+    SetDouble(value);
+    SEND_CHANGED_EVENT;
 }
 
 void FloatingPointSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
 {
     double value;
     if (!GetDouble(&value)) return;
-    SetDouble(value - incrVal);
+    value -= incrVal;
+    if (value < minVal) value = minVal;
+    SetDouble(value);
+    SEND_CHANGED_EVENT;
 }
 
 bool FloatingPointSpinCtrl::GetDouble(double *value) const
@@ -257,8 +288,8 @@ bool FloatingPointSpinCtrl::GetDouble(double *value) const
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(GetFloatingPointDialog, wxDialog)
-    EVT_BUTTON(-1, GetFloatingPointDialog::OnButton)
-    EVT_CLOSE (   GetFloatingPointDialog::OnCloseWindow)
+    EVT_BUTTON(-1,  GetFloatingPointDialog::OnButton)
+    EVT_CLOSE (     GetFloatingPointDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,

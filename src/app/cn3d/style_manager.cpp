@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/06/08 14:47:06  thiessen
+* fully functional (modal) render settings panel
+*
 * Revision 1.35  2001/06/07 19:05:38  thiessen
 * functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
 *
@@ -201,7 +204,7 @@ void StyleSettings::SetToSecondaryStructure(void)
     proteinSidechains.userColor = nucleotideSidechains.userColor =
     proteinBackbone.userColor = nucleotideBackbone.userColor =
     heterogens.userColor = solvents.userColor =
-    helixObjects.userColor = strandObjects.userColor = Vector(0.7,0.5,0.5);
+    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
 
     hydrogensOn = true;
 
@@ -250,7 +253,7 @@ void StyleSettings::SetToWireframe(void)
     proteinSidechains.userColor = nucleotideSidechains.userColor =
     proteinBackbone.userColor = nucleotideBackbone.userColor =
     heterogens.userColor = solvents.userColor =
-    helixObjects.userColor = strandObjects.userColor = Vector(0.7,0.5,0.5);
+    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
 
     hydrogensOn = true;
 
@@ -300,7 +303,7 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     proteinSidechains.userColor = nucleotideSidechains.userColor =
     proteinBackbone.userColor = nucleotideBackbone.userColor =
     heterogens.userColor = solvents.userColor =
-    helixObjects.userColor = strandObjects.userColor = Vector(0.7,0.5,0.5);
+    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
 
     hydrogensOn = true;
 
@@ -564,7 +567,8 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     else if (IsMetal(info->atomicNumber) ||
              (molecule->NResidues() == 1 && residue->NAtoms() == 1)) {
         atomStyle->style = eTransparentAtom;
-        atomStyle->radius = element->vdWRadius;  // always big spheres for metals or isolated atoms
+        // always big spheres for metals or isolated atoms
+        atomStyle->radius = element->vdWRadius * settings.spaceFillProportion;
         atomStyle->centerLabel = element->symbol;
     } else
         atomStyle->style = eSolidAtom;
@@ -648,6 +652,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     // use connection style if bond is between molecules
     if (atom1.mID != atom2.mID &&
         bond->order != Bond::eRealDisulfide && bond->order != Bond::eVirtualDisulfide) {
+        if (globalStyle.connections.isOn == false)
+            BOND_NOT_DISPLAYED;
         bondStyle->end1.color = bondStyle->end2.color = globalStyle.connections.userColor;
         if (globalStyle.connections.style == StyleSettings::eWire)
             bondStyle->end1.style = bondStyle->end2.style = eLineBond;
@@ -732,6 +738,10 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         if (bondStyle->end1.style != bondStyle->end2.style ||
             bondStyle->end1.radius != bondStyle->end2.radius)
             bondStyle->midCap = true;
+
+        // for residue-backbone junctions: add endCap if atom is of lesser radius
+        if (atomStyle1.radius < bondStyle->end1.radius) bondStyle->end1.atomCap = true;
+        if (atomStyle2.radius < bondStyle->end2.radius) bondStyle->end2.atomCap = true;
 
         // atomCaps needed at ends of thick worms when at end of chain, or if
         // internal residues are hidden or of a different style
@@ -835,6 +845,9 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
                     GlobalColors()->
                         Get(Colors::eCycle1, (domainID == Molecule::VALUE_NOT_SET) ? 0 : domainID);
             }
+            break;
+        case StyleSettings::eUserSelect:
+            objectStyle->color = generalStyle.userColor;
             break;
         case StyleSettings::eSecondaryStructure:
             // set by caller

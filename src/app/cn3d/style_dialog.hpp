@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/06/08 14:46:47  thiessen
+* fully functional (modal) render settings panel
+*
 * Revision 1.2  2001/06/07 19:04:50  thiessen
 * functional (although incomplete) render settings panel
 *
@@ -62,6 +65,7 @@ BEGIN_SCOPE(Cn3D)
 
 class StyleSettings;
 class StructureSet;
+class FloatingPointSpinCtrl;
 
 template < class T >
 class TypeStringAssociator
@@ -118,6 +122,9 @@ private:
     const StructureSet *structureSet;
     bool changedSinceApply, changedEver;
 
+    FloatingPointSpinCtrl *fpSpaceFill, *fpBallRadius, *fpStickRadius, *fpTubeRadius,
+        *fpTubeWormRadius, *fpHelixRadius, *fpStrandWidth, *fpStrandThickness;
+
     bool HandleColorButton(int bID);
 
     static TypeStringAssociator < StyleSettings::eBackboneType > BackboneTypeStrings;
@@ -128,6 +135,10 @@ private:
     bool GetBackboneStyle(StyleSettings::BackboneStyle *bbStyle,
         int showID, int renderID, int colorID, int userID);
     bool SetBackboneStyle(const StyleSettings::BackboneStyle& bbStyle,
+        int showID, int renderID, int colorID, int userID);
+    bool GetGeneralStyle(StyleSettings::GeneralStyle *gStyle,
+        int showID, int renderID, int colorID, int userID);
+    bool SetGeneralStyle(const StyleSettings::GeneralStyle& gStyle,
         int showID, int renderID, int colorID, int userID);
 
     void OnCloseWindow(wxCommandEvent& event);
