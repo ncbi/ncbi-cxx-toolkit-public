@@ -1,4 +1,4 @@
---$Revision: 4.1 $
+--$Revision: 4.2 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -103,7 +103,7 @@ Atom-pntrs ::= SEQUENCE {
 	atom-ids		SEQUENCE OF Atom-id }
 
 Residue-pntrs ::= CHOICE {
-	explict			Residue-explicit-pntrs,
+	explicit		Residue-explicit-pntrs,
 	interval		SEQUENCE OF Residue-interval-pntr }
 
 Residue-explicit-pntrs ::= SEQUENCE {
