@@ -83,6 +83,7 @@ public:
     /// Creates an options handle object for the requested program, throws an
     /// exception if an unsupported program is requested
     /// @param program BLAST program [in]
+    /// @param locality Local processing (default) or remote processing.
     /// @return requested options handle with default values set
     static CBlastOptionsHandle* 
         Create(EProgram program, EAPILocality locality = CBlastOptions::eLocal)
@@ -255,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/06/09 15:11:52  bealer
+ * - Document locality parameter of factory class.
+ *
  * Revision 1.14  2004/06/08 22:27:36  camacho
  * Add missing doxygen comments
  *
