@@ -74,7 +74,7 @@ public:
         PNocase nocase;
 
         bool operator() (const IDictionary::SAlternate& alt1,
-                        const IDictionary::SAlternate& alt2) const
+                         const IDictionary::SAlternate& alt2) const
         {
             if (alt1.score == alt2.score) {
                 return nocase.Less(alt1.alternate, alt2.alternate);
@@ -105,9 +105,18 @@ public:
 class NCBI_XUTIL_EXPORT CSimpleDictionary : public IDictionary
 {
 public:
+    CSimpleDictionary(size_t metaphone_key_size = 5);
+
     /// initialize the dictionary with a set of correctly spelled words.  The
-    //words must be one word per line, and will be automatically lower-cased.
+    /// words must be one word per line
     CSimpleDictionary(const string& file, size_t metaphone_key_size = 5);
+
+    /// initialize the dictionary with a set of correctly spelled words.  The
+    /// words must be one word per line
+    CSimpleDictionary(CNcbiIstream& file, size_t metaphone_key_size = 5);
+
+    void Read(CNcbiIstream& istr);
+    void Write(CNcbiOstream& ostr) const;
 
     /// Virtual requirement: check a word for existence in the dictionary.
     /// This function provides a mechanism for returning a list of alternates to
@@ -125,16 +134,19 @@ public:
 protected:
 
     /// forward dictionary: word -> phonetic representation
-    typedef map<string, string, PNocase> TForwardDict;
+    typedef set<string> TForwardDict;
     TForwardDict m_ForwardDict;
 
     /// reverse dictionary: soundex/metaphone -> word
-    typedef set<string, PNocase> TNocaseStringSet;
-    typedef map<string, TNocaseStringSet> TReverseDict;
+    typedef set<string> TStringSet;
+    typedef map<string, TStringSet> TReverseDict;
     TReverseDict m_ReverseDict;
 
     /// the size of our metaphone keys
     const size_t m_MetaphoneKeySize;
+
+    void x_GetMetaphoneKeys(const string& metaphone,
+                            list<TReverseDict::const_iterator>& keys) const;
 };
 
 
@@ -260,6 +272,15 @@ public:
     static size_t GetEditDistance(const string& str1, const string& str2,
                                   EDistanceMethod method = eEditDistance_Exact);
 
+    /// Compute a nearness score for two different words or phrases
+    static int Score(const string& word1, const string& word2,
+                     size_t max_metaphone = eMaxMetaphone);
+
+    /// Compute a nearness score based on metaphone as well as raw distance
+    static int Score(const string& word1, const string& meta1,
+                     const string& word2, const string& meta2,
+                     EDistanceMethod method = eEditDistance_Similar);
+
 };
 
 
@@ -270,6 +291,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/17 13:26:39  dicuccio
+ * Large update.  Added more constructors for CSimpleDictionary; support
+ * pre-computed metaphone keys in CSimpleDictionary; fixed several bugs in edit
+ * distance computation
+ *
  * Revision 1.2  2004/08/02 15:09:15  dicuccio
  * Parameterized metaphone key size.  Made data members of CSimpleDictionary
  * protected (not private)
