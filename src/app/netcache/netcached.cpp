@@ -38,6 +38,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_config.hpp>
 
 #include <util/thread_nonstop.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
@@ -757,6 +758,10 @@ void CNetCacheDApp::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "netcached");
+
+    arg_desc->AddFlag("reinit", "Recreate the storage directory.");
+
+    SetupArgDescriptions(arg_desc.release());
 }
 
 
@@ -764,6 +769,8 @@ void CNetCacheDApp::Init(void)
 int CNetCacheDApp::Run(void)
 {
     CBDB_Cache* bdb_cache = 0;
+    CArgs args = GetArgs();
+
     try {
         const CNcbiRegistry& reg = GetConfig();
 
@@ -773,22 +780,63 @@ int CNetCacheDApp::Run(void)
         const TPluginManagerParamTree* bdb_tree = 
             param_tree->FindSubNode(kBDBCacheDriverName);
 
+
         auto_ptr<ICache> cache;
 
         if (bdb_tree) {
+
+            CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
+            const string& db_path = 
+                bdb_conf.GetString("netcached", "path", 
+                                    CConfig::eErr_Throw, kEmptyStr);
+
+            if (args["reinit"]) {  // Drop the database directory
+                CDir dir(db_path);
+                dir.Remove();
+            }
+            
+
             LOG_POST("Initializing BDB cache");
 
             typedef CPluginManager<ICache> TCachePM;
             CPluginManager<ICache> pm_cache;
             pm_cache.RegisterWithEntryPoint(NCBI_EntryPoint_ICache_bdbcache);
 
-            ICache* ic = 
-                pm_cache.CreateInstance(
-                   kBDBCacheDriverName,
-                   CVersionInfo(TCachePM::TInterfaceVersion::eMajor,
-                                TCachePM::TInterfaceVersion::eMinor,
-                                TCachePM::TInterfaceVersion::ePatchLevel), 
-                                bdb_tree);
+            ICache* ic;
+
+            try {
+                ic = 
+                    pm_cache.CreateInstance(
+                        kBDBCacheDriverName,
+                        CVersionInfo(TCachePM::TInterfaceVersion::eMajor,
+                                     TCachePM::TInterfaceVersion::eMinor,
+                                     TCachePM::TInterfaceVersion::ePatchLevel), 
+                                     bdb_tree);
+            } 
+            catch (CBDB_Exception& ex)
+            {
+                bool drop_db = reg.GetBool("server", "drop_db", 
+                                           true, CNcbiRegistry::eReturn);
+                if (drop_db) {
+                    LOG_POST("Error initializing BDB ICache interface.");
+                    LOG_POST(ex.what());
+                    LOG_POST("Database directory will be droppped.");
+
+                    CDir dir(db_path);
+                    dir.Remove();
+
+                    ic = 
+                      pm_cache.CreateInstance(
+                        kBDBCacheDriverName,
+                        CVersionInfo(TCachePM::TInterfaceVersion::eMajor,
+                                     TCachePM::TInterfaceVersion::eMinor,
+                                     TCachePM::TInterfaceVersion::ePatchLevel), 
+                                     bdb_tree);
+
+                } else {
+                    throw;
+                }
+            }
 
             bdb_cache = dynamic_cast<CBDB_Cache*>(ic);
             cache.reset(ic);
@@ -868,6 +916,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/10/26 13:36:27  kuznets
+ * new startup flag -reinit and drop_db ini parameter
+ *
  * Revision 1.16  2004/10/25 16:06:18  kuznets
  * Better timeout handling, use larger network bufers, VERSION command
  *
