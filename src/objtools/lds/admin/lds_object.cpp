@@ -170,14 +170,13 @@ void CLDS_Object::UpdateFileObjects(int file_id,
     FindMaxAnnRecId();
 
     if (format == CFormatGuess::eBinaryASN ||
-        format == CFormatGuess::eTextASN) {
+        format == CFormatGuess::eTextASN ||
+        format == CFormatGuess::eXml) {
 
-        LOG_POST(Info << "Scanning ASN.1 file: " << file_name);
+        LOG_POST(Info << "Scanning file: " << file_name);
 
         CLDS_CoreObjectsReader sniffer;
-        ESerialDataFormat stream_format = 
-            format == CFormatGuess::eBinaryASN ? eSerial_AsnBinary
-                                               : eSerial_AsnText;
+        ESerialDataFormat stream_format = FormatGuess2Serial(format);
 
         auto_ptr<CObjectIStream> 
           input(CObjectIStream::Open(file_name, stream_format));
@@ -455,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/10 19:00:32  kuznets
+ * Code clean-up
+ *
  * Revision 1.3  2003/06/06 20:03:54  kuznets
  * Reflecting new location of fasta reader
  *
