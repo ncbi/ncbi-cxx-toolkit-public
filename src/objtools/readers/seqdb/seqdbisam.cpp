@@ -483,7 +483,7 @@ void CSeqDBIsam::x_ExtractData(const char * key_start,
                 data_out.assign(data_ptr+1, p);
             } else {
                 key_out.assign(key_start, p);
-                data_out.clear();
+                data_out.erase();
             }
             return;
             
@@ -547,7 +547,7 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
         }
     }
     
-    str.assign(key_offset_addr, key_offset_addr + length);
+    str.assign((char*)key_offset_addr, length * sizeof(Int4));
 }
 
 
@@ -1202,7 +1202,7 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
         } else if (tsip->CanGetName()) {
             str_id = tsip->GetName();
         } else {
-            str_id.clear();
+            str_id.erase();
         }
     }
     
