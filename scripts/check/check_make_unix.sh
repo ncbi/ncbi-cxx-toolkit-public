@@ -304,7 +304,7 @@ RunTest() {
             }' $x_tmp/\$\$.out >> \$x_test_out
 
          # Get application execution time
-         exec_time=\`tail -3 $x_tmp/\$\$.out\`
+         exec_time=\`$x_build_dir/sysdep.sh tl 3 $x_tmp/\$\$.out\`
          exec_time=\`echo \$exec_time | tr '\n' '?'\`
          exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
          rm -f $x_tmp/\$\$.out
