@@ -144,10 +144,10 @@ void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
     // compute the complement;
     // this should be replaced with new Seqport_util call
     reverse(comp.begin(), comp.end());
-    NON_CONST_ITERATE (Seq, iter, comp) {
-        *iter =
+    NON_CONST_ITERATE (typename Seq, i, comp) {
+        *i =
             objects::CSeqportUtil::GetIndexComplement(objects::eSeq_code_type_iupacna,
-                                                      *iter);
+                                                      *i);
     }
 
     x_FindForwardOrfs(comp, ranges, min_length_bp, genetic_code);
@@ -203,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/21 13:39:53  dicuccio
+ * Fixed compilation error - dependent type 'Seq' must be a typename
+ *
  * Revision 1.1  2003/08/21 12:00:53  dicuccio
  * Added private implementation file for COrf
  *
