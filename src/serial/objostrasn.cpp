@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/15 16:54:49  vasilche
+* Implemented vector<X> & vector<char> as special case.
+*
 * Revision 1.12  1999/07/14 18:58:10  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -258,7 +261,7 @@ void CObjectOStreamAsn::WriteObjectReference(TIndex index)
 void CObjectOStreamAsn::WriteOtherTypeReference(TTypeInfo typeInfo)
 {
     WriteId(typeInfo->GetName());
-    m_Output << " ::= ";
+    m_Output << " ::=";
 }
 
 void CObjectOStreamAsn::WriteNewLine(void)

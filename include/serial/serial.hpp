@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/07/15 16:54:43  vasilche
+* Implemented vector<X> & vector<char> as special case.
+*
 * Revision 1.19  1999/07/14 18:58:04  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -160,6 +163,19 @@ inline
 CTypeRef GetStlTypeRef(const list<Data>* )
 {
     return CTypeRef(CStlClassInfoList<Data>::GetTypeInfo);
+}
+
+inline
+CTypeRef GetStlTypeRef(const vector<char>* )
+{
+    return CTypeRef(CStlClassInfoCharVector::GetTypeInfo);
+}
+
+template<typename Data>
+inline
+CTypeRef GetStlTypeRef(const vector<Data>* )
+{
+    return CTypeRef(CStlClassInfoVector<Data>::GetTypeInfo);
 }
 
 template<typename Key, typename Value>
@@ -302,6 +318,19 @@ CTypeRef GetTypeRef(const char* const* object)
 template<typename Data>
 inline
 CTypeRef GetTypeRef(const list<Data>* object)
+{
+    return GetStlTypeRef(object);
+}
+
+inline
+CTypeRef GetTypeRef(const vector<char>* object)
+{
+    return GetStlTypeRef(object);
+}
+
+template<typename Data>
+inline
+CTypeRef GetTypeRef(const vector<Data>* object)
 {
     return GetStlTypeRef(object);
 }
@@ -454,6 +483,13 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
 #define END_CHOICE_INFO END_TYPE_INFO
 
 // adding members
+#define MEMBER(Member, Type) \
+    MemberInfo(&static_cast<const CClass*>(0)->Member, Type)
+#define ADD_MEMBER2(Name, Member, Type) \
+    info->AddMember(Name, MEMBER(Member, Type))
+#define ADD_MEMBER(Member, Type) \
+    ADD_MEMBER(#Member, Member, Type)
+
 #define CLASS_MEMBER(Member) \
 	MemberInfo(&static_cast<const CClass*>(0)->Member)
 #define ADD_CLASS_MEMBER(Member) \

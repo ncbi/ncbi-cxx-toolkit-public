@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/15 16:54:44  vasilche
+* Implemented vector<X> & vector<char> as special case.
+*
 * Revision 1.11  1999/07/13 20:18:08  vasilche
 * Changed types naming.
 *
@@ -81,12 +84,12 @@
 
 BEGIN_NCBI_SCOPE
 
-class CStlClassInfoListImpl : public CTypeInfo
+class CStlOneArgTemplate : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
 
-    CStlClassInfoListImpl(const CTypeRef& dataType)
+    CStlOneArgTemplate(const CTypeRef& dataType)
         : m_DataType(dataType)
         { }
 
@@ -99,22 +102,17 @@ private:
     CTypeRef m_DataType;
 };
 
-template<typename Data>
-class CStlClassInfoList : CStlClassInfoListImpl
+template<typename List>
+class CStlOneArgTemplateImpl : public CStlOneArgTemplate
 {
-    typedef CStlClassInfoListImpl CParent;
-
+    typedef CStlOneArgTemplate CParent;
 public:
-    typedef Data TDataType;
-    typedef list<TDataType> TObjectType;
+    typedef List TObjectType;
+    typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlClassInfoList(void)
-        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+    CStlOneArgTemplateImpl(const CTypeRef& dataType)
+        : CParent(dataType)
         { }
-    CStlClassInfoList(const CTypeRef& typeRef)
-        : CParent(typeRef)
-        { }
-        
 
     static const TObjectType& Get(TConstObjectPtr object)
         {
@@ -135,12 +133,6 @@ public:
             return new TObjectType;
         }
 
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStlClassInfoList;
-            return typeInfo;
-        }
-
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
         {
             const TObjectType& l1 = Get(object1);
@@ -148,7 +140,7 @@ public:
             if ( l1.size() != l2.size() )
                 return false;
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            for ( TObjectType::const_iterator i1 = l1.begin(), i2 = l2.begin();
+            for ( TConstIterator i1 = l1.begin(), i2 = l2.begin();
                   i1 != l1.end(); ++i1, ++i2 ) {
                 if ( !dataTypeInfo->Equals(&*i1, &*i2) )
                     return false;
@@ -158,14 +150,13 @@ public:
 
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
         {
-            TObjectType& to = Get(dst);
             const TObjectType& from = Get(src);
+            Reserve(dst, from.size());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            to.clear();
-            for ( TObjectType::const_iterator i = from.begin();
-                  i != from.end(); ++i ) {
-                to.push_back(TDataType());
-                dataTypeInfo->Assign(&to.back(), &*i);
+            size_t index = 0;
+            for ( TConstIterator i = from.begin(); i != from.end();
+                  ++i, ++index ) {
+                dataTypeInfo->Assign(AddEmpty(dst, index), &*i);
             }
         }
 
@@ -195,13 +186,82 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            TObjectType& l = Get(object);
-            TTypeInfo dataTypeInfo = GetDataTypeInfo();
             CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            Reserve(object, block.GetSize());
             while ( block.Next() ) {
-                l.push_back(TDataType());
-                in.ReadExternalObject(&l.back(), dataTypeInfo);
+                in.ReadExternalObject(AddEmpty(object, block.GetIndex()),
+                                      dataTypeInfo);
             }
+        }
+
+    virtual void Reserve(TObjectPtr object, size_t length) const = 0;
+    virtual TObjectPtr AddEmpty(TObjectPtr object, size_t index) const = 0;
+};
+
+template<typename Data>
+class CStlClassInfoList : public CStlOneArgTemplateImpl< list<Data> >
+{
+    typedef CStlOneArgTemplateImpl CParent;
+public:
+    typedef Data TDataType;
+
+    CStlClassInfoList(void)
+        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+        { }
+    CStlClassInfoList(const CTypeRef& typeRef)
+        : CParent(typeRef)
+        { }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoList;
+            return typeInfo;
+        }
+
+protected:
+    virtual void Reserve(TObjectPtr object, size_t ) const
+        {
+            Get(object).clear();
+        }
+
+    virtual TObjectPtr AddEmpty(TObjectPtr object, size_t ) const
+        {
+            TObjectType& l = Get(object);
+            l.push_back(TDataType());
+            return &l.back();
+        }
+};
+
+template<typename Data>
+class CStlClassInfoVector : public CStlOneArgTemplateImpl< vector<Data> >
+{
+    typedef CStlOneArgTemplateImpl CParent;
+public:
+    typedef Data TDataType;
+
+    CStlClassInfoVector(void)
+        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+        { }
+    CStlClassInfoVector(const CTypeRef& typeRef)
+        : CParent(typeRef)
+        { }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoVector;
+            return typeInfo;
+        }
+
+protected:
+    virtual void Reserve(TObjectPtr object, size_t length) const
+        {
+            Get(object).assign(length);
+        }
+
+    virtual TObjectPtr AddEmpty(TObjectPtr object, size_t index) const
+        {
+            return &Get(object).[index];
         }
 };
 
@@ -333,6 +393,33 @@ protected:
                 o.insert(value);
             }
         }
+};
+
+class CStlClassInfoCharVector : public CTypeInfo {
+public:
+    typedef vector<char> TObjectType;
+    CStlClassInfoCharVector(void);
+
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+
+    static TTypeInfo GetTypeInfo(void);
+
+    virtual size_t GetSize(void) const;
+    virtual TObjectPtr Create(void) const;
+
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+protected:
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/15 16:54:42  vasilche
+* Implemented vector<X> & vector<char> as special case.
+*
 * Revision 1.13  1999/07/09 16:32:53  vasilche
 * Added OCTET STRING write/read.
 *
@@ -226,47 +229,46 @@ public:
 	class ByteBlock {
 	public:
 		ByteBlock(CObjectIStream& in)
-			: m_In(in), m_KnownLength(false), m_Length(1)
+			: m_In(in), m_KnownLength(false), m_EndOfBlock(false), m_Length(0)
 		{
 			in.Begin(*this);
 		}
 
-		~ByteBlock(void)
-		{
-			if ( m_Length != 0 )
-				THROW1_TRACE(runtime_error, "not all bytes read");
-			m_In.End(*this);
-		}
+        bool KnownLength(void) const
+        {
+            return m_KnownLength;
+        }
 
 		size_t GetExpectedLength(void) const
 		{
 			return m_Length;
 		}
 
+		~ByteBlock(void)
+		{
+            if ( KnownLength()? m_Length != 0: !m_EndOfBlock )
+				THROW1_TRACE(runtime_error, "not all bytes read");
+			m_In.End(*this);
+		}
+
 		size_t Read(void* dst, size_t length)
 		{
-			if ( !m_KnownLength ) {
-				if ( m_Length == 0 )
-					return 0;
-				length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
-				if ( length == 0 )
-					m_Length = 0;
-				return length;
-			}
-			else {
-				if ( length > m_Length )
-					length = m_Length;
-				if ( length == 0 )
-					return 0;
-				length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
-				m_Length -= length;
-				return length;
-			}
+			if ( KnownLength() )
+                length = min(length, m_Length);
+            
+			if ( m_EndOfBlock || length == 0 )
+                return 0;
+
+            length = m_In.ReadBytes(*this, static_cast<char*>(dst), length);
+            m_Length -= length;
+            m_EndOfBlock = length == 0;
+            return length;
 		}
 
 	private:
 		CObjectIStream& m_In;
 		bool m_KnownLength;
+        bool m_EndOfBlock;
 		size_t m_Length;
 
 		friend class CObjectIStream;

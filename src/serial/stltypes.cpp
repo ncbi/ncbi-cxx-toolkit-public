@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/15 16:54:50  vasilche
+* Implemented vector<X> & vector<char> as special case.
+*
 * Revision 1.4  1999/07/13 20:54:05  vasilche
 * Fixed minor bugs.
 *
@@ -91,6 +94,72 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
     {
         CObjectIStream::Member m(in);
         GetValueTypeInfo()->ReadData(in, value);
+    }
+}
+
+size_t CStlClassInfoCharVector::GetSize(void) const
+{
+    return sizeof(TObjectType);
+}
+
+TObjectPtr CStlClassInfoCharVector::Create(void) const
+{
+    return new TObjectType;
+}
+
+TTypeInfo CStlClassInfoCharVector::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStlClassInfoCharVector;
+    return typeInfo;
+}
+
+bool CStlClassInfoCharVector::Equals(TConstObjectPtr object1,
+                                     TConstObjectPtr object2) const
+{
+    const TObjectType& o1 = Get(object1);
+    const TObjectType& o2 = Get(object2);
+    size_t length = o1.size();
+    if ( length != o2.size() )
+        return false;
+    return memcmp(&o1.front(), &o2.front(), length) == 0;
+}
+
+void CStlClassInfoCharVector::Assign(TObjectPtr dst, TConstObjectPtr src) const
+{
+    TObjectType& to = Get(dst);
+    const TObjectType& from = Get(src);
+    to = from;
+}
+
+void CStlClassInfoCharVector::WriteData(CObjectOStream& out,
+                                        TConstObjectPtr object) const
+{
+    const TObjectType& o = Get(object);
+    size_t length = o.size();
+    CObjectOStream::ByteBlock block(out, length);
+    if ( length > 0 )
+        block.Write(&o.front(), length);
+}
+
+void CStlClassInfoCharVector::ReadData(CObjectIStream& in,
+                                       TObjectPtr object) const
+{
+    TObjectType& o = Get(object);
+    CObjectIStream::ByteBlock block(in);
+    if ( block.KnownLength() ) {
+        size_t length = block.GetExpectedLength();
+        o.resize(length);
+        if ( block.Read(&o.front(), length) != length )
+            THROW1_TRACE(runtime_error, "read fault");
+    }
+    else {
+        // length is known -> copy via buffer
+        char buffer[1024];
+        size_t count;
+        o.clear();
+        while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
+            o.insert(o.end(), buffer, buffer + count);
+        }
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/15 16:54:48  vasilche
+* Implemented vector<X> & vector<char> as special case.
+*
 * Revision 1.10  1999/07/13 20:54:05  vasilche
 * Fixed minor bugs.
 *
@@ -606,12 +609,27 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
 	CObjectIStream::ByteBlock block(in);
 	BSFree(Get(object));
-	bytestore* bs = Get(object) = BSNew(block.GetExpectedLength());
-	char buffer[1024];
-	size_t count;
-	while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
-		BSWrite(bs, buffer, count);
-	}
+    if ( block.KnownLength() ) {
+        size_t length = block.GetExpectedLength();
+        bytestore* bs = Get(object) = BSNew(length);
+        bsunit* unit = bs->chain;
+        _ASSERT(unit != 0 && unit->len_avail >= length);
+        if ( block.Read(unit->str, length) != length )
+            THROW1_TRACE(runtime_error, "read fault");
+        unit->len = length;
+        bs->totlen = length;
+        bs->curchain = unit;
+    }
+    else {
+        // length is known -> copy via buffer
+        char buffer[1024];
+        size_t count = block.Read(buffer, sizeof(buffer));
+        bytestore* bs = Get(object) = BSNew(count);
+        BSWrite(bs, buffer, count);
+        while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
+            BSWrite(bs, buffer, count);
+        }
+    }
 }
 
 END_NCBI_SCOPE
