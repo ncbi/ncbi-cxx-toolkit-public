@@ -313,13 +313,9 @@ int CLDS_Object::SaveObject(int file_id,
     string molecule_title;
     bool is_object = IsObject(*obj_info, &id_str, &molecule_title);
     if (is_object) {
-
-        const CBioseq* bioseq = CType<CBioseq>().Get(obj_info->info);
-        _ASSERT(bioseq);
-
         string all_seq_id; // Space separated list of seq_ids
-        // Get list of all Seq_ids
-        {{
+        const CBioseq* bioseq = CType<CBioseq>().Get(obj_info->info);
+        if (bioseq) {
             const CBioseq::TId&  id_list = bioseq->GetId();
             ITERATE(CBioseq::TId, it, id_list) {
                 const CSeq_id* seq_id = *it;
@@ -328,7 +324,7 @@ int CLDS_Object::SaveObject(int file_id,
                     all_seq_id.append(" ");
                 }
             }
-        }}
+        }
 
         m_db.object_db.primary_seqid = id_str;
 
@@ -475,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/16 15:40:21  kuznets
+ * Fixed a bug with collecting all seq_ids from a bioseq
+ *
  * Revision 1.5  2003/06/13 16:00:30  kuznets
  * Improved work with sequence ids. Now it keeps all sequence ids bioseq has
  *
