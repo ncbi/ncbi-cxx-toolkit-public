@@ -46,6 +46,7 @@ class CTSE_ScopeInfo;
 class CTSE_Info;
 class CTSE_Lock;
 class CBioseq_Handle;
+class CSeq_entry_Handle;
 class CSeq_id;
 class CSeq_id_Handle;
 class CBlobIdKey;
@@ -79,6 +80,9 @@ public:
     /// TSE info getters
     CBlobIdKey GetBlobId(void) const;
 
+    /// Get top level Seq-entry handle
+    CSeq_entry_Handle GetTopLevelEntry(void) const;
+    
     /// Get Bioseq handle from this TSE
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id) const;
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id) const;

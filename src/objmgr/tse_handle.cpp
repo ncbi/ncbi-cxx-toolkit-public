@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/tse_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
@@ -89,6 +90,12 @@ CBlobIdKey CTSE_Handle::GetBlobId(void) const
         ret = CBlobIdKey(tse.GetDataSource().GetDataLoader(), tse.GetBlobId());
     }
     return ret;
+}
+
+
+CSeq_entry_Handle CTSE_Handle::GetTopLevelEntry(void) const
+{
+    return CSeq_entry_Handle(x_GetTSE_Info(), *this);
 }
 
 

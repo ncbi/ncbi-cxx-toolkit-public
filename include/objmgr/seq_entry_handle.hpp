@@ -181,6 +181,7 @@ protected:
     friend class CBioseq_Handle;
     friend class CBioseq_set_Handle;
     friend class CSeq_annot_Handle;
+    friend class CTSE_Handle;
     friend class CSeqMap_CI;
     friend class CSeq_entry_CI;
 
@@ -593,6 +594,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/05 18:43:57  vasilche
+* Added CTSE_Handle::GetTopLevelEntry().
+*
 * Revision 1.15  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *
