@@ -1305,7 +1305,7 @@ double lnfact[] =
   }; 
 
 
-#define AA20    2  /** #define identifying protein alphabet */
+const int kProtAlphabet = 2;   /**< identifies protein alphabet (FIXME: needed?). */
 
 
 
@@ -1315,7 +1315,7 @@ double lnfact[] =
  */
 typedef struct Alpha
   {
-   Int4 alphabet;              /**< which alphabet, AA20 for proteins. */
+   Int4 alphabet;              /**< which alphabet, kProtAlphabet for proteins. */
    Int4 alphasize;             /**< size of above alphabet. */
    double lnalphasize;         /**< nat. log of size of above alphabet. */
    Int4* alphaindex;           /**< value in ncbistdaa. */
@@ -1716,7 +1716,13 @@ s_EntropyOn(SSequence* win)
    return;
   }
 
-/*---------------------------------------------------------------(s_SeqEntropy)---*/
+/** Calculates entropy for a given sequence and window
+ * 
+ * @param seq Sequence to examine [in]
+ * @param window amount of sequence to examine at once [in]
+ * @param maxbogus limit on non-allowed (e.g., X) characters [in]
+ * @return calculated entropy
+ */
 static double* 
 s_SeqEntropy(SSequence* seq, Int4 window, Int4 maxbogus)
 {
@@ -1946,15 +1952,18 @@ s_GetProb(const Int4* sv, Int4 total, const Alpha* palpha)
    return ans;
   }
 
-/*-----------------------------------------------------------------(s_Trim)---*/
-
+/** Trims view of sequence so as to minimize the probability returned by s_GetProb
+ * @param seq the part of sequence to be examined [in]
+ * @param leftend left-most end of sequence [in|out]
+ * @param rightend right-most end of sequence [in|out]
+ * @param sparamsp the SEG parameters [in]
+ */
 static void 
-s_Trim(SSequence* seq, Int4* leftend, Int4* rightend, SegParameters* sparamsp)
+s_Trim(SSequence* seq, Int4* leftend, Int4* rightend, const SegParameters* sparamsp)
 
-  {
-   SSequence* win;
+{
    double prob, minprob;
-   Int4 shift, len, i;
+   Int4 len;
    Int4 lend, rend;
    Int4 minlen;
    Int4 maxtrim;
@@ -1963,53 +1972,58 @@ s_Trim(SSequence* seq, Int4* leftend, Int4* rightend, SegParameters* sparamsp)
    rend = seq->length - 1;
    minlen = 1;
    maxtrim = sparamsp->maxtrim;
-   if ((seq->length-maxtrim)>minlen) minlen = seq->length-maxtrim;
+   if ((seq->length-maxtrim)>minlen) 
+        minlen = seq->length-maxtrim;
 
    minprob = 1.;
    for (len=seq->length; len>minlen; len--)
-     {
-      win = s_OpenWin(seq, 0, len);
-      i = 0;
+   {
+      Boolean shift = TRUE;
+      Int4 i = 0;
+      SSequence* win = s_OpenWin(seq, 0, len);
 
-      shift = TRUE;
       while (shift)
-        {
+      {
          prob = s_GetProb(win->state, len, win->palpha);
          if (prob<minprob)
-           {
+         {
             minprob = prob;
             lend = i;
             rend = len + i - 1;
-           }
+         }
          shift = s_ShiftWin1(win);
          i++;
-        }
+      }
       s_CloseWin(win);
-     }
-
+   }
 
    *leftend = *leftend + lend;
    *rightend = *rightend - (seq->length - rend - 1);
 
    s_CloseWin(seq);
    return;
-  }
+}
 
-/*---------------------------------------------------------------(s_SegSeq)---*/
-
+/** High-level function to perform calculations to find 
+ * low-complexity segments.  Thi function calls itself 
+ * recursively
+ * 
+ * @param seq sequence to be checked [in]
+ * @param sparamsp seg parameters [in]
+ * @param segs low-complexity segments found [out]
+ * @param offset offset of sequence passed in [in]
+ */
 static void 
 s_SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg* *segs,
                    Int4 offset)
 {
-   SSeg* seg,* leftsegs;
-   SSequence* leftseq;
+   SSeg* seg = (SSeg*) NULL;
    Int4 window;
    double locut, hicut;
-   Int4 maxbogus;
    Int4 downset, upset;
    Int4 first, last, lowlim;
-   Int4 loi, hii, i;
-   Int4 leftend, rightend, lend, rend;
+   Int4 i;
+   Int4 leftend, rightend;
    double* H;
 
    if (sparamsp->window<=0) return;
@@ -2021,21 +2035,22 @@ s_SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg* *segs,
    hicut = sparamsp->hicut;
    downset = (window+1)/2 - 1;
    upset = window - downset;
-   maxbogus = sparamsp->maxbogus;
       
-   H = s_SeqEntropy(seq, window, maxbogus);
-   if (H==NULL) return;
+   H = s_SeqEntropy(seq, window, sparamsp->maxbogus);
+
+   if (H == NULL) 
+      return;
 
    first = downset;
    last = seq->length - upset;
    lowlim = first;
 
    for (i=first; i<=last; i++)
-     {
+   {
       if (H[i] <= locut && H[i] != -1.0)
         {
-         loi = s_FindLow(i, lowlim, hicut, H);
-         hii = s_FindHigh(i, last, hicut, H);
+         Int4 loi = s_FindLow(i, lowlim, hicut, H);
+         Int4 hii = s_FindHigh(i, last, hicut, H);
 
          leftend = loi - downset;
          rightend = hii + upset - 1;
@@ -2044,28 +2059,21 @@ s_SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg* *segs,
               sparamsp);
 
          if (i+upset-1<leftend)   /* check for trigger window in left trim */
-           {
-            lend = loi - downset;
-            rend = leftend - 1;
+         {
+            Int4 lend = loi - downset;
+            Int4 rend = leftend - 1;
 
-            leftseq = s_OpenWin(seq, lend, rend-lend+1);
-            leftsegs = (SSeg*) NULL;
+            SSequence* leftseq = s_OpenWin(seq, lend, rend-lend+1);
+            SSeg *leftsegs = (SSeg*) NULL;
             s_SegSeq(leftseq, sparamsp, &leftsegs, offset+lend);
             if (leftsegs!=NULL)
-              {
+            {
                if (*segs==NULL) *segs = leftsegs;
                else s_AppendSeg(*segs, leftsegs);
-              }
+            }
             s_CloseWin(leftseq);
 
-/*          s_Trim(s_OpenWin(seq, lend, rend-lend+1), &lend, &rend);
-            seg = (SSeg*) calloc(1, sizeof(SSeg));
-            seg->begin = lend;
-            seg->end = rend;
-            seg->next = (SSeg*) NULL;
-            if (segs==NULL) segs = seg;
-            else s_AppendSeg(segs, seg);  */
-           }
+         }
 
          seg = (SSeg*) calloc(1, sizeof(SSeg));
          seg->begin = leftend + offset;
@@ -2077,9 +2085,8 @@ s_SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg* *segs,
 
          i = MIN(hii, rightend+downset);
          lowlim = i + 1;
-/*       i = hii;     this ignores the trimmed residues... */
         }
-     }
+   }
    sfree(H);
    return;
 }
@@ -2190,7 +2197,7 @@ s_AA20alphaStd (void)
 
    palpha = (Alpha*) calloc(1, sizeof(Alpha));
 
-   palpha->alphabet = AA20;
+   palpha->alphabet = kProtAlphabet;
    palpha->alphasize = 20;
    palpha->lnalphasize = kLn20;
 
@@ -2286,13 +2293,8 @@ Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
       params_allocated = TRUE;
       sparamsp = SegParametersNewAa();
       s_SegParametersCheck (sparamsp);
-      if (!sparamsp) {
-#ifdef ERR_POST_EX_DEFINED
-         ErrPostEx (SEV_WARNING, 0, 0, "null parameters object");
-         ErrShow();
-#endif
+      if (!sparamsp)
          return -1;
-      }
    }
    
    /* make an old-style genwin sequence window object */
