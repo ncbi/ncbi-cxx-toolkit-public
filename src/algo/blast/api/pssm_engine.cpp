@@ -222,7 +222,7 @@ CScoreMatrixBuilder::x_ProcessDenseg(const CDense_seg& denseg,
 {
     ASSERT(denseg.GetDim() == 2);
 
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
     const vector<TSignedSeqPos>& starts = denseg.GetStarts();
     const vector<TSeqPos>& lengths = denseg.GetLens();
     TSeqPos query_index = 0;        // index into starts vector
@@ -490,6 +490,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/28 17:42:02  camacho
+* Fix compiler warning
+*
 * Revision 1.2  2004/05/28 17:15:43  camacho
 * Fix NCBI {BEGIN,END}_SCOPE macro usage, remove warning
 *
