@@ -1273,9 +1273,14 @@ void CAlnMix::x_CreateSegmentsVector()
                     st_it_i, (*st_i).second->m_StartIts) {
                 // both should point to the same seg
                 if ((*st_it_i).second->second != (*st_i).second) {
-                    NCBI_THROW(CAlnException, eMergeFailure,
-                               "CAlnMix::x_CreateSegmentsVector(): "
-                               "Internal error: Segments messed up.");
+                    string errstr =
+                        string("CAlnMix::x_CreateSegmentsVector():")
+                        + " Internal error: Segments messed up."
+                        + " row=" + NStr::IntToString((*row_i)->m_RowIndex)
+                        + " seq=" + NStr::IntToString((*row_i)->m_SeqIndex)
+                        + " strand=" +
+                        ((*row_i)->m_PositiveStrand ? "plus" : "minus");
+                    NCBI_THROW(CAlnException, eMergeFailure, errstr);
                 }
             }
         }
@@ -1973,6 +1978,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.89  2004/03/29 17:05:06  todorov
+* extended exception msg
+*
 * Revision 1.88  2004/03/09 17:40:07  kuznets
 * Compilation bug fix CAlnMix::ChooseSeqId
 *
