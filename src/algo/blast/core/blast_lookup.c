@@ -39,16 +39,39 @@
 static char const rcsid[] = 
     "$Id$";
 
+typedef struct NeighborInfo {
+    BlastLookupTable *lookup;
+    Uint1 *query_word;
+    Uint1 *subject_word;
+    Int4 alphabet_size;
+    Int4 wordsize;
+    Int4 **matrix;
+    Int4 *row_max;
+    Int4 *offset_list;
+    Int4 threshold;
+    Int4 query_bias;
+} NeighborInfo;
+
 static void AddWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
-			 Uint1* word,
-			 Int4 offset,
-                         Int4 query_bias);
+			 Uint1* query,
+			 Int4* offset_list,
+			 Int4 query_bias,
+                         Int4 *row_max);
+
+static void _AddWordHits(NeighborInfo *info, 
+                         Int4 score, 
+                         Int4 current_pos);
 
 static void AddPSSMWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
-			 Int4 offset,
-                         Int4 query_bias);
+			 Int4 query_bias,
+                         Int4 *row_max);
+
+static void _AddPSSMWordHits(NeighborInfo *info, 
+                         Int4 score, 
+                         Int4 current_pos);
+
 
 Int4 BlastAaLookupNew(const LookupTableOptions* opt,
 		      BlastLookupTable* * lut)
@@ -168,7 +191,6 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
   ASSERT(lookup->thin_backbone != NULL);
 
   lookup->use_pssm = opt->use_pssm;
-  lookup->neighbors=NULL;
   lookup->overflow=NULL;
   return 0;
 }
@@ -506,13 +528,6 @@ Int4 BlastAaLookupIndexQueries(BlastLookupTable* lookup,
 {
   Int4 i;
 
-  /* create neighbor array */
-
-  if (lookup->threshold>0)
-    {
-      MakeAllWordSequence(lookup);
-    }
-
   /* index queries */
   for(i=0;i<num_queries;i++)
     {
@@ -520,10 +535,6 @@ Int4 BlastAaLookupIndexQueries(BlastLookupTable* lookup,
                                (lookup->use_pssm == TRUE) ? NULL : &(query[i]), 
                                &(locations[i]), 0);
     }
-
-  /* free neighbor array*/
-  if (lookup->neighbors != NULL)
-    sfree(lookup->neighbors);
 
   return 0;
 }
@@ -534,274 +545,360 @@ Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			      ListNode* location,
                               Int4 query_bias)
 {
+    if (lookup->use_pssm)
+        AddPSSMNeighboringWords(lookup, matrix, 
+                                query_bias, location);
+    else
+        AddNeighboringWords(lookup, matrix, query,
+                            query_bias, location);
+  return 0;
+}
+
+Int4 AddNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 query_bias, ListNode *location)
+{
+  Int4 offset;
+  Int4 i, j;
+  Int4 **exact_backbone;
+  Int4 **old_backbone;
   ListNode* loc;
-  Int4 from, to;
-  Int4 w;
+  Int4 *row_max;
+
+  /* Determine the maximum possible score for
+     each row of the score matrix */
+
+  row_max = (Int4 *)malloc(lookup->alphabet_size * sizeof(Int4));
+  ASSERT(row_max != NULL);
+
+  for (i = 0; i < lookup->alphabet_size; i++) {
+      row_max[i] = matrix[i][0];
+      for (j = 1; j < lookup->alphabet_size; j++)
+          row_max[i] = MAX(row_max[i], matrix[i][j]);
+  }
+
+  /* Swap out the existing thin backbone for an empty
+     backbone */
+
+  old_backbone = lookup->thin_backbone;
+  lookup->thin_backbone = (Int4 **)calloc(lookup->backbone_size, 
+                                           sizeof(Int4 *));
+
+  /* find all the exact matches, grouping together all
+     offsets of identical query words. The query bias
+     is not used here, since the next stage will need real 
+     offsets into the query sequence */
 
   for(loc=location; loc; loc=loc->next)
-    {
-      from = ((SSeqRange*) loc->ptr)->left;
-      to = ((SSeqRange*) loc->ptr)->right - lookup->wordsize + 1;
-
-      for(w=from;w<=to;w++)
-	{
-	  AddNeighboringWords(lookup,
-			      matrix,
-			      query,
-			      w,
-                              query_bias);
-	}      
-    }
-  return 0;
-}
-
-Int4 MakeAllWordSequence(BlastLookupTable* lookup)
-{
-  Int4 k,n;
-  Int4 i;
-  Int4 len;
-  k=lookup->alphabet_size;
-  n=lookup->wordsize;
-
-  /* need k^n bytes for the de Bruijn sequence and n-1 to unwrap it. */ 
-
-  len = iexp(k,n) + (n-1);
-  
-  lookup->neighbors_length = len;
-
-  lookup->neighbors = (Uint1*) malloc( len );
-  ASSERT(lookup->neighbors != NULL);
-
-  /* generate the de Bruijn sequence */
-
-  debruijn(n,k,lookup->neighbors,NULL);
-
-  /* unwrap it */
-
-  for(i=0;i<(n-1);i++)
-    lookup->neighbors[len-n+1+i] = lookup->neighbors[i];
-  
-  return 0;
-}
-
-Int4 AddNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset, Int4 query_bias)
-{
-  
-  if (lookup->use_pssm)
   {
-      AddPSSMWordHits(lookup, matrix, offset, query_bias);
+      Int4 from = ((SSeqRange*) loc->ptr)->left;
+      Int4 to = ((SSeqRange*) loc->ptr)->right - lookup->wordsize + 1;
+      for (offset = from; offset <= to; offset++) 
+      {
+          Uint1* w = query->sequence + offset;
+          BlastAaLookupAddWordHit(lookup, w, offset);
+          lookup->exact_matches++;
+      }
   }
-  else
+
+  /* return the original thin backbone */
+
+  exact_backbone = lookup->thin_backbone;
+  lookup->thin_backbone = old_backbone;
+
+  /* walk though the list of exact matches
+     previously computed. Find neighboring words
+     for entire lists at a time */
+
+  for (i = 0; i < lookup->backbone_size; i++)
   {
-    Uint1* w = NULL;
-    ASSERT(query != NULL);
-    w = query->sequence + offset;
-  
-    if (lookup->threshold == 0)
-    {
-      BlastAaLookupAddWordHit(lookup, w, query_bias + offset);
-      lookup->exact_matches++;
-    }
-    else
-    {
-      AddWordHits(lookup, matrix, w, offset, query_bias);
-    }
+      if (exact_backbone[i] != NULL)
+      {
+          AddWordHits(lookup, matrix, query->sequence,
+                      exact_backbone[i], query_bias, row_max);
+          sfree(exact_backbone[i]);
+      }
   }
+
+  sfree(exact_backbone);
+  sfree(row_max);
   return 0;
 }
 
 static void AddWordHits(BlastLookupTable* lookup, Int4** matrix, 
-			Uint1* word, Int4 offset, Int4 query_bias)
+			Uint1* query, Int4 *offset_list, 
+                        Int4 query_bias, Int4 *row_max)
 {
-  Uint1* s = lookup->neighbors;
-  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize + 1;
-  Uint1* w = word;
-  Uint1 different;
+  Uint1* w;
+  Uint1 s[32];
   Int4 score;
-  Int4 threshold = lookup->threshold;
   Int4 i;
-  Int4* p0;
-  Int4* p1;
-  Int4* p2;
-  Int4 corrected_offset = offset + query_bias;
+  NeighborInfo info;
 
-  /* For each group of 'wordsize' bytes starting at 'w', 
-   * add the group to the lookup table at each offset 's' if
-   * either
-   *    - w matches s, or 
-   *    - the score derived from aligning w and s is high enough
-   */
+  /* All of the offsets in the list refer to the
+     same query word. Thus, neighboring words only
+     have to be found for the first offset in the
+     list (since all other offsets would have the 
+     same neighbors) */
 
-  switch (lookup->wordsize)
-    {
-      case 1:
-	p0 = matrix[w[0]];
+  w = query + offset_list[2];
 
-        while (s < s_end)
-          {
-            if ( (s[0] == w[0]) || (p0[s[0]] >= threshold) )
-	    {
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-		if (s[0] == w[0])
-		    lookup->exact_matches++;
-		else
-		    lookup->neighbor_matches++;
-	    }
-            s++;
-  	  }
+  /* Compute the self-score of this word */
 
-        break;
+  score = matrix[w[0]][w[0]];
+  for (i = 1; i < lookup->wordsize; i++)
+      score += matrix[w[i]][w[i]];
 
-      case 2:
-	p0 = matrix[w[0]];
-	p1 = matrix[w[1]];
+  /* If the self-score is above the threshold, then the
+     neighboring computation will automatically add the
+     word to the lookup table. Otherwise, either the score
+     is too low or neighboring is not done at all, so that
+     all of these exact matches must be explicitly added
+     to the lookup table */
 
-        while (s < s_end)
-          {
-            score = p0[s[0]] + p1[s[1]];
-	    different = (w[0] ^ s[0]) | (w[1] ^ s[1]);
-  
-            if ( !different || (score >= threshold) )
-	    {
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-		if (!different)
-		    lookup->exact_matches++;
-		else
-		    lookup->neighbor_matches++;
-	    }
-            s++;
-	  }
+  if (lookup->threshold == 0 || score < lookup->threshold)
+  {
+      for (i = 0; i < offset_list[1]; i++)
+          BlastAaLookupAddWordHit(lookup, w,
+                                  query_bias + offset_list[i+2]);
+  }
+  else
+  {
+      lookup->neighbor_matches -= offset_list[1];
+  }
 
-        break;
+  /* check if neighboring words need to be found */
 
-      case 3:
-	p0 = matrix[w[0]];
-	p1 = matrix[w[1]];
-	p2 = matrix[w[2]];
+  if (lookup->threshold == 0)
+      return;
 
-        while (s < s_end)
-          {
-            score = p0[s[0]] + p1[s[1]] + p2[s[2]];
-	    different = (w[0] ^ s[0]) | (w[1] ^ s[1]) | (w[2] ^ s[2]);
-  
-            if ( !different || (score >= threshold) )
-	    {
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-		if (!different)
-		    lookup->exact_matches++;
-		else
-		    lookup->neighbor_matches++;
-	    }
-            s++;
-  	  }
+  /* Set up the structure of information to be used
+     during the recursion */
 
-        break;
+  info.lookup = lookup;
+  info.query_word = w;
+  info.subject_word = s;
+  info.alphabet_size = lookup->alphabet_size;
+  info.wordsize = lookup->wordsize;
+  info.matrix = matrix;
+  info.row_max = row_max;
+  info.offset_list = offset_list;
+  info.threshold = lookup->threshold;
+  info.query_bias = query_bias;
 
-      default:
-        while (s < s_end)
-          {
-            score = 0;
-            different = 0;
-            for (i = 0; i < lookup->wordsize; i++)
-              {
-                score += matrix[w[i]][s[i]];
-                different |= w[i] ^ s[i];
-              }
-  
-            if ( !different || (score >= threshold) )
-	    {
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-		if (!different)
-		    lookup->exact_matches++;
-		else
-		    lookup->neighbor_matches++;
-	    }
-            s++;
-  	  }
+  /* compute the largest possible score that any neighboring
+     word can have; this maximum will gradually be replaced 
+     by exact scores as subject words are built up */
 
-        break;
+  score = row_max[w[0]];
+  for (i = 1; i < lookup->wordsize; i++)
+      score += row_max[w[i]];
+
+  _AddWordHits(&info, score, 0);
+}
+
+static void _AddWordHits(NeighborInfo *info, Int4 score, Int4 current_pos)
+{
+    Int4 alphabet_size = info->alphabet_size;
+    Int4 threshold = info->threshold;
+    Uint1 *query_word = info->query_word;
+    Uint1 *subject_word = info->subject_word;
+    Int4 *row;
+    Int4 i;
+
+    /* remove the maximum score of letters that
+       align with the query letter at position 
+       'current_pos'. Later code will align the
+       entire alphabet with this letter, and compute
+       the exact score each time. Also point to the 
+       row of the score matrix corresponding to the
+       query letter at current_pos */
+
+    score -= info->row_max[query_word[current_pos]];
+    row = info->matrix[query_word[current_pos]];
+
+    if (current_pos == info->wordsize - 1) {
+
+        /* The recursion has bottomed out, and we can
+           produce complete subject words. Pass the
+           entire alphabet through the last position
+           in the subject word, then save the list of
+           query offsets in all positions corresponding
+           to subject words that yield a high enough score */
+
+        Int4 *offset_list = info->offset_list;
+        Int4 query_bias = info->query_bias;
+        BlastLookupTable *lookup = info->lookup;
+        Int4 j;
+
+        for (i = 0; i < alphabet_size; i++) {
+            if (score + row[i] >= threshold) {
+                subject_word[current_pos] = i;
+                for (j = 0; j < offset_list[1]; j++) {
+                    BlastAaLookupAddWordHit(lookup, subject_word,
+                                            query_bias + offset_list[j+2]);
+                }
+                lookup->neighbor_matches += offset_list[1];
+            }
+        }
+        return;
+    }
+
+    /* Otherwise, pass the entire alphabet through position
+       current_pos of the subject word, and recurse on all
+       words that could possibly exceed the threshold later */
+
+    for (i = 0; i < alphabet_size; i++) {
+        if (score + row[i] >= threshold) {
+            subject_word[current_pos] = i;
+            _AddWordHits(info, score + row[i], current_pos + 1);
+        }
     }
 }
 
+Int4 AddPSSMNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, Int4 query_bias, ListNode *location)
+{
+  Int4 offset;
+  Int4 i, j;
+  ListNode* loc;
+  Int4 *row_max;
+  Int4 wordsize = lookup->wordsize;
+
+  /* for PSSMs, we only have to track the maximum
+     score of 'wordsize' matrix columns */
+
+  row_max = (Int4 *)malloc(lookup->wordsize * sizeof(Int4));
+  ASSERT(row_max != NULL);
+
+  for(loc=location; loc; loc=loc->next)
+  {
+      Int4 from = ((SSeqRange*) loc->ptr)->left;
+      Int4 to = ((SSeqRange*) loc->ptr)->right - wordsize + 1;
+      Int4 **row = matrix + from;
+
+      /* prepare to start another run of adjacent query
+         words. Find the maximum possible score for the
+         first wordsize-1 rows of the PSSM */
+
+      if (to >= from)
+      {
+          for (i = 0; i < wordsize - 1; i++) 
+          {
+              row_max[i] = row[i][0];
+              for (j = 1; j < lookup->alphabet_size; j++)
+                  row_max[i] = MAX(row_max[i], row[i][j]);
+          }
+      }
+
+      for (offset = from; offset <= to; offset++, row++) 
+      {
+          /* find the maximum score of the next PSSM row */
+
+          row_max[wordsize - 1] = row[wordsize - 1][0];
+          for (i = 1; i < lookup->alphabet_size; i++)
+              row_max[wordsize - 1] = MAX(row_max[wordsize - 1], 
+                                          row[wordsize - 1][i]);
+
+          /* find all neighboring words */
+
+          AddPSSMWordHits(lookup, row, offset + query_bias, row_max);
+
+          /* shift the list of maximum scores over by one,
+             to make room for the next maximum in the next
+             loop iteration */
+
+          for (i = 0; i < wordsize - 1; i++)
+              row_max[i] = row_max[i+1];
+      }
+  }
+
+  sfree(row_max);
+  return 0;
+}
 
 static void AddPSSMWordHits(BlastLookupTable* lookup, Int4** matrix, 
-                            Int4 offset, Int4 query_bias)
+			    Int4 offset, Int4 *row_max)
 {
-  Uint1* s = lookup->neighbors;
-  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
+  Uint1 s[32];
   Int4 score;
-  Int4 threshold = lookup->threshold;
   Int4 i;
-  Int4* p0;
-  Int4* p1;
-  Int4* p2;
-  Int4 corrected_offset = offset + query_bias;
+  NeighborInfo info;
 
-  /* Equivalent to AddWordHits(), except that the word score
-   * is derived from a Position-Specific Scoring Matrix (PSSM) 
-   */
+  /* Set up the structure of information to be used
+     during the recursion */
 
-  switch (lookup->wordsize)
-    {
-      case 1:
-	p0 = matrix[offset];
+  info.lookup = lookup;
+  info.query_word = NULL;
+  info.subject_word = s;
+  info.alphabet_size = lookup->alphabet_size;
+  info.wordsize = lookup->wordsize;
+  info.matrix = matrix;
+  info.row_max = row_max;
+  info.offset_list = NULL;
+  info.threshold = lookup->threshold;
+  info.query_bias = offset;
 
-        while (s < s_end)
-          {
-            if (p0[s[0]] >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-            s++;
-  	  }
+  /* compute the largest possible score that any neighboring
+     word can have; this maximum will gradually be replaced 
+     by exact scores as subject words are built up */
 
-        break;
+  score = row_max[0];
+  for (i = 1; i < lookup->wordsize; i++)
+      score += row_max[i];
 
-      case 2:
-	p0 = matrix[offset];
-	p1 = matrix[offset+1];
-
-        while (s < s_end)
-          {
-            score = p0[s[0]] + p1[s[1]];
-  
-            if (score >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-            s++;
-  	  }
-
-        break;
-
-      case 3:
-	p0 = matrix[offset];
-	p1 = matrix[offset + 1];
-	p2 = matrix[offset + 2];
-
-        while (s < s_end)
-          {
-            score = p0[s[0]] + p1[s[1]] + p2[s[2]];
-  
-            if (score >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
-            s++;
-  	  }
-
-        break;
-
-      default:
-        while (s < s_end)
-          {
-            score = 0;
-            for(i=0;i<lookup->wordsize;i++)
-                score += matrix[offset + i][s[i]];
-  
-            if (score >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,offset);
-            s++;
-  	  }
-
-        break;
-    }
+  _AddPSSMWordHits(&info, score, 0);
 }
 
+static void _AddPSSMWordHits(NeighborInfo *info, Int4 score, Int4 current_pos)
+{
+    Int4 alphabet_size = info->alphabet_size;
+    Int4 threshold = info->threshold;
+    Uint1 *subject_word = info->subject_word;
+    Int4 *row;
+    Int4 i;
+
+    /* remove the maximum score of letters that
+       align with the query letter at position 
+       'current_pos'. Later code will align the
+       entire alphabet with this letter, and compute
+       the exact score each time. Also point to the 
+       row of the score matrix corresponding to the
+       query letter at current_pos */
+
+    score -= info->row_max[current_pos];
+    row = info->matrix[current_pos];
+
+    if (current_pos == info->wordsize - 1) {
+
+        /* The recursion has bottomed out, and we can
+           produce complete subject words. Pass the
+           entire alphabet through the last position
+           in the subject word, then save the query offset
+           in all lookup table positions corresponding
+           to subject words that yield a high enough score */
+
+        Int4 offset = info->query_bias;
+        BlastLookupTable *lookup = info->lookup;
+
+        for (i = 0; i < alphabet_size; i++) {
+            if (score + row[i] >= threshold) {
+                subject_word[current_pos] = i;
+                BlastAaLookupAddWordHit(lookup, subject_word, offset);
+                lookup->neighbor_matches++;
+            }
+        }
+        return;
+    }
+
+    /* Otherwise, pass the entire alphabet through position
+       current_pos of the subject word, and recurse on all
+       words that could possibly exceed the threshold later */
+
+    for (i = 0; i < alphabet_size; i++) {
+        if (score + row[i] >= threshold) {
+            subject_word[current_pos] = i;
+            _AddPSSMWordHits(info, score + row[i], current_pos + 1);
+        }
+    }
+}
 
 /******************************************************
  *
