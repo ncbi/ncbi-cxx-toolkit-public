@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/24 18:12:33  thiessen
+* fix another leak
+*
 * Revision 1.3  2002/01/23 21:08:37  thiessen
 * fix memory leak
 *
@@ -83,7 +86,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
         AsnIoBSClose(aibp);
         aibp = NULL;
         int dataSize = Nlm_BSLen(bsp);
-        char *asnDataBlock = new char[dataSize];
+        asnDataBlock = new char[dataSize];
         if (!asnDataBlock) throw "block allocation failed";
 
         Nlm_BSSeek(bsp, 0, 0);
