@@ -73,6 +73,10 @@ public:
         {
             return m_Integer;
         }
+    const TValues& GetValues(void) const
+        {
+            return m_Values;
+        }
 
     void AddValue(const string& name, TEnumValueType value);
     void AddValue(const char* name, TEnumValueType value);
@@ -113,6 +117,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/05/24 15:12:10  gouriano
+* added method to acces list of values in CEnumeratedTypeValues
+*
 * Revision 1.9  2004/04/30 13:28:39  gouriano
 * Remove obsolete function declarations
 *
