@@ -19,7 +19,9 @@ SRC = \
 	cdd_annot_dialog \
 	cdd_ref_dialog \
 	cdd_splash_dialog \
+	cn3d_ba_interface \
 	cn3d_blast \
+	cn3d_blockalign \
 	cn3d_cache \
 	cn3d_colors \
 	cn3d_main_wxwin \
