@@ -15,9 +15,15 @@ We made the following changes in the master setup file <b>include\wx\msw\setup.h
 	<li><tt>#define wxUSE_SOCKETS 0</tt> to exclude (not to double) the network stuff, which is normally supported
 	in the standard core library, therefore <tt>class wxSocket</tt> disabled.</li>
 	<li><tt>#define wxUSE_THREADS 0</tt> as the multi-thread support is weak in the wxWindows library.</li>
-	<li><tt>#define wxUSE_GLCANVAS 1</tt> to enable GUI applications to use OpenGL library.</li>
 	<li><tt>#define wxUSE_IOSTREAMH 0</tt> to eliminate conflicts with the rest of the C++ Toolkit,
 	which uses new <tt>&lt;iostream&gt;</tt> library.</li>
+	<li><tt>#define wxUSE_GLCANVAS 1</tt> to enable GUI applications to use OpenGL library.</li>
+	<li><tt>#define wxUSE_STD_IOSTREAM 0</tt> fallback to default.</li><br>
+	Lately we used to have <tt>#define wxUSE_STD_IOSTREAM 1</tt> to use standard C++ I/O streams wherever appropriate
+        instead of home-made I/O streams supplied with wxWindows
+	distribution, but this configuration appeared to be broken (esp. with wxWindows 2.2.7), and wxWindows
+	developers admitted this: clash in namespaces (namespace std:: was open in one of wxWindows header files) has generated
+	lots of errors. The problem is to be fixed in upcoming version 3.
 </ul>
 
 <br>
