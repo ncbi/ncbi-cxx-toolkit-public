@@ -53,12 +53,12 @@ CSeqDB::CSeqDB(const string & dbname,
     m_Impl = new CSeqDBImpl(dbname, prot_nucl, oid_begin, oid_end, use_mmap);
 }
 
-Uint4 CSeqDB::GetSeqLength(Uint4 oid) const
+Uint4 CSeqDB::GetSeqLength(TOID oid) const
 {
     return m_Impl->GetSeqLength(oid);
 }
 
-Uint4 CSeqDB::GetSeqLengthApprox(Uint4 oid) const
+Uint4 CSeqDB::GetSeqLengthApprox(TOID oid) const
 {
     return m_Impl->GetSeqLengthApprox(oid);
 }
