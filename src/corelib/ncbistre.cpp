@@ -73,14 +73,20 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 
 }
 
+
 // Platform-specific EndOfLine
+const char* Endl(void)
+{
 #if   defined(NCBI_OS_MAC)
-const char s_Endl[] = "\r";
+    const char s_Endl[] = "\r";
 #elif defined(NCBI_OS_MSWIN)
-const char s_Endl[] = "\r\n";
+    const char s_Endl[] = "\r\n";
 #else /* assume UNIX-like EOLs */
-const char s_Endl[] = "\n";
+    const char s_Endl[] = "\n";
 #endif
+    return s_Endl;
+}
+
 
 // Get the next line taking into account platform specifics of End-of-Line
 CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str)
@@ -297,6 +303,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/10/17 22:07:27  vakatov
+ * + Endl() -- platform-specific EndOfLine
+ *
  * Revision 1.16  2002/08/01 18:42:17  ivanov
  * + NcbiGetlineEOL() -- moved from ncbireg and renamed
  *

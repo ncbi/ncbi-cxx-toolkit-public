@@ -164,6 +164,9 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiBadbit               IOS_PREFIX::badbit
 #define NcbiHardfail             IOS_PREFIX::hardfail
 
+// Platform-specific EndOfLine
+extern const char* Endl(void);
+
 // Read from "is" to "str" up to the delimiter symbol "delim"(or EOF)
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
 
@@ -222,18 +225,17 @@ string GetString(void)
 class CNcbiOstrstreamToString
 {
     CNcbiOstrstreamToString(const CNcbiOstrstreamToString&);
-    CNcbiOstrstreamToString& operator=(const CNcbiOstrstreamToString&);
+    CNcbiOstrstreamToString& operator= (const CNcbiOstrstreamToString&);
 public:
     CNcbiOstrstreamToString(CNcbiOstrstream& out)
         : m_Out(out)
         {
         }
-
     operator string(void) const;
-
 private:
     CNcbiOstrstream& m_Out;
 };
+
 
 // utility class for automatic conversion of strings to uppercase letters
 // sample usage:
@@ -361,6 +363,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2002/10/17 22:06:37  vakatov
+ * + Endl() -- platform-specific EndOfLine
+ *
  * Revision 1.29  2002/08/16 17:53:54  lavr
  * PUBSYNC, PUBSEEK* macros; SEEKOFF obsoleted; some formatting done
  *
