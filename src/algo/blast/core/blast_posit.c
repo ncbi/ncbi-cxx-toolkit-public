@@ -128,9 +128,7 @@ Kappa_compactSearchItemsNew(const Uint1* query, unsigned int queryLength,
     retval->query = (Uint1*) query;
     retval->qlength = queryLength;
     retval->alphabetSize = BLASTAA_SIZE;
-    retval->gapped_calculation = TRUE;
     retval->matrix = sbp->matrix->data;
-    retval->lambda = sbp->kbp_gap_std[0]->Lambda;
     retval->kbp_std = sbp->kbp_std;
     retval->kbp_psi = sbp->kbp_psi;
     retval->kbp_gap_std = sbp->kbp_gap_std;
@@ -155,9 +153,7 @@ Kappa_compactSearchItemsFree(Kappa_compactSearchItems* compactSearch)
     compactSearch->query = NULL;
     compactSearch->qlength = 0;
     compactSearch->alphabetSize = 0;
-    compactSearch->gapped_calculation = FALSE;
     compactSearch->matrix = NULL;
-    compactSearch->lambda = 0.0;
     compactSearch->kbp_std = NULL;
     compactSearch->kbp_psi = NULL;
     compactSearch->kbp_gap_std = NULL;
@@ -223,15 +219,16 @@ static Blast_ScoreFreq* fillSfp(int ** matrix, int matrixLength,
     return (return_sfp);
 }
 
-/* Used in blast_psi_priv.c, but not declared public */
-extern
-void
-_PSIUpdateLambdaK(const int** pssm,              /* [in] */
-                  const Uint1* query,            /* [in] */
-                  Uint4 query_length,            /* [in] */
-                  const double* std_probs,       /* [in] */
-                  BlastScoreBlk* sbp);           /* [in|out] */
-
+/** Copy of posit2.c's impalaScaleMatrix
+ * @todo refactor this function along with all scaling code!
+ * @param compactSearch [in]
+ * @param posMatrix PSSM [in|out]
+ * @param posPrivateMatrix scaled PSSM [in|out]
+ * @param scalingFactor impala scaling factor [in]
+ * @param doBinarySearch perform binary search? [in]
+ * @param sbp BLAST scoring block structure, Karlin-Altschul parameters are
+ * updated [in|out]
+ */
 static Boolean
 impalaScaleMatrix(Kappa_compactSearchItems* compactSearch, 
                   int** posMatrix,
@@ -407,7 +404,6 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
     ASSERT(sbp->kbp_psi == compactSearch->kbp_psi);
     ASSERT(sbp->kbp_gap_std == compactSearch->kbp_gap_std);
     ASSERT(sbp->kbp_gap_psi == compactSearch->kbp_gap_psi);
-    ASSERT(sbp->kbp_gap_std[0]->Lambda == compactSearch->lambda);
     ASSERT(sbp->kbp_ideal->Lambda == compactSearch->lambda_ideal);
     ASSERT(sbp->kbp_ideal->K == compactSearch->K_ideal);
 
@@ -423,6 +419,11 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/02/23 17:24:41  camacho
+ * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
+ * 2. Removed unneeded fields from Kappa_compactSearchItems
+ * 3. Doxygen fixes
+ *
  * Revision 1.5  2005/02/23 15:58:10  camacho
  * Fix compiler warning
  *

@@ -1948,22 +1948,6 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
 /****************************************************************************/
 /************************* Scaling of PSSM stage ****************************/
 
-/** FIXME
- * @param pssm PSSM [in]
- @ @param query query sequence in ncbistdaa encoding [in]
- * @param query_length length of the query sequence above [in]
- * @param std_probs array containing the standard background residue 
- * probabilities [in]
- * @param sbp Score block structure where the calculated lambda and K will be
- * returned [in|out]
- */
-void
-_PSIUpdateLambdaK(const int** pssm,
-                  const Uint1* query,
-                  Uint4 query_length,
-                  const double* std_probs,
-                  BlastScoreBlk* sbp);
-
 /* FIXME: change so that only lambda is calculated inside the loop that scales
    the matrix and kappa is calculated before returning from this function.
    Scaling factor should be optional argument to accomodate kappa.c's needs?
@@ -2229,7 +2213,6 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
     return score_freqs;
 }
 
-/* Port of blastool.c's updateLambdaK */
 void
 _PSIUpdateLambdaK(const int** pssm,              /* [in] */
                   const Uint1* query,            /* [in] */
@@ -2244,7 +2227,6 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
     /* Calculate lambda and K */
     Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[0], score_freqs);
 
-    /* Shouldn't this be in a function? */
     ASSERT(sbp->kbp_ideal);
     ASSERT(sbp->kbp_psi[0]);
     ASSERT(sbp->kbp_gap_std[0]);
@@ -2394,6 +2376,11 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/02/23 17:24:41  camacho
+ * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
+ * 2. Removed unneeded fields from Kappa_compactSearchItems
+ * 3. Doxygen fixes
+ *
  * Revision 1.48  2005/02/22 22:49:55  camacho
  * + impala_scaling_factor, first cut
  *

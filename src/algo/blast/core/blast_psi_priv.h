@@ -422,6 +422,24 @@ _PSIScaleMatrix(const Uint1* query,
 /****************************************************************************/
 /* Function prototypes for auxiliary functions for the stages above */
 
+
+/** Updates the Karlin-Altschul parameters based on the query sequence and 
+ * PSSM's score frequencies. Port of blastool.c's updateLambdaK
+ * @param pssm PSSM [in]
+ @ @param query query sequence in ncbistdaa encoding [in]
+ * @param query_length length of the query sequence above [in]
+ * @param std_probs array containing the standard background residue 
+ * probabilities [in]
+ * @param sbp Score block structure where the calculated lambda and K will be
+ * returned [in|out]
+ */
+void
+_PSIUpdateLambdaK(const int** pssm,
+                  const Uint1* query,
+                  Uint4 query_length,
+                  const double* std_probs,
+                  BlastScoreBlk* sbp);
+
 /** Provides a similar function to _PSIScaleMatrix but it performs the scaling
  * as IMPALA did, i.e.: allowing the specification of a scaling factor and when
  * calculating the score probabilities, the query length includes 'X' residues.
@@ -565,6 +583,11 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/02/23 17:24:41  camacho
+ * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
+ * 2. Removed unneeded fields from Kappa_compactSearchItems
+ * 3. Doxygen fixes
+ *
  * Revision 1.23  2005/02/22 22:49:34  camacho
  * + impala_scaling_factor, first cut
  *

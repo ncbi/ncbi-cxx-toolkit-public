@@ -50,14 +50,14 @@ extern "C" {
 /** positions of true characters in protein alphabet*/
 extern const Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE];
 
-/** Structure used to pass data into the scaling routines */
+/** Structure used to pass data into the scaling routines. All fields marked as
+ * alias are not owned by this structure. */
 typedef struct Kappa_posSearchItems {
     /** PSSM */
     int**               posMatrix;
-    /** Scaled PSSM, this is only an alias, it's not owned by this structure */
+    /** Scaled PSSM [alias] */
     int**               posPrivateMatrix;       
-    /* PSSM's frequency ratios, this is only an alias, it's not owned by this
-     * structure */
+    /** PSSM's frequency ratios [alias] */
     double**            posFreqs;               
     /** Frequecy ratios for underlying scoring matrix */
     SFreqRatios*        stdFreqRatios;
@@ -66,20 +66,34 @@ typedef struct Kappa_posSearchItems {
     unsigned int        queryLength;
 } Kappa_posSearchItems;
 
-/** Structure used to pass data into the scaling routines */
+/** Structure used to pass data into the scaling routines. All fields marked as
+ * aliases refer to fields in the BlastScoreBlk structure and are NOT owned by
+ * this structure */
 typedef struct Kappa_compactSearchItems {
-    Uint1*              query;                  /* this is only an alias */
+    /** Query sequence data in ncbistdaa format [alias] */
+    Uint1*              query;                 
+    /** Length of the sequence above */
     int                 qlength;
-    Boolean             gapped_calculation;
+    /** Size of the alphabet @sa BLASTAA_SIZE */
     int                 alphabetSize;
-    int**               matrix;                 /* this is only an alias */
-    double              lambda;
-    Blast_KarlinBlk**   kbp_std;                /* this is only an alias */
-    Blast_KarlinBlk**   kbp_psi;                /* this is only an alias */
-    Blast_KarlinBlk**   kbp_gap_std;            /* this is only an alias */
-    Blast_KarlinBlk**   kbp_gap_psi;            /* this is only an alias */
+    /** Standard substitution scoring matrix [alias] */
+    int**               matrix;
+    /** Ungapped Karlin-Altschul parameters [alias] */
+    Blast_KarlinBlk**   kbp_std;
+    /** Ungapped PSI-BLAST Karlin-Altschul parameters [alias] */
+    Blast_KarlinBlk**   kbp_psi;
+    /** Gapped Karlin-Altschul parameters [alias] */
+    Blast_KarlinBlk**   kbp_gap_std;
+    /** Gapped PSI-BLAST Karlin-Altschul parameters [alias] */
+    Blast_KarlinBlk**   kbp_gap_psi;
+    /** Lambda calculated using standard residue compositions for the query and
+     * database sequences */
     double              lambda_ideal;
+    /** K calculated using standard residue compositions for the query and
+     * database sequences */
     double              K_ideal;
+    /** Array of standard residue probabilities, as those returned by
+     * BLAST_GetStandardAaProbabilities */
     double*             standardProb;
 
 } Kappa_compactSearchItems;
@@ -94,7 +108,7 @@ typedef struct Kappa_compactSearchItems {
  * @return newly allocated structure or NULL if out of memory
  */
 Kappa_posSearchItems*
-Kappa_posSearchItemsNew(unsigned int queryLenth,
+Kappa_posSearchItemsNew(unsigned int queryLength,
                         const char* matrix_name,
                         int** posPrivateMatrix,
                         double** posFreqs);
@@ -140,6 +154,11 @@ int Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/02/23 17:24:41  camacho
+ * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
+ * 2. Removed unneeded fields from Kappa_compactSearchItems
+ * 3. Doxygen fixes
+ *
  * Revision 1.3  2005/02/23 14:20:51  camacho
  * Remove compiler warnings
  *
