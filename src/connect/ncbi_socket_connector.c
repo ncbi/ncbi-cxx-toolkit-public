@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/08/07 16:37:45  lavr
+ * EIO_ReadMethod enums changed accordingly;
+ * eSCC_SetReadOnWrite processing added
+ *
  * Revision 6.8  2002/04/26 16:37:05  lavr
  * Added setting of default timeout in meta-connector's setup routine
  * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
@@ -152,8 +156,8 @@ static EIO_Status s_VT_Open
             unsigned int   host;
             unsigned short port;
             char           addr[MAX_IP_ADDR_LEN];
-            
-            SOCK_GetAddress(xxx->sock, &host, &port, 0/*native byte order*/);
+
+            SOCK_GetPeerAddress(xxx->sock, &host, &port, eNH_HostByteOrder);
             if (SOCK_ntoa(SOCK_htonl(host), addr, sizeof(addr)) != 0)
                 return eIO_Unknown;
             xxx->host = strdup(addr);
@@ -175,6 +179,9 @@ static EIO_Status s_VT_Open
 
             SOCK_SetDataLogging(xxx->sock,
                                 (xxx->flags & eSCC_DebugPrintout)
+                                ? eOn : eDefault);
+            SOCK_SetReadOnWrite(xxx->sock,
+                                (xxx->flags & eSCC_SetReadOnWrite)
                                 ? eOn : eDefault);
             if (!xxx->init_data)
                 return eIO_Success;
@@ -248,7 +255,7 @@ static EIO_Status s_VT_Read
     if (!xxx->sock)
         return eIO_Closed;
     SOCK_SetTimeout(xxx->sock, eIO_Read, timeout);
-    return SOCK_Read(xxx->sock, buf, size, n_read, eIO_Plain);
+    return SOCK_Read(xxx->sock, buf, size, n_read, eIO_ReadPlain);
 }
 
 
