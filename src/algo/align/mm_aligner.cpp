@@ -1,4 +1,4 @@
-/* $Id $
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE                          
@@ -31,68 +31,14 @@
  *
  */
 
-#include <algo/mm_aligner.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_system.hpp>
 
+#include "mm_aligner_threads.hpp"
 
 BEGIN_NCBI_SCOPE
 
-// CMTRunHalf - x_RunTop and x_RunBtm thread incapsulation
-//
-
-class CMTRunHalf: public CThread
-{
-public:
-    
-    CMTRunHalf(const CMMAligner* aligner, bool top_half,
-               const SCoordRect* rect, vector<CNWAligner::TScore>* e,
-               vector<CNWAligner::TScore>* f, vector<CNWAligner::TScore>* g,
-               vector<unsigned char>* trace, bool free_corner_fgap );
-    
-    virtual void* Main();
-
-protected:
-        
-    virtual ~CMTRunHalf() {}
-    
-    const CMMAligner           *m_aligner;
-    const SCoordRect           *m_rect;
-    vector<CNWAligner::TScore> *m_E, *m_F, *m_G;
-    vector<unsigned char>      *m_trace;
-    bool                       m_free_corner_fgap;
-    bool                       m_RunOnTop;
-};
-
-
-CMTRunHalf::CMTRunHalf (
-    const CMMAligner* aligner, bool top_half, const SCoordRect* rect,
-    vector<CNWAligner::TScore>* e,
-    vector<CNWAligner::TScore>* f,
-    vector<CNWAligner::TScore>* g,
-    vector<unsigned char>* trace, bool free_corner_fgap ):
-
-    m_aligner(aligner), m_RunOnTop(top_half), m_rect(rect), m_E(e), m_F(f),
-    m_G(g), m_trace(trace), m_free_corner_fgap(free_corner_fgap)
-{
-}
-
-void* CMTRunHalf::Main()
-{
-    if(m_RunOnTop) {
-        m_aligner->x_RunTop(
-             *m_rect, *m_E, *m_F, *m_G, *m_trace, m_free_corner_fgap);
-    }
-    else {
-        m_aligner->x_RunBtm(
-             *m_rect, *m_E, *m_F, *m_G, *m_trace, m_free_corner_fgap);
-    }
- 
-    return 0;
-}
-
-//  CMMAligner
-//
 
 
 CMMAligner::CMMAligner( const char* seq1, size_t len1,
@@ -101,9 +47,16 @@ CMMAligner::CMMAligner( const char* seq1, size_t len1,
     throw(CNWAlignerException):
     CNWAligner(seq1, len1, seq2, len2, matrix_type),
     m_score(kMin_Int),
-    m_mt(false)
+    m_mt(false), m_maxthreads(1)
 {
 }
+
+
+void CMMAligner::EnableMultipleThreads(bool allow)
+{
+    m_maxthreads = (m_mt = allow)? GetCpuCount(): 1;
+}
+
 
 CNWAligner::TScore CMMAligner::Run()
 {
@@ -114,13 +67,15 @@ CNWAligner::TScore CMMAligner::Run()
     x_LoadScoringMatrix();
     SCoordRect m (0, 0, m_SeqLen1 - 1, m_SeqLen2 - 1);
     x_DoSubmatrix(m, m_TransList.end(), false, false); // top-level call
-    
+
+    // reverse_copy not supported by some compilers
+    list<ETranscriptSymbol>::const_iterator ib = m_TransList.begin(),
+        ie = m_TransList.end(), ii = ib;
+    size_t nsize = m_TransList.size() - 1;
     m_Transcript.clear();
-    m_Transcript.resize(m_TransList.size() - 1);
-    list<ETranscriptSymbol>::reverse_iterator ib = m_TransList.rbegin(),
-        ie = m_TransList.rend();
-    --ie;
-    copy(ib, ie, m_Transcript.begin());
+    m_Transcript.resize(nsize);
+    for(size_t k = 1; k <= nsize; ++k)
+        m_Transcript[nsize - k] = *++ii;
 
     return m_score;
 }
@@ -149,7 +104,10 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool top_level = submatr.i1 == 0 && submatr.j1 == 0 &&
         submatr.i2 == m_SeqLen1-1 && submatr.j2 == m_SeqLen2-1;
 
+    DEFINE_STATIC_FAST_MUTEX (masterlist_mutex);
+
     if(dimI < 3 || dimJ < 3) { // terminal case
+        CFastMutexGuard guard (masterlist_mutex);
         list<ETranscriptSymbol> lts;
         TScore score = x_RunTerm(submatr, left_top, right_bottom, lts);
         if(top_level) m_score = score;
@@ -168,10 +126,9 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     SCoordRect rbtm (I + 1, submatr.j1, submatr.i2 , submatr.j2);
     vector<TScore> vEbtm (dim), vFbtm (dim), vGbtm (dim);
     vector<unsigned char> trace_btm (dim);
-
-
-    if( /* m_mt */ false) {
-        CMTRunHalf* thr2 = new CMTRunHalf ( this, true, &rtop,
+    
+    if( m_mt && m_maxthreads > 1 && MM_RequestNewThread(m_maxthreads) ) {
+        CThreadRunOnTop* thr2 = new CThreadRunOnTop ( this, &rtop,
                                             &vEtop, &vFtop, &vGtop,
                                             &trace_top, left_top );
         thr2->Run();
@@ -269,7 +226,6 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     subpath_left.splice( subpath_left.end(), subpath_right );
 
     list<ETranscriptSymbol>::iterator ti0, ti1;
-    DEFINE_STATIC_FAST_MUTEX (masterlist_mutex);
     {{
         CFastMutexGuard  guard (masterlist_mutex);
         ti0 = translist_pos;
@@ -277,15 +233,18 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
         m_TransList.splice( translist_pos, subpath_left );
         ++ti0;
         ti1 = translist_pos;
-    }}  
+    }}
 
     // Recurse submatrices:
+    SCoordRect rlt;
     if(!bNoLT) {
         // left top
         int left_bnd = submatr.j1 + trans_pos - steps_left - 1;
         if(left_bnd >= submatr.j1) {
-            SCoordRect rlt (submatr.i1, submatr.j1, I - 1, left_bnd);
-            x_DoSubmatrix(rlt, ti0, left_top, rb);
+            rlt.i1 = submatr.i1;
+            rlt.j1 = submatr.j1;
+            rlt.i2 = I - 1;
+            rlt.j2 = left_bnd;
         }
         else {
             NCBI_THROW(
@@ -295,12 +254,15 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
         }
     }
 
+    SCoordRect rrb;
     if(!bNoRB) {
         // right bottom
-        int right_bnd = submatr.j1 + trans_pos + steps_right; 
+        int right_bnd = submatr.j1 + trans_pos + steps_right;
         if(right_bnd <= submatr.j2) {
-            SCoordRect rrb (I + 2, right_bnd, submatr.i2, submatr.j2);
-            x_DoSubmatrix(rrb, ti1, lt, right_bottom);
+            rrb.i1 = I + 2;
+            rrb.j1 = right_bnd;
+            rrb.i2 = submatr.i2;
+            rrb.j2 = submatr.j2;
         }
         else {
             NCBI_THROW(
@@ -308,6 +270,40 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
                        eInternal,
                        "Assertion: Right boundary out of range");
         }
+    }
+
+    if(!bNoLT && !bNoRB) {
+        if( m_mt && m_maxthreads > 1 && MM_RequestNewThread(m_maxthreads) ) {
+            // find out which rect is larger
+            if(rlt.GetArea() > rrb.GetArea()) {
+                // do rb in a second thread
+                CThread* thr2 = new CThreadDoSM( this, &rrb, ti1,
+                                                 lt, right_bottom);
+                thr2->Run();
+                // do lt in this thread
+                x_DoSubmatrix(rlt, ti0, left_top, rb);
+                thr2->Join(0);
+            }
+            else {
+                // do lt in a second thread
+                CThread* thr2 = new CThreadDoSM( this, &rlt, ti0,
+                                                 left_top, rb);
+                thr2->Run();
+                // do rb in this thread
+                x_DoSubmatrix(rrb, ti1, lt, right_bottom);
+                thr2->Join(0);
+            }
+        }
+        else {  // just do both
+            x_DoSubmatrix(rlt, ti0, left_top, rb);
+            x_DoSubmatrix(rrb, ti1, lt, right_bottom);
+        }
+    }
+    else if(!bNoLT) {
+        x_DoSubmatrix(rlt, ti0, left_top, rb);
+    }
+    else if(!bNoRB) {
+        x_DoSubmatrix(rrb, ti1, lt, right_bottom);
     }
 }
 
@@ -793,6 +789,9 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $Log $
+ * $Log$
+ * Revision 1.3  2003/01/22 13:40:09  kapustin
+ * Implement multithread algorithm
+ *
  * ===========================================================================
  */
