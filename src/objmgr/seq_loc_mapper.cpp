@@ -80,8 +80,10 @@ bool CMappingRange::CanMap(TSeqPos from,
     if (from > m_Src_to || to < m_Src_from) {
         return false;
     }
-    return SameOrientation(is_set_strand ? strand : eNa_strand_unknown,
-        m_Src_strand)  ||  (m_Src_strand == eNa_strand_unknown);
+    return (m_Src_strand == eNa_strand_unknown)  ||
+        (strand == eNa_strand_unknown)  ||
+        SameOrientation(is_set_strand ? strand : eNa_strand_unknown,
+        m_Src_strand);
 }
 
 
@@ -115,8 +117,14 @@ bool CMappingRange::Map_Strand(bool is_set_strand,
                                ENa_strand* dst) const
 {
     _ASSERT(dst);
+    if ( m_Reverse ) {
+        // Always convert to reverse strand
+        *dst = Reverse(src);
+        return true;
+    }
     if (is_set_strand) {
-        *dst = m_Reverse ? Reverse(src) : src;
+        // Use original strand if set
+        *dst = src;
         return true;
     }
     if (m_Dst_strand != eNa_strand_unknown) {
@@ -148,13 +156,15 @@ CInt_fuzz::ELim CMappingRange::x_ReverseFuzzLim(CInt_fuzz::ELim lim) const
 }
 
 
-CMappingRange::TRangeFuzz CMappingRange::Map_Fuzz(TRangeFuzz& fuzz) const
+CMappingRange::TRangeFuzz CMappingRange::Map_Fuzz(const TRangeFuzz& fuzz) const
 {
+    TRangeFuzz res = fuzz;
     // Maps some fuzz types to reverse strand
     if ( !m_Reverse ) {
-        return fuzz;
+        return res;
     }
-    TRangeFuzz res(fuzz.second, fuzz.first);
+    // Swap ends
+    res = TRangeFuzz(fuzz.second, fuzz.first);
     if ( res.first ) {
         switch ( res.first->Which() ) {
         case CInt_fuzz::e_Lim:
@@ -457,33 +467,75 @@ void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
                                         const TRange&         range,
                                         const TRangeFuzz&     fuzz)
 {
+    bool reverse = IsReverse(ENa_strand(strand_idx));
     switch ( m_MergeFlag ) {
     case eMergeContained:
     case eMergeAll:
         {
-            x_GetMappedRanges(id, strand_idx)
-                .push_back(TRangeWithFuzz(range, fuzz));
+            if ( reverse ) {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_front(TRangeWithFuzz(range, fuzz));
+            }
+            else {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_back(TRangeWithFuzz(range, fuzz));
+            }
             break;
         }
     case eMergeNone:
+        {
+            x_PushRangesToDstMix();
+            if ( reverse ) {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_front(TRangeWithFuzz(range, fuzz));
+            }
+            else {
+                x_GetMappedRanges(id, strand_idx)
+                    .push_back(TRangeWithFuzz(range, fuzz));
+            }
+            break;
+        }
     case eMergeAbutting:
     default:
         {
             TRangesById::iterator it = m_MappedLocs.begin();
-            if (it == m_MappedLocs.end()  ||
-                it->first != id  ||
-                (int)it->second.size() <= strand_idx  ||
-                it->second.empty()  ||
-                it->second[strand_idx].back().first.GetToOpen() <
-                range.GetFrom()) {
-                x_PushRangesToDstMix();
-                x_GetMappedRanges(id, strand_idx)
-                    .push_back(TRangeWithFuzz(range, fuzz));
+            // Start new sub-location for:
+            // New ID
+            bool no_merge = it == m_MappedLocs.end()  ||  it->first != id;
+            // New strand
+            no_merge |= (int)it->second.size() <= strand_idx
+                ||  it->second.empty();
+            // Ranges are not abutting
+            if ( reverse ) {
+                no_merge |= it->second[strand_idx].front().first.GetFrom() !=
+                    range.GetToOpen();
             }
             else {
-                TRangeWithFuzz& last_rg = it->second[strand_idx].back();
-                last_rg.first.SetTo(range.GetTo());
-                last_rg.second.second = fuzz.second;
+                no_merge |= it->second[strand_idx].back().first.GetToOpen() !=
+                    range.GetFrom();
+            }
+            if ( no_merge ) {
+                x_PushRangesToDstMix();
+                if ( reverse ) {
+                    x_GetMappedRanges(id, strand_idx)
+                        .push_front(TRangeWithFuzz(range, fuzz));
+                }
+                else {
+                    x_GetMappedRanges(id, strand_idx)
+                        .push_back(TRangeWithFuzz(range, fuzz));
+                }
+            }
+            else {
+                if ( reverse ) {
+                    TRangeWithFuzz& last_rg = it->second[strand_idx].front();
+                    last_rg.first.SetFrom(range.GetFrom());
+                    last_rg.second.first = fuzz.first;
+                }
+                else {
+                    TRangeWithFuzz& last_rg = it->second[strand_idx].back();
+                    last_rg.first.SetTo(range.GetTo());
+                    last_rg.second.second = fuzz.second;
+                }
             }
         }
     }
@@ -1273,6 +1325,97 @@ CSeq_loc_Mapper::x_BeginMappingRanges(CSeq_id_Handle id,
 }
 
 
+bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
+                                     bool is_set_strand,
+                                     ENa_strand src_strand,
+                                     const TRangeFuzz& src_fuzz,
+                                     TSortedMappings& mappings,
+                                     size_t cvt_idx,
+                                     TSeqPos* last_src_to)
+{
+    const CMappingRange& cvt = *mappings[cvt_idx];
+    if ( !cvt.CanMap(src_rg.GetFrom(), src_rg.GetTo(),
+        is_set_strand, src_strand) ) {
+        // Can not map the range
+        return false;
+    }
+
+    TSeqPos left = src_rg.GetFrom();
+    TSeqPos right = src_rg.GetTo();
+    bool partial_left = false;
+    bool partial_right = false;
+
+    bool reverse = IsReverse(src_strand);
+
+    if (left < cvt.m_Src_from) {
+        left = cvt.m_Src_from;
+        if ( !reverse ) {
+            // Partial if there's gap between left and last_src_to
+            partial_left = left > *last_src_to + 1;
+        }
+        else {
+            // Partial if there's gap between left and next cvt. right end
+            partial_left = (cvt_idx == mappings.size() - 1)  ||
+                (mappings[cvt_idx + 1]->m_Src_to + 1 < left);
+        }
+    }
+    if (right > cvt.m_Src_to) {
+        right = cvt.m_Src_to;
+        if ( !reverse ) {
+            // Partial if there's gap between right and next cvt. left end
+            partial_right = (cvt_idx == mappings.size() - 1)  ||
+                (mappings[cvt_idx + 1]->m_Src_from > right + 1);
+        }
+        else {
+            // Partial if there's gap between left and last_src_to
+            partial_right = left > *last_src_to + 1;
+        }
+    }
+    if (right < left) {
+        // Empty range
+        return false;
+    }
+    *last_src_to = reverse ? left : right;
+
+    TRangeFuzz fuzz;
+
+    if ( partial_left ) {
+        // Set fuzz-from if a range was skipped on the left
+        fuzz.first.Reset(new CInt_fuzz);
+        fuzz.first->SetLim(CInt_fuzz::eLim_lt);
+    }
+    else {
+        if ( (!reverse  &&  cvt_idx == 0)  ||
+            (reverse  &&  cvt_idx == mappings.size() - 1) ) {
+            // Preserve fuzz-from on the left end
+            fuzz.first = src_fuzz.first;
+        }
+    }
+    if ( partial_right ) {
+        // Set fuzz-to if a range will be skipped on the right
+        fuzz.second.Reset(new CInt_fuzz);
+        fuzz.second->SetLim(CInt_fuzz::eLim_gt);
+    }
+    else {
+        if ( (reverse  &&  cvt_idx == 0)  ||
+            (!reverse  &&  cvt_idx == mappings.size() - 1) ) {
+            // Preserve fuzz-to on the right end
+            fuzz.second = src_fuzz.second;
+        }
+    }
+
+    TRangeFuzz mapped_fuzz = cvt.Map_Fuzz(fuzz);
+    TRange rg = cvt.Map_Range(left, right);
+    ENa_strand dst_strand;
+    bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
+        src_strand, &dst_strand);
+    x_PushMappedRange(cvt.m_Dst_id_Handle,
+        is_set_dst_strand ? int(dst_strand) + 1 : 0,
+        rg, mapped_fuzz);
+    return true;
+}
+
+
 bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
                                     TRange           src_rg,
                                     bool             is_set_strand,
@@ -1288,75 +1431,25 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
     CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
 
     // Sorted mapping ranges
-    typedef vector< CRef<CMappingRange> > TSortedMappings;
     TSortedMappings mappings;
     TRangeIterator rg_it = x_BeginMappingRanges(
         src_idh, src_rg.GetFrom(), src_rg.GetTo());
     for ( ; rg_it; ++rg_it) {
         mappings.push_back(rg_it->second);
     }
-    sort(mappings.begin(), mappings.end(), CMappingRangeRef_Less());
+    if ( IsReverse(src_strand) ) {
+        sort(mappings.begin(), mappings.end(), CMappingRangeRef_LessRev());
+    }
+    else {
+        sort(mappings.begin(), mappings.end(), CMappingRangeRef_Less());
+    }
     TSeqPos last_src_to = 0;
     for (size_t idx = 0; idx < mappings.size(); ++idx) {
-        const CMappingRange& cvt = *mappings[idx];
-        if ( !cvt.CanMap(src_rg.GetFrom(), src_rg.GetTo(),
-            is_set_strand, src_strand) ) {
-            continue;
-        }
-        TSeqPos from = src_rg.GetFrom();
-        TSeqPos to = src_rg.GetTo();
-        TRangeFuzz fuzz = cvt.Map_Fuzz(orig_fuzz);
-        if (from < cvt.m_Src_from) {
-            from = cvt.m_Src_from;
-            // Set partial only if a non-empty range is to be skipped
-            if (cvt.m_Src_from > last_src_to + 1) {
-                if ( cvt.m_Reverse ) {
-                    if (!fuzz.second) {
-                        fuzz.second.Reset(new CInt_fuzz);
-                    }
-                    fuzz.second->SetLim(CInt_fuzz::eLim_gt);
-                }
-                else {
-                    if (!fuzz.first) {
-                        fuzz.first.Reset(new CInt_fuzz);
-                    }
-                    fuzz.first->SetLim(CInt_fuzz::eLim_lt);
-                }
-                m_Partial = true;
-            }
-        }
-        last_src_to = cvt.m_Src_to;
-        if ( to > cvt.m_Src_to ) {
-            to = cvt.m_Src_to;
-            // Set partial only if a non-empty range is to be skipped
-            if (idx == mappings.size() - 1 ||
-                mappings[idx+1]->m_Src_from > last_src_to + 1) {
-                if ( cvt.m_Reverse ) {
-                    if (!fuzz.first) {
-                        fuzz.first.Reset(new CInt_fuzz);
-                    }
-                    fuzz.first->SetLim(CInt_fuzz::eLim_lt);
-                }
-                else {
-                    if (!fuzz.second) {
-                        fuzz.second.Reset(new CInt_fuzz);
-                    }
-                    fuzz.second->SetLim(CInt_fuzz::eLim_gt);
-                }
-                m_Partial = true;
-            }
-        }
-        if ( from > to ) {
-            continue;
-        }
-        TRange rg = cvt.Map_Range(from, to);
-        ENa_strand dst_strand;
-        bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
-            src_strand, &dst_strand);
-        x_PushMappedRange(cvt.m_Dst_id_Handle,
-            is_set_dst_strand ? int(dst_strand) + 1 : 0,
-            rg, fuzz);
-        res = true;
+        res |= x_MapNextRange(src_rg,
+                              is_set_strand, src_strand,
+                              orig_fuzz,
+                              mappings, idx,
+                              &last_src_to);
     }
     return res;
 }
@@ -1922,6 +2015,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/10/27 20:01:04  grichenk
+* Fixed mapping: strands, circular locations, fuzz.
+*
 * Revision 1.28  2004/10/25 14:04:21  grichenk
 * Fixed order of ranges in mapped seq-loc.
 *

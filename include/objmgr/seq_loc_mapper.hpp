@@ -80,7 +80,7 @@ public:
     TSeqPos Map_Pos(TSeqPos pos) const;
     TRange Map_Range(TSeqPos from, TSeqPos to) const;
     bool Map_Strand(bool is_set_strand, ENa_strand src, ENa_strand* dst) const;
-    TRangeFuzz Map_Fuzz(TRangeFuzz& fuzz) const;
+    TRangeFuzz Map_Fuzz(const TRangeFuzz& fuzz) const;
 
 private:
     CInt_fuzz::ELim x_ReverseFuzzLim(CInt_fuzz::ELim lim) const;
@@ -97,6 +97,7 @@ private:
     friend class CSeq_loc_Mapper;
     friend class CSeq_align_Mapper;
     friend struct CMappingRangeRef_Less;
+    friend struct CMappingRangeRef_LessRev;
 };
 
 
@@ -241,6 +242,8 @@ private:
     typedef CSeq_align::C_Segs::TDendiag TDendiag;
     typedef CSeq_align::C_Segs::TStd     TStd;
 
+    typedef vector< CRef<CMappingRange> > TSortedMappings;
+
     // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
     int x_CheckSeqWidth(const CSeq_id& id, int width);
     int x_CheckSeqWidth(const CSeq_loc& loc,
@@ -287,6 +290,13 @@ private:
                                         TSeqPos from,
                                         TSeqPos to);
 
+    bool x_MapNextRange(const TRange& src_rg,
+                        bool is_set_strand,
+                        ENa_strand src_strand,
+                        const TRangeFuzz& src_fuzz,
+                        TSortedMappings& mappings,
+                        size_t cvt_idx,
+                        TSeqPos* last_src_to);
     bool x_MapInterval(const CSeq_id&   src_id,
                        TRange           src_rg,
                        bool             is_set_strand,
@@ -350,19 +360,42 @@ struct CMappingRangeRef_Less
 };
 
 
+struct CMappingRangeRef_LessRev
+{
+    bool operator()(const CRef<CMappingRange>& x,
+                    const CRef<CMappingRange>& y) const;
+};
+
+
 inline
 bool CMappingRangeRef_Less::operator()(const CRef<CMappingRange>& x,
                                        const CRef<CMappingRange>& y) const
 {
-    if (x->m_Src_id_Handle != y->m_Src_id_Handle) {
-        return x->m_Src_id_Handle < y->m_Src_id_Handle;
-    }
     // Leftmost first
     if (x->m_Src_from != y->m_Src_from) {
         return x->m_Src_from < y->m_Src_from;
     }
     // Longest first
-    return x->m_Src_to > y->m_Src_to;
+    if (x->m_Src_to != y->m_Src_to) {
+        return x->m_Src_to > y->m_Src_to;
+    }
+    return x < y;
+}
+
+
+inline
+bool CMappingRangeRef_LessRev::operator()(const CRef<CMappingRange>& x,
+                                          const CRef<CMappingRange>& y) const
+{
+    // Rightmost first
+    if (x->m_Src_to != y->m_Src_to) {
+        return x->m_Src_to > y->m_Src_to;
+    }
+    // Longest first
+    if (x->m_Src_from != y->m_Src_from) {
+        return x->m_Src_from < y->m_Src_from;
+    }
+    return x > y;
 }
 
 
@@ -457,6 +490,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/10/27 20:01:04  grichenk
+* Fixed mapping: strands, circular locations, fuzz.
+*
 * Revision 1.19  2004/10/25 14:04:21  grichenk
 * Fixed order of ranges in mapped seq-loc.
 *
