@@ -290,10 +290,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 6.37  2003/11/03 20:04:35  lavr
- * CStreamUtils::Readsome() reorganized: s_Readsome() introduced.
- * Add and elaborate notes about I/O on MSVC and MIPSPro.
- * Allow to use stream readsome() on these two compilers.
+ * Revision 6.38  2003/11/03 20:06:49  lavr
+ * Fix log message of the previous commit:
+ * CConn_Streambuf::xsgetn() made standard-conforming
  *
  * Revision 6.36  2003/10/22 18:16:09  lavr
  * More consistent use of buffer pointers in the implementation
