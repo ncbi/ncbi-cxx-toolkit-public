@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2001/05/11 14:04:08  grichenk
+* + CConn_Streambuf::xsgetn(), CConn_Streambuf::showmanyc()
+*
 * Revision 6.3  2001/01/12 23:49:20  lavr
 * Timeout and GetCONN method added
 *
@@ -64,6 +67,8 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
+    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
+    virtual streamsize  showmanyc(void);
 
     virtual int         sync(void);
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);

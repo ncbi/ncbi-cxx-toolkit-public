@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.6  2001/05/11 14:04:07  grichenk
+* + CConn_Streambuf::xsgetn(), CConn_Streambuf::showmanyc()
+*
 * Revision 6.5  2001/03/26 18:36:39  lavr
 * CT_EQ_INT_TYPE used throughout to compare CT_INT_TYPE values
 *
@@ -135,10 +138,12 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
 CT_INT_TYPE CConn_Streambuf::underflow(void)
 {
+    /* Flush output buffer, if tied up to it */
     if (m_Tie  &&  pbase()  &&  pptr() > pbase()) {
         _VERIFY(!CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF));
     }
 
+    /* Read from the connection */
     size_t n_read;
     EIO_Status status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize,
                                   &n_read, eIO_Plain);
@@ -147,9 +152,72 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     x_CheckThrow(status, "underflow(): CONN_Read() failed");
     _ASSERT(n_read);
 
+    /* Update input buffer with the data we just read */
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
     return CT_TO_INT_TYPE(m_ReadBuf[0]);
+}
+
+
+static const STimeout s_ZeroTimeout = {0, 0};
+
+
+streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
+{
+    /* Flush output buffer, if tied up to it */
+    if (m_Tie  &&  pbase()  &&  pptr() > pbase()) {
+        _VERIFY(!CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF));
+    }
+
+    if (!buf  ||  !n)
+        return 0;
+
+    size_t n_read;
+
+    /* Read from the C++ stream buffer */
+    if (gptr() < egptr()) {
+        size_t n_buffered = egptr() - gptr();
+        n_read = (n <= n_buffered) ? n : n_buffered;
+        memcpy(buf, gptr(), n_read);
+        gbump((int) n_read);
+        if (n_read == n)
+            return n;
+        buf += n_read;
+    } else {
+        n_read = 0;
+    }
+
+    /* Do not even try to read directly from the connection if it
+     * can lead to waiting while we already have read at least some data.
+     */
+    if (n_read > 0  &&
+        CONN_Wait(m_Conn, eIO_Read, &s_ZeroTimeout) != eIO_Success) {
+        return n_read;
+    }
+
+    /* Read directly from the connection */
+    size_t x_read;
+    CONN_Read(m_Conn, buf, n - n_read, &x_read, eIO_Plain);
+
+    return (streamsize) (n_read + x_read);
+}
+
+
+streamsize CConn_Streambuf::showmanyc(void)
+{
+    /* Flush output buffer, if tied up to it */
+    if (m_Tie  &&  pbase()  &&  pptr() > pbase()) {
+        _VERIFY(!CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF));
+    }
+
+    switch (CONN_Wait(m_Conn, eIO_Read, CONN_GetTimeout(m_Conn, eIO_Read))) {
+    case eIO_Success:
+        return 1;       /* can read at least 1 byte */
+    case eIO_Closed:
+        return -1;      /* eof */
+    default:
+        return 0;       /* no data is immediately available */
+    }
 }
 
 
