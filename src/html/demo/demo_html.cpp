@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/11 15:52:01  vakatov
+* Added missing "return" (1 on error)
+*
 * Revision 1.3  1999/05/11 02:53:59  vakatov
 * Moved CGI API from "corelib/" to "cgi/"
 *
@@ -60,33 +63,35 @@ extern "C" int main()
     CHTML_form * Form;
 
     try {
-	// write out the Content-type header
-	Response.WriteHeader();
+        // write out the Content-type header
+        Response.WriteHeader();
 
-	// create the tags
-	Html = new CHTML_html;
-	Body = new CHTML_body;
-	Form = new CHTML_form("cgidemo", CHTML_form::eGet);
+        // create the tags
+        Html = new CHTML_html;
+        Body = new CHTML_body;
+        Form = new CHTML_form("cgidemo", CHTML_form::eGet);
 
-	// stick them together
-	Html->AppendChild(Body);
-	Body->AppendChild(Form);
-	Form->AppendChild(new CHTML_text("name"));
-	Form->AppendChild(new CHTML_submit("Submit"));
+        // stick them together
+        Html->AppendChild(Body);
+        Body->AppendChild(Form);
+        Form->AppendChild(new CHTML_text("name"));
+        Form->AppendChild(new CHTML_submit("Submit"));
 
-	// print out the results
-	Html->Print(Response.out());
-	Response.Flush();
+        // print out the results
+        Html->Print(Response.out());
+        Response.Flush();
 
-	return 0;  
+        return 0;  
     }
     // check to see if there were any errors
     catch (exception exc) { 
-	// deallocate memory in case of error
-	delete Html;
-	delete Body;
-	delete Form;
+        // deallocate memory in case of error
+        delete Html;
+        delete Body;
+        delete Form;
         NcbiCerr << "\n" << exc.what() << NcbiEndl;
     }
 
+    // error
+    return 1;
 }
