@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/08/09 16:23:34  lavr
+ * Added: fLOG_OmitNoteLevel to log message format flags
+ *
  * Revision 6.9  2001/07/30 14:39:47  lavr
  * Do not include date/time in default logging (for ncbidiag.cpp compatibility)
  *
@@ -169,7 +172,8 @@ typedef enum {
     fLOG_Level    = 0x1,
     fLOG_Module   = 0x2,
     fLOG_FileLine = 0x4, /* (must always be printed for "eLOG_Trace" level) */
-    fLOG_DateTime = 0x8
+    fLOG_DateTime = 0x8,
+    fLOG_OmitNoteLevel = 0x4000 /* Do not add "NOTE:" if eLOG_Note is level */
 } ELOG_Format;
 typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
 #define fLOG_Short  (fLOG_Level)
