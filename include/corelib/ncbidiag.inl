@@ -74,6 +74,8 @@ class CDiagBuffer
     NCBI_XNCBI_EXPORT friend void SetDiagFixedPostLevel(const EDiagSev post_sev);
     NCBI_XNCBI_EXPORT friend bool DisableDiagPostLevelChange(bool disable_change);
     NCBI_XNCBI_EXPORT friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
+    NCBI_XNCBI_EXPORT friend void IgnoreDiagDieLevel(bool ignore,
+                                                     EDiagSev* prev_sev);
 
     // Others
     NCBI_XNCBI_EXPORT friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
@@ -238,12 +240,14 @@ bool operator< (const ErrCode& ec1, const ErrCode& ec2)
 inline
 const CNcbiDiag& Reset(const CNcbiDiag& diag)  {
     diag.m_Buffer.Reset(diag);
+    diag.SetErrorCode(0, 0);
     return diag;
 }
 
 inline
 const CNcbiDiag& Endm(const CNcbiDiag& diag)  {
     diag.m_Buffer.EndMess(diag);
+    diag.SetErrorCode(0, 0);
     return diag;
 }
 
@@ -419,6 +423,10 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/04/25 20:53:16  lavr
+ * Introduce draft version of IgnoreDiagDieLevel()
+ * Clear error code/subcode from Endm() and Reset() manipulators
+ *
  * Revision 1.35  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
