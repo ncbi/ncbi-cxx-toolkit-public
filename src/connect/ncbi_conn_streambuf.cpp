@@ -165,40 +165,46 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
     if (!buf  ||  m <= 0)
         return 0;
-
     size_t n = (size_t) m;
-    size_t n_read;
 
+    size_t n_read;
     // read from the memory buffer
     if (gptr() < egptr()) {
-        size_t n_buffered = egptr() - gptr();
-        n_read = (n <= n_buffered) ? n : n_buffered;
+        n_read = egptr() - gptr();
+        if (n_read > n)
+            n_read = n;
         memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
         gbump((int) n_read);
-        if (n_read == n)
-            return n;
         buf += n_read;
-    } else {
+        n -= n_read;
+    } else
         n_read = 0;
-    }
 
     /* Do not even try to read directly from the connection if it
      * can lead to waiting while we already have read at least some data.
      */
-    if (n_read > 0  &&
-        CONN_Wait(m_Conn, eIO_Read, &s_ZeroTimeout) != eIO_Success) {
-        return n_read;
+    if (!n  ||  (n_read > 0  &&
+                 CONN_Wait(m_Conn, eIO_Read, &s_ZeroTimeout) != eIO_Success)) {
+        return (streamsize) n_read;
     }
 
-    // read directly from the connection
     size_t x_read;
-    CONN_Read(m_Conn, buf, (n - n_read)*sizeof(CT_CHAR_TYPE),
-              &x_read, eIO_ReadPlain);
-    if (x_read /= sizeof(CT_CHAR_TYPE)) {
-        // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-        *m_ReadBuf = buf[x_read - 1];
-        setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1);
-    }
+    // read directly from the connection
+    if (n > (size_t) m_BufSize) {
+        CONN_Read(m_Conn, buf, n*sizeof(CT_CHAR_TYPE), &x_read, eIO_ReadPlain);
+        if (x_read /= sizeof(CT_CHAR_TYPE)) {
+            // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
+            *m_ReadBuf = buf[x_read - 1];
+            setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1);
+        }
+    } else if (underflow() != CT_EOF) {
+        x_read = egptr() - gptr();
+        if (x_read > n)
+            x_read = n;
+        memcpy(buf, gptr(), x_read*sizeof(CT_CHAR_TYPE));
+        gbump((int) x_read);
+    } else
+        x_read = 0;
 
     return (streamsize) (n_read + x_read);
 }
@@ -261,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/08/27 20:27:36  lavr
+ * xsgetn(): if reading from external source try to pull as much as possible
+ *
  * Revision 6.18  2002/08/07 16:32:12  lavr
  * Changed EIO_ReadMethod enums accordingly
  *
