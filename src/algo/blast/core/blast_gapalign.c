@@ -644,6 +644,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     GapStateArrayStruct* state_struct;
     Uint1** edit_script;
     Uint1* edit_script_row;
+    Int4 *edit_start_offset;
     Int4 orig_b_index;
     Uint1 script, next_script, script_row, script_col;
     Int4 align_len;
@@ -671,13 +672,28 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     data.last = 0;
     *sapp = S;
     GapPurgeState(gap_align->state_struct);
+
+    /* Conceptually, traceback requires a byte array of size
+       MxN. To save on memory, each row of the array is allocated
+       separately. edit_script[i] points to the storage reserved
+       for row i, and edit_start_offset[i] gives the offset into
+       the B sequence corresponding to element 0 of edit_script[i] */
+
     edit_script = (Uint1**) malloc(sizeof(Uint1*)*(M+1));
+    edit_start_offset = (Int4*) malloc(sizeof(Int4)*(M+1));
+
+    /* allocate storage for the first row of the traceback
+       array. Because row elements correspond to gaps in A,
+       the alignment can only go x_dropoff/gap_extend positions
+       at most before failing the X dropoff criterion */
+
     if (gap_extend > 0)
         state_struct = GapGetState(&gap_align->state_struct, 
                                    x_dropoff / gap_extend + 5);
     else
         state_struct = GapGetState(&gap_align->state_struct, N + 3);
     edit_script[0] = state_struct->state_array;
+    edit_start_offset[0] = 0;
     edit_script_row = state_struct->state_array;
 
     score_array = (BlastGapDP*)malloc((N + 2) * sizeof(BlastGapDP));
@@ -709,17 +725,27 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     for (a_index = 1; a_index <= M; a_index++) {
 
         /* Set up the next row of the edit script; this involves
-           allocating memory for the row, then pointing to it */
+           allocating memory for the row, then pointing to it.
+           It is not necessary to allocate space for offsets less
+           than first_b_index (since the inner loop will never 
+           look at them) and the alignment can go at most
+           x_dropoff/gap_extend positions to the right beyond b_size
+           before failing the X dropoff test. */
 
         if (gap_extend > 0)
             state_struct = GapGetState(&gap_align->state_struct, 
-                          b_size - first_b_index + x_dropoff / gap_extend + 5);
+                          b_size + x_dropoff / gap_extend - first_b_index + 5);
         else
             state_struct = GapGetState(&gap_align->state_struct, 
                           N + 3 - first_b_index);
         edit_script[a_index] = state_struct->state_array + 
                                 state_struct->used + 1;
-        edit_script_row = edit_script[a_index];
+        edit_start_offset[a_index] = first_b_index;
+
+        /* the inner loop assumes the current traceback
+           row begins at offset zero of B */
+
+        edit_script_row = edit_script[a_index] - first_b_index;
         orig_b_index = first_b_index;
 
         if (!(gap_align->positionBased)) {
@@ -876,7 +902,13 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     edit_script_row = (Uint1 *)malloc(a_index + b_index);
 
     for (i = 0; a_index > 0 || b_index > 0; i++) {
-        next_script = edit_script[a_index][b_index];
+        /* Retrieve the next action to perform. Rows of
+           the traceback array do not necessarily start
+           at offset zero of B, so a correction is needed
+           to point to the correct position */
+
+        next_script = 
+            edit_script[a_index][b_index - edit_start_offset[a_index]];
 
         switch(script) {
         case SCRIPT_INS:
@@ -933,6 +965,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
             DEL_(1)      
     }
       
+    sfree(edit_start_offset);
     sfree(edit_script_row);
     sfree(edit_script);
     sfree(score_array);
@@ -1256,6 +1289,7 @@ static Int4 OOF_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 orig_b_index;
     Int1 script, next_script;
     Int4 align_len;
+    Int4 *edit_start_offset;
 
     /* do initialization and sanity-checking */
 
@@ -1282,9 +1316,21 @@ static Int4 OOF_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     data.last = 0;
     *sapp = S;
     GapPurgeState(gap_align->state_struct);
+
+    /* Conceptually, traceback requires a byte array of size
+       MxN. To save on memory, each row of the array is allocated
+       separately. edit_script[i] points to the storage reserved
+       for row i, and edit_start_offset[i] gives the offset into
+       the B sequence corresponding to element 0 of edit_script[i] */
+
     edit_script = (Uint1**) malloc(sizeof(Uint1*)*(M+1));
+    edit_start_offset = (Int4*) malloc(sizeof(Int4)*(M+1));
+
+    /* allocate storage for the first row of the traceback array */
+
     state_struct = GapGetState(&gap_align->state_struct, N + 5);
     edit_script[0] = state_struct->state_array;
+    edit_start_offset[0] = 0;
     edit_script_row = state_struct->state_array;
 
     /* Allocate and fill in the auxiliary 
@@ -1336,13 +1382,22 @@ static Int4 OOF_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     for (a_index = 1; a_index <= M; a_index++) {
 
         /* Set up the next row of the edit script; this involves
-           allocating memory for the row, then pointing to it */
+           allocating memory for the row, then pointing to it.
+           It is not necessary to allocate space for offsets less
+           than first_b_index (since the inner loop will never 
+           look at them) */
 
         state_struct = GapGetState(&gap_align->state_struct, 
-                          N + 5 - first_b_index);
+                                    N + 5 - first_b_index);
+
         edit_script[a_index] = state_struct->state_array + 
                                 state_struct->used + 1;
-        edit_script_row = edit_script[a_index];
+        edit_start_offset[a_index] = first_b_index;
+
+        /* the inner loop assumes the current traceback
+           row begins at offset zero of B */
+
+        edit_script_row = edit_script[a_index] - first_b_index;
         orig_b_index = first_b_index;
 
         if (!(gap_align->positionBased)) {
@@ -1702,7 +1757,13 @@ static Int4 OOF_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     edit_script_row = (Uint1 *)malloc(a_index + b_index);
 
     while (a_index > 0 || b_index > 0) {
-        next_script = edit_script[a_index][b_index];
+        /* Retrieve the next action to perform. Rows of
+           the traceback array do not necessarily start
+           at offset zero of B, so a correction is needed
+           to point to the correct position */
+
+        next_script = 
+            edit_script[a_index][b_index - edit_start_offset[a_index]];
 
         switch (script) {
         case SCRIPT_GAP_IN_A:
@@ -1738,6 +1799,7 @@ static Int4 OOF_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
     for (align_len--; align_len >= 0; align_len--) 
         *data.sapp++ = edit_script_row[align_len];
       
+    sfree(edit_start_offset);
     sfree(edit_script_row);
     sfree(edit_script);
     sfree(score_array);
