@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -242,7 +242,9 @@ Seq-data ::= CHOICE {              -- sequence representations
     ncbipna NCBIpna ,              -- nucleic acid probabilities
     ncbi8aa NCBI8aa ,              -- 8 bit extended amino acid codes
     ncbieaa NCBIeaa ,              -- extended ASCII 1 letter aa codes
-    ncbipaa NCBIpaa }              -- amino acid probabilities
+    ncbipaa NCBIpaa ,              -- amino acid probabilities
+    ncbistdaa NCBIstdaa }          -- consecutive codes for std aas
+
 
 IUPACna ::= StringStore       -- IUPAC 1 letter codes, no spaces
 IUPACaa ::= StringStore       -- IUPAC 1 letter codes, no spaces
@@ -259,6 +261,8 @@ NCBIeaa ::= StringStore       -- ASCII extended 1 letter aa codes
 NCBIpaa ::= OCTET STRING      -- 25 octets/aa, prob for IUPAC aas in order:
                               -- A-Y,B,Z,X,(ter),anything
                               -- probabilities are coded 0-255 = 0.0-1.0
+NCBIstdaa ::= OCTET STRING    -- codes 0-25, 1 per byte
+
 --  *********************************************************************
 --
 --  Seq-map-table and Seq-code-table REQUIRE that codes start with 0
@@ -276,6 +280,7 @@ NCBIpaa ::= OCTET STRING      -- 25 octets/aa, prob for IUPAC aas in order:
 --    NCBI4na
 --    NCBI8na
 --    NCBI8aa
+--    NCBIstdaa
 --     probability types map to IUPAC types for display as characters
 
 Seq-code-type ::= ENUMERATED {              -- sequence representations
@@ -288,7 +293,8 @@ Seq-code-type ::= ENUMERATED {              -- sequence representations
     ncbi8aa (7) ,              -- 8 bit extended amino acid codes
     ncbieaa (8) ,              -- extended ASCII 1 letter aa codes
     ncbipaa (9) ,              -- amino acid probabilities
-    iupacaa3 (10) }            -- 3 letter code only for display
+    iupacaa3 (10) ,            -- 3 letter code only for display
+    ncbistdaa (11) }           -- consecutive codes for std aas, 0-25
 
 Seq-map-table ::= SEQUENCE { -- for tables of sequence mappings 
     from Seq-code-type ,      -- code to map from
