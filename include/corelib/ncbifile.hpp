@@ -369,6 +369,9 @@ public:
     // Get user "home" dir
     static string GetHome(void);
 
+    // Get the current working directory
+    static string GetCwd();
+
     // Return an array containing all directory entries.
     // Use file name mask "mask" (if passed non-empty).
     typedef vector< AutoPtr<CDirEntry> > TEntries;
@@ -560,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/01/16 13:03:47  dicuccio
+ * Added CDir::GetCwd()
+ *
  * Revision 1.17  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
