@@ -76,6 +76,8 @@ test2 trunc7 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 7"
 
 test2 trunc8 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 8"
 
+test2 framed_refseq "" "query sequence is on diff frames w/ overlaps on subject"
+
 rm $tmp_out
 
 echo "Done!"
