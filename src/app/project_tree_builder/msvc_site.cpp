@@ -97,18 +97,37 @@ void CMsvcSite::GetComponents(const string& entry,
     NStr::Split(comp_str, " ,\t", *components);
 }
 
+string CMsvcSite::ProcessMacros(string raw_data) const
+{
+    string data(raw_data), raw_macro, macro, definition;
+    string::size_type start, end;
+    while ((start = data.find("$(")) != string::npos) {
+        end = data.find(")", start);
+        if (end == string::npos) {
+            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + raw_data);
+            return data;
+        }
+        raw_macro = data.substr(start,end-start+1);
+        if (CSymResolver::IsDefine(raw_macro)) {
+            macro = CSymResolver::StripDefine(raw_macro);
+            definition = m_Registry.GetString("Configure", macro, "");
+            data = NStr::Replace(data, raw_macro, definition);
+        }
+    }
+    return data;
+}
 
 void CMsvcSite::GetLibInfo(const string& lib, 
                            const SConfigInfo& config, SLibInfo* libinfo) const
 {
     libinfo->Clear();
 
-    libinfo->m_IncludeDir = GetOpt(m_Registry, lib, "INCLUDE", config);
+    libinfo->m_IncludeDir = ProcessMacros(GetOpt(m_Registry, lib, "INCLUDE", config));
     
     string defines_str    = GetOpt(m_Registry, lib, "DEFINES", config);
     NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
 
-    libinfo->m_LibPath    = GetOpt(m_Registry, lib, "LIBPATH", config);
+    libinfo->m_LibPath    = ProcessMacros(GetOpt(m_Registry, lib, "LIBPATH", config));
 
     string libs_str = GetOpt(m_Registry, lib, "LIB", config);
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
@@ -382,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/02 18:09:19  gouriano
+ * Allow macros in the definition of 3rd party library paths
+ *
  * Revision 1.18  2004/08/25 19:38:40  gouriano
  * Implemented optional dependency on a third party library
  *

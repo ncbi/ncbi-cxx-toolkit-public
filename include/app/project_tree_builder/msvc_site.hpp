@@ -94,6 +94,7 @@ public:
     /// Is section present in site registry?
     bool IsDescribed(const string& section) const;
 
+    string ProcessMacros(string data) const;
     // Get library (LIBS) description
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
@@ -174,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/02 18:09:51  gouriano
+ * Allow macros in the definition of 3rd party library paths
+ *
  * Revision 1.18  2004/08/25 19:39:04  gouriano
  * Implemented optional dependency on a third party library
  *
