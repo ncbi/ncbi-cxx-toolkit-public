@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/25 17:03:46  lavr
+ * s_LOG_Handler: user_data commented out as unused
+ *
  * Revision 6.4  2001/01/23 23:08:06  lavr
  * LOG_cxx2c introduced
  *
@@ -109,7 +112,7 @@ extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
 }
 
 
-static void s_LOG_Handler(void* user_data, SLOG_Handler* call_data)
+static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
 {
     EDiagSev level;
     switch (call_data->level) {
