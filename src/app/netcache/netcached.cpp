@@ -336,7 +336,9 @@ int CNetCacheDApp::Run(void)
     try {
         const CNcbiRegistry& reg = GetConfig();
 
-        TPluginManagerParamTree* param_tree = ParamTree_ConvertRegToTree(reg);
+        CConfig conf(reg);
+
+        const CConfig::TParamTree* param_tree = conf.GetTree();
         const TPluginManagerParamTree* bdb_tree = 
             param_tree->FindSubNode(kBDBCacheDriverName);
 
@@ -401,6 +403,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/09/23 16:37:21  kuznets
+ * Reflected changes in ncbi_config.hpp
+ *
  * Revision 1.2  2004/09/23 14:17:36  kuznets
  * Fixed compilation bug
  *
