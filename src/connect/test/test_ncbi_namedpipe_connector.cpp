@@ -37,7 +37,6 @@
 
 #include <connect/ncbi_namedpipe.hpp>
 #include <connect/ncbi_namedpipe_connector.h>
-#include <stdio.h>
 #include "../ncbi_priv.h"
 #include "ncbi_conntest.h"
 #include "test_assert.h"  // This header must go last
@@ -60,7 +59,6 @@ static void Client(STimeout timeout)
 {
     CONNECTOR  connector;
     FILE*      log_file;
-    char       buf[512];
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
@@ -68,11 +66,10 @@ static void Client(STimeout timeout)
     assert(log_file);
 
     // Tests for NAMEDPIPE CONNECTOR
-    sprintf(buf,
-            "Starting the NAMEDPIPE CONNECTOR test...\n\n"
-            "%s,  timeout = %u.%06u\n\n",
-            kPipeName, timeout.sec, timeout.usec);
-    NcbiCout << buf;
+    _TRACE(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
+           kPipeName + ", timeout = " +
+           NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
+           "sec.\n");
 
     connector = NAMEDPIPE_CreateConnector(kPipeName,
                                           CNamedPipe::kDefaultBufferSize);
@@ -93,13 +90,11 @@ static void Client(STimeout timeout)
 static void Server(STimeout timeout, int n_cycle)
 {
     EIO_Status status;
-    char       message[512];
 
-    sprintf(message,
-            "Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n"
-            "%s,  timeout = %u.%06u, n_cycle=%u\n\n",
-            kPipeName, timeout.sec, timeout.usec, n_cycle);
-    _TRACE(message);
+    _TRACE(string("Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n") +
+           kPipeName + ", timeout = " +
+           NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
+           ", n_cycle = " + NStr::UIntToString(n_cycle) + "\n");
 
     // Create listening named pipe
     CNamedPipeServer pipe;
@@ -112,8 +107,7 @@ static void Server(STimeout timeout, int n_cycle)
         size_t  n_read, n_written;
         char    buf[kBufferSize];
 
-        sprintf(message, "Server(n_cycle = %d)", n_cycle);
-        _TRACE(message);
+        _TRACE("Server(n_cycle = " + NStr::UIntToString(n_cycle) + ")");
 
         // Listening pipe
         status = pipe.Listen();
@@ -125,8 +119,7 @@ static void Server(STimeout timeout, int n_cycle)
             while ((status = pipe.Read(buf, kBufferSize, &n_read))
                    == eIO_Success) {
                 // Dump received data
-                sprintf(message, "Read %u bytes:", n_read);
-                _TRACE(message);
+                _TRACE("Read " + NStr::UIntToString(n_read) + " bytes:");
                 NcbiCout.write(buf, n_read);
                 assert(NcbiCout.good());
 
@@ -136,16 +129,16 @@ static void Server(STimeout timeout, int n_cycle)
                     status = pipe.Write(buf + n_total, n_read - n_total,
                                         &n_written);
                     if (status != eIO_Success) {
-                        sprintf(message,
-                                "Failed to write %u bytes, status = %s",
-                                n_read - n_total, IO_StatusStr(status));
-                        _TRACE(message);
+                        _TRACE("Failed to write " +
+                               NStr::UIntToString(n_read) +
+                               " bytes, status = " +
+                               IO_StatusStr(status));
                         break;
                     }
                     n_total += n_written;
-                    sprintf(message,"Written %u, remains %u bytes",
-                            n_written, n_read - n_total);
-                    _TRACE(message);
+                    _TRACE("Written " + NStr::UIntToString(n_written) +
+                           ", remains " +
+                           NStr::UIntToString(n_read - n_total) + " bytes");
                 }
             }
             assert(status == eIO_Timeout  ||  status == eIO_Closed);
@@ -263,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/19 16:37:31  ivanov
+ * Replaced all sprintf() with stream output operators
+ *
  * Revision 1.1  2003/08/18 19:23:07  ivanov
  * Initial revision
  *
