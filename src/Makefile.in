@@ -42,8 +42,10 @@ internal: $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 compress_tests:
 	for f in $(bindir)/*; do \
 	   case "`basename $$f`" in \
-	      testipub | test_mghbn) ;; \
-	      *test* | *demo* | *sample*) test -d $$f  ||  gzip -Nf $$f ;; \
+	      blast | blast2seq | datatool | gbench* | id1_fetch | idwwwget \
+	        | lbsmc | one2all | testipub | test_mghbn ) ;; \
+	      *test* | *demo* | *sample*) gzip -Nf $$f ;; \
+	      *) test "$(DEBUG_SFX)" = "Release" || gzip -Nf $$f ;; \
 	   esac; \
 	done
 
