@@ -21,10 +21,10 @@ is allowed to make outgoing network connection to any of the following
 FD addresses (on front-end NCBI machines):
 
 <pre>
-   130.14.22.1,  port 5853
-   130.14.22.2,  port 5859
-   130.14.22.8,  port 5840
-   130.14.22.30, port 5810
+<!--   130.14.22.1,  port 5853 SERVER RETIRED -->
+<!--   130.14.22.2,  port 5859 SERVER RETIRED -->
+<!--   130.14.22.8,  port 5840 SERVER RETIRED -->
+<!--   130.14.22.30, port 5810 SERVER RETIRED -->
    130.14.22.31, port 5812
    130.14.22.32, port 5811
 </pre>
@@ -55,10 +55,10 @@ in the client configuration (<a href="../../libs/conn.html#ref_ProxyHost">CONN_P
 The mapping on your non-transparent firewall server should look like this:
 
 <pre>
- CONN_PROXY_HOST:5853    --&gt;    130.14.22.1:5853
- CONN_PROXY_HOST:5859    --&gt;    130.14.22.2:5859
- CONN_PROXY_HOST:5840    --&gt;    130.14.22.8:5840
- CONN_PROXY_HOST:5810    --&gt;    130.14.22.30:5810
+<!-- CONN_PROXY_HOST:5853    --&gt;    130.14.22.1:5853  SERVER RETIRED -->
+<!-- CONN_PROXY_HOST:5859    --&gt;    130.14.22.2:5859  SERVER RETIRED -->
+<!-- CONN_PROXY_HOST:5840    --&gt;    130.14.22.8:5840  SERVER RETIRED -->
+<!-- CONN_PROXY_HOST:5810    --&gt;    130.14.22.30:5810 SERVER RETIRED -->
  CONN_PROXY_HOST:5812    --&gt;    130.14.22.31:5812
  CONN_PROXY_HOST:5811    --&gt;    130.14.22.32:5811
 </pre>
@@ -70,7 +70,7 @@ You can test if the FD ports are accessible from your host by just running,
 for example:
 
 <pre>
-  telnet 130.14.22.1 5853
+  telnet 130.14.22.31 5812
 </pre>
 
 and entering a line of arbitrary text in the TELNET session.
@@ -78,9 +78,9 @@ If everything is fine, your TELNET session will look as follows
 (the line "test" is your input here):
 
 <pre>
-&gt; telnet 130.14.22.1 5853
-Trying 130.14.22.1...
-Connected to 130.14.22.1.
+&gt; telnet 130.14.22.31 5812
+Trying 130.14.22.31...
+Connected to 130.14.22.31.
 Escape character is '^]'.
 test
 NCBI Firewall Daemon:  Invalid ticket. Connection closed.
