@@ -581,6 +581,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
  );
 
 
+/* DSOCK_Connect() establishes default destination for all messages that
+ * are sent using default (0) arguments for host/port in DSOCK_SendMsg().
+ * DSOCK_Connect() does not restrict the origin of the incoming messages.
+ */
 #define DSOCK_Connect(s, h, p) SOCK_Reconnect(s, h, p, 0)
 
 
@@ -727,6 +731,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2003/04/11 20:57:43  lavr
+ * DSOCK_Connect() documented
+ *
  * Revision 6.33  2003/04/09 19:05:54  siyan
  * Added doxygen support
  *
