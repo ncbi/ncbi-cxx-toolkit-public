@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/08/31 22:24:14  thiessen
+* add timer for animation
+*
 * Revision 1.37  2001/08/24 00:40:57  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -255,6 +258,10 @@ public:
             MID_FIRST_FRAME,
             MID_LAST_FRAME,
             MID_ALL_FRAMES,
+            MID_ANIMATE,
+                MID_PLAY,
+                MID_STOP,
+                MID_SET_DELAY,
         // Show/Hide menu
             MID_SHOW_HIDE,
             MID_SHOW_ALL,
@@ -308,6 +315,8 @@ public:
             MID_FAVORITES_END   = 149
     };
 
+private:
+
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
     void OnShowWindow(wxCommandEvent& event);
@@ -325,14 +334,16 @@ public:
     void OnCDD(wxCommandEvent& event);
     void OnPreferences(wxCommandEvent& event);
     void OnSetFont(wxCommandEvent& event);
-
-private:
+    void OnAnimate(wxCommandEvent& event);
+    void OnTimer(wxTimerEvent& event);
 
     static const int UNLIMITED_STRUCTURES;
     int structureLimit;
 
     wxMenuBar *menuBar;
     wxMenu *favoritesMenu;
+
+    wxTimer timer;
 
     DECLARE_EVENT_TABLE()
 };

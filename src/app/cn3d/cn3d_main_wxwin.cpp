@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2001/08/31 22:24:40  thiessen
+* add timer for animation
+*
 * Revision 1.72  2001/08/28 17:33:33  thiessen
 * add ChooseGLVisual for wxWin 2.3+
 *
@@ -524,7 +527,7 @@ END_EVENT_TABLE()
 Cn3DApp::Cn3DApp() : wxApp()
 {
     // try to force all windows to use best (TrueColor) visuals
-#if wxVERSION_NUMBER >= 2302
+#if wxVERSION_NUMBER >= 2302 && !defined(__WXMAC__)
     if (!ChooseGLVisual(NULL)) SetUseBestVisual(true);
 #else
     SetUseBestVisual(true);
@@ -536,6 +539,9 @@ bool Cn3DApp::OnInit(void)
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
+
+    // default animation delay
+    RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 25);
 
     // default quality settings
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
@@ -671,6 +677,8 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
+    EVT_MENU_RANGE(MID_PLAY, MID_SET_DELAY,                 Cn3DMainFrame::OnAnimate)
+    EVT_TIMER     (MID_ANIMATE,                             Cn3DMainFrame::OnTimer)
 END_EVENT_TABLE()
 
 static void SetupFavoritesMenu(wxMenu *favoritesMenu)
@@ -692,6 +700,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 {
     topWindow = this;
     SetSizeHints(150, 150); // min size
+    timer.SetOwner(this, MID_ANIMATE);
 
     // File menu
     menuBar = new wxMenuBar;
@@ -720,6 +729,14 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_FIRST_FRAME, "&First Frame\tDown");
     menu->Append(MID_LAST_FRAME, "&Last Frame\tUp");
     menu->Append(MID_ALL_FRAMES, "&All Frames\ta");
+    menu->AppendSeparator();
+    subMenu = new wxMenu;
+    subMenu->Append(MID_PLAY, "&Play\tp", "", true);
+    subMenu->Check(MID_PLAY, false);
+    subMenu->Append(MID_STOP, "&Stop\ts", "", true);
+    subMenu->Check(MID_STOP, true);
+    subMenu->Append(MID_SET_DELAY, "Set &Delay");
+    menu->Append(MID_ANIMATE, "Ani&mation", subMenu);
     menuBar->Append(menu, "&View");
 
     // Show-Hide menu
@@ -842,6 +859,52 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
         logFrame->Destroy();
         logFrame = NULL;
     }
+}
+
+void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
+{
+    int currentDelay;
+    if (!RegistryGetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, &currentDelay)) {
+        ERR_POST(Error << "Cn3DMainFrame::OnAnimate() - can't get current delay value from registry");
+        return;
+    }
+
+    // play
+    if (event.GetId() == MID_PLAY) {
+        timer.Start(currentDelay, false);
+        menuBar->Check(MID_PLAY, true);
+        menuBar->Check(MID_STOP, false);
+    }
+
+    // stop
+    else if (event.GetId() == MID_STOP) {
+        timer.Stop();
+        menuBar->Check(MID_PLAY, false);
+        menuBar->Check(MID_STOP, true);
+    }
+
+    // set delay
+    else if (event.GetId() == MID_SET_DELAY) {
+        long newDelay = wxGetNumberFromUser("Enter a delay value in milliseconds (1..5000)",
+            "Delay:", "Set Delay", (long) currentDelay, 1, 5000, this);
+        if (newDelay > 0) {
+            if (!RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, (int) newDelay)) {
+                ERR_POST(Error << "Cn3DMainFrame::OnAnimate() - can't set delay value in registry");
+                return;
+            }
+            // change delay if timer is running
+            if (timer.IsRunning()) {
+                timer.Stop();
+                timer.Start((int) newDelay, false);
+            }
+        }
+    }
+}
+
+void Cn3DMainFrame::OnTimer(wxTimerEvent& event)
+{
+    // simply pretend the user selected "next frame"
+    Command(MID_NEXT_FRAME);
 }
 
 void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)

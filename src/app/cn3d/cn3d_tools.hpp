@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/08/31 22:24:14  thiessen
+* add timer for animation
+*
 * Revision 1.9  2001/08/24 18:53:13  thiessen
 * add filename to sequence viewer window titles
 *
@@ -118,6 +121,7 @@ static const std::string
     // configuration
     REG_CONFIG_SECTION = "Cn3D-4-Config",
     REG_FAVORITES_NAME = "Favorites",
+    REG_ANIMATION_DELAY = "AnimationDelay",
     // quality settings
     REG_QUALITY_SECTION = "Cn3D-4-Quality",
     REG_QUALITY_ATOM_SLICES = "AtomSlices",
