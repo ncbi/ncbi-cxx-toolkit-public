@@ -145,11 +145,11 @@ typedef enum {
 /* Forward declarations of the hidden socket internal structure, and
  * their upper-level handles to use by the LSOCK_*() and SOCK_*() API
  */
-struct LSOCK_tag;                /* listening socket:  internal storage  */
-typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle */
+struct LSOCK_tag;                /* listening socket:  internal storage */
+typedef struct LSOCK_tag* LSOCK; /* listening socket:  handle           */
 
-struct SOCK_tag;                 /* socket:  internal storage  */
-typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
+struct SOCK_tag;                 /* socket:  internal storage           */
+typedef struct SOCK_tag*  SOCK;  /* socket:  handle                     */
 
 
 
@@ -479,6 +479,33 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
  const STimeout* timeout,   /* [in]      max time to wait (infinite if NULL) */
  size_t*         n_ready    /* [out]     # of ready sockets  (may be NULL)   */
  );
+
+
+
+/* GENERIC POLLABLE INTERFACE, please see above for explanations
+ */
+struct SPOLLABLE_tag;
+typedef struct SPOLLABLE_tag* POLLABLE;
+
+typedef struct {
+    POLLABLE  poll;
+    EIO_Event event;
+    EIO_Event revent;
+} SPOLLABLE_Poll;
+
+extern NCBI_XCONNECT_EXPORT EIO_Status POLLABLE_Poll
+(size_t          n,
+ SPOLLABLE_Poll  polls[],
+ const STimeout* timeout,
+ size_t*         n_ready
+ );
+
+
+/* Return 0 if conversion cannot be made; otherwise converted handle */
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK (SOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK(LSOCK);
+extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
+extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
 
 
 /* Specify timeout for the connection i/o (see SOCK_[Read|Write|Close] funcs).
@@ -891,6 +918,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2003/08/25 14:38:00  lavr
+ * Introduce POLLABLE_Poll() and [L]SOCK<->POLLABLE conversion routines
+ *
  * Revision 6.40  2003/07/15 16:42:09  lavr
  * +SOCK_GetPeerAddressString()
  *
