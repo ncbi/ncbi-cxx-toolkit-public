@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/12/15 15:51:46  thiessen
+* show/hide system installed
+*
 * Revision 1.28  2000/11/30 15:49:34  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -126,6 +129,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -353,35 +357,54 @@ void AlignmentManager::RealignAllSlaves(void) const
     return;
 }
 
-void AlignmentManager::GetAlignmentSetSlaveSequences(std::vector < const Sequence * >& sequences) const
+void AlignmentManager::GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const
 {
-    sequences.resize(alignmentSet->alignments.size());
+    sequences->resize(alignmentSet->alignments.size());
 
     AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
     int i = 0;
     for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
-        sequences[i] = (*a)->slave;
+        sequences->at(i) = (*a)->slave;
     }
 }
 
-void AlignmentManager::GetAlignmentSetSlaveVisibilities(std::vector < bool >& visibilities) const
+void AlignmentManager::GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const
 {
     // copy visibility list
-    visibilities = slavesVisible;
+    *visibilities = slavesVisible;
 }
 
 void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnabled)
 {
+    if (itemsEnabled.size() != slavesVisible.size()) {
+        ERR_POST(Error << "AlignmentManager::SelectionCallback() - wrong size list");
+        return;
+    }
+
     slavesVisible = itemsEnabled;
     NewMultipleWithRows(slavesVisible);
 
-    // do necessary redraws: sequences + chains in the alignment
+    // do necessary redraws + show/hides: sequences + chains in the alignment
     sequenceViewer->Refresh();
+
     AlignmentSet::AlignmentList::const_iterator
         a = alignmentSet->alignments.begin(), ae = alignmentSet->alignments.end();
-    if ((*a)->master->molecule) GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
-    for (; a!=ae; a++)
-        if ((*a)->slave->molecule) GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
+    const StructureObject *object;
+
+    if ((*a)->master->molecule) {
+        // Show() redraws whole StructurObject only if necessary
+        if ((*a)->master->molecule->GetParentOfType(&object))
+            object->parentSet->showHideManager->Show(object, true);
+        // always redraw aligned molecule, in case alignment colors change
+        GlobalMessenger()->PostRedrawMolecule((*a)->master->molecule);
+    }
+    for (int i=0; a!=ae; a++, i++) {
+        if ((*a)->slave->molecule) {
+            if ((*a)->slave->molecule->GetParentOfType(&object))
+                object->parentSet->showHideManager->Show(object, slavesVisible[i]);
+            GlobalMessenger()->PostRedrawMolecule((*a)->slave->molecule);
+        }
+    }
 }
 
 void AlignmentManager::NewMultipleWithRows(const std::vector < bool >& visibilities)
@@ -411,6 +434,19 @@ bool AlignmentManager::IsAligned(const Sequence *sequence, int seqIndex) const
         return currentAlignment->IsAligned(sequence, seqIndex);
     else
         return false;
+}
+
+bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
+{
+    if (!sequence) return false;
+    const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
+    if (currentAlignment) {
+        for (int i=0; i<currentAlignment->sequences->size(); i++) {
+            if (currentAlignment->sequences->at(i) == sequence)
+                return true;
+        }
+    }
+    return false;
 }
 
 const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int seqIndex) const

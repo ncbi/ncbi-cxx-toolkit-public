@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/12/15 15:51:48  thiessen
+* show/hide system installed
+*
 * Revision 1.20  2000/12/01 19:35:57  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -703,7 +706,19 @@ bool StyleManager::GetBondStyle(const Bond *bond,
 bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D& object3D,
     const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const
 {
-    // should eventually check to see if the residues covered by the object are visible...
+    // check to see if any residue covered by the object is visible
+    bool anyResidueVisible = false;
+    const Molecule *molecule = object->graph->molecules.find(object3D.moleculeID)->second;
+    for (int r=object3D.fromResidueID; r<=object3D.toResidueID; r++) {
+        if (object->parentSet->showHideManager->IsVisible(molecule->residues.find(r)->second)) {
+            anyResidueVisible = true;
+            break;
+        }
+    }
+    if (!anyResidueVisible) {
+        objectStyle->style = StyleManager::eNotDisplayed;
+        return true;
+    }
 
     // set drawing style
     if (generalStyle.style == StyleSettings::eWithArrows) {
@@ -725,8 +740,7 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
             break;
         case StyleSettings::eDomain:
             {
-                int domainID = object->graph->molecules.find(object3D.moleculeID)->second->
-                    residueDomains[object3D.fromResidueID - 1];
+                int domainID = molecule->residueDomains[object3D.fromResidueID - 1];
                 objectStyle->color =
                     object->parentSet->colors->
                         Get(Colors::eCycle1, (domainID == Molecule::NOT_SET) ? 0 : domainID);

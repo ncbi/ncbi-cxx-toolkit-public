@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.9  2000/11/17 19:48:13  thiessen
 * working show/hide alignment row
 *
@@ -215,7 +218,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
         } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
         }
-        
+
         // nucleotide formats
         else if (bioseq.GetInst().GetSeq_data().IsIupacna()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
@@ -231,7 +234,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
             if (bioseq.GetInst().IsSetLength() && bioseq.GetInst().GetLength() < sequenceString.length())
                 sequenceString.resize(bioseq.GetInst().GetLength());
         }
-        
+
         else {
             ERR_POST(Critical << "Sequence::Sequence() - sequence " << gi
                 << ": confused by sequence string format");
@@ -260,7 +263,7 @@ CSeq_id * Sequence::CreateSeqId(void) const
     return sid;
 }
 
-void Sequence::GetTitle(std::string *title) const
+std::string Sequence::GetTitle(void) const
 {
     ostrstream oss;
     if (molecule) {
@@ -272,7 +275,7 @@ void Sequence::GetTitle(std::string *title) const
         oss << "gi " << gi;
     }
     oss << '\0';
-    *title = oss.str();
+    return std::string(oss.str());
 }
 
 END_SCOPE(Cn3D)

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.12  2000/11/30 15:49:08  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -163,6 +166,13 @@ public:
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
+        // Show/Hide menu
+            MID_SHOW_HIDE,
+            MID_SHOW_ALL,
+            MID_SHOW_DOMAINS,
+            MID_SHOW_ALIGNED,
+            MID_SHOW_UNALIGNED,
+            MID_SHOW_SELECTED,
         // Structure Alignments menu
             MID_REFIT_ALL,
         // Style menu
@@ -190,6 +200,7 @@ public:
     void OnAlignStructures(wxCommandEvent& event);
 
     void OnAdjustView(wxCommandEvent& event);
+    void OnShowHide(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
 

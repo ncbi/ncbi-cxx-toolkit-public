@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/12/15 15:52:07  thiessen
+* show/hide system installed
+*
 * Revision 1.23  2000/11/30 15:49:06  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -149,13 +152,16 @@ public:
     void RealignAllSlaves(void) const;
 
     // stuff relating to show/hide of alignment rows (slaves)
-    void GetAlignmentSetSlaveSequences(std::vector < const Sequence * >& sequences) const;
-    void GetAlignmentSetSlaveVisibilities(std::vector < bool >& visibilities) const;
+    void GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const;
+    void GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const;
     void SelectionCallback(const std::vector < bool >& itemsEnabled);
     void NewMultipleWithRows(const std::vector < bool >& visibilities);
 
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const;
+
+    // find out if a Sequence is part of the current alignment
+    bool IsInAlignment(const Sequence *sequence) const;
 
     // get a color for an aligned residue that's dependent on the entire alignment
     // (e.g., for coloring by sequence conservation)

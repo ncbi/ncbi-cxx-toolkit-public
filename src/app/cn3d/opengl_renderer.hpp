@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.22  2000/11/02 16:48:22  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -109,6 +112,7 @@
 
 #include <list>
 #include <map>
+#include <vector>
 #include <string>
 
 #include "cn3d/vector_math.hpp"
@@ -144,7 +148,7 @@ public:
     // tells the renderer that new camera settings need to be applied
     void NewView(int selectX = -1, int selectY = -1) const;
 
-    // get the name 
+    // get the name
     bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name);
 
     // reset camera to original state
@@ -193,7 +197,7 @@ public:
     void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style,
         const Vector *site0, const Vector* site3);
     void DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& helixStyle);
-    void DrawStrand(const Vector& Nterm, const Vector& Cterm, 
+    void DrawStrand(const Vector& Nterm, const Vector& Cterm,
         const Vector& unitNormal, const StrandStyle& strandStyle);
 
     // font methods (some platform-specific, until glCanvas can do fonts...)
@@ -220,7 +224,7 @@ private:
     void ConstructLogo(void);
 
     // camera data
-    double cameraDistance, cameraAngleRad, 
+    double cameraDistance, cameraAngleRad,
         cameraLookAtX, cameraLookAtY,
         cameraClipNear, cameraClipFar,
         viewMatrix[16];
@@ -231,6 +235,8 @@ private:
     // misc rendering stuff
     bool selectMode;
     unsigned int currentFrame;
+    std::vector < bool > displayListEmpty;
+    bool OpenGLRenderer::IsFrameEmpty(unsigned int frame) const;
 
     // Quality settings - will eventually be stored in program registry
     int atomSlices, atomStacks;     // for atom spheres
@@ -241,7 +247,7 @@ private:
     // stuff for storing transparent spheres (done during Construct())
     unsigned int currentDisplayList;
     typedef struct {
-        Vector site, color; 
+        Vector site, color;
         unsigned int name;
         double radius, alpha;
     } SphereInfo;
@@ -251,7 +257,7 @@ private:
     void AddTransparentSphere(const Vector& color, unsigned int name,
         const Vector& site, double radius, double alpha);
     void ClearTransparentSpheresForList(unsigned int list)
-    { 
+    {
         SphereMap::iterator i = transparentSphereMap.find(list);
         if (i != transparentSphereMap.end())
             transparentSphereMap.erase(i);

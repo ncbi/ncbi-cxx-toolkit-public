@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.20  2000/12/01 19:35:57  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -150,6 +153,12 @@ Molecule::Molecule(StructureBase *parent,
         if (gi == NOT_SET && pdbID.size() == 0) {
             ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
             return;
+        }
+        // assign default identifier from parent, and assuming 'name' is actually the chainID
+        if (pdbID.size() == 0) {
+            const StructureObject *object;
+            if (GetParentOfType(&object)) pdbID = object->pdbID;
+            if (name.size() >= 1) pdbChain = name[0];
         }
     }
 
@@ -286,6 +295,17 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
     }
 
     return true;
+}
+
+std::string Molecule::GetTitle(void) const
+{
+    std::string str;
+    str = pdbID;
+    if (pdbChain != ' ') {
+        str += '_';
+        str += (char) pdbChain;
+    }
+    return str;
 }
 
 END_SCOPE(Cn3D)

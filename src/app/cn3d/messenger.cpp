@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.10  2000/11/30 15:49:38  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -88,12 +91,8 @@ void Messenger::PostRedrawAllStructures(void)
 
 void Messenger::PostRedrawMolecule(const Molecule *molecule)
 {
-    if (!redrawAllStructures) {
-        RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
-        for (m=redrawMolecules.begin(); m!=me; m++)
-            if (*m == molecule) break;
-        if (m == me) redrawMolecules.push_back(molecule);
-    }
+    if (!redrawAllStructures)
+        redrawMolecules[molecule] = true;
 }
 
 void Messenger::PostRedrawSequenceViewers(void)
@@ -131,11 +130,18 @@ void Messenger::ProcessRedraws(void)
     }
 
     else if (redrawMolecules.size() > 0) {
+        std::map < const StructureObject * , bool > hetsRedrawn;
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
         for (m=redrawMolecules.begin(); m!=me; m++) {
             const StructureObject *object;
-            if (!(*m)->GetParentOfType(&object)) continue;
-            object->graph->RedrawMolecule((*m)->id);
+            if (!m->first->GetParentOfType(&object)) continue;
+
+            // hets/solvents are always redrawn with each molecule, so don't need to repeat
+            if ((m->first->IsSolvent() || m->first->IsHeterogen()) &&
+                hetsRedrawn.find(object) != hetsRedrawn.end()) continue;
+
+            object->graph->RedrawMolecule(m->first->id);
+            hetsRedrawn[object] = true;
         }
         redrawMolecules.clear();
 
@@ -224,7 +230,7 @@ void Messenger::RedrawMoleculesOfSameSequence(const Sequence *sequence)
 void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
-        seqIndexFrom >= sequence->sequenceString.size() || 
+        seqIndexFrom >= sequence->sequenceString.size() ||
         seqIndexTo >= sequence->sequenceString.size()) {
         ERR_POST(Error << "Messenger::AddHighlights() - seqIndex out of range");
         return;
@@ -248,7 +254,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
 void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
-        seqIndexFrom >= sequence->sequenceString.size() || 
+        seqIndexFrom >= sequence->sequenceString.size() ||
         seqIndexTo >= sequence->sequenceString.size()) {
         ERR_POST(Error << "Messenger::RemoveHighlights() - seqIndex out of range");
         return;

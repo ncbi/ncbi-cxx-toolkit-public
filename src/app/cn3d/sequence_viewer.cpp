@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.28  2000/11/30 15:49:39  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -206,7 +209,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menuBar->Check(MID_SELECT_RECT, true);
     menuBar->Check(MID_SPLIT, true);
     currentJustification = BlockMultipleAlignment::eSplit;
-    viewerWidget->TitleAreaOff();
+    viewerWidget->TitleAreaOn();
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
 
@@ -420,31 +423,29 @@ bool SequenceViewerWindow::SaveDialog(bool canCancel)
 void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
 {
     std::vector < const Sequence * > slaveSequences;
-    viewer->alignmentManager->GetAlignmentSetSlaveSequences(slaveSequences);
+    viewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
     wxString *titleStrs = new wxString[slaveSequences.size()];
-    for (int i=0; i<slaveSequences.size(); i++) {
-        std::string str;
-        slaveSequences[i]->GetTitle(&str);
-        titleStrs[i] = str.c_str();
-	}
+    for (int i=0; i<slaveSequences.size(); i++)
+        titleStrs[i] = slaveSequences[i]->GetTitle().c_str();
 
     std::vector < bool > visibilities;
-    viewer->alignmentManager->GetAlignmentSetSlaveVisibilities(visibilities);
+    viewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
+    wxString title = "Show/Hide Slaves of ";
+    title.Append(viewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->GetTitle().c_str());
     ShowHideDialog dialog(
         titleStrs,
         visibilities,
         viewer->alignmentManager,
-        NULL, -1, "Show/Hide Slaves", wxPoint(400, 50), wxSize(200, 300));
+        NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
     dialog.Activate();
-
-	delete titleStrs;
+//    delete titleStrs;    // apparently deleted by wxWindows
 }
 
 bool SequenceViewerWindow::QueryShowAllRows(void)
 {
     std::vector < bool > visibilities;
-    viewer->alignmentManager->GetAlignmentSetSlaveVisibilities(visibilities);
+    viewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
     int i;
     for (i=0; i<visibilities.size(); i++) if (!visibilities[i]) break;
@@ -663,9 +664,7 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
     if (!sequence) return false;
 
     // set title
-    std::string titleStr;
-    sequence->GetTitle(&titleStr);
-    *title = titleStr.c_str();
+    *title = sequence->GetTitle().c_str();
 
     // set color
     const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment*>(displayRow);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.37  2000/12/01 19:35:57  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -336,6 +339,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     }
 
     VerifyFrameMap();
+    showHideManager->ConstructShowHideArray(this);
 }
 
 StructureSet::~StructureSet(void)

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.9  2000/11/30 15:49:08  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -139,7 +142,7 @@ private:
     StructureWindowList structureWindows;
 
     // to keep track of messages posted
-    typedef std::list < const Molecule * > RedrawMoleculeList;
+    typedef std::map < const Molecule *, bool > RedrawMoleculeList; // use map to preclude redundant redraws
     RedrawMoleculeList redrawMolecules;
 
     bool redrawAllStructures;
@@ -157,6 +160,9 @@ private:
 
 public:
     Messenger(void) : redrawAllStructures(false), redrawSequenceViewers(false) { }
+
+    bool IsAnythingHighlighted(void) const
+        { return (residueHighlights.size() > 0 || sequenceHighlights.size() > 0); }
 
     // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(SequenceViewer *sequenceViewer)

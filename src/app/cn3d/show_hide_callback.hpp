@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.1  2000/11/17 19:47:38  thiessen
 * working show/hide alignment row
 *
@@ -51,6 +54,11 @@ class ShowHideCallback
 public:
     // called by the ShowHideDialog when the user hits 'done' or 'apply'
     virtual void SelectionCallback(const std::vector < bool > & itemsEnabled) = 0;
+
+    // called when the selection changes - the callback can then change the status
+    // of itemsEnabled, which will in turn be reflected in the listbox selection
+    virtual void SelectionChangedCallback(
+        const std::vector < bool >& original, std::vector < bool > & itemsEnabled) { }
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.9  2000/11/17 19:47:37  thiessen
 * working show/hide alignment row
 *
@@ -114,7 +117,7 @@ public:
 
 	ncbi::objects::CSeq_id * CreateSeqId(void) const;
 
-    void Sequence::GetTitle(std::string *title) const;
+    std::string GetTitle(void) const;
 };
 
 END_SCOPE(Cn3D)

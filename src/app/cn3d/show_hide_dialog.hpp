@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.1  2000/11/17 19:47:38  thiessen
 * working show/hide alignment row
 *
@@ -89,8 +92,9 @@ private:
 
     ShowHideCallback *callbackObject;
     wxListBox *listBox;
-    wxButton *applyB;
+    wxButton *applyB, *cancelB;
     bool dialogActive;
+    std::vector < bool > beforeChange;
 
     DECLARE_EVENT_TABLE()
 };

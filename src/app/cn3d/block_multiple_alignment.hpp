@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.1  2000/11/30 15:49:06  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -81,9 +84,9 @@ public:
     // find out if a residue is aligned - only works for non-repeated sequences!
     bool IsAligned(const Sequence *sequence, int seqIndex) const;
 
-    // return true if this sequence is the master
-    bool IsMaster(const Sequence *sequence) const
-        { return (sequence == sequences->at(0)); }
+    // stuff regarding master sequence
+    const Sequence * GetMaster(void) const { return sequences->at(0); }
+    bool IsMaster(const Sequence *sequence) const { return (sequence == sequences->at(0)); }
 
     // return sequence for given row
     const Sequence * GetSequenceOfRow(int row) const

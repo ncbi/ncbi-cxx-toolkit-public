@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.16  2000/11/30 15:49:38  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -161,6 +164,8 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/show_hide_manager.hpp"
+#include "cn3d/show_hide_dialog.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -282,14 +287,15 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 // data and methods for the main program window (a Cn3DMainFrame)
 
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
-    EVT_CLOSE(                                      Cn3DMainFrame::OnCloseWindow)
-    EVT_MENU(MID_EXIT,                              Cn3DMainFrame::OnExit)
-    EVT_MENU(MID_OPEN,                              Cn3DMainFrame::OnOpen)
-    EVT_MENU(MID_SAVE,                              Cn3DMainFrame::OnSave)
-    EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,      Cn3DMainFrame::OnAdjustView)
-    EVT_MENU(MID_REFIT_ALL,                         Cn3DMainFrame::OnAlignStructures)
-    EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
-    EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
+    EVT_CLOSE(                                          Cn3DMainFrame::OnCloseWindow)
+    EVT_MENU(MID_EXIT,                                  Cn3DMainFrame::OnExit)
+    EVT_MENU(MID_OPEN,                                  Cn3DMainFrame::OnOpen)
+    EVT_MENU(MID_SAVE,                                  Cn3DMainFrame::OnSave)
+    EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,          Cn3DMainFrame::OnAdjustView)
+    EVT_MENU_RANGE(MID_SHOW_HIDE,   MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
+    EVT_MENU(MID_REFIT_ALL,                             Cn3DMainFrame::OnAlignStructures)
+    EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(
@@ -315,6 +321,16 @@ Cn3DMainFrame::Cn3DMainFrame(
     menu->Append(MID_ZOOM_OUT, "Zoom &Out");
     menu->Append(MID_RESET, "&Reset");
     menuBar->Append(menu, "&View");
+
+    // Show-Hide menu
+    menu = new wxMenu;
+    menu->Append(MID_SHOW_HIDE, "&Pick Structures...");
+    menu->Append(MID_SHOW_ALL, "Show &Everything");
+    menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains");
+    menu->Append(MID_SHOW_ALIGNED, "Show &Aligned Residues");
+    menu->Append(MID_SHOW_UNALIGNED, "Show &Unaligned Residues");
+    menu->Append(MID_SHOW_SELECTED, "Show &Selected Residues");
+    menuBar->Append(menu, "Show/&Hide");
 
     // Structure Alignment menu
     menu = new wxMenu;
@@ -400,6 +416,49 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
         default: ;
     }
     glCanvas->Refresh(false);
+}
+
+void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
+{
+    if (glCanvas->structureSet) {
+
+        switch (event.GetId()) {
+
+        case MID_SHOW_HIDE:
+        {
+            std::vector < std::string > structureNames;
+            std::vector < bool > structureVisibilities;
+            glCanvas->structureSet->showHideManager->GetShowHideInfo(&structureNames, &structureVisibilities);
+            wxString *titles = new wxString[structureNames.size()];
+            for (int i=0; i<structureNames.size(); i++) titles[i] = structureNames[i].c_str();
+
+            ShowHideDialog dialog(
+                titles,
+                structureVisibilities,
+                glCanvas->structureSet->showHideManager,
+                NULL, -1, "Show/Hide Structures", wxPoint(400, 50), wxSize(200, 300));
+            dialog.Activate();
+    //        delete titles;    // apparently deleted by wxWindows
+            break;
+        }
+
+        case MID_SHOW_ALL:
+            glCanvas->structureSet->showHideManager->MakeAllVisible();
+            break;
+        case MID_SHOW_DOMAINS:
+            glCanvas->structureSet->showHideManager->ShowAlignedDomains(glCanvas->structureSet);
+            break;
+        case MID_SHOW_ALIGNED:
+            glCanvas->structureSet->showHideManager->ShowResidues(glCanvas->structureSet, true);
+            break;
+        case MID_SHOW_UNALIGNED:
+            glCanvas->structureSet->showHideManager->ShowResidues(glCanvas->structureSet, false);
+            break;
+        case MID_SHOW_SELECTED:
+            glCanvas->structureSet->showHideManager->ShowSelectedResidues(glCanvas->structureSet);
+            break;
+        }
+    }
 }
 
 void Cn3DMainFrame::OnAlignStructures(wxCommandEvent& event)

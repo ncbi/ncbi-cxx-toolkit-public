@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.4  2000/12/01 19:34:43  thiessen
 * better domain assignment
 *
@@ -50,32 +53,55 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <vector>
 #include <map>
 
 #include "cn3d/structure_base.hpp"
+#include "cn3d/show_hide_callback.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
 class Residue;
+class StructureSet;
+class ShowHideInfo;
 
-class ShowHideManager
+class ShowHideManager : public ShowHideCallback
 {
 public:
+    ~ShowHideManager();
+
     // eventually this will be tied to a GUI element or something...
     bool OverlayConfEnsembles(void) const { return true; }
 
     // set show/hide status of an entity - must be StructureObject, Molecule, or Residue.
     void Show(const StructureBase *entity, bool isShown);
 
+    void MakeAllVisible(void);
+
     // query whether an entity is visible
     bool IsHidden(const StructureBase *entity) const;
-    bool IsVisible(const StructureBase *entity) const
-        { return !IsHidden(entity); }
+    bool IsVisible(const StructureBase *entity) const { return !IsHidden(entity); }
+
+    // used for show/hide dialog to get list of names and visibility status
+    void GetShowHideInfo(std::vector < std::string > *names, std::vector < bool > *visibilities) const;
+    void SelectionCallback(const std::vector < bool >& itemsEnabled);
+    void SelectionChangedCallback(const std::vector < bool >& original, std::vector < bool >& itemsEnabled);
+    void ConstructShowHideArray(const StructureSet *structureSet);
+
+    // functions to show/hide more complex groups of stuff
+    void ShowAlignedDomains(const StructureSet *set);
+    void ShowResidues(const StructureSet *set, bool showAligned);
+    void ShowSelectedResidues(const StructureSet *set);
 
 private:
     typedef std::map < const StructureBase *, bool > EntitiesHidden;
     EntitiesHidden entitiesHidden;
+
+    // holds info on objects in this StructureSet
+    std::vector < const ShowHideInfo * > structureInfo;
+
+public:
 };
 
 END_SCOPE(Cn3D)

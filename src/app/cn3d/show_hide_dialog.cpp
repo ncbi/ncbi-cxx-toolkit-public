@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.1  2000/11/17 19:48:14  thiessen
 * working show/hide alignment row
 *
@@ -44,7 +47,7 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 BEGIN_EVENT_TABLE(ShowHideDialog, wxFrame)
-    EVT_LISTBOX     (LISTBOX,   ShowHideDialog::OnSelection) 
+    EVT_LISTBOX     (LISTBOX,   ShowHideDialog::OnSelection)
     EVT_BUTTON      (B_APPLY,   ShowHideDialog::OnButton)
     EVT_BUTTON      (B_CANCEL,  ShowHideDialog::OnButton)
     EVT_BUTTON      (B_DONE,    ShowHideDialog::OnButton)
@@ -86,13 +89,14 @@ ShowHideDialog::ShowHideDialog(
     applyB->SetConstraints(c2);
     applyB->Enable(false);
 
-    wxButton *cancelB = new wxButton(this, B_CANCEL, "Cancel");
+    cancelB = new wxButton(this, B_CANCEL, "Cancel");
     wxLayoutConstraints *c3 = new wxLayoutConstraints();
     c3->bottom.SameAs       (this,      wxBottom,   margin);
     c3->left.RightOf        (applyB,                margin);
     c3->right.LeftOf        (doneB,                 margin);
     c3->top.SameAs          (doneB,     wxTop);
     cancelB->SetConstraints(c3);
+    cancelB->Enable(false);
 
     listBox = new wxListBox(this, LISTBOX, wxDefaultPosition, wxDefaultSize,
         itemsEnabled.size(), items, wxLB_EXTENDED | wxLB_HSCROLL | wxLB_NEEDED_SB);
@@ -106,8 +110,11 @@ ShowHideDialog::ShowHideDialog(
     Layout();   // just to be safe; really only needed if this window isn't made resizable
 
     // set initial item selection (reverse order, so scroll bar is initially at the top)
-    for (int i=itemsEnabled.size()-1; i>=0; i--)
+    beforeChange.resize(itemsEnabled.size());
+    for (int i=itemsEnabled.size()-1; i>=0; i--) {
         listBox->SetSelection(i, itemsEnabled[i]);
+        beforeChange[i] = itemsEnabled[i];
+    }
 }
 
 void ShowHideDialog::Activate(void)
@@ -143,27 +150,52 @@ void ShowHideDialog::EndEventLoop(void)
 
 void ShowHideDialog::OnSelection(wxCommandEvent& event)
 {
+    // do the selection changed callback, and adjust selections accordingly
+    std::vector < bool > itemsEnabled(listBox->Number());
+    int i;
+    for (i=0; i<listBox->Number(); i++)
+        itemsEnabled[i] = listBox->Selected(i);
+    callbackObject->SelectionChangedCallback(beforeChange, itemsEnabled);
+
+    // apply changes
+    int pV = listBox->GetScrollPos(wxVERTICAL);
+    listBox->Show(false);
+    for (i=0; i<listBox->Number(); i++) {
+        listBox->SetSelection(i, itemsEnabled[i]);
+        beforeChange[i] = itemsEnabled[i];
+    }
+    // horrible kludge to keep vertical scroll at same position...
+    if (pV >= 0 && pV < listBox->Number()) {
+        listBox->SetSelection(listBox->Number() - 1, true);
+        listBox->SetSelection(listBox->Number() - 1, itemsEnabled[listBox->Number() - 1]);
+        listBox->SetSelection(pV, true);
+        listBox->SetSelection(pV, itemsEnabled[pV]);
+    }
+    listBox->Show(true);
+
     applyB->Enable(true);
+    cancelB->Enable(true);
 }
 
 void ShowHideDialog::OnButton(wxCommandEvent& event)
 {
     if (event.GetId() == B_CANCEL) {
         EndEventLoop();
-    } 
-    
+    }
+
     else if (event.GetId() == B_DONE || event.GetId() == B_APPLY) {
 
         // only do this if selection has changed since last time
         if (applyB->IsEnabled()) {
             // do the callback with the current selection state
             std::vector < bool > itemsEnabled(listBox->Number());
-            for (int i=0; i<listBox->Number(); i++) 
+            for (int i=0; i<listBox->Number(); i++)
                 itemsEnabled[i] = listBox->Selected(i);
             callbackObject->SelectionCallback(itemsEnabled);
             applyB->Enable(false);
+            cancelB->Enable(false);
         }
-        
+
         if (event.GetId() == B_DONE)
             EndEventLoop();
     }

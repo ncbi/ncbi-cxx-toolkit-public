@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/15 15:52:08  thiessen
+* show/hide system installed
+*
 * Revision 1.17  2000/12/01 19:34:43  thiessen
 * better domain assignment
 *
@@ -172,6 +175,8 @@ public:
         ERR_POST(ncbi::Warning << "Molecule #" << id << ": can't find residue #" << rID);
         return NULL;
     }
+
+    std::string GetTitle(void) const;
 
     // residue color method - called by sequence/alignment viewer - note
     // that sequenceIndex is numbered from zero.

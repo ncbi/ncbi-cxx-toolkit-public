@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/12/15 15:51:47  thiessen
+* show/hide system installed
+*
 * Revision 1.29  2000/11/30 15:49:39  thiessen
 * add show/hide rows; unpack sec. struc. and domain features
 *
@@ -436,9 +439,12 @@ void OpenGLRenderer::StartDisplayList(unsigned int list)
     }
     ClearTransparentSpheresForList(list);
     SetColor(GL_NONE); // reset color caches in SetColor
-    //TESTMSG("creating display list " << list);
+
     glNewList(list, GL_COMPILE);
     currentDisplayList = list;
+
+    if (currentDisplayList >= displayListEmpty.size()) displayListEmpty.resize(currentDisplayList + 1, true);
+    displayListEmpty[currentDisplayList] = true;
 }
 
 void OpenGLRenderer::EndDisplayList(void)
@@ -455,34 +461,53 @@ void OpenGLRenderer::ShowAllFrames(void)
     if (structureSet) currentFrame = ALL_FRAMES;
 }
 
+bool OpenGLRenderer::IsFrameEmpty(unsigned int frame) const
+{
+    if (!structureSet) return false;
+
+    StructureSet::DisplayLists::const_iterator l, le=structureSet->frameMap[frame].end();
+    for (l=structureSet->frameMap[frame].begin(); l!=le; l++)
+        if (!displayListEmpty[*l])
+            return false;
+    return true;
+}
+
 void OpenGLRenderer::ShowFirstFrame(void)
 {
-    if (structureSet) currentFrame = 0;
+    if (!structureSet) return;
+    currentFrame = 0;
+    while (IsFrameEmpty(currentFrame) && currentFrame < structureSet->frameMap.size() - 1)
+        currentFrame++;
 }
 
 void OpenGLRenderer::ShowLastFrame(void)
 {
-    if (structureSet) currentFrame = structureSet->frameMap.size() - 1;
+    if (!structureSet) return;
+    currentFrame = structureSet->frameMap.size() - 1;
+    while (IsFrameEmpty(currentFrame) && currentFrame > 0)
+        currentFrame--;
 }
 
 void OpenGLRenderer::ShowNextFrame(void)
 {
-    if (structureSet) {
-        if (currentFrame >= structureSet->frameMap.size() - 1)
-            currentFrame = 0;
-        else
-            currentFrame++;
-    }
+    if (!structureSet) return;
+    int originalFrame = (currentFrame == ALL_FRAMES) ? 0 : currentFrame;
+    do {
+        currentFrame++;
+        if (currentFrame == structureSet->frameMap.size()) currentFrame = 0;
+    } while (IsFrameEmpty(currentFrame) && currentFrame != originalFrame);
 }
 
 void OpenGLRenderer::ShowPreviousFrame(void)
 {
-    if (structureSet) {
-        if (currentFrame == 0 || currentFrame == ALL_FRAMES)
+    if (!structureSet) return;
+    int originalFrame = (currentFrame == ALL_FRAMES) ? structureSet->frameMap.size() - 1 : currentFrame;
+    do {
+        if (currentFrame == 0)
             currentFrame = structureSet->frameMap.size() - 1;
         else
             currentFrame--;
-    }
+    } while (IsFrameEmpty(currentFrame) && currentFrame != originalFrame);
 }
 
 
@@ -860,6 +885,8 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, do
         if (atomStyle.centerLabel.size() > 0)
             Label(atomStyle.centerLabel, site, Vector(1,1,1)); // always white
     }
+
+    displayListEmpty[currentDisplayList] = false;
 }
 
 /* add a thick splined curve from point 1 *halfway* to point 2 */
@@ -1150,6 +1177,7 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             DrawHalfBond(site1, midpoint,
                 style.end1.style, style.end1.radius,
                 style.end1.atomCap, style.midCap, bondSides);
+        displayListEmpty[currentDisplayList] = false;
     }
 
     if (style.end2.style != StyleManager::eNotDisplayed) {
@@ -1170,6 +1198,7 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             DrawHalfBond(midpoint, site2,
                 style.end2.style, style.end2.radius,
                 style.midCap, style.end2.atomCap, bondSides);
+        displayListEmpty[currentDisplayList] = false;
     }
 }
 
@@ -1220,6 +1249,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     }
 
     glPopMatrix();
+    displayListEmpty[currentDisplayList] = false;
 }
 
 void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
@@ -1372,6 +1402,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     }
 
     glEnd();
+    displayListEmpty[currentDisplayList] = false;
 }
 
 #ifdef __WXMSW__
@@ -1415,6 +1446,7 @@ void OpenGLRenderer::Label(const std::string& text, const Vector& center, const 
     glBitmap(0, 0, 0.0, 0.0, -0.5 * width, -0.5 * height, NULL);
     glCallLists(text.size(), GL_UNSIGNED_BYTE, text.data());
     glListBase(0);
+    displayListEmpty[currentDisplayList] = false;
 }
 
 END_SCOPE(Cn3D)
