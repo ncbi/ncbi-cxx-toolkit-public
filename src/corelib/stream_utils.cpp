@@ -43,8 +43,6 @@ BEGIN_NCBI_SCOPE
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
-#elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
-#  define CPushback_StreambufBase CShowmanycStreambuf
 #else
 #  define CPushback_StreambufBase CNcbiStreambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
@@ -383,6 +381,7 @@ static streamsize s_Readsome(CNcbiIstream& is,
                              CT_CHAR_TYPE* buf,
                              streamsize    buf_size)
 {
+    _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME
 #endif /*NCBI_NO_READSOME*/
@@ -410,23 +409,11 @@ static streamsize s_Readsome(CNcbiIstream& is,
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
     streamsize avail = is.rdbuf()->in_avail();
-    if ( !avail ) {
-#if defined(NCBI_COMPILER_MIPSPRO)  ||  defined(NCBI_COMPILER_GCC)
-        CShowmanycStreambuf* sb
-            = dynamic_cast<CShowmanycStreambuf*>(is.rdbuf());
-#else
-        CNcbiStreambuf* sb = is.rdbuf();
-#endif
-        if (sb) {
-            avail = sb->showmanyc(); // may be an underestimate
-            if ( !avail ) {
-                return 0; // would block
-            }
-        }
-    }
-    if (avail  &&  avail < buf_size)
-        buf_size = avail;
-    is.read(buf, buf_size);
+    if (avail == 0)
+        avail++; // we still must read
+    else if (buf_size < avail)
+        avail = buf_size;
+    is.read(buf, avail);
     streamsize count = is.gcount();
     // Reset "eof" flag if some data have been read
     if (count  &&  is.eof()  &&  !is.bad())
@@ -444,7 +431,7 @@ static streamsize s_Readsome(CNcbiIstream& is,
     if (buf_size == 1)
         return 1; // do not need more data
     // Read more data (up to "buf_size" bytes)
-    return is.readsome(buf+1, buf_size-1) + 1;
+    return is.readsome(buf + 1, buf_size - 1) + 1;
 #endif /*NCBI_NO_READSOME*/
 }
 
@@ -474,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.35  2003/12/29 15:18:40  lavr
+ * Modified CStreamUtils::Readsome() to avoid blocking on GCC2.95
+ *
  * Revision 1.34  2003/12/18 13:24:46  ucko
  * It seems MIPSpro also lacks showmanyc, so extend our
  * streambuf-with-showmanyc class to cover it as well and make it
