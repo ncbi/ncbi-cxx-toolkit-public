@@ -31,18 +31,13 @@
 * File Description:
 *   CNWAligner class definition
 *
-*   CNWAligner encapsulates the global alignment algorithm
-*   featuring affine gap penalty model.
-*   For a description of the algorithm, see
-*
-*   Dan Gusfeld, "Algorithms on Strings, Trees and Sequences", 
-*   11.8.6. Affine (and constant) gap weights
+*   CNWAligner encapsulates a generic global alignment algorithm
+*   with affine gap penalty model.
 *
 */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <objects/seqalign/Seq_align.hpp>
 #include <algo/align/align_exception.hpp>
 #include <vector>
 #include <string>
@@ -55,7 +50,6 @@
 
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
 
 // NW algorithm encapsulation
@@ -68,9 +62,12 @@ public:
 
     // ctors
     enum EScoringMatrixType {
-        eNucl,
-        eBlosum62
+        eSMT_None,
+        eSMT_Nucl,
+        eSMT_Blosum62
     };
+
+    CNWAligner();
 
     CNWAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
@@ -82,32 +79,25 @@ public:
     // Run the Needleman-Wunsch algorithm, return the alignment's score
     virtual TScore Run();
 
-    // Formatters
-    enum EFormat {
-        eFormatType1,
-        eFormatType2,
-        eFormatAsn,
-        eFormatFastA,
-        eFormatExonTable  // spliced alignment only
-    };
-    virtual void FormatAsText(string* output, EFormat type,
-                              size_t line_width = 100) const
-                              throw(CAlgoAlignException);
-
-    void FormatAsSeqAlign(CSeq_align*) const;
-
-    // Retrieve transcript string
-    string GetTranscript() const;
-
     // Setters
+    void SetMatrixType(EScoringMatrixType matrix_type)
+        throw(CAlgoAlignException);
+    void SetSequences(const char* seq1, size_t len1,
+		      const char* seq2, size_t len2,
+		      bool verify = true)
+        throw(CAlgoAlignException);
+
     void SetWm  (TScore value)  { m_Wm  = value; }   // match (na)
     void SetWms (TScore value)  { m_Wms = value; }   // mismatch (na)
     void SetWg  (TScore value)  { m_Wg  = value; }   // gap opening
     void SetWs  (TScore value)  { m_Ws  = value; }   // gap extension
-    void SetSeqIds(const string& id1, const string& id2);  // set seq ids
 
     // specify whether end gaps should be penalized
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
+
+    // guiding hits
+    void  SetGuides(const vector<size_t>& guides)
+        throw (CAlgoAlignException);
 
     // progress reporting
     struct SProgressInfo
@@ -124,26 +114,46 @@ public:
 
     // Getters
     static TScore GetDefaultWm  () { return  1; }
-    static TScore GetDefaultWms () { return -3; }
+    static TScore GetDefaultWms () { return -2; }
     static TScore GetDefaultWg  () { return -5; }
     static TScore GetDefaultWs  () { return -2; }
 
-    // available transcript symbols
+    const char*   GetSeq1() const { return m_Seq1; }
+    size_t        GetSeqLen1() const { return m_SeqLen1; }
+    const char*   GetSeq2() const { return m_Seq2; }
+    size_t        GetSeqLen2() const { return m_SeqLen2; }
+
+    void          GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2)
+                      const;
+
+    TScore        GetScore() const { return m_score; }
+    
+    // transcript symbols
     enum ETranscriptSymbol {
-        eNone = 0,
-        eInsert,
-        eDelete,
-        eMatch,
-        eReplace,
-        eIntron_GT_AG = 0x0100,
-        eIntron_GC_AG,
-        eIntron_AT_AC,
-        eIntron_Generic
+        eTS_None    =  0,
+        eTS_Delete  = 'D',
+        eTS_Insert  = 'I',
+        eTS_Match   = 'M',
+        eTS_Replace = 'R',
+        eTS_Intron  =  91
     };
 
-    // guiding hits
-    void  SetGuides(const vector<size_t>& guides)
-        throw (CAlgoAlignException);
+    // raw transcript
+    const vector<ETranscriptSymbol>* GetTranscript() const {
+        return &m_Transcript;
+    }
+    // converted transcript vector
+    void GetTranscriptString(vector<char>* out) const;
+
+    // transcript parsers
+    size_t        GetLeftSeg(size_t* q0, size_t* q1,
+                             size_t* s0, size_t* s1,
+                             size_t min_size) const;
+    size_t        GetRightSeg(size_t* q0, size_t* q1,
+                              size_t* s0, size_t* s1,
+                              size_t min_size) const;
+    size_t        GetLongestSeg(size_t* q0, size_t* q1,
+                                size_t* s0, size_t* s1) const;
 
 protected:
     // Bonuses and penalties
@@ -152,28 +162,30 @@ protected:
     TScore   m_Wg;   // gap opening penalty
     TScore   m_Ws;   // gap extension penalty
 
-    // end-space free indicators
+    // end-space free flags
     bool     m_esf_L1, m_esf_R1, m_esf_L2, m_esf_R2;
 
     // Pairwise scoring matrix
-    EScoringMatrixType    m_MatrixType;
-    TScore                m_Matrix [256][256];
+    EScoringMatrixType        m_MatrixType;
+    TScore                    m_Matrix [256][256];
     void x_LoadScoringMatrix();
 
     // progress callback (true return value indicates exit request)
     FProgressCallback     m_prg_callback;
+
     // progress status
     mutable SProgressInfo m_prg_info;
+
     // termination flag
     mutable  bool         m_terminate;
 
     // Source sequences
-    string                m_Seq1Id;
-    const char*           m_Seq1;
-    size_t                m_SeqLen1;
-    string                m_Seq2Id;
-    const char*           m_Seq2;
-    size_t                m_SeqLen2;
+    string                    m_Seq1Id;
+    const char*               m_Seq1;
+    size_t                    m_SeqLen1;
+    string                    m_Seq2Id;
+    const char*               m_Seq2;
+    size_t                    m_SeqLen2;
     size_t x_CheckSequence(const char* seq, size_t len) const;
     virtual bool x_CheckMemoryLimit();
 
@@ -190,20 +202,20 @@ protected:
                             const char* seg2, size_t len2,
                             vector<ETranscriptSymbol>* transcript);
 
-    size_t x_ApplyTranscript(vector<char>* seq1_transformed,
-                             vector<char>* seq2_transformed) const;
-
-    virtual TScore x_ScoreByTranscript() const
-        throw(CAlgoAlignException);
+    virtual TScore x_ScoreByTranscript() const throw (CAlgoAlignException);
 
     // overflow safe "infinity"
     enum { kInfMinus = kMin_Int / 2 };
 
-private:
+    // backtrace
     void x_DoBackTrace(const unsigned char* backtrace_matrix,
                        size_t N1, size_t N2,
                        vector<ETranscriptSymbol>* transcript);
-
+  
+    // returns the size of a single backtrace matrix element
+    virtual size_t x_GetElemSize() const {
+        return 1;
+    }
 };
 
 
@@ -216,11 +228,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.25  2003/08/04 15:43:19  dicuccio
- * Modified export specifiers to be more flexible
+ * Revision 1.26  2003/09/02 22:30:34  kapustin
+ * Move formatting functionality out of the class
  *
  * Revision 1.24  2003/06/26 20:39:53  kapustin
- * Rename formal parameters in SetEndSpaceFree() to avoid conflict with macro under some configurations
+ * Rename formal parameters in SetEndSpaceFree() to avoid conflict with
+ * macro under some configurations
  *
  * Revision 1.23  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
@@ -232,7 +245,8 @@ END_NCBI_SCOPE
  * Progress indication-related updates
  *
  * Revision 1.20  2003/05/23 18:23:40  kapustin
- * Introduce a generic splice type. Make transcript symbol to be more specific about type of the intron.
+ * Introduce a generic splice type. Make transcript symbol to be more
+ * specific about type of the intron.
  *
  * Revision 1.19  2003/04/14 18:58:19  kapustin
  * x_Run() -> x_Align()
@@ -250,7 +264,8 @@ END_NCBI_SCOPE
  * Calculate score independently from transcript
  *
  * Revision 1.14  2003/03/18 15:12:29  kapustin
- * Declare virtual mem limit checking function. Allow separate specification of free end gaps
+ * Declare virtual mem limit checking function. Allow separate specification
+ * of free end gaps
  *
  * Revision 1.13  2003/03/12 21:11:03  kapustin
  * Add text buffer to progress callback info structure
