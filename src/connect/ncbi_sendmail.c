@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/05/18 19:52:24  lavr
+ * Tircks in macros to keep Sun C compiler silent from warnings (details below)
+ *
  * Revision 6.7  2001/03/26 18:39:24  lavr
  * Casting to (unsigned char) instead of (int) for ctype char.class macros
  *
@@ -240,16 +243,26 @@ extern const char* CORE_SendMail(const char* to,
 }
 
 
+/* In two macros below the smartest (or, weak-minded?) Sun
+ * C compiler warned about unreachable end-of-loop condition
+ * (well, it thinks the "condition" is there, dumb!), if we
+ * used 'return' right before the end of 'while' statement.
+ * So we now added "check" and "conditional" exit, which makes
+ * the Sun compiler much happier, and less wordy :-)
+ */
+
 #define SENDMAIL_RETURN(reason)                                            \
     do {                                                                   \
         CORE_LOGF(eLOG_Error, ("[SendMail]  %s", reason));                 \
-        return reason;                                                     \
+        if (reason/*always true, though, to trick "smart" compiler*/)      \
+            return reason;                                                 \
     } while (0)
 
 #define SENDMAIL_RETURN2(reason, explanation)                              \
     do {                                                                   \
        CORE_LOGF(eLOG_Error, ("[SendMail]  %s: %s", reason, explanation)); \
-       return reason;                                                      \
+       if (reason/*always true, though, to trick "smart" compiler*/)       \
+           return reason;                                                  \
     } while (0)
 
 #define SENDMAIL_READ_RESPONSE(code, altcode, buffer)                      \
