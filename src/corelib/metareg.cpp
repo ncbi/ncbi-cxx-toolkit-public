@@ -146,7 +146,6 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             CDirEntry::SplitPath(name, 0, &base, &ext);
             return x_Load(CDirEntry::MakePath(dir, '.' + base, ext + "rc"),
                           eName_AsIs, flags, reg_flags, reg, name0, style0);
-            break;
         }
         }
     }
@@ -196,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/18 19:49:09  ucko
+* Remove an unreachable statement.
+*
 * Revision 1.4  2003/08/12 15:15:50  ucko
 * Open registry files in binary mode per CNcbiRegistry's expectations.
 *
