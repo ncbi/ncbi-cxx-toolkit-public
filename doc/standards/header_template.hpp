@@ -1,4 +1,4 @@
-#ifdef  DIR_DIR_DIR___HEADER_TEMPLATE__HPP
+#ifndef DIR_DIR_DIR___HEADER_TEMPLATE__HPP
 #define DIR_DIR_DIR___HEADER_TEMPLATE__HPP
 
 /*  $Id$
@@ -138,5 +138,17 @@ private:
 
 END_NCBI_SCOPE
 
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.3  2003/06/23 19:33:38  ucko
+* Fix reversed multiple-inclusion guard.
+* Having turned keyword expansion off, unexpand Id and add a Log comment
+* at the bottom.
+*
+*
+* ===========================================================================
+*/
 
 #endif  /* DIR_DIR_DIR___HEADER_TEMPLATE__HPP */
