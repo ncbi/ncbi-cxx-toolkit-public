@@ -1,13 +1,19 @@
+# $Id$
+#
+# Generate ASN.1 serialization code in the "objects/" projects
+
 include $(builddir)/Makefile.mk
 
 all all_r:
 	$(SHELL) -c ' \
-		cd "$(srcdir)" || exit 2; \
+	    cd "$(srcdir)" || exit 2; \
 	    if test -x "$(bindir)/datatool"; then \
+	        LD_LIBRARY_PATH="$(libdir):$LD_LIBRARY_PATH"; \
+	        export LD_LIBRARY_PATH; \
 	        NCBI_DATATOOL_PATH="$(bindir)"; \
-			export NCBI_DATATOOL_PATH; \
-		fi; \
-		$(MAKE) all_files; \
+	        export NCBI_DATATOOL_PATH; \
+	    fi; \
+	    $(MAKE) all_files; \
 	'
 
 clean clean_r purge purge_r:
