@@ -52,10 +52,25 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
+                               const CBioseq_Handle& bioseq,
+                               const SAnnotSelector* params)
+    : m_DataCollector(params ?
+        new CAnnot_Collector(*params, bioseq.GetScope()) :
+        new CAnnot_Collector(type, bioseq.GetScope()))
+{
+    m_DataCollector->GetSelector().CheckAnnotType(type);
+    m_DataCollector->x_Initialize(bioseq);
+    Rewind();
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                CScope& scope,
                                const CSeq_loc& loc,
-                               const SAnnotSelector& params)
-    : m_DataCollector(new CAnnot_Collector(params, scope))
+                               const SAnnotSelector* params)
+    : m_DataCollector(params ?
+        new CAnnot_Collector(*params, scope) :
+        new CAnnot_Collector(type, scope))
 {
     m_DataCollector->GetSelector().CheckAnnotType(type);
     CHandleRangeMap master_loc;
@@ -66,53 +81,16 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               const CBioseq_Handle& bioseq,
-                               TSeqPos start, TSeqPos stop,
-                               const SAnnotSelector& params)
-    : m_DataCollector(new CAnnot_Collector(params, bioseq.GetScope()))
-{
-    m_DataCollector->GetSelector().CheckAnnotType(type);
-    m_DataCollector->x_Initialize(bioseq, start, stop);
-    Rewind();
-}
-
-
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               const CSeq_annot_Handle& annot)
-    : m_DataCollector(new CAnnot_Collector(SAnnotSelector(type),
-                                              annot.GetScope()))
-{
-    m_DataCollector->GetSelector()
-        .SetResolveNone() // nothing to resolve
-        .SetLimitSeqAnnot(annot);
-    m_DataCollector->x_Initialize();
-    Rewind();
-}
-
-
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CSeq_annot_Handle& annot,
-                               const SAnnotSelector& params)
-    : m_DataCollector(new CAnnot_Collector(params, annot.GetScope()))
+                               const SAnnotSelector* params)
+    : m_DataCollector(params ?
+        new CAnnot_Collector(*params, annot.GetScope()) :
+        new CAnnot_Collector(type, annot.GetScope()))
 {
     m_DataCollector->GetSelector()
         .CheckAnnotType(type)
         .SetResolveNone() // nothing to resolve
         .SetLimitSeqAnnot(annot);
-    m_DataCollector->x_Initialize();
-    Rewind();
-}
-
-
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               const CSeq_entry_Handle& entry)
-    : m_DataCollector(new CAnnot_Collector(SAnnotSelector(type),
-                                              entry.GetScope()))
-{
-    m_DataCollector->GetSelector()
-        .SetResolveNone() // nothing to resolve
-        .SetSortOrder(SAnnotSelector::eSortOrder_None)
-        .SetLimitSeqEntry(entry);
     m_DataCollector->x_Initialize();
     Rewind();
 }
@@ -120,8 +98,10 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                const CSeq_entry_Handle& entry,
-                               const SAnnotSelector& params)
-    : m_DataCollector(new CAnnot_Collector(params, entry.GetScope()))
+                               const SAnnotSelector* params)
+    : m_DataCollector(params ?
+        new CAnnot_Collector(*params, entry.GetScope()) :
+        new CAnnot_Collector(type, entry.GetScope()))
 {
     m_DataCollector->GetSelector()
         .CheckAnnotType(type)
@@ -133,14 +113,53 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 }
 
 
+CSeq_annot_Handle CAnnotTypes_CI::GetAnnot(void) const
+{
+    return m_DataCollector->GetAnnot(Get());
+}
+
+
+CAnnotTypes_CI::~CAnnotTypes_CI(void)
+{
+    return;
+}
+
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
+                               const CBioseq_Handle& bioseq,
+                               TSeqPos start, TSeqPos stop,
+                               const SAnnotSelector& params)
+    : m_DataCollector(new CAnnot_Collector(params, bioseq.GetScope()))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,\n"
+        "                               const CBioseq_Handle& bioseq,\n"
+        "                               TSeqPos start, TSeqPos stop,\n"
+        "                               const SAnnotSelector& params).");
+    m_DataCollector->GetSelector().CheckAnnotType(type);
+    m_DataCollector->x_Initialize(bioseq, start, stop);
+    Rewind();
+}
+
+
 CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
                                CScope& scope,
                                const CSeq_loc& loc,
-                               //const SAnnotSelector& selector,
                                SAnnotSelector::EOverlapType overlap_type,
                                SAnnotSelector::EResolveMethod resolve_method)
     : m_DataCollector(new CAnnot_Collector(SAnnotSelector(), scope))
 {
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,\n"
+        "                               CScope& scope,\n"
+        "                               const CSeq_loc& loc,\n"
+        "                               SAnnotSelector::EOverlapType overlap_type,\n"
+        "                               SAnnotSelector::EResolveMethod resolve_method).");
     m_DataCollector->GetSelector()
         .CheckAnnotType(type)
         .SetOverlapType(overlap_type)
@@ -161,6 +180,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
     : m_DataCollector(new CAnnot_Collector(SAnnotSelector(),
                                               bioseq.GetScope()))
 {
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,\n"
+        "                               const CBioseq_Handle& bioseq,\n"
+        "                               TSeqPos start, TSeqPos stop,\n"
+        "                               SAnnotSelector::EOverlapType overlap_type,\n"
+        "                               SAnnotSelector::EResolveMethod resolve_method).");
     m_DataCollector->GetSelector()
         .CheckAnnotType(type)
         .SetOverlapType(overlap_type)
@@ -168,13 +194,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
     m_DataCollector->x_Initialize(bioseq, start, stop);
     Rewind();
 }
-
-
-CSeq_annot_Handle CAnnotTypes_CI::GetAnnot(void) const
-{
-    return m_DataCollector->GetAnnot(Get());
-}
-
 
 const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 {
@@ -185,10 +204,7 @@ const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 }
 
 
-CAnnotTypes_CI::~CAnnotTypes_CI(void)
-{
-    return;
-}
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 
 
 END_SCOPE(objects)
@@ -197,6 +213,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.123  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.122  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

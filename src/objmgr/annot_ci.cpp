@@ -59,11 +59,10 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
 }
 
 
-CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
-                     const SAnnotSelector& sel)
+CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      scope, loc,
-                     SAnnotSelector(sel)
+                     &SAnnotSelector()
                      .SetNoMapping(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
@@ -71,13 +70,34 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
 }
 
 
-
-CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
+CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     bioseq, start, stop,
-                     SAnnotSelector(sel)
+                     scope, loc,
+                     &SAnnotSelector(sel)
+                     .SetNoMapping(true)
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
+{
+    x_Collect();
+}
+
+
+CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     bioseq,
+                     &SAnnotSelector()
+                     .SetNoMapping(true)
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
+{
+    x_Collect();
+}
+
+
+CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     bioseq,
+                     &SAnnotSelector(sel)
                      .SetNoMapping(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
@@ -100,18 +120,64 @@ CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 }
 
 
+CAnnot_CI::~CAnnot_CI(void)
+{
+    return;
+}
+
+
+void CAnnot_CI::x_Collect(void)
+{
+    while ( IsValid() ) {
+        CSeq_annot_Handle h = GetAnnot();
+        if ( h ) {
+            m_SeqAnnotSet.insert(h);
+        }
+        Next();
+    }
+    m_Iterator = m_SeqAnnotSet.begin();
+}
+
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
+                     TSeqPos start, TSeqPos stop,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     bioseq, start, stop,
+                     SAnnotSelector(sel)
+                     .SetNoMapping(true)
+                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,\n"
+        "                     TSeqPos start, TSeqPos stop,\n"
+        "                     const SAnnotSelector& sel).");
+    x_Collect();
+}
+
+
 CAnnot_CI::CAnnot_CI(CScope& scope,
                      const CSeq_loc& loc,
                      SAnnotSelector::EOverlapType overlap_type,
                      SAnnotSelector::EResolveMethod resolve)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      scope, loc,
-                     SAnnotSelector()
+                     &SAnnotSelector()
                      .SetNoMapping(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve))
 {
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CAnnot_CI::CAnnot_CI(CScope& scope,\n"
+        "                     const CSeq_loc& loc,\n"
+        "                     SAnnotSelector::EOverlapType overlap_type,\n"
+        "                     SAnnotSelector::EResolveMethod resolve).");
     x_Collect();
 }
 
@@ -127,35 +193,15 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve))
 {
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,\n"
+        "                     SAnnotSelector::EOverlapType overlap_type,\n"
+        "                     SAnnotSelector::EResolveMethod resolve).");
     x_Collect();
 }
 
-
-CAnnot_CI::~CAnnot_CI(void)
-{
-    return;
-}
-
-
-void CAnnot_CI::x_Collect(void)
-{
-    while ( IsValid() ) {
-        CSeq_annot_Handle h = GetAnnot();
-        if ( h ) {
-            m_SeqAnnotSet.insert(h);
-        }
-        /*
-        if (Get().GetObjectType() != CAnnotObject_Ref::eType_Seq_annot_Info) {
-            Next();
-            continue;
-        }
-        CSeq_annot_Handle h(GetScope(),
-                            Get().GetAnnotObject_Info().GetSeq_annot_Info());
-        */
-        Next();
-    }
-    m_Iterator = m_SeqAnnotSet.begin();
-}
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 
 
 END_SCOPE(objects)
@@ -164,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.35  2004/10/06 15:10:53  grichenk
 * Fixed type(s) selection.
 *

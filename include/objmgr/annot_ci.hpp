@@ -62,38 +62,30 @@ public:
     CAnnot_CI(void);
 
     /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given bioseq
+    CAnnot_CI(const CBioseq_Handle& bioseq);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAnnot_CI(const CBioseq_Handle& bioseq,
+              const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given seq-loc based on selection
+    CAnnot_CI(CScope& scope,
+              const CSeq_loc& loc);
+
+    /// Create an iterator that enumerates CSeq_annot objects 
     /// related to the given seq-loc based on selection
     ///
     /// @sa
     ///   SAnnotSelector
-    CAnnot_CI(CScope& scope, const CSeq_loc& loc,
+    CAnnot_CI(CScope& scope,
+              const CSeq_loc& loc,
               const SAnnotSelector& sel);
-
-    /// Create an iterator that enumerates CSeq_annot objects 
-    /// related to the given bioseq based on selection
-    ///
-    /// @sa
-    ///   SAnnotSelector
-    CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              const SAnnotSelector& sel);
-
-    /// Create an iterator that enumerates CSeq_annot objects
-    /// from all TSEs in all datasources
-    CAnnot_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-
-    /// Create an iterator that enumerates CSeq_annot objects
-    /// from the only TSE that contains the bioseq
-    CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-
-    // Iterate all features from the object regardless of their location
 
     /// Create an iterator that enumerates CSeq_annot objects
     /// from the annotation regardless of their location
@@ -126,6 +118,35 @@ private:
     mutable TSeqAnnotSet m_SeqAnnotSet;
     TIterator m_Iterator;
     mutable CSeq_annot_Handle m_Value;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    /// @deprecated
+    /// Create an iterator that enumerates CSeq_annot objects 
+    /// related to the given bioseq based on selection
+    CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              const SAnnotSelector& sel);
+
+    /// @deprecated
+    /// Create an iterator that enumerates CSeq_annot objects
+    /// from all TSEs in all datasources
+    CAnnot_CI(CScope& scope, const CSeq_loc& loc,
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
+
+    /// @deprecated
+    /// Create an iterator that enumerates CSeq_annot objects
+    /// from the only TSE that contains the bioseq
+    CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -180,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.28  2004/10/01 14:36:44  kononenk
 * Added doxygen formatting
 *

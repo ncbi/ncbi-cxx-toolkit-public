@@ -91,6 +91,29 @@ void CMappedGraph::MakeMappedGraph(void) const
 }
 
 
+CGraph_CI::~CGraph_CI(void)
+{
+}
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     TSeqPos start, TSeqPos stop,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, start, stop, sel)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,\n"
+        "                     TSeqPos start, TSeqPos stop,\n"
+        "                     const SAnnotSelector& sel).");
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
                      SAnnotSelector::EOverlapType overlap_type,
@@ -99,6 +122,12 @@ CGraph_CI::CGraph_CI(CScope& scope,
                      scope, loc,
                      overlap_type, resolve)
 {
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CGraph_CI::CGraph_CI(CScope& scope,\n"
+        "                     const CSeq_loc& loc,\n"
+        "                     SAnnotSelector::EOverlapType overlap_type,\n"
+        "                     SAnnotSelector::EResolveMethod resolve).");
     if ( IsValid() ) {
         m_Graph.Set(GetCollector(), GetIterator());
     }
@@ -113,16 +142,18 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      bioseq, start, stop,
                      overlap_type, resolve)
 {
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,\n"
+        "                     TSeqPos start, TSeqPos stop,\n"
+        "                     SAnnotSelector::EOverlapType overlap_type,\n"
+        "                     SAnnotSelector::EResolveMethod resolve).");
     if ( IsValid() ) {
         m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
-
-CGraph_CI::~CGraph_CI(void)
-{
-}
-
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -130,6 +161,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.28  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

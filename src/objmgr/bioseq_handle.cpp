@@ -146,24 +146,6 @@ CConstRef<CBioseq> CBioseq_Handle::GetCompleteBioseq(void) const
 }
 
 
-const CBioseq& CBioseq_Handle::GetBioseq(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CBioseq_Handle::GetBioseq() is deprecated, "
-                  "use GetCompleteBioseq() or GetBioseqCore().");
-    return *GetCompleteBioseq();
-}
-
-
-const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CBioseq_Handle::GetTopLevelSeqEntry() is deprecated, "
-                  "use GetTopLevelEntry().");
-    return *GetTopLevelEntry().GetCompleteSeq_entry();
-}
-
-
 CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 {
     return x_GetInfo().GetBioseqCore();
@@ -804,6 +786,28 @@ void CBioseq_EditHandle::SetInst_Hist(TInst_Hist& v) const
 }
 
 
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+const CBioseq& CBioseq_Handle::GetBioseq(void) const
+{
+    ERR_POST_ONCE(Warning<<
+                  "CBioseq_Handle::GetBioseq() is deprecated, "
+                  "use GetCompleteBioseq() or GetBioseqCore().");
+    return *GetCompleteBioseq();
+}
+
+
+const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
+{
+    ERR_POST_ONCE(Warning<<
+                  "CBioseq_Handle::GetTopLevelSeqEntry() is deprecated, "
+                  "use GetTopLevelEntry().");
+    return *GetTopLevelEntry().GetCompleteSeq_entry();
+}
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+
 
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
@@ -815,6 +819,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.72  2004/09/27 20:12:51  kononenk
 * Fixed CBioseq_Handle::operator==()
 *

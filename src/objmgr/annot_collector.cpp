@@ -560,6 +560,15 @@ public:
 };
 
 
+CAnnot_Collector::CAnnot_Collector(TAnnotType& type,
+                                   CScope&     scope)
+    : m_Selector(type),
+      m_Scope(scope),
+      m_MappingCollector(new CAnnotMappingCollector)
+{
+    return;
+}
+
 CAnnot_Collector::CAnnot_Collector(const SAnnotSelector& selector,
                                    CScope&               scope)
     : m_Selector(selector),
@@ -608,17 +617,13 @@ void CAnnot_Collector::x_Clear(void)
 }
 
 
-void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,
-                                    TSeqPos               start,
-                                    TSeqPos               stop)
+void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq)
 {
     try {
-        if ( start == 0 && stop == 0 ) {
-            stop = bioseq.GetBioseqLength()-1;
-        }
         CHandleRangeMap master_loc;
         master_loc.AddRange(bioseq.GetSeq_id_Handle(),
-                            CHandleRange::TRange(start, stop),
+                            CHandleRange::TRange(0,
+                            bioseq.GetBioseqLength()-1),
                             eNa_strand_unknown);
         x_Initialize(master_loc);
     } catch (...) {
@@ -1813,12 +1818,45 @@ CAnnot_Collector::MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
 }
 
 
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,
+                                    TSeqPos               start,
+                                    TSeqPos               stop)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,\n"
+        "                                    TSeqPos               start,\n"
+        "                                    TSeqPos               stop).");
+    try {
+        if ( start == 0 && stop == 0 ) {
+            stop = bioseq.GetBioseqLength()-1;
+        }
+        CHandleRangeMap master_loc;
+        master_loc.AddRange(bioseq.GetSeq_id_Handle(),
+                            CHandleRange::TRange(start, stop),
+                            eNa_strand_unknown);
+        x_Initialize(master_loc);
+    } catch (...) {
+        // clear all members - GCC 3.0.4 does not do it
+        x_Clear();
+        throw;
+    }
+}
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.36  2004/10/27 19:29:23  vasilche
 * Reset partial flag in CAnnotObject_Ref::ResetLocation().
 * Several methods of CAnnotObject_Ref made non-inline.

@@ -202,83 +202,49 @@ class CSeq_annot_Handle;
 class NCBI_XOBJMGR_EXPORT CFeat_CI : public CAnnotTypes_CI
 {
 public:
-    enum EFeat_Location {
-        e_Location,
-        e_Product
-    };
     CFeat_CI(void);
 
+    /// Search features on the whole bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq);
+
+    /// Search features on the whole bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             const SAnnotSelector& sel);
+
+    /// Search features related to the location
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc);
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop);
+
+    /// Search features related to the location
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              const SAnnotSelector& sel);
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             const SAnnotSelector& sel);
 
-    // Iterate all features from the object regardless of their location
-    CFeat_CI(CScope& scope, const CSeq_annot& annot);
-    CFeat_CI(CScope& scope, const CSeq_annot& annot,
-             const SAnnotSelector& sel);
+    /// Iterate all features from the seq-annot regardless of their location
     CFeat_CI(const CSeq_annot_Handle& annot);
+
+    /// Iterate all features from the seq-annot regardless of their location
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CFeat_CI(const CSeq_annot_Handle& annot,
              const SAnnotSelector& sel);
 
-    CFeat_CI(CScope& scope, const CSeq_entry& entry);
-    CFeat_CI(CScope& scope, const CSeq_entry& entry,
-             const SAnnotSelector& sel);
+    /// Iterate all features from the seq-entry regardless of their location
     CFeat_CI(const CSeq_entry_Handle& entry);
+
+    /// Iterate all features from the seq-entry regardless of their location
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CFeat_CI(const CSeq_entry_Handle& entry,
              const SAnnotSelector& sel);
-
-    typedef SAnnotSelector::TFeatType TFeatType;
-
-    /// Search all TSEs in all datasources. By default search sequence segments
-    /// (for constructed sequences) only if the referenced sequence is in the
-    /// same TSE as the master one. Use CFeat_CI::eResolve_All flag to search
-    /// features on all referenced sequences or CFeat_CI::eResolve_None to
-    /// disable references resolving.
-    CFeat_CI(CScope& scope,
-             const CSeq_loc& loc,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type
-             = SAnnotSelector::eOverlap_Intervals,
-             SAnnotSelector::EResolveMethod resolve
-             = SAnnotSelector::eResolve_TSE,
-             EFeat_Location loc_type = e_Location);
-
-    /// Search only in TSE, containing the bioseq. If both start & stop are 0,
-    /// the whole bioseq is searched. References are resolved depending on the
-    /// "resolve" flag (see above).
-    /// If "entry" is set, search only features from the seq-entry specified
-    /// (but no its sub-entries or parent entry).
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type
-             = SAnnotSelector::eOverlap_Intervals,
-             SAnnotSelector::EResolveMethod resolve
-             = SAnnotSelector::eResolve_TSE,
-             EFeat_Location loc_type = e_Location);
-
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type,
-             SAnnotSelector::EResolveMethod resolve,
-             EFeat_Location loc_type,
-             const CSeq_entry_Handle& limitEntry);
-
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type,
-             SAnnotSelector::EResolveMethod resolve,
-             EFeat_Location loc_type,
-             const CSeq_entry* limitEntry);
 
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
@@ -304,6 +270,88 @@ private:
     CFeat_CI& operator-- (int);
 
     CMappedFeat m_MappedFeat;// current feature object returned by operator->()
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    enum EFeat_Location {
+        e_Location,
+        e_Product
+    };
+
+    /// @deprecated
+    /// Search features on the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop);
+
+    /// @deprecated
+    /// Search features on the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             const SAnnotSelector& sel);
+
+    /// @deprecated
+    /// Iterate all features from the seq-annot regardless of their location
+    CFeat_CI(CScope& scope, const CSeq_annot& annot);
+
+    /// @deprecated
+    /// Iterate all features from the seq-annot regardless of their location
+    CFeat_CI(CScope& scope, const CSeq_annot& annot,
+             const SAnnotSelector& sel);
+
+    /// @deprecated
+    /// Iterate all features from the seq-entry regardless of their location
+    CFeat_CI(CScope& scope, const CSeq_entry& entry);
+
+    /// @deprecated
+    /// Iterate all features from the seq-entry regardless of their location
+    CFeat_CI(CScope& scope, const CSeq_entry& entry,
+             const SAnnotSelector& sel);
+
+    typedef SAnnotSelector::TFeatType TFeatType;
+
+    /// @deprecated
+    /// Search features related to the location
+    CFeat_CI(CScope& scope,
+             const CSeq_loc& loc,
+             TFeatType feat_type,
+             SAnnotSelector::EOverlapType overlap_type
+             = SAnnotSelector::eOverlap_Intervals,
+             SAnnotSelector::EResolveMethod resolve
+             = SAnnotSelector::eResolve_TSE,
+             EFeat_Location loc_type = e_Location);
+
+    /// @deprecated
+    /// Search features on the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             TFeatType feat_type,
+             SAnnotSelector::EOverlapType overlap_type
+             = SAnnotSelector::eOverlap_Intervals,
+             SAnnotSelector::EResolveMethod resolve
+             = SAnnotSelector::eResolve_TSE,
+             EFeat_Location loc_type = e_Location);
+
+    /// @deprecated
+    /// Search features on the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             TFeatType feat_type,
+             SAnnotSelector::EOverlapType overlap_type,
+             SAnnotSelector::EResolveMethod resolve,
+             EFeat_Location loc_type,
+             const CSeq_entry_Handle& limitEntry);
+
+    /// @deprecated
+    /// Search features on the bioseq
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             TFeatType feat_type,
+             SAnnotSelector::EOverlapType overlap_type,
+             SAnnotSelector::EResolveMethod resolve,
+             EFeat_Location loc_type,
+             const CSeq_entry* limitEntry);
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -404,6 +452,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.45  2004/10/08 14:18:34  grichenk
 * Moved MakeMappedXXXX methods to CAnnotCollector,
 * fixed mapped feature initialization bug.

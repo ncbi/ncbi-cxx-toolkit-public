@@ -187,29 +187,52 @@ private:
 class NCBI_XOBJMGR_EXPORT CGraph_CI : public CAnnotTypes_CI
 {
 public:
+    /// Create an empty iterator
     CGraph_CI(void);
-    CGraph_CI(CScope& scope, const CSeq_loc& loc,
+
+    /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given bioseq
+    CGraph_CI(const CBioseq_Handle& bioseq);
+
+    /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CGraph_CI(const CBioseq_Handle& bioseq,
               const SAnnotSelector& sel);
-    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+
+    /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given seq-loc
+    CGraph_CI(CScope& scope,
+              const CSeq_loc& loc);
+
+    /// Create an iterator that enumerates CSeq_graph objects 
+    /// related to the given seq-loc
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CGraph_CI(CScope& scope,
+              const CSeq_loc& loc,
               const SAnnotSelector& sel);
-    // Search all TSEs in all datasources
-    CGraph_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-    // Search only in TSE, containing the bioseq
-    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-    
-    // Iterate all graphs from the object regardless of their location
+
+    /// Iterate all graphs from the seq-annot regardless of their location
     CGraph_CI(const CSeq_annot_Handle& annot);
+
+    /// Iterate all graphs from the seq-annot regardless of their location
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CGraph_CI(const CSeq_annot_Handle& annot,
               const SAnnotSelector& sel);
+
+    /// Iterate all graphs from the seq-entry regardless of their location
     CGraph_CI(const CSeq_entry_Handle& entry);
+
+    /// Iterate all graphs from the seq-entry regardless of their location
+    ///
+    /// @sa
+    ///   SAnnotSelector
     CGraph_CI(const CSeq_entry_Handle& entry,
               const SAnnotSelector& sel);
 
@@ -225,6 +248,32 @@ private:
     CGraph_CI operator-- (int);
 
     CMappedGraph m_Graph; // current graph object returned by operator->()
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    /// @deprecated
+    /// Iterate all graphs related to the bioseq
+    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              const SAnnotSelector& sel);
+
+    /// @deprecated
+    /// Iterate all graphs related to the location
+    CGraph_CI(CScope& scope, const CSeq_loc& loc,
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
+
+    /// @deprecated
+    /// Iterate all graphs related to the bioseq
+    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -234,9 +283,8 @@ CGraph_CI::CGraph_CI(void)
 }
 
 inline
-CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, sel)
+CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc)
 {
     if ( IsValid() ) {
         m_Graph.Set(GetCollector(), GetIterator());
@@ -245,9 +293,30 @@ CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
 
 
 inline
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, start, stop, sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, &sel)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+inline
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), GetIterator());
+    }
+}
+
+
+inline
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, &sel)
 {
     if ( IsValid() ) {
         m_Graph.Set(GetCollector(), GetIterator());
@@ -268,7 +337,7 @@ CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
 inline
 CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, &sel)
 {
     if ( IsValid() ) {
         m_Graph.Set(GetCollector(), GetIterator());
@@ -289,7 +358,7 @@ CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
 inline
 CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, &sel)
 {
     if ( IsValid() ) {
         m_Graph.Set(GetCollector(), GetIterator());
@@ -345,6 +414,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.37  2004/10/01 19:52:50  kononenk
 * Added doxygen formatting
 *

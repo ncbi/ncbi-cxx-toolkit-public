@@ -185,6 +185,10 @@ class CAnnotMappingCollector;
 class CAnnot_Collector : public CObject
 {
 public:
+    typedef SAnnotSelector::TAnnotType TAnnotType;
+
+    CAnnot_Collector(TAnnotType& type,
+                     CScope&     scope);
     CAnnot_Collector(const SAnnotSelector& selector,
                      CScope&               scope);
     ~CAnnot_Collector(void);
@@ -211,8 +215,7 @@ private:
                                            CSeq_loc& mapped_location);
 
     void x_Clear(void);
-    void x_Initialize(const CBioseq_Handle& bioseq,
-                      TSeqPos start, TSeqPos stop);
+    void x_Initialize(const CBioseq_Handle& bioseq);
     void x_Initialize(const CHandleRangeMap& master_loc);
     void x_Initialize(void);
     void x_GetTSE_Info(void);
@@ -292,6 +295,13 @@ private:
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
     friend class CMappedGraph;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+private:
+    void x_Initialize(const CBioseq_Handle& bioseq,
+                      TSeqPos start, TSeqPos stop);
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -655,6 +665,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.19  2004/10/27 19:29:23  vasilche
 * Reset partial flag in CAnnotObject_Ref::ResetLocation().
 * Several methods of CAnnotObject_Ref made non-inline.

@@ -33,7 +33,6 @@
 *
 */
 
-
 #include <corelib/ncbi_limits.h>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
@@ -385,6 +384,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.34  2004/09/27 14:35:45  grichenk
 * +Flag for handling unresolved IDs (search/ignore/fail)
 * +Selector method for external annotations search

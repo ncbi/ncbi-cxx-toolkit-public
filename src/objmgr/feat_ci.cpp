@@ -76,73 +76,18 @@ CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 }
 
 
-CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   TFeatType feat_type,
-                   SAnnotSelector::EOverlapType overlap_type,
-                   SAnnotSelector::EResolveMethod resolve,
-                   EFeat_Location loc_type)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     bioseq, start, stop,
-                     SAnnotSelector(feat_type)
-                     .SetByProduct(loc_type == e_Product)
-                     .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve))
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable, bioseq)
 {
     Update();
 }
 
 
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   TFeatType feat_type,
-                   SAnnotSelector::EOverlapType overlap_type,
-                   SAnnotSelector::EResolveMethod resolve,
-                   EFeat_Location loc_type,
-                   const CSeq_entry_Handle& limitEntry)
+                   const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     bioseq, start, stop,
-                     SAnnotSelector(feat_type)
-                     .SetByProduct(loc_type == e_Product)
-                     .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve)
-                     .SetLimitSeqEntry(limitEntry))
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   TFeatType feat_type,
-                   SAnnotSelector::EOverlapType overlap_type,
-                   SAnnotSelector::EResolveMethod resolve,
-                   EFeat_Location loc_type,
-                   const CSeq_entry* limitEntry)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     bioseq, start, stop,
-                     SAnnotSelector(feat_type)
-                     .SetByProduct(loc_type == e_Product)
-                     .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve)
-                     .SetLimitSeqEntry(limitEntry))
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(CScope& scope,
-                   const CSeq_loc& loc,
-                   TFeatType feat_type,
-                   SAnnotSelector::EOverlapType overlap_type,
-                   SAnnotSelector::EResolveMethod resolve,
-                   EFeat_Location loc_type)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope, loc,
-                     SAnnotSelector(feat_type)
-                     .SetByProduct(loc_type == e_Product)
-                     .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve))
+                     bioseq,
+                     &sel)
 {
     Update();
 }
@@ -151,20 +96,8 @@ CFeat_CI::CFeat_CI(CScope& scope,
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope, loc,
-                     SAnnotSelector::eOverlap_Intervals,
-                     SAnnotSelector::eResolve_TSE)
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     bioseq, start, stop,
-                     SAnnotSelector::eOverlap_Intervals,
-                     SAnnotSelector::eResolve_TSE)
+                     scope,
+                     loc)
 {
     Update();
 }
@@ -174,19 +107,9 @@ CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
                    const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope, loc,
-                     sel)
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     bioseq, start, stop,
-                     sel)
+                     scope,
+                     loc,
+                     &sel)
 {
     Update();
 }
@@ -204,7 +127,7 @@ CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot,
                    const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      annot,
-                     sel)
+                     &sel)
 {
     Update();
 }
@@ -222,43 +145,7 @@ CFeat_CI::CFeat_CI(const CSeq_entry_Handle& entry,
                    const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
                      entry,
-                     sel)
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope.GetSeq_annotHandle(annot))
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot,
-                   const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope.GetSeq_annotHandle(annot),
-                     sel)
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope.GetSeq_entryHandle(entry))
-{
-    Update();
-}
-
-
-CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,
-                   const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
-                     scope.GetSeq_entryHandle(entry),
-                     sel)
+                     &sel)
 {
     Update();
 }
@@ -316,15 +203,6 @@ CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 }
 
 
-const CSeq_annot& CMappedFeat::GetSeq_annot(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CMappedFeat::GetSeq_annot() is deprecated, "
-                  "use GetAnnot().");
-    return *m_FeatRef->GetSeq_annot_Info().GetCompleteSeq_annot();
-}
-
-
 void CMappedFeat::Reset(void)
 {
     m_Collector.Reset();
@@ -358,12 +236,216 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 }
 
 
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   TFeatType feat_type,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
+                   EFeat_Location loc_type)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector(feat_type)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve))
+{
+    ERR_POST_ONCE(Warning <<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,\n"
+        "                   TSeqPos start, TSeqPos stop,\n"
+        "                   TFeatType feat_type,\n"
+        "                   SAnnotSelector::EOverlapType overlap_type,\n"
+        "                   SAnnotSelector::EResolveMethod resolve,\n"
+        "                   EFeat_Location loc_type).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   TFeatType feat_type,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
+                   EFeat_Location loc_type,
+                   const CSeq_entry_Handle& limitEntry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector(feat_type)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve)
+                     .SetLimitSeqEntry(limitEntry))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,\n"
+        "                   TSeqPos start, TSeqPos stop,\n"
+        "                   TFeatType feat_type,\n"
+        "                   SAnnotSelector::EOverlapType overlap_type,\n"
+        "                   SAnnotSelector::EResolveMethod resolve,\n"
+        "                   EFeat_Location loc_type,\n"
+        "                   const CSeq_entry_Handle& limitEntry).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   TFeatType feat_type,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
+                   EFeat_Location loc_type,
+                   const CSeq_entry* limitEntry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector(feat_type)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve)
+                     .SetLimitSeqEntry(limitEntry))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,\n"
+        "                   TSeqPos start, TSeqPos stop,\n"
+        "                   TFeatType feat_type,\n"
+        "                   SAnnotSelector::EOverlapType overlap_type,\n"
+        "                   SAnnotSelector::EResolveMethod resolve,\n"
+        "                   EFeat_Location loc_type,\n"
+        "                   const CSeq_entry* limitEntry).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope,
+                   const CSeq_loc& loc,
+                   TFeatType feat_type,
+                   SAnnotSelector::EOverlapType overlap_type,
+                   SAnnotSelector::EResolveMethod resolve,
+                   EFeat_Location loc_type)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope, loc,
+                     &SAnnotSelector(feat_type)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(CScope& scope,\n"
+        "                   const CSeq_loc& loc,\n"
+        "                   TFeatType feat_type,\n"
+        "                   SAnnotSelector::EOverlapType overlap_type,\n"
+        "                   SAnnotSelector::EResolveMethod resolve,\n"
+        "                   EFeat_Location loc_type).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector::eOverlap_Intervals,
+                     SAnnotSelector::eResolve_TSE)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,\n"
+        "                   TSeqPos start, TSeqPos stop).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     sel)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,\n"
+        "                   TSeqPos start, TSeqPos stop,\n"
+        "                   const SAnnotSelector& sel).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_annotHandle(annot))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_annotHandle(annot),
+                     &sel)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot,\n"
+        "                   const SAnnotSelector& sel).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_entryHandle(entry))
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry).");
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_entryHandle(entry),
+                     &sel)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,\n"
+        "                   const SAnnotSelector& sel).");
+    Update();
+}
+
+
+const CSeq_annot& CMappedFeat::GetSeq_annot(void) const
+{
+    ERR_POST_ONCE(Warning<<
+                  "CMappedFeat::GetSeq_annot() is deprecated, "
+                  "use GetAnnot().");
+    return *m_FeatRef->GetSeq_annot_Info().GetCompleteSeq_annot();
+}
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.35  2004/10/12 17:07:39  grichenk
 * Fixed x_MakeMappedFeature
 *

@@ -109,9 +109,6 @@ public:
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
-    /// Get const reference to the current seq-annot
-    const CSeq_annot& GetSeq_annot(void) const;
-
     /// Complete and return const reference to the current seq-annot
     CConstRef<CSeq_annot> GetCompleteSeq_annot(void) const;
 
@@ -148,6 +145,12 @@ protected:
 public: // non-public section
     const TTSE_Lock& GetTSE_Lock(void) const;
     const CSeq_annot_Info& x_GetInfo(void) const;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+    /// Get const reference to the current seq-annot
+    const CSeq_annot& GetSeq_annot(void) const;
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -285,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.11  2004/09/29 16:52:34  kononenk
 * Added doxygen formatting
 *

@@ -66,30 +66,30 @@ public:
     CAlign_CI(void);
 
     /// Create an iterator that enumerates CSeq_align objects 
-    /// related to the given seq-loc
-    CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              const SAnnotSelector& sel);
+    /// related to the given bioseq
+    CAlign_CI(const CBioseq_Handle& bioseq);
 
     /// Create an iterator that enumerates CSeq_align objects 
     /// related to the given bioseq
-    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAlign_CI(const CBioseq_Handle& bioseq,
               const SAnnotSelector& sel);
 
-    /// Create an iterator that enumerates CSeq_align objects
-    /// from all TSEs in all datasources
-    CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given seq-loc
+    CAlign_CI(CScope& scope,
+              const CSeq_loc& loc,
+              const SAnnotSelector& sel);
 
-    /// Create an iterator that enumerates CSeq_align objects
-    /// from the only TSE that contains the bioseq
-    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given seq-loc
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CAlign_CI(CScope& scope,
+              const CSeq_loc& loc);
 
     // Iterate all features from the object regardless of their location
 
@@ -147,29 +147,77 @@ private:
     CAlign_CI operator-- (int);
 
     mutable CConstRef<CSeq_align> m_MappedAlign;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    /// @deprecated
+    /// Create an iterator that enumerates CSeq_align objects 
+    /// related to the given bioseq
+    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              const SAnnotSelector& sel);
+
+    /// @deprecated
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from all TSEs in all datasources
+    CAlign_CI(CScope& scope, const CSeq_loc& loc,
+              SAnnotSelector::EOverlapType overlap_type,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
+
+    /// @deprecated
+    /// Create an iterator that enumerates CSeq_align objects
+    /// from the only TSE that contains the bioseq
+    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              SAnnotSelector::EOverlapType overlap_type
+              = SAnnotSelector::eOverlap_Intervals,
+              SAnnotSelector::EResolveMethod resolve
+              = SAnnotSelector::eResolve_TSE);
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
 inline
 CAlign_CI::CAlign_CI(void)
 {
+    return;
 }
 
 
 inline
-CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc, sel)
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq)
 {
+    return;
 }
 
 
 inline
 CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq, start, stop, sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq, &sel)
 {
+    return;
+}
+
+
+inline
+CAlign_CI::CAlign_CI(CScope& scope,
+                     const CSeq_loc& loc)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc)
+{
+    return;
+}
+
+
+inline
+CAlign_CI::CAlign_CI(CScope& scope,
+                     const CSeq_loc& loc,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc, &sel)
+{
+    return;
 }
 
 
@@ -177,14 +225,16 @@ inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot)
 {
+    return;
 }
 
 
 inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot, sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot, &sel)
 {
+    return;
 }
 
 
@@ -192,14 +242,16 @@ inline
 CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry)
 {
+    return;
 }
 
 
 inline
 CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry, sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry, &sel)
 {
+    return;
 }
 
 
@@ -219,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.30  2004/09/30 23:11:11  kononenk
 * Added doxygen formatting
 *

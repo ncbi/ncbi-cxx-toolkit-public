@@ -77,15 +77,6 @@ CConstRef<CSeq_annot> CSeq_annot_Handle::GetCompleteSeq_annot(void) const
 }
 
 
-const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CSeq_annot_Handle::GetSeq_annot() is deprecated, "
-                  "use GetCompleteSeq_annot().");
-    return *GetCompleteSeq_annot();
-}
-
-
 CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
 {
     return CSeq_entry_Handle(GetScope(),
@@ -145,12 +136,29 @@ void CSeq_annot_EditHandle::Remove(void) const
 }
 
 
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
+{
+    ERR_POST_ONCE(Warning<<
+                  "CSeq_annot_Handle::GetSeq_annot() is deprecated, "
+                  "use GetCompleteSeq_annot().");
+    return *GetCompleteSeq_annot();
+}
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.11  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *

@@ -138,10 +138,6 @@ public:
     /// Get the complete bioseq
     CConstRef<CBioseq> GetCompleteBioseq(void) const;
 
-    // Deprecated interface.
-    const CBioseq& GetBioseq(void) const;
-    const CSeq_entry& GetTopLevelSeqEntry(void) const;
-
     //////////////////////////////////////////////////////////////////
     // Bioseq members
     // id
@@ -378,6 +374,18 @@ protected:
 
 public: // non-public section
     const CBioseq_Info& x_GetInfo(void) const;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+    /// @deprecated
+    /// Get complete bioseq
+    const CBioseq& GetBioseq(void) const;
+
+    /// @deprecated
+    /// Get top level seq-entry
+    const CSeq_entry& GetTopLevelSeqEntry(void) const;
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -590,6 +598,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/10/29 16:29:47  grichenk
+* Prepared to remove deprecated methods, added new constructors.
+*
 * Revision 1.61  2004/09/28 19:36:29  kononenk
 * Updated doxygen documentation
 *
