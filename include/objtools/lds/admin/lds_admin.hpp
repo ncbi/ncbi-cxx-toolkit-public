@@ -59,6 +59,16 @@ public:
     // If file is removed all relevant objects are cleaned up too.
     void SyncWithDir(const string& dir_name);
 
+    // Function tries to open the database, if the database does not exist
+    // creates it and loads all the data.
+    // Return pointer on new CLDS_Database object 
+    // (caller is responsible for the destruction).
+    // is_created parameter receives TRUE if the database was created by 
+    // the method.
+    static CLDS_Database* OpenCreateDB(const string& dir_name,
+                                       const string& db_name,
+                                       bool*         is_created);
+
 private:
     CLDS_Database&   m_lds_db; // LDS database object
 };
@@ -70,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/25 18:27:47  kuznets
+ * +OpenCreateDB() class method
+ *
  * Revision 1.2  2003/06/16 16:24:16  kuznets
  * Fixed #include paths (lds <-> lds_admin separation)
  *
