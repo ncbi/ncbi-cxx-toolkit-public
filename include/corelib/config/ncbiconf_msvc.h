@@ -58,3 +58,6 @@
 
 #define HAVE_ODBC        1
 #define HAVE_ODBCSS_H    1
+
+/* optional parameters */
+/*#define HAVE_PUBSEQ_OS   1*/

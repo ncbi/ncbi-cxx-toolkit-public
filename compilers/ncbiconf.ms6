@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.21 2003/06/20 15:09:56 dicuccio Exp $
+/* $Id: ncbiconf.ms6,v 1.22 2003/07/22 22:00:06 vasilche Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -58,3 +58,6 @@
 
 #define HAVE_ODBC        1
 #define HAVE_ODBCSS_H    1
+
+/* optional parameters */
+/*#define HAVE_PUBSEQ_OS   1*/
