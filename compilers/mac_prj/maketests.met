@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.6 2001/01/04 21:27:39 vakatov Exp $
+	$Id: maketests.met,v 1.7 2001/01/08 17:52:56 vakatov Exp $
 	
    ================================================================================ *)
 
@@ -401,6 +401,9 @@ on DoCreateProjects()
 		my DoCreateDefaultCProject("test_srv_connector", "connect:test", Â
 			{"ncbi_conntest", "test_ncbi_service_connector"}, {"ncsasock", "connect"})
 		
+		my DoCreateDefaultProject("test_conn_stream", "connect:test", Â
+			{"test_ncbi_conn_stream"}, {"ncsasock", "connect", "corelib"})
+		
 		my DoCreateDefaultProject("serialtest", "serial:test", Â
 			{"serialobject", "serialobject_Base", "testserial", "cppwebenv"}, {"corelib", "serial", "util"})
 		
@@ -468,6 +471,7 @@ on DoCompileBinaries()
 	my DoCompileBinary("test_sock_connector")
 	my DoCompileBinary("test_http_connector")
 	my DoCompileBinary("test_srv_connector")
+	my DoCompileBinary("test_conn_stream")
 	my DoCompileBinary("serialtest")
 	my DoCompileBinary("asn2asn")
 	my DoCompileBinary("testmedline")

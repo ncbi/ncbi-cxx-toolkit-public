@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.8 2001/01/04 21:27:39 vakatov Exp $
+	$Id: makelibs.met,v 1.9 2001/01/08 17:52:56 vakatov Exp $
 	
 	Revision History:
 	----------------
@@ -360,8 +360,8 @@ on DoCreateProjects()
 			Set Preferences of panel "PPC Project" to {File Name:"connect"}
 			Set Preferences of panel "C/C++ Compiler" to Â
 				{Activate CPlusPlus:false Â
-					, Exception Handling:false Â
-					, RTTI:false Â
+					, Exception Handling:true Â
+					, RTTI:true Â
 					, Require Function Prototypes:false}
 			Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & "connect:", origin:absolute}}}
 			Set Preferences of panel "Access Paths" to {System Paths:{{name:SOURCEFILES & "connect:ncsasock:", origin:absolute}}}
@@ -370,12 +370,16 @@ on DoCreateProjects()
 			-- can't do "ncbi_lbsm_ipc", "ncbi_server_info", "ncbi_service_lbsmd"
 			repeat with i in {"ncbi_ansi_ext", "ncbi_buffer", "ncbi_connection", "ncbi_connutil", Â
 				"ncbi_core", "ncbi_file_connector", "ncbi_heapmgr", "ncbi_http_connector", Â
-				"ncbi_lbsm", "ncbi_misc", "ncbi_priv", Â
+				"ncbi_lbsm", "ncbi_priv", Â
 				"ncbi_service", "ncbi_service_dispd", Â
 				"ncbi_socket_", "ncbi_socket_connector", "ncbi_util", Â
 				"ncbi_connector", "ncbi_service_connector", "ncbi_service_lbsmd_stub", Â
 				"ncbi_server_info"}
 				Add Files {SOURCEFILES & "connect:" & i & ".c"} To Segment 1
+			end repeat
+			
+			repeat with i in {"ncbi_conn_streambuf", "ncbi_conn_stream", "ncbi_core_cxx"}
+				Add Files {SOURCEFILES & "connect:" & i & ".cpp"} To Segment 1
 			end repeat
 			
 			Reset File Paths
@@ -388,7 +392,7 @@ on DoCreateProjects()
 				"ncbiobj", "ncbireg", "ncbistd", "ncbistre", "ncbithr", "ncbitime"})
 		
 		my DoCreateDefaultProject("util", "util", Â
-			{"bytesrc", "strbuffer", "checksum"})
+			{"bytesrc", "strbuffer", "checksum", "itree"})
 		
 		my DoCreateDefaultProject("serial", "serial", Â
 			{"asntypes", "autoptrinfo", "choice", Â
