@@ -104,7 +104,6 @@
 #ifdef NCBI_SEQEXT_EXPORTS
 #  define NCBI_FLAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
-#  define NCBI_XALNUTIL_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
@@ -571,12 +570,6 @@
 #  define NCBI_XALNMGR_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XALNMGR_EXPORT       __declspec(dllimport)
-#endif
-
-#ifdef NCBI_XALNUTIL_EXPORTS
-#  define NCBI_XALNUTIL_EXPORT      __declspec(dllexport)
-#else
-#  define NCBI_XALNUTIL_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -1476,7 +1469,7 @@
 /* This section is for static-only libraries */
 
 #define NCBI_TEST_MT_EXPORT
-
+#define NCBI_XALNUTIL_EXPORT
 
 
 
@@ -1485,6 +1478,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.67  2004/03/18 15:34:17  gorelenk
+ * Export define for library xalnutil ( NCBI_XALNUTIL_EXPORT ) moved
+ * to static libraries section .
+ *
  * Revision 1.66  2004/03/16 19:44:01  gorelenk
  * Added definition of NCBI_ENTREZGENE_EXPORTS to
  * definition of NCBI_MISC_EXPORTS .
