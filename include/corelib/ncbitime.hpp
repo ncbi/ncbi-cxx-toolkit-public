@@ -859,8 +859,11 @@ private:
     int m_AdjustTimeDiff;
 
     // Friend operators
+    NCBI_XNCBI_EXPORT
     friend CTime operator + (int days, const CTime& t);
+    NCBI_XNCBI_EXPORT
     friend CTime operator + (const CTime& t, int days);
+    NCBI_XNCBI_EXPORT
     friend CTime operator - (const CTime& t, int days);
 };
 
@@ -904,20 +907,33 @@ private:
 //=============================================================================
 
 // Add (subtract if negative) to the time (see CTime::AddXXX)
+NCBI_XNCBI_EXPORT
 extern CTime AddYear       (const CTime& t, int  years       = 1);
+NCBI_XNCBI_EXPORT
 extern CTime AddMonth      (const CTime& t, int  months      = 1);
+NCBI_XNCBI_EXPORT
 extern CTime AddDay        (const CTime& t, int  days        = 1);
+NCBI_XNCBI_EXPORT
 extern CTime AddHour       (const CTime& t, int  hours       = 1);
+NCBI_XNCBI_EXPORT
 extern CTime AddMinute     (const CTime& t, int  minutes     = 1);
+NCBI_XNCBI_EXPORT
 extern CTime AddSecond     (const CTime& t, int  seconds     = 1);
+NCBI_XNCBI_EXPORT
 extern CTime AddNanoSecond (const CTime& t, long nanoseconds = 1);
 
 // Add/subtract days (see CTime::operator +/-)
+NCBI_XNCBI_EXPORT
 extern CTime operator + (int days, const CTime& t);
+
+NCBI_XNCBI_EXPORT
 extern CTime operator + (const CTime& t, int days);
+
+NCBI_XNCBI_EXPORT
 extern CTime operator - (const CTime& t, int days);
 
 // Difference in days (see CTime::operator)
+NCBI_XNCBI_EXPORT
 extern int   operator - (const CTime& t1, const CTime& t2);
 
 // Get current time (in local or GMT format)
@@ -1197,6 +1213,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/03/10 19:56:38  gorelenk
+ * Added NCBI_XNCBI_EXPORT prefix for functions AddYear, AddMonth, AddDay,
+ * AddHour, AddMinute, AddSecond, AddNanoSecond and operators:
+ * CTime operator + and CTime operator - .
+ *
  * Revision 1.30  2004/01/26 18:07:22  siyan
  * Fixed errors in documentation on GetTimeT()
  *
