@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
 * Revision 1.25  2002/02/19 14:59:38  thiessen
 * add CDD reject and purge sequence
 *
@@ -361,6 +364,9 @@ public:
             rowStrings[r].erase();
         }
     }
+
+    // for storing initial alignment region, e.g. when demoted from multiple
+    int alignFrom, alignTo;
 };
 
 

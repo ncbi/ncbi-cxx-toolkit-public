@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
 * Revision 1.25  2002/02/21 12:26:29  thiessen
 * fix row delete bug ; remember threader options
 *
@@ -377,19 +380,29 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         }
     }
 
-    // if a terminal block is unconstrained (mn,mx == -1), set limits for how far from the edge of
-    // the next block in the new (religned) block is allowed to go
-    if (pairwiseABlocks->size() > 0 && terminalCutoff >= 0) {
+    // if a terminal block is unconstrained (mn,mx == -1), set limits for how far the new
+    // (religned) block is allowed to be from the edge of the next block or from the
+    // aligned region set upon demotion
+    if (terminalCutoff >= 0) {
         if (qrySeq->sac.mn[0] == -1) {
-            const Block::Range *nextQryBlock = pairwiseABlocks->front()->GetRangeOfRow(1);
-            qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
+            if (pairwise->alignFrom >= 0) {
+                qrySeq->sac.mn[0] = pairwise->alignFrom - terminalCutoff;
+            } else if (pairwiseABlocks->size() > 0) {
+                const Block::Range *nextQryBlock = pairwiseABlocks->front()->GetRangeOfRow(1);
+                qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
+            }
             if (qrySeq->sac.mn[0] < 0) qrySeq->sac.mn[0] = 0;
             TESTMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
         }
         if (qrySeq->sac.mx[multipleABlocks->size() - 1] == -1) {
-            const Block::Range *prevQryBlock = pairwiseABlocks->back()->GetRangeOfRow(1);
-            qrySeq->sac.mx[multipleABlocks->size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
-            if (qrySeq->sac.mx[multipleABlocks->size() - 1] >= qrySeq->n)
+            if (pairwise->alignTo >= 0) {
+                qrySeq->sac.mx[multipleABlocks->size() - 1] = pairwise->alignTo + terminalCutoff;
+            } else if (pairwiseABlocks->size() > 0) {
+                const Block::Range *prevQryBlock = pairwiseABlocks->back()->GetRangeOfRow(1);
+                qrySeq->sac.mx[multipleABlocks->size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
+            }
+            if (qrySeq->sac.mx[multipleABlocks->size() - 1] >= qrySeq->n ||
+                qrySeq->sac.mx[multipleABlocks->size() - 1] < 0)
                 qrySeq->sac.mx[multipleABlocks->size() - 1] = qrySeq->n - 1;
             TESTMSG("new C-terminal block constrained to query loc <= "
                 << qrySeq->sac.mx[multipleABlocks->size() - 1] + 1);

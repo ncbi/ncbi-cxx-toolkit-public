@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/02/21 22:01:50  thiessen
+* remember alignment range on demotion
+*
 * Revision 1.10  2001/11/27 16:26:11  thiessen
 * major update to data management system
 *
@@ -154,6 +157,9 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
     spinButton->PushEventHandler(this);
     spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
 
+    // clamp and set initial value
+    if (initial < min) initial = min;
+    if (initial > max) initial = max;
     SetInteger(initial);
 }
 
@@ -264,6 +270,9 @@ FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
     spinButton->PushEventHandler(this);
     spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
 
+    // clamp and set initial value
+    if (initial < min) initial = min;
+    if (initial > max) initial = max;
     SetDouble(initial);
 }
 

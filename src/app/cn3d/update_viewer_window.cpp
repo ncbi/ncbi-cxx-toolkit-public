@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
 * Revision 1.31  2002/02/21 12:26:30  thiessen
 * fix row delete bug ; remember threader options
 *
@@ -411,10 +414,10 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     grid->Add(fpLoops->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // random starts
-    wxStaticText *item11 = new wxStaticText(panel, -1, "Number of random starts? [1 .. 100]", wxDefaultPosition, wxDefaultSize, 0);
+    wxStaticText *item11 = new wxStaticText(panel, -1, "Number of random starts? [1 .. 1000]", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     iStarts = new IntegerSpinCtrl(panel,
-        1, 100, 5, initialOptions.nRandomStarts,
+        1, 1000, 5, initialOptions.nRandomStarts,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(iStarts->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);

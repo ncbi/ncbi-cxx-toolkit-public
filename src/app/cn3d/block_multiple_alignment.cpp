@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/02/21 22:01:49  thiessen
+* remember alignment range on demotion
+*
 * Revision 1.34  2002/02/19 14:59:38  thiessen
 * add CDD reject and purge sequence
 *
@@ -149,6 +152,7 @@
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -157,7 +161,8 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr) :
-    sequences(sequenceList), conservationColorer(NULL), alignmentManager(alnMgr)
+    sequences(sequenceList), conservationColorer(NULL), alignmentManager(alnMgr),
+    alignFrom(-1), alignTo(-1)
 {
     InitCache();
     rowDoubles.resize(sequenceList->size());
@@ -201,6 +206,8 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     copy->rowStrings = rowStrings;
     copy->geometryViolations = geometryViolations;
     copy->updateOrigin = updateOrigin;
+    copy->alignFrom = alignFrom;
+    copy->alignTo = alignTo;
 	return copy;
 }
 
@@ -1266,11 +1273,13 @@ bool BlockMultipleAlignment::ExtractRows(
         }
     }
 
-    BlockList::const_iterator b, br, be = blocks.end();
-
     if (pairwiseAlignments) {
         TESTMSG("creating new pairwise alignments");
         SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
+
+        auto_ptr<UngappedAlignedBlockList> uaBlocks(GetUngappedAlignedBlocks());
+        UngappedAlignedBlockList::const_iterator u, ue = uaBlocks->end();
+
         for (i=0; i<slavesToRemove.size(); i++) {
 
             // redraw molecule associated with removed row
@@ -1282,15 +1291,13 @@ bool BlockMultipleAlignment::ExtractRows(
             (*newSeqs)[0] = (*sequences)[0];
             (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
             BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
-            for (b=blocks.begin(); b!=be; b++) {
-                UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
-
+            for (u=uaBlocks->begin(); u!=ue; u++) {
                 // only copy blocks that aren't flagged to be realigned
-                if (ABlock && markBlocks.find(ABlock) == markBlocks.end()) {
+                if (markBlocks.find(*u) == markBlocks.end()) {
                     UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
-                    const Block::Range *range = ABlock->GetRangeOfRow(0);
+                    const Block::Range *range = (*u)->GetRangeOfRow(0);
                     newABlock->SetRangeOfRow(0, range->from, range->to);
-                    range = ABlock->GetRangeOfRow(slavesToRemove[i]);
+                    range = (*u)->GetRangeOfRow(slavesToRemove[i]);
                     newABlock->SetRangeOfRow(1, range->from, range->to);
                     newABlock->width = range->to - range->from + 1;
                     newAlignment->AddAlignedBlockAtEnd(newABlock);
@@ -1301,6 +1308,15 @@ bool BlockMultipleAlignment::ExtractRows(
                 ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
                 return false;
             }
+
+            // add aligned region info (for threader to use later on)
+            if (uaBlocks->size() > 0) {
+                newAlignment->alignFrom = uaBlocks->front()->GetRangeOfRow(slavesToRemove[i])->from;
+                newAlignment->alignTo = uaBlocks->back()->GetRangeOfRow(slavesToRemove[i])->to;
+                TESTMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
+                    << newAlignment->alignFrom << " to " << newAlignment->alignTo);
+            }
+
             pairwiseAlignments->push_back(newAlignment);
         }
         SetDiagPostLevel(eDiag_Info);
@@ -1312,7 +1328,7 @@ bool BlockMultipleAlignment::ExtractRows(
 
     // delete row from all blocks, removing any zero-width blocks
     TESTMSG("deleting alignment rows from blocks");
-    b = blocks.begin();
+    BlockList::const_iterator b = blocks.begin(), br, be = blocks.end();
     while (b != be) {
         (*b)->DeleteRows(removeRows, slavesToRemove.size());
         if ((*b)->width == 0) {
