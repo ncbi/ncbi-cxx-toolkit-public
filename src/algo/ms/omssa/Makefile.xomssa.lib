@@ -4,6 +4,8 @@
 # Build library "xomssa"
 #################################
 
+ASN_DEP     = omssa
+
 NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi -lncbimmdb
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
