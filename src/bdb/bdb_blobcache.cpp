@@ -1380,7 +1380,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         m_CacheAttrDB->SetTransaction(&trans);
 
         for (unsigned j = 0; 
-             (j < m_PurgeBatchSize) && (i < cache_entries.size()); 
+             (j < batch_size) && (i < cache_entries.size()); 
              ++i,++j) {
                  const SCacheDescr& it = cache_entries[i];
                  x_DropBlob(it.key.c_str(), 
@@ -2026,6 +2026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2004/10/19 17:18:21  kuznets
+ * GCC warning fixed
+ *
  * Revision 1.84  2004/10/18 16:06:26  kuznets
  * Implemented automatic (on Purge) log cleaning
  *
