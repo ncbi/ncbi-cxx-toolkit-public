@@ -33,15 +33,14 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/09/14 19:16:28  vakatov
-* *** empty log message ***
+* Revision 1.3  1998/09/14 22:36:55  vakatov
+* <a go-home save>
 *
 * ==========================================================================
 */
 
 #include <iostream>
 #include <string>
-#include <sstream>
 
 using namespace std;
 
@@ -62,14 +61,14 @@ namespace ncbi_cgi {
 
         // client data properties
         eProp_ContentType,
-        eProp_ContentLength,     // see also "m_GetContentLength()"
+        // eProp_ContentLength,     // see also "m_GetContentLength()"
 
         // request properties
-        eProp_RequestMethod,     // see also "m_GetMethod()"
+        // eProp_RequestMethod,     // see also "m_GetMethod()"
         eProp_PathInfo,
         eProp_PathTranslated,
         eProp_ScriptName,
-        eProp_QueryString,
+        // eProp_QueryString,
 
         // authentication info
         eProp_AuthType,
@@ -78,33 +77,50 @@ namespace ncbi_cgi {
     };
 
 
-    // CGI request method
-    enum EMethod {
-        eMethod_Get,
-        eMethod_Post
-    };
 
 
-    // CGI request data and functions
+    ///////////////////////////////////////////////////////
+    // The CGI request class
+    //
     class CRequest {
     public:
+        /* Startup initialization using environment and/or standard input
+         */
+        CRequest(void);
+
         /* Access to the properties set by the HTTP server(read-only)
          */
-        // get "standard" properties
-        string m_GetProperty(EProperty property);
-        // get random client properties("HTTP_XXXXX")
-        string m_GetRandomProperty(string property_key);
+        // get "standard" properties(empty string if not found)
+        string  m_GetProperty(EProperty property);
+        // get random client properties("HTTP_<key>")
+        string  m_GetRandomProperty(string key);
         // auxiliaries(to convert from the "string" representation)
-        EMethod m_GetMethod(void);
-        EMethod m_GetMethod(void);
-        EMethod m_GetMethod(void);
-        EMethod m_GetMethod(void);
+        Uint2   m_GetServerPort(void);
+        Uint4   m_GetServerAddr(void);  // (in the network byte order)
+        size_t  m_GetContentLength(void);
 
+        /* Direct access to the data sent by the client
+         */
+        istream& m_Content(void);
+
+        /* 
+         */
+        const map<string, string>& m_Entries(void);
 
     private:
-        // cached values of the request properties
+        istream istr
+
+        // CGI request method
+        enum EMethod {
+            eMethod_Get,
+            eMethod_Post
+        } m_Method;
+
+        // set of the request properties(already retrieved; cached)
         map<string, string> m_Properties;
 
+        // set of the request entries(already retrieved; cached)
+        map<string, string> m_Entries;
     };  // CRequest
 
 };  // namespace ncbi_cgi
