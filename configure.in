@@ -250,6 +250,18 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
+AC_SUBST(use_shell)
+AC_SUBST(obj_ext)
+AC_SUBST(lib_pre)
+AC_SUBST(lib_l_pre)
+AC_SUBST(lib_ext)
+AC_SUBST(lib_l_ext)
+AC_SUBST(exe_ext)
+AC_SUBST(f_compile)
+AC_SUBST(f_outobj)
+AC_SUBST(f_libpath)
+AC_SUBST(f_outexe)
+
 
 #############################################################################
 ### Create output files and render the "$exec_prefix" sub-dirs
