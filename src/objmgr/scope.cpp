@@ -54,8 +54,8 @@ BEGIN_SCOPE(objects)
 
 
 CMutexPool_Base<CScope> CScope::sm_Scope_MP;
-#if !defined(NCBI_COMPILER_GCC)  &&  !defined(NCBI_COMPILER_KCC)
-EMPTY_TEMPLATE
+#ifdef NCBI_COMPILER_MIPSPRO
+template <> // theoretically needed, but only MIPSpro actually wants it...
 #endif
 CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize];
 
@@ -376,6 +376,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/08/09 14:59:00  ucko
+* Restrict template <> to MIPSpro for now, as it also leads to link
+* errors with Compaq's compiler.  (Sigh.)
+*
 * Revision 1.26  2002/08/08 19:51:24  ucko
 * Omit EMPTY_TEMPLATE for GCC and KCC, as it evidently leads to link errors(!)
 *

@@ -62,12 +62,12 @@ BEGIN_SCOPE(objects)
 
 CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
 CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
-#if !defined(NCBI_COMPILER_GCC)  &&  !defined(NCBI_COMPILER_KCC)
-EMPTY_TEMPLATE
+#ifdef NCBI_COMPILER_MIPSPRO
+template <> // theoretically needed, but only MIPSpro actually wants it...
 #endif
 CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize];
-#if !defined(NCBI_COMPILER_GCC)  &&  !defined(NCBI_COMPILER_KCC)
-EMPTY_TEMPLATE
+#ifdef NCBI_COMPILER_MIPSPRO
+template <>
 #endif
 CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize];
 
@@ -1913,6 +1913,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2002/08/09 14:58:50  ucko
+* Restrict template <> to MIPSpro for now, as it also leads to link
+* errors with Compaq's compiler.  (Sigh.)
+*
 * Revision 1.60  2002/08/08 19:51:16  ucko
 * Omit EMPTY_TEMPLATE for GCC and KCC, as it evidently leads to link errors(!)
 *
