@@ -94,6 +94,31 @@ int yylex(YYSTYPE *lvalp, void* param)
         return STRING;
     }
 
+    // Process AND token
+    if (toupper(c) == 'A') {
+        const char* tok_start = env->GetBufPtr() - 1;
+        // look ahead if it is AND
+        if (toupper(tok_start[1]) == 'N' &&
+            toupper(tok_start[2]) == 'D' &&
+            isspace(tok_start[3])
+           ) {
+            env->Skip(3);
+            return AND;
+        }
+    }
+
+    // Process OR token
+    if (toupper(c) == 'O') {
+        const char* tok_start = env->GetBufPtr() - 1;
+        // look ahead if it is OR
+        if (toupper(tok_start[1]) == 'R' &&
+            isspace(tok_start[2])
+           ) {
+            env->Skip(2);
+            return OR;
+        }
+    }
+
     // Process name-like tokens
     if (isalpha(c)) {
         const char* tok_start = env->GetBufPtr() - 1;
@@ -132,6 +157,10 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/25 13:42:24  kuznets
+ * Improved lexer to recognize AND OR as string tokens,
+ * not just '&' '|' characters
+ *
  * Revision 1.2  2004/02/24 19:26:14  kuznets
  * Fix compilation(GCC & SUN Workshop)
  *
