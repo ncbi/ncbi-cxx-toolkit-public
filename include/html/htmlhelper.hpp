@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/15 19:46:18  vasilche
+* Added CIDs class to hold sorted list of IDs.
+*
 * Revision 1.1  1999/01/07 16:41:54  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -53,6 +56,28 @@ class CNCBINode;
 class CHTML_form;
 
 // utility functions
+
+class CIDs : public map<int, int>
+{
+public:
+    CIDs(void);
+
+    ~CIDs(void);
+
+    bool HaveID(int id) const;
+
+    bool ExtractID(int id);
+
+    void AddID(int id);
+
+    void RemoveID(int id);
+
+    int CountIDs(void) const;
+
+    void Decode(const string& str);
+
+    string Encode(void) const;
+};
 
 class CHTMLHelper
 {
@@ -84,15 +109,6 @@ public:
                             const string& hiddenPrefix,
                             const string& checkboxPrefix);
 
-private:
-    static string sx_EncodeIDList(const TIDList& ids);
-    static void sx_DecodeIDList(TIDList& ids, const string& value);
-    static void sx_AddID(TIDList& ids, const string& value);
-
-    static string sx_ExtractHidden(const TCgiEntries& values, const string& hiddenPrefix);
-    static void sx_InsertHidden(CHTML_form* form, const string& value, const string& hiddenPrefix);
-    static void sx_SetCheckboxes(CNCBINode* root, TIDList& ids, const string& checkboxName);
-    static void sx_GetCheckboxes(TIDList& ids, const TCgiEntries& values, const string& checkboxName);
 };
 
 #include <html/htmlhelper.inl>

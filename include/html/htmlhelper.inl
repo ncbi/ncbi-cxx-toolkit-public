@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/15 19:46:18  vasilche
+* Added CIDs class to hold sorted list of IDs.
+*
 * Revision 1.1  1999/01/07 16:41:54  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -44,6 +47,41 @@
 * ===========================================================================
 */
 
+inline CIDs::CIDs(void)
+{
+}
 
+inline CIDs::~CIDs(void)
+{
+}
+
+inline bool CIDs::HaveID(int id) const
+{
+    return find(id) != end();
+}
+
+inline bool CIDs::ExtractID(int id)
+{
+    iterator i = find(id);
+    if ( i == end() )
+        return false;
+    erase(i);
+    return true;
+}
+
+inline void CIDs::AddID(int id)
+{
+    insert(value_type(id, id));
+}
+
+inline void CIDs::RemoveID(int id)
+{
+    erase(id);
+}
+
+inline int CIDs::CountIDs(void) const
+{
+    return size();
+}
 
 #endif /* def HTMLHELPER__HPP  &&  ndef HTMLHELPER__INL */
