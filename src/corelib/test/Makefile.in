@@ -9,7 +9,8 @@ APP_PROJ = test_ncbithr coretest test_ncbiargs test_ncbiargs_sample \
            test_ncbireg_mt test_ncbi_system test_ncbiutil test_ncbifile \
            test_ncbidll test_semaphore_mt test_ncbitime_mt test_ncbiexec \
            test_ncbiexpt test_ncbi_process test_ncbi_os_unix test_ncbi_tree \
-           test_plugins test_ncbidiag_p test_ncbidiag_f_mt test_objstore
+           test_plugins test_ncbidiag_p test_ncbidiag_f_mt test_objstore \
+           test_hash
 
 
 srcdir = @srcdir@
