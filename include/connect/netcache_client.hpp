@@ -369,7 +369,17 @@ public:
         eKeyFormatError
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eTimeout:            return "eTimeout";
+        case eCommunicationError: return "eCommunicationError";
+        case eKeyFormatError:     return "eKeyFormatError";
+        default:                  return CException::GetErrCodeString();
+        }
+    }
+
 
     NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
 };
@@ -429,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/01/28 19:25:16  kuznets
+ * Exception method inlined
+ *
  * Revision 1.21  2005/01/28 14:55:06  kuznets
  * GetCommunicatioTimeout() declared const
  *
