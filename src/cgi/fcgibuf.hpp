@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/04/28 16:54:19  vasilche
+* Implemented stream input processing for FastCGI applications.
+*
 * Revision 1.1  1999/04/27 14:49:49  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -56,6 +59,19 @@ public:
 private:
 
     FCGX_Stream* m_out;
+};
+
+class CCgiIbuffer : public IO_PREFIX::streambuf
+{
+public:
+    CCgiIbuffer(FCGX_Stream* in);
+
+    virtual int_type uflow(void);
+    virtual int_type underflow(void);
+
+private:
+
+    FCGX_Stream* m_in;
 };
 
 END_NCBI_SCOPE

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/04/28 16:54:18  vasilche
+* Implemented stream input processing for FastCGI applications.
+*
 * Revision 1.1  1999/04/27 14:49:48  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -106,7 +109,7 @@ class CCgiContext
 public:
     typedef list<string> TMsgList;
 
-    CCgiContext(CCgiApplication& app, int argc, char** argv);
+    CCgiContext(CCgiApplication& app, CNcbiIstream* in = 0, CNcbiOstream* out = 0);
 
     const CCgiApplication& GetApp(void) const;
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/04/28 16:54:19  vasilche
+* Implemented stream input processing for FastCGI applications.
+*
 * Revision 1.6  1998/12/30 21:50:27  vakatov
 * Got rid of some redundant headers
 *
@@ -65,7 +68,7 @@ BEGIN_NCBI_SCOPE
 class CCgiResponse {
 public:
     // Constructor
-    CCgiResponse();
+    CCgiResponse(CNcbiOstream* out = 0);
     // Destructor
     ~CCgiResponse();
 
