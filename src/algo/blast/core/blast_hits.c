@@ -147,7 +147,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
 
 Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
-           const BlastHitSavingOptions* hit_options, 
+           const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp)
 {
@@ -199,8 +199,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
          query++;
          subject++;
          if (sum < 0) {
-            if (BLAST_KarlinStoE_simple(score, kbp, searchsp_eff)
-                > hit_options->expect_value) {
+            if (score < hit_params->cutoff_score) {
                /* Start from new offset */
                new_q_start = query;
                new_s_start = subject;
@@ -239,8 +238,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
          }
          
          if (sum < 0) {
-            if (BLAST_KarlinStoE_simple(score, kbp, searchsp_eff)
-                > hit_options->expect_value) {
+            if (score < hit_params->cutoff_score) {
                /* Start from new offset */
                new_q_start = query;
                new_s_start = subject;
@@ -283,7 +281,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
    hsp->score = score;
    hsp->evalue = 
       BLAST_KarlinStoE_simple(score, kbp, searchsp_eff);
-   if (hsp->evalue > hit_options->expect_value) {
+   if (hsp->score < hit_params->cutoff_score) {
       delete_hsp = TRUE;
    } else {
       hsp->query.length = new_q_end - new_q_start;
@@ -309,7 +307,7 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
          gapped_calculation, &hsp->num_ident, &align_length);
       /* Check if this HSP passes the percent identity test */
       if (((double)hsp->num_ident) / align_length * 100 < 
-          hit_options->percent_identity)
+          hit_params->options->percent_identity)
          delete_hsp = TRUE;
    }
    
@@ -1478,7 +1476,7 @@ Blast_HSPListUniqSort(BlastHSPList* hsp_list)
 Int2 
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
-   const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
+   const BlastHitSavingParameters* hit_params, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src)
 {
@@ -1530,7 +1528,7 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
 
       delete_hsp = 
          Blast_HSPReevaluateWithAmbiguities(hsp, query_start, subject_start,
-            hit_options, score_params, query_info, sbp);
+            hit_params, score_params, query_info, sbp);
       
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
