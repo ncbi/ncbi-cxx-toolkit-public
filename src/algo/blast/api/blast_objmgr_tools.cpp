@@ -1,32 +1,35 @@
-/*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Christiam Camacho / Kevin Bealer
-*
-* ===========================================================================
-*/
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] =
+    "$Id";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
+/* ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho / Kevin Bealer
+ *
+ */
 
 /// @file blast_objmgr_tools.cpp
 /// Functions in xblast API code that interact with object manager.
@@ -50,15 +53,9 @@
  */
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
-USING_SCOPE(ncbi::objects);
 
-
-Uint1
-GetQueryEncoding(EProgram program);
-
-Uint1
-GetSubjectEncoding(EProgram program);
 
 CSeq_align_set*
 x_CreateEmptySeq_align_set(CSeq_align_set* sas);
@@ -796,6 +793,16 @@ Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv,
 }
 
 
+/// Converts BlastHitList containing alignments for a single query to database
+/// sequences into a CSeq_align_set
+/// @param hit_list List of alignments [in]
+/// @param prog Program type [in]
+/// @param query Query sequence blast::SSeqLoc [in]
+/// @param seqinfo_src abstraction to obtain sequence information [in]
+/// @param is_gapped true if this is a gapped alignment [in]
+/// @param is_ooframe true if this is an out-of-frame alignment [in]
+/// @return empty CSeq_align_set if hit_list is NULL, otherwise conversion from
+/// BlastHitList to CSeq_align_set
 CSeq_align_set*
 BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     EProgram prog, SSeqLoc &query,
@@ -952,6 +959,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2005/03/01 20:52:42  camacho
+* Doxygen fixes
+*
 * Revision 1.35  2005/02/18 15:06:02  shomrat
 * CSeq_loc interface changes
 *

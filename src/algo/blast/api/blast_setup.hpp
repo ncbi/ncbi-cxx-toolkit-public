@@ -190,6 +190,20 @@ NCBI_XBLAST_EXPORT
 unsigned int 
 GetNumberOfFrames(EProgram p);
 
+
+/// Returns the encoding for the sequence data used in BLAST for the query
+/// @param program program type [in]
+/// @throws CBlastException in case of unsupported program
+Uint1
+GetQueryEncoding(EProgram program);
+
+/// Returns the encoding for the sequence data used in BLAST2Sequences for 
+/// the subject
+/// @param program program type [in]
+/// @throws CBlastException in case of unsupported program
+Uint1
+GetSubjectEncoding(EProgram program);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -197,6 +211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/03/01 20:52:42  camacho
+* Doxygen fixes
+*
 * Revision 1.30  2005/01/21 17:38:36  camacho
 * Update documentation
 *
