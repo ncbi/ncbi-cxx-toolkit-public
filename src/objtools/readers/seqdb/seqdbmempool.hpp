@@ -56,8 +56,9 @@ public:
         for(set<char*>::iterator i = m_Pool.begin(); i != m_Pool.end(); i++) {
             //cout << "Destructor of mempool is deleting: " << hex << unsigned(*i) << endl;
             delete[] *i;
-            m_Pool.erase(i);
         }
+        
+        m_Pool.clear();
         
         //cout << "Destructing mempool" << dec << endl;
     }
