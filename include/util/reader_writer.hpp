@@ -33,6 +33,10 @@
  *
  */
 
+/// @file reader_writer.hpp
+/// Abstract reader-writer interface classes
+
+
 #include <corelib/ncbistl.hpp>
 #include <stddef.h>
 
@@ -40,13 +44,15 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Result codes for I/O operations
+/// @sa IReader, IWriter, IReaderWriter
 enum EIO_Result {
     eIO_NotImplemented = -1,
     eIO_Success = 0,
     eIO_Error,
-    eIO_Eof,
+    eIO_Eof
 };
-
+ below
 
 /// A very basic data-read interface.
 ///
@@ -61,7 +67,8 @@ public:
     /// Special case:  if count passed as 0, then the value of
     /// buf is ignored, and the return value is always eIO_Success, but
     /// no change is actually done to the state of input device.
-    virtual EIO_Result Read(void* buf, size_t count,
+    virtual EIO_Result Read(void*   buf,
+                            size_t  count,
                             size_t* bytes_read = 0) = 0;
 
     /// Return the number of bytes ready to be read from input
@@ -84,8 +91,9 @@ public:
     /// of bytes actually written, or 0 if either count was
     /// passed as 0 (buf is ignored in this case) or an error occured,
     /// via the "bytes_written" pointer, if provided.
-    virtual EIO_Result Write(const void* buf, size_t count,
-                             size_t* bytes_written = 0) = 0;
+    virtual EIO_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written = 0) = 0;
 
     virtual ~IWriter() {}
 };
@@ -108,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/24 21:12:39  lavr
+ * Doxygenification
+ *
  * Revision 1.4  2003/09/24 15:56:24  kuznets
  * Minor syntax error fixed in EIO_Result declaration
  *
