@@ -85,7 +85,6 @@ void* MultiSeqInfo::GetSeqLoc(int index)
 
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 extern "C" {
 static Int4 MultiSeqGetMaxLength(void* multiseq_handle, void*)
@@ -108,7 +107,6 @@ static Int4 MultiSeqGetMaxLength(void* multiseq_handle, void*)
 
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void*)
 {
@@ -135,7 +133,6 @@ static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void*)
 
 /** Retrieves the number of sequences in the BlastSeqSrc.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Int4 MultiSeqGetNumSeqs(void* multiseq_handle, void*)
 {
@@ -146,8 +143,6 @@ static Int4 MultiSeqGetNumSeqs(void* multiseq_handle, void*)
 }
 
 /** Returns 0 as total length, indicating that this is NOT a database!
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Int8 MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
 {
@@ -155,8 +150,6 @@ static Int8 MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
 }
 
 /** Needed for completeness only.
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static char* MultiSeqGetName(void* /*multiseq_handle*/, void*)
 {
@@ -164,8 +157,6 @@ static char* MultiSeqGetName(void* /*multiseq_handle*/, void*)
 }
 
 /** Needed for completeness only
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static char* MultiSeqGetDefinition(void* /*multiseq_handle*/, void*)
 {
@@ -173,8 +164,6 @@ static char* MultiSeqGetDefinition(void* /*multiseq_handle*/, void*)
 }
 
 /** Needed for completeness only.
- * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static char* MultiSeqGetDate(void* /*multiseq_handle*/, void*)
 {
@@ -183,7 +172,6 @@ static char* MultiSeqGetDate(void* /*multiseq_handle*/, void*)
 
 /** Retrieves the date of the BLAST database.
  * @param multiseq_handle Pointer to the structure containing sequences [in]
- * @param ignoreme Unused by this implementation [in]
  */
 static Boolean MultiSeqGetIsProt(void* multiseq_handle, void*)
 {
