@@ -1,2 +1,4 @@
+ASN_DEP = mla
+
 LIB = mlacli
 SRC = mla_client mla_client_
