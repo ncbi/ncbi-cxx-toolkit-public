@@ -127,8 +127,16 @@ inline
 bool CCgiWatchFile::HasChanged(void)
 {
     TBuf buf(new char[m_Limit]);
-    return (x_Read(buf.get()) != m_Count
-            ||  memcmp(buf.get(), m_Buf.get(), m_Count) != 0);
+    bool changed = false;
+    if (x_Read(buf.get()) != m_Count) {
+        return true;
+    } else if (m_Count == -1) { // couldn't be opened
+        return false;
+    } else {
+        return memcmp(buf.get(), m_Buf.get(), m_Count) != 0;
+    }
+    // no need to update m_Count or m_Buf, since the CGI will restart
+    // if there are any discrepancies.
 }
 
 inline
@@ -526,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.45  2004/09/14 19:43:33  ucko
+ * CCgiWatchFile::HasChanged: DTRT for unopenable files.
+ *
  * Revision 1.44  2004/08/04 15:57:56  vakatov
  * Minor cosmetics
  *
