@@ -1216,6 +1216,28 @@ bool CDir::Create(void) const
 #endif
 }
 
+bool CDir::CreatePath(void) const
+{
+    if (Exists()) {
+        return true;
+    }
+    string path(GetPath());
+    if (path.empty()) {
+        return true;
+    }
+    if (path[path.length()-1] == GetPathSeparator()) {
+        path.erase(path.length()-1);
+    }
+    CDir dir_this(path);
+    if (dir_this.Exists()) {
+        return true;
+    }
+    CDir dir_up(dir_this.GetDir());
+    if (dir_up.CreatePath()) {
+        return dir_this.Create();
+    }
+    return false;
+}
 
 bool CDir::Remove(EDirRemoveMode mode) const
 {
@@ -1534,6 +1556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2003/05/29 17:21:04  gouriano
+ * added CreatePath() which creates directories recursively
+ *
  * Revision 1.47  2003/04/11 14:04:49  ivanov
  * Fixed CDirEntry::GetMode (Mac OS) - store a mode only for a notzero pointers.
  * Fixed CDir::GetEntries -- do not try to close a dir handle if it was

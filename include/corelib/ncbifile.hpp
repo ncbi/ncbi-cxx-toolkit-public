@@ -385,6 +385,8 @@ public:
 
     // Create the directory using "dirname" passed in the constructor
     bool Create(void) const;
+    // Create the directory recursively (possibly more than one at a time)
+    bool CreatePath(void) const;
 
     // Delete existing directory
     virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
@@ -592,6 +594,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/05/29 17:21:31  gouriano
+ * added CreatePath() which creates directories recursively
+ *
  * Revision 1.20  2003/03/31 16:54:25  siyan
  * Added doxygen support
  *
