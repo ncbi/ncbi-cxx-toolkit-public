@@ -49,7 +49,14 @@
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/pssm_input.hpp>
 
-class CPssmEngineTest;   // forward declaration of unit test class
+// Forward declarations
+struct BlastScoreBlk;       // Core BLAST scoring block structure
+class CPssmEngineTest;      // unit test class
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -65,12 +72,50 @@ class CPssmEngine
 public:
     /// Does not take ownership of input
     CPssmEngine(IPssmInputData* input);
+    ~CPssmEngine();
 
     CRef<objects::CScore_matrix_parameters> Run();
 
 protected:
     /// Handle to strategy to process raw PSSM input data
     IPssmInputData*         m_PssmInput;
+    BlastScoreBlk*          m_ScoreBlk;
+
+    /// Copies query sequence and adds protein sentinel bytes at the beginning
+    /// and at the end of the sequence.
+    /// @param query sequence to copy [in]
+    /// @param query_length length of the sequence above [in]
+    /// @throws CBlastException if does not have enough memory
+    /// @return copy of query guarded by protein sentinel bytes
+    unsigned char*
+    x_GuardProteinQuery(const unsigned char* query,
+                        unsigned int query_length);
+
+    /// Initialiazes the core BlastQueryInfo structure for a single protein
+    /// sequence.
+    /// @todo this should be moved to the core of BLAST
+    /// @param query_length length of the sequence above [in]
+    BlastQueryInfo*
+    x_InitializeQueryInfo(unsigned int query_length);
+
+    /// Initializes the BlastScoreBlk required to run the PSSM engine.
+    /// @todo this should be moved to the core of BLAST
+    /// @param query sequence [in]
+    /// @param query_length length of the sequence above [in]
+    /// @throws CBlastException if does not have enough memory or if there was
+    /// an error when setting up the return value
+    /// @return initialized BlastScoreBlk
+    BlastScoreBlk*
+    x_InitializeScoreBlock(const unsigned char* query,
+                           unsigned int query_length);
+
+    /// Converts the PsiMatrix structure into a CScore_matrix_parameters object
+    /// @param pssm input PsiMatrix structure [in]
+    /// @return CScore_matrix_parameters object with equivalent contents to
+    /// those in pssm argument
+    CRef<objects::CScore_matrix_parameters>
+    x_PsiMatrix2ScoreMatrix(const PsiMatrix* pssm,
+                            const PsiDiagnosticsResponse* diagnostics);
 
     /// Default constructor available for derived test classes
     CPssmEngine() {}
@@ -85,10 +130,15 @@ protected:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/08/02 13:28:04  camacho
+ * +Initialization of BlastScoreBlk and population of Score_matrix structure
+ *
  * Revision 1.6  2004/07/29 17:53:16  camacho
  * Redesigned to use strategy pattern
  *
