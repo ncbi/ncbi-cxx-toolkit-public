@@ -177,7 +177,7 @@ HEAP HEAP_Create(void* base,       TNCBI_Size   size,
 }
 
 
-HEAP HEAP_AttachEx(void* base, size_t size)
+HEAP HEAP_AttachEx(const void* base, size_t size)
 {
     HEAP heap;
 
@@ -187,7 +187,7 @@ HEAP HEAP_AttachEx(void* base, size_t size)
         CORE_LOGF(eLOG_Warning,
                   ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
-    heap->base   = base;
+    heap->base   = (void*) base;
     heap->size   = size;
     heap->chunk  = 0/*read-only*/;
     heap->expand = 0;
@@ -197,7 +197,7 @@ HEAP HEAP_AttachEx(void* base, size_t size)
 }
 
 
-HEAP HEAP_Attach(void* base)
+HEAP HEAP_Attach(const void* base)
 {
     TNCBI_Size size;
     SHEAP_Block* b;
@@ -230,18 +230,15 @@ static SHEAP_Block* s_HEAP_Join(SHEAP_Block* p, SHEAP_Block* b)
     /* Block following 'b' */
     SHEAP_Block* n = (SHEAP_Block*)((char*) b + b->size);
 
-    if (!HEAP_ISFREE(b))
-        CORE_LOG(eLOG_Warning, "Heap Join: Block is not free");
-    else {
-        if (!HEAP_ISLAST(b) && HEAP_ISFREE(n)) {
-            b->size += n->size;
-            b->flag = n->flag;
-            n = (SHEAP_Block*)((char*) n + n->size);
-        }
-        if (p && HEAP_ISFREE(p)) {
-            p->size += b->size;
-            p->flag = b->flag;
-        }
+    assert(HEAP_ISFREE(b));
+    if (!HEAP_ISLAST(b) && HEAP_ISFREE(n)) {
+        b->size += n->size;
+        b->flag = n->flag;
+        n = (SHEAP_Block*)((char*) n + n->size);
+    }
+    if (p && HEAP_ISFREE(p)) {
+        p->size += b->size;
+        p->flag = b->flag;
     }
     return n;
 }
@@ -284,14 +281,6 @@ static SHEAP_Block* s_HEAP_Take(SHEAP_Block* b, TNCBI_Size size)
 {
     unsigned int last = b->flag & HEAP_LAST;
 
-    if (HEAP_ISUSED(b)) {
-        CORE_LOG(eLOG_Warning, "Heap Take: Block is not free");
-        return 0;
-    }
-    if (b->size < size) {
-        CORE_LOG(eLOG_Warning, "Heap Take: Block is too small");
-        return 0;
-    }
     if (b->size >= size + sizeof(*b)) {
         SHEAP_Block* n = (SHEAP_Block*)((char*) b + size);
 
@@ -327,8 +316,8 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
     b = (SHEAP_Block*) heap->base;
     while ((char*) b < (char*) heap->base + heap->size) {
         if (HEAP_ISFREE(b)) {
+            /* if an empty, large enough block found, then take it! */
             if (b->size >= size)
-                /* Empty, large enough block found, take it! */
                 return s_HEAP_Take(b, size);
             free += b->size;
         } else if (!HEAP_ISUSED(b)) {
@@ -371,6 +360,7 @@ SHEAP_Block* HEAP_Alloc(HEAP heap, TNCBI_Size size)
         heap->base = base;
         heap->size = hsize;
     }
+    assert(b && HEAP_ISFREE(b) && b->size >= size);
     return s_HEAP_Take(b, size);
 }
 
@@ -583,6 +573,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/09/23 21:06:30  lavr
+ * +HEAP_AttachEx()
+ *
  * Revision 6.23  2003/08/28 21:09:58  lavr
  * Accept (and allocate) additional heap extent in HEAP_CopySerial()
  *
