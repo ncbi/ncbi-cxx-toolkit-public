@@ -252,8 +252,8 @@ void CDBL_Connection::Release()
 
 CDBL_Connection::~CDBL_Connection()
 {
-    if (!Refresh())
-        dbclose(m_Link);
+    Refresh();
+    dbclose(m_Link);
 }
 
 
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/08/23 16:31:47  soussov
+ * fixes bug in ~CDBL_Connection()
+ *
  * Revision 1.6  2002/07/02 16:05:49  soussov
  * splitting Sybase dblib and MS dblib
  *
