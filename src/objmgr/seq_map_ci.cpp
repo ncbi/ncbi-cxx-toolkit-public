@@ -277,11 +277,11 @@ bool CSeqMap_CI::x_CanResolveRef(const CSeqMap::CSegment& seg) const
 {
     _ASSERT(m_Selector.m_TSE);
     _ASSERT(CSeqMap::ESegmentType(seg.m_SegType) == CSeqMap::eSeqRef);
-    CSeq_id_Handle id = GetRefSeqid();
+    CSeq_id_Handle id = CSeq_id_Mapper::GetSeq_id_Mapper().
+        GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
     CConstRef<CTSE_Info> tse_info =
         x_GetSeqMap().m_Source->GetTSEInfo(*m_Selector.m_TSE);
-    return bool(tse_info)  &&
-        tse_info->ContainsSeqid(id);
+    return bool(tse_info)  &&  tse_info->ContainsSeqid(id);
 }
 
 
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/07/17 22:51:31  vasilche
+* Fixed unused variables warnings.
+*
 * Revision 1.15  2003/07/14 21:13:26  grichenk
 * Added possibility to resolve seq-map iterator withing a single TSE
 * and to skip intermediate references during this resolving.

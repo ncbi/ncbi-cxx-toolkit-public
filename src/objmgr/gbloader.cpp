@@ -583,7 +583,6 @@ CGBDataLoader::TMask CGBDataLoader::x_Request2SeqrefMask(const EChoice choice)
     case eExternal:
         // external features
         return CSeqref::fHasExternal;
-        return CSeqref::fHasAll;
     default:
         return 0;
     }
@@ -958,6 +957,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/07/17 22:51:31  vasilche
+* Fixed unused variables warnings.
+*
 * Revision 1.78  2003/07/17 20:07:56  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

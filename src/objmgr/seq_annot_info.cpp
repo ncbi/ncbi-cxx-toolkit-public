@@ -98,7 +98,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
     m_ObjectKeys.reserve(size_t(1.1*objCount));
     m_ObjectInfos.reserve(objCount);
 
-    CDataSource& data_source = GetDataSource();
+    //CDataSource& data_source = GetDataSource();
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
@@ -149,7 +149,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
     m_ObjectKeys.reserve(objCount);
     m_ObjectInfos.reserve(objCount);
 
-    CDataSource& data_source = GetDataSource();
+    //CDataSource& data_source = GetDataSource();
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
@@ -200,7 +200,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
     m_ObjectKeys.reserve(objCount);
     m_ObjectInfos.reserve(objCount);
 
-    CDataSource& data_source = GetDataSource();
+    //CDataSource& data_source = GetDataSource();
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
@@ -257,7 +257,7 @@ void CSeq_annot_Info::x_UnmapAnnotObjects(void)
 
 void CSeq_annot_Info::x_DropAnnotObjects(void)
 {
-    CDataSource& data_source = GetDataSource();
+    //CDataSource& data_source = GetDataSource();
 
     ITERATE( TObjectInfos, it, m_ObjectInfos ) {
         //data_source.x_UnregisterAnnotObject(it->GetObjectPointer());
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/17 22:51:31  vasilche
+ * Fixed unused variables warnings.
+ *
  * Revision 1.4  2003/07/17 20:07:56  vasilche
  * Reduced memory usage by feature indexes.
  * SNP data is loaded separately through PUBSEQ_OS.

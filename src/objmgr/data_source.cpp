@@ -599,15 +599,15 @@ void CDataSource::x_DeleteBioseq_Info(CBioseq_Info& info)
 }
 
 
-void CDataSource::x_RegisterAnnotObject(const CObject* object,
-                                        CAnnotObject_Info* info)
+void CDataSource::x_RegisterAnnotObject(const CObject* /*object*/,
+                                        CAnnotObject_Info* /*info*/)
 {
     //_VERIFY(m_AnnotObject_InfoMap.
     //        insert(TAnnotObject_InfoMap::value_type(object, info)).second);
 }
 
 
-void CDataSource::x_UnregisterAnnotObject(const CObject* object)
+void CDataSource::x_UnregisterAnnotObject(const CObject* /*object*/)
 {
     //_VERIFY(m_AnnotObject_InfoMap.erase(object));
 }
@@ -1389,6 +1389,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.115  2003/07/17 22:51:31  vasilche
+* Fixed unused variables warnings.
+*
 * Revision 1.114  2003/07/17 20:07:56  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
