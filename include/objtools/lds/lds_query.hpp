@@ -77,11 +77,21 @@ public:
         string                  title;
     };
 
-    // Return object's description.
-    // SObjectDescr.id == 0 if requested object cannot be found.
+    /// Return object's description.
+    /// SObjectDescr.id == 0 if requested object cannot be found.
     SObjectDescr GetObjectDescr(const map<string, int>& type_map, 
                                 int id,
                                 bool trace_to_top = false);
+
+    /// For a given object scans all parents to find the topmost SeqEntry
+    /// (top level bioseq-sets are not taken into account)
+    SObjectDescr GetTopSeqEntry(const map<string, int>& type_map, 
+                                int id);
+private:
+    /// Fills descr based on current fetched m_db.object_db
+    void x_FillDescrObj(SObjectDescr* descr, const map<string, int>& type_map);
+    /// Fills descr based on current fetched m_db.annot_db
+    void x_FillDescrAnnot(SObjectDescr* descr, const map<string, int>& type_map);
 
 private:
     SLDS_TablesCollection& m_db;
@@ -93,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/01/13 17:37:21  kuznets
+ * +GetTopSeqEntry
+ *
  * Revision 1.6  2004/03/11 18:43:10  kuznets
  * + FindSequences (by a query string)
  *

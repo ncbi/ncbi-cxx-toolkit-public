@@ -332,29 +332,7 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
             return GetObjectDescr(type_map, tse_id, trace_to_top);
         }
 
-        descr.id = id;
-        descr.is_object = true;
-
-        int object_type = m_db.object_db.object_type;
-        descr.type_str = LDS_TypeMapSearch(type_map, object_type);
-
-        int file_id = m_db.object_db.file_id;
-
-        m_db.file_db.file_id = file_id;
-        if (m_db.file_db.Fetch() != eBDB_Ok) {
-            LDS_THROW(eRecordNotFound, "File record not found.");
-        }
-
-        descr.format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
-        descr.file_name = m_db.file_db.file_name;
-        descr.offset = m_db.object_db.file_offset;
-        descr.title = m_db.object_db.object_title;
-/*
-        m_db.object_attr_db.object_attr_id = id;
-        if (m_db.object_attr_db.Fetch() == eBDB_Ok) {
-            descr.title = m_db.object_attr_db.object_title;
-        }
-*/
+        x_FillDescrObj(&descr, type_map);
         return descr;
     }
 
@@ -363,7 +341,7 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
 
     m_db.annot_db.annot_id = id;
     if (m_db.annot_db.Fetch() == eBDB_Ok) {
-        int top_level_id = m_db.annot_db.top_level_id;
+        int top_level_id = m_db.annot_db.TSE_object_id;
         
         if (top_level_id && trace_to_top) {
             // If non-top level entry, call recursively redirected to
@@ -371,28 +349,127 @@ CLDS_Query::GetObjectDescr(const map<string, int>& type_map,
             return GetObjectDescr(type_map, top_level_id, trace_to_top);
         }
 
-        descr.id = id;
-        descr.is_object = false;
-
-        int object_type = m_db.annot_db.annot_type;
-        descr.type_str = LDS_TypeMapSearch(type_map, object_type);
-
-        int file_id = m_db.annot_db.file_id;
-
-        m_db.file_db.file_id = file_id;
-        if (m_db.file_db.Fetch() != eBDB_Ok) {
-            LDS_THROW(eRecordNotFound, "File record not found.");
-        }
-
-        descr.format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
-        descr.file_name = m_db.file_db.file_name;
-        descr.offset = m_db.annot_db.file_offset;
-
+        x_FillDescrAnnot(&descr, type_map);
         return descr;
     }
 
     descr.id = 0; // not found
     return descr;
+}
+
+CLDS_Query::SObjectDescr 
+CLDS_Query::GetTopSeqEntry(const map<string, int>& type_map, 
+                           int id)
+{
+    SObjectDescr descr;
+    int parent_id, tse_id, candidate_id = 0;
+
+    m_db.object_db.object_id = id;
+    if (m_db.object_db.Fetch() == eBDB_Ok) {
+        parent_id = m_db.object_db.parent_object_id;
+        tse_id = m_db.object_db.TSE_object_id;
+    } else { // record not found
+
+        // try annotations
+        m_db.annot_db.annot_id = id;
+        if (m_db.annot_db.Fetch() == eBDB_Ok) {
+            parent_id = m_db.annot_db.parent_object_id;
+            tse_id = m_db.annot_db.TSE_object_id;
+        } else {
+            descr.id = -1;
+            descr.is_object = false;
+            return descr;
+        }
+    }
+
+    if (parent_id == 0) { // top level         
+        x_FillDescrObj(&descr, type_map);
+        return descr;
+    }
+
+    // scan parents
+    while (parent_id) {
+
+        // check objects
+        m_db.object_db.object_id = parent_id;
+        if (m_db.object_db.Fetch() == eBDB_Ok) {
+            int object_type = m_db.object_db.object_type;
+            descr.type_str = LDS_TypeMapSearch(type_map, object_type);
+            parent_id = m_db.object_db.parent_object_id;
+
+            if (descr.type_str == "Seq-entry") {
+                // remember this object as the top possible seq-entry
+                candidate_id = m_db.object_db.object_id;
+                if (parent_id == 0) {
+                    // we found "the true TSE"
+                    x_FillDescrObj(&descr, type_map);
+                    return descr;
+                }
+            }
+        } else {
+            // try annotation
+            m_db.annot_db.annot_id = id;
+            if (m_db.annot_db.Fetch() == eBDB_Ok) {
+                // annotation cannot be the TSE, so just go to
+                // the next parent
+                parent_id = m_db.annot_db.parent_object_id;
+            } else {
+                LDS_THROW(eRecordNotFound, 
+                          "Local database cannot trace parent object.");
+            }
+        }
+    } // while
+
+    return GetObjectDescr(type_map, 
+                          candidate_id ? candidate_id : tse_id, 
+                          false /*dont trace to top*/);
+
+}
+
+void CLDS_Query::x_FillDescrObj(SObjectDescr* descr,
+                                const map<string, int>& type_map)
+{
+    descr->id = m_db.object_db.object_id;
+    descr->is_object = true;
+    int object_type = m_db.object_db.object_type;
+    descr->type_str = LDS_TypeMapSearch(type_map, object_type);
+
+    int file_id = m_db.object_db.file_id;
+    m_db.file_db.file_id = file_id;
+    if (m_db.file_db.Fetch() != eBDB_Ok) {
+        LDS_THROW(eRecordNotFound, "File record not found.");
+    }
+    descr->format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
+    descr->file_name = m_db.file_db.file_name;
+    descr->offset = m_db.object_db.file_offset;
+    descr->title = m_db.object_db.object_title;
+/*
+        m_db.object_attr_db.object_attr_id = id;
+        if (m_db.object_attr_db.Fetch() == eBDB_Ok) {
+            descr.title = m_db.object_attr_db.object_title;
+        }
+*/
+}
+
+void CLDS_Query::x_FillDescrAnnot(SObjectDescr* descr,
+                                  const map<string, int>& type_map)
+{
+    descr->id = m_db.annot_db.annot_id;
+    descr->is_object = false;
+
+    int object_type = m_db.annot_db.annot_type;
+    descr->type_str = LDS_TypeMapSearch(type_map, object_type);
+
+    int file_id = m_db.annot_db.file_id;
+
+    m_db.file_db.file_id = file_id;
+    if (m_db.file_db.Fetch() != eBDB_Ok) {
+        LDS_THROW(eRecordNotFound, "File record not found.");
+    }
+
+    descr->format    = (CFormatGuess::EFormat)(int)m_db.file_db.format;
+    descr->file_name = m_db.file_db.file_name;
+    descr->offset    = m_db.annot_db.file_offset;
 }
 
 
@@ -402,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/01/13 17:38:27  kuznets
+ * +GetTopSeqEntry
+ *
  * Revision 1.12  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *
