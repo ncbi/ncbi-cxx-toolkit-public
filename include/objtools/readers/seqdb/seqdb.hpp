@@ -146,8 +146,7 @@ public:
     ///   fails, this platform does not support it, the less efficient
     ///   read and write calls are used instead.
     
-    CSeqDB(const string & dbpath,
-           const string & dbname,
+    CSeqDB(const string & dbname,
            char           prot_nucl,
            bool           use_mmap = true);
     
@@ -201,7 +200,7 @@ public:
     /// @return
     ///   In case of an error, -1 is returned; otherwise the return
     ///   value is the sequence length (in base pairs or residues).
-    Int4 GetAmbigSeq(TOID oid, const char ** buffer, bool nucl_code);
+    Int4 GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code);
     
     /// Returns any resources associated with the sequence.
     /// 
