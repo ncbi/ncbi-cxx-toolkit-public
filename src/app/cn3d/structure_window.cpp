@@ -1421,6 +1421,8 @@ void StructureWindow::OnSave(wxCommandEvent& event)
             string data(outputFilename.c_str());
             data += '\n';
             TRACEMSG("changeFlags: " << changeFlags);
+            if ((changeFlags & StructureSet::eAnyAlignmentData) > 0)
+                data += "AlignmentChanged\n";
             if ((changeFlags & StructureSet::eRowOrderData) > 0)
                 data += "RowOrderChanged\n";
             if ((changeFlags & StructureSet::ePSSMData) > 0)
@@ -1458,6 +1460,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/09/22 17:33:12  thiessen
+* add AlignmentChanged flag; flush message file; check row order of repeats
+*
 * Revision 1.17  2003/08/04 15:29:46  thiessen
 * send PendingAlignmentsChanged to CDTree2
 *

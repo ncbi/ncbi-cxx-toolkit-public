@@ -387,6 +387,7 @@ void FileMessenger::SendPendingCommands(void)
                 *outStream << '\n';
         }
         *outStream << COMMAND_END << '\n';
+        outStream->flush();
         TRACEMSG("sent " << (isReply ? "reply " : "command ") << c->id << " to " << c->to);
     }
     pendingCommands.clear();
@@ -446,6 +447,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/09/22 17:33:12  thiessen
+* add AlignmentChanged flag; flush message file; check row order of repeats
+*
 * Revision 1.5  2003/07/10 18:47:29  thiessen
 * add CDTree->Select command
 *

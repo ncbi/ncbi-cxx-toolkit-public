@@ -204,7 +204,8 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
         } else {
             for (int row=0; row<originalMultiple->NRows(); row++) {
                 if (originalMultiple->GetSequenceOfRow(originalRowOrder[row]) !=
-                        multiple->GetSequenceOfRow(rowOrder[row]))
+                        multiple->GetSequenceOfRow(rowOrder[row]) ||
+                    originalRowOrder[row] != rowOrder[row])
                 {
                     TRACEMSG("row order changed");
                     alignmentSet->parentSet->SetDataChanged(StructureSet::eRowOrderData);
@@ -942,6 +943,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2003/09/22 17:33:12  thiessen
+* add AlignmentChanged flag; flush message file; check row order of repeats
+*
 * Revision 1.87  2003/09/22 16:17:29  thiessen
 * fix typo
 *
