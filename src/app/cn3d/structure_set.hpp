@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.72  2002/11/21 15:26:33  thiessen
 * fix style dictionary loading bug
 *
@@ -262,10 +265,12 @@
 #include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/cdd/Align_annot_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/cdd/Reject_id.hpp>
 
 #include <string>
 #include <map>
 #include <vector>
+#include <list>
 
 #include <objseq.h>
 #include <objloc.h>
@@ -383,6 +388,9 @@ public:
 
     // reject sequence (from CDD)
     void RejectAndPurgeSequence(const Sequence *reject, std::string reason, bool purge);
+    typedef std::list < ncbi::CRef < ncbi::objects::CReject_id > > RejectList;
+    const RejectList * GetRejects(void) const;
+    void ShowRejects(void) const;
 
     // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
     Bioseq * GetOrCreateBioseq(const Sequence *sequence);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.61  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -1294,7 +1297,7 @@ void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment
     if (nRowsAddedToMultiple <= 0) return;
 
     // find the last row that's from this multiple
-    int r, nRows = 0, lastAlnRowIndex;
+    int r, nRows = 0, lastAlnRowIndex, firstHighlightedRow = -1;
     DisplayRowFromAlignment *lastAlnRow = NULL;
     for (r=0; r<rows.size(); r++) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[r]);
@@ -1302,22 +1305,38 @@ void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment
             lastAlnRow = alnRow;
             lastAlnRowIndex = r;
             nRows++;
+
+            // look for first completely highlighted row - if found, insert after that instead
+            if (firstHighlightedRow < 0) {
+            TESTMSG("one");
+                const Sequence *seq = multiple->GetSequenceOfRow(alnRow->row);
+                int i;
+                for (i=0; i<seq->Length(); i++)
+                    if (!GlobalMessenger()->IsHighlighted(seq, i))
+                        break;
+                if (i == seq->Length())
+                {
+                TESTMSG("two");
+                    firstHighlightedRow = r;
+                }
+            }
         }
     }
     if (!lastAlnRow || multiple->NRows() != nRows + nRowsAddedToMultiple) {
         ERR_POST(Error << "SequenceDisplay::RowsAdded() - inconsistent parameters");
         return;
     }
+    int rowToMergeAfter = (firstHighlightedRow >= 0) ? firstHighlightedRow : lastAlnRowIndex;
 
     // move higher rows up to leave space for new rows
-    nRows = rows.size() - 1 - lastAlnRowIndex;
+    int nRowsToMove = rows.size() - 1 - rowToMergeAfter;
     rows.resize(rows.size() + nRowsAddedToMultiple);
-    for (r=0; r<nRows; r++)
-        rows[rows.size() - 1 - r] = rows[rows.size() - 1 - r - nRows];
+    for (r=0; r<nRowsToMove; r++)
+        rows[rows.size() - 1 - r] = rows[rows.size() - 1 - r - nRowsAddedToMultiple];
 
-    // add new rows, assuming new rows in multiple are at the end of the multiple
+    // add new rows, assuming new rows to add to the display are from the last rows of the multiple
     for (r=0; r<nRowsAddedToMultiple; r++)
-        rows[lastAlnRowIndex + 1 + r] = new DisplayRowFromAlignment(
+        rows[rowToMergeAfter + 1 + r] = new DisplayRowFromAlignment(
             multiple->NRows() + r - nRowsAddedToMultiple, multiple);
 
     UpdateAfterEdit(multiple);

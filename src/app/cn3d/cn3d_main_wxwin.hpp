@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.70  2002/11/25 15:02:21  thiessen
 * changes for cdd annotation evidence show
 *
@@ -434,6 +437,7 @@ public:
             MID_EDIT_CDD_REFERENCES,
             MID_ANNOT_CDD,
             MID_CDD_REJECT_SEQ,
+            MID_CDD_SHOW_REJECTS,
         // Help menu
             MID_HELP_COMMANDS,
             MID_ONLINE_HELP,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.127  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.126  2003/01/10 20:10:53  thiessen
 * undo previous change - don't want full Bioseqs (with multiple Seq-ids) in converted C-Bioseqs
 *
@@ -1385,6 +1388,32 @@ void StructureSet::RejectAndPurgeSequence(const Sequence *reject, std::string re
 
     if (purge)
         alignmentManager->PurgeSequence(reject->identifier);
+}
+
+const StructureSet::RejectList * StructureSet::GetRejects(void) const
+{
+    return dataManager->GetRejects();
+}
+
+void StructureSet::ShowRejects(void) const
+{
+    const RejectList *rejects = GetRejects();
+    if (!rejects) {
+        TESTMSG("No rejects in this CD");
+        return;
+    }
+
+    TESTMSG("Rejects:");
+    RejectList::const_iterator r, re = rejects->end();
+    for (r=rejects->begin(); r!=re; r++) {
+        std::string idstr;
+        CReject_id::TIds::const_iterator i, ie = (*r)->GetIds().end();
+        for (i=(*r)->GetIds().begin(); i!=ie; i++)
+            idstr += (*i)->AsFastaString() + ", ";
+        TESTMSG(idstr << "Reason: " <<
+            (((*r)->IsSetDescription() && (*r)->GetDescription().front()->IsComment()) ?
+                (*r)->GetDescription().front()->GetComment() : std::string("none given")));
+    }
 }
 
 // trivial methods...

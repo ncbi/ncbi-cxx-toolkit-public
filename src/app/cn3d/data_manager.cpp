@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.16  2002/11/22 19:48:14  thiessen
 * one more fix for const changes in objects API
 *
@@ -789,6 +792,14 @@ void ASNDataManager::AddReject(ncbi::objects::CReject_id *reject)
 
     cdd->SetRejects().push_back(CRef < CReject_id > (reject));
     dataChanged |= StructureSet::eCDDData;
+}
+
+const StructureSet::RejectList * ASNDataManager::GetRejects(void) const
+{
+    const CCdd *cdd = GetInternalCDDData();
+    if (!cdd || !cdd->IsSetRejects())
+        return NULL;
+    return &(cdd->GetRejects());
 }
 
 END_SCOPE(Cn3D)

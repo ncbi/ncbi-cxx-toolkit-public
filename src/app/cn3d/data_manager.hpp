@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.9  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -77,7 +80,6 @@
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/cdd/Reject_id.hpp>
 #include <objects/mmdb2/Model_type.hpp>
 
 #include <list>
@@ -168,6 +170,7 @@ public:
 
     // add sequence to CDD rejects list
     void AddReject(ncbi::objects::CReject_id *reject);
+    const StructureSet::RejectList * GetRejects(void) const;
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates

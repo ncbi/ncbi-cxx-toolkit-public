@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.174  2003/01/27 15:52:22  thiessen
+* merge after highlighted row; show rejects; trim rejects from new reject list
+*
 * Revision 1.173  2003/01/09 13:46:33  thiessen
 * update version
 *
@@ -1165,7 +1168,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
     EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  Cn3DMainFrame::OnSelectFavorite)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
-    EVT_MENU_RANGE(MID_CDD_OVERVIEW, MID_CDD_REJECT_SEQ,    Cn3DMainFrame::OnCDD)
+    EVT_MENU_RANGE(MID_CDD_OVERVIEW, MID_CDD_SHOW_REJECTS,  Cn3DMainFrame::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
@@ -1336,6 +1339,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->AppendSeparator();
     menu->Append(MID_CDD_REJECT_SEQ, "Re&ject Sequence");
     menu->Enable(MID_CDD_REJECT_SEQ, !readOnly);
+    menu->Append(MID_CDD_SHOW_REJECTS, "&Show Rejects");
     menuBar->Append(menu, "&CDD");
 
     // Help menu
@@ -1862,16 +1866,39 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             ShowCDDAnnotations();
             break;
 
+        case MID_CDD_SHOW_REJECTS:
+            glCanvas->structureSet->ShowRejects();
+            break;
+
         case MID_CDD_REJECT_SEQ: {
             // make a list of slave sequences
             SeqAndDescrList seqsDescrs;
             const MoleculeIdentifier *master =
                 glCanvas->structureSet->alignmentManager->
                     GetCurrentMultipleAlignment()->GetSequenceOfRow(0)->identifier;
+            const StructureSet::RejectList *rejects = glCanvas->structureSet->GetRejects();
             SequenceSet::SequenceList::const_iterator
                 s, se = glCanvas->structureSet->sequenceSet->sequences.end();
             for (s=glCanvas->structureSet->sequenceSet->sequences.begin(); s!=se; s++) {
                 if ((*s)->identifier != master) {
+
+                    // make sure this sequence isn't already rejected
+                    bool rejected = false;
+                    if (rejects) {
+                        StructureSet::RejectList::const_iterator r, re = rejects->end();
+                        for (r=rejects->begin(); r!=re; r++) {
+                            CReject_id::TIds::const_iterator i, ie = (*r)->GetIds().end();
+                            for (i=(*r)->GetIds().begin(); i!=ie; i++) {
+                                if ((*s)->identifier->MatchesSeqId(**i)) {
+                                    rejected = true;
+                                    break;
+                                }
+                            }
+                            if (rejected) break;
+                        }
+                    }
+                    if (rejected) continue;
+
                     wxString description((*s)->identifier->ToString().c_str());
                     if ((*s)->description.size() > 0)
                         description += wxString("     ") + (*s)->description.c_str();
