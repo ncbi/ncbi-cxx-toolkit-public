@@ -106,8 +106,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
             "The feature is missing a location", feat);
     }
 
-    CBioseq_Handle bsh;
-    bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
     const CBioseq* seq = bsh ? &bsh.GetBioseq() : 0;
     m_Imp.ValidateSeqLoc(feat.GetLocation(), seq, "Location", feat);
     
@@ -252,8 +251,7 @@ void CValidError_feat::ValidateSeqFeatData
 void CValidError_feat::ValidateSeqFeatProduct
 (const CSeq_loc& prod, const CSeq_feat& feat)
 {
-    CBioseq_Handle bsh;
-    bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
     const CBioseq* seq = bsh ? &bsh.GetBioseq() : 0;
     m_Imp.ValidateSeqLoc(feat.GetProduct(), seq, "Product", feat);
     
@@ -465,20 +463,14 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                 "Gene of 'order' with otherwise complete location should "
                 "have partial flag set", feat);
         }
-        // inconsistent combination of partial/complete product,location,partial flag
-        else if ( (partial_prod == eSeqlocPartial_Complete  &&  feat.CanGetProduct ())  ||
-            partial_loc == eSeqlocPartial_Complete  ||
-            !feat.GetPartial () ) {
-            string str("Inconsistent: ");
-            if ( feat.CanGetProduct () ) {
-                str += "Product= ";
-                if ( partial_prod != eSeqlocPartial_Complete ) {
-                    str += "partial, ";
-                } else {
-                    str += "complete, ";
-                }
-            }
-            str += "Location= ";
+        // inconsistent combination of partial/complete product,location,partial flag - part 1
+        else if ( partial_prod == eSeqlocPartial_Complete  &&
+                  feat.CanGetProduct() ) {
+            // if not local bioseq product, lower severity
+            EDiagSev sev = m_Scope->GetBioseqHandle(feat.GetProduct()) ?
+                eDiag_Warning : eDiag_Info;
+                        
+            string str("Inconsistent: Product= complete, Location= ");
             if ( partial_loc != eSeqlocPartial_Complete ) {
                 str += "partial, ";
             } else {
@@ -489,6 +481,32 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                 str += "TRUE";
             } else {
                 str += "FALSE";
+            }
+            PostErr(sev, eErr_SEQ_FEAT_PartialProblem, str, feat);
+        }
+        // inconsistent combination of partial/complete product,location,partial flag - part 2
+        else if ( partial_loc == eSeqlocPartial_Complete  ||
+                  (feat.CanGetPartial()  &&  !feat.GetPartial()) ) {
+            string str("Inconsistent: ");
+            if ( feat.CanGetProduct() ) {
+                str += "Product= ";
+                if ( partial_prod != eSeqlocPartial_Complete ) {
+                    str += "partial, ";
+                } else {
+                    str += "complete, ";
+                }
+                str += "Location= ";
+                if ( partial_loc != eSeqlocPartial_Complete ) {
+                    str += "partial, ";
+                } else {
+                    str += "complete, ";
+                }
+                str += "Feature.partial= ";
+                if ( feat.CanGetPartial()  &&  feat.GetPartial() ) {
+                    str += "TRUE";
+                } else {
+                    str += "FALSE";
+                }
             }
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, str, feat);
         }
@@ -1355,22 +1373,55 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         CBioseq_Handle::eViewConstructed,
         CBioseq_Handle::eCoding_Iupac);
 
-    if ( nuc_vec.size() != rna_vec.size() ) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
-            "Transcript length [" + NStr::IntToString(nuc_vec.size()) + "] " +
-            "does not match product length [" + 
-            NStr::IntToString(rna_vec.size()) + "]", feat);
-    } else if ( nuc_vec.size() > 0 ) {
+    size_t nuc_len = nuc_vec.size();
+    size_t rna_len = rna_vec.size();
+
+    if ( nuc_len != rna_len ) {
+        if ( nuc_len < rna_len ) {
+            size_t count_a = 0, count_no_a = 0;
+            // count 'A's in the tail
+            for ( CSeqVector_CI iter(rna_vec, nuc_len); iter; ++iter ) {
+                if ( (*iter == 'A')  ||  (*iter == 'a') ) {
+                    ++count_a;
+                } else {
+                    ++count_no_a;
+                }
+            }
+            if ( count_a < (19 * count_no_a) ) { // less then 5%
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
+                    "Transcript length [" + NStr::IntToString(nuc_len) + 
+                    "] less than product length [" + NStr::IntToString(rna_len) + 
+                    "], and tail < 95% polyA", feat);
+            } else {
+                PostErr(eDiag_Info, eErr_SEQ_FEAT_TranscriptLen,
+                    "Transcript length [" + NStr::IntToString(nuc_len) + 
+                    "] less than product length [" + NStr::IntToString(rna_len) +
+                    "], but tail >= 95% polyA", feat);
+            }
+            // allow base-by-base comparison on common length
+            rna_len = nuc_len; 
+        } else {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
+                "Transcript length [" + NStr::IntToString(nuc_vec.size()) + "] " +
+                "does not match product length [" + 
+                NStr::IntToString(rna_vec.size()) + "]", feat);
+        }
+    } 
+    if ( (nuc_len == rna_len)  &&  (nuc_len > 0) ) {
+        // compare content of common length
+        CSeqVector_CI nuc_ci(nuc_vec);
+        CSeqVector_CI rna_ci(rna_vec);
         size_t mismatches = 0;
-        for ( size_t i = 0; i < nuc_vec.size(); ++i ) {
-            if ( nuc_vec[i] != rna_vec[i] ) {
+
+        while ( nuc_ci  &&  rna_ci ) {
+            if ( *nuc_ci != *rna_ci ) {
                 ++mismatches;
             }
         }
         if ( mismatches > 0 ) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
                 "There are " + NStr::IntToString(mismatches) + 
-                " mismatches out of " + NStr::IntToString(nuc_vec.size()) +
+                " mismatches out of " + NStr::IntToString(nuc_len) +
                 " bases between the transcript and product sequence", feat);
         }
     }
@@ -2388,6 +2439,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/09/22 20:25:10  shomrat
+* lower severity for far product partial inconsistency and mrnatranscheck, also check for 95% polyA
+*
 * Revision 1.35  2003/07/24 20:16:18  vasilche
 * Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
 *
