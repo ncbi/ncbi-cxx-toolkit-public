@@ -28,30 +28,14 @@
  * File Description:
  *   Standard test for the the SOCK-based CONNECTOR
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.5  2002/03/22 19:47:55  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.4  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.3  2001/12/04 15:55:33  lavr
- * +Test for SOCK_CreateConnectorOnTop()
- *
- * Revision 6.2  2000/04/12 15:21:15  vakatov
- * Moved the log initialization to after the cmd.line args' parsing
- *
- * Revision 6.1  2000/04/07 20:06:45  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_conntest.h"
 #include "../ncbi_priv.h"
 #include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_util.h>
+#include <stdlib.h>
+#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -62,6 +46,7 @@ int main(int argc, const char* argv[])
     CONNECTOR connector;
     FILE*     data_file;
 #define MIN_PORT 5001
+    const char*    env;
     const char*    host;
     unsigned short port;
     unsigned int   max_try;
@@ -115,8 +100,14 @@ int main(int argc, const char* argv[])
 
     /* log and data log streams */
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    data_file = fopen("test_ncbi_socket_connector.log", "wb");
+    data_file = fopen("test_ncbi_socket_connector.log", "ab");
     assert(data_file);
+
+    if ((env = getenv("CONN_DEBUG_PRINTOUT")) != 0 &&
+        (strcasecmp(env, "true") == 0 || strcasecmp(env, "1") == 0 ||
+         strcasecmp(env, "data") == 0 || strcasecmp(env, "all") == 0)) {
+        SOCK_SetDataLoggingAPI(eOn);
+    }
 
     /* Tests for SOCKET CONNECTOR */
     fprintf(stderr,
@@ -125,16 +116,13 @@ int main(int argc, const char* argv[])
             host, port, timeout.sec, timeout.usec, max_try);
 
     connector = SOCK_CreateConnector(host, port, max_try);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_SingleBouncePrint);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
     connector = SOCK_CreateConnector(host, port, max_try);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_SingleBounceCheck);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
     connector = SOCK_CreateConnector(host, port, max_try);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_Everything);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     /* Tests for OnTop SOCKET CONNECTOR connector */
     fprintf(stderr,
@@ -146,11 +134,35 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Cannot create socket");
 
     connector = SOCK_CreateConnectorOnTop(sock, max_try);
-    CONN_TestConnector(connector, &timeout, data_file,
-                       fTC_Everything);
+    CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     /* cleanup, exit */
     fclose(data_file);
     CORE_SetLOG(0);
     return 0/*okay*/;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.6  2002/12/04 16:57:11  lavr
+ * Toggle verbose logging from environment; move change log to end
+ *
+ * Revision 6.5  2002/03/22 19:47:55  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.4  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.3  2001/12/04 15:55:33  lavr
+ * +Test for SOCK_CreateConnectorOnTop()
+ *
+ * Revision 6.2  2000/04/12 15:21:15  vakatov
+ * Moved the log initialization to after the cmd.line args' parsing
+ *
+ * Revision 6.1  2000/04/07 20:06:45  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
