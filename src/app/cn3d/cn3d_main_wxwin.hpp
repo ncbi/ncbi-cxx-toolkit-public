@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/09/06 21:38:33  thiessen
+* tweak message log / diagnostic system
+*
 * Revision 1.39  2001/09/04 14:40:26  thiessen
 * add rainbow and charge coloring
 *
@@ -213,9 +216,6 @@ public:
     bool OnInit(void);
     int OnExit(void);
 
-    // used for processing display updates when system is idle
-    void OnIdle(wxIdleEvent& event);
-
     // for now, there is only one structure window
     Cn3DMainFrame *structureWindow;
 
@@ -223,6 +223,11 @@ public:
     SequenceViewer *sequenceViewer;
 
 private:
+    void InitRegistry(void);
+
+    // used for processing display updates when system is idle
+    void OnIdle(wxIdleEvent& event);
+
     DECLARE_EVENT_TABLE()
 };
 
@@ -309,6 +314,7 @@ public:
                 MID_FAVORITES_FILE,
         // Window menu
             MID_SHOW_LOG,
+            MID_SHOW_LOG_START,
             MID_SHOW_SEQ_V,
         // CDD menu
             MID_EDIT_CDD_DESCR,

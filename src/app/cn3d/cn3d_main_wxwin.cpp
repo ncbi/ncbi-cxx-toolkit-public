@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2001/09/06 21:38:43  thiessen
+* tweak message log / diagnostic system
+*
 * Revision 1.79  2001/09/06 18:34:28  thiessen
 * more mac tweaks
 *
@@ -416,6 +419,7 @@ static bool favoriteStylesChanged = false;
 class MsgFrame;
 
 static MsgFrame *logFrame = NULL;
+static std::list < std::string > backLog;
 
 class MsgFrame : public wxFrame
 {
@@ -444,6 +448,7 @@ void MsgFrame::OnCloseWindow(wxCloseEvent& event)
         event.Veto();
     } else {
         Destroy();
+        logFrame = NULL;
     }
 }
 
@@ -451,30 +456,43 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 {
     std::string errMsg;
     diagMsg.Write(errMsg);
+#ifdef __WXMAC__
+    // wxTextCtrl on Mac doesn't like regular '\n' newlines... ugh
+    if (errMsg[errMsg.size() - 1] < ' ') errMsg[errMsg.size() - 1] = '\r';
+#endif
 
+    // severe errors get a special error dialog
     if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace) {
         wxMessageDialog dlg(NULL, errMsg.c_str(), "Severe Error!", wxOK | wxCENTRE | wxICON_EXCLAMATION);
         dlg.ShowModal();
-    } else {
-        if (!logFrame) {
-            logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
-            logFrame->SetSizeHints(150, 100);
-            logFrame->logText = new wxTextCtrl(logFrame, -1, "",
-                wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
+    }
+
+    // info messages and less severe errors get added to the log
+    else {
+        if (logFrame) {
+            // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
+            if (logFrame->logText->GetLastPosition() > 30000) logFrame->logText->Clear();
+            *(logFrame->logText) << errMsg.c_str();
+        } else {
+            // if message window doesn't exist yet, store messages until later
+            backLog.push_back(errMsg.c_str());
         }
-        // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
-        if (logFrame->logText->GetLastPosition() > 30000) logFrame->logText->Clear();
-#ifdef __WXMAC__
-        // wxTextCtrl on Mac doesn't like regular '\n' newlines... ugh
-        if (errMsg[errMsg.size() - 1] < ' ') errMsg[errMsg.size() - 1] = '\r';
-#endif
-        *(logFrame->logText) << errMsg.c_str();
-        logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
     }
 }
 
 void RaiseLogWindow(void)
 {
+    if (!logFrame) {
+        logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
+        logFrame->SetSizeHints(150, 100);
+        logFrame->logText = new wxTextCtrl(logFrame, -1, "",
+            wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
+        // display any messages received before window created
+        while (backLog.size() > 0) {
+            *(logFrame->logText) << backLog.front().c_str();
+            backLog.erase(backLog.begin());
+        }
+    }
     logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
     logFrame->Show(true);
 #if defined(__WXMSW__)
@@ -551,6 +569,10 @@ END_EVENT_TABLE()
 
 Cn3DApp::Cn3DApp() : wxApp()
 {
+    // setup the diagnostic stream
+    SetDiagHandler(DisplayDiagnostic, NULL, NULL);
+    SetDiagPostLevel(eDiag_Info); // report all messages
+
     // try to force all windows to use best (TrueColor) visuals
 #if wxVERSION_NUMBER >= 2302 && !defined(__WXMAC__)
     if (!ChooseGLVisual(NULL)) SetUseBestVisual(true);
@@ -559,14 +581,13 @@ Cn3DApp::Cn3DApp() : wxApp()
 #endif
 }
 
-bool Cn3DApp::OnInit(void)
+void Cn3DApp::InitRegistry(void)
 {
-    // setup the diagnostic stream
-    SetDiagHandler(DisplayDiagnostic, NULL, NULL);
-    SetDiagPostLevel(eDiag_Info); // report all messages
+    // first set up defaults, then override any/all with stuff from registry file
 
-    // default animation delay
+    // default animation delay and log window startup
     RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 25);
+    RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, true);
 
     // default quality settings
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
@@ -605,16 +626,18 @@ bool Cn3DApp::OnInit(void)
     RegistrySetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
     RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
 
-    // create the main frame window
-    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
-    SetTopWindow(structureWindow);
-    structureWindow->Show(true);
+    // load program registry - overriding defaults if present
+    registryFile = dataDir + "cn3d.ini";
+    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
+    if (*iniIn) {
+        TESTMSG("loading program registry " << registryFile);
+        registry.Read(*iniIn);
+    }
+}
 
+bool Cn3DApp::OnInit(void)
+{
     TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
-#ifndef __WXMAC__
-    // Mac version does weird things when messag log is present at startup
-    RaiseLogWindow();
-#endif
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -635,20 +658,22 @@ bool Cn3DApp::OnInit(void)
     TESTMSG("program dir: " << programDir.c_str());
     TESTMSG("data dir: " << dataDir.c_str());
 
-    // load program registry - overriding defaults if present
-    registryFile = dataDir + "cn3d.ini";
-    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
-    if (*iniIn) {
-        TESTMSG("loading program registry " << registryFile);
-        registry.Read(*iniIn);
-    }
-
-    // favorite styles
-    LoadFavorites();
-
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
     LoadStandardDictionary(dictFile.c_str());
+
+    // set up registry anbd favorite styles (must be done before structure window creation)
+    InitRegistry();
+    LoadFavorites();
+
+    // create the main frame window - must be first window created by the app
+    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
+    SetTopWindow(structureWindow);
+
+    // show log if set to do so
+    bool showLog = false;
+    if (RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog) && showLog)
+        RaiseLogWindow();
 
     // get file name from command line, if present
     if (argc > 2)
@@ -658,6 +683,7 @@ bool Cn3DApp::OnInit(void)
     else
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
 
+    // give structure window initial focus
     structureWindow->Raise();
     structureWindow->SetFocus();
     return true;
@@ -852,6 +878,10 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu = new wxMenu;
     menu->Append(MID_SHOW_SEQ_V, "Show &Sequence Viewer");
     menu->Append(MID_SHOW_LOG, "Show Message &Log");
+    menu->Append(MID_SHOW_LOG_START, "Show Log on Start&up", "", true);
+    bool showLog = false;
+    RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
+    menu->Check(MID_SHOW_LOG_START, showLog);
     menuBar->Append(menu, "&Window");
 
     // CDD menu
@@ -884,9 +914,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     glCanvas = new Cn3DGLCanvas(this, attribList);
 
     // set initial font
-#ifdef __WXGTK__
     Show(true); // on X, need to establish gl context first, which requires visible window
-#endif
     glCanvas->SetGLFontFromRegistry();
 }
 
@@ -901,10 +929,8 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
 {
     int currentDelay;
-    if (!RegistryGetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, &currentDelay)) {
-        ERR_POST(Error << "Cn3DMainFrame::OnAnimate() - can't get current delay value from registry");
+    if (!RegistryGetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, &currentDelay))
         return;
-    }
 
     // play
     if (event.GetId() == MID_PLAY) {
@@ -925,10 +951,8 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
         long newDelay = wxGetNumberFromUser("Enter a delay value in milliseconds (1..5000)",
             "Delay:", "Set Delay", (long) currentDelay, 1, 5000, this);
         if (newDelay > 0) {
-            if (!RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, (int) newDelay)) {
-                ERR_POST(Error << "Cn3DMainFrame::OnAnimate() - can't set delay value in registry");
+            if (!RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, (int) newDelay))
                 return;
-            }
             // change delay if timer is running
             if (timer.IsRunning()) {
                 timer.Stop();
@@ -1101,6 +1125,10 @@ void Cn3DMainFrame::OnShowWindow(wxCommandEvent& event)
             break;
         case MID_SHOW_SEQ_V:
             GlobalMessenger()->PostRedrawAllSequenceViewers();
+            break;
+        case MID_SHOW_LOG_START:
+            RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START,
+                menuBar->IsChecked(MID_SHOW_LOG_START));
             break;
     }
 }
@@ -1646,7 +1674,7 @@ bool RegistrySetInteger(const std::string& section, const std::string& name, int
     regStr.Printf("%i", value);
     bool okay = registry.Set(section, name, regStr.c_str(), CNcbiRegistry::ePersistent);
     if (!okay)
-        ERR_POST(Error << "registry Set() failed");
+        ERR_POST(Error << "registry Set(" << section << ", " << name << ") failed");
     else
         registryChanged = true;
     return okay;
@@ -1661,7 +1689,7 @@ bool RegistrySetBoolean(const std::string& section, const std::string& name, boo
         regStr = value ? "true" : "false";
     bool okay = registry.Set(section, name, regStr, CNcbiRegistry::ePersistent);
     if (!okay)
-        ERR_POST(Error << "registry Set() failed");
+        ERR_POST(Error << "registry Set(" << section << ", " << name << ") failed");
     else
         registryChanged = true;
     return okay;
@@ -1671,7 +1699,7 @@ bool RegistrySetString(const std::string& section, const std::string& name, cons
 {
     bool okay = registry.Set(section, name, value, CNcbiRegistry::ePersistent);
     if (!okay)
-        ERR_POST(Error << "registry Set() failed");
+        ERR_POST(Error << "registry Set(" << section << ", " << name << ") failed");
     else
         registryChanged = true;
     return okay;

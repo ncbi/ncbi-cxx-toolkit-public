@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/09/06 21:38:33  thiessen
+* tweak message log / diagnostic system
+*
 * Revision 1.10  2001/08/31 22:24:14  thiessen
 * add timer for animation
 *
@@ -122,6 +125,7 @@ static const std::string
     REG_CONFIG_SECTION = "Cn3D-4-Config",
     REG_FAVORITES_NAME = "Favorites",
     REG_ANIMATION_DELAY = "AnimationDelay",
+    REG_SHOW_LOG_ON_START = "ShowLogOnStartup",
     // quality settings
     REG_QUALITY_SECTION = "Cn3D-4-Quality",
     REG_QUALITY_ATOM_SLICES = "AtomSlices",
