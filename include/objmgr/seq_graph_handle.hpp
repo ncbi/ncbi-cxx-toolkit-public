@@ -79,6 +79,7 @@ public:
     const string& GetTitle(void) const;
     bool IsSetComment(void) const;
     const string& GetComment(void) const;
+    bool IsSetLoc(void) const;
     const CSeq_loc& GetLoc(void) const;
     bool IsSetTitle_x(void) const;
     const string& GetTitle_x(void) const;
@@ -130,6 +131,13 @@ inline
 const string& CSeq_graph_Handle::GetComment(void) const
 {
     return x_GetSeq_graph().GetComment();
+}
+
+
+inline
+bool CSeq_graph_Handle::IsSetLoc(void) const
+{
+    return x_GetSeq_graph().IsSetLoc();
 }
 
 
@@ -233,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/26 19:11:57  grichenk
+* Added IsSetLoc()
+*
 * Revision 1.6  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
