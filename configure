@@ -3118,6 +3118,10 @@ case "$host_os:$compiler" in
    STRIP=":"
    ;;
 
+ linux*:GCC )
+   LDFLAGS="-Wl,-E"
+   ;;
+
  linux* | osf*:GCC )
    ;;
 

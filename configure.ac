@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.55 2002/04/09 20:21:07 ucko Exp $
+#  $Id: configure.ac,v 1.56 2002/04/11 21:05:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -474,6 +474,10 @@ case "$host_os:$compiler" in
 
  solaris*:GCC )
    STRIP=":"
+   ;;
+
+ linux*:GCC )
+   LDFLAGS="-Wl,-E"
    ;;
 
  linux* | osf*:GCC )
