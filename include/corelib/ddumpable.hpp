@@ -104,6 +104,12 @@ public:
              const string& comment = kEmptyStr);
     void Log(const string& name, unsigned long value,
              const string& comment = kEmptyStr);
+#if (SIZEOF_LONG_LONG == 8) || defined(NCBI_USE_INT64)
+    void Log(const string& name, Int8 value,
+             const string& comment = kEmptyStr);
+    void Log(const string& name, Uint8 value,
+             const string& comment = kEmptyStr);
+#endif
     void Log(const string& name, double value,
              const string& comment = kEmptyStr);
     void Log(const string& name, const void* value,
@@ -343,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/09 16:55:12  gouriano
+ * Added Log() methods for Int8 and Uint8
+ *
  * Revision 1.6  2003/11/12 20:15:23  gouriano
  * Added more Log() methods: for short, int, and char* types
  *

@@ -211,6 +211,21 @@ void CDebugDumpContext::Log(const string& name, unsigned long value,
     Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
+#if (SIZEOF_LONG_LONG == 8) || defined(NCBI_USE_INT64)
+void CDebugDumpContext::Log(const string& name, Int8 value,
+                            const string& comment)
+{
+    Log(name, NStr::Int8ToString(value), CDebugDumpFormatter::eValue, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, Uint8 value,
+                            const string& comment)
+{
+    Log(name, NStr::UInt8ToString(value), CDebugDumpFormatter::eValue, comment);
+}
+#endif
+
 
 void CDebugDumpContext::Log(const string& name, double value,
                             const string& comment)
@@ -374,6 +389,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/09 16:55:38  gouriano
+ * Added Log() methods for Int8 and Uint8
+ *
  * Revision 1.7  2003/11/18 14:13:43  gouriano
  * Corrected odd typecast in CDebugDumpContext::Log method
  *
