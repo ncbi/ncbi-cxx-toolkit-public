@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/09/10 21:15:48  lavr
+ * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
+ *
  * Revision 6.6  2001/05/23 21:52:00  lavr
  * +fHCC_NoUpread
  *
@@ -146,7 +149,7 @@ extern CONNECTOR HTTP_CreateConnector
  *  -- "adjust_cleanup()" will be called when the connector is destroyed.
  */
 
-typedef int/*bool*/ (*FHttpParseHTTPHdr)
+typedef int/*bool*/ (*FHttpParseHTTPHeader)
 (const char* http_header,
  void*       adjust_data,
  int/*bool*/ server_error
@@ -163,12 +166,12 @@ typedef void (*FHttpAdjustCleanup)
  );
 
 extern CONNECTOR HTTP_CreateConnectorEx
-(const SConnNetInfo* info,
- THCC_Flags          flags,
- FHttpParseHTTPHdr   parse_http_hdr, /* can be NULL, then no addtl. parsing  */
- FHttpAdjustInfo     adjust_info,    /* can be NULL, then no adjustments     */
- void*               adjust_data,    /* for "adjust_info" & "adjust_cleanup" */
- FHttpAdjustCleanup  adjust_cleanup  /* can be NULL                          */
+(const SConnNetInfo*  info,
+ THCC_Flags           flags,
+ FHttpParseHTTPHeader parse_http_hdr, /* may be NULL, then no addtl. parsing */
+ FHttpAdjustInfo      adjust_info,    /* may be NULL, then no adjustments    */
+ void*                adjust_data,    /* for "adjust_info" & "adjust_cleanup"*/
+ FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                         */
 );
 
 

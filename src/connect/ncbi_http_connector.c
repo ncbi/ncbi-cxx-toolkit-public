@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/09/10 21:15:56  lavr
+ * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
+ *
  * Revision 6.15  2001/05/23 21:52:44  lavr
  * +fHCC_NoUpread
  *
@@ -111,14 +114,14 @@ typedef enum {
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    SConnNetInfo*      info;        /* generic connection configuration     */
-    THCC_Flags         flags;       /* as passed to HTTP_CreateConnector()  */
-    FHttpParseHTTPHdr  parse_http_hdr; /* callback to parse HTTP reply hdr  */
+    SConnNetInfo*        info;      /* generic connection configuration     */
+    THCC_Flags           flags;     /* as passed to HTTP_CreateConnector()  */
+    FHttpParseHTTPHeader parse_http_hdr; /* callback to parse HTTP reply hdr*/
 
     /* for on-the-fly adjustment of the connection info */
-    FHttpAdjustInfo    adjust_info;
-    void*              adjust_data;
-    FHttpAdjustCleanup adjust_cleanup;
+    FHttpAdjustInfo      adjust_info;
+    void*                adjust_data;
+    FHttpAdjustCleanup   adjust_cleanup;
 
     SOCK            sock;        /* socket;  NULL if not in the "READ" mode  */
     BUF             obuf;        /* storage to accumulate output data        */
@@ -784,12 +787,12 @@ extern CONNECTOR HTTP_CreateConnector
 
 
 extern CONNECTOR HTTP_CreateConnectorEx
-(const SConnNetInfo* info,
- THCC_Flags          flags,
- FHttpParseHTTPHdr   parse_http_hdr,
- FHttpAdjustInfo     adjust_info,
- void*               adjust_data,
- FHttpAdjustCleanup  adjust_cleanup)
+(const SConnNetInfo*  info,
+ THCC_Flags           flags,
+ FHttpParseHTTPHeader parse_http_hdr,
+ FHttpAdjustInfo      adjust_info,
+ void*                adjust_data,
+ FHttpAdjustCleanup   adjust_cleanup)
 {
     CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector    ));
     SHttpConnector* uuu = (SHttpConnector*) malloc(sizeof(SHttpConnector));
