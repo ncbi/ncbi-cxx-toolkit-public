@@ -333,6 +333,14 @@ flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
 
 On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
 <ul>
+  <li> <i><b>--with-dll --with-static</b></i> --
+       build libraries as both <i>dynamic</i> and <i>static</i>; <br>
+		 however, if the library project makefile specifies
+		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = lib</i></a>,
+       then build the library as <i>static</i> only, and if the
+       library project makefile specifies
+		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>
+       then build the library as <i>dynamic</i> only.
   <li> <i><b>--with-dll</b></i> --
        build libraries as <i>dynamic</i>; <br>
 		 however, if the library project makefile specifies
