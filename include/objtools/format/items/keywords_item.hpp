@@ -35,7 +35,7 @@
 */
 #include <corelib/ncbistd.hpp>
 
-#include <list>
+#include <vector>
 
 #include <objtools/format/items/item_base.hpp>
 
@@ -57,7 +57,7 @@ class CKeywordsItem : public CFlatItem
 {
 public:
     // types
-    typedef list<string> TKeywords;
+    typedef vector<string> TKeywords;
 
     CKeywordsItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
@@ -67,12 +67,23 @@ public:
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
-    void x_AddKeyword(const string& keyword, Uint4 flags = 0);
-    bool x_CheckSpecialKeyword(const string& keyword, Uint4 flags = 0) const;
+    void x_AddKeyword(const string& keyword);
 
     // data
     TKeywords m_Keywords;
 };
+
+
+//===============================  inline methods  ==========================
+
+inline
+const CKeywordsItem::TKeywords& CKeywordsItem::GetKeywords(void) const 
+{ 
+    return m_Keywords; 
+}
+
+//===========================  end of inline methods  =======================
+
 
 
 END_SCOPE(objects)
@@ -83,6 +94,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/10/05 15:29:56  shomrat
+* list -> vector; changes to x_AddKeyword
+*
 * Revision 1.2  2004/04/22 15:37:17  shomrat
 * Changes in context
 *
