@@ -141,7 +141,9 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   First argument vector parameter.
+    /// @param ...
+    ///   Argument vector. Must ends with NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -178,9 +180,12 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   First argument vector parameter.
     /// @param ...
-    ///   NULL, const char* envp[]
+    ///   Argument vector. Must ends with NULL.
+    /// @param envp
+    ///   Pointer to vector with environment variables which will be used
+    ///   instead of current environment. Last value in vector must be NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -218,9 +223,9 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   First argument vector parameter.
     /// @param ...
-    ///   NULL
+    ///   Argument vector. Must ends with NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -264,9 +269,12 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   First argument vector parameter.
     /// @param ...
-    ///   NULL, const char* envp[]
+    ///   Argument vector. Must ends with NULL.
+    /// @param envp
+    ///   Pointer to vector with environment variables which will be used
+    ///   instead of current environment. Last value in an array must be NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -298,7 +306,7 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   Pointer to argument vector. Last value in vector must be NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -336,7 +344,10 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   Argument vector. Last value must be NULL.
+    /// @param envp
+    ///   Pointer to vector with environment variables which will be used
+    ///   instead of current environment. Last value in an array must be NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -373,9 +384,7 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
-    /// @param ...
-    ///   NULL, const char* envp[]
+    ///   Pointer to argument vector. Last value in vector must be NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -418,7 +427,10 @@ public:
     /// @param cmdline
     ///   Command-line string.
     /// @param argv
-    ///   Argument vector.
+    ///   Argument vector. Last value must be NULL.
+    /// @param envp
+    ///   Pointer to vector with environment variables which will be used
+    ///   instead of current environment. Last value in an array must be NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -456,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/18 15:57:56  ivanov
+ * Minor comment changes
+ *
  * Revision 1.13  2004/04/01 14:14:01  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
