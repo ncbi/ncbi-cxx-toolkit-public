@@ -507,7 +507,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
-   BLAST_SequenceBlkPtr query,  BlastQueryInfoPtr query_info,
+   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info,
    ReadDBFILEPtr rdfp, BLAST_ScoreBlkPtr sbp,
    const BlastScoringOptionsPtr score_options, 
    LookupTableWrapPtr lookup_wrap,
@@ -606,7 +606,6 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
 
-   query = BlastSequenceBlkFree(query);
    hit_params = MemFree(hit_params);
    ext_params = MemFree(ext_params);
    word_params = MemFree(word_params);
@@ -615,8 +614,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 }
 
 Int4 
-BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
+BLAST_TwoSequencesEngine(Uint1 program_number, 
+   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info, 
+   const BLAST_SequenceBlkPtr subject, 
    BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr score_options, 
    LookupTableWrapPtr lookup_wrap,
    const BlastInitialWordOptionsPtr word_options, 
@@ -674,7 +674,6 @@ BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query,
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
 
-   query = BlastSequenceBlkFree(query);
    ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
    hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
 

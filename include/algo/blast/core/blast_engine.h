@@ -70,7 +70,7 @@ extern "C" {
  */
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
-   BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info,
+   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info,
    ReadDBFILEPtr rdfp, BLAST_ScoreBlkPtr sbp, 
    const BlastScoringOptionsPtr score_options, 
    LookupTableWrapPtr lookup_wrap, 
@@ -102,8 +102,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
  *                     different stages of the search [out]
  */
 Int4 
-BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
+BLAST_TwoSequencesEngine(Uint1 program_number, 
+   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info, 
+   const BLAST_SequenceBlkPtr subject, 
    BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr score_options, 
    LookupTableWrapPtr lookup_wrap, 
    const BlastInitialWordOptionsPtr word_options, 
