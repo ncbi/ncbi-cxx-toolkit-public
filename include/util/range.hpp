@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/22 20:02:33  grichenk
+* Fixed CombineFrom(), CombineTo(), operator+=()
+*
 * Revision 1.4  2001/09/05 14:50:28  grichenk
 * Fixed comparison of "whole" ranges
 *
@@ -244,42 +247,20 @@ public:
     // combine ranges
     TThisType& CombineFrom(position_type from)
         {
-            if ( from <= GetFrom() ) {
-                // from?
-                if ( from == GetWholeFrom() )
-                    return *this; // not
-            }
-            else {
-                // GetFrom()?
-                if ( !IsWholeFrom() )
-                    return *this; // yes
-            }
-            return SetFrom(from);
+            if ( from < GetFrom() )
+                SetFrom(from);
+            return *this;
         }
     TThisType& CombineTo(position_type to)
         {
-            if ( to <= GetTo() ) {
-                // to?
-                if ( to == GetWholeTo() )
-                    return *this; // not
-            }
-            else {
-                // GetTo()?
-                if ( !IsWholeTo() )
-                    return *this; // yes
-            }
-            return SetTo(to);
+            if ( to > GetTo() )
+                SetTo(to);
+            return *this;
         }
     TThisType& operator+=(TThisType range)
         {
-            if ( !range.Empty() ) {
-                if ( Empty() )
-                    *this = range;
-                else {
-                    CombineFrom(range.GetFrom());
-                    CombineTo(range.GetTo());
-                }
-            }
+            CombineFrom(range.GetFrom());
+            CombineTo(range.GetTo());
             return *this;
         }
 
