@@ -126,6 +126,15 @@ enum EDebugLevel
 CId1Reader::CId1Reader(int max_connections)
 {
     SetMaximumConnections(max_connections);
+    try {
+        CConn conn(this);
+        x_GetConnection(conn);
+        conn.Release();
+    }
+    catch ( ... ) {
+        SetMaximumConnections(0);
+        throw;
+    }
 }
 
 
@@ -300,8 +309,11 @@ void CId1Reader::x_Disconnect(TConn conn)
 void CId1Reader::x_Reconnect(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    ERR_POST("CId1Reader: ID1 GenBank connection failed: reconnecting...");
-    m_Connections[conn].reset();
+    AutoPtr<CConn_ServiceStream>& stream = m_Connections[conn];
+    if ( stream.get() ) {
+        ERR_POST("CId1Reader: ID1 GenBank connection failed: reconnecting...");
+        stream.reset();
+    }
 }
 
 

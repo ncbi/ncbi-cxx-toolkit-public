@@ -101,6 +101,15 @@ CPubseqReader::CPubseqReader(int max_connections,
     }
 #endif
     SetMaximumConnections(max_connections);
+    try {
+        CConn conn(this);
+        x_GetConnection(conn);
+        conn.Release();
+    }
+    catch ( ... ) {
+        SetMaximumConnections(0);
+        throw;
+    }
 }
 
 
@@ -139,9 +148,12 @@ void CPubseqReader::x_Disconnect(TConn conn)
 void CPubseqReader::x_Reconnect(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    ERR_POST("CPubseqReader: PubSeqOS GenBank connection failed: "
-             "reconnecting...");
-    m_Connections[conn].reset();
+    AutoPtr<CDB_Connection>& stream = m_Connections[conn];
+    if ( stream ) {
+        ERR_POST("CPubseqReader: PubSeqOS GenBank connection failed: "
+                 "reconnecting...");
+        stream.reset();
+    }
 }
 
 

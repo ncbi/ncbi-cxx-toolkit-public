@@ -60,8 +60,6 @@
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 
 #include <serial/iterator.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistr.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
 
@@ -128,6 +126,15 @@ CId2Reader::CId2Reader(int max_connections)
 {
     m_RequestSerialNumber.Set(1);
     SetMaximumConnections(max_connections);
+    try {
+        CConn conn(this);
+        x_GetConnection(conn);
+        conn.Release();
+    }
+    catch ( ... ) {
+        SetMaximumConnections(0);
+        throw;
+    }
 }
 
 
@@ -162,8 +169,11 @@ void CId2Reader::x_Disconnect(TConn conn)
 void CId2Reader::x_Reconnect(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    ERR_POST("CId2Reader: ID2 GenBank connection failed: reconnecting...");
-    m_Connections[conn].reset();
+    AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
+    if ( stream ) {
+        ERR_POST("CId2Reader: ID2 GenBank connection failed: reconnecting...");
+        stream.reset();
+    }
 }
 
 
@@ -682,6 +692,13 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
                 s << " ID2-Reply.";
             }
             s << '\n';
+        }
+        if ( GetDebugLevel() >= eTraceBlob ) {
+            for ( CTypeIterator<CID2_Reply_Data> it(Begin(reply)); it; ++it ) {
+                if ( it->IsSetData() ) {
+                    CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                }
+            }
         }
         size_t num = reply.GetSerial_number() - start_serial_num;
         if ( reply.IsSetDiscard() ) {
