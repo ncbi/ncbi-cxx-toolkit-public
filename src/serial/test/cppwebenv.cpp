@@ -1,10 +1,10 @@
-#include "webenv.hpp"
+#include "cppwebenv.hpp"
 #include <serial/serial.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/classinfo.hpp>
 
 #include <asn.h>
-#include <webenv.h>
+#include "webenv.h"
 
 BEGIN_NCBI_SCOPE
 
@@ -27,6 +27,7 @@ BEGIN_STRUCT_INFO(Argument)
 END_STRUCT_INFO
 
 BEGIN_STRUCT_INFO2("Query-History", Query_History)
+    ADD_CLASS_MEMBER(name)->SetOptional();
     ADD_CLASS_MEMBER(seqNumber);
     ADD_CHOICE_MEMBER(time, Time);
     ADD_CHOICE_MEMBER(command, Query_Command);
@@ -41,7 +42,7 @@ END_CHOICE_INFO
 BEGIN_STRUCT_INFO2("Query-Search", Query_Search)
     ADD_CLASS_MEMBER(db);
     ADD_CLASS_MEMBER(term);
-    ADD_CLASS_MEMBER(field);
+    ADD_CLASS_MEMBER(field)->SetOptional();
     ADD_ASN_MEMBER(filters, SetOf)->SetOptional();
     ADD_CLASS_MEMBER(count);
 	ADD_CLASS_MEMBER(flags)->SetOptional();

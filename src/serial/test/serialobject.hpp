@@ -37,7 +37,9 @@ public:
     map<long, string> m_Names;
     
     CSerialObject* m_Next;
+#ifdef HAVE_NCBI_C
     struct_Web_Env* m_WebEnv;
+#endif
 };
 
 class CSerialObject2 : public CSerialObject

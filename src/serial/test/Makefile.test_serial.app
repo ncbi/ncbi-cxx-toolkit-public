@@ -7,12 +7,12 @@
 #################################
 
 APP = serialtest
-OBJ = serialobject testserial webenv
+OBJ = serialobject testserial cppwebenv webenv
 LIB = xser xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
   $(NCBI_C_INCLUDE) \
-  -I$(top_srcdir)/src/internal/webenv/asn
+  -I$(top_srcdir)/src/serial/test/
 
 LIBS = $(NCBI_C_LIBPATH) -lncbi \
   $(ORIG_LIBS)

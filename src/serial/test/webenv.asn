@@ -1,0 +1,137 @@
+--$Revision: 1.1 $
+--********************************************************************
+--
+--  Web environment format
+--  Eugene Vasilchenko 1999
+--
+--*********************************************************************
+--
+--  webenv.asn
+--
+--*********************************************************************
+
+NCBI-Env DEFINITIONS ::=
+BEGIN
+
+Web-Env ::= SEQUENCE {
+    arguments SET OF Argument OPTIONAL,         -- variable arguments
+    db-Env SET OF Db-Env OPTIONAL,              -- list of DB environments
+    queries SEQUENCE OF Query-History OPTIONAL  -- history of queries
+}
+
+Web-Settings ::= SEQUENCE {
+    arguments SET OF Argument OPTIONAL,     -- variable arguments
+    db-Env SET OF Db-Env OPTIONAL           -- list of DB environments
+}
+
+Web-Saved ::= SEQUENCE {
+    queries SET OF Named-Query OPTIONAL,
+    item-Sets SET OF Named-Item-Set OPTIONAL
+}
+
+Db-Env ::= SEQUENCE {
+    name VisibleString,                     -- name of DB
+    arguments SET OF Argument OPTIONAL,     -- variable arguments
+    filters SET OF Filter-Value OPTIONAL,   -- current filters set
+    clipboard SET OF Db-Clipboard OPTIONAL     -- db's clipboards (one for query WebEnv)
+}
+
+Argument ::= SEQUENCE {
+    name VisibleString,                 -- name of argument
+    value VisibleString                 -- value of argument
+}
+
+-- Queries history information
+
+Query-History ::= SEQUENCE {
+    name VisibleString OPTIONAL,		-- name of this query (may be empty)
+    seqNumber INTEGER,                  -- sequential number of this query
+    time Time,                          -- time of query execution
+    command Query-Command               -- query command
+}    
+
+-- Various types of queries
+
+Query-Command ::= CHOICE {
+    search Query-Search,                -- direct search by term
+    select Query-Select,                -- select some docs from other query
+    related Query-Related               -- related docs from other query
+}
+
+Query-Search ::= SEQUENCE {
+    db VisibleString,                       -- source DB
+    term VisibleString,                     -- query term
+    field VisibleString OPTIONAL,           -- query default field
+    filters SET OF Filter-Value OPTIONAL,   -- query filters set
+    count INTEGER,                          -- size of result
+    flags INTEGER OPTIONAL                  -- query flags (IgnoreFilters)  
+}
+
+Query-Select ::= SEQUENCE {
+    db VisibleString,
+    items Item-Set
+}
+
+Query-Related ::= SEQUENCE {
+    base Query-Command,                 -- base result
+    relation VisibleString,             -- type of relation
+    db VisibleString,                   -- result db
+    items CHOICE {
+        items Item-Set,                     -- result items
+        itemCount INTEGER                   -- 
+    }
+}
+
+
+-- Filters definition
+
+Filter-Value ::= SEQUENCE {
+    name VisibleString,                 -- filter field name
+    value VisibleString                 -- filter value
+}
+
+Time ::= CHOICE {
+    unix INTEGER,
+    full Full-Time
+}
+
+Full-Time ::= SEQUENCE {
+    year INTEGER,
+    month INTEGER,
+    day INTEGER,
+    hour INTEGER,
+    minute INTEGER,
+    second INTEGER
+}
+
+-- Web settings definition
+
+Named-Query ::= SEQUENCE {
+    name Name,
+    time Time,                          -- time of query execution
+    command Query-Command               -- query command
+}
+
+Named-Item-Set ::= SEQUENCE {
+    name Name,
+    db VisibleString,
+    item-Set Item-Set
+}
+
+Db-Clipboard ::= SEQUENCE {
+    name VisibleString,							-- clipboard name
+	count INTEGER,                      -- cached count of items
+    items Item-Set						-- id
+}
+
+Name ::= SEQUENCE {
+    name VisibleString,
+    description VisibleString OPTIONAL
+}
+
+Item-Set ::= SEQUENCE {
+    items OCTET STRING,                 -- IDs of items
+    count INTEGER                       -- cached count of items
+}
+
+END
