@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/22 21:51:04  grichenk
+* Added indexing textseq-id without accession
+*
 * Revision 1.8  2002/03/15 18:10:09  grichenk
 * Removed CRef<CSeq_id> from CSeq_id_Handle, added
 * key to seq-id map th CSeq_id_Mapper
@@ -441,12 +444,25 @@ TSeq_id_Info CSeq_id_Textseq_Tree::FindEqual(const CSeq_id& id) const
     x_Check(id);
     const CTextseq_id& tid = x_Get(id);
     // Can not compare if no accession given
-    _ASSERT( tid.IsSetAccession() );
-    TStringMap::const_iterator it = m_ByAccession.find(tid.GetAccession());
-    if (it != m_ByAccession.end()) {
-        TSeq_id_Info info = x_FindVersionEqual(it->second, tid);
-        if ( info.first )
-            return info;
+    TStringMap::const_iterator it;
+    if ( tid.IsSetAccession() ) {
+        it = m_ByAccession.find(tid.GetAccession());
+        if (it == m_ByAccession.end()) {
+            return TSeq_id_Info(0, 0);
+        }
+    }
+    else if ( tid.IsSetName() ) {
+        it = m_ByName.find(tid.GetName());
+        if (it == m_ByName.end()) {
+            return TSeq_id_Info(0, 0);
+        }
+    }
+    else {
+        return TSeq_id_Info(0, 0);
+    }
+    TSeq_id_Info info = x_FindVersionEqual(it->second, tid);
+    if ( info.first ) {
+        return info;
     }
     return TSeq_id_Info(0, 0);
 }
@@ -487,12 +503,21 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id& id,
 {
     x_Check(id);
     const CTextseq_id& tid = x_Get(id);
-    _ASSERT( tid.IsSetAccession() );
-    // Find by accession
-    TStringMap::const_iterator it = m_ByAccession.find(tid.GetAccession());
-    if (it != m_ByAccession.end()) {
-        x_FindVersionMatch(it->second, tid, id_list);
+    TStringMap::const_iterator it;
+    if ( tid.IsSetAccession() ) {
+        it = m_ByAccession.find(tid.GetAccession());
+        if (it == m_ByAccession.end())
+            return;
     }
+    else if ( tid.IsSetName() ) {
+        it = m_ByName.find(tid.GetName());
+        if (it == m_ByName.end())
+            return;
+    }
+    else {
+        return;
+    }
+    x_FindVersionMatch(it->second, tid, id_list);
 }
 
 
@@ -503,18 +528,14 @@ void CSeq_id_Textseq_Tree::FindMatchStr(string sid,
     sid = sid.substr(0, sid.find('.'));
     // Find by accession
     TStringMap::const_iterator it = m_ByAccession.find(sid);
-    if (it != m_ByAccession.end()) {
-        iterate(TVersions, vit, it->second) {
-            id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(*vit), x_GetKey(*vit)));
-        }
+    if (it == m_ByAccession.end()) {
+        it = m_ByName.find(sid);
+        if (it == m_ByName.end())
+            return;
     }
-    it = m_ByName.find(sid);
-    if (it != m_ByName.end()) {
-        iterate(TVersions, vit, it->second) {
-            id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(*vit), x_GetKey(*vit)));
-        }
+    iterate(TVersions, vit, it->second) {
+        id_list.push_back(TSeq_id_Info(
+            &x_GetSeq_id(*vit), x_GetKey(*vit)));
     }
 }
 
