@@ -18,7 +18,7 @@ status_dir=$bld_tree/status
 
 for x_arg in "$@" ; do
   case "$x_arg" in
-    --drop-suffix )  extra_sed='s%/c[+][+][^/ '\''"]*%/c++%g' ;;
+    --drop-suffix )  extra_sed='s%/c[+][+][^;/ '\''"]*%/c++%g' ;;
     * )  Usage "Unknown argument \"$x_arg\""
   esac
 done
