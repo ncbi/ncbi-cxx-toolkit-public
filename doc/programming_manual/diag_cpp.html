@@ -24,34 +24,40 @@ public:
 
 int CTestApp::Run()
 {
+<font color = "red">   // Test the ERR_POST and _TRACE macros </font>
+    long lll = 345;
+    ERR_POST("My ERR_POST message, print long: " << lll);
+
+    double ddd = 123.345;
+    ERR_POST(Warning << "...print double: " << ddd); 
+
+<font color = "red">   // Disable diagnostic tracing  </font>
+    SetDiagTrace(eDT_Disable, eDT_Default);
+    _TRACE("Testing the _TRACE macro");
+
+<font color = "red">   // Enable diagnostic tracing and retest _TRACE </font>
+    SetDiagTrace(eDT_Enable, eDT_Default);
+    _TRACE("Testing the _TRACE macro AGAIN");
 
 <font color = "red">   // Reset the global severity level to Info <font color = "black">
-
-    EDiagSev level = SetDiagPostLevel(eDiag_Info);
-
-<font color = "red">   // Enable diagnostic tracing <font color = "black">
-
-    SetDiagTrace(eDT_Enable, eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
 
 <font color = "red">   // Instantiate some CNcbiDiag objects with file and line
    // information and post flags set to display all fields <font color = "black">
-
-    CNcbiDiag diagInfo      ("diag.cpp", 13, eDiag_Info, eDPF_All);
-    CNcbiDiag diagWarning   ("diag.cpp", 14, eDiag_Warning, eDPF_All);
-    CNcbiDiag diagError     ("diag.cpp", 15, eDiag_Error, eDPF_All);
-    CNcbiDiag diagTrace     ("diag.cpp", 16, eDiag_Trace, eDPF_All);
-    CNcbiDiag diagCritical  ("diag.cpp", 17, eDiag_Critical, eDPF_All);
+    CNcbiDiag diagInfo      ("diag.cpp", 41, eDiag_Info, eDPF_All);
+    CNcbiDiag diagWarning   ("diag.cpp", 42, eDiag_Warning, eDPF_All);
+    CNcbiDiag diagError     ("diag.cpp", 43, eDiag_Error, eDPF_All);
+    CNcbiDiag diagTrace     ("diag.cpp", 44, eDiag_Trace, eDPF_All);
+    CNcbiDiag diagCritical  ("diag.cpp", 45, eDiag_Critical, eDPF_All);
 
     string Msg = "This is a test message\n\n";
 
 <font color = "red">   // Insert a message into the buffers and flush all but one <font color = "black">
-
     diagInfo << Msg << Endm;
     diagWarning << Msg;
     diagError << Msg << Endm;
 
 <font color = "red">   // Install a new handler for all subsequent messages <font color = "black">
-
     SetDiagHandler (myHandler, 0, 0);
   
     diagTrace << Msg;
