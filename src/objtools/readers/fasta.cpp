@@ -355,7 +355,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 char c = line[i];
                 if (isalpha(c)) {
                     if (lowercase) {
-                        bool is_lc = bool(islower(c));
+                        bool is_lc = islower(c) ? true : false;
                         if (is_lc && !was_lc) {
                             lc_start = pos;
                         } else if (was_lc && !is_lc) {
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/06/08 16:17:00  lavr
+* Heed MSVC int->bool performance warning
+*
 * Revision 1.1  2003/06/04 17:26:22  ucko
 * Split out from Seq_entry.cpp.
 *
