@@ -50,9 +50,9 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/bl2seq.hpp>
 #include <blast_setup.hpp>
 #include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/blast_input.hpp>
-#include <algo/blast/api/seqsrc_readdb.h>
-#include <algo/blast/api/blast_seqalign.hpp>
+#include <blast_input.hpp>
+#include <seqsrc_readdb.h>
+#include <blast_seqalign.hpp>
 #include <blast_format.hpp>
 
 #ifndef NCBI_C_TOOLKIT
@@ -62,6 +62,7 @@ Contents: C++ driver for running BLAST
 // C include files
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 
 // For writing out seqalign only
@@ -397,7 +398,7 @@ int CBlastApplication::BlastSearch()
          m_Options->GetEffLenOpts(), NULL, m_Options->GetDbOpts(), results, 
          m_return_stats);
 
-    lookup_wrap = BlastLookupTableDestruct(lookup_wrap);
+    lookup_wrap = LookupTableWrapFree(lookup_wrap);
     query_blk = BlastSequenceBlkFree(query_blk);
 
     /* The following works because the ListNodes' data point to simple
