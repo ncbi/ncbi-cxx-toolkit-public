@@ -948,6 +948,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
                ext_params->options, hit_params, db_options->gen_code_string, 
                psi_options);
+            BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
          }
       }
    }

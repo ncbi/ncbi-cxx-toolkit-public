@@ -252,6 +252,8 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetNextChunk(bssp))(GetDataStructure(bssp), iterator)
 #define BLASTSeqSrcGetError(bssp) \
     (*GetGetError(bssp))(GetDataStructure(bssp), NULL)
+#define BLASTSeqSrcRetSequence(bssp, arg) \
+    (*GetRetSequence(bssp))(GetDataStructure(bssp), arg)
 
 
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
@@ -284,6 +286,7 @@ DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetError, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }
