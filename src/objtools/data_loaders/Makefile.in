@@ -2,7 +2,7 @@
 
 REQUIRES = objects
 
-SUB_PROJ = lds blastdb
+SUB_PROJ = lds blastdb table
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

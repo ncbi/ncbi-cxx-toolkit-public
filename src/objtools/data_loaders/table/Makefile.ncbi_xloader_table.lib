@@ -1,0 +1,13 @@
+# $Id$
+
+# Build library "ncbi_xloader_table"
+###############################
+
+LIB = ncbi_xloader_table
+SRC = sage_dload sqlite_table
+
+CPPFLAGS = $(ORIG_CPPFLAGS)
+
+LIBS = $(SQLITE_LIBS)
+
+REQUIRES = SQLITE

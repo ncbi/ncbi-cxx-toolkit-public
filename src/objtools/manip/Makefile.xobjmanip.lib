@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = xobjmanip
+SRC = sage_manip

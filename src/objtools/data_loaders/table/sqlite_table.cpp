@@ -95,10 +95,10 @@ private:
 CSQLiteTable::CSQLiteTable(const string& input_file,
                            const string& temp_file,
                            bool delete_file)
-    : m_DeleteFile(delete_file)
-    , m_NumRows(0)
-    , m_FileName(input_file)
-    , m_TmpFileName(temp_file)
+    : m_NumRows(0),
+      m_DeleteFile(delete_file),
+      m_FileName(input_file),
+      m_TmpFileName(temp_file)
 {
     //
     // first, see if our temporary file is already a SQLite DB
@@ -412,7 +412,7 @@ CSQLiteTable::TIterator CSQLiteTable::Begin(const string& query)
     if ( !q ) {
         return TIterator();
     }
-    return new CSQLiteTableIterator(*q);
+    return TIterator(new CSQLiteTableIterator(*q));
 }
 
 
@@ -423,6 +423,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/02 18:21:20  dicuccio
+ * Added Unix projects.  Compilation fixes for gcc on Linux
+ *
  * Revision 1.1  2003/10/02 17:50:48  dicuccio
  * Initial revision
  *

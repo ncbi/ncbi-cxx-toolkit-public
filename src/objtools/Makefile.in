@@ -5,7 +5,7 @@
 
 REQUIRES = objects
 
-SUB_PROJ = alnmgr cddalignview flat lds readers validator data_loaders
+SUB_PROJ = alnmgr cddalignview flat lds readers manip validator data_loaders
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
