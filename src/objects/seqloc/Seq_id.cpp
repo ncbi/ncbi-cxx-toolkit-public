@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/12/15 19:30:31  ostell
+ * Used Upcase() in AsFastaString() and changed to PNocase().Equals() style
+ *
  * Revision 6.7  2000/12/08 22:19:45  ostell
  * changed MakeFastString to AsFastaString and to use ostream instead of string
  *
@@ -302,7 +305,7 @@ ostream& CSeq_id::AsFastaString(ostream& s) const
            case e_General:
 		{
 		const CDbtag& dbt = GetGeneral();
-		s << dbt.GetDb() << '|' << (dbt.GetTag().AsString(s));
+		s << Upcase(dbt.GetDb()) << '|' << (dbt.GetTag().AsString(s));
 		}
 		break;
            case e_Gi:

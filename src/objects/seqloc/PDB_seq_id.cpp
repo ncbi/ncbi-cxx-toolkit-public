@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/15 19:30:31  ostell
+ * Used Upcase() in AsFastaString() and changed to PNocase().Equals() style
+ *
  * Revision 6.4  2000/12/08 22:19:46  ostell
  * changed MakeFastString to AsFastaString and to use ostream instead of string
  *
@@ -70,7 +73,7 @@ CPDB_seq_id::~CPDB_seq_id(void)
 // comparison function
 bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 {
-       if (AStrEquiv(GetMol().Get(), psip2.GetMol().Get(), PNocase()))
+       if (PNocase().Equals(GetMol().Get(), psip2.GetMol().Get()))
        {
             if ((GetChain()) == (psip2.GetChain()))
                          return true;
@@ -81,7 +84,7 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
     // format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {
-	s << GetMol().Get() << '|' << (char)(GetChain());
+	s << Upcase(GetMol().Get()) << '|' << (char)(GetChain());
 	return s;
 }
 

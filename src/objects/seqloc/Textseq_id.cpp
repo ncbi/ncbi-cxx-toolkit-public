@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/15 19:30:32  ostell
+ * Used Upcase() in AsFastaString() and changed to PNocase().Equals() style
+ *
  * Revision 6.3  2000/12/08 22:19:45  ostell
  * changed MakeFastString to AsFastaString and to use ostream instead of string
  *
@@ -71,7 +74,7 @@ bool CTextseq_id::Match(const CTextseq_id& tsip2) const
 	// Check Accessions first
 	if (IsSetAccession() && (tsip2.IsSetAccession()))
 	{
-		if (AStrEquiv(GetAccession(), tsip2.GetAccession(), PNocase()))
+		if (PNocase().Equals(GetAccession(), tsip2.GetAccession()))
 		{
 			if (IsSetVersion() && tsip2.IsSetVersion())
 			{
@@ -90,7 +93,7 @@ bool CTextseq_id::Match(const CTextseq_id& tsip2) const
 	// then try name
 	if (IsSetName() && tsip2.IsSetName())
 	{
-                if (AStrEquiv(GetName(), tsip2.GetName(), PNocase()))
+                if (PNocase().Equals(GetName(), tsip2.GetName()))
                 {
                         if (IsSetVersion() && tsip2.IsSetVersion())
                         {
@@ -116,7 +119,7 @@ ostream& CTextseq_id::AsFastaString(ostream& s) const
 
 	if (IsSetAccession())
 	{
-		s << GetAccession();
+		s << Upcase(GetAccession());
 		if (IsSetVersion())
 		{
 			int version = GetVersion();
@@ -128,7 +131,7 @@ ostream& CTextseq_id::AsFastaString(ostream& s) const
 	}
 	s << '|';
 	if (IsSetName())
-		s << GetName();
+		s << Upcase(GetName());
 	return s;
 }
 
