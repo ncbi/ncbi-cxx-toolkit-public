@@ -40,6 +40,9 @@
 * -------  ----------  -----------------------------------------------------
 *
 * $Log$
+* Revision 1.6  2003/09/26 20:38:12  dondosha
+* Returned prototype for the factorial function (BLAST_Factorial)
+*
 * Revision 1.5  2003/09/26 19:02:31  madden
 * Prefix ncbimath functions with BLAST_
 *
@@ -101,6 +104,9 @@ extern double BLAST_Log1p (double);
 
 /* exp(x)-1 for all x */
 extern double BLAST_Expm1 (double);
+
+/* Factorial function */
+extern double BLAST_Factorial(Int4 n);
 
 /* Logarithm of the factorial Fn */
 extern double BLAST_LnFactorial (double x);
