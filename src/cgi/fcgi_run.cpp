@@ -166,14 +166,14 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
     if (mtimeNew != mtime) {
         _TRACE("CCgiApplication::x_RunFastCGI: "
                "the program modification date has changed");
-        return 101;
+        return 111;
     }
     
     // Check if the file we're watching (if any) has changed
     // (based on contents, not timestamp!)
     if (watcher  &&  watcher->HasChanged()) {
         _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
-        return 102;
+        return 112;
     }
     return 0;
 }
@@ -526,6 +526,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.42  2004/02/02 18:00:25  vakatov
+ * Changed these special codes to 111 and 112 as to avoid possible quick-look
+ * blunders caused by their similarity to HTTP status codes.
+ *
  * Revision 1.41  2004/02/02 17:49:47  vakatov
  * When restarted due to the change of the binary or watch-file, set the
  * application return code to special values 101 and 102, respectively.
