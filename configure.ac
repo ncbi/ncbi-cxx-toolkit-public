@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.346 2005/02/03 16:02:58 ssikorsk Exp $
+#  $Id: configure.ac,v 1.347 2005/02/03 17:13:07 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -852,7 +852,7 @@ fi
 case "$host_os:$compiler" in
    *:GCC | *:KCC | *:ICC )
       compiler_pfx="${compiler}-"
-      compiler_vpfx=`echo "${compiler}${compiler_ver}-" | \
+      compiler_vpfx=`echo "${compiler}${compiler_ver}00-" | \
          sed -e 's/\.//g; s/[\([0-9][0-9][0-9]\)[0-9]*]/\1/'`
       ;;
 esac
@@ -2943,7 +2943,8 @@ if test "$with_cppunit" != "no" ; then
    AC_CACHE_CHECK([for CPPUNIT in $CPPUNIT_ARCH_PATH], ncbi_cv_lib_cppunit,
       [if test -x "$CPPUNIT_BINPATH/cppunit-config" ; then
           CPPUNIT_INCLUDE=`$CPPUNIT_BINPATH/cppunit-config --cflags`
-          CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs`
+          CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs |\
+             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
 
           CPPFLAGS="$CPPUNIT_INCLUDE $orig_CPPFLAGS"
           LIBS="$CPPUNIT_LIBS $orig_LIBS"
@@ -2977,7 +2978,8 @@ else
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$CPPUNIT_INCLUDE"; then
       CPPUNIT_INCLUDE=`$CPPUNIT_CONFIG --cflags`
-      CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs`
+      CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs |\
+         sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
    fi
    AC_DEFINE(HAVE_CPPUNIT, 1, [Define to 1 if CPPUNIT libraries are available.])
 fi
