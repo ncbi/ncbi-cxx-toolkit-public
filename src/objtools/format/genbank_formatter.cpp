@@ -195,11 +195,13 @@ void CGenbankFormatter::FormatAccession
         acc_line += "..";
         acc_line += NStr::Int8ToString(acc.GetRegion().GetTo());
     }
-    if ( !acc_line.empty() ) {
-        list<string> l;
+    list<string> l;
+    if (NStr::IsBlank(acc_line)) {
+        l.push_back("ACCESSION   ");
+    } else {
         Wrap(l, "ACCESSION", acc_line);
-        text_os.AddParagraph(l);
     }
+    text_os.AddParagraph(l);
 }
 
 
@@ -294,12 +296,39 @@ void CGenbankFormatter::x_FormatSourceLine
 }
 
 
+static string s_GetHtmlTaxname(const CSourceItem& source)
+{
+    CNcbiOstrstream link;
+    
+    if (!NStr::EqualNocase(source.GetTaxname(), "Unknown")) {
+        if (source.GetTaxid() != CSourceItem::kInvalidTaxid) {
+            link << "<a href=" << "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" << "id=" << source.GetTaxid() << ">";
+        } else {
+            string taxname = source.GetTaxname();
+            replace(taxname.begin(), taxname.end(), ' ', '+');
+            link << "<a href=" << "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" << "name=" << taxname << ">";
+        }
+        link << source.GetTaxname() << "</a>";
+    } else {
+        return source.GetTaxname();
+    }
+
+    return CNcbiOstrstreamToString(link);
+}
+
+
 void CGenbankFormatter::x_FormatOrganismLine
 (list<string>& l,
  const CSourceItem& source) const
 {
-    Wrap(l, GetWidth(), "ORGANISM", source.GetTaxname(), eSubp);
-    Wrap(l, GetWidth(), kEmptyStr, source.GetLineage(), eSubp);
+    // taxname
+    if (source.GetContext()->Config().DoHTML()) {
+        Wrap(l, "ORGANISM", s_GetHtmlTaxname(source), eSubp);
+    } else {
+        Wrap(l, "ORGANISM", source.GetTaxname(), eSubp);
+    }
+    // lineage
+    Wrap(l, kEmptyStr, source.GetLineage(), eSubp);
 }
 
 
@@ -408,14 +437,7 @@ void CGenbankFormatter::x_Journal
  CBioseqContext& ctx) const
 {
     string journal;
-    x_FormatRefJournal(ref, journal, ctx.Config());
-
-    /*if ((ref.GetPrepub() == CImprint::ePrepub_in_press)  ||
-        (ref.GetPubstatus() == 10  &&  NStr::IsBlank(ref.GetPages()))) {
-        if (!NStr::EndsWith(journal , "in press", NStr::eNocase)) {
-            journal += " In press";
-        }
-    }*/
+    x_FormatRefJournal(ref, journal, ctx);
 
     Wrap(l, "JOURNAL", journal, eSubp);
 }
@@ -514,7 +536,7 @@ void CGenbankFormatter::FormatFeature
         }
         // Call NStr::Wrap directly to avoid unwanted line breaks right
         // before the start of the value (in /translation, e.g.)
-        NStr::Wrap(value, GetWidth(), l, NStr::fWrap_FlatFile, GetFeatIndent(),
+        NStr::Wrap(value, GetWidth(), l, SetWrapFlags(), GetFeatIndent(),
             GetFeatIndent() + qual);
     }
     NON_CONST_ITERATE (list<string>, it, l) {
@@ -726,7 +748,7 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     } else {
         estimated_length = "unknown";
     }
-    NStr::Wrap(estimated_length, GetWidth(), l, NStr::fWrap_FlatFile,
+    NStr::Wrap(estimated_length, GetWidth(), l, SetWrapFlags(),
         GetFeatIndent(), GetFeatIndent() + "/estimated_length=");
 
     text_os.AddParagraph(l);
@@ -740,6 +762,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/02/09 14:58:09  shomrat
+* HTML output for SOURCE/ORGANISM paragraph; Fixed empty accession formatting
+*
 * Revision 1.24  2005/01/12 16:46:16  shomrat
 * Changes in reference formatting
 *
