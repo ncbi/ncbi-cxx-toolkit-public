@@ -239,7 +239,8 @@ CNCBINode* CDemoApplication::NumAdderHook(CNumAdderCtx* ctx)
         sep->SetRepeatCount(25);
         node->AppendChild(sep);
         node->AppendChild(new CHTML_br());
-        ctx->GetPage()->AddTagMap("num_sum", new CHTMLText(NStr::IntToString(sum)));
+        ctx->GetPage()->AddTagMap("num_sum",
+                                  new CHTMLText(NStr::IntToString(sum)));
     }
 
     // Enable to call this hook again after printing already prepared data.
@@ -284,7 +285,8 @@ int CDemoApplication::Run(void)
 
     // Setup static hook procedure to generate table rows
     STableRowHook_Ctx table_ctx(s_Persons);
-    page.AddTagMap("table_row_hook", CreateTagMapper(s_TableRowHook, &table_ctx));
+    page.AddTagMap("table_row_hook", CreateTagMapper(s_TableRowHook,
+                                                     &table_ctx));
 
     // We also can use any other tag mappers, such as a function with
     // tag name parameter, or some class method as shown below.
@@ -299,7 +301,7 @@ int CDemoApplication::Run(void)
     cout << endl;
 
     // All done.
-	return 0;
+    return 0;
 }
 
 
@@ -321,6 +323,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/02 15:14:26  ivanov
+ * Lines wrapped at 79th column
+ *
  * Revision 1.1  2004/02/02 14:34:00  ivanov
  * Initial revision
  *
