@@ -33,7 +33,12 @@
  *
  */
 
-#include "ncbi_config.h"
+/* NCBI core headers
+ */
+#include "ncbi_ansi_ext.h"
+#include "ncbi_priv.h"
+/* The next header implicitly includes <connect/ncbi_socket.h> */
+#include <connect/ncbi_connutil.h>
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
@@ -123,20 +128,10 @@
 #endif /* platform-specific headers (for UNIX, MSWIN, MAC) */
 
 
-/* NCBI core headers
- */
-#include "ncbi_ansi_ext.h"
-#include "ncbi_priv.h"
-/* The next header implicitly includes <connect/ncbi_socket.h> */
-#include <connect/ncbi_connutil.h>
-
-
 /* Portable standard C headers
  */
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
-
 
 
 
@@ -1032,7 +1027,8 @@ static EIO_Status s_Select(size_t                n,
             }
             if (polls[i].event  &&
                 (EIO_Event)(polls[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
-                if (polls[i].sock->sock != SOCK_INVALID) {
+                TSOCK_Handle fd = polls[i].sock->sock;
+                if (fd != SOCK_INVALID) {
                     int/*bool*/ ls = IS_LISTENING(polls[i].sock);
                     if (!ls && n != 1 && polls[i].sock->type == eSOCK_Datagram)
                         continue;
@@ -1045,7 +1041,7 @@ static EIO_Status s_Select(size_t                n,
                             if (polls[i].sock->type == eSOCK_Datagram  ||
                                 polls[i].sock->w_status != eIO_Closed) {
                                 read_only = 0;
-                                FD_SET(polls[i].sock->sock, &w_fds);
+                                FD_SET(fd, &w_fds);
                                 if (polls[i].sock->type == eSOCK_Datagram  ||
                                     polls[i].sock->pending)
                                     break;
@@ -1065,7 +1061,7 @@ static EIO_Status s_Select(size_t                n,
                                  polls[i].sock->eof))
                             break;
                         write_only = 0;
-                        FD_SET(polls[i].sock->sock, &r_fds);
+                        FD_SET(fd, &r_fds);
                         if (polls[i].sock->type == eSOCK_Datagram  ||
                             polls[i].event != eIO_Read             ||
                             polls[i].sock->w_status == eIO_Closed  ||
@@ -1073,16 +1069,16 @@ static EIO_Status s_Select(size_t                n,
                                          !polls[i].sock->w_len))
                             break;
                         read_only = 0;
-                        FD_SET(polls[i].sock->sock, &w_fds);
+                        FD_SET(fd, &w_fds);
                         break;
                     default:
                         /* should never get here */
                         assert(0);
                         break;
                     }
-                    FD_SET(polls[i].sock->sock, &e_fds);
-                    if (n_fds < (int) polls[i].sock->sock)
-                        n_fds = (int) polls[i].sock->sock;
+                    FD_SET(fd, &e_fds);
+                    if (n_fds < (int) fd)
+                        n_fds = (int) fd;
                 } else {
                     polls[i].revent = eIO_Close;
                     ready = 1;
@@ -1134,12 +1130,16 @@ static EIO_Status s_Select(size_t                n,
     n_fds = 0;
     for (i = 0; i < n; i++) {
         if ( polls[i].sock ) {
+            TSOCK_Handle fd = polls[i].sock->sock;
             assert(polls[i].revent == eIO_Open);
-            if ( FD_ISSET(polls[i].sock->sock, &r_fds) )
-                polls[i].revent = eIO_Read;
-            if ( FD_ISSET(polls[i].sock->sock, &w_fds) )
-                polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
-            if (!polls[i].revent  &&  FD_ISSET(polls[i].sock->sock, &e_fds))
+            if (fd != SOCK_INVALID) {
+                if ( FD_ISSET(fd, &r_fds) )
+                    polls[i].revent = eIO_Read;
+                if ( FD_ISSET(fd, &w_fds) )
+                    polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
+                if (!polls[i].revent  &&  FD_ISSET(fd, &e_fds))
+                    polls[i].revent = eIO_Close;
+            } else
                 polls[i].revent = eIO_Close;
             if (polls[i].revent != eIO_Open)
                 n_fds++;
@@ -4004,6 +4004,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.139  2003/11/14 13:04:23  lavr
+ * Little changes in comments [no code changes]
+ *
  * Revision 6.138  2003/11/12 17:49:42  lavr
  * Implement close w/o destruction (SOCK_CloseEx()) and make
  * corresponding provisions throughout the file.
