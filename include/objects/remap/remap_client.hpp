@@ -73,6 +73,7 @@ private:
 inline
 CRemapClient::CRemapClient(void)
 {
+    SetDefaultRequest().SetVersion(0);
 }
 
 
@@ -88,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/07/29 18:47:40  jcherry
+* In constructor, set up default request
+*
 * Revision 1.1  2004/07/28 15:09:48  jcherry
 * Arranged to contact experimental server, which is not a named service
 *
