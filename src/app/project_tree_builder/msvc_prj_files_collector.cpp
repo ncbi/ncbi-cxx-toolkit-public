@@ -259,6 +259,7 @@ CMsvcPrjFilesCollector::CollectResources
 {
     rel_pathes->clear();
 
+    // resources from msvc makefile - first priority
     list<string> included_sources;
     context.GetMsvcProjectMakefile().GetResourceFiles
                                             (SConfigInfo(),&included_sources);
@@ -276,7 +277,10 @@ CMsvcPrjFilesCollector::CollectResources
             CDirEntry::CreateRelativePath(context.ProjectDir(), 
                                           abs_path));
     }
+    if ( !rel_pathes->empty() )
+        return;
 
+    // if there are no makefile resources - 'll use defaults
     string default_rc;
     if (project.m_ProjType == CProjKey::eApp) {
         default_rc = GetApp().GetSite().GetAppDefaultResource();
@@ -333,6 +337,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/19 14:25:53  gorelenk
+ * Changed implementation of CMsvcPrjFilesCollector::CollectResources -
+ * default resource will be added omly if there are no excplicit resource
+ * in msvc makefile.
+ *
  * Revision 1.4  2004/05/17 14:38:39  gorelenk
  * Changed CMsvcPrjFilesCollector::CollectResources - implemented addition of
  * default resource to 'app' projects.
