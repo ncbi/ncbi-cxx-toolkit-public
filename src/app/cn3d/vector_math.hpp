@@ -137,10 +137,13 @@ public:
     {
         return sqrt(x*x + y*y + z*z);
     }
+    double lengthSquared(void) const
+    {
+        return (x*x + y*y + z*z);
+    }
     void normalize(void)
     {
-        double len=length();
-        *this /= len;
+        *this /= length();
     }
     friend double vector_dot(const Vector& a, const Vector& b)
     {
@@ -216,6 +219,10 @@ void RigidBodyFit(
     int natx, const Vector * const *xref, const Vector * const *xvar, const double *weights,  // inputs
     Vector& cgref, Vector& cgvar, Matrix& rotMat);                                            // outputs
 
+// RMSD calculator
+double ComputeRMSD(int nCoords, const Vector * const *masterCoords,
+    const Vector * const *slaveCoords, const Matrix *transformSlaveToMaster);
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_VECTORMATH__HPP
@@ -223,6 +230,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/03/23 18:39:37  thiessen
+* split out RMSD calculator as function
+*
 * Revision 1.15  2004/03/15 17:17:56  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

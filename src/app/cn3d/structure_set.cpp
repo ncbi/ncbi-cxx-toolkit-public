@@ -1288,20 +1288,8 @@ void StructureObject::RealignStructure(int nCoords,
     ComposeInto(transformToMaster, single, combined);
 
     // print out RMSD
-    Vector x;
-    double rmsd = 0.0, d;
-    int n = 0;
-    for (int c=0; c<nCoords; ++c) {
-        if (!slaveCoords[c] || !masterCoords[c]) continue;
-        x = *(slaveCoords[c]);
-        ApplyTransformation(&x, *transformToMaster);
-        d = (*(masterCoords[c]) - x).length();
-        rmsd += d * d;
-        ++n;
-    }
-    rmsd = sqrt(rmsd / n);
     INFOMSG("RMSD of aligned alpha coordinates between master structure and " << pdbID << ": "
-        << setprecision(3) << rmsd << setprecision(6) << " A");
+        << setprecision(3) << ComputeRMSD(nCoords, masterCoords, slaveCoords, transformToMaster) << setprecision(6) << " A");
 
     // create a new Biostruc-feature that contains this alignment
     CBiostruc_feature *feature = new CBiostruc_feature();
@@ -1523,6 +1511,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.145  2005/03/23 18:39:37  thiessen
+* split out RMSD calculator as function
+*
 * Revision 1.144  2004/10/05 14:57:54  thiessen
 * add distance selection dialog
 *

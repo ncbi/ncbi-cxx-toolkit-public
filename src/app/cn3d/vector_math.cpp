@@ -37,6 +37,7 @@
 
 #include <ncbi_pch.hpp>
 #include "vector_math.hpp"
+#include "cn3d_tools.hpp"
 
 BEGIN_SCOPE(Cn3D)
 
@@ -305,11 +306,36 @@ void RigidBodyFit(
     }
 } // end RigidBodyFit()
 
+double ComputeRMSD(int nCoords, const Vector * const *masterCoords,
+    const Vector * const *slaveCoords, const Matrix *transformSlaveToMaster)
+{
+    Vector x;
+    double rmsd = 0.0;
+    int n = 0;
+    for (int c=0; c<nCoords; ++c) {
+        if (!slaveCoords[c] || !masterCoords[c]) continue;
+        x = *(slaveCoords[c]);
+        if (transformSlaveToMaster)
+            ApplyTransformation(&x, *transformSlaveToMaster);
+        rmsd += (*(masterCoords[c]) - x).lengthSquared();
+        ++n;
+    }
+    if (n == 0) {
+        WARNINGMSG("ComputeRMSD() - received no non-NULL coordinates");
+        return 0.0;
+    }
+    rmsd = sqrt(rmsd / n);
+    return rmsd;
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/03/23 18:39:37  thiessen
+* split out RMSD calculator as function
+*
 * Revision 1.8  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
