@@ -334,7 +334,9 @@ string CDB_MultiEx::WhatThis(void) const
     str += OriginatedFrom();
     str += "]   Contains a backtrace of ";
     str += NStr::UIntToString( NofExceptions() );
-    str += " exception" + (NofExceptions() == 1 ? "" : "s") + "  ---";
+    str += " exception";
+    str += NofExceptions() == 1 ? "" : "s";
+    str += "  ---";
     return str;
 }
 
@@ -622,6 +624,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/10/22 20:19:04  lavr
+ * Do not print "1 exceptions" -- reworked
+ *
  * Revision 1.13  2004/10/22 20:16:42  lavr
  * Do not print "1 exceptions"
  *
