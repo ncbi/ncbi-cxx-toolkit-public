@@ -30,9 +30,15 @@
  *
  */
 
-/// CSeqDBAlias class
-/// 
-/// This object defines access to one database aliasume.
+/// @file seqdb.hpp
+/// Defines database alias file access classes.
+///
+/// Defines classes:
+///     CSeqDB_AliasWalker
+///     CSeqDBAliasNode
+///     CSeqDBAliasFile
+///
+/// Implemented for: UNIX, MS-Windows
 
 #include <iostream>
 
@@ -47,14 +53,28 @@ BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
 
+/// CSeqDBAliasWalker class
+/// 
+/// Derivatives of this abstract class can be used to gather summary
+/// data from the entire include tree of alias files.  For details of
+/// the traversal order, see the WalkNodes documentation.
 
 class CSeqDB_AliasWalker {
 public:
+    /// Destructor
     virtual ~CSeqDB_AliasWalker() {}
     
-    virtual const char * GetFileKey(void) const        = 0;
-    virtual void         Accumulate(const CSeqDBVol &) = 0;
-    virtual void         AddString (const string &)    = 0;
+    /// Override to provide the alias file KEY name for the type of
+    /// summary data you want to gather, for example "NSEQ".
+    virtual const char * GetFileKey(void) const = 0;
+    
+    /// This will be called with each CVolume that is in the alias
+    /// file tree structure.
+    virtual void Accumulate(const CSeqDBVol &) = 0;
+    
+    /// This will be called with the value associated with this key in
+    /// the alias file.
+    virtual void AddString (const string &) = 0;
 };
 
 class CSeqDBAliasNode : public CObject {

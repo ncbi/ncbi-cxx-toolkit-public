@@ -29,6 +29,9 @@
  * Author:  Kevin Bealer
  *
  */
+/// @file blast_options_handle.cpp
+/// Implementation for the CBlastOptionsHandle and the
+/// CBlastOptionsFactory classes.
 
 /// CSeqDBAtlas class
 /// 

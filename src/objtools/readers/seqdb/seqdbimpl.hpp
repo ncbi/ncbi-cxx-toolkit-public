@@ -30,11 +30,8 @@
  *
  */
 
-/// CSeqDBImpl class
-/// 
-/// This is the main implementation layer of the CSeqDB class.  This
-/// is seperated from that class so that various implementation
-/// details of CSeqDB are kept from the public interface.
+/// @file seqdbimpl.hpp
+/// Declares the CSeqDBImplFlush and CSeqDBImpl classes.
 
 #include "seqdbvolset.hpp"
 #include "seqdbalias.hpp"
@@ -43,6 +40,15 @@
 BEGIN_NCBI_SCOPE
 
 using namespace ncbi::objects;
+
+
+/// CSeqDBImplFlush class
+/// 
+/// This functor like object provides a call back mechanism to return
+/// memory holds to the atlas, from lease objects in the other objects
+/// under CSeqDBImpl.  Without this class, CSeqDBAtlas and CSeqDBImpl
+/// would be codependant, which is somewhat bad style, and creates
+/// annoying cyclical dependencies among the include files.
 
 class CSeqDBImplFlush : public CSeqDBFlushCB {
 public:
@@ -61,6 +67,13 @@ public:
 private:
     CSeqDBImpl * m_Impl;
 };
+
+
+/// CSeqDBImpl class
+/// 
+/// This is the main implementation layer of the CSeqDB class.  This
+/// is seperated from that class so that various implementation
+/// details of CSeqDB are kept from the public interface.
 
 class CSeqDBImpl {
 public:

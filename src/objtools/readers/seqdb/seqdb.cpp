@@ -27,11 +27,8 @@
  *
  */
 
-/// CSeqDB class
-/// 
-/// This class defines access to the database component by calling
-/// methods on objects which represent the various database files,
-/// such as the index file, the header file, and the sequence file.
+/// @file blast_options_handle.cpp
+/// Implementation for the CSeqDB class.
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
