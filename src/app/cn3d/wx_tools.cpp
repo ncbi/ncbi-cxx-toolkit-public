@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/10/08 00:00:10  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.8  2001/09/24 14:37:53  thiessen
 * more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
 *
@@ -116,7 +119,7 @@ bool IntegerTextCtrl::IsValidInteger(void) const
     int intVal;
     if (!GetValue().ToLong(&longVal)) return false;
     intVal = (int) longVal;
-    return (intVal >= minVal && intVal <= maxVal && (intVal - minVal)%incrVal == 0);
+    return (intVal >= minVal && intVal <= maxVal);
 }
 
 
@@ -148,8 +151,7 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
 bool IntegerSpinCtrl::SetInteger(int value)
 {
     // check for allowed value
-    if (value < minVal || value > maxVal || (value - minVal)%incrVal != 0)
-        return false;
+    if (value < minVal || value > maxVal) return false;
 
     wxString strVal;
     strVal.Printf("%i", value);

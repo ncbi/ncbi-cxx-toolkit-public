@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/10/08 00:00:09  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.24  2001/09/27 15:38:00  thiessen
 * decouple sequence import and BLAST
 *
@@ -214,7 +217,13 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
                 ThreadSingleOff();
             break;
         case MID_THREAD_ALL: {
+            if (updateViewer->GetCurrentAlignments()->size() == 0) return;
+
             ThreaderOptions options;
+            // base nRS estimate on first update...
+            options.nRandomStarts = Threader::EstimateNRandomStarts(
+                updateViewer->alignmentManager->GetCurrentMultipleAlignment(),
+                updateViewer->GetCurrentAlignments()->front());
             ThreaderOptionsDialog optDialog(this, options);
             if (optDialog.ShowModal() == wxCANCEL) return;  // user cancelled
 

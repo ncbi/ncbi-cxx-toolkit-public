@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/10/08 00:00:09  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.33  2001/09/27 15:37:59  thiessen
 * decouple sequence import and BLAST
 *
@@ -608,6 +611,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (updateWindow->DoThreadSingle()) {
                 // get threader options
                 ThreaderOptions options;
+                options.nRandomStarts = Threader::EstimateNRandomStarts(
+                    updateWindow->updateViewer->alignmentManager->GetCurrentMultipleAlignment(),
+                    alignment);
                 ThreaderOptionsDialog optDialog(updateWindow, options);
                 if (optDialog.ShowModal() == wxCANCEL) return false;  // user cancelled
                 if (!optDialog.GetValues(&options)) {

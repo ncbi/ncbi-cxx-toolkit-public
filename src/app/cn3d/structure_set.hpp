@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/10/08 00:00:02  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.56  2001/10/01 16:03:58  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -355,7 +358,8 @@ private:
         eUpdateData                 = 0x08,
         eStyleData                  = 0x100,
         eUserAnnotationData         = 0x200,
-        eOtherData                  = 0x400
+        eCDDData                    = 0x400,
+        eOtherData                  = 0x800
     };
     mutable unsigned int dataChanged;
 
@@ -370,6 +374,8 @@ public:
 
     // CDD-specific stuff
     bool IsCDD(void) const { return (cddData != NULL); }
+    const std::string& GetCDDName(void) const;
+    bool SetCDDName(const std::string& name);
     const std::string& GetCDDDescription(void) const;
     bool SetCDDDescription(const std::string& descr);
     typedef std::vector < std::string > TextLines;

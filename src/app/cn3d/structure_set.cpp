@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2001/10/08 00:00:09  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.81  2001/10/01 16:04:25  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -1103,6 +1106,23 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     }
 }
 
+const std::string& StructureSet::GetCDDName(void) const
+{
+    static const std::string empty = "";
+    if (cddData)
+        return cddData->GetName();
+    else
+        return empty;
+}
+
+bool StructureSet::SetCDDName(const std::string& name)
+{
+    if (!cddData || name.size() == 0) return false;
+    cddData->SetName(name);
+    dataChanged |= eCDDData;
+    return true;
+}
+
 const std::string& StructureSet::GetCDDDescription(void) const
 {
     static const std::string empty = "";
@@ -1129,7 +1149,7 @@ bool StructureSet::SetCDDDescription(const std::string& descr)
             if ((*d)->IsComment()) {
                 if ((*d)->GetComment() != descr) {
                     (*d)->SetComment(descr);
-                    dataChanged |= eOtherData;
+                    dataChanged |= eCDDData;
                 }
                 return true;
             }
@@ -1140,7 +1160,7 @@ bool StructureSet::SetCDDDescription(const std::string& descr)
     CRef < CCdd_descr > comment(new CCdd_descr);
     comment->SetComment(descr);
     cddData->SetDescription().Set().push_front(comment);
-    dataChanged |= eOtherData;
+    dataChanged |= eCDDData;
     return true;
 }
 
@@ -1182,7 +1202,7 @@ bool StructureSet::SetCDDNotes(const TextLines& lines)
             if ((*d)->IsScrapbook()) {
                 if (lines.size() == 0) {
                     cddData->SetDescription().Set().erase(d);   // if empty, remove scrapbook item
-                    dataChanged |= eOtherData;
+                    dataChanged |= eCDDData;
                     TESTMSG("removed scrapbook");
                 } else
                     scrapbook = &((*d)->SetScrapbook());
@@ -1203,7 +1223,7 @@ bool StructureSet::SetCDDNotes(const TextLines& lines)
     scrapbook->clear();
     for (int i=0; i<lines.size(); i++)
         scrapbook->push_back(lines[i]);
-    dataChanged |= eOtherData;
+    dataChanged |= eCDDData;
 
     return true;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/10/08 00:00:09  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.23  2001/09/27 15:37:58  thiessen
 * decouple sequence import and BLAST
 *
@@ -1262,6 +1265,39 @@ bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
 
     TESTMSG("Found " << nViolations << " geometry violations");
     return true;
+}
+
+int Threader::EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
+    const BlockMultipleAlignment *toBeThreaded)
+{
+    int nBlocksToAlign = 0;
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+        multipleABlocks(coreAlignment->GetUngappedAlignedBlocks()),
+        pairwiseABlocks(toBeThreaded->GetUngappedAlignedBlocks());
+
+    // if a block in the multiple is *not* contained in the pairwise (looking at master coords),
+    // then it'll probably be realigned upon threading
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
+        m, me = multipleABlocks->end(), p, pe = pairwiseABlocks->end();
+    const Block::Range *multipleRange, *pairwiseRange;
+    for (m=multipleABlocks->begin(); m!=me; m++) {
+        multipleRange = (*m)->GetRangeOfRow(0);
+        bool realignBlock = true;
+        for (p=pairwiseABlocks->begin(); p!=pe; p++) {
+            pairwiseRange = (*p)->GetRangeOfRow(0);
+            if (pairwiseRange->from <= multipleRange->from && pairwiseRange->to >= multipleRange->to) {
+                realignBlock = false;
+                break;
+            }
+        }
+        if (realignBlock) nBlocksToAlign++;
+    }
+
+    if (nBlocksToAlign <= 1)
+        return 1;
+    else
+        // round to nearest integer
+        return (int) (exp(1.5 + 0.25432 * nBlocksToAlign) + 0.5);
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/10/08 00:00:02  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.44  2001/10/01 16:03:58  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -340,6 +343,7 @@ public:
             MID_SHOW_LOG_START,
             MID_SHOW_SEQ_V,
         // CDD menu
+            MID_EDIT_CDD_NAME,
             MID_EDIT_CDD_DESCR,
             MID_EDIT_CDD_NOTES,
             MID_ANNOT_CDD,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/10/08 00:00:02  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.11  2001/09/27 15:36:48  thiessen
 * decouple sequence import and BLAST
 *
@@ -124,6 +127,11 @@ public:
     typedef std::vector < std::list < std::pair < int, int > > > GeometryViolationsForRow;
     bool GetGeometryViolations(const BlockMultipleAlignment *multiple,
         GeometryViolationsForRow *violations);
+
+    // estimate the number of random starts needed to thread an alignment based on
+    // the number of blocks to be aligned
+    static int EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
+        const BlockMultipleAlignment *toBeThreaded);
 
     // to hold virtual residue, sidechain positions
     enum { MISSING_COORDINATE = 0, VIRTUAL_RESIDUE, VIRTUAL_PEPTIDE };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2001/10/08 00:00:08  thiessen
+* estimate threader N random starts; edit CDD name
+*
 * Revision 1.89  2001/10/02 18:01:06  thiessen
 * fix CDD annotate dialog bug
 *
@@ -774,7 +777,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
     EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  Cn3DMainFrame::OnSelectFavorite)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
-    EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_ANNOT_CDD,       Cn3DMainFrame::OnCDD)
+    EVT_MENU_RANGE(MID_EDIT_CDD_NAME, MID_ANNOT_CDD,        Cn3DMainFrame::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
@@ -923,8 +926,9 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     // CDD menu
     menu = new wxMenu;
+    menu->Append(MID_EDIT_CDD_NAME, "Edit &Name");
     menu->Append(MID_EDIT_CDD_DESCR, "Edit &Description");
-    menu->Append(MID_EDIT_CDD_NOTES, "Edit &Notes");
+    menu->Append(MID_EDIT_CDD_NOTES, "Edit N&otes");
     menu->Append(MID_ANNOT_CDD, "&Annotate");
     menuBar->Append(menu, "&CDD");
 
@@ -1225,6 +1229,13 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet || !glCanvas->structureSet->IsCDD()) return;
     switch (event.GetId()) {
+        case MID_EDIT_CDD_NAME: {
+            wxString newName = wxGetTextFromUser("Enter or edit the CDD name:",
+                "CDD Name", glCanvas->structureSet->GetCDDName().c_str(), this, -1, -1, false);
+            if (newName.size() > 0 && !glCanvas->structureSet->SetCDDName(newName.c_str()))
+                ERR_POST(Error << "Error saving CDD name");
+            break;
+        }
         case MID_EDIT_CDD_DESCR: {
             wxString newDescription = wxGetTextFromUser("Enter or edit the CDD description text:",
                 "CDD Description", glCanvas->structureSet->GetCDDDescription().c_str(),
