@@ -852,11 +852,10 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         return (Int2) code;
     }
 
-    if (program_number == eBlastTypeRpsBlast ||
-        program_number == eBlastTypeRpsTblastn)
-        return 0;
-
-	if (program_number != eBlastTypeBlastn && options->threshold <= 0)
+	if (program_number != eBlastTypeBlastn && 
+            program_number != eBlastTypeRpsBlast &&
+            program_number != eBlastTypeRpsTblastn &&
+            options->threshold <= 0)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Non-zero threshold required");
@@ -865,9 +864,13 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 
 	if (options->word_size <= 0)
 	{
-		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
-                         "Word-size must be greater than zero");
-		return (Int2) code;
+                if (program_number != eBlastTypeRpsBlast &&
+                    program_number != eBlastTypeRpsTblastn) {
+        		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, 
+                                           code, subcode, 
+                                         "Word-size must be greater than zero");
+		        return (Int2) code;
+                }
 	} else if (program_number == eBlastTypeBlastn && options->word_size < 4)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
@@ -1162,6 +1165,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.161  2005/03/21 15:20:31  papadopo
+ * Allow RPS searches in LookupTableOptionsValidate
+ *
  * Revision 1.160  2005/03/08 21:00:51  camacho
  * PSIBlastOptionsNew returns 0 on success only, passing in NULL is an error
  *
