@@ -304,7 +304,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'B':
             switch (pfx[1]) {
             case 'A':                               return eAcc_ddbj_con;
-            case 'B': case 'J': case 'P': case 'W': return eAcc_ddbj_est;
+            case 'B': case 'J': case 'P': case 'W':
+            case 'Y':                               return eAcc_ddbj_est;
             case 'C': case 'T':                     return eAcc_gb_cdna;
             case 'D':                               return eAcc_ddbj_patent;
             case 'E': case 'F': case 'G': case 'I':
@@ -817,6 +818,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.33  2002/09/20 19:55:29  ucko
+ * +BY (eAcc_ddbj_est)
+ *
  * Revision 6.32  2002/08/28 14:07:56  ucko
  * IdentifyAccession: handle BX (EMBL genome)
  *
