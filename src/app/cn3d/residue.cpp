@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/19 02:59:05  thiessen
+* fix tranparent sphere bug
+*
 * Revision 1.13  2000/08/18 18:57:39  thiessen
 * added transparent spheres
 *
@@ -340,7 +343,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
             // add transparency; scale by occupancy if transparent
             if (atomStyle.style == StyleManager::eTransparentAtom) {
                 alpha = 0.6;
-                if (atom->occupancy < 1 && atom->occupancy >= 0)
+                if (atom->occupancy < 1 && atom->occupancy > 0)
                     alpha *= atom->occupancy;
             } else
                 alpha = 1.0;

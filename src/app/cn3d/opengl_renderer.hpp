@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/08/19 02:58:23  thiessen
+* fix tranparent sphere bug
+*
 * Revision 1.15  2000/08/18 23:07:03  thiessen
 * minor efficiency tweaks
 *
@@ -175,7 +178,7 @@ public:
 
 private:
     StructureSet *structureSet;
-    void SetColor(int type, float red = 0.0, float green = 0.0, float blue = 0.0, float alpha = 1.0);
+    void SetColor(int type, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
     void ConstructLogo(void);
 
     // camera data

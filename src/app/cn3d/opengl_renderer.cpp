@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/08/19 02:59:04  thiessen
+* fix tranparent sphere bug
+*
 * Revision 1.19  2000/08/18 23:07:08  thiessen
 * minor efficiency tweaks
 *
@@ -534,9 +537,9 @@ void OpenGLRenderer::Construct(void)
 }
 
 // set current GL color; don't change color if it's same as what's current
-void OpenGLRenderer::SetColor(int type, float red, float green, float blue, float alpha)
+void OpenGLRenderer::SetColor(int type, double red, double green, double blue, double alpha)
 {
-    static GLfloat pr, pg, pb, pa;
+    static double pr, pg, pb, pa;
     static GLenum pt = GL_NONE;
 
     if (type == GL_NONE) {
@@ -547,8 +550,8 @@ void OpenGLRenderer::SetColor(int type, float red, float green, float blue, floa
 //#ifdef _DEBUG
     if (red == 0.0 && green == 0.0 && blue == 0.0)
         ERR_POST(Warning << "SetColor request color (0,0,0)");
-    if (alpha == 0.0)
-        ERR_POST(Warning << "SetColor request alpha 0.0");
+    if (alpha <= 0.0)
+        ERR_POST(Warning << "SetColor request alpha <= 0.0");
 //#endif
 
     if (red != pr || green != pg || blue != pb || type != pt || alpha != pa) {
@@ -701,18 +704,20 @@ void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name
 
 void OpenGLRenderer::AddTransparentSpheresFromList(unsigned int list)
 {
-    const SphereList& sphereList = transparentSphereMap[list].first;
-    if (sphereList.size() == 0) return;
+    SphereMap::const_iterator sLT = transparentSphereMap.find(list);
+    if (sLT == transparentSphereMap.end()) return;
 
+    const SphereList& sphereList = sLT->second.first;
+ 
     Matrix view;
     GL2Matrix(viewMatrix, &view);
 
     // add spheres attached to this display list; calculate distance from camera to each one
     transparentSpheresToRender.resize(transparentSpheresToRender.size() + sphereList.size());
-    SpherePtrList::iterator sph = transparentSpheresToRender.end();
+    SpherePtrList::reverse_iterator sph = transparentSpheresToRender.rbegin();
 
     SphereList::const_iterator i, ie=sphereList.end();
-    for (i=sphereList.begin(); i!=ie; i++, sph--) {
+    for (i=sphereList.begin(); i!=ie; i++, sph++) {
         sph->siteGL = i->site;
         ApplyTransformation(&(sph->siteGL), transparentSphereMap[list].second); // slave->master transform
         ApplyTransformation(&(sph->siteGL), view);                              // current view transform
@@ -725,14 +730,14 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
 {
     if (transparentSpheresToRender.size() == 0) return;
 
-    SetColor(GL_NONE); // reset color caches in SetColor
-
     // sort spheres by distance from camera, via operator < defined for SpherePtr
     transparentSpheresToRender.sort();
 
     // turn on blending
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    SetColor(GL_NONE); // reset color caches in SetColor
 
     // render spheres in order (farthest first)
     SpherePtrList::reverse_iterator i, ie=transparentSpheresToRender.rend();
