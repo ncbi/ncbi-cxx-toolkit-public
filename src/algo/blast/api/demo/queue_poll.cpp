@@ -292,7 +292,7 @@ s_SetBlast4Params(string              & program,
         err += program;
         err += "] and service [";
         err += service;
-        err += " is not supported.\n";
+        err += "] is not supported.\n";
     } else {
         cb4o->SetDatabase(database);
         
@@ -548,6 +548,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/08/02 14:58:05  bealer
+ * - Minor spelling glitch.
+ *
  * Revision 1.7  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added
