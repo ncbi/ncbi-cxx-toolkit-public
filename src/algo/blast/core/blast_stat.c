@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.3  2003/07/24 17:37:46  dondosha
+ * Removed MakeBlastScore function that is dependent on objalign.h
+ *
  * Revision 1.2  2003/07/24 15:50:49  dondosha
  * Commented out mutex operations
  *
@@ -4169,54 +4172,6 @@ Nlm_FloatHi
 ConvertPseudoStoE(Int2 s, Nlm_FloatHi n)
 {
 	return n*exp(-s/PSCALE);
-}
-
-/****************************************************************************
-*
-*	This function attaches a new ScorePtr to the "*old" one passed
-*	in.  If *old is NULL, then *old is set equal to the new ptr.
-*	The new pointer (NOT the head of the chain) is returned.
-*
-*	If the value is an int, then set prob to zero and pass the value in
-*	as score; if the value is a Nlm_FloatHi, pass it in as prob.
-*
-*	The type of score is stored in an Object-id.str
-****************************************************************************/
-
-ScorePtr
-MakeBlastScore (ScorePtr PNTR old, CharPtr scoretype, Nlm_FloatHi prob, Int4 score)
-
-{
-	ScorePtr	scrp, scrp1;
-
-	scrp = ScoreNew();
-
-	if (score) 
-	{
-		scrp->choice = 1;
-		scrp->value.intvalue = score;
-	}
-	else 
-	{
-		scrp->choice = 2;
-		scrp->value.realvalue = (Nlm_FloatHi) prob;
-	}
-
-	scrp->id = ObjectIdNew();
-	scrp->id->str = StringSave(scoretype);
-
-
-	if (*old == NULL)
-		*old = scrp;
-	else
-	{
-		for (scrp1=*old; scrp1->next; scrp1=scrp1->next)
-			;
-		scrp1->next = scrp;	
-	}
-		
-
-	return scrp;
 }
 
 #ifndef TX_MATRIX_SIZE

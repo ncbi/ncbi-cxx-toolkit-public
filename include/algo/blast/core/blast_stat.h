@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.2  2003/07/24 17:37:52  dondosha
+* Removed MakeBlastScore function that is dependent on objalign.h
+*
 * Revision 1.1  2003/07/24 15:18:03  dondosha
 * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
 *
@@ -246,7 +249,6 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 #define __BLASTKAR__
 
 #include <ncbi.h>
-#include <objalign.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -580,9 +582,6 @@ and E or p-values.
 Int2 ConvertPtoPseudoS PROTO((Nlm_FloatHi p, Nlm_FloatHi n));
 Int2 ConvertEtoPseudoS PROTO((Nlm_FloatHi E, Nlm_FloatHi searchsp));
 Nlm_FloatHi ConvertPseudoStoE PROTO((Int2 s, Nlm_FloatHi n));
-
-ScorePtr MakeBlastScore PROTO((ScorePtr PNTR old, CharPtr scoretype, Nlm_FloatHi prob, Int4 score));
- 
 
 /*
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
