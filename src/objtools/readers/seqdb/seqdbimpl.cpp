@@ -88,7 +88,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     m_FlushCB.SetImpl(this);
 }
 
-CSeqDBImpl::~CSeqDBImpl(void)
+CSeqDBImpl::~CSeqDBImpl()
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
@@ -360,32 +360,32 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(Uint4 oid) const
                "OID not in valid range.");
 }
 
-Uint4 CSeqDBImpl::GetNumSeqs(void) const
+Uint4 CSeqDBImpl::GetNumSeqs() const
 {
     return m_NumSeqs;
 }
 
-Uint4 CSeqDBImpl::GetNumOIDs(void) const
+Uint4 CSeqDBImpl::GetNumOIDs() const
 {
     return m_NumOIDs;
 }
 
-Uint8 CSeqDBImpl::GetTotalLength(void) const
+Uint8 CSeqDBImpl::GetTotalLength() const
 {
     return m_TotalLength;
 }
 
-Uint8 CSeqDBImpl::GetVolumeLength(void) const
+Uint8 CSeqDBImpl::GetVolumeLength() const
 {
     return m_VolumeLength;
 }
 
-Uint4 CSeqDBImpl::x_GetNumSeqs(void) const
+Uint4 CSeqDBImpl::x_GetNumSeqs() const
 {
     return m_Aliases.GetNumSeqs(m_VolSet);
 }
 
-Uint4 CSeqDBImpl::x_GetNumOIDs(void) const
+Uint4 CSeqDBImpl::x_GetNumOIDs() const
 {
     Uint4 num_oids = m_VolSet.GetNumOIDs();
     
@@ -401,22 +401,22 @@ Uint4 CSeqDBImpl::x_GetNumOIDs(void) const
     return num_oids;
 }
 
-Uint8 CSeqDBImpl::x_GetTotalLength(void) const
+Uint8 CSeqDBImpl::x_GetTotalLength() const
 {
     return m_Aliases.GetTotalLength(m_VolSet);
 }
 
-Uint8 CSeqDBImpl::x_GetVolumeLength(void) const
+Uint8 CSeqDBImpl::x_GetVolumeLength() const
 {
     return m_VolSet.GetVolumeSetLength();
 }
 
-string CSeqDBImpl::GetTitle(void) const
+string CSeqDBImpl::GetTitle() const
 {
     return x_FixString( m_Aliases.GetTitle(m_VolSet) );
 }
 
-char CSeqDBImpl::GetSeqType(void) const
+char CSeqDBImpl::GetSeqType() const
 {
     if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return vol->GetSeqType();
@@ -424,7 +424,7 @@ char CSeqDBImpl::GetSeqType(void) const
     return kSeqTypeUnkn;
 }
 
-string CSeqDBImpl::GetDate(void) const
+string CSeqDBImpl::GetDate() const
 {
     if (const CSeqDBVol * vol = m_VolSet.GetVol(0)) {
         return x_FixString( vol->GetDate() );
@@ -446,7 +446,7 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(Uint4 oid) const
                "OID not in valid range.");
 }
 
-Uint4 CSeqDBImpl::GetMaxLength(void) const
+Uint4 CSeqDBImpl::GetMaxLength() const
 {
     Uint4 max_len = 0;
     
@@ -460,7 +460,7 @@ Uint4 CSeqDBImpl::GetMaxLength(void) const
     return max_len;
 }
 
-const string & CSeqDBImpl::GetDBNameList(void) const
+const string & CSeqDBImpl::GetDBNameList() const
 {
     return m_DBNames;
 }
@@ -483,7 +483,7 @@ string CSeqDBImpl::x_FixString(const string & s) const
     return s;
 }
 
-void CSeqDBImplFlush::operator()(void)
+void CSeqDBImplFlush::operator()()
 {
     if (m_Impl) {
         m_Impl->FlushSeqMemory();

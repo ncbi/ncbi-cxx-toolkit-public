@@ -442,28 +442,57 @@ private:
     ///   The lock hold object for this thread.
     bool x_CheckOrFindOID(Uint4 & next_oid, CSeqDBLockHold & locked) const;
     
-    CSeqDBImplFlush       m_FlushCB;
-    mutable CSeqDBAtlas   m_Atlas;
-    string                m_DBNames;
-    CSeqDBAliasFile       m_Aliases;
-    CSeqDBVolSet          m_VolSet;
+    /// This callback functor allows the atlas code flush any cached
+    /// region holds prior to garbage collection.
+    CSeqDBImplFlush m_FlushCB;
     
-    /// The list of included OIDs
+    /// Memory management layer.
+    mutable CSeqDBAtlas m_Atlas;
+    
+    /// The list of database names provided to the constructor.
+    string m_DBNames;
+    
+    /// Alias node hierarchy management object.
+    CSeqDBAliasFile m_Aliases;
+    
+    /// Set of volumes used by this database instance.
+    CSeqDBVolSet m_VolSet;
+    
+    /// The list of included OIDs (construction is deferred).
     mutable CRef<CSeqDBOIDList> m_OIDList;
-    CRef<CSeqDBTaxInfo>   m_TaxInfo;
-    Uint4                 m_RestrictBegin;
-    Uint4                 m_RestrictEnd;
-    CFastMutex            m_OIDLock;
-    Uint4                 m_NextChunkOID;
     
-    Uint4                 m_NumSeqs;
-    Uint4                 m_NumOIDs;
-    Uint8                 m_TotalLength;
-    Uint8                 m_VolumeLength;
-    char                  m_SeqType;
+    /// Taxonomic information.
+    CRef<CSeqDBTaxInfo> m_TaxInfo;
     
-    /// True if OID list setup is done.
-    mutable bool          m_OidListSetup;
+    /// Starting OID as provided to the constructor.
+    Uint4 m_RestrictBegin;
+    
+    /// Ending OID as provided to the constructor.
+    Uint4 m_RestrictEnd;
+    
+    /// Mutex which synchronizes access to the OID list.
+    CFastMutex m_OIDLock;
+    
+    /// "Bookmark" for multithreaded chunk-type OID iteration.
+    Uint4 m_NextChunkOID;
+    
+    /// Number of sequences in the overall database.
+    Uint4 m_NumSeqs;
+    
+    /// Size of databases OID range.
+    Uint4 m_NumOIDs;
+    
+    /// Total length of database (in bases).
+    Uint8 m_TotalLength;
+    
+    /// Total length of all database volumes combined (in bases).
+    Uint8 m_VolumeLength;
+    
+    /// Type of sequences used by this instance.
+    char m_SeqType;
+    
+    /// True if OID list setup is done (or was not required).
+    mutable bool m_OidListSetup;
 };
 
 END_NCBI_SCOPE
