@@ -51,12 +51,22 @@ CNWFormatter::CNWFormatter (const CNWAligner& aligner):
 
 void CNWFormatter::AsSeqAlign(CSeq_align* seqalign) const
 {
-    if(seqalign == 0) return;
-
-    seqalign->Reset();
-
+    if(seqalign == 0) {
+        NCBI_THROW(CAlgoAlignException,
+                   eBadParameter,
+                   "Zero pointer passed to CNWFormatter::AsSeqAlign()");
+    }
+    
     const vector<CNWAligner::ETranscriptSymbol>& transcript = 
         *(m_aligner->GetTranscript());
+
+    if(!transcript.size()) {
+        NCBI_THROW(CAlgoAlignException,
+                   eNoData,
+                   "Zero size transcript (forgot to run the aligner?)");
+    }
+
+    seqalign->Reset();
 
     if(transcript.size() == 0) return;
 
@@ -167,6 +177,13 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
 
     const vector<CNWAligner::ETranscriptSymbol>& transcript =
         *(m_aligner->GetTranscript());
+
+    if(!transcript.size()) {
+        NCBI_THROW(CAlgoAlignException,
+                   eNoData,
+                   "Zero size transcript (forgot to run the aligner?)");
+    }
+
 
     switch (type) {
 
@@ -455,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/12 19:43:04  kapustin
+ * Add checking for empty transcript
+ *
  * Revision 1.2  2003/09/03 01:19:32  ucko
  * +<iterator> (needed for ostream_iterator<> with some compilers)
  *
