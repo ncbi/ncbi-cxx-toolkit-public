@@ -199,7 +199,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 
 // NOTE: This code is used also in the CDirEntry::MatchesMask.
 
-bool NStr::MatchesMask(const char* str, const char* mask) 
+bool NStr::MatchesMask(const char* str, const char* mask, ECase use_case) 
 {
     char c;
     bool infinite = true;
@@ -229,7 +229,7 @@ bool NStr::MatchesMask(const char* str, const char* mask)
             }
             // General case, use recursion
             while ( *str ) {
-                if ( MatchesMask(str, mask) ) {
+                if ( MatchesMask(str, mask, use_case) ) {
                     return true;
                 }
                 ++str;
@@ -238,7 +238,12 @@ bool NStr::MatchesMask(const char* str, const char* mask)
 		
         default:
             // Compare nonpattern character in mask and name
-            if ( c != *str++ ) {
+            char s = *str++;
+            if ( use_case == eNocase ) {
+                c = tolower(c);
+                s = tolower(s);
+            }
+            if ( c != s ) {
                 return false;
             }
             break;
@@ -248,9 +253,9 @@ bool NStr::MatchesMask(const char* str, const char* mask)
 }
 
 
-bool NStr::MatchesMask(const string& str, const string& mask)
+bool NStr::MatchesMask(const string& str, const string& mask, ECase use_case)
 {
-    return MatchesMask(str.c_str(), mask.c_str());
+    return MatchesMask(str.c_str(), mask.c_str(), use_case);
 }
 
 
@@ -1695,6 +1700,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.134  2005/03/16 15:28:30  ivanov
+ * MatchesMask(): Added parameter for case sensitive/insensitive matching
+ *
  * Revision 1.133  2005/02/16 15:04:35  ssikorsk
  * Tweaked kEmptyStr with Linux GCC
  *

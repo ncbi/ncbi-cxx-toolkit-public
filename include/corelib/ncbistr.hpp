@@ -1091,11 +1091,15 @@ public:
     ///   wildcard characters:
     ///     ? - matches to any one symbol in the string.
     ///     * - matches to any number of symbols in the string. 
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return
     ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
     /// @sa
     ///    CRegexp, CRegexpUtil
-    static bool MatchesMask(const char *str, const char *mask);
+    static bool MatchesMask(const char *str, const char *mask,
+                            ECase use_case = eCase);
 
     /// Match "str" against the "mask".
     ///
@@ -1107,11 +1111,15 @@ public:
     ///   wildcard characters:
     ///     ? - matches to any one symbol in the string.
     ///     * - matches to any number of symbols in the string. 
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
     /// @return
     ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
     /// @sa
     ///    CRegexp, CRegexpUtil
-    static bool MatchesMask(const string& str, const string& mask);
+    static bool MatchesMask(const string& str, const string& mask,
+                            ECase use_case = eCase);
 
     // The following 4 methods change the passed string, then return it
 
@@ -2596,6 +2604,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2005/03/16 15:28:30  ivanov
+ * MatchesMask(): Added parameter for case sensitive/insensitive matching
+ *
  * Revision 1.77  2005/02/23 15:34:18  gouriano
  * Type cast to get rid of compiler warnings
  *
