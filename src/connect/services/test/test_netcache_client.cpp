@@ -497,7 +497,7 @@ int CTestNetCacheClient::Run(void)
         CSocket sock(host, port);
 //        STimeout to = {0,0};
 //        sock.SetTimeout(eIO_ReadWrite, &to);
-        CNetCacheClient nc_client(&sock, "");
+        CNetCacheClient nc_client(&sock, "test");
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
@@ -665,6 +665,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/02/07 13:04:21  kuznets
+ * Do not use empty client name
+ *
  * Revision 1.28  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
