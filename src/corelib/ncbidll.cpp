@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/03/25 18:10:00  ucko
+ * Make errmsg const to accommodate platforms (FreeBSD at least) where
+ * dlerror returns const char*.
+ *
  * Revision 1.2  2002/01/16 18:48:57  ivanov
  * Added new constructor and related "basename" rules for DLL names. Polished source code.
  *
@@ -204,7 +208,7 @@ void CDll::x_ThrowException(const string& what)
     string errmsg = ptr ? ptr : "unknown reason";
     LocalFree(ptr);
 #elif defined(NCBI_OS_UNIX)
-    char* errmsg = dlerror();
+    const char* errmsg = dlerror();
     if ( !errmsg ) {
         errmsg = "unknown reason";
     }
