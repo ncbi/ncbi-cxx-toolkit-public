@@ -139,7 +139,11 @@ DEBUG_SFX = @DEBUG_SFX@
 # 'd' for debugging, empty for release
 D_SFX=@D_SFX@
 
-# whether to build apps
+### Muli-thread suffix
+# "MT" if multi-thread,  "" if single-thread
+MT_SFX = @MT_SFX@
+
+### Whether to build apps
 APP_OR_NULL = @APP_OR_NULL@
 
 ### DLL specifics
