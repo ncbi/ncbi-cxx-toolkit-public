@@ -281,8 +281,8 @@ impalaScaleMatrix(Kappa_compactSearchItems* compactSearch,
                     if (private_matrix[c][a] == BLAST_SCORE_MIN) {
                         matrix[c][a] = BLAST_SCORE_MIN;
                     } else {
-                        matrix[c][a] =
-                            (factor * private_matrix[c][a]) / divFactor;
+                        matrix[c][a] = (int)
+                             ((factor * private_matrix[c][a]) / divFactor);
                     }
                 }
             }
@@ -337,8 +337,8 @@ impalaScaleMatrix(Kappa_compactSearchItems* compactSearch,
                     if (private_matrix[c][a] == BLAST_SCORE_MIN) {
                         matrix[c][a] = BLAST_SCORE_MIN;
                     } else {
-                        matrix[c][a] =
-                            (factor * private_matrix[c][a]) / divFactor;
+                        matrix[c][a] = (int)
+                            ((factor * private_matrix[c][a]) / divFactor);
                     }
                 }
             }
@@ -423,6 +423,9 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/02/23 15:58:10  camacho
+ * Fix compiler warning
+ *
  * Revision 1.4  2005/02/23 14:20:51  camacho
  * Remove compiler warnings
  *
