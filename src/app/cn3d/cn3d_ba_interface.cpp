@@ -68,19 +68,21 @@ void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks, Int4 *allowedGap
     Nlm_FloatHi percentile, Int4 gapAddition);
 extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
     Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold,
+    Int4 masterLength, BLAST_Score **posMatrix, Int4 *scoreThresholds,
     Int4 *frozenBlocks, Boolean localAlignment);
 extern void LIBCALL sortAlignPieces(Int4 numBlocks);
 extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 queryLength, Uint1Ptr seq,
     Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps, Int4 scoreThresholdMultipleBlock,
     SeqIdPtr subject_id, SeqIdPtr query_id, Int4* bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda,
-    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment);
+    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment, Nlm_FloatHi Ethreshold);
 extern void freeBestPairs(Int4 numBlocks);
 extern void freeAlignPieceLists(Int4 numBlocks);
 extern void freeBestScores(Int4 numBlocks);
 extern Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
    Int4 numBlocks, Int4 startQueryRegion, Int4 endQueryRegion,
    Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps);
+extern int *parseBlockThresholds(Char *stringToParse, Int4 numBlocks, Boolean localAlignment);
+extern Int4 getSearchSpaceSize(Int4 masterLength, Int4 queryLength, Int4 databaseLength, Int4 initSearchSpaceSize);
 }
 
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
@@ -106,7 +108,7 @@ public:
     bool GetValues(BlockAligner::BlockAlignerOptions *options);
 
 private:
-    IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iSize;
+    IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iDataLen, *iSearchLen;
     FloatingPointSpinCtrl *fpPercent, *fpLambda, *fpK;
     wxCheckBox *cGlobal, *cMerge, *cKeepBlocks, *cLongGaps;
 
@@ -124,7 +126,8 @@ BlockAligner::BlockAligner(void)
     currentOptions.gapLengthPercentile = 0.6;
     currentOptions.lambda = 0.0;
     currentOptions.K = 0.0;
-    currentOptions.searchSpaceSize = 0;
+    currentOptions.databaseLength = 0;
+    currentOptions.searchSpaceLength = 0;
     currentOptions.globalAlignment = true;
     currentOptions.mergeAfterEachSequence = false;
     currentOptions.keepExistingBlocks = true;
@@ -288,6 +291,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     Int4 bestFirstBlock, bestLastBlock;
     SeqAlignPtr results;
     SeqAlignPtr listOfSeqAligns = NULL;
+    Int4 *perBlockThresholds;
 
     // show options dialog each time block aligner is run
     if (!SetOptions(NULL)) return false;
@@ -298,23 +302,27 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
     // the following would be command-line arguments to Alejandro's standalone program
     Boolean localAlignment = currentOptions.globalAlignment ? FALSE : TRUE;
-    BLAST_Score scoreThresholdSingleBlock =
-        localAlignment ? currentOptions.singleBlockThreshold : NEG_INFINITY;
+    Char scoreThresholdsMultipleBlockString[20];
     BLAST_Score scoreThresholdMultipleBlock = currentOptions.multipleBlockThreshold;
     Nlm_FloatHi Lambda = currentOptions.lambda;
     Nlm_FloatHi K = currentOptions.K;
     Nlm_FloatHi percentile = currentOptions.gapLengthPercentile;
     Int4 gapAddition = currentOptions.allowedGapExtension;
-    Int4 searchSpaceSize = currentOptions.searchSpaceSize;
+    Int4 searchSpaceSize;
     Nlm_FloatHi scaleMult = 1.0;
     Int4 startQueryPosition;
     Int4 endQueryPosition;
+    Nlm_FloatHi maxEValue = 10.0;
 
     newAlignments->clear();
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
     numBlocks = blocks->size();
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
     if (nRowsAddedToMultiple) *nRowsAddedToMultiple = 0;
+
+    // use Alejandro's per-block threshold parser, to make sure same values are used
+    sprintf(scoreThresholdsMultipleBlockString, "%i", currentOptions.singleBlockThreshold);
+    perBlockThresholds = parseBlockThresholds(scoreThresholdsMultipleBlockString, numBlocks, localAlignment);
 
     // master sequence info
     masterLength = multiple->GetMaster()->Length();
@@ -374,6 +382,10 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < query->Length()) ?
                 ((*s)->alignSlaveTo + 1) : query->Length();
 
+        // set search space size
+        searchSpaceSize = getSearchSpaceSize(masterLength, queryLength,
+            currentOptions.databaseLength, currentOptions.searchSpaceLength);
+
         // set frozen blocks
         for (i=0; i<numBlocks-1; i++)
             currentAllowedGaps[i] = allowedGaps[i];
@@ -406,13 +418,13 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             allocateAlignPieceMemory(numBlocks);
             findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
                 numBlocks, blockStarts, blockEnds, masterLength, thisScoreMat,
-                scoreThresholdSingleBlock, frozenBlocks, localAlignment);
+                perBlockThresholds, frozenBlocks, localAlignment);
             sortAlignPieces(numBlocks);
             results = makeMultiPieceAlignments(convertedQuery, numBlocks,
                 queryLength, masterSequence, masterLength,
                 blockStarts, blockEnds, currentAllowedGaps, scoreThresholdMultipleBlock,
                 subject_id, query_id, &bestFirstBlock, &bestLastBlock,
-                Lambda, K, searchSpaceSize, localAlignment);
+                Lambda, K, searchSpaceSize, localAlignment, maxEValue);
         } else
             results = NULL;
 
@@ -488,6 +500,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     if (listOfSeqAligns) SeqAlignSetFree(listOfSeqAligns);
     MemFree(masterSequence);
     MemFree(frozenBlocks);
+    MemFree(perBlockThresholds);
 
     return true;
 }
@@ -604,14 +617,23 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item3->Add(fpK->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item3->Add(fpK->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    wxStaticText *item22 = new wxStaticText( panel, ID_TEXT, "Search space size:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item22, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    iSize = new IntegerSpinCtrl(panel,
-        0, kMax_Int, 1000, init.searchSpaceSize,
+    wxStaticText *item40 = new wxStaticText( panel, ID_TEXT, "Database length:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item40, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iDataLen = new IntegerSpinCtrl(panel,
+        0, kMax_Int, 1000, init.databaseLength,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item3->Add(iSize->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iSize->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iDataLen->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iDataLen->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item22 = new wxStaticText( panel, ID_TEXT, "Search space length:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item22, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iSearchLen = new IntegerSpinCtrl(panel,
+        0, kMax_Int, 1000, init.searchSpaceLength,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iSearchLen->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iSearchLen->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
@@ -673,7 +695,8 @@ BlockAlignerOptionsDialog::~BlockAlignerOptionsDialog(void)
     delete iSingle;
     delete iMultiple;
     delete iExtend;
-    delete iSize;
+    delete iDataLen;
+    delete iSearchLen;
     delete fpPercent;
     delete fpLambda;
     delete fpK;
@@ -689,7 +712,8 @@ bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *opt
         iSingle->GetInteger(&(options->singleBlockThreshold)) &&
         iMultiple->GetInteger(&(options->multipleBlockThreshold)) &&
         iExtend->GetInteger(&(options->allowedGapExtension)) &&
-        iSize->GetInteger(&(options->searchSpaceSize)) &&
+        iDataLen->GetInteger(&(options->databaseLength)) &&
+        iSearchLen->GetInteger(&(options->searchSpaceLength)) &&
         fpPercent->GetDouble(&(options->gapLengthPercentile)) &&
         fpLambda->GetDouble(&(options->lambda)) &&
         fpK->GetDouble(&(options->K))
@@ -721,6 +745,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/27 18:45:59  thiessen
+* update blockaligner code
+*
 * Revision 1.24  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -70,7 +70,8 @@ public:
         double gapLengthPercentile;
         double lambda;
         double K;
-        int searchSpaceSize;
+        int databaseLength;
+        int searchSpaceLength;
         bool globalAlignment;
         bool mergeAfterEachSequence;
         bool keepExistingBlocks;
@@ -88,6 +89,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/27 18:46:00  thiessen
+* update blockaligner code
+*
 * Revision 1.8  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
