@@ -971,7 +971,11 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     //set config file
     m_ConfigFile = new CNcbiIfstream(".ncbirc");
     m_Reg = new CNcbiRegistry(*m_ConfigFile);
-    m_DynamicFeature = new CGetFeature( m_Reg->Get("FEATURE_INFO", "FEATURE_FILE"), m_Reg->Get("FEATURE_INFO", "FEATURE_FILE_INDEX"));
+    string feat_file = m_Reg->Get("FEATURE_INFO", "FEATURE_FILE");
+    string feat_file_index = m_Reg->Get("FEATURE_INFO", "FEATURE_FILE_INDEX");
+    if(feat_file != NcbiEmptyString && feat_file_index != NcbiEmptyString){
+        m_DynamicFeature = new CGetFeature(feat_file, feat_file_index);
+    }
   }
   if(m_AlignOption & eHtml){  
     out<<"<script src=\"blastResult.js\"></script>";
@@ -2035,7 +2039,7 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
 
     //output dynamic feature lines
     if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign) && (m_AlignOption&eDynamicFeature) && m_AV->GetBioseqHandle(1).GetBioseqLength() >= k_GetDynamicFeatureSeqLength){ 
-        if(m_Reg->Get("FEATURE_INFO", "FEATURE_FILE") != NcbiEmptyString && m_Reg->Get("FEATURE_INFO", "FEATURE_FILE_INDEX") != NcbiEmptyString){
+        if(m_DynamicFeature){
             x_PrintDynamicFeatures(out);
         } 
     }
@@ -2094,6 +2098,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.41  2004/08/05 19:16:50  jianye
+*checking dynamic feature better
+*
 *Revision 1.40  2004/08/05 16:58:10  jianye
 *Added dynamic features
 *
