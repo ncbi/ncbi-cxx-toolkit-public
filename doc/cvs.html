@@ -21,6 +21,7 @@ Select the instructions appropriate for your <em>development</em> environment.
 <p></p>
 <ul>
   <li><a href="#ref_Overview">NCBI CVS Tree Contents</a></li>
+  <li><a href="#ref_CVS_ClientSetup">Setting up CVS client </a></li>
   <li><a href="#ref_CVSUnix"> CVS Retrieval under Unix</a> </li>
   <ul>
     <li>CVS Retrieval of C++ Toolkit</li>
@@ -88,13 +89,51 @@ needed for all supported builds.
 
 <hr>
 
-<a name="ref_CVSUnix"></a>
-<h3>CVS Retrieval under Unix <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h3>
+<p>
+<br>
+<a name="ref_CVS_ClientSetup"></a>
+<h3>Setting up CVS client <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h3>
+
+
 CVS client installation instructions are available on separate pages
 for <a href="win_cvs.html"><span class="ncbi_os">MS Windows</span></a> and <a href="mac_cvs.html"><span class="ncbi_os">Mac OS</span></a> systems.
 
-<p>
+Here are the instructions for setting up CVS client on UNIX:
+
+<ol>
+<li>
+Set <span class="ncbi_env">CVSROOT</span> env.variable to:
 <br>
+<span class="ncbi_value">:pserver:${LOGNAME}@cvsvault:/src/NCBI/vault.ncbi</span>
+<p>
+<li>
+Run the command:
+<span class="ncbi_cmd">cvs login</span><br>
+You will be asked for a password -- enter the word <em>allowed</em>.
+<br>
+This command will record your login info into
+<span class="ncbi_file">~/.cvspass</span> file
+(so you would not have to login into CVS in the future, ever).
+<p>
+<li>
+If you have some other CVS snapshot which was checkout'ed with old value
+of CVSROOT, you should commit all you changes first, then delete completely
+the old snapshot dir and run:
+<span class="ncbi_cmd">cvs checkout</span><br>
+to get it with new <span class="ncbi_env">CVSROOT</span> value.
+<p>
+<li>
+  Now you are all set and can use all usual CVS commands.
+</ol>
+
+
+<hr>
+
+<a name="ref_CVSUnix"></a>
+<h3>CVS Retrieval under Unix <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h3>
+
+
+<p>
 <a name="ref_Checkout"></a>
 <a name="ref_CheckoutAll"></a>
 <h4>Checking Out the Complete NCBI C++ Toolkit Source Tree <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
