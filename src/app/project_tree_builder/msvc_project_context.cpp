@@ -209,7 +209,11 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_IncludeDir.empty() ) {
-            add_include_dirs_list.push_back(lib_info.m_IncludeDir);
+            const string& dir_abs = lib_info.m_IncludeDir;
+            add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir_abs)?
+                                CDirEntry::CreateRelativePath(m_ProjectDir, 
+                                                              dir_abs) :
+                                dir_abs);
         }
     }
 
@@ -789,6 +793,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/03/16 21:46:17  gorelenk
+ * Changed implementation of
+ * CMsvcPrjProjectContext::AdditionalIncludeDirectories : implemented
+ * uniqueness of include dirs from 3-party libraries.
+ *
  * Revision 1.22  2004/03/16 16:37:33  gorelenk
  * Changed msvc7_prj subdirs structure: Separated "static" and "dll" branches.
  *
