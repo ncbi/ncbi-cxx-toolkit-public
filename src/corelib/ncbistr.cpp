@@ -1085,9 +1085,9 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_score = score;
             }
 
-            while (pos < len - 1  &&  str[pos + 1] == '\b') {
+            while (pos2 < len - 1  &&  str[pos2 + 1] == '\b') {
                 // Account for backspaces
-                ++pos;
+                ++pos2;
                 if (column > column0) {
                     --column;
                 }
@@ -1390,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2004/02/18 20:54:47  shomrat
+ * bug fix (pos -> pos2)
+ *
  * Revision 1.102  2003/12/12 20:06:44  rsmith
  * Take out un-needed include of stdarg.h (included in ncbistr.hpp).
  *
