@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.133  2002/04/26 12:42:07  thiessen
+* fix for wxWin 2.2
+*
 * Revision 1.132  2002/04/25 19:00:38  thiessen
 * remove message log from Mac build
 *
@@ -2186,7 +2189,11 @@ bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height,
     memoryDC.EndDrawing();
 
     // then convert bitmap to image so that we can read individual pixels (ugh...)
+#if wxVERSION_NUMBER >= 2303
     wxImage image(memoryBitmap.ConvertToImage());
+#else
+    wxImage image(memoryBitmap);
+#endif
 //    wxInitAllImageHandlers();
 //    image.SaveFile("text.png", wxBITMAP_TYPE_PNG); // for testing
 
