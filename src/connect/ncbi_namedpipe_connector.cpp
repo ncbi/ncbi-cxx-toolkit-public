@@ -51,7 +51,7 @@ typedef struct {
     string            pipename;     // pipe name
     size_t            pipebufsize;  // pipe buffer size
     bool              is_open;      // true if pipe is open
-} SPipeConnector;
+} SNamedPipeConnector;
 
 
 /***********************************************************************
@@ -72,7 +72,7 @@ static const char* s_VT_GetType
 static char* s_VT_Descr
 (CONNECTOR connector)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     size_t len = xxx->pipename.length() + 1/*EOL*/;
     char* buf = (char*) malloc(len);
     if (buf) {
@@ -86,7 +86,7 @@ static EIO_Status s_VT_Open
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
 
     if (!xxx->pipe) {
         return eIO_Unknown;
@@ -114,7 +114,7 @@ static EIO_Status s_VT_Status
 (CONNECTOR connector,
  EIO_Event dir)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     return xxx->pipe ? xxx->pipe->Status(dir) : eIO_Success;
 }
 
@@ -135,7 +135,7 @@ static EIO_Status s_VT_Write
  size_t*         n_written,
  const STimeout* timeout)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
 
     if (!xxx->is_open) {
         return eIO_Closed;
@@ -155,7 +155,7 @@ static EIO_Status s_VT_Read
  size_t*         n_read,
  const STimeout* timeout)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
 
     if (!xxx->is_open) {
         return eIO_Closed;
@@ -172,7 +172,7 @@ static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* /*timeout*/)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     EIO_Status status = eIO_Success;
     if (xxx->is_open) {
         status = xxx->pipe->Close();
@@ -217,7 +217,7 @@ static void s_Setup
 static void s_Destroy
 (CONNECTOR connector)
 {
-    SPipeConnector* xxx = (SPipeConnector*) connector->handle;
+    SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     if (xxx) {
         if (xxx->pipe) {
             delete xxx->pipe;
@@ -244,7 +244,7 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
  size_t        pipebufsize) 
 {
     CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
-    SPipeConnector* xxx = new SPipeConnector();
+    SNamedPipeConnector* xxx = new SNamedPipeConnector();
 
     // Initialize internal data structures
     xxx->pipe        = new CNamedPipeClient();
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2004/06/04 14:29:34  ivanov
+ * Renamed SPipeConnector->SNamedPipeConnector
+ *
  * Revision 1.8  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
