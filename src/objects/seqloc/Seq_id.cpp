@@ -661,7 +661,9 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
                 best_id->WriteAsFasta(out_str);
             }
 
-            return string(out_str.str(), out_str.pcount());
+            const char* s = out_str.str();
+            out_str.freeze(false);
+            return string(s, out_str.pcount());
         }
         break;
 
@@ -673,7 +675,10 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
             if ( (*iter)->IsGi() ) {
                 CNcbiOstrstream out_str;
                 (*iter)->WriteAsFasta(out_str);
-                return string(out_str.str(), out_str.pcount());
+
+                const char* s = out_str.str();
+                out_str.freeze(false);
+                return string(s, out_str.pcount());
             }
         }
         break;
@@ -1076,6 +1081,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.44  2002/12/30 23:44:42  vakatov
+ * CSeq_id::GetStringDescr() -- un-freeze "strstream" to avoid a mem.leak
+ *
  * Revision 6.43  2002/12/26 16:39:25  vasilche
  * Object manager class CSeqMap rewritten.
  *
