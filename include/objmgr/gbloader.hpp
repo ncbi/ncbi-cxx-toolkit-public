@@ -39,8 +39,13 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <map>
-#include <sys/types.h>
 #include <time.h>
+
+#if defined(NCBI_OS_MAC)
+#   include <types.h>
+#else
+#   include <sys/types.h>
+#endif
 
 #include <objects/objmgr/data_loader.hpp>
 #include <objects/objmgr/reader.hpp>
@@ -253,6 +258,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.24  2002/07/19 18:36:14  lebedev
+ * NCBI_OS_MAC: include path changed for types.h
+ *
  * Revision 1.23  2002/07/08 20:50:56  grichenk
  * Moved log to the end of file
  * Replaced static mutex (in CScope, CDataSource) with the mutex
