@@ -98,7 +98,6 @@ void BLAST_AdjustQueryOffsets(Uint1 program_number,
             query_info->context_offsets, 
             (Int4) (query_info->last_context+1));   
       hsp->query.frame = ContextToFrame(program_number, context);
-      hsp->subject.frame = 1;
       offset_shift = query_info->context_offsets[context];
       hsp->query.offset -= offset_shift;
       hsp->query.gapped_start -= offset_shift;
@@ -734,7 +733,8 @@ BlastHSPListPtr BlastHSPListNew()
    BlastHSPListPtr hsp_list = (BlastHSPListPtr) MemNew(sizeof(BlastHSPList));
    hsp_list->hsp_array = (BlastHSPPtr PNTR) 
       MemNew(MIN_HSP_ARRAY_SIZE*sizeof(BlastHSPPtr));
-   hsp_list->hsp_max = hsp_list->allocated = MIN_HSP_ARRAY_SIZE;
+   hsp_list->hsp_max = INT4_MAX;
+   hsp_list->allocated = MIN_HSP_ARRAY_SIZE;
 
    return hsp_list;
 }
@@ -906,7 +906,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
             new_hsp_array = Realloc(tmp_hsp_list->hsp_array, 
                                     new_size*sizeof(BlastHSPPtr));
             if (!new_hsp_array) {
-               tmp_hsp_list->hsp_max = tmp_hsp_list->hspcnt;
+               tmp_hsp_list->allocated = tmp_hsp_list->hspcnt;
                tmp_hsp_list->do_not_reallocate = TRUE;
                tmp_hsp_list = NULL;
             } else {
@@ -1259,7 +1259,7 @@ static Boolean BLASTHspContained(BlastHSPPtr hsp1, BlastHSPPtr hsp2)
 
 Int2 MergeHSPLists(BlastHSPListPtr hsp_list, 
         BlastHSPListPtr PNTR combined_hsp_list_ptr, Int4 start,
-        Boolean merge_hsps)
+        Boolean merge_hsps, Boolean append)
 {
    BlastHSPListPtr combined_hsp_list = *combined_hsp_list_ptr;
    BlastHSPPtr hsp, PNTR hspp1, PNTR hspp2;
@@ -1273,8 +1273,43 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
       return 0;
    }
 
+   if (append) {
+      /* Just append new list to the end of the old list, in case of 
+         multiple frames of the subject sequence */
+      new_hspcnt = MIN(combined_hsp_list->hspcnt + hsp_list->hspcnt, 
+                       combined_hsp_list->hsp_max);
+      if (new_hspcnt > combined_hsp_list->allocated) {
+         Int4 new_allocated = MIN(2*new_hspcnt, combined_hsp_list->hsp_max);
+         new_hsp_array = (BlastHSPPtr PNTR) 
+            Realloc(combined_hsp_list->hsp_array, 
+                    new_allocated*sizeof(BlastHSPPtr));
+
+         if (new_hsp_array) {
+            combined_hsp_list->allocated = new_allocated;
+            combined_hsp_list->hsp_array = new_hsp_array;
+         } else {
+            combined_hsp_list->do_not_reallocate = TRUE;
+            return -1;
+         }
+      }
+      
+      MemCpy(&combined_hsp_list->hsp_array[combined_hsp_list->hspcnt], 
+             hsp_list->hsp_array, 
+             (new_hspcnt - combined_hsp_list->hspcnt)*sizeof(BlastHSPPtr));
+      for (index = new_hspcnt - combined_hsp_list->hspcnt; 
+           index < hsp_list->hspcnt; ++index)
+         MemFree(hsp_list->hsp_array[index]);
+      hsp_list->hsp_array = MemFree(hsp_list->hsp_array);
+
+      combined_hsp_list->hspcnt = new_hspcnt;
+
+      return 1;
+   }
+
+   /* Merge the two HSP lists for successive chunks of the subject sequence */
    hspcnt1 = hspcnt2 = 0;
-   hspp1 = (BlastHSPPtr PNTR) MemNew(combined_hsp_list->hspcnt*sizeof(BlastHSPPtr));
+   hspp1 = (BlastHSPPtr PNTR) 
+      MemNew(combined_hsp_list->hspcnt*sizeof(BlastHSPPtr));
    hspp2 = (BlastHSPPtr PNTR) MemNew(hsp_list->hspcnt*sizeof(BlastHSPPtr));
    index_array = (Int4Ptr) MemNew(combined_hsp_list->hspcnt*sizeof(Int4));
 
@@ -1334,33 +1369,44 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
          new_hspcnt++;
    }
    
-   if (new_hspcnt >= combined_hsp_list->hsp_max-1 && combined_hsp_list->do_not_reallocate == FALSE) {
-      new_hsp_array = (BlastHSPPtr PNTR) Realloc(combined_hsp_list->hsp_array, new_hspcnt*2*sizeof(BlastHSPPtr));
+   if (new_hspcnt >= combined_hsp_list->allocated-1 && 
+       combined_hsp_list->do_not_reallocate == FALSE) {
+      new_hsp_array = (BlastHSPPtr PNTR) 
+         Realloc(combined_hsp_list->hsp_array, 
+                 new_hspcnt*2*sizeof(BlastHSPPtr));
       if (new_hsp_array == NULL) {
          combined_hsp_list->do_not_reallocate = TRUE; 
       } else {
          combined_hsp_list->hsp_array = new_hsp_array;
-         combined_hsp_list->hsp_max = 2*new_hspcnt;
+         combined_hsp_list->allocated = 2*new_hspcnt;
       }
    }
 
    for (index=0; index<hspcnt1; index++) 
       combined_hsp_list->hsp_array[index_array[index]] = hspp1[index];
    for (index=combined_hsp_list->hspcnt, index1=0; 
-        index1<hsp_list->hspcnt && index<combined_hsp_list->hsp_max; index1++) {
+        index1<hsp_list->hspcnt && index<combined_hsp_list->allocated; 
+        index1++) {
       if (hsp_list->hsp_array[index1] != NULL)
          combined_hsp_list->hsp_array[index++] = hsp_list->hsp_array[index1];
    }
-   for (index1=0; index1<hspcnt2 && index<combined_hsp_list->hsp_max; index1++) {
+   for (index1=0; index1<hspcnt2 && index<combined_hsp_list->allocated;
+        index1++) {
       if (hspp2[index1] != NULL)
          combined_hsp_list->hsp_array[index++] = hspp2[index1];
    }
+   combined_hsp_list->hspcnt = index;
+
+   /* Free the remaining HSPs in the new list, if reallocation failed */
+   if (combined_hsp_list->do_not_reallocate) {
+      for ( ; index1 < hsp_list->hspcnt; ++index1)
+         MemFree(hsp_list->hsp_array[index]);
+   }
+   hsp_list->hsp_array = MemFree(hsp_list->hsp_array);
 
    hspp1 = MemFree(hspp1);
    hspp2 = MemFree(hspp2);
    index_array = MemFree(index_array);
    
-   combined_hsp_list->hspcnt = index;
-
    return 1;
 }
