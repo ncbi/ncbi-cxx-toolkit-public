@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/12 16:22:45  thiessen
+* working block split
+*
 * Revision 1.13  2000/10/05 18:34:43  thiessen
 * first working editing operation
 *
@@ -629,11 +632,9 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         if (event.ControlDown()) controls |= ViewableAlignment::eControlDown;
         if (event.AltDown() || event.MetaDown()) controls |= ViewableAlignment::eAltOrMetaDown;
 
-        // send MouseDown message
-        alignment->MouseDown(MOX, MOY, controls);
-
-        if (MOX != -1) {    // don't start selection if mouse-down is not inside display area
-
+        // send MouseDown message; don't start selection if MouseDown returns false
+        // or if not inside display area
+        if (alignment->MouseDown(MOX, MOY, controls) && MOX != -1) {
             prevToX = fromX = cellX;
             prevToY = fromY = cellY;
             dragging = true;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/12 16:22:45  thiessen
+* working block split
+*
 * Revision 1.15  2000/10/12 02:14:56  thiessen
 * working block boundary editing
 *
@@ -231,6 +234,7 @@ BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList,
     messenger(mesg), conservationColorer(NULL)
 {
     InitCache();
+    UnemphasizeBlocks();
 
     // create conservation colorer
     conservationColorer = new ConservationColorer();
@@ -251,35 +255,45 @@ BlockMultipleAlignment::~BlockMultipleAlignment(void)
     for (i=blocks.begin(); i!=ie; i++) if (*i) delete *i;
 }
 
-bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock)
+bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
 {
-    if (!newBlock || !newBlock->IsAligned()) {
-        ERR_POST("MultipleAlignment::AddAlignedBlockAtEnd() - add aligned blocks only");
+    if (!block || !block->IsAligned()) {
+        ERR_POST("MultipleAlignment::CheckAlignedBlock() - checks aligned blocks only");
         return false;
     }
-    if (newBlock->NSequences() != sequences->size()) {
-        ERR_POST("MultipleAlignment::AddAlignedBlockAtEnd() - block size mismatch");
+    if (block->NSequences() != sequences->size()) {
+        ERR_POST("MultipleAlignment::CheckAlignedBlock() - block size mismatch");
         return false;
     }
 
     // make sure ranges are reasonable for each sequence
     int row;
-    const Block::Range *range, *prevRange = NULL;
+    const Block
+        *prevBlock = GetBlockBefore(block),
+        *nextBlock = GetBlockAfter(block);
+    const Block::Range *range, *prevRange = NULL, *nextRange = NULL;
     SequenceList::const_iterator sequence = sequences->begin();
-    for (row=0; row<newBlock->NSequences(); row++, sequence++) {
-        range = newBlock->GetRangeOfRow(row);
-        if (blocks.size() > 0) prevRange = blocks.back()->GetRangeOfRow(row);
-        if (range->to - range->from + 1 != newBlock->width ||       // check block width
+    for (row=0; row<block->NSequences(); row++, sequence++) {
+        range = block->GetRangeOfRow(row);
+        if (prevBlock) prevRange = prevBlock->GetRangeOfRow(row);
+        if (nextBlock) nextRange = nextBlock->GetRangeOfRow(row);
+        if (range->to - range->from + 1 != block->width ||       // check block width
             (prevRange && range->from <= prevRange->to) ||          // check for range overlap
+            (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
             range->to >= (*sequence)->Length()) {                   // check bounds of end
-            ERR_POST(Error << "MultipleAlignment::AddAlignedBlockAtEnd() - range error");
+            ERR_POST(Error << "MultipleAlignment::CheckAlignedBlock() - range error");
             return false;
         }
     }
 
-    blocks.push_back(newBlock);
     return true;
+}
+
+bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock)
+{
+    blocks.push_back(newBlock);
+    return CheckAlignedBlock(newBlock);
 }
 
 Block * BlockMultipleAlignment::
@@ -608,7 +622,7 @@ void BlockMultipleAlignment::GetAlignedBlockPosition(int alignmentIndex,
     }
 }
 
-Block * BlockMultipleAlignment::GetBlockBefore(Block *block) const
+Block * BlockMultipleAlignment::GetBlockBefore(const Block *block) const
 {
     Block *prevBlock = NULL;
     BlockList::const_iterator b, be = blocks.end();
@@ -619,7 +633,7 @@ Block * BlockMultipleAlignment::GetBlockBefore(Block *block) const
     return prevBlock;
 }
 
-Block * BlockMultipleAlignment::GetBlockAfter(Block *block) const
+Block * BlockMultipleAlignment::GetBlockAfter(const Block *block) const
 {
     BlockList::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
@@ -632,7 +646,7 @@ Block * BlockMultipleAlignment::GetBlockAfter(Block *block) const
     return NULL;
 }
 
-void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, Block *insertAt)
+void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, const Block *insertAt)
 {
     BlockList::iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
@@ -644,7 +658,7 @@ void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, Block *insertAt)
     ERR_POST(Warning << "BlockMultipleAlignment::InsertBlockBefore() - couldn't find insertAt block");
 }
 
-void BlockMultipleAlignment::InsertBlockAfter(Block *newBlock, Block *insertAt)
+void BlockMultipleAlignment::InsertBlockAfter(const Block *insertAt, Block *newBlock)
 {
     BlockList::iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
@@ -725,7 +739,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
             nextBlock->width -= requestedShift;
         } else {
             Block *newUnalignedBlock = CreateNewUnalignedBlockBetween(info.block, nextBlock);
-            if (newUnalignedBlock) InsertBlockAfter(newUnalignedBlock, info.block);
+            if (newUnalignedBlock) InsertBlockAfter(info.block, newUnalignedBlock);
             TESTMSG("added new unaligned block");
         }
     }
@@ -794,6 +808,41 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         return true;
     } else
         return false;
+}
+
+bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
+{
+    const BlockInfo& info = blockMap[alignmentIndex];
+    if (!info.block->IsAligned() || info.block->width < 2 || info.blockColumn == 0)
+        return false;
+
+    UngappedAlignedBlock *newAlignedBlock = new UngappedAlignedBlock(sequences);
+    newAlignedBlock->width = info.block->width - info.blockColumn;
+    info.block->width = info.blockColumn;
+
+    const Block::Range *range;
+    int oldTo;
+    for (int row=0; row < info.block->NSequences(); row++) {
+        range = info.block->GetRangeOfRow(row);
+        oldTo = range->to;
+        info.block->SetRangeOfRow(row, range->from, range->from + info.block->width - 1);
+        newAlignedBlock->SetRangeOfRow(row, oldTo - newAlignedBlock->width + 1, oldTo);
+    }
+
+    InsertBlockAfter(info.block, newAlignedBlock);
+    if (!CheckAlignedBlock(info.block) || !CheckAlignedBlock(newAlignedBlock))
+        ERR_POST(Error << "BlockMultipleAlignment::SplitBlock() - split failed to create valid blocks");
+
+    UpdateBlockMapAndConservationColors();
+    messenger->PostRedrawSequenceViewers();
+    return true;
+}
+
+void BlockMultipleAlignment::EmphasizeBlock(int alignmentIndex, int row)
+{
+    const Block *block = blockMap[alignmentIndex].block;
+    emphasizedBlock2 = emphasizedBlock1;
+    emphasizedBlock1 = block;
 }
 
 

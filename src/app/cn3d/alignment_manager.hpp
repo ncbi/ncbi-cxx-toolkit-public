@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/12 16:22:37  thiessen
+* working block split
+*
 * Revision 1.13  2000/10/12 02:14:32  thiessen
 * working block boundary editing
 *
@@ -163,6 +166,10 @@ public:
 
     // returns true if any boundary shift actually occurred
     bool MoveBlockBoundary(int columnFrom, int columnTo);
+
+    // splits a block such that alignmentIndex is the first column of the new block;
+    // returns false if no split occurred (e.g. if index is not inside aligned block)
+    bool SplitBlock(int alignmentIndex);
     
 private:
     ConservationColorer *conservationColorer;
@@ -180,11 +187,12 @@ private:
     typedef std::vector < BlockInfo > BlockMap;
     BlockMap blockMap;
 
+    bool CheckAlignedBlock(const Block *newBlock) const;
     Block * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
-    Block * GetBlockBefore(Block *block) const;
-    Block * GetBlockAfter(Block *block) const;
-    void InsertBlockBefore(Block *newBlock, Block *insertAt);
-    void InsertBlockAfter(Block *newBlock, Block *insertAt);
+    Block * GetBlockBefore(const Block *block) const;
+    Block * GetBlockAfter(const Block *block) const;
+    void InsertBlockBefore(Block *newBlock, const Block *insertAt);
+    void InsertBlockAfter(const Block *insertAt, Block *newBlock);
     void RemoveBlock(Block *block);
     
     eUnalignedJustification currentJustification;
@@ -197,6 +205,8 @@ private:
 
     // given a row and seqIndex, find block that contains that residue
     const Block * GetBlock(int row, int seqIndex) const;
+
+    const Block *emphasizedBlock1, *emphasizedBlock2;
 
 public:
     int NBlocks(void) const { return blocks.size(); }
@@ -214,7 +224,17 @@ public:
     bool GetSequenceAndIndexAt(int alignmentColumn, int row,
         const Sequence **sequence, int *index, bool *isAligned) const;
 
+    // called when user selects some part of a row
     void SelectedRange(int row, int from, int to) const;
+
+    // add an emphasis (not highlight) color to this block's background
+    void EmphasizeBlock(int alignmentIndex, int row);
+    void UnemphasizeBlocks(void)
+        { emphasizedBlock1 = emphasizedBlock2 = NULL; }
+    bool IsEmphasized(int alignmentIndex, int row) const
+		{ const Block *block = blockMap[alignmentIndex].block;
+		  return (block &&
+            (block == emphasizedBlock1 || block == emphasizedBlock2)); }
 };
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/12 16:22:45  thiessen
+* working block split
+*
 * Revision 1.17  2000/10/12 02:14:56  thiessen
 * working block boundary editing
 *
@@ -142,6 +145,7 @@ public:
 
         // edit menu
         MID_ENABLE_EDIT,
+        MID_SPLIT_BLOCK,
         MID_SYNC_STRUCS,
         MID_SYNC_STRUCS_ON,
 
@@ -178,7 +182,10 @@ public:
 
     bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
 
-    bool SyncStructures(void) { Command(MID_SYNC_STRUCS); }
+    bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }
+    void SplitBlockOff(void) { menuBar->Check(MID_SPLIT_BLOCK, false); }
+
+    void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
 };
 
@@ -211,8 +218,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu = new wxMenu;
     menu->Append(MID_ENABLE_EDIT, "&Enable Editor", noHelp, true);
     menu->AppendSeparator();
-    menu->Append(MID_DRAG_HORIZ, "Edit &Row", noHelp, true);
-    menu->Append(MID_SYNC_STRUCS, "&Sync Structure Colors");
+    menu->Append(MID_SPLIT_BLOCK, "&Split Block", noHelp, true);
+    menu->Append(MID_SYNC_STRUCS, "Sync Structure &Colors");
     menu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", noHelp, true);
     menuBar->Append(menu, "&Edit");
 
@@ -221,6 +228,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->Append(MID_SELECT_COLS, "Select &Columns", noHelp, true);
     menu->Append(MID_SELECT_ROWS, "Select &Rows", noHelp, true);
     menu->Append(MID_MOVE_ROW, "&Move Row", noHelp, true);
+    menu->Append(MID_DRAG_HORIZ, "&Horizontal Drag", noHelp, true);
     menuBar->Append(menu, "&Mouse Mode");
 
     menu = new wxMenu;
@@ -236,6 +244,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
     menuBar->Check(MID_SPLIT, true);
     viewerWidget->TitleAreaOff();
+    menuBar->Check(MID_SPLIT_BLOCK, false);
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
 
@@ -289,6 +298,12 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             }
             EnableEditorMenuItems(!editorOn);
             break;
+        case MID_SPLIT_BLOCK:
+            if (menuBar->IsChecked(MID_SPLIT_BLOCK))
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                SetCursor(wxNullCursor);
+            break;
         case MID_SYNC_STRUCS:
             viewer->RedrawAlignedMolecules();
             break;
@@ -300,9 +315,13 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
 void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
 {
     int i;
-    for (i=MID_SYNC_STRUCS; i<=MID_SYNC_STRUCS_ON; i++)
+    for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; i++)
         menuBar->Enable(i, enabled);
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
+    if (!enabled) {
+        menuBar->Check(MID_SPLIT_BLOCK, false);
+        SetCursor(wxNullCursor);
+    }
 }
 
 void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
@@ -374,18 +393,7 @@ public:
 
     bool GetCharacterTraitsAt(int column,
         char *character, Vector *color,
-        bool *drawBackground, wxColour *cellBackgroundColor) const
-    {
-        bool isHighlighted,
-			result = alignment->GetCharacterTraitsAt(column, row, character, color, &isHighlighted);
-        if (isHighlighted) {
-            *drawBackground = true;
-            *cellBackgroundColor = highlightColor;
-        } else {
-            *drawBackground = false;
-        }
-        return result;
-    }
+        bool *drawBackground, wxColour *cellBackgroundColor) const;
 
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequence, int *index) const
@@ -456,6 +464,24 @@ public:
     void SelectedRange(int from, int to) const { } // do nothing
 };
 
+
+bool DisplayRowFromAlignment::GetCharacterTraitsAt(int column,
+    char *character, Vector *color,
+    bool *drawBackground, wxColour *cellBackgroundColor) const
+{
+    bool isHighlighted,
+        result = alignment->GetCharacterTraitsAt(column, row, character, color, &isHighlighted);
+    
+    *drawBackground = true;
+    if (isHighlighted)
+        *cellBackgroundColor = highlightColor;
+    else if (alignment->IsEmphasized(column, row))
+        cellBackgroundColor->Set(128,200,128);
+    else
+        *drawBackground = false;
+
+    return result;
+}
 
 bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
     char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
@@ -584,7 +610,7 @@ public:
     
     // callbacks for ViewableAlignment
     void MouseOver(int column, int row) const;
-    void MouseDown(int column, int row, unsigned int controls);
+    bool MouseDown(int column, int row, unsigned int controls);
     void SelectedRectangle(int columnLeft, int rowTop, int columnRight, int rowBottom);
     void DraggedCell(int columnFrom, int rowFrom, int columnTo, int rowTo);
 };
@@ -746,13 +772,29 @@ void SequenceDisplay::MouseOver(int column, int row) const
     }
 }
 
-void SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
+bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 {
     TESTMSG("got MouseDown");
     controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
 
     if (!controlDown && column == -1)
         messenger->RemoveAllHighlights(true);
+
+    if (alignment && column >= 0) {
+        if ((*viewerWindow)->DoSplitBlock()) {
+            if (alignment->SplitBlock(column)) {
+                (*viewerWindow)->SplitBlockOff();
+                (*viewerWindow)->SetCursor(wxNullCursor);
+                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+            }
+            return false;
+        }
+//        alignment->EmphasizeBlock(column, row);
+//        messenger->PostRedrawSequenceViewers();
+//        return false;
+    }
+
+    return true;
 }
 
 void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop, 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/12 16:22:37  thiessen
+* working block split
+*
 * Revision 1.9  2000/10/05 18:34:35  thiessen
 * first working editing operation
 *
@@ -121,8 +124,9 @@ public:
 
     // this is called when the mouse-down event occurs (i.e., at the
     // beginning of selection), saying where the mouse was at the time and
-    // with what control keys (see eControlKeys above)
-    virtual void MouseDown(int column, int row, unsigned int controls) { }
+    // with what control keys (see eControlKeys above). If 'false' is returned,
+    // then no selection will ensue; if 'true', selection acts normally.
+    virtual bool MouseDown(int column, int row, unsigned int controls) { }
 
     // this is the callback when the the widget is in eSelect mode; it gives the
     // corners of the rectangle of cells selected.
