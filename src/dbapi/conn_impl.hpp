@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/11/27 17:19:49  kholodov
+* Added: Error output redirection to CToMultiExHandler object.
+*
 * Revision 1.9  2002/09/30 20:45:34  kholodov
 * Added: ForceSingle() method to enforce single connection used
 *
@@ -128,12 +131,24 @@ public:
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);
 
+    // If enabled, redirects all error messages 
+    // to CDB_MultiEx object (see below)
+    virtual void MsgToEx(bool v);
+
+    // Returns all error messages as a CDB_MultiEx object
+    virtual CDB_MultiEx* GetErrorAsEx();
+
+    // Returns all error messages as a single string
+    virtual string GetErrorInfo();
+
 protected:
     CConnection(class CDB_Connection *conn, 
                 CDataSource* ds);
     // Clone connection, if the original cmd structure is taken
     CConnection* GetAuxConn();
     // void DeleteConn(CConnection* conn);
+
+    class CToMultiExHandler* GetHandler();
 
 private:
     string m_database;
@@ -143,6 +158,8 @@ private:
     bool m_connUsed;
     unsigned int m_modeMask;
     bool m_forceSingle;
+    class CToMultiExHandler *m_multiExH;
+
 };
 
 //====================================================================

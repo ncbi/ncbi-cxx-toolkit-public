@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.18  2002/11/27 17:19:49  kholodov
+* Added: Error output redirection to CToMultiExHandler object.
+*
 * Revision 1.17  2002/10/03 18:50:00  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -102,13 +105,14 @@
 #include "cstmt_impl.hpp"
 #include "cursor_impl.hpp"
 #include "bulkinsert.hpp"
+#include "err_handler.hpp"
 
 BEGIN_NCBI_SCOPE
 
 // Implementation
 CConnection::CConnection(CDataSource* ds)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
-      m_modeMask(0), m_forceSingle(false)
+      m_modeMask(0), m_forceSingle(false), m_multiExH(0)
 {
     _TRACE("Default connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -116,7 +120,7 @@ CConnection::CConnection(CDataSource* ds)
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false),
-      m_modeMask(0), m_forceSingle(false)
+      m_modeMask(0), m_forceSingle(false), m_multiExH(0)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -318,11 +322,42 @@ CConnection* CConnection::GetAuxConn()
                << ", no aux connections necessary, using default...");
     }
 
-
-
     return conn;
 
 }
+
+void CConnection::MsgToEx(bool v) 
+{
+    if( !v ) {
+        // Clear the previous handlers if present
+        GetCDB_Connection()->PopMsgHandler(GetHandler());
+    }
+    else {
+        GetCDB_Connection()->PushMsgHandler(GetHandler());
+    }
+}
+
+CToMultiExHandler* CConnection::GetHandler()
+{
+    if(m_multiExH == 0 ) {
+        m_multiExH = new CToMultiExHandler;
+    }
+    return m_multiExH;
+}
+    
+CDB_MultiEx* CConnection::GetErrorAsEx()
+{
+    return GetHandler()->GetMultiEx();
+}
+
+string CConnection::GetErrorInfo()
+{
+    CNcbiOstrstream out;
+    CDB_UserHandler_Stream h(&out);
+    h.HandleIt(GetHandler()->GetMultiEx());
+    return CNcbiOstrstreamToString(out);
+}
+
 /*
 void CConnection::DeleteConn(CConnection* conn)
 {
