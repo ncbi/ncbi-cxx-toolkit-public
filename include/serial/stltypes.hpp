@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/07/10 19:01:00  vasilche
+* Avoid internal WorkShop C++ compiler error.
+*
 * Revision 1.44  2000/07/03 18:42:38  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -244,7 +247,8 @@ public:
         }
     TConstObjectPtr GetElementPtr(void) const
         {
-            return &*m_Iterator;
+            const typename Container::value_type& element = *m_Iterator;
+            return &element;
         }
 
 private:
