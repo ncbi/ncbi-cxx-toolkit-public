@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/08/14 17:02:00  ivanov
+* Changed tests for popup menu in connection with change means init menu.
+* Added second test for use menu in HTML templates.
+*
 * Revision 1.1  2001/07/23 21:50:33  vakatov
 * Initial revision
 *
@@ -38,13 +42,131 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbiargs.hpp>
 
-#include <html/html.hpp>
+#include <html/page.hpp>
 #include <html/jsmenu.hpp>
 
 
-
 USING_NCBI_SCOPE;
+
+
+
+/////////////////////////////////
+// Standart HTML test
+//
+
+static void Test_Html(void)
+{
+    LOG_POST("\nHTML test\n");
+
+    // Create HTML page skeleton with HEAD and BODY
+    CHTML_html* html = new CHTML_html;
+    CHTML_head* head = new CHTML_head;
+    CHTML_body* body = new CHTML_body;
+
+    html->AppendChild(head); 
+    html->AppendChild(body); 
+
+    // Create one menu
+    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
+
+    m1->AddItem("Red"  , "document.bgColor='red'");
+    m1->AddItem("White" , "document.bgColor='white'");
+    m1->AddSeparator();
+    m1->AddItem("Green", "document.bgColor='green'");
+    m1->SetAttribute(eHTML_PM_fontColor, "black");
+    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
+
+    // !!! We can add menu to BODY only!
+    body->AppendChild(m1);
+
+    // Create another menu
+    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
+
+    m2->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
+    m2->AddItem("Netscape", "top.location='http://www.netscape.com'");
+    m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
+    m2->SetAttribute(eHTML_PM_disableHide, "true");
+
+    body->AppendChild(m2);
+
+    // Add menus call
+    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(),
+                                   "Color Menu");
+    body->AppendChild(anchor1);
+
+    body->AppendChild(new CHTML_p(""));
+
+    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "URL Menu");
+    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
+    body->AppendChild(anchor2);
+
+    // Enable using popup menus (we can skip call this function)
+    // html->EnablePopupMenu();
+    
+    // Print in HTML format
+    html->Print(cout);
+    cout << endl << endl;
+}
+
+
+/////////////////////////////////
+// Template test
+//
+
+static void Test_Template(void)
+{
+    LOG_POST("\nTemplate test\n");
+
+    CHTMLPage page("JSMenu test page","template_jsmenu.html"); 
+    CNCBINode* view = new CNCBINode();
+
+    // Create one menu
+    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
+    m1->AddItem("Red"  , "document.bgColor='red'");
+    m1->AddItem("White" , "document.bgColor='white'");
+    m1->AddSeparator();
+    m1->AddItem("Green", "document.bgColor='green'");
+    m1->SetAttribute(eHTML_PM_fontColor, "black");
+    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
+
+    view->AppendChild(m1);
+
+    // Create another menu
+    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
+    m2->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
+    m2->AddItem("Netscape", "top.location='http://www.netscape.com'");
+    m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
+    m2->SetAttribute(eHTML_PM_disableHide, "true");
+
+    view->AppendChild(m2);
+
+    // Enable using popup menus (we can skip call this function)
+    // page.EnablePopupMenu();
+
+    // Add menus call
+    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(),
+                                   "Color Menu");
+    view->AppendChild(anchor1);
+
+    view->AppendChild(new CHTML_br());
+
+    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "URL Menu");
+    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
+    view->AppendChild(anchor2);
+
+    page.AddTagMap("VIEW", view);
+
+    // Print test result
+    page.Print(cout, CNCBINode::eHTML);
+    cout << endl << endl;
+}
+
+
+/////////////////////////////////
+// Test application
+//
 
 
 class CTestApplication : public CNcbiApplication
@@ -61,65 +183,41 @@ void CTestApplication::Init(void)
     SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
+
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Test JavaScript Menu");
+
+    // Describe the expected command-line arguments
+    arg_desc->AddPositional
+        ("feature", "HTML-specific feature to test",
+         CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("feature", &(*new CArgAllow_Strings, "html", "template"));
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+
 }
 
 
 int CTestApplication::Run(void)
 {
-    // Create HTML page skeleton with HEAD and BODY
-    CHTML_html* html = new CHTML_html;
-    CHTML_head* head = new CHTML_head;
-    CHTML_body* body = new CHTML_body;
+    // Get arguments
+    CArgs args = GetArgs();
 
-    // NOTE: the BODY will be added to the HTML automatically in
-    // InitPopupMenus().
-    html->AppendChild(head); 
-
-    // Create one menu
-    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
-
-    m1->AddItem("Red"  , "document.bgColor='red'");
-    m1->AddItem("White" , "document.bgColor='white'");
-    m1->AddSeparator();
-    m1->AddItem("Green", "document.bgColor='green'");
-
-    m1->SetAttribute(eHTML_PM_fontColor, "black");
-    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
-
-    // Create another menu
-    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
-
-    m2->AddItem("NCBI", "top.location='http://ncbi.nlm.nih.gov'");
-    m2->AddItem("Netscape", "top.location='http://www.netscape.com'");
-    m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
-
-    m2->SetAttribute(eHTML_PM_disableHide, "true");
-
-    // Append one paragraph
-    body->AppendChild(new CHTML_p("paragraph 1"));
-
-    // Add menus to the page
-    html->InitPopupMenus(*head, *body);
-    html->AddPopupMenu(*m1);
-    html->AddPopupMenu(*m2);
-
-    // Append another paragraph
-    body->AppendChild(new CHTML_p("paragraph 2"));
-
-    // Add menus call
-    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(),
-                                   "Color Menu");
-    body->AppendChild(anchor1);
-
-    body->AppendChild(new CHTML_p(""));
-
-    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "URL Menu");
-    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
-    body->AppendChild(anchor2);
-    
-    // Print in HTML format
-    html->Print(cout);
-    cout << endl << endl;
+    if (args["feature"].AsString() == "html") {
+        Test_Html();
+    }
+    else if (args["feature"].AsString() == "template") {
+        Test_Template();
+    }
+    else {
+        _TROUBLE;
+    }
 
     return 0;
 }
