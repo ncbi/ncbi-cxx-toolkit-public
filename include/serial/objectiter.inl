@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/09/09 18:09:37  grichenk
+* implemented GetChoiceObject()
+*
 * Revision 1.3  2001/05/17 14:58:40  lavr
 * Typos corrected
 *
@@ -793,6 +796,12 @@ CObjectInfoCV::CObjectInfoCV(const CObjectInfo& object,
                              TMemberIndex index)
     : CParent(object, index), m_Object(object)
 {
+}
+
+inline
+const CObjectInfo& CObjectInfoCV::GetChoiceObject(void) const
+{
+    return m_Object;
 }
 
 inline
