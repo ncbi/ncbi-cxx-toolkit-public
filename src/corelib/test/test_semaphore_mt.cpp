@@ -31,14 +31,15 @@
  *
  *   the test is a very simple producer/consumer model
  *   one thread produces "items" (increments integer counter)
- *	next thread consumes the same amount of items (decrements integer counter)
- *	"Content" semaphore is used to notify consumers of how many items are
+ *	 next thread consumes the same amount of items (decrements integer counter)
+ *	 "Content" semaphore is used to notify consumers of how many items are
  *   available.
  *
  */
 
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <corelib/test_mt.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -60,11 +61,9 @@ protected:
 
 private:
     // produce Num items
-    void Produce( int Num);
+    void Produce(int Num);
     // consume Num items
-    void Consume( int Num);
-    // sleep for, like, "msec" milliseconds
-    void Sleep(unsigned int msec);
+    void Consume(int Num);
 
     static CSemaphore s_semContent, s_semStorage;
     static int s_Counter, s_Id;
@@ -75,6 +74,7 @@ private:
 
 CSemaphore CTestSemaphoreApp::s_semContent(0,10);
 CSemaphore CTestSemaphoreApp::s_semStorage(1,1);
+
 int CTestSemaphoreApp::s_Counter=0;
 int CTestSemaphoreApp::s_Id=0;
 
@@ -82,7 +82,7 @@ int CTestSemaphoreApp::s_Id=0;
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION
 
-void CTestSemaphoreApp::Produce( int Num)
+void CTestSemaphoreApp::Produce(int Num)
 {
     // Storage semaphore acts as a kind of mutex - its only purpose
     // is to protect Counter
@@ -97,17 +97,18 @@ void CTestSemaphoreApp::Produce( int Num)
     // to consume something
     for (bool Posted=false; !Posted;) {
         try {
-            s_semContent.Post( Num);
+            s_semContent.Post(Num);
             Posted = true;
         }
         catch (exception& e) {
             NcbiCout << e.what() << NcbiEndl;
-            Sleep(500);
+            SleepMilliSec(500);
         }
     }
 }
 
-void CTestSemaphoreApp::Consume( int Num)
+
+void CTestSemaphoreApp::Consume(int Num)
 {
     for (int i = Num; i > 0; --i ) {
         // we can only consume one by one
@@ -116,23 +117,8 @@ void CTestSemaphoreApp::Consume( int Num)
         --s_Counter;
         NcbiCout << "-1=" << s_Counter << NcbiEndl;
         s_semStorage.Post();
-        Sleep(500);
+        SleepMilliSec(500);
     }
-}
-
-
-void CTestSemaphoreApp::Sleep(unsigned int msec)
-{
-#if defined(NCBI_OS_MSWIN)
-        ::Sleep(msec);
-#else
-        //        ::sleep(1);
-        char cBuf[32];
-        for (Uint8 j = msec * 100; j > 0; --j) {
-            strcpy(cBuf, "blahblah");
-            strcpy(cBuf, "");
-        }
-#endif
 }
 
 
@@ -150,14 +136,12 @@ bool CTestSemaphoreApp::Thread_Run(int idx)
 
     xncbi_SetValidateAction(eValidate_Throw);
 
-    if ( idx % 2 != 1)
-        {
-            Consume( (idx/2)%3 + 1);
-        }
-    else
-        {
-            Produce( (idx/2)%3 + 1);
-        }
+    if ( idx % 2 != 1) {
+        Consume((idx/2)%3 + 1);
+    } 
+    else {
+        Produce((idx/2)%3 + 1);
+    }
     return true;
 }
 
@@ -170,7 +154,7 @@ bool CTestSemaphoreApp::TestApp_Init(void)
         << NStr::IntToString(s_NumThreads)
         << " threads"
         << NcbiEndl;
-    if (s_NumThreads%2 != 0) {
+    if ( s_NumThreads%2 != 0 ) {
         throw runtime_error("The number of threads MUST be even");
     }
     return true;
@@ -185,10 +169,10 @@ bool CTestSemaphoreApp::TestApp_Exit(void)
         << " counter = " << s_Counter
         << NcbiEndl;
     // storage must be available
-    assert( s_semStorage.TryWait());
+    assert( s_semStorage.TryWait() );
     // content must be empty
-    assert( !s_semContent.TryWait());
-	assert( s_Counter == 0);
+    assert( !s_semContent.TryWait() );
+	assert( s_Counter == 0 );
     return true;
 }
 
@@ -207,6 +191,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2003/05/14 16:26:23  ivanov
+ * Changed Sleep() to SleepMilliSec()
+ *
  * Revision 6.7  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *
