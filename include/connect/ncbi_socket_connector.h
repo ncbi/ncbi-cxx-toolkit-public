@@ -107,8 +107,6 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
 extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 (SOCK         sock,      /* socket object                                    */
  unsigned int max_try,   /* max.# of tries to reconnect if disconnected      */
- const void*  init_data, /* initial data to send right away down to link     */
- size_t       init_size, /* size of data to send                             */
  TSCC_Flags   flags      /* bitwise OR of additional flags: see above        */
  );
 
@@ -124,6 +122,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/05/14 03:48:51  lavr
+ * SOCKET_CreateConnectorOnTopEx(): init_data and init_size parameters removed
+ *
  * Revision 6.8  2003/04/09 19:05:57  siyan
  * Added doxygen support
  *
