@@ -290,7 +290,7 @@ int CTextFsm<MatchType>::GetNextState(const CState& from, char letter) const {
 template <typename MatchType>
 int CTextFsm<MatchType>::GetNextState(int state, char letter) const
 {
-    if ( state < 0 || state >= m_States.size() ) {
+    if ( state < 0 || size_t(state) >= m_States.size() ) {
         return eFailState;
     }
     
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/01/22 20:03:56  vasilche
+* Removed compiler warning.
+*
 * Revision 1.7  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *
