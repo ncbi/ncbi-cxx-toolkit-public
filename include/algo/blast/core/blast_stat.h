@@ -130,9 +130,10 @@ typedef struct BLAST_ScoreFreq {
 
 #define BLAST_MATRIX_SIZE 32
 
+/* Remove me */
 typedef struct BLASTMatrixStructure {
     Int4 *matrix[BLAST_MATRIX_SIZE];
-    Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE];
+    Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE]; /* not used */
 } BLASTMatrixStructure;
 
 typedef struct BlastScoreBlk {
@@ -173,20 +174,6 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int4    	query_length;   /* the length of the query. */
 	Int8	effective_search_sp;	/* product of above two */
 } BlastScoreBlk;
-
-/* Used for communicating between BLAST and other applications. */
-typedef struct BLAST_Matrix {
-    Boolean is_prot;	/* Matrix is for proteins */
-    char* name;		/* Name of Matrix (i.e., BLOSUM62). */
-    /* Position-specific BLAST rows and columns are different, otherwise they are the
-    alphabet length. */
-    Int4	rows,		/* query length + 1 for PSSM. */
-        columns;	/* alphabet size in all cases (26). */
-    Int4** matrix;
-    double ** posFreqs;
-    double karlinK;
-    Int4** original_matrix;
-} BLAST_Matrix;
 
 typedef struct BLAST_ResComp {
     Uint1	alphabet_code;
