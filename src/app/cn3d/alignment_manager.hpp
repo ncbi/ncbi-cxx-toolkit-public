@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/08 20:16:10  thiessen
+* working dynamic alignment views
+*
 * Revision 1.3  2000/08/30 23:45:36  thiessen
 * working alignment display
 *
@@ -50,6 +53,8 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include "cn3d/vector_math.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -57,7 +62,7 @@ class Sequence;
 class SequenceSet;
 class AlignmentSet;
 class MasterSlaveAlignment;
-class MultipleAlignment;
+class BlockMultipleAlignment;
 class SequenceViewer;
 
 class AlignmentManager
@@ -73,40 +78,143 @@ public:
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
-    const MultipleAlignment * CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
+    const BlockMultipleAlignment *
+		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
 
 private:
     // for now, will own the current multiple alignment
-    MultipleAlignment *currentMultipleAlignment;
+    BlockMultipleAlignment *currentMultipleAlignment;
 
     SequenceViewer * const *sequenceViewer;
 
 public:
-    const MultipleAlignment * GetCurrentMultipleAlignment(void) const
+    const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const
         { return currentMultipleAlignment; }
 };
 
-class MultipleAlignment
+
+///// The stuff below makes up the implementation of a multiple alignment /////
+
+class Block; // defined below
+
+class BlockMultipleAlignment
 {
 public:
-    typedef std::list < const Sequence * > SequenceList;
-    MultipleAlignment(const SequenceList *sequenceList);
+    typedef std::vector < const Sequence * > SequenceList;
+    BlockMultipleAlignment(const SequenceList *sequenceList);
+
+    ~BlockMultipleAlignment(void);
+
+    const SequenceList *sequences;
+
+    // add a new aligned block - will be "owned" and deallocated by BlockMultipleAlignment
+    bool AddAlignedBlockAtEnd(Block *newBlock);
+
+    // should be called after all aligned blocks have been added; fills out
+    // unaligned blocks inbetween aligned blocks (and at ends). Also sets length,
+    // and fills out the BlockMap for mapping alignment column -> block+column.
+    bool AddUnalignedBlocksAndIndex(void);
+
+    // will be used to control padding of unaligned blocks
+    enum eUnalignedJustification {
+        eLeft,
+        eRight,
+        eCenter,
+        eSplit
+    };    
+    
+private:
+    typedef std::list < Block * > BlockList;
+    BlockList blocks;
+    int totalWidth;
+
+    typedef struct {
+        const Block *block;
+        int blockColumn;
+    } BlockInfo;
+    typedef std::vector < BlockInfo > BlockMap;
+    BlockMap blockMap;
+
+    Block * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
+
+    eUnalignedJustification currentJustification;
+
+public:
+    int NBlocks(void) const { return blocks.size(); }
+    int NSequences(void) const { return sequences->size(); }
+    int AlignmentWidth(void) const { return totalWidth; }
+
+    void SetUnalignedJustification(eUnalignedJustification j) { currentJustification = j; }
+
+    // character query interface - "column" must be in alignment range
+    // 0 ... totalWidth-1
+    bool GetCharacterTraitsAt(int alignmentColumn, int row,
+        char *character, Vector *color, bool *isHighlighted) const;
+
+    // get sequence and index (if any) at given position, and whether that residue is aligned
+    bool GetSequenceAndIndexAt(int alignmentColumn, int row,
+        const Sequence **sequence, int *index, bool *isAligned) const;
+};
+
+// base class for Block - BlockMultipleAlignment is made up of a list of these
+class Block
+{
+public:
+    const bool isAligned;
+    int width;
 
     typedef struct {
         int from, to;
     } Range;
 
-    typedef std::vector < Range > Block;
-    typedef std::list < Block > BlockList;
-    BlockList blocks;
+    // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
+    const Range * GetRangeOfRow(int row) const { return &(ranges[row]); }
+
+    // set range
+    void SetRangeOfRow(int row, int from, int to)
+    {
+        ranges[row].from = from;
+        ranges[row].to = to;
+    }
+
+    // get sequence index for a column, which must be in block range (0 ... width-1)
+    virtual int GetIndexAt(int blockColumn, int row,
+        BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
+
+    typedef std::vector < const Sequence * > SequenceList;
+
+protected:
+    typedef std::vector < Range > RangeList;
+    RangeList ranges;
+
     const SequenceList *sequences;
 
-    bool AddBlockAtEnd(const Block& newBlock);
+public:
+    Block(const SequenceList *sequenceList, bool isAlignedBlock) :
+        isAligned(isAlignedBlock), sequences(sequenceList), ranges(sequenceList->size()) { }
 
-    int NBlocks(void) const { return blocks.size(); }
-    int NSequences(void) const { return sequences->size(); }
+    int NSequences(void) const { return ranges.size(); }
+};
 
-    ~MultipleAlignment(void) { if (sequences) delete sequences; }
+// a gapless aligned block; width must be >= 1
+class UngappedAlignedBlock : public Block
+{
+public:
+    UngappedAlignedBlock(const SequenceList *sequenceList) : Block(sequenceList, true) { }
+    int GetIndexAt(int blockColumn, int row,
+        BlockMultipleAlignment::eUnalignedJustification justification) const
+            { return (GetRangeOfRow(row)->from + blockColumn); }
+};
+
+// an unaligned block; max width of block must be >=1, but range over any given
+// sequence can be length 0 (but not <0). If length 0, "to" is the residue after
+// the block, and "from" (=to - 1) is the residue before.
+class UnalignedBlock : public Block
+{
+public:
+    UnalignedBlock(const SequenceList *sequenceList) : Block(sequenceList, false) { }
+    int GetIndexAt(int blockColumn, int row,
+        BlockMultipleAlignment::eUnalignedJustification justification) const;
 };
 
 END_SCOPE(Cn3D)

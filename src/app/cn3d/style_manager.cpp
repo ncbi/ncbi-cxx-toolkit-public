@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
 * Revision 1.11  2000/08/24 23:40:19  thiessen
 * add 'atomic ion' labels
 *
@@ -106,7 +109,7 @@ void StyleSettings::SetToSecondaryStructure(void)
     connections.isOn = true;
     connections.style = eTubes;
     connections.colorScheme = eUserSelect;
-    connections.userColor = Vector(1,1,0); // yellow
+    connections.userColor.Set(1,1,0); // yellow
     
     helixObjects.isOn = strandObjects.isOn = true;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -127,7 +130,7 @@ void StyleSettings::SetToSecondaryStructure(void)
     tubeRadius = 0.3;
     tubeWormRadius = 0.3;
 
-    backgroundColor = Vector(0,0,0);
+    backgroundColor.Set(0,0,0);
 }
 
 void StyleSettings::SetToWireframe(void)
@@ -151,7 +154,7 @@ void StyleSettings::SetToWireframe(void)
     connections.isOn = true;
     connections.style = eWire;
     connections.colorScheme = eUserSelect;
-    connections.userColor = Vector(1,1,0); // yellow
+    connections.userColor.Set(1,1,0); // yellow
     
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -172,7 +175,7 @@ void StyleSettings::SetToWireframe(void)
     tubeRadius = 0.3;
     tubeWormRadius = 0.3;
 
-    backgroundColor = Vector(0,0,0);
+    backgroundColor.Set(0,0,0);
 }
 
 // check for inconsistencies in style settings - checks just globalStyle for now,
@@ -342,7 +345,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     // determine color
     if (object == highlightObject && molecule->id == highlightMoleculeID &&
         residue->id == highlightResidueID)
-        atomStyle->color = Vector(1,1,0); // highlight color
+        atomStyle->color.Set(1,1,0); // highlight color
     else {
 
         switch (backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme) {
@@ -354,13 +357,13 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             case StyleSettings::eObject:
                 // should actually be a color cycle...
                 if (object->IsMaster())
-                    atomStyle->color = Vector(1,0,1);
+                    atomStyle->color.Set(1,0,1);
                 else
-                    atomStyle->color = Vector(0,0,1);
+                    atomStyle->color.Set(0,0,1);
                 break;
             case StyleSettings::eSecondaryStructure:
                 // needs to be done right, once residue->secondary structure lookup is in place
-                atomStyle->color = Vector(0,1,1);
+                atomStyle->color.Set(0,1,1);
                 break;
             case StyleSettings::eUserSelect:
                 if (backboneStyle)
@@ -605,9 +608,9 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
         case StyleSettings::eObject:
             // should actually be a color cycle...
             if (object->IsMaster())
-                objectStyle->color = Vector(1,0,1);
+                objectStyle->color.Set(1,0,1);
             else
-                objectStyle->color = Vector(0,0,1);
+                objectStyle->color.Set(0,0,1);
             break;
         case StyleSettings::eSecondaryStructure:
             // set by caller
@@ -643,7 +646,7 @@ bool StyleManager::GetHelixStyle(const StructureObject *object,
         helixStyle->arrowTipWidthProportion = 0.4;
     }
     if (settings.helixObjects.colorScheme == StyleSettings::eSecondaryStructure)
-        helixStyle->color = Vector(0,1,0);
+        helixStyle->color.Set(0,1,0);
 
     return true;
 }
@@ -671,7 +674,7 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
         strandStyle->arrowBaseWidthProportion = 1.6;
     }
     if (settings.strandObjects.colorScheme == StyleSettings::eSecondaryStructure)
-            strandStyle->color = Vector(.7,.7,0);
+            strandStyle->color.Set(.7,.7,0);
 
     return true;
 }

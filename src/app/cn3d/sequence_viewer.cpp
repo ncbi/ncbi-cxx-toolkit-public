@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
 * Revision 1.4  2000/09/07 17:37:35  thiessen
 * minor fixes
 *
@@ -64,38 +67,133 @@ BEGIN_SCOPE(Cn3D)
 
 class SequenceViewerWindow;
 
-// this is the class that holds the sequences/alignment formatted for display -
-// the equivalent of DDV's ParaG. 
+class DisplayRow
+{
+public:
+    virtual int Size() const = 0;
+    virtual bool GetCharacterTraitsAt(int column,
+        char *character, Vector *color, bool *isHighlighted) const = 0;
+    virtual bool GetSequenceAndIndexAt(int column,
+        const Sequence **sequence, int *index) const = 0;
+};
+
+class DisplayRowFromAlignment : public DisplayRow
+{
+public:
+    const int row;
+    const BlockMultipleAlignment * const alignment;
+
+    DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) : row(r), alignment(a) { }
+
+    int Size() const { return alignment->AlignmentWidth(); }
+
+    bool GetCharacterTraitsAt(int column,
+        char *character, Vector *color, bool *isHighlighted) const
+    {
+        return alignment->GetCharacterTraitsAt(column, row, character, color, isHighlighted);
+    }
+
+    bool GetSequenceAndIndexAt(int column,
+        const Sequence **sequence, int *index) const
+    {
+		bool ignore;
+        return alignment->GetSequenceAndIndexAt(column, row, sequence, index, &ignore);
+    }
+};
+
+class DisplayRowFromSequence : public DisplayRow
+{
+public:
+    const Sequence * const sequence;
+
+    DisplayRowFromSequence(const Sequence *s) : sequence(s) { }
+
+    int Size() const { return sequence->sequenceString.size(); }
+    
+    bool GetCharacterTraitsAt(int column,
+        char *character, Vector *color, bool *isHighlighted) const;
+
+    bool GetSequenceAndIndexAt(int column,
+        const Sequence **sequenceHandle, int *index) const;
+};
+
+bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
+    char *character, Vector *color, bool *isHighlighted) const
+{    
+    if (column >= sequence->sequenceString.size())
+        return false;
+
+    *character = tolower(sequence->sequenceString[column]);
+    if (sequence->molecule)
+        *color = sequence->molecule->GetResidueColor(column);
+    else
+        color->Set(0,0,0);
+    *isHighlighted = false;
+    return true;
+}
+
+bool DisplayRowFromSequence::GetSequenceAndIndexAt(int column,
+    const Sequence **sequenceHandle, int *index) const
+{
+    if (column >= sequence->sequenceString.size())
+        return false;
+
+    *sequenceHandle = sequence;
+    *index = column;
+    return true;
+}
+
+class DisplayRowFromString : public DisplayRow
+{
+public:
+    const std::string theString;
+    const Vector stringColor;
+
+    DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5)) : 
+        theString(s), stringColor(color) { }
+
+    int Size() const { return theString.size(); }
+    
+    bool GetCharacterTraitsAt(int column,
+        char *character, Vector *color, bool *isHighlighted) const;
+
+    bool GetSequenceAndIndexAt(int column,
+        const Sequence **sequenceHandle, int *index) const { return false; }
+};
+
+bool DisplayRowFromString::GetCharacterTraitsAt(int column,
+    char *character, Vector *color, bool *isHighlighted) const
+{
+    if (column >= theString.size()) return false;
+
+    *character = theString[column];
+    *color = stringColor;
+    *isHighlighted = false;
+    return true;
+}
+
+// this is the class that interfaces between the alignment viewer and the underlying data. 
 class SequenceDisplay : public ViewableAlignment
 {
 public:
     SequenceDisplay(SequenceViewerWindow * const *parentViewer);
     ~SequenceDisplay(void);
 
-    // each Cell is a character to display, and an index into the sequence;
-    // we could just look up the character from the index, but it's more
-    // efficient just to set it statically, as characters don't change once
-    // the display is created. (Color does change, so that will be looked up
-    // dynamically.) The index must be -1 if this isn't a sequence cell (e.g.
-    // a separator, ruler, gap, identifier, etc.).
-    typedef struct {
-        char character;
-        int index;
-    } Cell;
-    typedef std::vector < Cell > RowOfCells;
-
-    // add a (pre-constructed) RowOfCells to this display. The row passed in will
-    // be "owned" by the SequenceDisplay, which will handle its deconstuction.
-    void AddRow(const Sequence *sequence, RowOfCells *row);
+    // these functions add a row to the display, from various sources
+    void AddRowFromAlignment(int row, const BlockMultipleAlignment *fromAlignment);
+    void AddRowFromSequence(const Sequence *sequence);
+    void AddRowFromString(const std::string& anyString);
 
 private:
-    typedef std::vector < const Sequence * > SequenceVector;
-    SequenceVector sequences;
 
-    typedef std::vector < RowOfCells * > RowList;
-    RowList rows;
+    void AddRow(DisplayRow *row);
+
+    typedef std::vector < DisplayRow * > RowVector;
+    RowVector rows;
 
     int maxRowWidth;
+
+    const BlockMultipleAlignment *alignment;
 
     SequenceViewerWindow * const *viewerWindow;
 
@@ -181,168 +279,13 @@ void SequenceViewer::NewAlignment(const ViewableAlignment *display)
     viewerWindow->NewAlignment(display);
 }
 
-static inline int RangeLength(const MultipleAlignment::Range& range)
-{
-    return (range.to - range.from + 1);
-}
-
-static const char UNALIGNED_GAP_CHAR = '~';
-
-static void AddRightJustifiedUAR(SequenceDisplay::RowOfCells *row, int startAddingAt, 
-    int length, const MultipleAlignment::Range& range, const Sequence *seq)
-{
-    int i, rangeLength = RangeLength(range);
-    int padLength = length - rangeLength;
-    for (i=0; i<padLength; i++) {
-        row->at(startAddingAt + i).character = UNALIGNED_GAP_CHAR;
-        row->at(startAddingAt + i).index = -1;
-    }
-    startAddingAt += padLength;
-    for (i=0; i<rangeLength; i++) {
-        row->at(startAddingAt + i).character = tolower(seq->sequenceString[range.from + i]);
-        row->at(startAddingAt + i).index = range.from + i;
-    }
-}
-
-static void AddLeftJustifiedUAR(SequenceDisplay::RowOfCells *row, int startAddingAt, 
-    int length, const MultipleAlignment::Range& range, const Sequence *seq)
-{
-    int i, rangeLength = RangeLength(range);
-    int padLength = length - rangeLength;
-    for (i=0; i<rangeLength; i++) {
-        row->at(startAddingAt + i).character = tolower(seq->sequenceString[range.from + i]);
-        row->at(startAddingAt + i).index = range.from + i;
-    }
-    startAddingAt += rangeLength;
-    for (i=0; i<padLength; i++) {
-        row->at(startAddingAt + i).character = UNALIGNED_GAP_CHAR;
-        row->at(startAddingAt + i).index = -1;
-    }
-}
-
-void SequenceViewer::DisplayAlignment(const MultipleAlignment *multiple)
+void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
 {
     if (display) delete display;
     display = new SequenceDisplay(&viewerWindow);
-
-    SequenceDisplay::RowOfCells *row;
-
-    typedef std::list < MultipleAlignment::Range > UnalignedRegionList;
-    typedef std::list < UnalignedRegionList > UnalignedRegionLists;
-    UnalignedRegionLists URs;
-    typedef std::vector < int > MaxUnalignedLengths;
-    MaxUnalignedLengths ULs(multiple->NBlocks() + 1, 0);
-
-    // for each sequence, get the unaligned residues between each block (and at ends).
-    // Also keep track of the maximum length of each unaligned region, across
-    // all sequences, for padding with unaligned gaps.
-    SequenceList::const_iterator s, se = multiple->sequences->end();
-    MultipleAlignment::BlockList::const_iterator b, be = multiple->blocks.end(), bp1;
-    int i = 0, length, j;
-    for (s=multiple->sequences->begin(); s!=se; s++, i++) {
-
-        // check for null-alignment
-        if (multiple->NBlocks() == 0) {
-            row = new SequenceDisplay::RowOfCells((*s)->Length());
-            for (j=0; j < (*s)->Length(); j++) {
-                row->at(j).character = tolower((*s)->sequenceString[j]);
-                row->at(j).index = j;
-            }
-            display->AddRow(*s, row);
-        }
-
-        // real alignment
-        else {
-            URs.resize(URs.size() + 1);
-            UnalignedRegionList& UR = URs.back();
-            j = 0;
-
-            for (b=multiple->blocks.begin(); b!=be; b++) {
-                bp1 = b; bp1++;
-
-                // left tail
-                if (b == multiple->blocks.begin()) {
-                    length = b->at(i).from;
-                    UR.resize(UR.size() + 1);
-                    UR.back().from = 0;
-                    UR.back().to = length - 1;
-                    if (length > ULs[j]) ULs[j] = length;
-                    j++;
-                }
-
-                // right tail
-                if (bp1 == multiple->blocks.end()) {
-                    length = (*s)->sequenceString.size() - 1 - b->at(i).to;
-                    UR.resize(UR.size() + 1);
-                    UR.back().from = b->at(i).to + 1;
-                    UR.back().to = UR.back().from + length - 1;
-                    if (length > ULs[j]) ULs[j] = length;
-                    break;
-                }
-
-                // between blocks
-                else {
-                    length = bp1->at(i).from - b->at(i).to - 1;
-                    UR.resize(UR.size() + 1);
-                    UR.back().from = b->at(i).to + 1;
-                    UR.back().to = UR.back().from + length - 1;
-                    if (length > ULs[j]) ULs[j] = length;
-                    j++;
-                }
-            }
-        }
-    }
-
-    // now we have all the info needed to create padded alignment strings
-    if (multiple->NBlocks() > 0) {
-
-        // calculate total alignment length
-        int alignmentLength = 0;
-        for (b=multiple->blocks.begin(), i=0; i<multiple->NBlocks(); b++, i++) {
-            alignmentLength += ULs[i] + RangeLength(b->front());
-        }
-        alignmentLength += ULs[i]; // right tail
-
-        // create display row for each sequence
-        UnalignedRegionLists::const_iterator URs_i = URs.begin();
-        for (i=0, s=multiple->sequences->begin(); s!=se; s++, URs_i++, i++) {
-            UnalignedRegionList::const_iterator UR_i = URs_i->begin();
-            MaxUnalignedLengths::const_iterator UL_i = ULs.begin();
-
-            // allocate new display row
-            row = new SequenceDisplay::RowOfCells(alignmentLength);
-
-            int startAddingAt = 0, blockSize;
-            for (b=multiple->blocks.begin(); b!=be; b++, UR_i++, UL_i++) {
-
-                // add left tail
-                if (b == multiple->blocks.begin()) { // always right-justified for left tail
-                    AddRightJustifiedUAR(row, 0, *UL_i, *UR_i, *s);
-                }
-                // add unaligned region to the left of the current block
-                else {
-                    // should eventually have dynamic justification choice here...
-                    AddRightJustifiedUAR(row, startAddingAt, *UL_i, *UR_i, *s);
-                }
-                startAddingAt += *UL_i;
-
-                // add block
-                blockSize = RangeLength(b->front());
-                for (j=0; j<blockSize; j++) {
-                    row->at(startAddingAt + j).character =
-                        toupper((*s)->sequenceString[b->at(i).from + j]);
-                    row->at(startAddingAt + j).index = b->at(i).from + j;
-                }
-                startAddingAt += blockSize;
-            }
-
-            // add right tail
-            AddLeftJustifiedUAR(row, startAddingAt, *UL_i, *UR_i, *s);
-
-            display->AddRow(*s, row);
-        }
-        TESTMSG("alignment display size: " << row->size() << 'x' << multiple->sequences->size());
-    }
+    
+    for (int row=0; row<multiple->NSequences(); row++)
+        display->AddRowFromAlignment(row, multiple);
 
     NewAlignment(display);
 }
@@ -352,19 +295,11 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
     if (display) delete display;
     display = new SequenceDisplay(&viewerWindow);
 
-    // populate each line of the display with one sequence - in lower case to
-    // emphasize that they're unaligned
+    // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
-    SequenceDisplay::RowOfCells *row;
-    int i;
     for (s=sequenceList->begin(); s!=se; s++) {
-        if (s != sequenceList->begin()) display->AddRow(NULL, NULL); // put blank lines inbetween
-        row = new SequenceDisplay::RowOfCells((*s)->Length());
-        for (i=0; i < (*s)->Length(); i++) {
-            row->at(i).character = tolower((*s)->sequenceString[i]);
-            row->at(i).index = i;
-        }
-        display->AddRow(*s, row);
+        if (s != sequenceList->begin()) display->AddRowFromString("");
+        display->AddRowFromSequence(*s);
     }
 
     NewAlignment(display);
@@ -372,7 +307,7 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 
 
 SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow) : 
-    maxRowWidth(0), viewerWindow(parentViewerWindow)
+    maxRowWidth(0), viewerWindow(parentViewerWindow), alignment(NULL)
 {
 }
 
@@ -381,41 +316,61 @@ SequenceDisplay::~SequenceDisplay(void)
     for (int i=0; i<rows.size(); i++) delete rows[i];
 }
 
-void SequenceDisplay::AddRow(const Sequence *sequence, RowOfCells *row)
+void SequenceDisplay::AddRow(DisplayRow *row)
 {
-    sequences.push_back(sequence);
+    rows.push_back(row);
+    if (row->Size() > maxRowWidth) maxRowWidth = row->Size();
+}
 
-    rows.resize(rows.size() + 1);
-    rows.back() = row;
+void SequenceDisplay::AddRowFromAlignment(int row, const BlockMultipleAlignment *fromAlignment)
+{
+    if (!fromAlignment || row < 0 || row >= fromAlignment->NSequences() ||
+        (alignment && alignment != fromAlignment)) {
+        ERR_POST(Error << "SequenceDisplay::AddRowFromAlignment() failed");
+        return;
+    }
 
-    if (row && row->size() > maxRowWidth) maxRowWidth = row->size();
+    AddRow(new DisplayRowFromAlignment(row, fromAlignment));
+}
+
+void SequenceDisplay::AddRowFromSequence(const Sequence *sequence)
+{
+    if (!sequence) {
+        ERR_POST(Error << "SequenceDisplay::AddRowFromSequence() failed");
+        return;
+    }
+
+    AddRow(new DisplayRowFromSequence(sequence));
+}
+
+void SequenceDisplay::AddRowFromString(const std::string& anyString)
+{
+    AddRow(new DisplayRowFromString(anyString));
 }
 
 bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
         char *character, wxColour *color, bool *isHighlighted) const
 {
-    const RowOfCells *cells = rows[row];
-    if (!cells || column >= cells->size()) return false;
-
-    // set character
-    const Cell& cell = cells->at(column);
-    *character = cell.character;
-
-    // set color
-    const Sequence *seq = sequences[row];
-    if (seq && seq->molecule && cell.index >= 0) {
-        Vector colorVec = seq->molecule->GetResidueColor(cell.index);
-        color->Set(
-            static_cast<unsigned char>((colorVec[0] + 0.000001) * 255),
-            static_cast<unsigned char>((colorVec[1] + 0.000001) * 255),
-            static_cast<unsigned char>((colorVec[2] + 0.000001) * 255)
-        );
-    } else {
-        color->Set(0.5, 0.5, 0.5); // gray
+    if (row < 0 || row > rows.size()) {
+        ERR_POST(Warning << "SequenceDisplay::GetCharacterTraitsAt() - row out of range");
+        return false;
     }
 
-    // set highlighting
-    *isHighlighted = false;
+    const DisplayRow *displayRow = rows[row];
+
+    if (column >= displayRow->Size())
+        return false;
+
+    Vector colorVec;
+    if (!displayRow->GetCharacterTraitsAt(column, character, &colorVec, isHighlighted))
+        return false;
+
+    // convert vector color to wxColour
+    color->Set(
+        static_cast<unsigned char>((colorVec[0] + 0.000001) * 255),
+        static_cast<unsigned char>((colorVec[1] + 0.000001) * 255),
+        static_cast<unsigned char>((colorVec[2] + 0.000001) * 255)
+    );
 
     return true;
 }
@@ -424,15 +379,24 @@ void SequenceDisplay::MouseOver(int column, int row) const
 {
     if (*viewerWindow) {
         wxString message;
-
-        if (column != -1 && row != -1) {
-            const Sequence *seq = sequences[row];
-            if (seq) {
-                const RowOfCells *cells = rows[row];
-                if (cells && column < cells->size()) {
-                    const Cell& cell = cells->at(column);
-                    if (cell.index >= 0) {
-                        message.Printf("gi %i, loc %i", seq->gi, cell.index);
+        if (column >= 0 && row >= 0) {
+            const DisplayRow *displayRow = rows[row];
+            if (column < displayRow->Size()) {
+                const Sequence *sequence;
+                int index;
+                if (displayRow->GetSequenceAndIndexAt(column, &sequence, &index)) {
+                    if (index >= 0) {
+                        if (sequence->molecule) {
+                            wxString pdbID(sequence->molecule->pdbID.data(),
+                            sequence->molecule->pdbID.size());
+                            if (sequence->molecule->name.size() > 0 && sequence->molecule->name[0] != ' ')
+                                message.Printf("_%c, loc %i", sequence->molecule->name[0], index);
+                            else
+                                message.Printf(", loc %i", index);
+                            message = pdbID + message;
+                        } else {
+                            message.Printf("gi %i, loc %i", sequence->gi, index);
+                        }
                     }
                 }
             }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/08 20:16:10  thiessen
+* working dynamic alignment views
+*
 * Revision 1.2  2000/09/03 18:45:57  thiessen
 * working generalized sequence viewer
 *
@@ -53,7 +56,7 @@ class ViewableAlignment; // base class for alignments to attach to SequenceViewe
 BEGIN_SCOPE(Cn3D)
 
 class Sequence;
-class MultipleAlignment;
+class BlockMultipleAlignment;
 class SequenceViewerWindow;
 class SequenceDisplay;
 
@@ -70,7 +73,7 @@ public:
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;
     void DisplaySequences(const SequenceList *sequenceList);
-    void DisplayAlignment(const MultipleAlignment *multipleAlignment);
+    void DisplayAlignment(const BlockMultipleAlignment *multipleAlignment);
 
     void Refresh(void);
 

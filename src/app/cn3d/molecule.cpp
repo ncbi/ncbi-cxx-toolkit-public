@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
 * Revision 1.13  2000/09/03 18:46:48  thiessen
 * working generalized sequence viewer
 *
@@ -97,13 +100,15 @@ Molecule::Molecule(StructureBase *parent,
     StructureBase(parent), type(eOther), sequence(NULL),
     gi(NOT_SET), pdbChain(NOT_SET)
 {
-    // get ID and type
+    // get ID, name, and type
     id = graph.GetId().Get();
     CMolecule_graph::TDescr::const_iterator k, ke=graph.GetDescr().end();
     for (k=graph.GetDescr().begin(); k!=ke; k++) {
         if (k->GetObject().IsMolecule_type()) {
             type = static_cast<eType>(k->GetObject().GetMolecule_type());
-            break;
+        }
+        if (k->GetObject().IsName()) {
+            name = k->GetObject().GetName();
         }
     }
 

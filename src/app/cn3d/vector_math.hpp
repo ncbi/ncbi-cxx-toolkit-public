@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/08 20:16:10  thiessen
+* working dynamic alignment views
+*
 * Revision 1.9  2000/08/18 18:57:44  thiessen
 * added transparent spheres
 *
@@ -87,6 +90,10 @@ public:
     {
 		x=v.x; y=v.y; z=v.z;
         return *this;
+    }
+    void Set(double xs, double ys, double zs)
+    {
+        x=xs; y=ys; z=zs;
     }
     friend bool operator == (const Vector& a, const Vector& b)
     {

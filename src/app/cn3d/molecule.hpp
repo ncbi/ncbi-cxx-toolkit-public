@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/08 20:16:10  thiessen
+* working dynamic alignment views
+*
 * Revision 1.12  2000/09/03 18:45:56  thiessen
 * working generalized sequence viewer
 *
@@ -116,7 +119,7 @@ public:
     eType type;
     static const int NOT_SET;
     int id, gi, pdbChain;
-    std::string pdbID;
+    std::string name, pdbID;
 
     typedef std::map < int, const Residue * > ResidueMap;
     ResidueMap residues;

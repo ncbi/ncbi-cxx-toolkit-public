@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/09/08 20:16:55  thiessen
+* working dynamic alignment views
+*
 * Revision 1.25  2000/08/27 18:52:21  thiessen
 * extract sequence information
 *
@@ -961,9 +964,9 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             dQt.z = T[0] * MG[0][2] + T[1] * MG[1][2] + MG[2][2] /* *T[2] + T[3]*MG[3][2] */ ;
 
             /* use cross prod't of [1,0,0] x normal as horizontal */
-            H = Vector(0.0, -dQt.z, dQt.y);
+            H.Set(0.0, -dQt.z, dQt.y);
             if (H.length() < 0.000001) /* nearly colinear - use [1,0.1,0] instead */
-                H = Vector(0.1 * dQt.z, -dQt.z, dQt.y - 0.1 * dQt.x);
+                H.Set(0.1 * dQt.z, -dQt.z, dQt.y - 0.1 * dQt.x);
             H.normalize();
 
             /* and a vertical vector = normal x H */
