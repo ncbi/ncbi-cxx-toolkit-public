@@ -281,6 +281,38 @@ typedef struct SOCK_tag {
 } SOCK_struct;
 
 
+/*
+ * Please note the following implementation details:
+ *
+ * 1. w_buf is not used for stream sockets; it is only for keeping
+ *    pending message that is being built in datagram socket.
+ *
+ * 2. is_eof is used differently for stream and datagram sockets:
+ *    =1 for stream sockets means that read had hit EOF;
+ *    =1 for datagram sockets means that the message in w_buf is complete.
+ *
+ * 3. r_status keeps completion code of the last low-level read call;
+ *    however, eIO_Closed is there when the socket is shut down for reading;
+ *    see the table below for full details on stream sockets.
+ *
+ * 4. w_status keeps completion code of the last low-level write call;
+ *    however, eIO_Closed is there when the socket is shut down for writing.
+ *
+ * 5. The following table depicts r_status and is_eof combinations and their
+ *    meanings for stream sockets:
+ * -------------------------------+------------------------------------------
+ *              Field             |
+ * ---------------+---------------+                  Meaning
+ * sock->r_status | sock->is_eof  |           (stream sockets only)
+ * ---------------+---------------+------------------------------------------
+ * eIO_Closed     |       0       |  Socket shut down for reading
+ * eIO_Closed     |       1       |  Read severely failed
+ * not eIO_Closed |       0       |  Read completed with r_status error
+ * not eIO_Closed |       1       |  Read hit EOF and completed with r_status
+ * ---------------+---------------+------------------------------------------
+ */
+
+
 /* Globals:
  */
 
@@ -760,6 +792,7 @@ static EIO_Status s_Select(size_t                n,
                         FD_SET(polls[i].sock->sock, &w_fds);
                         if (polls[i].event == eIO_Write
                             && (polls[i].sock->type == eSOCK_Datagram ||
+                                polls[i].sock->w_status == eIO_Closed ||
                                 polls[i].sock->r_status == eIO_Closed ||
                                 polls[i].sock->is_eof                 ||
                                 polls[i].sock->r_on_w == eOff         ||
@@ -1251,19 +1284,20 @@ static EIO_Status s_WipeRBuf(SOCK sock)
 }
 
 
+/* For datagram sockets only! */
 static EIO_Status s_WipeWBuf(SOCK sock)
 {
     EIO_Status status;
     size_t     size = BUF_Size(sock->w_buf);
 
+    assert(sock->type == eSOCK_Datagram);
     if (size  &&  BUF_Read(sock->w_buf, 0, size) != size) {
         CORE_LOG(eLOG_Error, "[SOCK::s_WipeWBuf]  Cannot drop aux. data buf");
         assert(0);
         status = eIO_Unknown;
     } else
         status = eIO_Success;
-    if (sock->type == eSOCK_Datagram)
-        sock->is_eof = 0;
+    sock->is_eof = 0;
     return status;
 }
 
@@ -1274,9 +1308,9 @@ static EIO_Status s_Close(SOCK sock)
 {
     /* reset the auxiliary data buffers */
     s_WipeRBuf(sock);
-    s_WipeWBuf(sock);
-
-    if (sock->type != eSOCK_Datagram) {
+    if (sock->type == eSOCK_Datagram) {
+        s_WipeWBuf(sock);
+    } else {
         /* set the socket back to blocking mode */
         if ( !s_SetNonblock(sock->sock, 0/*false*/) ) {
             CORE_LOG(eLOG_Error, "[SOCK::s_Close] "
@@ -1337,17 +1371,6 @@ static EIO_Status s_Close(SOCK sock)
 /* To allow emulating "peek" using the NCBI data buffering.
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves.)
- * Please note the following status combinations and their meanings:
- * -------------------------------+------------------------------------------
- *              Field             |
- * ---------------+---------------+                  Meaning
- * sock->r_status | sock->is_eof  |           (stream sockets only)
- * ---------------+---------------+------------------------------------------
- * eIO_Closed     |       0       |  Socket shut down
- * eIO_Closed     |       1       |  Read severely failed
- * not eIO_Closed |       0       |  Read completed with r_status error
- * not eIO_Closed |       1       |  Read hit EOF and completed with r_status
- * ---------------+---------------+------------------------------------------
  * NOTE: This call is for stream sockets only.
  */
 static int s_Recv(SOCK        sock,
@@ -1552,6 +1575,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
             while (polls[i].revent == eIO_Read) {
                 assert(polls[i].sock &&
                        polls[i].sock->type != eSOCK_Datagram &&
+                       polls[i].sock->w_status != eIO_Closed &&
                        (polls[i].sock->r_on_w == eOn ||
                         (polls[i].sock->r_on_w == eDefault
                          && s_ReadOnWrite == eOn)));
@@ -2948,6 +2972,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.85  2003/02/24 21:13:23  lavr
+ * More comments added; fix for read-ahead on shut-down-for-write socket
+ *
  * Revision 6.84  2003/02/20 17:52:30  lavr
  * Resolve dead-lock condition in s_SelectStallsafe()
  *
