@@ -1,4 +1,4 @@
---$Revision: 1.9 $
+--$Revision: 1.10 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -273,7 +273,7 @@ ID2-Reply-Get-Seq-id ::= SEQUENCE {
 
 -- Reply to ID2-Request-Get-Blob-Id.
 ID2-Reply-Get-Blob-Id ::= SEQUENCE {
-        -- required Seq-id
+        -- requested Seq-id
         seq-id          Seq-id,
 
         -- result
