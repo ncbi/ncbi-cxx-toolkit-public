@@ -151,6 +151,7 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual void SetPacketSize   (unsigned int packet_size);
 
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
@@ -727,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/04/01 20:17:54  soussov
+ * SetPacketSize(unsigned int packet_size) method added
+ *
  * Revision 1.10  2003/01/06 20:09:01  vakatov
  * cosmetics (identation)
  *
