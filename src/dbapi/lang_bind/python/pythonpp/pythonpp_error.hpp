@@ -78,17 +78,6 @@ class CError
 //PyAPI_DATA(PyObject *) PyExc_MemoryErrorInst;
 
 
-/* Predefined warning categories */
-//PyAPI_DATA(PyObject *) PyExc_Warning;
-//PyAPI_DATA(PyObject *) PyExc_UserWarning;
-//PyAPI_DATA(PyObject *) PyExc_DeprecationWarning;
-//PyAPI_DATA(PyObject *) PyExc_PendingDeprecationWarning;
-//PyAPI_DATA(PyObject *) PyExc_SyntaxWarning;
-
-//PyAPI_DATA(PyObject *) PyExc_RuntimeWarning;
-//PyAPI_DATA(PyObject *) PyExc_FutureWarning;
-
-
 /* Convenience functions */
 
 //PyAPI_FUNC(int) PyErr_BadArgument(void);
@@ -186,7 +175,13 @@ public:
 public:
     static void SetString(const string& msg)
     {
-        PyErr_SetString(PyExc_Exception, msg.c_str());
+        PyErr_SetString(GetPyException(), msg.c_str());
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_Exception;
     }
 
 protected:
@@ -221,8 +216,14 @@ class CZeroDivisionError : public CError
 {
 public:
     CZeroDivisionError(const string& msg)
-    : CError(msg, PyExc_ZeroDivisionError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_ZeroDivisionError;
     }
 };
 
@@ -230,8 +231,14 @@ class CValueError : public CError
 {
 public:
     CValueError(const string& msg)
-    : CError(msg, PyExc_ValueError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_ValueError;
     }
 };
 
@@ -239,7 +246,7 @@ class CUnicodeError : public CError
 {
 public:
     CUnicodeError(const string& msg)
-    : CError(msg, PyExc_UnicodeError)
+    : CError(msg, GetPyException())
     {
     }
 
@@ -248,14 +255,26 @@ protected:
     : CError(msg, err_type)
     {
     }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_UnicodeError;
+    }
 };
 
 class CUnicodeEncodeError : public CUnicodeError
 {
 public:
     CUnicodeEncodeError(const string& msg)
-    : CUnicodeError(msg, PyExc_UnicodeEncodeError)
+    : CUnicodeError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_UnicodeEncodeError;
     }
 };
 
@@ -263,8 +282,14 @@ class CUnicodeDecodeError : public CUnicodeError
 {
 public:
     CUnicodeDecodeError(const string& msg)
-    : CUnicodeError(msg, PyExc_UnicodeDecodeError)
+    : CUnicodeError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_UnicodeDecodeError;
     }
 };
 
@@ -272,8 +297,14 @@ class CUnicodeTranslateError : public CUnicodeError
 {
 public:
     CUnicodeTranslateError(const string& msg)
-    : CUnicodeError(msg, PyExc_UnicodeTranslateError)
+    : CUnicodeError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_UnicodeTranslateError;
     }
 };
 
@@ -281,8 +312,14 @@ class CTypeError : public CError
 {
 public:
     CTypeError(const string& msg)
-    : CError(msg, PyExc_TypeError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_TypeError;
     }
 };
 
@@ -290,8 +327,14 @@ class CSystemError : public CError
 {
 public:
     CSystemError(const string& msg)
-    : CError(msg, PyExc_SystemError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_SystemError;
     }
 };
 
@@ -299,8 +342,14 @@ class CUnboundLocalError : public CError
 {
 public:
     CUnboundLocalError(const string& msg)
-    : CError(msg, PyExc_UnboundLocalError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_UnboundLocalError;
     }
 };
 
@@ -308,8 +357,14 @@ class CSystemExit : public CError
 {
 public:
     CSystemExit(const string& msg)
-    : CError(msg, PyExc_SystemExit)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_SystemExit;
     }
 };
 
@@ -317,8 +372,14 @@ class CReferenceError : public CError
 {
 public:
     CReferenceError(const string& msg)
-    : CError(msg, PyExc_ReferenceError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_ReferenceError;
     }
 };
 
@@ -326,8 +387,14 @@ class CTabError : public CError
 {
 public:
     CTabError(const string& msg)
-    : CError(msg, PyExc_TabError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_TabError;
     }
 };
 
@@ -335,8 +402,14 @@ class CIndentationError : public CError
 {
 public:
     CIndentationError(const string& msg)
-    : CError(msg, PyExc_IndentationError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_IndentationError;
     }
 };
 
@@ -344,8 +417,14 @@ class CSyntaxError : public CError
 {
 public:
     CSyntaxError(const string& msg)
-    : CError(msg, PyExc_SyntaxError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_SyntaxError;
     }
 };
 
@@ -353,7 +432,7 @@ class CNotImplementedError : public CError
 {
 public:
     CNotImplementedError(const string& msg)
-    : CError(msg, PyExc_NotImplementedError)
+    : CError(msg, GetPyException())
     {
     }
 
@@ -362,14 +441,26 @@ protected:
     : CError(msg, err_type)
     {
     }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_NotImplementedError;
+    }
 };
 
 class CRuntimeError : public CError
 {
 public:
     CRuntimeError(const string& msg)
-    : CError(msg, PyExc_RuntimeError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_RuntimeError;
     }
 };
 
@@ -377,8 +468,14 @@ class COverflowError : public CError
 {
 public:
     COverflowError(const string& msg)
-    : CError(msg, PyExc_OverflowError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_OverflowError;
     }
 };
 
@@ -386,8 +483,14 @@ class CNameError : public CError
 {
 public:
     CNameError(const string& msg)
-    : CError(msg, PyExc_NameError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_NameError;
     }
 };
 
@@ -395,8 +498,14 @@ class CMemoryError : public CError
 {
 public:
     CMemoryError(const string& msg)
-    : CError(msg, PyExc_MemoryError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_MemoryError;
     }
 };
 
@@ -404,8 +513,14 @@ class CKeyboardInterrupt : public CError
 {
 public:
     CKeyboardInterrupt(const string& msg)
-    : CError(msg, PyExc_KeyboardInterrupt)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_KeyboardInterrupt;
     }
 };
 
@@ -413,8 +528,14 @@ class CKeyError : public CError
 {
 public:
     CKeyError(const string& msg)
-    : CError(msg, PyExc_KeyError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_KeyError;
     }
 };
 
@@ -422,8 +543,14 @@ class CIndexError : public CError
 {
 public:
     CIndexError(const string& msg)
-    : CError(msg, PyExc_IndexError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_IndexError;
     }
 };
 
@@ -431,8 +558,14 @@ class CImportError : public CError
 {
 public:
     CImportError(const string& msg)
-    : CError(msg, PyExc_ImportError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_ImportError;
     }
 };
 
@@ -440,7 +573,7 @@ class COSError : public CError
 {
 public:
     COSError(const string& msg)
-    : CError(msg, PyExc_OSError)
+    : CError(msg, GetPyException())
     {
     }
 
@@ -449,14 +582,26 @@ protected:
     : CError(msg, err_type)
     {
     }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_OSError;
+    }
 };
 
 class CIOError : public CError
 {
 public:
     CIOError(const string& msg)
-    : CError(msg, PyExc_IOError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_IOError;
     }
 };
 
@@ -464,8 +609,14 @@ class CEnvironmentError : public CError
 {
 public:
     CEnvironmentError(const string& msg)
-    : CError(msg, PyExc_EnvironmentError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_EnvironmentError;
     }
 };
 
@@ -473,8 +624,14 @@ class CFloatingPointError : public CError
 {
 public:
     CFloatingPointError(const string& msg)
-    : CError(msg, PyExc_FloatingPointError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_FloatingPointError;
     }
 };
 
@@ -485,14 +642,26 @@ public:
     : CError(msg, PyExc_EOFError)
     {
     }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_EOFError;
+    }
 };
 
 class CAttributeError : public CError
 {
 public:
     CAttributeError(const string& msg)
-    : CError(msg, PyExc_AttributeError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_AttributeError;
     }
 };
 
@@ -500,8 +669,14 @@ class CAssertionError : public CError
 {
 public:
     CAssertionError(const string& msg)
-    : CError(msg, PyExc_AssertionError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_AssertionError;
     }
 };
 
@@ -509,8 +684,14 @@ class CLookupError : public CError
 {
 public:
     CLookupError(const string& msg)
-    : CError(msg, PyExc_LookupError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_LookupError;
     }
 };
 
@@ -518,8 +699,14 @@ class CArithmeticError : public CError
 {
 public:
     CArithmeticError(const string& msg)
-    : CError(msg, PyExc_ArithmeticError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_ArithmeticError;
     }
 };
 
@@ -527,8 +714,20 @@ class CStandardError : public CError
 {
 public:
     CStandardError(const string& msg)
-    : CError(msg, PyExc_StandardError)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    CStandardError(const string& msg, PyObject* err_type)
+    : CError(msg, err_type)
+    {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_StandardError;
     }
 };
 
@@ -536,8 +735,14 @@ class CStopIteration : public CError
 {
 public:
     CStopIteration(const string& msg)
-    : CError(msg, PyExc_StopIteration)
+    : CError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_StopIteration;
     }
 };
 
@@ -546,8 +751,14 @@ class CWindowsError : public COSError
 {
 public:
     CWindowsError(const string& msg)
-    : COSError(msg, PyExc_WindowsError)
+    : COSError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_WindowsError;
     }
 };
 #endif
@@ -556,16 +767,20 @@ class CVMSError : public COSError
 {
 public:
     CVMSError(const string& msg)
-    : COSError(msg, PyExc_VMSError)
+    : COSError(msg, GetPyException())
     {
+    }
+
+protected:
+    static PyObject* GetPyException(void)
+    {
+        return PyExc_VMSError;
     }
 };
 #endif
 
 
-
-
-// This class is supposed to store and retrieve a python error code
+// This class is supposed to retrieve and store a python error code
 class CErrorStackElem
 {
 public:
@@ -621,6 +836,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/08 19:19:34  ssikorsk
+* A lot of improvements
+*
 * Revision 1.3  2005/01/27 19:17:10  ssikorsk
 * Fixed: compilation errors on Unix
 *

@@ -348,7 +348,6 @@ public:
 // PyHeapTypeObject
 class CType : public CObject
 {
-// int PyType_Check(   PyObject *o)
 // int PyType_HasFeature(  PyObject *o, int feature)
 // int PyType_IS_GC(   PyObject *o)
 // int PyType_IsSubtype(   PyTypeObject *a, PyTypeObject *b)
@@ -393,6 +392,10 @@ public:
     }
 
 public:
+    static bool HasSameType(PyObject* obj)
+    {
+        return PyType_Check (obj);
+    }
     static bool HasExactSameType(PyObject* obj)
     {
         return PyType_CheckExact (obj);
@@ -546,6 +549,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/02/08 19:19:35  ssikorsk
+* A lot of improvements
+*
 * Revision 1.3  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object
