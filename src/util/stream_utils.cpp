@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/02/06 14:38:23  ucko
+ * Split up conditional test for GCC 2.x to work around KCC preprocessor lossage.
+ *
  * Revision 1.7  2002/02/05 16:05:43  lavr
  * List of included header files revised
  *
@@ -60,7 +63,13 @@
 #include <string.h>
 
 
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
+#ifdef NCBI_COMPILER_GCC
+#  if NCBI_COMPILER_VERSION < 300
+#    define NO_PUBSYNC
+#  endif
+#endif
+
+#ifdef NO_PUBSYNC
 #  define PUBSYNC    sync
 #  define PUBSEEKOFF seekoff
 #  define PUBSEEKPOS seekpos
