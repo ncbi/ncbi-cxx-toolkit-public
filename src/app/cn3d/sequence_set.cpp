@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/12/28 20:43:09  vakatov
+* Do not use "set" as identifier.
+* Do not include <strstream>. Use "CNcbiOstrstream" instead of "ostrstream".
+*
 * Revision 1.12  2000/12/21 23:42:15  thiessen
 * load structures from cdd's
 *
@@ -85,8 +89,6 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Dbtag.hpp>
 
-#include <strstream>
-
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 
@@ -96,10 +98,10 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static void UnpackSeqSet(const CBioseq_set& set, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
+static void UnpackSeqSet(const CBioseq_set& bss, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
-    CBioseq_set::TSeq_set::const_iterator q, qe = set.GetSeq_set().end();
-    for (q=set.GetSeq_set().begin(); q!=qe; q++) {
+    CBioseq_set::TSeq_set::const_iterator q, qe = bss.GetSeq_set().end();
+    for (q=bss.GetSeq_set().begin(); q!=qe; q++) {
         if (q->GetObject().IsSeq()) {
 
             // only store amino acid or nucleotide sequences
@@ -304,7 +306,7 @@ CSeq_id * Sequence::CreateSeqId(void) const
 
 std::string Sequence::GetTitle(void) const
 {
-    ostrstream oss;
+    CNcbiOstrstream oss;
     if (molecule) {
         oss << pdbID;
         if (molecule->pdbChain != ' ') {
@@ -318,4 +320,3 @@ std::string Sequence::GetTitle(void) const
 }
 
 END_SCOPE(Cn3D)
-
