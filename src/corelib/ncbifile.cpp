@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2002/01/10 16:46:36  ivanov
+ * Added CDir::GetHome() and some CDirEntry:: path processing functions
+ *
  * Revision 1.11  2001/12/26 21:21:05  ucko
  * Conditionalize deletion of m_FSS on NCBI_OS_MAC.
  *
@@ -77,7 +80,7 @@
 
 #include <corelib/ncbifile.hpp>
 
-#ifndef NCBI_OS_MAC
+#if !defined NCBI_OS_MAC
 #  include <sys/types.h>
 #  include <sys/stat.h>
 #endif
@@ -90,6 +93,7 @@
 #elif defined NCBI_OS_UNIX
 #  include <unistd.h>
 #  include <dirent.h>
+#  include <pwd.h>
 #elif defined NCBI_OS_MAC
 #  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
@@ -99,7 +103,36 @@
 BEGIN_NCBI_SCOPE
 
 
-#ifdef NCBI_OS_MAC
+// Path separators
+
+#undef  DIR_SEPARATOR
+#undef  DIR_SEPARATOR_ALT
+#undef  DISK_SEPARATOR
+#undef  ALL_SEPARATORS
+
+#define DIR_PARENT  ".."
+#define DIR_CURRENT '.'
+
+#if defined NCBI_OS_MSWIN
+#  define DIR_SEPARATOR     '\\'
+#  define DIR_SEPARATOR_ALT '/'
+#  define DISK_SEPARATOR    ':'
+#  define ALL_SEPARATORS    ":/\\"
+
+#elif defined NCBI_OS_UNIX
+#  define DIR_SEPARATOR     '/'
+#  define ALL_SEPARATORS    "/"
+
+#elif defined NCBI_OS_MAC
+#  define DIR_SEPARATOR     ':'
+#  define ALL_SEPARATORS    ":"
+#  undef  DIR_PARENT
+#  undef  DIR_CURRENT
+#endif
+
+
+
+#if defined NCBI_OS_MAC
 
 static const FSSpec sNullFSS = {0, 0, "\p"};
 
@@ -139,13 +172,13 @@ static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode,
 
 
 CDirEntry::CDirEntry()
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     : m_FSS(new FSSpec(sNullFSS))
 #endif
 {
 }
 
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
 CDirEntry::CDirEntry(const CDirEntry& other) : m_FSS(new FSSpec(*other.m_FSS))
 {
     m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
@@ -172,7 +205,7 @@ CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(new FSSpec(fss))
 #endif
 
 CDirEntry::CDirEntry(const string& name)
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     : m_FSS(new FSSpec(sNullFSS))
 #endif
 {
@@ -182,31 +215,19 @@ CDirEntry::CDirEntry(const string& name)
     m_DefaultMode[eOther] = m_DefaultModeGlobal[eFile][eOther];
 }
 
-#ifdef NCBI_OS_MAC
-bool
-CDirEntry::operator== (const CDirEntry& other) const
+
+#if defined NCBI_OS_MAC
+bool CDirEntry::operator== (const CDirEntry& other) const
 {
     return *m_FSS == *other.m_FSS;
 }
 
-const FSSpec&
-CDirEntry::FSS() const
+const FSSpec& CDirEntry::FSS() const
 {
     return *m_FSS;
 }
 #endif
 
-
-char CDirEntry::GetPathSeparator()
-{
-#if defined NCBI_OS_MSWIN
-    return '\\';
-#elif defined NCBI_OS_UNIX
-    return '/';
-#elif defined NCBI_OS_MAC
-    return ':';
-#endif    
-}
 
 
 CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
@@ -239,7 +260,7 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 
 
 
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
 void CDirEntry::Reset(const string& path)
 {
     OSErr err = MacPathname2FSSpec(path.c_str(), m_FSS);
@@ -263,16 +284,17 @@ string CDirEntry::GetPath(void) const
 
 CDirEntry::~CDirEntry(void)
 {
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
 	delete m_FSS;
 #endif
 }
+
 
 void CDirEntry::SplitPath(const string& path, string* dir,
                           string* base, string* ext)
 {
     // Get file name
-    size_t pos = path.rfind(GetPathSeparator());
+    size_t pos = path.find_last_of(ALL_SEPARATORS);
     string filename = (pos == NPOS) ? path : path.substr(pos+1);
 
     // Get dir
@@ -293,25 +315,177 @@ void CDirEntry::SplitPath(const string& path, string* dir,
 string CDirEntry::MakePath(const string& dir, const string& base, 
                            const string& ext)
 {
-    string path;   // Result string
+    string path;
 
-    // Adding "dir" to path
-    path += dir;
-    size_t pos = dir.length();
-    // Adding path separator, if need
-    if ( pos  &&  dir.at(pos-1) != GetPathSeparator() ) {
-        path += GetPathSeparator();
-    }
-    // Adding file base
-    path += base;
-    
+    // Adding "dir" and file base
+    path = AddTrailingPathSeparator(dir) + base;
     // Adding extension
     if ( ext.length()  &&  ext.at(0) != '.' ) {
         path += '.';
     }
     path += ext;
-
     // Return result
+    return path;
+}
+
+
+char CDirEntry::GetPathSeparator(void) 
+{
+    return DIR_SEPARATOR;
+}
+
+
+bool CDirEntry::IsPathSeparator(const char c)
+{
+#if defined DISK_SEPARATOR
+    if ( c == DISK_SEPARATOR ) {
+        return true;
+    }
+#endif
+#if defined DIR_SEPARATOR_ALT
+    if ( c == DIR_SEPARATOR_ALT ) {
+        return true;
+    }
+#endif
+    return c == DIR_SEPARATOR;
+}
+
+
+string CDirEntry::AddTrailingPathSeparator(const string& path)
+{
+    size_t pos = path.length();
+#if defined NCBI_OS_MAC
+    if ( !pos ) {
+        return string(1, GetPathSeparator());
+    }
+#endif
+    if ( pos  &&  string(ALL_SEPARATORS).find(path.at(pos-1)) == NPOS ) {
+        return path + GetPathSeparator();
+    }
+    return path;
+}
+
+
+bool CDirEntry::IsAbsolutePath(const string& path)
+{
+    if ( path.empty() )
+        return false;
+    char first = path[0];
+
+#if defined NCBI_OS_MAC
+    if ( path.find(DIR_SEPARATOR) != NPOS  &&  first != DIR_SEPARATOR )
+        return true;
+#else
+    if ( IsPathSeparator(first) )
+        return true;
+#endif
+#if defined DISK_SEPARATOR
+    if ( path.find(DISK_SEPARATOR) != NPOS )
+        return true;
+#endif
+    return false;
+}
+
+
+bool CDirEntry::IsAbsolutePathEx(const string& path)
+{
+    if ( path.empty() )
+        return false;
+    char first = path[0];
+
+    // MAC or WIN absolute
+    if ( path.find(':') != NPOS  &&  first != ':' )
+        return true;
+
+    // MAC relative path
+    if ( first == ':' )
+        return false;
+
+    // UNIX or WIN absolute
+    if ( first == '\\' || first == '/' )
+        return true;
+
+    // Else - relative
+    return false;
+}
+
+
+string CDirEntry::ConvertToOSPath(const string& path)
+{
+    // Not process empty and absolute path
+    if ( path.empty() || IsAbsolutePathEx(path) ) {
+        return path;
+    }
+    // Now we have relative "path"
+    string xpath = path;
+    // Add trailing separator if path ends with DIR_PARENT or DIR_CURRENT
+#if defined DIR_PARENT
+    if ( NStr::EndsWith(xpath, DIR_PARENT) )  {
+        xpath += DIR_SEPARATOR;
+    }
+#endif
+#if defined DIR_CURRENT
+    if ( NStr::EndsWith(xpath, string(1,DIR_CURRENT)) )  {
+        xpath += DIR_SEPARATOR;
+    }
+#endif
+    // Replace each path separator with the current OS separator character
+    for (size_t i = 0; i < xpath.length(); i++) {
+        char c = xpath[i];
+        if ( c == '\\' || c == '/' || c == ':') {
+            xpath[i] = DIR_SEPARATOR;
+        }
+    }
+#if defined NCBI_OS_MAC
+    // Fix current and parent refs in the path for MAC
+    string search= "..:";
+    size_t pos = 0;
+    while ((pos = xpath.find(search)) != NPOS) {
+        xpath.replace(pos, search.length(), ":");
+        if ( xpath.substr(pos + 1, 2) == ".:" )  {
+           xpath.erase(pos + 1, 2);
+        } else {
+            if ( xpath.substr(pos + 1, search.length()) != search )  {
+               xpath.insert(pos,":");
+            }
+        }
+    }
+    xpath = NStr::Replace(xpath, ".:",  "");
+    // Add leading ":" (criterion of relativity of the dir)
+    if ( xpath[0] != ':' ) {
+        xpath = ":" + xpath;
+    }
+#else
+    // Fix current and parent refs in the path after conversion from MAC path
+    // Replace all "::" to "/../"
+#if defined DIR_PARENT
+    string sep1 = string(1,DIR_SEPARATOR);
+    string sep2 = string(2,DIR_SEPARATOR);
+    string sep = sep1 + DIR_PARENT + sep1;
+    while ( xpath.find(sep2) != NPOS ) {
+        xpath = NStr::Replace(xpath, sep2, sep);
+    }
+#endif
+    // Remove leading ":" in the relative path on non-MAC platforms 
+    if ( xpath[0] == DIR_SEPARATOR ) {
+        xpath.erase(0,1);
+    }
+#endif
+    return xpath;
+}
+
+
+string CDirEntry::ConcatPath(const string& first, const string& second)
+{
+    // Prepare first part of path
+    string path = AddTrailingPathSeparator(NStr::TruncateSpaces(first));
+    // Remove leading separator in "second" part
+    string part = NStr::TruncateSpaces(second);
+    if ( part.length() > 0  &&  part[0] == DIR_SEPARATOR ) {
+        part.erase(0,1);
+    }
+    // Add second part
+    path += part;
     return path;
 }
 
@@ -367,10 +541,11 @@ bool CDirEntry::MatchesMask(const char *name, const char *mask)
 }
 
 
+
 bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
     const
 {
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     FSSpec fss = FSS();
     OSErr err = FSpCheckObjectLock(&fss);
     if (err != noErr  &&  err != fLckdErr) {
@@ -410,7 +585,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
     if (user_mode == fDefault) {
         user_mode = m_DefaultMode[eUser];
     }
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     bool wantLocked = (user_mode & fWrite) == 0;
     FSSpec fss = FSS();
     OSErr  err = FSpCheckObjectLock(&fss);
@@ -579,7 +754,7 @@ CDirEntry::EType CDirEntry::GetType(void) const
 
 bool CDirEntry::Rename(const string& newname)
 {
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     const int maxFilenameLength = 31;
     if (newname.length() > maxFilenameLength) return false;
     Str31 newNameStr;
@@ -598,7 +773,7 @@ bool CDirEntry::Rename(const string& newname)
 
 bool CDirEntry::Remove(void) const
 {
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     OSErr err = ::FSpDelete(&FSS());
     return err == noErr;
 #else
@@ -632,7 +807,7 @@ CFile::~CFile(void)
 
 Int8 CFile::GetLength(void) const
 {
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
     long dataSize, rsrcSize;
     OSErr err = FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
     if (err != noErr) {
@@ -744,6 +919,82 @@ CDir::CDir(const string& dirname) : CParent(dirname)
 }
 
 
+#if defined NCBI_OS_UNIX
+
+static bool s_GetHomeByUID(string& home)
+{
+    // Get the info using user ID
+    struct passwd *pwd;
+
+    if ((pwd = getpwuid(getuid())) == 0) {
+        return false;
+    }
+    home = pwd->pw_dir;
+    return true;
+}
+
+static bool s_GetHomeByLOGIN(string& home)
+{
+    char* ptr = 0;
+    // Get user name
+    if ( !(ptr = getenv("USER")) ) {
+        if ( !(ptr = getenv("LOGNAME")) ) {
+            if ( !(ptr = getlogin()) ) {
+                return false;
+            }
+        }
+    }
+    // Get home dir for this user
+    struct passwd* pwd = getpwnam(ptr);
+    if ( !pwd ||  pwd->pw_dir[0] == '\0') {
+        return false;
+    }
+    home = pwd->pw_dir;
+    return true;
+}
+#endif // NCBI_OS_UNIX
+
+
+string CDir::GetHome(void)
+{
+    char *ptr;
+    string home;
+
+#if defined NCBI_OS_MSWIN
+    // Get home dir from environment variables
+    // like - C:\Documents and Settings\user\Application Data
+    if ( ptr = getenv("APPDATA") ) {
+        home = ptr;
+    } else {
+        // like - C:\Documents and Settings\user
+        if ( ptr = getenv("USERPROFILE") ) {
+            home = ptr;
+        }
+    }
+   
+#elif defined NCBI_OS_UNIX
+    // Try get home dir from environment variable
+    if ( (ptr = getenv("HOME")) != NULL ) {
+        home = ptr;
+    } else {
+        // Try to retrieve the home dir -- first use user's ID, and if failed, 
+        // then use user's login name.
+        if ( !s_GetHomeByUID(home) ) { 
+            s_GetHomeByLOGIN(home);
+        }
+    }
+   
+#elif defined NCBI_OS_MAC
+    // FIX ME 
+    home = kEmptyStr;
+    
+#endif 
+
+    // Add trailing separator if needed
+    return AddTrailingPathSeparator(home);
+}
+
+
 CDir::~CDir(void)
 {
     return;
@@ -754,7 +1005,7 @@ CDir::~CDir(void)
 static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
 {
     FSSpec dir = container.FSS();
-    FSSpec fss;  // FSSpec of item gotten.
+    FSSpec fss;     // FSSpec of item gotten.
     SInt16 actual;  // Actual number of items gotten.  Should be one or zero.
     SInt16 itemIndex = index;
     OSErr err = GetDirItems(dir.vRefNum, dir.parID, dir.name, true, true, 
@@ -864,13 +1115,13 @@ bool CDir::Remove(EDirRemoveMode mode) const
     // Read and remove all entry in derectory
     TEntries contents = dir.GetEntries();
     iterate(TEntries, entry, contents) {
-#ifndef NCBI_OS_MAC
+#if !defined NCBI_OS_MAC
         if ( (*entry)->GetName() == "."  ||  (*entry)->GetName() == ".."  ||  
              (*entry)->GetName() == string(1, GetPathSeparator()) ) {
             continue;
         }
 #endif
-#ifdef NCBI_OS_MAC
+#if defined NCBI_OS_MAC
         CDirEntry& item = **entry;
         // Is it directory ?
         if ( item.IsDir() ) {

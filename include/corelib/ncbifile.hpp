@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/01/10 16:46:09  ivanov
+ * Added CDir::GetHome() and some CDirEntry:: path processing functions
+ *
  * Revision 1.7  2001/12/26 20:58:23  juran
  * Use an FSSpec* member instead of an FSSpec, so a forward declaration can be used.
  * Add copy constructor and assignment operator for CDirEntry on Mac OS,
@@ -62,7 +65,6 @@
  * ===========================================================================
  */
 
-
 #include <corelib/ncbistd.hpp>
 #include <vector>
 
@@ -88,7 +90,7 @@ BEGIN_NCBI_SCOPE
 // title - file name without ext ("autoexec")
 // ext   - file extension        (".bat" -- whatever goes after the last dot)
 //
-// Class work with DOS and UNIX file name formats.
+// Supported filename formats:  DOS, UNIX and MAC.
 //
 
 class CDirEntry
@@ -97,7 +99,7 @@ public:
     CDirEntry();
 #ifdef NCBI_OS_MAC
     CDirEntry(const CDirEntry& other);
-    CDirEntry& operator=(const CDirEntry& other);
+    CDirEntry& operator= (const CDirEntry& other);
     CDirEntry(const FSSpec& fss);
 #endif
     CDirEntry(const string& path);
@@ -110,6 +112,11 @@ public:
 #endif
     // Get entry path
     string GetPath(void) const;
+
+
+    //
+    // Path processing
+    //
 
     // Break a path into components.
     // "dir" will always have terminating path separator (e.g. "/usr/local/").
@@ -125,6 +132,36 @@ public:
     static string MakePath(const string& dir  = kEmptyStr,
                            const string& base = kEmptyStr,
                            const string& ext  = kEmptyStr);
+
+    // Get path separator symbol specific for the platform
+    static char GetPathSeparator(void);
+
+    // Check character "c" at path separator symbol specific for the platform
+    static bool IsPathSeparator(const char c);
+
+    // Add a trailing path separator (if needed)
+    static string AddTrailingPathSeparator(const string& path);
+
+    // Convert relative "path" (any OS) to current OS dependent relative path 
+    static string ConvertToOSPath(const string& path);
+
+    // Detect if the "path" is absolute.
+    //  1) "path" must be for current OS 
+    static bool IsAbsolutePath(const string& path);
+    //  2) "path" can be for any OS (MSWIN, UNIX, MAC )
+    static bool IsAbsolutePathEx(const string& path);
+
+    // Concatenate 2 parts of the path. "first" path can be either absolute or
+    // relative;  "second" must always be relative.
+    //  1) "first" and "second" must be paths for the current OS
+    static string ConcatPath(const string& first, const string& second);
+    //  2) "first" and "second" can be paths for any OS (MSWIN, UNIX, MAC)
+    static string ConcatPathEx(const string& first, const string& second);
+
+
+    //
+    // Checks & manipulations
+    //
 
     // Match "name" against the filename "mask"
     static bool MatchesMask(const char *name, const char *mask);
@@ -157,10 +194,6 @@ public:
     };
     // NOTE: On error (e.g. if the entry does not exist), return "eUnknown".
     EType GetType(void) const;
-
-
-    // Get path separator symbol specific for the platform
-    static char GetPathSeparator(void);
 
 
     //
@@ -328,6 +361,9 @@ public:
     // Check if directory "dirname" exists
     virtual bool Exists(void) const;
 
+    // Get user "home" dir
+    static string GetHome(void);
+
     // Return an array containing all directory entries.
     // Use file name mask "mask" (if passed non-empty).
     typedef vector< AutoPtr<CDirEntry> > TEntries;
@@ -425,16 +461,13 @@ bool CDirEntry::Exists(void) const
 }
 
 
-
 // CFile
-
 
 inline
 bool CFile::Exists(void) const
 {
     return GetType() == eFile;
 }
-
 
 
 // CDir
