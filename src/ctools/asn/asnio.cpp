@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/10/21 16:57:11  golikov
+* AsnMemoryWrite mode param added
+*
 * Revision 1.7  1999/10/21 16:20:44  golikov
 * Mode param added
 *
@@ -106,10 +109,10 @@ Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
     return static_cast<AsnMemoryRead*>(data)->Read(buffer, size);
 }
 
-AsnMemoryWrite::AsnMemoryWrite(void)
+AsnMemoryWrite::AsnMemoryWrite(Uint2 mode)
     : m_Data(new char[512]), m_Size(512), m_Ptr(0)
 {
-    m_Out = AsnIoNew(ASNIO_BIN | ASNIO_OUT, 0, this, 0, WriteAsn);
+    m_Out = AsnIoNew(mode | ASNIO_OUT, 0, this, 0, WriteAsn);
 }
 
 AsnMemoryWrite::~AsnMemoryWrite(void)

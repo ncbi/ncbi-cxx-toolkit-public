@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/10/21 16:57:05  golikov
+* AsnMemoryWrite mode param added
+*
 * Revision 1.4  1999/10/21 16:20:38  golikov
 * Mode param added
 *
@@ -87,7 +90,7 @@ private:
 class AsnMemoryWrite
 {
 public:
-    AsnMemoryWrite(void);
+    AsnMemoryWrite(Uint2 mode);
     virtual ~AsnMemoryWrite(void);
 
     AsnIoPtr GetOut(void) const
