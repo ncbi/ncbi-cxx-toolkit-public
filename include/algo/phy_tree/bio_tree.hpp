@@ -75,6 +75,7 @@ struct NCBI_XALGOPHYTREE_EXPORT CBioTreeFeaturePair
     {}
 };
 
+/*
 /// Base node interface used for dynamic access to the node properties
 struct NCBI_XALGOPHYTREE_EXPORT IBioTreeNode
 {
@@ -91,7 +92,7 @@ struct NCBI_XALGOPHYTREE_EXPORT IBioTreeNode
     /// Get list of supported features
     virtual void GetFeatures(list<CBioTreeFeaturePair>* features) const = 0;
 };
-
+*/
 
 /// Features storage for the bio tree node
 ///
@@ -136,7 +137,7 @@ struct CBioTreeEmptyNodeData
 {
 };
 
-
+/*
 class NCBI_XALGOPHYTREE_EXPORT CBioTreeNode
 {
 public:
@@ -169,7 +170,7 @@ private:
     IBioTreeNode*       m_INode;
     TBioTreeNodeId      m_Id;      ///< Unique node Id
 };
-
+*/
 
 /// Basic data contained in every bio-tree node
 ///
@@ -177,7 +178,7 @@ private:
 /// compile-time (non-dynamic attributes in the tree)
 /// NodeFeatures - extends node with dynamic list of node attributes
 ///
-/*
+///
 template<class TNodeData     = CBioTreeEmptyNodeData, 
          class TNodeFeatures = CBioTreeFeatureList>
 struct BioTreeBaseNode
@@ -210,8 +211,10 @@ struct BioTreeBaseNode
     }
 
     TBioTreeNodeId GetId() const { return uid; }
+
+    void SetId(TBioTreeNodeId id) { uid = id; }
 };
-*/
+
 
 /// Feature dictionary. 
 /// Used for mapping between feature ids and feature names.
@@ -247,6 +250,8 @@ public:
     /// If feature does not exist returns 0.
     TBioTreeFeatureId GetId(const string& feature_name) const;
 
+    /// Clear the dictionary
+    void Clear();
 
 protected:
     TFeatureDict     m_Dict;        ///< id -> feature name map
@@ -255,7 +260,7 @@ protected:
     unsigned int     m_IdCounter;   ///< Feature id counter
 };
 
-
+/*
 class NCBI_XALGOPHYTREE_EXPORT CBioTree
 {
 public:
@@ -290,9 +295,8 @@ protected:
     TBioTreeNodeId             m_NodeIdCounter;
     auto_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
 };
+*/
 
-
-/*
 
 /// Basic tree structure for biological applications
 template<class TBioNode>
@@ -354,7 +358,7 @@ public:
         // Check if this id is in the dictionary
         bool id_found = m_FeatureDict.HasFeature(feature_id);
         if (id_found) {
-            node->features.SetFeature(feature_id, feature_value);
+            node->GetValue().features.SetFeature(feature_id, feature_value);
         } else {
             // TODO:throw an exception here
         }
@@ -399,6 +403,15 @@ public:
         node->uid = uid;
     }
 
+    /// Assign new top level tree node
+    void SetTreeNode(TBioTreeNode* node)
+    {
+        _ASSERT(node->GetParent() == 0);
+        m_TreeNode.reset(node);
+    }
+
+    const TBioTreeNode* GetTreeNode() const { return m_TreeNode.get(); }
+
     /// Add node to the tree (node location is defined by the parent id
     void AddNode(const TBioNodeType& node_value, 
                  TBioTreeNodeId      parent_id)
@@ -409,6 +422,16 @@ public:
             pnode->AddNode(node_value);
         }
     }
+
+    /// Clear the bio tree
+    void Clear()
+    {
+        m_FeatureDict.Clear();
+        m_NodeIdCounter = 0;
+        m_TreeNode.reset(0);
+    }
+
+    CBioTreeFeatureDictionary& GetFeatureDict() { return m_FeatureDict; }
 
 protected:
 
@@ -421,7 +444,7 @@ protected:
            m_Node(0)
         {}
 
-        TBioTreeNode* GetNode() { return m_Node; }
+        const TBioTreeNode* GetNode() const { return m_Node; }
 
         ETreeTraverseCode operator()(TBioTreeNode& tree_node, int delta)
         {
@@ -445,7 +468,104 @@ protected:
     auto_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
 };
 
-*/
+
+/// Bio tree without static elements. Everything is stored as features.
+///
+
+typedef 
+  CBioTree<BioTreeBaseNode<CBioTreeEmptyNodeData, CBioTreeFeatureList> >
+  CBioTreeDynamic;
+
+template<class TDynamicTree, class TSrcBioTree, class TNodeConvFunc>
+class CBioTreeConvert2DynamicFunc
+{
+public:
+    typedef typename TSrcBioTree::TBioTreeNode   TBioTreeNodeType;
+    typedef typename TDynamicTree::TBioTreeNode  TDynamicNodeType;
+
+public:
+    CBioTreeConvert2DynamicFunc(TDynamicTree* dyn_tree, TNodeConvFunc func)
+    : m_DynTree(dyn_tree),
+      m_ConvFunc(func)
+    {}
+
+    ETreeTraverseCode 
+    operator()(const TBioTreeNodeType& node, 
+               int                     delta_level)
+    {
+        if (m_TreeStack.size() == 0) {
+            auto_ptr<TDynamicNodeType> pnode(MakeDynamicNode(node));
+
+            m_TreeStack.push_back(pnode.get());
+            m_DynTree->SetTreeNode(pnode.release());
+            return eTreeTraverse;
+        }
+
+        if (delta_level == 0) {
+            if (m_TreeStack.size() > 0) {
+                m_TreeStack.pop_back();
+            }
+            TDynamicNodeType* parent_node = m_TreeStack.back();
+            TDynamicNodeType* pnode= MakeDynamicNode(node);
+
+            parent_node->AddNode(pnode);
+            m_TreeStack.push_back(pnode);
+            return eTreeTraverse;
+        }
+
+        if (delta_level == 1) {
+            TDynamicNodeType* parent_node = m_TreeStack.back();
+            TDynamicNodeType* pnode= MakeDynamicNode(node);
+
+            parent_node->AddNode(pnode);
+            m_TreeStack.push_back(pnode);
+            return eTreeTraverse;                        
+        }
+        if (delta_level == -1) {
+            m_TreeStack.pop_back();
+        }
+
+        return eTreeTraverse;
+    }
+
+protected:
+
+    TDynamicNodeType* MakeDynamicNode(const TBioTreeNodeType& src_node)
+    {
+        auto_ptr<TDynamicNodeType> pnode(new TDynamicNodeType());
+        TBioTreeNodeId uid = src_node.GetValue().GetId();
+        pnode->GetValue().SetId(uid);
+
+        m_ConvFunc(*pnode.get(), src_node);
+        return pnode.release();        
+    }
+
+private:
+    TDynamicTree*                m_DynTree;
+    TNodeConvFunc                m_ConvFunc;
+    vector<TDynamicNodeType*>    m_TreeStack;
+};
+
+
+/// Convert any tree to dynamic tree using a node converter
+///
+template<class TDynamicTree, class TBioTree, class TNodeConvFunc>
+void BioTreeConvert2Dynamic(TDynamicTree&      dyn_tree, 
+                            const TBioTree&    bio_tree,
+                            TNodeConvFunc      node_conv)
+{
+    dyn_tree.Clear();
+
+    CBioTreeConvert2DynamicFunc<TDynamicTree, TBioTree, TNodeConvFunc> 
+       func(&dyn_tree, node_conv);
+
+    typedef typename TBioTree::TBioTreeNode TTreeNode;
+    typename const TTreeNode *n = bio_tree.GetTreeNode();
+
+    TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(n)), func);
+}
+
+
 
 END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 
@@ -453,6 +573,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/19 12:46:25  kuznets
+ * Added utilities to convert tree to a fully dynamic variant.
+ *
  * Revision 1.5  2004/05/10 20:51:27  ucko
  * Repoint m_TreeNode with .reset() rather than assignment, which not
  * all auto_ptr<> implementations support.
