@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/03/30 21:06:35  kans
+* bad end of line detected on Mac
+*
 * Revision 1.10  1999/11/18 20:14:15  vakatov
 * Get rid of some CodeWarrior(MAC) C++ compilation warnings
 *
@@ -518,8 +521,5 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     _ASSERT(beg <= end);
     *to = value.substr(beg, end - beg + 1);
 }
-
-
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
-
