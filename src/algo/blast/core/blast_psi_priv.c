@@ -564,13 +564,13 @@ _PSIComputeAlignedRegionLengths(const PsiAlignmentData* alignment,
 
             Uint4 idx = 0;
             for (idx = 0; idx < i; idx++) {
-                if (aligned_blocks->pos_extnt[idx].right >= i &&
+                if ((Uint4)aligned_blocks->pos_extnt[idx].right >= i &&
                     query_seq[idx].letter != X) {
                     aligned_blocks->size[idx]--;
                 }
             }
             for (idx = alignment->dimensions->query_sz - 1; idx > i; idx--) {
-                if (aligned_blocks->pos_extnt[idx].left <= i &&
+                if ((Uint4)aligned_blocks->pos_extnt[idx].left <= i &&
                     query_seq[idx].letter != X) {
                     aligned_blocks->size[idx]--;
                 }
@@ -739,8 +739,8 @@ _PSICalculatePositionWeightsAndIntervalSigmas(
         residue_counts[i] = 0;
     }
 
-    for (i = aligned_blocks->pos_extnt[position].left; 
-         i <= aligned_blocks->pos_extnt[position].right; i++) {
+    for (i = (Uint4) aligned_blocks->pos_extnt[position].left; 
+         i <= (Uint4) aligned_blocks->pos_extnt[position].right; i++) {
 
         Uint4 asi = 0;   /**< index into array of aligned sequences */
 
@@ -972,13 +972,13 @@ PSIComputeResidueFrequencies(const PsiAlignmentData* alignment,     /* [in] */
         /* If there is an 'X' in the query sequence at position i... */
         if (alignment->desc_matrix[kQueryIndex][i].letter == X) {
 
-            for (j = 0; j < sbp->alphabet_size; j++) {
+            for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
                 score_matrix->res_freqs[i][j] = 0.0;
             }
 
         } else {
 
-            for (j = 0; j < sbp->alphabet_size; j++) {
+            for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
 
                 if (seq_weights->std_prob[j] > kEpsilon) {
                     Uint4 interval_size = 0; /* length of a block */
@@ -991,7 +991,7 @@ PSIComputeResidueFrequencies(const PsiAlignmentData* alignment,     /* [in] */
                     double qOverPEstimate = 0.0;    /* intermediate term */
 
                     /* changed to matrix specific ratios here May 2000 */
-                    for (idx = 0; idx < sbp->alphabet_size; idx++) {
+                    for (idx = 0; idx < (Uint4) sbp->alphabet_size; idx++) {
                         if (sbp->matrix[j][idx] != BLAST_SCORE_MIN) {
                             pseudo += (seq_weights->match_weights[i][idx] *
                                        freq_ratios->data[j][idx]);
@@ -1075,7 +1075,7 @@ PSIConvertResidueFreqsToPSSM(PsiMatrix* score_matrix,           /* [in|out] */
         Boolean is_unaligned_column = TRUE;
         const Uint4 query_res = query[i];
 
-        for (j = 0; j < sbp->alphabet_size; j++) {
+        for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
 
             double qOverPEstimate = 0.0;
 
@@ -1106,7 +1106,7 @@ PSIConvertResidueFreqsToPSSM(PsiMatrix* score_matrix,           /* [in|out] */
         }
 
         if (is_unaligned_column) {
-            for (j = 0; j < sbp->alphabet_size; j++) {
+            for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
 
                 score_matrix->pssm[i][j] = sbp->matrix[query_res][j];
 
@@ -1126,7 +1126,7 @@ PSIConvertResidueFreqsToPSSM(PsiMatrix* score_matrix,           /* [in|out] */
     std_freq_ratios = _PSIMatrixFrequencyRatiosFree(std_freq_ratios);
 
     /* Set the last column of the matrix to BLAST_SCORE_MIN (why?) */
-    for (j = 0; j < sbp->alphabet_size; j++) {
+    for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
         score_matrix->scaled_pssm[score_matrix->ncols-1][j] = BLAST_SCORE_MIN;
     }
 
@@ -1172,7 +1172,7 @@ PSIScaleMatrix(const Uint1* query,              /* [in] */
     double new_lambda;      /* Karlin-Altschul parameter */
 
     const double kPositPercent = 0.05;
-    const int kPositNumIterations = 10;
+    const Uint4 kPositNumIterations = 10;
     Boolean too_high = TRUE;
     double ideal_lambda;
 
@@ -1193,7 +1193,7 @@ PSIScaleMatrix(const Uint1* query,              /* [in] */
         Uint4 j = 0;
 
         for (i = 0; i < score_matrix->ncols; i++) {
-            for (j = 0; j < sbp->alphabet_size; j++) {
+            for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
                 if (scaled_pssm[i][j] != BLAST_SCORE_MIN) {
                     pssm[i][j] = 
                         BLAST_Nint(factor*scaled_pssm[i][j]/kPsiScaleFactor);
@@ -1255,7 +1255,7 @@ PSIScaleMatrix(const Uint1* query,              /* [in] */
         factor = (factor_high + factor_low)/2;
 
         for (i = 0; i < score_matrix->ncols; i++) {
-            for (j = 0; j < sbp->alphabet_size; j++) {
+            for (j = 0; j < (Uint4) sbp->alphabet_size; j++) {
                 if (scaled_pssm[i][j] != BLAST_SCORE_MIN) {
                     pssm[i][j] = 
                         BLAST_Nint(factor*scaled_pssm[i][j]/kPsiScaleFactor);
@@ -1285,7 +1285,7 @@ PSIScaleMatrix(const Uint1* query,              /* [in] */
     }
 
     /* FIXME: Why is this needed? */
-    for (index = 0; index < sbp->alphabet_size; index++) {
+    for (index = 0; index < (Uint4) sbp->alphabet_size; index++) {
         pssm[score_matrix->ncols-1][index] = BLAST_SCORE_MIN;
     }
 
@@ -1322,7 +1322,7 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
     Uint4 effective_length = 0;                 /* length of query w/o Xs */
     Uint4 p = 0;                                /* index on positions */
     Uint4 c = 0;                                /* index on characters */
-    Uint4 s = 0;                                /* index on scores */
+    int s = 0;                                  /* index on scores */
     int min_score = 0;                          /* minimum score in pssm */
     int max_score = 0;                          /* maximum score in pssm */
     short rv = 0;                               /* temporary return value */
@@ -1344,8 +1344,8 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
 
     /* Get the minimum and maximum scores */
     for (p = 0; p < query_length; p++) {
-        for (c = 0; c < sbp->alphabet_size; c++) {
-            const Uint4 kScore = pssm[p][aa_alphabet[c]];
+        for (c = 0; c < (Uint4) sbp->alphabet_size; c++) {
+            const int kScore = pssm[p][aa_alphabet[c]];
 
             if (kScore <= BLAST_SCORE_MIN || kScore >= BLAST_SCORE_MAX) {
                 continue;
@@ -1365,7 +1365,7 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
             continue;
         }
 
-        for (c = 0; c < sbp->alphabet_size; c++) {
+        for (c = 0; c < (Uint4) sbp->alphabet_size; c++) {
             const Uint4 kScore = pssm[p][aa_alphabet[c]];
 
             if (kScore <= BLAST_SCORE_MIN || kScore >= BLAST_SCORE_MAX) {
@@ -1477,7 +1477,7 @@ double*
 _PSIGetStandardProbabilities(const BlastScoreBlk* sbp)
 {
     Blast_ResFreq* standard_probabilities = NULL;
-    unsigned int i = 0;
+    Uint4 i = 0;
     double* retval = NULL;
 
     if ( !(retval = (double*) malloc(sbp->alphabet_size * sizeof(double))))
@@ -1486,7 +1486,7 @@ _PSIGetStandardProbabilities(const BlastScoreBlk* sbp)
     standard_probabilities = Blast_ResFreqNew(sbp);
     Blast_ResFreqStdComp(sbp, standard_probabilities);
 
-    for (i = 0; i < sbp->alphabet_size; i++) {
+    for (i = 0; i < (Uint4) sbp->alphabet_size; i++) {
         retval[i] = standard_probabilities->prob[i];
     }
 
@@ -1508,6 +1508,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/28 17:35:03  camacho
+ * Fix msvc6 warnings
+ *
  * Revision 1.5  2004/05/28 16:00:09  camacho
  * + first port of PSSM generation engine
  *
