@@ -175,6 +175,9 @@ public:
             && m_PlusCuts == rhs.m_PlusCuts
             && m_MinusCuts == rhs.m_MinusCuts;
     }
+    bool operator!=(const CRSpec& rhs) const {
+        return !(*this == rhs);
+    }
 
     // reset everything
     void Reset(void);
@@ -549,6 +552,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/18 13:52:22  jcherry
+ * Added operator!= for CRSpec (possible fix for MIPS, which seems to
+ * use != in computing vector ==)
+ *
  * Revision 1.7  2003/08/17 19:25:30  jcherry
  * Changed member variable names to follow convention
  *
