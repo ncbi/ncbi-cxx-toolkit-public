@@ -401,17 +401,9 @@ int CBlastApplication::BlastSearch()
     lookup_segments = ListNodeFreeData(lookup_segments);
 
     // Convert results to the SeqAlign form 
-    vector< CConstRef<CSeq_id> > query_seqids;
-    int index;
-
-    for (index = 0; index < m_query->size(); ++index) {
-        CConstRef<CSeq_id> id(&sequence::GetId(*(*m_query)[index].first, 
-                                              (*m_query)[index].second));
-        query_seqids.push_back(id);
-    }
-    
-    m_seqalign = BLAST_Results2CppSeqAlign(results, program, query_seqids,
-                   m_bssp, 0, m_Options->GetScoringOpts(), m_sbp);
+    m_seqalign = BLAST_Results2CSeqAlign(results, program, *m_query,
+                     m_bssp, 0, m_Options->GetScoringOpts(), m_sbp,
+                     m_Options->GetHitSavingOpts()->is_gapped);
 
     results = BLAST_ResultsFree(results);
 
@@ -510,7 +502,6 @@ int CBlastApplication::Run(void)
                  blast_program, m_query_info->num_queries, query_slp,
                  m_filter_loc, format_options, score_options->is_ooframe);
 #endif
-    m_filter_loc = BlastMaskFree(m_filter_loc);
     
 #ifdef C_FORMATTING
     PrintOutputFooter(program_number, format_options, score_options, 
@@ -518,16 +509,17 @@ int CBlastApplication::Run(void)
         m_query_info, bssp, return_stats);
 #endif
 
-    m_query_info = BlastQueryInfoFree(m_query_info);
-    m_sbp = BlastScoreBlkFree(m_sbp);
-
-    sfree(m_return_stats);
-
     return status;
 }
 
 void CBlastApplication::Exit(void)
 {
+    m_filter_loc = BlastMaskFree(m_filter_loc);
+    m_query_info = BlastQueryInfoFree(m_query_info);
+    m_sbp = BlastScoreBlkFree(m_sbp);
+
+    sfree(m_return_stats);
+
     SetDiagStream(0);
 }
 

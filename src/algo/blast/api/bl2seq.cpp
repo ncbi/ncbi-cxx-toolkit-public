@@ -568,12 +568,17 @@ CBl2Seq::x_Results2SeqAlign()
 
     _ASSERT(mi_vResults.size() == m_tSubjects.size());
     unsigned int index = 0;
-    ITERATE(TSeqLocVector, itr, m_tSubjects) {
+    
+    
+    for (index = 0; index < m_tQueries.size(); ++index)
+    {
         CRef<CSeq_align_set> seqalign =
-            BLAST_Results2CppSeqAlign(mi_vResults[index++], m_eProgram,
-                query_vector, NULL,
-                &sequence::GetId(*itr->first, itr->second),
-                m_pOptions->GetScoringOpts(), mi_pScoreBlock);
+            BLAST_Results2CSeqAlign(mi_vResults[index], m_eProgram,
+                m_tQueries, NULL, 
+                &m_tSubjects[index],
+                m_pOptions->GetScoringOpts(), mi_pScoreBlock,
+                m_pOptions->GetHitSavingOpts()->is_gapped);
+
         if (seqalign) {
             retval->Set().merge(seqalign->Set());
         }
@@ -595,6 +600,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2003/08/15 15:59:13  dondosha
+ * Changed call to BLAST_Results2CSeqAlign according to new prototype
+ *
  * Revision 1.15  2003/08/12 19:21:08  dondosha
  * Subject id argument to BLAST_Results2CppSeqAlign is now a simple pointer, allowing it to be NULL
  *
