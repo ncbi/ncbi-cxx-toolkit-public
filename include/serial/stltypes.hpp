@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/09/19 20:16:53  vasilche
+* Fixed type in CStlClassInfo_auto_ptr.
+* Added missing include serialutil.hpp.
+*
 * Revision 1.50  2000/09/18 20:00:11  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -229,6 +233,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/continfo.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <serial/serialutil.hpp>
 #include <serial/typeref.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -275,13 +280,13 @@ protected:
     static TObjectPtr GetData(const CPointerTypeInfo* /*objectType*/,
                               TObjectPtr objectPtr)
         {
-            return CTypeConverter<TObjectPtr>::Get(objectPtr).get();
+            return CTypeConverter<TObjectType>::Get(objectPtr).get();
         }
     static void SetData(const CPointerTypeInfo* /*objectType*/,
                         TObjectPtr objectPtr,
                         TObjectPtr dataPtr)
         {
-            CTypeConverter<TObjectPtr>::Get(objectPtr).
+            CTypeConverter<TObjectType>::Get(objectPtr).
                 reset(&CTypeConverter<TDataType>::Get(dataPtr));
         }
 };

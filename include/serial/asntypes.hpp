@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/09/19 20:16:52  vasilche
+* Fixed type in CStlClassInfo_auto_ptr.
+* Added missing include serialutil.hpp.
+*
 * Revision 1.33  2000/09/18 19:59:58  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -169,6 +173,7 @@
 #if HAVE_NCBI_C
 
 #include <serial/typeinfo.hpp>
+#include <serial/serialutil.hpp>
 #include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/typeref.hpp>

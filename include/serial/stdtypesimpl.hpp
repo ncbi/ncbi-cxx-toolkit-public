@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/19 20:16:53  vasilche
+* Fixed type in CStlClassInfo_auto_ptr.
+* Added missing include serialutil.hpp.
+*
 * Revision 1.5  2000/09/18 20:00:11  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -61,6 +65,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
+#include <serial/serialutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
