@@ -106,6 +106,7 @@ typedef Uint1 Boolean;
 /* low-level ANSI-style functions */
 
 #ifndef NCBI_C_TOOLKIT
+#define UINT4_MAX     4294967295U
 #define INT4_MAX    2147483647
 #define INT4_MIN    (-2147483647-1)
 #define NCBIMATH_LN2      0.69314718055994530941723212145818
