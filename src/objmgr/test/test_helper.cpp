@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/28 21:22:38  grichenk
+* More tests for location-exclusive bioseq
+*
 * Revision 1.2  2002/03/18 21:47:15  grichenk
 * Moved most includes to test_helper.cpp
 * Added test for CBioseq::ConstructExcludedSequence()
@@ -708,6 +711,18 @@ CSeq_entry& CDataGenerator::CreateConstructedExclusionEntry(int idx, int index)
     sl.Reset(new CSeq_loc);
     sl->SetInt().SetId().SetGi(11+idx*1000);
     sl->SetInt().SetFrom(10);
+    sl->SetInt().SetTo(15);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetInt().SetId().SetGi(11+idx*1000);
+    sl->SetInt().SetFrom(10);
+    sl->SetInt().SetTo(12);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetInt().SetId().SetGi(11+idx*1000);
+    sl->SetInt().SetFrom(13);
     sl->SetInt().SetTo(15);
     mix.push_back(sl);
 
