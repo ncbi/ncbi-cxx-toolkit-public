@@ -2,16 +2,17 @@
 # $Id$
 #
 
+test_dir="./data"
 prg="./alnmrg"
-tmp_out="tst/out.asn"
+tmp_out=$test_dir/out.asn
 return_status=0
 
 run_prg() {
-  $prg -in tst/$1.asn $2 > $tmp_out
+  $prg -in $test_dir/$1.asn $2 > $tmp_out
 }
 
 check_diff() {
-  cmp -s tst/$1.asn $tmp_out
+  cmp -s $test_dir/$1.asn $tmp_out
   if test "$?" != 0; then
       echo "FAILURE: $2"
       return_status=1
