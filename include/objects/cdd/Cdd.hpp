@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2002/11/20 17:16:06  hurwitz
+ * added functions for getting multiple row indices that match a seq-id
+ *
  * Revision 1.14  2002/11/07 02:01:41  hurwitz
  * added GetGIFromSequenceList
  *
@@ -162,6 +165,8 @@ public:
     bool   SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
     bool   IsAMatchFor(CRef<CSeq_id>& ID);            // see if ID matches any ID in alignment
     bool   IsAMatchFor(CRef<CSeq_id>& ID, int& RowIndex);  // same, but return row that matches
+    int    GetNthMatchFor(CRef<CSeq_id>& ID, int N);  // get RowIndex of Nth match
+    int    GetNumMatches(CRef<CSeq_id>& ID);          // get num-times ID matches an ID in alignment
     void   EraseStructureEvidence();                  // scan structure-evidence, erase missing biostruc-ids
     void   EraseUID();                                // erase CD's uid
     string GetDefline(int SeqIndex);                  // get description from sequence list
