@@ -1,3 +1,6 @@
 corelib$
-util
-connect
+util$
+util/test$
+connect$
+connect/ext
+connect/test

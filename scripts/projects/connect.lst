@@ -1,2 +1,4 @@
 corelib$
-connect
+connect$
+connect/ext
+connect/test
