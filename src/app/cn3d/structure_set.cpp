@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.51  2001/02/22 00:30:07  thiessen
 * make directories global ; allow only one Sequence per StructureObject
 *
@@ -235,6 +238,11 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
+
+// check match by gi or pdbID (not accession, since molecules presumably won't be identified that way)
+#define SAME_SEQUENCE(a, b) \
+    (((a)->gi > 0 && (a)->gi == (b)->gi) || \
+     ((a)->pdbID.size() > 0 && (a)->pdbID == (b)->pdbID && (a)->pdbChain == (b)->pdbChain))
 
 static bool VerifyMatch(const Sequence *sequence, const StructureObject *object, const Molecule *molecule)
 {

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.25  2001/02/22 00:30:06  thiessen
 * make directories global ; allow only one Sequence per StructureObject
 *
@@ -564,7 +567,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
         }
         glCanvas->structureSet->styleManager->CheckStyleSettings(glCanvas->structureSet);
         GlobalMessenger()->PostRedrawAllStructures();
-        GlobalMessenger()->PostRedrawSequenceViewers();
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
     }
 }
 

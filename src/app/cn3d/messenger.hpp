@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/03/01 20:15:29  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.10  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -76,7 +79,7 @@
 
 BEGIN_SCOPE(Cn3D)
 
-class SequenceViewer;
+class ViewerBase;
 class BlockMultipleAlignment;
 class Sequence;
 class Cn3DMainFrame;
@@ -97,16 +100,19 @@ public:
     // is cached and actually occurs during system idle time. Thus, during
     // processing of an event, any number of PostRedraws can be called, and
     // only one redraw as appropriate will be done at idle time.
-    void PostRedrawSequenceViewers(void);
-    void PostRedrawAllStructures(void);
+    void PostRedrawSequenceViewer(ViewerBase *viewer);
+    void PostRedrawAllSequenceViewers(void);
+
     void PostRedrawMolecule(const Molecule *molecule);
+    void PostRedrawAllStructures(void);
 
     // un-Post a redraw message - use (carefully!) to avoid redundant redraws
     // (flicker) if some other action is known to cause immediate redraw.
-    void UnPostRedrawSequenceViewers(void);
+    void UnPostRedrawAllSequenceViewers(void);
+    void UnPostRedrawSequenceViewer(ViewerBase *viewer);
 
     // un-Post structure redraws - again, use carefully to avoid redundant redraws
-    // when some non-Messenger method causes strucure redraws to occur
+    // when some non-Messenger method causes structure redraws to occur
     void UnPostStructureRedraws(void);
 
     // should be called only by Cn3DApp at idle time; processes any redraws
@@ -135,18 +141,20 @@ public:
     void RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
 
 private:
-    typedef std::list < SequenceViewer * > SequenceViewerList;
-    SequenceViewerList sequenceViewers;
 
+    // lists of registered viewers
+    typedef std::list < ViewerBase * > SequenceViewerList;
+    SequenceViewerList sequenceViewers;
     typedef std::list < Cn3DMainFrame * > StructureWindowList;
     StructureWindowList structureWindows;
 
     // to keep track of messages posted
     typedef std::map < const Molecule *, bool > RedrawMoleculeList; // use map to preclude redundant redraws
     RedrawMoleculeList redrawMolecules;
-
+    typedef std::map < ViewerBase *, bool > RedrawSequenceViewerList;
+    RedrawSequenceViewerList redrawSequenceViewers;
     bool redrawAllStructures;
-    bool redrawSequenceViewers;
+    bool redrawAllSequenceViewers;
 
     void RedrawMoleculesOfSameSequence(const Sequence *sequence);
 
@@ -159,13 +167,13 @@ private:
     PerSequenceHighlightStore sequenceHighlights;
 
 public:
-    Messenger(void) : redrawAllStructures(false), redrawSequenceViewers(false) { }
+    Messenger(void) : redrawAllStructures(false), redrawAllSequenceViewers(false) { }
 
     bool IsAnythingHighlighted(void) const
         { return (residueHighlights.size() > 0 || sequenceHighlights.size() > 0); }
 
     // to register sequence and structure viewers for redraw postings
-    void AddSequenceViewer(SequenceViewer *sequenceViewer)
+    void AddSequenceViewer(ViewerBase *sequenceViewer)
         { sequenceViewers.push_back(sequenceViewer); }
 
     void AddStructureWindow(Cn3DMainFrame *structureWindow)
@@ -173,7 +181,7 @@ public:
 
     // to unregister viewers
     void RemoveStructureWindow(const Cn3DMainFrame *structureWindow);
-    void RemoveSequenceViewer(const SequenceViewer *sequenceViewer);
+    void RemoveSequenceViewer(const ViewerBase *sequenceViewer);
 
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/03/01 20:15:50  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.39  2001/02/16 00:40:01  thiessen
 * remove unused sequences from asn data
 *
@@ -155,6 +158,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/sequence_viewer.hpp"

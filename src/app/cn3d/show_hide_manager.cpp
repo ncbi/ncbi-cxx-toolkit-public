@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.7  2001/01/25 20:21:18  thiessen
 * fix ostrstream memory leaks
 *
@@ -179,7 +182,7 @@ static void PostRedrawEntity(const StructureObject *object, const Molecule *mole
         }
     }
 
-    GlobalMessenger()->PostRedrawSequenceViewers();
+    GlobalMessenger()->PostRedrawAllSequenceViewers();
 }
 
 void ShowHideManager::Show(const StructureBase *entity, bool isShown)

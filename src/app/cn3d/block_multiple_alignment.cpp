@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/01 20:15:50  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.5  2001/02/13 20:33:49  thiessen
 * add information content coloring
 *
@@ -54,9 +57,9 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/conservation_colorer.hpp"
-#include "cn3d/messenger.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -650,7 +653,6 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
 
     if (actualShift != 0) {
         UpdateBlockMapAndConservationColors();
-        GlobalMessenger()->PostRedrawSequenceViewers();
         return true;
     } else
         return false;
@@ -743,7 +745,6 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
         ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - shift failed to create valid aligned block");
 
     UpdateBlockMapAndConservationColors();
-    GlobalMessenger()->PostRedrawSequenceViewers();
     return true;
 }
 
@@ -772,7 +773,6 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
         ERR_POST(Error << "BlockMultipleAlignment::SplitBlock() - split failed to create valid blocks");
 
     UpdateBlockMapAndConservationColors();
-    GlobalMessenger()->PostRedrawSequenceViewers();
     return true;
 }
 
@@ -806,7 +806,6 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
         ERR_POST(Error << "BlockMultipleAlignment::MergeBlocks() - merge failed to create valid block");
 
     UpdateBlockMapAndConservationColors();
-    GlobalMessenger()->PostRedrawSequenceViewers();
     return true;
 }
 
@@ -883,7 +882,6 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
         ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - failed to create valid block");
 
     UpdateBlockMapAndConservationColors();
-    GlobalMessenger()->PostRedrawSequenceViewers();
     return true;
 }
 
@@ -949,7 +947,6 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
 
     RemoveBlock(block);
     UpdateBlockMapAndConservationColors();
-    GlobalMessenger()->PostRedrawSequenceViewers();
     return true;
 }
 

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/03/01 20:15:51  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.12  2001/02/22 00:30:06  thiessen
 * make directories global ; allow only one Sequence per StructureObject
 *
@@ -94,18 +97,34 @@ void Messenger::PostRedrawAllStructures(void)
 
 void Messenger::PostRedrawMolecule(const Molecule *molecule)
 {
-    if (!redrawAllStructures)
-        redrawMolecules[molecule] = true;
+    if (!redrawAllStructures) redrawMolecules[molecule] = true;
 }
 
-void Messenger::PostRedrawSequenceViewers(void)
+void Messenger::PostRedrawAllSequenceViewers(void)
 {
-    redrawSequenceViewers = true;
+    redrawAllSequenceViewers = true;
+    redrawSequenceViewers.clear();
+}
+void Messenger::PostRedrawSequenceViewer(ViewerBase *viewer)
+{
+    if (!redrawAllSequenceViewers) redrawSequenceViewers[viewer] = true;
 }
 
-void Messenger::UnPostRedrawSequenceViewers(void)
+void Messenger::UnPostRedrawAllSequenceViewers(void)
 {
-    redrawSequenceViewers = false;
+    redrawAllSequenceViewers = false;
+    redrawSequenceViewers.clear();
+}
+
+void Messenger::UnPostRedrawSequenceViewer(ViewerBase *viewer)
+{
+    if (redrawAllSequenceViewers) {
+        SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
+        for (q=sequenceViewers.begin(); q!=qe; q++) redrawSequenceViewers[*q] = true;
+        redrawAllSequenceViewers = false;
+    }
+    RedrawSequenceViewerList::iterator f = redrawSequenceViewers.find(viewer);
+    if (f != redrawSequenceViewers.end()) redrawSequenceViewers.erase(f);
 }
 
 void Messenger::UnPostStructureRedraws(void)
@@ -116,11 +135,16 @@ void Messenger::UnPostStructureRedraws(void)
 
 void Messenger::ProcessRedraws(void)
 {
-    if (redrawSequenceViewers) {
+    if (redrawAllSequenceViewers) {
         SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-        for (q=sequenceViewers.begin(); q!=qe; q++)
-            (*q)->Refresh();
-        redrawSequenceViewers = false;
+        for (q=sequenceViewers.begin(); q!=qe; q++) (*q)->Refresh();
+        redrawAllSequenceViewers = false;
+    }
+
+    else if (redrawSequenceViewers.size() > 0) {
+        RedrawSequenceViewerList::const_iterator q, qe = redrawSequenceViewers.end();
+        for (q=redrawSequenceViewers.begin(); q!=qe; q++) q->first->Refresh();
+        redrawSequenceViewers.clear();
     }
 
     if (redrawAllStructures) {
@@ -163,7 +187,7 @@ void Messenger::RemoveStructureWindow(const Cn3DMainFrame *structureWindow)
     }
 }
 
-void Messenger::RemoveSequenceViewer(const SequenceViewer *sequenceViewer)
+void Messenger::RemoveSequenceViewer(const ViewerBase *sequenceViewer)
 {
     SequenceViewerList::iterator t, te = sequenceViewers.end();
     for (t=sequenceViewers.begin(); t!=te; t++) {
@@ -181,6 +205,12 @@ void Messenger::SequenceWindowsSave(void)
 
 
 ///// highlighting functions /////
+
+// check match by gi or pdbID or accession
+#define SAME_SEQUENCE(a, b) \
+    (((a)->gi > 0 && (a)->gi == (b)->gi) || \
+     ((a)->pdbID.size() > 0 && (a)->pdbID == (b)->pdbID && (a)->pdbChain == (b)->pdbChain) || \
+     ((a)->accession.size() > 0 && (a)->accession == (b)->accession))
 
 bool Messenger::IsHighlighted(const Molecule *molecule, int residueID) const
 {
@@ -250,7 +280,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
 
     for (int i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = true;
 
-    PostRedrawSequenceViewers();
+    PostRedrawAllSequenceViewers();
     if (sequence->molecule) RedrawMoleculesOfSameSequence(sequence);
 }
 
@@ -277,7 +307,7 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
         if (i == sequence->sequenceString.size())
             sequenceHighlights.erase(sh);
 
-        PostRedrawSequenceViewers();
+        PostRedrawAllSequenceViewers();
         if (sequence->molecule) RedrawMoleculesOfSameSequence(sequence);
     }
 }
@@ -311,7 +341,7 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
     bool anyRemoved = (sequenceHighlights.size() > 0 || residueHighlights.size() > 0);
 
     if (postRedraws) {
-        if (anyRemoved) PostRedrawSequenceViewers();
+        if (anyRemoved) PostRedrawAllSequenceViewers();
 
         PerSequenceHighlightStore::iterator sh, she = sequenceHighlights.end();
         for (sh=sequenceHighlights.begin(); sh!=she; sh++) {

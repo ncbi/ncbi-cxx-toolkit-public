@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/03/01 20:15:29  thiessen
+* major rearrangement of sequence viewer code into base and derived classes
+*
 * Revision 1.16  2001/02/16 00:36:47  thiessen
 * remove unused sequences from asn data
 *
@@ -143,10 +146,5 @@ public:
 };
 
 END_SCOPE(Cn3D)
-
-// check match by gi or pdbID
-#define SAME_SEQUENCE(a, b) \
-    (((a)->gi > 0 && (a)->gi == (b)->gi) || \
-     ((a)->pdbID.size() > 0 && (a)->pdbID == (b)->pdbID && (a)->pdbChain == (b)->pdbChain))
 
 #endif // CN3D_SEQUENCE_SET__HPP

@@ -26,61 +26,80 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      implementation of non-GUI part of main sequence/alignment viewer
+*      base functionality for non-GUI part of viewers
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.16  2001/03/01 20:15:29  thiessen
+* Revision 1.1  2001/03/01 20:15:30  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_SEQUENCE_VIEWER__HPP
-#define CN3D_SEQUENCE_VIEWER__HPP
+#ifndef CN3D_VIEWER_BASE__HPP
+#define CN3D_VIEWER_BASE__HPP
 
 #include <corelib/ncbistl.hpp>
 
 #include <list>
 
-#include "cn3d/viewer_base.hpp"
-
 
 BEGIN_SCOPE(Cn3D)
 
+class ViewerWindowBase;
 class Sequence;
-class AlignmentManager;
+class Messenger;
+class SequenceDisplay;
 class BlockMultipleAlignment;
-class SequenceViewerWindow;
 
-class SequenceViewer : public ViewerBase
+class ViewerBase
 {
-    friend class SequenceViewerWindow;
+public:
+
+    // to update/remove the GUI window
+    virtual void Refresh(void) = 0; // must be implemented by derived class
+    void DestroyGUI(void);
+
+    // to push/pop alignment+display data for undo during editing
+    void PushAlignment(void);
+    void PopAlignment(void);
+
+    // revert back to original (w/o save)
+    void RevertAlignment(void);
+    void KeepOnlyStackTop(void);
+
+    // tell viewer to save its data (does nothing unless overridden)
+    virtual void SaveDialog(void) { }
+
+protected:
+
+    // can't instantiate this base class
+    ViewerBase(ViewerWindowBase* *window);
+    virtual ~ViewerBase(void);
+
+    // handle to the associated window
+    ViewerWindowBase* *const viewerWindow;
+
+    typedef std::list < BlockMultipleAlignment * > AlignmentStack;
+    AlignmentStack alignmentStack;
+
+    typedef std::list < SequenceDisplay * > DisplayStack;
+    DisplayStack displayStack;
+
+    void InitStacks(BlockMultipleAlignment *alignment, SequenceDisplay *display);
+    void ClearStacks(void);
 
 public:
 
-    SequenceViewer(AlignmentManager *alnMgr);
-    ~SequenceViewer(void);
+    void GUIDestroyed(void) { *viewerWindow = NULL; }
 
-    void Refresh(void);
+    BlockMultipleAlignment * GetCurrentAlignment(void) const
+        { return ((alignmentStack.size() > 0) ? alignmentStack.back() : NULL); }
 
-    // to create displays from unaligned sequence(s), or multiple alignment
-    typedef std::list < const Sequence * > SequenceList;
-    void DisplaySequences(const SequenceList *sequenceList);
-    void DisplayAlignment(BlockMultipleAlignment *multipleAlignment);
-
-    // functions to save edited data
-    void SaveDialog(void);
-    void SaveAlignment(void);
-
-private:
-
-    AlignmentManager *alignmentManager;
-    SequenceViewerWindow *sequenceWindow;
-
-    void CreateSequenceWindow(void);
+    SequenceDisplay * GetCurrentDisplay(void) const
+        { return ((displayStack.size() > 0) ? displayStack.back() : NULL); }
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_SEQUENCE_VIEWER__HPP
+#endif // CN3D_VIEWER_BASE__HPP
