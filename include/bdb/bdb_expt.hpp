@@ -124,6 +124,7 @@ public:
         eIdxSearch,
         eInvalidValue,
         eInvalidOperation,
+		eInvalidType,
         eTransInProgress,
         eNull,
         eQueryError,
@@ -139,6 +140,7 @@ public:
         case eIdxSearch:         return "eIdxSearch";
         case eInvalidValue:      return "eInvalidValue";
         case eInvalidOperation:  return "eInvalidOperation";
+        case eInvalidType:  	 return "eInvalidType";
         case eNull:              return "eNull";
         case eTransInProgress:   return "eTransInProgress";
         case eQueryError:        return "eQueryError";
@@ -188,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/17 13:37:00  kuznets
+ * +new exception InvalidType
+ *
  * Revision 1.12  2004/02/24 19:24:48  kuznets
  * Syntax error fix
  *
