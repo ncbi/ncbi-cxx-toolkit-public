@@ -221,6 +221,7 @@ typedef struct BlastExtensionOptions {
    double gap_trigger;/**< Score in bits for starting gapped extension */
    Int4 algorithm_type; /**< E.g. for blastn: dynamic programming; 
                            greedy without traceback; greedy with traceback */
+   Boolean skip_traceback; /**< Is traceback information needed in results? */
 } BlastExtensionOptions;
 
 typedef struct BlastExtensionParameters {
