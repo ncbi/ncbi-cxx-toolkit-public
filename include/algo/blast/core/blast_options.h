@@ -245,6 +245,8 @@ typedef struct BlastHitSavingParameters {
         VoidPtr hsp_list, VoidPtr hit_options, VoidPtr query_info, 
         VoidPtr sbp, VoidPtr rdfp));
    /**< Callback for formatting results on the fly for each subject sequence */
+   Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
+                         provided by the user */
 } BlastHitSavingParameters, *BlastHitSavingParametersPtr;
 	
 
@@ -383,7 +385,7 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
 
 /** Allocate memory for BlastInitialWordParameters and set x_dropoff.
  * @param word_options The initial word options [in]
- * @param hit_options The hit saving options (needed to calculate cutoff score 
+ * @param hit_params The hit saving options (needed to calculate cutoff score 
  *                    for ungapped extensions) [in]
  * @param ext_params Extension parameters (containing gap trigger value) [in]
  * @param sbp Statistical (Karlin-Altschul) information [in]
@@ -393,7 +395,7 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
 */
 Int2
 BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
-   BlastHitSavingOptionsPtr hit_options, 
+   BlastHitSavingParametersPtr hit_params, 
    BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
    BlastQueryInfoPtr query_info, FloatHi avglen, 
    BlastInitialWordParametersPtr *parameters);
@@ -426,11 +428,14 @@ Int2 BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_Messa
  * @param blast_program Program name [in]
  * @param options Already allocated extension options [in]
  * @param sbp Structure containing statistical information [in]
+ * @param query_info Query information, needed only for determining the first 
+ *                   context [in]
  * @param parameters Extension parameters [out]
  */
 Int2 BlastExtensionParametersNew(CharPtr blast_program, 
         BlastExtensionOptionsPtr options, 
-        BLAST_ScoreBlkPtr sbp, BlastExtensionParametersPtr *parameters);
+        BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
+        BlastExtensionParametersPtr *parameters);
 
 /** Deallocate memory for BlastExtensionParameters. */
 BlastExtensionParametersPtr
@@ -540,11 +545,17 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parameters);
 /** Allocate memory for BlastInitialWordParameters and set x_dropoff. 
  * @param options The given hit saving options [in]
  * @param handle_results Callback function for printing results on the fly [in]
+ * @param sbp Scoring block, needed for calculating score cutoff from 
+ *            e-value [in]
+ * @param query_info Query information, needed for calculating score cutoff 
+ *                   from e-value [in]
  * @param parameters Resulting parameters [out]
  */
 Int2 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
-        int handle_results(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
-                VoidPtr), BlastHitSavingParametersPtr *parameters);
+        int handle_results(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
+                           VoidPtr, VoidPtr), 
+        BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
+        BlastHitSavingParametersPtr *parameters);
 
 /** Initialize the formatting options structure.
  * @param program Name of the BLAST program [in]
