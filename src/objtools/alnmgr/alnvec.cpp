@@ -211,10 +211,21 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                                       TSeqPosList * scrn_lefts,
                                       TSeqPosList * scrn_rights) const
 {
-    TSeqPos aln_pos = 0, len = 0, curr_pos = 0, anchor_pos = 0, scrn_pos = 0;
-    TSignedSeqPos start = -1, stop = -1, scrn_lft_seq_pos = -1, scrn_rgt_seq_pos = -1;
-    TNumseg seg;
-    int pos, nscrns, delta;
+    TSeqPos       aln_pos = 0,
+        len = 0,
+        curr_pos = 0,
+        anchor_pos = 0,
+        scrn_pos = 0,
+        prev_len = 0,
+        ttl_len = 0;
+    TSignedSeqPos start = -1,
+        stop = -1,
+        scrn_lft_seq_pos = -1,
+        scrn_rgt_seq_pos = -1,
+        prev_aln_pos = -1,
+        prev_start = -1;
+    TNumseg       seg;
+    int           pos, nscrns, delta;
     
     TSeqPos aln_len = GetAlnStop() + 1;
 
@@ -249,8 +260,6 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             if (start >= 0) {
                 // record the insert if requested
                 if (record_inserts) {
-                    static TSignedSeqPos prev_aln_pos, prev_start = -1;
-                    static TSeqPos       prev_len, ttl_len        = 0;
                     if (prev_aln_pos == (aln_pos / width)  &&
                         start == (plus ? prev_start + prev_len :
                                   prev_start - len)) {
@@ -769,6 +778,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2003/09/23 21:29:34  todorov
+* Rearranged variables & fixed a bug
+*
 * Revision 1.50  2003/09/23 18:37:24  todorov
 * bug fix in GetWholeAlnSeqString
 *
