@@ -66,11 +66,17 @@ CSplicedAligner16::CSplicedAligner16(const char* seq1, size_t len1,
 
 CNWAligner::TScore CSplicedAligner16::GetDefaultWi(unsigned char splice_type)
 {
-    if(splice_type == 3) {
-        return -40; //arbitrary splice
-    }
-    else {
-        return CSplicedAligner::GetDefaultWi(splice_type);
+
+   switch(splice_type) {
+        case 0: return -10; // GT/AG
+        case 1: return -15; // GC/AG
+        case 2: return -15; // AT/AC
+        case 3: return -25; // ??/??
+        default: {
+            NCBI_THROW(CAlgoAlignException,
+                       eInvalidSpliceTypeIndex,
+                       "Invalid splice type index");
+        }
     }
 }
 
@@ -526,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/27 21:00:17  kapustin
+ * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.
+ *
  * Revision 1.5  2003/10/14 19:29:24  kapustin
  * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespaces are not everywhere supported
  *

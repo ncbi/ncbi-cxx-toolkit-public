@@ -120,7 +120,16 @@ CSplicedAligner32::CSplicedAligner32(const char* seq1, size_t len1,
 
 CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
 {
-    return CSplicedAligner::GetDefaultWi(splice_type);
+    switch(splice_type) {
+        case 0: return -30; // GT/AG
+        case 1: return -35; // GC/AG
+        case 2: return -35; // AT/AC
+        default: {
+            NCBI_THROW(CAlgoAlignException,
+                       eInvalidSpliceTypeIndex,
+                       "Invalid splice type index");
+        }
+    }
 }
 
 
@@ -597,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/27 21:00:17  kapustin
+ * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.
+ *
  * Revision 1.7  2003/10/14 19:31:52  kapustin
  * Use one flag for all gap types
  *
