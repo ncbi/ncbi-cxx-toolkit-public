@@ -32,20 +32,27 @@ REM ---------------------------------------------------------------------------
 REM $Log$
 REM ===========================================================================
 
-IF EXIST %1% GOTO FOUND
+IF NOT _%1% == _ GOTO DLL
+SET DSWFILE=
+GOTO NEXTARG
+:DLL
 IF NOT _%1% == _DLL GOTO LIB
-SET FILE=wxvc_dll.dsw
+SET DSWFILE=wxvc_dll.dsw
 GOTO NEXTARG
 :LIB
 IF NOT _%1% == _LIB GOTO ERR
-SET FILE=wxvc.dsw
+SET DSWFILE=wxvc.dsw
 GOTO NEXTARG
 :ERR
-ECHO ERROR: Unknown parameter "%1%". Please specify either LIB or DLL.
+ECHO FATAL: Unknown parameter "%1%". Please specify ALL, LIB or DLL.
 GOTO EXIT
 
 :NEXTARG
 IF _%2% == _ GOTO DEFAULT
+IF NOT _%FILE% == _ GOTO SETCFG
+ECHO ERROR: Target ALL. Configuration(s) ignored.
+GOTO DEFAULT
+:SETCFG
 SET CFG=%2%
 GOTO LOOP
 :DEFAULT
@@ -61,26 +68,41 @@ IF %CFG% == ReleaseMT GOTO CONTINUE
 IF %CFG% == ReleaseDLL GOTO CONTINUE
 ECHO INFO: The following configuration names are recognized:
 ECHO       Debug DebugMT DebugDLL Release ReleaseMT ReleaseDLL ALL
-ECHO FATAL: Unknown configuration name %CFG% - please correct.
-SET ERROR=1
+ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
-ECHO INFO: Building "all - %CFG%" using %FILE%.
-msdev.exe %FILE% /MAKE "all - %CFG%"
-IF ERRORLEVEL 0 GOTO GOON
-SET ERROR=1
-GOTO END
+IF NOT _%DSWFILE% == _ GOTO BUILD
+IF _%CFG% == _ GOTO SETDLL
+SET FILE=wxvc.dsw
+GOTO BUILD
+:SETDLL
+SET DSWFILE=dummy
+SET FILE=wxvc_dll.dsw
+SET CFG=ALL
+GOTO BUILD
 
-:GOON
-IF %CFG% == ALL GOTO END
+:BUILD
+ECHO INFO: Building "all - %CFG%" using %FILE%.
+IF EXIST %FILE% GOTO START
+ECHO FATAL: File %FILE% not found. Please check your settings.
+GOTO EXIT
+:START
+msdev.exe %FILE% /MAKE "all - %CFG%"
+IF NOT ERRORLEVEL 0 GOTO ABORT
+
+IF NOT %CFG% == ALL GOTO ITERATE
+IF NOT _%DSWFILE% == _ GOTO COMPLETE
+SET CFG=
+GOTO CONTINUE
+
+:ITERATE
 SHIFT
-IF _%2% == _ GOTO END
+IF _%2% == _ GOTO COMPLETE
 SET CFG=%2%
 GOTO LOOP
 
-:END
-IF _%ERROR% == _ GOTO COMPLETE
+:ABORT
 ECHO INFO: Aborted, please see error log. Hit any key to quit...
 PAUSE > NUL
 GOTO EXIT
