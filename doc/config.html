@@ -1142,7 +1142,7 @@ or <i>\\dizzy\public\cxx\<b>DebugMT</b></i>, according to the configuration you 
 in the field <i>"Additional library path"</i>.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
-Moreover, if one of conversion <a href="msvc_prj.html#scripts">scripts</a> is then applied to your project file, then
+Moreover, if one of <a href="msvc_prj.html#scripts">conversion scripts</a> is then applied to your project file, then
 the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
 <p>
 If, however, you need to trace through the library source code, then you have to put
@@ -1177,8 +1177,8 @@ Your project has to specify all the library names (<b>tiff.lib jpeg.lib pnm.lib 
 Please note that although the wxWindows documentation instructs you to use *.lib in Release mode and *d.lib in Debug mode,
 we renamed the libraries to have the same names in any configuration, but we keep them in separate directories.
 Also note that in both <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations, only one library
-<b>wx.lib</b> is required to link your program dynamically with <b>wx.dll</b>. If conversion
-<a href="msvc_prj.html#scripts">scripts</a> are later applied to your project file, then the proper set of the libraries is chosen automatically.
+<b>wx.lib</b> is required to link your program dynamically with <b>wx.dll</b>. If <a href="msvc_prj.html#scripts">conversion
+scripts</a> are later applied to your project file, then the proper set of the libraries is chosen automatically.
 <br>
 You also have to specify the correct path to the libraries (<i>\\dizzy\public\wxwin\</i><tt>[Debug|Release]*</tt>),
 according to the configuration you are adjusting, in the field <i>"Additional library path"</i>.
@@ -1187,7 +1187,7 @@ Note that many programs that use wxWindows may require additional system librari
 The list of known libraries includes (but not limited to) the following:
 <b>advapi32.lib</b>, <b>comctl32.lib</b>, <b>comdlg32.lib</b>, <b>gdi32.lib</b>,
 <b>ole32.lib</b>, <b>shell32.lib</b>, <b>user32.lib</b>, <b>winmm.lib</b>, <b>wsock32.lib</b>. And if the program
-uses GL graphics, the following two libraries definitely come in addition: <b>glu32.lib</b> and
+uses OpenGL graphics, the following two libraries definitely come in addition: <b>glu32.lib</b> and
 <b>opengl32.lib</b>. All those libraries have to be listed in <i>"Objects/Library modules"</i> of
 linker settings (as described earlier for wxWindows libraries).
 
@@ -1201,7 +1201,7 @@ defined in Debug configurations, and <tt>WXUSINGDLL</tt> - in DLL configurations
 The <a href="msvc_prj.html#scripts">conversion scripts</a> are aware of these symbols, and they make all necessary adjustments to keep these symbols consistent -- whenever you convert your project file(s).
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
-Moreover, if one of conversion <a href="msvc_prj.html#scripts">scripts</a> is then applied to your project,
+Moreover, if one of <a href="msvc_prj.html#scripts">conversion scripts</a> is then applied to your project,
 the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
 <p>
 If, however, you need to trace through the library source code, you have to put <i>\\dizzy\public\wxwin\<b>src</b></i>
