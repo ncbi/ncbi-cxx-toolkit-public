@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/06 19:56:12  ucko
+* Check for EOF at the beginning of AbstractLexer::FillChar() to handle
+* Compaq's iostream implementation.
+*
 * Revision 1.16  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -165,6 +169,9 @@ const AbstractToken& AbstractLexer::FillNextToken(void)
 
 char AbstractLexer::FillChar(size_t index)
 {
+    if (Eof()) {
+        return 0;
+    }
     char* pos = m_Position + index;
     if ( pos >= m_AllocEnd ) {
         // char will lay outside of buffer
