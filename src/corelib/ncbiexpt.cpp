@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/16 23:52:41  vakatov
+* Porting to Mac...
+*
 * Revision 1.15  2000/04/04 22:30:26  vakatov
 * SetThrowTraceAbort() -- auto-set basing on the application
 * environment and/or registry
@@ -105,14 +108,14 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace)
 extern void DoThrowTraceAbort(void)
 {
     if ( !s_DTTA_Initialized ) {
-        const char* str = ::getenv(ABORT_ON_THROW);
+        const char* str = getenv(ABORT_ON_THROW);
         if (str  &&  *str)
             s_DoThrowTraceAbort = true;
         s_DTTA_Initialized  = true;
     }
 
     if ( s_DoThrowTraceAbort )
-        ::abort();
+        abort();
 }
 
 extern void DoDbgPrint(const char* file, int line, const char* message)

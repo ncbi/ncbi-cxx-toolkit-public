@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/11/16 23:52:41  vakatov
+* Porting to Mac...
+*
 * Revision 1.34  2000/11/07 04:06:08  vakatov
 * kEmptyCStr (equiv. to NcbiEmptyCStr)
 *
@@ -322,7 +325,7 @@ int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* endptr = 0;
-    long value = ::strtol(str.c_str(), &endptr, base);
+    long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value < kMin_Int || value > kMax_Int)
         throw runtime_error("NStr::StringToInt():  cannot convert");
@@ -334,7 +337,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* endptr = 0;
-    unsigned long value = ::strtoul(str.c_str(), &endptr, base);
+    unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value > kMax_UInt)
         throw runtime_error("NStr::StringToUInt():  cannot convert");
@@ -346,7 +349,7 @@ long NStr::StringToLong(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* endptr = 0;
-    long value = ::strtol(str.c_str(), &endptr, base);
+    long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
         throw runtime_error("NStr::StringToLong():  cannot convert");
     CHECK_ENDPTR();
@@ -357,7 +360,7 @@ unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* endptr = 0;
-    unsigned long value = ::strtoul(str.c_str(), &endptr, base);
+    unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
         throw runtime_error("NStr::StringToULong():  cannot convert");
     CHECK_ENDPTR();
@@ -368,7 +371,7 @@ double NStr::StringToDouble(const string& str)
 {
     errno = 0;
     char* endptr = 0;
-    double value = ::strtod(str.c_str(), &endptr);
+    double value = strtod(str.c_str(), &endptr);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
         throw runtime_error("NStr::StringToDouble():  cannot convert");
     if ( *endptr == '.' )
@@ -495,9 +498,9 @@ extern char* strdup(const char* str)
     if ( !str )
         return 0;
 
-    size_t size   = ::strlen(str) + 1;
-    void*  result = ::malloc(size);
-    return (char*) (result ? ::memcpy(result, str, size) : 0);
+    size_t size   = strlen(str) + 1;
+    void*  result = malloc(size);
+    return (char*) (result ? memcpy(result, str, size) : 0);
 }
 #endif
 

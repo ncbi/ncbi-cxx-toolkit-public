@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/16 23:52:41  vakatov
+* Porting to Mac...
+*
 * Revision 1.23  2000/10/24 21:51:21  vakatov
 * [DEBUG] By default, do not print file name and line into the diagnostics
 *
@@ -324,8 +327,8 @@ extern void SetDiagPostPrefix(const char* prefix)
     //## MUTEX_LOCK(s_Mutex);
     delete[] CDiagBuffer::sm_PostPrefix;
     if (prefix  &&  *prefix) {
-        CDiagBuffer::sm_PostPrefix = new char[::strlen(prefix) + 1];
-        ::strcpy(CDiagBuffer::sm_PostPrefix, prefix);
+        CDiagBuffer::sm_PostPrefix = new char[strlen(prefix) + 1];
+        strcpy(CDiagBuffer::sm_PostPrefix, prefix);
     } else {
         CDiagBuffer::sm_PostPrefix = 0;
     }
@@ -500,7 +503,7 @@ CNcbiDiag::CNcbiDiag(const char* file, size_t line,
 CNcbiDiag& CNcbiDiag::SetFile(const char* file)
 {
     if (file  &&  *file) {
-        ::strncpy(m_File, file, sizeof(m_File));
+        strncpy(m_File, file, sizeof(m_File));
         m_File[sizeof(m_File) - 1] = '\0';
     } else {
         *m_File = '\0';
