@@ -1,72 +1,75 @@
-<!--#set var="TITLE" value="A Simple Application Project" -->
+<!--#set var="TITLE" value="NCBI Application" -->
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
 
-<h1>Writing a Simple Application Project</h1>
 
+<h2>Writing a Simple Application.</h2>
+
+
+<div>
 <ul>
-<li>
-<a href="#using">Using the NCBI Application Class</a></li>
-
-<li>
-<a href="#creating">Creating the Application Class</a></li>
-
-<li>
-<a href="#inside">Inside the Application Class</a></li>
+  <li>
+    <a href="#using">Using the NCBI Application Class</a></li>
+  <li>
+    <a href="#creating">Creating the Application Class</a></li>
+  <li>
+    <a href="#inside">Inside the Application Class</a></li>
 </ul>
-This page describes what you will need to know to write the simplest possible
-application using the C++ Toolkit. The program simply prints a message
+
+This page describes what is needed to write the simplest possible
+application using the NCBI C++ Toolkit. The program simply prints a message
 to the screen. Following this exercise however, will introduce you to the
 foundation classes of the library.
-<p><a NAME="using"></a>
-<h3>
-Using the NCBI Application Class</h3>
+</div>
+
+
+
+<a NAME="using"></a>
+<h3>Using the NCBI Application Class</h3>
+<p>
 Five fundamental classes form the foundation of the C++ Toolkit:
 <ul>
-<li>
-class <a href="#CNcbiApplication">CNcbiApplication</a></li>
-
-<li>
-class <a href="#CNcbiArguments">CNcbiArguments</a>&nbsp; (see also <a href="argdescr.html">CArgDescriptions,
-CArgs, ...</a>)</li>
-
-<li>
-class <a href="#CNcbiEnvironment">CNcbiEnvironment</a></li>
-
-<li>
-class <a href="#CNcbiRegistry">CNcbiRegistry</a></li>
-
-<li>
-class <a href="#CNcbiDiag">CNcbiDiag</a></li>
+  <li>
+    class <a href="#CNcbiApplication">CNcbiApplication</a></li>
+  <li>
+    class <a href="#CNcbiArguments">CNcbiArguments</a>&nbsp;
+	(see also <a href="argdescr.html">CArgDescriptions, CArgs, ...</a>)</li>
+  <li>
+    class <a href="#CNcbiEnvironment">CNcbiEnvironment</a></li>
+  <li>
+    class <a href="#CNcbiRegistry">CNcbiRegistry</a></li>
+  <li>
+    class <a href="#CNcbiDiag">CNcbiDiag</a></li>
 </ul>
-<a NAME="CNcbiApplication"></a><i><a href="../docxx/CNcbiApplication.html">CNcbiApplication</a></i>
+</p>
+
+
+<a NAME="CNcbiApplication"></a>
+<p>
+<i><a href="../docxx/CNcbiApplication.html">CNcbiApplication</a></i>
 is an abstract class used to define the basic functionality and behavior
-of an NCBI application. Because this application class effectively supercedes
+of an NCBI application. Since this application class effectively supercedes
 the <i>C</i>-style <i>main()</i> function, minimally, it must provide the
 same functionality, i.e.
 <ul>
-<li>
-A mechanism to execute the actual application</li>
-
-<li>
-A data structure for holding program command-line arguments ("argv")</li>
-
-<li>
-A data structure for holding environmental variables</li>
+  <li>
+    A mechanism to execute the actual application</li>
+  <li>
+    A data structure for holding program command-line arguments ("argv")</li>
+  <li>
+    A data structure for holding environmental variables</li>
 </ul>
 In addition, the application class provides the same features previously
 implemented in the C Toolkit, namely:
 <ul>
-<li>
-Mechanisms for specifying where, when, and how errors should be reported</li>
-
-<li>
-Methods for reading, accessing, modifying, and writing information in the
-application's registry (configuration) file</li>
-
-<li>
-Methods to describe, and then automatically parse, validate and access
-program command-line arguments, and to generate the<i>USAGE</i> message</li>
+  <li>
+    Mechanisms for specifying where, when, and how errors should be reported</li>
+  <li>
+    Methods for reading, accessing, modifying, and writing information in the
+    application's registry (configuration) file</li>
+  <li>
+    Methods to describe, and then automatically parse, validate and access
+    program command-line arguments, and to generate the<i>USAGE</i> message</li>
 </ul>
 The mechansim to execute the application is provided by <i>CNcbiApplication</i>'s
 member function <i>Run()</i> - which you must write your own implementation
@@ -74,7 +77,12 @@ of. The <i>Run()</i> function will be automatically invoked by <i>CNcbiApplicati
 after it has initialized its
 <i>CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>,
 and <i>CNcbiDiag</i> data members.
-<p><a NAME="CNcbiArguments"></a>The <i><a href="../docxx/CNcbiArguments.html">CNcbiArguments</a></i>
+</p>
+
+
+<a NAME="CNcbiArguments"></a>
+<p>
+The <i><a href="../docxx/CNcbiArguments.html">CNcbiArguments</a></i>
 class provides a data structure for holding the application's command-line
 arguments, along with methods for accessing and modifying these. Access
 to the argument values is implemented using the built-in <i>[ ]</i> operator
@@ -82,9 +90,9 @@ to the argument values is implemented using the built-in <i>[ ]</i> operator
 name) can be retrieved using the
 <i>CNcbiApplication::GetArguments()</i>
 method, as:
-<br>
+<br />
 <pre>string arg1_value = GetArguments()[1];</pre>
-<br>Here,
+Here,
 <i>GetArguments()</i> returns the <i>CNcbiArguments</i> object,
 whose argument values can then be retrieved using the <i>[ ]</i> operator.
 Four additional <i>CNcbiArgument</i> member functions support retrieval
@@ -93,54 +101,61 @@ class, described in <i><a href="argdescr.html">Parsing, validating, and
 accessing command line arguments</a></i>, supports the generation of
 <i>USAGE</i>
 messages and the imposition of constraints on the values of the input arguments.
-<br><br>
+<br /><br />
 When using C++ Toolkit on Mac OS you can specify command-line arguments in a separate 
 file with the name of your executable and ".args" extension. Each argument should be on a separate line.
-<br><br>
+<br /><br />
 Example:
-<br>
+<br />
 <table border=1 CELLPADDING=5 CELLSPACING=1>
-<tr>
-<td>
-<b>Command-line parameters</b>
-</td>
-<td>
-<b>File Content</b>
-</td>
-<tr>
-<tr>
-<td>
--gi "Integer" (GI id of the Seq-Entry to examine)<br><br>
+  <tr>
+    <th>Command-line parameters</th>
+    <th>File Content</th>
+  </tr>
+  <tr>
+    <td>
+-gi "Integer" (GI id of the Seq-Entry to examine)<br /><br />
 
-OPTIONAL ARGUMENTS<br><br>
- -h (Print this USAGE message;  ignore other arguments)<br>
- -reconstruct (Reconstruct title)<br>
- -accession (Prepend accession)<br>
+OPTIONAL ARGUMENTS:<br />
+ -h (Print this USAGE message;  ignore other arguments)<br />
+ -reconstruct (Reconstruct title)<br />
+ -accession (Prepend accession)<br />
  -organism (Append organism name)
-</td>
-<td>
--gi<br>
-10200<br>
--reconstruct<br>
--accession<br>
--organism<br><br>
-</td>
-<tr>
+    </td>
+    <td>
+-gi<br />
+10200<br />
+-reconstruct<br />
+-accession<br />
+-organism<br />
+    </td>
+  </tr>
 </table>
-<br>
-Please note of the following:
-<li>File must contain Macintosh-style line breaks<br>
-<li>No extra spaces are allowed after argument ("-accession" and not "-accession ")<br>
-<li>Arguments must be followed by an empty terminating line.<br>
+
+Please note:
+<ul>
+<li>File must contain Macintosh-style line breaks</li>
+<li>No extra spaces are allowed after argument ("-accession" and not "-accession ")</li>
+<li>Arguments must be followed by an empty terminating line.</li>
+</ul>
+</p>
 
 
-<p><a NAME="CNcbiEnvironment"></a>The <i><a href="../docxx/CNcbiEnvironment.html">CNcbiEnvironment</a></i>
+<a NAME="CNcbiEnvironment"></a>
+<p>
+The <i><a href="../docxx/CNcbiEnvironment.html">CNcbiEnvironment</a></i>
 class provides a data structure for storing, accessing, and modifying the
 environment variables accessed by the C library routine <i>getenv()</i>.
 For example, to retrieve the value of environment variable <b>PATH</b>:
-<br><pre>string arg1_value = GetEnvironment().Get("PATH");</pre>
-<p><a NAME="CNcbiRegistry"></a>The
-<i><a href="registry.html">CNcbiRegistry</a></i>
+<br>
+<pre>string arg1_value = GetEnvironment().Get("PATH");</pre>
+</p>
+
+
+
+<a NAME="CNcbiRegistry"></a>
+<p>
+The <i><a href="registry.html">CNcbiRegistry</a></i>
 class is used to load, access, modify and store runtime information read
 from a configuration file. Previously, these files were by convention named
 <i>.*rc</i>
@@ -149,9 +164,14 @@ files on
 </i>systems. The convention for all platforms now is to
 name such files
 <i>*.ini</i> (where * is by default the application name).
-<p><a NAME="CNcbiDiag"></a>The
-<i><a href="diag.html">CNcbiDiag
-</a></i>class
+</p>
+
+
+
+
+<a NAME="CNcbiDiag"></a>
+<p>
+The <i><a href="diag.html">CNcbiDiag</a></i> class
 implements much of the functionality of the NCBI C Toolkit error processing
 mechanisms. Each instance of <i>CNcbiDiag</i> has a private buffer to handle
 a <i>single</i> message, along with private severity level and post flags
@@ -162,43 +182,56 @@ to <i>stderr</i>, with the action determined by the severity level of the
 message, however user can provide another stream to post to, or create
 an arbitrary callback to do the job, or just ignore all diagnostics. See
 also <i><a href="diag.html">Diagnostic Streams </a></i>in this manual,
-as well as the discussion in the Reference Manual section on <i><a href="../libs/err_msg.html#ref_Message">message
-posting</a></i>.
-<p><a NAME="creating"></a>
-<h3>
-Creating a Simple Application Class</h3>
+as well as the discussion in the Reference Manual section on 
+<i><a href="../libs/err_msg.html#ref_Message">message posting</a></i>.
+</p>
+
+
+<a NAME="creating"></a>
+<h3>Creating a Simple Application Class</h3>
+<p>
 <b>Step 1.</b> Define a subclass of the <i>CNcbiApplication </i>class.
-<p>Because <i>CNcbiApplication::Run() </i>is defined as a pure virtual
-function, the class cannot be used directly. Instead, you must first define
+</p>
+
+<p>
+Since <i>CNcbiApplication::Run() </i>is a pure virtual function,
+the class cannot be used directly. Instead, you must first define
 a subclass which inherits from <i>CNcbiApplication</i>, and implement
-<i>Run()
-</i>in
-the subclass.
-<p>Define the subclass in a header file, and in the subclass declaration,
-declare
-<i>Run()</i> to be a virtual function:
+<i>Run()</i> in the subclass.
+</p>
+
+<p>
+Define the subclass in a header file, and in the subclass declaration,
+declare <i>Run()</i> to be a virtual function:
+
 <pre>
 // File name: justApp.hpp
 
 #ifndef JUST_APP__HPP
 #define JUST_APP__HPP
-#include &lt;corelib/ncbiapp.hpp>
+#include &lt;corelib/ncbiapp.hpp&gt;
 
-BEGIN_NCBI_SCOPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+BEGIN_NCBI_SCOPE
 
 class CTestApp : public CNcbiApplication
 {
 public:
-&nbsp;&nbsp;&nbsp; virtual int Run(void);
+    virtual int Run(void);
 };
 
 END_NCBI_SCOPE
 
-#endif /* JUST_APP__HPP */</pre>
+#endif /* JUST_APP__HPP */
+</pre>
+</p>
 
-<p><br><b>Step 2.</b> Define <i>main()</i> in the
+<p>
+<b>Step 2.</b> Define <i>main()</i> in the
 <i>*.cpp</i> file where you instantiate your application subclass.
-<p>Inside <i>main()</i>, instantiate your application
+</p>
+
+<p>
+Inside <i>main()</i>, instantiate your application
 subclass, and call its inherited function,
 <i>AppMain()</i>. This file
 is also a good place to put the implementation of the
@@ -209,6 +242,7 @@ Enclose the <i>Run() </i>implementation with <i>BEGIN_NCBI_SCOPE
 </i>statements,
 and precede <i>main() </i>(as well as any other code using the NCBI C++
 Toolkit) with a <i>USING_NCBI_SCOPE </i>statement:
+
 <pre>
 // file justApp.cpp
 
@@ -217,21 +251,24 @@ Toolkit) with a <i>USING_NCBI_SCOPE </i>statement:
 BEGIN_NCBI_SCOPE
 
 int CTestApp::Run() {
-&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Executing CTestApp::Run()!" &lt;&lt; endl;
-&nbsp;&nbsp;&nbsp; return 0;
+    cout &lt;&lt; "Executing CTestApp::Run()!" &lt;&lt; endl;
+    return 0;
 }
 
-END_NCBI_SCOPE</pre>
+END_NCBI_SCOPE
 
-<pre>USING_NCBI_SCOPE;
+
+USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])&nbsp;
 {
-&nbsp;&nbsp;&nbsp; CTestApp theTestApp;
-&nbsp;&nbsp;&nbsp; return theTestApp.AppMain(argc, argv);
+    CTestApp theTestApp;
+    return theTestApp.AppMain(argc, argv);
 }
 </pre>
+</p>
 
+<p>
 <b>Step 3.</b> Assuming you have done all of this
 work in a project directory called "justApp", and have already run the
 <i><a href="outside_tree.html">new_project.sh</a></i>
@@ -252,22 +289,25 @@ without requiring the :: scope operator.
 combines the usage of the <i>CNcbiApplication</i> class with the&nbsp;<i>
 CArgDescriptions</i>, <i>CArgs, </i>and
 <i>CNcbiDiag</i> classes. For a
-more realistic usage of these classes, see also the test program, <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>.
-<p><a NAME="inside"></a>
+more realistic usage of these classes, see also the test program,
+<i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>.
+</p>
+
+
+<a NAME="inside"></a>
 <h3>Inside the NCBI Application Class</h3>
+<p>
 To review what we've done so far:
 <ol>
-<li>
-We defined a subclass of <i>CNcbiApplication </i>with
-an implementation of <i>Run()</i>.</li>
-
-<li>
-We created an instance of this class in <i>main()</i>.</li>
-
-<li>
-In <i>main()</i>, we invoked the class member function
-<i>AppMain()</i>,
-and passed <i>argc, argv[ ]</i> to it.</li>
+  <li>
+    We defined a subclass of <i>CNcbiApplication </i>with
+    an implementation of <i>Run()</i>.</li>
+  <li>
+    We created an instance of this class in <i>main()</i>.</li>
+  <li>
+    In <i>main()</i>, we invoked the class member function
+    <i>AppMain()</i>,
+    and passed <i>argc, argv[ ]</i> to it.</li>
 </ol>
 Here is a somewhat simplified view of the application
 class's definition:
@@ -292,6 +332,7 @@ protected:
    .............
 };
 </pre>
+
 The protected virtual function <i>SetupDiag_AppSpecific()</i>
 can be redefined to setup error posting specific for your application.
 <i>SetupDiag_AppSpecific()</i>
@@ -308,50 +349,58 @@ parameters into the registry. The default implementation of <i>LoadConfig()</i>
 expects to find a configuration file named
 <i>progname.ini</i>, and will
 generate a warning to the user if no such file is found.
-<p><a NAME="appmain"></a>
-<br>The <i>AppMain() </i>function is also inherited
+</p>
+
+<a NAME="appmain"></a>
+<p>
+The <i>AppMain() </i>function is also inherited
 from the parent class. Although this function accepts up to six arguments,
 this example passes only the first two, with missing values supplied by
 defaults. The remaining four arguments specify:
 <ul>
-<li>
-(#3) a NULL-terminated array of '\0'-terminated
-character strings from which the environment variables can be read</li>
-
-<li>
-(#4) how to setup a diagnostic stream for message posting</li>
-
-<li>
-(#5) the name of a <i>.ini</i> configuration
-file (will use program name with suffix <i>.ini</i> by default)</li>
-
-<li>
-(#6) a program name (to be used in lieu of <i>argv[0]</i>)</li>
+  <li>
+    (#3) a NULL-terminated array of '\0'-terminated
+    character strings from which the environment variables can be read</li>
+  <li>
+    (#4) how to setup a diagnostic stream for message posting</li>
+  <li>
+    (#5) the name of a <i>.ini</i> configuration
+    file (will use program name with suffix <i>.ini</i> by default)</li>
+  <li>
+    (#6) a program name (to be used in lieu of <i>argv[0]</i>)</li>
 </ul>
 In order to avoid the display of a warning message when no configuration file is present, the
 <i>.ini</i>
 file should be explicitly specified as <i>NULL (zero)</i>, as in:
-<p><pre>AppMain (argc, argv, envp, diag_stream, 0, progname);</pre>
+<pre>AppMain (argc, argv, envp, diag_stream, 0, progname);</pre>
+</p>
 
-<p><i>AppMain() </i>begins by resetting the internal
+<p>
+<i>AppMain() </i>begins by resetting the internal
 data members with the actual values provided by the arguments of <i>main()</i>.
 Once these internal data structures have been loaded, <i>AppMain() </i>calls
 the virtual functions <i>Init(), Run(), </i>and <i>Exit() </i>in succession
 to execute the application.
-<p>The <i>Init() </i>and <i>Exit() </i>virtual functions
+</p>
+
+<p>
+The <i>Init() </i>and <i>Exit() </i>virtual functions
 are provided as places for developers to add their own methods for specific
 applications. As this example does not require any additional initialization/termination,
-these two functions simply return. The <i>Run() </i>method prints out the
-message defined in <i>justApp.cpp</i> and exits.
-<p>As exemplified here, source files which utilize
+these two functions are empty.
+The <i>Run() </i>method prints out the message defined in <i>justApp.cpp</i> and exits.
+</p>
+<p>
+As shown above, source files which utilize
 the <i>CNcbiApplication</i> class must
 <i>#include</i> the header file
 where that class is defined, <i>corelib/ncbiapp.hpp</i>, in the
 <b><i>include/</i></b>
 directory. This header file in turn includes <i>corelib/ncbistd.hpp</i>,
 which should <i>always</i> be <i>#include</i>'d.
+</p>
 
-<p><i><a href="../index.html">up&nbsp;</a></i> <i><a href="argdescr.html">next&nbsp;</a></i>
+<i><a href="../index.html">up&nbsp;</a></i> <i><a href="argdescr.html">next&nbsp;</a></i>
 
 
 <!--#include virtual="../ssi/navlinks.shtml" -->
