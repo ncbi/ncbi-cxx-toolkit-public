@@ -126,7 +126,7 @@ Also, a special value <tt>CONN_DEFAULT_TIMEOUT</tt> may be used for any timeout.
 This value specifies the timeout set by default for current connection type.
 
 <li> <a name="CONN_GetTimeout"><a href="../lxr/ident?i=CONN_GetTimeout"><i><b>CONN_GetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action);</tt></a><br>
-Obtain (via return value of type <a href="../lxr/ident?i=STimeout"><i><b>const STimeout*</b></i></a>)
+Obtain (via return value of type <b><i>const <a href="../lxr/ident?i=STimeout">STimeout*</a></i></b>)
 timeouts set by <a href="#CONN_SetTimeout"><i><b>CONN_SetTimeout()</b></i></a> routine, or active by default
 (i.e. special value <tt>CONN_DEFAULT_TIMEOUT</tt>).
 <br>
@@ -284,7 +284,7 @@ but rather resembles data exchange via socket. )
 <p>
 Extended variant of connector's constructor,
 <a href="../lxr/ident?i=FILE_CreateConnectorEx"><i><b>FILE_CreateConnectorEx()</b></i></a>
-takes an additional argument, the pointer to a structure of type <a href="../lxr/ident?i=SFileConnAttr">SFileConnAttr</a>,
+takes an additional argument, the pointer to a structure of type <a href="../lxr/ident?i=SFileConnAttr"><b><i>SFileConnAttr</i></b></a>,
 describing file connector attributes, like initial read position to start from in the input file, open mode for output file (append
 <a href="../lxr/ident?i=EFileConnMode"><i><b>eFCM_Append</b></i></a>, truncate <i><b>eFCM_Truncate</b></i>, or seek <i><b>eFCM_Seek</b></i>
 to start writing at a specified file position), and the position in the output file, which is used in <i>seek</i> open mode.
@@ -392,8 +392,8 @@ Namely, in order to be included in <i>both</i> C <i>and</i> C++ NCBI Toolkits, <
 uses another <a href="../lxr/ident?i=REG">registry</a> (C structure), called C registry and defined in
 <a href="../lxr/source/include/connect/ncbi_core.h"><b><i>connect/ncbi_core.h</i></b></a>.
 The global registry object (so called <tt>CORE C registry</tt>, consulted by the library,
-is set by means of <a href="../lxr/ident?CORE_SetREG"><b><i>CORE_SetREG</i></b></a>
-declared in <a href="../lxr/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>.
+is set by means of <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG</i></b></a>
+declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>.
 The same notice applies to log facility, that is <tt>connect</tt> library has its own
 <a href="../lxr/ident?i=LOG">logger</a>, defined in the
 same header <a href="../lxr/source/include/connect/ncbi_core.h"><b><i>connect/ncbi_core.h</i></b></a>. The
@@ -403,7 +403,7 @@ global log (<tt>CORE log</tt>) used by the library is set by convenience routine
 <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE</i></b></a> etc.
 There is, however, a means for a C++ program, using NCBI C++ Toolkit, to bind <b><i>CNcbiReg</b></i>
 object to C registry <b><i>REG</i></b>, <a href="../programming_manual/diag.html"><b><i>CNcbiDiag</i></b></a> to C log, etc.
-The interface defined in <a href="../lxr/source/include/ncbi_core_cxx.h"><b><i>connect/ncbi_core_cxx.h</i></b></a>,
+The interface defined in <a href="../lxr/source/include/connect/ncbi_core_cxx.h"><b><i>connect/ncbi_core_cxx.h</i></b></a>,
 an includes the following C++ functions:
 <ul>
 <li> <tt>REG</tt> <a href="../lxr/ident?i=REG_cxx2c"><b><i>REG_cxx2c</i></b></a>&nbsp;<tt>(CNcbiRegistry* reg, bool pass_ownership = false)</tt>
@@ -582,7 +582,7 @@ error replies are actually sent from different hosts, so is the successful proce
 first link done by one of several hosts, running the bouncing service).
 
 <p>
-<a name="ref_dispd.cgi"><a href="../tools/dispatcher/DISPD.html">Dispatching</a></a>&nbsp; <i>per se</i> is implemented on top of the HTTP protocol, and parsed by a
+<a name="ref_dispd_cgi"><a href="../tools/dispatcher/DISPD.html">Dispatching</a></a>&nbsp; <i>per se</i> is implemented on top of the HTTP protocol, and parsed by a
 CGI program, <a href="../lxr/source/src/connect/daemons/dispd_cgi.c"><tt>dispd.cgi</tt></a> (or another dispatching CGI), which is
 available on the NCBI Web. On every server, which runs named services, another program, called
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>&nbsp; (<a href="../lxr/source/src/connect/daemons/lbsmd.c"><tt>lbsmd</tt></a>),
@@ -604,8 +604,8 @@ The named service facility uses the following distinction of server types:
   <li>HTTP servers are those, which can accept both of either "GET" or "POST" methods.
   </ul>
   <li>NCBID servers are those run by a special engine CGI, called
-      <a href="../lxr/source/src/connect/daemons/dispd.cgi"><tt>ncbid.cgi</tt></a>, a configurable program
-      (now integrated within <a href="#ref_dispd.cgi"><tt>dispd.cgi</tt></a> itself), which can convert byte-stream
+      <a href="../lxr/source/src/connect/daemons/dispd_cgi.c"><tt>ncbid.cgi</tt></a>, a configurable program
+      (now integrated within <a href="#ref_dispd_cgi"><tt>dispd.cgi</tt></a> itself), which can convert byte-stream
       output from another program (server), started by the request
       from dispatcher, to an HTTP-compliant reply (that is a packet
       having both HTTP header and body, and suitable e.g. for the Internet
@@ -688,7 +688,7 @@ by setting it in constructor's <tt>type</tt> argument explicitly);
 (by default, local load-balancing deamon consulted first to resolve
 the name of the service);
 <li><tt>firewall</tt> set to "true" disables the direct connection to
-the service. Instead, either a connection to a proxy <a href="../tools/dispatching/fwdaemon.html">firewall daemon</a>
+the service. Instead, either a connection to a proxy <a href="../tools/dispatcher/fwdaemon.html">firewall daemon</a>
 (<a href="../lxr/source/src/connect/daemons/fwdaemon.c">fwdaemon</a>), running
 at the NCBI site, is initiated to pass the data in stream mode, or data get relayed
 via dispatcher if stateless server is used;
@@ -702,7 +702,7 @@ NULL, default values are obtained as described above, as with the call to
 
 <p>
 Library provides additional interface to named service mapper, which
-can be found in <a href="../lxr/source/include/connect/ncbi_service.h"><i><b>include/connect/ncbi_service.h</b></i></a>
+can be found in <a href="../lxr/source/include/connect/ncbi_service.h"><i><b>connect/ncbi_service.h</b></i></a>
 and described <a href="#ref_ServiceAPI">below</a>.
 
 <p>
@@ -719,7 +719,7 @@ all famous stream I/O operators, manipulators etc.
 
 <p>
 The declarations of the stream's constructors can be found in
-<a href="../lxr/include/connect/ncbi_conn_stream.hpp"><i><b>include/connect/ncbi_conn_stream.hpp</b></i></a>.
+<a href="../lxr/source/include/connect/ncbi_conn_stream.hpp"><i><b>connect/ncbi_conn_stream.hpp</b></i></a>.
 We tried to keep the same number and order of constructor's
 parameters, which appear in corresponding connector's constructors in C.
 
@@ -782,7 +782,7 @@ As shown in the example, loop reading from the iterator results in the sequence 
 (none of which is to be freed by the program!), which, along with converion functions
 <a href="../lxr/ident?i=SERV_ReadInfo"><b><i>SERV_ReadInfo</i></b></a>,
 <a href="../lxr/ident?i=SERV_WriteInfo"><b><i>SERV_WriteInfo</i></b></a>, and others, are defined
-in <a href="../lxr/source/src/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>.
+in <a href="../lxr/source/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>.
 <b><i>SSERV_Info</i></b> structure describes the server, which implements requested service.
 NULL gets returned, when no more servers (if any) could be found. The iterator returns servers in the order
 of load-balancing algorithm is extracting them. Each server has a rate, and the larger the rate
