@@ -26,7 +26,7 @@ inside NCBI users at:
 	<li> <a href="#ref_ServiceConnector">Service Connector</a>
     </ul>
     <li> <a href="#ref_CxxConnectionStreams">C++ Connection Streams</a> built on top of connection objects.
-    <li> <a href="#ref_ServiceAPI">Service API</a>: description of service name resolution API.
+    <li> <a href="#ref_ServiceAPI">Service mapping API</a>: description of service name resolution API.
 </ul>
 </ol>
 
@@ -582,12 +582,13 @@ The library provides two forms of connector's constructor:
 <a href="../lxr/ident?i=SERVICE_CreateConnector">SERVICE_CreateConnector</a>(const char* service_name);
 
 <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>
-(const char*         service_name, /* The registered name of an NCBI service */
- TSERV_Type          types,        /* Accepted server types, bitmask         */
- const SConnNetInfo* info          /* Connection parameters                  */
+(const char*           service_name, /* The registered name of an NCBI service */
+ <a href="../../lxr/ident?i=TSERV_Type">TSERV_Type</a>            types,        /* Accepted server types, bitmask         */
+ const <a href="../../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>*   net_info,     /* Connection parameters                  */
+ const <a href="../../lxr/ident?i=SSERVICE_Extra">SSERVICE_Extra</a>* params        /* Addtl set of parameters, may be NULL   */
  );
 </pre>
-The first form is equivalent to <i><b>SERVICE_CreateConnectorEx(</b></i><tt>service_name, 0, 0</tt><i><b>)</b></i>.
+The first form is equivalent to <i><b>SERVICE_CreateConnectorEx(</b></i><tt>service_name, fSERV_Any, 0, 0</tt><i><b>)</b></i>.
 
 <form name="io_bounce" method="POST" action="http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=io_bounce">
 <input type="hidden" name="name" value="value">
@@ -655,31 +656,38 @@ typedef enum {
   fSERV_HttpPost   = 0x8,
   fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
   fSERV_Firewall   = 0x10
-} ESERV_Type;
+} <a href="../../lxr/ident?i=ESERV_Type">ESERV_Type</a>;
 
 #define fSERV_Any           0
 #define fSERV_StatelessOnly 0x80
 typedef unsigned TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 </pre>
 
-The bitwise <tt>OR</tt> of the <a href="../lxr/ident?i=ESERV_Type"><i><b>ESERV_Type</b></i></a> flags can be used to
+The bitwise <tt>OR</tt> of the <i><b>ESERV_Type</b></i> flags can be used to
 restrict the search for the servers, matching the requested service name.
 These flags passed as argument <tt>types</tt> are used by the
 dispatcher when figuring out, which server is acceptable for the client.
-Special value 0 (or, better <i><b>fSERV_Any</b></i>) states no
+Special value&nbsp;<tt>0</tt> (or, better <i><b>fSERV_Any</b></i>) states no
 such preference whatsoever. Special bit-value <i><b>fSERV_StatelessOnly</b></i>
 set together with other bits or just alone specifies that the servers
 should be of stateless (HTTP-alike) type only, and it is the client which is responsible for keeping
 track of the logical sequence of transactions.
 
 <p>
+Normally the last parameter of <b><i>SERVICE_CreateConnectorEx()</i></b> is left <tt>NULL</tt>, which
+sets all additional parameters to their default values. Among others, default procedure of choosing
+an appropriate server is used by the connector when looking for mapping of name into server address.
+To see how this parameter can be used to change the mapping procedure
+please refer to a <a href="#ref_ServiceAPI">later section</a>.
+
+<p>
 The following code fragment establishes service connection to
-the named service "io_bounce", using only stateless servers:
+the named service <tt>"io_bounce"</tt>, using only stateless servers:
 <pre>
   CONNECTOR c;
   CONN conn;
 
-  if (!(c = SERVICE_CreateConnector("io_bounce", fSERV_StatelessOnly, 0)))
+  if (!(c = SERVICE_CreateConnectorEx("io_bounce", fSERV_StatelessOnly, 0, 0)))
     fprintf(stderr, "No such service available");
   else if (CONN_Create(c, &conn) != eIO_Success)
     fprintf(stderr, "Failed to create connection");
@@ -782,9 +790,9 @@ description into the log file (<tt>cerr</tt>, by default).
 <hr>
 
 
-<h2><a name="ref_ServiceAPI">Service API</a></h2>
+<h2><a name="ref_ServiceAPI">Service mapping API</a></h2>
 
-Service API, defined in <a href="../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>,
+The API defined in <a href="../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>
 maps required sevice name into server address. Internally, the mapping is done <a href="#ref_DirectIndirect">either directly or indirectly</a> by means of
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>, running at NCBI site.
 For the client, the mapping is seen as a reading from an iterator created by a call to
@@ -794,7 +802,7 @@ fragment (for more examples please refer to the test program
 <pre>
 #include &lt;connect/ncbi_service.h&gt;
 
-    SERV_ITER iter = <a href="../lxr/ident?i=SERV_Open">SERV_Open</a>("my_service", <a href="../lxr/ident?i=ESERV_Type">fSERV_Any</a>, SERV_ANYHOST, 0);
+    <a href="../lxr/ident?i=SERV_ITER">SERV_ITER</a> iter = <a href="../lxr/ident?i=SERV_Open">SERV_Open</a>("my_service", <a href="../lxr/ident?i=ESERV_Type">fSERV_Any</a>, <a href="../lxr/ident?i=SERV_ANYHOST">SERV_ANYHOST</a>, 0);
     int n = 0;
 
     if (iter != 0) {
@@ -817,12 +825,12 @@ guarantee that the service is available, whereas <tt>NULL</tt> iterator definite
 means that the service does not exist.
 
 <p>
-As shown in the example, loop reading from the iterator results in the sequence of successive structures
-(none of which is to be freed by the program!), which, along with conversion functions
+As shown in the above example, loop reading from the iterator results in the sequence of successive structures
+(none of which is to be freed by the program!), which along with conversion functions
 <a href="../lxr/ident?i=SERV_ReadInfo"><b><i>SERV_ReadInfo()</i></b></a>,
-<a href="../lxr/ident?i=SERV_WriteInfo"><b><i>SERV_WriteInfo()</i></b></a>, and others, are defined
+<a href="../lxr/ident?i=SERV_WriteInfo"><b><i>SERV_WriteInfo()</i></b></a> and others are defined
 in <a href="../lxr/source/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>.
-<a href="../lxr/ident?i=SSERV_Info"><b><i>SSERV_Info</i></b></a> structure describes the server, which implements
+Structure <a href="../lxr/ident?i=SSERV_Info"><b><i>SSERV_Info</i></b></a> describes the server, which implements
 requested service.
 <tt>NULL</tt> gets returned, when no more servers (if any) could be found. The iterator returns servers in the order
 the load-balancing algorithm extracts them. Each server has a rate, and the larger the rate
@@ -837,7 +845,7 @@ and with the assumption that the client has chosen firewall connection mode, reg
 supplied in <b><i>SConnNetInfo</i></b>, or read out from either registry or environment.
 
 <p>
-There is a simplified version of <b><i>SERV_Open</i></b>, called <a href="../lxr/ident?i=SERV_OpenSimple"><b><i>SERV_OpenSimple()</i></b></a>,
+There is a simplified version of <b><i>SERV_Open()</i></b>, called <a href="../lxr/ident?i=SERV_OpenSimple"><b><i>SERV_OpenSimple()</i></b></a>,
 as well as an advanced version, called <a href="../lxr/ident?i=SERV_OpenEx"><b><i>SERV_OpenEx()</i></b></a>.
 The former takes only one argument, the service name. The latter takes two more arguments, which describe the
 set of servers <i>not</i> to be seen from the iterator (excluded server descriptors).
@@ -845,29 +853,138 @@ set of servers <i>not</i> to be seen from the iterator (excluded server descript
 <p>
 There is also an advanced version of <b><i>SERV_GetNextInfo()</i></b>, called
 <a href="../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>, which allows via its second
-argument to get so called host environment, a <tt>'\0'</tt>-terminated string, consisting of the set of lines,
-separated by <tt>'\n'</tt> characters, and specified in the configuration file of load-balancing daemon
-of the host, where the returning server was found. The typical line within the set has a form <tt>"name=value"</tt>,
+argument to get so called <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a>,
+a <tt>'\0'</tt>-terminated string, consisting of set of lines
+separated by <tt>'\n'</tt> characters, and specified in the configuration file of
+<a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>
+of the host, where the returned server was found. The typical line within the set has a form <tt>"name=value"</tt>
 and resembles very much the shell environment, where its name comes from. The host environment could be
-very handy to pass additional information to applications when the host has some limitations or requires special
-handling, if the server is to be selected and used on this host. For the time of writing,
-getting the host environment is only implemented if the service was obtained via <a href="#ref_DirectIndirect">direct access</a> to
+very handy to pass additional information to applications if the host has some limitations or requires special
+handling should the server be selected and used on this host. <a href="#ref_Example">Example below</a> should give an idea.<br>
+For the time of writing, getting the host environment is only implemented when the service is obtained via <a href="#ref_DirectIndirect">direct access</a> to
 the load-balancing daemon. Unlike returned server descriptors, the returned host environment is not a constant object i.e. it
 could be modified, and it must be explicitly freed by the application when no longer needed.
 If the server descriptor was obtained using dispatching CGI (<a href="#ref_DirectIndirect">indirect dispatching</a>),
 then the host enrivonment is always returned as <tt>NULL</tt> (no host environment available).
 
 <p>
-<a name="ref_DirectIndirect">The</a> back end of the service API is split into 2 independent parts: <i><u>direct</u></i> access to
+<a name="ref_DirectIndirect">The</a> back end of the service mapping API is split into 2 independent parts: <i><u>direct</u></i> access to
 <a href="../tools/dispatcher/LBSMD.html"><tt>LBSMD</tt></a>, if the one is both available on the current host and is not
-disabled by parameter <a href="#ref_LbDisable"><tt>lb_disable</tt></a> at the iterator opening. If neither <tt>LBSMD</tt> available
-nor enabled, the second (<u><i>indirect</i></u>) part of the back-end API is used, which involves connection to
+disabled by parameter <a href="#ref_LbDisable"><tt>lb_disable</tt></a> at the iterator opening. If <tt>LBSMD</tt> is either unavailable
+or disabled, the second (<u><i>indirect</i></u>) part of the back-end API is used, which involves connection to
 <a href="../tools/dispatcher/DISPD.html">dispatching CGI</a>, which in turn connects to <tt>LBSMD</tt> in order to carry out the request.
 Attempt to use the CGI is only done, if <a href="../lxr/ident?i=SERV_OpenEx"><tt>net_info</tt></a> argument is provided non-<tt>NULL</tt> in the
-calls to <b><i>SERV_Open()</i></b> or <b><i>SERV_OpenEx()</i></b> (note that in the call to <b><i>SERV_OpenSimple()</i></b>,
-<tt>net_info</tt> gets created before upcall to <b><i>SERV_Open()</i></b> and thus CGI dispatching is likely to happen, unless
-<tt>net_info</tt> could not be constructed from the environment). In the above conditions, the network service name resolution
-is also undertaken if service name could not be resolved (due to service inexistence or other error) with the use of locally found <tt>LBSMD</tt>.
+calls to <b><i>SERV_Open()</i></b> or <b><i>SERV_OpenEx()</i></b>.<br>
+<u>Note</u>: In call to <b><i>SERV_OpenSimple()</i></b>, <tt>net_info</tt> gets created internally before upcall to
+<b><i>SERV_Open()</i></b> and thus CGI dispatching is likely to happen, unless <tt>net_info</tt> could not be constructed
+from the environment.<br>
+<u>Note</u>: In the above conditions, the network service name resolution is also undertaken if service name could
+not be resolved (due to service inexistence or other error) with the use of locally found <tt>LBSMD</tt>.
+
+<p>
+<a name="ref_Example">The following code example</a> uses both <a href="#ref_ServiceConnector">service connector</a> and the service
+mapping API to access certain service using an alternate way (other than connector's default supply) of choosing appropriate servers.
+By default, service connector opens an internal service iterator and then tries to connect to the next server,
+which <b><i>SERV_GetNextInfo()</i></b> returns when given the iterator. That is, the server with higher rate is
+tried first. If the user provides a pointer to structure <b><i>SSERVICE_Extra</i></b> as the last parameter of the connector's
+constructor, then the user-supplied routine (if any) can be called instead in order to obtain the next server. The routine is also
+given a supplemental custom argument <tt>data</tt> taken from <b><i>SSERVICE_Extra</i></b>.
+The (intentionally simplified) example below tries to create connector to an imaginary service <tt>"my_service"</tt>
+in restriction that additionally the server has to have a certain (user-specified) database present. The database name is taken
+from <a href="../tools/dispatcher/LBSMD.html#ref_HostEnvironment">host environment</a> of
+<a href="../tools/dispatcher/LBSMD.html"><tt>LBSMD</tt></a> named <tt>"my_service_env"</tt>, the first word of which is
+assumed to be the name.
+
+<pre>
+#include &lt;<a href="../lxr/source/include/connect/ncbi_service_connector.h">connect/ncbi_service_connector.h</a>&gt;
+#include &lt;ctype.h>
+#include &lt;stdlib.h>
+#include &lt;string.h>
+
+#define ENV_DB_KEY "my_service_env="
+
+
+/* This routine gets called when connector is about to close.
+ */
+static void s_CleanupData(void* data)
+{
+    free(data); /* we kept database name there */
+}
+
+
+/* 'Iter' is an internal service iterator used by service connector; it must remain open.
+ * 'Data' is what we supplied among extra-parameters in connector's constructor.
+ */
+static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_ITER</a> iter, void* data)
+{
+    const char* db_name = (const char*) data;
+    size_t len = strlen(db_name);
+    <a href="../lxr/ident?i=SSERV_Info">SSERV_Info</a>* info;
+    int reset = 0;
+    char* env;
+
+    for (;;) {
+        while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &env)) != 0) {
+            const char* c;
+            for (c = env; c; c = strchr(c, '\n')) {
+                if (strncmp(c == env ? c : ++c, ENV_DB_KEY, sizeof(ENV_DB_KEY)-1) == 0) {
+                    /* Our keyword has been detected in environment for this host */
+                    c += sizeof(ENV_DB_KEY) - 1;
+                    while (*c && isspace(*c))
+                        c++;
+                    if (strncmp(c, db_name, len) == 0 && !isalnum(c + len)) {
+                        /* Database match */
+                        free(env); /* must be freed explicitly */
+                        return info;
+                    }
+                }
+            }
+            if (env)
+                free(env); /* must be freed explicitly */
+        }
+        if (reset)
+            break; /* coming to reset 2 times in a row means no server fit */
+        <a href="../lxr/ident?i=SERV_Reset">SERV_Reset</a>(iter);
+        reset = 1;
+    }
+    return 0; /* no match found */
+}
+
+
+int main(int argc, char* argv[])
+{
+    char* db_name = strdup(argv[1]);
+    <a href="../lxr/ident?i=SSERVICE_Extra">SSERVICE_Extra</a> params;
+    <a href="../lxr/ident?i=CONNECTOR">CONNECTOR</a> c;
+    <a href="../lxr/ident?i=CONN">CONN</a> conn;
+
+    memset(&params, 0, sizeof(params));
+    params.data = db_name;                /* custom data, anything        */
+    params.cleanup = s_CleanupData;       /* cleanup routine, may be NULL */
+    params.get_net_info = s_GetNextInfo;  /* custom iterator routine      */
+    if (!(c = <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>("my_service", fSERV_Any, NULL, &params))) {
+        fprintf(stderr, "Cannot create connector");
+        exit(1);
+    }
+
+    if (<a href="../lxr/ident?i=CONN_Create">CONN_Create</a>(c, &conn) != <a href="../lxr/ident?i=EIO_Status">eIO_Success</a>) {
+        fprintf(stderr, "Cannot create connection");
+        exit(1);
+    }
+
+    /* Now we can use <a href="../lxr/ident?i=CONN_Read">CONN_Read()</a>, <a href="../lxr/ident?i=CONN_Write">CONN_Write()</a> etc to operate with connection,
+     * and we are assured that the connection is made only to the server on such a host,
+     * which has "db_name" specified in configuration file of <a href="../tools/dispatcher/LBSMD.html">LBSMD</a>.
+     */
+
+    ...
+    <a href="../lxr/ident?i=CONN_Close">CONN_Close</a>(conn); /* this also calls cleanup of user data provided in params */
+
+    return 0;
+}
+</pre>
+<u>Note</u>: No network (indirect) mapping occurs in the above example because <tt>net_info</tt> is passed as <tt>NULL</tt>
+to the connector's constructor.
 
 <p>
 <hr>
