@@ -151,9 +151,9 @@ inline
 void CPriorityNode::x_CopySubTree(const CPriorityNode& node)
 {
     m_SubTree.reset(new TPriorityMap);
-    iterate(TPriorityMap, mit, node.GetTree()) {
+    ITERATE(TPriorityMap, mit, node.GetTree()) {
         TPrioritySet& pset = (*m_SubTree)[mit->first];
-        iterate(TPrioritySet, sit, mit->second) {
+        ITERATE(TPrioritySet, sit, mit->second) {
             pset.insert(*sit);
         }
     }
@@ -369,6 +369,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/04/18 20:08:53  kans
+* changed iterate to ITERATE
+*
 * Revision 1.2  2003/04/09 16:04:30  grichenk
 * SDataSourceRec replaced with CPriorityNode
 * Added CScope::AddScope(scope, priority) to allow scope nesting
