@@ -1707,7 +1707,7 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
     /* Look for the greatest common divisor ("delta" in Appendix of PNAS 87 of
        Karlin&Altschul (1990) */
     for (i = 1, divisor = -low; i <= range && divisor > 1; ++i) {
-        if (probArrayStartLow[i])
+        if (probArrayStartLow[i] != 0.0)
             divisor = BLAST_Gcd(divisor, i);
     }
 
@@ -1965,7 +1965,7 @@ Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess)
 	sprob = sfp->sprob;
 	/* Find greatest common divisor of all scores */
 	for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
-		if (sprob[i+low] != 0) {
+		if (sprob[i+low] != 0.0) {
 			d = BLAST_Gcd(d, i);
 		}
 	}
@@ -2006,7 +2006,7 @@ BlastKarlinLtoH(Blast_ScoreFreq* sfp, double	lambda)
   }
 
   scale = BLAST_Powi( etonlam, high );
-  if( scale > 0 ) {
+  if( scale > 0.0 ) {
     H = lambda * sum/scale;
   } else { /* Underflow of exp( -lambda * high ) */
     H = lambda * exp( lambda * high + log(sum) );
@@ -3548,6 +3548,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2004/06/07 20:03:34  coulouri
+ * use floating point constants for comparisons with floating point variables
+ *
  * Revision 1.79  2004/06/07 14:44:01  madden
  * Doxygen fixes
  *
