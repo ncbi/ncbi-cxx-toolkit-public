@@ -356,8 +356,11 @@ public:
     /// Check if there are no arguments in this container.
     bool IsEmpty(void) const;
 
-    /// Remove argument
+    /// Remove argument of name "name"
     void Remove(const string& name);
+
+    /// Remove all arguments
+    void Reset(void);
 
 private:
     typedef set< CRef<CArgValue> >  TArgs;   ///< Type for arguments
@@ -369,7 +372,7 @@ private:
 
     /// Find argument value with name "name".
     TArgsCI x_Find(const string& name) const;
-    TArgsI x_Find(const string& name);
+    TArgsI  x_Find(const string& name);
 };
 
 
@@ -448,8 +451,9 @@ public:
         ///< Append to end-of-file for eOutputFile only
         fAppend  = (1 << 2), 
 
-        // multiple keys flag
-        /// Repeated key arguments are legal (use with AddKey)
+        // multiple keys flag:
+
+        ///< Repeated key arguments are legal (use with AddKey)
         fAllowMultiple = (1 << 3) 
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
@@ -647,9 +651,9 @@ public:
     /// Check if there is already an argument description with specified name.
     bool Exist(const string& name) const;
 
-    /// Delete description with name "name".
+    /// Delete description of argument with name "name".
     ///
-    /// Throw the CArgException (eSynposis error code) exception if the
+    /// Throw the CArgException (eSynopsis error code) exception if the
     /// specified name cannot be found.
     void Delete(const string& name);
 
@@ -678,62 +682,6 @@ public:
     /// Argument name can contain only  alphanumeric characters and
     /// underscore ('_'), or be empty.
     static bool VerifyName(const string& name, bool extended = false);
-
-    /// Convert argument map (key-value pairs) into arguments in accordance
-    /// with the argument description
-    template<class T>
-    void ConvertKeys(CArgs* args, const T& arg_map, bool update) const
-    {
-        ITERATE(TKeyFlagArgs, it, m_KeyFlagArgs) {
-            const string& param_name = *it;
-
-            // find first element in the input multimap
-
-            typename T::const_iterator vit = arg_map.find(param_name);
-            typename T::const_iterator vend = arg_map.end();
-
-            if (vit != vend) {   // at least one value found
-                const string& v = vit->second;
-                CArgValue* new_arg_value;
-
-                x_CreateArg(param_name, param_name, 
-                            true, /* value is present */
-                            v,
-                            1,
-                            *args,
-                            update,
-                            &new_arg_value);
-
-                if (new_arg_value) {
-
-                    if (x_IsMultiArg(param_name)) {
-
-                        CArgValue::TStringArray& varr = 
-                            new_arg_value->SetStringList();
-
-                        // try to add all additional arguments to arg value
-                        for (++vit; vit != vend; ++vit) {
-                            const string& n = vit->first;
-                            if (n != param_name) {
-                                break;
-                            }
-                            varr.push_back(vit->second);
-                        } // for
-                    }
-                }
-
-            } else {
-                x_CreateArg(param_name, param_name, 
-                            false, /* value is not present */
-                            kEmptyStr,
-                            1,
-                            *args,
-                            update);
-            }
-
-
-        } // ITERATE
-    }
 
 private:
     typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
@@ -795,13 +743,21 @@ private:
                      const string& name, 
                      bool          have_arg2,
                      const string& arg2,
-                     unsigned      n_plain,
+                     unsigned int  n_plain,
                      CArgs&        args,
                      bool          update = false,
                      CArgValue**   new_value = 0) const;
 
+    /// @sa x_PostCheck()
+    enum EPostCheckCaller {
+        eCreateArgs,  ///< called by CreateArgs()
+        eConvertKeys  ///< called by ConvertKeys()
+    };
     /// Helper method for doing post-processing consistency checks.
-    void    x_PostCheck(CArgs& args, unsigned n_plain) const;
+    void x_PostCheck(CArgs&           args,
+                     unsigned int     n_plain,
+                     EPostCheckCaller caller)
+        const;
 
     /// Returns TRUE if parameter supports multiple arguments
     bool x_IsMultiArg(const string& name) const;
@@ -829,7 +785,7 @@ public:
     template<class TSize, class TArray>
     CArgs* CreateArgs(TSize argc, TArray argv) const
     {
-        // Pre-processing consistency checks
+        // Check the consistency of argument descriptions
         x_PreCheck();
 
         // Check for "-h" flag
@@ -841,13 +797,21 @@ public:
 
         // Create new "CArgs" to fill up, and parse cmd.-line args into it
         auto_ptr<CArgs> args(new CArgs());
+
+        // Special case for CGI -- a lone positional argument
+        if (GetArgsType() == eCgiArgs  &&  argc == 2) {
+            return args.release();
+        }
+
+        // Regular case for both CGI and non-CGI
         unsigned int n_plain = kMax_UInt;
         for (TSize i = 1;  i < argc;  i++) {
             bool have_arg2 = (i + 1 < argc);
             if ( x_CreateArg(argv[i], have_arg2,
                              have_arg2 ? (string) argv[i+1] : kEmptyStr,
-                             &n_plain, *args) )
+                             &n_plain, *args) ) {
                 i++;
+            }
         }
 
         // Check if there were any arguments at all
@@ -855,12 +819,57 @@ public:
             n_plain = 0;
         }
 
-        // Post-processing consistency checks
-        x_PostCheck(*args, n_plain);
+        // Extra checks for the consistency of resultant argument values
+        x_PostCheck(*args, n_plain, eCreateArgs);
         return args.release();
     }
 
+    /// Parse command-line arguments 'argv'
     CArgs* CreateArgs(const CNcbiArguments& argv) const;
+
+    /// Convert argument map (key-value pairs) into arguments in accordance
+    /// with the argument descriptions
+    template<class T>
+    void ConvertKeys(CArgs* args, const T& arg_map, bool update) const
+    {
+        // Check the consistency of argument descriptions
+        x_PreCheck();
+
+        // Retrieve the arguments and their values
+        ITERATE(TKeyFlagArgs, it, m_KeyFlagArgs) {
+            const string& param_name = *it;
+
+            // find first element in the input multimap
+            typename T::const_iterator vit  = arg_map.find(param_name);
+            typename T::const_iterator vend = arg_map.end();
+
+            if (vit != vend) {   // at least one value found
+                CArgValue* new_arg_value;
+                x_CreateArg(param_name, param_name, 
+                            true, /* value is present */
+                            vit->second,
+                            1,
+                            *args,
+                            update,
+                            &new_arg_value);
+
+                if (new_arg_value  &&  x_IsMultiArg(param_name)) {
+                    CArgValue::TStringArray& varr =
+                        new_arg_value->SetStringList();
+
+                    // try to add all additional arguments to arg value
+                    for (++vit;  vit != vend;  ++vit) {
+                        if (vit->first != param_name)
+                            break;
+                        varr.push_back(vit->second);
+                    }
+                }
+            }
+        } // ITERATE
+
+        // Extra checks for the consistency of resultant argument values
+        x_PostCheck(*args, 0, eConvertKeys);
+    }
 };
 
 
@@ -1192,6 +1201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/03/10 17:59:30  vakatov
+ * Fixed CGI-related arg processing
+ *
  * Revision 1.43  2005/02/11 16:02:22  gouriano
  * Distinguish short and detailed help message
  *
