@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/01/25 19:55:08  shomrat
+ * Fixed bug in Compare()
+ *
  * Revision 6.9  2004/05/19 17:21:39  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -109,7 +112,7 @@ bool CObject_id::Match(const CObject_id& oid2) const
 int CObject_id::Compare(const CObject_id& oid2) const
 {
     E_Choice type = Which();
-    E_Choice type2 = Which();
+    E_Choice type2 = oid2.Which();
     if ( type != type2 )
         return type - type2;
     switch ( type ) {
