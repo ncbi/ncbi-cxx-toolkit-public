@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.138  2002/05/26 21:59:16  thiessen
+* tweaks for new window styles
+*
 * Revision 1.137  2002/05/24 11:32:17  thiessen
 * API fix for wx2.2/2.3
 *
@@ -642,7 +645,7 @@ public:
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
             wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
-                | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
+                | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR
 #endif
             )
     {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/05/26 21:59:16  thiessen
+* tweaks for new window styles
+*
 * Revision 1.30  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -149,7 +152,9 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
         wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
-            | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
+            | wxFRAME_TOOL_WINDOW
+            | wxFRAME_NO_TASKBAR
+            | wxFRAME_FLOAT_ON_PARENT
 #endif
         ),
     viewerWidget(NULL), viewer(parentViewer)
