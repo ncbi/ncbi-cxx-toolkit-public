@@ -256,10 +256,6 @@ Int4 AddNeighboringWords(LookupTable* lookup,
 			 Int4 offset,
                          Int4 query_bias);
 
-#define SET_HIGH_BIT(x) (x |= 0x80000000)
-#define CLEAR_HIGH_BIT(x) (x &= 0x7FFFFFFF)
-#define TEST_HIGH_BIT(x) ( ((x) >> 31) & 1 )
-
 /* RPS blast structures and functions */
 
 #define RPS_HITS_PER_CELL 3
