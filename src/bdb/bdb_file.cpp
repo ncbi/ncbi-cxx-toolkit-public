@@ -114,12 +114,13 @@ private:
 
 
 
-CBDB_RawFile::CBDB_RawFile()
+CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
 : m_DB(0),
   m_DBT_Key(0),
   m_DBT_Data(0),
   m_PageSize(0),
-  m_CacheSize(256 * 1024)
+  m_CacheSize(256 * 1024),
+  m_DuplicateKeys(dup_keys)
 {
     try
     {
@@ -252,6 +253,12 @@ void CBDB_RawFile::x_CreateDB()
 
     ret = m_DB->set_cachesize(m_DB, 0, m_CacheSize, 1);
     BDB_CHECK(ret, 0);
+
+    if (DuplicatesAllowed()) {
+        ret = m_DB->set_flags(m_DB, DB_DUP);
+        BDB_CHECK(ret, 0);
+    }
+
     guard.release();
 }
 
@@ -269,19 +276,22 @@ void CBDB_RawFile::x_Open(const char* filename,
         x_Create(filename, database);
     }
     else {
-        u_int32_t om;
+        u_int32_t open_flags;
 
         switch (open_mode)
         {
         case eReadOnly:
-            om = DB_RDONLY;
+            open_flags = DB_RDONLY;
             break;
         case eCreate:
-            om = DB_CREATE;
+            open_flags = DB_CREATE;
             break;
         default:
-            om = 0;
+            open_flags = 0;
             break;
+        }
+        if (DuplicatesAllowed()) {
+            open_flags |= DB_DUP;
         }
 
         int ret = m_DB->open(m_DB,
@@ -289,7 +299,7 @@ void CBDB_RawFile::x_Open(const char* filename,
                              filename,
                              database,             // database name
                              DB_BTREE,
-                             om,
+                             open_flags,
                              kOpenFileMask
                              );
         if ( ret ) {
@@ -318,12 +328,14 @@ void CBDB_RawFile::SetPageSize(unsigned int page_size)
 
 void CBDB_RawFile::x_Create(const char* filename, const char* database)
 {
+    u_int32_t open_flags = DB_CREATE;
+
     int ret = m_DB->open(m_DB,
                          0,               // DB_TXN*
                          filename,
                          database,        // database name
                          DB_BTREE,
-                         DB_CREATE,
+                         open_flags,
                          kOpenFileMask);
     if ( ret ) {
         m_DB->close(m_DB, 0);
@@ -339,8 +351,8 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
 //
 
 
-CBDB_File::CBDB_File()
-    : CBDB_RawFile(),
+CBDB_File::CBDB_File(EDuplicateKeys dup_keys)
+    : CBDB_RawFile(dup_keys),
       m_KeyBuf(new CBDB_BufferManager),
       m_BufsAttached(false),
       m_BufsCreated(false),
@@ -445,7 +457,14 @@ EBDB_ErrCode CBDB_File::Fetch()
 EBDB_ErrCode CBDB_File::Insert(EAfterWrite write_flag)
 {
     CheckNullDataConstraint();
-    return x_Write(DB_NOOVERWRITE | DB_NODUPDATA, write_flag);
+
+    unsigned int flags;
+    if (DuplicatesAllowed()) {
+        flags = 0;
+    } else {
+        flags = DB_NODUPDATA | DB_NOOVERWRITE;
+    }
+    return x_Write(flags, write_flag);
 }
 
 
@@ -599,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/07/09 14:29:24  kuznets
+ * Added support of files with duplicate access keys. (DB_DUP mode)
+ *
  * Revision 1.11  2003/07/02 17:55:35  kuznets
  * Implementation modifications to eliminated direct dependency from <db.h>
  *

@@ -96,8 +96,13 @@ public:
         eReallocForbidden
     };
 
+    enum EDuplicateKeys {
+        eDuplicatesDisable,
+        eDuplicatesEnable
+    };
+
 public:
-    CBDB_RawFile();
+    CBDB_RawFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
     virtual ~CBDB_RawFile();
 
     // Open file with specified access mode
@@ -132,6 +137,9 @@ public:
     // Return TRUE if the file is open
     bool IsOpen() const;
 
+    // Return TRUE if file can contain duplicate keys.
+    bool DuplicatesAllowed() const { return m_DuplicateKeys == eDuplicatesEnable; }
+
 private:
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
@@ -160,6 +168,7 @@ private:
     string           m_Database;       // db name in file (optional)
     unsigned         m_PageSize;
     unsigned         m_CacheSize;
+    EDuplicateKeys   m_DuplicateKeys;
 
     static const int kOpenFileMask;
 };
@@ -176,7 +185,7 @@ private:
 class NCBI_BDB_EXPORT CBDB_File : public CBDB_RawFile
 {
 public:
-    CBDB_File();
+    CBDB_File(EDuplicateKeys dup_keys = eDuplicatesDisable);
 
     // Open file with specified access mode
     void Open(const char* filename, EOpenMode open_mode);
@@ -350,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/07/09 14:29:01  kuznets
+ * Added support of files with duplicate access keys. (DB_DUP mode)
+ *
  * Revision 1.9  2003/07/02 17:53:59  kuznets
  * Eliminated direct dependency from <db.h>
  *
