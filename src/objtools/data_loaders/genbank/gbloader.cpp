@@ -168,8 +168,8 @@ CGBDataLoader::~CGBDataLoader(void)
 }
 
 bool
-CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
-                          TTSESet* tse_set)
+CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
+                          const EChoice choice)
 {
     GC();
 
@@ -202,7 +202,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
         ITERATE (TLocMap, hrange, hrmap.GetMap() ) {
             //GBLOG_POST( "GetRecords-0" );
             TSeq_id_Key  sih       = x_GetSeq_id_Key(hrange->first);
-            if(x_GetRecords(sih,hrange->second,choice, tse_set))
+            if(x_GetRecords(sih,hrange->second,choice))
                 unreleased_mutex_run=false;
         }
         _VERIFY(count++ < 10); // actually I would expect it to be 2 at most
@@ -257,11 +257,11 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
 }
 
 CTSE_Info*
-CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_set)
+CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
+                               const TTSE_LockSet& tse_set)
 {
     TSeq_id_Key  sih       = x_GetSeq_id_Key(handle);
     SSeqrefs*    sr=0;
-    CTSE_Info*   best=0;
     bool         conflict=false;
   
     GBLOG_POST( "ResolveConflict" );
@@ -273,9 +273,11 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
         if(cnt==0)
             return 0;
     }
-    ITERATE(TTSESet, sit, tse_set) {
-        CTSE_Info *ti = const_cast<CTSE_Info*>(*sit);
-        CSeq_entry *sep = &ti->GetSeq_entry();
+
+    const CTSE_Info*   best=0;
+    ITERATE(TTSE_LockSet, sit, tse_set) {
+        const CTSE_Info *ti = *sit;
+        const CSeq_entry *sep = &ti->GetSeq_entry();
         TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
         if(it==m_Tse2TseInfo.end()) continue;
         STSEinfo *tse = it->second;
@@ -285,7 +287,8 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
         g.Lock(tse);
 
         if(tse->mode.test(STSEinfo::eDead) && !ti->IsDead()) {
-            GetDataSource()->x_UpdateTSEStatus(*sep, true);
+            GetDataSource()->x_UpdateTSEStatus(const_cast<CSeq_entry&>(*sep),
+                                               true);
         }
         if(tse->m_SeqIds.find(sih)!=tse->m_SeqIds.end()) {
             // listed for given TSE
@@ -308,30 +311,29 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle, const TTSESet& tse_
         g.Unlock(tse);
     }
 
-    if(best && !conflict)
-        return best;
-  
-    // try harder
-  
-    best=0;conflict=false;
-    ITERATE (SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
-        TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
-        if (tsep == m_Sr2TseInfo.end()) continue;
-        ITERATE(TTSESet, sit, tse_set) {
-            CTSE_Info *ti = const_cast<CTSE_Info*>(*sit);;
-            TTse2TSEinfo::iterator it =
-                m_Tse2TseInfo.find(&ti->GetSeq_entry());
-            if(it==m_Tse2TseInfo.end()) continue;
-            if(it->second==tsep->second) {
-                if ( !best )
-                    best=ti;
-                else if (ti != best)
-                    conflict=true;
+    if ( !best || conflict ) {
+        // try harder
+        
+        best=0;conflict=false;
+        ITERATE (SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
+            TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
+            if (tsep == m_Sr2TseInfo.end()) continue;
+            ITERATE(TTSE_LockSet, sit, tse_set) {
+                const CTSE_Info *ti = *sit;
+                TTse2TSEinfo::iterator it =
+                    m_Tse2TseInfo.find(&ti->GetSeq_entry());
+                if(it==m_Tse2TseInfo.end()) continue;
+                if(it->second==tsep->second) {
+                    if ( !best )
+                        best=ti;
+                    else if (ti != best)
+                        conflict=true;
+                }
             }
         }
+        if(conflict) best=0;
     }
-    if(conflict) best=0;
-    return best;
+    return const_cast<CTSE_Info*>(best);
 }
 
 //=======================================================================
@@ -489,8 +491,7 @@ CGBDataLoader::TMask CGBDataLoader::x_Request2BlobMask(const EChoice choice)
 
 bool CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,
                                  const CHandleRange& hrange,
-                                 EChoice choice,
-                                 TTSESet* tse_set)
+                                 EChoice choice)
 {
     TMask         sr_mask   = x_Request2SeqrefMask(choice);
     TMask         blob_mask = x_Request2BlobMask(choice);
@@ -568,8 +569,7 @@ bool CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,
                                   **srp,
                                   lrange->first.GetFrom(),
                                   lrange->first.GetTo(),
-                                  blob_mask,
-                                  tse_set
+                                  blob_mask
                             );
                     break;
                 }
@@ -741,8 +741,7 @@ bool CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,
 bool CGBDataLoader::x_GetData(STSEinfo *tse,
                               const CSeqref& srp,
                               int from,int to,
-                              TMask blob_mask,
-                              TTSESet* tse_set)
+                              TMask blob_mask)
 {
     CTSEUpload *tse_up = &tse->m_upload;
     if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
@@ -767,7 +766,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
                     tse_up->m_mode   = CTSEUpload::eDone;
                     GBLOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
                     new_tse=true;
-                    tse->tseinfop=GetDataSource()->AddTSE(*(tse_up->m_tse), tse_set);
+                    tse->tseinfop=GetDataSource()->AddTSE(*(tse_up->m_tse));
                 }
                 else {
                     tse_up->m_mode   = CTSEUpload::eDone;
@@ -814,6 +813,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/04/29 19:51:13  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.60  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -60,11 +60,11 @@ public:
     const CSeq_entry* operator-> (void) const;
 
 private:
-    typedef set<TTSE_Lock>          TTSESet;
-    typedef TTSESet::const_iterator TTSEIterator;
+    typedef set<TTSE_Lock>          TTSE_LockSet;
+    typedef TTSE_LockSet::const_iterator TTSEIterator;
 
     CScope*       m_Scope;
-    TTSESet       m_Entries;
+    TTSE_LockSet  m_Entries;
     TTSEIterator  m_Current;
 };
 
@@ -102,7 +102,7 @@ CTSE_CI& CTSE_CI::operator= (const CTSE_CI& tse_ci)
 {
     if (this != &tse_ci) {
         m_Scope = tse_ci.m_Scope;
-        ITERATE (TTSESet, it, tse_ci.m_Entries) {
+        ITERATE (TTSE_LockSet, it, tse_ci.m_Entries) {
             m_Entries.insert(*it);
         }
         if (tse_ci) {
@@ -150,6 +150,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/04/29 19:51:12  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.1  2003/03/24 21:26:02  grichenk
 * Initial revision
 *

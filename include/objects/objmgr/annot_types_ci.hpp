@@ -144,7 +144,7 @@ public:
     void Rewind(void);
 
     typedef CConstRef<CTSE_Info> TTSE_Lock;
-    typedef set<TTSE_Lock> TTSESet;
+    typedef set<TTSE_Lock>       TTSE_LockSet;
 
     const CSeq_annot& GetSeq_annot(void) const;
 
@@ -179,7 +179,7 @@ private:
     // Current annotation
     TAnnotSet::const_iterator    m_CurAnnot;
     // TSE set to keep all the TSEs locked
-    TTSESet                      m_TSESet;
+    TTSE_LockSet                 m_TSE_LockSet;
     mutable CRef<CScope>         m_Scope;
 };
 
@@ -330,6 +330,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/04/29 19:51:12  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.38  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

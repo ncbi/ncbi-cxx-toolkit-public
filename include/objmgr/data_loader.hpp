@@ -81,13 +81,13 @@ public:
     // CDataSource::AppendXXX() methods.
     //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
     
-    typedef set<CTSE_Info*> TTSESet;
+    typedef CConstRef<CTSE_Info> TTSE_Lock;
+    typedef set<TTSE_Lock>       TTSE_LockSet;
 
     // Request from a datasource using handles and ranges instead of seq-loc
     // The TSEs loaded in this call will be added to the tse_set.
     virtual bool GetRecords(const CHandleRangeMap& hrmap,
-                            const EChoice choice,
-                            TTSESet* tse_set = 0) = 0;
+                            const EChoice choice) = 0;
     
     // 
     virtual bool DropTSE(const CSeq_entry *sep) = 0 ;
@@ -101,11 +101,11 @@ public:
     // *select the best TSE from the set of dead TSEs.
     // *select the live TSE from the list of live TSEs
     //  and mark the others one as dead.
-    virtual CTSE_Info* ResolveConflict(const CSeq_id_Handle&, const TTSESet&)
-    { return 0; }
+    virtual CTSE_Info* ResolveConflict(const CSeq_id_Handle& id,
+                                       const TTSE_LockSet& tseset);
 
     virtual void GC(void) = 0;
-    virtual void DebugDump(CDebugDumpContext, unsigned int) const { return; }
+    virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
 protected:
     void SetName(const string& loader_name);
@@ -116,8 +116,8 @@ protected:
     const CSeq_id* x_GetSeq_id(const CSeq_id_Handle& handle) const;
 
 private:
-	CDataLoader(const CDataLoader&);
-	CDataLoader& operator=(const CDataLoader&);
+    CDataLoader(const CDataLoader&);
+    CDataLoader& operator=(const CDataLoader&);
 
     string       m_Name;
     CDataSource* m_DataSource;
@@ -142,6 +142,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/04/29 19:51:12  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.16  2003/04/25 14:23:46  vasilche
 * Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
 *

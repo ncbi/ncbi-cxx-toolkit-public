@@ -63,6 +63,115 @@ class CBioseq_Info;
 // others
 class CBioseq_Handle;
 
+class CTSE_LockingSetLock;
+
+class NCBI_XOBJMGR_EXPORT CTSE_LockingSet
+{
+public:
+    CTSE_LockingSet(void);
+    CTSE_LockingSet(const CTSE_LockingSet&);
+    ~CTSE_LockingSet(void);
+    CTSE_LockingSet& operator=(const CTSE_LockingSet&);
+
+    typedef set<CTSE_Info*> TTSESet;
+    typedef TTSESet::iterator iterator;
+    typedef TTSESet::const_iterator const_iterator;
+
+    void insert(CTSE_Info* tse);
+    void erase(CTSE_Info* tse);
+
+    const_iterator begin(void) const
+        {
+            return m_TSE_set.begin();
+        }
+    const_iterator end(void) const
+        {
+            return m_TSE_set.end();
+        }
+
+    bool empty(void) const
+        {
+            return m_TSE_set.empty();
+        }
+
+    friend class CTSE_LockingSetLock;
+
+private:
+    bool x_Locked(void) const
+        {
+            return m_LockCount != 0;
+        }
+    void x_Lock(void);
+    void x_Unlock(void);
+
+    CFastMutex m_Mutex;
+    int        m_LockCount;
+    TTSESet    m_TSE_set;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CTSE_LockingSetLock
+{
+public:
+    CTSE_LockingSetLock(void)
+        : m_TSE_set(0)
+        {
+        }
+    CTSE_LockingSetLock(CTSE_LockingSet& tse_set)
+        : m_TSE_set(&tse_set)
+        {
+            x_Lock();
+        }
+    CTSE_LockingSetLock(const CTSE_LockingSetLock& lock)
+        : m_TSE_set(lock.m_TSE_set)
+        {
+            x_Lock();
+        }
+    ~CTSE_LockingSetLock(void)
+        {
+            x_Unlock();
+        }
+    CTSE_LockingSetLock& operator=(const CTSE_LockingSetLock& lock)
+        {
+            x_Lock(lock.m_TSE_set);
+            return *this;
+        }
+
+    void Lock(CTSE_LockingSet& lock)
+        {
+            x_Lock(&lock);
+        }
+    void Unlock(void)
+        {
+            x_Lock(0);
+        }
+
+private:
+    void x_Lock(void)
+        {
+            if ( m_TSE_set ) {
+                m_TSE_set->x_Lock();
+            }
+        }
+    void x_Unlock(void)
+        {
+            if ( m_TSE_set ) {
+                m_TSE_set->x_Unlock();
+            }
+        }
+    void x_Lock(CTSE_LockingSet* lock)
+        {
+            if ( m_TSE_set != lock ) {
+                x_Unlock();
+                m_TSE_set = lock;
+                x_Lock();
+            }
+        }
+
+    CTSE_LockingSet* m_TSE_set;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 {
 public:
@@ -72,11 +181,9 @@ public:
     virtual ~CDataSource(void);
 
     /// Register new TSE (Top Level Seq-entry)
-    typedef set< CTSE_Info* > TTSESet;
+    typedef set<TTSE_Lock>     TTSE_LockSet;
 
-    CRef<CTSE_Info> AddTSE(CSeq_entry& se,
-                           TTSESet* tse_set,
-                           bool dead = false);
+    CRef<CTSE_Info> AddTSE(CSeq_entry& se, bool dead = false);
 
     /// Add new sub-entry to "parent".
     /// Return FALSE and do nothing if "parent" is not a node in an
@@ -125,7 +232,7 @@ public:
     // Select from the setSource ones which are "owned" by this DataSource
     // and move them into setResult
     void FilterSeqid(TSeq_id_HandleSet& setResult,
-                     TSeq_id_HandleSet& setSource) const;
+                     const TSeq_id_HandleSet& setSource) const;
 
     // Remove TSE from the datasource, update indexes
     void DropAllTSEs(void);
@@ -155,11 +262,11 @@ public:
     CSeq_entry* GetTopEntry(void);
 
     // Internal typedefs
-    typedef CTSE_Info::TRange                       TRange;
-    typedef CTSE_Info::TRangeMap                    TRangeMap;
-    typedef CTSE_Info::TAnnotMap                    TAnnotMap;
+    typedef CTSE_Info::TRange                        TRange;
+    typedef CTSE_Info::TRangeMap                     TRangeMap;
+    typedef CTSE_Info::TAnnotMap                     TAnnotMap;
 
-    typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
+    typedef map<CSeq_id_Handle, CTSE_LockingSet>     TTSEMap;
 
     typedef map<const CSeq_entry*, CRef<CTSE_Info> > TTSE_InfoMap;
     typedef map<const CSeq_entry*, CSeq_entry_Info*> TSeq_entry_InfoMap;
@@ -178,7 +285,7 @@ public:
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             set<TTSE_Lock>& tse_set,
+                             TTSE_LockSet& tse_set,
                              CScope::TRequestHistory& history);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
@@ -191,7 +298,7 @@ public:
 
     CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
 
-    bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
+    //bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
 
     string GetName(void) const;
 
@@ -348,6 +455,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/04/29 19:51:12  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.50  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

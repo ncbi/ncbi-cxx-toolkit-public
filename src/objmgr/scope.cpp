@@ -365,7 +365,8 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
 }
 
 
-const CScope::TTSESet& CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
+const CScope::TTSE_LockSet&
+CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 {
     TAnnotCache::iterator cached = m_AnnotCache.find(idh);
     if (cached != m_AnnotCache.end()) {
@@ -373,13 +374,13 @@ const CScope::TTSESet& CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     }
 
     // Create new entry for idh
-    TTSESet& tse_set = m_AnnotCache[idh];
+    TTSE_LockSet& tse_set = m_AnnotCache[idh];
     //CMutexGuard guard(m_Scope_Mtx);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         it->GetTSESetWithAnnots(idh, tse_set, m_History);
     }
     //### Filter the set depending on the requests history?
-    NON_CONST_ITERATE (TTSESet, tse_it, tse_set) {
+    NON_CONST_ITERATE (TTSE_LockSet, tse_it, tse_set) {
         x_AddToHistory(const_cast<CTSE_Info&>(**tse_it));
     }
     return tse_set;
@@ -591,6 +592,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/04/29 19:51:13  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.61  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

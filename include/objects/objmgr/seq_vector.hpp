@@ -63,10 +63,10 @@ public:
 
     CSeqVector(const CSeqMap& seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
-	       ENa_strand strand = eNa_strand_unknown);
+               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
-	       ENa_strand strand = eNa_strand_unknown);
+               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeqVector& vec);
 
     virtual ~CSeqVector(void);
@@ -181,6 +181,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/04/29 19:51:12  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.29  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

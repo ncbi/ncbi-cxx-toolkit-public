@@ -133,16 +133,16 @@ CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         EVectorStrand strand) const
 {
     return CSeqVector(GetSeqMap(), *m_Scope, coding,
-		      strand == eStrand_Minus?
-		      eNa_strand_minus: eNa_strand_plus);
+                      strand == eStrand_Minus?
+                      eNa_strand_minus: eNa_strand_plus);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorStrand strand) const
 {
     return CSeqVector(GetSeqMap(), *m_Scope, eCoding_Ncbi,
-		      strand == eStrand_Minus?
-		      eNa_strand_minus: eNa_strand_plus);
+                      strand == eStrand_Minus?
+                      eNa_strand_minus: eNa_strand_plus);
 }
 
 
@@ -162,15 +162,15 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
                                            ENa_strand strand) const
 {
     if ( mode != eViewConstructed )
-	strand = eNa_strand_unknown;
+        strand = eNa_strand_unknown;
     return CSeqVector(GetSeqMapByLocation(location, mode), *m_Scope,
-		      coding, strand);
+                      coding, strand);
 }
 
 
 CConstRef<CSeqMap>
 CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
-				    ESequenceViewMode mode) const
+                                    ESequenceViewMode mode) const
 {
     CConstRef<CSeqMap> ret;
     if ( mode == eViewConstructed ) {
@@ -320,6 +320,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/04/29 19:51:13  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.36  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

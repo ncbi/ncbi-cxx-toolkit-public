@@ -84,8 +84,8 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
-	CBioseq_Info(const CBioseq_Info&);
-	CBioseq_Info& operator=(const CBioseq_Info&);
+    CBioseq_Info(const CBioseq_Info&);
+    CBioseq_Info& operator=(const CBioseq_Info&);
 
     friend class CDataSource;
     friend class CScope;
@@ -146,6 +146,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2003/04/29 19:51:12  vasilche
+ * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+ * Made some typedefs more consistent.
+ *
  * Revision 1.11  2003/04/25 14:23:46  vasilche
  * Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
  *

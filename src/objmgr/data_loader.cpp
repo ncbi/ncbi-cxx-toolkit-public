@@ -103,6 +103,17 @@ CSeq_id_Handle CDataLoader::x_GetSeq_id_Handle(TSeq_id_Key key)
 }
 
 
+CTSE_Info* CDataLoader::ResolveConflict(const CSeq_id_Handle& id,
+                                        const TTSE_LockSet& tseset)
+{
+    return 0;
+}
+
+
+void CDataLoader::DebugDump(CDebugDumpContext, unsigned int) const
+{
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -110,6 +121,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/04/29 19:51:13  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.6  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -159,12 +159,12 @@ public:
     virtual ~CGBDataLoader(void);
   
     virtual bool DropTSE(const CSeq_entry* sep);
-    virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
-                            TTSESet* tse_set = 0);
+    virtual bool GetRecords(const CHandleRangeMap& hrmap,
+                            const EChoice choice);
   
     virtual CTSE_Info*
     ResolveConflict(const CSeq_id_Handle& handle,
-                    const TTSESet&        tse_set);
+                    const TTSE_LockSet& tse_set);
   
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -229,15 +229,13 @@ private:
   
     typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
     bool            x_GetRecords(const TSeq_id_Key key,
-                                 const CHandleRange &hrange, EChoice choice,
-                                 TTSESet* tse_set);
+                                 const CHandleRange &hrange, EChoice choice);
     bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
     bool            x_NeedMoreData(CTSEUpload *tse_up,
                                    const CSeqref& srp,
                                    int from,int to, TMask blob_mask);
     bool            x_GetData(STSEinfo *tse,const CSeqref& srp,
-                              int from,int to, TMask blob_mask,
-                              TTSESet* tse_set);
+                              int from,int to, TMask blob_mask);
     void            x_Check(STSEinfo *me);
 };
 
@@ -249,6 +247,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.32  2003/04/29 19:51:12  vasilche
+ * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+ * Made some typedefs more consistent.
+ *
  * Revision 1.31  2003/04/24 16:12:37  vasilche
  * Object manager internal structures are splitted more straightforward.
  * Removed excessive header dependencies.

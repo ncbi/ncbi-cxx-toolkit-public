@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/04/29 19:51:14  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.12  2003/04/24 20:48:47  vasilche
 * Added missing header.
 *
@@ -90,8 +94,7 @@ class CTestDataLoader : public CDataLoader
 public:
     CTestDataLoader(const string& loader_name) : CDataLoader( loader_name) {}
     virtual bool GetRecords(const CHandleRangeMap& /*hrmap*/,
-        const EChoice /*choice*/,
-        TTSESet* /*tse_set = 0*/) { return false; }
+        const EChoice /*choice*/) { return false; }
     virtual bool DropTSE(const CSeq_entry* /*sep*/)  {return false;}
     virtual void GC(void) {return;}
 };

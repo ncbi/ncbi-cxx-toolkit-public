@@ -28,85 +28,6 @@
 * File Description:
 *   Examples of using the C++ object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.23  2003/04/24 16:12:38  vasilche
-* Object manager internal structures are splitted more straightforward.
-* Removed excessive header dependencies.
-*
-* Revision 1.22  2003/04/15 14:24:08  vasilche
-* Changed CReader interface to not to use fake streams.
-*
-* Revision 1.21  2003/04/03 14:17:43  vasilche
-* Allow using data loaded from file.
-*
-* Revision 1.20  2003/03/27 19:40:11  vasilche
-* Implemented sorting in CGraph_CI.
-* Added Rewind() method to feature/graph/align iterators.
-*
-* Revision 1.19  2003/03/26 17:27:04  vasilche
-* Added optinal reverse feature traversal.
-*
-* Revision 1.18  2003/03/21 14:51:41  vasilche
-* Added debug printing of features collected.
-*
-* Revision 1.17  2003/03/18 21:48:31  grichenk
-* Removed obsolete class CAnnot_CI
-*
-* Revision 1.16  2003/03/10 16:33:44  vasilche
-* Added dump of features if errors were detected.
-*
-* Revision 1.15  2003/02/27 20:57:36  vasilche
-* Addef some options for better performance testing.
-*
-* Revision 1.14  2003/02/24 19:02:01  vasilche
-* Reverted testing shortcut.
-*
-* Revision 1.13  2003/02/24 18:57:22  vasilche
-* Make feature gathering in one linear pass using CSeqMap iterator.
-* Do not use feture index by sub locations.
-* Sort features at the end of gathering in one vector.
-* Extracted some internal structures and classes in separate header.
-* Delay creation of mapped features.
-*
-* Revision 1.12  2002/12/06 15:36:01  grichenk
-* Added overlap type for annot-iterators
-*
-* Revision 1.11  2002/12/05 19:28:33  grichenk
-* Prohibited postfix operator ++()
-*
-* Revision 1.10  2002/11/08 19:43:36  grichenk
-* CConstRef<> constructor made explicit
-*
-* Revision 1.9  2002/11/04 21:29:13  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.8  2002/10/02 17:58:41  grichenk
-* Added CBioseq_CI sample code
-*
-* Revision 1.7  2002/09/03 21:27:03  grichenk
-* Replaced bool arguments in CSeqVector constructor and getters
-* with enums.
-*
-* Revision 1.6  2002/06/12 14:39:03  grichenk
-* Renamed enumerators
-*
-* Revision 1.5  2002/05/06 03:28:49  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.4  2002/05/03 21:28:11  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.3  2002/05/03 18:37:34  grichenk
-* Added more examples of using CFeat_CI and GetSequenceView()
-*
-* Revision 1.2  2002/03/28 14:32:58  grichenk
-* Minor fixes
-*
-* Revision 1.1  2002/03/28 14:07:25  grichenk
-* Initial revision
-*
-*
 * ===========================================================================
 */
 
@@ -118,15 +39,16 @@
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
+#include <serial/objectio.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_ext.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
@@ -204,29 +126,422 @@ void CDemoApp::Init(void)
 }
 
 
-class CSplit
+class CSplit : public CWriteObjectHook
 {
 public:
     CSplit(const CSeq_entry& entry);
     ~CSplit();
     
-    void Save(const string& prefix) const;
-
-private:
+    void Save(const string& prefix);
+    
+    string suffix;
+    
+    CObjectOStream* Open(const string& prefix,
+                         const char* contents_name) const;
+    void Save(CConstRef<CSeq_entry> entry,
+              const string& prefix,
+              const char* contents_name) const;
+    
     static CRef<CSeq_entry> NewSeqEntry(void);
+    
+    CConstRef<CSeq_entry> entry;
 
-    CRef<CSeq_entry> core;
-    CRef<CSeq_entry> inst;
-    CRef<CSeq_entry> ftable;
-    CRef<CSeq_entry> align;
-    CRef<CSeq_entry> graph;
-    vector<CRef<CSeq_entry> > snp;
+    typedef set< CConstRef<CBioseq> > TSet;
+    TSet inst;
+    TSet ftable;
+    TSet align;
+    TSet graph;
+    TSet snp;
+
+    void WriteObject(CObjectOStream& out,
+                     const CConstObjectInfo& object);
+    bool skip;
 };
 
-CSplit::CSplit(const CSeq_entry& entry)
+
+class CWSkipMember : public CWriteClassMemberHook
 {
-    /*
-    core.Reset(&entry);
+public:
+    CWSkipMember(const bool& skip)
+        : skip(skip)
+        {
+        }
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            if ( !skip ) {
+                DefaultWrite(out, member);
+            }
+        }
+    const bool& skip;
+};
+
+#if 0
+class CWAnnot : public CWriteClassMemberHook
+{
+public:
+    CWAnnot(CSplit& split)
+        : split(split)
+        {
+        }
+        
+    CSplit& split;
+        
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            const CBioseq& seq =
+                *CType<CBioseq>::Get(member.GetClassObject());
+            if ( !seq.GetId().empty() ) {
+                ITERATE ( CBioseq::TAnnot, it, seq.GetAnnot() ) {
+                    const CSeq_annot& annot = **it;
+                    switch ( annot.GetData().Which() ) {
+                    case CSeq_annot::C_Data::e_Ftable:
+                    {
+                        CTypeConstIterator<CSeq_feat> fi(annot);
+                        if ( fi &&
+                             fi->GetData().GetSubtype() ==
+                             CSeqFeatData::eSubtype_variation ) {
+                            split.snp.insert(CConstRef<CBioseq>(&seq));
+                        }
+                        else {
+                            split.ftable.insert(CConstRef<CBioseq>(&seq));
+                        }
+                        break;
+                    }
+                    case CSeq_annot::C_Data::e_Graph:
+                        split.graph.insert(CConstRef<CBioseq>(&seq));
+                        break;
+                    case CSeq_annot::C_Data::e_Align:
+                        split.align.insert(CConstRef<CBioseq>(&seq));
+                        break;
+                    }
+                }
+            }
+            else {
+                DefaultWrite(out, member);
+            }
+        }
+};
+
+
+class CWAnnot_set : public CWAnnot
+{
+public:
+    CWAnnot_set(CSplit& split)
+        : CWAnnot(split)
+        {
+        }
+};
+
+
+class CWAnnot_seq : public CWAnnot
+{
+public:
+    CWAnnot_seq(CSplit& split)
+        : CWAnnot(split)
+        {
+        }
+};
+
+
+class CWSeq_data : public CWriteClassMemberHook
+{
+public:
+    CWSeq_data(CSplit& split)
+        : split(split)
+        {
+        }
+
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            const CBioseq& seq =
+                *CType<CBioseq>::Get(member.GetClassObject());
+            if ( !seq.GetId().empty() ) {
+                split.inst.insert(CConstRef<CBioseq>(&seq));
+            }
+            else {
+                DefaultWrite(out, member);
+            }
+        }
+
+    CSplit& split;
+};
+
+
+class CWSeq_ext : public CWriteClassMemberHook
+{
+public:
+    CWSeq_ext(CSplit& split)
+        : split(split)
+        {
+        }
+
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            const CBioseq& seq =
+                *CType<CBioseq>::Get(member.GetClassObject());
+            if ( !seq.GetId().empty() ) {
+                split.inst.insert(CConstRef<CBioseq>(&seq));
+            }
+            else {
+                DefaultWrite(out, member);
+            }
+        }
+
+    CSplit& split;
+};
+#endif
+
+class CWSeq_set : public CWriteClassMemberHook
+{
+public:
+    CWSeq_set(const CSplit& split)
+        : split(split), dummy_entry_seq(new CSeq_entry)
+        {
+            dummy_entry_seq->
+                SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_not_set);
+            dummy_entry_seq->
+                SetSeq().SetInst().SetMol(CSeq_inst::eMol_not_set);
+        }
+
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            COStreamClassMember m(out, member);
+    
+            COStreamContainer o(out, member);
+    
+            ITERATE ( CSplit::TSet, i, split.inst ) {
+                seq = *i;
+                o << *dummy_entry_seq;
+                seq.Reset();
+            }
+        }
+
+    const CSplit& split;
+    CRef<CSeq_entry> dummy_entry_seq;
+    CConstRef<CBioseq> seq;
+};
+
+
+class CWSeq_id : public CWriteClassMemberHook
+{
+public:
+    CWSeq_id(const CWSeq_set& seq)
+        : seq(seq), gb_id(new CSeq_id)
+        {
+        }
+
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            if ( seq.seq ) {
+                COStreamClassMember m(out, member);
+                
+                COStreamContainer o(out, member);
+            
+                ITERATE ( CBioseq::TId, i, seq.seq->GetId() ) {
+                    if ( (*i)->IsGi() ) {
+                        gb_id->SetGi((*i)->GetGi());
+                        o << *gb_id;
+                        return;
+                    }
+                }
+
+                o << **seq.seq->GetId().begin();
+            }
+        }
+
+    const CWSeq_set& seq;
+    CRef<CSeq_id> gb_id;
+};
+
+
+class CWSeq_data : public CWriteClassMemberHook
+{
+public:
+    CWSeq_data(const CWSeq_set& seq)
+        : seq(seq)
+        {
+        }
+
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            if ( seq.seq && seq.seq->GetInst().IsSetSeq_data() ) {
+                COStreamClassMember m(out, member);
+                out.WriteObject(&seq.seq->GetInst().GetSeq_data(),
+                                CType<CSeq_data>::GetTypeInfo());
+            }
+        }
+
+    const CWSeq_set& seq;
+};
+
+
+class CWSeq_ext : public CWriteClassMemberHook
+{
+public:
+    CWSeq_ext(const CWSeq_set& seq)
+        : seq(seq)
+        {
+        }
+
+    void WriteClassMember(CObjectOStream& out,
+                          const CConstObjectInfo::CMemberIterator& member)
+        {
+            if ( seq.seq && seq.seq->GetInst().IsSetExt() ) {
+                COStreamClassMember m(out, member);
+                out.WriteObject(&seq.seq->GetInst().GetExt(),
+                                CType<CSeq_ext>::GetTypeInfo());
+            }
+        }
+
+    const CWSeq_set& seq;
+};
+
+
+CSplit::CSplit(const CSeq_entry& entry)
+    : entry(&entry)
+{
+}
+
+
+CSplit::~CSplit(void)
+{
+}
+
+
+void CSplit::WriteObject(CObjectOStream& out,
+                         const CConstObjectInfo& object)
+{
+    CConstRef<CBioseq> seq(CType<CBioseq>::Get(object));
+    skip = !seq->GetId().empty();
+    if ( skip ) {
+        ITERATE ( CBioseq::TAnnot, it, seq->GetAnnot() ) {
+            const CSeq_annot& annot = **it;
+            switch ( annot.GetData().Which() ) {
+            case CSeq_annot::C_Data::e_Ftable:
+            {
+                CTypeConstIterator<CSeq_feat> fi(annot);
+                if ( fi &&
+                     fi->GetData().GetSubtype() ==
+                     CSeqFeatData::eSubtype_variation ) {
+                    snp.insert(seq);
+                }
+                else {
+                    ftable.insert(seq);
+                }
+                break;
+            }
+            case CSeq_annot::C_Data::e_Graph:
+                graph.insert(seq);
+                break;
+            case CSeq_annot::C_Data::e_Align:
+                align.insert(seq);
+                break;
+            }
+        }
+        if ( seq->GetInst().IsSetSeq_data() || seq->GetInst().IsSetExt() ) {
+            inst.insert(seq);
+        }
+    }
+    DefaultWrite(out, object);
+    skip = false;
+}
+
+CObjectOStream* CSplit::Open(const string& prefix,
+                             const char* contents_name) const
+{
+    return CObjectOStream::Open(eSerial_AsnText,
+                                prefix+contents_name+".asn");
+}
+
+
+void CSplit::Save(CConstRef<CSeq_entry> entry,
+                  const string& prefix,
+                  const char* contents_name) const
+{
+    if ( entry ) {
+        auto_ptr<CObjectOStream> out(Open(prefix, contents_name));
+        *out << *entry;
+    }
+}
+
+
+void CSplit::Save(const string& prefix)
+{
+    {{
+        auto_ptr<CObjectOStream> out(Open(prefix, "core"));
+        
+        CObjectTypeInfo type;
+        type = CType<CBioseq>();
+        type.SetLocalWriteHook(*out, this);
+        
+        CRef<CWSkipMember> wSkip(new CWSkipMember(skip));
+        type.FindMember("annot").SetLocalWriteHook(*out, &*wSkip);
+        type = CType<CSeq_inst>();
+        type.FindMember("seq-data").SetLocalWriteHook(*out, &*wSkip);
+        type.FindMember("ext").SetLocalWriteHook(*out, &*wSkip);
+
+        *out << *entry;
+    }}
+
+    if ( !inst.empty() ) {
+        auto_ptr<CObjectOStream> out(Open(prefix, "seq"));
+
+        CRef<CSeq_entry> dummy_entry(new CSeq_entry);
+        dummy_entry->SetSet();
+
+        CRef<CWSeq_set> wSeq_set(new CWSeq_set(*this));
+        CRef<CWSeq_id> wSeq_id(new CWSeq_id(*wSeq_set));
+        CRef<CWSeq_data> wSeq_data(new CWSeq_data(*wSeq_set));
+        CRef<CWSeq_ext> wSeq_ext(new CWSeq_ext(*wSeq_set));
+        
+        CObjectTypeInfo type = CType<CBioseq_set>();
+        type.FindMember("seq-set").SetLocalWriteHook(*out, &*wSeq_set);
+        type = CType<CBioseq>();
+        type.FindMember("id").SetLocalWriteHook(*out, &*wSeq_id);
+        type = CType<CSeq_inst>();
+        type.FindMember("seq-data").SetLocalWriteHook(*out, &*wSeq_data);
+        type.FindMember("ext").SetLocalWriteHook(*out, &*wSeq_ext);
+
+        *out << *dummy_entry;
+    }
+#if 0
+        CNcbiOstrstream s;
+        s << base_name;
+        switch ( annot.GetData().Which() ) {
+        case CSeq_annot::C_Data::e_Ftable:
+        {
+            CTypeConstIterator<CSeq_feat> fi(annot);
+            if ( fi &&
+                 fi->GetData().GetSubtype() ==
+                 CSeqFeatData::eSubtype_variation ) {
+                s << "snp." << ++cnt[3];
+            }
+            else {
+                s << "ftable." << ++cnt[0];
+            }
+            break;
+        }
+        case CSeq_annot::C_Data::e_Graph:
+            s << "graph." << ++cnt[1];
+            break;
+        case CSeq_annot::C_Data::e_Align:
+            s << "align." << ++cnt[2];
+            break;
+        }
+        s << ".asn";
+        string file_name = CNcbiOstrstreamToString(s);
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, file_name));
+        *out << annot;
+    }
+
     for ( CTypeConstIterator<CSeq_annot> i(entry); i; ++i ) {
         const CSeq_annot& annot = *i;
         CNcbiOstrstream s;
@@ -257,16 +572,20 @@ CSplit::CSplit(const CSeq_entry& entry)
         auto_ptr<CObjectOStream>
             out(CObjectOStream::Open(eSerial_AsnText, file_name));
         *out << annot;
+    
+
+    Save(inst, prefix, "seq");
+    Save(ftable, prefix, "ftable");
+    Save(align, prefix, "align");
+    Save(graph, prefix, "graph");
+    for ( size_t i = 0; i < snp.size(); ++i ) {
+        CNcbiOstrstream name_out;
+        name_out << "snp."<<(i+1);
+        string name = CNcbiOstrstreamToString(name_out);
+        auto_ptr<CObjectOStream> out(Open(prefix, name.c_str()));
+        *out << *snp[i];
     }
-    */
-}
-
-CSplit::~CSplit(void)
-{
-}
-
-void CSplit::Save(const string& prefix) const
-{
+#endif
 }
 
 int CDemoApp::Run(void)
@@ -340,6 +659,7 @@ int CDemoApp::Run(void)
             CNcbiOstrstream name;
             name << gi << '.';
             s.Save(CNcbiOstrstreamToString(name));
+            break;
         }
         if ( !only_features ) {
             // List other sequences in the same TSE
@@ -528,3 +848,91 @@ int main(int argc, const char* argv[])
 {
     return CDemoApp().AppMain(argc, argv);
 }
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.24  2003/04/29 19:51:14  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
+* Revision 1.23  2003/04/24 16:12:38  vasilche
+* Object manager internal structures are splitted more straightforward.
+* Removed excessive header dependencies.
+*
+* Revision 1.22  2003/04/15 14:24:08  vasilche
+* Changed CReader interface to not to use fake streams.
+*
+* Revision 1.21  2003/04/03 14:17:43  vasilche
+* Allow using data loaded from file.
+*
+* Revision 1.20  2003/03/27 19:40:11  vasilche
+* Implemented sorting in CGraph_CI.
+* Added Rewind() method to feature/graph/align iterators.
+*
+* Revision 1.19  2003/03/26 17:27:04  vasilche
+* Added optinal reverse feature traversal.
+*
+* Revision 1.18  2003/03/21 14:51:41  vasilche
+* Added debug printing of features collected.
+*
+* Revision 1.17  2003/03/18 21:48:31  grichenk
+* Removed obsolete class CAnnot_CI
+*
+* Revision 1.16  2003/03/10 16:33:44  vasilche
+* Added dump of features if errors were detected.
+*
+* Revision 1.15  2003/02/27 20:57:36  vasilche
+* Addef some options for better performance testing.
+*
+* Revision 1.14  2003/02/24 19:02:01  vasilche
+* Reverted testing shortcut.
+*
+* Revision 1.13  2003/02/24 18:57:22  vasilche
+* Make feature gathering in one linear pass using CSeqMap iterator.
+* Do not use feture index by sub locations.
+* Sort features at the end of gathering in one vector.
+* Extracted some internal structures and classes in separate header.
+* Delay creation of mapped features.
+*
+* Revision 1.12  2002/12/06 15:36:01  grichenk
+* Added overlap type for annot-iterators
+*
+* Revision 1.11  2002/12/05 19:28:33  grichenk
+* Prohibited postfix operator ++()
+*
+* Revision 1.10  2002/11/08 19:43:36  grichenk
+* CConstRef<> constructor made explicit
+*
+* Revision 1.9  2002/11/04 21:29:13  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
+* Revision 1.8  2002/10/02 17:58:41  grichenk
+* Added CBioseq_CI sample code
+*
+* Revision 1.7  2002/09/03 21:27:03  grichenk
+* Replaced bool arguments in CSeqVector constructor and getters
+* with enums.
+*
+* Revision 1.6  2002/06/12 14:39:03  grichenk
+* Renamed enumerators
+*
+* Revision 1.5  2002/05/06 03:28:49  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.4  2002/05/03 21:28:11  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.3  2002/05/03 18:37:34  grichenk
+* Added more examples of using CFeat_CI and GetSequenceView()
+*
+* Revision 1.2  2002/03/28 14:32:58  grichenk
+* Minor fixes
+*
+* Revision 1.1  2002/03/28 14:07:25  grichenk
+* Initial revision
+*
+*
+* ===========================================================================
+*/
+

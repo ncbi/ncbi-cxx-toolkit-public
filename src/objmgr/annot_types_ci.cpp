@@ -409,7 +409,7 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
         size_t index = it.m_CurAnnot - it.m_AnnotSet.begin();
         m_CurAnnot = m_AnnotSet.begin()+index;
         // Copy TSE list, set TSE locks
-        m_TSESet = it.m_TSESet;
+        m_TSE_LockSet = it.m_TSE_LockSet;
     }
     return *this;
 }
@@ -842,19 +842,19 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
     CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    const TTSESet* entries;
+    const TTSE_LockSet* entries;
     switch ( m_LimitObjectType ) {
     case eLimit_TSE:
     {
-        if ( m_TSESet.empty() ) {
+        if ( m_TSE_LockSet.empty() ) {
             const CSeq_entry* tse = 
                 static_cast<const CSeq_entry*>(m_LimitObject.GetPointer());
             TTSE_Lock tse_info(m_Scope->GetTSEInfo(tse));
             if ( tse_info ) {
-                m_TSESet.insert(tse_info);
+                m_TSE_LockSet.insert(tse_info);
             }
         }
-        entries = &m_TSESet;
+        entries = &m_TSE_LockSet;
         break;
     }
     case eLimit_Entry:
@@ -864,7 +864,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         break;
     }
 
-    ITERATE ( TTSESet, tse_it, *entries ) {
+    ITERATE ( TTSE_LockSet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
 
@@ -873,7 +873,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
             continue;
         }
 
-        m_TSESet.insert(*tse_it);
+        m_TSE_LockSet.insert(*tse_it);
 
         for ( CTSE_Info::TRangeMap::const_iterator aoit = rmap->begin(range);
               aoit; ++aoit ) {
@@ -1021,6 +1021,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/04/29 19:51:13  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.65  2003/04/28 15:00:46  vasilche
 * Workaround for ICC bug with dynamic_cast<>.
 *

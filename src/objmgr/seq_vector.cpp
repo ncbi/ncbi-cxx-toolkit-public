@@ -109,7 +109,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_Scope = vec.m_Scope;
         m_SequenceType = vec.m_SequenceType;
         m_Coding = vec.m_Coding;
-	m_Strand = vec.m_Strand;
+        m_Strand = vec.m_Strand;
         m_CacheData = vec.m_CacheData;
         m_Cache = &m_CacheData[0];
         m_CachePos = vec.m_CachePos;
@@ -691,6 +691,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/04/29 19:51:13  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.46  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

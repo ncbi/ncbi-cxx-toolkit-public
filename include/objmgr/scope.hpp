@@ -118,6 +118,9 @@ public:
     virtual ~CScope(void);
 
     typedef CConstRef<CTSE_Info> TTSE_Lock;
+    typedef set<TTSE_Lock>       TTSE_LockSet;
+    // History of requests
+    typedef TTSE_LockSet         TRequestHistory;
 
     // Add default data loaders from object manager
     void AddDefaults(CPriorityNode::TPriority priority = 99);
@@ -179,9 +182,6 @@ public:
     };
     virtual void SetFindMode(EFindMode mode);
 
-    // History of requests
-    typedef set<TTSE_Lock> TRequestHistory;
-
     void ResetHistory(void);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -192,7 +192,6 @@ public:
     const CSynonymsSet& GetSynonyms(const CSeq_id_Handle& id);
 
 private:
-    typedef set<TTSE_Lock>                TTSESet;
     typedef set<CSeqMatch_Info>           TSeqMatchSet;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
@@ -203,7 +202,7 @@ private:
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           const SAnnotTypeSelector& sel,
                           const CSeq_annot& limit_annot);
-    const TTSESet& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
+    const TTSE_LockSet& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
     void x_DetachFromOM(void);
     // Get requests history (used by data sources to process requests)
@@ -252,7 +251,7 @@ private:
 
     typedef map<CSeq_id_Handle, CBioseq_Handle> TCache;
     typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
-    typedef map<CSeq_id_Handle, TTSESet> TAnnotCache;
+    typedef map<CSeq_id_Handle, TTSE_LockSet> TAnnotCache;
 
     TCache m_Cache;
     TSynCache m_SynCache;
@@ -276,6 +275,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/04/29 19:51:12  vasilche
+* Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
+* Made some typedefs more consistent.
+*
 * Revision 1.43  2003/04/24 17:24:57  vasilche
 * SAnnotSelector is struct.
 * Added include required by MS VC.
