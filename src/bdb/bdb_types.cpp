@@ -646,7 +646,7 @@ void CBDB_FieldLString::Set(const char* str, EOverflowAction if_overflow)
     if ( !str )
         str = kEmptyCStr;
 
-    int new_len = ::strlen(str) + 1;
+    unsigned int new_len = ::strlen(str) + 1;
 
     // check overflow
     if ( new_len > (GetBufferSize() - 4) ) {
@@ -751,7 +751,7 @@ bool CBDB_FieldLString::IsBlank() const
 
     str = GetLString(str, check_legacy, &str_len);
 
-    for (unsigned i = 0; i < str_len; ++i) {
+    for (int i = 0; i < str_len; ++i) {
         if (!isspace(str[i]))
             return false;
     }
@@ -804,7 +804,7 @@ string CBDB_FieldLString::Get() const
 
 void CBDB_FieldLString::SetStdString(const string& str)
 {
-    int str_len = (int) str.length();
+    unsigned int str_len = str.length();
     if (str_len == 0) {
         Set("", eThrowOnOverflow);
         return;
@@ -819,7 +819,7 @@ void CBDB_FieldLString::SetStdString(const string& str)
 
     const char* str_data = str.data();
 
-    void* buf = Unpack();
+    /* void* buf = */ Unpack();
 
     unsigned char* str_buf = (unsigned char*) GetBuffer();
 
@@ -846,6 +846,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/02/17 19:05:21  kuznets
+ * GCC warnings fix
+ *
  * Revision 1.18  2004/02/12 19:54:39  kuznets
  * CBDB_BufferManager::GetFieldIndex()
  *

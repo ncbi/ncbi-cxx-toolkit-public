@@ -157,9 +157,9 @@ CBDB_ConditionHandle::~CBDB_ConditionHandle()
 
 CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
 : m_Dbf(dbf),
-  m_DBC(0),
   From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
   To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
+  m_DBC(0),
   m_CondFrom(eFirst),
   m_CondTo(eLast),
   m_FetchDirection(eForward),
@@ -170,9 +170,9 @@ CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf)
 
 CBDB_FileCursor::CBDB_FileCursor(CBDB_File& dbf, CBDB_Transaction& trans)
 : m_Dbf(dbf),
-  m_DBC(0),
   From( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this))  ),
   To( *(new CBDB_FC_Condition(*dbf.m_KeyBuf, *this)) ),
+  m_DBC(0),
   m_CondFrom(eFirst),
   m_CondTo(eLast),
   m_FetchDirection(eForward),
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/17 19:05:21  kuznets
+ * GCC warnings fix
+ *
  * Revision 1.9  2003/12/29 13:23:53  kuznets
  * Added support for transaction protected cursors.
  *
