@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <connect/ncbi_conn_stream.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/submit/Seq_submit.hpp>
@@ -40,6 +41,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -250,9 +252,41 @@ void CFlatFileGenerator::Generate
 }
 
 
-void CFlatFileGenerator::Reset(void)
+//void CFlatFileGenerator::Reset(void)
+//{
+//    m_Ctx->Reset();
+//}
+
+
+string CFlatFileGenerator::GetSeqFeatText
+(const CSeq_feat& feat,
+ CScope& scope,
+ const CFlatFileConfig& cfg)
 {
-    m_Ctx->Reset();
+    CBioseq_Handle seq = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
+    if (!seq) {
+        NCBI_THROW(CFlatException, eUnknown, "Bioseq not found for feature");
+    }
+    CRef<CFlatItemFormatter> formatter(CFlatItemFormatter::New(cfg.GetFormat()));
+    CRef<CFlatFileContext> ctx(new CFlatFileContext(cfg));
+
+    ctx->SetEntry(seq.GetParentEntry());
+    formatter->SetContext(*ctx);
+
+    CConn_MemoryStream os;
+    CFormatItemOStream item_os(new COStreamTextOStream(os));
+    item_os.SetFormatter(formatter);
+
+    CBioseqContext bctx(seq, *ctx);
+    if (feat.GetData().IsBiosrc()) {
+        item_os << new CSourceFeatureItem(feat, bctx, &feat.GetLocation());
+    } else {
+        item_os << new CFeatureItem(feat, bctx, &feat.GetLocation());
+    }
+
+    string text;
+    os.ToString(text);
+    return text;
 }
 
 
@@ -264,6 +298,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/02 16:28:28  shomrat
+* Added single feature formatting
+*
 * Revision 1.12  2005/02/11 15:29:45  shomrat
 * Cleanup after execution; avoid duplicate entries in scope
 *

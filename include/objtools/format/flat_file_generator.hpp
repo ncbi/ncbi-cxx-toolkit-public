@@ -86,7 +86,10 @@ public:
     void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
-    void Reset(void);
+    static string GetSeqFeatText(const CSeq_feat& feat, CScope& scope,
+        const CFlatFileConfig& cfg);
+
+    //void Reset(void);
 private:
     CRef<CFlatFileContext>    m_Ctx;
 
@@ -104,6 +107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/03/02 16:26:12  shomrat
+* Added single feature formatting
+*
 * Revision 1.10  2005/02/07 14:56:21  shomrat
 * unconst Seq-submit objects
 *
