@@ -422,6 +422,9 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
     TTreeNodeIterator it = tr->SubNodeBegin();
     TTreeNodeIterator it_end = tr->SubNodeEnd();
 
+    if (it == it_end)
+        return func;
+
     stack<TTreeNodeIterator> tree_stack;
 
     while (true) {
@@ -711,6 +714,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/03/10 15:59:33  kuznets
+ * TreeDepthFirstTraverse fixed bug in tree iteration logic
+ * (corner case for empty tree)
+ *
  * Revision 1.22  2004/02/17 19:07:27  kuznets
  * GCC warning fix
  *
