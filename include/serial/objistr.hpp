@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2000/12/26 17:26:09  vasilche
+* Added one more Read() interface method.
+*
 * Revision 1.59  2000/12/15 21:28:46  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -341,6 +344,7 @@ public:
     void Read(const CObjectInfo& object);
     void Read(TObjectPtr object, TTypeInfo type);
     void Skip(TTypeInfo type);
+    CObjectInfo Read(TTypeInfo type);
 
     // file header readers
     virtual string ReadFileHeader(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2000/12/26 17:26:16  vasilche
+* Added one more Read() interface method.
+*
 * Revision 1.70  2000/12/15 21:29:01  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -588,6 +591,15 @@ void CObjectIStream::Read(const CObjectInfo& object, ENoFileHeader)
     EndOfRead();
     
     END_OBJECT_FRAME();
+}
+
+CObjectInfo CObjectIStream::Read(TTypeInfo typeInfo)
+{
+    // root object
+    SkipFileHeader(typeInfo);
+    CObjectInfo info(typeInfo->Create(), typeInfo);
+    Read(info, eNoFileHeader);
+    return info;
 }
 
 void CObjectIStream::Read(const CObjectInfo& object)
