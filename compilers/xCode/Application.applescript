@@ -30,6 +30,8 @@
  *
  *)
 
+
+(* ==== Globals ==== *)
 global AllLibraries
 global AllConsoleTools
 global AllApplications
@@ -39,31 +41,37 @@ global ProjBuilderLib
 global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
 global libTypeDLL, cpuOptimization, zeroLink, fixContinue
 
+
+(* ==== Properties ==== *)
 property allPaths : {"pathNCBI", "pathFLTK", "pathBDB", "pathSQL", "pathPCRE", "pathOUT"}
+property libDataSource : null
+property toolDataSource : null
+property appDataSource : null
+property curDataSource : null
+(* ==== Event Handlers ==== *)
 
 (* Loading of library scripts *)
 on launched theObject
 	my loadScripts()
-	
 	tell ToolkitSource to Initialize()
 	
 	-- Load User Defaults	
 	repeat with p in allPaths
 		try
 			set tmp to contents of default entry (p as string) of user defaults
-			set contents of text field (p as string) of box "pathBox" of window "Main" to tmp
+			set contents of text field (p as string) of tab view item "tab1" of tab view "theTab" of window "Main" to tmp
 		on error
 			set homePath to the POSIX path of (path to home folder) as string
 			
-			if (p as string) is equal to "pathNCBI" then set contents of text field (p as string) of box "pathBox" of window "Main" to homePath & "c++"
-			
-			if (p as string) is equal to "pathOUT" then set contents of text field (p as string) of box "pathBox" of window "Main" to homePath & "out"
+			if (p as string) is equal to "pathNCBI" then set contents of text field (p as string) of tab view item "tab1" of tab view "theTab" of window "Main" to homePath & "c++"
+			if (p as string) is equal to "pathOUT" then set contents of text field (p as string) of tab view item "tab1" of tab view "theTab" of window "Main" to homePath & "out"
 		end try
 		
 	end repeat
 	
 	show window "Main"
 end launched
+
 
 on pathToScripts()
 	set appPath to (path to me from user domain) as text
@@ -88,18 +96,39 @@ on should quit after last window closed theObject
 	return true
 end should quit after last window closed
 
+
+
 (* When the NIB (resourses are loaded *)
 on awake from nib theObject
-	tell theObject
-		-- Set the drawer up with some initial values.
-		set leading offset of drawer "Drawer" to 20
-		set trailing offset of drawer "Drawer" to 20
-	end tell
+	if name of theObject is "Main" then
+		tell theObject
+			-- Set the drawer up with some initial values.
+			set leading offset of drawer "Drawer" to 20
+			set trailing offset of drawer "Drawer" to 20
+		end tell
+	end if
 end awake from nib
 
 
 (* Actual work starts here *)
 on clicked theObject
+	if name of theObject is "theLibsTable" then
+		set curDataSource to libDataSource
+		x_SaveTableData(libDataSource, AllLibraries)
+	else if name of theObject is "theToolsTable" then
+		set curDataSource to toolDataSource
+		x_SaveTableData(toolDataSource, AllConsoleTools)
+	else if name of theObject is "theAppsTable" then
+		set curDataSource to appDataSource
+		x_SaveTableData(appDataSource, AllApplications)
+	end if
+	
+	if name of theObject is "selectAll" then
+		x_SelectAll(true)
+	else if name of theObject is "deselectAll" then
+		x_SelectAll(false)
+	end if
+	
 	tell window "Main"
 		(* Handle Generate button *)
 		if theObject is equal to button "generate" then
@@ -127,7 +156,7 @@ on clicked theObject
 		end if
 		
 		(* Handle Paths *)
-		tell box "pathBox"
+		tell tab view item "tab1" of tab view "theTab"
 			if theObject is equal to button "ChooseNCBI" then
 				my ChooseFolder("Select NCBI C++ Toolkit location", "pathNCBI")
 			end if
@@ -161,15 +190,57 @@ end clicked
 on will quit theObject
 	-- Save User Defaults	
 	repeat with p in allPaths
-		set thePath to the contents of text field (p as string) of box "pathBox" of window "Main"
+		set thePath to the contents of text field (p as string) of tab view item "tab1" of tab view "theTab" of window "Main"
 		make new default entry at end of default entries of user defaults with properties {name:p, contents:thePath}
 		set contents of default entry (p as string) of user defaults to thePath
 	end repeat
 end will quit
 
-on mouse entered theObject event theEvent
+
+
+on selected tab view item theObject tab view item tabViewItem
+	if name of tabViewItem is "tab2" then
+		set libTable to table view "theLibsTable" of scroll view "theLibsTable" of split view "theSplitter" of tab view item "tab2" of theObject
+		set toolTable to table view "theToolsTable" of scroll view "theToolsTable" of split view "theSplitter" of tab view item "tab2" of theObject
+		set appTable to table view "theAppsTable" of scroll view "theAppsTable" of split view "theSplitter" of tab view item "tab2" of theObject
+		
+		-- Here we will add the data columns to the data source of the contacts table view
+		if libDataSource is null then
+			set libDataSource to make new data source at the end of the data sources with properties {name:"libs"}
+			make new data column at the end of data columns of libDataSource with properties {name:"use"}
+			make new data column at the end of data columns of libDataSource with properties {name:"name"}
+			set data source of libTable to libDataSource
+			my x_ReloadTable(libDataSource, AllLibraries)
+		end if
+		
+		if toolDataSource is null then
+			set toolDataSource to make new data source at the end of the data sources with properties {name:"tools"}
+			make new data column at the end of data columns of toolDataSource with properties {name:"use"}
+			make new data column at the end of data columns of toolDataSource with properties {name:"name"}
+			make new data column at the end of data columns of toolDataSource with properties {name:"path"}
+			set data source of toolTable to toolDataSource
+			my x_ReloadTable(toolDataSource, AllConsoleTools)
+		end if
+		
+		if appDataSource is null then
+			set appDataSource to make new data source at the end of the data sources with properties {name:"apps"}
+			make new data column at the end of data columns of appDataSource with properties {name:"use"}
+			make new data column at the end of data columns of appDataSource with properties {name:"name"}
+			make new data column at the end of data columns of appDataSource with properties {name:"path"}
+			set data source of appTable to appDataSource
+			my x_ReloadTable(appDataSource, AllApplications)
+		end if
+	end if
+end selected tab view item
+
+on cell value theObject table column tableColumn row theRow
 	(*Add your script here.*)
-end mouse entered
+end cell value
+
+on number of rows theObject
+	(*Add your script here.*)
+end number of rows
+
 
 
 (* Select a directory with given title *)
@@ -188,10 +259,27 @@ on ChooseFolder(theTitle, textField)
 		set pathNames to (path names of open panel as list)
 		set thePath to the first item of pathNames
 		log thePath
-		set contents of text field textField of box "pathBox" of window "Main" to thePath
+		set contents of text field textField of tab view item "tab1" of tab view "theTab" of window "Main" to thePath
 	end if
 	
 end ChooseFolder
+
+
+on x_ReloadTable(theDS, thePack)
+	set update views of theDS to false
+	delete every data row in theDS
+	
+	repeat with p in thePack
+		set theDataRow to make new data row at the end of the data rows of theDS
+		set contents of data cell "use" of theDataRow to req of p
+		set contents of data cell "name" of theDataRow to name of p
+		if theDS is not equal to libDataSource then set contents of data cell "path" of theDataRow to path of p
+	end repeat
+	
+	
+	set update views of theDS to true
+end x_ReloadTable
+
 
 (* Append to log entry *)
 on x_AddtoLog(txt)
@@ -206,31 +294,37 @@ end x_AddtoLog
 (* Actual work happends here *)
 on CreateProject()
 	repeat with library in AllLibraries -- ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, tables, sequtil, creaders, xutil, xregexp, xconnect, xser}}
-		set src_files to {}
-		repeat with lib in libs of library
-			set src_files to src_files & my GetSourceFiles(lib)
-			x_AddtoLog("Processing: " & name of lib)
-		end repeat
-		--if name of library = "ncbi_core" then --then --or name of lib = "xser" or name of lib = "xutil" or name of lib = "access" then
-		tell ProjBuilderLib to MakeNewLibraryTarget(library, src_files)
-		--end if
+		if req of library is true then -- selected to be build
+			set src_files to {}
+			repeat with lib in libs of library
+				set src_files to src_files & my GetSourceFiles(lib)
+				x_AddtoLog("Processing: " & name of lib)
+			end repeat
+			--if name of library = "ncbi_core" then --then --or name of lib = "xser" or name of lib = "xutil" or name of lib = "access" then
+			tell ProjBuilderLib to MakeNewLibraryTarget(library, src_files)
+			--end if
+		end if -- req is true
 	end repeat
 	
-	repeat with toolBundle in AllConsoleTools
-		repeat with tool in toolBundle
+	--repeat with toolBundle in AllConsoleTools
+	repeat with tool in AllConsoleTools --toolBundle
+		if req of tool is true then -- selected to be build
 			set src_files to my GetSourceFiles(tool)
 			x_AddtoLog("Processing: " & name of tool)
 			tell ProjBuilderLib to MakeNewToolTarget(tool, src_files)
-		end repeat
+		end if
 	end repeat
+	--end repeat
 	
-	repeat with appBundle in AllApplications
-		repeat with theApp in appBundle
+	--repeat with appBundle in AllApplications
+	repeat with theApp in AllApplications --appBundle
+		if req of theApp is true then -- selected to be build
 			set src_files to my GetSourceFiles(theApp)
 			x_AddtoLog("Processing: " & name of theApp)
 			tell ProjBuilderLib to MakeNewAppTarget(theApp, src_files)
-		end repeat
+		end if
 	end repeat
+	--end repeat
 	
 	x_AddtoLog("Saving project file")
 	tell ProjBuilderLib to SaveProjectFile()
@@ -336,10 +430,9 @@ on EndsWith(aList, suffix)
 end EndsWith
 
 
-
 (* Performs a validation of paths and names before generating a project *)
 on ValidatePaths()
-	tell box "pathBox" of window "Main"
+	tell tab view item "tab1" of tab view "theTab" of window "Main"
 		set TheNCBIPath to contents of text field "pathNCBI"
 		set TheFLTKPath to contents of text field "pathFLTK"
 		set TheBDBPath to contents of text field "pathBDB"
@@ -417,10 +510,37 @@ on x_ShowAlert(msg)
 end x_ShowAlert
 
 
+on x_SelectAll(theBool)
+	if curDataSource is not null then
+		repeat with d in data rows of curDataSource
+			set contents of data cell "use" of d to theBool
+		end repeat
+		
+		x_SaveTableData(libDataSource, AllLibraries)
+		x_SaveTableData(toolDataSource, AllConsoleTools)
+		x_SaveTableData(appDataSource, AllApplications)
+	end if
+end x_SelectAll
+
+
+
+on x_SaveTableData(theDS, thePack)
+	set c to 1
+	repeat with p in thePack
+		set theDataRow to item c of the data rows of theDS
+		set req of p to contents of data cell "use" of theDataRow
+		
+		set c to c + 1
+	end repeat
+end x_SaveTableData
+
 
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/09/29 15:24:52  lebedev
+ * Option to select individual package (lib, tool, application) added
+ *
  * Revision 1.9  2004/09/24 17:56:52  lebedev
  * Create output directory of it's not exist
  *
