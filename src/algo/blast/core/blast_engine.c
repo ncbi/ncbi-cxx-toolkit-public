@@ -137,8 +137,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    BLAST_ExtendWord* ewp = aux_struct->ewp;
    Uint4* query_offsets = aux_struct->query_offsets;
    Uint4* subject_offsets = aux_struct->subject_offsets;
-   Uint1* translation_buffer;
-   Int4* frame_offsets;
+   Uint1* translation_buffer = NULL;
+   Int4* frame_offsets = NULL;
    Int4 num_chunks, chunk, total_subject_length, offset;
    BlastHitSavingOptions* hit_options = hit_params->options;
    BlastHSPList* combined_hsp_list;
@@ -274,6 +274,13 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       MergeHSPLists(combined_hsp_list, hsp_list_out, 0, 
                     FALSE, TRUE);
    } /* End loop on frames */
+
+   if (translation_buffer) {
+       sfree(translation_buffer);
+   }
+   if (frame_offsets) {
+       sfree(frame_offsets);
+   }
       
    /* Restore the original contents of the subject block */
    subject->length = orig_length;
@@ -877,6 +884,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
    default:
       {
          /* FIXME - emit error condition here */
+          abort();
       }
    } /* end switch */
 

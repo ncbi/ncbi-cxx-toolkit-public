@@ -414,8 +414,8 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    Boolean translate_subject = 
       (program_number == blast_type_tblastn ||
        program_number == blast_type_psitblastn);   
-   Uint1* translation_buffer;
-   Int4* frame_offsets;
+   Uint1* translation_buffer = NULL;
+   Int4* frame_offsets = NULL;
    Uint1* nucl_sequence = NULL;
    BLAST_KarlinBlk** kbp;
 
@@ -684,6 +684,12 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
       }
    } /* End loop on HSPs */
 
+    if (translation_buffer) {
+        sfree(translation_buffer);
+    }
+    if (frame_offsets) {
+        sfree(frame_offsets);
+    }
     /* Now try to detect simular alignments */
 
     BLASTCheckHSPInclusion(hsp_array, hsp_list->hspcnt, is_ooframe);
