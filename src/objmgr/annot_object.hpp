@@ -39,6 +39,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -63,6 +64,9 @@ public:
                  const CSeq_entry* entry);
     virtual ~CAnnotObject(void);
 
+    CAnnotObject(const CAnnotObject& obj);
+    CAnnotObject& operator=(const CAnnotObject& obj);
+
     SAnnotSelector::TAnnotChoice Which(void) const;
 
     bool IsFeat(void) const;
@@ -82,6 +86,11 @@ public:
     // Get Seq-entry, containing the annotation
     const CSeq_entry& GetSeq_entry(void) const;
 
+    bool IsMapped(void) const;
+    const CSeq_loc& GetMappedLoc(void) const;
+
+    bool IsPartial(void) const;
+
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 private:
     // Constructors used by CAnnotTypes_CI only to create fake annotations
@@ -100,13 +109,19 @@ private:
 
     void x_ProcessAlign(const CSeq_align& align);
 
+    CSeq_loc& SetMappedLoc(void);
+    void SetMappedLoc(CSeq_loc& loc);
+    void SetPartial(bool value);
+
     CDataSource*                 m_DataSource;
     SAnnotSelector::TAnnotChoice m_Choice;
     CConstRef<CObject>           m_Object;
     CConstRef<CSeq_annot>        m_Annot;
-    CConstRef<CSeq_entry>        m_Entry;    // seq-entry, containing the annot.
-    auto_ptr<CHandleRangeMap>    m_RangeMap; // may be null for fake objects
+    CConstRef<CSeq_entry>        m_Entry;      // seq-entry, containing the annot
+    auto_ptr<CHandleRangeMap>    m_RangeMap;   // may be null for fake objects
     auto_ptr<CHandleRangeMap>    m_ProductMap; // non-null for features with product
+    CRef<CSeq_loc>               m_MappedLoc;  // master sequence coordinates
+    bool                         m_Partial;    // Partial flag (same as in features)
 };
 
 
@@ -129,7 +144,9 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Annot(&annot),
       m_Entry(entry),
       m_RangeMap(new CHandleRangeMap()),
-      m_ProductMap(0)
+      m_ProductMap(0),
+      m_MappedLoc(0),
+      m_Partial(false)
 {
     m_RangeMap->AddLocation(feat.GetLocation());
     if ( feat.IsSetProduct() ) {
@@ -150,7 +167,9 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Annot(&annot),
       m_Entry(entry),
       m_RangeMap(new CHandleRangeMap()),
-      m_ProductMap(0)
+      m_ProductMap(0),
+      m_MappedLoc(0),
+      m_Partial(false)
 {
     x_ProcessAlign(align);
     return;
@@ -167,7 +186,9 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Annot(&annot),
       m_Entry(entry),
       m_RangeMap(new CHandleRangeMap()),
-      m_ProductMap(0)
+      m_ProductMap(0),
+      m_MappedLoc(0),
+      m_Partial(false)
 {
     m_RangeMap->AddLocation(graph.GetLoc());
     return;
@@ -177,6 +198,37 @@ inline
 CAnnotObject::~CAnnotObject(void)
 {
     return;
+}
+
+inline
+CAnnotObject::CAnnotObject(const CAnnotObject& obj)
+    : m_DataSource(obj.m_DataSource),
+      m_Choice(obj.m_Choice),
+      m_Object(obj.m_Object),
+      m_Annot(obj.m_Annot),
+      m_Entry(obj.m_Entry),
+      m_RangeMap(obj.m_RangeMap.get() ? new CHandleRangeMap(*obj.m_RangeMap) : 0),
+      m_ProductMap(obj.m_ProductMap.get() ? new CHandleRangeMap(*obj.m_ProductMap) : 0),
+      m_MappedLoc(obj.m_MappedLoc),
+      m_Partial(obj.m_Partial)
+{
+}
+
+inline
+CAnnotObject& CAnnotObject::operator=(const CAnnotObject& obj)
+{
+    if (&obj != this) {
+        m_DataSource = obj.m_DataSource;
+        m_Choice = obj.m_Choice;
+        m_Object = obj.m_Object;
+        m_Annot = obj.m_Annot;
+        m_Entry = obj.m_Entry;
+        m_RangeMap.reset(obj.m_RangeMap.get() ? new CHandleRangeMap(*obj.m_RangeMap) : 0);
+        m_ProductMap.reset(obj.m_ProductMap.get() ? new CHandleRangeMap(*obj.m_ProductMap) : 0);
+        m_MappedLoc = obj.m_MappedLoc;
+        m_Partial = obj.m_Partial;
+    }
+    return *this;
 }
 
 inline
@@ -268,7 +320,9 @@ CAnnotObject::CAnnotObject(const CSeq_feat& feat,
       m_Annot(&annot),
       m_Entry(entry),
       m_RangeMap(0),
-      m_ProductMap(0)
+      m_ProductMap(0),
+      m_MappedLoc(0),
+      m_Partial(false)
 {
     return;
 }
@@ -283,7 +337,9 @@ CAnnotObject::CAnnotObject(const CSeq_align& align,
       m_Annot(&annot),
       m_Entry(entry),
       m_RangeMap(0),
-      m_ProductMap(0)
+      m_ProductMap(0),
+      m_MappedLoc(0),
+      m_Partial(false)
 {
     return;
 }
@@ -298,11 +354,52 @@ CAnnotObject::CAnnotObject(const CSeq_graph& graph,
       m_Annot(&annot),
       m_Entry(entry),
       m_RangeMap(0),
-      m_ProductMap(0)
+      m_ProductMap(0),
+      m_MappedLoc(0),
+      m_Partial(false)
 {
     return;
 }
 
+inline
+bool CAnnotObject::IsMapped(void) const
+{
+    return bool(m_MappedLoc);
+}
+
+inline
+const CSeq_loc& CAnnotObject::GetMappedLoc(void) const
+{
+    _ASSERT(m_MappedLoc);
+    return *m_MappedLoc;
+}
+
+inline
+CSeq_loc& CAnnotObject::SetMappedLoc(void)
+{
+    if (!m_MappedLoc) {
+        m_MappedLoc.Reset(new CSeq_loc);
+    }
+    return *m_MappedLoc;
+}
+
+inline
+void CAnnotObject::SetMappedLoc(CSeq_loc& loc)
+{
+    m_MappedLoc.Reset(&loc);
+}
+
+inline
+bool CAnnotObject::IsPartial(void) const
+{
+    return m_Partial;
+}
+
+inline
+void CAnnotObject::SetPartial(bool value)
+{
+    m_Partial = value;
+}
 
 
 END_SCOPE(objects)
@@ -311,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/04 21:45:19  grichenk
+* Added IsPartial(), IsMapped(), GetMappedLoc()
+*
 * Revision 1.12  2003/01/29 22:03:46  grichenk
 * Use single static CSeq_id_Mapper instead of per-OM model.
 *
