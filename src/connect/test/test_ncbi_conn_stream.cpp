@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/02/05 21:45:55  lavr
+ * Included header files rearranged
+ *
  * Revision 6.15  2002/01/28 20:28:28  lavr
  * Changed io_bounce.cgi -> bounce.cgi
  *
@@ -83,7 +86,6 @@
 #include "test_assert.h"
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <connect/ncbi_util.h>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <stdlib.h>

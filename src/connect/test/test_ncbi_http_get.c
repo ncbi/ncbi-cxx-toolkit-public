@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/02/05 21:45:55  lavr
+ * Included header files rearranged
+ *
  * Revision 6.2  2002/01/16 21:23:15  vakatov
  * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
  *
@@ -42,10 +45,10 @@
 
 #include "test_assert.h"
 
+#include "../ncbi_priv.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
-#include "../ncbi_priv.h"
 #include <stdlib.h>
 #include <string.h>
 

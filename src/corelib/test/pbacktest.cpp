@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/02/05 21:45:19  lavr
+ * Included header files rearranged
+ *
  * Revision 1.4  2002/02/05 16:06:41  lavr
  * List of included header files revised; Use macro IOS_BASE instead of raw ios
  *
@@ -48,9 +51,9 @@
 
 #include "../../connect/test/test_assert.h"
 
+#include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <util/stream_pushback.hpp>
-#include "pbacktest.hpp"
 #include <stdlib.h>
 #include <time.h>
 

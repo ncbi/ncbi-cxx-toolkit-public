@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/02/05 21:45:19  lavr
+ * Included header files rearranged
+ *
  * Revision 1.3  2002/02/05 16:06:41  lavr
  * List of included header files revised; Use macro IOS_BASE instead of raw ios
  *
@@ -42,8 +45,8 @@
  * ==========================================================================
  */
 
-#include <corelib/ncbidiag.hpp>
 #include "pbacktest.hpp"
+#include <corelib/ncbidiag.hpp>
 #include <stdio.h>                 // remove()
 
 

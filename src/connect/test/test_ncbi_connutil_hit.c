@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/02/05 21:45:55  lavr
+ * Included header files rearranged
+ *
  * Revision 6.7  2001/03/02 20:03:57  lavr
  * Typos fixed
  *
@@ -54,8 +57,8 @@
  * ===========================================================================
  */
 
-#include <connect/ncbi_util.h>
 #include <connect/ncbi_connutil.h>
+#include <connect/ncbi_util.h>
 #include <stdio.h>
 #include <stdlib.h>
 
