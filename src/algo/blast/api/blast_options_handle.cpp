@@ -37,6 +37,7 @@
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/blastx_options.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
+#include <algo/blast/api/rpstblastn_options.hpp>
 #include <algo/blast/api/tblastx_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
@@ -121,6 +122,10 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CB
         retval = new CBlastRPSOptionsHandle(locality);
         break;
 
+    case eRPSTblastn:
+        retval = new CRPSTBlastnOptionsHandle(locality);
+        break;
+
     default:
         NCBI_THROW(CBlastException, eBadParameter,
         "CBlastOptionFactory cannot construct options handle: invalid program");
@@ -139,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/16 14:26:39  papadopo
+ * add handle construction for translated RPS blast
+ *
  * Revision 1.4  2004/03/17 19:40:06  camacho
  * Correct @file doxygen directive
  *
