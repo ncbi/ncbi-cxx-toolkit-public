@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/27 18:19:31  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
 * Revision 1.4  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -94,7 +97,8 @@ public:
     ~CCodeGenerator(void);
 
     // setup interface
-    void LoadConfig(const string& fileName);
+    void LoadConfig(CNcbiIstream& in);
+    void LoadConfig(const string& fileName, bool ignoreAbsense = false);
     void AddConfigLine(const string& s);
 
     void IncludeTypes(const string& types);
@@ -104,6 +108,10 @@ public:
             m_ExcludeRecursion = exclude;
         }
     void IncludeAllMainTypes(void);
+    bool HaveGenerateTypes(void) const
+        {
+            return !m_GenerateTypes.empty();
+        }
 
     void SetCPPDir(const string& dir)
         {

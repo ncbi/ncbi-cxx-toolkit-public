@@ -30,7 +30,7 @@ purge_all_files:
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
-	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -oc $(MODULE) -or $(MODULE_PATH) -oR $(top_srcdir) -od $(MODULE).def
+	$(DATATOOL) -oR $(top_srcdir) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def
 
 #$(FULL_MODULE_BASE): $(FILES)
 #	for f in `grep GENFILES_LOCAL $(FILES) | sed 's/^.*=//'`; do echo '#include "'$$f'_.cpp"'; done > $@

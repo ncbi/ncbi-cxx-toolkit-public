@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/11/27 18:19:47  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
 * Revision 1.45  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -146,11 +149,14 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
+#include <corelib/ncbiargs.hpp>
+
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
+
 #include <memory>
+
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/parser.hpp>
 #include <serial/datatool/lexer.hpp>
@@ -158,487 +164,358 @@
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/generate.hpp>
+#include <serial/datatool/datatool.hpp>
 
 BEGIN_NCBI_SCOPE
 
-typedef pair<AnyType, TTypeInfo> TObject;
-
-static
-void Help(void)
+int CDataTool::Run(void)
 {
-    NcbiCout <<
-        "\n"
-        "DataTool 1.0 arguments:\n"
-        "\n"
-        "  -H           display this message (optional)\n"
-        "  -oH          display code generation arguments (optional)\n"
-        "  -m <file>    ASN.1 module file\n"
-        "  -mx <file>   XML DTD file\n"
-        "  -M <files>   external ASN.1 module files (optional)\n"
-        "  -Mx <files>  external XML module files (optional)\n"
-        "  -i           ignore unresolved symbols (optional)\n"
-        "  -f <file>    write ASN.1 module file (optional)\n"
-        "  -fx <file>   write XML DTD file (optional)\n"
-        "  -fx m        write modular XML DTD file (optional)\n"
-        "  -v <file>    read value in ASN.1 text format (optional)\n"
-        "  -p <file>    write value in ASN.1 text format (optional)\n"
-        "  -vx <file>   read value in XML format (optional)\n"
-        "  -px <file>   write value in XML format (optional)\n"
-        "  -F           read fully into memory before write (optional)\n"
-        "  -d <file>    read value in ASN.1 binary format (type required) (optional)\n"
-        "  -t <type>    binary value type (optional)\n"
-        "  -e <file>    write value in ASN.1 binary format (optional)\n" <<
-        NcbiFlush;
+    if ( !ProcessModules() )
+        return 1;
+    if ( !ProcessData() )
+        return 1;
+    if ( !GenerateCode() )
+        return 1;
+
+    return 0;
 }
 
-static
-void GenerateHelp(void)
+
+void CDataTool::Init(void)
 {
-    NcbiCout <<
-        "\n"
-        "DataTool 1.0 code generation arguments (all optional):\n"
-        "\n"
-        "  -oH            display this message\n"
-        "  -oA            generate C++ files for all types\n"
-        "  -ot <types>    generate C++ files for listed types\n"
-        "  -ox <types>    exclude listed types from generation\n"
-        "  -oX            turn off recursive type generation\n"
-        "  -on <ns>       Put generated classes in namespace <ns>\n"
-        "  -od <file>     C++ code definition file\n"
-        "  -of <file>     write list of generated C++ files\n"
-        "  -oc <basename> write combining C++ files\n"
-        "  -opm <dir>     directory for searching source modules\n"
-        "  -oph <dir>     directory for generated *.hpp files\n"
-        "  -opc <dir>     directory for generated *.cpp files\n"
-        "  -or <prefix>   add prefix to generated file names\n"
-        "  -ors           add source file dir to generated file names\n"
-        "  -orm           add module name to generated file names\n"
-        "  -orA           combine all -or* prefixes\n"
-        "  -oR <dir>      set -op* and -or* arguments for NCBI dir tree\n" <<
-        NcbiFlush;
-}
-
-static
-const char* StringArgument(const char* arg)
-{
-    if ( !arg || !arg[0] ) {
-        ERR_POST("argument expected");
-        exit(1);
-    }
-    return arg;
-}
-
-static inline
-const char* DirArgument(const char* arg)
-{
-    return StringArgument(arg);
-}
-
-static inline
-const char* FileInArgument(const char* arg)
-{
-    return StringArgument(arg);
-}
-
-static inline
-const char* FileOutArgument(const char* arg)
-{
-    return StringArgument(arg);
-}
-
-static void LoadDefinitions(CFileSet& fileSet,
-                            const string& modulesDir,
-                            const list<FileInfo>& file);
-static void StoreDefinition(const CFileSet& types, const FileInfo& file);
-static TObject LoadValue(CFileSet& types, const string& typeName,
-                         const FileInfo& fileIn);
-static void CopyValue(CFileSet& types, const string& typeName,
-                      const FileInfo& fileIn, const FileInfo& fileOut);
-static void StoreValue(const TObject& object,
-                       const FileInfo& fileOut);
-
-static
-ESerialDataFormat FileType(const char* arg,
-                           ESerialDataFormat defType = eSerial_AsnText)
-{
-    switch ( arg[2] ) {
-    case 0:
-        return defType;
-    case 'x':
-        return eSerial_Xml;
-    default:
-        ERR_POST("Invalid argument: " << arg);
-        exit(1);
-        return defType;
-    }
-}
-
-static
-void GetFileIn(FileInfo& info, const char* typeArg, const char* name,
-               ESerialDataFormat defType = eSerial_AsnText)
-{
-    info.type = FileType(typeArg, defType);
-    info.name = FileInArgument(name);
-}
-
-static
-void GetFilesIn(list<FileInfo>& files, const char* typeArg,
-                const char* namesIn)
-{
-    ESerialDataFormat type = FileType(typeArg);
-    string names = StringArgument(namesIn);
-    SIZE_TYPE pos = 0;
-    SIZE_TYPE next = names.find(',');
-    while ( next != NPOS ) {
-        files.push_back(FileInfo(names.substr(pos, next - pos), type));
-        pos = next + 1;
-        next = names.find(',', pos);
-    }
-    files.push_back(FileInfo(names.substr(pos), type));
-}
-
-static
-void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
-                ESerialDataFormat defType = eSerial_AsnText)
-{
-    info.type = FileType(typeArg, defType);
-    info.name = FileOutArgument(name);
-}
-
-int DataTool(int argc, const char* argv[]);
-
-int DataTool(int argc, const char* argv[])
-{
-    SetDiagStream(&NcbiCerr);
     SetDiagPostLevel(eDiag_Warning);
-    IOS_BASE::sync_with_stdio(false);
+
+    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+
+    d->SetUsageContext("datatool", "work with ASN.1/XML data");
+
+    // module arguments
+    d->AddKey("m", "moduleFile",
+              "module file(s)",
+              CArgDescriptions::eInputFile);
+    d->AddOptionalKey("M", "externalModuleFile",
+                      "external module file(s)",
+                      CArgDescriptions::eInputFile);
+    d->AddFlag("i",
+               "ignore unresolved symbols");
+    d->AddOptionalKey("f", "moduleFile",
+                      "write ASN.1 module file",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("fx", "dtdFile",
+                      "write DTD file (\"-fx m\" writes modular DTD file)",
+                      CArgDescriptions::eOutputFile);
+
+    // data arguments
+    d->AddOptionalKey("v", "valueFile",
+                      "read value in ASN.1 text format",
+                      CArgDescriptions::eInputFile);
+    d->AddOptionalKey("vx", "valueFile",
+                      "read value in XML format",
+                      CArgDescriptions::eInputFile);
+    d->AddOptionalKey("d", "valueFile",
+                      "read value in ASN.1 binary format (-t is required)",
+                      CArgDescriptions::eInputFile);
+    d->AddOptionalKey("t", "type",
+                      "binary value type (see \"-d\" argument)",
+                      CArgDescriptions::eString);
+    d->AddFlag("F",
+               "read value completely into memory");
+    d->AddOptionalKey("p", "valueFile",
+                      "write value in ASN.1 text format",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("px", "valueFile",
+                      "write value in XML format",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("e", "valueFile",
+                      "write value in ASN.1 binary format",
+                      CArgDescriptions::eOutputFile);
+
+    // code generation arguments
+    d->AddOptionalKey("od", "defFile",
+                      "code definition file",
+                      CArgDescriptions::eInputFile);
+    d->AddFlag("odi",
+               "ignore absent code definition file");
+    d->AddOptionalKey("of", "listFile",
+                      "write list of generated C++ files",
+                      CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("oc", "basename",
+                      "write combining C++ files",
+                      CArgDescriptions::eString);
+    d->AddFlag("oA",
+               "generate C++ files for all types");
+    d->AddOptionalKey("ot", "types",
+                      "generate C++ files for listed types",
+                      CArgDescriptions::eString);
+    d->AddOptionalKey("ox", "types",
+                      "exclude listed types from generation",
+                      CArgDescriptions::eString);
+    d->AddFlag("oX",
+               "turn off recursive type generation");
+
+    d->AddOptionalKey("on", "namespace",
+                      "default namespace", 
+                      CArgDescriptions::eString);
+
+    d->AddOptionalKey("opm", "directory",
+                      "directory for searching source modules",
+                      CArgDescriptions::eString);
+    d->AddOptionalKey("oph", "directory",
+                      "directory for generated *.hpp files",
+                      CArgDescriptions::eString);
+    d->AddOptionalKey("opc", "directory",
+                      "directory for generated *.cpp files",
+                      CArgDescriptions::eString);
+
+    d->AddOptionalKey("or", "prefix",
+                      "add prefix to generated file names",
+                      CArgDescriptions::eString);
+    d->AddFlag("ors",
+               "add source file dir to generated file names");
+    d->AddFlag("orm",
+               "add module name to generated file names");
+    d->AddFlag("orA",
+               "combine all -or* prefixes");
+    d->AddOptionalKey("oR", "rootDirectory",
+                      "set \"-o*\" arguments for NCBI directory tree",
+                      CArgDescriptions::eString);
+
+    SetupArgDescriptions(d.release());
+}
+
+bool CDataTool::ProcessModules(void)
+{
+    const CArgs& args = GetArgs();
 
     string modulesDir;
-    list<FileInfo> mainModules;
-    list<FileInfo> importModules;
-    FileInfo moduleOut;
-    FileInfo dataIn;
-    string dataInTypeName;
-    FileInfo dataOut;
-    bool fullReadBeforeWrite = false;
-    bool ignoreErrors = false;
-    list<string> additionalDefinitions;
 
-    bool generateAllTypes = false;
-    CCodeGenerator generator;
+    if ( args.IsProvided("oR") ) {
+        // NCBI directory tree
+        const string& rootDir = args["oR"].AsString();
+        generator.SetHPPDir(Path(rootDir, "include"));
+        string srcDir = Path(rootDir, "src");
+        generator.SetCPPDir(srcDir);
+        modulesDir = srcDir;
+        generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
+        generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
+    }
+    
+    if ( args.IsProvided("opm") )
+        modulesDir = args["opm"].AsString();
+    
+    LoadDefinitions(generator.GetMainModules(),
+                    modulesDir, args["m"].AsString());
 
-    if ( argc <= 1 ) {
-        Help();
-        return 1;
+    if ( args.IsProvided("f") ) {
+        const CArgValue& f = args["f"];
+        generator.GetMainModules().PrintASN(f.AsOutputFile());
+        f.CloseFile();
+    }
+
+    if ( args.IsProvided("fx") ) {
+        const CArgValue& fx = args["fx"];
+        if ( fx.AsString() == "m" )
+            generator.GetMainModules().PrintDTDModular();
+        else {
+            generator.GetMainModules().PrintDTD(fx.AsOutputFile());
+            fx.CloseFile();
+        }
+    }
+    
+    LoadDefinitions(generator.GetImportModules(),
+                    modulesDir, args["M"].AsString());
+
+    if ( !generator.Check() ) {
+        if ( !args.IsProvided("i") ) { // ignored
+            ERR_POST("some types are unknown");
+            return false;
+        }
+        else {
+            ERR_POST(Warning << "some types are unknown: ignoring");
+        }
+    }
+    return true;
+}
+
+bool CDataTool::ProcessData(void)
+{    
+    const CArgs& args = GetArgs();
+
+    // convert data
+    ESerialDataFormat inFormat;
+    string inFileName;
+    string typeName = args["t"].AsString();
+    
+    if ( args.IsProvided("v") ) {
+        inFormat = eSerial_AsnText;
+        inFileName = args["v"].AsString();
+    }
+    else if ( args.IsProvided("vx") ) {
+        inFormat = eSerial_Xml;
+        inFileName = args["vx"].AsString();
+    }
+    else if ( args.IsProvided("d") ) {
+        inFormat = eSerial_AsnBinary;
+        inFileName = args["d"].AsString();
+        if ( typeName.empty() ) {
+            ERR_POST("ASN.1 value type must be specified (-t)");
+            return false;
+        }
+    }
+    else // no input data
+        return true;
+
+    auto_ptr<CObjectIStream>
+        in(CObjectIStream::Open(inFormat, inFileName, eSerial_StdWhenAny));
+    
+    if ( typeName.empty() )
+        typeName = in->ReadFileHeader();
+    else
+        in->ReadFileHeader();
+
+    TTypeInfo typeInfo =
+        generator.GetMainModules().ResolveInAnyModule(typeName, true)->
+        GetTypeInfo().Get();
+    
+    // determine output data file
+    ESerialDataFormat outFormat;
+    string outFileName;
+    
+    if ( args.IsProvided("p") ) {
+        outFormat = eSerial_AsnText;
+        outFileName = args["p"].AsString();
+    }
+    else if ( args.IsProvided("px") ) {
+        outFormat = eSerial_Xml;
+        outFileName = args["px"].AsString();
+    }
+    else if ( args.IsProvided("e") ) {
+        outFormat = eSerial_AsnBinary;
+        outFileName = args["e"].AsString();
     }
     else {
-        for ( int i = 1; i < argc; ++i ) {
-            const char* arg = argv[i];
-            if ( arg[0] != '-' ) {
-                ERR_POST("Invalid argument: " << arg);
-                return 1;
-            }
-            switch ( arg[1] ) {
-            case 'H':
-                Help();
-                return 1;
-            case 'm':
-                GetFilesIn(mainModules, arg, argv[++i]);
-                break;
-            case 'M':
-                GetFilesIn(importModules, arg, argv[++i]);
-                break;
-            case 'f':
-                GetFileOut(moduleOut, arg, argv[++i]);
-                break;
-            case 'v':
-                GetFileIn(dataIn, arg, argv[++i]);
-                break;
-            case 'p':
-                GetFileOut(dataOut, arg, argv[++i]);
-                break;
-            case 'd':
-                GetFileIn(dataIn, arg, argv[++i], eSerial_AsnBinary);
-                break;
-            case 'e':
-                GetFileOut(dataOut, arg, argv[++i], eSerial_AsnBinary);
-                break;
-            case 'F':
-                fullReadBeforeWrite = true;
-                break;
-            case 't':
-                dataInTypeName = StringArgument(argv[++i]);
-                break;
-            case 'i':
-                ignoreErrors = true;
-                break;
-            case 'o':
-                switch ( arg[2] ) {
-                case 'H':
-                    GenerateHelp();
-                    return 1;
-                case 'A':
-                    generateAllTypes = true;
-                    break;
-                case 't':
-                    generator.IncludeTypes(StringArgument(argv[++i]));
-                    break;
-                case 'x':
-                    generator.ExcludeTypes(StringArgument(argv[++i]));
-                    break;
-                case 'X':
-                    generator.ExcludeRecursion();
-                    break;
-                case 'd':
-                    generator.LoadConfig(FileInArgument(argv[++i]));
-                    break;
-                case 'n':
-                    generator.SetDefaultNamespace(StringArgument(argv[++i]));
-                    break;
-                case 'D':
-                    additionalDefinitions.push_back(StringArgument(argv[++i]));
-                    break;
-                case 'f':
-                    generator.SetFileListFileName(FileOutArgument(argv[++i]));
-                    break;
-                case 'c':
-                    {
-                        string fileName = FileOutArgument(argv[++i]);
-                        generator.SetCombiningFileName(fileName);
-                        generator.SetFileListFileName(fileName+".files");
-                    }
-                    break;
-                case 'p':
-                    // set directories
-                    switch ( arg[3] ) {
-                    case 'h':
-                        generator.SetHPPDir(DirArgument(argv[++i]));
-                        break;
-                    case 'c':
-                        generator.SetCPPDir(DirArgument(argv[++i]));
-                        break;
-                    case 'm':
-                        modulesDir = DirArgument(argv[++i]);
-                        break;
-                    default:
-                        ERR_POST("Invalid argument: " << arg <<
-                                 "\nRun datatool -oH for more info");
-                        return 1;
-                        break;
-                    }
-                    break;
-                case 'r':
-                    // set relative path of classes
-                    switch ( arg[3] ) {
-                    case '\0':
-                        generator.SetFileNamePrefix(StringArgument(argv[++i]));
-                        break;
-                    case 's':
-                        generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
-                        break;
-                    case 'm':
-                        generator.SetFileNamePrefixSource(eFileName_FromModuleName);
-                        break;
-                    case 'A':
-                        generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
-                        break;
-                    default:
-                        ERR_POST("Invalid argument: " << arg <<
-                                 "\nRun datatool -oH for more info");
-                        return 1;
-                    }
-                    break;
-                case 'R':
-                    ++i;
-                    generator.SetHPPDir(Path(DirArgument(argv[i]),
-                                             "include"));
-                    generator.SetCPPDir(Path(DirArgument(argv[i]),
-                                             "src"));
-                    modulesDir = Path(DirArgument(argv[i]), "src");
-                    generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
-                    generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
-                    break;
-                default:
-                    ERR_POST("Invalid argument: " << arg <<
-                             "\nRun datatool -oH for more info");
-                    return 1;
-                }
-                break;
-            default:
-                ERR_POST("Invalid argument: " << arg <<
-                         "\nRun datatool -H for more info");
-                return 1;
-            }
-        }
+        // no input data
+        outFormat = eSerial_None;
     }
 
-    iterate ( list<string>, i, additionalDefinitions ) {
-        generator.AddConfigLine(*i);
+    if ( args.IsProvided("F") ) {
+        // read fully in memory
+        AnyType value;
+        in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
+        if ( outFormat != eSerial_None ) {
+            // store data
+            auto_ptr<CObjectOStream>
+                out(CObjectOStream::Open(outFormat, outFileName,
+                                         eSerial_StdWhenAny));
+            out->Write(&value, typeInfo);
+        }
     }
-    additionalDefinitions.clear();
-
-    try {
-        if ( mainModules.empty() ) {
-            ERR_POST("Module file not specified");
-            return 1;
+    else {
+        if ( outFormat != eSerial_None ) {
+            // copy
+            auto_ptr<CObjectOStream>
+                out(CObjectOStream::Open(outFormat, outFileName,
+                                         eSerial_StdWhenAny));
+            CObjectStreamCopier copier(*in, *out);
+            copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
         }
-        
-        LoadDefinitions(generator.GetMainModules(),
-                        modulesDir, mainModules);
-        if ( moduleOut )
-            StoreDefinition(generator.GetMainModules(), moduleOut);
-
-        LoadDefinitions(generator.GetImportModules(),
-                        modulesDir, importModules);
-        if ( !generator.Check() ) {
-            ERR_POST("Errors was found...");
-            if ( !ignoreErrors )
-                return 1;
+        else {
+            // skip
+            in->Skip(typeInfo, CObjectIStream::eNoFileHeader);
         }
+    }
+    return true;
+}
+
+bool CDataTool::GenerateCode(void)
+{
+    const CArgs& args = GetArgs();
+
+    // load generator config
+    if ( args.IsProvided("od") )
+        generator.LoadConfig(args["od"].AsString(), args["odi"].AsBoolean());
+    if ( args.IsProvided("oD") )
+        generator.AddConfigLine(args["oD"].AsString());
+
+    // set list of types for generation
+    if ( args.IsProvided("oX") )
+        generator.ExcludeRecursion();
+    if ( args.IsProvided("oA") )
+        generator.IncludeAllMainTypes();
+    generator.IncludeTypes(args["ot"].AsString());
+    generator.ExcludeTypes(args["ox"].AsString());
+
+    if ( !generator.HaveGenerateTypes() )
+        return true;
+
+    // prepare generator
     
-        if ( generateAllTypes )
-            generator.IncludeAllMainTypes();
-
-        if ( dataIn ) {
-            if ( !fullReadBeforeWrite && dataOut  ) {
-                CopyValue(generator.GetMainModules(), dataInTypeName,
-                          dataIn, dataOut);
-            }
-            else {
-                TObject object =
-                    LoadValue(generator.GetMainModules(), dataInTypeName,
-                              dataIn);
-                if ( dataOut ) {
-                    StoreValue(object,
-                               dataOut);
-                }
-            }
-        }
-
-        generator.GenerateCode();
+    // set namespace
+    if ( args.IsProvided("on") )
+        generator.SetDefaultNamespace(args["on"].AsString());
+    
+    // set output files
+    if ( args.IsProvided("oc") ) {
+        const string& fileName = args["oc"].AsString();
+        generator.SetCombiningFileName(fileName);
+        generator.SetFileListFileName(fileName+".files");
     }
-    catch (exception& e) {
-        ERR_POST(e.what());
-        return 1;
-    }
-    catch (...) {
-        ERR_POST("unknown");
-        return 1;
-    }
-	return 0;
+    if ( args.IsProvided("of") )
+        generator.SetFileListFileName(args["of"].AsString());
+    
+    // set directories
+    if ( args.IsProvided("oph") )
+        generator.SetHPPDir(args["oph"].AsString());
+    if ( args.IsProvided("opc") )
+        generator.SetCPPDir(args["opc"].AsString());
+    
+    // set file names prefixes
+    if ( args.IsProvided("or") )
+        generator.SetFileNamePrefix(args["or"].AsString());
+    if ( args.IsProvided("ors") )
+        generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
+    if ( args.IsProvided("orm") )
+        generator.SetFileNamePrefixSource(eFileName_FromModuleName);
+    if ( args.IsProvided("orA") )
+        generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
+    
+    // generate code
+    generator.GenerateCode();
+    return true;
 }
 
 
-void LoadDefinitions(CFileSet& fileSet,
-                     const string& modulesDir,
-                     const list<FileInfo>& names)
+void CDataTool::LoadDefinitions(CFileSet& fileSet,
+                                const string& modulesDir,
+                                const string& nameList)
 {
-    iterate ( list<FileInfo>, fi, names ) {
-        const string& name = *fi;
-        if ( fi->type != eSerial_AsnText ) {
-            ERR_POST("data definition format not supported: " << name);
-            exit(1);
+    list<string> names;
+    {
+        SIZE_TYPE pos = 0;
+        SIZE_TYPE next = nameList.find(' ');
+        while ( next != NPOS ) {
+            names.push_back(nameList.substr(pos, next - pos));
+            pos = next + 1;
+            next = nameList.find(' ', pos);
         }
-        try {
-			SourceFile fName(name, modulesDir);
+        names.push_back(nameList.substr(pos));
+    }
+
+    iterate ( list<string>, fi, names ) {
+        const string& name = *fi;
+        if ( !name.empty() ) {
+            SourceFile fName(name, modulesDir);
             ASNLexer lexer(fName);
             ASNParser parser(lexer);
             fileSet.AddFile(parser.Modules(name));
         }
-        catch (exception& exc) {
-            ERR_POST("Parsing failed: " << exc.what());
-            exit(1);
-        }
-        catch (...) {
-            ERR_POST("Parsing failed: " << name);
-            exit(1);
-        }
     }
-}
-
-void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
-{
-    switch ( file.type ) {
-    case eSerial_AsnText:
-    case eSerial_AsnBinary:
-		{
-			DestinationFile out(file);
-			fileSet.PrintASN(out);
-		}
-        break;
-    case eSerial_Xml:
-        if ( file.name == "m" ) {
-            // modular
-            fileSet.PrintDTDModular();
-        }
-        else {
-			DestinationFile out(file);
-            fileSet.PrintDTD(out);
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-TObject LoadValue(CFileSet& types, const string& defTypeName,
-                  const FileInfo& fileIn)
-{
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(fileIn.type,
-                                                     fileIn.name,
-                                                     eSerial_StdWhenAny));
-    //    in->SetTypeMapper(&types);
-    string typeName = in->ReadFileHeader();
-    if ( typeName.empty() ) {
-        if ( defTypeName.empty() ) {
-            ERR_POST("ASN.1 value type must be specified (-t)");
-            exit(1);
-        }
-        typeName = defTypeName;
-    }
-    TTypeInfo typeInfo =
-        types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
-    AnyType value;
-    in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
-    return make_pair(value, typeInfo);
-}
-
-void StoreValue(const TObject& object, const FileInfo& fileOut)
-{
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(fileOut.type,
-                                                      fileOut.name,
-                                                      eSerial_StdWhenAny));
-    out->Write(&object.first, object.second);
-}
-
-void CopyValue(CFileSet& types, const string& defTypeName,
-               const FileInfo& fileIn, const FileInfo& fileOut)
-{
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(fileIn.type,
-                                                     fileIn.name,
-                                                     eSerial_StdWhenAny));
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(fileOut.type,
-                                                      fileOut.name,
-                                                      eSerial_StdWhenAny));
-    CObjectStreamCopier copier(*in, *out);
-    string typeName = in->ReadFileHeader();
-    if ( typeName.empty() ) {
-        if ( defTypeName.empty() ) {
-            ERR_POST("ASN.1 value type must be specified (-t)");
-            exit(1);
-        }
-        typeName = defTypeName;
-    }
-    TTypeInfo typeInfo =
-        types.ResolveInAnyModule(typeName, true)->GetTypeInfo().Get();
-    copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
 }
 
 END_NCBI_SCOPE
 
-USING_NCBI_SCOPE;
-
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
-    return DataTool(argc, argv);
+    USING_NCBI_SCOPE;
+    return CDataTool().AppMain(argc, argv, 0, eDS_Default, 0, "datatool");
 }

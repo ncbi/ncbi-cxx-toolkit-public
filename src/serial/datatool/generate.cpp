@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/11/27 18:19:48  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
 * Revision 1.33  2000/08/25 15:59:22  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -166,19 +169,25 @@ void CCodeGenerator::SetDefaultNamespace(const string& ns)
     m_DefaultNamespace = ns;
 }
 
-void CCodeGenerator::LoadConfig(const string& fileName)
+void CCodeGenerator::LoadConfig(CNcbiIstream& in)
+{
+    m_Config.Read(in);
+}
+
+void CCodeGenerator::LoadConfig(const string& fileName, bool ignoreAbsense)
 {
     // load descriptions from registry file
     if ( fileName == "stdin" || fileName == "-" ) {
-        m_Config.Read(NcbiCin);
+        LoadConfig(NcbiCin);
     }
     else {
         CNcbiIfstream in(fileName.c_str());
         if ( !in ) {
-            ERR_POST(Warning << "cannot open file " << fileName);
+            if ( !ignoreAbsense )
+                ERR_POST(Warning << "cannot open file " << fileName);
         }
         else {
-            m_Config.Read(in);
+            LoadConfig(in);
         }
     }
 }
@@ -285,6 +294,7 @@ void CCodeGenerator::ExcludeTypes(const string& typeList)
     GetTypes(typeNames, typeList);
     iterate ( TTypeNames, i, typeNames ) {
         m_Config.Set(*i, "_class", "-");
+        m_GenerateTypes.erase(*i);
     }
 }
 
