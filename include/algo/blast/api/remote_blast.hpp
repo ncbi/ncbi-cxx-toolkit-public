@@ -62,73 +62,61 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CRemoteBlast : public CObject
 {
 public:
-    // Protein = blastp/plain
+    /// Use the specified RID to get results for an existing search.
     CRemoteBlast(const string & RID)
     {
         x_Init(RID);
     }
     
-    // Protein = blastp/plain
+    /// Create a blastp (protein) search.
     CRemoteBlast(CBlastProteinOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastp", "plain");
     }
     
-    // Nucleotide = blastn/plain
+    /// Create a blastn (nucleotide) search.
     CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastn", "plain");
     }
     
-//     // Nucleotide = blastn/plain
-//     CRemoteBlast(CMegaNucleotideOptionsHandle * algo_opts)
-//     {
-//         x_Init(algo_opts, "blastn", "megablast");
-//     }
-    
-    // Blastx = blastx/plain
+    /// Create a blastx (translated query) search.
     CRemoteBlast(CBlastxOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastx", "plain");
     }
     
-    // TBlastn = tblastn/plain
+    /// Create a tblastn (translated database) search.
     CRemoteBlast(CTBlastnOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "tblastn", "plain");
     }
     
-    // TBlastx = tblastx/plain
+    /// Create a tblastx search, translating both query and database.
     CRemoteBlast(CTBlastxOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "tblastx", "plain");
     }
     
-    // DiscNucl = blastn/plain
+    /// Create a Discontiguous Megablast search.
     CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastn", "megablast");
     }
     
-    // PSIBlast = blastp/psi
+    /// Create a PSI-Blast search (only protein is supported).
     CRemoteBlast(CPSIBlastOptionsHandle * algo_opts)
     {
         x_Init(algo_opts, "blastp", "psi");
     }
     
-//     // Prot PHI = blastp/phi
-//     CRemoteBlast(CBlastPHINucleotideOptionsHandle * algo_opts)
-//     { x_Init(algo_opts, "blastn", "phi"); }
-    
-//     // Nucl PHI = blastn/phi
-//     CRemoteBlast(CBlastPHIProteinOptionsHandle * algo_opts)
-//     { x_Init(algo_opts, "blastp", "phi"); }
-    
+    /// Destruct the search object.
     ~CRemoteBlast()
     {
     }
     
-    /******************* GI List ***********************/
+    /// This restricts the subject database to this list of GIs (this is not
+    /// supported yet on the server end).
     void SetGIList(list<Int4> & gi_list)
     {
         if (gi_list.empty()) {
@@ -138,7 +126,7 @@ public:
         x_SetOneParam("GiList", & gi_list);
     }
     
-    /******************* DB/subject *******************/
+    /// Set the name of the database to search against.
     void SetDatabase(const string & x)
     {
         if (x.empty()) {
@@ -148,9 +136,10 @@ public:
         SetDatabase(x.c_str());
     }
     
+    /// Alternate interface to set database name.
     void SetDatabase(const char * x);
     
-    /******************* Entrez Query *******************/
+    /// Restrict search to sequences matching this Entrez query.
     void SetEntrezQuery(const char * x)
     {
         if (!x) {
@@ -160,12 +149,24 @@ public:
         x_SetOneParam("EntrezQuery", &x);
     }
     
-    /******************* Queries *******************/
-    void SetQueries(CRef<objects::CBioseq_set>                bioseqs);
-    void SetQueries(list< CRef<objects::CSeq_loc> >         & seqlocs);
-    void SetQueries(CRef<objects::CScore_matrix_parameters>   pssm);
+    /// Set the query as a Bioseq_set.
+    void SetQueries(CRef<objects::CBioseq_set> bioseqs);
     
-    /******************* Queries *******************/
+    /// Set the query as a list of Seq_locs.
+    /// @param seqlocs One interval Seq_loc or a list of whole Seq_locs.
+    void SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs);
+    
+    /// Set a PSSM query (as for PSI blast), which must include a bioseq set.
+    void SetQueries(CRef<objects::CScore_matrix_parameters> pssm);
+    
+    
+    /// Set the PSSM matrix for a PSI-Blast search.
+    /// 
+    /// A PSI-Blast search can be configured by specifying the PSSM (including
+    /// an internal query) in SetQueries, or by using this option to set the
+    /// matrix and using a Bioseq_set with SetQueries().  The former method is
+    /// newer and this option may be removed in the future.
+    
     void SetMatrixTable(CRef<objects::CScore_matrix_parameters> matrix)
     {
         if (matrix.Empty()) {
@@ -175,84 +176,134 @@ public:
         x_SetOneParam("MatrixTable", matrix);
     }
     
-    /******************* Getting Results *******************/
+    /* Getting Results */
     
-    // Submit and poll results until a completion (or error) state is
-    // reached.  This sleeps 10 seconds the after the submission, 13
-    // seconds after the first check, increasing by 30% after each
-    // check to a maximum of 300 seconds per sleep.
     
-    // Returns true if the search was _submitted_ (there may be
-    // errors, call CheckErrors).
-    
+    /// This submits the search (if necessary) and polls for results.
+    ///
+    /// If a new search is configured, and not already submitted, this will
+    /// submit it.  It then polls for results until either completion or error
+    /// state is reached, or until the search times out.  The polling is done
+    /// at an increasing interval, which starts out at 10 seconds, increasing
+    /// by 30% after each check to a maximum of 300 seconds per sleep.
+    ///
+    /// @return true if the search was submitted, otherwise false.
     bool SubmitSync(void)
     {
         return SubmitSync( DefaultTimeout() );
     }
     
-    bool SubmitSync(int);
+    /// This submits the search (if necessary) and polls for results.
+    ///
+    /// If a new search is configured, and not already submitted, this will
+    /// submit it.  It then polls for results until either completion or error
+    /// state is reached, or until the search times out.  The polling is done
+    /// at an increasing interval, which starts out at 10 seconds, increasing
+    /// by 30% after each check to a maximum of 300 seconds per sleep.
+    ///
+    /// @param timeout Search timeout specified as a number of seconds.
+    /// @return true if the search was submitted, otherwise false.
+    bool SubmitSync(int timeout);
     
-    
-    // Submit and return immediately; returns true if request was
-    // submitted (true iff an RID was returned).
-    
+    /// This submits the search (if necessary) and returns immediately.
+    ///
+    /// If a new search is configured, and not already submitted, this will
+    /// submit it.  It then polls for results until either completion or error
+    /// state is reached, or until the search times out.  The polling is done
+    /// at an increasing interval, which starts out at 10 seconds, increasing
+    /// by 30% after each check to a maximum of 300 seconds per sleep.
+    ///
+    /// @return true if the search was submitted, otherwise false.
     bool Submit(void);
     
-    
-    // This returns true if the search is done; it does a network
-    // operation, so it should not be called in a loop without a
-    // few seconds of delay.
-    
+    /// Check whether the search has completed.
+    ///
+    /// This checks the status of the search.  Please delay several seconds
+    /// between subsequent calls.
+    ///
+    /// @return true If search is not still running.
     bool CheckDone(void);
     
-    // This returns any errors encountered as a string (the empty
-    // string implies that everything is running smoothly).
-    
+    /// This returns a string containing any errors that were produced by the
+    /// search.  A successful search should return an empty string here.
+    ///
+    /// @return An empty string or a newline seperated list of errors.
     string GetErrors(void);
     
-    // This returns any warnings encountered as a string.  These do
-    // not necessarily indicate an error or potential error; some
-    // warnings are always returned from certain types of searches.
-    // (This is more of a debugging feature rather than something to
-    // return to the end-user.)
-    
+    /// This returns any warnings encountered.  These do not necessarily
+    /// indicate an error or even a potential error; some warnings are always
+    /// returned from certain types of searches.  (This is a debugging feature
+    /// and warnings should probably not be returned to the end-user).
+    ///
+    /// @return Empty string or newline seperated list of warnings.
     string GetWarnings(void);
     
-    /******************* Getting Results *******************/
+    /* Getting Results */
     
-    // This is valid if submit returns true.
-    
+    /// Gets the request id (RID) associated with the search.
+    ///
+    /// If the search was not successfully submitted, this will be empty.
     const string & GetRID(void)
     {
         return m_RID;
     }
     
-    // This is valid if CheckDone returns true.  If CheckErrors
-    // returns errors, the rest of these will return nulls.
+    /// Get the seqalign set from the results.
+    /// @return Reference to a seqalign set.
+    CRef<objects::CSeq_align_set> GetAlignments(void);
     
-    CRef<objects::CSeq_align_set>            GetAlignments(void);
-    CRef<objects::CBlast4_phi_alignments>    GetPhiAlignments(void);
-    CRef<objects::CBlast4_mask>              GetMask(void);
+    /// Get the results of a PHI-Align request, if PHI pattern was set.
+    /// @return Reference to PHI alignment set.
+    CRef<objects::CBlast4_phi_alignments> GetPhiAlignments(void);
+    
+    /// Get the query mask from the results.
+    /// @return Reference to a Blast4_mask object.
+    CRef<objects::CBlast4_mask> GetMask(void);
+    
+    /// Get the Karlin/Altschul parameter blocks produced by the search.
+    /// @return List of references to KA blocks.
     list< CRef<objects::CBlast4_ka_block > > GetKABlocks(void);
-    list< string >                           GetSearchStats(void);
-    CRef<objects::CScore_matrix_parameters>  GetPSSM(void);
     
-    // Verbose mode
+    /// Get the search statistics block as a list of strings.
+    /// 
+    /// Search statistics describe the data flow during each step of a BLAST
+    /// search.  They are subject to change, and are not formally defined, but
+    /// can sometimes provide insight when investigating software problems.
+    /// 
+    /// @return List of strings, each contains one line of search stats block.
+    list< string > GetSearchStats(void);
+    
+    /// Get the PSSM produced by the search.
+    /// @return Reference to a Score-matrix-parameters object.
+    CRef<objects::CScore_matrix_parameters> GetPSSM(void);
+    
+    /// Debugging support can be turned on with eDebug or off with eSilent.
     enum EDebugMode {
         eDebug = 0,
         eSilent
     };
     
-    // Debugging method: set to true to output progress info to stdout.
+    /// Adjust the debugging level.
+    ///
+    /// This causes debugging trace data to be dumped to standard output,
+    /// along with ASN.1 objects used during the search and other text.  It
+    /// produces a great deal of output, none of which is expected to be
+    /// useful to the end-user.
     void SetVerbose(EDebugMode verb = eDebug)
     {
         m_Verbose = verb;
     }
     
 private:
+    /// An alias for the most commonly used part of the Blast4 search results.
     typedef objects::CBlast4_get_search_results_reply TGSRR;
     
-    // State helpers (for readability)
+    /// Various states the search can be in.
+    ///
+    /// eStart  Not submitted, can still be configured.
+    /// eFailed An error was encountered.
+    /// eWait   The search is still running.
+    /// eDone   Results are available.
     enum EState {
         eStart = 0,
         eFailed,
@@ -260,13 +311,14 @@ private:
         eDone
     };
     
-    // Immediacy flag
+    /// Indicates whether to use async mode.
     enum EImmediacy {
         ePollAsync = 0,
         ePollImmed
     };
     
-    // Required Parameters
+    /// This class attempts to verify whether all necessary configuration is
+    /// complete before attempting to submit the search.
     enum ENeedConfig {
         eNoConfig = 0x0,
         eProgram  = 0x1,
@@ -276,58 +328,110 @@ private:
         eNeedAll  = 0xF
     };
     
-    // Initialize request (called by constructors)
-    
+    /// The default timeout is 3.5 hours.
     const int DefaultTimeout(void)
     {
         return int(3600*3.5);
     }
     
+    /// Called by new search constructors: initialize a new search.
     void x_Init(CBlastOptionsHandle * algo_opts,
                 const char          * program,
                 const char          * service);
     
+    /// Called by RID constructor: set up monitoring of existing search.
     void x_Init(const string & RID);
+    
+    /// Configure new search from options handle passed to constructor.
     void x_SetAlgoOpts(void);
     
-    // Parameter setting
-    void x_SetOneParam(const char * name, const int * x); // not used (yet)
+    /// Set an integer parameter (not used yet).
+    /// @param name Name of option.
+    /// @param name Pointer to integer value to use.
+    void x_SetOneParam(const char * name, const int * x);
+    
+    /// Set a list of integers.
+    /// @param name Name of option.
+    /// @param name Pointer to list of integers to use.
     void x_SetOneParam(const char * name, const list<int> * x);
+    
+    /// Set a string parameter.
+    /// @param name Name of option.
+    /// @param name Pointer to pointer to null delimited string.
     void x_SetOneParam(const char * name, const char ** x);
+    
+    /// Set a matrix parameter.
+    /// @param name Name of option (probably MatrixTable).
+    /// @param name Pointer to Score-matrix-parameters object.
     void x_SetOneParam(const char * name, 
                        objects::CScore_matrix_parameters * matrix);
     
+    /// Set a matrix parameter.
+    /// @param name Name of option (probably MatrixTable).
+    /// @param name Pointer to Score-matrix-parameters object.
     int x_GetState(void);
     
+    /// Poll until done, return the CBlast4_get_search_results_reply.
+    /// @return Pointer to GSR reply object or NULL if search failed.
     TGSRR * x_GetGSRR(void);
     
-    // Submission/Result progression
+    /// Send a Blast4 request and get a reply.
+    /// @return The blast4 server response.
     CRef<objects::CBlast4_reply>
     x_SendRequest(CRef<objects::CBlast4_request_body> body);
     
+    /// Try to get the search results.
+    /// @return The blast4 server response.
     CRef<objects::CBlast4_reply>
     x_GetSearchResults(void);
     
+    /// Verify that search object contains mandatory fields.
     void x_CheckConfig(void);
+    
+    /// Submit the search and process results (of submit action).
     void x_SubmitSearch(void);
+    
+    /// Try to get and process results.
     void x_CheckResults(void);
+    
+    /// Iterate over error list, splitting into errors and warnings.
     void x_SearchErrors(CRef<objects::CBlast4_reply> reply);
+    
+    /// Poll until results are found, error occurs, or timeout expires.
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
     
     
     // Data
     
+    
+    /// Options for new search.
     CRef<blast::CBlastOptionsHandle>            m_CBOH;
+    
+    /// Request object for new search.
     CRef<objects::CBlast4_queue_search_request> m_QSR;
+    
+    /// Results of BLAST search.
     CRef<objects::CBlast4_reply>                m_Reply;
     
+    /// List of errors encountered.
     vector<string> m_Errs;
-    vector<string> m_Warn;
-    string m_RID;
     
+    /// List of warnings encountered.
+    vector<string> m_Warn;
+
+    /// Request ID of submitted or pre-existing search.
+    string         m_RID;
+    
+    /// Count of server glitches (communication errors) to ignore.
     int         m_ErrIgn;
+    
+    /// Pending state: indicates that search still needs to be queued.
     bool        m_Pending;
+    
+    /// Verbosity mode: whether to produce debugging info on stdout.
     EDebugMode  m_Verbose;
+    
+    /// Bitfield to track whether all necessary configuration is done.
     ENeedConfig m_NeedConfig;
 };
 
@@ -341,6 +445,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/08 17:56:25  bealer
+ * - Add documentation for all methods and members.
+ *
  * Revision 1.6  2004/05/17 18:07:19  bealer
  * - Add PSI Blast support.
  *
