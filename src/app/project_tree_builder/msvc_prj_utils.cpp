@@ -376,12 +376,14 @@ CSourceFileToProjectInserter::operator()(CRef<CFilter>&  filter,
         compilerl_tool->SetAttlist().SetName("VCCLCompilerTool");
 
         if (pch_usage.first == eCreate) {
-            compilerl_tool->SetAttlist().SetPreprocessorDefinitions("NCBI_USE_PCH");
+            compilerl_tool->SetAttlist().SetPreprocessorDefinitions
+                             (GetApp().GetMetaMakefile().GetPchUsageDefine());
             compilerl_tool->SetAttlist().SetUsePrecompiledHeader("1");
             compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
                                                             (pch_usage.second);
         } else if (pch_usage.first == eUse) {
-            compilerl_tool->SetAttlist().SetPreprocessorDefinitions("NCBI_USE_PCH");
+            compilerl_tool->SetAttlist().SetPreprocessorDefinitions
+                              (GetApp().GetMetaMakefile().GetPchUsageDefine());
             compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");
             compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
                                                             (pch_usage.second);
@@ -630,6 +632,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/05/17 14:40:30  gorelenk
+ * Changed implementation of CSourceFileToProjectInserter::operator():
+ * get rid of hard-coded define for PCH usage.
+ *
  * Revision 1.21  2004/05/13 16:15:24  gorelenk
  * Changed CSourceFileToProjectInserter::operator() .
  *
