@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/02/13 19:45:29  thiessen
+* Fit coloring by info content contribution
+*
 * Revision 1.18  2001/09/27 15:37:58  thiessen
 * decouple sequence import and BLAST
 *
@@ -226,9 +229,9 @@ void ConservationColorer::CalculateConservationColors(void)
     float totalInformationContent = 0.0f;
 
     int nRows = blocks.begin()->first->NSequences();
-    typedef std::map < char, int > CharMap;
-    std::vector < CharMap > fitSums(nColumns);
-    IntVector minFit(nColumns), maxFit(nColumns);
+    typedef std::map < char, float > CharMap;
+    std::vector < CharMap > fitScores(nColumns);
+    float minFit, maxFit;
 
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++) {
@@ -265,7 +268,7 @@ void ConservationColorer::CalculateConservationColors(void)
             variety = profile.size();
             if (profile.find('X') != profile.end())
                 variety += profile['X'] - 1; // each 'X' counts as one variety
-            if (b == blocks.begin() && blockColumn == 0) {
+            if (blockColumn == 0 && b == blocks.begin()) {
                 minVariety = maxVariety = variety;
             } else {
                 if (variety < minVariety) minVariety = variety;
@@ -283,49 +286,43 @@ void ConservationColorer::CalculateConservationColors(void)
                     weightedVariety +=
                         p->second * p2->second * Blosum62Map[p->first][p2->first];
             }
-            if (b == blocks.begin() && blockColumn == 0) {
+            if (blockColumn == 0 && b == blocks.begin()) {
                 minWeightedVariety = maxWeightedVariety = weightedVariety;
             } else {
                 if (weightedVariety < minWeightedVariety) minWeightedVariety = weightedVariety;
                 else if (weightedVariety > maxWeightedVariety) maxWeightedVariety = weightedVariety;
             }
 
-            // information content for this column (calculated in bits -> logs of base 2)
+            // information content and fit scores for this column (calculated in bits -> logs of base 2)
             pe = profile.end();
-            float& information = informationContents[profileColumn];
+            float &columnInfo = informationContents[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
                 static const float ln2 = (float) log(2.0), threshhold = 0.0001f;
-                float expFreq = StandardProbabilities[p->first];
+                float residueScore = 0.0f, expFreq = StandardProbabilities[p->first];
                 if (expFreq > threshhold) {
                     float obsFreq = 1.0f * p->second / nRows,
                           freqRatio = obsFreq / expFreq;
-                    if (freqRatio > threshhold)
-                        information += obsFreq * ((float) log(freqRatio)) / ln2;
+                    if (freqRatio > threshhold) {
+                        residueScore = obsFreq * ((float) log(freqRatio)) / ln2;
+                        columnInfo += residueScore; // information content
+                    }
                 }
-            }
-            totalInformationContent += information;
-//            TESTMSG("info prof col " << profileColumn << " = " << information);
-
-            // fit for each residue in this column
-            for (p=profile.begin(); p!=pe; p++) {
-                int& sum = fitSums[profileColumn][p->first];
-                for (p2=profile.begin(); p2!=pe; p2++) {
-                    if (p2 == p)
-                        sum += (p->second - 1) * Blosum62Map[p->first][p->first];
-                    else
-                        sum += p2->second * Blosum62Map[p->first][p2->first];
-                }
-                if (p == profile.begin()) {
-                    minFit[profileColumn] = maxFit[profileColumn] = sum;
+                // fit score
+                fitScores[profileColumn][p->first] = residueScore;
+                if (blockColumn == 0 && b == blocks.begin() && p == profile.begin()) {
+                    minFit = maxFit = residueScore;
                 } else {
-                    if (sum < minFit[profileColumn]) minFit[profileColumn] = sum;
-                    else if (sum > maxFit[profileColumn]) maxFit[profileColumn] = sum;
+                    if (residueScore < minFit) minFit = residueScore;
+                    else if (residueScore > maxFit) maxFit = residueScore;
                 }
             }
+            totalInformationContent += columnInfo;
+//            TESTMSG("info prof col " << profileColumn << " = " << information);
         }
     }
 
     TESTMSG("Total information content: " << totalInformationContent << " bits");
+//    TESTMSG("minFit: " << minFit << "  maxFit: " << maxFit);
 
     // now assign colors
     varietyColors.resize(nColumns);
@@ -360,13 +357,12 @@ void ConservationColorer::CalculateConservationColors(void)
         informationContentColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
 
         // fit
-        CharMap::const_iterator c, ce = fitSums[profileColumn].end();
-        for (c=fitSums[profileColumn].begin(); c!=ce; c++) {
-            if (maxFit[profileColumn] == minFit[profileColumn])
+        CharMap::const_iterator c, ce = fitScores[profileColumn].end();
+        for (c=fitScores[profileColumn].begin(); c!=ce; c++) {
+            if (maxFit == minFit)
                 scale = 1.0;
             else
-                scale = 1.0 * (c->second - minFit[profileColumn]) /
-                                (maxFit[profileColumn] - minFit[profileColumn]);
+                scale = 1.0 * (c->second - minFit) / (maxFit - minFit);
             fitColors[profileColumn][c->first] = GlobalColors()->Get(Colors::eConservationMap, scale);
         }
     }
