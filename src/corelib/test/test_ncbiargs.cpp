@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2000/11/29 00:09:19  vakatov
+ * Added test #10 -- to auto-sort flag and key args alphabetically
+ *
  * Revision 6.14  2000/11/24 23:37:46  vakatov
  * The test is now "CNcbiApplication" based (rather than "bare main()")
  * -- to use and to test standard processing of cmd.-line arguments implemented
@@ -173,6 +176,9 @@ static void s_RunTest0(const CArgs& args, ostream& os)
     } else {
         lg << "...no unnamed positional arguments in the cmd-line" << endl;
     }
+
+    // Separator
+    lg << string(44, '-') << endl;
 }
 
 
@@ -409,6 +415,7 @@ static STest s_Test[] =
     {s_InitTest7, s_RunTest7},
     {s_InitTest8, s_RunTest8},
     {s_InitTest9, s_RunTest9},
+    {s_InitTest0, s_RunTest0},
     {0,           0}
 };
 
@@ -439,7 +446,7 @@ void CArgTestApplication::Init(void)
 
     // Get test # from env.variable $TEST_NO
     m_TestNo = 0;
-    size_t max_test = sizeof(s_Test) / sizeof(s_Test[0]) - 1;
+    size_t max_test = sizeof(s_Test) / sizeof(s_Test[0]) - 2;
     const string& test_str = GetEnvironment().Get("TEST_NO");
     if ( !test_str.empty() ) {
         try {
@@ -466,8 +473,9 @@ void CArgTestApplication::Init(void)
         "TEST #" + NStr::UIntToString(m_TestNo) +
         "    (To run another test, set env.variable $TEST_NO to 0.." +
         NStr::UIntToString(max_test) + ")";
+    bool usage_sort_args = (m_TestNo == 10);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description);
+                              prog_description, usage_sort_args);
 
     // Describe cmd-line arguments according to the chosen test #
     s_Test[m_TestNo].init(*arg_desc);
