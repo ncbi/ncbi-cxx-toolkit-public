@@ -85,6 +85,46 @@
 	 and then runs the original <i>"configure"</i> script.
 	 The resultant <i>"ncbiconf.h"</i> will be automagically copied to directory
 	 <i>"<b>projects/</b>corelib/include/"</i>.
+
+	 <p>
+	 You can specify the C and C++ compilers and theirs flags by setting
+	 environment variables
+	 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html"><i>CC, CFLAGS, CXX, CXXFLAGS and CPPFLAGS</i></a> (before running the
+	 <i>"configure"</i> script).
+	 For example, when you want to configure for the use of version of
+	 <a href="http://corp.metabyte.com/~fbp/stl/index.html">
+		STL adaptation effort</a>
+	 plus a string library from
+	 <a href="http://corp.metabyte.com/~fbp/stl/components.html">
+		Moderna Software</a>
+	 installed in NCBI for WorkShop Compilers 4.2:
+<pre>
+(csh)
+setenv CC  "cc"
+setenv CXX "CC"
+setenv CPPFLAGS "-I/netopt/stlport/3.01"
+
+(sh)
+CC="cc"  ;  export CC
+CXX="CC" ;  export CXX
+CPPFLAGS="-I/netopt/stlport/3.01" ;  export CPPFLAGS
+</pre>
+
+	 An if you are planning to use WorkShop Compilers 5.0(they have
+	 a "native" implementation of Standard C++ libs):
+<pre>
+(csh)
+setenv CC  "/netopt/SUNWspro6/bin/cc"
+setenv CXX "/netopt/SUNWspro6/bin/CC"
+
+(sh)
+CC="/netopt/SUNWspro6/bin/cc"  ;  export CC
+CXX="/netopt/SUNWspro6/bin/CC" ;  export CXX
+</pre>
+
+	 Hint:  we recommend to always remove "config.cache" and remove
+	 (or save somewhere else) <i>"projects/corelib/include/ncbiconf.h"</i>
+	 before running the <i>"configure"</i> script.
 	 
 
 	 <br></br>
@@ -111,6 +151,7 @@
 	 <ul>
 		<li> MSVC++ 5.0 for MS Windows on PC
 		<li> WorkShop Compilers 5.0 for Solaris 2.6 on Sun
+		<li> WorkShop Compilers 4.2 for Solaris 2.6 on Sun(with third-party STL)
 	 </ul>
 
 
