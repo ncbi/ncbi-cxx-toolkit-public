@@ -60,7 +60,7 @@ extern "C" {
 #define blast_type_psitblastn 5
 #define blast_type_undefined 255
 
-/// Codons are always of length 3
+/** Codons are always of length 3 */
 #define CODON_LENGTH 3
 
 /** Structure to hold a sequence. */
