@@ -65,7 +65,8 @@ BEGIN_SCOPE(Cn3D)
 
 BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr) :
     sequences(sequenceList), conservationColorer(NULL), alignmentManager(alnMgr),
-    alignMasterFrom(-1), alignMasterTo(-1), alignSlaveFrom(-1), alignSlaveTo(-1), pssm(NULL)
+    alignMasterFrom(-1), alignMasterTo(-1), alignSlaveFrom(-1), alignSlaveTo(-1),
+    pssm(NULL), showGeometryViolations(false)
 {
     InitCache();
     rowDoubles.resize(sequenceList->size(), 0.0);
@@ -109,6 +110,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     copy->rowDoubles = rowDoubles;
     copy->rowStrings = rowStrings;
     copy->geometryViolations = geometryViolations;
+    copy->showGeometryViolations = showGeometryViolations;
     copy->updateOrigin = updateOrigin;
     copy->alignMasterFrom = alignMasterFrom;
     copy->alignMasterTo = alignMasterTo;
@@ -380,7 +382,7 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
     // if alignment changes, any pssm/scores/status/special colors become invalid
     RemovePSSM();
     if (clearRowInfo) ClearRowInfo();
-    geometryViolations.clear();
+    ShowGeometryViolations(showGeometryViolations); // recalculate GV's
 
     return true;
 }
@@ -454,8 +456,8 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
             *cellBackgroundColor = GlobalColors()->Get(Colors::eMarkBlock);
         }
 
-        // check for geometry violations
-        if (geometryViolations.size() > 0 && seqIndex >= 0 && geometryViolations[row][seqIndex]) {
+        // optionally show geometry violations
+        if (showGeometryViolations && seqIndex >= 0 && geometryViolations[row][seqIndex]) {
             *drawBackground = true;
             *cellBackgroundColor = GlobalColors()->Get(Colors::eGeometryViolation);
         }
@@ -1474,24 +1476,35 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     return true;
 }
 
-void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForRow& violations)
+int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
 {
-    if (violations.size() != NRows()) {
-        ERRORMSG("BlockMultipleAlignment::ShowGeometryViolations() - wrong size list");
-        return;
+    geometryViolations.clear();
+
+    if (!showGV || !GetMaster()->molecule || GetMaster()->molecule->parentSet->isAlphaOnly) {
+        showGeometryViolations = false;
+        return 0;
     }
 
-    geometryViolations.clear();
+    Threader::GeometryViolationsForRow violations;
+    int nViolations = alignmentManager->threader->GetGeometryViolations(this, &violations);
+    if (violations.size() != NRows()) {
+        ERRORMSG("BlockMultipleAlignment::ShowGeometryViolations() - wrong size list");
+        showGeometryViolations = false;
+        return 0;
+    }
+
     geometryViolations.resize(NRows());
     for (int row=0; row<NRows(); row++) {
         geometryViolations[row].resize(GetSequenceOfRow(row)->Length(), false);
-        IntervalList::const_iterator i, ie = violations[row].end();
+        Threader::IntervalList::const_iterator i, ie = violations[row].end();
         for (i=violations[row].begin(); i!=ie; i++)
             for (int l=i->first; l<=i->second; l++)
                 geometryViolations[row][l] = true;
     }
-}
 
+    showGeometryViolations = true;
+    return nViolations;
+}
 
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
     const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, int slaveRow)
@@ -1798,6 +1811,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/11/06 18:52:31  thiessen
+* make geometry violations shown on/off; allow multiple pmid entry in ref dialog
+*
 * Revision 1.52  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

@@ -92,7 +92,8 @@ public:
 
     // geometry violations - for each row of an alignment, get a list of seqIndex
     // (from, to) pairs for offending regions; return total number of violations
-    typedef std::vector < std::list < std::pair < int, int > > > GeometryViolationsForRow;
+    typedef std::list < std::pair < int, int > > IntervalList;
+    typedef std::vector < IntervalList > GeometryViolationsForRow;
     int GetGeometryViolations(const BlockMultipleAlignment *multiple,
         GeometryViolationsForRow *violations);
 
@@ -143,6 +144,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/11/06 18:52:32  thiessen
+* make geometry violations shown on/off; allow multiple pmid entry in ref dialog
+*
 * Revision 1.17  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -228,10 +228,8 @@ public:
     // object's aligned blocks
     bool MergeAlignment(const BlockMultipleAlignment *newAlignment);
 
-    // set geometry violation flags
-    typedef std::list < std::pair < int, int > > IntervalList;  // list of (from, to) seqIndex pairs
-    typedef std::vector < IntervalList > GeometryViolationsForRow;
-    void ShowGeometryViolations(const GeometryViolationsForRow& violations);
+    // turn on/off geometry violations; if param is true, will return # violations found
+    int ShowGeometryViolations(bool showGeometryViolations);
 
 private:
     ConservationColorer *conservationColorer;
@@ -277,6 +275,7 @@ private:
     // for flagging residues (e.g. for geometry violations)
     typedef std::vector < std::vector < bool > > RowSeqIndexFlags;
     RowSeqIndexFlags geometryViolations;
+    bool showGeometryViolations;
 
 public:
 
@@ -421,6 +420,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/11/06 18:52:31  thiessen
+* make geometry violations shown on/off; allow multiple pmid entry in ref dialog
+*
 * Revision 1.37  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

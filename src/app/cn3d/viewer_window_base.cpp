@@ -81,7 +81,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     viewMenu = new wxMenu;
     viewMenu->Append(MID_SHOW_TITLES, "Show &Titles");
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
-    viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations");
+    viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations", "", true);
     viewMenu->Append(MID_FIND_PATTERN, "Find &Pattern");
     menuBar->Append(viewMenu, "&View");
 
@@ -135,6 +135,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     viewerWidget->TitleAreaOn();
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableBaseEditorMenuItems(false);
+    menuBar->Check(MID_SHOW_GEOM_VLTNS, false);   // start with gv's off
 }
 
 ViewerWindowBase::~ViewerWindowBase(void)
@@ -327,16 +328,15 @@ void ViewerWindowBase::OnJustification(wxCommandEvent& event)
 void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 {
     const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
-    if (alignments.size() == 0) return;
+    bool showGeometryViolations = menuBar->IsChecked(MID_SHOW_GEOM_VLTNS);
 
-    int nViolations = 0;
     ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
-    for (a=alignments.begin(); a!=ae; a++) {
-        Threader::GeometryViolationsForRow violations;
-        nViolations += viewer->alignmentManager->threader->GetGeometryViolations(*a, &violations);
-        (*a)->ShowGeometryViolations(violations);
-    }
-    INFOMSG("Found " << nViolations << " geometry violations");
+    int nViolations = 0;
+    for (a=alignments.begin(); a!=ae; a++)
+        nViolations += (*a)->ShowGeometryViolations(showGeometryViolations);
+    if (showGeometryViolations)
+        INFOMSG("Found " << nViolations << " geometry violation"
+            << ((nViolations == 1) ? "" : "s") << " in this window");
     GlobalMessenger()->PostRedrawSequenceViewer(viewer);
 }
 
@@ -387,6 +387,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/11/06 18:52:32  thiessen
+* make geometry violations shown on/off; allow multiple pmid entry in ref dialog
+*
 * Revision 1.46  2003/07/17 16:52:34  thiessen
 * add FileSaved message with edit typing
 *

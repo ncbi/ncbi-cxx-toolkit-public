@@ -164,15 +164,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
         display->AddBlockBoundaryRow(*a);
         for (int row=0; row<2; row++)
             display->AddRowFromAlignment(row, *a);
-
-        // always show geometry violations in updates
-        if ((*a)->GetMaster()->molecule && !(*a)->GetMaster()->molecule->parentSet->isAlphaOnly) {
-            Threader::GeometryViolationsForRow violations;
-            nViolations += alignmentManager->threader->GetGeometryViolations(*a, &violations);
-            (*a)->ShowGeometryViolations(violations);
-        }
     }
-    INFOMSG("Found " << nViolations << " geometry violations in Import alignments");
 
     if (alignments.size() > 0)
         display->SetStartingColumn(alignments.front()->GetFirstAlignedBlockPosition() - 5);
@@ -1181,6 +1173,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/11/06 18:52:32  thiessen
+* make geometry violations shown on/off; allow multiple pmid entry in ref dialog
+*
 * Revision 1.66  2003/09/25 14:11:43  thiessen
 * don't assume gi Seq-id's for imported structure's sequences
 *

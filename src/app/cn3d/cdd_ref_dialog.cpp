@@ -41,6 +41,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 
+#include <wx/tokenzr.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // The following is taken unmodified from wxDesigner's C++ header from cdd_ref_dialog.wdr
@@ -158,15 +159,20 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
 
     // add reference
     else if (event.GetId() == ID_B_ADD) {
-        wxString pmidStr = wxGetTextFromUser("Enter a PubMed ID:", "New PMID", "", this);
-        unsigned long pmidVal;
-        if (pmidStr.size() > 0 && pmidStr.ToULong(&pmidVal)) {
-            CRef < CCdd_descr > ref(new CCdd_descr());
-            ref->SetReference().SetPmid().Set((int) pmidVal);
-            descrSet->Set().push_back(ref);
-            sSet->SetDataChanged(StructureSet::eCDDData);
-            selectItem = listbox->GetCount();
-            ResetListBox();
+        wxString ids = wxGetTextFromUser("Enter a list of PubMed IDs:", "Input PMIDs", "", this);
+        wxStringTokenizer tkz(ids, " ,;\t\r\n", wxTOKEN_STRTOK);
+        long pmidVal;
+        while (tkz.HasMoreTokens()) {
+            wxString id = tkz.GetNextToken();
+            if (id.size() > 0 && id.ToLong(&pmidVal) && pmidVal > 0) {
+                CRef < CCdd_descr > ref(new CCdd_descr());
+                ref->SetReference().SetPmid().Set((int) pmidVal);
+                descrSet->Set().push_back(ref);
+                sSet->SetDataChanged(StructureSet::eCDDData);
+                selectItem = listbox->GetCount();
+                ResetListBox();
+            } else
+                ERRORMSG("Invalid PMID: '" << id.c_str() << "'");
         }
     }
 
@@ -318,6 +324,9 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/11/06 18:52:31  thiessen
+* make geometry violations shown on/off; allow multiple pmid entry in ref dialog
+*
 * Revision 1.9  2003/06/22 09:47:40  thiessen
 * rearrange buttons
 *
