@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/06 16:40:23  lavr
+ * <string.h> included now in <connect/ncbi_ansi_ext.h>
+ * conditional preprocessor statements removed
+ *
  * Revision 6.2  2000/05/17 16:11:02  lavr
  * Reorganized for use of HAVE_* defines
  *
@@ -42,10 +46,8 @@
 #include <connect/ncbi_ansi_ext.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <string.h>
 
 
-#ifndef HAVE_STRDUP
 char *strdup(const char *str)
 {
     size_t size = strlen(str) + 1;
@@ -54,10 +56,8 @@ char *strdup(const char *str)
         memcpy(newstr, str, size);
     return newstr;
 }
-#endif /* HAVE_STRDUP */
 
 
-#ifndef HAVE_STRCASECMP
 int strcasecmp(const char *s1, const char *s2)
 {
     const unsigned char *p1 = (const unsigned char *)s1;
@@ -91,4 +91,3 @@ int strncasecmp(const char *s1, const char *s2, size_t n)
 
     return c1 - c2;
 }
-#endif /* HAVE_STRCASECMP */
