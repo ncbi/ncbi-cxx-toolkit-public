@@ -278,7 +278,8 @@ void CBDB_BLOB_Cache::Purge(time_t           access_time,
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    if (keep_last_version == eDropAll || access_time == 0) {
+    if (keep_last_version == eDropAll && access_time == 0) {
+        LOG_POST(Info << "CBDB_BLOB_Cache:: cache truncated");
         m_BlobDB.Truncate();
         m_TimeDB.Truncate();
         return;
@@ -377,6 +378,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/06 16:24:19  kuznets
+ * Fixed bug in Purge function
+ * (truncated cache files with some parameters combination).
+ *
  * Revision 1.5  2003/10/02 20:13:25  kuznets
  * Minor code cleanup
  *
