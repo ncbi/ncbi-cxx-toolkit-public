@@ -1566,6 +1566,8 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
             if ( *nuc_ci != *rna_ci ) {
                 ++mismatches;
             }
+            ++nuc_ci;
+            ++rna_ci;
         }
         if ( mismatches > 0 ) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
@@ -2671,6 +2673,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/03/25 18:33:47  shomrat
+* Bug fix
+*
 * Revision 1.50  2004/03/19 14:48:53  shomrat
 * use ERR_SEQ_FEAT_PartialsInconsistent in two places
 *
