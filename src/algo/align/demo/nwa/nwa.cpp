@@ -25,13 +25,19 @@
  *
  * Author:  Yuri Kapustin
  *
- * File Description:  NWA application
+ * File Description:  xalgoalign application
  *                   
 */
 
 #include <algo/align/mm_aligner.hpp>
-#include <algo/align/nw_aligner_mrna2dna.hpp>
+#include <algo/align/nw_spliced_aligner16.hpp>
+#include <algo/align/nw_spliced_aligner32.hpp>
+#include <algo/align/nw_formatter.hpp>
 #include "nwa.hpp"
+
+
+#define SPLALIGNER CSplicedAligner32
+
 
 BEGIN_NCBI_SCOPE
 
@@ -42,8 +48,7 @@ void CAppNWA::Init()
 
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Global alignment demo application.\n"
-                              "Build 1.00.16 - 05/23/03");
+                              "Demo application using xalgoalign library");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -67,9 +72,9 @@ void CAppNWA::Init()
 
     argdescr->AddDefaultKey
         ("esf", "esf",
-         "End-space free alignment. Format it lrLR where each character "
+         "End-space free alignment. Format: lrLR where each character "
          "can be z (free end) or x (regular end) representing "
-         "left and right ends",
+         "left and right ends. First sequence's ends are specified first.", 
          CArgDescriptions::eString,
          "xxxx");
 
@@ -96,24 +101,19 @@ void CAppNWA::Init()
     argdescr->AddDefaultKey
         ("Wi0", "intron0", "type 0 (GT/AG) intron weight",
          CArgDescriptions::eInteger,
-         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(0)).c_str());
+         NStr::IntToString(SPLALIGNER::GetDefaultWi(0)).c_str());
 
     argdescr->AddDefaultKey
         ("Wi1", "intron1", "type 1 (GC/AG) intron weight",
          CArgDescriptions::eInteger,
-         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(1)).c_str());
+         NStr::IntToString(SPLALIGNER::GetDefaultWi(1)).c_str());
 
     argdescr->AddDefaultKey
         ("Wi2", "intron2", "type 2 (AT/AC) intron weight",
          CArgDescriptions::eInteger,
-         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(2)).c_str());
+         NStr::IntToString(SPLALIGNER::GetDefaultWi(2)).c_str());
 
-    argdescr->AddDefaultKey
-        ("Wi3", "intron3", "type 3 (arbitrary splice) intron weight",
-         CArgDescriptions::eInteger,
-         NStr::IntToString(CNWAlignerMrna2Dna::GetDefaultWi(3)).c_str());
-
-    int intron_min_size = CNWAlignerMrna2Dna::GetDefaultIntronMinSize();
+    int intron_min_size = SPLALIGNER::GetDefaultIntronMinSize();
     argdescr->AddDefaultKey
         ("IntronMinSize", "IntronMinSize", "intron minimum size",
          CArgDescriptions::eInteger,
@@ -250,13 +250,13 @@ void CAppNWA::x_RunOnPair() const
     // determine seq type
     CNWAligner::EScoringMatrixType smt;
     if (args["matrix"].AsString() == "blosum62")
-        smt = CNWAligner::eBlosum62;
+        smt = CNWAligner::eSMT_Blosum62;
     else
-        smt = CNWAligner::eNucl;
+        smt = CNWAligner::eSMT_Nucl;
 
     auto_ptr<CNWAligner> aligner (
         bMrna2Dna? 
-        new CNWAlignerMrna2Dna (&v1[0], v1.size(), &v2[0], v2.size()):
+        new SPLALIGNER (&v1[0], v1.size(), &v2[0], v2.size()):
         (bMM?
          new CMMAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt):
          new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt))
@@ -268,13 +268,13 @@ void CAppNWA::x_RunOnPair() const
     aligner->SetWs  (args["Ws"]. AsInteger());
 
     if( bMrna2Dna ) {
-        CNWAlignerMrna2Dna *aligner_mrna2dna = 
-            static_cast<CNWAlignerMrna2Dna *> (aligner.get());
+        SPLALIGNER *aligner_mrna2dna = 
+            static_cast<SPLALIGNER*> (aligner.get());
 
         aligner_mrna2dna->SetWi (0, args["Wi0"]. AsInteger());
         aligner_mrna2dna->SetWi (1, args["Wi1"]. AsInteger());
         aligner_mrna2dna->SetWi (2, args["Wi2"]. AsInteger());
-        aligner_mrna2dna->SetWi (3, args["Wi3"]. AsInteger());
+        //        aligner_mrna2dna->SetWi (3, args["Wi3"]. AsInteger());
 
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
 
@@ -314,8 +314,6 @@ void CAppNWA::x_RunOnPair() const
         pofsExons.reset(open_ofstream (args["oexons"].AsString()).release());
     }
 
-    aligner->SetSeqIds(seqname1, seqname2);
-    
     {{  // setup end penalties
         string ends = args["esf"].AsString();
         bool L1 = ends[0] == 'z';
@@ -328,37 +326,40 @@ void CAppNWA::x_RunOnPair() const
     int score = aligner->Run();
     cerr << "Score = " << score << endl;
 
+    CNWFormatter formatter (*aligner);
+    formatter.SetSeqIds(seqname1, seqname2);
+
     const size_t line_width = 50;
     string s;
     if(pofs1.get()) {
-        aligner->FormatAsText(&s, CNWAligner::eFormatType1, line_width);
+        formatter.AsText(&s, CNWFormatter::eFormatType1, line_width);
         *pofs1 << s;
     }
 
     if(pofs2.get()) {
-        aligner->FormatAsText(&s, CNWAligner::eFormatType2, line_width);
+        formatter.AsText(&s, CNWFormatter::eFormatType2, line_width);
         *pofs2 << s;
     }
 
     if(pofsAsn.get()) {
-        aligner->FormatAsText(&s, CNWAligner::eFormatAsn, line_width);
+        formatter.AsText(&s, CNWFormatter::eFormatAsn, line_width);
         *pofsAsn << s;
     }
 
     if(pofsFastA.get()) {
-        aligner->FormatAsText(&s, CNWAligner::eFormatFastA, line_width);
+        formatter.AsText(&s, CNWFormatter::eFormatFastA, line_width);
         *pofsFastA << s;
     }
 
     if(pofsExons.get()) {
-        aligner->FormatAsText(&s, CNWAligner::eFormatExonTable, line_width);
+        formatter.AsText(&s, CNWFormatter::eFormatExonTableEx, line_width);
         *pofsExons << s;
     }
     
     if(!output_type1 && !output_type2
        && !output_asn && !output_fasta
        && !output_exons) {
-        aligner->FormatAsText(&s, CNWAligner::eFormatType2, line_width);
+        formatter.AsText(&s, CNWFormatter::eFormatType2, line_width);
         cout << s;
     }
 }
@@ -406,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/09/02 22:38:52  kapustin
+ * Adjust for the library's changes
+ *
  * Revision 1.21  2003/06/17 17:20:44  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *
