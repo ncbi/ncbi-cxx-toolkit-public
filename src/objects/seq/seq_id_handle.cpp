@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/12 19:41:42  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
 * Revision 1.1  2002/01/23 21:57:22  grichenk
 * Splitted id_handles.hpp
 *
@@ -40,6 +43,7 @@
 
 #include <objects/objmgr1/seq_id_handle.hpp>
 #include <serial/typeinfo.hpp>
+#include "seq_id_mapper.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -52,16 +56,60 @@ BEGIN_SCOPE(objects)
 //
 
 
-CSeq_id_Handle::CSeq_id_Handle(const CSeq_id& id, TSeq_id_Key key)
-    : m_Value(key)
+CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
+    : m_Mapper(handle.m_Mapper),
+      m_Value(handle.m_Value),
+      m_SeqId(handle.m_SeqId)
 {
-    m_SeqId = new CSeq_id;
-    SerialAssign<CSeq_id>(*m_SeqId, id);
+    if ( m_Mapper )
+        m_Mapper->AddHandleReference(*this);
 }
 
 
+CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Mapper& mapper,
+                               const CSeq_id& id,
+                               TSeq_id_Key key)
+    : m_Mapper(&mapper),
+      m_Value(key)
+{
+    m_SeqId = new CSeq_id;
+    SerialAssign<CSeq_id>(*m_SeqId, id);
+    m_Mapper->AddHandleReference(*this);
+}
+
+
+CSeq_id_Handle::~CSeq_id_Handle(void)
+{
+    Reset();
+}
+
+
+CSeq_id_Handle& CSeq_id_Handle::operator= (const CSeq_id_Handle& handle)
+{
+    Reset();
+    m_Mapper = handle.m_Mapper;
+    m_Value = handle.m_Value;
+    m_SeqId = handle.m_SeqId;
+    if ( m_Mapper )
+        m_Mapper->AddHandleReference(*this);
+    return *this;
+}
+
+
+void CSeq_id_Handle::Reset(void)
+{
+    if ( m_Mapper )
+        m_Mapper->ReleaseHandleReference(*this);
+    m_Mapper = 0;
+    m_Value = 0;
+    m_SeqId.Reset();
+}
+
 bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
 {
+    // Different mappers -- handle can not be equal
+    if (m_Mapper != handle.m_Mapper)
+        return false;
     // The same seq-id object -- no need to compare
     if (m_SeqId == handle.m_SeqId)
         return true;
@@ -72,6 +120,9 @@ bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
 
 bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
 {
+    // Different mappers -- handle can not be equal
+    if (m_Mapper != handle.m_Mapper)
+        return false;
     // The same seq-id object -- no need to compare
     if (m_SeqId == handle.m_SeqId)
         return true;

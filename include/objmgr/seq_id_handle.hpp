@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/12 19:41:40  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
 * Revision 1.2  2002/01/29 17:06:12  grichenk
 * + operator !()
 *
@@ -63,6 +66,10 @@ BEGIN_SCOPE(objects)
 
 typedef size_t TSeq_id_Key;
 
+// forward declaration
+class CSeq_id_Mapper;
+
+
 class CSeq_id_Handle
 {
 public:
@@ -84,7 +91,9 @@ public:
 
 private:
     // This constructor should be used by mappers only
-    CSeq_id_Handle(const CSeq_id& id, TSeq_id_Key key);
+    CSeq_id_Handle(CSeq_id_Mapper& mapper,
+                   const CSeq_id& id,
+                   TSeq_id_Key key);
 
     // Comparison methods
     // True if handles are strictly equal
@@ -92,6 +101,8 @@ private:
     // True if "this" may be resolved to "handle"
     bool x_Match(const CSeq_id_Handle& handle) const;
 
+    // Seq-id mapper (to lock/unlock the handle)
+    CSeq_id_Mapper* m_Mapper;
     // Handle value
     TSeq_id_Key m_Value;
     // Reference to the seq-id used by a group of equal handles
@@ -113,38 +124,25 @@ private:
 
 inline
 CSeq_id_Handle::CSeq_id_Handle(void)
-    : m_Value(0), m_SeqId(0)
+    : m_Mapper(0), m_Value(0), m_SeqId(0)
 {
-}
-
-inline
-CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
-    : m_Value(handle.m_Value), m_SeqId(handle.m_SeqId)
-{
-}
-
-inline
-CSeq_id_Handle::~CSeq_id_Handle(void)
-{
-}
-
-inline
-CSeq_id_Handle& CSeq_id_Handle::operator= (const CSeq_id_Handle& handle)
-{
-    m_Value = handle.m_Value;
-    m_SeqId = handle.m_SeqId;
-    return *this;
 }
 
 inline
 bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
 {
+    if (m_Mapper != handle.m_Mapper)
+        throw runtime_error(
+        "Can not compare seq-id handles from different mappers");
     return m_Value == handle.m_Value;
 }
 
 inline
 bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
 {
+    if (m_Mapper != handle.m_Mapper)
+        throw runtime_error(
+        "Can not compare seq-id handles from different mappers");
     return m_Value < handle.m_Value;
 }
 
@@ -158,13 +156,6 @@ inline
 bool CSeq_id_Handle::operator! (void) const
 {
     return m_SeqId.Empty();
-}
-
-inline
-void CSeq_id_Handle::Reset(void)
-{
-    m_Value = 0;
-    m_SeqId.Reset();
 }
 
 

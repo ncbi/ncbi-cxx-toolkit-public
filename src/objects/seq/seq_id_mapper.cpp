@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/12 19:41:42  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
 * Revision 1.4  2002/02/06 21:46:11  gouriano
 * *** empty log message ***
 *
@@ -142,8 +145,9 @@ void CSeq_id_Which_Tree::DropKeysRange(TSeq_id_Key first, TSeq_id_Key last)
     TKeyMap::iterator it_last = m_KeyMap.upper_bound(last);
     for (TKeyMap::iterator it = it_first; it != it_last; ++it) {
         x_DropHandle(it->second);
-        x_RemoveFromKeyMap(it->first);
+        //x_RemoveFromKeyMap(it->first);
     }
+    m_KeyMap.erase(it_first, it_last);
 }
 
 
@@ -1449,6 +1453,25 @@ void CSeq_id_PDB_Tree::x_DropHandle(const CSeq_id_Handle& handle)
 const size_t kKeyUsageTableSegmentSize =
     numeric_limits<TSeq_id_Key>().max() / kKeyUsageTableSize;
 
+
+CSeq_id_Mapper::~CSeq_id_Mapper(void)
+{
+    while (m_IdMap.size() > 0) {
+        // Prevent premature tree destruction
+        CRef<CSeq_id_Which_Tree> keep_tree = m_IdMap.begin()->second;
+        // Erase the tree from the map to prevent double-drop of handles
+        m_IdMap.erase(m_IdMap.begin());
+        // Drop all handles from the tree
+        keep_tree->DropKeysRange(0, numeric_limits<TSeq_id_Key>().max());
+    }
+//### This is for debugging only
+    for (int i = 0; i < kKeyUsageTableSize; i++) {
+        _ASSERT(m_KeyUsageTable[i] == 0);
+    }
+//###
+}
+
+
 CSeq_id_Mapper::CSeq_id_Mapper(void)
     : m_NextKey(0)
 {
@@ -1502,11 +1525,11 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
     TSeq_id_Info info = map_it->second->FindEqual(id);
     // If found, return valid handle
     if ( !info.first.Empty() )
-        return CSeq_id_Handle(*info.first, info.second);
+        return CSeq_id_Handle(*this, *info.first, info.second);
     // Not found - should we create a new handle or return an empty one?
     if ( do_not_create )
         return CSeq_id_Handle();
-    CSeq_id_Handle new_handle(id, GetNextKey());
+    CSeq_id_Handle new_handle(*this, id, GetNextKey());
     map_it->second->AddSeq_idMapping(new_handle);
     return new_handle;
 }
@@ -1520,7 +1543,7 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
     map_it->second->FindMatch(id, m_list);
     iterate(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
-        h_set.insert(CSeq_id_Handle(*it->first, it->second));
+        h_set.insert(CSeq_id_Handle(*this, *it->first, it->second));
     }
 }
 
@@ -1538,7 +1561,7 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
         map_it->second->FindMatchStr(sid, m_list);
     }
     iterate(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
-        h_set.insert(CSeq_id_Handle(*it->first, it->second));
+        h_set.insert(CSeq_id_Handle(*this, *it->first, it->second));
     }
 }
 

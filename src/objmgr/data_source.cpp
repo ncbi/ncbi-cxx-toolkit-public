@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/02/12 19:41:42  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
 * Revision 1.10  2002/02/07 21:27:35  grichenk
 * Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
 *
@@ -632,8 +635,6 @@ void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse)
                 // return;
             }
             else {
-                // Lock the handle
-                GetIdMapper().AddHandleReference(key);
                 // Add new seq-id synonym
                 info->m_Synonyms.insert(key);
             }
@@ -771,9 +772,6 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
     for (int i = 0; i < seqmap->size(); i++) {
         // Lock seq-id handles
         const CSeqMap::CSegmentInfo& info = (*seqmap)[i];
-        if (info.m_SegType == CSeqMap::eSeqRef) {
-            GetIdMapper().AddHandleReference(info.m_RefSeq);
-        }
     }
     m_SeqMaps[&seq] = seqmap;
 }
@@ -915,7 +913,6 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat, CTSE_Info& tse)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        GetIdMapper().AddHandleReference(mapit->first.GetKey());
         m_TSE_ref[mapit->first.GetKey()].insert(&tse);
         tse.m_AnnotMap[mapit->first.GetKey()].insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
@@ -930,7 +927,6 @@ void CDataSource::x_MapAlign(const CSeq_align& align, CTSE_Info& tse)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        GetIdMapper().AddHandleReference(mapit->first.GetKey());
         m_TSE_ref[mapit->first.GetKey()].insert(&tse);
         tse.m_AnnotMap[mapit->first.GetKey()].insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
@@ -946,7 +942,6 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph, CTSE_Info& tse)
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
-        GetIdMapper().AddHandleReference(mapit->first.GetKey());
         m_TSE_ref[mapit->first.GetKey()].insert(&tse);
         tse.m_AnnotMap[mapit->first.GetKey()].insert(TRangeMap::value_type(
             mapit->second.GetOverlappingRange(), aobj));
@@ -1059,13 +1054,11 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
                 // Un-lock seq-id handles
                 const CSeqMap::CSegmentInfo& info = (*(map_it->second))[i];
                 if (info.m_SegType == CSeqMap::eSeqRef) {
-                    GetIdMapper().ReleaseHandleReference(info.m_RefSeq);
                 }
             }
             m_SeqMaps.erase(map_it);
         }
         x_DropAnnotMap(entry);
-        GetIdMapper().ReleaseHandleReference(key);
     }
     else {
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
@@ -1162,7 +1155,6 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat)
             }
             break;
         }
-        GetIdMapper().ReleaseHandleReference(mapit->first.GetKey());
     }
 }
 
@@ -1203,7 +1195,6 @@ void CDataSource::x_DropAlign(const CSeq_align& align)
             }
             break;
         }
-        GetIdMapper().ReleaseHandleReference(mapit->first.GetKey());
     }
 }
 
@@ -1244,7 +1235,6 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph)
             }
             break;
         }
-        GetIdMapper().ReleaseHandleReference(mapit->first.GetKey());
     }
 }
 

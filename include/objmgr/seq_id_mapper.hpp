@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/12 19:41:42  grichenk
+* Seq-id handles lock/unlock moved to CSeq_id_Handle 'ctors.
+*
 * Revision 1.2  2002/01/23 21:59:32  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -77,6 +80,8 @@ const size_t kKeyUsageTableSize = 65536;
 class CSeq_id_Mapper : public CObject
 {
 public:
+    virtual ~CSeq_id_Mapper(void);
+
     // Get seq-id handle. Create new handle if not found and
     // do_not_create is false. Get only the exactly equal seq-id handle.
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
@@ -87,14 +92,17 @@ public:
     // Get seq-id for the given handle
     static const CSeq_id& GetSeq_id(const CSeq_id_Handle& handle);
 
-    // References to each handle must be tracked to re-use their values
-    void AddHandleReference(const CSeq_id_Handle& handle);
-    void ReleaseHandleReference(const CSeq_id_Handle& handle);
-
 private:
     // Constructor available for CObjectManager only
     CSeq_id_Mapper(void);
     friend class CObjectManager;
+
+    // References to each handle must be tracked to re-use their values
+    // Each CSeq_id_Handle locks itself in the constructor and
+    // releases in the destructor.
+    void AddHandleReference(const CSeq_id_Handle& handle);
+    void ReleaseHandleReference(const CSeq_id_Handle& handle);
+    friend class CSeq_id_Handle;
 
     // Hide copy constructor and operator
     CSeq_id_Mapper(const CSeq_id_Mapper&);
