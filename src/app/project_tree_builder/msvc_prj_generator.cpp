@@ -437,16 +437,20 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
 
     //Outputs
 #if 0
-    string data_tool_src_base;
-    CDirEntry::SplitPath(src.m_SourceFile, NULL, &data_tool_src_base);
-    string outputs = "$(InputDir)" + data_tool_src_base + "__.cpp;";
-    outputs += "$(InputDir)" + data_tool_src_base + "___.cpp;";
-    build_info->m_Outputs = outputs;
+    // if I do this then ASN src will always be regenerated
+    string combined;
+    list<string> cmd_args;
+    NStr::Split(tool_cmd_prfx, LIST_SEPARATOR, cmd_args);
+    list<string>::const_iterator i = find(cmd_args.begin(), cmd_args.end(), "-oc");
+    if (i != cmd_args.end()) {
+        ++i;
+        combined = "$(InputDir)" + *i + "__.cpp;" + "$(InputDir)" + *i + "___.cpp;";
+    }
 #endif
     build_info->m_Outputs = "$(InputDir)$(InputName).files;";
 
     //Additional Dependencies
-    build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
+    build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;" + tool_exe_location;
 }
 
 
@@ -455,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/10/13 13:36:38  gouriano
+ * add dependency on datatool to ASN projects
+ *
  * Revision 1.37  2004/10/12 16:18:26  ivanov
  * Added configurable file support
  *
