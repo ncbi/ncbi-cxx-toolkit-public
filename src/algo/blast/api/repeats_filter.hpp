@@ -53,11 +53,19 @@ USING_SCOPE(blast);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/// Parses out thre repeats filtering option from a filter string option.
 char* GetRepeatsFilterOption(const char* filter_string);
+
 #ifdef __cplusplus
 }
 #endif
 
+/** Finds repeats locations for a given set of sequences. The locations are
+ * saved in the respective fields of the SSeqLoc structures.
+ * @param query_loc Vector of sequence locations. [in] [out]
+ * @param repeats_filter_string Repeats filtering options. [in]
+ */
 void
 FindRepeatFilterLoc(TSeqLocVector& query_loc, char* repeats_filter_sting);
 
@@ -67,6 +75,9 @@ FindRepeatFilterLoc(TSeqLocVector& query_loc, char* repeats_filter_sting);
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/07/02 19:52:51  dondosha
+* Added doxygen comments
+*
 * Revision 1.1  2004/06/15 19:09:10  dondosha
 * Repeats filtering code, moved from internal/blast/SplitDB/blastd
 *
