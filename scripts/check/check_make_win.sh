@@ -20,7 +20,7 @@
 #                       (default: will try determine path from current work
 #                       directory -- root of build tree ) 
 #    cfgs             - list of tests configurations 
-#                       (default: "Debug DebugMT Release ReleaseMT")
+#                       (default: "Debug DebugDLL Release ReleaseDLL")
 #
 #    If any parameter is skipped that will be used default value for it.
 #
@@ -47,7 +47,7 @@ x_tmp="/tmp"
 x_list=$1
 x_out=$2
 x_build_dir=$3
-x_confs="${4:-Debug DebugMT Release ReleaseMT}"
+x_confs="${4:-Debug DebugDLL Release ReleaseDLL}"
 
 if test ! -z "$x_build_dir"; then
    if test ! -d "$x_build_dir"; then
