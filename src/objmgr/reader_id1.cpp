@@ -94,6 +94,7 @@ streambuf* CId1Reader::x_SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
 
     {{
         CID1server_maxcomplex blob;
+        blob.SetMaxplex(eEntry_complexities_entry);
         blob.SetGi(gi);
         id1_request.SetGetblobinfo(blob);
         {{
@@ -171,7 +172,7 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref&          id1Seqref,
     m_Id1Seqref(id1Seqref)
 {
     CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-
+    params->SetMaxplex(eEntry_complexities_entry);
     params->SetGi(m_Id1Seqref.Gi());
     params->SetEnt(m_Id1Seqref.SatKey());
     params->SetSat(NStr::IntToString(m_Id1Seqref.Sat()));
@@ -425,6 +426,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.33  2003/04/07 16:56:57  vasilche
+ * Fixed unassigned member in ID1 request.
+ *
  * Revision 1.32  2003/03/31 17:02:03  lavr
  * Some code reformatting to [more closely] meet coding requirements
  *
