@@ -99,10 +99,10 @@ int CPipeHandle::Close()
 {
     // Wait for the child process to exit
     DWORD exit_code;
-    if ( !GetExitCodeProcess(m_ProcHandle, &exit_code) ) {
+    if (!GetExitCodeProcess(m_ProcHandle, &exit_code) ||
+        exit_code == STILL_ACTIVE) {
         return -1;
     }
-
     m_ProcHandle = NULL;
     return exit_code;
 }
@@ -739,6 +739,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/03/07 16:19:39  ivanov
+ * MSWin CPipeHandle::Close() -- Handling GetExitCodeProcess() returns value 259 (STILL_ACTIVE)
+ *
  * Revision 1.11  2003/03/06 21:12:10  ivanov
  * Formal comments rearrangement
  *
