@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/09/24 14:37:55  ucko
+* Comment out names of unused args to WriteXxx.
+*
 * Revision 1.3  2001/09/21 22:39:07  ucko
 * Fix MSVC build.
 *
@@ -471,7 +474,7 @@ bool CGenbankWriter::WriteLocus(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteDefinition(const CBioseq& seq,
+bool CGenbankWriter::WriteDefinition(const CBioseq& /* seq */,
                                      const CDescList& descs)
 {
     string definition;
@@ -490,7 +493,8 @@ bool CGenbankWriter::WriteDefinition(const CBioseq& seq,
 }
 
 
-bool CGenbankWriter::WriteAccession(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteAccession(const CBioseq& seq,
+                                    const CDescList& /* descs */)
 {
     string accessions;
     for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);  it;  ++it) {
@@ -528,7 +532,8 @@ bool CGenbankWriter::WriteAccession(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteVersion(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteVersion(const CBioseq& seq,
+                                  const CDescList& /* descs */)
 {
     string accession;
     int version;
@@ -551,7 +556,7 @@ bool CGenbankWriter::WriteVersion(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteID(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteID(const CBioseq& seq, const CDescList& /* descs */)
 {
     if (m_Format == eFormat_Genbank) {
         return true;
@@ -568,7 +573,8 @@ bool CGenbankWriter::WriteID(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteKeywords(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteKeywords(const CBioseq& /* seq */,
+                                   const CDescList& descs)
 {
     vector<string> keywords;
     CTypesConstIterator it;
@@ -638,7 +644,8 @@ bool CGenbankWriter::WriteKeywords(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteSegment(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteSegment(const CBioseq& seq,
+                                  const CDescList& /* descs */)
 {
     if (!seq.GetParentEntry()->GetParentEntry()->IsSet()) {
         return true; // nothing to do
@@ -666,7 +673,8 @@ bool CGenbankWriter::WriteSegment(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteSource(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteSource(const CBioseq& /* seq */,
+                                 const CDescList& descs)
 {
     string source, taxname, lineage;
     for (CTypeConstIterator<CGB_block> it = ConstBegin(descs);  it;  ++it) {
@@ -1309,7 +1317,8 @@ bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteComment(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteComment(const CBioseq& /* seq */,
+                                  const CDescList& descs)
 {
     string comments;
     for (CTypeConstIterator<CSeqdesc> it = ConstBegin(descs);  it;  ++it) {
@@ -2232,7 +2241,8 @@ void CGenbankWriter::WriteSourceQualifiers(const CBioSource& source)
 }
 
 
-bool CGenbankWriter::WriteSequence(const CBioseq& seq, const CDescList& descs)
+bool CGenbankWriter::WriteSequence(const CBioseq& seq,
+                                   const CDescList& /* descs */)
 {
 #ifdef USE_SEQ_VECTOR
     TASCIISeqData asd
