@@ -416,6 +416,10 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
 		       const BlastExtensionParameters* ext_params,
 		       Int4 max_dbseq_length)
 {
+#define ERROR_FRACTION 2    /* N.B.: This value should match the value of
+                               ERROR_FRACTION in the anonymous enum in
+                               greedy_align.c */
+#define ICEIL(x,y) ((((x)-1)/(y))+1)    /* FIXME: duplicated from greedy_align.c */
    GreedyAlignMem* gamp;
    Int4 max_d, max_d_1, Xdrop, d_diff, max_cost, gd, i;
    Int4 reward, penalty, gap_open, gap_extend;
@@ -2339,6 +2343,10 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 static GapEditScript*
 MBToGapEditScript (MBGapEditScript* ed_script)
 {
+    /* Moved from greedy_align.h because it's only needed in this function */
+#define EDIT_VAL(op) (op >> 2)
+#define EDIT_OPC(op) (op & 0x3) /* EDIT_OP_MASK == 0x3 */
+
    GapEditScript* esp_start = NULL,* esp,* esp_prev = NULL;
    Uint4 i;
 
