@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.5  2003/05/08 16:16:32  starchen
+* fixed bug in the query
+*
 * Revision 1.4  2003/02/27 20:21:34  starchen
 * correct a lang call
 *
@@ -181,7 +184,7 @@ int CreateTable (CDB_Connection* con)
        CDB_LangCmd* lcmd =
         con->LangCmd ( " IF EXISTS(select * from sysobjects WHERE name = 'BcpSample'"
                        " AND   type = 'U') begin "
-                       " DROP TABLE BcpSample end )");
+                       " DROP TABLE BcpSample end ");
        lcmd->Send();
 
        while (lcmd->HasMoreResults()) {
