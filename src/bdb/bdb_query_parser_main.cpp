@@ -146,6 +146,11 @@ public:
         m_NodePool.Put(qnode);
     }
 
+    CResourcePool<CBDB_Query::TQueryClause>& GetPool()
+    {
+        return m_NodePool;
+    }
+
 private:
     const char*    m_Query;   ///< Request buffer. (Source for the scanner)
     const char*    m_Ptr;     ///< Current position in the request buffer
@@ -187,6 +192,21 @@ void BDB_ParseQuery(const char* query_str, CBDB_Query* query)
     if (qc) {
         qc = env.DetachQueryClause();
         query->SetQueryClause(qc);
+    } else {
+
+        // Check if we have only one token node created by the tokenizer
+        // means it's just a single word request (legal)
+
+        CResourcePool<CBDB_Query::TQueryClause>& pool = env.GetPool();
+        CResourcePool<CBDB_Query::TQueryClause>::TPoolList& vec = 
+                                                        pool.GetFreeList();
+
+        // the only node in pool
+        if (vec.size() == 1) {
+            CBDB_Query::TQueryClause* qc = vec[0];
+            query->SetQueryClause(qc);
+            pool.ForgetAll();
+        }
     }
 }
 
@@ -196,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/10 16:19:24  kuznets
+ * Improved parser to handle single word requests
+ *
  * Revision 1.3  2004/02/25 13:40:39  kuznets
  * + CBDB_QueryParserEnvironment::Skip
  *
