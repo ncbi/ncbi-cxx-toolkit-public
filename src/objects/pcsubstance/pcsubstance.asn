@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.7 2004/12/14 11:55:38 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.8 2004/12/15 14:35:11 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -54,7 +54,7 @@ PC-Substance ::= SEQUENCE {
     xref           SEQUENCE OF PC-XRefData    OPTIONAL, -- X-Ref/LinkOut Data provided by Depositor
 
     -- Structure Description
-    compound       PC-Compounds                         -- Original Deposited Structure Information
+    compound       PC-Compounds               OPTIONAL  -- Original Deposited Structure Information
 }
 
 
@@ -116,6 +116,10 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         mmdb             INTEGER,                 -- MMDB ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
+        sid              INTEGER,                 -- PubChem Substance ID
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        cid              INTEGER,                 -- PubChem Compound ID
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
         dburl            VisibleString,           -- Depositor Source Database Homepage
         sburl            VisibleString,           -- Depositor Homepage for a Substance
         asurl            VisibleString            -- Depositor Homepage for an Assay
@@ -125,9 +129,7 @@ PC-XRefData ::= CHOICE {
 -- Compound Record
 PC-Compound ::= SEQUENCE {
     -- Tracking Information
-    id             PC-CompoundID,                          -- Compound ID
-    type           PC-CompoundType               OPTIONAL, -- Type of Compound
-    name           SEQUENCE OF VisibleString     OPTIONAL, -- Derived Name/Synonym Describing a Structure
+    id             PC-CompoundType,                        -- Compound Qualifier (Type/ID)
     atoms          PC-Atoms                      OPTIONAL, -- AtomID/Type Information
     bonds          PC-Bonds                      OPTIONAL, -- BondID/Type/Atom Information
     stereo         SEQUENCE OF PC-StereoCenter   OPTIONAL, -- StereoCenter Descriptions
@@ -144,20 +146,29 @@ PC-Compound ::= SEQUENCE {
 PC-Compounds ::= SEQUENCE OF PC-Compound
 
 
--- Compound ID  [Note: Compound ID’s must either be a valid ID or a "0" dummy value]
-PC-CompoundID ::= CHOICE {
-        cid        INTEGER,                      --  Deposited Compound
-        cig        INTEGER                       --  Standardized Compound
-}
+-- Qualification used to describe the type of Compound deposited, standardized, or derived.
+--    Please note that mixtures/cocktails may be specified using previously deposited substances.
+PC-CompoundType ::= SEQUENCE {
+    type        INTEGER {               --  Compound Qualifier or Type
+                    -- For Compound Depositions
+                    deposited           (0),               -- Original Deposited Compound
+                    -- For Standardized Compounds
+                    standardized        (1),               -- Standardized Form of a Deposited Compound
+                    component           (2),               -- Component of a Standardized Compound
+                    neutralized         (3),               -- Neutralized Form of a Standardized Compound
+                    -- For Mixture/Cocktail Depositions
+                    mixture             (4),               -- Substance that is a component of a mixture
+                    -- For Theoretical Compounds
+                    tautomer            (5),               -- Predicted Tautomer Form
+                    pka-state           (6),               -- Predicted Ionized pKa Form
 
-
--- Compound Type
-PC-CompoundType ::= INTEGER {
-        deposited           (0),                 -- Original Deposited Compound
-        standardized        (1),                 -- Standardized VB Form of Deposited Compound
-        component           (2),                 -- Component of Standardized VB Form
-        neutralized         (3),                 -- Neutralized VB Form of Standardized VB Form
-        unknown           (255)                  -- Unknown Compound Type
+                    unknown           (255)                -- Unknown Compound Type
+                },
+    id          CHOICE {                --  Compound Namespace and ID  (absent for "deposited" type compounds)
+                    cid        INTEGER,                    --  Standardized Compound
+                    sid        INTEGER,                    --  PubChem Substance (for "mixture" type compounds)
+                    xid        INTEGER                     --  PubChem Theoretical Compound
+                }                                OPTIONAL
 }
 
 
@@ -247,6 +258,7 @@ PC-UrnDataType ::= INTEGER {
         uint64                        (11),  -- 64-Bit Unsigned Integer            [maps to a VisibleString]
         binary                        (12),  -- Base64 encoded Binary Blob         [maps to a VisibleString]
         url                           (13),  -- URL                                [maps to a VisibleString]
+        unicode                       (14),  -- UniCode String                     [maps to a VisibleString]
 
         unknown                      (255)   -- Unknown Data Type               [maps to a set of VisibleString]
 }
@@ -626,6 +638,10 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.8  2004/12/15 14:35:11  bolton
+-- New version of the spec that removed old "CID" namespace and renames the
+-- "CIG" namespace to "CID".  Many changes impacting mixture registration.
+--
 -- Revision 1.7  2004/12/14 11:55:38  bolton
 -- Latest spec changes to reflect "PubChem 2.0".  Included in this update are
 -- changes to allow for cheminformatics research, new Compound ID definitions
@@ -689,4 +705,5 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
