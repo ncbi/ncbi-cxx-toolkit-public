@@ -60,8 +60,9 @@ public:
 
     ~CMsvcMasterProjectGenerator(void);
 
-    // base name
-    void SaveProject(const string& base_name);
+    void SaveProject();
+
+    string GetPath() const;
 
 private:
     const CProjectItemsTree& m_Tree;
@@ -101,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/12 17:48:12  gorelenk
+ * Re-designed of projects saving. Added member-function GetPath().
+ *
  * Revision 1.7  2004/02/12 16:22:39  gorelenk
  * Changed generation of command line for custom build info.
  *

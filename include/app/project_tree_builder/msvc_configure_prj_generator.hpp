@@ -64,8 +64,9 @@ public:
     ~CMsvcConfigureProjectGenerator(void);
 
 
-    // base name
-    void SaveProject(const string& base_name);
+    void SaveProject();
+
+    string GetPath() const;
 
 private:
  
@@ -103,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/12 17:48:11  gorelenk
+ * Re-designed of projects saving. Added member-function GetPath().
+ *
  * Revision 1.1  2004/02/12 16:21:12  gorelenk
  * Initial Revision.
  *
