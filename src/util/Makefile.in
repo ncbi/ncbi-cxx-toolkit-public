@@ -3,7 +3,7 @@
 # Meta-makefile("UTIL" project)
 #################################
 
-LIB_PROJ = util
+LIB_PROJ = util xregexp
 SUB_PROJ = regexp compress image test
 
 srcdir = @srcdir@
