@@ -332,7 +332,7 @@ public:
         SetBufferSize(sizeof(T));
     }
 
-    void Set(const CBDB_FieldSimple& field)
+    void SetField(const CBDB_FieldSimple& field)
     {
         if ( field.IsNull() ) {
             SetNull();
@@ -1503,6 +1503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/09/15 15:49:25  kuznets
+ * Fixed some compilation warnings(SunCC)
+ *
  * Revision 1.17  2003/09/11 16:34:13  kuznets
  * Implemented byte-order independence.
  *
