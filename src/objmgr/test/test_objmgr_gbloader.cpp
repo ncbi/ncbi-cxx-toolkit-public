@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/04/09 19:05:02  kimelman
+* make gcc happy
+*
 * Revision 1.14  2002/04/09 18:48:17  kimelman
 * portability bugfixes: to compile on IRIX, sparc gcc
 *
@@ -120,7 +123,6 @@ int CTestApplication::Run()
     pOm->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader, 2),
                             CObjectManager::eDefault);
 
-    int ecount = 0;
     for (int i = 1;  i < 500;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();

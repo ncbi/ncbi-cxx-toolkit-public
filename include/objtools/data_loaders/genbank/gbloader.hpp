@@ -207,14 +207,14 @@ private:
       }
   };
 
-  int             m_SlowTraverseMode;
+  unsigned        m_SlowTraverseMode;
   MyMutex         m_LookupMutex;
   CMutexPool      m_Pool;
 
   STSEinfo       *m_UseListHead;
   STSEinfo       *m_UseListTail;
-  int             m_TseCount;
-  int             m_TseGC_Threshhold;
+  unsigned        m_TseCount;
+  unsigned        m_TseGC_Threshhold;
   bool            m_InvokeGC;
   void            x_UpdateDropList(STSEinfo *p);
   void            x_DropTSEinfo(STSEinfo *tse);
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.16  2002/04/09 19:04:21  kimelman
+ * make gcc happy
+ *
  * Revision 1.15  2002/04/09 18:48:14  kimelman
  * portability bugfixes: to compile on IRIX, sparc gcc
  *

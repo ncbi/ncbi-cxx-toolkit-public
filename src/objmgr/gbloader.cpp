@@ -62,7 +62,7 @@ struct CGBDataLoader::STSEinfo
   TSeqids           m_SeqIds;
   CTSEUpload        m_upload;
   
-  STSEinfo() : next(0), prev(0), m_upload(),key(0),m_SeqIds()
+  STSEinfo() : next(0), prev(0), key(0),m_SeqIds(),m_upload()
     {
       //GBLOG_POST("new tse(" << (void*)this << ")");
     };
@@ -195,7 +195,7 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
 void
 CGBDataLoader::x_Check(STSEinfo *me)
 {
-  int c = 0;
+  unsigned c = 0;
   bool tse_found=false;
   STSEinfo *tse2 = m_UseListHead, *t1=0;
   while(tse2) { c++; if(tse2==me) tse_found = true; t1=tse2; tse2=tse2->next; }
@@ -363,7 +363,7 @@ CGBDataLoader::GC(void)
   //GetDataSource()->x_CleanupUnusedEntries();
 
 //#if 0
-  int skip=0;
+  unsigned skip=0;
   m_LookupMutex.Lock("GC");
   x_Check(0);
   while(skip<m_TseCount && skip<0.6*m_TseGC_Threshhold && m_TseCount > 0.9*m_TseGC_Threshhold)
@@ -727,6 +727,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/04/09 19:04:23  kimelman
+* make gcc happy
+*
 * Revision 1.24  2002/04/09 18:48:15  kimelman
 * portability bugfixes: to compile on IRIX, sparc gcc
 *
