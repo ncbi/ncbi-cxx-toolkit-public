@@ -148,7 +148,7 @@ void CGFFFormatter::FormatFeature
         return;
     }
 
-    CFlatFeature& feat = *f.Format();
+    CConstRef<CFlatFeature> feat = f.Format();
     list<string>  l;
     list<string>  attr_list;
 
@@ -156,7 +156,7 @@ void CGFFFormatter::FormatFeature
         attr_list.push_back("gbkey \"" + oldkey + "\";");
     }
 
-    ITERATE (CFlatFeature::TQuals, it, feat.GetQuals()) {
+    ITERATE (CFlatFeature::TQuals, it, feat->GetQuals()) {
         string name = (*it)->GetName();
         if (name == "codon_start"  ||  name == "translation"
             ||  name == "transcription") {
@@ -165,7 +165,7 @@ void CGFFFormatter::FormatFeature
             name = "exon_number";
         } else if ((m_GFFFlags & fGTFCompat)  &&  !ctx.IsProt()
                    &&  name == "gene") {
-            string gene_id = x_GetGeneID(feat, (*it)->GetValue(), ctx);
+            string gene_id = x_GetGeneID(*feat, (*it)->GetValue(), ctx);
             attr_list.push_front
                 ("transcript_id \"" + gene_id + '.' + m_Date + "\";");
             attr_list.push_front("gene_id \"" + gene_id + "\";");
@@ -471,6 +471,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/06 17:54:29  shomrat
+* Use CConstRef instead of reference
+*
 * Revision 1.4  2004/04/22 16:02:12  shomrat
 * fixed stop_codon
 *
