@@ -490,7 +490,8 @@ public:
         if (this->IsByteSwapped()) {
 
             if (sizeof(T) == 4) {
-                CByteSwap::PutFloat((unsigned char*)this->GetBuffer(), val);
+                CByteSwap::PutFloat((unsigned char*)this->GetBuffer(), 
+                                    (float)val);
             } else
             if (sizeof(T) == 8) {
                 CByteSwap::PutDouble((unsigned char*)this->GetBuffer(), val);
@@ -2035,6 +2036,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/07/09 15:15:24  kuznets
+ * Fixed warning (MSVC 7)
+ *
  * Revision 1.44  2004/06/29 12:25:24  kuznets
  * CBDB_BufferManager added functions to bulk copy fields
  *
