@@ -36,9 +36,10 @@
  *                CORE_SetLOCK(), CORE_GetLOCK(),
  *                CORE_SetLOG(),  CORE_GetLOG(),   CORE_SetLOGFILE()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
- *    macro:      LOG_Write(), LOG_Data(),
- *                LOG_WRITE(), LOG_DATA(),  THIS_FILE, THIS_MODULE
- *                LOG_WRITE_ERRNO()
+ *    macros:     LOG_Write(), LOG_Data(),
+ *                LOG_WRITE(), LOG_DATA(),
+ *                THIS_FILE, THIS_MODULE,
+ *                LOG_WRITE_ERRNO_EX(), LOG_WRITE_ERRNO()
  *
  */
 
@@ -185,13 +186,18 @@ extern char* MessagePlusErrno
  size_t       buf_size  /* [in]  max. buffer size */
  );
 
-#define LOG_WRITE_ERRNO(lg, level, message)  do { \
-  if (lg  ||  level == eLOG_Fatal) { \
-    char buf[2048]; \
-    LOG_WRITE(lg, level, \
-              MessagePlusErrno(message, errno, 0, buf, sizeof(buf))); \
-  } \
+
+#define LOG_WRITE_ERRNO_EX(lg, level, message, x_errno, x_descr)  do { \
+    if (lg  ||  level == eLOG_Fatal) { \
+        char buf[1024]; \
+        LOG_WRITE(lg, level, MessagePlusErrno(message, x_errno, x_descr, \
+                                              buf, sizeof(buf))); \
+    } \
 } while (0)
+
+
+#define LOG_WRITE_ERRNO(lg, level, message)  \
+     LOG_WRITE_ERRNO_EX(lg, level, message, errno, 0)
 
 
 
@@ -226,6 +232,9 @@ extern const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/12/04 20:59:21  lavr
+ * +LOG_WRITE_ERRNO_EX()
+ *
  * Revision 6.13  2002/09/19 18:05:47  lavr
  * Header file guard macro changed; log moved to end
  *
