@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/04/12 21:39:44  vakatov
+* NStr::Replace() -- check against source and dest. strings being the same
+*
 * Revision 1.41  2001/04/11 20:15:29  vakatov
 * NStr::PrintableString() -- cast "char" to "unsigned char".
 *
@@ -513,6 +516,11 @@ string& NStr::Replace(const string& src,
                       const string& search, const string& replace,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
 {
+    if (&src == &dst) {
+        throw runtime_error
+            ("NStr::Replace():  source and destination are the same string");
+    }
+
     dst = src;
 
     if( start_pos + search.size() > src.size() ||
