@@ -1,0 +1,40 @@
+NCBI-Mime DEFINITIONS ::=
+BEGIN
+
+EXPORTS Ncbi-mime-asn1;
+IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
+	Seq-entry FROM NCBI-Seqset
+	Medline-entry FROM NCBI-Medline;
+	
+Ncbi-mime-asn1 ::= CHOICE {
+	entrez Entrez-general
+	-- others may be added here in the future
+}
+
+Entrez-style ::= ENUMERATED {
+	docsum (1),
+	genbank (2) ,
+	genpept (3) ,
+	fasta (4) ,
+	asn1 (5) ,
+	graphic (6) ,
+	alignment (7) ,
+	globalview (8) ,
+	report (9) ,
+	medlars (10) ,
+	embl (11) ,
+	pdb (12) ,
+	kinemage (13) }
+
+Entrez-general ::= SEQUENCE {
+	title VisibleString OPTIONAL,
+	data CHOICE {
+		ml	Medline-entry ,
+		prot	Seq-entry ,
+		nuc	Seq-entry ,
+		genome	Seq-entry ,
+		structure Biostruc ,
+		strucAnnot Biostruc-annot-set } ,
+	style Entrez-style }
+
+END
