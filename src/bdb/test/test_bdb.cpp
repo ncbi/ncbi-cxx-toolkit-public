@@ -1108,6 +1108,44 @@ static void s_TEST_db_multimap(void)
 
 }
 
+static void s_TEST_ICache(void)
+{
+    cout << "======== ICache test." << endl;
+
+    vector<int> data;
+    data.push_back(10);
+    data.push_back(20);
+    data.push_back(30);
+    data.push_back(40);
+
+    const void* dp = &data[0];
+
+    CBDB_Cache  bdb_cache;
+    int top = bdb_cache.GetTimeStampPolicy();
+    bdb_cache.SetTimeStampPolicy(top, 30);
+    bdb_cache.Open(".", "bcache", CBDB_Cache::eNoLock);
+
+    bdb_cache.Store("test_key1", 1, "", dp, data.size() * sizeof(int));
+
+    vector<int> data2;
+
+    size_t sz = bdb_cache.GetSize("test_key1", 1, "");
+    assert(sz);
+
+    sz = sz / sizeof(int);
+    assert(sz == data.size());
+
+    data2.resize(sz);
+    void* dp2 = &data2[0];
+
+    bool res = bdb_cache.Read("test_key1", 1, "", dp2, sz * sizeof(int));
+
+    assert(data2[0] == data[0]);
+    assert(data2[1] == data[1]);
+    assert(data2[2] == data[2]);
+    assert(data2[3] == data[3]);
+    
+}
 
 static void s_TEST_IntCache(void)
 {
@@ -1224,6 +1262,8 @@ int CBDB_Test::Run(void)
 
         s_TEST_db_multimap();
 
+        s_TEST_ICache();
+
         s_TEST_IntCache();        
 
     }
@@ -1258,6 +1298,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/11/25 19:36:54  kuznets
+ * + test for ICache implementation
+ *
  * Revision 1.26  2003/11/14 04:31:10  ucko
  * bytes_read should be size_t, not unsigned.
  *
