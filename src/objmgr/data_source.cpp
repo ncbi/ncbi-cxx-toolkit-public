@@ -1127,7 +1127,7 @@ bool CDataSource::x_DropAnnotObject(CTSE_Info::TRangeMap& mapByRange,
 
 void CDataSource::x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
                                    const CHandleRangeMap& hrm,
-                                   SAnnotTypeSelector annotSelector)
+                                   const SAnnotTypeSelector& annotSelector)
 {
     SAnnotObject_Index annotRef;
     annotRef.m_AnnotObject = annot_info;
@@ -1158,7 +1158,7 @@ void CDataSource::x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
 
 void CDataSource::x_DropAnnotObject(CRef<CAnnotObject_Info>& annot_info,
                                     const CHandleRangeMap& hrm,
-                                    SAnnotTypeSelector annotSelector)
+                                    const SAnnotTypeSelector& annotSelector)
 {
     // Iterate id handles
     CRef<CTSE_Info> tse_info(&annot_info->GetTSE_Info());
@@ -1167,14 +1167,15 @@ void CDataSource::x_DropAnnotObject(CRef<CAnnotObject_Info>& annot_info,
             tse_info->m_AnnotMap[mapit->first];
 
         // repeat for more generic types of selector
+        SAnnotTypeSelector localSelector = annotSelector;
         do {
             if ( x_DropAnnotObject(tse_info->x_SetRangeMap(selMap,
-                                                           annotSelector),
+                                                           localSelector),
                                    mapit->second.GetOverlappingRange(),
                                    annot_info) ) {
-                tse_info->x_DropRangeMap(selMap, annotSelector);
+                tse_info->x_DropRangeMap(selMap, localSelector);
             }
-        } while ( x_MakeGenericSelector(annotSelector) );
+        } while ( x_MakeGenericSelector(localSelector) );
 
         if ( selMap.empty() ) {
             tse_info->m_AnnotMap.erase(mapit->first);
@@ -1482,6 +1483,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2003/06/10 15:26:20  vasilche
+* Fixed removal of multi location annotations too.
+*
 * Revision 1.106  2003/06/10 14:19:42  grichenk
 * Do not reset selector when mapping annotations
 *

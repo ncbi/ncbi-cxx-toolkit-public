@@ -374,13 +374,13 @@ private:
                           const SAnnotObject_Index& annotRef);
     void x_MapAnnotObject(CRef<CAnnotObject_Info>& annot_info,
                           const CHandleRangeMap& hrm,
-                          SAnnotTypeSelector annotSelector);
+                          const SAnnotTypeSelector& annotSelector);
     bool x_DropAnnotObject(CTSE_Info::TRangeMap& mapByRange,
                            const CTSE_Info::TRange& range,
                            CRef<CAnnotObject_Info>& annotObj);
     void x_DropAnnotObject(CRef<CAnnotObject_Info>& annotObj,
                            const CHandleRangeMap& hrm,
-                           SAnnotTypeSelector annotSelector);
+                           const SAnnotTypeSelector& annotSelector);
     void x_DropAnnotObject(const CObject* annotPtr);
     void x_MapAnnotObject(CSeq_feat& feat, CSeq_annot_Info& annot);
     void x_MapAnnotObject(CSeq_align& align, CSeq_annot_Info& annot);
@@ -474,6 +474,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/06/10 15:26:46  vasilche
+* Fixed removal of multi location annotations too.
+*
 * Revision 1.56  2003/06/02 16:01:37  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
