@@ -16,7 +16,7 @@ include $(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
 BINTOUCH = @:
-LOCAL_CPPFLAGS = -I.
+LOCAL_CPPFLAGS = $(BLAST_CPPFLAGS)
 
 
 #############################################################################
