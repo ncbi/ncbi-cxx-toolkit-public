@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/02 20:03:17  lavr
+ * "../ncbi_priv.h" explained
+ *
  * Revision 6.5  2001/01/25 17:12:01  lavr
  * Added: buffers and LOG freed upon program exit
  *
@@ -53,7 +56,7 @@
 #  undef NDEBUG
 #endif 
 
-#include "../ncbi_priv.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -93,7 +96,7 @@ int main(void)
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 
-    LOG_POST(Info << "Checking error log setup"); // short expalanatory mesg
+    LOG_POST(Info << "Checking error log setup"); // short explanatory mesg
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 

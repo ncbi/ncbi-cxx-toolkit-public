@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/03/02 20:01:53  lavr
+ * "../ncbi_priv.h" explained
+ *
  * Revision 6.2  2001/02/28 17:48:07  lavr
  * Huge body test added
  *
@@ -39,7 +42,7 @@
  * ==========================================================================
  */
 
-#include "../ncbi_priv.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_sendmail.h>
 #include <stdio.h>
 #include <stdlib.h>
