@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/11/14 20:44:48  gouriano
+* added AddMember method
+*
 * Revision 1.9  2001/10/22 15:16:19  grichenk
 * Optimized CTypeInfo::IsCObject()
 *
@@ -114,6 +117,11 @@ protected:
     
 public:
     virtual ~CClassTypeInfoBase(void);
+
+    CMemberInfo* AddMember(const char* memberId,
+                           const void* memberPtr, const CTypeRef& memberType);
+    CMemberInfo* AddMember(const CMemberId& memberId,
+                           const void* memberPtr, const CTypeRef& memberType);
 
     const CItemsInfo& GetItems(void) const;
 
