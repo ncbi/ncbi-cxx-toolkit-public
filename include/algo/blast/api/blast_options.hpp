@@ -46,6 +46,7 @@
 // Forward declaration of a unit test class
 class CBlastGapAlignTest;
 class CBlastDbTest;
+class CBlastTraceBackTest; 
 
 BEGIN_NCBI_SCOPE
 
@@ -1649,6 +1650,7 @@ public:
 
     friend class ::CBlastDbTest;        // unit test class
     friend class ::CBlastGapAlignTest;  // unit test class
+    friend class ::CBlastTraceBackTest;  // unit test class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -2416,6 +2418,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/02/27 19:44:38  madden
+* Add  CBlastTraceBackTest (unit test) as friend class
+*
 * Revision 1.51  2004/02/24 23:22:59  bealer
 * - Fix glitch in Validate().
 *
