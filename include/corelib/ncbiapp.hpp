@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/09 17:30:12  sandomir
+* ncbicgi.hpp deleted from ncbiapp.hpp
+*
 * Revision 1.7  1998/12/09 16:49:56  sandomir
 * CCgiApplication added
 *
@@ -60,8 +63,6 @@
 */
 
 #include <ncbistd.hpp>
-#include <ncbicgi.hpp>
-
 
 BEGIN_NCBI_SCOPE
 
