@@ -44,6 +44,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/02/23 22:33:37  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
  * Revision 6.2  1999/10/12 16:30:10  vakatov
  * include <string.h> to define "size_t"
  *
@@ -61,7 +64,7 @@
 #endif
 
 /* This is only needed to define "size_t"... */
-#include <string.h>
+#include <stddef.h>
 
 
 #ifdef __cplusplus

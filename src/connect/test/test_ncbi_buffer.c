@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/02/23 22:34:37  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
  * Revision 6.3  1999/11/22 16:12:54  vakatov
  * Allow to #include ncbi_buffer.h as a local
  *
@@ -42,14 +45,12 @@
  * ===========================================================================
  */
 
-
-#include "ncbi_buffer.h"
-
 #if defined(NDEBUG)
 #  undef NDEBUG
 #endif 
-#include <assert.h>
 
+#include <connect/ncbi_buffer.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,7 +133,7 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
         }
       }
 
-      /* read(or just discard) the data */
+      /* read (or just discard) the data */
       if (do_peek  &&  s_Rand() % 2 == 0)
         n_bytes = BUF_Read(buf, 0, n_bytes);
       else
@@ -145,6 +146,8 @@ BUF_Write %5lu\n", (unsigned long)n_bytes);
       /* push back & re-read */
       if (s_Rand() % 3 == 0) {
         size_t n_pushback = s_Rand() % n_bytes;
+        if (n_pushback == 0)
+          n_pushback = 1;
         assert(BUF_PushBack(&buf, charbuf + n_bytes - n_pushback, n_pushback));
         assert(BUF_Read(buf, charbuf + n_bytes - n_pushback, n_pushback));
       }

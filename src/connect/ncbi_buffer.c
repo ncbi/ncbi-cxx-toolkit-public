@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/02/23 22:34:34  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
  * Revision 6.4  1999/11/19 19:59:08  vakatov
  * Get rid of an insignificant compiler warning
  *
@@ -45,11 +48,11 @@
  * from the NCBI C toolkit specific types and API calls.
  * NCBIBUF module still exists for the backward compatibility -- it
  * provides old NCBI-wise interface.
+ *
  * ===========================================================================
  */
 
-#include "ncbi_buffer.h"
-
+#include <connect/ncbi_buffer.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -60,7 +63,7 @@
 typedef struct SBufChunkTag {
   struct SBufChunkTag* next;
   size_t size;       /* of data (including the discarded "n_skip" bytes) */
-  size_t alloc_size; /* maximum avail.(allocated) size of "data" */
+  size_t alloc_size; /* maximum avail. (allocated) size of "data" */
   size_t n_skip;     /* # of bytes already discarded(read) from the chunk */
   char   data[1];    /* data stored in this chunk */
 } SBufChunk;

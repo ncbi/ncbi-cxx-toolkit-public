@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/02/23 22:34:37  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
  * Revision 6.3  1999/11/26 19:05:21  vakatov
  * Initialize "log_fp" in "main()"...
  *
@@ -39,17 +42,19 @@
  *
  * Revision 6.1  1999/10/18 15:40:21  vakatov
  * Initial revision
+ *
  * ===========================================================================
  */
-
-#include "ncbi_socket.h"
 
 #if defined(NDEBUG)
 #  undef NDEBUG
 #endif 
-#include <assert.h>
+
+#include <connect/ncbi_socket.h>
+#include <connect/ncbi_util.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 
@@ -126,30 +131,30 @@ static const char s_S1[] = "S1";
 
 static void TEST__client_1(SOCK sock)
 {
-    ESOCK_Status status;
-    size_t       n_io, n_io_done;
-    char         buf[TEST_BUFSIZE];
+    EIO_Status status;
+    size_t     n_io, n_io_done;
+    char       buf[TEST_BUFSIZE];
 
     fprintf(log_fp, "[INFO] TEST__client_1(TC1)\n");
 
     /* Send a short string */
     n_io = strlen(s_C1) + 1;
     status = SOCK_Write(sock, s_C1, n_io, &n_io_done);
-    assert(status == eSOCK_Success  &&  n_io == n_io_done);
+    assert(status == eIO_Success  &&  n_io == n_io_done);
 
     n_io = strlen(s_S1) + 1;
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eSOCK_Peek);
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eSOCK_Read);
-    if (status == eSOCK_Closed) {
+    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Peek);
+    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
+    if (status == eIO_Closed) {
         fprintf(log_fp, "[WARNING] TC1:: connection closed\n");
         assert(0);
     }
-    assert(status == eSOCK_Success  &&  n_io == n_io_done);
+    assert(status == eIO_Success  &&  n_io == n_io_done);
     assert(strcmp(buf, s_S1) == 0);
-    assert(SOCK_PushBack(sock, buf, n_io_done) == eSOCK_Success);
+    assert(SOCK_PushBack(sock, buf, n_io_done) == eIO_Success);
     memset(buf, '\xFF', n_io_done);
-    assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eSOCK_Read)
-           == eSOCK_Success);
+    assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eIO_Plain)
+           == eIO_Success);
     assert(strcmp(buf, s_S1) == 0);
 
     /* Send a very big binary blob */
@@ -161,7 +166,7 @@ static void TEST__client_1(SOCK sock)
         for (i = 0;  i < 10;  i++) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done);
-            assert(status == eSOCK_Success  &&  n_io_done==SUB_BLOB_SIZE);
+            assert(status == eIO_Success  &&  n_io_done==SUB_BLOB_SIZE);
         }
         free(blob);
     }}
@@ -170,16 +175,16 @@ static void TEST__client_1(SOCK sock)
 
 static void TEST__server_1(SOCK sock)
 {
-    ESOCK_Status status;
-    size_t       n_io, n_io_done;
-    char         buf[TEST_BUFSIZE];
+    EIO_Status status;
+    size_t     n_io, n_io_done;
+    char       buf[TEST_BUFSIZE];
 
     fprintf(log_fp, "[INFO] TEST__server_1(TS1)\n");
 
     /* Receive and send back a short string */
     n_io = strlen(s_C1) + 1;
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eSOCK_Read);
-    assert(status == eSOCK_Success  &&  n_io == n_io_done);
+    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
+    assert(status == eIO_Success  &&  n_io == n_io_done);
     assert(strcmp(buf, s_C1) == 0);
 
 #ifdef TEST_SRV1_SHUTDOWN
@@ -188,14 +193,13 @@ static void TEST__server_1(SOCK sock)
 
     n_io = strlen(s_S1) + 1;
     status = SOCK_Write(sock, s_S1, n_io, &n_io_done);
-    assert(status == eSOCK_Success  &&  n_io == n_io_done);
+    assert(status == eIO_Success  &&  n_io == n_io_done);
 
     /* Receive a very big binary blob, and check its content */
     {{
         char* blob = (char*) malloc(BIG_BLOB_SIZE);
-        status = SOCK_Read(sock, blob, BIG_BLOB_SIZE, &n_io_done,
-                           eSOCK_Persist);
-        assert(status == eSOCK_Success  &&  n_io_done == BIG_BLOB_SIZE);
+        status = SOCK_Read(sock, blob, BIG_BLOB_SIZE, &n_io_done, eIO_Persist);
+        assert(status == eIO_Success  &&  n_io_done == BIG_BLOB_SIZE);
         for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
             assert( blob[n_io] == (char)n_io );
         free(blob);
@@ -208,7 +212,7 @@ static void TEST__server_1(SOCK sock)
  *      "TEST__server_2(SOCK sock)"
  */
 
-static void s_DoubleTimeout(SSOCK_Timeout *to) {
+static void s_DoubleTimeout(STimeout *to) {
     if (!to->sec  &&  !to->usec) {
         to->usec = 1;
     } else {
@@ -223,9 +227,9 @@ static void TEST__client_2(SOCK sock)
 #define N_FIELD  1000
 #define N_REPEAT 10
 #define N_RECONNECT 3
-    ESOCK_Status status;
-    size_t       n_io, n_io_done, i;
-    char         buf[W_FIELD * N_FIELD + 1];
+    EIO_Status status;
+    size_t     n_io, n_io_done, i;
+    char       buf[W_FIELD * N_FIELD + 1];
 
     fprintf(log_fp, "[INFO] TEST__client_2(TC2)\n");
 
@@ -237,17 +241,17 @@ static void TEST__client_2(SOCK sock)
 
     /* send the buffer to server, then get it back */
     for (i = 0;  i < N_REPEAT;  i++) {
-        char          buf1[sizeof(buf)];
-        SSOCK_Timeout w_to, r_to;
-        int/*bool*/   w_timeout_on = (int)(i%2); /* if to start from     */
-        int/*bool*/   r_timeout_on = (int)(i%3); /* zero or inf. timeout */
-        char*         x_buf;
+        char        buf1[sizeof(buf)];
+        STimeout    w_to, r_to;
+        int/*bool*/ w_timeout_on = (int)(i%2); /* if to start from     */
+        int/*bool*/ r_timeout_on = (int)(i%3); /* zero or inf. timeout */
+        char*       x_buf;
 
         /* set timeout */
         w_to.sec  = 0;
         w_to.usec = 0;
-        status = SOCK_SetTimeout(sock, eSOCK_OnWrite, w_timeout_on ? &w_to :0);
-        assert(status == eSOCK_Success);
+        status = SOCK_SetTimeout(sock, eIO_Write, w_timeout_on ? &w_to : 0);
+        assert(status == eIO_Success);
 
 #ifdef DO_RECONNECT
         /* reconnect */
@@ -257,8 +261,8 @@ static void TEST__client_2(SOCK sock)
                 status = SOCK_Reconnect(sock, 0, 0, 0);
                 fprintf(log_fp,
                         "[INFO] TEST__client_2::reconnect: i=%lu, status=%s\n",
-                        (unsigned long)i, SOCK_StatusStr(status));
-                assert(status == eSOCK_Success);
+                        (unsigned long)i, IO_StatusStr(status));
+                assert(status == eIO_Success);
                 assert(!SOCK_Eof(sock));
 
                 /* give a break to let server reset the listening socket */
@@ -273,7 +277,7 @@ static void TEST__client_2(SOCK sock)
         do {
             X_SLEEP(1);
             status = SOCK_Write(sock, x_buf, n_io, &n_io_done);
-            if (status == eSOCK_Closed) {
+            if (status == eIO_Closed) {
                 fprintf(log_fp,
                         "[ERROR] TC2::write: connection closed\n");
                 assert(0);
@@ -281,33 +285,32 @@ static void TEST__client_2(SOCK sock)
             fprintf(log_fp, "[INFO] TC2::write "
                     "i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
                     "\ntimeout(%d): %5lu sec, %6lu msec\n",
-                    (int)i, SOCK_StatusStr(status),
+                    (int)i, IO_StatusStr(status),
                     (unsigned long)n_io, (unsigned long)n_io_done,
                     (int)w_timeout_on,
                     (unsigned long)w_to.sec, (unsigned long)w_to.usec);
             if ( !w_timeout_on ) {
-                assert(status == eSOCK_Success  &&  n_io_done == n_io);
+                assert(status == eIO_Success  &&  n_io_done == n_io);
             } else {
-                const SSOCK_Timeout* x_to;
-                assert(status == eSOCK_Success  ||  status == eSOCK_Timeout);
-                x_to = SOCK_GetWriteTimeout(sock);
+                const STimeout* x_to;
+                assert(status == eIO_Success  ||  status == eIO_Timeout);
+                x_to = SOCK_GetTimeout(sock, eIO_Write);
                 assert(w_to.sec == x_to->sec  &&  w_to.usec == x_to->usec);
             }
             n_io  -= n_io_done;
             x_buf += n_io_done;
-            if (status == eSOCK_Timeout)
+            if (status == eIO_Timeout)
                 s_DoubleTimeout(&w_to);
-            status = SOCK_SetTimeout(sock, eSOCK_OnWrite, &w_to);
-            assert(status == eSOCK_Success);
+            status = SOCK_SetTimeout(sock, eIO_Write, &w_to);
+            assert(status == eIO_Success);
             w_timeout_on = 1/*true*/;
         } while ( n_io );
 
         /* get back the just sent data */
         r_to.sec  = 0;
         r_to.usec = 0;
-        status = SOCK_SetTimeout(sock, eSOCK_OnRead,
-                                 (r_timeout_on ? &r_to : 0));
-        assert(status == eSOCK_Success);
+        status = SOCK_SetTimeout(sock, eIO_Read, (r_timeout_on ? &r_to : 0));
+        assert(status == eIO_Success);
 
         x_buf = buf1;
         n_io = sizeof(buf1);
@@ -317,15 +320,15 @@ static void TEST__client_2(SOCK sock)
                 char   xx_buf1[128], xx_buf2[128];
                 size_t xx_io_done1, xx_io_done2;
                 if (SOCK_Read(sock, xx_buf1, sizeof(xx_buf1), &xx_io_done1,
-                              eSOCK_Peek) == eSOCK_Success  &&
+                              eIO_Peek) == eIO_Success  &&
                     SOCK_Read(sock, xx_buf2, xx_io_done1, &xx_io_done2,
-                              eSOCK_Peek) == eSOCK_Success) {
+                              eIO_Peek) == eIO_Success) {
                     assert(xx_io_done1 >= xx_io_done2);
                     assert(memcmp(xx_buf1, xx_buf2, xx_io_done2) == 0);
                 }
             }
-            status = SOCK_Read(sock, x_buf, n_io, &n_io_done, eSOCK_Read);
-            if (status == eSOCK_Closed) {
+            status = SOCK_Read(sock, x_buf, n_io, &n_io_done, eIO_Plain);
+            if (status == eIO_Closed) {
                 fprintf(log_fp,
                         "[ERROR] TC2::read: connection closed\n");
                 assert(SOCK_Eof(sock));
@@ -334,24 +337,24 @@ static void TEST__client_2(SOCK sock)
             fprintf(log_fp, "[INFO] TC2::read: "
                     "i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
                     "\ntimeout(%d): %5u sec, %6u usec\n",
-                    (int)i, SOCK_StatusStr(status),
+                    (int)i, IO_StatusStr(status),
                     (unsigned long)n_io, (unsigned long)n_io_done,
                     (int)r_timeout_on, r_to.sec, r_to.usec);
             if ( !r_timeout_on ) {
-                assert(status == eSOCK_Success  &&  n_io_done > 0);
+                assert(status == eIO_Success  &&  n_io_done > 0);
             } else {
-                const SSOCK_Timeout* x_to;
-                assert(status == eSOCK_Success  ||  status == eSOCK_Timeout);
-                x_to = SOCK_GetReadTimeout(sock);
+                const STimeout* x_to;
+                assert(status == eIO_Success  ||  status == eIO_Timeout);
+                x_to = SOCK_GetTimeout(sock, eIO_Read);
                 assert(r_to.sec == x_to->sec  &&  r_to.usec == x_to->usec);
             }
 
             n_io  -= n_io_done;
             x_buf += n_io_done;
-            if (status == eSOCK_Timeout)
+            if (status == eIO_Timeout)
                 s_DoubleTimeout(&r_to);
-            status = SOCK_SetTimeout(sock, eSOCK_OnRead, &r_to);
-            assert(status == eSOCK_Success);
+            status = SOCK_SetTimeout(sock, eIO_Read, &r_to);
+            assert(status == eIO_Success);
             r_timeout_on = 1/*true*/;
         } while ( n_io );
 
@@ -362,11 +365,11 @@ static void TEST__client_2(SOCK sock)
 
 static void TEST__server_2(SOCK sock, LSOCK lsock)
 {
-    ESOCK_Status  status;
-    size_t        n_io, n_io_done;
-    char          buf[TEST_BUFSIZE];
-    SSOCK_Timeout r_to, w_to;
-    size_t        i;
+    EIO_Status status;
+    size_t     n_io, n_io_done;
+    char       buf[TEST_BUFSIZE];
+    STimeout   r_to, w_to;
+    size_t     i;
 
     fprintf(log_fp, "[INFO] TEST__server_2(TS2)\n");
 
@@ -377,27 +380,27 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
     /* goto */
  l_reconnect: /* reconnection loopback */
 
-    status = SOCK_SetTimeout(sock, eSOCK_OnRead,  &r_to);
-    assert(status == eSOCK_Success);
-    status = SOCK_SetTimeout(sock, eSOCK_OnWrite, &w_to);
-    assert(status == eSOCK_Success);
+    status = SOCK_SetTimeout(sock, eIO_Read,  &r_to);
+    assert(status == eIO_Success);
+    status = SOCK_SetTimeout(sock, eIO_Write, &w_to);
+    assert(status == eIO_Success);
 
     for (i = 0;  ;  i++) {
         char* x_buf;
 
         /* read data from socket */
         n_io = sizeof(buf);
-        status = SOCK_Read(sock, buf, n_io, &n_io_done, eSOCK_Read);
+        status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
         switch ( status ) {
-        case eSOCK_Success:
+        case eIO_Success:
             fprintf(log_fp, "[INFO] TS2::read: "
                     "[%lu], status=%7s, n_io=%5lu, n_io_done=%5lu\n",
-                    (unsigned long)i, SOCK_StatusStr(status),
+                    (unsigned long)i, IO_StatusStr(status),
                     (unsigned long)n_io, (unsigned long)n_io_done);
             assert(n_io_done > 0);
             break;
 
-        case eSOCK_Closed:
+        case eIO_Closed:
             fprintf(log_fp, "[INFO] TS2::read: connection closed\n");
             assert(SOCK_Eof(sock));
 
@@ -408,19 +411,19 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             fprintf(log_fp, "[INFO] TS2:: reconnect\n");
             SOCK_Close(sock);
             status = LSOCK_Accept(lsock, NULL, &sock);
-            assert(status == eSOCK_Success);
+            assert(status == eIO_Success);
             assert(!SOCK_Eof(sock));
             /* !!! */ 
             goto l_reconnect;
 
-        case eSOCK_Timeout:
+        case eIO_Timeout:
             fprintf(log_fp, "[INFO] TS2::read: "
                     "[%lu] timeout expired: %5u sec, %6u usec\n",
                     (unsigned long)i, r_to.sec, r_to.usec);
             assert(n_io_done == 0);
             s_DoubleTimeout(&r_to);
-            status = SOCK_SetTimeout(sock, eSOCK_OnRead, &r_to);
-            assert(status == eSOCK_Success);
+            status = SOCK_SetTimeout(sock, eIO_Read, &r_to);
+            assert(status == eIO_Success);
             assert( !SOCK_Eof(sock) );
             break;
 
@@ -435,25 +438,25 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
         while ( n_io ) {
             status = SOCK_Write(sock, buf, n_io, &n_io_done);
             switch ( status ) {
-            case eSOCK_Success:
+            case eIO_Success:
                 fprintf(log_fp, "[INFO] TS2::write: "
                         "[%lu], status=%7s, n_io=%5lu, n_io_done=%5lu\n",
-                        (unsigned long)i, SOCK_StatusStr(status),
+                        (unsigned long)i, IO_StatusStr(status),
                         (unsigned long)n_io, (unsigned long)n_io_done);
                 assert(n_io_done > 0);
                 break;
-            case eSOCK_Closed:
+            case eIO_Closed:
                 fprintf(log_fp, "[ERROR] TS2::write: connection closed\n");
                 assert(0);
                 return;
-            case eSOCK_Timeout:
+            case eIO_Timeout:
                 fprintf(log_fp, "[INFO] TS2::write: "
                         "[%lu] timeout expired: %5u sec, %6u usec\n",
                         (unsigned long)i, w_to.sec, w_to.usec);
                 assert(n_io_done == 0);
                 s_DoubleTimeout(&w_to);
-                status = SOCK_SetTimeout(sock, eSOCK_OnWrite, &w_to);
-                assert(status == eSOCK_Success);
+                status = SOCK_SetTimeout(sock, eIO_Write, &w_to);
+                assert(status == eIO_Success);
                 break;
             default:
                 assert(0);
@@ -473,12 +476,12 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
  *   establish and close connection;  call test i/o functions like
  *     TEST__[client|server]_[1|2|...] (...)
  */
-static void TEST__client(const char*          server_host,
-                         unsigned short       server_port,
-                         const SSOCK_Timeout* timeout)
+static void TEST__client(const char*     server_host,
+                         unsigned short  server_port,
+                         const STimeout* timeout)
 {
-    SOCK         sock;
-    ESOCK_Status status;
+    SOCK       sock;
+    EIO_Status status;
 
     fprintf(log_fp, "[INFO] TEST__client(host = \"%s\", port = %hu, ",
             server_host, server_port);
@@ -489,7 +492,7 @@ static void TEST__client(const char*          server_host,
 
     /* Connect to server */
     status = SOCK_Create(server_host, server_port, timeout, &sock);
-    assert(status == eSOCK_Success);
+    assert(status == eIO_Success);
 
     /* Test the simplest randezvous(plain request-reply)
      * The two peer functions are:
@@ -505,27 +508,27 @@ static void TEST__client(const char*          server_host,
 
     /* Close connection and exit */
     status = SOCK_Close(sock);
-    assert(status == eSOCK_Success  ||  status == eSOCK_Closed);
+    assert(status == eIO_Success  ||  status == eIO_Closed);
 }
 
 
 static void TEST__server(unsigned short port)
 {
-    LSOCK lsock;
-    ESOCK_Status status;
+    LSOCK      lsock;
+    EIO_Status status;
 
     fprintf(log_fp, "[INFO] TEST__server(port = %hu)\n", port);
 
     /* Create listening socket */
     status = LSOCK_Create(port, 1, &lsock);
-    assert(status == eSOCK_Success);
+    assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
     for (;;) {
         /* Accept connection */
         SOCK sock;
         status = LSOCK_Accept(lsock, NULL, &sock);
-        assert(status == eSOCK_Success);
+        assert(status == eIO_Success);
 
         /* Test the simplest randezvous(plain request-reply)
          * The two peer functions are:
@@ -545,16 +548,15 @@ static void TEST__server(unsigned short port)
 
         /* Close connection */
         status = SOCK_Close(sock);
-        assert(status == eSOCK_Success  ||  status == eSOCK_Closed);
+        assert(status == eIO_Success  ||  status == eIO_Closed);
 
 #ifdef TEST_SRV1_ONCE
-        /* finish after the first session */
+        /* Close listening socket */
+        assert(LSOCK_Close(lsock) == eIO_Success);
+        /* Finish after the first session */
         break;
 #endif
     } /* for */
-
-    /* Close listening socket */
-    assert(LSOCK_Close(lsock) == eSOCK_Success);
 }
 
 
@@ -567,35 +569,41 @@ static void TEST__server(unsigned short port)
 
 /* Fake (printout only) MT critical section callback and data
  */
-static char s_MT_FakeData[] = "s_MT_FakeData";
+static char TEST_LockUserData[] = "TEST_LockUserData";
 
 #if defined(__cplusplus)
 extern "C" {
-  static void s_MT_FakeFunc(void* data, ESOCK_MT_Locking what);
+    static int/*bool*/ TEST_LockHandler(void* user_data, EMT_Lock how);
+    static void        TEST_LockCleanup(void* user_data);
 }
 #endif /* __cplusplus */
 
-static void s_MT_FakeFunc(void* data, ESOCK_MT_Locking what)
+
+static int/*bool*/ TEST_LockHandler(void* user_data, EMT_Lock how)
 {
-    const char* what_str;
-    switch ( what ) {
-    case eSOCK_MT_Lock:
-        what_str = "eSOCK_MT_Lock";
+    const char* what_str = 0;
+    switch ( how ) {
+    case eMT_Lock:
+        what_str = "eMT_Lock";
         break;
-    case eSOCK_MT_Unlock:
-        what_str = "eSOCK_MT_Unlock";
+    case eMT_LockRead:
+        what_str = "eMT_LockRead";
         break;
-    case eSOCK_MT_Cleanup:
-        what_str = "eSOCK_MT_Cleanup";
+    case eMT_Unlock:
+        what_str = "eMT_Unlock";
         break;
-    default:
-        assert(0);
-        what_str = 0;
     }
-    fprintf(log_fp, "s_MT_FakeFunc(\"%s\", %s)\n",
-            data ? (char*)data : "<NULL>", what_str);
+    fprintf(log_fp, "TEST_LockHandler(\"%s\", %s)\n",
+            user_data ? (char*)user_data : "<NULL>", what_str);
+    return 1/*true*/;
 }
 
+
+static void TEST_LockCleanup(void* user_data)
+{
+    fprintf(log_fp, "TEST_LockCleanup(\"%s\")\n",
+            user_data ? (char*)user_data : "<NULL>");
+}
 
 
 
@@ -619,17 +627,24 @@ extern int main(int argc, char** argv)
     argc = 3;
 #endif
 
-    /* Setup a fake MT critical section callback
+    /* Try to set various fake MT safety locks
      */
-    SOCK_MT_SetCriticalSection(s_MT_FakeFunc, s_MT_FakeData);
-    SOCK_MT_SetCriticalSection(0, 0);
-    SOCK_MT_SetCriticalSection(0, 0);
-    SOCK_MT_SetCriticalSection(s_MT_FakeFunc, s_MT_FakeData);
+    SOCK_SetLOCK( MT_LOCK_Create(0, TEST_LockHandler, TEST_LockCleanup) );
+    SOCK_SetLOCK(0);
+    SOCK_SetLOCK(0);
+    SOCK_SetLOCK( MT_LOCK_Create(&TEST_LockUserData,
+                                 TEST_LockHandler, TEST_LockCleanup) );
 
-    /* Setup the SOCK error post stream */
-    SOCK_SetErrStream(log_fp, 0);
+    /* Setup the SOCK error post stream
+     */
+    {{
+      LOG lg = LOG_Create(0, 0, 0, 0);
+      LOG_ToFILE(lg, log_fp, 0/*false*/);
+      SOCK_SetLOG(lg);
+    }}
 
-    /* Printout local hostname */
+    /* Printout local hostname
+     */
     {{
         char local_host[64];
         assert(SOCK_gethostname(local_host, sizeof(local_host)) == 0);
@@ -637,7 +652,8 @@ extern int main(int argc, char** argv)
                 local_host);
     }}
 
-    /* Parse cmd.-line args and decide whether it's a client or a server */
+    /* Parse cmd.-line args and decide whether it's a client or a server
+     */
     switch ( argc ) {
     case 2: {
         /*** SERVER ***/
@@ -651,21 +667,21 @@ extern int main(int argc, char** argv)
 #endif /* DO_SERVER */
 
         TEST__server((unsigned short) port);
-        assert(SOCK_ShutdownAPI() == eSOCK_Success);
+        assert(SOCK_ShutdownAPI() == eIO_Success);
         return 0;
     }
 
     case 3: case 4: {
         /*** CLIENT ***/
-        const char*    server_host;
-        int            server_port;
-        SSOCK_Timeout* timeout = 0;
+        const char* server_host;
+        int         server_port;
+        STimeout*   timeout = 0;
 
 #if defined(DO_CLIENT)
         server_host = DEF_HOST;
         server_port = DEF_PORT;
 #else
-        SSOCK_Timeout  x_timeout;
+        STimeout    x_timeout;
         /* host */
         server_host = argv[1];
 
@@ -686,14 +702,16 @@ extern int main(int argc, char** argv)
 #endif /* DO_CLIENT */
 
         TEST__client(server_host, (unsigned short)server_port, timeout);
-        assert(SOCK_ShutdownAPI() == eSOCK_Success);
+        assert(SOCK_ShutdownAPI() == eIO_Success);
         return 0;
     }
     } /* switch */
 
-    /*** USAGE ***/
+
+    /* USAGE
+     */
     fprintf(log_fp,
-            "Usage:\n"
+            "\nUSAGE:\n"
             "  Client: %s <srv_host> <port> [conn_timeout]\n"
             "  Server: %s <port>\n"
             " where <port> is greater than %d, and [conn_timeout] is double\n",
