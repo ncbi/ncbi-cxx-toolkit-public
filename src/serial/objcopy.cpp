@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/08/30 16:22:21  vasilche
+* Removed excessive _TRACEs
+*
 * Revision 1.7  2002/08/27 17:44:14  grichenk
 * Added separator output to object copier
 *
@@ -78,6 +81,9 @@
 #include <serial/objostr.hpp>
 #include <serial/objistrimpl.hpp>
 #include <serial/objlist.hpp>
+
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2002/08/30 16:22:21  vasilche
+* Removed excessive _TRACEs
+*
 * Revision 1.54  2001/05/17 15:07:04  lavr
 * Typos corrected
 *
@@ -476,7 +479,6 @@ public:
 void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
 {
 	TTypeInfo type = GetElementType();
-    _TRACE("SequenceOf(" << type->GetName() << ") " << typeid(*type).name());
     const CAutoPointerTypeInfo* ptrInfo =
         dynamic_cast<const CAutoPointerTypeInfo*>(type);
     if ( ptrInfo != 0 ) {
@@ -484,7 +486,6 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
         TTypeInfo asnType = ptrInfo->GetPointedType();
         if ( asnType->GetTypeFamily() == eTypeFamilyChoice ) {
             // CHOICE
-            _TRACE("SequenceOf(" << type->GetName() << ") AUTO CHOICE");
             SetChoiceNext();
             m_ElementType = asnType;
         }
@@ -502,18 +503,15 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
             m_NextOffset = 0;
             m_DataOffset = 0;
             m_ElementType = asnType;
-            _TRACE("SequenceOf(" << type->GetName() << ") SEQUENCE");
         }
         else if ( asnType->GetSize() <= sizeof(dataval) ) {
             // standard types and SET/SEQUENCE OF
-            _TRACE("SequenceOf(" << type->GetName() << ") AUTO VALNODE");
             SetValNodeNext();
 			m_ElementType = asnType;
         }
 		else {
 /*
 			_ASSERT(type->GetSize() <= sizeof(dataval));
-            _TRACE("SequenceOf(" << type->GetName() << ") VALNODE");
             SetValNodeNext();
 */
             CNcbiOstrstream msg;
@@ -525,7 +523,6 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
     }
     else if ( type->GetSize() <= sizeof(dataval) ) {
         // SEQUENCE OF, SET OF or primitive types
-        _TRACE("SequenceOf(" << type->GetName() << ") VALNODE");
         SetValNodeNext();
     }
 	else {
@@ -581,7 +578,6 @@ TObjectPtr CSequenceOfTypeInfo::CreateNode(void) const
 
 void CSequenceOfTypeInfo::DeleteNode(TObjectPtr node) const
 {
-    _TRACE(Warning << "Erase struct");
     if ( m_DataOffset == 0 ) {
         _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
         GetElementType()->Delete(node);

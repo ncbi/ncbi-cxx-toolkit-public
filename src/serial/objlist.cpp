@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/08/30 16:22:21  vasilche
+* Removed excessive _TRACEs
+*
 * Revision 1.24  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -144,6 +147,9 @@
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
 #include <serial/typeinfoimpl.hpp>
+
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
 

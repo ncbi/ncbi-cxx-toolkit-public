@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/08/30 16:22:22  vasilche
+* Removed excessive _TRACEs
+*
 * Revision 1.64  2002/08/26 18:32:29  grichenk
 * Added Get/SetAutoSeparator() to CObjectOStream to control
 * output of separators.
@@ -307,6 +310,9 @@
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
+
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2002/08/30 16:22:21  vasilche
+* Removed excessive _TRACEs
+*
 * Revision 1.86  2001/10/22 15:17:41  grichenk
 * Protected objects being read from destruction by temporary CRef<>-s
 *
@@ -382,6 +385,9 @@
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
+
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
 

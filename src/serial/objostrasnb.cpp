@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2002/08/30 16:22:22  vasilche
+* Removed excessive _TRACEs
+*
 * Revision 1.66  2002/08/08 14:15:23  grichenk
 * Fixed WriteByte()
 *
@@ -309,6 +312,9 @@
 #endif
 
 using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
+
+#undef _TRACE
+#define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
 
