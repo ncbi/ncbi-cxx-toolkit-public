@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.230 2003/10/23 16:11:02 ucko Exp $
+#  $Id: configure.ac,v 1.231 2003/10/23 17:18:21 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1236,8 +1236,11 @@ esac
 
 #### Set runpath (may depend on build root)
 if test -z "$with_runpath"; then
-   # NOTE:  we do not support "--libdir" here as it makes things complicated
-   if test -n "$exec_prefix"  -a  "$exec_prefix" != "NONE" ; then
+   # Don't allow libdir values containing variable expansions,
+   # including in particular the default "${exec_prefix}/lib"
+   if test -n "$libdir"  &&  expr "$libdir" : '[^$]*$' >/dev/null; then
+      with_runpath=$libdir
+   elif test -n "$exec_prefix"  -a  "$exec_prefix" != "NONE" ; then
       with_runpath=$exec_prefix/lib
    elif test -n "$prefix"  -a  "$prefix" != "NONE" ; then
       with_runpath=$prefix/lib
