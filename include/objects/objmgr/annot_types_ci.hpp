@@ -47,7 +47,19 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CTSE_Info;
 class CSeq_loc;
+class CAnnotObject;
 
+
+class CAnnotObject_Less
+{
+public:
+    // Compare CRef-s: if at least one is NULL, compare as pointers,
+    // otherwise call non-inline x_CompareAnnot() method
+    bool operator ()(const CRef<CAnnotObject>& x, const CRef<CAnnotObject>& y) const;
+private:
+    // Compare annot objects
+    bool x_CompareAnnot(const CAnnotObject& x, const CAnnotObject& y) const;
+};
 
 
 // Base class for specific annotation iterators
@@ -154,12 +166,24 @@ private:
 };
 
 
+inline
+bool CAnnotObject_Less::operator ()(const CRef<CAnnotObject>& x, const CRef<CAnnotObject>& y) const
+{
+    if ( !x.GetPointer()  ||  !y.GetPointer() )
+        return x < y;
+    return x_CompareAnnot(*x, *y);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/10/08 18:57:27  grichenk
+* Added feature sorting to the iterator class.
+*
 * Revision 1.18  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

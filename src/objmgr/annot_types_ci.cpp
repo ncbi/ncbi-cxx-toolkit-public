@@ -48,6 +48,21 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x, const CAnnotObject& y) const
+{
+    if ( x.IsFeat()  &&  y.IsFeat() ) {
+        // CSeq_feat::operator<() may report x == y while the features
+        // are different. In this case compare pointers too.
+        bool lt = x.GetFeat() < y.GetFeat();
+        bool gt = y.GetFeat() < x.GetFeat();
+        if ( lt  ||  gt )
+            return lt;
+    }
+    // Compare pointers
+    return &x < &y;
+}
+
+
 CAnnotTypes_CI::CAnnotTypes_CI(void)
     : m_ResolveMethod(eResolve_None)
 {
@@ -120,7 +135,7 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
     m_Selector = it.m_Selector;
     m_Scope = it.m_Scope;
     m_ResolveMethod = it.m_ResolveMethod;
-
+    m_AnnotSet.clear();
     // Copy TSE list, set TSE locks
     iterate (TTSESet, tse_it, it.m_TSESet) {
         m_TSESet.insert(*tse_it);
@@ -152,11 +167,11 @@ bool CAnnotTypes_CI::IsValid(void) const
 
 void CAnnotTypes_CI::Walk(void)
 {
-    m_AnnotCopy.Reset();
+    //### m_AnnotCopy.Reset();
     // Find the next annot + conv. id + conv. rec. combination
-    while (m_CurAnnot != m_AnnotSet.end()) {
+    if (m_CurAnnot != m_AnnotSet.end()) {
         ++m_CurAnnot;
-        return; //??? Anything else?
+        return;
     }
 }
 
@@ -164,12 +179,7 @@ void CAnnotTypes_CI::Walk(void)
 CAnnotObject* CAnnotTypes_CI::Get(void) const
 {
     _ASSERT( IsValid() );
-    if (m_ResolveMethod != eResolve_None) {
-        return x_ConvertAnnotToMaster(**m_CurAnnot);
-    }
-    else {
-        return *m_CurAnnot;
-    }
+    return *m_CurAnnot;
 }
 
 
@@ -212,6 +222,16 @@ has_references = true;
     if ( !has_references ) {
         m_ResolveMethod = eResolve_None;
         x_SearchLocation(master_loc);
+    }
+    TAnnotSet orig_annots(m_AnnotSet);
+    m_AnnotSet.clear();
+    non_const_iterate(TAnnotSet, it, orig_annots) {
+        if (m_ResolveMethod != eResolve_None) {
+            m_AnnotSet.insert(x_ConvertAnnotToMaster(**it));
+        }
+        else {
+            m_AnnotSet.insert(*it);
+        }
     }
     m_CurAnnot = m_AnnotSet.begin();
 }
@@ -317,10 +337,12 @@ void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
 CAnnotObject*
 CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
 {
+/*
     if ( m_AnnotCopy )
         // Already have converted version
         return m_AnnotCopy.GetPointer();
 
+*/
     switch ( annot_obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
         {
@@ -342,6 +364,7 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
         {
             LOG_POST(Warning <<
             "CAnnotTypes_CI -- seq-align convertions not implemented.");
+            m_AnnotCopy.Reset(const_cast<CAnnotObject*>(&annot_obj));
             break;
         }
     case CSeq_annot::C_Data::e_Graph:
@@ -359,6 +382,7 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
         {
             LOG_POST(Warning <<
             "CAnnotTypes_CI -- annotation type not implemented.");
+            m_AnnotCopy.Reset(const_cast<CAnnotObject*>(&annot_obj));
             break;
         }
     }
@@ -564,6 +588,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/10/08 18:57:30  grichenk
+* Added feature sorting to the iterator class.
+*
 * Revision 1.24  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
