@@ -34,6 +34,7 @@
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_coreobjreader.hpp>
 #include <objtools/lds/lds_object.hpp>
+#include <objtools/lds/lds_files.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -141,7 +142,7 @@ void CLDS_Database::SyncWithDir(const string& dir_name)
     CLDS_Set files_deleted;
     CLDS_Set files_updated;
 
-    CLDS_File fl(m_db.file_db);
+    CLDS_File fl(GetTables());
     fl.SyncWithDir(dir_name, &files_deleted, &files_updated);
 
 
@@ -170,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/16 14:55:00  kuznets
+ * lds splitted into "lds" and "lds_admin"
+ *
  * Revision 1.1  2003/06/03 14:13:25  kuznets
  * Initial revision
  *

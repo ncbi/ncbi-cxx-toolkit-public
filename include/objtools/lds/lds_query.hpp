@@ -1,5 +1,5 @@
-#ifndef LDS_FILES_HPP__
-#define LDS_FILES_HPP__
+#ifndef LDS_QUERY_HPP__
+#define LDS_QUERY_HPP__
 /*  $Id$
  * ===========================================================================
  *
@@ -27,63 +27,35 @@
  *
  * Author: Anatoliy Kuznetsov
  *
- * File Description: Different operations on LDS File table
+ * File Description: Different query functions to LDS database.
  *
  */
 
-#include <corelib/ncbistd.hpp>
-
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
-#include <objtools/lds/lds_expt.hpp>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 //////////////////////////////////////////////////////////////////
 //
-// SLDS_FileDB related methods.
+// CLDS_Query different queries to the LDS database.
 //
 
-class NCBI_LDS_EXPORT CLDS_File
+class NCBI_LDS_EXPORT CLDS_Query
 {
 public:
-    CLDS_File(SLDS_TablesCollection& lds_tables)
-    : m_db(lds_tables),
-      m_FileDB(lds_tables.file_db),
-      m_MaxRecId(0)
+    CLDS_Query(SLDS_TablesCollection& lds_tables)
+    : m_db(lds_tables)
     {}
 
-    // Scan the given directory, calculate timestamp and control sums for 
-    // every file, update "File" database table.
-    // Method returns set of row ids deleted from files, and set of row ids
-    // to be updated.
-    void SyncWithDir(const string& path, CLDS_Set* deleted, CLDS_Set* updated);
-
-    // Delete all records with ids belonging to record_set
-    void Delete(const CLDS_Set& record_set);
-
-    void UpdateEntry(int    file_id, 
-                     const  string& file_name,
-                     Uint4  crc,
-                     int    timestamp,
-                     size_t file_size);
-
-    // Return max record id. 0 if no record found.
-    int FindMaxRecId();
-
-private:
-    CLDS_File(const CLDS_File&);
-    CLDS_File& operator=(const CLDS_File&);
+    // Scan the database, find the file, return TRUE if file exists.
+    // Linear scan, no idx optimization.
+    bool FindFile(const string& path);
 
 private:
     SLDS_TablesCollection& m_db;
-    SLDS_FileDB&           m_FileDB;
-    int                    m_MaxRecId;
 };
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -91,28 +63,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2003/06/16 14:54:08  kuznets
+ * Revision 1.1  2003/06/16 14:54:08  kuznets
  * lds splitted into "lds" and "lds_admin"
- *
- * Revision 1.5  2003/06/03 19:14:02  kuznets
- * Added lds dll export/import specifications
- *
- * Revision 1.4  2003/06/03 14:07:46  kuznets
- * Include paths changed to reflect the new directory structure
- *
- * Revision 1.3  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.2  2003/05/22 18:57:17  kuznets
- * Work in progress
- *
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
  *
  * ===========================================================================
  */
 
 #endif
-

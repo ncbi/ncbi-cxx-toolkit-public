@@ -40,6 +40,7 @@
 #include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
+#include <objtools/lds/lds_query.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,6 +57,8 @@ void CLDS_File::SyncWithDir(const string& path,
 
         LDS_THROW(eFileNotFound, err);
     }
+
+    CLDS_Query lds_query(m_db);
 
     set<string> files;
 
@@ -81,7 +84,7 @@ void CLDS_File::SyncWithDir(const string& path,
             continue; // Berkeley DB file, no need to index it.
         }
 
-        bool found = DBFindFile(entry);
+        bool found = lds_query.FindFile(entry);
 
         files.insert(entry);
 
@@ -138,20 +141,6 @@ void CLDS_File::SyncWithDir(const string& path,
     } // while
 
     Delete(*deleted);
-}
-
-
-bool CLDS_File::DBFindFile(const string& path)
-{
-    CBDB_FileCursor cur(m_FileDB);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-    while (cur.Fetch() == eBDB_Ok) {
-        string fname = m_FileDB.file_name;
-        if (fname == path) {
-            return true;
-        }
-    }
-    return false;
 }
 
 
@@ -213,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/16 14:55:00  kuznets
+ * lds splitted into "lds" and "lds_admin"
+ *
  * Revision 1.1  2003/06/03 14:13:25  kuznets
  * Initial revision
  *

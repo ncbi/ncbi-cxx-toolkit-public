@@ -1,5 +1,5 @@
-#ifndef LDS_HPP__
-#define LDS_HPP__
+#ifndef LDS_ADMIN_HPP__
+#define LDS_ADMIN_HPP__
 /*  $Id$
  * ===========================================================================
  *
@@ -27,99 +27,51 @@
  *
  * Author: Anatoliy Kuznetsov
  *
- * File Description: Main LDS include file.
+ * File Description: LDS data management(admin) include file.
  *
  */
 
-#include <objtools/lds/lds_db.hpp>
-#include <objtools/lds/lds_expt.hpp>
-
-#include <map>
+#include <objtools/lds/lds.hpp>
+#include <objtools/lds/lds_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
 //////////////////////////////////////////////////////////////////
 //
-// LDS database.
+// LDS database maintanance(modification).
 //
 
-class NCBI_LDS_EXPORT CLDS_Database
+class NCBI_LDS_EXPORT CLDS_Management
 {
 public:
-    // Object type string to database id map
-    typedef map<string, int> TObjTypeMap;
-
-public:
-
-    CLDS_Database(string db_name)
-    : m_LDS_DbName(db_name)
-    {}
+    CLDS_Management(CLDS_Database& db);
 
     // Create the database. If the LDS database already exists all data will
     // be cleaned up.
-    void Create();
-
-    // Open LDS database (Read/Write mode)
-    void Open();
+    void Create() { m_lds_db.Create(); }
 
     // Syncronize LDS database content with directory. 
+    // The main workhorse function.
     // Function will do format guessing, files parsing, etc
+    // Current implementation can work with only one directory.
+    // If file is removed all relevant objects are cleaned up too.
     void SyncWithDir(const string& dir_name);
 
-    // Return reference on database tables
-    SLDS_TablesCollection& GetTables() { return m_db; }
-
-    const TObjTypeMap& GetObjTypeMap() const { return m_ObjTypeMap; }
 private:
-    // Loads types map from m_ObjectTypeDB to memory.
-    void x_LoadTypeMap();
-private:
-    CLDS_Database(const CLDS_Database&);
-    CLDS_Database& operator=(const CLDS_Database&);
-private:
-    string                 m_LDS_DbName;
-
-    SLDS_TablesCollection  m_db;
-
-    TObjTypeMap            m_ObjTypeMap;
+    CLDS_Database&   m_lds_db; // LDS database object
 };
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+#endif
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.8  2003/06/16 14:54:08  kuznets
+ * Revision 1.1  2003/06/16 14:54:08  kuznets
  * lds splitted into "lds" and "lds_admin"
  *
- * Revision 1.7  2003/06/11 15:30:56  kuznets
- * Added GetObjTypeMap() member function.
- *
- * Revision 1.6  2003/06/06 16:35:51  kuznets
- * Added CLDS_Database::GetTables()
- *
- * Revision 1.5  2003/06/03 19:14:02  kuznets
- * Added lds dll export/import specifications
- *
- * Revision 1.4  2003/06/03 14:07:46  kuznets
- * Include paths changed to reflect the new directory structure
- *
- * Revision 1.3  2003/05/23 20:33:33  kuznets
- * Bulk changes in lds library, code reorganizations, implemented top level
- * objects read, metainformation persistance implemented for top level objects...
- *
- * Revision 1.2  2003/05/22 18:57:17  kuznets
- * Work in progress
- *
- * Revision 1.1  2003/05/22 13:24:45  kuznets
- * Initial revision
- *
- *
- * ===========================================================================
- */
-
-#endif
-
+ * 
+*/
