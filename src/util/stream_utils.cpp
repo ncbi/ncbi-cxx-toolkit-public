@@ -81,10 +81,10 @@ protected:
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    void                x_FillBuffer(streamsize max_size = k_MinBufSize);
+    void                x_FillBuffer(streamsize max_size);
     void                x_DropBuffer(void);
 
-    istream&            m_Is;      // i/o stream this streambuf is attached to
+    istream&            m_Is;      // I/O stream this streambuf is attached to
     streambuf*          m_Sb;      // original streambuf
     CT_CHAR_TYPE*       m_Buf;     // == 0 when the buffer has been emptied
     streamsize          m_BufSize;
@@ -176,10 +176,8 @@ CT_INT_TYPE CPushback_Streambuf::overflow(CT_INT_TYPE c)
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         return m_Sb->sputc(CT_TO_CHAR_TYPE(c));
     }
-    if (m_Sb->PUBSYNC() == 0) {
-        return CT_NOT_EOF(CT_EOF); // success
-    }
-    return CT_EOF; // failure
+
+    return m_Sb->PUBSYNC() == 0 ? CT_NOT_EOF(CT_EOF) : CT_EOF;
 }
 
 
@@ -193,7 +191,7 @@ streamsize CPushback_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize n)
 CT_INT_TYPE CPushback_Streambuf::underflow(void)
 {
     // we are here because there is no more data in the pushback buffer
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(gptr()  &&  gptr() >= egptr());
 
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
@@ -201,10 +199,8 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
     m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
 #endif
 
-    x_FillBuffer();
-    if (gptr() < egptr())
-        return CT_TO_INT_TYPE(*gptr());
-    return CT_EOF;
+    x_FillBuffer(m_Sb->in_avail());
+    return gptr() < egptr() ? CT_TO_INT_TYPE(*gptr()) : CT_EOF;
 }
 
 
@@ -234,7 +230,7 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 streamsize CPushback_Streambuf::showmanyc(void)
 {
     // we are here because (according to the standard) gptr() >= egptr()
-    _ASSERT(!gptr()  ||  gptr() >= egptr());
+    _ASSERT(gptr()  &&  gptr() >= egptr());
 
     return m_Sb->in_avail();
 }
@@ -271,6 +267,8 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
 {
     _ASSERT(m_Sb);
+    if ( !max_size )
+        ++max_size;
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
     if ( sb ) {
         _ASSERT(&m_Is == &sb->m_Is);
@@ -296,7 +294,7 @@ void CPushback_Streambuf::x_FillBuffer(streamsize max_size)
             buf_size = k_MinBufSize;
             bp = new CT_CHAR_TYPE[buf_size];
         }
-        streamsize n = m_Sb->sgetn(bp? bp : (CT_CHAR_TYPE*)m_DelPtr,
+        streamsize n = m_Sb->sgetn(bp ? bp : (CT_CHAR_TYPE*) m_DelPtr,
                                    min(buf_size, max_size));
         if (n <= 0) {
             // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
@@ -460,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.32  2003/11/21 19:58:47  lavr
+ * x_FillBuffer() not to have default parameter: crucial in underflow()
+ *
  * Revision 1.31  2003/11/19 16:49:35  vasilche
  * Fix previous commit to maintain backup condition.
  *
@@ -467,7 +468,7 @@ END_NCBI_SCOPE
  * Temporary fix for wrong Readsome() after Pushback().
  *
  * Revision 1.29  2003/11/04 13:39:01  lavr
- * CPushback_Streambuf is conditioanally specially based on MIPSPro
+ * CPushback_Streambuf is conditionally based on MIPSPro
  *
  * Revision 1.28  2003/11/03 20:05:11  lavr
  * CStreamUtils::Readsome() reorganized: s_Readsome() introduced.
