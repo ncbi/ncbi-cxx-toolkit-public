@@ -288,6 +288,18 @@ void
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
                  Int4 q_off, Int4 s_off, Int4 len, Int4 score);
 
+/** Sort array of initial HSPs by score. 
+ * @param init_hitlist Initial hit list structure to check. [in]
+ */
+void 
+Blast_InitHitListSortByScore(BlastInitHitList* init_hitlist);
+
+/** Check if array of initial HSPs is sorted by score. 
+ * @param init_hitlist Initial hit list structure to check. [in]
+ * @return TRUE if sorted, FALSE otherwise.
+*/
+Boolean Blast_InitHitListIsSortedByScore(BlastInitHitList* init_hitlist);
+
 #ifdef __cplusplus
 }
 #endif
