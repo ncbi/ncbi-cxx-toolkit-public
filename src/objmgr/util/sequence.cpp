@@ -1392,7 +1392,7 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
 
     // Change the contents of *id to that of *tmp_id
     id->Reset();
-    SerialAssign(*id, *tmp_id);
+    id->Assign(*tmp_id);
 }
 
 
@@ -2815,6 +2815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2003/02/06 22:26:27  vasilche
+* Use CSeq_id::Assign().
+*
 * Revision 1.34  2003/02/06 20:59:16  shomrat
 * Bug fix in SeqLocPartialCheck
 *
