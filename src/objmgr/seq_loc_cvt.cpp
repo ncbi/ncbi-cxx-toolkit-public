@@ -275,7 +275,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
         const CSeq_id& src_id = src.GetWhole();
         // Convert to the allowed master seq interval
         if ( GoodSrcId(src_id) ) {
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id,
+                CScope::eGetBioseq_All);
             ConvertInterval(0, bh.GetBioseqLength()-1, eNa_strand_unknown);
         }
         break;
@@ -646,7 +647,8 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         CSeq_interval whole_int;
         whole_int.SetId().Assign(src_id);
         whole_int.SetFrom(0);
-        CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
+        CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id,
+            CScope::eGetBioseq_All);
         whole_int.SetTo(bh.GetBioseqLength());
         res = ConvertInterval(whole_int, dst);
         break;
@@ -831,6 +833,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/04/13 15:59:35  grichenk
+* Added CScope::GetBioseqHandle() with id resolving flag.
+*
 * Revision 1.25  2004/03/30 21:21:09  grichenk
 * Reduced number of includes.
 *

@@ -83,6 +83,17 @@ public:
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
 
+    // Get bioseq handle without loading new data
+    enum EGetBioseqFlag {
+        eGetBioseq_Resolved, // Search only in already resolved ids
+        eGetBioseq_Loaded,   // Search in all loaded bioseqs
+        eGetBioseq_All       // Search bioseq, load if not loaded yet
+    };
+    CBioseq_Handle GetBioseqHandle(const CSeq_id& id,
+                                   EGetBioseqFlag get_flag);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
+                                   EGetBioseqFlag get_flag);
+
     // Deprecated interface
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
@@ -196,6 +207,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2004/04/13 15:59:35  grichenk
+* Added CScope::GetBioseqHandle() with id resolving flag.
+*
 * Revision 1.75  2004/04/12 18:40:24  grichenk
 * Added GetAllTSEs()
 *

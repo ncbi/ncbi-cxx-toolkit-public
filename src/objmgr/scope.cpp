@@ -83,19 +83,19 @@ CScope::~CScope(void)
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
-    return m_Impl->GetBioseqHandle(id);
+    return m_Impl->GetBioseqHandle(id, eGetBioseq_All);
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
 {
-    return m_Impl->GetBioseqHandle(id);
+    return m_Impl->GetBioseqHandle(id, eGetBioseq_All);
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 {
-    return m_Impl->GetBioseqHandle(loc);
+    return m_Impl->GetBioseqHandle(loc, eGetBioseq_All);
 }
 
 
@@ -103,6 +103,20 @@ CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
 {
     //ERR_POST_ONCE(Warning<<"CScope::GetBioseqHandle(CBioseq&) is deprecated");
     return m_Impl->GetBioseqHandle(seq);
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id,
+                                       EGetBioseqFlag get_flag)
+{
+    return m_Impl->GetBioseqHandle(id, get_flag);
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id,
+                                       EGetBioseqFlag get_flag)
+{
+    return m_Impl->GetBioseqHandle(id, get_flag);
 }
 
 
@@ -304,6 +318,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2004/04/13 15:59:35  grichenk
+* Added CScope::GetBioseqHandle() with id resolving flag.
+*
 * Revision 1.105  2004/04/12 18:40:24  grichenk
 * Added GetAllTSEs()
 *

@@ -639,15 +639,16 @@ CScope_Impl::x_FindSeq_id_Info(const CSeq_id_Handle& id)
 
 
 CRef<CBioseq_ScopeInfo>
-CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info)
+CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info, int get_flag)
 {
-    {{
+    if (get_flag != CScope::eGetBioseq_Resolved) {
+        // Resolve only if the flag allows
         CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool);
         if ( init ) {
-            x_ResolveSeq_id(info);
+            x_ResolveSeq_id(info, get_flag);
         }
-    }}
-    _ASSERT(info.second.m_Bioseq_Info);
+    }
+    //_ASSERT(info.second.m_Bioseq_Info);
     return info.second.m_Bioseq_Info;
 }
 
@@ -668,19 +669,19 @@ bool CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
 
 
 CRef<CBioseq_ScopeInfo>
-CScope_Impl::x_GetBioseq_Info(const CSeq_id_Handle& id)
+CScope_Impl::x_GetBioseq_Info(const CSeq_id_Handle& id, int get_flag)
 {
-    return x_InitBioseq_Info(x_GetSeq_id_Info(id));
+    return x_InitBioseq_Info(x_GetSeq_id_Info(id), get_flag);
 }
 
 
 CRef<CBioseq_ScopeInfo>
-CScope_Impl::x_FindBioseq_Info(const CSeq_id_Handle& id)
+CScope_Impl::x_FindBioseq_Info(const CSeq_id_Handle& id, int get_flag)
 {
     CRef<CBioseq_ScopeInfo> ret;
     TSeq_idMapValue* info = x_FindSeq_id_Info(id);
     if ( info ) {
-        ret = x_InitBioseq_Info(*info);
+        ret = x_InitBioseq_Info(*info, get_flag);
     }
     return ret;
 }
@@ -691,7 +692,7 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 {
     CBioseq_Handle ret;
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    CRef<CBioseq_ScopeInfo> info = x_FindBioseq_Info(id);
+    CRef<CBioseq_ScopeInfo> info = x_FindBioseq_Info(id, CScope::eGetBioseq_Loaded);
     if ( bool(info)  &&  info->HasBioseq() ) {
         if ( &info->GetTSE_Info() == &tse ) {
             ret.m_Bioseq_Info = info.GetPointer();
@@ -710,7 +711,8 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                 CConstRef<CBioseq_Info> bioseq = match.GetBioseq_Info();
                 if ( bioseq ) {
                     _ASSERT(m_HeapScope);
-                    CBioseq_Handle bh = GetBioseqHandle(*hit);
+                    CBioseq_Handle bh = GetBioseqHandle(*hit,
+                        CScope::eGetBioseq_Loaded);
                     if ( bh && &bh.x_GetInfo().GetTSE_Info() == &tse ) {
                         ret = bh;
                         break;
@@ -722,7 +724,8 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
             CSeqMatch_Info match(id, tse);
             CConstRef<CBioseq_Info> bioseq = match.GetBioseq_Info();
             if ( bioseq ) {
-                CBioseq_Handle bh = GetBioseqHandle(id);
+                CBioseq_Handle bh = GetBioseqHandle(id,
+                    CScope::eGetBioseq_Loaded);
                 if ( bh && &bh.x_GetInfo().GetTSE_Info() == &tse ) {
                     ret = bh;
                 }
@@ -735,15 +738,16 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 }
 
 
-CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id)
+CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
+                                            int get_flag)
 {
     CBioseq_Handle ret;
     if ( id )  {
         {{
             TReadLockGuard rguard(m_Scope_Conf_RWLock);
-            ret.m_Bioseq_Info = x_GetBioseq_Info(id).GetPointer();
+            ret.m_Bioseq_Info = x_GetBioseq_Info(id, get_flag).GetPointer();
         }}
-        if ( !ret.x_GetScopeInfo().HasBioseq() ) {
+        if ( bool(ret.m_Bioseq_Info) && !ret.x_GetScopeInfo().HasBioseq() ) {
             ret.m_Bioseq_Info.Reset();
         }
         ret.m_Seq_id = id;
@@ -817,9 +821,9 @@ CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
 }
 
 
-CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id& id)
+CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id& id, int get_flag)
 {
-    return GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+    return GetBioseqHandle(CSeq_id_Handle::GetHandle(id), get_flag);
 }
 
 
@@ -871,11 +875,11 @@ CScope_Impl::GetBioseqHandleFromTSE(const CSeq_id& id,
 }
 
 
-CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc)
+CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc, int get_flag)
 {
     CBioseq_Handle bh;
     for (CSeq_loc_CI citer (loc); citer; ++citer) {
-        bh = GetBioseqHandle(citer.GetSeq_id());
+        bh = GetBioseqHandle(citer.GetSeq_id(), get_flag);
         if ( bh ) {
             break;
         }
@@ -913,7 +917,8 @@ CDataSource_ScopeInfo*
 CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
                               const CSeq_id_Handle& idh,
                               const TSeq_id_HandleSet* hset,
-                              CSeqMatch_Info& match_info)
+                              CSeqMatch_Info& match_info,
+                              int get_flag)
 {
     CDataSource_ScopeInfo* ret = 0;
     // Process sub-tree
@@ -931,7 +936,7 @@ CScope_Impl::x_FindBioseqInfo(const CPriorityTree& tree,
             last_priority = new_priority;
         }
         CDataSource_ScopeInfo* new_ret =
-            x_FindBioseqInfo(mit->second, idh, hset, match_info);
+            x_FindBioseqInfo(mit->second, idh, hset, match_info, get_flag);
         if ( new_ret ) {
             _ASSERT(!ret); // should be checked by match_info already
             ret = new_ret;
@@ -945,7 +950,8 @@ CDataSource_ScopeInfo*
 CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                               const CSeq_id_Handle& main_idh,
                               const TSeq_id_HandleSet* hset,
-                              CSeqMatch_Info& match_info)
+                              CSeqMatch_Info& match_info,
+                              int get_flag)
 {
     // skip already matched CDataSource
     CDataSource& ds = ds_info.GetDataSource();
@@ -981,7 +987,7 @@ CScope_Impl::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
             }
         }
     }}
-    if ( !info ) {
+    if ( !info  &&  get_flag == CScope::eGetBioseq_All ) {
         // Try to load the sequence from the data source
         info = ds_info.GetDataSource().BestResolve(main_idh);
     }
@@ -1000,21 +1006,22 @@ CDataSource_ScopeInfo*
 CScope_Impl::x_FindBioseqInfo(const CPriorityNode& node,
                               const CSeq_id_Handle& idh,
                               const TSeq_id_HandleSet* hset,
-                              CSeqMatch_Info& match_info)
+                              CSeqMatch_Info& match_info,
+                              int get_flag)
 {
     if ( node.IsTree() ) {
         // Process sub-tree
-        return x_FindBioseqInfo(node.GetTree(), idh, hset, match_info);
+        return x_FindBioseqInfo(node.GetTree(), idh, hset, match_info, get_flag);
     }
     else if ( node.IsLeaf() ) {
         return x_FindBioseqInfo(const_cast<CDataSource_ScopeInfo&>(node.GetLeaf()),
-                                idh, hset, match_info);
+                                idh, hset, match_info, get_flag);
     }
     return 0;
 }
 
 
-void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info)
+void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info, int get_flag)
 {
     // Use priority, do not scan all DSs - find the first one.
     // Protected by m_Scope_Conf_RWLock in upper-level functions
@@ -1029,10 +1036,14 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info)
             hset.reset();
     }
     CDataSource_ScopeInfo* ds_info =
-        x_FindBioseqInfo(m_setDataSrc, id_info.first, hset.get(), match_info);
+        x_FindBioseqInfo(m_setDataSrc, id_info.first, hset.get(), match_info,
+        get_flag);
     if ( !ds_info ) {
-        _ASSERT(m_HeapScope);
-        id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(&id_info));
+        // Map unresoved ids only if loading was requested
+        if (get_flag == CScope::eGetBioseq_All) {
+            _ASSERT(m_HeapScope);
+            id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(&id_info));
+        }
     }
     else {
         {{
@@ -1083,7 +1094,8 @@ CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     TSeq_idMapValue& info = x_GetSeq_id_Info(idh);
-    CRef<CBioseq_ScopeInfo> binfo = x_InitBioseq_Info(info);
+    CRef<CBioseq_ScopeInfo> binfo = x_InitBioseq_Info(info,
+        CScope::eGetBioseq_All);
     {{
         CInitGuard init(info.second.m_AllAnnotRef_Info, m_MutexPool);
         if ( init ) {
@@ -1232,7 +1244,7 @@ CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id_Handle& id)
 {
     _ASSERT(id);
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    return x_GetSynonyms(*x_GetBioseq_Info(id));
+    return x_GetSynonyms(*x_GetBioseq_Info(id, CScope::eGetBioseq_All));
 }
 
 
@@ -1337,6 +1349,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/04/13 15:59:35  grichenk
+* Added CScope::GetBioseqHandle() with id resolving flag.
+*
 * Revision 1.11  2004/04/12 19:35:59  grichenk
 * Added locks in GetAllTSEs()
 *

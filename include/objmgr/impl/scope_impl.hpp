@@ -197,10 +197,9 @@ public:
     CBioseq_set_EditHandle TakeSet(const CSeq_entry_EditHandle& entry,
                                    const CBioseq_set_EditHandle& seqset);
 
-    // Get bioseq handle by seq-id
-    // Declared "virtual" to avoid circular dependencies with seqloc
-    CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
-    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id);
+    // Get bioseq handle, limit id resolving
+    CBioseq_Handle GetBioseqHandle(const CSeq_id& id, int get_flag);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id, int get_flag);
 
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
                                           const CBioseq_Handle& bh);
@@ -212,7 +211,7 @@ public:
                                           const CSeq_entry_Handle& seh);
 
     // Get bioseq handle by seqloc
-    CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
+    CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc, int get_flag);
 
     // Deprecated interface
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
@@ -270,20 +269,23 @@ private:
                                        CRef<CBioseq_set_Info> seqset);
 
     // Find the best possible resolution for the Seq-id
-    void x_ResolveSeq_id(TSeq_idMapValue& id);
+    void x_ResolveSeq_id(TSeq_idMapValue& id, int get_flag);
     // Iterate over priorities, find all possible data sources
     CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityTree& tree,
                                             const CSeq_id_Handle& idh,
                                             const TSeq_id_HandleSet* hset,
-                                            CSeqMatch_Info& match_info);
+                                            CSeqMatch_Info& match_info,
+                                            int get_flag);
     CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityNode& node,
                                             const CSeq_id_Handle& idh,
                                             const TSeq_id_HandleSet* hset,
-                                            CSeqMatch_Info& match_info);
+                                            CSeqMatch_Info& match_info,
+                                            int get_flag);
     CDataSource_ScopeInfo* x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                                             const CSeq_id_Handle& idh,
                                             const TSeq_id_HandleSet* hset,
-                                            CSeqMatch_Info& match_info);
+                                            CSeqMatch_Info& match_info,
+                                            int get_flag);
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Info& tse);
@@ -323,11 +325,14 @@ private:
     TSeq_idMapValue& x_GetSeq_id_Info(const CBioseq_Handle& bh);
     TSeq_idMapValue* x_FindSeq_id_Info(const CSeq_id_Handle& id);
 
-    CRef<CBioseq_ScopeInfo> x_InitBioseq_Info(TSeq_idMapValue& info);
+    CRef<CBioseq_ScopeInfo> x_InitBioseq_Info(TSeq_idMapValue& info,
+                                              int get_flag);
     bool x_InitBioseq_Info(TSeq_idMapValue& info,
                            CBioseq_ScopeInfo& bioseq_info);
-    CRef<CBioseq_ScopeInfo> x_GetBioseq_Info(const CSeq_id_Handle& id);
-    CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id);
+    CRef<CBioseq_ScopeInfo> x_GetBioseq_Info(const CSeq_id_Handle& id,
+                                             int get_flag);
+    CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id,
+                                              int get_flag);
 
 
     CScope*         m_HeapScope;
@@ -373,6 +378,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/04/13 15:59:35  grichenk
+* Added CScope::GetBioseqHandle() with id resolving flag.
+*
 * Revision 1.6  2004/04/12 18:40:24  grichenk
 * Added GetAllTSEs()
 *

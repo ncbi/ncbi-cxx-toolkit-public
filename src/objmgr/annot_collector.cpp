@@ -560,7 +560,8 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
         if ( deeper ) {
             ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
                 //### Check for eLoadedOnly
-                CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
+                CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first,
+                    CScope::eGetBioseq_All);
                 if ( !bh ) {
                     if (m_Selector.m_IdResolving ==
                         SAnnotSelector::eFailUnresolved) {
@@ -1349,6 +1350,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/13 15:59:35  grichenk
+* Added CScope::GetBioseqHandle() with id resolving flag.
+*
 * Revision 1.1  2004/04/05 15:54:26  grichenk
 * Initial revision
 *
