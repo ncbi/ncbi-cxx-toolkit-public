@@ -917,22 +917,33 @@ public:
     ///
     /// Register the RW-lock to be released by the guard destructor.
     /// Do NOT acquire the RW-lock though!
-    CAutoRW(CRWLock& rw) : m_RW(&rw) {}
-
-    /// Release the RW-lock right now - don't release it in the guard
-    /// destructor.
-    void Release(void) { m_RW->Unlock();  m_RW = 0; }
+    CAutoRW(void) : m_RW(0)
+        {
+        }
 
     /// Destructor.
     ///
     /// Release the R-lock, if it was successfully acquired and
     /// not released already by Release().
-    ~CAutoRW(void)  { if (m_RW) Release(); }
+    ~CAutoRW(void)
+        {
+            Release();
+        }
 
+    /// Release the RW-lock right now - don't release it in the guard
+    /// destructor.
+    void Release(void)
+        {
+            if ( m_RW ) {
+                m_RW->Unlock();
+                m_RW = 0;
+            }
+        }
+
+protected:
     /// Get the RW-lock being guarded.
     CRWLock* GetRW(void) const { return m_RW; }
 
-protected:
     CRWLock* m_RW;  /// The RW-lock -- NULL if not acquired.
 
     /// Private copy constructor to disallow initialization.
@@ -955,9 +966,20 @@ class NCBI_XNCBI_EXPORT CReadLockGuard : public CAutoRW
 public:
     /// Constructor.
     ///
+    /// Default constructor - do nothing.
+    CReadLockGuard(void)
+        {
+        }
+
+    /// Constructor.
+    ///
     /// Acquire the R-lock;  register it to be released by the guard
     /// destructor.
-    CReadLockGuard(CRWLock& rw) : CAutoRW(rw) { GetRW()->ReadLock(); }
+    CReadLockGuard(CRWLock& rw)
+        {
+            rw.ReadLock();
+            m_RW = &rw;
+        }
 
     void Guard(CRWLock& rw)
         {
@@ -989,9 +1011,20 @@ class NCBI_XNCBI_EXPORT CWriteLockGuard : public CAutoRW
 public:
     /// Constructor.
     ///
+    /// Default constructor - do nothing.
+    CWriteLockGuard(void)
+        {
+        }
+
+    /// Constructor.
+    ///
     /// Acquire the W-lock;  register it to be released by the guard
     /// destructor.
-    CWriteLockGuard(CRWLock& rw) : CAutoRW(rw) { GetRW()->WriteLock(); }
+    CWriteLockGuard(CRWLock& rw)
+        {
+            rw.WriteLock();
+            m_RW = &rw;
+        }
 
     void Guard(CRWLock& rw)
         {
@@ -1075,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/09/30 16:07:39  vasilche
+ * Allow release and reacqure rw lock in guard.
+ *
  * Revision 1.30  2003/09/29 20:50:30  ivanov
  * Removed CAutoInitializeStaticBase
  *
