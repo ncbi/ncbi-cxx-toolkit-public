@@ -106,6 +106,9 @@ enum ESentinelType {
  *        When using NCBI2NA_ENCODING, this argument should be set to
  *        eNoSentinels as a sentinel byte cannot be represented in this 
  *        encoding. [in]
+ * @param warnings Used to emit warnings when fetching sequence (e.g.:
+ *        replacement of invalid characters). Parameter must be allocated by
+ *        caller of this function and warnings will be appended. [out]
  * @throws CBlastException, CSeqVectorException, CException
  * @return pair containing the buffer and its length. 
  */
@@ -114,7 +117,8 @@ SBlastSequence
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope,
             objects::ENa_strand strand = objects::eNa_strand_plus, 
-            ESentinelType sentinel = eSentinels);
+            ESentinelType sentinel = eSentinels,
+            std::string* warnings = NULL);
 
 /** Calculates the length of the buffer to allocate given the desired encoding,
  * strand (if applicable) and use of sentinel bytes around sequence
@@ -192,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/01/06 16:07:55  camacho
+* + warnings output parameter to blast::GetSequence
+*
 * Revision 1.28  2005/01/06 15:41:20  camacho
 * Add Blast_Message output parameter to SetupQueries
 *

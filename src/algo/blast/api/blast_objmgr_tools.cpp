@@ -433,12 +433,16 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
             } else {
 
+                string warnings;
                 sequence = GetSequence(*itr->seqloc, encoding, itr->scope,
-                                     eNa_strand_unknown, eSentinels);
+                                     eNa_strand_unknown, eSentinels, &warnings);
                 int offset = qinfo->contexts[ctx_index].query_offset;
                 memcpy(&buf.get()[offset], sequence.data.get(), 
                        sequence.length);
                 mask->seqloc_array[index] = bsl_tmp;
+                if ( !warnings.empty() ) {
+                    error_string += warnings + " ";
+                }
             }
 
             ++index;
@@ -546,7 +550,8 @@ SetupSubjects(const TSeqLocVector& subjects,
 
 SBlastSequence
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
-            ENa_strand strand, ESentinelType sentinel) 
+            ENa_strand strand, ESentinelType sentinel,
+            string* warnings) 
 {
     Uint1* buf = NULL;          // buffer to write sequence
     Uint1* buf_var = NULL;      // temporary pointer to buffer
@@ -560,15 +565,32 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
     switch (encoding) {
     // Protein sequences (query & subject) always have sentinels around sequence
     case BLASTP_ENCODING:
+    {
+        vector<TSeqPos> replaced_positions;   // positions replaced by X's
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
         *buf_var++ = GetSentinelByte(encoding);
-        for (i = 0; i < sv.size(); i++)
-            *buf_var++ = sv[i];
+        for (i = 0; i < sv.size(); i++) {
+            // Change Selenocysteine to X
+            if (sv[i] == AMINOACID_TO_NCBISTDAA[(int)'U']) {
+                replaced_positions.push_back(i);
+                *buf_var++ = AMINOACID_TO_NCBISTDAA[(int)'X'];
+            } else {
+                *buf_var++ = sv[i];
+            }
+        }
         *buf_var++ = GetSentinelByte(encoding);
+        if (warnings && replaced_positions.size() > 0) {
+            *warnings += "Selenocysteine (U) replaced by X at positions ";
+            *warnings += NStr::IntToString(replaced_positions[0]);
+            for (i = 1; i < replaced_positions.size(); i++) {
+                *warnings += ", " + NStr::IntToString(replaced_positions[i]);
+            }
+        }
         break;
+    }
 
     case NCBI4NA_ENCODING:
     case BLASTNA_ENCODING: // Used for nucleotide blastn queries
@@ -1004,6 +1026,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/01/06 16:08:09  camacho
+* + warnings output parameter to blast::GetSequence
+*
 * Revision 1.30  2005/01/06 15:41:35  camacho
 * Add Blast_Message output parameter to SetupQueries
 *
