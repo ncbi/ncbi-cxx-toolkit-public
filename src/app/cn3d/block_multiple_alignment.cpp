@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/07/10 16:39:54  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.23  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -587,7 +590,7 @@ int BlockMultipleAlignment::GetAlignedSlaveIndex(int masterSeqIndex, int slaveRo
 }
 
 void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
-    eUnalignedJustification justification, bool altDown) const
+    eUnalignedJustification justification, bool toggle) const
 {
     // translate from,to (alignment columns) into sequence indexes
     const Sequence *sequence;
@@ -612,7 +615,7 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
         to--;
     }
 
-    if (altDown)
+    if (toggle)
         GlobalMessenger()->ToggleHighlights(sequence, fromIndex, toIndex);
     else
         GlobalMessenger()->AddHighlights(sequence, fromIndex, toIndex);

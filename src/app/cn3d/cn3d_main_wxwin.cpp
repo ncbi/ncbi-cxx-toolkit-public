@@ -26,9 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
+*       main windows (structure and log) and application object for Cn3D
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/07/10 16:39:54  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.56  2001/07/04 19:39:16  thiessen
 * finish user annotation system
 *
@@ -281,6 +285,7 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/show_hide_dialog.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/multitext_dialog.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -357,11 +362,8 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     diagMsg.Write(errMsg);
 
     if (diagMsg.m_Severity >= eDiag_Error && diagMsg.m_Severity != eDiag_Trace) {
-        wxMessageDialog *dlg =
-			new wxMessageDialog(NULL, errMsg.c_str(), "Severe Error!",
-				wxOK | wxCENTRE | wxICON_EXCLAMATION);
-        dlg->ShowModal();
-		delete dlg;
+        wxMessageDialog dlg(NULL, errMsg.c_str(), "Severe Error!", wxOK | wxCENTRE | wxICON_EXCLAMATION);
+        dlg.ShowModal();
     } else {
         if (!logFrame) {
             logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
@@ -460,17 +462,18 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 const int Cn3DMainFrame::UNLIMITED_STRUCTURES = -2;
 
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
-    EVT_CLOSE(                                          Cn3DMainFrame::OnCloseWindow)
-    EVT_MENU(       MID_EXIT,                           Cn3DMainFrame::OnExit)
-    EVT_MENU(       MID_OPEN,                           Cn3DMainFrame::OnOpen)
-    EVT_MENU(       MID_SAVE,                           Cn3DMainFrame::OnSave)
-    EVT_MENU(       MID_LIMIT_STRUCT,                   Cn3DMainFrame::OnLimit)
-    EVT_MENU_RANGE( MID_TRANSLATE,  MID_RESET,          Cn3DMainFrame::OnAdjustView)
-    EVT_MENU_RANGE( MID_SHOW_HIDE,  MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
-    EVT_MENU(       MID_REFIT_ALL,                      Cn3DMainFrame::OnAlignStructures)
-    EVT_MENU_RANGE( MID_EDIT_STYLE, MID_ANNOTATE,       Cn3DMainFrame::OnSetStyle)
-    EVT_MENU_RANGE( MID_QLOW,       MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
-    EVT_MENU_RANGE( MID_SHOW_LOG,   MID_SHOW_SEQ_V,     Cn3DMainFrame::OnShowWindow)
+    EVT_CLOSE     (                                         Cn3DMainFrame::OnCloseWindow)
+    EVT_MENU      (MID_EXIT,                                Cn3DMainFrame::OnExit)
+    EVT_MENU      (MID_OPEN,                                Cn3DMainFrame::OnOpen)
+    EVT_MENU      (MID_SAVE,                                Cn3DMainFrame::OnSave)
+    EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
+    EVT_MENU_RANGE(MID_TRANSLATE,  MID_RESET,               Cn3DMainFrame::OnAdjustView)
+    EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
+    EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
+    EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE(MID_QLOW,       MID_QHIGH,               Cn3DMainFrame::OnSetQuality)
+    EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
+    EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_EDIT_CDD_NOTES,  Cn3DMainFrame::OnCDD)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
@@ -484,7 +487,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     RaiseLogWindow();
 
     // File menu
-    wxMenuBar *menuBar = new wxMenuBar;
+    menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     menu->Append(MID_OPEN, "&Open");
     menu->Append(MID_SAVE, "&Save");
@@ -547,7 +550,13 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_SHOW_LOG, "Show Message &Log");
     menuBar->Append(menu, "&Window");
 
+    menu = new wxMenu;
+    menu->Append(MID_EDIT_CDD_DESCR, "Edit &Description");
+    menu->Append(MID_EDIT_CDD_NOTES, "Edit &Notes");
+    menuBar->Append(menu, "&CDD");
+
     SetMenuBar(menuBar);
+    menuBar->EnableTop(menuBar->FindMenu("&CDD"), false);
 
     // Make a GLCanvas
 #if defined(__WXMSW__)
@@ -634,6 +643,35 @@ bool Cn3DMainFrame::SaveDialog(bool canCancel)
     }
 
     return true;
+}
+
+void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
+{
+    if (!glCanvas->structureSet) return;
+    switch (event.GetId()) {
+        case MID_EDIT_CDD_DESCR: {
+            wxString newDescription = wxGetTextFromUser("Enter or edit the CDD description text:",
+                "CDD Description", glCanvas->structureSet->GetCDDDescription().c_str(),
+                this, -1, -1, false);
+            if (newDescription.size() > 0 &&
+                !glCanvas->structureSet->SetCDDDescription(newDescription.c_str()))
+                ERR_POST(Error << "Error saving CDD description");
+            break;
+        }
+        case MID_EDIT_CDD_NOTES: {
+            StructureSet::TextLines lines;
+            if (!glCanvas->structureSet->GetCDDNotes(&lines)) break;
+            MultiTextDialog dialog(lines,
+                this, -1, "CDD Notes", wxDefaultPosition, wxSize(500, 400));
+            int retval = dialog.ShowModal();
+            if (retval == wxOK) {
+                dialog.GetLines(&lines);
+                if (!glCanvas->structureSet->SetCDDNotes(lines))
+                    ERR_POST(Error << "Error saving CDD notes");
+            }
+            break;
+        }
+    }
 }
 
 void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
@@ -831,6 +869,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     }
 
     SetTitle(wxFileNameFromPath(filename) + " - Cn3D++");
+    menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
 }

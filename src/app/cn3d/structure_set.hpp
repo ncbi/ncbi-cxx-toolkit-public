@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/07/10 16:39:34  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.49  2001/07/04 19:38:55  thiessen
 * finish user annotation system
 *
@@ -312,20 +315,29 @@ private:
         eSequenceData               = 0x04,
         eUpdateData                 = 0x08,
         eStyleData                  = 0x100,
-        eUserAnnotationData         = 0x200
+        eUserAnnotationData         = 0x200,
+        eOtherData                  = 0x400
     };
     mutable unsigned int dataChanged;
 
 public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
     void StyleDataChanged(void) const { dataChanged |= eStyleData; }
-    bool UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
+    void UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
 
     // for manipulating structure alignment features
     void InitStructureAlignments(int masterMMDBID);
     void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature,
         int masterDomainID, int slaveDomainID);
     void RemoveStructureAlignments(void);
+
+    // CDD-specific stuff
+    bool IsCDD(void) const { return (cddData != NULL); }
+    const std::string& GetCDDDescription(void) const;
+    bool SetCDDDescription(const std::string& descr);
+    typedef std::vector < std::string > TextLines;
+    bool GetCDDNotes(TextLines *lines) const;
+    bool SetCDDNotes(const TextLines& lines);
 };
 
 class ChemicalGraph;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2001/07/10 16:39:55  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.69  2001/07/04 19:39:17  thiessen
 * finish user annotation system
 *
@@ -263,6 +266,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
+#include <objects/cdd/Cdd_descr_set.hpp>
+#include <objects/cdd/Cdd_descr.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <connect/ncbi_util.h>
@@ -453,8 +458,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime->GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-		styleManager->SetGlobalRenderingStyle(StyleSettings::eWormDisplay);
-        styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
+        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
+        styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
         structureAlignments = &(mime->GetAlignstruc().SetAlignments());
         if (mime->GetAlignstruc().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetAlignstruc().GetStyle_dictionary());
@@ -1050,6 +1055,113 @@ void StructureSet::SelectedAtom(unsigned int name)
         ApplyTransformation(&rotationCenter, *(object->transformToMaster));
 }
 
+const std::string& StructureSet::GetCDDDescription(void) const
+{
+    static const std::string empty = "";
+    if (!cddData) return empty;
+
+    // find first 'comment' in Cdd-descr-set, assume this is the "long description"
+    if (!cddData->IsSetDescription() || cddData->GetDescription().Get().size() == 0) return empty;
+    CCdd_descr_set::Tdata::const_iterator d, de = cddData->GetDescription().Get().end();
+    for (d=cddData->GetDescription().Get().begin(); d!=de; d++)
+        if ((*d)->IsComment())
+            return (*d)->GetComment();
+
+    return empty;
+}
+
+bool StructureSet::SetCDDDescription(const std::string& descr)
+{
+    if (!cddData || descr.size() == 0) return false;
+
+    if (cddData->IsSetDescription() && cddData->GetDescription().Get().size() >= 0) {
+        // find first 'comment' in Cdd-descr-set, assume this is the "long description"
+        CCdd_descr_set::Tdata::iterator d, de = cddData->SetDescription().Set().end();
+        for (d=cddData->SetDescription().Set().begin(); d!=de; d++) {
+            if ((*d)->IsComment()) {
+                if ((*d)->GetComment() != descr) {
+                    (*d)->SetComment(descr);
+                    dataChanged |= eOtherData;
+                }
+                return true;
+            }
+        }
+    }
+
+    // add new comment if not yet present
+    CRef < CCdd_descr > comment(new CCdd_descr);
+    comment->SetComment(descr);
+    cddData->SetDescription().Set().push_front(comment);
+    dataChanged |= eOtherData;
+    return true;
+}
+
+bool StructureSet::GetCDDNotes(TextLines *lines) const
+{
+    if (!lines || !cddData) return false;
+    lines->clear();
+
+    if (!cddData->IsSetDescription() || cddData->GetDescription().Get().size() == 0)
+        return true;
+
+    // find scrapbook item
+    CCdd_descr_set::Tdata::const_iterator d, de = cddData->GetDescription().Get().end();
+    for (d=cddData->GetDescription().Get().begin(); d!=de; d++) {
+        if ((*d)->IsScrapbook()) {
+
+            // fill out lines from scrapbook string list
+            lines->resize((*d)->GetScrapbook().size());
+            CCdd_descr::TScrapbook::const_iterator l, le = (*d)->GetScrapbook().end();
+            int i = 0;
+            for (l=(*d)->GetScrapbook().begin(); l!=le; l++)
+                (*lines)[i++] = *l;
+            return true;
+        }
+    }
+    return true;
+}
+
+bool StructureSet::SetCDDNotes(const TextLines& lines)
+{
+    if (!cddData) return false;
+
+    CCdd_descr::TScrapbook *scrapbook = NULL;
+
+    // find an existing scrapbook item
+    if (cddData->IsSetDescription()) {
+        CCdd_descr_set::Tdata::iterator d, de = cddData->SetDescription().Set().end();
+        for (d=cddData->SetDescription().Set().begin(); d!=de; d++) {
+            if ((*d)->IsScrapbook()) {
+                if (lines.size() == 0) {
+                    cddData->SetDescription().Set().erase(d);   // if empty, remove scrapbook item
+                    dataChanged |= eOtherData;
+                    TESTMSG("removed scrapbook");
+                } else
+                    scrapbook = &((*d)->SetScrapbook());
+                break;
+            }
+        }
+    }
+    if (lines.size() == 0) return true;
+
+    // create a scrapbook item if doesn't exist already
+    if (!scrapbook) {
+        CRef < CCdd_descr > descr(new CCdd_descr());
+        scrapbook = &(descr->SetScrapbook());
+        cddData->SetDescription().Set().push_back(descr);
+    }
+
+    // fill out scrapbook lines
+    scrapbook->clear();
+    for (int i=0; i<lines.size(); i++)
+        scrapbook->push_back(lines[i]);
+    dataChanged |= eOtherData;
+
+    return true;
+}
+
+
+///// StructureObject stuff /////
 
 const int StructureObject::NO_MMDB_ID = -1;
 const double StructureObject::NO_TEMPERATURE = -1.0;

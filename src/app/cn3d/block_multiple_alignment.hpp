@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/07/10 16:39:32  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.18  2001/06/21 02:01:06  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -196,7 +199,7 @@ public:
 
     // called when user selects some part of a row
     void SelectedRange(int row, int from, int to,
-        eUnalignedJustification justification, bool altDown) const;
+        eUnalignedJustification justification, bool toggle) const;
 
     // get a list of UngappedAlignedBlocks; should be destroyed by called when done
     typedef std::list < const UngappedAlignedBlock * > UngappedAlignedBlockList;

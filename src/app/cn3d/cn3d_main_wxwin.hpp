@@ -26,9 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
+*       main windows (structure and log) and application object for Cn3D
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/07/10 16:39:33  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.29  2001/06/29 18:12:53  thiessen
 * initial (incomplete) user annotation system
 *
@@ -248,7 +252,10 @@ public:
             MID_QHIGH,
         // Window menu
             MID_SHOW_LOG,
-            MID_SHOW_SEQ_V
+            MID_SHOW_SEQ_V,
+        // CDD menu
+           MID_EDIT_CDD_DESCR,
+           MID_EDIT_CDD_NOTES
     };
 
     void OnExit(wxCommandEvent& event);
@@ -267,10 +274,14 @@ public:
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
 
+    void OnCDD(wxCommandEvent& event);
+
 private:
 
     static const int UNLIMITED_STRUCTURES;
     int structureLimit;
+
+    wxMenuBar *menuBar;
 
     DECLARE_EVENT_TABLE()
 };

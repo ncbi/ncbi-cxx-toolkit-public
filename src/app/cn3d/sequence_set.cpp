@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/07/10 16:39:55  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.32  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -413,7 +416,7 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
 CSeq_id * Sequence::CreateSeqId(void) const
 {
     CSeq_id *sid = new CSeq_id();
-    if (identifier->pdbID.size() > 0) {
+    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
         sid->SetPdb().SetMol().Set(identifier->pdbID);
         if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
     } else { // use gi

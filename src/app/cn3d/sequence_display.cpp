@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/07/10 16:39:55  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.27  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -223,7 +226,7 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(
 }
 
 void DisplayRowFromSequence::SelectedRange(int from, int to,
-    BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const
+    BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
 {
     int len = sequence->Length();
 
@@ -237,7 +240,7 @@ void DisplayRowFromSequence::SelectedRange(int from, int to,
     if (to < 0) to = 0;
     else if (to >= len) to = len - 1;
 
-    if (altDown)
+    if (toggle)
         GlobalMessenger()->ToggleHighlights(sequence, from, to);
     else
         GlobalMessenger()->AddHighlights(sequence, from, to);
@@ -473,9 +476,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         return false;
     }
 
+    shiftDown = ((controls & ViewableAlignment::eShiftDown) > 0);
     controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
-    altDown = ((controls & ViewableAlignment::eAltOrMetaDown) > 0);
-    if (!controlDown && !altDown && column == -1)
+    if (!shiftDown && !controlDown && column == -1)
         GlobalMessenger()->RemoveAllHighlights(true);
 
     // process events in sequence area
@@ -638,11 +641,11 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
         }
     }
 
-    if (!controlDown && !altDown)
+    if (!shiftDown && !controlDown)
         GlobalMessenger()->RemoveAllHighlights(true);
 
     for (int i=rowTop; i<=rowBottom; i++)
-        rows[i]->SelectedRange(columnLeft, columnRight, justification, altDown);
+        rows[i]->SelectedRange(columnLeft, columnRight, justification, controlDown); // toggle if control down
 }
 
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,

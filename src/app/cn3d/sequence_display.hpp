@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/07/10 16:39:34  thiessen
+* change selection control keys; add CDD name/notes dialogs
+*
 * Revision 1.16  2001/06/21 02:01:07  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -113,7 +116,7 @@ public:
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
     virtual void SelectedRange(int from, int to,
-        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const = 0;
+        BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const = 0;
 
     virtual DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const = 0;
 };
@@ -148,9 +151,9 @@ public:
     }
 
     void SelectedRange(int from, int to,
-        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const
+        BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
     {
-        alignment->SelectedRange(row, from, to, justification, altDown);
+        alignment->SelectedRange(row, from, to, justification, toggle);
     }
 };
 
@@ -176,7 +179,7 @@ public:
         { return sequence; }
 
     void SelectedRange(int from, int to,
-        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const;
+        BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const;
 };
 
 class DisplayRowFromString : public DisplayRow
@@ -210,7 +213,7 @@ public:
     const Sequence * GetSequence(void) const { return NULL; }
 
     void SelectedRange(int from, int to,
-        BlockMultipleAlignment::eUnalignedJustification justification, bool altDown) const
+        BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
         { } // do nothing
 };
 
@@ -288,7 +291,7 @@ private:
     void UpdateMaxRowWidth(void);
     void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
-    bool controlDown, altDown;
+    bool shiftDown, controlDown;
 
     void SortRows(void);
 
