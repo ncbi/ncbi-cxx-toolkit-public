@@ -191,6 +191,16 @@
 #endif
 
 /*
+ * Export specifier for library ximage
+ */
+#ifdef NCBI_XIMAGE_EXPORTS
+#  define NCBI_XIMAGE_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XIMAGE_EXPORT       __declspec(dllimport)
+#endif
+
+ 
+/*
  * Export specifier for library xser
  */
 #ifdef NCBI_XSERIAL_EXPORTS
@@ -827,6 +837,7 @@
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
+#  define NCBI_XIMAGE_EXPORT
 
 #endif
 
@@ -836,6 +847,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.33  2003/08/27 16:41:43  ivanov
+ * * Added export specifier NCBI_XIMAGE_EXPORT
+ *
  * Revision 1.32  2003/08/06 16:09:21  jianye
  * Add specifiers for new libraries: blastdb, xalnutil, xloader_blastdb.
  *
