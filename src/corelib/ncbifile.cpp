@@ -758,14 +758,19 @@ bool CDirEntry::Rename(const string& newname)
 }
 
 
-bool CDirEntry::Remove(void) const
+bool CDirEntry::Remove(EDirRemoveMode mode) const
 {
 #if defined(NCBI_OS_MAC)
     OSErr err = ::FSpDelete(&FSS());
     return err == noErr;
 #else
     if ( IsDir() ) {
-        return rmdir(GetPath().c_str()) == 0;
+        if (mode == eOnlyEmpty) {
+            return rmdir(GetPath().c_str()) == 0;
+        } else {
+            CDir dir(GetPath());
+            return dir.Remove(eRecursive);
+        }
     } else {
         return remove(GetPath().c_str()) == 0;
     }
@@ -871,9 +876,9 @@ fstream* CFile::CreateTmpFile(const string& filename,
 }
 
 
-fstream* CFile::CreateTmpFileExt(const string& dir, const string& prefix,
-                                 ETextBinary text_binary, 
-                                 EAllowRead allow_read)
+fstream* CFile::CreateTmpFileEx(const string& dir, const string& prefix,
+                                ETextBinary text_binary, 
+                                EAllowRead allow_read)
 {
     return CreateTmpFile(GetTmpNameExt(dir, prefix), text_binary, allow_read);
 }
@@ -1091,61 +1096,41 @@ bool CDir::Remove(EDirRemoveMode mode) const
 {
     // Remove directory as empty
     if ( mode == eOnlyEmpty ) {
-        return CParent::Remove();
+        return CParent::Remove(eOnlyEmpty);
     }
+    // Read all entryes in derectory
+    TEntries contents = GetEntries();
 
-    CDir dir(*this);
-
-    // List for subdirectories
-    list<CDir> dirlist;
-
-    // Read and remove all entry in derectory
-    TEntries contents = dir.GetEntries();
+    // Remove
     iterate(TEntries, entry, contents) {
+        string name = (*entry)->GetName();
 #if !defined(NCBI_OS_MAC)
-        if ( (*entry)->GetName() == "."  ||  (*entry)->GetName() == ".."  ||  
-             (*entry)->GetName() == string(1, GetPathSeparator()) ) {
+        if ( name == "."  ||  name == ".."  ||  
+             name == string(1, GetPathSeparator()) ) {
             continue;
         }
 #endif
 #if defined(NCBI_OS_MAC)
         CDirEntry& item = **entry;
-        // Is it directory ?
-        if ( item.IsDir() ) {
-            if ( mode == eRecursive ) {
-                dirlist.push_back(CDir(item.FSS()));
-            }
-        } else {
-            // It is a file
-            if ( !item.Remove() ) {
-                return false;
-            }
-        }
 #else
-        string path = GetPath() + GetPathSeparator() + (*entry)->GetName();
-        CDirEntry item(path);
-        if ( item.IsDir() ) {
-            if ( mode == eRecursive ) {
-                dirlist.push_back(CDir(path));
-            }
-        } else {
-            // It is a file
-            if ( !item.Remove() ) {
+        // Get entry item with full pathname
+        CDirEntry item(GetPath() + GetPathSeparator() + name);
+#endif
+        if ( mode == eRecursive ) {
+            if ( !item.Remove(eRecursive) ) {
                 return false;
             }
-        }
-#endif
-    }
-    // If need remove subdirectories
-    if ( mode == eRecursive ) {
-        iterate(list<CDir>, it, dirlist) {
-            if ( !it->Remove(eRecursive) ) {
+        } else {
+            if ( item.IsDir() ) {
+                continue;
+            }
+            if ( !item.Remove() ) {
                 return false;
             }
         }
     }
     // Remove main directory
-    return CParent::Remove();
+    return CParent::Remove(eOnlyEmpty);
 }
 
 
@@ -1155,6 +1140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/01/24 22:18:02  ivanov
+ * Changed CDirEntry::Remove() and CDir::Remove()
+ *
  * Revision 1.15  2002/01/22 21:21:09  ivanov
  * Fixed typing error
  *

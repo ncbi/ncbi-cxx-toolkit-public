@@ -1,5 +1,5 @@
-#ifndef NCBIFILE__HPP
-#define NCBIFILE__HPP
+#ifndef CORELIB__NCBIFILE__HPP
+#define CORELIB__NCBIFILE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,41 +28,8 @@
  *
  * Author: Vladimir Ivanov, Denis Vakatov
  *
- * File Description:
- *    Files and directories accessory functions
+ * File Description:  Files and directories accessory functions
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.8  2002/01/10 16:46:09  ivanov
- * Added CDir::GetHome() and some CDirEntry:: path processing functions
- *
- * Revision 1.7  2001/12/26 20:58:23  juran
- * Use an FSSpec* member instead of an FSSpec, so a forward declaration can be used.
- * Add copy constructor and assignment operator for CDirEntry on Mac OS,
- * thus avoiding memberwise copy which would blow up upon deleting the pointer twice.
- *
- * Revision 1.6  2001/12/13 20:14:34  juran
- * Add forward declaration of struct FSSpec for Mac OS.
- *
- * Revision 1.5  2001/11/19 18:07:38  juran
- * Change Contents() to GetEntries().
- * Implement MatchesMask().
- *
- * Revision 1.4  2001/11/15 16:30:46  ivanov
- * Moved from util to corelib
- *
- * Revision 1.3  2001/11/01 21:02:18  ucko
- * Fix to work on non-MacOS platforms again.
- *
- * Revision 1.2  2001/11/01 20:06:49  juran
- * Replace directory streams with Contents() method.
- * Implement and test Mac OS platform.
- *
- * Revision 1.1  2001/09/19 13:04:18  ivanov
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -172,9 +139,18 @@ public:
     // Rename entry
     bool Rename(const string& new_path);
 
-    // Remove entry. (NOTE: Delete only empty directories).
-    bool Remove(void) const;
+    // Directory remove mode
+    enum EDirRemoveMode {
+        eOnlyEmpty,     // Remove only empty directory
+        eNonRecursive,  // Remove all files in directory, but not remove
+                        // subdirectories and files in it.
+        eRecursive      // Remove all files and subdirectories
+    };
 
+    // Remove entry
+    // NOTE: "mode" appoint removing method only for directories
+    virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
+    
     // See also GetType() below for other entry types
     bool IsFile(void) const;
     bool IsDir(void) const;
@@ -328,10 +304,10 @@ public:
     static fstream* CreateTmpFile(const string& filename = kEmptyStr,
                                   ETextBinary text_binary = eBinary,
                                   EAllowRead  allow_read  = eAllowRead);
-    static fstream* CreateTmpFileExt(const string& dir = ".",
-                                     const string& prefix = kEmptyStr,
-                                     ETextBinary text_binary = eBinary,
-                                     EAllowRead  allow_read  = eAllowRead);
+    static fstream* CreateTmpFileEx(const string& dir = ".",
+                                    const string& prefix = kEmptyStr,
+                                    ETextBinary text_binary = eBinary,
+                                    EAllowRead  allow_read  = eAllowRead);
 };
 
 
@@ -369,21 +345,11 @@ public:
     typedef vector< AutoPtr<CDirEntry> > TEntries;
     TEntries GetEntries(const string& mask = kEmptyStr) const;
 
-    // Create the directory using "dirname" passed in the constructor.
+    // Create the directory using "dirname" passed in the constructor
     bool Create(void) const;
 
-    // Directory remove mode
-    enum EDirRemoveMode {
-        eOnlyEmpty,     // Remove only empty directory
-        eNonRecursive,  // Remove all files in directory, but not remove
-                        // subdirectories and files in it.
-        eRecursive      // Remove all files and subdirectories
-    };
-
-    // Delete existing directory.
-    // NOTE: This functions can delete non-empty directories (unlike
-    //       CDirEntry::Remove()).
-    bool Remove(EDirRemoveMode mode) const;
+    // Delete existing directory
+    virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
 };
 
 
@@ -481,4 +447,44 @@ bool CDir::Exists(void) const
 
 END_NCBI_SCOPE
 
-#endif  /* NCBIFILE__HPP */
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.9  2002/01/24 22:17:40  ivanov
+ * Changed CDirEntry::Remove() and CDir::Remove()
+ *
+ * Revision 1.8  2002/01/10 16:46:09  ivanov
+ * Added CDir::GetHome() and some CDirEntry:: path processing functions
+ *
+ * Revision 1.7  2001/12/26 20:58:23  juran
+ * Use an FSSpec* member instead of an FSSpec, so a forward declaration can 
+ * be used.
+ * Add copy constructor and assignment operator for CDirEntry on Mac OS,
+ * thus avoiding memberwise copy which would blow up upon deleting the 
+ * pointer twice.
+ *
+ * Revision 1.6  2001/12/13 20:14:34  juran
+ * Add forward declaration of struct FSSpec for Mac OS.
+ *
+ * Revision 1.5  2001/11/19 18:07:38  juran
+ * Change Contents() to GetEntries().
+ * Implement MatchesMask().
+ *
+ * Revision 1.4  2001/11/15 16:30:46  ivanov
+ * Moved from util to corelib
+ *
+ * Revision 1.3  2001/11/01 21:02:18  ucko
+ * Fix to work on non-MacOS platforms again.
+ *
+ * Revision 1.2  2001/11/01 20:06:49  juran
+ * Replace directory streams with Contents() method.
+ * Implement and test Mac OS platform.
+ *
+ * Revision 1.1  2001/09/19 13:04:18  ivanov
+ * Initial revision
+ * ===========================================================================
+ */
+
+
+#endif  /* CORELIB__NCBIFILE__HPP */
