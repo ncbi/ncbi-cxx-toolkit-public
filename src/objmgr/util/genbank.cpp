@@ -576,7 +576,7 @@ bool CGenbankWriter::WriteVersion(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     string accession;
-    int version;
+    int version = 0;
     {
         CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
         for (;  it;  ++it) {
@@ -1135,7 +1135,7 @@ bool CRefLess::operator()(CConstRef<CReference> ref1,
     }
 
     {{
-        bool used_uids;
+        bool used_uids = false;
         if (ref1->m_Pmid  &&  ref2->m_Pmid) {
             used_uids = true;
             if (ref1->m_Pmid != ref2->m_Pmid) {
@@ -2775,6 +2775,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2002/12/30 18:02:53  dicuccio
+* Minor compiler warning tweaks: added virtual dtor to CGBQual; fixed a couple of warning concerning uninitialized variables in CGenBankWriter
+*
 * Revision 1.26  2002/12/20 21:42:28  ucko
 * Iterate twice through features to avoid losing coding regions for GenPept.
 *

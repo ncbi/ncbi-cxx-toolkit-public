@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/30 18:02:53  dicuccio
+* Minor compiler warning tweaks: added virtual dtor to CGBQual; fixed a couple of warning concerning uninitialized variables in CGenBankWriter
+*
 * Revision 1.1  2001/11/02 20:54:51  ucko
 * Make gbqual.hpp private; clean up cruft from genbank.hpp.
 *
@@ -125,6 +128,7 @@ public:
 
     CGBQual(EType type = eType_unknown, string value = kEmptyStr)
         : m_Type(type), m_Value(value) {}
+	virtual ~CGBQual() {}
     string ToString(void) const;
 
     DECLARE_INTERNAL_TYPE_INFO();
@@ -202,6 +206,7 @@ public:
 
     CGBSQual(EType type = eType_unknown, string value = kEmptyStr)
         : m_Type(type), m_Value(value) {}
+	virtual ~CGBSQual() {}
     string ToString(void) const;
 
     DECLARE_INTERNAL_TYPE_INFO();
