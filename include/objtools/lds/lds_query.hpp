@@ -53,6 +53,10 @@ public:
     // Linear scan, no idx optimization.
     bool FindFile(const string& path);
 
+    // Scans the objects database, search for sequences.
+    // All found ids are added to the obj_ids set.
+    void FindSequences(const vector<string>& seqids, CLDS_Set* obj_ids);
+
 private:
     SLDS_TablesCollection& m_db;
 };
@@ -63,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/20 19:55:50  kuznets
+ * Implemented new function "FindSequences"
+ *
  * Revision 1.1  2003/06/16 14:54:08  kuznets
  * lds splitted into "lds" and "lds_admin"
  *
