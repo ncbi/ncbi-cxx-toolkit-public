@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2000/10/24 21:51:23  vakatov
+* [DEBUG] By default, do not print file name and line into the diagnostics
+*
 * Revision 1.68  2000/10/24 19:54:48  vakatov
 * Diagnostics to go to CERR by default (was -- disabled by default)
 *
@@ -554,6 +557,7 @@ static void TestDiag(void)
     CNcbiDiag diag;
     double d = 123.45;
 
+    SetDiagPostFlag(eDPF_All);
     diag << "[Unset Diag Stream]  Diagnostics double = " << d << Endm;
     ERR_POST( "[Unset Diag Stream]  ERR_POST double = " << d );
     _TRACE( "[Unset Diag Stream]  Trace double = " << d );

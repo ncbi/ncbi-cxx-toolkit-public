@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/10/24 21:51:21  vakatov
+* [DEBUG] By default, do not print file name and line into the diagnostics
+*
 * Revision 1.22  2000/10/24 19:54:46  vakatov
 * Diagnostics to go to CERR by default (was -- disabled by default)
 *
@@ -121,12 +124,12 @@ BEGIN_NCBI_SCOPE
 //  CDiagBuffer::
 
 #if defined(NDEBUG)
-unsigned int CDiagBuffer::sm_PostFlags      = eDPF_Prefix | eDPF_Severity;
 EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Error;
 #else
-unsigned int CDiagBuffer::sm_PostFlags      = eDPF_All;
 EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
 #endif /* else!NDEBUG */
+
+unsigned int CDiagBuffer::sm_PostFlags      = eDPF_Prefix | eDPF_Severity;
 
 char*        CDiagBuffer::sm_PostPrefix     = 0;
 EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
