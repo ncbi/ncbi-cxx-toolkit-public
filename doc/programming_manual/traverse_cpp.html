@@ -11,8 +11,8 @@
 <font color = "green">
 #include &lt;serial/serial.hpp&gt;
 #include &lt;serial/iterator.hpp&gt;
-#include &lt;serial/objistrasnb.hpp&gt;
-#include &lt;serial/serialasn.hpp&gt;
+#include &lt;serial/objistr.hpp&gt;
+#include &lt;serial/serial.hpp&gt;
 #include &lt;objects/general/Dbtag.hpp&gt;
 #include &lt;objects/general/Object_id.hpp&gt;
 #include &lt;objects/seq/Numbering.hpp>
@@ -40,15 +40,9 @@ using namespace objects;
 int CTestAsn::Run()
 {
 <font color = "red">    // initialize ASN input stream <font color = "black">
-    auto_ptr&lt;CNcbiIstream&gt; inFStream;
-    CNcbiIstream* inStream;
-    inFStream.reset(inStream = new CNcbiIfstream("1001.val", IOS_BASE::in | IOS_BASE::binary));
-    if ( !*inStream )
-        ERR_POST(Fatal << "Cannot open file: 1001.val");
 
-<font color = "red">    // associate an ASN input object with the input <font color = "black">
-    auto_ptr&lt;CObjectIStream&gt; inObject;
-    inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+    auto_ptr&lt;CObjectIStream>
+      inObject(CObjectIStream::Open("1001.val", eSerial_AsnBinary));
 
 <font color = "red">    // initialize, read into, and traverse CBiostruc object <font color = "black">
     CBiostruc bs;

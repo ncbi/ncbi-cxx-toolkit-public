@@ -1,22 +1,22 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
-  <title> Traversing an ASN.1 Data Structure. </title>
+  <title> Traversing a Serialized Data Structure. </title>
 </head>
 <body BGCOLOR="white">
 
-<h1> Traversing an ASN.1 Data Structure </h1>
+<h1> Traversing a Serialized Data Structure </h1>
 <ul>
   <li> <a href="#locateClass"> Locating the Class Definitions </a>
   <li> <a href="#accessMember"> Accessing and Referencing Data Members </a>
-  <li> <a href="#example"> Traversing an ASN.1 Biostruc </a>
+  <li> <a href="#example"> Traversing a Biostruc </a>
   <li> <a href="#iterate"> Iterating Over Containers </a>
 </ul>
 
 <a name="locateClass"> <h3> Locating the Class Definitions </h3>
-In order to traverse an ASN data object, you must first become familiar with 
+In order to traverse a serial data object, you must first become familiar with 
 the class structures and access functions which implement the object. The
-example provided here involves an ASN.1 Biostruc type which is implemented
+example provided here involves a Biostruc type which is implemented
 by class <i>CBiostruc.</i> <p>
 
 The first question is: how do I locate the class definitions implementing the object
@@ -42,8 +42,8 @@ Alternatively, you may want to access the <i>LXR</i> engine directly by using th
 Because we wish to determine which headers to include, the synopsis displayed by the 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident">
 <i>Identifier search </i></a> tool is most useful. There we find a single header file,
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc.hpp#L59">
-<i> Biostruc.hpp </i></a> listed as defining the class at line 59. Accordingly, this is
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc.hpp">
+<i> Biostruc.hpp </i></a> listed as defining the class. Accordingly, this is
 the header file we must include. The <i>CBiostruc</i> class inherits from the <i>CBiostruc_Base</i> class
 however, and we will need to consult that file as well to understand the internal structure
 of the <i>CBiostruc</i> class. Following a link to the parent class from the class hierarchy browser, 
@@ -53,9 +53,9 @@ we find the definition of the
 <p>
 
 This is where we must look for the definitions and access functions we will be using. However,
-it is the inherited class (defined in <i>CBiostruc.hpp</i>) whose header should be
+it is the <i>derived</i> class (defined in <i>CBiostruc.hpp</i>) whose header should be
 <i>#include</i>'d in your source files, and which should be instantiated by your local program
-variable. The inherited class's header file will include the base header file for you. <p>
+variable. The deriveded class header file will include the base header file for you. <p>
 
 More generally, the base (auto-generated) classes should <i>never</i> be instantiated or
 accessed directly in an application.  The relation between these two files and the classes they
@@ -134,9 +134,9 @@ and modify ("mutate") these data. In addition, most classes, including <i>CBiost
 <i>IsSetXxx()</i> and <i>ResetXxx()</i> functions to validate and clear the data members
 respectively. 
 
-<a name="example"> <h3> Traversing an ASN.1 Biostruc </h3> 
+<a name="example"> <h3> Traversing a Biostruc </h3> 
 The program <a href="traverse_cpp.html"><i>traverseBS.cpp</i></a> demonstrates
-how one might load an ASN.1 data file and iterate over the components of the resulting object. 
+how one might load a serial data file and iterate over the components of the resulting object. 
 This example reads from a text ASN.1 Biostruc file and stores the information
 into  a <i>CBiostruc</i> object in memory. The overloaded <i>Visit()</i> function 
 is then used to recursively examine the object
