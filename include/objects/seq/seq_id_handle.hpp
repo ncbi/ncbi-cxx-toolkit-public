@@ -56,7 +56,7 @@ class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_id_Info : public CObject
+class NCBI_SEQ_EXPORT CSeq_id_Info : public CObject
 {
 public:
     explicit CSeq_id_Info(CSeq_id::E_Choice type);
@@ -91,7 +91,7 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
+class NCBI_SEQ_EXPORT CSeq_id_Handle
 {
 public:
     // 'ctors
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/07/12 17:24:06  grichenk
+* Fixed export name
+*
 * Revision 1.25  2004/06/17 18:28:38  vasilche
 * Fixed null pointer exception in GI CSeq_id_Handle.
 *

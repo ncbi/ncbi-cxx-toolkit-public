@@ -64,7 +64,7 @@ class CSeq_id_Which_Tree;
 typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
+class NCBI_SEQ_EXPORT CSeq_id_Mapper : public CObject
 {
 public:
     static CRef<CSeq_id_Mapper> GetInstance(void);
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/07/12 17:24:06  grichenk
+* Fixed export name
+*
 * Revision 1.27  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

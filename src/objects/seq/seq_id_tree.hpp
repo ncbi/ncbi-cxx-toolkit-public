@@ -76,7 +76,7 @@ class CSeq_id_Which_Tree;
 
 
 // Base class for seq-id type-specific trees
-class NCBI_XOBJMGR_EXPORT CSeq_id_Which_Tree : public CObject
+class CSeq_id_Which_Tree : public CObject
 {
 public:
     // 'ctors
@@ -609,6 +609,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/07/12 17:23:48  grichenk
+* Fixed export name
+*
 * Revision 1.7  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
