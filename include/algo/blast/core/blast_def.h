@@ -59,7 +59,8 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #define blast_type_blastx 2
 #define blast_type_tblastn 3
 #define blast_type_tblastx 4
-#define blast_type_psitblastn 5
+#define blast_type_rpsblast 5
+#define blast_type_rpstblastn 6
 #define blast_type_undefined 255
 
 /** Codons are always of length 3 */
