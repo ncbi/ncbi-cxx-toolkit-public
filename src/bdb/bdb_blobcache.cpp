@@ -251,7 +251,8 @@ public:
       m_StampSubKey(stamp_subkey),
 	  m_AttrUpdFlag(false),
       m_WSync(wsync),
-      m_TTL(ttl)
+      m_TTL(ttl),
+      m_Flushed(false)
     {
         m_Buffer = new unsigned char[s_WriterBufferSize];
     }
@@ -292,6 +293,8 @@ public:
     virtual ERW_Result Write(const void* buf, size_t count,
                              size_t* bytes_written = 0)
     {
+        _ASSERT(m_Flushed == false);
+
         if (bytes_written)
             *bytes_written = 0;
         if (count == 0)
@@ -342,6 +345,11 @@ public:
     /// Flush pending data (if any) down to output device.
     virtual ERW_Result Flush(void)
     {
+        if (m_Flushed)
+            return eRW_Success;
+
+        m_Flushed = true;
+
         unsigned flushed_bytes = 0;
         // Dumping the buffer
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
@@ -355,8 +363,8 @@ public:
             m_BlobStream->SetTransaction(&trans);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             delete[] m_Buffer;
-            flushed_bytes = m_BytesInBuffer; 
             m_Buffer = 0;
+            flushed_bytes = m_BytesInBuffer; 
             m_BytesInBuffer = 0;
         }
         if (m_WSync == CBDB_Cache::eWriteSync) {
@@ -409,7 +417,8 @@ private:
 
         if (m_OverflowFile) {
             m_AttrDB.overflow = 1;
-            delete m_OverflowFile;
+            delete m_OverflowFile; 
+            m_OverflowFile = 0;
         }
         m_AttrDB.ttl = m_TTL;
         m_AttrDB.UpdateInsert();
@@ -457,6 +466,7 @@ private:
 	bool                  m_AttrUpdFlag; ///< Falgs attributes are up to date
     CBDB_Cache::EWriteSyncMode m_WSync;
     unsigned int          m_TTL;
+    bool                  m_Flushed; ///< FALSE until Flush() called
 };
 
 
@@ -2257,6 +2267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.103  2005/02/17 15:53:15  kuznets
+ * CBDB_CacheIWriter: protection from double Flush()
+ *
  * Revision 1.102  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
