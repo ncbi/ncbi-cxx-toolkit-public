@@ -411,8 +411,7 @@ CBlastOptionsLocal::Validate() const
         BlastMessageToException(&blmsg, "Lookup table options validation failed");
     }
 
-    if (BlastInitialWordOptionsValidate(program, m_InitWordOpts, m_LutOpts, 
-                                        &blmsg)) {
+    if (BlastInitialWordOptionsValidate(program, m_InitWordOpts, &blmsg)) {
         BlastMessageToException(&blmsg, "Word finder options validation failed");
     }
 
@@ -487,13 +486,12 @@ x_LookupTableOptions_cmp(const LookupTableOptions* a,
     if (a->threshold != b->threshold) return false;
     if (a->lut_type != b->lut_type) return false;
     if (a->word_size != b->word_size) return false;
-    if (a->alphabet_size != b->alphabet_size) return false;
     if (a->mb_template_length != b->mb_template_length) return false;
     if (a->mb_template_type != b->mb_template_type) return false;
-    if (a->scan_step != b->scan_step) return false;
     if (a->max_num_patterns != b->max_num_patterns) return false;
     if (a->use_pssm != b->use_pssm) return false;
     if (x_safe_strcmp(a->phi_pattern, b->phi_pattern) != 0) return false;
+    if (a->variable_wordsize != b->variable_wordsize) return false;
     return true;
 }
 
@@ -610,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2005/01/10 13:36:06  madden
+* Removed deleted options from x_LookupTableOptions_cmp
+*
 * Revision 1.56  2004/12/28 16:42:32  camacho
 * Consistently use the RAII idiom for C structures using wrapper classes in CBlastOptions
 *
