@@ -91,11 +91,6 @@ public:
         eSeqRef_packed_point  // real sequence ref  (m_Object: null)
     };
 
-protected:
-    friend class CSegment;
-    friend class SPosLessSegment;
-    friend class CSeqMap_SeqPoss;
-
     class CSegment
     {
     public:
@@ -117,11 +112,11 @@ protected:
         } m_Iterator;
         
         CRef<CObject>        m_Object;
-        
-        friend class CSeqMap;
-        friend class CSeqMap_CI;
-        friend class SPosLessSegment;
     };
+
+protected:
+    friend class CSegment;
+    friend class CSeqMap_SeqPoss;
 
     class SPosLessSegment
     {
@@ -279,6 +274,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/27 19:29:41  vasilche
+* Fixed access to protected class on WorkShop.
+*
 * Revision 1.25  2002/12/27 19:04:46  vasilche
 * Fixed segmentation fault on 64 bit platforms.
 *
