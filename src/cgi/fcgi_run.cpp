@@ -155,12 +155,12 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
     auto_ptr<CCgiWatchFile> watcher(0);
     {{
         string filename = GetConfig().Get("FastCGI", "WatchFile.Name");
-        int    limit    = NStr::StringToNumeric
-                          (GetConfig().Get("FastCGI", "WatchFile.Limit"));
-        if (limit <= 0) {
-            limit = 1024; // set a reasonable default
-        }
         if ( !filename.empty() ) {
+            int limit = NStr::StringToNumeric
+                        (GetConfig().Get("FastCGI", "WatchFile.Limit"));
+            if (limit <= 0) {
+                limit = 1024; // set a reasonable default
+            }
             watcher.reset(new CCgiWatchFile(filename, limit));
         }
     }}
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2002/12/19 21:23:26  ucko
+ * Don't bother checking WatchFile.Limit unless WatchFile.Name is set.
+ *
  * Revision 1.16  2002/12/19 16:13:35  ucko
  * Support watching an outside file to know when to restart; CVS log to end
  *
