@@ -106,10 +106,10 @@ typedef struct BlastHSP {
    Boolean linked_set;        /**< Is this HSp part of a linked set? */
    Int2 ordering_method;/**< Which method (max or no max for gaps) was used? */
    Int4 num;            /**< How many HSP's make up this (sum) segment */
-   BLAST_Score sumscore;/**< Sumscore of a set of "linked" HSP's. */
+   Int4 sumscore;/**< Sumscore of a set of "linked" HSP's. */
    Boolean start_of_chain; /**< If TRUE, this HSP starts a chain along the
                               "link" pointer. */
-   BLAST_Score score;         /**< This HSP's raw score */
+   Int4 score;         /**< This HSP's raw score */
    Int4 num_ident;         /**< Number of identical base pairs in this HSP */
    double evalue;        /**< This HSP's e-value */
    BlastSeg query;            /**< Query sequence info. */
