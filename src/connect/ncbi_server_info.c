@@ -32,7 +32,6 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_server_infop.h"
-#include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -839,6 +838,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2003/09/02 21:21:42  lavr
+ * Cleanup included headers
+ *
  * Revision 6.52  2003/06/26 15:21:43  lavr
  * Use server's default locality for fSERV_Dns infos
  *
