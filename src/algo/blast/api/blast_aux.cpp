@@ -48,9 +48,9 @@ CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth)
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "filter_string", m_Ptr->filter_string);
-    DebugDumpValue(ddc, "strand_option", m_Ptr->strand_option);
-    DebugDumpValue(ddc, "genetic_code", m_Ptr->genetic_code);
+    ddc.Log("filter_string", string(m_Ptr->filter_string));
+    ddc.Log("strand_option", (unsigned long)m_Ptr->strand_option);
+    ddc.Log("genetic_code", (long)m_Ptr->genetic_code);
 }
 
 void
@@ -60,11 +60,11 @@ CBLAST_SequenceBlk::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "sequence", m_Ptr->sequence);
-    DebugDumpValue(ddc, "sequence_start", m_Ptr->sequence_start);
-    DebugDumpValue(ddc, "sequence_allocated", m_Ptr->sequence_allocated);
-    DebugDumpValue(ddc, "sequence_start_allocated", m_Ptr->sequence_start_allocated);
-    DebugDumpValue(ddc, "length", m_Ptr->length);
+    ddc.Log("sequence", m_Ptr->sequence);
+    ddc.Log("sequence_start", m_Ptr->sequence_start);
+    ddc.Log("sequence_allocated", (bool)m_Ptr->sequence_allocated);
+    ddc.Log("sequence_start_allocated", (bool)m_Ptr->sequence_start_allocated);
+    ddc.Log("length", (long)m_Ptr->length);
 
 }
 
@@ -83,14 +83,14 @@ CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "threshold", m_Ptr->threshold);
-    DebugDumpValue(ddc, "lut_type", m_Ptr->lut_type);
-    DebugDumpValue(ddc, "word_size", m_Ptr->word_size);
-    DebugDumpValue(ddc, "alphabet_size", m_Ptr->alphabet_size);
-    DebugDumpValue(ddc, "mb_template_length", m_Ptr->mb_template_length);
-    DebugDumpValue(ddc, "mb_template_type", m_Ptr->mb_template_type);
-    DebugDumpValue(ddc, "max_positions", m_Ptr->max_positions);
-    DebugDumpValue(ddc, "scan_step", m_Ptr->scan_step);
+    ddc.Log("threshold", (long)m_Ptr->threshold);
+    ddc.Log("lut_type", (long)m_Ptr->lut_type);
+    ddc.Log("word_size", (long)m_Ptr->word_size);
+    ddc.Log("alphabet_size", (long)m_Ptr->alphabet_size);
+    ddc.Log("mb_template_length", (unsigned long)m_Ptr->mb_template_length);
+    ddc.Log("mb_template_type", (unsigned long)m_Ptr->mb_template_type);
+    ddc.Log("max_positions", (long)m_Ptr->max_positions);
+    ddc.Log("scan_step", (unsigned long)m_Ptr->scan_step);
 }
 
 void
@@ -108,12 +108,12 @@ CBlastInitialWordOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "window_size", m_Ptr->window_size);
-    DebugDumpValue(ddc, "container_type", m_Ptr->container_type);
-    DebugDumpValue(ddc, "extension_method", m_Ptr->extension_method);
-    DebugDumpValue(ddc, "variable_wordsize", m_Ptr->variable_wordsize);
-    DebugDumpValue(ddc, "ungapped_extension", m_Ptr->ungapped_extension);
-    DebugDumpValue(ddc, "x_dropoff", m_Ptr->x_dropoff);
+    ddc.Log("window_size", (long)m_Ptr->window_size);
+    ddc.Log("container_type", (long)m_Ptr->container_type);
+    ddc.Log("extension_method", (unsigned long)m_Ptr->extension_method);
+    ddc.Log("variable_wordsize", (bool)m_Ptr->variable_wordsize);
+    ddc.Log("ungapped_extension", (bool)m_Ptr->ungapped_extension);
+    ddc.Log("x_dropoff", m_Ptr->x_dropoff);
 }
 void
 CBlastInitialWordParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
@@ -139,10 +139,10 @@ CBlastExtensionOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "gap_x_dropoff", m_Ptr->gap_x_dropoff);
-    DebugDumpValue(ddc, "gap_x_dropoff_final", m_Ptr->gap_x_dropoff_final);
-    DebugDumpValue(ddc, "gap_trigger", m_Ptr->gap_trigger);
-    DebugDumpValue(ddc, "algorithm_type", m_Ptr->algorithm_type);
+    ddc.Log("gap_x_dropoff", m_Ptr->gap_x_dropoff);
+    ddc.Log("gap_x_dropoff_final", m_Ptr->gap_x_dropoff_final);
+    ddc.Log("gap_trigger", m_Ptr->gap_trigger);
+    ddc.Log("algorithm_type", (long)m_Ptr->algorithm_type);
 }
 
 void
@@ -161,22 +161,22 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "hitlist_size", m_Ptr->hitlist_size);
-    DebugDumpValue(ddc, "hsp_num_max", m_Ptr->hsp_num_max);
-    DebugDumpValue(ddc, "total_hsp_limit", m_Ptr->total_hsp_limit);
-    DebugDumpValue(ddc, "hsp_range_max", m_Ptr->hsp_range_max);
-    DebugDumpValue(ddc, "perform_culling", m_Ptr->perform_culling);
-    DebugDumpValue(ddc, "required_start", m_Ptr->required_start);
-    DebugDumpValue(ddc, "required_end", m_Ptr->required_end);
-    DebugDumpValue(ddc, "expect_value", m_Ptr->expect_value);
-    DebugDumpValue(ddc, "original_expect_value", m_Ptr->original_expect_value);
-    DebugDumpValue(ddc, "single_hsp_evalue", m_Ptr->single_hsp_evalue);
-    DebugDumpValue(ddc, "cutoff_score", m_Ptr->cutoff_score);
-    DebugDumpValue(ddc, "single_hsp_score", m_Ptr->single_hsp_score);
-    DebugDumpValue(ddc, "percent_identity", m_Ptr->percent_identity);
-    DebugDumpValue(ddc, "do_sum_stats", m_Ptr->do_sum_stats);
-    DebugDumpValue(ddc, "longest_intron", m_Ptr->longest_intron);
-    DebugDumpValue(ddc, "is_neighboring", m_Ptr->is_neighboring);
+    ddc.Log("hitlist_size", (long)m_Ptr->hitlist_size);
+    ddc.Log("hsp_num_max", (long)m_Ptr->hsp_num_max);
+    ddc.Log("total_hsp_limit", (long)m_Ptr->total_hsp_limit);
+    ddc.Log("hsp_range_max", (long)m_Ptr->hsp_range_max);
+    ddc.Log("perform_culling", (bool)m_Ptr->perform_culling);
+    ddc.Log("required_start", (long)m_Ptr->required_start);
+    ddc.Log("required_end", (long)m_Ptr->required_end);
+    ddc.Log("expect_value", m_Ptr->expect_value);
+    ddc.Log("original_expect_value", m_Ptr->original_expect_value);
+    ddc.Log("single_hsp_evalue", m_Ptr->single_hsp_evalue);
+    ddc.Log("cutoff_score", (long)m_Ptr->cutoff_score);
+    ddc.Log("single_hsp_score", (long)m_Ptr->single_hsp_score);
+    ddc.Log("percent_identity", m_Ptr->percent_identity);
+    ddc.Log("do_sum_stats", (bool)m_Ptr->do_sum_stats);
+    ddc.Log("longest_longron", (long)m_Ptr->longest_intron);
+    ddc.Log("is_neighboring", (bool)m_Ptr->is_neighboring);
 }
 void
 CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
@@ -210,10 +210,10 @@ CBlastEffectiveLengthsOptions::DebugDump(CDebugDumpContext ddc, unsigned int dep
     if (!m_Ptr)
         return;
 
-    DebugDumpValue(ddc, "db_length", m_Ptr->db_length);
-    DebugDumpValue(ddc, "dbseq_num", m_Ptr->dbseq_num);
-    DebugDumpValue(ddc, "searchsp_eff", m_Ptr->searchsp_eff);
-    DebugDumpValue(ddc, "use_real_db_size", m_Ptr->use_real_db_size);
+    ddc.Log("db_length", (long)m_Ptr->db_length);
+    ddc.Log("dbseq_num", (long)m_Ptr->dbseq_num);
+    ddc.Log("searchsp_eff", (long)m_Ptr->searchsp_eff);
+    ddc.Log("use_real_db_size", (bool)m_Ptr->use_real_db_size);
 }
 
 void
@@ -223,18 +223,16 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     if (!m_Ptr)
         return;
 
-    if (m_Ptr->matrix)
-        DebugDumpValue(ddc, "matrix", m_Ptr->matrix);
-    if (m_Ptr->matrix_path)
-        DebugDumpValue(ddc, "matrix_path", m_Ptr->matrix_path);
-    DebugDumpValue(ddc, "reward", m_Ptr->reward);
-    DebugDumpValue(ddc, "penalty", m_Ptr->penalty);
-    DebugDumpValue(ddc, "gapped_calculation", m_Ptr->gapped_calculation);
-    DebugDumpValue(ddc, "gap_open", m_Ptr->gap_open);
-    DebugDumpValue(ddc, "gap_extend", m_Ptr->gap_extend);
-    DebugDumpValue(ddc, "shift_pen", m_Ptr->shift_pen);
-    DebugDumpValue(ddc, "decline_align", m_Ptr->decline_align);
-    DebugDumpValue(ddc, "is_ooframe", m_Ptr->is_ooframe);
+    ddc.Log("matrix", string(m_Ptr->matrix));
+    ddc.Log("matrix_path", string(m_Ptr->matrix_path));
+    ddc.Log("reward", (long)m_Ptr->reward);
+    ddc.Log("penalty", (long)m_Ptr->penalty);
+    ddc.Log("gapped_calculation", (bool)m_Ptr->gapped_calculation);
+    ddc.Log("gap_open", (long)m_Ptr->gap_open);
+    ddc.Log("gap_extend", (long)m_Ptr->gap_extend);
+    ddc.Log("shift_pen", (long)m_Ptr->shift_pen);
+    ddc.Log("decline_align", (long)m_Ptr->decline_align);
+    ddc.Log("is_ooframe", (bool)m_Ptr->is_ooframe);
 }
 
 void
