@@ -189,6 +189,7 @@ enum EErrType {
     eErr_GENERIC_MissingPubInfo,
     eErr_GENERIC_UnnecessaryPubEquiv,
     eErr_GENERIC_BadPageNumbering,
+    eErr_GENERIC_MedlineEntryPub,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG),
@@ -960,6 +961,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2004/08/03 13:40:26  shomrat
+* + eErr_GENERIC_MedlineEntryPub
+*
 * Revision 1.71  2004/07/29 17:09:45  shomrat
 * + eErr_SEQ_DESCR_TransgenicProblem
 *

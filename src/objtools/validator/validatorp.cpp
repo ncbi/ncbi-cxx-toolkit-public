@@ -828,6 +828,11 @@ void CValidError_imp::ValidatePubdesc
             ValidateCitSub(pub.GetSub(), obj);
             break;
 
+        case CPub::e_Medline:
+            PostErr(eDiag_Error, eErr_GENERIC_MedlineEntryPub, 
+                "Publication is medline entry", obj);
+            break;
+
         case CPub::e_Muid:
             if ( uid == 0 ) {
                 uid = pub.GetMuid();
@@ -2466,6 +2471,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/08/03 13:40:52  shomrat
+* + eErr_GENERIC_MedlineEntryPub
+*
 * Revision 1.56  2004/08/03 13:31:12  shomrat
 * eErr_GENERIC_MissingPubInfo missing cit-sub affil is down to warning if refseq
 *
