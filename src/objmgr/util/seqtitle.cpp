@@ -66,6 +66,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
@@ -386,25 +387,11 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             un = "un";
         }
         if (core->GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
-            // We need the full bioseq here...
-            const CBioseq& seq = hnd.GetBioseq();
             unsigned int pieces = 1;
-            ITERATE (CDelta_ext::Tdata, it,
-                     seq.GetInst().GetExt().GetDelta().Get()) {
-                switch ((*it)->Which()) {
-                case CDelta_seq::e_Loc:
-                    if ( (*it)->GetLoc().IsNull() ) {
-                        pieces++;
-                    }
-                    break;
-                case CDelta_seq::e_Literal:
-                    if ( !(*it)->GetLiteral().IsSetSeq_data() ) {
-                        pieces++;
-                    }
-                    break;
-                default:
-                    break;
-                }
+            for (CSeqMap_CI it = hnd.GetSeqMap().BeginResolved
+                     (&hnd.GetScope(), 0, CSeqMap::fFindGap);
+                 it;  ++it) {
+                ++pieces;
             }
             if (pieces == 1) {
                 // suffix += (", 1 " + un + "ordered piece");
@@ -897,6 +884,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.40  2004/10/07 14:18:46  ucko
+* Rework piece-counting code to use CSeqMap_CI, eliminating the use of
+* the deprecated method CBioseq_Handle::GetBioseq().
+*
 * Revision 1.39  2004/10/01 19:13:53  ucko
 * Drop s_FindLongestFeature in favor of GetBestOverlappingFeat.
 *
