@@ -143,7 +143,7 @@ s_GetProteinFrameLength(Int4 nuc_length, Int2 frame)
 /// Note that even though the edit_block is passed in, data for seqalign is
 /// collected from the esp_head argument for nsegs segments. This editing script may
 /// not be the full editing scripg if a discontinuous alignment is being built.
-/// @param edit_script Traceback editing script. [in]
+/// @param hsp HSP structure containing traceback information. [in]
 /// @param esp_head Traceback editing script linked list [in]
 /// @param nsegs Number of alignment segments [in]
 /// @param starts Vector of starting positions to fill [out]
@@ -356,7 +356,7 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
 /// Checks if any decline-to-align segments immediately follow an insertion or 
 /// deletion, and swaps any such segments so indels are always to the right of 
 /// the decline-to-align segments.
-/// @param edit_block Traceback editing block [in] [out]
+/// @param hsp HSP structure, containint traceback [in] [out]
 static void 
 s_CorrectUASequence(BlastHSP* hsp)
 {
@@ -405,7 +405,6 @@ s_CorrectUASequence(BlastHSP* hsp)
 /// @param strands Strands of alignment segments [in]
 /// @param translate_master Is query translated? [in]
 /// @param translate_slave Is subject translated? [in]
-/// @param reverse Is order of sequences reversed? [in]
 /// @return Resulting Seq-align object.
 static CRef<CSeq_align>
 s_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
@@ -527,7 +526,7 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
 /// This function is used for out-of-frame traceback conversion
 /// Converts an OOF editing script chain to a Seq-align of type Std-seg.
 /// @param program BLAST program: blastx or tblastn.
-/// @param edit_block Traceback editing block produced by an out-of-frame 
+/// @param hsp HSP structure containing traceback produced by an out-of-frame 
 ///                   gapped extension [in]
 /// @param query_id Query sequence identifier [in]
 /// @param subject_id Subject sequence identifier [in]
@@ -1209,6 +1208,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2005/04/06 23:29:04  dondosha
+* Doxygen fixes
+*
 * Revision 1.55  2005/04/06 21:04:55  dondosha
 * GapEditBlock structure removed, use BlastHSP which contains GapEditScript
 *

@@ -964,7 +964,7 @@ typedef struct BlastHSPSegment {
         q_end;    /**< End of segment in query. */
     Int4 s_start, /**< Start of segment in subject. */
         s_end;    /**< End of segment in subject. */
-   struct BlastHSPSegment* next;
+   struct BlastHSPSegment* next; /**< Next link in the chain. */
 } BlastHSPSegment;
 
 /** Maximal diagonal distance between HSP starting offsets, within which HSPs 

@@ -2289,8 +2289,6 @@ StartingPointForHit(
  *                              been scaled in order to obtain greater
  *                              precision
  * @param prog_number   the type of alignment being performed
- * @param queryLength   length of the full query sequence
- * @param subjectLength length of the full subject sequence
  * @param next          preexisting list of alignments [out]
  */
 static Kappa_DistinctAlignment *
@@ -2346,9 +2344,6 @@ NewAlignmentUsingXdrop(
  *
  * @param gap_align         the GapAlignBlk
  * @param window            the window used to compute the traceback
- * @param query             query sequence
- * @param subject           subject sequence
- * @param full_subject_length length full length of the subject sequence
  */
 static Kappa_DistinctAlignment *
 NewAlignmentFromGapAlign(

@@ -155,7 +155,7 @@ protected:
     virtual void* Main(void);
     virtual void OnExit(void);
 private:
-    CRef<CDbBlastPrelim> m_iBlaster;
+    CRef<CDbBlastPrelim> m_iBlaster; ///< Object containing all search data
 };
 
 /// Constructor: creates a preliminary search object for internal use.
@@ -669,6 +669,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.61  2005/04/06 23:29:04  dondosha
+ * Doxygen fixes
+ *
  * Revision 1.60  2005/04/06 21:06:18  dondosha
  * Use EBlastProgramType instead of EProgram in non-user-exposed functions
  *

@@ -3616,11 +3616,9 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
  * This function is for out-of-frame gapping.
  * @param rev_prelim_tback Traceback operations for left extension [in]
  * @param fwd_prelim_tback Traceback operations for right extension [in]
- * @param q_start query start offset of alignment [in]
- * @param s_start subject start offset of alignment [in]
  * @param nucl_align_length Length of alignment on the translated
  *                          nucleotide sequence [in]
- * @param edit_block_ptr The resulting edit block [out]
+ * @param edit_script_ptr The resulting edit block [out]
  * @return Always zero
  */
 static Int2
