@@ -118,16 +118,22 @@ public:
                     int               to_row,
                     CScope*           scope = 0);
 
-/*
     // Mapping from segments to the segmented sequence (same as
-    // in annot iterator).
+    // in annot iterator). If dst_id is set, all segments are
+    // mapped to the id. Otherwise mapping is done to the top
+    // level references in the map (e.g. if the map is created from
+    // a seq-loc).
     CSeq_loc_Mapper(CBioseq_Handle target_seq);
+    CSeq_loc_Mapper(const CSeqMap& seq_map,
+                    const CSeq_id* dst_id = 0,
+                    CScope*        scope = 0);
 
     // Mapping from master sequence to its segments, restricted
     // by depth. Depth = 0 is for synonyms conversion.
     CSeq_loc_Mapper(size_t depth,
                     CBioseq_Handle& source_seq);
 
+/*
     // Mapping from master sequence to its segments, restricted
     // by target segment ID.
     CSeq_loc_Mapper(CScope&        scope,
@@ -144,6 +150,7 @@ public:
     CSeq_loc_Mapper& SetMergeAll(void);
 
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
+    // CRef<CSeq_align> Map(const CSeq_align& src_align);
     // Check if the last mapping resulted in partial location
     bool             LastIsPartial(void);
 
@@ -211,6 +218,9 @@ private:
                       const CSeq_id&    to_id);
     void x_Initialize(const CSeq_align& map_align,
                       int               to_row);
+    void x_Initialize(const CSeqMap& seq_map,
+                      const CSeq_id* top_id = 0);
+
     void x_InitAlign(const CDense_diag& diag, int to_row);
     void x_InitAlign(const CDense_seg& denseg, int to_row);
     void x_InitAlign(const CStd_seg& sseg, int to_row);
@@ -231,6 +241,7 @@ private:
     void x_PushRangesToDstMix(void);
 
     void x_MapSeq_loc(const CSeq_loc& src_loc);
+    CRef<CSeq_align> x_MapSeq_align(const CSeq_align& src_align);
 
     // Access mapped ranges, check vector size
     TMappedRanges& x_GetMappedRanges(const CSeq_id_Handle& id,
@@ -298,6 +309,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/22 21:10:58  grichenk
+* Added mapping from segments to master sequence or through a seq-map.
+*
 * Revision 1.2  2004/03/19 14:19:08  grichenk
 * Added seq-loc mapping through a seq-align.
 *

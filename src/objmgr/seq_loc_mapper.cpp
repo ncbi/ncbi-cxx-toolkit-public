@@ -33,6 +33,8 @@
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/seq_map.hpp>
+#include <objmgr/seq_map_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -191,6 +193,33 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_row);
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
+    : m_Scope(&target_seq.GetScope()),
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
+{
+    x_Initialize(target_seq.GetSeqMap(),
+        target_seq.GetSeqId().GetPointerOrNull());
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
+                                 const CSeq_id* dst_id,
+                                 CScope*        scope)
+    : m_Scope(scope),
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
+{
+    x_Initialize(seq_map, dst_id);
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t depth,
+                                 CBioseq_Handle& source_seq)
+{
 }
 
 
@@ -854,6 +883,57 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, int to_row)
 }
 
 
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map, const CSeq_id* top_id)
+{
+    CSeqMap::const_iterator seg_it =
+        seq_map.begin_resolved(m_Scope.GetPointerOrNull(), size_t(-1),
+        CSeqMap::fFindRef);
+
+    TSeqPos top_start = kInvalidSeqPos;
+    TSeqPos top_stop = kInvalidSeqPos;
+    TSeqPos dst_seg_start = kInvalidSeqPos;
+    TSeqPos dst_seg_stop = kInvalidSeqPos;
+    CConstRef<CSeq_id> dst_id;
+
+    for ( ; seg_it; ++seg_it) {
+        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
+        if (seg_it.GetPosition() > top_stop  ||  !dst_id) {
+            // New top-level segment
+            top_start = seg_it.GetPosition();
+            top_stop = seg_it.GetEndPosition() - 1;
+            if (top_id) {
+                // Top level is a bioseq
+                dst_id.Reset(top_id);
+                dst_seg_start = top_start;
+                dst_seg_stop = top_stop;
+            }
+            else {
+                // Top level is a seq-loc, positions are
+                // on the first-level references
+                dst_id = seg_it.GetRefSeqid().GetSeqId();
+                dst_seg_start = seg_it.GetRefPosition();
+                dst_seg_stop = seg_it.GetRefEndPosition() - 1;
+                continue;
+            }
+        }
+        // when top_id is set, destination position = GetPosition(),
+        // else it needs to be calculated from top_start/stop and dst_start/stop.
+        TSeqPos dst_from = dst_seg_start + seg_it.GetPosition() - top_start;
+        TSeqPos dst_to = dst_seg_stop + seg_it.GetEndPosition() - 1 - top_stop;
+        _ASSERT(dst_from >= dst_seg_start  &&  dst_to <= dst_seg_stop);
+        TSeqPos dst_len = dst_to - dst_from + 1;
+        CConstRef<CSeq_id> src_id(seg_it.GetRefSeqid().GetSeqId());
+        TSeqPos src_from = seg_it.GetRefPosition();
+        TSeqPos src_len = seg_it.GetRefEndPosition() - src_from;
+        ENa_strand src_strand = seg_it.GetRefMinusStrand() ?
+            eNa_strand_minus : eNa_strand_unknown;
+        x_NextMappingRange(*src_id, src_from, src_len, src_strand,
+            *dst_id, dst_from, dst_len, eNa_strand_unknown);
+        _ASSERT(src_len == 0  &&  dst_len == 0);
+    }
+}
+
+
 CSeq_loc_Mapper::TRangeIterator
 CSeq_loc_Mapper::x_BeginMappingRanges(CSeq_id_Handle id,
                                       TSeqPos from,
@@ -940,6 +1020,16 @@ CRef<CSeq_loc> CSeq_loc_Mapper::Map(const CSeq_loc& src_loc)
     x_OptimizeSeq_loc(m_Dst_loc);
     return m_Dst_loc;
 }
+
+
+/*
+CRef<CSeq_align> CSeq_loc_Mapper::Map(const CSeq_align& src_align)
+{
+    m_Dst_loc.Reset();
+    m_Partial = false; // reset for each location
+    return x_MapSeq_align(src_align);
+}
+*/
 
 
 void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
@@ -1271,12 +1361,36 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
 }
 
 
+CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
+{
+    CRef<CSeq_align> dst_align(new CSeq_align);
+    switch ( src_align.GetSegs().Which() ) {
+    case CSeq_align::C_Segs::e_Dendiag:
+        break;
+    case CSeq_align::C_Segs::e_Denseg:
+        break;
+    case CSeq_align::C_Segs::e_Std:
+        break;
+    case CSeq_align::C_Segs::e_Packed:
+        break;
+    case CSeq_align::C_Segs::e_Disc:
+        break;
+    default:
+        break;
+    }
+    return dst_align;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/22 21:10:58  grichenk
+* Added mapping from segments to master sequence or through a seq-map.
+*
 * Revision 1.5  2004/03/19 14:19:08  grichenk
 * Added seq-loc mapping through a seq-align.
 *
