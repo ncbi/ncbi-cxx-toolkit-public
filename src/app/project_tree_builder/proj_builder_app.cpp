@@ -173,7 +173,7 @@ int CProjBulderApp::Run(void)
                                        utility_projects_dir,
                                        GetProjectTreeInfo().m_Root,
                                        GetArgs()["subtree"].AsString(),
-                                       GetArgs()["solution"].AsString());
+                                       m_Solution);
     configure_generator.SaveProject();
 
     // INDEX dummy project
@@ -218,7 +218,7 @@ void CProjBulderApp::ParseArguments(void)
     /// are provided by SProjectTreeInfo (see GetProjectTreeInfo(void) below)
 
     // Solution
-    m_Solution = args["solution"].AsString();
+    m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
 }
 
 
@@ -350,7 +350,9 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         
         // Root, etc.
         m_ProjectTreeInfo->m_Root = 
-            CDirEntry::AddTrailingPathSeparator(args["root"].AsString());
+            CDirEntry::NormalizePath
+                (CDirEntry::AddTrailingPathSeparator
+                              (args["root"].AsString()));
 
         // Subtree to build
         string subtree = args["subtree"].AsString();
@@ -455,6 +457,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/02/13 17:52:42  gorelenk
+ * Added command line parametrs path normalization.
+ *
  * Revision 1.18  2004/02/12 23:15:29  gorelenk
  * Implemented utility projects creation and configure re-build of the app.
  *
