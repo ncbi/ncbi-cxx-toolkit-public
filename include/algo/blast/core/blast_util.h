@@ -52,6 +52,7 @@ extern "C" {
 #define BLASTP_ENCODING 0
 #define BLASTNA_ENCODING 1
 #define NCBI4NA_ENCODING 2
+#define ERROR_ENCODING 255
 
 /** Retrieve a sequence from the BLAST database
  * @param db BLAST database [in]
