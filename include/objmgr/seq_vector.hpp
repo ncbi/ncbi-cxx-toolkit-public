@@ -117,6 +117,7 @@ private:
     TCoding x_UpdateCoding(void) const;
     void x_InitSequenceType(void);
     TResidue x_GetGapChar(TCoding coding) const;
+    const CSeqMap& x_GetSeqMap(void) const;
 
     static const char* sx_GetConvertTable(TCoding src, TCoding dst);
     static const char* sx_GetComplementTable(TCoding coding);
@@ -151,6 +152,13 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void) const
     return x_GetGapChar(GetCoding());
 }
 
+inline
+const CSeqMap& CSeqVector::x_GetSeqMap(void) const
+{
+    _ASSERT(m_SeqMap);
+    return *m_SeqMap;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -158,6 +166,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/06/13 17:22:26  grichenk
+* Check if seq-map is not null before using it
+*
 * Revision 1.36  2003/06/12 18:38:47  vasilche
 * Added default constructor of CSeqVector.
 *

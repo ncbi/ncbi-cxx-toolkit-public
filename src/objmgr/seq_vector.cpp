@@ -123,7 +123,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 TSeqPos CSeqVector::size(void) const
 {
     // Calculate total sequence size
-    return m_SeqMap->GetLength(m_Scope);
+    return x_GetSeqMap().GetLength(m_Scope);
 }
 
 
@@ -358,7 +358,7 @@ void CSeqVector::SetCoding(EVectorCoding coding)
 CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
 {
     if (m_SequenceType == eType_not_set) {
-        switch ( m_SeqMap->GetMol() ) {
+        switch ( x_GetSeqMap().GetMol() ) {
         case CSeq_inst::eMol_dna:
         case CSeq_inst::eMol_rna:
         case CSeq_inst::eMol_na:
@@ -388,6 +388,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/06/13 17:22:28  grichenk
+* Check if seq-map is not null before using it
+*
 * Revision 1.54  2003/06/12 18:39:21  vasilche
 * Added default constructor of CSeqVector.
 * Cleared cache iterator on CSeqVector assignment.

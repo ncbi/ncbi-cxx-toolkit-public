@@ -147,7 +147,7 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
     if (pos >= m_Vector->size()) {
         pos = m_Vector->size() ? m_Vector->size() - 1 : 0;
     }
-    m_Seg = m_Vector->m_SeqMap->FindResolved(
+    m_Seg = m_Vector->x_GetSeqMap().FindResolved(
         pos, m_Vector->m_Scope, m_Vector->m_Strand);
     x_UpdateCache(pos);
 }
@@ -175,7 +175,7 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
     if (pos == kInvalidSeqPos)
         pos = m_CachePos;
     if (pos < m_Seg.GetPosition()  || pos >= m_Seg.GetEndPosition()) {
-        m_Seg = m_Vector->m_SeqMap->FindResolved(pos,
+        m_Seg = m_Vector->x_GetSeqMap().FindResolved(pos,
             m_Vector->m_Scope, m_Vector->m_Strand);
         _TRACE("CSeqVector_CI::x_UpdateCache -- got new segment at "
             << m_Seg.GetPosition());
@@ -381,7 +381,7 @@ void CSeqVector_CI::SetPos(TSeqPos pos)
                         &&  m_Seg.GetLength() == 0);
                 }
                 else {
-                    m_Seg = m_Vector->m_SeqMap->FindResolved(m_CachePos,
+                    m_Seg = m_Vector->x_GetSeqMap().FindResolved(m_CachePos,
                         m_Vector->m_Scope, m_Vector->m_Strand);
                 }
                 _ASSERT(pos >= m_Seg.GetPosition());
@@ -494,6 +494,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/06/13 17:22:28  grichenk
+* Check if seq-map is not null before using it
+*
 * Revision 1.12  2003/06/10 15:27:14  vasilche
 * Fixed warning
 *
