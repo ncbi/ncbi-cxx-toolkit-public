@@ -36,6 +36,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include <list>
 #include <vector>
@@ -102,6 +103,10 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/26 01:57:47  ucko
+* Move #include <corelib/ncbi_limits.hpp> from su_alignment_set.cpp for
+* kMax_UInt.
+*
 * Revision 1.3  2004/05/25 21:22:28  ucko
 * Some compilers don't support static const members, so make
 * MasterSlaveAlignment::UNALIGNED a member of an (anonymous) enum instead.
