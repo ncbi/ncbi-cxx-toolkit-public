@@ -69,7 +69,7 @@ GapEditScriptNew(GapEditScriptPtr old)
 {
 	GapEditScriptPtr new;
 
-	new = (GapEditScriptPtr) MemNew(sizeof(GapEditScript));
+	new = (GapEditScriptPtr) calloc(1, sizeof(GapEditScript));
 
 	if (old == NULL)
 		return new;
@@ -104,7 +104,7 @@ GapEditBlockNew(Int4 start1, Int4 start2)
 {
 	GapEditBlockPtr edit_block;
 
-	edit_block = (GapEditBlockPtr) MemNew(sizeof(GapEditBlock));
+	edit_block = (GapEditBlockPtr) calloc(1, sizeof(GapEditBlock));
 	edit_block->start1 = start1;
 	edit_block->start2 = start2;
 

@@ -145,7 +145,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
                                      lookup_options->mb_template_length, 
                                      lookup_options->mb_template_type);
    query_length = query->length;
-   mb_lt = (MBLookupTablePtr) MemNew(sizeof(MBLookupTable));
+   mb_lt = (MBLookupTablePtr) calloc(1, sizeof(MBLookupTable));
     
    bytes_in_word = (lookup_options->word_size + 1)/ 4;
    if (bytes_in_word < 3) 
@@ -197,13 +197,13 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    mb_lt->full_byte_scan = (mb_lt->scan_step % COMPRESSION_RATIO == 0);
 
    if ((mb_lt->hashtable = (Int4Ptr) 
-        MemNew(mb_lt->hashsize*sizeof(Int4))) == NULL) {
+        calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
       MBLookupTableDestruct(mb_lt);
       return -1;
    }
 
    if ((mb_lt->next_pos = (Int4Ptr) 
-        MemNew((query_length+1)*sizeof(Int4))) == NULL) {
+        calloc((query_length+1), sizeof(Int4))) == NULL) {
       MBLookupTableDestruct(mb_lt);
       return -1;
    }
@@ -211,7 +211,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    if (two_templates) {
       if (lookup_options->word_size >= 12) {
          if ((mb_lt->hashtable2 = (Int4Ptr) 
-              MemNew(mb_lt->hashsize*sizeof(Int4))) == NULL) {
+              calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
             MBLookupTableDestruct(mb_lt);
             return -1;
          }
@@ -219,7 +219,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
          mb_lt->hashtable2 = mb_lt->hashtable;
       }
       if ((mb_lt->next_pos2 = (Int4Ptr) 
-           MemNew((query_length+1)*sizeof(Int4))) == NULL) {
+           calloc((query_length+1), sizeof(Int4))) == NULL) {
          MBLookupTableDestruct(mb_lt);
          return -1;
       }
@@ -390,7 +390,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
 #endif
       pv_size = mb_lt->hashsize>>pv_array_bts;
       /* Size measured in PV_ARRAY_TYPE's */
-      pv_array = MemNew(pv_size*PV_ARRAY_BYTES);
+      pv_array = calloc(PV_ARRAY_BYTES, pv_size);
 
       for (index=0; index<mb_lt->hashsize; index++) {
          if (mb_lt->hashtable[index] != 0 ||

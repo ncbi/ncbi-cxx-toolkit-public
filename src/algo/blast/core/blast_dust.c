@@ -79,7 +79,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
    windowhalf = windowsize / 2;
    
    nreg = 0;
-   seq = (Uint1Ptr) MemNew (windowsize);			/* triplets */
+   seq = (Uint1Ptr) calloc(1, windowsize);			/* triplets */
    if (!seq) {
       return -1;
    }
@@ -115,7 +115,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
                Interactive means wrapping stuff up in a graphics shell
             */
             regold = reg;
-            reg = (DREGION PNTR) MemNew (sizeof (DREGION));
+            reg = (DREGION PNTR) calloc(1, sizeof(DREGION));
             if (!reg) {
                sfree(seq);
                return -1;
@@ -266,7 +266,7 @@ GetDustLocations (ValNodePtr PNTR loc, DREGION PNTR reg, Int4 nreg)
    /* point to dusted locations */
    if (nreg > 0) {
       for (i = 0; reg && i < nreg; i++) {
-         dintp = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
+         dintp = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
          if (!dintp) {
             return -1;
          }
@@ -291,7 +291,7 @@ Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
    Int2 status = 0;
 
         /* place for dusted regions */
-	regold = reg = (DREGION PNTR) MemNew (sizeof (DREGION));
+	regold = reg = (DREGION PNTR) calloc(1, sizeof(DREGION));
 	if (!reg)
            return -1;
 

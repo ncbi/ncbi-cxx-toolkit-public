@@ -47,7 +47,7 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 {
    /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
    if (*seq_blk == NULL) {
-      *seq_blk = MemNew(sizeof(BLAST_SequenceBlk));
+      *seq_blk = calloc(1, sizeof(BLAST_SequenceBlk));
    }
 
    if (buffer_allocated) {
@@ -742,7 +742,7 @@ BLAST_GetTranslationTable(Uint1Ptr genetic_code, Boolean reverse_complement)
 	if (genetic_code == NULL)
 		return NULL;
 
-	translation = MemNew(64*sizeof(Uint1));
+	translation = calloc(64, sizeof(Uint1));
 	if (translation == NULL)
 		return NULL;
 

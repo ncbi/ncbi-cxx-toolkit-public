@@ -158,7 +158,7 @@ MBGapEditScript *MBGapEditScriptAppend(MBGapEditScript *es, MBGapEditScript *et)
 
 MBGapEditScript *MBGapEditScriptNew(void)
 {
-    MBGapEditScript *es = MemNew(sizeof(*es));
+    MBGapEditScript *es = calloc(1, sizeof(*es));
     if (!es)
         return 0;
 

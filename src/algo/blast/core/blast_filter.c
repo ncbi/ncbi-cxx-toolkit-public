@@ -49,7 +49,7 @@ Contents: All code related to query sequence masking/filtering for BLAST
 
 BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to)
 {
-   BlastSeqLocPtr loc = (BlastSeqLocPtr) MemNew(sizeof(BlastSeqLoc));
+   BlastSeqLocPtr loc = (BlastSeqLocPtr) calloc(1, sizeof(BlastSeqLoc));
    DoubleIntPtr di = (DoubleIntPtr) malloc(sizeof(DoubleInt));
 
    di->i1 = from;
@@ -208,7 +208,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       if (!mask_loc || (mask_loc->index > index) ||
           !mask_loc->loc_list) {
          /* No masks for this context */
-         double_int = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
+         double_int = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
          double_int->i1 = start_offset;
          double_int->i2 = end_offset;
          if (!last_loc)
@@ -252,7 +252,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          if (first) {
             last_interval_open = TRUE;
             first = FALSE;
-            double_int = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
+            double_int = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
             
             if (filter_start > start_offset) {
                /* beginning of sequence not filtered */
@@ -275,7 +275,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             last_interval_open = FALSE;
             break;
          } else {
-            double_int = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
+            double_int = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
                double_int->i1 = filter_end + 1;
          }
       }
@@ -592,7 +592,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	}
 	else
 	{
-		buffer = (CharPtr) MemNew(StringLen(instructions)*sizeof(Char));
+		buffer = (CharPtr) calloc(StringLen(instructions), sizeof(Char));
 		ptr = instructions;
 		/* allow old-style filters when m cannot be followed by the ';' */
 		if (*ptr == 'm' && ptr[1] == ' ')

@@ -249,10 +249,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
          if (filter_slp_combined) {
             if (!last_filter_out) {
                last_filter_out = *filter_out = 
-                  (BlastMaskPtr) MemNew(sizeof(BlastMask));
+                  (BlastMaskPtr) calloc(1, sizeof(BlastMask));
             } else {
                last_filter_out->next = 
-                  (BlastMaskPtr) MemNew(sizeof(BlastMask));
+                  (BlastMaskPtr) calloc(1, sizeof(BlastMask));
                last_filter_out = last_filter_out->next;
             }
             last_filter_out->index = index;

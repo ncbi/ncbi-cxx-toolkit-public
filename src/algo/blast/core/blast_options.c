@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.41  2003/07/28 19:04:15  camacho
+ * Replaced all MemNews for calloc
+ *
  * Revision 1.40  2003/07/25 21:12:28  coulouri
  * remove constructions of the form "return sfree();" and "a=sfree(a);"
  *
@@ -264,7 +267,7 @@ BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
 Int2
 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
 {
-   *options = (QuerySetUpOptionsPtr) MemNew(sizeof(QuerySetUpOptions));
+   *options = (QuerySetUpOptionsPtr) calloc(1, sizeof(QuerySetUpOptions));
    
    if (*options == NULL)
       return 1;
@@ -313,7 +316,7 @@ BlastInitialWordOptionsNew(Uint1 program,
    BlastInitialWordOptionsPtr *options)
 {
    *options = 
-      (BlastInitialWordOptionsPtr) MemNew(sizeof(BlastInitialWordOptions));
+      (BlastInitialWordOptionsPtr) calloc(1, sizeof(BlastInitialWordOptions));
    if (*options == NULL)
       return 1;
 
@@ -395,7 +398,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
       return 8;
 
    *parameters = (BlastInitialWordParametersPtr) 
-      MemNew(sizeof(BlastInitialWordParameters));
+      calloc(1, sizeof(BlastInitialWordParameters));
 
    hit_options = hit_params->options;
 
@@ -451,7 +454,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptionsPtr *options)
 
 {
 	*options = (BlastExtensionOptionsPtr) 
-           MemNew(sizeof(BlastExtensionOptions));
+           calloc(1, sizeof(BlastExtensionOptions));
 
 	if (*options == NULL)
 		return 1;
@@ -583,7 +586,7 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 Int2 
 BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptionsPtr *options)
 {
-   *options = (BlastScoringOptionsPtr) MemNew(sizeof(BlastScoringOptions));
+   *options = (BlastScoringOptionsPtr) calloc(1, sizeof(BlastScoringOptions));
 
    if (*options == NULL)
       return 1;
@@ -719,7 +722,7 @@ BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options)
 
 {
    *options = (BlastEffectiveLengthsOptionsPtr)
-      MemNew(sizeof(BlastEffectiveLengthsOptions));
+      calloc(1, sizeof(BlastEffectiveLengthsOptions));
 
    if (*options == NULL)
       return 1;
@@ -765,7 +768,7 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 Int2 
 LookupTableOptionsNew(Uint1 program_number, LookupTableOptionsPtr *options)
 {
-   *options = (LookupTableOptionsPtr) MemNew(sizeof(LookupTableOptions));
+   *options = (LookupTableOptionsPtr) calloc(1, sizeof(LookupTableOptions));
    
    if (*options == NULL)
       return 1;
@@ -917,7 +920,7 @@ BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 Int2 BlastHitSavingOptionsNew(Uint1 program_number, 
         BlastHitSavingOptionsPtr *options)
 {
-   *options = (BlastHitSavingOptionsPtr) MemNew(sizeof(BlastHitSavingOptions));
+   *options = (BlastHitSavingOptionsPtr) calloc(1, sizeof(BlastHitSavingOptions));
    
    if (*options == NULL)
       return 1;
@@ -1006,7 +1009,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
       return 1;
 
    *parameters = params = (BlastHitSavingParametersPtr) 
-      MemNew(sizeof(BlastHitSavingParameters));
+      calloc(1, sizeof(BlastHitSavingParameters));
 
    if (params == NULL)
       return 1;
@@ -1043,7 +1046,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
 Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options)
 {
    PSIBlastOptionsPtr options = 
-      (PSIBlastOptionsPtr) MemNew(sizeof(PSIBlastOptions));
+      (PSIBlastOptionsPtr) calloc(1, sizeof(PSIBlastOptions));
    *psi_options = options;
    options->ethresh = PSI_ETHRESH;
    options->maxNumPasses = PSI_MAX_NUM_PASSES;
@@ -1065,7 +1068,7 @@ PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
 Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
 {
    BlastDatabaseOptionsPtr options = (BlastDatabaseOptionsPtr)
-      MemNew(sizeof(BlastDatabaseOptions));
+      calloc(1, sizeof(BlastDatabaseOptions));
 
    options->genetic_code = BLAST_GENETIC_CODE;
    *db_options = options;

@@ -47,7 +47,7 @@ static SequencePtr SeqNew(void)
 {
    SequencePtr seq;
 
-   seq = (SequencePtr) MemNew(sizeof(Sequence));
+   seq = (SequencePtr) calloc(1, sizeof(Sequence));
    if (seq==NULL)
      {
       /* raise error flag and etc. */
@@ -155,7 +155,7 @@ static void compon(SequencePtr win)
         alphaflag = win->palpha->alphaflag;
 
 	win->composition = comp =
-                (Int4Ptr) MemNew(alphasize*sizeof(Int4));
+                (Int4Ptr) calloc(alphasize, sizeof(Int4));
 	seq = win->seq;
 	seqmax = seq + win->length;
 
@@ -182,7 +182,7 @@ static void stateon(SequencePtr win)
 	if (win->composition == NULL)
 		compon(win);
 
-	win->state = (Int4Ptr) MemNew((alphasize+1)*sizeof(win->state[0]));
+	win->state = (Int4Ptr) calloc((alphasize+1), sizeof(win->state[0]));
 
 	for (letter = nel = 0; letter < alphasize; ++letter) {
 		if ((c = win->composition[letter]) == 0)
@@ -208,7 +208,7 @@ static SequencePtr openwin(SequencePtr parent, Int4 start, Int4 length)
       return((SequencePtr) NULL);
      }
 
-   win = (SequencePtr) MemNew(sizeof(Sequence));
+   win = (SequencePtr) calloc(1, sizeof(Sequence));
 
 /*---                                          ---[set links, up and down]---*/
 
@@ -220,7 +220,7 @@ static SequencePtr openwin(SequencePtr parent, Int4 start, Int4 length)
    win->start = start;
    win->length = length;
 #if 0                                                    /* Hi Warren! */
-   win->seq = (CharPtr) MemNew(sizeof(Char)*length + 1);
+   win->seq = (CharPtr) calloc(length + 1, sizeof(Char));
    memcpy(win->seq, (parent->seq)+start, length);
    win->seq[length] = '\0';
 #else
@@ -368,7 +368,7 @@ static FloatHiPtr seqent(SequencePtr seq, Int4 window, Int4 maxbogus)
       return((FloatHiPtr) NULL);
      }
 
-   H = (FloatHiPtr) MemNew(seq->length*sizeof(FloatHi));
+   H = (FloatHiPtr) calloc(seq->length, sizeof(FloatHi));
 
    for (i=0; i<seq->length; i++)
      {
@@ -677,7 +677,7 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
             closewin(leftseq);
 
 /*          trim(openwin(seq, lend, rend-lend+1), &lend, &rend);
-            seg = (SegPtr) MemNew(sizeof(Seg));
+            seg = (SegPtr) calloc(1, sizeof(Seg));
             seg->begin = lend;
             seg->end = rend;
             seg->next = (SegPtr) NULL;
@@ -685,7 +685,7 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
             else appendseg(segs, seg);  */
            }
 
-         seg = (SegPtr) MemNew(sizeof(Seg));
+         seg = (SegPtr) calloc(1, sizeof(Seg));
          seg->begin = leftend + offset;
          seg->end = rightend + offset;
          seg->next = (SegPtr) NULL;
@@ -767,7 +767,7 @@ static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr PNTR seg_
    BlastSeqLocPtr last_slp = NULL, head_slp = NULL;
 
    for ( ; segs; segs = segs->next) {
-      dip = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
+      dip = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
       dip->i1 = segs->begin + offset;
       dip->i2 = segs->end + offset;
 
@@ -792,15 +792,15 @@ static AlphaPtr AA20alpha_std (void)
    CharPtr alphachar;
    Uint1 c, i;
 
-   palpha = (AlphaPtr) MemNew (sizeof(Alpha));
+   palpha = (AlphaPtr) calloc(1, sizeof(Alpha));
 
    palpha->alphabet = AA20;
    palpha->alphasize = 20;
    palpha->lnalphasize = LN20;
 
-   alphaindex = (Int4Ptr) MemNew (CHAR_SET * sizeof(Int4));
-   alphaflag = (unsigned char*) MemNew (CHAR_SET * sizeof(char));
-   alphachar = (CharPtr) MemNew (palpha->alphasize * sizeof(Char));
+   alphaindex = (Int4Ptr) calloc(CHAR_SET , sizeof(Int4));
+   alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
+   alphachar = (CharPtr) calloc(palpha->alphasize , sizeof(Char));
 
    for (c=0, i=0; c<128; c++)
      {
@@ -827,7 +827,7 @@ SegParametersPtr SegParametersNewAa (void)
 {
    SegParametersPtr sparamsp;
 
-   sparamsp = (SegParametersPtr) MemNew (sizeof(SegParameters));
+   sparamsp = (SegParametersPtr) calloc(1, sizeof(SegParameters));
 
    sparamsp->window = 12;
    sparamsp->locut = 2.2;
@@ -891,14 +891,14 @@ static AlphaPtr AlphaCopy (AlphaPtr palpha)
 
    if (!palpha) return((AlphaPtr) NULL);
 
-   pbeta = (AlphaPtr) MemNew(sizeof(Alpha));
+   pbeta = (AlphaPtr) calloc(1, sizeof(Alpha));
    pbeta->alphabet = palpha->alphabet;
    pbeta->alphasize = palpha->alphasize;
    pbeta->lnalphasize = palpha->lnalphasize;
 
-   pbeta->alphaindex = (Int4Ptr) MemNew (CHAR_SET * sizeof(Int4));
-   pbeta->alphaflag = (unsigned char*) MemNew (CHAR_SET * sizeof(char));
-   pbeta->alphachar = (CharPtr) MemNew (palpha->alphasize * sizeof(Char));
+   pbeta->alphaindex = (Int4Ptr) calloc(CHAR_SET , sizeof(Int4));
+   pbeta->alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
+   pbeta->alphachar = (CharPtr) calloc(palpha->alphasize , sizeof(Char));
 
    for (i=0; i<CHAR_SET; i++)
      {

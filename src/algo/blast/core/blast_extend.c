@@ -50,7 +50,7 @@ static char const rcsid[] = "$Id$";
 BlastInitHitListPtr BLAST_InitHitListNew(void)
 {
    BlastInitHitListPtr init_hitlist = (BlastInitHitListPtr)
-      MemNew(sizeof(BlastInitHitList));
+      calloc(1, sizeof(BlastInitHitList));
 
    init_hitlist->allocated = MIN_INIT_HITLIST_SIZE;
 
@@ -82,7 +82,7 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
         BLAST_DiagTablePtr diag_table;
         Int4 diag_array_length;
 
-        diag_table= (BLAST_DiagTablePtr) MemNew(sizeof(BLAST_DiagTable));
+        diag_table= (BLAST_DiagTablePtr) calloc(1, sizeof(BLAST_DiagTable));
 
         if (diag_table)
         {
@@ -111,7 +111,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
    BLAST_ExtendWordPtr ewp;
    Int4 index, i;
 
-   *ewp_ptr = ewp = (BLAST_ExtendWordPtr) MemNew(sizeof(BLAST_ExtendWord));
+   *ewp_ptr = ewp = (BLAST_ExtendWordPtr) calloc(1, sizeof(BLAST_ExtendWord));
 
    if (!ewp) {
       return -1;
@@ -129,7 +129,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
          ((FloatHi) query->length) * dblen / dbseq_num;
       num_stacks = MIN(1 + (Int4) (sqrt(av_search_space)/100), 500);
       stack_size = 5000/num_stacks;
-      stack_table->stack_index = (Int4Ptr) MemNew(num_stacks*sizeof(Int4));
+      stack_table->stack_index = (Int4Ptr) calloc(num_stacks, sizeof(Int4));
       stack_table->stack_size = (Int4Ptr) malloc(num_stacks*sizeof(Int4));
       stack_table->estack = 
          (MbStackPtr PNTR) malloc(num_stacks*sizeof(MbStackPtr));
@@ -149,7 +149,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
                             word_options->window_size);
       /* Allocate the buffer to be used for diagonal array. */
       buffer = 
-         (Int4Ptr) MemNew(diag_table->diag_array_length*sizeof(DiagStruct));
+         (Int4Ptr) calloc(diag_table->diag_array_length, sizeof(DiagStruct));
       
       if (buffer == NULL)	{
          sfree(ewp);

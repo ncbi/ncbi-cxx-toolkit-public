@@ -446,7 +446,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    Uint4 max_subject_length;
 
    *aux_struct_ptr = aux_struct = (BlastCoreAuxStructPtr)
-      MemNew(sizeof(BlastCoreAuxStruct));
+      calloc(1, sizeof(BlastCoreAuxStruct));
 
    /* Initialize the BlastSeqSrc */
    if (bssn_info) {
@@ -621,7 +621,7 @@ static BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
 {
    BlastThrInfoPtr thr_info;
    
-   thr_info = MemNew(sizeof(BlastThrInfo));
+   thr_info = calloc(1, sizeof(BlastThrInfo));
    thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
    thr_info->final_db_seq = readdb_get_num_entries_total(rdfp);
    
@@ -634,7 +634,7 @@ static BlastThrInfoPtr BLAST_ThrInfoNew(Int4 last_oid2search)
 {
    BlastThrInfoPtr thr_info;
    
-   thr_info = (BlastThrInfoPtr) MemNew(sizeof(BlastThrInfo));
+   thr_info = (BlastThrInfoPtr) calloc(1, sizeof(BlastThrInfo));
    thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
    thr_info->final_db_seq = last_oid2search;
    
@@ -838,7 +838,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query,
 
    /* Construct the lookup table. */
    *lookup_wrap_ptr = lookup_wrap = 
-      (LookupTableWrapPtr) MemNew(sizeof(LookupTableWrap));
+      (LookupTableWrapPtr) calloc(1, sizeof(LookupTableWrap));
    lookup_wrap->lut_type = lookup_options->lut_type;
 
    switch ( lookup_options->lut_type ) {

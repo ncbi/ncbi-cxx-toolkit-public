@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.12  2003/07/28 19:04:15  camacho
+ * Replaced all MemNews for calloc
+ *
  * Revision 1.11  2003/07/28 03:41:49  camacho
  * Use f{open,close,gets} instead of File{Open,Close,Gets}
  *
@@ -1142,7 +1145,7 @@ BLAST_ScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
 {
 	BLAST_ScoreBlkPtr sbp;
 
-	sbp = (BLAST_ScoreBlkPtr) MemNew(sizeof(BLAST_ScoreBlk));
+	sbp = (BLAST_ScoreBlkPtr) calloc(1, sizeof(BLAST_ScoreBlk));
 
 	if (sbp != NULL)
 	{
@@ -1171,13 +1174,13 @@ BLAST_ScoreBlkNew(Uint1 alphabet, Int2 number_of_contexts)
 			return sbp;
 		}
 		sbp->matrix = sbp->matrix_struct->matrix;
-		sbp->maxscore = (BLAST_ScorePtr) MemNew(BLAST_MATRIX_SIZE*sizeof(BLAST_Score));
+		sbp->maxscore = (BLAST_ScorePtr) calloc(BLAST_MATRIX_SIZE, sizeof(BLAST_Score));
 		sbp->number_of_contexts = number_of_contexts;
-		sbp->sfp = MemNew(sbp->number_of_contexts*sizeof(BLAST_ScoreFreqPtr));
-		sbp->kbp_std = MemNew(sbp->number_of_contexts*sizeof(BLAST_KarlinBlkPtr));
-		sbp->kbp_gap_std = MemNew(sbp->number_of_contexts*sizeof(BLAST_KarlinBlkPtr));
-		sbp->kbp_psi = MemNew(sbp->number_of_contexts*sizeof(BLAST_KarlinBlkPtr));
-		sbp->kbp_gap_psi = MemNew(sbp->number_of_contexts*sizeof(BLAST_KarlinBlkPtr));
+		sbp->sfp = calloc(sbp->number_of_contexts, sizeof(BLAST_ScoreFreqPtr));
+		sbp->kbp_std = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlkPtr));
+		sbp->kbp_gap_std = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlkPtr));
+		sbp->kbp_psi = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlkPtr));
+		sbp->kbp_gap_psi = calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlkPtr));
 	}
 
 	return sbp;
@@ -1254,7 +1257,7 @@ BlastScoreSetAmbigRes(BLAST_ScoreBlkPtr sbp, Char ambiguous_res)
 	if (sbp->ambig_occupy >= sbp->ambig_size)
 	{
 		sbp->ambig_size += 5;
-		ambig_buffer = MemNew(sbp->ambig_size*sizeof(Uint1));
+		ambig_buffer = calloc(sbp->ambig_size, sizeof(Uint1));
 		for (index=0; index<sbp->ambig_occupy; index++)
 		{
 			ambig_buffer[index] = sbp->ambiguous_res[index];
@@ -1344,7 +1347,7 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
     if (sbp == NULL)
         return NULL;
     
-    blast_matrix = (BLAST_MatrixPtr) MemNew(sizeof(BLAST_Matrix));
+    blast_matrix = (BLAST_MatrixPtr) calloc(1, sizeof(BLAST_Matrix));
     
     dim1 = sbp->alphabet_size;
     dim2 = sbp->alphabet_size;
@@ -1353,9 +1356,9 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
     if (sbp->kbp_gap_psi[0])
         karlinK = sbp->kbp_gap_psi[0]->K;
     
-    matrix = MemNew(dim1*sizeof(Int4Ptr));
+    matrix = calloc(dim1, sizeof(Int4Ptr));
     for (index1=0; index1<dim1; index1++) {
-        matrix[index1] = MemNew(dim2*sizeof(Int4));
+        matrix[index1] = calloc(dim2, sizeof(Int4));
         for (index2=0; index2<dim2; index2++) {
             matrix[index1][index2] = original_matrix[index1][index2];
         }
@@ -1368,9 +1371,9 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
         dim1 = sbp->query_length + 1;
         dim2 = sbp->alphabet_size;
         original_matrix = sbp->posMatrix;
-        matrix = MemNew(dim1*sizeof(Int4Ptr));
+        matrix = calloc(dim1, sizeof(Int4Ptr));
         for (index1=0; index1<dim1; index1++) {
-           matrix[index1] = MemNew(dim2*sizeof(Int4));
+           matrix[index1] = calloc(dim2, sizeof(Int4));
            for (index2=0; index2<dim2; index2++) {
               matrix[index1][index2] = original_matrix[index1][index2];
            }
@@ -1380,9 +1383,9 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
 
     /* Copying posFreqs to the BLAST_Matrix */
     if ((sbp->posFreqs != NULL) && (sbp->posMatrix != NULL)) {
-        posFreqs = MemNew(dim1*sizeof(FloatHi *));
+        posFreqs = calloc(dim1, sizeof(FloatHi *));
         for (index1 = 0; index1 < dim1; index1++) {
-            posFreqs[index1] = MemNew(dim2*sizeof(FloatHi));
+            posFreqs[index1] = calloc(dim2, sizeof(FloatHi));
             for (index2=0; index2 < dim2; index2++) {
                 posFreqs[index1][index2] = sbp->posFreqs[index1][index2];
             }
@@ -1741,7 +1744,7 @@ BlastKarlinBlkCreate(void)
 {
 	BLAST_KarlinBlkPtr kbp;
 
-	kbp = (BLAST_KarlinBlkPtr) MemNew(sizeof(BLAST_KarlinBlk));
+	kbp = (BLAST_KarlinBlkPtr) calloc(1, sizeof(BLAST_KarlinBlk));
 
 	return kbp;
 }
@@ -1996,7 +1999,7 @@ BLAST_ScorePtr BlastPSIMaxScoreGet(BLAST_ScorePtr PNTR posMatrix,
     if(posMatrix == NULL)
         return NULL;
     
-    maxscore_pos = MemNew(length * sizeof(BLAST_Score));
+    maxscore_pos = calloc(length , sizeof(BLAST_Score));
     
     for (index1 = start; index1 < length; index1++) {
         maxscore = BLAST_SCORE_MIN;
@@ -2024,7 +2027,7 @@ BlastMatrixAllocate(Int2 alphabet_size)
 	if (alphabet_size <= 0 || alphabet_size >= BLAST_MATRIX_SIZE)
 		return NULL;
 
-	matrix_struct =	(BLASTMatrixStructurePtr) MemNew(sizeof(BLASTMatrixStructure));
+	matrix_struct =	(BLASTMatrixStructurePtr) calloc(1, sizeof(BLASTMatrixStructure));
 
 	if (matrix_struct == NULL)
 		return NULL;
@@ -2060,7 +2063,7 @@ BlastResCompNew(BLAST_ScoreBlkPtr sbp)
 {
 	BLAST_ResCompPtr	rcp;
 
-	rcp = (BLAST_ResCompPtr) MemNew(sizeof(BLAST_ResComp));
+	rcp = (BLAST_ResCompPtr) calloc(1, sizeof(BLAST_ResComp));
 	if (rcp == NULL)
 		return NULL;
 
@@ -2068,7 +2071,7 @@ BlastResCompNew(BLAST_ScoreBlkPtr sbp)
 
 /* comp0 has zero offset, comp starts at 0, only one 
 array is allocated.  */
-	rcp->comp0 = (Int4Ptr) MemNew(BLAST_MATRIX_SIZE*sizeof(Int4));
+	rcp->comp0 = (Int4Ptr) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
 	if (rcp->comp0 == NULL) 
 	{
 		rcp = BlastResCompDestruct(rcp);
@@ -2154,12 +2157,12 @@ BlastScoreFreqNew(BLAST_Score score_min, BLAST_Score score_max)
 	if (BlastScoreChk(score_min, score_max) != 0)
 		return NULL;
 
-	sfp = (BLAST_ScoreFreqPtr) MemNew(sizeof(BLAST_ScoreFreq));
+	sfp = (BLAST_ScoreFreqPtr) calloc(1, sizeof(BLAST_ScoreFreq));
 	if (sfp == NULL)
 		return NULL;
 
 	range = score_max - score_min + 1;
-	sfp->sprob = (FloatHi PNTR) MemNew(sizeof(FloatHi) * range);
+	sfp->sprob = (FloatHi PNTR) calloc(range, sizeof(FloatHi));
 	if (sfp->sprob == NULL) 
 	{
 		BlastScoreFreqDestruct(sfp);
@@ -2356,13 +2359,13 @@ BlastResFreqNew(BLAST_ScoreBlkPtr sbp)
 		return NULL;
 	}
 
-	rfp = (BLAST_ResFreqPtr) MemNew(sizeof(BLAST_ResFreq));
+	rfp = (BLAST_ResFreqPtr) calloc(1, sizeof(BLAST_ResFreq));
 	if (rfp == NULL)
 		return NULL;
 
 	rfp->alphabet_code = sbp->alphabet_code;
 
-	rfp->prob0 = (FloatHi PNTR) MemNew(sizeof(FloatHi) * sbp->alphabet_size);
+	rfp->prob0 = (FloatHi PNTR) calloc(sbp->alphabet_size, sizeof(FloatHi));
 	if (rfp->prob0 == NULL) 
 	{
 		rfp = BlastResFreqDestruct(rfp);
@@ -2453,7 +2456,7 @@ BlastResFreqStdComp(BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp)
 
 	if (sbp->protein_alphabet == TRUE)
 	{
-		residues = (Uint1Ptr) MemNew(DIM(STD_AMINO_ACID_FREQS)*sizeof(Uint1));
+		residues = (Uint1Ptr) calloc(DIM(STD_AMINO_ACID_FREQS), sizeof(Uint1));
 		retval = BlastGetStdAlphabet(sbp->alphabet_code, residues, DIM(STD_AMINO_ACID_FREQS));
 		if (retval < 1)
 			return retval;
@@ -2492,7 +2495,7 @@ BlastRepresentativeResidues(Int2 length)
 		total += (Int2) STD_AMINO_ACID_FREQS[index].p;
 	}
 
-	buffer = (CharPtr) MemNew((length+1)*sizeof(Char));
+	buffer = (CharPtr) calloc((length+1), sizeof(Char));
 
 	ptr = buffer;
 	for (index=0; index<DIM(STD_AMINO_ACID_FREQS); index++) 
@@ -2608,7 +2611,7 @@ MatrixInfoNew(CharPtr name, array_of_8 *values, Int4Ptr prefs, Int4 max_number)
 {
 	MatrixInfoPtr matrix_info;
 
-	matrix_info = (MatrixInfoPtr) MemNew(sizeof(MatrixInfo));
+	matrix_info = (MatrixInfoPtr) calloc(1, sizeof(MatrixInfo));
 	matrix_info->name = StringSave(name);
 	matrix_info->values = values;
 	matrix_info->prefs = prefs;
@@ -2758,23 +2761,23 @@ BlastKarlinGetMatrixValuesEx2(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR ex
 	if (found_matrix)
 	{
 		if (open)
-			*open = open_array = MemNew(max_number_values*sizeof(Int4));
+			*open = open_array = calloc(max_number_values, sizeof(Int4));
 		if (extension)
-			*extension = extension_array = MemNew(max_number_values*sizeof(Int4));
+			*extension = extension_array = calloc(max_number_values, sizeof(Int4));
 		if (decline_align)
-			*decline_align = decline_align_array = MemNew(max_number_values*sizeof(Int4));
+			*decline_align = decline_align_array = calloc(max_number_values, sizeof(Int4));
 		if (lambda)
-			*lambda = lambda_array = (FloatHiPtr) MemNew(max_number_values*sizeof(FloatHi));
+			*lambda = lambda_array = (FloatHiPtr) calloc(max_number_values, sizeof(FloatHi));
 		if (K)
-			*K = K_array = (FloatHiPtr) MemNew(max_number_values*sizeof(FloatHi));
+			*K = K_array = (FloatHiPtr) calloc(max_number_values, sizeof(FloatHi));
 		if (H)
-			*H = H_array = (FloatHiPtr) MemNew(max_number_values*sizeof(FloatHi));
+			*H = H_array = (FloatHiPtr) calloc(max_number_values, sizeof(FloatHi));
 		if (alpha)
-			*alpha = alpha_array = (FloatHiPtr) MemNew(max_number_values*sizeof(FloatHi));
+			*alpha = alpha_array = (FloatHiPtr) calloc(max_number_values, sizeof(FloatHi));
 		if (beta)
-			*beta = beta_array = (FloatHiPtr) MemNew(max_number_values*sizeof(FloatHi));
+			*beta = beta_array = (FloatHiPtr) calloc(max_number_values, sizeof(FloatHi));
 		if (pref_flags)
-			*pref_flags = pref_flags_array = MemNew(max_number_values*sizeof(Int4));
+			*pref_flags = pref_flags_array = calloc(max_number_values, sizeof(Int4));
 
 		for (index=0; index<max_number_values; index++)
 		{
@@ -3042,7 +3045,7 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, I
 CharPtr
 PrintMatrixMessage(const Char *matrix_name)
 {
-	CharPtr buffer=MemNew(1024*sizeof(Char));
+	CharPtr buffer=calloc(1024, sizeof(Char));
 	CharPtr ptr;
 	MatrixInfoPtr matrix_info;
         ValNodePtr vnp, head;
@@ -3076,7 +3079,7 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 	MatrixInfoPtr matrix_info;
 	ValNodePtr vnp, head;
 
-	ptr = buffer = MemNew(2048*sizeof(Char));
+	ptr = buffer = calloc(2048, sizeof(Char));
 
         if (decline_align == INT2_MAX)
               sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
@@ -3343,7 +3346,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreqPtr sfp, FloatHi	lambda, FloatHi H)
 		return -1.;
 	}
 #ifndef BLAST_KARLIN_STACKP
-	P0 = (FloatHi PNTR)MemNew(DIMOFP0 * sizeof(*P0));
+	P0 = (FloatHi PNTR)calloc(DIMOFP0 , sizeof(*P0));
 	if (P0 == NULL)
 		return -1.;
 #else

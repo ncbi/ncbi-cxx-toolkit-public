@@ -446,7 +446,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
 
    max_d = (Int4) (max_dbseq_length / ERROR_FRACTION + 1);
 
-   gamp = (GreedyAlignMemPtr) MemNew(sizeof(GreedyAlignMem));
+   gamp = (GreedyAlignMemPtr) calloc(1, sizeof(GreedyAlignMem));
 
    if (score_options->gap_open==0 && score_options->gap_extend==0) {
       d_diff = ICEIL(Xdrop+reward/2, penalty+reward);
@@ -480,7 +480,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       max_cost = MAX(Mis_cost, gap_open+GE_cost);
       gd = gdb3(&Mis_cost, &gap_open, &GE_cost);
       d_diff = ICEIL(Xdrop+reward/2, gd);
-      gamp->uplow_free = (Int4Ptr) MemNew(sizeof(Int4)*2*(max_d+1+max_cost));
+      gamp->uplow_free = (Int4Ptr) calloc(2*(max_d+1+max_cost), sizeof(Int4));
       gamp->flast_d_affine = (ThreeValPtr PNTR) 
 	 malloc((MAX(max_d, max_cost) + 2) * sizeof(ThreeValPtr));
       if (!gamp->uplow_free || !gamp->flast_d_affine) {
@@ -488,7 +488,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
          return NULL;
       }
       gamp->flast_d_affine[0] = (ThreeValPtr)
-	 MemNew((2*max_d_1 + 6) * sizeof(ThreeVal) * (max_cost+1));
+	 calloc((2*max_d_1 + 6) , sizeof(ThreeVal) * (max_cost+1));
       for (i = 1; i <= max_cost; i++)
 	 gamp->flast_d_affine[i] = 
 	    gamp->flast_d_affine[i-1] + 2*max_d_1 + 6;
@@ -533,7 +533,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
                     program == blast_type_blastx ||
                     program == blast_type_tblastx);
    BlastGapAlignStructPtr gap_align = 
-      (BlastGapAlignStructPtr) MemNew(sizeof(BlastGapAlignStruct));
+      (BlastGapAlignStructPtr) calloc(1, sizeof(BlastGapAlignStruct));
 
    *gap_align_ptr = gap_align;
 
@@ -1038,9 +1038,9 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   GapPurgeState(gap_align->state_struct);
 
   j = (N + 2) * sizeof(BlastGapDP);
-  data.CD = (BlastGapDPPtr)MemNew(j);
+  data.CD = (BlastGapDPPtr)calloc(1, j);
 
-  state = (Uint1Ptr PNTR) MemNew(sizeof(Uint1Ptr)*(M+1));
+  state = (Uint1Ptr PNTR) calloc((M+1), sizeof(Uint1Ptr));
   data.CD[0].CC = 0;
   c = data.CD[0].DD = -m;
   state_struct = GapGetState(&gap_align->state_struct, N+3);
@@ -1230,7 +1230,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 
   i = *pei; j = *pej;
   /* printf("best = %d i,j=%d %d\n", best_score, i, j); */
-  tmp = (Uint1Ptr) MemNew(i + j);        
+  tmp = (Uint1Ptr) calloc(1, i + j);        
   for (s= 1, c= 0; i > 0 || j > 0; c++, i--) {
       k  = (t=state[i][j])%10;
       if (s == 6 && (t/10)%2 == 1) k = 6;
@@ -1317,7 +1317,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   N+=2;
 
   j = (N + 5) * sizeof(BlastGapDP);
-  CD = (BlastGapDPPtr)MemNew(j);
+  CD = (BlastGapDPPtr)calloc(1, j);
   CD[0].CC = 0; c = CD[0].DD = -m;
   for(i = 3; i <= N; i+=3) {
     CD[i].CC = c;
@@ -1580,7 +1580,7 @@ MBToGapEditScript (MBGapEditScript PNTR ed_script)
       return NULL;
 
    for (i=0; i<ed_script->num; i++) {
-      esp = (GapEditScriptPtr) MemNew(sizeof(GapEditScript));
+      esp = (GapEditScriptPtr) calloc(1, sizeof(GapEditScript));
       esp->num = EDIT_VAL(ed_script->op[i]);
       esp->op_type = 3 - EDIT_OPC(ed_script->op[i]);
       if (esp->op_type == 3)
@@ -2014,7 +2014,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
 
    hsp_array = hsp_list->hsp_array;
 
-   new_hsp = (BlastHSPPtr) MemNew(sizeof(BlastHSP));
+   new_hsp = (BlastHSPPtr) calloc(1, sizeof(BlastHSP));
 
    if (gap_align) {
       score = gap_align->score;

@@ -57,7 +57,7 @@ BlastSeqSrcPtr BlastSeqSrcNew(BlastSeqSrcNewInfoPtr bssn_info)
     if (!bssn_info)
         return NULL;
 
-    if ( !(retval = (BlastSeqSrcPtr) MemNew(sizeof(BlastSeqSrc))))
+    if ( !(retval = (BlastSeqSrcPtr) calloc(1, sizeof(BlastSeqSrc))))
         return NULL;
 
     /* Save the constructor and invoke it */

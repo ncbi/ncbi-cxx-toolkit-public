@@ -91,7 +91,7 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
   lookup->neighbor_matches=0;
   lookup->threshold = opt->threshold;
   lookup->thin_backbone = 
-     (Int4Ptr PNTR) MemNew( lookup->backbone_size * sizeof(Int4Ptr));
+     (Int4Ptr PNTR) calloc(lookup->backbone_size , sizeof(Int4Ptr));
 
   return 0;
 }
@@ -155,11 +155,11 @@ Int4 _BlastAaLookupFinalize(LookupTablePtr lookup)
   
 /* allocate the new lookup table */
  lookup->thick_backbone = (LookupBackboneCell *)
-    MemNew( lookup->backbone_size * sizeof(LookupBackboneCell) );
+    calloc(lookup->backbone_size , sizeof(LookupBackboneCell));
 
  /* allocate the pv_array */
  lookup->pv = (PV_ARRAY_TYPE *)
-    MemNew( (lookup->backbone_size >> PV_ARRAY_BTS) * sizeof(PV_ARRAY_TYPE) );
+    calloc((lookup->backbone_size >> PV_ARRAY_BTS) , sizeof(PV_ARRAY_TYPE));
 
  /* find out how many cells have >3 hits */
  for(i=0;i<lookup->backbone_size;i++)

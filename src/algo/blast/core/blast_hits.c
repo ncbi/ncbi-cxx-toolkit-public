@@ -737,9 +737,9 @@ evalue_compare_hsp_lists(const void* v1, const void* v2)
 #define MIN_HSP_ARRAY_SIZE 100
 BlastHSPListPtr BlastHSPListNew()
 {
-   BlastHSPListPtr hsp_list = (BlastHSPListPtr) MemNew(sizeof(BlastHSPList));
+   BlastHSPListPtr hsp_list = (BlastHSPListPtr) calloc(1, sizeof(BlastHSPList));
    hsp_list->hsp_array = (BlastHSPPtr PNTR) 
-      MemNew(MIN_HSP_ARRAY_SIZE*sizeof(BlastHSPPtr));
+      calloc(MIN_HSP_ARRAY_SIZE, sizeof(BlastHSPPtr));
    hsp_list->hsp_max = INT4_MAX;
    hsp_list->allocated = MIN_HSP_ARRAY_SIZE;
 
@@ -835,7 +835,7 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
 static BlastHitListPtr BLAST_HitListNew(Int4 hitlist_size)
 {
    BlastHitListPtr new_hitlist = (BlastHitListPtr) 
-      MemNew(sizeof(BlastHitList));
+      calloc(1, sizeof(BlastHitList));
    new_hitlist->hsplist_max = hitlist_size;
    return new_hitlist;
 }
@@ -916,7 +916,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
       BlastHSPListPtr tmp_hsp_list;
-      hsp_list_array = MemNew(results->num_queries*sizeof(BlastHSPListPtr));
+      hsp_list_array = calloc(results->num_queries, sizeof(BlastHSPListPtr));
       for (index = 0; index < hsp_list->hspcnt; index++) {
          hsp = hsp_list->hsp_array[index];
          tmp_hsp_list = hsp_list_array[hsp->context/context_factor];
@@ -996,7 +996,7 @@ Int2 BLAST_ResultsInit(Int4 num_queries, BlastResultsPtr PNTR results_ptr)
 
    results->num_queries = num_queries;
    results->hitlist_array = (BlastHitListPtr PNTR) 
-      MemNew(num_queries*sizeof(BlastHitListPtr));
+      calloc(num_queries, sizeof(BlastHitListPtr));
    
    *results_ptr = results;
    return status;
@@ -1088,7 +1088,7 @@ BLAST_MergeHsps(BlastHSPPtr hsp1, BlastHSPPtr hsp2, Int4 start)
          return FALSE;
    }
    /* Find whether these HSPs have an intersection point */
-   segments1 = (BLASTHSPSegmentPtr) MemNew(sizeof(BLASTHSPSegment));
+   segments1 = (BLASTHSPSegmentPtr) calloc(1, sizeof(BLASTHSPSegment));
    
    esp1 = hsp1->gap_info->esp;
    esp2 = hsp2->gap_info->esp;
@@ -1119,7 +1119,7 @@ BLAST_MergeHsps(BlastHSPPtr hsp1, BlastHSPPtr hsp2, Int4 start)
    
    for (esp = esp1->next; esp; esp = esp->next) {
       new_segment1->next = (BLASTHSPSegmentPtr)
-         MemNew(sizeof(BLASTHSPSegment));
+         calloc(1, sizeof(BLASTHSPSegment));
       new_segment1->next->q_start = new_segment1->q_end + 1;
       new_segment1->next->s_start = new_segment1->s_end + 1;
       new_segment1 = new_segment1->next;
@@ -1137,7 +1137,7 @@ BLAST_MergeHsps(BlastHSPPtr hsp1, BlastHSPPtr hsp2, Int4 start)
    
    /* Now create the second segments list */
    
-   segments2 = (BLASTHSPSegmentPtr) MemNew(sizeof(BLASTHSPSegment));
+   segments2 = (BLASTHSPSegmentPtr) calloc(1, sizeof(BLASTHSPSegment));
    segments2->q_start = hsp2->query.offset;
    segments2->s_start = hsp2->subject.offset;
    segments2->q_end = segments2->q_start + esp2->num - 1;
@@ -1148,7 +1148,7 @@ BLAST_MergeHsps(BlastHSPPtr hsp1, BlastHSPPtr hsp2, Int4 start)
    for (esp = esp2->next; esp && new_segment2->s_end < end; 
         esp = esp->next) {
       new_segment2->next = (BLASTHSPSegmentPtr)
-         MemNew(sizeof(BLASTHSPSegment));
+         calloc(1, sizeof(BLASTHSPSegment));
       new_segment2->next->q_start = new_segment2->q_end + 1;
       new_segment2->next->s_start = new_segment2->s_end + 1;
       new_segment2 = new_segment2->next;
@@ -1372,9 +1372,9 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
    /* Merge the two HSP lists for successive chunks of the subject sequence */
    hspcnt1 = hspcnt2 = 0;
    hspp1 = (BlastHSPPtr PNTR) 
-      MemNew(combined_hsp_list->hspcnt*sizeof(BlastHSPPtr));
-   hspp2 = (BlastHSPPtr PNTR) MemNew(hsp_list->hspcnt*sizeof(BlastHSPPtr));
-   index_array = (Int4Ptr) MemNew(combined_hsp_list->hspcnt*sizeof(Int4));
+      calloc(combined_hsp_list->hspcnt, sizeof(BlastHSPPtr));
+   hspp2 = (BlastHSPPtr PNTR) calloc(hsp_list->hspcnt, sizeof(BlastHSPPtr));
+   index_array = (Int4Ptr) calloc(combined_hsp_list->hspcnt, sizeof(Int4));
 
    for (index=0; index<combined_hsp_list->hspcnt; index++) {
       hsp = combined_hsp_list->hsp_array[index];
