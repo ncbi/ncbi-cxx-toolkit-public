@@ -38,7 +38,7 @@
 
 #include <connect/ncbi_core.h>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 
 
 /** @addtogroup UtilityFunc
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2004/11/30 15:07:05  dicuccio
+ * Replaced ncbithr.hpp with ncbimtx.hpp in include list
+ *
  * Revision 6.13  2004/07/14 15:45:52  lavr
  * +flags (=0) for CONNECT_Init()
  *

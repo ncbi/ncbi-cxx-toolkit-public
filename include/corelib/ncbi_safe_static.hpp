@@ -43,7 +43,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbithr.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -364,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/30 15:07:05  dicuccio
+ * Replaced ncbithr.hpp with ncbimtx.hpp in include list
+ *
  * Revision 1.12  2004/04/26 14:28:59  ucko
  * Move large inline methods [Set(), Init()] from CSafeStatic{Ptr,Ref}'s
  * definitions to the end of the file, both to reduce clutter and because
