@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("ALGO/tree" project)
+#################################
+
+SUB_PROJ = test
+
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
