@@ -290,7 +290,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
                           CFFContext& ctx, IFlatQVal::TFlags) const
 {
     // XXX - add link in HTML mode
-    // !!!x_AddFQ(q, name, ctx.GetPreferredSynonym(*m_Value).GetSeqIdString(true));
+    x_AddFQ(q, name, ctx.GetPreferredSynonym(*m_Value).GetSeqIdString(true));
 }
 
 
@@ -343,6 +343,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:18:07  shomrat
+* uncomment code
+*
 * Revision 1.2  2003/12/18 17:43:35  shomrat
 * context.hpp moved
 *
