@@ -455,9 +455,9 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       is zero only for translated subject sequences, whose maximum
       length is bounded by the length of the first frame */
 
-   tree = Blast_IntervalTreeInit(0, query_blk->length,
+   tree = Blast_IntervalTreeInit(0, query_blk->length + 1,
                                  0, (subject_length > 0 ? subject_length :
-                                 subject_blk->length / CODON_LENGTH) );
+                                 subject_blk->length / CODON_LENGTH) + 1);
 
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_array[index];
