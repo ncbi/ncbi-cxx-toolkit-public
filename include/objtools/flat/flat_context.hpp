@@ -36,8 +36,9 @@
 #include <objtools/flat/flat_loc.hpp>
 #include <objtools/flat/flat_reference.hpp>
 
-#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
 
@@ -54,7 +55,7 @@ class CFlatContext : public CObject
 {
 public:
     CFlatContext(void)
-        : m_Formatter(0), m_AdjustCoords(false), m_InSegSet(false),
+        : m_Formatter(0), m_AdjustCoords(false),
           m_SegmentNum(0), m_SegmentCount(0), m_GI(0), m_Length(0),
           m_Mol(CSeq_inst::eMol_not_set), m_Biomol(CMolInfo::eBiomol_unknown),
           m_IsProt(false), m_IsTPA(false), m_IsWGSMaster(false),
@@ -77,7 +78,8 @@ public:
     const CSeq_loc&    GetLocation    (void) const { return *m_Location;      }
     bool               AdjustCoords   (void) const { return m_AdjustCoords;   }
     const CBioseq_Handle& GetHandle   (void) const { return m_Handle;         }
-    bool               InSegSet       (void) const { return m_InSegSet;       }
+    bool               InSegSet       (void) const { return m_SegMaster;      }
+    const CBioseq*     GetSegMaster   (void) const { return m_SegMaster;      }
     unsigned int       GetSegmentNum  (void) const { return m_SegmentNum;     }
     unsigned int       GetSegmentCount(void) const { return m_SegmentCount;   }
     const TReferences& GetReferences  (void) const { return m_References;     }
@@ -99,7 +101,7 @@ private:
     bool                m_AdjustCoords;
     CBioseq_Handle      m_Handle;
     // everything below is technically redundant but useful to keep around
-    bool                m_InSegSet;
+    CConstRef<CBioseq>  m_SegMaster;
     unsigned int        m_SegmentNum, m_SegmentCount;
     TReferences         m_References;
     int                 m_GI;
@@ -130,6 +132,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/08 21:09:58  ucko
+* For segmented sequences, find and note the "master" sequence rather
+* than just setting a flag.
+*
 * Revision 1.3  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

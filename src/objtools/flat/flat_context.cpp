@@ -56,7 +56,12 @@ void CFlatContext::SetFlags(const CSeq_entry& entry, bool do_parents)
         switch (bss.GetClass()) {
         case CBioseq_set::eClass_segset:
         case CBioseq_set::eClass_conset:
-            m_InSegSet = true;
+            ITERATE (CBioseq_set::TSeq_set, it, bss.GetSeq_set()) {
+                if ((*it)->IsSeq()) {
+                    m_SegMaster = &(*it)->GetSeq();
+                    break;
+                }
+            }
             break;
         case CBioseq_set::eClass_parts:
             m_SegmentNum   = 1;
@@ -119,6 +124,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/10/08 21:10:07  ucko
+* For segmented sequences, find and note the "master" sequence rather
+* than just setting a flag.
+*
 * Revision 1.4  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
