@@ -497,18 +497,21 @@ BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
 }
 
 /** Documented in blast_gapalign.h */
-BlastGapAlignStructPtr 
+Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
-			BlastExtensionParametersPtr ext_params,
-			Int4 total_num_contexts, Int4 max_dbseq_length,
-                        Int4 query_length, const CharPtr program,
-                        BLAST_ScoreBlkPtr sbp)
+   BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
+   ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, Int4 query_length, 
+   const CharPtr program, BLAST_ScoreBlkPtr sbp, 
+   BlastGapAlignStructPtr PNTR gap_align_ptr)
 {
-   Int2 status;
+   Int2 status = 0;
    Boolean is_na = (!StrCmp(program, "blastn") || !StrCmp(program, "blastx")
 		    || !StrCmp(program, "tblastx"));
-   BlastGapAlignStructPtr gap_align = (BlastGapAlignStructPtr)
-      MemNew(sizeof(BlastGapAlignStruct));
+   Int4 max_dbseq_length;
+   BlastGapAlignStructPtr gap_align = 
+      (BlastGapAlignStructPtr) MemNew(sizeof(BlastGapAlignStruct));
+
+   *gap_align_ptr = gap_align;
 
    BlastProgram2Number(program, &gap_align->program);
 
@@ -523,9 +526,9 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
             BLAST_ScoreBlkNew(Seq_code_ncbistdaa, total_num_contexts);
 
       /* Fills in block for gapped blast. */
-      status = BlastScoreBlkGappedFill(gap_align->sbp, score_options, program);
-      if (status)
-         return NULL;
+      if ((status = BlastScoreBlkGappedFill(gap_align->sbp, score_options, 
+                       program)))
+         return status;
    }
 
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff;
@@ -536,6 +539,14 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
       if (!gap_align->dyn_prog)
          gap_align = BLAST_GapAlignStructFree(gap_align);
    } else {
+      if (rdfp) {
+         for (max_dbseq_length = 0; rdfp; rdfp = rdfp->next)
+            max_dbseq_length = 
+               MAX(max_dbseq_length, readdb_get_maxlen(rdfp));
+      } else {
+         max_dbseq_length = subject->length;
+      }
+      max_dbseq_length = MIN(max_dbseq_length, MAX_DBSEQ_LEN);
       gap_align->greedy_align_mem = 
          MB_GreedyAlignMemAlloc(score_options, ext_params, 
                                 max_dbseq_length);
@@ -543,8 +554,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
          gap_align = BLAST_GapAlignStructFree(gap_align);
    }
 
-
-   return gap_align;
+   return status;
 }
 
 /** Low level function to perform dynamic programming gapped extension 
