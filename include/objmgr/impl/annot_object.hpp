@@ -134,7 +134,9 @@ private:
     // for sequence segments. The annot object points to the seq-annot
     // containing the original annotation object.
 
-    void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
+    void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
+                        const CSeq_align& align,
+                        int loc_index_shift) const;
 
     CSeq_annot_Info*             m_Annot_Info;
     CConstRef<CObject>           m_Object;         // annot object itself
@@ -268,6 +270,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.17  2004/03/31 20:43:28  grichenk
 * Fixed mapping of seq-locs containing both master sequence
 * and its segments.

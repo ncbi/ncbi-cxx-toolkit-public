@@ -94,7 +94,7 @@ const CSeq_align& CAlign_CI::operator* (void) const
     _ASSERT(annot.IsAlign());
     if (!m_MappedAlign) {
         if ( annot.IsMapped() ) {
-            m_MappedAlign = annot.GetMappedSeq_align_Mapper().GetDstAlign();
+            m_MappedAlign.Reset(&annot.GetMappedSeq_align());
         }
         else {
             m_MappedAlign.Reset(&annot.GetAlign());
@@ -110,7 +110,7 @@ const CSeq_align* CAlign_CI::operator-> (void) const
     _ASSERT(annot.IsAlign());
     if (!m_MappedAlign) {
         if ( annot.IsMapped() ) {
-            m_MappedAlign = annot.GetMappedSeq_align_Mapper().GetDstAlign();
+            m_MappedAlign.Reset(&annot.GetMappedSeq_align());
         }
         else {
             m_MappedAlign.Reset(&annot.GetAlign());
@@ -142,6 +142,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.26  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

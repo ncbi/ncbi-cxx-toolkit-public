@@ -174,9 +174,8 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
     {
         const CSeq_align& align = GetAlign();
         // TODO: separate alignment locations
-        hrmaps.resize(1);
-        hrmaps[0].clear();
-        x_ProcessAlign(hrmaps[0], align);
+        hrmaps.clear();
+        x_ProcessAlign(hrmaps, align, 0);
         break;
     }
     default:
@@ -233,8 +232,9 @@ const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 }
 
 
-void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
-                                       const CSeq_align& align) const
+void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
+                                       const CSeq_align& align,
+                                       int loc_index_shift) const
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
@@ -262,28 +262,19 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                     ERR_POST(Warning << "Invalid 'strands' size in dendiag");
                     dim = min(dim, (int)diag.GetStrands().size());
                 }
-                CDense_diag::TIds::const_iterator it_id =
-                    (*it)->GetIds().begin();
-                CDense_diag::TStarts::const_iterator it_start =
-                    (*it)->GetStarts().begin();
-                TSeqPos len = (*it)->GetLen();
-                CDense_diag::TStrands::const_iterator it_strand;
-                if ( (*it)->IsSetStrands() ) {
-                    it_strand = (*it)->GetStrands().begin();
+                if (hrmaps.size() < loc_index_shift + dim) {
+                    hrmaps.resize(loc_index_shift + dim);
                 }
-                while (it_id != (*it)->GetIds().end()) {
-                    // Create CHandleRange from an align element
+                TSeqPos len = (*it)->GetLen();
+                for (int row = 0; row < dim; ++row) {
                     CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(**it_id);
-                    loc.SetInt().SetFrom(*it_start);
-                    loc.SetInt().SetTo(*it_start + len - 1);
+                    loc.SetInt().SetId().Assign(*(*it)->GetIds()[row]);
+                    loc.SetInt().SetFrom((*it)->GetStarts()[row]);
+                    loc.SetInt().SetTo((*it)->GetStarts()[row] + len - 1);
                     if ( (*it)->IsSetStrands() ) {
-                        loc.SetInt().SetStrand(*it_strand);
-                        ++it_strand;
+                        loc.SetInt().SetStrand((*it)->GetStrands()[row]);
                     }
-                    hrmap.AddLocation(loc);
-                    ++it_id;
-                    ++it_start;
+                    hrmaps[loc_index_shift + row].AddLocation(loc);
                 }
             }
             break;
@@ -317,33 +308,23 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                 ERR_POST(Warning << "Invalid 'strands' size in denseg");
                 dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
             }
-            CDense_seg::TStarts::const_iterator it_start =
-                denseg.GetStarts().begin();
-            CDense_seg::TLens::const_iterator it_len =
-                denseg.GetLens().begin();
-            CDense_seg::TStrands::const_iterator it_strand;
-            if ( denseg.IsSetStrands() ) {
-                it_strand = denseg.GetStrands().begin();
+            if (hrmaps.size() < loc_index_shift + dim) {
+                hrmaps.resize(loc_index_shift + dim);
             }
-            for (int seg = 0;  seg < numseg;  seg++, ++it_len) {
-                CDense_seg::TIds::const_iterator it_id =
-                    denseg.GetIds().begin();
-                for (int seq = 0;  seq < dim;  seq++, ++it_start, ++it_id) {
-                    ENa_strand strand = eNa_strand_unknown;
-                    if ( denseg.IsSetStrands() ) {
-                        strand = *it_strand;
-                    }
-                    ++it_strand;
-                    if ( *it_start < 0 )
+            for (int seg = 0;  seg < numseg;  seg++) {
+                for (int row = 0;  row < dim;  row++) {
+                    if (denseg.GetStarts()[seg*dim + row] < 0 ) {
                         continue;
-                    CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(**it_id);
-                    loc.SetInt().SetFrom(*it_start);
-                    loc.SetInt().SetTo(*it_start + *it_len - 1);
-                    if ( denseg.IsSetStrands() ) {
-                        loc.SetInt().SetStrand(strand);
                     }
-                    hrmap.AddLocation(loc);
+                    CSeq_loc loc;
+                    loc.SetInt().SetId().Assign(*denseg.GetIds()[row]);
+                    loc.SetInt().SetFrom(denseg.GetStarts()[seg*dim + row]);
+                    loc.SetInt().SetTo(denseg.GetStarts()[seg*dim + row]
+                        + denseg.GetLens()[seg] - 1);
+                    if ( denseg.IsSetStrands() ) {
+                        loc.SetInt().SetStrand(denseg.GetStrands()[seg*dim + row]);
+                    }
+                    hrmaps[loc_index_shift + row].AddLocation(loc);
                 }
             }
             break;
@@ -353,10 +334,24 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             const CSeq_align::C_Segs::TStd& std =
                 align.GetSegs().GetStd();
             ITERATE ( CSeq_align::C_Segs::TStd, it, std ) {
-                //### Ignore Seq-id, assuming it is also set in Seq-loc?
+                if (hrmaps.size() < loc_index_shift + (*it)->GetDim()) {
+                    hrmaps.resize(loc_index_shift + (*it)->GetDim());
+                }
                 ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
-                    // Create CHandleRange from an align element
-                    hrmap.AddLocation(**it_loc);
+                    CSeq_loc_CI row_it(**it_loc);
+                    for (int row = 0; row_it; ++row_it, ++row) {
+                        if (loc_index_shift + row >= hrmaps.size()) {
+                            hrmaps.resize(loc_index_shift + row + 1);
+                        }
+                        CSeq_loc loc;
+                        loc.SetInt().SetId().Assign(row_it.GetSeq_id());
+                        loc.SetInt().SetFrom(row_it.GetRange().GetFrom());
+                        loc.SetInt().SetTo(row_it.GetRange().GetTo());
+                        if ( row_it.GetStrand() != eNa_strand_unknown ) {
+                            loc.SetInt().SetStrand(row_it.GetStrand());
+                        }
+                        hrmaps[loc_index_shift + row].AddLocation(loc);
+                    }
                 }
             }
             break;
@@ -377,35 +372,21 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             if (dim > (int)packed.GetLens().size()) {
                 dim = packed.GetLens().size();
             }
-            CPacked_seg::TStarts::const_iterator it_start =
-                packed.GetStarts().begin();
-            CPacked_seg::TLens::const_iterator it_len =
-                packed.GetLens().begin();
-            CPacked_seg::TPresent::const_iterator it_pres =
-                packed.GetPresent().begin();
-            CPacked_seg::TStrands::const_iterator it_strand;
-            if ( packed.IsSetStrands() ) {
-                it_strand = packed.GetStrands().begin();
-                if (dim * numseg > (int)packed.GetStrands().size()) {
-                    dim = packed.GetStrands().size() / numseg;
-                }
+            if (hrmaps.size() < loc_index_shift + dim) {
+                hrmaps.resize(loc_index_shift + dim);
             }
-            for (int seg = 0;  seg < numseg;  seg++, ++it_len) {
-                CPacked_seg::TIds::const_iterator it_id =
-                    packed.GetIds().begin();
-                for (int seq = 0;  seq < dim;  seq++, ++it_pres) {
-                    if ( *it_pres ) {
+            for (int seg = 0;  seg < numseg;  seg++) {
+                for (int row = 0;  row < dim;  row++) {
+                    if ( packed.GetPresent()[seg*dim + row] ) {
                         CSeq_loc loc;
-                        loc.SetInt().SetId().Assign(**it_id);
-                        loc.SetInt().SetFrom(*it_start);
-                        loc.SetInt().SetTo(*it_start + *it_len - 1);
+                        loc.SetInt().SetId().Assign(*packed.GetIds()[row]);
+                        loc.SetInt().SetFrom(packed.GetStarts()[seg*dim + row]);
+                        loc.SetInt().SetTo(packed.GetStarts()[seg*dim + row]
+                            + packed.GetLens()[seg] - 1);
                         if ( packed.IsSetStrands() ) {
-                            loc.SetInt().SetStrand(*it_strand);
-                            ++it_strand;
+                            loc.SetInt().SetStrand(packed.GetStrands()[seg*dim + row]);
                         }
-                        ++it_id;
-                        ++it_start;
-                        hrmap.AddLocation(loc);
+                        hrmaps[loc_index_shift + row].AddLocation(loc);
                     }
                 }
             }
@@ -416,7 +397,7 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
             ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
-                x_ProcessAlign(hrmap, **it);
+                x_ProcessAlign(hrmaps, **it, hrmaps.size());
             }
             break;
         }
@@ -430,6 +411,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.38  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -56,19 +56,19 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
                              TSeqPos            src_from,
                              TSeqPos            src_length,
                              ENa_strand         src_strand,
-                             const CSeq_id&     dst_id,
+                             CSeq_id_Handle     dst_id,
                              TSeqPos            dst_from,
                              ENa_strand         dst_strand)
     : m_Src_id_Handle(src_id),
       m_Src_from(src_from),
       m_Src_to(src_from + src_length - 1),
       m_Src_strand(src_strand),
+      m_Dst_id_Handle(dst_id),
       m_Dst_from(dst_from),
       m_Dst_strand(dst_strand),
       m_Reverse(!SameOrientation(src_strand, dst_strand))
 {
-    m_Dst_id.Reset(new CSeq_id);
-    m_Dst_id->Assign(dst_id);
+    return;
 }
 
 
@@ -384,7 +384,7 @@ void CSeq_loc_Mapper::PreserveDestinationLocs(void)
                 CRef<CMappingRange> cvt(new CMappingRange(
                     id_it->first, dst_start, dst_stop - dst_start + 1,
                     ENa_strand(str_idx),
-                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
+                    id_it->first, dst_start, ENa_strand(str_idx)));
                 m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
                     TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
             }
@@ -392,7 +392,7 @@ void CSeq_loc_Mapper::PreserveDestinationLocs(void)
                 CRef<CMappingRange> cvt(new CMappingRange(
                     id_it->first, dst_start, dst_stop - dst_start + 1,
                     ENa_strand(str_idx),
-                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
+                    id_it->first, dst_start, ENa_strand(str_idx)));
                 m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
                     TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
             }
@@ -548,7 +548,7 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
             CRef<CMappingRange> cvt(new CMappingRange(
                 CSynonymsSet::GetSeq_id_Handle(syn_it),
                 src_start, length, src_strand,
-                dst_id, dst_start, dst_strand));
+                CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand));
             m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
                 TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
         }
@@ -563,7 +563,7 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
         CRef<CMappingRange> cvt(new CMappingRange(
             CSeq_id_Handle::GetHandle(src_id),
             src_start, length, src_strand,
-            dst_id, dst_start, dst_strand));
+            CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand));
         m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
             TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
         m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
@@ -1193,28 +1193,6 @@ CSeq_loc_Mapper::x_BeginMappingRanges(CSeq_id_Handle id,
 }
 
 
-struct CMappingRangeRef_Less
-{
-    bool operator()(const CRef<CMappingRange>& x,
-                    const CRef<CMappingRange>& y) const;
-};
-
-
-bool CMappingRangeRef_Less::operator()(const CRef<CMappingRange>& x,
-                                       const CRef<CMappingRange>& y) const
-{
-    if (x->m_Src_id_Handle != y->m_Src_id_Handle) {
-        return x->m_Src_id_Handle < y->m_Src_id_Handle;
-    }
-    // Leftmost first
-    if (x->m_Src_from != y->m_Src_from) {
-        return x->m_Src_from < y->m_Src_from;
-    }
-    // Longest first
-    return x->m_Src_to > y->m_Src_to;
-}
-
-
 bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
                                     TRange           src_rg,
                                     bool             is_set_strand,
@@ -1295,7 +1273,7 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
         ENa_strand dst_strand;
         bool is_set_dst_strand = cvt.Map_Strand(is_set_strand,
             src_strand, &dst_strand);
-        x_GetMappedRanges(CSeq_id_Handle::GetHandle(*cvt.m_Dst_id),
+        x_GetMappedRanges(cvt.m_Dst_id_Handle,
             is_set_dst_strand ? int(dst_strand) + 1 : 0)
             .push_back(TRangeWithFuzz(rg, fuzz));
         res = true;
@@ -1816,13 +1794,16 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
 CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
 {
     CSeq_align_Mapper aln_mapper(src_align);
+    aln_mapper.Convert(*this);
+    return aln_mapper.GetDstAlign();
+    /*
     ITERATE(TIdMap, id_it, m_IdMap) {
         ITERATE(TRangeMap, rg_it, id_it->second) {
             aln_mapper.Convert(*rg_it->second,
                 m_UseWidth ? m_Widths[id_it->first] : 0);
         }
     }
-    return aln_mapper.GetDstAlign();
+    */
 }
 
 
@@ -1832,6 +1813,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.19  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -77,12 +77,12 @@ struct SAnnotObject_Index
 {
     SAnnotObject_Index(void)
         : m_AnnotObject_Info(0),
-          m_AnnotLocationIndex(false)
+          m_AnnotLocationIndex(0)
         {
         }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;
-    bool                                m_AnnotLocationIndex;
+    unsigned int                        m_AnnotLocationIndex;
     CRef< CObjectFor<CHandleRange> >    m_HandleRange;
 };
 
@@ -168,6 +168,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.4  2004/01/23 16:14:46  grichenk
 * Implemented alignment mapping
 *

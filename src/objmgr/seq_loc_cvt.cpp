@@ -53,6 +53,7 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
+                                         const CSeq_id_Handle& dst_id,
                                          const CSeqMap_CI& seg,
                                          const CSeq_id_Handle& src_id,
                                          CScope* scope)
@@ -61,6 +62,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
       m_Src_to(0),
       m_Shift(0),
       m_Reverse(false),
+      m_Dst_id_Handle(dst_id),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
       m_LastType(eMappedObjType_not_set),
@@ -79,6 +81,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
       m_Src_to(kInvalidSeqPos - 1),
       m_Shift(0),
       m_Reverse(false),
+      m_Dst_id_Handle(master_id),
       m_Dst_loc_Empty(0),
       m_Partial(false),
       m_LastType(eMappedObjType_not_set),
@@ -426,26 +429,11 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
         ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
-    case CSeq_annot::C_Data::e_Align:
-    {
-        const CSeq_align& orig_align = ref.GetAlign();
-        CRef<CSeq_align_Mapper> mapped_align;
-        Convert(orig_align, &mapped_align);
-        ref.SetMappedSeq_align_Mapper(mapped_align.GetPointerOrNull());
-        return;
-    }
     default:
         _ASSERT(0);
         break;
     }
     SetMappedLocation(ref, loctype);
-}
-
-
-void CSeq_loc_Conversion::Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst)
-{
-    dst->Reset(new CSeq_align_Mapper(src));
-    (*dst)->Convert(*this);
 }
 
 
@@ -470,15 +458,34 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
 /////////////////////////////////////////////////////////////////////////////
 
 
-CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(void)
-: m_Partial(false), m_TotalRange(TRange::GetEmpty())
+CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(CHeapScope& scope)
+    : m_SingleConv(0),
+      m_SingleIndex(0),
+      m_Partial(false),
+      m_TotalRange(TRange::GetEmpty()),
+      m_Scope(scope)
 {
+    return;
 }
 
 
-void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt)
+void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt,
+                                  unsigned int loc_index)
 {
-    TRangeMap& ranges = m_IdMap[cvt.m_Src_id_Handle];
+    if (!m_SingleConv) {
+        m_SingleConv.Reset(&cvt);
+        m_SingleIndex = loc_index;
+        return;
+    }
+    else {
+        TIdMap& id_map = m_CvtByIndex[m_SingleIndex];
+        TRangeMap& ranges = id_map[m_SingleConv->m_Src_id_Handle];
+        ranges.insert(TRangeMap::value_type
+                      (TRange(cvt.m_Src_from, cvt.m_Src_to),
+                       m_SingleConv));
+    }
+    TIdMap& id_map = m_CvtByIndex[loc_index];
+    TRangeMap& ranges = id_map[cvt.m_Src_id_Handle];
     ranges.insert(TRangeMap::value_type(TRange(cvt.m_Src_from, cvt.m_Src_to),
                                         Ref(&cvt)));
 }
@@ -487,10 +494,11 @@ void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt)
 CSeq_loc_Conversion_Set::TRangeIterator
 CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
                                      TSeqPos from,
-                                     TSeqPos to)
+                                     TSeqPos to,
+                                     unsigned int loc_index)
 {
-    TIdMap::iterator ranges = m_IdMap.find(id);
-    if (ranges == m_IdMap.end()) {
+    TIdMap::iterator ranges = m_CvtByIndex[loc_index].find(id);
+    if (ranges == m_CvtByIndex[loc_index].end()) {
         return TRangeIterator();
     }
     return ranges->second.begin(TRange(from, to));
@@ -498,11 +506,14 @@ CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
 
 
 void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
-                                      CSeq_loc_Conversion::ELocationType loctype)
+                                      CSeq_loc_Conversion::ELocationType
+                                      loctype)
 {
-    if (m_IdMap.size() == 1  &&  m_IdMap.begin()->second.size() == 1) {
+    _ASSERT(m_SingleConv);
+    if (m_CvtByIndex.size() == 0  &&
+        !ref.IsAlign()) {
         // No multiple mappings
-        m_IdMap.begin()->second.begin()->second->Convert(ref, loctype);
+        m_SingleConv->Convert(ref, loctype);
         return;
     }
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
@@ -511,29 +522,28 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
     {
         CRef<CSeq_loc> mapped_loc;
         const CSeq_loc* src_loc;
+        unsigned int loc_index = 0;
         if ( loctype != CSeq_loc_Conversion::eProduct ) {
             src_loc = &obj.GetFeatFast()->GetLocation();
         }
         else {
             src_loc = &obj.GetFeatFast()->GetProduct();
+            loc_index = 1;
         }
-        Convert(*src_loc, &mapped_loc);
+        Convert(*src_loc, &mapped_loc, loc_index);
         ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Graph:
     {
         CRef<CSeq_loc> mapped_loc;
-        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
+        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc, 0);
         ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Align:
     {
-        const CSeq_align& orig_align = ref.GetAlign();
-        CRef<CSeq_align_Mapper> mapped_align;
-        Convert(orig_align, &mapped_align);
-        ref.SetMappedSeq_align_Mapper(mapped_align.GetPointerOrNull());
+        ref.SetMappedSeq_align_Cvts(*this);
         break;
     }
     default:
@@ -547,12 +557,13 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
 
 
 bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
-                                           CRef<CSeq_loc>* dst)
+                                           CRef<CSeq_loc>* dst,
+                                           unsigned int loc_index)
 {
     _ASSERT(*dst);
     bool res = false;
     TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
-        src.GetPoint(), src.GetPoint());
+        src.GetPoint(), src.GetPoint(), loc_index);
     for ( ; mit; ++mit) {
         CSeq_loc_Conversion& cvt = *mit->second;
         cvt.Reset();
@@ -569,7 +580,8 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
-                                              CRef<CSeq_loc>* dst)
+                                              CRef<CSeq_loc>* dst,
+                                              unsigned int loc_index)
 {
     _ASSERT(*dst);
     CRef<CSeq_loc> tmp(new CSeq_loc);
@@ -579,7 +591,7 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         && src.GetStrand() == eNa_strand_minus);
     bool res = false;
     TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
-        src.GetFrom(), src.GetTo());
+        src.GetFrom(), src.GetTo(), loc_index);
     for ( ; mit; ++mit) {
         CSeq_loc_Conversion& cvt = *mit->second;
         cvt.Reset();
@@ -608,7 +620,9 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
 }
 
 
-bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
+bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
+                                      CRef<CSeq_loc>* dst,
+                                      unsigned int loc_index)
 {
     dst->Reset(new CSeq_loc);
     bool res = false;
@@ -628,7 +642,9 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
     case CSeq_loc::e_Empty:
     {
         TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
-                                         TRange::GetWhole().GetFrom(), TRange::GetWhole().GetTo());
+                                         TRange::GetWhole().GetFrom(),
+                                         TRange::GetWhole().GetTo(),
+                                         loc_index);
         for ( ; mit; ++mit) {
             CSeq_loc_Conversion& cvt = *mit->second;
             cvt.Reset();
@@ -650,17 +666,17 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id,
             CScope::eGetBioseq_All);
         whole_int.SetTo(bh.GetBioseqLength());
-        res = ConvertInterval(whole_int, dst);
+        res = ConvertInterval(whole_int, dst, loc_index);
         break;
     }
     case CSeq_loc::e_Int:
     {
-        res = ConvertInterval(src.GetInt(), dst);
+        res = ConvertInterval(src.GetInt(), dst, loc_index);
         break;
     }
     case CSeq_loc::e_Pnt:
     {
-        res = ConvertPoint(src.GetPnt(), dst);
+        res = ConvertPoint(src.GetPnt(), dst, loc_index);
         break;
     }
     case CSeq_loc::e_Packed_int:
@@ -669,7 +685,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         CPacked_seqint::Tdata& dst_ints = (*dst)->SetPacked_int().Set();
         ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
             CRef<CSeq_loc> dst_int(new CSeq_loc);
-            bool mapped = ConvertInterval(**i, &dst_int);
+            bool mapped = ConvertInterval(**i, &dst_int, loc_index);
             if (mapped) {
                 if ( dst_int->IsInt() ) {
                     dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
@@ -698,7 +714,9 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
             bool mapped = false;
             TRangeIterator mit = BeginRanges(
-                CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()), *i, *i);
+                CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
+                *i, *i,
+                loc_index);
             for ( ; mit; ++mit) {
                 CSeq_loc_Conversion& cvt = *mit->second;
                 cvt.Reset();
@@ -728,7 +746,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         CSeq_loc_mix::Tdata& dst_mix = (*dst)->SetMix().Set();
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
             dst_loc.Reset(new CSeq_loc);
-            if ( Convert(**i, &dst_loc) ) {
+            if ( Convert(**i, &dst_loc, loc_index) ) {
                 _ASSERT(dst_loc);
                 dst_mix.push_back(dst_loc);
                 res = true;
@@ -743,7 +761,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         CRef<CSeq_loc> dst_loc;
         CSeq_loc_equiv::Tdata& dst_equiv = (*dst)->SetEquiv().Set();
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, &dst_loc) ) {
+            if ( Convert(**i, &dst_loc, loc_index) ) {
                 dst_equiv.push_back(dst_loc);
                 res = true;
             }
@@ -762,7 +780,8 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         {{
             TRangeIterator mit = BeginRanges(
                 CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
-                src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint());
+                src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint(),
+                loc_index);
             for ( ; mit  &&  !bool(pntA); ++mit) {
                 CSeq_loc_Conversion& cvt = *mit->second;
                 cvt.Reset();
@@ -776,7 +795,8 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         if ( src_bond.IsSetB() ) {
             TRangeIterator mit = BeginRanges(
                 CSeq_id_Handle::GetHandle(src_bond.GetB().GetId()),
-                src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint());
+                src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint(),
+                loc_index);
             for ( ; mit  &&  !bool(pntB); ++mit) {
                 CSeq_loc_Conversion& cvt = *mit->second;
                 cvt.Reset();
@@ -814,16 +834,11 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
 
 
 void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
-                                      CRef<CSeq_align_Mapper>* dst)
+                                      CRef<CSeq_align>* dst)
 {
-    dst->Reset(new CSeq_align_Mapper(src));
-    NON_CONST_ITERATE(TIdMap, id_it, m_IdMap) {
-        NON_CONST_ITERATE(TRangeMap, range_it, id_it->second) {
-            range_it->second->Reset();
-            (*dst)->Convert(*range_it->second);
-            m_TotalRange += range_it->second->GetTotalRange();
-        }
-    }
+    CRef<CSeq_align_Mapper> mapper(new CSeq_align_Mapper(src));
+    mapper->Convert(*this);
+    *dst = mapper->GetDstAlign();
 }
 
 
@@ -833,6 +848,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.28  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -46,7 +46,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
 class CSeq_id;
 class CSeq_loc;
 class CSeq_loc_CI;
@@ -63,12 +62,12 @@ public:
                   TSeqPos           src_from,
                   TSeqPos           src_length,
                   ENa_strand        src_strand,
-                  const CSeq_id&    dst_id,
+                  CSeq_id_Handle    dst_id,
                   TSeqPos           dst_from,
                   ENa_strand        dst_strand);
 
     bool GoodSrcId(const CSeq_id& id) const;
-    CSeq_id& GetDstId(void);
+    CRef<CSeq_id> GetDstId(void);
 
     typedef CRange<TSeqPos>    TRange;
     typedef CRef<CInt_fuzz>    TFuzz;
@@ -90,7 +89,7 @@ private:
     TSeqPos             m_Src_from;
     TSeqPos             m_Src_to;
     ENa_strand          m_Src_strand;
-    CRef<CSeq_id>       m_Dst_id;
+    CSeq_id_Handle      m_Dst_id_Handle;
     TSeqPos             m_Dst_from;
     ENa_strand          m_Dst_strand;
     bool                m_Reverse;
@@ -318,6 +317,29 @@ private:
 };
 
 
+struct CMappingRangeRef_Less
+{
+    bool operator()(const CRef<CMappingRange>& x,
+                    const CRef<CMappingRange>& y) const;
+};
+
+
+inline
+bool CMappingRangeRef_Less::operator()(const CRef<CMappingRange>& x,
+                                       const CRef<CMappingRange>& y) const
+{
+    if (x->m_Src_id_Handle != y->m_Src_id_Handle) {
+        return x->m_Src_id_Handle < y->m_Src_id_Handle;
+    }
+    // Leftmost first
+    if (x->m_Src_from != y->m_Src_from) {
+        return x->m_Src_from < y->m_Src_from;
+    }
+    // Longest first
+    return x->m_Src_to > y->m_Src_to;
+}
+
+
 inline
 bool CMappingRange::GoodSrcId(const CSeq_id& id) const
 {
@@ -326,9 +348,11 @@ bool CMappingRange::GoodSrcId(const CSeq_id& id) const
 
 
 inline
-CSeq_id& CMappingRange::GetDstId(void)
+CRef<CSeq_id> CMappingRange::GetDstId(void)
 {
-    return *m_Dst_id;
+    return m_Dst_id_Handle ?
+        Ref(&const_cast<CSeq_id&>(*m_Dst_id_Handle.GetSeqId())) :
+        CRef<CSeq_id>(0);
 }
 
 
@@ -399,6 +423,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.12  2004/05/07 13:53:18  grichenk
 * Preserve fuzz from original location.
 * Better detection of partial locations.

@@ -194,21 +194,40 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
 }
 
 
-const CSeq_align_Mapper&
-CAnnotObject_Ref::GetMappedSeq_align_Mapper(void) const
+const CSeq_align&
+CAnnotObject_Ref::GetMappedSeq_align(void) const
 {
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align_Mapper);
-    return *CTypeConverter<CSeq_align_Mapper>::
+    if (m_MappedObjectType == eMappedObjType_Seq_loc_Conv_Set) {
+        // Map the alignment, replace conv-set with the mapped align
+        CSeq_loc_Conversion_Set& cvts =
+            const_cast<CSeq_loc_Conversion_Set&>(
+            *CTypeConverter<CSeq_loc_Conversion_Set>::
+            SafeCast(m_MappedObject.GetPointer()));
+        CRef<CSeq_align> dst;
+        cvts.Convert(GetAlign(), &dst);
+        const_cast<CAnnotObject_Ref&>(*this).
+            SetMappedSeq_align(dst.GetPointerOrNull());
+    }
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align);
+    return *CTypeConverter<CSeq_align>::
         SafeCast(m_MappedObject.GetPointer());
 }
 
 
-void CAnnotObject_Ref::SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper)
+void CAnnotObject_Ref::SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts)
 {
     _ASSERT(!IsMapped());
-    m_MappedObject.Reset(mapper);
+    m_MappedObject.Reset(&cvts);
+    m_MappedObjectType = eMappedObjType_Seq_loc_Conv_Set;
+}
+
+
+void CAnnotObject_Ref::SetMappedSeq_align(CSeq_align* align)
+{
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_loc_Conv_Set);
+    m_MappedObject.Reset(align);
     m_MappedObjectType =
-        mapper? eMappedObjType_Seq_align_Mapper: eMappedObjType_not_set;
+        align? eMappedObjType_Seq_align: eMappedObjType_not_set;
 }
 
 
@@ -485,7 +504,8 @@ struct CAnnotObject_LessReverse
 class CAnnotMappingCollector
 {
 public:
-    typedef map<CAnnotObject_Ref, CSeq_loc_Conversion_Set> TAnnotMappingSet;
+    typedef map<CAnnotObject_Ref,
+                CRef<CSeq_loc_Conversion_Set> > TAnnotMappingSet;
     // Set of annotations for complex remapping
     TAnnotMappingSet              m_AnnotMappingSet;
     // info of limit object
@@ -599,6 +619,7 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                     }
                     found = x_SearchMapped(smit,
                                            *master_loc_empty,
+                                           idit->first,
                                            idit->second);
                     deeper = !(found && m_Selector.m_AdaptiveDepth);
                     smit.Next(deeper);
@@ -608,7 +629,7 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
         NON_CONST_ITERATE(CAnnotMappingCollector::TAnnotMappingSet, amit,
             m_MappingCollector->m_AnnotMappingSet) {
             CAnnotObject_Ref annot_ref = amit->first;
-            amit->second.Convert(annot_ref,
+            amit->second->Convert(annot_ref,
                 m_Selector.m_FeatProduct ? CSeq_loc_Conversion::eProduct :
                 CSeq_loc_Conversion::eLocation);
             m_AnnotSet.push_back(annot_ref);
@@ -711,6 +732,14 @@ bool CAnnot_Collector::x_NeedSNPs(void) const
 
 
 inline
+bool CAnnot_Collector::x_MatchLocIndex(const SAnnotObject_Index& index) const
+{
+    return index.m_AnnotObject_Info->IsAlign()  ||
+        m_Selector.m_FeatProduct == (index.m_AnnotLocationIndex == 1);
+}
+
+
+inline
 bool CAnnot_Collector::x_MatchRange(const CHandleRange& hr,
                                        const CRange<TSeqPos>& range,
                                        const SAnnotObject_Index& index) const
@@ -727,7 +756,7 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange& hr,
             }
         }
     }
-    if ( m_Selector.m_FeatProduct != index.m_AnnotLocationIndex ) {
+    if ( !x_MatchLocIndex(index) ) {
         return false;
     }
     return true;
@@ -963,17 +992,20 @@ bool CAnnot_Collector::x_Search(const TTSE_LockSet& tse_set,
 
 
 bool CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
-                                             CSeq_loc_Conversion* cvt)
+                                          CSeq_loc_Conversion* cvt,
+                                          unsigned int loc_index)
 {
     _ASSERT(object_ref.GetAnnotObject_Info().GetMultiIdFlags()
             || cvt->IsPartial()
-            ||  object_ref.IsAlign() );
+            || object_ref.IsAlign() );
     object_ref.ResetLocation();
-    CSeq_loc_Conversion_Set& mapping_set =
+    CRef<CSeq_loc_Conversion_Set>& mapping_set =
         m_MappingCollector->m_AnnotMappingSet[object_ref];
-    mapping_set.SetScope(m_Scope);
+    if ( !mapping_set ) {
+        mapping_set.Reset(new CSeq_loc_Conversion_Set(m_Scope));
+    }
     CRef<CSeq_loc_Conversion> cvt_copy(new CSeq_loc_Conversion(*cvt));
-    mapping_set.Add(*cvt_copy);
+    mapping_set->Add(*cvt_copy, loc_index);
     return x_GetAnnotCount() >= m_Selector.m_MaxSize;
 }
 
@@ -988,11 +1020,13 @@ bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref& object_ref)
 
 inline
 bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref& object_ref,
-                                      CSeq_loc_Conversion* cvt)
+                                   CSeq_loc_Conversion* cvt,
+                                   unsigned int loc_index)
 {
     // Always map aligns through conv. set
     return ( cvt && (cvt->IsPartial() || object_ref.IsAlign()) )?
-        x_AddObjectMapping(object_ref, cvt): x_AddObject(object_ref);
+        x_AddObjectMapping(object_ref, cvt, loc_index)
+        : x_AddObject(object_ref);
 }
 
 
@@ -1058,7 +1092,7 @@ void CAnnot_Collector::x_Search(const CTSE_Info& tse,
 
                     CAnnotObject_Ref annot_ref(snp_annot, index);
                     annot_ref.SetSNP_Point(snp, cvt);
-                    if ( x_AddObject(annot_ref, cvt) ) {
+                    if ( x_AddObject(annot_ref, cvt, 0) ) {
                         return;
                     }
                 } while ( ++snp_it != snp_annot.end() );
@@ -1146,7 +1180,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
                 // Create self-conversion, add to conversion set
                 CRef<CSeq_loc_Conversion> cvt_ref
                     (new CSeq_loc_Conversion(id, m_Scope));
-                if (x_AddObjectMapping(annot_ref, &*cvt_ref)) {
+                if (x_AddObjectMapping(annot_ref,
+                    &*cvt_ref, aoit->second.m_AnnotLocationIndex)) {
                     return;
                 }
             }
@@ -1160,9 +1195,10 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
                 }
                 else {
                     annot_ref.SetAnnotObjectRange(aoit->first,
-                                                  m_Selector.m_FeatProduct != 0);
+                                                  m_Selector.m_FeatProduct);
                 }
-                if ( x_AddObject(annot_ref, cvt) ) {
+                if ( x_AddObject(annot_ref, cvt,
+                    aoit->second.m_AnnotLocationIndex) ) {
                     return;
                 }
             }
@@ -1296,6 +1332,7 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 
 bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI& seg,
                                       CSeq_loc& master_loc_empty,
+                                      const CSeq_id_Handle& master_id,
                                       const CHandleRange& master_hr)
 {
     CHandleRange::TOpenRange master_seg_range(seg.GetPosition(),
@@ -1339,6 +1376,7 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI& seg,
     }
     else {
         CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_loc_empty,
+                                                              master_id,
                                                               seg,
                                                               ref_id,
                                                               m_Scope));
@@ -1353,6 +1391,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.6  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

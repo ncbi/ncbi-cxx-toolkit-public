@@ -75,6 +75,7 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
+                        const CSeq_id_Handle& dst_id,
                         const CSeqMap_CI& seg,
                         const CSeq_id_Handle& src_id,
                         CScope* scope);
@@ -110,8 +111,6 @@ public:
 
     bool Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
                  EConvertFlag flag = eCnvDefault);
-
-    void Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst);
 
     void Convert(CAnnotObject_Ref& obj, ELocationType loctype);
 
@@ -168,7 +167,7 @@ private:
     bool           m_Reverse;
 
     //   Destination id:
-    CRef<CSeq_id>  m_Dst_id;
+    CSeq_id_Handle m_Dst_id_Handle;
     CRef<CSeq_loc> m_Dst_loc_Empty;
 
     // Results:
@@ -192,38 +191,51 @@ private:
 
     friend class CSeq_loc_Conversion_Set;
     friend class CSeq_align_Mapper;
+    friend struct CConversionRef_Less;
 };
 
 
-class CSeq_loc_Conversion_Set
+class CSeq_loc_Conversion_Set : public CObject
 {
 public:
-    CSeq_loc_Conversion_Set(void);
+    CSeq_loc_Conversion_Set(CHeapScope& scope);
 
     typedef CRange<TSeqPos> TRange;
     typedef CRangeMultimap<CRef<CSeq_loc_Conversion>, TSeqPos> TRangeMap;
     typedef TRangeMap::iterator TRangeIterator;
     typedef map<CSeq_id_Handle, TRangeMap> TIdMap;
 
-    void Add(CSeq_loc_Conversion& cvt);
-    TRangeIterator BeginRanges(CSeq_id_Handle id, TSeqPos from, TSeqPos to);
+    // Conversions by location index
+    typedef map<unsigned int, TIdMap> TConvByIndex;
+
+    void Add(CSeq_loc_Conversion& cvt, unsigned int loc_index);
+    TRangeIterator BeginRanges(CSeq_id_Handle id,
+                               TSeqPos from,
+                               TSeqPos to,
+                               unsigned int loc_index);
     void Convert(CAnnotObject_Ref& obj,
                  CSeq_loc_Conversion::ELocationType loctype);
-    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst);
-    void Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst);
-    void SetScope(CHeapScope& scope)
-        {
-            m_Scope = scope;
-        }
+    bool Convert(const CSeq_loc& src,
+                 CRef<CSeq_loc>* dst,
+                 unsigned int loc_index);
+    void Convert(const CSeq_align& src, CRef<CSeq_align>* dst);
 
 private:
-    bool ConvertPoint(const CSeq_point& src, CRef<CSeq_loc>* dst);
-    bool ConvertInterval(const CSeq_interval& src, CRef<CSeq_loc>* dst);
+    friend class CSeq_align_Mapper;
 
-    TIdMap         m_IdMap;
-    bool           m_Partial;
-    TRange         m_TotalRange;
-    CHeapScope     m_Scope;
+    bool ConvertPoint(const CSeq_point& src,
+                      CRef<CSeq_loc>* dst,
+                      unsigned int loc_index);
+    bool ConvertInterval(const CSeq_interval& src,
+                         CRef<CSeq_loc>* dst,
+                         unsigned int loc_index);
+
+    CRef<CSeq_loc_Conversion> m_SingleConv;
+    unsigned int              m_SingleIndex;
+    TConvByIndex m_CvtByIndex;
+    bool         m_Partial;
+    TRange       m_TotalRange;
+    CHeapScope   m_Scope;
 };
 
 
@@ -305,6 +317,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.16  2004/05/10 18:26:37  grichenk
 * Fixed 'not used' warnings
 *

@@ -47,7 +47,7 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/synonyms.hpp>
-#include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -614,46 +614,8 @@ CBioseq_Handle::GetExactComplexityLevel(CBioseq_set::EClass cls) const
 
 CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
 {
-    const CSeqMap& seq_map = GetSeqMap();
-    // Iterate seq-map, for each segment create conversion,
-    // for each conversion try to map seq-loc to the master sequence.
-    CSeq_loc_Conversion_Set conv_set;
-    CRef<CSeq_loc_Conversion> self_cvt(
-        new CSeq_loc_Conversion(GetSeq_id_Handle(), &GetScope()));
-    conv_set.Add(*self_cvt);
-    CHeapScope hscope(GetScope());
-    conv_set.SetScope(hscope);
-    CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
-    master_loc_empty->SetEmpty().Assign(*GetSeqId());
-    CConstRef<CSeqMap> cr_map(&seq_map);
-    CSeqMap_CI it(cr_map, &GetScope(), 0, kMax_Int,
-        CSeqMap::fFindRef);
-    for ( ; it; ++it) {
-        _ASSERT(it.GetType() == CSeqMap::eSeqRef);
-        CSeq_loc_Conversion def_cvt(
-            *master_loc_empty,
-            it,
-            it.GetRefSeqid(),
-            &GetScope());
-        CConstRef<CSynonymsSet> syns =
-            GetScope().GetSynonyms(it.GetRefSeqid());
-        if (syns) {
-            ITERATE ( CSynonymsSet, synit, *syns ) {
-                CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(synit);
-                CRef<CSeq_loc_Conversion> cvt
-                    (new CSeq_loc_Conversion(def_cvt));
-                cvt->SetSrcId(idh);
-                conv_set.Add(*cvt);
-            }
-        }
-        else {
-            CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(def_cvt));
-            conv_set.Add(*cvt);
-        }
-    }
-    CRef<CSeq_loc> dst;
-    conv_set.Convert(loc, &dst);
-    return dst;
+    CSeq_loc_Mapper mapper(*this);
+    return mapper.Map(loc);
 }
 
 
@@ -827,6 +789,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.64  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

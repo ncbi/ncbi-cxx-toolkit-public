@@ -56,7 +56,8 @@ class CSeq_annot_SNP_Info;
 struct SSNP_Info;
 struct SIdAnnotObjs;
 class CSeq_loc_Conversion;
-class CSeq_align_Mapper;
+class CSeq_loc_Conversion_Set;
+// class CSeq_align_Mapper;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
@@ -84,7 +85,8 @@ public:
         eMappedObjType_not_set,
         eMappedObjType_Seq_loc,
         eMappedObjType_Seq_id,
-        eMappedObjType_Seq_align_Mapper
+        eMappedObjType_Seq_align,
+        eMappedObjType_Seq_loc_Conv_Set
     };
 
     EObjectType GetObjectType(void) const;
@@ -124,13 +126,13 @@ public:
 
     const CSeq_loc& GetMappedSeq_loc(void) const;
     const CSeq_id& GetMappedSeq_id(void) const;
-    const CSeq_align_Mapper& GetMappedSeq_align_Mapper(void) const;
+    const CSeq_align& GetMappedSeq_align(void) const;
 
-    Uint4 GetAnnotObjectIndex(void) const;
+    unsigned int GetAnnotObjectIndex(void) const;
 
     void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
-    void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
-                             CRef<CSeq_point>& pnt_ref,
+    void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
+                             CRef<CSeq_point>&    pnt_ref,
                              CRef<CSeq_interval>& int_ref) const;
 
     void SetAnnotObjectRange(const TRange& range, bool product);
@@ -142,7 +144,8 @@ public:
     void SetMappedSeq_id(CSeq_id& id);
     void SetMappedPoint(bool point);
     void SetMappedSeq_id(CSeq_id& id, bool point);
-    void SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper);
+    void SetMappedSeq_align(CSeq_align* align);
+    void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
     void SetTotalRange(const TRange& range);
     void SetMappedStrand(ENa_strand strand);
 
@@ -153,7 +156,7 @@ private:
     CConstRef<CObject>      m_Object;
     CRef<CObject>           m_MappedObject; // master sequence coordinates
     TRange                  m_TotalRange;
-    Uint4                   m_AnnotObject_Index;
+    unsigned int            m_AnnotObject_Index;
     Int1                    m_ObjectType; // EObjectType
     Int1                    m_MappedFlags; // partial, product
     Int1                    m_MappedObjectType;
@@ -195,6 +198,7 @@ private:
     void x_GetTSE_Info(void);
     bool x_SearchMapped(const CSeqMap_CI& seg,
                         CSeq_loc& master_loc_empty,
+                        const CSeq_id_Handle& master_id,
                         const CHandleRange& master_hr);
     bool x_Search(const CHandleRangeMap& loc,
                   CSeq_loc_Conversion* cvt);
@@ -227,9 +231,12 @@ private:
     void x_Sort(void);
     
     bool x_AddObjectMapping(CAnnotObject_Ref& object_ref,
-                            CSeq_loc_Conversion* cvt);
+                            CSeq_loc_Conversion* cvt,
+                            unsigned int loc_index);
     bool x_AddObject(CAnnotObject_Ref& object_ref);
-    bool x_AddObject(CAnnotObject_Ref& object_ref, CSeq_loc_Conversion* cvt);
+    bool x_AddObject(CAnnotObject_Ref& object_ref,
+                     CSeq_loc_Conversion* cvt,
+                     unsigned int loc_index);
 
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
@@ -239,6 +246,8 @@ private:
     bool x_MatchRange(const CHandleRange& hr,
                       const CRange<TSeqPos>& range,
                       const SAnnotObject_Index& index) const;
+    bool x_MatchLocIndex(const SAnnotObject_Index& index) const;
+
     size_t x_GetAnnotCount(void) const;
 
     SAnnotSelector                   m_Selector;
@@ -321,7 +330,7 @@ void CAnnotObject_Ref::SetTotalRange(const TRange& range)
 
 
 inline
-Uint4 CAnnotObject_Ref::GetAnnotObjectIndex(void) const
+unsigned int CAnnotObject_Ref::GetAnnotObjectIndex(void) const
 {
     return m_AnnotObject_Index;
 }
@@ -566,6 +575,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/26 14:29:20  grichenk
+* Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
+* fixed strands handling, improved performance.
+*
 * Revision 1.5  2004/05/11 17:45:24  grichenk
 * Removed declarations for SetMappedIndex() and SetMappedSeq_align_Mapper()
 *
