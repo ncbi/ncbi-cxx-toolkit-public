@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/03/01 01:03:46  lavr
+ * SendMailInfo_Init got extern
+ *
  * Revision 6.2  2001/02/28 18:13:02  lavr
  * Heavily documented
  *
@@ -79,7 +82,7 @@ typedef struct {
  *   'mx_*' filled out with accordance to corresponding macros defined above;
  *          application may choose different values afterwards.
  */
-SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info);
+extern SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info);
 
 
 /* Send a simple message to recipient defined in 'to',
