@@ -1238,7 +1238,7 @@ const char* CDBL_CursorResult::ItemName(unsigned int item_num) const
 }
 
 
-unsigned int CDBL_CursorResult::ItemMaxSize(unsigned int item_num) const
+size_t CDBL_CursorResult::ItemMaxSize(unsigned int item_num) const
 {
     return m_Res ? m_Res->ItemMaxSize(item_num) : 0;
 }
@@ -1398,6 +1398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/24 05:19:24  vakatov
+ * Fixed return type for ItemMaxSize()
+ *
  * Revision 1.2  2001/10/22 16:28:01  lavr
  * Default argument values removed
  * (mistakenly left while moving code from header files)
