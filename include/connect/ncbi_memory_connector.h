@@ -48,7 +48,7 @@ extern "C" {
  * Use lock (may be NULL) to protect write/read operations.
  * Return NULL on error.
  */
-extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
+extern NCBI_XCONNECT_EXPORT CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
 
 
 #ifdef __cplusplus
@@ -59,6 +59,9 @@ extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2003/01/08 01:59:33  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.2  2002/09/19 18:01:14  lavr
  * Header file guard macro changed; log moved to the end
  *

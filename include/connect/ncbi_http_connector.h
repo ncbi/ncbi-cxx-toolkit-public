@@ -122,7 +122,7 @@ typedef enum {
 } EHCC_Flags;
 typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
 
-extern CONNECTOR HTTP_CreateConnector
+extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 (const SConnNetInfo* net_info,
  const char*         user_header,
  THCC_Flags          flags
@@ -158,7 +158,7 @@ typedef void (*FHttpAdjustCleanup)
 (void* adjust_data                  /* supplemental user data for cleanup    */
  );
 
-extern CONNECTOR HTTP_CreateConnectorEx
+extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 (const SConnNetInfo*  net_info,
  THCC_Flags           flags,
  FHttpParseHTTPHeader parse_http_hdr, /* may be NULL, then no addtl. parsing */
@@ -176,6 +176,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/01/08 01:59:32  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.10  2002/09/19 18:06:39  lavr
  * Additional blank line inserted after inclusion of headers
  *

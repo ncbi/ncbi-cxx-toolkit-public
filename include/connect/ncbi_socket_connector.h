@@ -48,7 +48,7 @@ extern "C" {
 /* This is equivalent to SOCK_CreateConnectorEx(host, port, max_try, 0,0,0),
  * see below.
  */
-extern CONNECTOR SOCK_CreateConnector
+extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnector
 (const char*    host,   /* server:  host                            */
  unsigned short port,   /* server:  service port                    */
  unsigned int   max_try /* max.number of attempts to establish conn */
@@ -70,7 +70,7 @@ typedef unsigned int TSCC_Flags;  /* bitwise OR of "ESCC_Flags */
  * NOTE:  the connector makes (and then uses) its own copy of the "init_data".
  * Return NULL on error.
  */
-extern CONNECTOR SOCK_CreateConnectorEx
+extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorEx
 (const char*    host,      /* server:  host                                  */
  unsigned short port,      /* server:  service port                          */
  unsigned int   max_try,   /* max.number of attempts to establish connection */
@@ -83,7 +83,7 @@ extern CONNECTOR SOCK_CreateConnectorEx
 /* Equivalent to SOCK_CreateConnectorOnTopEx(sock, max_try, 0,0,0),
  * see below.
  */
-extern CONNECTOR SOCK_CreateConnectorOnTop
+extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTop
 (SOCK         sock,   /* socket object                                       */
  unsigned int max_try /* max.number of tries to re-establish the link if lost*/
  );
@@ -98,7 +98,7 @@ extern CONNECTOR SOCK_CreateConnectorOnTop
  * A socket obtained as a result of accepting connection on a listening socket
  * (aka server-side socket) is not allowed to have reconnects (max_try = 0).
  */
-extern CONNECTOR SOCK_CreateConnectorOnTopEx
+extern NCBI_XCONNECT_EXPORT CONNECTOR SOCK_CreateConnectorOnTopEx
 (SOCK         sock,      /* socket object                                    */
  unsigned int max_try,   /* max.# of tries to reconnect if disconnected      */
  const void*  init_data, /* initial data to send right away down to link     */
@@ -115,6 +115,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/01/08 01:59:33  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.6  2002/09/19 18:05:34  lavr
  * Header file guard macro changed; log moved to end
  *

@@ -43,7 +43,6 @@
  *
  */
 
-#include <connect/connect_export.h>
 #include <connect/ncbi_core.h>
 #include <stdio.h>
 
@@ -235,6 +234,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/01/08 01:59:33  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.15  2003/01/07 22:21:58  lavr
  * Add NCBI_XCONNECT_EXPORT to public API functions
  *

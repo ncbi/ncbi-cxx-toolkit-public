@@ -208,7 +208,9 @@ typedef struct {
  *
  * For default values see right above, in macros DEF_CONN_<NAME>.
  */
-extern SConnNetInfo* ConnNetInfo_Create(const char* service);
+extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Create
+(const char* service
+ );
 
 
 /* Adjust the "host:port" to "proxy_host:proxy_port", and
@@ -218,12 +220,16 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service);
  * NOTE:  it does nothing if applied more than once to the same "info"
  *        (or its clone), or when "http_proxy_host" is NULL.
  */
-extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AdjustForHttpProxy
+(SConnNetInfo* info
+ );
 
 
 /* Make an exact and independent copy of "*info".
  */
-extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info);
+extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
+(const SConnNetInfo* info
+ );
 
 
 /* Convenience routines to manipulate SConnNetInfo::args[].
@@ -237,42 +243,57 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info);
  */
 
 /* append argument to the end of the list */
-extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
-                                         const char*   arg,
-                                         const char*   val);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendArg
+(SConnNetInfo* info,
+ const char*   arg,
+ const char*   val
+ );
 
 /* put argument in the front of the list */
-extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
-                                          const char*   arg,
-                                          const char*   val);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
+(SConnNetInfo* info,
+ const char*   arg,
+ const char*   val
+ );
 
 /* delete argument from the list */
-extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
-                                  const char*   arg);
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteArg
+(SConnNetInfo* info,
+ const char*   arg
+ );
 
 /* same as sequence Delete then Prepend, see above */
-extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
-                                              const char*   arg,
-                                              const char*   val);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PreOverrideArg
+(SConnNetInfo* info,
+ const char*   arg,
+ const char*   val
+ );
 
 /* same as sequence Delete then Append, see above */
-extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
-                                               const char*   arg,
-                                               const char*   val);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
+(SConnNetInfo* info,
+ const char*   arg,
+ const char*   val
+ );
 
 
 /* Set user header (discard previously set header, if any).
  * Reset the old header (if any) if "header" == NULL.
  */
-extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info, const char* header);
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_SetUserHeader
+(SConnNetInfo* info,
+ const char*   header
+ );
 
 
 /* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
  * header was set, or if "header" == NULL).
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
-extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
-                                                const char*   header);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
+(SConnNetInfo* info,
+ const char*   header
+ );
 
 
 /* Override user header.
@@ -283,8 +304,10 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
  * header (as with "Append" above).
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
-extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
-                                                  const char*   header);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
+(SConnNetInfo* info,
+ const char*   header
+ );
 
 
 /* Extend user header.
@@ -295,29 +318,40 @@ extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
  * of the user header.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
-extern int/*bool*/ ConnNetInfo_ExtendUserHeader(SConnNetInfo* info,
-                                                const char*   header);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
+(SConnNetInfo* info,
+ const char*   header
+ );
 
 
 /* Delete entries from current user header, if their tags match of those
  * tags passed in "hdr" (regardless of the value, if any, of the latter).
  */
-extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info, const char* hdr);
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteUserHeader
+(SConnNetInfo* info,
+ const char*   hdr
+ );
 
 
 /* Parse URL into "*info", using (service-specific, if any) defaults.
  */
-extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url);
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
+(SConnNetInfo* info,
+ const char*   url
+ );
 
 
 /* Log the contents of "*info".
  */
-extern void ConnNetInfo_Log(const SConnNetInfo* info, LOG log);
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Log
+(const SConnNetInfo* info,
+ LOG                 log
+ );
 
 
 /* Destroy and deallocate "info" (if not NULL).
  */
-extern void ConnNetInfo_Destroy(SConnNetInfo* info);
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
 
 
 /* Hit URL "http://host:port/path?args" with:
@@ -340,7 +374,7 @@ extern void ConnNetInfo_Destroy(SConnNetInfo* info);
  *       needed anymore.
  */
 
-extern SOCK URL_Connect
+extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
 (const char*     host,
  unsigned short  port,
  const char*     path,
@@ -361,7 +395,7 @@ extern SOCK URL_Connect
  * will return # of discarded bytes.
  * NOTE: "pattern" == NULL causes stripping to the EOF.
  */
-extern EIO_Status CONN_StripToPattern
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_StripToPattern
 (CONN        conn,
  const void* pattern,
  size_t      pattern_size,
@@ -369,7 +403,7 @@ extern EIO_Status CONN_StripToPattern
  size_t*     n_discarded
  );
 
-extern EIO_Status SOCK_StripToPattern
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_StripToPattern
 (SOCK        sock,
  const void* pattern,
  size_t      pattern_size,
@@ -377,7 +411,7 @@ extern EIO_Status SOCK_StripToPattern
  size_t*     n_discarded
  );
 
-extern EIO_Status BUF_StripToPattern
+extern NCBI_XCONNECT_EXPORT EIO_Status BUF_StripToPattern
 (BUF         buffer,
  const void* pattern,
  size_t      pattern_size,
@@ -397,7 +431,7 @@ extern EIO_Status BUF_StripToPattern
  * NOTE:  the unfinished "%.." sequence is fine -- return TRUE, but dont
  *        "read" it.
  */
-extern int/*bool*/ URL_Decode
+extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_Decode
 (const void* src_buf,    /* [in]     non-NULL */
  size_t      src_size,   /* [in]              */
  size_t*     src_read,   /* [out]    non-NULL */
@@ -413,7 +447,7 @@ extern int/*bool*/ URL_Decode
  * "allow_symbols" (it can be NULL or empty -- then this will be an exact
  * equivalent of URL_Decode).
  */
-extern int/*bool*/ URL_DecodeEx
+extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_DecodeEx
 (const void* src_buf,      /* [in]     non-NULL  */
  size_t      src_size,     /* [in]               */
  size_t*     src_read,     /* [out]    non-NULL  */
@@ -430,7 +464,7 @@ extern int/*bool*/ URL_DecodeEx
  * Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  */
-extern void URL_Encode
+extern NCBI_XCONNECT_EXPORT void URL_Encode
 (const void* src_buf,    /* [in]     non-NULL */
  size_t      src_size,   /* [in]              */
  size_t*     src_read,   /* [out]    non-NULL */
@@ -505,7 +539,7 @@ typedef enum {
  * Return pointer to the "buf".
  */
 #define MAX_CONTENT_TYPE_LEN 64
-extern char* MIME_ComposeContentTypeEx
+extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentTypeEx
 (EMIME_Type     type,
  EMIME_SubType  subtype,
  EMIME_Encoding encoding,
@@ -515,7 +549,7 @@ extern char* MIME_ComposeContentTypeEx
 
 /* Exactly equivalent to MIME_ComposeContentTypeEx(eMIME_T_NcbiData, ...)
  */
-extern char* MIME_ComposeContentType
+extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentType
 (EMIME_SubType  subtype,
  EMIME_Encoding encoding,
  char*          buf,
@@ -540,7 +574,7 @@ extern char* MIME_ComposeContentType
  * (or if it is NULL/empty), then
  * return FALSE, eMIME_T_Unknown, eMIME_Unknown, and eENCOD_Unknown
  */
-extern int/*bool*/ MIME_ParseContentTypeEx
+extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentTypeEx
 (const char*     str,      /* the HTTP "Content-Type:" header to parse */
  EMIME_Type*     type,     /* can be NULL */
  EMIME_SubType*  subtype,  /* can be NULL */
@@ -549,7 +583,7 @@ extern int/*bool*/ MIME_ParseContentTypeEx
 
 /* Requires the MIME type be "x-ncbi-data"
  */
-extern int/*bool*/ MIME_ParseContentType
+extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentType
 (const char*     str,      /* the HTTP "Content-Type:" header to parse */
  EMIME_SubType*  subtype,  /* can be NULL */
  EMIME_Encoding* encoding  /* can be NULL */
@@ -565,7 +599,7 @@ extern int/*bool*/ MIME_ParseContentType
  * Note that 'host' returned is in network byte order,
  * unlike 'port', which always comes out in host (native) byte order.
  */
-extern const char* StringToHostPort
+extern NCBI_XCONNECT_EXPORT const char* StringToHostPort
 (const char*     str,   /* must not be NULL */
  unsigned int*   host,  /* must not be NULL */
  unsigned short* port   /* must not be NULL */
@@ -576,7 +610,7 @@ extern const char* StringToHostPort
  * Suppress printing host if parameter 'host' is zero.
  * Return the number of bytes printed.
  */
-extern size_t HostPortToString
+extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 (unsigned int   host,
  unsigned short port,
  char*          buf,
@@ -592,6 +626,9 @@ extern size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/01/08 01:59:32  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.26  2002/11/19 19:19:24  lavr
  * +ConnNetInfo_ExtendUserHeader()
  *

@@ -62,6 +62,7 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 
 
@@ -189,7 +190,7 @@ typedef void (*FMT_LOCK_Cleanup)
 
 /* Create new MT locking object (with reference counter := 1)
  */
-extern MT_LOCK MT_LOCK_Create
+extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Create
 (void*            user_data, /* to call "handler" and "cleanup" with */
  FMT_LOCK_Handler handler,   /* locking function */
  FMT_LOCK_Cleanup cleanup    /* cleanup function */
@@ -198,7 +199,7 @@ extern MT_LOCK MT_LOCK_Create
 
 /* Increment ref.counter by 1,  then return "lk"
  */
-extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk);
+extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_AddRef(MT_LOCK lk);
 
 
 /* Decrement ref.counter by 1.
@@ -206,7 +207,7 @@ extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk);
  * destroy the handle, call "lk->cleanup(lk->user_data)", and return NULL.
  * Otherwise (if ref.counter is still > 0), return "lk".
  */
-extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
+extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
 
 
 /* Call "lk->handler(lk->user_data, how)".
@@ -215,7 +216,7 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
  * NOTE:  use MT_LOCK_Do() to avoid overhead!
  */
 #define MT_LOCK_Do(lk,how)  (lk ? MT_LOCK_DoInternal(lk, how) : -1)
-extern int/*bool*/ MT_LOCK_DoInternal
+extern NCBI_XCONNECT_EXPORT int/*bool*/ MT_LOCK_DoInternal
 (MT_LOCK  lk,
  EMT_Lock how
  );
@@ -246,7 +247,7 @@ typedef enum {
 
 /* Return verbal description of the log level
  */
-extern const char* LOG_LevelStr(ELOG_Level level);
+extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
 
 
 /* Message and miscellaneous data to pass to the log post callback FLOG_Handler
@@ -282,7 +283,7 @@ typedef void (*FLOG_Cleanup)
  * ATTENTION:  if non-NULL "lk" is specified then MT_LOCK_Delete() will be
  *             called when this LOG is destroyed -- be aware of it!
  */
-extern LOG LOG_Create
+extern NCBI_XCONNECT_EXPORT LOG LOG_Create
 (void*        user_data, /* the data to call "handler" and "cleanup" with */
  FLOG_Handler handler,   /* handler */
  FLOG_Cleanup cleanup,   /* cleanup */
@@ -293,7 +294,7 @@ extern LOG LOG_Create
 /* Reset the "lg" to use the new "user_data", "handler" and "cleanup".
  * NOTE:  it does not change ref.counter.
  */
-extern void LOG_Reset
+extern NCBI_XCONNECT_EXPORT void LOG_Reset
 (LOG          lg,         /* created by LOG_Create() */
  void*        user_data,  /* new user data */
  FLOG_Handler handler,    /* new handler */
@@ -303,7 +304,7 @@ extern void LOG_Reset
 
 /* Increment ref.counter by 1,  then return "lg"
  */
-extern LOG LOG_AddRef(LOG lg);
+extern NCBI_XCONNECT_EXPORT LOG LOG_AddRef(LOG lg);
 
 
 /* Decrement ref.counter by 1.
@@ -311,7 +312,7 @@ extern LOG LOG_AddRef(LOG lg);
  * call "lg->cleanup(lg->user_data)", destroy the handle, and return NULL.
  * Otherwise (if ref.counter is still > 0), return "lg".
  */
-extern LOG LOG_Delete(LOG lg);
+extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
 
 
 /* Write message (maybe, with raw data attached) to the log -- e.g. call:
@@ -319,7 +320,7 @@ extern LOG LOG_Delete(LOG lg);
  * NOTE:  Do not call this function directly, if possible. Instead, use
  *        LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
  */
-extern void LOG_WriteInternal
+extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
 (LOG         lg,        /* created by LOG_Create() */
  ELOG_Level  level,     /* severity */
  const char* module,    /* module name */
@@ -391,7 +392,7 @@ typedef void (*FREG_Cleanup)
  * ATTENTION:  if non-NULL "mt_lock" is specified then MT_LOCK_Delete() will be
  *             called when this REG is destroyed -- be aware of it!
  */
-extern REG REG_Create
+extern NCBI_XCONNECT_EXPORT REG REG_Create
 (void*        user_data, /* the data to call "set", "get" and "cleanup" with */
  FREG_Get     get,       /* the get method */
  FREG_Set     set,       /* the set method */
@@ -403,7 +404,7 @@ extern REG REG_Create
 /* Reset the "rg" to use the new "user_data", "set", "get" and "cleanup".
  * NOTE:  it does not change ref.counter.
  */
-extern void REG_Reset
+extern NCBI_XCONNECT_EXPORT void REG_Reset
 (REG          rg,         /* created by REG_Create() */
  void*        user_data,  /* new user data */
  FREG_Get     get,        /* the get method */
@@ -415,7 +416,7 @@ extern void REG_Reset
 
 /* Increment ref.counter by 1,  then return "rg"
  */
-extern REG REG_AddRef(REG rg);
+extern NCBI_XCONNECT_EXPORT REG REG_AddRef(REG rg);
 
 
 /* Decrement ref.counter by 1.
@@ -423,7 +424,7 @@ extern REG REG_AddRef(REG rg);
  * call "rg->cleanup(rg->user_data)", destroy the handle, and return NULL.
  * Otherwise (if ref.counter is still > 0), return "rg".
  */
-extern REG REG_Delete(REG rg);
+extern NCBI_XCONNECT_EXPORT REG REG_Delete(REG rg);
 
 
 /* Copy the registry value stored in "section" under name "name"
@@ -435,7 +436,7 @@ extern REG REG_Delete(REG rg);
  * Return "value" (however, if "value_size" is zero, then return NULL).
  * If non-NULL, the returned "value" will be terminated by '\0'.
  */
-extern char* REG_Get
+extern NCBI_XCONNECT_EXPORT char* REG_Get
 (REG         rg,         /* created by REG_Create() */
  const char* section,    /* registry section name */
  const char* name,       /* registry entry name  */
@@ -448,7 +449,7 @@ extern char* REG_Get
 /* Store the "value" to  the registry section "section" under name "name",
  * in storage "storage".
  */
-extern void REG_Set
+extern NCBI_XCONNECT_EXPORT void REG_Set
 (REG          rg,        /* created by REG_Create() */
  const char*  section,
  const char*  name,
@@ -465,6 +466,9 @@ extern void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.20  2003/01/08 01:59:32  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.19  2002/09/19 18:00:33  lavr
  * Header file guard macro changed
  *

@@ -81,7 +81,9 @@ typedef struct {
  * Return value equals the argument passed in.
  * Note: This call is the only valid way to init SSendMailInfo.
  */
-extern SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info);
+extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_Init
+(SSendMailInfo*       info
+ );
 
 
 /* Send a simple message to recipient(s) defined in 'to',
@@ -92,19 +94,23 @@ extern SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info);
  * gets returned. Communicaiton parameters for connection with sendmail
  * are set using default values as described in SendMailInfo_Init().
  */
-extern const char* CORE_SendMail(const char* to,
-                                 const char* subject,
-                                 const char* body);
+extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
+(const char*          to,
+ const char*          subject,
+ const char*          body
+ );
 
-/* Send a message as in CORE_SendMail() but with specifying explicitly
- * all additional parameters of the message and communication via
+/* Send a message as in CORE_SendMail() but by explicitly specifying
+ * all additional parameters of the message and the communication via
  * argument 'info'. In case of 'info' == NULL, the call is completely
  * equivalent to CORE_SendMail().
  */
-extern const char* CORE_SendMailEx(const char* to,
-                                   const char* subject,
-                                   const char* body,
-                                   const SSendMailInfo* info);
+extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
+(const char*          to,
+ const char*          subject,
+ const char*          body,
+ const SSendMailInfo* info
+ );
 
 
 #ifdef __cplusplus
@@ -115,6 +121,9 @@ extern const char* CORE_SendMailEx(const char* to,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2003/01/08 01:59:33  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.9  2002/09/24 15:01:17  lavr
  * File description indented uniformly
  *

@@ -68,7 +68,7 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
  * NOTE3:  Initial timeout values are set to CONN_DEFAULT_TIMEOUT, meaning
  *         that connector-specific timeouts are in force for the connection.
  */
-extern EIO_Status CONN_Create
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Create
 (CONNECTOR connector,  /* [in]  connector                        */
  CONN*     conn        /* [out] handle of the created connection */
  );
@@ -82,7 +82,7 @@ extern EIO_Status CONN_Create
  * NOTE:  Although it closes the previous connection immediately, however it
  *        does not open the new connection right away -- see notes to "Create".
  */
-extern EIO_Status CONN_ReInit
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
 (CONN      conn,      /* [in] connection handle */
  CONNECTOR connector  /* [in] new connector     */
  );
@@ -94,7 +94,7 @@ extern EIO_Status CONN_ReInit
  * NOTE2:  if "new_timeout" is CONN_DEFAULT_TIMEOUT then underlying
  *         connector-specific value is used (this is the default).
  */
-extern EIO_Status CONN_SetTimeout
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
 (CONN            conn,        /* [in] connection handle */
  EIO_Event       event,       /* [in] I/O direction     */
  const STimeout* new_timeout  /* [in] new timeout       */
@@ -106,7 +106,7 @@ extern EIO_Status CONN_SetTimeout
  * (or be either NULL or CONN_DEFAULT_TIMEOUT) until the next "SetTimeout"
  * or "Close" method's call.
  */
-extern const STimeout* CONN_GetTimeout
+extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
 (CONN      conn,  /* [in] connection handle                  */
  EIO_Event event  /* [in] I/O direction, not "eIO_ReadWrite" */
  );
@@ -117,7 +117,7 @@ extern const STimeout* CONN_GetTimeout
  * NOTE:  "timeout" can also be one of two special values:
  *         NULL (means infinite), CONN_DEFAULT_TIMEOUT (connector-defined).
  */
-extern EIO_Status CONN_Wait
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
 (CONN            conn,    /* [in] connection handle                  */
  EIO_Event       event,   /* [in] can be eIO_Read or eIO_Write only! */
  const STimeout* timeout  /* [in] the maximal wait time              */
@@ -129,7 +129,7 @@ extern EIO_Status CONN_Wait
  * If cannot write all data and the timeout (see CONN_SetTimeout()) is expired
  * then return eIO_Timeout.
  */
-extern EIO_Status CONN_Write
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
 (CONN        conn,      /* [in]  connection handle                     */ 
  const void* buf,       /* [in]  pointer to the data buffer to write   */ 
  size_t      size,      /* [in]  # of bytes to write                   */ 
@@ -144,8 +144,8 @@ extern EIO_Status CONN_Write
  * NOTE3:  CONN_Read() always calls CONN_Flush() before proceeding.
  *         So does CONN_Close() but only if connection is was open before.
  */
-extern EIO_Status CONN_Flush
-(CONN conn  /* [in] connection handle */ 
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
+(CONN conn              /* [in] connection handle                      */ 
  );
 
 
@@ -160,7 +160,7 @@ extern EIO_Status CONN_Flush
  *                      could not read the requested # of bytes, and read
  *                      timeout has expired.
  */
-extern EIO_Status CONN_Read
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
 (CONN           conn,   /* [in]  connection handle                  */
  void*          buf,    /* [out] memory buffer to read to           */
  size_t         size,   /* [in]  max. # of bytes to read            */
@@ -173,7 +173,7 @@ extern EIO_Status CONN_Read
  * code of the last CONN-call, but rather a status from the lower level
  * connector's layer.
  */
-extern EIO_Status CONN_Status
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
 (CONN      conn,   /* [in]  connection handle       */
  EIO_Event dir     /* [in] = {eIO_Read | eIO_Write} */
  );
@@ -183,7 +183,7 @@ extern EIO_Status CONN_Status
  * NOTE:  whatever error code is returned, the connection handle "conn"
  *        will become invalid (so, you should not use it anymore).
  */
-extern EIO_Status CONN_Close
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
 (CONN conn  /* [in] connection handle */
  );
 
@@ -193,7 +193,7 @@ extern EIO_Status CONN_Close
  * I/O operation in the connection. Return value NULL denotes
  * unknown connection type.
  */
-extern const char* CONN_GetType
+extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
 (CONN conn  /* [in]  connection handle */ 
  );
 
@@ -218,7 +218,7 @@ typedef struct {
     void*         data;  /* Data to pass to the callback as last arg */
 } SCONN_Callback;
 
-EIO_Status CONN_SetCallback
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetCallback
 (CONN                  conn,    /* [in]  connection to set callback for     */
  ECONN_Callback        type,    /* [in]  callback type                      */
  const SCONN_Callback* new_cb,  /* [in]  callback to set (may be 0)         */
@@ -263,6 +263,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/01/08 01:59:32  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.12  2002/09/19 18:00:04  lavr
  * Header file guard macro changed
  *

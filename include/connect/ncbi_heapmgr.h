@@ -33,6 +33,7 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 
 
@@ -78,7 +79,7 @@ typedef char* (*FHEAP_Expand)
 /* Create new heap.
  * NOTE: the initial heap base must be aligned on a 'double' boundary!
  */
-HEAP HEAP_Create
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
 (char*        base,        /* initial heap base (use "expand" if NULL) */
  TNCBI_Size   size,        /* initial heap size                        */
  TNCBI_Size   chunk_size,  /* minimal increment size                   */
@@ -88,14 +89,14 @@ HEAP HEAP_Create
 
 /* Attach to an already existing heap (in read-only mode).
  */
-HEAP HEAP_Attach
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_Attach
 (char* base                /* base of the heap to attach to */
  );
 
 
 /* Allocate a new block of memory in the heap.
  */
-SHEAP_Block* HEAP_Alloc
+extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Alloc
 (HEAP       heap,          /* heap handle                       */
  TNCBI_Size size           /* data size of the block to contain */
  );
@@ -103,7 +104,7 @@ SHEAP_Block* HEAP_Alloc
 
 /* Deallocate block pointed by "block_ptr".
  */
-void HEAP_Free
+extern NCBI_XCONNECT_EXPORT void HEAP_Free
 (HEAP         heap,        /* heap handle         */
  SHEAP_Block* block_ptr    /* block to deallocate */
  );
@@ -113,7 +114,7 @@ void HEAP_Free
  * Return pointer to the block following block "prev_block".
  * Return NULL if "prev_block" is the last block of the heap.
  */
-SHEAP_Block* HEAP_Walk
+extern NCBI_XCONNECT_EXPORT SHEAP_Block* HEAP_Walk
 (HEAP               heap,  /* heap handle                                  */
  const SHEAP_Block* prev   /* (if 0, then get the first block of the heap) */
  );
@@ -125,35 +126,35 @@ SHEAP_Block* HEAP_Walk
  * If a non-zero number provided (serial number) it is stored
  * in the heap descriptor (zero number is always changed into 1).
  */
-HEAP HEAP_CopySerial(HEAP orig, int serial);
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_CopySerial(HEAP orig, int serial);
 
 #define HEAP_Copy(orig) HEAP_CopySerial(orig, 0)
 
 
 /* Detach heap (previously attached by HEAP_Attach).
  */
-void HEAP_Detach(HEAP heap);
+extern NCBI_XCONNECT_EXPORT void HEAP_Detach(HEAP heap);
 
 
 /* Destroy heap (previously created by HEAP_Create).
  */
-void HEAP_Destroy(HEAP heap);
+extern NCBI_XCONNECT_EXPORT void HEAP_Destroy(HEAP heap);
 
 
 /* Get base address of the heap
  */
-char* HEAP_Base(const HEAP heap);
+extern NCBI_XCONNECT_EXPORT char* HEAP_Base(const HEAP heap);
 
 
 /* Get the extent of the heap
  */
-size_t HEAP_Size(const HEAP heap);
+extern NCBI_XCONNECT_EXPORT size_t HEAP_Size(const HEAP heap);
 
 
 /* Get non-zero serial number of the heap.
  * Return 0 if HEAP is passed as 0, or the heap is not a copy but original.
  */
-int HEAP_Serial(const HEAP heap);
+extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 
 
 #ifdef __cplusplus
@@ -164,6 +165,9 @@ int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/01/08 01:59:32  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.12  2002/09/25 20:08:43  lavr
  * Added table to explain expand callback inputs and outputs
  *

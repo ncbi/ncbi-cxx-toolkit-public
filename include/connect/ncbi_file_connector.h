@@ -47,7 +47,7 @@ extern "C" {
 /* Create new CONNECTOR structure to handle a data transfer between two files.
  * Return NULL on error.
  */
-extern CONNECTOR FILE_CreateConnector
+extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnector
 (const char* in_file_name,   /* to read data from */
  const char* out_file_name   /* to write the read data to */
  );
@@ -73,7 +73,7 @@ typedef struct {
 
 /* An extended version of FILE_CreateConnector().
  */
-extern CONNECTOR FILE_CreateConnectorEx
+extern NCBI_XCONNECT_EXPORT CONNECTOR FILE_CreateConnectorEx
 (const char*          in_file_name,
  const char*          out_file_name,
  const SFileConnAttr* attr
@@ -88,6 +88,9 @@ extern CONNECTOR FILE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2003/01/08 01:59:32  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.2  2002/09/19 18:00:42  lavr
  * Header file guard macro changed; log moved to the end
  *

@@ -148,7 +148,7 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
 
 
 /******************************************************************************
- *   Error Logging
+ *   Error & Data Logging
  *
  * NOTE:  Use CORE_SetLOG() from "ncbi_core.h" to setup the log handler.
  */
@@ -158,14 +158,17 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
  * To start logging the data, call this func with "log_data" == eOn.
  * To stop  logging the data, call this func with "log_data" == eOff.
  */
-extern void SOCK_SetDataLoggingAPI(ESwitch log_data);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLoggingAPI(ESwitch log_data);
 
 
 /* Control the data logging for socket "sock" individually.
  * To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
  * call this function with "log_data" == eDefault.
  */
-extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetDataLogging
+(SOCK    sock,
+ ESwitch log_data
+ );
 
 
 
@@ -176,12 +179,15 @@ extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data);
 
 /* By default ("on_off" == eDefault,eOff), I/O is restartable if interrupted.
  */
-extern void SOCK_SetInterruptOnSignalAPI(ESwitch on_off);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetInterruptOnSignalAPI(ESwitch on_off);
 
 
 /* Control sockets individually. eDefault causes the use of global API flag.
  */
-extern void SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetInterruptOnSignal
+(SOCK    sock,
+ ESwitch on_off
+ );
 
 
 
@@ -195,7 +201,7 @@ extern void SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off);
  * you must call SOCK_AllowSigPipeAPI() before you call any other
  * function from the SOCK API.
  */
-extern void SOCK_AllowSigPipeAPI(void);
+extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 
 
 /* Initialize all internal/system data & resources to be used by the SOCK API.
@@ -207,7 +213,7 @@ extern void SOCK_AllowSigPipeAPI(void);
  *  guaranteed to initialize itself automagically, in one of API functions,
  *  when necessary. Yet, see the "Multi Thread safety" remark above.
  */
-extern EIO_Status SOCK_InitializeAPI(void);
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_InitializeAPI(void);
 
 
 /* Cleanup; destroy all internal/system data & resources used by the SOCK API.
@@ -215,7 +221,7 @@ extern EIO_Status SOCK_InitializeAPI(void);
  * NOTE: you can safely call it more than once; just, all calls after the first
  *       one will have no result. 
  */
-extern EIO_Status SOCK_ShutdownAPI(void);
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
 
 
 
@@ -228,7 +234,7 @@ extern EIO_Status SOCK_ShutdownAPI(void);
  * (socket() + bind() + listen())
  * NOTE: on some systems, "backlog" can be silently limited down to 128 (or 5).
  */
-extern EIO_Status LSOCK_Create
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
 (unsigned short port,    /* [in]  the port to listen at                  */
  unsigned short backlog, /* [in]  maximal # of pending connections       */
  LSOCK*         lsock    /* [out] handle of the created listening socket */
@@ -239,7 +245,7 @@ extern EIO_Status LSOCK_Create
  * NOTE: the "*timeout" is for this accept() only.  To set I/O timeout,
  *       use SOCK_SetTimeout();  all I/O timeouts are infinite by default.
  */
-extern EIO_Status LSOCK_Accept
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Accept
 (LSOCK           lsock,    /* [in]  handle of a listening socket */
  const STimeout* timeout,  /* [in]  timeout (infinite if NULL)   */
  SOCK*           sock      /* [out] handle of the created socket */
@@ -248,13 +254,13 @@ extern EIO_Status LSOCK_Accept
 
 /* [SERVER-side]  Close the listening socket, destroy relevant internal data.
  */
-extern EIO_Status LSOCK_Close(LSOCK lsock);
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Close(LSOCK lsock);
 
 
 /* Get an OS-dependent native socket handle to use by platform-specific API.
  * FYI:  on MS-Windows it will be "SOCKET", on other platforms -- "int".
  */
-extern EIO_Status LSOCK_GetOSHandle
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 (LSOCK  lsock,
  void*  handle_buf,  /* pointer to a memory area to put the OS handle at */
  size_t handle_size  /* the exact(!) size of the expected OS handle */
@@ -270,7 +276,7 @@ extern EIO_Status LSOCK_GetOSHandle
 /* [CLIENT-side]  Connect client to another(server-side, listening) socket
  * (socket() + connect() [+ select()])
  */
-extern EIO_Status SOCK_CreateEx
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CreateEx
 (const char*     host,    /* [in]  host to connect to                     */
  unsigned short  port,    /* [in]  port to connect to                     */
  const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
@@ -279,7 +285,7 @@ extern EIO_Status SOCK_CreateEx
  );
 
 /* SOCK_CreateEx(host, port, timeout, sock, eDefault) */
-extern EIO_Status SOCK_Create
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
 (const char*     host,    /* [in]  host to connect to                     */
  unsigned short  port,    /* [in]  port to connect to                     */
  const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
@@ -293,9 +299,13 @@ extern EIO_Status SOCK_Create
  *
  * HINT: if "host" is NULL then connect to the same host address as before;
  *       if "port" is zero then connect to the same port # as before.
+ *
+ * [DATAGRAM]     Set default host:port destination (or no destination in
+ *                case of NULL parameters.
+ *
  * NOTE: "new" socket inherits the old i/o timeouts,
  */
-extern EIO_Status SOCK_Reconnect
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Reconnect
 (SOCK            sock,    /* [in] handle of the socket to reconnect      */
  const char*     host,    /* [in] host to connect to  (can be NULL)      */
  unsigned short  port,    /* [in] port to connect to  (can be 0)         */
@@ -306,8 +316,9 @@ extern EIO_Status SOCK_Reconnect
 /* Shutdown the connection in only one direction (specified by "direction").
  * Later attempts to I/O (or to wait) in the shutdown direction will
  * do nothing, and immediately return with "eIO_Closed" status.
+ * Cannot be applied to datagram sockets (eIO_InvalidArg results).
  */
-extern EIO_Status SOCK_Shutdown
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Shutdown
 (SOCK      sock,
  EIO_Event how   /* [in] one of:  eIO_Read, eIO_Write, eIO_ReadWrite */
  );
@@ -319,13 +330,16 @@ extern EIO_Status SOCK_Shutdown
  * NOTE: if eIO_Close timeout was specified then it blocks until
  *       either all unsent data are sent or the timeout expires.
  */
-extern EIO_Status SOCK_Close(SOCK sock);
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
 
 
 /* Block on the socket until either read/write (dep. on the "event" arg) is
  * available or timeout expires (if "timeout" is NULL then assume it infinite).
+ * For datagram sockets this call never blocks but return immediately
+ * whether the portion of a message is ready for the read operation from
+ * the internal buffer or not, or write operation can be attempted.
  */
-extern EIO_Status SOCK_Wait
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
  EIO_Event       event,  /* [in] one of:  eIO_Read, eIO_Write, eIO_ReadWrite */
  const STimeout* timeout
@@ -345,6 +359,7 @@ extern EIO_Status SOCK_Wait
  *        are NULL, then the returned result is either
  *        eIO_Timeout (after the specified amount of time was spent idle), or
  *        eIO_Interrupted (if signal came while the waiting was in progress).
+ * NOTE4: For datagram sockets...
  */
 
 typedef struct {
@@ -353,7 +368,7 @@ typedef struct {
     EIO_Event revent; /* [out] one of:  eIO_Open/Read/Write/ReadWrite/Close  */
 } SSOCK_Poll;
 
-extern EIO_Status SOCK_Poll
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
 (size_t          n,         /* [in]      # of SSOCK_Poll elems in "polls"    */
  SSOCK_Poll      polls[],   /* [in|out]  array of query/result structures    */
  const STimeout* timeout,   /* [in]      max time to wait (infinite if NULL) */
@@ -365,7 +380,7 @@ extern EIO_Status SOCK_Poll
  * If "timeout" is NULL then set the timeout to be infinite;
  * NOTE: the default timeout is infinite (wait "ad infinitum" on i/o).
  */
-extern EIO_Status SOCK_SetTimeout
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
 (SOCK            sock,
  EIO_Event       event,   /* [in]  one of:  eIO_[Read/Write/ReadWrite/Close] */
  const STimeout* timeout  /* [in]  new timeout value to set                  */
@@ -377,7 +392,7 @@ extern EIO_Status SOCK_SetTimeout
  *        (and correct) structure in memory at least until the SOCK is closed
  *        or SOCK_SetTimeout is called for this "sock".
  */
-extern const STimeout* SOCK_GetTimeout
+extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
 (SOCK      sock,
  EIO_Event event  /* [in]  one of:  eIO_[Read/Write/Close] */
  );
@@ -397,7 +412,7 @@ extern const STimeout* SOCK_GetTimeout
  *        return value can be either of eIO_Success, eIO_Closed or
  *        eIO_Unknown depending on connection status of the socket.
  */
-extern EIO_Status SOCK_Read
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 (SOCK           sock,
  void*          buf,    /* [out] data buffer to read to          */
  size_t         size,   /* [in]  max # of bytes to read to "buf" */
@@ -410,7 +425,7 @@ extern EIO_Status SOCK_Read
  * internal read buffer). These can be any data, not necessarily the data
  * previously read from the socket.
  */
-extern EIO_Status SOCK_PushBack
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
 (SOCK        sock,
  const void* buf,  /* [in] data to push back to the socket's local buffer */
  size_t      size  /* [in] # of bytes (starting at "buf") to push back    */
@@ -430,7 +445,7 @@ extern EIO_Status SOCK_PushBack
  *        then this is the only "non-destructive" way to check whether EOF
  *        or an error has occurred on read.
  */
-extern EIO_Status SOCK_Status
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Status
 (SOCK      sock,
  EIO_Event direction  /* [in] one of:  eIO_Read, eIO_Write */
  );
@@ -449,7 +464,7 @@ extern EIO_Status SOCK_Status
  *                other code denotes an error, but some bytes might have
  *                been sent (check *n_written to know).
  */
-extern EIO_Status SOCK_Write
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Write
 (SOCK            sock,
  const void*     buf,       /* [in]  data to write to the socket             */
  size_t          size,      /* [in]  # of bytes (starting at "buf") to write */
@@ -462,7 +477,7 @@ extern EIO_Status SOCK_Write
  * If "network_byte_order" is true(non-zero) then return the host/port in the
  * network byte order; otherwise return them in the local host byte order.
  */
-extern void SOCK_GetPeerAddress
+extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
 (SOCK            sock,
  unsigned int*   host,               /* [out] the peer's host (can be NULL) */
  unsigned short* port,               /* [out] the peer's port (can be NULL) */
@@ -473,7 +488,7 @@ extern void SOCK_GetPeerAddress
 /* Get an OS-dependent native socket handle to use by platform-specific API.
  * FYI:  on MS-Windows it will be "SOCKET", on other platforms -- "int".
  */
-extern EIO_Status SOCK_GetOSHandle
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
 (SOCK   sock,
  void*  handle_buf,  /* pointer to a memory area to put the OS handle at */
  size_t handle_size  /* the exact(!) size of the expected OS handle      */
@@ -485,20 +500,17 @@ extern EIO_Status SOCK_GetOSHandle
  * (and cache it in the internal socket buffer) when the write operation
  * is not immediately available, call this func with "on_off" == eOn.
  */
-extern void SOCK_SetReadOnWriteAPI(ESwitch on_off);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWriteAPI(ESwitch on_off);
 
 
 /* Control the reading-while-writing feature for socket "sock" individually.
  * To reset to the global default behavior (as set by
  * SOCK_SetReadOnWriteAPI), call this function with "on_off" == eDefault.
  */
-extern void SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off);
-
-
-/* Return non-zero value if socket "sock" was created by LSOCK_Accept().
- * Return zero otherwise.
- */
-extern int/*bool*/ SOCK_IsServerSide(SOCK sock);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetReadOnWrite
+(SOCK    sock,
+ ESwitch on_off
+ );
 
 
 
@@ -507,20 +519,26 @@ extern int/*bool*/ SOCK_IsServerSide(SOCK sock);
  */
 
 
-extern EIO_Status DSOCK_Create
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
 (unsigned short port,                   /* [in]  may be 0 for unbound        */
  SOCK*          sock                    /* [out] socket created              */
  );
 
 
-extern EIO_Status DSOCK_CreateEx
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
 (unsigned short port,                   /* [in]  may be 0 for unbound        */
  SOCK*          sock,                   /* [out] socket created              */
  ESwitch        do_log                  /* [in]  whether to log data activity*/
  );
 
 
-extern EIO_Status SOCK_SendMsg
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ const STimeout* timeout                /* [in]  time to wait for message    */
+ );
+
+
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SendMsg
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
  const char*     host,                  /* [in]  hostname or dotted IP       */
  unsigned short  port,                  /* [in]  port number, host byte order*/
@@ -529,7 +547,7 @@ extern EIO_Status SOCK_SendMsg
  );
 
 
-extern EIO_Status SOCK_RecvMsg
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_RecvMsg
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
  size_t          msgsize,               /* [in]  msg size expected, 0 for max*/
  void*           buf,                   /* [in]  buf to store msg at,m.b.NULL*/
@@ -542,6 +560,30 @@ extern EIO_Status SOCK_RecvMsg
 
 
 /******************************************************************************
+ *  Type information for SOCK sockets
+ */
+
+
+/* Return non-zero value if socket "sock" was created by SOCK_Create[Ex]().
+ * Return zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsClientSide(SOCK sock);
+
+
+/* Return non-zero value if socket "sock" was created by LSOCK_Accept().
+ * Return zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsServerSide(SOCK sock);
+
+
+/* Return non-zero value if socket "sock" was created by DSOCK_Create[Ex]().
+ * Return zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsDatagram(SOCK sock);
+
+
+
+/******************************************************************************
  *  AUXILIARY network-specific functions (added for the portability reasons)
  */
 
@@ -549,7 +591,7 @@ extern EIO_Status SOCK_RecvMsg
 /* Return zero on success, non-zero on error.  See BSD gethostname().
  * On error "name" returned emptied (name[0] == '\0').
  */
-extern int SOCK_gethostname
+extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
 (char*  name,          /* [out] (guaranteed to be '\0'-terminated)           */
  size_t namelen        /* [in]  max # of bytes allowed to put to "name"      */
  );
@@ -558,7 +600,7 @@ extern int SOCK_gethostname
 /* Return zero on success, non-zero on error.  Vaguely related to BSD's
  * inet_ntoa(). On error "buf" returned emptied (buf[0] == '\0').
  */
-extern int SOCK_ntoa
+extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
 (unsigned int addr,      /* [in]  must be in the network byte-order          */
  char*        buf,       /* [out] to be filled by smth. like "123.45.67.89\0"*/
  size_t       buflen     /* [in]  max # of bytes to put to "buf"             */
@@ -567,11 +609,15 @@ extern int SOCK_ntoa
 
 /* See man for the BSDisms, htonl() and htons().
  */
-extern unsigned int SOCK_HostToNetLong(unsigned int value);
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_HostToNetLong
+(unsigned int value
+ );
 
 #define SOCK_NetToHostLong SOCK_HostToNetLong
 
-extern unsigned short SOCK_HostToNetShort(unsigned short value);
+extern NCBI_XCONNECT_EXPORT unsigned short SOCK_HostToNetShort
+(unsigned short value
+ );
 
 #define SOCK_NetToHostShort SOCK_HostToNetShort
 
@@ -588,7 +634,7 @@ extern unsigned short SOCK_HostToNetShort(unsigned short value);
  * dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
  * NOTE: "0.0.0.0" and "255.255.255.255" are considered invalid.
  */
-extern unsigned int SOCK_gethostbyname
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
 (const char* hostname  /* [in]  return current host address if hostname is 0 */
  );
 
@@ -599,7 +645,7 @@ extern unsigned int SOCK_gethostbyname
  * means error, while success is denoted by the 'name' argument returned.
  * Note that on error the name returned emptied (name[0] == '\0').
  */
-extern char* SOCK_gethostbyaddr
+extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 (unsigned int addr,    /* [in]  host address in network byte order           */
  char*        name,    /* [out] buffer to put the name to                    */
  size_t       namelen  /* [in]  size (bytes) of the buffer above             */
@@ -614,6 +660,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/01/08 01:59:33  lavr
+ * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
+ *
  * Revision 6.27  2003/01/07 22:01:43  lavr
  * ChangeLog message corrected
  *
