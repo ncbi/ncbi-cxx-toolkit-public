@@ -41,6 +41,7 @@
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <util/strsearch.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -53,6 +54,8 @@ class CPacked_seqpnt;
 class CSeq_interval;
 class CScope;
 class CBioseq_Handle;
+class CCdregion;
+class CSeq_feat;
 
 BEGIN_SCOPE(sequence)
 
@@ -193,7 +196,6 @@ typedef int TP2SFlags; // binary OR of ES2PFlags
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
 
-
 END_SCOPE(sequence)
 
 // FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
@@ -283,12 +285,141 @@ struct SRelLoc
 
 
 
+//============================================================================//
+//                             Sequence Search                                //
+//============================================================================//
+
+// CSeqSearch
+// ==========
+//
+// Search a nucleotide sequence for one or more patterns
+//
+//
+//
+//
+//
+//
+class CSeqSearch
+{
+public:
+
+    
+    // Holds information associated with a match, such as the name of the
+    // restriction enzyme, location of cut site etc.
+    class CMatchInfo
+    {
+    public:
+        // Constructor:
+        CMatchInfo(const string& name,
+                   const string& pattern,
+                   int cut_site,
+                   int overhang,
+                   ENa_strand strand):
+            m_Name(name), m_Pattern(pattern), 
+            m_CutSite(cut_site), m_Overhang(overhang), 
+            m_Strand(strand)
+        {}
+            
+        // Getters
+        const string& GetName(void) const    { return m_Name; }
+        const string& GetPattern(void) const { return m_Pattern; }
+        int GetCutSite(void) const           { return m_CutSite; }
+        int GetOverhang(void) const          { return m_Overhang; }
+        ENa_strand GetStrand(void) const     { return m_Strand; }
+
+    private:
+        friend class CSeqSearch; 
+
+        string m_Name;
+        string m_Pattern;
+        int m_CutSite;
+        int m_Overhang;
+        ENa_strand m_Strand;        
+    };  // end of CMatchInfo
+
+
+    // Client interface:
+    // ==================
+    // A class that uses the SeqSearch facility should implement the Client 
+    // interface and register itself with the search utility to be notified 
+    // of matches detection.
+    class IClient
+    {
+    public:
+        virtual void MatchFound(const CMatchInfo& match, int position) = 0;
+    };
+
+
+    // Constructors and Destructors:
+    CSeqSearch(IClient *client = 0, bool allow_mismatch = false);
+    ~CSeqSearch(void);
+
+    // Add nucleotide pattern or restriction site to sequence search.
+    // Uses ambiguity codes, e.g., R = A and G, H = A, C and T
+    void AddNucleotidePattern(const string& name,
+                              const string& pattern, 
+                              int cut_site,
+                              int overhang);
+
+    // This is a low level search method.
+    // The user is responsible for feeding each character in turn,
+    // keep track of the position in the text and provide the length in case of
+    // a circular topoloy.
+    int Search(int current_state, char ch, int position, int length = INT_MAX);
+
+    // Search an entire bioseq.
+    void Search(const CBioseq_Handle& bsh);
+
+    // Get / Set the Client.
+    const IClient* GetClient() const { return m_Client; }
+    void SetClient(IClient* client) { m_Client = client; }
+
+private:
+
+    // Member Functions:
+    void InitializeMaps(void);
+
+
+    void AddNucleotidePattern(const string& name,
+                              const string& pattern, 
+                              int cut_site,
+                              int overhang,
+                              ENa_strand strand);
+
+
+    void ExpandPattern(const string& pattern,
+                       string& temp,
+                       int position,
+                       int pat_len,
+                       CMatchInfo& info);
+
+    string ReverseComplement(const string& pattern) const;
+
+    // Member Variables:
+
+    static map<unsigned char, int>  sm_CharToEnum;
+    static map<int, unsigned char>  sm_EnumToChar;
+    static map<char, char>          sm_Complement;
+
+    bool                 m_AllowOneMismatch;
+    int                  m_MaxPatLen;
+    IClient*             m_Client;
+    CTextFsm<CMatchInfo> m_Fsa;
+
+}; // end of CSeqSearch
+
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/11/18 19:58:40  shomrat
+* Add CSeqSearch - a nucleotide search utility
+*
 * Revision 1.12  2002/11/12 20:00:19  ucko
 * +SourceToProduct, ProductToSource, SRelLoc
 *
