@@ -76,18 +76,15 @@ of K, so high accuracy is generally unwarranted.
 */
 #define BLASTMAT_DIR "/usr/ncbi/blast/matrix"
 
-/*************************************************************************
-	Structure to the Karlin-Blk parameters.
-
-	This structure was (more or less) copied from the old
-	karlin.h.
-**************************************************************************/
+/**
+  Structure to hold the Karlin-Altschul parameters.
+*/
 
 typedef struct Blast_KarlinBlk {
-		double	Lambda; /* Lambda value used in statistics */
-		double	K, logK; /* K value used in statistics */
-		double	H; /* H value used in statistics */
-		double	paramC;	/* for use in seed. */
+		double	Lambda; /**< Lambda value used in statistics */
+		double	K, logK; /**< K value used in statistics */
+		double	H; /**< H value used in statistics */
+		double	paramC;	/**< for use in seed. */
 	} Blast_KarlinBlk;
 
 
@@ -119,11 +116,14 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 #endif
 #define BLAST_SCORE_RANGE_MAX	(BLAST_SCORE_1MAX - BLAST_SCORE_1MIN)
 
+/** Holds score frequencies used in calculation
+of Karlin-Altschul parameters for an ungapped search.
+*/
 typedef struct Blast_ScoreFreq {
-    Int4	score_min, score_max;
-    Int4	obs_min, obs_max;
-    double	score_avg;
-    double* sprob0,* sprob;
+    Int4	score_min, score_max; /**< lowest and highest allowed scores */
+    Int4	obs_min, obs_max; /**< lowest and highest observed (actual) scores */
+    double	score_avg; /**< average score, must be negative for local alignment. */
+    double* sprob0,* sprob; /**< arrays for frequency of given score, sprob is shifted down by score_min. */
 } Blast_ScoreFreq;
 
 #define BLAST_MATRIX_SIZE 32
@@ -134,60 +134,91 @@ typedef struct SBLASTMatrixStructure {
     Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE]; /* not used */
 } SBLASTMatrixStructure;
 
+/** Structure used for scoring calculations.
+*/
 typedef struct BlastScoreBlk {
-	Boolean		protein_alphabet; /* TRUE if alphabet_code is for a 
+	Boolean		protein_alphabet; /**< TRUE if alphabet_code is for a 
 protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
-	Uint1		alphabet_code;	/* NCBI alphabet code. */
-	Int2 		alphabet_size;  /* size of alphabet. */
-	Int2 		alphabet_start;  /* numerical value of 1st letter. */
-	SBLASTMatrixStructure* matrix_struct;	/* Holds info about matrix. */
-	Int4 **matrix;  /* Substitution matrix */
-	Int4 **posMatrix;  /* Sub matrix for position depend BLAST. */
-   double karlinK; /* Karlin-Altschul parameter associated with posMatrix */
-	Int2	mat_dim1, mat_dim2;	/* dimensions of matrix. */
-	Int4 *maxscore; /* Max. score for each letter */
-	Int4	loscore, hiscore; /* Min. & max. substitution scores */
-	Int4	penalty, reward; /* penalty and reward for blastn. */
-        double  scale_factor; /* multiplier for all cutoff and dropoff scores */
-	Boolean		read_in_matrix; /* If TRUE, matrix is read in, otherwise
+	Uint1		alphabet_code;	/**< NCBI alphabet code. */
+	Int2 		alphabet_size;  /**< size of alphabet. */
+	Int2 		alphabet_start;  /**< numerical value of 1st letter. */
+	SBLASTMatrixStructure* matrix_struct;	/**< Holds info about matrix. */
+	Int4 **matrix;  /**< Substitution matrix */
+	Int4 **posMatrix;  /**< Sub matrix for position depend BLAST. */
+   double karlinK; /**< Karlin-Altschul parameter associated with posMatrix */
+	Int2	mat_dim1, mat_dim2;	/**< dimensions of matrix. */
+	Int4 *maxscore; /**< Max. score for each letter */
+	Int4	loscore, hiscore; /**< Min. & max. substitution scores */
+	Int4	penalty, reward; /**< penalty and reward for blastn. */
+        double  scale_factor; /**< multiplier for all cutoff and dropoff scores */
+	Boolean		read_in_matrix; /**< If TRUE, matrix is read in, otherwise
 					produce one from penalty and reward above. */
-	Blast_ScoreFreq** sfp;	/* score frequencies. */
-	double **posFreqs; /*matrix of position specific frequencies*/
+	Blast_ScoreFreq** sfp;	/**< score frequencies. */
+	double **posFreqs; /**<matrix of position specific frequencies*/
 	/* kbp & kbp_gap are ptrs that should be set to kbp_std, kbp_psi, etc. */
-	Blast_KarlinBlk** kbp; 	/* Karlin-Altschul parameters. */
-	Blast_KarlinBlk** kbp_gap; /* K-A parameters for gapped alignments. */
+	Blast_KarlinBlk** kbp; 	/**< Karlin-Altschul parameters. */
+	Blast_KarlinBlk** kbp_gap; /**< K-A parameters for gapped alignments. */
 	/* Below are the Karlin-Altschul parameters for non-position based ('std')
 	and position based ('psi') searches. */
 	Blast_KarlinBlk **kbp_std,	
                     **kbp_psi,	
                     **kbp_gap_std,
                     **kbp_gap_psi;
-	Blast_KarlinBlk* 	kbp_ideal;	/* Ideal values (for query with average database composition). */
-	Int4 number_of_contexts;	/* Used by sfp and kbp, how large are these*/
-	char* 	name;		/* name of matrix. */
-	Uint1* 	ambiguous_res;	/* Array of ambiguous res. (e.g, 'X', 'N')*/
-	Int2		ambig_size,	/* size of array above. */
-			ambig_occupy;	/* How many occupied? */
-	ListNode*	comments;	/* Comments about matrix. */
-	Int4    	query_length;   /* the length of the query. */
-	Int8	effective_search_sp;	/* product of above two */
+	Blast_KarlinBlk* 	kbp_ideal;	/**< Ideal values (for query with average database composition). */
+	Int4 number_of_contexts;	/**< Used by sfp and kbp, how large are these*/
+	char* 	name;		/**< name of matrix. */
+	Uint1* 	ambiguous_res;	/**< Array of ambiguous res. (e.g, 'X', 'N')*/
+	Int2		ambig_size,	/**< size of array above. FIXME: not needed here? */
+			ambig_occupy;	/**< How many occupied? */
+	ListNode*	comments;	/**< Comments about matrix. */
+	Int4    	query_length;   /**< the length of the query. */
+	Int8	effective_search_sp;	/**< product of above two */
 } BlastScoreBlk;
 
+/** 
+Stores the letter frequency of a sequence or database.
+*/
 typedef struct Blast_ResFreq {
-    Uint1		alphabet_code;
-    double* prob;	/* probs, (possible) non-zero offset. */
-    double* prob0; /* probs, zero offset. */
+    Uint1   alphabet_code;    /**< indicates alphabet. */
+    double* prob;	      /**< letter probs, (possible) non-zero offset. */
+    double* prob0;            /**< probs, zero offset. */
 } Blast_ResFreq;
 
+/**
+ *   Allocates and initializes BlastScoreBlk
+ * @param alphabet either BLASTAA_SEQ_CODE or BLASTNA_SEQ_CODE [in]
+ * @param number_of_contexts how many strands or sequences [in]
+ * @return BlastScoreBlk*
+*/
 BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
 
-Int2 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp);
-
+/** Deallocates BlastScoreBlk as well as all associated structures.
+ * @param sbp BlastScoreBlk to be deallocated [in]
+ * @return NULL pointer.
+ */
 BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
 
+/* FIXME make private? */
+Int2 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp);
+
+/** Set the ambiguous residue (e.g, 'N', 'X') in the BlastScoreBlk*.
+ *  Convert from ncbieaa to sbp->alphabet_code (i.e., ncbistdaa) first.
+ *
+ * @param sbp the object to be modified [in|out]
+ * @param ambiguous_res the residue to be set on the BlastScoreBlk
+ * @return zero on success, others on error
+ */
 Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
+/** Calculate the Karlin parameters.  This function should be called once
+ *  for each context, or frame translated.
+ * @param sbp the object to be modified [in|out]
+ * @param string the query sequence [in]
+ * @param length length of above sequence [in]
+ * @param context_number which element in various arrays [in]
+ * @return zero on success.
+ */
 Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int4 context_number);
  
 /** This function fills in the BlastScoreBlk structure.  
@@ -199,14 +230,14 @@ Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int4 con
 */
 Int2 BLAST_ScoreBlkMatFill (BlastScoreBlk* sbp, char* matrix);
  
-/*
-	Functions taken from the OLD karlin.c
+/** Callocs a Blast_KarlinBlk
+ * @return pointer to the Blast_KarlinBlk
 */
-
 Blast_KarlinBlk* Blast_KarlinBlkCreate (void);
 
 /** Deallocates the KarlinBlk
  * @param kbp KarlinBlk to be deallocated [in]
+ * @return NULL
 */
 Blast_KarlinBlk* Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp);
 
@@ -224,6 +255,16 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
 Blast_KarlinBlk* Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
 
 
+/** Fills KarlinBlk pointers in BlastScoreBlk with "ideal" values if the 
+ * ideal Lambda is less than the actual Lambda.  This happens if 
+ * if the query is translated and the calculated (real) Karlin
+ *
+ * parameters are bad, as they're calculated for non-coding regions.
+ * @param sbp the object to be modified [in|out]
+ * @param context_start first context to start with [in]
+ * @param context_end last context to work on [in]
+ * @return zero on success
+ */
 Int2 Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
                                  Int4 context_end);
 
@@ -237,11 +278,20 @@ Int2 Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start,
 */
 Int2 Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name);
 
-/* Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. */
+/** Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. 
+ * @param matrix the matrix to print a message about [in]
+ * @return the message
+ */
 char* BLAST_PrintMatrixMessage(const char *matrix);
 
-/* Prints a messages about the allowed open etc values for the given matrix, 
-BlastKarlinkGapBlkFill should return 2 before this is called. */
+/** Prints a messages about the allowed open etc values for the given matrix, 
+ * BlastKarlinkGapBlkFill should return 2 before this is called. 
+ * @param matrix name of the matrix [in]
+ * @param gap_open gap existence cost [in]
+ * @param gap_extend cost to extend a gap by one [in]
+ * @param decline_align cost of declining to align [in]
+ * @return message
+ */
 char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
 /** Calculates the parameter Lambda given an initial guess for its value */
@@ -347,7 +397,7 @@ Int2
 Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, 
                      Uint4 residues_size);
 
-/* Please see comment on blast_stat.c */
+/* Please see comment on blast_stat.c  */
 Int2
 Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
 

@@ -66,7 +66,10 @@ static char const rcsid[] =
 #endif
 
 
-/* Allocates and Deallocates the two-dimensional matrix. */
+/** Allocates and Deallocates the two-dimensional matrix. 
+ * @param alphabet_size the number of letters in the alphabet
+ * @return the allocated matrix
+ */
 static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 
 /* performs sump calculation, used by BlastSumPStd */
@@ -1342,10 +1345,14 @@ Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp)
 	return 0;
 }
 
+/** 
+Intermediate structure to store the composition of a sequence
+*/
+
 typedef struct Blast_ResComp {
-    Uint1	alphabet_code;
-    Int4*	comp; 	/* composition of alphabet, array starts at beginning of alphabet. */
-    Int4*   comp0;	/* Same array as above, starts at zero. */
+    Uint1	alphabet_code; /**< indicates alphabet. */
+    Int4*	comp; 	/**< store composition of a string. */
+    Int4*   comp0;	/**< Same array as above, starts at zero. */
 } Blast_ResComp;
 
 static Blast_ResComp*
@@ -1530,6 +1537,14 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max)
 	return sfp;
 }
 
+/** Calculates the score frequencies.
+ *
+ * @param sbp object with scoring information [in]
+ * @param sfp object to hold frequency information [in|out]
+ * @param rfp1 letter frequencies for first sequence (query) [in]
+ * @param rfp2 letter frequencies for second sequence (database) [in]
+ * @return zero on success
+ */
 static Int2
 BlastScoreFreqCalc(BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1, Blast_ResFreq* rfp2)
 {
@@ -1600,7 +1615,7 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1
 #define SMALL_LAMBDA_THRESHOLD 20 /*defines special case in K computation*/
                                 /*threshold is on exp(-Lambda)*/
 
-/*The following procedure computes K. The input includes Lambda, H,
+/** The following procedure computes K. The input includes Lambda, H,
  *  and an array of probabilities for each score.
  *  There are distinct closed form for three cases:
  *  1. high score is 1 low score is -1
@@ -1625,6 +1640,11 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq* rfp1
  * and tried to replace the tail of the computation of outerSum
  * by a geometric series, but the base of the geometric series
  * was not accurately estimated in some cases.
+ *
+ * @param sfp object holding scoring frequency information [in]
+ * @param lambda a Karlin-Altschul parameter [in]
+ * @param H a Karlin-Altschul parameter [in]
+ * @return K, another Karlin-Altschul parameter
  */
 
 static double
@@ -1959,11 +1979,12 @@ Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess)
 	return returnValue;
 }
 
-/*
-	BlastKarlinLtoH
-
-	Calculate H, the relative entropy of the p's and q's
-*/
+/** Calculate H, the relative entropy of the p's and q's
+ *
+ * @param sfp object containing scoring frequency information [in]
+ * @param lambda a Karlin-Altschul parameter [in]
+ * @return H, a Karlin-Altschul parameter
+ */
 static double 
 BlastKarlinLtoH(Blast_ScoreFreq* sfp, double	lambda)
 {
@@ -2226,9 +2247,10 @@ BlastMatrixAllocate(Int2 alphabet_size)
 	return matrix_struct;
 }
 
-/*
-	Deallocates MatrixInfo*
-*/
+/** Deallocates MatrixInfo as well as name string.
+ * @param matrix_info the object to be deallocated [in]
+ * @return NULL pointer
+ */
 
 static MatrixInfo*
 MatrixInfoDestruct(MatrixInfo* matrix_info)
@@ -2242,12 +2264,16 @@ MatrixInfoDestruct(MatrixInfo* matrix_info)
 	return NULL;
 }
 
-/*
-	Makes New MatrixInfo*
-*/
+/** Allocates New MatrixInfo*
+ * @param name name of matrix [in]
+ * @param array_of_8 contains information on a matrix [in]
+ * @param prefs contains information on a which values are preferred [in]
+ * @param max_number size of those arrays [in]
+ * @return pointer to the allocated MatrixInfo
+ */
 
 static MatrixInfo*
-MatrixInfoNew(char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
+MatrixInfoNew(const char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
 
 {
 	MatrixInfo* matrix_info;
@@ -2261,6 +2287,10 @@ MatrixInfoNew(char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
 	return matrix_info;
 }
 
+/** Free linked list of MatrixValues and all associated data
+ * @param vnp linked list of MatrixValues [in]
+ * @return NULL pointer
+ */
 static ListNode*
 BlastMatrixValuesDestruct(ListNode* vnp)
 
@@ -2279,12 +2309,10 @@ BlastMatrixValuesDestruct(ListNode* vnp)
 	return head;
 }
 
-/*
-	ListNode* BlastLoadMatrixValues (void)
-	
-	Loads all the matrix values, returns a ListNode* chain that contains
-	MatrixInfo*'s.
-
+/** Loads all the matrix values, returns a ListNode* chain that contains
+ *  MatrixInfo*'s.
+ * @return list of MatrixInfos.
+ *
 */
 static ListNode* 
 BlastLoadMatrixValues (void)
@@ -2932,18 +2960,21 @@ BlastSumP(Int4 r, double s)
 	return BlastSumPCalc(r, s);
 }
 
-/*
-    BlastSumPCalc
-
-    Evaluate the following double integral, where r = number of segments
-    and s = the adjusted score in nats:
-
-                    (r-2)         oo           oo
-     Prob(r,s) =   r              -            -   (r-2)
-                 -------------   |   exp(-y)  |   x   exp(-exp(x - y/r)) dx dy
-                 (r-1)! (r-2)!  U            U
-                                s            0
-*/
+/**
+ *
+ *   Evaluate the following double integral, where r = number of segments
+ *
+ *   and s = the adjusted score in nats:
+ *
+ *                   (r-2)         oo           oo
+ *    Prob(r,s) =   r              -            -   (r-2)
+ *                -------------   |   exp(-y)  |   x   exp(-exp(x - y/r)) dx dy
+ *                (r-1)! (r-2)!  U            U
+ *                               s            0
+ * @param r number of segments
+ * @param s adjusted score in nats
+ * @return P value
+ */
 static double
 BlastSumPCalc(int r, double s)
 {
@@ -3517,6 +3548,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2004/06/07 14:44:01  madden
+ * Doxygen fixes
+ *
  * Revision 1.78  2004/06/07 14:20:41  dondosha
  * Set matrix dimensions to 26 when matrix is read from a file, to make it the same as when matrix is loaded from a library
  *
