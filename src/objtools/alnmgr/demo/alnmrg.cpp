@@ -248,7 +248,9 @@ void CAlnMrgApp::LoadInputAlignments(void)
     if (asn_type == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         in->Read(Begin(*se), CObjectIStream::eNoFileHeader);
-        GetScope().AddTopLevelSeqEntry(*se);
+        if (m_Scope) {
+            GetScope().AddTopLevelSeqEntry(*se);
+        }
         for (i = Begin(*se); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
@@ -355,8 +357,8 @@ void CAlnMrgApp::SetOptions(void)
         m_AddFlags |= CAlnMix::fCalcScore;
     }
 
-    if (args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) {
-        m_AddFlags |= CAlnMix::fDontUseObjMgr;
+    if ( !(args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) ) {
+        GetScope(); // first call creates the scope
     }
 }
 
@@ -379,19 +381,7 @@ void CAlnMrgApp::ViewMergedAlignment(void)
 
     int screen_width = args["w"].AsInteger();
 
-    CRef<CObjectManager> obj_mgr;
-    CRef<CScope>         scope;
-
-    {{
-        obj_mgr = CObjectManager::GetInstance();
-        CGBDataLoader::RegisterInObjectManager(*obj_mgr);
-
-        scope = new CScope(*obj_mgr);
-        scope->AddDefaults();
-    }}
-
-
-    CAlnVec aln_vec(m_Mix->GetDenseg(), *scope);
+    CAlnVec aln_vec(m_Mix->GetDenseg(), GetScope());
     aln_vec.SetGapChar('-');
     aln_vec.SetEndChar('.');
     if (args["a"]) {
@@ -432,7 +422,7 @@ int CAlnMrgApp::Run(void)
 {
     SetOptions();
 
-    m_Mix = new CAlnMix(GetScope());
+    m_Mix = m_Scope ? new CAlnMix(GetScope()) : new CAlnMix();
     LoadInputAlignments();
     m_Mix->Merge(m_MergeFlags);
 
@@ -461,6 +451,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/10/18 15:07:53  todorov
+* Do not construct CAlnMix with a scope if noobjmgr was requested.
+*
 * Revision 1.28  2004/09/28 00:53:29  vakatov
 * Added -asnoutb key to be able to use it in the place of -asnout when we
 * want to open output file in "binary" mode. This is to work around our
