@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.7  2003/07/30 16:32:02  madden
+ * Use ansi functions when possible
+ *
  * Revision 1.6  2003/07/29 14:42:31  coulouri
  * use strdup() instead of StringSave()
  *
@@ -107,7 +110,8 @@ Blast_MessagePost(Blast_MessagePtr blast_msg)
 	if (blast_msg == NULL)
 		return 1;
 
-	ErrPostEx(blast_msg->severity, blast_msg->code, blast_msg->subcode, "%s", blast_msg->message);
+	/*ErrPostEx(blast_msg->severity, blast_msg->code, blast_msg->subcode, "%s", blast_msg->message);*/
+	fprintf(stderr, "%s", blast_msg->message);	/* FIXME! */
 
 	return 0;
 }

@@ -2103,7 +2103,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
       }
    }
    hsp_list->hspcnt++;
-   Nlm_MemMove((hsp_array+new_index+1), (hsp_array+new_index), (hspcnt-new_index)*sizeof(hsp_array[0]));
+   memmove((hsp_array+new_index+1), (hsp_array+new_index), (hspcnt-new_index)*sizeof(hsp_array[0]));
    hsp_array[new_index] = new_hsp;
    
    return 0;

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.43  2003/07/30 16:32:02  madden
+ * Use ansi functions when possible
+ *
  * Revision 1.42  2003/07/29 14:42:31  coulouri
  * use strdup() instead of StringSave()
  *
@@ -291,7 +294,7 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
    }
    /* "L" indicates low-complexity (seg for proteins, 
       dust for nucleotides). */
-   if (!filter_string || !StringICmp(filter_string, "T")) {
+   if (!filter_string || !strcasecmp(filter_string, "T")) {
       if (program == blast_type_blastn)
          options->filter_string = strdup("D");
       else

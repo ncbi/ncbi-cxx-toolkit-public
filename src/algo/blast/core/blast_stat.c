@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.15  2003/07/30 16:32:02  madden
+ * Use ansi functions when possible
+ *
  * Revision 1.14  2003/07/30 15:29:37  madden
  * Removed MemSets
  *
@@ -1545,9 +1548,9 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
         /* 2. Try configuration file */
         if (fp == NULL) {
            if (sbp->protein_alphabet)
-              StringNCpy(alphabet_type, "aa", 2);
+              strncpy(alphabet_type, "aa", 2);
            else
-              StringNCpy(alphabet_type, "nt", 2);
+              strncpy(alphabet_type, "nt", 2);
            alphabet_type[2] = NULLB;
 
            if(FindPath("ncbi", "ncbi", "data", string, PATH_MAX)) {
@@ -1820,7 +1823,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     /* Read the residue names for the second alphabet */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         ++lineno;
-        if (StrChr(buf, '\n') == NULL) {
+        if (strchr(buf, '\n') == NULL) {
 #if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
@@ -1829,13 +1832,13 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
 
         if (buf[0] == COMMENT_CHR) {
             /* save the comment line in a linked list */
-            *StrChr(buf, '\n') = NULLB;
+            *strchr(buf, '\n') = NULLB;
             ValNodeCopyStr(&sbp->comments, 0, buf+1);
             continue;
         }
-        if ((cp = StrChr(buf, COMMENT_CHR)) != NULL)
+        if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
             *cp = NULLB;
-        lp = (CharPtr)StrTok(buf, TOKSTR);
+        lp = (CharPtr)strtok(buf, TOKSTR);
         if (lp == NULL) /* skip blank lines */
             continue;
         while (lp != NULL) {
@@ -1847,7 +1850,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
               ch = *lp;
            }
             a2chars[a2cnt++] = ch;
-            lp = (CharPtr)StrTok(NULL, TOKSTR);
+            lp = (CharPtr)strtok(NULL, TOKSTR);
         }
         
         break;	/* Exit loop after reading one line. */
@@ -1865,19 +1868,19 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     }
     while (fgets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
-        if ((cp = StrChr(buf, '\n')) == NULL) {
+        if ((cp = strchr(buf, '\n')) == NULL) {
 #if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
             return 2;
         }
-        if ((cp = StrChr(buf, COMMENT_CHR)) != NULL)
+        if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
             *cp = NULLB;
-        if ((lp = (CharPtr)StrTok(buf, TOKSTR)) == NULL)
+        if ((lp = (CharPtr)strtok(buf, TOKSTR)) == NULL)
             continue;
         ch = *lp;
         cp = (CharPtr) lp;
-        if ((cp = StrTok(NULL, TOKSTR)) == NULL) {
+        if ((cp = strtok(NULL, TOKSTR)) == NULL) {
 #if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
@@ -1907,9 +1910,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
 #endif
                 return 2;
             }
-            StrCpy(temp, cp);
+            strcpy(temp, cp);
             
-            if (StrICmp(temp, "na") == 0)  {
+            if (strcasecmp(temp, "na") == 0)  {
                 score = BLAST_SCORE_1MIN;
             } else  {
                 if (sscanf(temp, "%lg", &xscore) != 1) {
@@ -1931,7 +1934,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
             
             m[(int)a2chars[index2++]] = score;
             
-            cp = StrTok(NULL, TOKSTR);
+            cp = strtok(NULL, TOKSTR);
         }
     }
     
@@ -2753,7 +2756,7 @@ BlastKarlinGetMatrixValuesEx2(CharPtr matrix, Int4Ptr PNTR open, Int4Ptr PNTR ex
 	while (vnp)
 	{
 		matrix_info = vnp->data.ptrvalue;
-		if (StringICmp(matrix_info->name, matrix) == 0)
+		if (strcasecmp(matrix_info->name, matrix) == 0)
 		{
 			values = matrix_info->values;
 			max_number_values = matrix_info->max_number_values;
@@ -2998,7 +3001,7 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, I
 	while (vnp)
 	{
 		matrix_info = vnp->data.ptrvalue;
-		if (StringICmp(matrix_info->name, matrix_name) == 0)
+		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;
 			max_number_values = matrix_info->max_number_values;
@@ -3059,7 +3062,7 @@ PrintMatrixMessage(const Char *matrix_name)
 	ptr = buffer;
         sprintf(ptr, "%s is not a supported matrix, supported matrices are:\n", matrix_name);
 
-	ptr += StringLen(ptr);
+	ptr += strlen(ptr);
 
         vnp = head = BlastLoadMatrixValues();
 
@@ -3067,7 +3070,7 @@ PrintMatrixMessage(const Char *matrix_name)
         {
         	matrix_info = vnp->data.ptrvalue;
         	sprintf(ptr, "%s \n", matrix_info->name);
-		ptr += StringLen(ptr);
+		ptr += strlen(ptr);
 		vnp = vnp->next;
         }
         BlastMatrixValuesDestruct(head);
@@ -3094,13 +3097,13 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
                sprintf(ptr, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s\n supported values are:\n", 
 		(long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
 
-	ptr += StringLen(ptr);
+	ptr += strlen(ptr);
 
 	vnp = head = BlastLoadMatrixValues();
 	while (vnp)
 	{
 		matrix_info = vnp->data.ptrvalue;
-		if (StringICmp(matrix_info->name, matrix_name) == 0)
+		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;
 			max_number_values = matrix_info->max_number_values;
@@ -3118,7 +3121,7 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 				sprintf(ptr, "%ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
 			else
 				sprintf(ptr, "%ld, %ld, %ld\n", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
-			ptr += StringLen(ptr);
+			ptr += strlen(ptr);
 		}
 	}
 
@@ -3143,7 +3146,7 @@ BlastKarlinReportAllowedValues(const Char *matrix_name,
 	while (vnp)
 	{
 		matrix_info = vnp->data.ptrvalue;
-		if (StringICmp(matrix_info->name, matrix_name) == 0)
+		if (strcasecmp(matrix_info->name, matrix_name) == 0)
 		{
 			values = matrix_info->values;
 			max_number_values = matrix_info->max_number_values;

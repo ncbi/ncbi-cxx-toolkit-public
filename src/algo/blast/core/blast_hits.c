@@ -1387,7 +1387,7 @@ Int2 MergeHSPLists(BlastHSPListPtr hsp_list,
          }
       }
       
-      MemCpy(&combined_hsp_list->hsp_array[combined_hsp_list->hspcnt], 
+      memcpy(&combined_hsp_list->hsp_array[combined_hsp_list->hspcnt], 
              hsp_list->hsp_array, 
              (new_hspcnt - combined_hsp_list->hspcnt)*sizeof(BlastHSPPtr));
       for (index = new_hspcnt - combined_hsp_list->hspcnt; 

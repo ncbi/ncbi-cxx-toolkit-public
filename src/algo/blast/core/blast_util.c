@@ -119,17 +119,17 @@ Int2 BlastProgram2Number(const Char *program, Uint1 *number)
 	if (program == NULL)
 		return 1;
 
-	if (StringICmp("blastn", program) == 0)
+	if (strcasecmp("blastn", program) == 0)
 		*number = blast_type_blastn;
-	else if (StringICmp("blastp", program) == 0)
+	else if (strcasecmp("blastp", program) == 0)
 		*number = blast_type_blastp;
-	else if (StringICmp("blastx", program) == 0)
+	else if (strcasecmp("blastx", program) == 0)
 		*number = blast_type_blastx;
-	else if (StringICmp("tblastn", program) == 0)
+	else if (strcasecmp("tblastn", program) == 0)
 		*number = blast_type_tblastn;
-	else if (StringICmp("tblastx", program) == 0)
+	else if (strcasecmp("tblastx", program) == 0)
 		*number = blast_type_tblastx;
-	else if (StringICmp("psitblastn", program) == 0)
+	else if (strcasecmp("psitblastn", program) == 0)
 		*number = blast_type_psitblastn;
 
 	return 0;

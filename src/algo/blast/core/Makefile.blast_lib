@@ -43,6 +43,7 @@ gapinfo \
 greedy_align \
 mb_lookup \
 na_lookup \
+ncbi_std \
 util
 
 # OBJ =

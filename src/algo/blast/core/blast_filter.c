@@ -577,7 +577,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	if (mask_at_hash)
 		*mask_at_hash = FALSE;
 
-	if (instructions == NULL || StringICmp(instructions, "F") == 0)
+	if (instructions == NULL || strcasecmp(instructions, "F") == 0)
 		return status;
 
 	/* parameters for dust. */
@@ -586,13 +586,13 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	window_dust = -1;
 	minwin_dust = -1;
 	linker_dust = -1;
-	if (StringICmp(instructions, "T") == 0)
+	if (strcasecmp(instructions, "T") == 0)
 	{ /* do_default actually means seg for proteins and dust for nt. */
 		do_default = TRUE;
 	}
 	else
 	{
-		buffer = (CharPtr) calloc(StringLen(instructions), sizeof(Char));
+		buffer = (CharPtr) calloc(strlen(instructions), sizeof(Char));
 		ptr = instructions;
 		/* allow old-style filters when m cannot be followed by the ';' */
 		if (*ptr == 'm' && ptr[1] == ' ')

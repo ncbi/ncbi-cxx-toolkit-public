@@ -952,9 +952,9 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
    offset_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
    end_hsp_array = (BlastHSPPtr PNTR) malloc(hspcnt*sizeof(BlastHSPPtr));
 
-   MemCpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
-   MemCpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
-   MemCpy(end_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
+   memcpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
+   memcpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
+   memcpy(end_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
    qsort(offset_hsp_array, hspcnt, sizeof(BlastHSPPtr), fwd_compare_hsps);
    qsort(end_hsp_array, hspcnt, sizeof(BlastHSPPtr), end_compare_hsps);
 
