@@ -223,7 +223,7 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number);
  *                set [in]
  * @return Length of the individual sequence/strand/frame.
  */
-Int4 BLAST_GetQueryLength(BlastQueryInfo* query_info, Int4 context);
+Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context);
 
 /** Deallocate memory for query information structure */
 BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);

@@ -672,7 +672,7 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
    return frame;
 }
 
-Int4 BLAST_GetQueryLength(BlastQueryInfo* query_info, Int4 context)
+Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context)
 {
    return query_info->context_offsets[context+1] -
       query_info->context_offsets[context] - 1;
