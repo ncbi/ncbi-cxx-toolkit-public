@@ -34,6 +34,13 @@
 
 #include <algo/nw_aligner.hpp>
 #include <corelib/ncbi_limits.h>
+#include <objects/seqalign/Score.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/serial.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -81,9 +88,10 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
       m_Wms(GetDefaultWms()),
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
-      m_Seq1(seq1),  m_SeqLen1(len1),
-      m_Seq2(seq2),  m_SeqLen2(len2),
-      m_MatrixType(matrix_type)
+      m_Seq1(seq1), m_SeqLen1(len1),
+      m_Seq2(seq2), m_SeqLen2(len2),
+      m_MatrixType(matrix_type),
+      m_score(kInfMinus)
 {
     if(!seq1 || !seq2)
         NCBI_THROW(
@@ -121,6 +129,13 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
                    eInvalidCharacter,
                    message );
     }
+}
+
+
+void CNWAligner::SetSeqIds(const string& id1, const string& id2)
+{
+    m_Seq1Id = id1;
+    m_Seq2Id = id2;
 }
 
 
@@ -234,7 +249,7 @@ int CNWAligner::Run()
     delete[] rowV;
     delete[] rowF;
 
-    return V;
+    return m_score = V;
 }
 
 
@@ -277,11 +292,111 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace)
 }
 
 
+void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
+{
+    if(seqalign == 0) return;
+
+    seqalign->Reset();
+    if(m_Transcript.size() == 0) return;
+
+
+    // the alignment is pairwise
+    seqalign->SetDim(2);
+
+    // this is a global alignment
+    seqalign->SetType(CSeq_align::eType_global);
+
+    // seq-ids
+    CRef< CSeq_id > id1 ( new CSeq_id );
+    CRef< CObject_id > local_oid1 (new CObject_id);
+    local_oid1->SetStr(m_Seq1Id);
+    id1->SetLocal(*local_oid1);
+
+    CRef< CSeq_id > id2 ( new CSeq_id );
+    CRef< CObject_id > local_oid2 (new CObject_id);
+    local_oid2->SetStr(m_Seq2Id);
+    id2->SetLocal(*local_oid2);
+    
+    // the score was calculated during the main process
+    CRef< CScore > score (new CScore);
+    CRef< CObject_id > id (new CObject_id);
+    id->SetStr("score");
+    score->SetId(*id);
+    CRef< CScore::C_Value > val (new CScore::C_Value);
+    val->SetInt(m_score);
+    score->SetValue(*val);
+    list< CRef< CScore > >& scorelist = seqalign->SetScore();
+    scorelist.push_back(score);
+
+    // create segments and add them to this seq-align
+    CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
+    CDense_seg& ds = segs->SetDenseg();
+    ds.SetDim(2);
+    vector< CRef< CSeq_id > > &ids = ds.SetIds();
+    ids.push_back( id1 );
+    ids.push_back( id2 );
+    vector< TSignedSeqPos > &starts  = ds.SetStarts();
+    vector< TSeqPos >       &lens    = ds.SetLens();
+    vector< ENa_strand >    &strands = ds.SetStrands();
+    
+    // iterate through transcript
+    size_t seg_count = 0;
+    {{ 
+        const char *seq1 = m_Seq1, *seq2 = m_Seq2;
+
+        vector<ETranscriptSymbol>::const_reverse_iterator
+            ib = m_Transcript.rbegin(),
+            ie = m_Transcript.rend(),
+            ii;
+        
+        ETranscriptSymbol ts = *ib;
+        char seg_type0 = ((ts == eInsert || ts == eIntron)? 1:
+                          (ts == eDelete)? 2: 0);
+        size_t seg_len = 1;
+
+        for (ii = ib;  ii != ie; ++ii) {
+            ts = *ii;
+            char seg_type = ((ts == eInsert || ts == eIntron)? 1:
+                             (ts == eDelete)? 2: 0);
+
+            if(seg_type0 != seg_type) {
+                starts.push_back( (seg_type0 == 1)? -1: seq1 - m_Seq1 + 1 );
+                starts.push_back( (seg_type0 == 2)? -1: seq2 - m_Seq2 + 1 );
+                lens.push_back(seg_len);
+                strands.push_back(eNa_strand_plus);
+                strands.push_back(eNa_strand_plus);
+                ++seg_count;
+                seg_len = 1;
+            }
+            else {
+                ++seg_len;
+            }
+
+            if(seg_type != 1) ++seq1;
+            if(seg_type != 2) ++seq2;
+            seg_type0 = seg_type;
+        }
+        // the last one
+        starts.push_back( (seg_type0 == 1)? -1: seq1 - m_Seq1 + 1 );
+        starts.push_back( (seg_type0 == 2)? -1: seq2 - m_Seq2 + 1 );
+        lens.push_back(seg_len);
+        strands.push_back(eNa_strand_plus);
+        strands.push_back(eNa_strand_plus);
+        ++seg_count;
+    }}
+
+    ds.SetNumseg(seg_count);
+    ds.SetIds();
+    seqalign->SetSegs(*segs);
+}
+
+
 // creates formatted output of alignment;
 // requires prior call to Run
-string CNWAligner::Format(size_t line_width, EFormat type, int param) const
+string CNWAligner::FormatAsText( size_t line_width,
+                                 EFormat type, int param) const
 {
-    ostrstream ss;
+    CNcbiOstrstream ss;
     vector<char> v1, v2;
     size_t aln_size = x_ApplyTranscript(&v1, &v2);
 
@@ -351,6 +466,11 @@ string CNWAligner::Format(size_t line_width, EFormat type, int param) const
     break;
 
     case eFormatAsn: {
+        CSeq_align seq_align;
+        FormatAsSeqAlign(&seq_align);
+        CObjectOStreamAsn asn_stream (ss);
+        asn_stream << seq_align;
+        asn_stream << Separator;
     }
     break;
 
@@ -533,6 +653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/01/28 12:39:03  kapustin
+ * Implement ASN.1 and SeqAlign output
+ *
  * Revision 1.8  2003/01/24 16:48:50  kapustin
  * Support more output formats - type 2 and gapped FastA
  *
