@@ -45,6 +45,10 @@ class NCBI_XALGOALIGN_EXPORT CSplignSeqAccessor: public CObject
 {
 public:
 
+    // start and finish are zero-based;
+    // must return full sequence when start == 0 and finish == kMax_UInt;
+    // sequence characters are expected to be in upper case.
+
     virtual void Load(const string& id, vector<char> *seq,
                       size_t start, size_t finish) = 0;
 };
@@ -191,6 +195,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/04/27 17:19:43  kapustin
+ * Valuble comments added
+ *
  * Revision 1.6  2004/04/26 15:38:25  kapustin
  * Add model_id as a class member
  *
