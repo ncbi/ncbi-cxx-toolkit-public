@@ -52,6 +52,7 @@ class CBlastTraceBackTest;
 class CScoreBlkTest; 
 class CRPSTest; 
 class CBlastRedoAlignmentTest; 
+class CBlastEngineTest;
 class CBlastSetupTest;
 class CPsimodulestestApplication;
 
@@ -1699,6 +1700,7 @@ public:
     friend class ::CBlastRedoAlignmentTest;// unit test class
     friend class ::CBlastSetupTest;        // unit test class
     friend class ::CPsimodulestestApplication;  // bulk test application class
+    friend class ::CBlastEngineTest;       // unit test class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -2478,6 +2480,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.79  2004/12/21 17:14:35  dondosha
+* Added CBlastEngineTest friend class for new unit tests
+*
 * Revision 1.78  2004/12/21 15:12:19  dondosha
 * Added friend class for blastsetup unit test
 *
