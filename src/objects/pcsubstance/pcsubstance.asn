@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.2 2004/06/23 11:14:37 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.3 2004/07/13 14:24:32 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -35,7 +35,7 @@ NCBI-PCSubstance DEFINITIONS ::= BEGIN
 IMPORTS Pub FROM NCBI-Pub
         Date, Object-id FROM NCBI-General;
 
-EXPORTS PC-Source, PC-ID, PC-InfoData;
+EXPORTS PC-Source, PC-ID, PC-InfoData, PC-XRefData;
 
 
 -- Root Record for Chemical Substance Definition
@@ -117,7 +117,8 @@ PC-XRefData ::= CHOICE {
         gi               INTEGER,                 -- GenBank General ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         dburl            VisibleString,           -- Depositor Source Database Homepage
-        sburl            VisibleString            -- Depositor Homepage for this Substance
+        sburl            VisibleString,           -- Depositor Homepage for a Substance
+        asurl            VisibleString            -- Depositor Homepage for an Assay
 }
 
 
@@ -136,7 +137,7 @@ PC-Compound ::= SEQUENCE {
     charge         INTEGER                       OPTIONAL, -- Provided Total Formal Charge  (Signed Integer)
     props          SEQUENCE OF PC-InfoData       OPTIONAL, -- Derived (computed) Properties
     stereogroups   SEQUENCE OF PC-StereoGroup    OPTIONAL, -- Relative stereochemistry groups
-    count          PC-Count                                 -- Counts of various properties
+    count          PC-Count                                -- Counts of various properties
 }
 
 
@@ -661,6 +662,10 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.3  2004/07/13 14:24:32  bolton
+-- Exported PC-XRefData for use in the PCAssay specification.  Also, added
+-- assay URL linkout.
+--
 -- Revision 1.2  2004/06/23 11:14:37  bolton
 -- Minor reorganization and addition of PC-Count block.
 --
@@ -706,5 +711,4 @@ END
 -- structural information.
 --
 -- ===========================================================================
-
 
