@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/06/04 14:58:00  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.23  2001/06/01 18:07:27  thiessen
 * fix display clone bug
 *
@@ -106,6 +109,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_limits.h>
 
 #include <algorithm>
 
@@ -124,6 +128,7 @@
 #include "cn3d/update_viewer_window.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/cn3d_threader.hpp"
+#include "cn3d/conservation_colorer.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -450,7 +455,11 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     // process events in title area (launch of browser for entrez page on a sequence)
     if (column < 0 && row >= 0 && row < NRows()) {
         const Sequence *seq = rows[row]->GetSequence();
-        if (seq) seq->LaunchWebBrowserWithInfo();
+        if (seq) {
+            seq->LaunchWebBrowserWithInfo();
+            GlobalMessenger()->RemoveAllHighlights(false);
+            GlobalMessenger()->AddHighlights(seq, 0, seq->sequenceString.size() - 1);
+        }
         return false;
     }
 
@@ -486,6 +495,14 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (sequenceWindow->DoMarkBlock()) {
                 if (alignment->MarkBlock(column)) {
                     sequenceWindow->MarkBlockOff();
+                    GlobalMessenger()->PostRedrawSequenceViewer(sequenceWindow->sequenceViewer);
+                }
+                return false;
+            }
+
+            if (sequenceWindow->DoProximitySort()) {
+                if (ProximitySort(row)) {
+                    sequenceWindow->ProximitySortOff();
                     GlobalMessenger()->PostRedrawSequenceViewer(sequenceWindow->sequenceViewer);
                 }
                 return false;
@@ -905,6 +922,7 @@ void SequenceDisplay::SortRowsByIdentifier(void)
 {
     rowComparisonFunction = CompareRowsByIdentifier;
     SortRows();
+    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
 }
 
 void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
@@ -913,12 +931,14 @@ void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
     rowComparisonFunction = CompareRowsByScore;
     SortRows();
     TESTMSG("sorted rows");
+    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
 }
 
 void SequenceDisplay::FloatPDBRowsToTop(void)
 {
     rowComparisonFunction = CompareRowsFloatPDB;
     SortRows();
+    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
 }
 
 void SequenceDisplay::SortRows(void)
@@ -955,8 +975,96 @@ void SequenceDisplay::SortRows(void)
         rows = newRows;
     else
         ERR_POST(Error << "SequenceDisplay::SortRows() - internal inconsistency");
+}
 
+bool SequenceDisplay::ProximitySort(int displayRow)
+{
+    DisplayRowFromAlignment *keyRow = dynamic_cast<DisplayRowFromAlignment*>(rows[displayRow]);
+    if (!keyRow || keyRow->row == 0) return false;
+    if (keyRow->alignment->NRows() < 3) return true;
+
+    TESTMSG("doing Proximity Sort on alignment row " << keyRow->row);
+    int row;
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+        blocks(keyRow->alignment->GetUngappedAlignedBlocks());
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    const Sequence *seq1 = keyRow->alignment->GetSequenceOfRow(keyRow->row);
+    std::vector < DisplayRowFromAlignment * > sortedByScore;
+
+    // calculate scores for each row based on simple Blosum62 sum of all aligned pairs
+    for (row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (!alnRow) continue;
+        sortedByScore.push_back(alnRow);
+
+        if (alnRow == keyRow) {
+            keyRow->alignment->SetRowDouble(keyRow->row, kMax_Double);
+            keyRow->alignment->SetRowStatusLine(keyRow->row, "(key row)");
+        } else {
+            const Sequence *seq2 = alnRow->alignment->GetSequenceOfRow(alnRow->row);
+            double score = 0.0;
+            for (b=blocks->begin(); b!=be; b++) {
+                const Block::Range
+                    *r1 = (*b)->GetRangeOfRow(keyRow->row),
+                    *r2 = (*b)->GetRangeOfRow(alnRow->row);
+                for (int i=0; i<(*b)->width; i++)
+                    score += Blosum62Map
+                        [seq1->sequenceString[r1->from + i]] [seq2->sequenceString[r2->from + i]];
+            }
+            alnRow->alignment->SetRowDouble(alnRow->row, score);
+            wxString str;
+            str.Printf("Score vs. key row: %i", (int) score);
+            alnRow->alignment->SetRowStatusLine(alnRow->row, str.c_str());
+        }
+    }
+    if (sortedByScore.size() != keyRow->alignment->NRows()) {
+        ERR_POST(Error << "SequenceDisplay::ProximitySort() - wrong # rows in sort list");
+        return false;
+    }
+
+    // sort by these scores
+    stable_sort(sortedByScore.begin(), sortedByScore.end(), CompareRowsByScore);
+
+    // find where the master row is in sorted list
+    int M;
+    for (M=0; M<sortedByScore.size(); M++) if (sortedByScore[M]->row == 0) break;
+
+    // arrange by proximity to key row
+    std::vector < DisplayRowFromAlignment * > arrangedByProximity(sortedByScore.size(), NULL);
+    arrangedByProximity[0] = sortedByScore[M];  // move master back to top
+    arrangedByProximity[M] = sortedByScore[0];  // move key row to M
+    int i = 1, j = 1, N, R = 1;
+    while (R < sortedByScore.size()) {
+        N = M + i*j;    // iterate N = M+1, M-1, M+2, M-2, ...
+        j = -j;
+        if (j > 0) i++;
+        if (N > 0 && N < sortedByScore.size() && !arrangedByProximity[N]) {
+            arrangedByProximity[N] = sortedByScore[R++];
+            if (R == M) R++;
+        }
+    }
+
+    // recreate the row list with new order
+    RowVector newRows(rows.size());
+    int nNewRows = 0;
+    for (row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow)
+            newRows[row] = arrangedByProximity[nNewRows++];   // put arranged rows in place
+        else
+            newRows[row] = rows[row];           // leave other rows in original order
+    }
+    if (nNewRows == arrangedByProximity.size())   // sanity check
+        rows = newRows;
+    else
+        ERR_POST(Error << "SequenceDisplay::ProximitySort() - internal inconsistency");
+
+    // finally, highlight the key row and scroll approximately there
+    GlobalMessenger()->RemoveAllHighlights(false);
+    GlobalMessenger()->AddHighlights(seq1, 0, seq1->sequenceString.size() - 1);
+    (*viewerWindow)->ScrollToRow(M - 3);
     (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+    return true;
 }
 
 bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)

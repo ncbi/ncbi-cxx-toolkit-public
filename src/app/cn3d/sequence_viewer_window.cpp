@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/06/04 14:58:00  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.17  2001/06/01 14:05:13  thiessen
 * add float PDB sort
 *
@@ -115,7 +118,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
     EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
-    EVT_MENU_RANGE(MID_SORT_IDENT, MID_FLOAT_PDBS,      SequenceViewerWindow::OnSort)
+    EVT_MENU_RANGE(MID_SORT_IDENT, MID_PROXIMITY_SORT,  SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
 END_EVENT_TABLE()
@@ -132,6 +135,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
+    subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
 
@@ -190,6 +194,7 @@ void SequenceViewerWindow::OnDeleteRow(wxCommandEvent& event)
 {
     if (DoRealignRow()) RealignRowOff();
     if (DoMarkBlock()) MarkBlockOff();
+    if (DoProximitySort()) ProximitySortOff();
     CancelBaseSpecialModes();
     if (DoDeleteRow())
         SetCursor(*wxCROSS_CURSOR);
@@ -311,6 +316,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     if (event.GetId() == MID_REALIGN_ROW) {
         if (DoDeleteRow()) DeleteRowOff();
         if (DoMarkBlock()) MarkBlockOff();
+        if (DoProximitySort()) ProximitySortOff();
         CancelBaseSpecialModes();
         if (DoRealignRow())
             SetCursor(*wxCROSS_CURSOR);
@@ -355,13 +361,14 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnSort(wxCommandEvent& event)
 {
-    SetCursor(*wxHOURGLASS_CURSOR);
     switch (event.GetId()) {
         case MID_SORT_IDENT:
+            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->SortRowsByIdentifier();
             break;
         case MID_SORT_THREADER:
         {
+            if (DoProximitySort()) ProximitySortOff();
             GetFloatingPointDialog fpDialog(NULL,
                 "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
                 0.0, 1.0, 0.05, 0.5);
@@ -374,10 +381,20 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             break;
         }
         case MID_FLOAT_PDBS:
+            if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();
             break;
+        case MID_PROXIMITY_SORT:
+            if (DoDeleteRow()) DeleteRowOff();
+            if (DoRealignRow()) RealignRowOff();
+            if (DoMarkBlock()) MarkBlockOff();
+            CancelBaseSpecialModes();
+            if (DoProximitySort())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                ProximitySortOff();
+            break;
     }
-    SetCursor(wxNullCursor);
 }
 
 void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
@@ -400,6 +417,7 @@ void SequenceViewerWindow::OnMarkBlock(wxCommandEvent& event)
         case MID_MARK_BLOCK:
             if (DoDeleteRow()) DeleteRowOff();
             if (DoRealignRow()) RealignRowOff();
+            if (DoProximitySort()) ProximitySortOff();
             CancelBaseSpecialModes();
             if (DoMarkBlock())
                 SetCursor(*wxCROSS_CURSOR);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/06/04 14:58:00  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.14  2001/06/02 17:22:45  thiessen
 * fixes for GCC
 *
@@ -127,7 +130,7 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
 };
 
-static std::map < char, std::map < char, char > > Blosum62Map;
+std::map < char, std::map < char, int > > Blosum62Map;
 static std::map < char, float > StandardProbabilities;
 
 ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(false)
