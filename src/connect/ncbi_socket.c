@@ -162,7 +162,7 @@ typedef SOCKET TSOCK_Handle;
 #  define SOCK_EINPROGRESS    WSAEINPROGRESS
 #  define SOCK_ENOTCONN       WSAENOTCONN
 #  define SOCK_ECONNABORTED   WSAECONNABORTED
-#  define SOCK_ECONNREFUSED   WASECONNREFUSED
+#  define SOCK_ECONNREFUSED   WSAECONNREFUSED
 #  define SOCK_ENETRESET      WSAENETRESET
 #  define SOCK_NFDS(s)        0
 #  define SOCK_CLOSE(s)       closesocket(s)
@@ -1838,8 +1838,8 @@ static EIO_Status s_Send(SOCK        sock,
 
         if (x_errno != SOCK_EINTR) {
             /* forcibly closed by peer or shut down? */
-            if (x_errno != SOCK_EPIPE     &&  x_errno != SOCK_ENOTCONN      &&
-                x_errno != ECONNRESET     &&  x_errno != SOCK_ECONNABORTED  &&
+            if (x_errno != SOCK_EPIPE      &&  x_errno != SOCK_ENOTCONN     &&
+                x_errno != SOCK_ECONNRESET &&  x_errno != SOCK_ECONNABORTED &&
                 x_errno != SOCK_ENETRESET) {
                 CORE_LOGF_ERRNO_EX(eLOG_Trace, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_Send] "
@@ -3706,6 +3706,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.107  2003/05/19 18:47:42  lavr
+ * Fix MSVC compilation errors
+ *
  * Revision 6.106  2003/05/19 16:51:33  lavr
  * +SOCK_SetReuseAddress[API]() - both experimental!
  * Fix for bitfield signedness in some compilers (including MSVC).
