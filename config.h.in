@@ -63,16 +63,19 @@
 /* NCBI SSS DB library is available */
 #undef HAVE_LIBSSSDB
 
+/* NCBI SSS UTILS library is available */
+#undef HAVE_LIBSSSUTILS
+
 /* NCBI PubMed libraries are available */
-#undef HAVE_PUBMED
+#undef HAVE_LIBPUBMED
 
 /* New C++ streams dont have ios_base:: */
 #undef HAVE_NO_IOS_BASE
 
-/* This is good for the GNU C/C++ compiler on Solaris */ 
+/* This is good for the GNU compiler on Solaris */ 
 #undef __EXTENSIONS__
 
-/* This is good for the EGCS C/C++ compiler on Linux(e.g. proto for putenv) */
+/* This is good for the GNU compiler on Linux (e.g. proto for putenv) */
 #undef _SVID_SOURCE
 
 /* There is no "std::char_traits" type defined */
