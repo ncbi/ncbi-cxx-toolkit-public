@@ -2,7 +2,7 @@
 
 APP = grid_worker_sample
 SRC = grid_worker_sample
-LIB = xconnserv$(FORCE_STATIC) xthrserv xconnect xutil xncbi 
+LIB = xconnserv$(STATIC) xthrserv xconnect xutil xncbi 
 
 REQUIRES = MT
 
