@@ -85,6 +85,7 @@ CBioseqContext::CBioseqContext
     m_IsPDB(false),
     m_IsSP(false),
     m_IsTPA(false),
+    m_IsJournalScan(false),
     m_IsRefSeq(false),
     m_RefseqInfo(0),
     m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
@@ -270,16 +271,18 @@ void CBioseqContext::x_SetId(void)
                 }
             }
             break;
-        // nothing special
-        case CSeq_id::e_not_set:
-        case CSeq_id::e_Local:
         case CSeq_id::e_Gibbsq:
         case CSeq_id::e_Gibbmt:
         case CSeq_id::e_Giim:
-        case CSeq_id::e_Pir:
+            m_IsJournalScan = true;
+            break;
         case CSeq_id::e_Swissprot:
             m_IsSP = true;
             break;
+        // nothing special
+        case CSeq_id::e_Pir:
+        case CSeq_id::e_not_set:
+        case CSeq_id::e_Local:
         case CSeq_id::e_Prf:
         default:
             break;
@@ -586,6 +589,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/10/18 18:42:52  shomrat
+* Indicate if scanned from journal
+*
 * Revision 1.24  2004/10/05 15:38:11  shomrat
 * Use more efficient NStr::EndsWith function
 *

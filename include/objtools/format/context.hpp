@@ -143,7 +143,8 @@ public:
     bool IsPDB            (void) const { return m_IsPDB;  }  // PDB
     bool IsSP             (void) const { return m_IsSP;   }  // SwissProt
     bool IsTPA            (void) const { return m_IsTPA;  }  // Third-Party Annotation
-    bool IsPatent         (void) const { return m_IsPatent; }
+    bool IsJournalScan    (void) const { return m_IsJournalScan;  }  // scanned from journal
+    bool IsPatent         (void) const { return m_IsPatent; }  // patent
     bool IsGbGenomeProject(void) const { return m_IsGbGenomeProject; } // AE
     bool IsNcbiCONDiv     (void) const { return m_IsNcbiCONDiv; }      // CH
     
@@ -206,14 +207,15 @@ private:
     // delta bioseq
     bool        m_IsDeltaLitOnly;
 
-    bool m_IsProt;      // Protein
-    bool m_IsInGPS;     // Gene-Prod Set
-    bool m_IsInNucProt; // Nuc-Prot Set
-    bool m_IsGED;       // Genbank, Embl or Ddbj
-    bool m_IsEMBL;      // EMBL
-    bool m_IsPDB;       // PDB
-    bool m_IsSP;        // SwissProt
-    bool m_IsTPA;       // Third Party Annotation
+    bool m_IsProt;         // Protein
+    bool m_IsInGPS;        // Gene-Prod Set
+    bool m_IsInNucProt;    // Nuc-Prot Set
+    bool m_IsGED;          // Genbank, Embl or Ddbj
+    bool m_IsEMBL;         // EMBL
+    bool m_IsPDB;          // PDB
+    bool m_IsSP;           // SwissProt
+    bool m_IsTPA;          // Third Party Annotation
+    bool m_IsJournalScan;  // scanned from journal
     bool m_IsRefSeq;
     unsigned int m_RefseqInfo;
     bool m_IsGbGenomeProject;  // GenBank Genome project data
@@ -514,6 +516,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/10/18 18:42:22  shomrat
+* Indicate if scanned from journal
+*
 * Revision 1.19  2004/09/02 15:39:46  shomrat
 * + SetAnnotSelector()
 *
