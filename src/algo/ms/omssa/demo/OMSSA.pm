@@ -52,7 +52,7 @@ sub characters {
     my $text = $characters->{Data};
     $text =~ s/^\s*//;
     $text =~ s/\s*$//;
-    return '' unless $text;
+    return '' unless ($text ne "");
 
     if ($current_element eq 'MSHitSet_number') {
       print "Hitset number: " . $text . "\n";
