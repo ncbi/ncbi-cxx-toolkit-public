@@ -35,6 +35,7 @@
 *
 */
 #include <corelib/ncbistd.hpp>
+#include <util/range.hpp>
 
 #include <list>
 
@@ -45,7 +46,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -58,21 +59,25 @@ class CAccessionItem : public CFlatItem
 public:
     // typedef
     typedef list<string>    TExtra_accessions;
+    typedef CRange<TSeqPos> TRegion;
 
-    CAccessionItem(CFFContext& ctx);
+    CAccessionItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     const string& GetAccession(void) const;
     const string& GetWGSAccession(void) const;
     const TExtra_accessions& GetExtraAccessions(void) const;
-
+    bool  IsSetRegion(void) const;
+    const TRegion& GetRegion(void) const;
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     string              m_Accession;
     string              m_WGSAccession;
     TExtra_accessions   m_ExtraAccessions;
+    TRegion             m_Region;
+    bool                m_IsSetRegion;
 };
 
 
@@ -101,6 +106,20 @@ const CAccessionItem::TExtra_accessions& CAccessionItem::GetExtraAccessions(void
 }
 
 
+inline
+bool CAccessionItem::IsSetRegion(void) const
+{
+    return m_IsSetRegion;
+}
+
+
+inline
+const CAccessionItem::TRegion& CAccessionItem::GetRegion(void) const
+{
+    return m_Region;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -109,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:33:58  shomrat
+* Changes in context; + Region
+*
 * Revision 1.2  2004/04/13 16:41:54  shomrat
 * + GetWGSAccession(); inlined methods
 *
