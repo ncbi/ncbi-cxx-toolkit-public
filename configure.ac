@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.143 2002/10/28 19:46:58 ucko Exp $
+#  $Id: configure.ac,v 1.144 2002/10/29 16:58:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -617,7 +617,7 @@ case "$host_os:$compiler" in
 
  *:Compaq)
    CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
-   CXXFLAGS="-tweak $CXXFLAGS"
+   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
    case "$host_os" in
       osf*)
         # Suppress link warnings; otherwise, we get "weak symbol multiply
