@@ -941,7 +941,7 @@ const string& CCompoundRegistry::x_Get(const string& section,
 bool CCompoundRegistry::x_HasEntry(const string& section, const string& name,
                                    TFlags flags) const
 {
-    return FindByContents(section, name, flags);
+    return FindByContents(section, name, flags).NotEmpty();
 }
 
 const string& CCompoundRegistry::x_GetComment(const string& section,
@@ -1288,6 +1288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/01/12 16:55:15  vasilche
+ * Avoid performance warning on MSVC.
+ *
  * Revision 1.43  2004/12/20 17:34:13  ucko
  * Fix silly portability bugs.
  *

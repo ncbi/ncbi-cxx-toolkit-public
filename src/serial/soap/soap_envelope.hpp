@@ -102,7 +102,7 @@ private:
 inline
 bool CSoapEnvelope::IsSetHeader(void) const
 {
-    return m_Header;
+    return m_Header.NotEmpty();
 }
 
 inline
@@ -123,7 +123,7 @@ const CSoapHeader& CSoapEnvelope::GetHeader(void) const
 inline
 bool CSoapEnvelope::IsSetBody(void) const
 {
-    return m_Body;
+    return m_Body.NotEmpty();
 }
 
 inline
@@ -157,6 +157,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/01/12 17:00:09  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.2  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *

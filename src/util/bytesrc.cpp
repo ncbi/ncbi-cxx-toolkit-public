@@ -435,7 +435,7 @@ CMemoryChunk::~CMemoryChunk(void)
     delete[] m_Data;
     CRef<CMemoryChunk> next = m_NextChunk;
     m_NextChunk.Reset();
-    while ( bool(next) && next->ReferencedOnlyOnce() ) {
+    while ( next && next->ReferencedOnlyOnce() ) {
         CRef<CMemoryChunk> cur = next;
         next = cur->m_NextChunk;
         cur->m_NextChunk.Reset();
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/01/12 16:56:41  vasilche
+ * Avoid performance warning on MSVC.
+ *
  * Revision 1.38  2004/09/13 18:41:59  vasilche
  * Fixed mismatched new[]/delete[].
  *

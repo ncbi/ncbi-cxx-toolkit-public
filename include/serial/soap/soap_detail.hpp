@@ -137,7 +137,7 @@ private:
 inline
 bool CSoapDetail::C_E::IsSetAnyContent(void) const
 {
-    return m_AnyContent;
+    return m_AnyContent.NotEmpty();
 }
 
 inline
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/01/12 17:00:08  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.1  2003/09/25 19:46:21  gouriano
 * Added soap Fault object
 *

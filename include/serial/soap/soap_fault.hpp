@@ -152,7 +152,7 @@ private:
 inline
 bool CSoapFault::IsSetSoapCode(void) const
 {
-    return m_SoapCode;
+    return m_SoapCode.NotEmpty();
 }
 
 inline
@@ -179,7 +179,7 @@ CSoapCode& CSoapFault::SetSoapCode(void)
 inline
 bool CSoapFault::IsSetSoapReason(void) const
 {
-    return m_SoapReason;
+    return m_SoapReason.NotEmpty();
 }
 
 inline
@@ -286,7 +286,7 @@ std::string& CSoapFault::SetSoapRole(void)
 inline
 bool CSoapFault::IsSetSoapDetail(void) const
 {
-    return m_SoapDetail;
+    return m_SoapDetail.NotEmpty();
 }
 
 inline
@@ -314,6 +314,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/01/12 17:00:08  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.1  2003/09/25 19:46:21  gouriano
 * Added soap Fault object
 *

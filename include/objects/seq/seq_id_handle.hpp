@@ -232,7 +232,7 @@ CSeq_id_Mapper& CSeq_id_Info::GetMapper(void) const
 inline
 CSeq_id_Handle::operator bool (void) const
 {
-    return m_Info;
+    return m_Info.NotEmpty();
 }
 
 
@@ -374,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/01/12 17:01:11  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.31  2005/01/12 15:00:57  vasilche
 * Fixed the way to get pointer in GetHash().
 *
