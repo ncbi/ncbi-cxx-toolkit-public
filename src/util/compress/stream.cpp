@@ -37,184 +37,63 @@
 BEGIN_NCBI_SCOPE
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // CCompressionBaseStream
 //
 
 
-CCompressionBaseStream::CCompressionBaseStream(void)
-    : m_StreamBuf(0), m_Compressor(0)
+CCompressionStream::CCompressionStream(
+        CCompressionProcessor* compressor,
+        ECompressorType        compressor_type,
+        TCompressionUIOS*      stream,
+        EStreamType            stream_type,
+        streamsize             in_buf_size,
+        streamsize             out_buf_size,
+        EDeleteCompressor      need_delete_compressor)
+
+    : iostream(0), m_StreamBuf(0), m_Compressor(0)
 {
+    // Create new stream buffer
+    auto_ptr<CCompressionStreambuf> sb(
+        new CCompressionStreambuf(compressor, compressor_type,
+                                  stream, stream_type,
+                                  in_buf_size, out_buf_size));
+    init(sb.get());
+    m_StreamBuf = sb.release();
+    if ( !m_StreamBuf->IsOkay() ) {
+        setstate(badbit | eofbit);
+    }
+    // Set compressor deleter
+    if ( need_delete_compressor == eDelete ) {
+        m_Compressor = compressor;
+    }
     return;
 }
 
 
-CCompressionBaseStream::~CCompressionBaseStream(void)
+CCompressionStream::~CCompressionStream(void)
 {
-    if ( m_Compressor )
+    // Delete stream buffer
+#if !defined(HAVE_IOS_XALLOC) || defined(HAVE_BUGGY_IOS_CALLBACKS)
+    streambuf* sb = rdbuf();
+    delete sb;
+    if ( sb != m_StreamBuf )
+#endif
+        delete m_StreamBuf;
+#ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
+    rdbuf(0);
+#endif
+    if ( m_Compressor ) {
         delete m_Compressor;
+    }
 }
 
 
-void CCompressionBaseStream::SetCompressorForDeletion(CCompression* compressor)
-{ 
-    m_Compressor = compressor;
-}
-
-
-void CCompressionBaseStream::Finalize(void) 
+void CCompressionStream::Finalize(void) 
 {
-    if ( m_StreamBuf )
+    if ( m_StreamBuf ) {
         m_StreamBuf->Finalize();
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CCompressOStream
-//
-
-CCompressOStream::CCompressOStream(CCompression*     compressor,
-                                   streambuf*        out_streambuf,
-                                   streamsize        in_buf_size,
-                                   streamsize        out_buf_size,
-                                   EDeleteCompressor need_delete_compressor)
-    : ostream(0), CCompressionBaseStream()
-{
-    // Create new stream buffer
-    auto_ptr<CCompressionOStreambuf> sb(
-        new CCompressionOStreambuf(compressor, out_streambuf,
-                                   in_buf_size, out_buf_size));
-    init(sb.get());
-    m_StreamBuf = sb.release();
-    // Set compressor deleter
-    if ( need_delete_compressor == eDelete ) {
-        SetCompressorForDeletion(compressor);
-    }
-}
-
-
-CCompressOStream::~CCompressOStream(void)
-{
-    // Delete stream buffer
-    streambuf* sb = rdbuf();
-    delete sb;
-    if ( sb != m_StreamBuf ) {
-        delete m_StreamBuf;
-    }
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CCompressIStream
-//
-
-CCompressIStream::CCompressIStream(CCompression*     compressor,
-                                   streambuf*        in_stream_buf,
-                                   streamsize        in_buf_size,
-                                   streamsize        out_buf_size,
-                                   EDeleteCompressor need_delete_compressor)
-    : istream(0), CCompressionBaseStream()
-{
-    // Create new stream buffer
-    auto_ptr<CCompressionIStreambuf> sb(
-        new CCompressionIStreambuf(compressor, in_stream_buf,
-                                   in_buf_size, out_buf_size));
-    init(sb.get());
-    m_StreamBuf = sb.release();
-    // Set compressor deleter
-    if ( need_delete_compressor == eDelete ) {
-        SetCompressorForDeletion(compressor);
-    }
-}
-
-
-CCompressIStream::~CCompressIStream(void)
-{
-    // Delete stream buffer
-    streambuf* sb = rdbuf();
-    delete sb;
-    if ( sb != m_StreamBuf ) {
-        delete m_StreamBuf;
-    }
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDecompressOStream
-//
-
-CDecompressOStream::CDecompressOStream(CCompression*     compressor,
-                                       streambuf*        out_streambuf,
-                                       streamsize        in_buf_size,
-                                       streamsize        out_buf_size,
-                                       EDeleteCompressor need_del_compressor)
-    : ostream(0), CCompressionBaseStream()
-{
-    // Create new stream buffer
-    auto_ptr<CDecompressionOStreambuf> sb(
-        new CDecompressionOStreambuf(compressor, out_streambuf,
-                                     in_buf_size, out_buf_size));
-    init(sb.get());
-    m_StreamBuf = sb.release();
-    // Set compressor deleter
-    if ( need_del_compressor == eDelete ) {
-        SetCompressorForDeletion(compressor);
-    }
-}
-
-
-CDecompressOStream::~CDecompressOStream(void)
-{
-    // Delete stream buffer
-    streambuf* sb = rdbuf();
-    delete sb;
-    if ( sb != m_StreamBuf ) {
-        delete m_StreamBuf;
-    }
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDecompressIStream
-//
-
-CDecompressIStream::CDecompressIStream(CCompression*     compressor,
-                                       streambuf*        in_stream_buf,
-                                       streamsize        in_buf_size,
-                                       streamsize        out_buf_size,
-                                       EDeleteCompressor need_del_compressor)
-    : istream(0), CCompressionBaseStream()
-{
-    // Create new stream buffer
-    auto_ptr<CDecompressionIStreambuf> sb(
-        new CDecompressionIStreambuf(compressor, in_stream_buf,
-                                     in_buf_size, out_buf_size));
-    init(sb.get());
-    m_StreamBuf = sb.release();
-    // Set compressor deleter
-    if ( need_del_compressor == eDelete ) {
-        SetCompressorForDeletion(compressor);
-    }
-}
-
-
-CDecompressIStream::~CDecompressIStream(void)
-{
-    // Delete stream buffer
-    streambuf* sb = rdbuf();
-    delete sb;
-    if ( sb != m_StreamBuf ) {
-        delete m_StreamBuf;
     }
 }
 
@@ -225,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/03 20:09:16  ivanov
+ * The Compression API redesign. Added some new classes, rewritten old.
+ *
  * Revision 1.2  2003/04/11 19:55:28  ivanov
  * Move streambuf.hpp from 'include/...' to 'src/...'
  *

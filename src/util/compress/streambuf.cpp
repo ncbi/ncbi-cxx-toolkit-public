@@ -25,226 +25,177 @@
  *
  * Authors:  Vladimir Ivanov
  *
- * File Description:  CCompression based C++ streambufs
+ * File Description:  CCompression based C++ streambuf
  *
  */
 
 #include <memory>
 #include "streambuf.hpp"
+#include <util/compress/stream.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-#define X_THROW(err_code, message) \
-    x_Throw(__FILE__, __LINE__, CCompressionException::err_code, message)
-
+#define CP CCompressionProcessor
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// CCompressionBaseStreambuf
+// CCompressionStreambuf
 //
 
-CCompressionBaseStreambuf::CCompressionBaseStreambuf(CCompression* compressor,
-                                                     streambuf*   stream_buf,
-                                                     streamsize   in_buf_size,
-                                                     streamsize   out_buf_size)
-    : m_Compressor(compressor), m_Streambuf(stream_buf),
-      m_InBufSize(in_buf_size ? in_buf_size : kCompressionDefaultInBufSize),
-      m_OutBufSize(out_buf_size ? out_buf_size :kCompressionDefaultOutBufSize),
-      m_Dying(false), m_Finalized(false)
+CCompressionStreambuf::CCompressionStreambuf(
+    CCompressionProcessor*              compressor,
+    CCompressionStream::ECompressorType compressor_type,
+    ios*                                stream,
+    CCompressionStream::EStreamType     stream_type,
+    streamsize                          in_buf_size,
+    streamsize                          out_buf_size)
+
+    : m_Compressor(compressor), m_CompressorType(compressor_type),
+      m_Stream(stream), m_StreamType(stream_type),
+      m_Buf(0), m_InBuf(0), m_OutBuf(0),
+      m_InBufSize(in_buf_size > 1 ?
+                  in_buf_size : kCompressionDefaultInBufSize),
+      m_OutBufSize(out_buf_size > 1 ?
+                   out_buf_size : kCompressionDefaultOutBufSize),
+      m_Finalized(false)
 {
+    if ( !compressor  ||  !stream ) {
+        return;
+    }
+
     // Allocate memory for buffers
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[m_InBufSize + m_OutBufSize]);
     m_InBuf = bp.get();
-    if ( !m_InBuf ) {
-        X_THROW(eMemory, "Memory allocation failed");
-    }
     m_OutBuf = bp.get() + m_InBufSize;
-    m_Buf = bp.release();
+
+    // Set the buffer pointers
+
+    if ( stream_type == CCompressionStream::eST_Read ) {
+        setp(m_InBuf, m_InBuf + m_InBufSize);
+        // Init pointers for data reading from input underlying stream
+        m_InBegin = m_InBuf;
+        m_InEnd   = m_InBuf;
+    } else {
+        // Use one character less for the input buffer than the really
+        // available one (see overflow())
+        setp(m_InBuf, m_InBuf + m_InBufSize - 1);
+    }
+    // We wish to have underflow() called at the first read
+    setg(m_OutBuf, m_OutBuf, m_OutBuf);
+
+    // Init compression
+    m_Compressor->Init();
+
+    m_Buf= bp.release();
 }
 
 
-CCompressionBaseStreambuf::~CCompressionBaseStreambuf()
+CCompressionStreambuf::~CCompressionStreambuf()
 {
-    // Delete allocated buffer
+    Finalize();
     delete[] m_Buf;
 }
 
 
-const CCompression* CCompressionBaseStreambuf::GetCompressor(void) const
+void CCompressionStreambuf::Finalize(void)
 {
-    return m_Compressor;
-}
-
-
-streambuf* CCompressionBaseStreambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
-                                             streamsize    /*buf_size*/)
-{
-    X_THROW(eSetBuf, "CCompressionBaseStreambuf::setbuf() not allowed");
-    return this; // notreached
-}
-
-
-void CCompressionBaseStreambuf::x_Throw(const char* file, int line,
-                                        CCompressionException::EErrCode err,
-                                        const string& msg)
-{
-    string message(msg + ". Compressor status (" +
-        NStr::IntToString(m_Compressor->GetLastError()) + ").");
-    if ( m_Dying ) {
-        ERR_POST(message);
-    } else {
-        throw CCompressionException(file, line, 0, err, message);
-    }
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CCompressionOStreambuf
-//
-
-CCompressionOStreambuf::CCompressionOStreambuf(CCompression* compressor,
-                                               streambuf*    out_stream_buf,
-                                               streamsize    in_buf_size,
-                                               streamsize    out_buf_size)
-    : CCompressionBaseStreambuf(compressor, out_stream_buf, in_buf_size,
-                                out_buf_size)
-{
-    // Set the buffer pointers; use one character less for the
-    // input buffer than the really available one (see overflow())
-    setp(m_InBuf, m_InBuf + m_InBufSize - 1);
-
-    // Init compression
-    CCompression::EStatus status = m_Compressor->DeflateInit();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eDeflate, "Compression initialization failed");
-    }
-}
-
-
-CCompressionOStreambuf::~CCompressionOStreambuf()
-{
-    m_Dying = true;
-    try {
-        Finalize();
-    } catch(CException& e) {
-        NCBI_REPORT_EXCEPTION("CCompressionOStreambuf destructor", e);
-    }
-}
-
-
-void CCompressionOStreambuf::Finalize(void)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
+    // To do nothing if a streambuf is already finalized or a compressor
+    // is idle
+    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
         return;
     }
-    // Do not to do a finalization if a compressor has already finalized
-    if ( !m_Compressor->IsBusy() ) {
-        return;
-    }
-
+    // Sync buffers
     sync();
 
-    CCompression::EStatus status;
-    unsigned long out_avail = 0;
+    CT_CHAR_TYPE* buf = m_OutBuf;
+    unsigned long out_size = m_OutBufSize, out_avail = 0;
 
     // Finish
     do {
-        status = m_Compressor->DeflateFinish(m_OutBuf, m_OutBufSize,
-                                             &out_avail);
-        if ( status != CCompression::eStatus_Success ) {
-            X_THROW(eDeflate,"CCompressionOStreambuf: DeflateFinish() failed");
-            break;
+        if ( m_StreamType == CCompressionStream::eST_Read ) {
+            buf = egptr();
+            out_size = m_OutBuf + m_OutBufSize - egptr();
         }
-        // Write the data to the underlying stream buffer
-        if ( m_Streambuf->sputn(m_OutBuf, out_avail) !=
-             (streamsize)out_avail) {
-            X_THROW(eWrite, "Writing to output stream buffer failed");
-            break;
+        m_LastStatus = m_Compressor->Finish(buf, out_size, &out_avail);
+        if ( m_LastStatus == CP::eStatus_Error ) {
+           break;
         }
-    } while ( status == CCompression::eStatus_Overflow);
+        if ( m_StreamType == CCompressionStream::eST_Read ) {
+            // Update the get's pointers
+            setg(m_OutBuf, gptr(), egptr() + out_avail);
+        } else {
+            // Write the data to the underlying stream
+            if ( out_avail && m_Stream->rdbuf()->sputn(m_OutBuf, out_avail) !=
+                 (streamsize)out_avail) {
+                break;
+            }
+        }
+    } while ( out_avail  &&  m_LastStatus == CP::eStatus_Overflow);
 
     // Cleanup
-    status = m_Compressor->DeflateEnd();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eDeflate, "CCompressionOStreambuf: DeflateEnd() failed");
-    }
+    m_Compressor->End();
+
     // Streambuf is finalized
     m_Finalized = true;
 }
 
 
-bool CCompressionOStreambuf::ProcessBlock()
+int CCompressionStreambuf::sync()
 {
-    char*         in_buf    = pbase();
-    streamsize    count     = pptr() - pbase();
-    unsigned long in_avail  = count;
-    unsigned long out_avail = 0;
-
-    // Loop until no data is left
-    while ( in_avail ) {
-        // Compress block
-        CCompression::EStatus status =
-            m_Compressor->Deflate(in_buf + count - in_avail, in_avail,
-                                  m_OutBuf, m_OutBufSize,
-                                  &in_avail, &out_avail);
-        if ( status != CCompression::eStatus_Success ) {
-            X_THROW(eDeflate, "CCompressionOStreambuf: DeflateBlock() failed");
-            return false;
-        }
-        // Write the data to the underlying stream buffer
-        if ( m_Streambuf->sputn(m_OutBuf, out_avail) !=
-             (streamsize)out_avail) {
-            X_THROW(eWrite, "Writing to output stream buffer failed");
-            return false;
-        }
-    }
-    // Decrease the put pointer
-    pbump(-count);
-    return true;
-}
-
-
-int CCompressionOStreambuf::sync()
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return 0;
-    }
-    // Process remaining data in the input buffer
-    if ( !ProcessBlock() ) {
+    // To do nothing if a streambuf is already finalized or a compressor
+    // is idle
+    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
         return -1;
     }
+    // Process remaining data in the input buffer
+    if ( !Process() ) {
+        return -1;
+    }
+
     // Flush
-    CCompression::EStatus status;
-    unsigned long out_avail = 0;
+    CT_CHAR_TYPE* buf = m_OutBuf;
+    unsigned long out_size = m_OutBufSize, out_avail = 0;
     do {
-        status = m_Compressor->DeflateFlush(m_OutBuf, m_OutBufSize,&out_avail);
-        // Write the data to the underlying stream buffer
-        if ( m_Streambuf->sputn(m_OutBuf, out_avail) !=
-             (streamsize)out_avail) {
-            X_THROW(eWrite, "Writing to output stream buffer failed");
-            return -1;
+        if ( m_StreamType == CCompressionStream::eST_Read ) {
+            buf = egptr();
+            out_size = m_OutBuf + m_OutBufSize - egptr();
         }
-    } while ( status == CCompression::eStatus_Overflow);
+        m_LastStatus = m_Compressor->Flush(buf, out_size, &out_avail);
+        if ( m_LastStatus == CP::eStatus_Error ) {
+           break;
+        }
+        if ( m_StreamType == CCompressionStream::eST_Read ) {
+            // Update the get's pointers
+            setg(m_OutBuf, gptr(), egptr() + out_avail);
+        } else {
+            // Write the data to the underlying stream
+            if ( out_avail && m_Stream->rdbuf()->sputn(m_OutBuf, out_avail) !=
+                 (streamsize)out_avail) {
+                return -1;
+            }
+        }
+    } while ( out_avail  &&  m_LastStatus == CP::eStatus_Overflow );
+
+    // Sync the underlying stream
+    if ( m_Stream->rdbuf()->PUBSYNC() ) {
+        return -1;
+    }
     // Check status
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eDeflate, "CCompressionOStreambuf: DeflateFlush() failed");
+    if ( m_LastStatus != CP::eStatus_Success ) {
         return -1;
     }
     return 0;
 }
 
 
-CT_INT_TYPE CCompressionOStreambuf::overflow(CT_INT_TYPE c)
+CT_INT_TYPE CCompressionStreambuf::overflow(CT_INT_TYPE c)
 {
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
+    // To do nothing if a streambuf is already finalized or a compressor
+    // is idle
+    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
         return CT_EOF;
     }
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
@@ -256,174 +207,106 @@ CT_INT_TYPE CCompressionOStreambuf::overflow(CT_INT_TYPE c)
         // Increment put pointer
         pbump(1);
     }
-    if ( ProcessBlock() ) {
+    if ( Process() ) {
         return CT_NOT_EOF(CT_EOF);
     }
     return CT_EOF;
 }
 
 
-streamsize CCompressionOStreambuf::xsputn(const CT_CHAR_TYPE* buf,
-                                          streamsize count)
+CT_INT_TYPE CCompressionStreambuf::underflow(void)
 {
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return 0;
+    // Here we don't make a check for the streambuf finalization because
+    // underflow() can be called after Finalize() to read a rest of
+    // produced data.
+    if ( !IsOkay() ) {
+        return CT_EOF;
     }
-    // Check parameters
-    if ( !buf  ||  count <= 0 ) {
-        return 0;
+
+    // Reset pointer to the processed data
+    setg(m_OutBuf, m_OutBuf, m_OutBuf);
+
+    // Try to process next data
+    if ( !Process()  ||  gptr() == egptr() ) {
+        return CT_EOF;
     }
-    // The number of chars copied
-    streamsize done = 0;
+    return CT_TO_INT_TYPE(*gptr());
+}
+
+
+bool CCompressionStreambuf::ProcessStreamWrite()
+{
+    const char*      in_buf    = pbase();
+    const streamsize count     = pptr() - pbase();
+    unsigned long    in_avail  = count;
+    unsigned long    out_avail = 0;
 
     // Loop until no data is left
-    while ( done < count ) {
-        // Get the number of chars to write in this iteration
-        // (we've got one more char than epptr thinks)
-        size_t block_size = min( size_t(count-done), size_t(epptr()-pptr()+1));
-
-        // Write them
-        memcpy(pptr(), buf + done, block_size);
-
-        // Update the write pointer
-        pbump(block_size);
-
-        // Process block if necessary
-        if ( pptr() >= epptr()  &&  !ProcessBlock() ) {
-            break;
+    while ( in_avail ) {
+        // Process next data piece
+        m_LastStatus = m_Compressor->Process(in_buf + count - in_avail,
+                                             in_avail,
+                                             m_OutBuf, m_OutBufSize,
+                                             &in_avail, &out_avail);
+        if ( m_LastStatus != CP::eStatus_Success ) {
+            return false;
         }
-        done += block_size;
-    }
-    return done;
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CCompressIStreambuf
-//
-
-CCompressionIStreambuf::CCompressionIStreambuf(CCompression* compressor,
-                                               streambuf*    stream_buf,
-                                               streamsize    in_buf_size,
-                                               streamsize    out_buf_size)
-    : CCompressionBaseStreambuf(compressor, stream_buf,
-                                in_buf_size, out_buf_size)
-{
-    // Set the input buffer pointers
-    setp(m_InBuf, m_InBuf + m_InBufSize);
-
-    // Init pointers for uncompressed data reading
-    m_InBegin = m_InBuf;
-    m_InEnd   = m_InBuf;
-
-    // Init compression
-    CCompression::EStatus status = m_Compressor->DeflateInit();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eInflate, "Compression initialization failed");
-    }
-    // Set the output buffer pointers.
-    // We wish to have underflow() called at the first read.
-    setg(m_OutBuf, m_OutBuf, m_OutBuf);
-}
-
-
-CCompressionIStreambuf::~CCompressionIStreambuf()
-{
-    m_Dying = true;
-    try {
-        Finalize();
-    } catch(CException& e) {
-        NCBI_REPORT_EXCEPTION("CCompressionIStreambuf destructor", e);
-    }
-
-}
-
-
-void CCompressionIStreambuf::Finalize(void)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return;
-    }
-    // Do not to do a finalization if a compressor has already finalized
-    if ( !m_Compressor->IsBusy() ) {
-        return;
-    }
-
-    sync();
-
-    CCompression::EStatus status;
-    unsigned long out_size, out_avail;
-
-    // Finish
-    do {
-        out_size = m_OutBuf + m_OutBufSize - egptr();
-        status = m_Compressor->DeflateFinish(egptr(), out_size, &out_avail);
-        if ( status != CCompression::eStatus_Success ) {
-            X_THROW(eDeflate,"CCompressionIStreambuf: DeflateFinish() failed");
-            break;
+        // Write the data to the underlying stream
+        if ( out_avail  &&  m_Stream->rdbuf()->sputn(m_OutBuf, out_avail) !=
+             (streamsize)out_avail) {
+            return false;
         }
-        // Update the get's pointers
-        setg(m_OutBuf, gptr(), egptr() + out_avail);
-
-    } while ( !out_avail  &&  status == CCompression::eStatus_Overflow);
-
-    // Cleanup
-    status = m_Compressor->DeflateEnd();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eInflate, "CCompressionIStreambuf: DeflateEnd() failed");
     }
-    // Streambuf is finalized
-    m_Finalized = true;
+    // Decrease the put pointer
+    pbump(-count);
+    return true;
 }
 
 
-bool CCompressionIStreambuf::ProcessBlock()
+bool CCompressionStreambuf::ProcessStreamRead()
 {
-    unsigned long in_len, out_size, in_avail, out_avail;
+    unsigned long in_len, in_avail, out_size, out_avail = 0;
     streamsize    n_read;
 
     // Put data into the compressor until there is something
     // in the output buffer
     do {
-        // Refill the input buffer if necessary
-        if ( m_InEnd == m_InBegin  ) {
-            n_read = m_Streambuf->sgetn(m_InBuf, m_InBufSize);
-            if ( !n_read ) {
-                // We can't read more of data
+        out_size = m_OutBuf + m_OutBufSize - egptr();
+
+        // Refill the output buffer if necessary
+        if ( m_LastStatus != CP::eStatus_Overflow ) {
+            // Refill the input buffer if necessary
+            if ( m_InEnd == m_InBegin  ) {
+                n_read = m_Stream->rdbuf()->sgetn(m_InBuf, m_InBufSize);
+                if ( !n_read ) {
+                    // We can't read more of data
+                    return false;
+                }
+                // Update the input buffer pointers
+                m_InBegin = m_InBuf;
+                m_InEnd   = m_InBuf + n_read;
+            }
+            // Process next data piece
+            in_len = m_InEnd - m_InBegin;
+            m_LastStatus = m_Compressor->Process(m_InBegin, in_len,
+                                                 egptr(), out_size,
+                                                 &in_avail, &out_avail);
+            if ( m_LastStatus != CP::eStatus_Success ) {
                 return false;
             }
-            // Update the input buffer pointers
-            m_InBegin = m_InBuf;
-            m_InEnd   = m_InBuf + n_read;
         }
-            
-        // Compress block
-        in_len = m_InEnd - m_InBegin;
-        out_size = m_OutBuf + m_OutBufSize - egptr();
-        CCompression::EStatus status =
-            m_Compressor->Deflate(m_InBegin, in_len, egptr(), out_size,
-                                  &in_avail, &out_avail);
-        if ( status != CCompression::eStatus_Success ) {
-            X_THROW(eInflate, "CCompressionIStreambuf: DeflateBlock() failed");
-            return false;
-        }
-        // Try to flush compressor if "out_avail" is zero  
+
+        // Try to flush the compressor if it has not produced a data
+        // via Process()
         if ( !out_avail ) { 
-            status = m_Compressor->DeflateFlush(egptr(), out_size,&out_avail);
-            if ( status != CCompression::eStatus_Success  &&
-                 status != CCompression::eStatus_Overflow ) {
-                X_THROW(eInflate,
-                        "CCompressionIStreambuf: DeflateFlush() failed");
+            m_LastStatus = m_Compressor->Flush(egptr(), out_size, &out_avail);
+            if ( m_LastStatus != CP::eStatus_Success  &&
+                 m_LastStatus != CP::eStatus_Overflow ) {
                 return false;
             }
         }
         // Update pointer to an unprocessed data
         m_InBegin += (in_len - in_avail);
-
         // Update the get's pointers
         setg(m_OutBuf, gptr(), egptr() + out_avail);
 
@@ -433,226 +316,14 @@ bool CCompressionIStreambuf::ProcessBlock()
 }
 
 
-int CCompressionIStreambuf::sync()
+
+streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
+                                         streamsize count)
 {
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return 0;
-    }
-    // Sync the underlying stream buffer
-    if ( m_Streambuf->PUBSYNC() ) {
-        return -1;
-    }
-    // Process remaining data in the input buffer
-    if ( !ProcessBlock() ) {
-        return -1;
-    }
-    // Flush
-    CCompression::EStatus status;
-    unsigned long out_size, out_avail;
-    do {
-        out_size = m_OutBuf + m_OutBufSize - egptr();
-        status = m_Compressor->DeflateFlush(egptr(), out_size, &out_avail);
-        setg(m_OutBuf, gptr(), egptr() + out_avail);
-    } while ( !out_avail  &&  status == CCompression::eStatus_Overflow);
-
-
-    // Check status
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eDeflate, "CCompressionIStreambuf: DeflateFlush() failed");
-        return -1;
-    }
-    return 0;
-}
-
-
-CT_INT_TYPE CCompressionIStreambuf::underflow(void)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
+    // To do nothing if a streambuf is already finalized or a compressor
+    // is idle
+    if ( !IsOkay()  ||  m_Finalized  ||  !m_Compressor->IsBusy() ) {
         return CT_EOF;
-    }
-    // Reset pointer of the end of compressed data
-    setg(m_OutBuf, m_OutBuf, m_OutBuf);
-
-    // Compress next data block
-    if ( !ProcessBlock()  ||  gptr() == egptr() ) {
-        return CT_EOF;
-    }
-    return CT_TO_INT_TYPE(*gptr());
-}
-
-
-streamsize CCompressionIStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
-{
-    // To do nothing is a streambuf is already finalized
-///    if (m_Finalized) {
-///        return 0;
-///    }
-    // Check parameters
-    if ( !buf  ||  count <= 0 ) {
-        return 0;
-    }
-    // The number of chars copied
-    streamsize done = 0;
-
-    // Loop until all data are not read yet
-    for (;;) {
-        // Get the number of chars to write in this iteration
-        size_t block_size = min(size_t(count-done), size_t(egptr()-gptr()));
-        // Copy them
-        if ( block_size ) {
-            memcpy(buf + done, gptr(), block_size);
-            done += block_size;
-            // Update get pointers.
-            // Satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-            *m_OutBuf = buf[done - 1];
-            setg(m_OutBuf, m_OutBuf + 1, m_OutBuf + 1);
-        }
-        // Process block if necessary
-        if ( done == count  ||  !ProcessBlock() ) {
-            break;
-        }
-    }
-    return done;
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDecompressOStreambuf
-//
-
-CDecompressionOStreambuf::CDecompressionOStreambuf(CCompression* compressor,
-                                                   streambuf*   out_stream_buf,
-                                                   streamsize   in_buf_size,
-                                                   streamsize   out_buf_size)
-    : CCompressionBaseStreambuf(compressor, out_stream_buf,
-                                in_buf_size, out_buf_size)
-{
-    // Set the buffer pointers; use one character less for the
-    // input buffer than the really available one (see overflow())
-    setp(m_InBuf, m_InBuf + m_InBufSize - 1);
-
-    // Init decompression
-    CCompression::EStatus status = m_Compressor->InflateInit();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eInflate, "Decompression initialization failed");
-    }
-
-}
-
-
-CDecompressionOStreambuf::~CDecompressionOStreambuf()
-{
-    m_Dying = true;
-    try {
-        Finalize();
-    } catch(CException& e) {
-        NCBI_REPORT_EXCEPTION("CDecompressionOStreambuf destructor", e);
-    }
-
-}
-
-
-void CDecompressionOStreambuf::Finalize(void)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return;
-    }
-    // Do not to do a finalization if a compressor has already finalized
-    if ( !m_Compressor->IsBusy() ) {
-        return;
-    }
-
-    sync();
-
-    // Cleanup
-    CCompression::EStatus status = m_Compressor->InflateEnd();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eInflate, "CDecompressionOStreambuf: InflateEnd() failed");
-    }
-    // Streambuf is finalized
-    m_Finalized = true;
-}
-
-
-bool CDecompressionOStreambuf::ProcessBlock()
-{
-    char*         in_buf    = pbase();
-    streamsize    count     = pptr() - pbase();
-    unsigned long in_avail  = count;
-    unsigned long out_avail = 0;
-
-    // Loop until no data is left
-    while ( in_avail ) {
-        // Decompress block
-        CCompression::EStatus status =
-            m_Compressor->Inflate(in_buf + count - in_avail, in_avail,
-                                  m_OutBuf, m_OutBufSize,
-                                  &in_avail, &out_avail);
-        if ( status != CCompression::eStatus_Success ) {
-            X_THROW(eInflate,
-                    "CDecompressionOStreambuf: InflateBlock() failed");
-            return false;
-        }
-        // Write the data to the underlying stream buffer
-        if ( m_Streambuf->sputn(m_OutBuf, out_avail) !=
-             (streamsize)out_avail) {
-            X_THROW(eWrite, "Writing to output stream buffer failed");
-            return false;
-        }
-    }
-    // Decrease the put pointer
-    pbump(-count);
-    return true;
-}
-
-
-int CDecompressionOStreambuf::sync()
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return 0;
-    }
-    // Process remaining data in the input buffer
-    if ( !ProcessBlock() ) {
-        return -1;
-    }
-    return 0;
-}
-
-
-CT_INT_TYPE CDecompressionOStreambuf::overflow(CT_INT_TYPE c)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return CT_EOF;
-    }
-    if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
-        // Put this character in the last position
-        // (this function is called when pptr() == eptr() but we
-        // have reserved one byte more in the constructor, thus
-        // *epptr() and now *pptr() point to valid positions)
-        *pptr() = c;
-        // Increment put pointer
-        pbump(1);
-    }
-    if ( ProcessBlock() ) {
-        return CT_NOT_EOF(CT_EOF);
-    }
-    return CT_EOF;
-}
-
-
-streamsize CDecompressionOStreambuf::xsputn(const CT_CHAR_TYPE* buf,
-                                            streamsize count)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return 0;
     }
     // Check parameters
     if ( !buf  ||  count <= 0 ) {
@@ -666,12 +337,15 @@ streamsize CDecompressionOStreambuf::xsputn(const CT_CHAR_TYPE* buf,
         // Get the number of chars to write in this iteration
         // (we've got one more char than epptr thinks)
         size_t block_size = min(size_t(count-done), size_t(epptr()-pptr()+1));
+
         // Write them
         memcpy(pptr(), buf + done, block_size);
+
         // Update the write pointer
         pbump(block_size);
+
         // Process block if necessary
-        if ( pptr() >= epptr()  &&  !ProcessBlock() ) {
+        if ( pptr() >= epptr()  &&  !Process() ) {
             break;
         }
         done += block_size;
@@ -680,154 +354,12 @@ streamsize CDecompressionOStreambuf::xsputn(const CT_CHAR_TYPE* buf,
 };
 
 
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDecompressIStreambuf
-//
-
-CDecompressionIStreambuf::CDecompressionIStreambuf(CCompression* compressor,
-                                                   streambuf*    stream_buf,
-                                                   streamsize    in_buf_size,
-                                                   streamsize    out_buf_size)
-    : CCompressionBaseStreambuf(compressor, stream_buf,
-                                in_buf_size, out_buf_size)
+streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
 {
-    // Set the input buffer pointers
-    setp(m_InBuf, m_InBuf + m_InBufSize);
-
-    // Init pointers for compressed data reading
-    m_InBegin = m_InBuf;
-    m_InEnd   = m_InBuf;
-
-    // Init decompression
-    CCompression::EStatus status = m_Compressor->InflateInit();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eInflate, "Decompression initialization failed");
-    }
-    // Set the output buffer pointers.
-    // We wish to have underflow() called at the first read.
-    setg(m_OutBuf, m_OutBuf, m_OutBuf);
-}
-
-
-CDecompressionIStreambuf::~CDecompressionIStreambuf()
-{
-    m_Dying = true;
-    try {
-        Finalize();
-    } catch(CException& e) {
-        NCBI_REPORT_EXCEPTION("CDecompressionIStreambuf destructor", e);
-    }
-
-}
-
-
-void CDecompressionIStreambuf::Finalize(void)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return;
-    }
-    // Do not to do a finalization if a compressor has already finalized
-    if ( !m_Compressor->IsBusy() ) {
-        return;
-    }
-
-    sync();
-
-    // Cleanup
-    CCompression::EStatus status = m_Compressor->InflateEnd();
-    if ( status != CCompression::eStatus_Success ) {
-        X_THROW(eInflate, "CDecompressionIStreambuf: InflateEnd() failed");
-    }
-    // Streambuf is finalized
-    m_Finalized = true;
-}
-
-
-bool CDecompressionIStreambuf::ProcessBlock()
-{
-    unsigned long in_len, out_size, in_avail, out_avail;
-    streamsize    n_read;
-
-    // Put data into the compressor until there is something
-    // in the output buffer
-    do {
-        // Refill the input buffer if necessary
-        if ( m_InEnd == m_InBegin  ) {
-            n_read = m_Streambuf->sgetn(m_InBuf, m_InBufSize);
-            if ( !n_read ) {
-                // We can't read more of compressed data
-                return false;
-            }
-            // Update the input buffer pointers
-            m_InBegin = m_InBuf;
-            m_InEnd   = m_InBuf + n_read;
-        }
-            
-        // Decompress block
-        in_len = m_InEnd - m_InBegin;
-        out_size = m_OutBuf + m_OutBufSize - egptr();
-        CCompression::EStatus status =
-            m_Compressor->Inflate(m_InBegin, in_len, egptr(), out_size,
-                                  &in_avail, &out_avail);
-        if ( status != CCompression::eStatus_Success ) {
-            X_THROW(eInflate,
-                    "CDecompressionIStreambuf: InflateBlock() failed");
-            return false;
-        }
-
-        // Update pointer to an unprocessed data
-        m_InBegin += (in_len - in_avail);
-        // Update the get's pointers
-        setg(m_OutBuf, gptr(), egptr() + out_avail);
-
-    } while ( !out_avail);
-
-    return true;
-}
-
-
-int CDecompressionIStreambuf::sync()
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return 0;
-    }
-    // Sync the underlying stream buffer
-    if ( m_Streambuf->PUBSYNC() ) {
-        return -1;
-    }
-    // Process remaining data in the input buffer
-    if ( !ProcessBlock() ) {
-        return -1;
-    }
-    return 0;
-}
-
-
-CT_INT_TYPE CDecompressionIStreambuf::underflow(void)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
-        return CT_EOF;
-    }
-    // Reset pointers to the decompressed data
-    setg(m_OutBuf, m_OutBuf, m_OutBuf);
-
-    // Decompress next data block
-    if ( !ProcessBlock()  ||  gptr() == egptr() ) {
-        return CT_EOF;
-    }
-    return CT_TO_INT_TYPE(*gptr());
-}
-
-
-streamsize CDecompressionIStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
-{
-    // To do nothing is a streambuf is already finalized
-    if (m_Finalized) {
+    // We don't doing here a check for the streambuf finalization because
+    // underflow() can be called after Finalize() to read a rest of
+    // produced data.
+    if ( !IsOkay() ) {
         return 0;
     }
     // Check parameters
@@ -851,7 +383,7 @@ streamsize CDecompressionIStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
             setg(m_OutBuf, m_OutBuf + 1, m_OutBuf + 1);
         }
         // Process block if necessary
-        if ( done == count  ||  !ProcessBlock() ) {
+        if ( done == count  ||  !Process() ) {
             break;
         }
     }
@@ -865,6 +397,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/03 20:09:16  ivanov
+ * The Compression API redesign. Added some new classes, rewritten old.
+ *
  * Revision 1.3  2003/04/15 16:51:12  ivanov
  * Fixed error with flushing the streambuf after it finalizaton
  *

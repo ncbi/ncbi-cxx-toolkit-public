@@ -37,24 +37,26 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// CCompressionBZip2
+// CBZip2Compression
 //
 
 
-CCompressionBZip2::CCompressionBZip2(ELevel level, int verbosity,
-                                   int work_factor, int small_decompress)
+CBZip2Compression::CBZip2Compression(ELevel level, int verbosity,
+                                     int work_factor, int small_decompress)
     : CCompression(level), m_Verbosity(verbosity), m_WorkFactor(work_factor),
       m_SmallDecompress(small_decompress)
 {
+    return;
 }
 
 
-CCompressionBZip2::~CCompressionBZip2()
+CBZip2Compression::~CBZip2Compression(void)
 {
+    return;
 }
 
 
-CCompression::ELevel CCompressionBZip2::GetLevel(void) const
+CCompression::ELevel CBZip2Compression::GetLevel(void) const
 {
     CCompression::ELevel level = CCompression::GetLevel();
     // BZip2 do not support a zero compression level -- make conversion 
@@ -65,7 +67,219 @@ CCompression::ELevel CCompressionBZip2::GetLevel(void) const
 }
 
 
-CCompression::EStatus CCompressionBZip2::DeflateInit(void)
+bool CBZip2Compression::CompressBuffer(
+                        const void* src_buf, unsigned int  src_len,
+                        void*       dst_buf, unsigned int  dst_size,
+                        /* out */            unsigned int* dst_len)
+{
+    // Check parameters
+    if ( !src_buf || !src_len ) {
+        *dst_len = 0;
+        SetLastError(BZ_OK);
+        return true;
+    }
+    if ( !dst_buf || !dst_len ) {
+        SetLastError(BZ_PARAM_ERROR);
+        return false;
+    }
+
+    // Destination buffer size
+    *dst_len = dst_size;
+
+    // Compress buffer
+    int errcode = BZ2_bzBuffToBuffCompress((char*)dst_buf, dst_len,
+                                           (char*)src_buf, src_len,
+                                           GetLevel(), 0, 0 );
+    SetLastError(errcode);
+
+    return errcode == BZ_OK;
+}
+
+
+bool CBZip2Compression::DecompressBuffer(
+                        const void* src_buf, unsigned int  src_len,
+                        void*       dst_buf, unsigned int  dst_size,
+                        /* out */            unsigned int* dst_len)
+{
+    // Check parameters
+    if ( !src_buf || !src_len ) {
+        *dst_len = 0;
+        SetLastError(BZ_OK);
+        return true;
+    }
+    if ( !dst_buf || !dst_len ) {
+        SetLastError(BZ_PARAM_ERROR);
+        return false;
+    }
+    
+    // Destination buffer size
+    *dst_len = dst_size;
+    
+    // Compress buffer
+    int errcode = BZ2_bzBuffToBuffDecompress((char*)dst_buf, dst_len,
+                                             (char*)src_buf, src_len, 0, 0 );
+    SetLastError(errcode);
+
+    return errcode == BZ_OK;
+}
+
+
+bool CBZip2Compression::CompressFile(const string&, const string&)
+{
+    return false;
+}
+
+
+bool CBZip2Compression::DecompressFile(const string&, const string&)
+{
+    return false;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2CompressionFile
+//
+
+
+CBZip2CompressionFile::CBZip2CompressionFile(
+    const string& file_name, EMode mode,
+    ELevel level, int verbosity, int work_factor, int small_decompress)
+    : CBZip2Compression(level, verbosity, work_factor, small_decompress), 
+      m_FileStream(0)
+{
+    if ( !Open(file_name, mode) ) {
+        const string smode = (mode == eMode_Read) ? "reading" : "writing";
+        NCBI_THROW(CCompressionException, eCompressionFile, 
+                   "CBZip2CompressionFile: Cannot open file '" + file_name +
+                   "' for " + smode + ".");
+    }
+    return;
+}
+
+
+CBZip2CompressionFile::CBZip2CompressionFile(
+    ELevel level, int verbosity, int work_factor, int small_decompress)
+    : CBZip2Compression(level, verbosity, work_factor, small_decompress), 
+      m_FileStream(0), m_EOF(true)
+{
+    return;
+}
+
+
+CBZip2CompressionFile::~CBZip2CompressionFile(void)
+{
+    Close();
+    return;
+}
+
+
+bool CBZip2CompressionFile::Open(const string& file_name, EMode mode)
+{
+    int errcode;
+    
+    if ( mode == eMode_Read ) {
+        m_FileStream = fopen(file_name.c_str(), "rb");
+        m_File = BZ2_bzReadOpen (&errcode, m_FileStream, m_SmallDecompress,
+                                 m_Verbosity, 0, 0);
+        m_EOF = false;
+    } else {
+        m_FileStream = fopen(file_name.c_str(), "wb");
+        m_File = BZ2_bzWriteOpen(&errcode, m_FileStream, GetLevel(),
+                                 m_Verbosity, m_WorkFactor);
+    }
+    SetLastError(errcode);
+    m_Mode = mode;
+
+    if ( errcode != BZ_OK ) {
+        Close();
+        return false;
+    }; 
+    return true;
+} 
+
+
+int CBZip2CompressionFile::Read(void* buf, int len)
+{
+    if ( m_EOF ) {
+        return 0;
+    }
+    int errcode;
+    int nread = BZ2_bzRead(&errcode, m_File, buf, len);
+    SetLastError(errcode);
+
+    if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
+        return -1;
+    }; 
+    if ( errcode == BZ_STREAM_END ) {
+        m_EOF = true;
+    }; 
+    return nread;
+}
+
+
+int CBZip2CompressionFile::Write(const void* buf, int len)
+{
+    int errcode;
+    BZ2_bzWrite(&errcode, m_File, const_cast<void*>(buf), len);
+    SetLastError(errcode);
+
+    if ( errcode != BZ_OK  &&  errcode != BZ_STREAM_END ) {
+        return -1;
+    }; 
+    return len;
+ 
+}
+
+
+bool CBZip2CompressionFile::Close(void)
+{
+    int errcode = BZ_OK;
+
+    if ( m_File ) {
+        if ( m_Mode == eMode_Read ) {
+            BZ2_bzReadClose(&errcode, m_File);
+            m_EOF = true;
+        } else {
+            BZ2_bzWriteClose(&errcode, m_File, 0, 0, 0);
+        }
+        m_File = 0;
+   }
+    SetLastError(errcode);
+
+    if ( m_FileStream ) {
+        fclose(m_FileStream);
+        m_FileStream = 0;
+    }
+
+    if ( errcode != BZ_OK ) {
+        return false;
+    }; 
+    return true;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2Compressor
+//
+
+
+CBZip2Compressor::CBZip2Compressor(
+                  ELevel level, int verbosity, int work_factor)
+    : CBZip2Compression(level, verbosity, work_factor, 0)
+{
+}
+
+
+CBZip2Compressor::~CBZip2Compressor()
+{
+}
+
+
+CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
 {
     SetBusy();
     // Initialize the compressor stream structure
@@ -82,7 +296,7 @@ CCompression::EStatus CCompressionBZip2::DeflateInit(void)
 }
 
 
-CCompression::EStatus CCompressionBZip2::Deflate(
+CCompressionProcessor::EStatus CBZip2Compressor::Process(
                       const char* in_buf,  unsigned long  in_len,
                       char*       out_buf, unsigned long  out_size,
                       /* out */            unsigned long* in_avail,
@@ -105,7 +319,7 @@ CCompression::EStatus CCompressionBZip2::Deflate(
 }
 
 
-CCompression::EStatus CCompressionBZip2::DeflateFlush(
+CCompressionProcessor::EStatus CBZip2Compressor::Flush(
                       char* out_buf, unsigned long  out_size,
                       /* out */      unsigned long* out_avail)
 {
@@ -131,7 +345,7 @@ CCompression::EStatus CCompressionBZip2::DeflateFlush(
 }
 
 
-CCompression::EStatus CCompressionBZip2::DeflateFinish(
+CCompressionProcessor::EStatus CBZip2Compressor::Finish(
                       char* out_buf, unsigned long  out_size,
                       /* out */      unsigned long* out_avail)
 {
@@ -157,7 +371,7 @@ CCompression::EStatus CCompressionBZip2::DeflateFinish(
 }
 
 
-CCompression::EStatus CCompressionBZip2::DeflateEnd(void)
+CCompressionProcessor::EStatus CBZip2Compressor::End(void)
 {
     int errcode = BZ2_bzCompressEnd(&m_Stream);
     SetLastError(errcode);
@@ -170,10 +384,29 @@ CCompression::EStatus CCompressionBZip2::DeflateEnd(void)
 }
 
 
-CCompression::EStatus CCompressionBZip2::InflateInit(void)
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2Decompressor
+//
+
+
+CBZip2Decompressor::CBZip2Decompressor(ELevel level, int verbosity,
+                                       int small_decompress)
+    : CBZip2Compression(level, verbosity, 0, small_decompress)
+{
+}
+
+
+CBZip2Decompressor::~CBZip2Decompressor()
+{
+}
+
+
+CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
 {
     SetBusy();
-    // Initialize the compressor stream structure
+    // Initialize the decompressor stream structure
     memset(&m_Stream, 0, sizeof(m_Stream));
     // Create a compressor stream
     int errcode = BZ2_bzDecompressInit(&m_Stream, m_Verbosity,
@@ -187,7 +420,7 @@ CCompression::EStatus CCompressionBZip2::InflateInit(void)
 }
 
 
-CCompression::EStatus CCompressionBZip2::Inflate(
+CCompressionProcessor::EStatus CBZip2Decompressor::Process(
                       const char* in_buf,  unsigned long  in_len,
                       char*       out_buf, unsigned long  out_size,
                       /* out */            unsigned long* in_avail,
@@ -214,7 +447,21 @@ CCompression::EStatus CCompressionBZip2::Inflate(
 }
 
 
-CCompression::EStatus CCompressionBZip2::InflateEnd(void)
+CCompressionProcessor::EStatus CBZip2Decompressor::Flush(
+                      char*, unsigned long, unsigned long*)
+{
+    return eStatus_Success;
+}
+
+
+CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
+                      char*, unsigned long, unsigned long*)
+{
+    return eStatus_Success;
+}
+
+
+CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
 {
     int errcode = BZ2_bzDecompressEnd(&m_Stream);
     SetBusy(false);
@@ -225,71 +472,15 @@ CCompression::EStatus CCompressionBZip2::InflateEnd(void)
 }
 
 
-bool CCompressionBZip2::CompressBuffer(
-                        const char* src_buf, unsigned long  src_len,
-                        char*       dst_buf, unsigned long  dst_size,
-                        /* out */            unsigned long* dst_len)
-{
-    // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        SetLastError(BZ_OK);
-        return true;
-    }
-    if ( !dst_buf || !dst_len ) {
-        SetLastError(BZ_PARAM_ERROR);
-        return false;
-    }
-    // Destination buffer size
-    unsigned int out_len = dst_size;
-
-    // Compress buffer
-    int errcode = BZ2_bzBuffToBuffCompress(dst_buf, &out_len,
-                                           const_cast<char*>(src_buf),
-                                           src_len, GetLevel(), 0, 0 );
-    SetLastError(errcode);
-    *dst_len = out_len;
-
-    return errcode == BZ_OK;
-}
-
-
-bool CCompressionBZip2::DecompressBuffer(
-                        const char* src_buf, unsigned long  src_len,
-                        char*       dst_buf, unsigned long  dst_size,
-                        /* out */            unsigned long* dst_len)
-{
-    // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        SetLastError(BZ_OK);
-        return true;
-    }
-    if ( !dst_buf || !dst_len ) {
-        SetLastError(BZ_PARAM_ERROR);
-        return false;
-    }
-
-    // Destination buffer size
-    unsigned int out_len = dst_size;
-
-    // Compress buffer
-    int errcode = BZ2_bzBuffToBuffDecompress( dst_buf, &out_len,
-                                              const_cast<char*>(src_buf),
-                                              src_len, 0, 0 );
-    SetLastError(errcode);
-    *dst_len = out_len;
-
-    return errcode == BZ_OK;
-}
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/03 20:09:16  ivanov
+ * The Compression API redesign. Added some new classes, rewritten old.
+ *
  * Revision 1.1  2003/04/07 20:21:35  ivanov
  * Initial revision
  *

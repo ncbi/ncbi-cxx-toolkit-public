@@ -40,9 +40,8 @@ BEGIN_NCBI_SCOPE
 // CCompression
 //
 
-
 CCompression::CCompression(ELevel level)
-    : m_Level(level), m_Busy(0)
+    : m_Level(level), m_LastError(0)
 {
     return;
 }
@@ -63,112 +62,39 @@ CCompression::ELevel CCompression::GetLevel(void) const
 }
 
 
-void CCompression::SetLevel(ELevel level)
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionProcessor
+//
+
+CCompressionProcessor::CCompressionProcessor(void)
+    : m_Busy(false)
 {
-    m_Level = level;
+    return;
 }
 
 
-int CCompression::GetLastError(void) const
+CCompressionProcessor::~CCompressionProcessor(void)
 {
-    return m_LastError;
+    return;
 }
 
 
-void CCompression::SetLastError(int errcode)
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionFile
+//
+
+CCompressionFile::CCompressionFile(void)
+    : m_File(0), m_Mode(eMode_Read)
 {
-    m_LastError = errcode;
+    return;
 }
 
 
-bool CCompression::IsBusy(void)
+CCompressionFile::~CCompressionFile(void)
 {
-    return m_Busy;
-}
-
-
-void CCompression::SetBusy(bool busy)
-{
-    if ( busy  &&  m_Busy ) {
-        NCBI_THROW(CCompressionException, eBusy, "The compressor is busy now");
-    }
-    m_Busy = busy;
-}
-
-
-bool CCompression::CompressBuffer(const char* src_buf, unsigned long  src_len,
-                                  char*       dst_buf, unsigned long  dst_size,
-                                  /* out */            unsigned long* dst_len)
-{
-    // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        return true;
-    }
-    if ( !dst_buf || !dst_len ) {
-        return false;
-    }
-    unsigned long in_avail  = 0;
-    unsigned long out_avail = 0;
-
-    // Init
-    EStatus status = DeflateInit();
-    if ( status != eStatus_Success ) {
-        goto errhandler;
-    }
-    // Compress
-    status = Deflate(src_buf, src_len, dst_buf, dst_size,
-                     &in_avail, &out_avail);
-    *dst_len = out_avail;
-    if ( status != eStatus_Success  ||  in_avail != 0 ) {
-        goto errhandler;
-    }
-    // Finishing
-    status = DeflateFinish(dst_buf + out_avail, dst_size - out_avail,
-                           &out_avail);
-    *dst_len += out_avail;
-    if ( status != eStatus_Success ) {
-        goto errhandler;
-    }
-    // Termination
-errhandler:
-    DeflateEnd();
-    return status == eStatus_Success;
-}
-
-
-bool CCompression::DecompressBuffer(
-                   const char* src_buf, unsigned long  src_len,
-                   char*       dst_buf, unsigned long  dst_size,
-                   /* out */   unsigned long* dst_len)
-{
-    // Check parameters
-    if ( !src_buf || !src_len ) {
-        *dst_len = 0;
-        return true;
-    }
-    if ( !dst_buf || !dst_len ) {
-        return false;
-    }
-    unsigned long in_avail  = 0;
-    unsigned long out_avail = 0;
-
-    // Init
-    EStatus status = InflateInit();
-    if ( status != eStatus_Success ) {
-        goto errhandler;
-    }
-    // Decompress
-    status = Inflate(src_buf, src_len, dst_buf, dst_size,
-                     &in_avail, &out_avail);
-    *dst_len = out_avail;
-    if ( in_avail != 0 ) {
-        status = eStatus_Error;
-    }
-    // Termination
-errhandler:
-    InflateEnd();
-    return status == eStatus_Success;
+    return;
 }
 
 
@@ -178,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/03 20:09:16  ivanov
+ * The Compression API redesign. Added some new classes, rewritten old.
+ *
  * Revision 1.1  2003/04/07 20:21:35  ivanov
  * Initial revision
  *

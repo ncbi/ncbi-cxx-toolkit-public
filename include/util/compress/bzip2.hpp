@@ -38,16 +38,17 @@
 #include <util/compress/bzip2/bzlib.h>
 
 
+/** @addtogroup Compression
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// CCompressionBZip2 class
-//
-//////////////////////////////////////////////////////////////////////////////
-//
-// Special compressor's parameters (description from bzip2 docs)
+// Special compression parameters (description from bzip2 docs)
 //        
 // <verbosity>
 //    This parameter should be set to a number between 0 and 4 inclusive.
@@ -77,17 +78,23 @@ BEGIN_NCBI_SCOPE
 //    algorithm which uses less memory but at the cost of decompressing more
 //    slowly (roughly speaking, half the speed, but the maximum memory
 //    requirement drops to around 2300k).
+//
 
-class NCBI_XUTIL_EXPORT CCompressionBZip2 : public CCompression 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2Compression
+//
+
+class NCBI_XUTIL_EXPORT CBZip2Compression : public CCompression 
 {
 public:
     // 'ctors
-    CCompressionBZip2(ELevel level         = eLevel_Default,
-                      int verbosity        = 0,               // [0..4]
-                      int work_factor      = 0,               // [0..250] 
-                      int small_decompress = 0);              // [0,1]
-    virtual ~CCompressionBZip2(void);
-
+    CBZip2Compression(ELevel level            = eLevel_Default,
+                      int    verbosity        = 0,              // [0..4]
+                      int    work_factor      = 0,              // [0..250] 
+                      int    small_decompress = 0);             // [0,1]
+    virtual ~CBZip2Compression(void);
 
     // Get compression level.
     // NOTE: BZip2 algorithm do not support zero level compression.
@@ -97,71 +104,163 @@ public:
     // Return default compression level for a BZip compression algorithm
     virtual ELevel GetDefaultLevel(void) const { return eLevel_VeryHigh; };
 
-
     //
     // Utility functions 
     //
 
-    // Compress the source buffer into the destination buffer.
-    // Return TRUE if compression was succesfully or FALSE otherwise.
-    // Altogether, the total size of the destination buffer must be little
-    // more then size of the source buffer. 
-    virtual 
-    bool CompressBuffer(const char* src_buf, unsigned long  src_len,
-                        char*       dst_buf, unsigned long  dst_size,
-                        /* out */            unsigned long* dst_len);
+    // (De)compress the source buffer into the destination buffer.
+    // Return TRUE if operation was succesfully or FALSE otherwise.
+    // Notice that altogether the total size of the destination buffer must
+    // be little more then size of the source buffer. 
+    virtual bool CompressBuffer  (const void* src_buf, unsigned int  src_len,
+                                  void*       dst_buf, unsigned int  dst_size,
+                                  /* out */            unsigned int* dst_len);
+    virtual bool DecompressBuffer(const void* src_buf, unsigned int  src_len,
+                                  void*       dst_buf, unsigned int  dst_size,
+                                  /* out */            unsigned int* dst_len);
 
-    // Decompress data from src buffer and put result to dst.
-    // Return TRUE if compression was succesfully or FALSE if otherwise.
-    virtual
-    bool DecompressBuffer(const char* src_buf, unsigned long  src_len,
-                          char*       dst_buf, unsigned long  dst_size,
-                          /* out */            unsigned long* dst_len);
-
+    // (De)compress file with name "src" and put result to file "dst".
+    // Return TRUE on success, FALSE on error.
+    virtual bool CompressFile  (const string& src, const string& dst);
+    virtual bool DecompressFile(const string& src, const string& dst);
 
 protected:
-    //
-    // Basic compression/decompresson functions
-    //
-
-    virtual EStatus DeflateInit   (void); 
-    virtual EStatus Deflate       (const char* in_buf, unsigned long  in_len,
-                                   char* out_buf, unsigned long  out_size,
-                                   /* out */      unsigned long* in_avail,
-                                   /* out */      unsigned long* out_avail);
-    virtual EStatus DeflateFlush  (char* out_buf, unsigned long  out_size,
-                                   /* out */      unsigned long* out_avail);
-    virtual EStatus DeflateFinish (char* out_buf, unsigned long  out_size,
-                                   /* out */      unsigned long* out_avail);
-    virtual EStatus DeflateEnd    (void);
-    
-    virtual EStatus InflateInit   (void);
-
-    virtual EStatus Inflate       (const char* in_buf, unsigned long  in_len,
-                                   char* out_buf, unsigned long  out_size,
-                                   /* out */      unsigned long* in_avail,
-                                   /* out */      unsigned long* out_avail);
-    virtual EStatus InflateEnd    (void);
-
-
-private:
     bz_stream  m_Stream;         // Compressor stream
     int        m_Verbosity;      // Verbose monitoring/debugging output level
-    int        m_WorkFactor;
-    int        m_SmallDecompress;
+    int        m_WorkFactor;     // See description above
+    int        m_SmallDecompress;// Use memory-frugal decompression algorithm
 };
- 
+
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Stream classes
+// CBZip2CompressionFile class
 //
 
-class NCBI_XUTIL_EXPORT CCompressBZip2IStream : public CCompressIStream
+// Note, Read() copies data from the compressed file in chunks of size
+// BZ_MAX_UNUSED bytes before decompressing it. If the file contains more
+// bytes than strictly needed to reach the logical end-of-stream, Read()
+// will almost certainly read some of the trailing data before signalling of
+// sequence end.
+//
+
+class NCBI_XUTIL_EXPORT CBZip2CompressionFile : public CBZip2Compression,
+                                                public CCompressionFile
 {
 public:
-    CCompressBZip2IStream(
+    // 'ctors (for a special parameters description see CBZip2Compression)
+    // Throw exception CCompressionException::eCompressionFile on error.
+    CBZip2CompressionFile(
+        const string& file_name,
+        EMode         mode,
+        ELevel        level            = eLevel_Default,
+        int           verbosity        = 0,
+        int           work_factor      = 0,
+        int           small_decompress = 0 
+    );
+    CBZip2CompressionFile(
+        ELevel        level            = eLevel_Default,
+        int           verbosity        = 0,
+        int           work_factor      = 0,
+        int           small_decompress = 0 
+    );
+    ~CBZip2CompressionFile(void);
+
+    // Opens a compressed file for reading or writing.
+    // Return TRUE if file was opened succesfully or FALSE otherwise.
+    virtual bool Open(const string& file_name, EMode mode);
+
+    // Read up to "len" uncompressed bytes from the compressed file "file"
+    // into the buffer "buf". Return the number of bytes actually read
+    // (0 for end of file, -1 for error).
+    // The number of really readed bytes can be less than requested.
+    virtual int Read(void* buf, int len);
+
+    // Writes the given number of uncompressed bytes into the compressed file.
+    // Return the number of bytes actually written or -1 for error.
+    virtual int Write(const void* buf, int len);
+
+    // Flushes all pending output if necessary, closes the compressed file.
+    // Return TRUE on success, FALSE on error.
+    virtual bool Close(void);
+
+protected:
+    FILE*  m_FileStream;  // Underlying file stream
+    bool   m_EOF;         // EOF flag for read mode
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2Compressor class
+//
+
+class NCBI_XUTIL_EXPORT CBZip2Compressor : public CBZip2Compression,
+                                           public CCompressionProcessor
+{
+public:
+    // 'ctors
+    CBZip2Compressor(ELevel level       = eLevel_Default,
+                     int    verbosity   = 0,              // [0..4]
+                     int    work_factor = 0);             // [0..250] 
+    virtual ~CBZip2Compressor(void);
+
+protected:
+    virtual EStatus Init   (void);
+    virtual EStatus Process(const char* in_buf,  unsigned long  in_len,
+                            char*       out_buf, unsigned long  out_size,
+                            /* out */            unsigned long* in_avail,
+                            /* out */            unsigned long* out_avail);
+    virtual EStatus Flush  (char*       out_buf, unsigned long  out_size,
+                            /* out */            unsigned long* out_avail);
+    virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
+                            /* out */            unsigned long* out_avail);
+    virtual EStatus End    (void);
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CBZip2Decompressor class
+//
+
+class NCBI_XUTIL_EXPORT CBZip2Decompressor : public CBZip2Compression,
+                                             public CCompressionProcessor
+{
+public:
+    // 'ctors
+    CBZip2Decompressor(ELevel level         = eLevel_Default,
+                       int verbosity        = 0,          // [0..4]
+                       int small_decompress = 0);         // [0,1]
+    virtual ~CBZip2Decompressor(void);
+
+protected:
+    virtual EStatus Init   (void); 
+    virtual EStatus Process(const char* in_buf,  unsigned long  in_len,
+                            char*       out_buf, unsigned long  out_size,
+                            /* out */            unsigned long* in_avail,
+                            /* out */            unsigned long* out_avail);
+    virtual EStatus Flush  (char*       out_buf, unsigned long  out_size,
+                            /* out */            unsigned long* out_avail);
+    virtual EStatus Finish (char*       out_buf, unsigned long  out_size,
+                            /* out */            unsigned long* out_avail);
+    virtual EStatus End    (void);
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Stream classes (for detail see "stream.hpp")
+//
+
+class NCBI_XUTIL_EXPORT CBZip2CompressIStream : public CCompressIStream
+{
+public:
+    CBZip2CompressIStream(
         istream&             in_stream,
         CCompression::ELevel level        = CCompression::eLevel_Default,
         streamsize           in_buf_size  = kCompressionDefaultInBufSize,
@@ -170,17 +269,16 @@ public:
         int                  work_factor  = 0)
 
         : CCompressIStream(
-              new CCompressionBZip2(level, verbosity, work_factor,
-                      0 /* small decompress - do not have matter */),
-              in_stream.rdbuf(), in_buf_size, out_buf_size, eDelete)
+              new CBZip2Compressor(level, verbosity, work_factor),
+              &in_stream, in_buf_size, out_buf_size, eDelete)
    {}
 };
 
 
-class NCBI_XUTIL_EXPORT CCompressBZip2OStream : public CCompressOStream
+class NCBI_XUTIL_EXPORT CBZip2CompressOStream : public CCompressOStream
 {
 public:
-    CCompressBZip2OStream(
+    CBZip2CompressOStream(
         ostream&             out_stream,
         CCompression::ELevel level        = CCompression::eLevel_Default,
         streamsize           in_buf_size  = kCompressionDefaultInBufSize,
@@ -189,17 +287,16 @@ public:
         int                  work_factor  = 0)
 
         : CCompressOStream(
-              new CCompressionBZip2(level, verbosity, work_factor,
-                      0 /* small decompress - do not have matter */),
-              out_stream.rdbuf(), in_buf_size, out_buf_size, eDelete)
+              new CBZip2Compressor(level, verbosity, work_factor),
+              &out_stream, in_buf_size, out_buf_size, eDelete)
     {}
 };
 
 
-class NCBI_XUTIL_EXPORT CDecompressBZip2IStream : public CDecompressIStream
+class NCBI_XUTIL_EXPORT CBZip2DecompressIStream : public CDecompressIStream
 {
 public:
-    CDecompressBZip2IStream(
+    CBZip2DecompressIStream(
         istream&             in_stream,
         streamsize           in_buf_size      = kCompressionDefaultInBufSize,
         streamsize           out_buf_size     = kCompressionDefaultOutBufSize,
@@ -207,18 +304,17 @@ public:
         int                  small_decompress = 0)
 
         : CDecompressIStream(
-              new CCompressionBZip2(CCompression::eLevel_Default,
-                      verbosity, 0 /* work_factor - do not have matter */,
-                      small_decompress),
-              in_stream.rdbuf(), in_buf_size, out_buf_size, eDelete)
+              new CBZip2Decompressor(CCompression::eLevel_Default,
+                      verbosity, small_decompress),
+              &in_stream, in_buf_size, out_buf_size, eDelete)
     {}
 };
 
 
-class NCBI_XUTIL_EXPORT CDecompressBZip2OStream : public CDecompressOStream
+class NCBI_XUTIL_EXPORT CBZip2DecompressOStream : public CDecompressOStream
 {
 public:
-    CDecompressBZip2OStream(
+    CBZip2DecompressOStream(
         ostream&             out_stream,
         streamsize           in_buf_size      = kCompressionDefaultInBufSize,
         streamsize           out_buf_size     = kCompressionDefaultOutBufSize,
@@ -226,10 +322,9 @@ public:
         int                  small_decompress = 0)
 
         : CDecompressOStream(
-              new CCompressionBZip2(CCompression::eLevel_Default,
-                      verbosity, 0 /* work_factor - do not have matter */,
-                      small_decompress),
-              out_stream.rdbuf(), in_buf_size, out_buf_size, eDelete
+              new CBZip2Decompressor(CCompression::eLevel_Default,
+                      verbosity, small_decompress),
+              &out_stream, in_buf_size, out_buf_size, eDelete
           )
     {}
 };
@@ -238,9 +333,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/03 20:09:54  ivanov
+ * The Compression API redesign. Added some new classes, rewritten old.
+ *
  * Revision 1.1  2003/04/07 20:42:11  ivanov
  * Initial revision
  *

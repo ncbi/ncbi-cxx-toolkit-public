@@ -28,206 +28,119 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  CCompression based C++ streambufs
+ * File Description:  CCompression based C++ streambuf
  *
  */
 
 #include <util/compress/compress.hpp>
+#include <util/compress/stream.hpp>
 
+
+/** @addtogroup CompressionStreams
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
-// Compression/decompression I/O sreambuffer classes
+// CCompression based streambuf class
 //
 
-class CCompressionBaseStreambuf : public streambuf
+class NCBI_XUTIL_EXPORT CCompressionStreambuf : public streambuf
 {
 public:
     // 'ctors
-    CCompressionBaseStreambuf(CCompression* compressor,
-                              streambuf*    out_stream_buf,
-                              streamsize    in_buf_size  =
-                                                kCompressionDefaultInBufSize,
-                              streamsize    out_buf_size =
-                                                kCompressionDefaultOutBufSize);
-
-    // Flush the buffers and destroy the object
-    virtual ~CCompressionBaseStreambuf(void);
+    CCompressionStreambuf(
+        CCompressionProcessor*              compressor,
+        CCompressionStream::ECompressorType compressor_type,
+        ios*                                stream,
+        CCompressionStream::EStreamType     stream_type,
+        streamsize                          in_buf_size,
+        streamsize                          out_buf_size
+    );
+    virtual ~CCompressionStreambuf(void);
 
     // Get current compressor
-    const CCompression* GetCompressor(void) const;
+    const CCompressionProcessor* GetCompressor(void) const;
+    // Get streambuf status
+    bool  IsOkay(void) const;
 
     // Finalize stream's compression/decompression process.
-    // This function calls a compressor's *Finish() and *End() functions.
-    // Throws exceptions on error.
-    virtual void Finalize(void) = 0;
+    // This function calls a compressor's Finish() and End() functions.
+    virtual void Finalize(void);
 
 protected:
+    // Streambuf overloaded functions
+    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
+    virtual CT_INT_TYPE underflow(void);
+    virtual int         sync(void);
+    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize count);
+    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
+
     // This method is declared here to be disabled (exception) at run-time
-    virtual streambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
+    virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
-    void x_Throw(const char* file, int line,
-                 CCompressionException::EErrCode errcode, const string& msg);
+    // Process a data from the input buffer and put result into the out buffer
+    bool Process(void);
+    virtual bool ProcessStreamRead(void);
+    virtual bool ProcessStreamWrite(void);
 
 protected:
-    CCompression*  m_Compressor;    // Copression method
-    streambuf*     m_Streambuf;     // Underlying I/O stream buffer
-    CT_CHAR_TYPE*  m_Buf;           // of size 2 * m_BufSize
-    CT_CHAR_TYPE*  m_InBuf;         // Input buffer,  m_Buf
-    CT_CHAR_TYPE*  m_OutBuf;        // Output buffer, m_Buf + m_InBufSize
-    streamsize     m_InBufSize;     // Input buffer size
-    streamsize     m_OutBufSize;    // Output buffer size
-    bool           m_Dying;         // True if destructor is calling.
-    bool           m_Finalized;     // True if Finalized() already done.
+    CCompressionProcessor*
+                    m_Compressor;     // Copression object
+    CCompressionStream::ECompressorType
+                    m_CompressorType; // Compression/decompresson
+    ios*            m_Stream;         // Underlying I/O stream
+    CCompressionStream::EStreamType
+                    m_StreamType;     // Underlying stream type (Read/Write)
+    CT_CHAR_TYPE*   m_Buf;            // of size 2 * m_BufSize
+    CT_CHAR_TYPE*   m_InBuf;          // Input buffer,  m_Buf
+    CT_CHAR_TYPE*   m_OutBuf;         // Output buffer, m_Buf + m_InBufSize
+    streamsize      m_InBufSize;      // Input buffer size
+    streamsize      m_OutBufSize;     // Output buffer size
+
+    CT_CHAR_TYPE*   m_InBegin;        // Begin of unproc.data in the input buf
+    CT_CHAR_TYPE*   m_InEnd;          // End of unproc.data in the input buf
+
+    bool            m_Finalized;      // True if a Finalized() already done
+    CCompressionProcessor::EStatus
+                    m_LastStatus;     // Last compressor status
 };
 
 
+/* @} */
 
-//////////////////////////////////////////////////////////////////////////////
+
 //
-// CCompressionOStreambuf
+// Inline function
 //
 
-class CCompressionOStreambuf : public CCompressionBaseStreambuf
+inline const CCompressionProcessor* CCompressionStreambuf::GetCompressor(void) const
 {
-public:
-    // 'ctors
-    CCompressionOStreambuf(CCompression* compressor,
-                           streambuf*    stream_buf,
-                           streamsize    in_buf_size =
-                                             kCompressionDefaultInBufSize,
-                           streamsize    out_buf_size =
-                                             kCompressionDefaultOutBufSize);
-    virtual ~CCompressionOStreambuf(void);
+    return m_Compressor;
+}
 
-    // Finalize stream's compression process.
-    // This function calls a compressor's DeflateFinish() and DeflateEnd()
-    // functions. Throws exceptions on error.
-    virtual void Finalize(void);
-
-protected:
-    // Streambuf overloaded functions
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual int         sync(void);
-    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize count);
-
-    // Compress data from the input buffer and put result to the output buffer
-    bool ProcessBlock(void);
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CCompressionIStreambuf
-//
-
-class CCompressionIStreambuf : public CCompressionBaseStreambuf
+inline bool CCompressionStreambuf::IsOkay(void) const
 {
-public:
-    // 'ctors
-    CCompressionIStreambuf(CCompression* compressor,
-                           streambuf*    stream_buf,
-                           streamsize    in_buf_size =
-                                             kCompressionDefaultInBufSize,
-                           streamsize    out_buf_size =
-                                             kCompressionDefaultOutBufSize);
-    virtual ~CCompressionIStreambuf(void);
-
-    // Finalize stream's compression process.
-    // This function calls a compressor's DeflateFinish() and DeflateEnd()
-    // functions. Throws exceptions on error.
-    virtual void Finalize(void);
-
-protected:
-    // Streambuf overloaded functions
-    virtual CT_INT_TYPE underflow(void);
-    virtual int         sync(void);
-    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-
-    // Compress data from the input buffer and put result to the output buffer
-    bool ProcessBlock(void);
-
-protected:
-    CT_CHAR_TYPE*  m_InBegin; // Begin of unprocessed data in the input buffer
-    CT_CHAR_TYPE*  m_InEnd;   // End of unprocessed data in the input bufffer
+    return !!m_Buf;
 };
 
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDecompressionOStreambuf
-//
-
-class CDecompressionOStreambuf : public CCompressionBaseStreambuf
+inline streambuf* CCompressionStreambuf::setbuf(CT_CHAR_TYPE* /* buf */,
+                                                streamsize    /* buf_size */)
 {
-public:
-    // 'ctors
-    CDecompressionOStreambuf(CCompression* compressor,
-                             streambuf*    stream_buf,
-                             streamsize    in_buf_size =
-                                               kCompressionDefaultInBufSize,
-                             streamsize    out_buf_size =
-                                               kCompressionDefaultOutBufSize);
-    virtual ~CDecompressionOStreambuf(void);
+    NCBI_THROW(CCompressionException, eCompression,
+               "CCompressionStreambuf::setbuf() not allowed");
+    return this; // notreached
+}
 
-    // Finalize stream's decompression process.
-    // This function calls a compressor's InflateFinish() and InflateEnd()
-    // functions. Throws exceptions on error.
-    virtual void Finalize(void);
-
-protected:
-    // Streambuf overloaded functions
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual int         sync(void);
-    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize count);
-
-    // Decompress data from the input buffer and put result
-    // to the output buffer
-    bool ProcessBlock(void);
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CDecompressionIStreambuf
-//
-
-class CDecompressionIStreambuf : public CCompressionBaseStreambuf
+inline bool CCompressionStreambuf::Process(void)
 {
-public:
-    // 'ctors
-    CDecompressionIStreambuf(CCompression* compressor,
-                             streambuf*    stream_buf,
-                             streamsize    in_buf_size      = kCompressionDefaultInBufSize,
-                             streamsize    out_buf_size     = kCompressionDefaultOutBufSize);
-    virtual ~CDecompressionIStreambuf(void);
-
-    // Finalize stream's decompression process.
-    // This function calls a compressor's InflateFinish() and InflateEnd()
-    // functions. Throws exceptions on error.
-    virtual void Finalize(void);
-
-protected:
-    // Streambuf overloaded functions
-    virtual CT_INT_TYPE underflow(void);
-    virtual int         sync(void);
-    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-
-    // Decompress data from the input buffer and put result
-    // to the output buffer
-    bool ProcessBlock(void);
-
-protected:
-    CT_CHAR_TYPE*  m_InBegin; // Begin of unprocessed data in the input buffer
-    CT_CHAR_TYPE*  m_InEnd;   // End of unprocessed data in the input bufffer
-};
+    return m_StreamType == CCompressionStream::eST_Read ?
+                                ProcessStreamRead() :  ProcessStreamWrite();
+}
 
 
 END_NCBI_SCOPE
@@ -236,6 +149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/03 20:09:16  ivanov
+ * The Compression API redesign. Added some new classes, rewritten old.
+ *
  * Revision 1.2  2003/04/15 16:51:12  ivanov
  * Fixed error with flushing the streambuf after it finalizaton
  *
