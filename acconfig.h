@@ -23,6 +23,9 @@
 #undef NCBI_COMPILER_UNKNOWN
 #undef NCBI_COMPILER_VERSION
 
+/* Linker run path */
+#undef NCBI_RUNPATH
+
 /* <sys/sockio.h> */
 #undef HAVE_SYS_SOCKIO_H
 

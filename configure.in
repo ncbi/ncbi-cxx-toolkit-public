@@ -62,7 +62,7 @@ AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
-AC_ARG_WITH(mt,
+AC_ARG_WITH(64,
    [ --with-64               compile to 64-bit code])
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
@@ -102,6 +102,8 @@ AC_ARG_WITH(pubmed,
 ## Third-party and system packages
 AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
+AC_ARG_WITH(sybase-local,
+   [ --with-sybase-local=DIR use local SYBASE install (DIR is optional)])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(fastcgi,
@@ -134,7 +136,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization dll runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy \
-ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase \
+ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 local-lbsm serial objects app ctools gui internal"
 
 changequote(, )dnl
@@ -166,6 +168,7 @@ for x_arg in "$@" ; do
 
       --with-extra-action=* | --exec-prefix=* \
       | --cache-file=* | --build=* | --host=* \
+      | --with-sybase-local=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -583,12 +586,16 @@ fi
 
 if   test -z "$CONF_f_runpath"  -o  "$with_runpath" = "no" ; then
    runpath=
+   pure_runpath=
 elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    runpath="${CONF_f_runpath}${with_runpath}"
+   pure_runpath=$with_runpath
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
    runpath="${CONF_f_runpath}\$(libdir)"
+   pure_runpath=$libdir
 else
    runpath=
+   pure_runpath=
 fi
 
 
@@ -1286,10 +1293,22 @@ AC_MSG_RESULT([$RPCSVC_LIBS])
 
 ## SYBASE libraries
 AC_MSG_CHECKING(if SYBASE libraries are available)
+if test -z "$with_sybase_local" ; then
+   with_sybase_local=no
+fi
 if test "$with_sybase" != "no" ; then
-   SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
-   SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
-   SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include -I$SYBASE_PATH/include"
+   if test "$with_sybase_local" != "no" ; then
+      if test "$with_sybase_local" = "yes" ; then
+         SYBASE_PATH=${SYBASE_PATH:="/export/home/sybase/clients/current"}
+      else
+         SYBASE_PATH=$with_sybase_local
+      fi
+      SYBASE_INCLUDE="-I$SYBASE_PATH/include"
+   else
+      SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
+      SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
+      SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include -I$SYBASE_PATH/include"
+   fi
    case "$host_os" in
      linux* )
        SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl -ldl"
@@ -1314,9 +1333,14 @@ if test "$with_sybase" != "no" ; then
       SYBASE_DBLIBS="${SYBASE_DBLIBS}${bit64_sfx}"
    fi
    changequote([, ])dnl
-   SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
+   if test "$with_sybase_local" != no ; then
+      SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_PATH}/lib${bit64_sfx} $SYBASE_LIBLIST"
+      SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_PATH}/lib${bit64_sfx} $SYBASE_DBLIBS"
+   else
+      SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
+      SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} ${SYBASE_DBLIBS}"
+   fi
    SYBASE_DLLS="$SYBASE_DLLLIST"
-   SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} ${SYBASE_DBLIBS}"
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
@@ -1957,6 +1981,8 @@ if test -z "$configurables" ; then
   AC_MSG_ERROR([Cannot find any configurables below \"${srcdir}\"!])
 fi
 
+eval ncbi_runpath=`echo $pure_runpath`
+AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath")
 
 ### Template substitutions
 AC_SUBST(exec_prefix)
