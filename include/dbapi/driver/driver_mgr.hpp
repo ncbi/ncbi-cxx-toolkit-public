@@ -41,11 +41,20 @@ BEGIN_NCBI_SCOPE
 class C_DriverMgr : public I_DriverMgr
 {
 public:
+    C_DriverMgr(unsigned int nof_drivers= 16) {
+	m_NofRoom= nof_drivers? nof_drivers : 16;
+	m_Drivers= new SDrivers[m_NofRoom];
+	m_NofDrvs= 0;
+    }
+
     FDBAPI_CreateContext GetDriver(const string& driver_name);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
-    virtual ~C_DriverMgr(void);
+
+    virtual ~C_DriverMgr() {
+	delete [] m_Drivers;
+    }
 
 protected:
     bool LoadDriverDll(const string& driver_name);
@@ -54,14 +63,15 @@ private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
     typedef FDriverRegister (*FDllEntryPoint)  (void);
 
-#ifndef NCBI_COMPILER_GCC
-    typedef map<string, FDBAPI_CreateContext> TDrivers;
-#else
-    typedef map<string, void*> TDrivers;
-#endif
-    TDrivers   m_Drivers;
+    struct SDrivers {
+	string               drv_name;
+	FDBAPI_CreateContext drv_func;
+    } *m_Drivers;
 
-    CFastMutex m_Mutex;
+    unsigned int m_NofDrvs;
+    unsigned int m_NofRoom;
+    CFastMutex m_Mutex1;
+    CFastMutex m_Mutex2;
 };
 
 
@@ -72,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/23 21:14:06  soussov
+ * replaces map with array
+ *
  * Revision 1.3  2002/01/20 07:26:57  vakatov
  * Fool-proofed to compile func_ptr/void_ptr type casts on all compilers.
  * Added virtual destructor.
