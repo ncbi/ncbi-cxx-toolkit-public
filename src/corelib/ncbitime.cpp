@@ -636,11 +636,16 @@ CTime& CTime::x_SetTime(const time_t* value)
     if (value) {
         timer = *value;
     } else {
-        timer = time(0);
         struct timeval tp;
-        ns = (gettimeofday(&tp,0) == -1) ? 0 : 
-            (long) tp.tv_usec * 
-            (long) (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+        if (gettimeofday(&tp,0) == -1) {
+            timer = 0;
+            ns = 0;
+        } else { 
+            timer = tp.tv_sec;
+            ns = long((double)tp.tv_usec * 
+                      (double)kNanoSecondsPerSecond /
+                      (double)kMicroSecondsPerSecond);
+        }
     }
 
 #else // NCBI_OS_MAC
@@ -1205,6 +1210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/10/24 15:16:37  ivanov
+ * Fixed bug with using two obtainments of the current time in x_SetTime().
+ *
  * Revision 1.28  2002/10/18 20:13:01  ivanov
  * Get rid of some Sun Workshop compilation warnings
  *
