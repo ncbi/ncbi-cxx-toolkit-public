@@ -831,7 +831,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
    if (encoding != NCBI2NA_ENCODING && encoding != NCBI4NA_ENCODING)
       return -1;
 
-   if ((*translation_buffer_ptr = translation_buffer = 
+   if ((translation_buffer = 
         (Uint1*) malloc(2*(nucl_length+1)+1)) == NULL)
       return -1;
 
@@ -844,10 +844,11 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
       translation_table_rc = BLAST_GetTranslationTable(genetic_code, TRUE);
    } 
 
-   *frame_offsets_ptr = frame_offsets = (Int4*) malloc(7*sizeof(Int4));
+   frame_offsets = (Int4*) malloc((NUM_FRAMES+1)*sizeof(Int4));
+
    frame_offsets[0] = 0;
    
-   for (context = 0; context < 6; ++context) {
+   for (context = 0; context < NUM_FRAMES; ++context) {
       frame = BLAST_ContextToFrame(blast_type_blastx, context);
       if (encoding == NCBI2NA_ENCODING) {
          if (frame > 0) {
@@ -886,14 +887,23 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
 
       *mixed_seq_ptr = mixed_seq = (Uint1*) malloc(2*(nucl_length+1));
       seq = mixed_seq;
-      for (index = 0; index < 6; index += CODON_LENGTH) {
+      for (index = 0; index < NUM_FRAMES; index += CODON_LENGTH) {
          for (i = 0; i <= nucl_length; ++i) {
             context = i % 3;
             offset = i / 3;
             *seq++ = translation_buffer[frame_offsets[index+context]+offset];
          }
-      }      
+      }
    }
+   if (translation_buffer_ptr)
+      *translation_buffer_ptr = translation_buffer;
+   else
+      sfree(translation_buffer);
+
+   if (frame_offsets_ptr)
+      *frame_offsets_ptr = frame_offsets;
+   else
+      sfree(frame_offsets);
 
    return 0;
 }
