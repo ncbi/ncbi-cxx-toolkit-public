@@ -17,7 +17,7 @@
 #    date_time    - get check list on specified date/time
 #                   (default is current).
 #                   Note that some tests can be already deleted in the CVS. 
-#    cvs_tree     - --internal or --production.
+#    cvs_tree     - --development or --production.
 #
 #    If any parameter is skipped that will be used default value for it.
 #
@@ -28,7 +28,7 @@
 target_dir=${1:-`pwd`}
 tmp_dir=${2:-`pwd`}
 date_time=${3:+"--date=$3"}
-cvs_tree=${4:-'--internal'}
+cvs_tree=${4:-'--development'}
 
 cvs_core=${NCBI:-/netopt/ncbi_tools}/c++.metastable/scripts/cvs_core.sh
 src_dir="$tmp_dir/c++.checklist"
