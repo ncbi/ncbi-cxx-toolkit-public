@@ -86,7 +86,7 @@ string CGridJobSubmiter::Submit()
 {
     string job_key = m_GridClient.GetNSClient().SubmitJob(m_Input);
     m_GridClient.GetStorage().Reset();
-    m_Input.clear();
+    m_Input.erase();
     return job_key;
 }
 
@@ -116,8 +116,8 @@ CNetScheduleClient::EJobStatus CGridJobStatus::GetStatus()
  void CGridJobStatus::x_SetJobKey(const string& job_key)
  {
      m_JobKey = job_key;
-     m_Output.clear();
-     m_ErrMsg.clear();
+     m_Output.erase();
+     m_ErrMsg.erase();
      m_RetCode = 0;
      m_BlobSize = 0;
      m_GridClient.GetStorage().Reset();
@@ -129,6 +129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/25 21:36:33  ucko
+ * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
+ *
  * Revision 1.1  2005/03/25 16:25:41  didenko
  * Initial version
  *
