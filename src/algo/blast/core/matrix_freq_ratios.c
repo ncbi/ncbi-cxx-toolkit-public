@@ -328,7 +328,8 @@ static const double PAM250_FREQRATIOS[BLASTAA_SIZE][BLASTAA_SIZE] = {
 SFreqRatios*
 _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
 {
-    SFreqRatios* retval = NULL;
+    unsigned int i, j;          /* loop indices */
+    SFreqRatios* retval = NULL; /* the return value */
 
     ASSERT(matrix_name);
 
@@ -344,11 +345,13 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
 
     if ( !strcmp(matrix_name, "BLOSUM62") ||
          !strcmp(matrix_name, "BLOSUM62_20")) {
-        _PSICopyMatrix(retval->data, (const double**) BLOSUM62_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = BLOSUM62_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "BLOSUM62_20A")) {
-        unsigned int i, j;
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = 
@@ -357,7 +360,6 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
         }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "BLOSUM62_20B")) {
-        unsigned int i, j;
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] =
@@ -366,32 +368,53 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
         }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "BLOSUM45") ) {
-        _PSICopyMatrix(retval->data, (const double**) BLOSUM45_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = BLOSUM45_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 3;
     } else if ( !strcmp(matrix_name, "BLOSUM80") ) {
-        _PSICopyMatrix(retval->data, (const double**) BLOSUM80_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = BLOSUM80_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "BLOSUM50") ) {
-        _PSICopyMatrix(retval->data, (const double**) BLOSUM50_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = BLOSUM50_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "BLOSUM90") ) {
-        _PSICopyMatrix(retval->data, (const double**) BLOSUM90_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = BLOSUM90_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "PAM30") ) {
-        _PSICopyMatrix(retval->data, (const double**) PAM30_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = PAM30_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "PAM70") ) {
-        _PSICopyMatrix(retval->data, (const double**) PAM70_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = PAM70_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else if ( !strcmp(matrix_name, "PAM250") ) {
-        _PSICopyMatrix(retval->data, (const double**) PAM250_FREQRATIOS, 
-                       BLASTAA_SIZE, BLASTAA_SIZE);
+        for (i = 0; i < BLASTAA_SIZE; i++) {
+            for (j = 0; j < BLASTAA_SIZE; j++) {
+                retval->data[i][j] = PAM250_FREQRATIOS[i][j];
+            }
+        }
         retval->bit_scale_factor = 2;
     } else {
         retval = _PSIMatrixFrequencyRatiosFree(retval);
@@ -418,6 +441,9 @@ _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/05/13 14:56:05  camacho
+ * Fix for retrieving frequency ratios matrices
+ *
  * Revision 1.1  2004/05/06 15:26:54  camacho
  * Initial revision
  *
