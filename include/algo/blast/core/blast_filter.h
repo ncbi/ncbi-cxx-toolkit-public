@@ -45,8 +45,6 @@ extern "C" {
 
 #include <blast_def.h>
 
-#define NUM_FRAMES 6
-
 /** Create and initialize a new sequence interval.
  * @param from Start of the interval [in]
  * @param to End of the interval [in]
@@ -59,20 +57,6 @@ BlastSeqLocPtr BlastSeqLocFree(BlastSeqLocPtr loc);
 
 /** Deallocate memory for a list of BlastMask structures */
 BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc);
-
-/** Convert a SeqLoc of type int or packed_int to a BlastMask structure.
- * @param mask_slp The SeqLoc to be converted [in]
- * @param index The ordinal number of the sequence to be assigned to the new 
- *              BlastMask
- * @return Pointer to the allocated BlastMask structure.
- */
-BlastMaskPtr BlastMaskFromSeqLoc(SeqLocPtr mask_slp, Int4 index);
-
-/** Convert a BlastMask list to a list of SeqLocs, used for formatting 
- * BLAST results.
- */
-SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc, 
-                            SeqLocPtr slp);
 
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
@@ -116,19 +100,6 @@ Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
    Int4 offset, CharPtr instructions, BoolPtr mask_at_hash, 
    BlastSeqLocPtr *seqloc_retval);
-
-/** Duplicate masks in 6 frames for each nucleotide sequence, converting
- * all masks' coordinates from DNA to protein.
- * @param mask_loc_ptr Masks list to be modified [in] [out]
- * @param slp List of nucleotide query SeqLoc's [in]
- */
-Int2 BlastMaskDNAToProtein(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp);
-
-/** Convert all masks' protein coordinates to nucleotide.
- * @param mask_loc_ptr Masks list to be modified [in] [out]
- * @param slp List of nucleotide query SeqLoc's [in]
- */
-Int2 BlastMaskProteinToDNA(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp);
 
 #ifdef __cplusplus
 }
