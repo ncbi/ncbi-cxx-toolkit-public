@@ -62,13 +62,6 @@ extern "C" {
 /** Split subject sequences if longer than this */
 #define MAX_DBSEQ_LEN 5000000 
 
-/** Auxiliary structure for dynamic programming gapped extension */
-typedef struct BlastGapDP {
-  Int4 best;
-  Int4 best_gap;
-  Int4 best_decline;
-} BlastGapDP;
-
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
    Boolean positionBased; /**< Is this PSI-BLAST? */
