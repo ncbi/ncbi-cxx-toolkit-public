@@ -432,9 +432,9 @@ CTestTranscript_TranscriptCdsLength::RunTest(const CSerialObject& obj,
 static void s_Utrs(const CSeq_id& id, const CSeqTestContext* ctx,
                    CFeat_CI feat_iter, CSeq_test_result& result)
 {
-    const CSeq_feat& mf = feat_iter->GetMappedFeature();
-    TSeqPos cds_from = sequence::GetStart(mf.GetLocation());
-    TSeqPos cds_to   = sequence::GetStop(mf.GetLocation());
+    const CSeq_loc& loc = feat_iter->GetLocation();
+    TSeqPos cds_from = sequence::GetStart(loc);
+    TSeqPos cds_to   = sequence::GetStop(loc);
     int xcript_len = ctx->GetScope().GetBioseqHandle(id).GetInst_Length();
     result.SetOutput_data().AddField("length_5_prime_utr", (int) cds_from);
     result.SetOutput_data().AddField("length_3_prime_utr",
@@ -633,6 +633,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/10 21:49:31  jcherry
+ * Don't call CMappedFeat::GetMappedFeature; as of recent changes, this
+ * apparently doesn't work when the feature has not been mapped.
+ *
  * Revision 1.3  2004/10/07 13:38:56  ucko
  * s_CompareProtProdToTrans: make sure to use TSeqPos uniformly.
  *
