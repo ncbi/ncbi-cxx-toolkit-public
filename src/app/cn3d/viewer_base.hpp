@@ -56,6 +56,7 @@ class ViewerBase
 {
     friend class ViewerWindowBase;
     friend class AlignmentManager;
+    friend class SequenceDisplay;
 
 public:
 
@@ -145,6 +146,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/10/20 13:17:15  thiessen
+* add float geometry violations sorting
+*
 * Revision 1.16  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

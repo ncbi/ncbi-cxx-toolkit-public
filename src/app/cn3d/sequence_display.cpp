@@ -928,6 +928,12 @@ static bool CompareRowsFloatHighlights(const DisplayRowFromAlignment *a, const D
             !GlobalMessenger()->IsHighlightedAnywhere(b->alignment->GetSequenceOfRow(b->row)->identifier));
 }
 
+static Threader::GeometryViolationsForRow violations;
+static bool CompareRowsFloatGV(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
+{
+    return (violations[a->row].size() > 0 && violations[b->row].size() == 0);
+}
+
 static CompareRows rowComparisonFunction = NULL;
 
 void SequenceDisplay::SortRowsByIdentifier(void)
@@ -962,6 +968,30 @@ void SequenceDisplay::FloatHighlightsToTop(void)
     SortRows();
     (*viewerWindow)->viewer->Save();   // make this an undoable operation
 	(*viewerWindow)->UpdateDisplay(this);
+}
+
+void SequenceDisplay::FloatGVToTop(void)
+{
+    DisplayRowFromAlignment *alnRow = NULL;
+    for (int row=0; row<rows.size(); row++) {
+        alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow)
+            break;
+    }
+    if (!alnRow) {
+        ERRORMSG("SequenceDisplay::FloatGVToTop() - can't get alignment");
+        return;
+    }
+
+    if ((*viewerWindow)->viewer->alignmentManager->threader->
+            GetGeometryViolations(alnRow->alignment, &violations) == 0)
+        return;
+    (*viewerWindow)->Command(ViewerWindowBase::MID_SHOW_GEOM_VLTNS);
+
+    rowComparisonFunction = CompareRowsFloatGV;
+    SortRows();
+    (*viewerWindow)->viewer->Save();   // make this an undoable operation
+    (*viewerWindow)->UpdateDisplay(this);
 }
 
 void SequenceDisplay::SortRowsBySelfHit(void)
@@ -1241,6 +1271,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2003/10/20 13:17:15  thiessen
+* add float geometry violations sorting
+*
 * Revision 1.68  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

@@ -82,6 +82,7 @@ private:
             MID_SORT_THREADER,
             MID_FLOAT_PDBS,
             MID_FLOAT_HIGHLIGHTS,
+            MID_FLOAT_G_V,
             MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
         // mouse mode
@@ -170,6 +171,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/10/20 13:17:15  thiessen
+* add float geometry violations sorting
+*
 * Revision 1.27  2003/08/23 22:42:17  thiessen
 * add highlight blocks command
 *

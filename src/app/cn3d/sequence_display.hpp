@@ -220,6 +220,7 @@ public:
     void SortRowsBySelfHit(void);
     void FloatPDBRowsToTop(void);
     void FloatHighlightsToTop(void);
+    void FloatGVToTop(void);
 
     // a sort of clustering of similar sequences around a particular row
     bool ProximitySort(int displayRow);
@@ -300,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/10/20 13:17:15  thiessen
+* add float geometry violations sorting
+*
 * Revision 1.26  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

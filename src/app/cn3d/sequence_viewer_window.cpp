@@ -103,6 +103,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
     subMenu->Append(MID_FLOAT_HIGHLIGHTS, "Float Hi&ghlights");
+    subMenu->Append(MID_FLOAT_G_V, "Float &Geometry Violations");
     subMenu->Append(MID_SORT_SELF_HIT, "By Self-&Hit");
     subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
@@ -384,6 +385,10 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->FloatPDBRowsToTop();
             break;
+        case MID_FLOAT_G_V:
+            if (DoProximitySort()) ProximitySortOff();
+            sequenceViewer->GetCurrentDisplay()->FloatGVToTop();
+            break;
         case MID_SORT_SELF_HIT:
             if (DoProximitySort()) ProximitySortOff();
             sequenceViewer->GetCurrentDisplay()->SortRowsBySelfHit();
@@ -491,6 +496,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/10/20 13:17:15  thiessen
+* add float geometry violations sorting
+*
 * Revision 1.50  2003/08/23 22:42:17  thiessen
 * add highlight blocks command
 *
