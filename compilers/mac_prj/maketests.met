@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.2 2000/07/27 17:23:07 thiessen Exp $
+	$Id: maketests.met,v 1.3 2000/11/17 00:32:40 vakatov Exp $
 	
    ================================================================================ *)
 
@@ -263,7 +263,7 @@ on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
 	tell application "CodeWarrior IDE 4.1"
 		
 		if DODEBUG = "TRUE" then
-			Create Project {BINARIES & projName & " debug.µ"}
+			Create Project {BINARIES & projName & " dbg.µ"}
 		else
 			Create Project {BINARIES & projName & ".µ"}
 		end if
@@ -271,7 +271,7 @@ on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
 		my DoSetPreferences()
 		Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
 		if DODEBUG = "TRUE" then
-			Set Preferences of panel "PPC Project" to {File Name:(projName & " debug")}
+			Set Preferences of panel "PPC Project" to {File Name:(projName & " dbg")}
 		else
 			Set Preferences of panel "PPC Project" to {File Name:projName}
 		end if
@@ -300,6 +300,47 @@ on DoCreateDefaultProject(projName, projPath, projFiles, projNCBILibs)
 	end tell
 end DoCreateDefaultProject
 
+on DoCreateDefaultCProject(projName, projPath, projFiles, projNCBILibs)
+	tell application "CodeWarrior IDE 4.1"
+		
+		if DODEBUG = "TRUE" then
+			Create Project {BINARIES & projName & " dbg.µ"}
+		else
+			Create Project {BINARIES & projName & ".µ"}
+		end if
+		
+		my DoSetPreferences()
+		Set Preferences of panel "Access Paths" to {User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
+		if DODEBUG = "TRUE" then
+			Set Preferences of panel "PPC Project" to {File Name:(projName & " dbg")}
+		else
+			Set Preferences of panel "PPC Project" to {File Name:projName}
+		end if
+		Set Preferences of panel "PPC Project" to {SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL"}
+		Set Preferences of panel "PPC Project" to {Preferred Size:8000, Minimum Size:5000, Stack Size:64}
+		my DoSetPaths2()
+		
+		my AddLibraries()
+		
+		Set Preferences of panel "Access Paths" to {System Paths:{{name:LIBRARIES, origin:absolute}}}
+		repeat with i in projNCBILibs
+			if DODEBUG = "TRUE" then
+				Add Files {LIBRARIES & i & " debug"} To Segment 1
+			else
+				Add Files {LIBRARIES & i} To Segment 1
+			end if
+		end repeat
+		
+		repeat with i in projFiles
+			Add Files {SOURCEFILES & projPath & ":" & i & ".c"} To Segment 1
+		end repeat
+		
+		Reset File Paths
+		Close Project
+		
+	end tell
+end DoCreateDefaultCProject
+
 (* ==== This section populates and builds the libraries ==== *)
 
 on DoCreateProjects()
@@ -317,8 +358,45 @@ on DoCreateProjects()
 				"blocktype", "choicetype", "typestr", "ptrstr", "stdstr", "classstr", Â
 				"enumstr", "stlstr", "choicestr", "choiceptrstr", "value", "mcontainer", Â
 				"module", "moduleset", "generate", "filecode", "code", "fileutil", Â
-				"alexer", "aparser", "parser", "lexer", "exceptions"}, Â
+				"alexer", "aparser", "parser", "lexer", "exceptions", "checksum", Â
+				"comments", "srcutil"}, Â
 			{"corelib", "serial"})
+		
+		my DoCreateDefaultProject("test_ncbitime", "corelib:test", Â
+			{"test_ncbitime"}, {"corelib"})
+		
+		my DoCreateDefaultCProject("test_core", "connect:test", Â
+			{"test_ncbi_core"}, {"connect"})
+		
+		my DoCreateDefaultCProject("test_buffer", "connect:test", Â
+			{"test_ncbi_buffer"}, {"connect"})
+		
+		my DoCreateDefaultCProject("test_socket", "connect:test", Â
+			{"test_ncbi_socket_"}, {"ncsasock", "connect"})
+		
+		my DoCreateDefaultCProject("test_heapmgr", "connect:test", Â
+			{"test_ncbi_heapmgr"}, {"connect"})
+		
+		my DoCreateDefaultCProject("test_connutil_hit", "connect:test", Â
+			{"test_ncbi_connutil_hit"}, {"ncsasock", "connect"})
+		
+		my DoCreateDefaultCProject("test_connutil_misc", "connect:test", Â
+			{"test_ncbi_connutil_misc"}, {"connect"})
+		
+		my DoCreateDefaultCProject("socket_io_bouncer", "connect:test", Â
+			{"socket_io_bouncer"}, {"ncsasock", "connect"})
+		
+		my DoCreateDefaultCProject("test_file_connector", "connect:test", Â
+			{"ncbi_conntest", "test_ncbi_file_connector"}, {"connect"})
+		
+		my DoCreateDefaultCProject("test_sock_connector", "connect:test", Â
+			{"ncbi_conntest", "test_ncbi_socket_connector"}, {"ncsasock", "connect"})
+		
+		my DoCreateDefaultCProject("test_http_connector", "connect:test", Â
+			{"ncbi_conntest", "test_ncbi_http_connector"}, {"ncsasock", "connect"})
+		
+		my DoCreateDefaultCProject("test_srv_connector", "connect:test", Â
+			{"ncbi_conntest", "test_ncbi_service_connector"}, {"ncsasock", "connect"})
 		
 	end tell
 end DoCreateProjects
@@ -329,7 +407,7 @@ on DoCompileBinary(projName)
 	tell application "CodeWarrior IDE 4.1"
 		
 		if DODEBUG = "TRUE" then
-			open (BINARIES & projName & " debug.µ")
+			open (BINARIES & projName & " dbg.µ")
 		else
 			open (BINARIES & projName & ".µ")
 		end if
@@ -349,10 +427,22 @@ on DoCompileBinaries()
 		end if
 		my DoCompileBinary("connect")
 	end if
-*)
+	*)
 	
 	my DoCompileBinary("coretest")
 	my DoCompileBinary("datatool")
+	my DoCompileBinary("test_ncbitime")
+	my DoCompileBinary("test_core")
+	my DoCompileBinary("test_buffer")
+	my DoCompileBinary("test_socket")
+	my DoCompileBinary("test_heapmgr")
+	my DoCompileBinary("test_connutil_hit")
+	my DoCompileBinary("test_connutil_misc")
+	my DoCompileBinary("socket_io_bouncer")
+	my DoCompileBinary("test_file_connector")
+	my DoCompileBinary("test_sock_connector")
+	my DoCompileBinary("test_http_connector")
+	my DoCompileBinary("test_srv_connector")
 	
 end DoCompileBinaries
 
