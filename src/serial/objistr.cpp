@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/09/26 05:19:02  vakatov
+* FLT_MIN/MAX are not #define'd on some platforms
+*
 * Revision 1.27  1999/09/24 18:19:17  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -576,8 +579,10 @@ unsigned CObjectIStream::ReadUInt(void)
 float CObjectIStream::ReadFloat(void)
 {
     double data = ReadDouble();
+#if defined(FLT_MIN) && defined(FLT_MAX)
     if ( data < FLT_MIN || data > FLT_MAX )
         ThrowError(eOverflow, "float overflow");
+#endif
     return float(data);
 }
 
