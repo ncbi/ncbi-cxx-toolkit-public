@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/11/22 19:48:14  thiessen
+* one more fix for const changes in objects API
+*
 * Revision 1.15  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -547,7 +550,7 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     if (usedSeqs.find((seq)->identifier) == usedSeqs.end()) { \
         seqEntryList->resize(seqEntryList->size() + 1); \
         seqEntryList->back().Reset(new CSeq_entry); \
-        seqEntryList->back().GetObject().SetSeq((seq)->bioseqASN.GetObject()); \
+        seqEntryList->back().GetObject().SetSeq((const_cast<Sequence*>(seq))->bioseqASN.GetObject()); \
         usedSeqs[(seq)->identifier] = true; \
     } } while (0)
 
