@@ -36,7 +36,6 @@
  *
  */
 
-#include <connect/ncbi_connector.h>
 #include <connect/ncbi_connutil.h>
 
 
@@ -185,6 +184,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/05/29 20:13:15  lavr
+ * -#include <connect/ncbi_connector.h>
+ *
  * Revision 6.12  2003/04/09 19:05:44  siyan
  * Added doxygen support
  *
