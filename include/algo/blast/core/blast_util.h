@@ -121,7 +121,7 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
 */
 Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1Ptr buffer, Uint1Ptr genetic_code);
+   Int4 nt_length, Int2 frame, Uint1Ptr buffer, const Uint1Ptr genetic_code);
 
 /** Translate a nucleotide sequence without ambiguity codes.
  * This is used for the first-pass translation of the database.

@@ -217,7 +217,7 @@ static Uint1 CodonToAA (Uint1Ptr codon, Uint1Ptr codes)
 
 Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, Uint1Ptr genetic_code)
+   Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, const Uint1Ptr genetic_code)
 {
 	Uint1 codon[CODON_LENGTH];
 	Int4 index, index_prot;
