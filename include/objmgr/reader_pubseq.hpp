@@ -96,7 +96,7 @@ private:
 
 END_SCOPE(objects)
 
-extern NCBI_XOBJMGR_EXPORT const string kPubseqReaderDriverName = "pubseq_reader";
+extern NCBI_XOBJMGR_EXPORT const string kPubseqReaderDriverName;
 
 extern "C" 
 {
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.21  2003/12/03 15:10:30  kuznets
+* Minor bug fixed.
+*
 * Revision 1.20  2003/12/03 14:28:23  kuznets
 * Added driver name constant.
 *
