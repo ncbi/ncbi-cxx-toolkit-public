@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/11 16:42:32  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
  * Revision 6.5  2000/10/18 20:29:43  vakatov
  * REG_Get::  pass in the default value (rather than '\0')
  *
@@ -454,7 +457,7 @@ extern char* REG_Get
     REG_VALID;
 
     if ( rg->get )
-        rg->get(section, name, value, value_size);
+        rg->get(rg->user_data, section, name, value, value_size);
 
     REG_UNLOCK;
     return value;
@@ -475,7 +478,7 @@ extern void REG_Set
     REG_VALID;
 
     if ( rg->set )
-        rg->set(section, name, value, storage);
+        rg->set(rg->user_data, section, name, value, storage);
 
     REG_UNLOCK;
 }

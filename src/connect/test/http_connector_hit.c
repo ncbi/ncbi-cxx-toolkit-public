@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/11 16:42:45  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
  * Revision 6.4  2000/11/15 17:27:29  vakatov
  * Fixed path to the test CGI application.
  *
@@ -70,13 +73,15 @@ static struct {
  */
 #if defined(__cplusplus)
 extern "C" {
-    static void s_REG_Get(const char* section, const char* name,
+    static void s_REG_Get(void*user_data,
+                          const char* section, const char* name,
                           char* value, size_t value_size);
 }
 #endif /* __cplusplus */
 
 static void s_REG_Get
-(const char* section,
+(void*       user_data,
+ const char* section,
  const char* name,
  char*       value,
  size_t      value_size)

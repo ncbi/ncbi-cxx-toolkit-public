@@ -66,6 +66,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/11 16:41:18  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
  * Revision 6.5  2000/10/18 20:29:41  vakatov
  * REG_Get::  pass in the default value (rather than '\0')
  *
@@ -402,7 +405,8 @@ typedef enum {
  * Note:  do not put more than "value_size" bytes to "value".
  */
 typedef void (*FREG_Get)
-(const char* section,
+(void*       user_data,
+ const char* section,
  const char* name,
  char*       value,      /* passed a default value, cut to "value_size" syms */
  size_t      value_size  /* always > 0 */
@@ -413,14 +417,15 @@ typedef void (*FREG_Get)
  * in storage "storage".
  */
 typedef void (*FREG_Set)
-(const char*  section,
+(void*        user_data,
+ const char*  section,
  const char*  name,
  const char*  value,
  EREG_Storage storage
  );
 
 
-/* Registry cleanup function;  see "LOG_Reset()" for more details
+/* Registry cleanup function;  see "REG_Reset()" for more details
  */
 typedef void (*FREG_Cleanup)
 (void* user_data  /* see "user_data" in REG_Create() or REG_Reset() */
@@ -428,11 +433,11 @@ typedef void (*FREG_Cleanup)
 
 
 /* Create new REG (with reference counter := 1).
- * ATTENTION:  if non-NULL "lk" is specified then MT_LOCK_Delete() will be
+ * ATTENTION:  if non-NULL "mt_lock" is specified then MT_LOCK_Delete() will be
  *             called when this REG is destroyed -- be aware of it!
  */
 extern REG REG_Create
-(void*        user_data, /* the data to call "handler" and "cleanup" with */
+(void*        user_data, /* the data to call "set", "get" and "cleanup" with */
  FREG_Get     get,       /* the get method */
  FREG_Set     set,       /* the set method */
  FREG_Cleanup cleanup,   /* cleanup */
@@ -440,7 +445,7 @@ extern REG REG_Create
  );
 
 
-/* Reset the "lg" to use the new "user_data", "handler" and "cleanup".
+/* Reset the "rg" to use the new "user_data", "set", "get" and "cleanup".
  * NOTE:  it does not change ref.counter.
  */
 extern void REG_Reset
@@ -449,19 +454,19 @@ extern void REG_Reset
  FREG_Get     get,        /* the get method */
  FREG_Set     set,        /* the set method */
  FREG_Cleanup cleanup,    /* cleanup */
- int/*bool*/  do_cleanup  /* call cleanup(if any specified) for the old data */
+ int/*bool*/  do_cleanup  /* call old cleanup(if any specified) for old data */
  );
 
 
-/* Increment ref.counter by 1,  then return "reg"
+/* Increment ref.counter by 1,  then return "rg"
  */
 extern REG REG_AddRef(REG rg);
 
 
 /* Decrement ref.counter by 1.
  * Now, if ref.counter becomes 0, then
- * call "reg->cleanup(reg->user_data)", destroy the handle, and return NULL.
- * Otherwise (if ref.counter is still > 0), return "reg".
+ * call "rg->cleanup(rg->user_data)", destroy the handle, and return NULL.
+ * Otherwise (if ref.counter is still > 0), return "rg".
  */
 extern REG REG_Delete(REG rg);
 

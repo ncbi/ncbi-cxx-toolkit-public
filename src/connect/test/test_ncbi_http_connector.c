@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/11 16:42:50  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
  * Revision 6.5  2001/01/08 23:48:51  lavr
  * REQ_METHOD "any" added to SConnNetInfo
  *
@@ -72,13 +75,15 @@
 
 #if defined(__cplusplus)
 extern "C" {
-    static void s_REG_Get(const char* section, const char* name,
+    static void s_REG_Get(void* user_data,
+                          const char* section, const char* name,
                           char* value, size_t value_size);
 }
 #endif /* __cplusplus */
 
 static void s_REG_Get
-(const char* section,
+(void*       user_data,
+ const char* section,
  const char* name,
  char*       value,
  size_t      value_size)
