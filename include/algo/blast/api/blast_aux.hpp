@@ -36,6 +36,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/metareg.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
@@ -106,6 +108,17 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask, TSeqLocVector &slp);
 NCBI_XBLAST_EXPORT
 AutoPtr<Uint1, ArrayDeleter<Uint1> >
 FindGeneticCode(int genetic_code);
+
+/** Initializes a special extra structure for RPS BLAST database, needed
+ * for the RPS BLAST search.
+ * @param ppinfo Structure to be returned [out]
+ * @param rps_mmap Memory mapped file structure for the RPS BLAST database [out]
+ * @param rps_pssm_mmap Memory mapped file structure for the RPS BLAST PSSM. [out]
+ * @param dbname Name of the RPS BLAST database [in]
+ */
+Int2 Blast_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
+                        CMemoryFile **rps_pssm_mmap, string dbname );
+
 
 /** Declares class to handle deallocating of the structure using the appropriate
  * function
@@ -180,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/10/26 15:29:03  dondosha
+* Added function Blast_FillRPSInfo, previously static in demo/blast_app.cpp
+*
 * Revision 1.43  2004/09/13 15:55:20  madden
 * Remove unused parameter from CSeqLoc2BlastSeqLoc
 *

@@ -409,6 +409,108 @@ EProgram ProgramNameToEnum(const std::string& program_name)
     NCBI_THROW(CBlastException, eNotSupported, program_name + " not supported");
 }
 
+Int2 Blast_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
+                        CMemoryFile **rps_pssm_mmap, string dbname )
+{
+   RPSInfo *info = new RPSInfo;
+   if (info == NULL) {
+      NCBI_THROW(CBlastException, eOutOfMemory, 
+                 "RPSInfo allocation failed");
+   }
+
+   /* construct the full path to the DB file. Look in
+      the local directory, then .ncbirc */
+
+   CFile LUTfile(dbname + ".loo");
+
+   if (!LUTfile.Exists()) {
+      CMetaRegistry::SEntry config = CMetaRegistry::Load("ncbi", 
+                                        CMetaRegistry::eName_RcOrIni);
+      string dbpath(config.registry->Get("BLAST", "BLASTDB"));
+      char c[2] = {0};
+      c[0] = CDirEntry::GetPathSeparator();
+      string full_dbname = dbpath + string(c) + dbname;
+
+      // Check if .loo file exists here; if not, check if there is an alias file.
+      // If alias file exists, find the new path, and look for .loo file there.
+      CFile lutfile(full_dbname + ".loo");
+      if (!lutfile.Exists()) {
+          CFile aliasfile(full_dbname + ".pal");
+          if (!aliasfile.Exists()) {
+              NCBI_THROW(CBlastException, eBadParameter, 
+                         "BLAST database does not exist");
+          } else {
+              /// @todo FIXME: Need to get a relative path from the alias file
+              /// At this time just try the "cdsearch" subdirectory
+              full_dbname = 
+                  dbpath + string(c) + "cdsearch" + string(c) + dbname;
+              CFile testLUTfile(full_dbname + ".loo");
+              if (!testLUTfile.Exists()) {
+                  NCBI_THROW(CBlastException, eBadParameter, 
+                             "RPS BLAST database does not exist");
+              }
+          }
+      }
+      dbname = full_dbname;
+   }
+
+   CMemoryFile *lut_mmap = new CMemoryFile(dbname + ".loo");
+   if (lut_mmap == NULL) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "Cannot map RPS BLAST lookup file");
+   }
+   info->lookup_header = (RPSLookupFileHeader *)lut_mmap->GetPtr();
+
+   CMemoryFile *pssm_mmap = new CMemoryFile(dbname + ".rps");
+   if (pssm_mmap == NULL) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                   "Cannot map RPS BLAST profile file");
+   }
+   info->profile_header = (RPSProfileHeader *)pssm_mmap->GetPtr();
+
+   CNcbiIfstream auxfile( (dbname + ".aux").c_str() );
+   if (auxfile.bad() || auxfile.fail()) {
+       NCBI_THROW(CBlastException, eBadParameter, 
+                   "Cannot open RPS BLAST parameters file");
+   }
+
+   string matrix;
+   auxfile >> matrix;
+   info->aux_info.orig_score_matrix = strdup(matrix.c_str());
+
+   auxfile >> info->aux_info.gap_open_penalty;
+   auxfile >> info->aux_info.gap_extend_penalty;
+   auxfile >> info->aux_info.ungapped_k;
+   auxfile >> info->aux_info.ungapped_h;
+   auxfile >> info->aux_info.max_db_seq_length;
+   auxfile >> info->aux_info.db_length;
+   auxfile >> info->aux_info.scale_factor;
+
+   int num_db_seqs = info->profile_header->num_profiles;
+   info->aux_info.karlin_k = new double[num_db_seqs];
+   if (info->aux_info.karlin_k == NULL) {
+      NCBI_THROW(CBlastException, eOutOfMemory, 
+                  "karlin_k array allocation failed");
+   }
+   int i;
+
+   for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
+      int seq_size;
+      auxfile >> seq_size;  // not used
+      auxfile >> info->aux_info.karlin_k[i];
+   }
+
+   if (i < num_db_seqs) {
+       NCBI_THROW(CBlastException, eBadParameter,
+                  "Aux file missing Karlin parameters");
+   }
+
+   *ppinfo = info;
+   *rps_mmap = lut_mmap;
+   *rps_pssm_mmap = pssm_mmap;
+
+   return 0;
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -419,6 +521,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2004/10/26 15:31:08  dondosha
+ * Added function Blast_FillRPSInfo, previously static in demo/blast_app.cpp
+ *
  * Revision 1.51  2004/10/21 18:04:06  camacho
  * Remove unneeded ostringstream
  *
