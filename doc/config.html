@@ -20,6 +20,8 @@
 		 <ul>
 		   <li> <a href="#ref_DebugVsRelease">
 			<i>Debug</i> vs. <i>Release</i> configuration</a>
+		   <li> <a href="#ref_DLL">
+			Building shared libraries (DLLs)</a>
 		   <li> <a href="#ref_NamingBuildTree">
 			Naming the <i>build tree</i></a>
 		   <li> <a href="#ref_ToolsAndFlags">
@@ -276,6 +278,33 @@ flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
   <li> <i><b>--without-release</b></i> --
        strip <b>-DNDEBUG</b> and <b>-O</b>
 </ul>
+
+
+<p>
+<br>
+<a name="ref_DLL"></a>
+<h4>Building shared libraries (DLLs)</h4>
+
+On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
+<ul>
+  <li> <i><b>--with-dll</b></i> --
+       compile position-independent code (PIC),
+       build <i>dynamic</i> libraries.
+  <li> <i><b>--without-dll</b></i> --
+       do not compile PIC,
+       build <i>static</i> libraries.
+  <li> by default --
+       compile position-independent code (PIC),
+       build <i>static</i> libraries.
+</ul>
+HINT:  To build both <i>dynamic</i> and <i>static</i> libraries without
+recompiling all sources:
+<ol>
+  <li> configure the toolkit without any of "<i><b>--.....-dll</b></i>" flags
+  <li> build the toolkit
+  <li> re-configure the toolkit with "<i><b>--with-dll</b></i>"
+  <li> build the toolkit again
+</ol>
 
 
 <p>
