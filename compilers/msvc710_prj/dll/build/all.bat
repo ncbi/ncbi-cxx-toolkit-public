@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all.bat,v 1.1 2004/05/11 18:53:00 ivanov Exp $
+REM $Id: all.bat,v 1.2 2004/05/12 12:08:27 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -32,11 +32,11 @@ REM ===========================================================================
 
 
 CALL all_ncbi.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
-IF ERRORLEVEL 1 GOTO _ABORT
+IF ERRORLEVEL 1 GOTO _ABORT_
 
 CALL all_gui.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
-IF ERRORLEVEL 1 GOTO _ABORT
+IF ERRORLEVEL 1 GOTO _ABORT_
 
 CALL all_gbench.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
 
-_ABORT:
+:_ABORT_
