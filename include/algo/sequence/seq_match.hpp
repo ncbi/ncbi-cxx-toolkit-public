@@ -68,22 +68,76 @@ public:
     /// enough 'characters' in seq, i.e., that pos + pat.size() <= seq.size()
     template<class Seq, class Pat, class Compare>
     static EMatch Match(const Seq& seq, const Pat& pat, TSeqPos pos,
-                        const Compare compare);
+                        const Compare compare)
+    {
+
+        // for efficiency, no check is made that we're not looking
+        // past the end of seq; caller must assure this
+
+        EMatch rv = eYes;
+        // check pattern positions in succession
+        for (unsigned int i = 0;  i < pat.size();  i++) {
+            EMatch res = compare(seq[pos+i], pat[i]);
+            if (res == eNo) {
+                return eNo;
+            }
+            if (res == eMaybe) {
+                rv = eMaybe;
+            }
+        }
+        // if we got here, everybody at least could have matched
+        return rv;
+    }
+
     template<class Seq, class Pat>
     static EMatch MatchNcbi8na(const Seq& seq,
-                               const Pat& pat, TSeqPos pos);
+                               const Pat& pat, TSeqPos pos)
+    {
+        return Match(seq, pat, pos, CompareNcbi8na);
+    }
+
+    template <class Seq, class Pat>
+    struct SMatchNcbi8na
+    {
+        EMatch operator() (const Seq& seq,
+                           const Pat& pat, TSeqPos pos) const
+        {
+            return CSeqMatch::Match(seq, pat, pos, CompareNcbi8na);
+        }
+    };
+
     /// find all places where seq must or might match pat
     template<class Seq, class Pat, class Match_fun>
     static void FindMatches(const Seq& seq,
                             const Pat& pat,
                             vector<TSeqPos>& definite_matches,
                             vector<TSeqPos>& possible_matches,
-                            Match_fun match);
+                            Match_fun match)
+    {
+        for (unsigned int i = 0;  i < seq.size() - pat.size() + 1; i++) {
+            EMatch res = match(seq, pat, i);
+            if (res == eNo) {
+                continue;
+            }
+            if (res == eYes) {
+                definite_matches.push_back(i);
+                continue;
+            }
+            // otherwise must be eMaybe
+            possible_matches.push_back(i);
+        }
+    }
+
     template<class Seq, class Pat>
     static void FindMatchesNcbi8na(const Seq& seq,
                                    const Pat& pat,
                                    vector<TSeqPos>& definite_matches,
-                                   vector<TSeqPos>& possible_matches);
+                                   vector<TSeqPos>& possible_matches)
+    {
+        FindMatches(seq, pat,
+                    definite_matches, possible_matches,
+                    SMatchNcbi8na<Seq, Pat>());
+    }
 
     /// stuff for dealing with ncbi8na.
     /// doesn't really belong here, but oh well
@@ -99,74 +153,7 @@ public:
 };
 
 
-template<class Seq, class Pat, class Match_fun>
-inline void
-CSeqMatch::FindMatches(const Seq& seq,
-                       const Pat& pat,
-                       vector<TSeqPos>& definite_matches,
-                       vector<TSeqPos>& possible_matches,
-                       Match_fun match)
-{
-    for (unsigned int i = 0;  i < seq.size() - pat.size() + 1; i++) {
-        EMatch res = match(seq, pat, i);
-        if (res == eNo) {
-            continue;
-        }
-        if (res == eYes) {
-            definite_matches.push_back(i);
-            continue;
-        }
-        // otherwise must be eMaybe
-        possible_matches.push_back(i);
-    }
-}
 
-
-template<class Seq, class Pat>
-inline void
-CSeqMatch::FindMatchesNcbi8na(const Seq& seq,
-                              const Pat& pat,
-                              vector<TSeqPos>& definite_matches,
-                              vector<TSeqPos>& possible_matches)
-{
-    FindMatches(seq, pat,
-                definite_matches, possible_matches,
-                CSeqMatch::MatchNcbi8na<Seq, Pat>);
-}
-
-
-template<class Seq, class Pat, class Compare>
-inline
-CSeqMatch::EMatch CSeqMatch::Match(const Seq& seq, const Pat& pat, TSeqPos pos,
-                                   const Compare compare)
-{
-
-    // for efficiency, no check is made that we're not looking
-    // past the end of seq; caller must assure this
-
-    EMatch rv = eYes;
-    // check pattern positions in succession
-    for (unsigned int i = 0;  i < pat.size();  i++) {
-        EMatch res = compare(seq[pos+i], pat[i]);
-        if (res == eNo) {
-            return eNo;
-        }
-        if (res == eMaybe) {
-            rv = eMaybe;
-        }
-    }
-    // if we got here, everybody at least could have matched
-    return rv;
-}
-
-
-template<class Seq, class Pat>
-inline CSeqMatch::EMatch 
-CSeqMatch::MatchNcbi8na(const Seq& seq,
-                        const Pat& pat, TSeqPos pos)
-{
-    return Match(seq, pat, pos, CompareNcbi8na);
-}
 
 
 // works on ncbi8na
@@ -195,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/13 16:42:11  dicuccio
+ * Compilation fixes for MSVC
+ *
  * Revision 1.1  2003/08/12 18:52:58  jcherry
  * Initial version
  *

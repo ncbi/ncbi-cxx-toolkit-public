@@ -483,12 +483,12 @@ public:
             inplace_merge(definite_sites.begin(),
                           definite_sites.begin() + ds_pos,
                           definite_sites.end(),
-                          CompareLocation);
+                          SCompareLocation());
 
             inplace_merge(possible_sites.begin(),
                           possible_sites.begin() + ps_pos,
                           possible_sites.end(),
-                          CompareLocation);
+                          SCompareLocation());
         }
     }
 };
@@ -503,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/13 16:42:11  dicuccio
+ * Compilation fixes for MSVC
+ *
  * Revision 1.2  2003/08/13 12:37:58  dicuccio
  * Partial compilation fixes for Windows
  *

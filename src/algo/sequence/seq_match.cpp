@@ -33,6 +33,8 @@
 #include <corelib/ncbistd.hpp>
 #include "seq_match.hpp"
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -107,13 +109,11 @@ void CSeqMatch::IupacToNcbi8na(const string& in, string& out)
 
 char CSeqMatch::CompNcbi8na(char in)
 {
-    char A = 1, C = 2, G = 4, T = 8;
-    char out;
-
-    out = bool(in & A) * T + bool(in & C) * G
-        + bool(in & G) * C + bool(in & T) * A;
-
-    return out;
+    static const char sc_table[16] = {
+        0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08,
+        0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00
+    };
+    return sc_table[ in & 0x0f ];
 }        
 
 
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/13 16:42:11  dicuccio
+ * Compilation fixes for MSVC
+ *
  * Revision 1.1  2003/08/12 18:52:58  jcherry
  * Initial version
  *
