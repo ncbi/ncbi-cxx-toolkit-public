@@ -279,8 +279,14 @@ esac
 
 
 #### Use full path to the compiler, if possible
+changequote(, )dnl
+
 set $CC
-x_CC="`which $1`"
+x_CC="`which $1  2>/dev/null`"
+if test ! -x "$x_CC" ; then
+  x_CC="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
+fi
+
 if test -x "$x_CC" ; then
   shift
   CC="$x_CC $*"
@@ -290,7 +296,11 @@ CC_PATH="`dirname $x_CC`"
 x_CC=
 
 set $CXX
-x_CXX="`which $1`"
+x_CXX="`which $1  2>/dev/null`"
+if test ! -x "$x_CXX" ; then
+  x_CXX="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
+fi
+
 if test -x "$x_CXX" ; then
   shift
   CXX="$x_CXX $*"
@@ -298,6 +308,8 @@ if test -x "$x_CXX" ; then
 fi
 CXX_PATH="`dirname $x_CXX`"
 x_CXX=
+
+changequote([, ])dnl
 
 
 #### Multi-Thread safety
