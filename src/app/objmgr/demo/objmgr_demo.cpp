@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/03/10 16:33:44  vasilche
+* Added dump of features if errors were detected.
+*
 * Revision 1.15  2003/02/27 20:57:36  vasilche
 * Addef some options for better performance testing.
 *
@@ -298,6 +301,14 @@ int CDemoApp::Run(void)
                  CBioseq_Handle::eCoding_Iupac);
             // Print first 10 characters of each cd-region
             NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
+            if ( cds_vect.size() == 0 ) {
+                NcbiCout << "Zero size from: ";
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetOriginalFeature().GetLocation();
+                out->Flush();
+                NcbiCout << "Zero size to: ";
+                *out << feat_it->GetMappedFeature().GetLocation();
+            }
             sout = "";
             for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
                 // Convert sequence symbols to printable form
