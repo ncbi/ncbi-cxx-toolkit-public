@@ -25,7 +25,7 @@ script_dir=`(cd "$script_dir"; pwd)`
 make_check_script="$script_dir/check_make_unix.sh"
 
 # Define name for the check script file
-script_name="check.shcheck.sh"
+script_name="check.sh"
 CHECK_RUN_FILE="`pwd`/$script_name"
 export CHECK_RUN_FILE
 CHECK_RUN_LIST="`pwd`/$script_name.list"
