@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2002/01/30 20:14:48  lavr
+ * URL_Connect(): Print error code in some failure messages
+ *
  * Revision 6.26  2002/01/28 20:21:46  lavr
  * Do not store "" as a user_header
  *
@@ -126,6 +129,7 @@
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -542,7 +546,7 @@ extern SOCK URL_Connect
  size_t          content_length,
  const STimeout* c_timeout,
  const STimeout* rw_timeout,
- const char*     user_header,
+ const char*     user_hdr,
  int/*bool*/     encode_args,
  ESwitch         data_logging)
 {
@@ -553,11 +557,11 @@ extern SOCK URL_Connect
     SOCK  sock;
     char  buffer[128];
     char* x_args = 0;
+    EIO_Status st;
 
     /* check the args */
     if (!host  ||  !*host  ||  !port  ||  !path  ||  !*path  ||
-        (user_header  &&  *user_header  &&
-         user_header[strlen(user_header) - 1] != '\n')) {
+        (user_hdr  &&  *user_hdr  &&  user_hdr[strlen(user_hdr)-1] != '\n')) {
         CORE_LOG(eLOG_Error, "[URL_Connect]  Bad arguments");
         assert(0);
         return 0/*error*/;
@@ -585,10 +589,10 @@ extern SOCK URL_Connect
     }
 
     /* connect to HTTPD */
-    if (SOCK_Create(host, port, c_timeout, &sock) != eIO_Success) {
+    if ((st = SOCK_Create(host, port, c_timeout, &sock)) != eIO_Success) {
         CORE_LOGF(eLOG_Error,
-                  ("[URL_Connect]  Socket connect to %s:%hu failed",
-                   host, port));
+                  ("[URL_Connect]  Socket connect to %s:%hu failed: %s", host,
+                   port, st==eIO_Success? strerror(errno) : IO_StatusStr(st)));
         return 0/*error*/;
     }
     
@@ -621,38 +625,39 @@ extern SOCK URL_Connect
     /* compose and send HTTP header */
     if (
         /* {POST|GET} <path>?<args> HTTP/1.0\r\n */
-        SOCK_Write(sock, (const void*) X_REQ_R, strlen(X_REQ_R), 0)
+        (st = SOCK_Write(sock, (const void*) X_REQ_R, strlen(X_REQ_R), 0))
         != eIO_Success  ||
-        SOCK_Write(sock, (const void*) path, strlen(path), 0)
+        (st = SOCK_Write(sock, (const void*) path, strlen(path), 0))
         != eIO_Success  ||
         (x_args  &&
-         (SOCK_Write(sock, (const void*) X_REQ_Q, strlen(X_REQ_Q), 0)
+         ((st = SOCK_Write(sock, (const void*) X_REQ_Q, strlen(X_REQ_Q), 0))
           != eIO_Success  ||
-          SOCK_Write(sock, (const void*) x_args, strlen(x_args), 0)
+          (st = SOCK_Write(sock, (const void*) x_args, strlen(x_args), 0))
           != eIO_Success
           )
          )  ||
-        SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E), 0)
+        (st = SOCK_Write(sock, (const void*) X_REQ_E, strlen(X_REQ_E), 0))
         != eIO_Success  ||
 
         /* <user_header> */
-        (user_header  &&
-         SOCK_Write(sock, (const void*) user_header, strlen(user_header), 0)
+        (user_hdr  &&
+         (st = SOCK_Write(sock, (const void*) user_hdr, strlen(user_hdr), 0))
          != eIO_Success)  ||
 
         /* Content-Length: <content_length>\r\n\r\n */
         (req_method != eReqMethod_Get  &&
          (sprintf(buffer, "Content-Length: %lu\r\n",
                   (unsigned long) content_length) <= 0  ||
-          SOCK_Write(sock, (const void*) buffer, strlen(buffer), 0)
+          (st = SOCK_Write(sock, (const void*) buffer, strlen(buffer), 0))
           != eIO_Success))  ||
-        SOCK_Write(sock, (const void*) "\r\n", 2, 0)
+        (st = SOCK_Write(sock, (const void*) "\r\n", 2, 0))
         != eIO_Success)
         {
             CORE_LOGF(eLOG_Error,
-                      ("[URL_Connect]  Error sending HTTP header to %s:%hu",
-                       host, port));
-            if ( x_args )
+                      ("[URL_Connect]  Error sending HTTP header to"
+                       " %s:%hu: %s", host, port, st == eIO_Success
+                       ? strerror(errno) : IO_StatusStr(st)));
+            if (x_args)
                 free(x_args);
             SOCK_Close(sock);
             return 0/*error*/;
