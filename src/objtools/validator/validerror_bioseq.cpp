@@ -898,7 +898,7 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
     CTypeConstIterator<CMolInfo> mi = ConstBegin(seq);
     if (inst.GetRepr() == CSeq_inst::eRepr_delta) {
         if ( mi  &&  mi->IsSetTech()  &&  m_Imp.IsGED() ) {
-            CMolInfo::ETech tech = static_cast<CMolInfo::ETech>(mi->GetTech());
+            CMolInfo::TTech tech = mi->GetTech();
             if (tech == CMolInfo::eTech_htgs_0  ||
                 tech == CMolInfo::eTech_htgs_1  ||
                 tech == CMolInfo::eTech_htgs_2)
@@ -932,7 +932,7 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
 
     } else if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
         if (mi  &&  mi->IsSetTech()) {
-            CMolInfo::ETech tech = static_cast<CMolInfo::ETech>(mi->GetTech());
+            CMolInfo::TTech tech = mi->GetTech();
             if (tech == CMolInfo::eTech_htgs_0  ||
                 tech == CMolInfo::eTech_htgs_1  ||
                 tech == CMolInfo::eTech_htgs_2)
@@ -2052,6 +2052,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/01/29 17:19:55  ucko
+* Use TTech (with no cast) rather than ETech, in preparation for CIntEnum<>.
+*
 * Revision 1.8  2003/01/28 15:38:35  shomrat
 * Bug fix in ValidateSeqIds; Performance improvments in ValidateDupOrOverlapFeats
 *
