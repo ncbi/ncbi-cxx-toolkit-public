@@ -104,6 +104,16 @@ CConstRef<CUser_field> CUser_object::GetFieldRef(const string& str,
         }
     }
 
+    if ( !field_ref ) {
+        /// not found in the standard pathway, so recurse the fields themselves
+        ITERATE(TData, field_iter, GetData()) {
+            field_ref = (*field_iter)->GetFieldRef(str, delim);
+            if (field_ref) {
+                break;
+            }
+        }
+    }
+
     return field_ref;
 }
 
@@ -128,39 +138,34 @@ CUser_field& CUser_object::SetField(const string& str,
 
 
 CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
-                                         const string& delim,
-                                         const string& obj_subtype)
+                                            const string& delim,
+                                            const string& obj_subtype)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
 
-    CRef<CUser_object> obj_ref(this);
     CRef<CUser_field>  field_ref;
-    ITERATE(list<string>, iter, toks) {
-        field_ref.Reset();
 
-        // find the named field at this object's level
-        NON_CONST_ITERATE(TData, field_iter, obj_ref->SetData()) {
-            CUser_field& field = **field_iter;
-            if (field.IsSetLabel()  &&  field.GetLabel().IsStr()  &&
-                field.GetLabel().GetStr() == *iter) {
-                field_ref.Reset(&field);
-                break;
-            }
+    /// pass 1: see if we have a field that starts with this label already
+    NON_CONST_ITERATE(TData, field_iter, SetData()) {
+        CUser_field& field = **field_iter;
+        if (field.GetLabel().GetStr() == toks.front()) {
+            field_ref = *field_iter;
+            break;
         }
+    }
 
-        // if we didn't find it, add a new field
-        if ( !field_ref ) {
-            field_ref.Reset(new CUser_field());
-            field_ref->SetLabel().SetStr(*iter);
-            field_ref->SetData().SetObject().SetClass("NCBI");
-            field_ref->SetData().SetObject().SetType().SetStr(obj_subtype);
-            obj_ref->SetData().push_back(field_ref);
+    if ( !field_ref ) {
+        field_ref.Reset(new CUser_field());
+        field_ref->SetLabel().SetStr(toks.front());
+        SetData().push_back(field_ref);
+    }
 
-            obj_ref.Reset(&field_ref->SetData().SetObject());
-        } else if (field_ref->GetData().IsObject()) {
-            obj_ref.Reset(&field_ref->SetData().SetObject());
-        }
+    toks.pop_front();
+    if (toks.size()) {
+        string s = NStr::Join(toks, delim);
+        CRef<CUser_field> f = field_ref->SetFieldRef(s, delim);
+        field_ref = f;
     }
 
     return field_ref;
@@ -572,6 +577,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.12  2004/11/24 15:56:04  dicuccio
+* GetField(): added recursion of CUser_field if recursion in CUser_object fails.
+* SetField(): make equivalent to GetField()
+*
 * Revision 6.11  2004/11/08 17:20:37  dicuccio
 * Added GetFieldRef() and SetFieldRef() - returns the CConstRef<>/CRef<>
 * corresponding to the named field.  White space changes.
