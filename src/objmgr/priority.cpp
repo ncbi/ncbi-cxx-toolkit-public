@@ -136,7 +136,7 @@ CPriorityNode::CPriorityNode(const CPriorityTree& tree)
 
 
 CPriorityNode::CPriorityNode(const CPriorityNode& node)
-    : m_Leaf(node.m_Leaf), m_SubTree(node.m_SubTree)
+    : m_SubTree(node.m_SubTree), m_Leaf(node.m_Leaf)
 {
 }
 
@@ -248,6 +248,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/01 17:59:13  vasilche
+* Reordered member initializers.
+*
 * Revision 1.4  2003/06/30 18:42:10  vasilche
 * CPriority_I made to use less memory allocations/deallocations.
 *
