@@ -27,6 +27,7 @@
  *  File Description: Cached extension of data reader from ID1
  *
  */
+#include <connect/ncbi_conn_stream.hpp>
 
 #include <objmgr/reader_id1_cache.hpp>
 #include <util/cache/blob_cache.hpp>
@@ -122,16 +123,21 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
 
     }
     else {
-        CId1Reader::x_ReadBlob(id1_reply, seqref, conn);
+        CConn_ServiceStream* stream = x_GetConnection(conn);
+        x_SendRequest(seqref, stream, false);
+
+        x_ReadBlob(id1_reply, seqref, *stream);
     }
 }
+
 
 
 void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
                                   const CSeqref& seqref,
                                   CNcbiIstream& stream)
 {
-    auto_ptr<IWriter> writer(StoreBlob(seqref));
+    IWriter* wr = StoreBlob(seqref);
+    auto_ptr<IWriter> writer(wr);
     if ( writer.get() ) {
         try {
             CWriterByteSourceReader proxy(&stream, writer.get());
@@ -203,6 +209,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2003/10/02 19:29:14  kuznets
+ * First working revision
+ *
  * Revision 1.2  2003/10/01 19:32:22  kuznets
  * Work in progress
  *

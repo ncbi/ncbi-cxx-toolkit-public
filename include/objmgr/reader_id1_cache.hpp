@@ -61,11 +61,6 @@ protected:
     IWriter* StoreBlob(const CSeqref& seqref);
 
 protected:
-/*
-    void x_ReadBlob(CID1server_back& id1_reply,
-                    const CSeqref&   seqref, 
-                    TConn            conn);
-*/
     void x_ReadBlob(CID1server_back& id1_reply,
                                   const CSeqref& seqref,
                                   TConn conn);
@@ -73,6 +68,8 @@ protected:
     void x_ReadBlob(CID1server_back& id1_reply,
                     const CSeqref& seqref,
                     CNcbiIstream& stream);
+
+
 
 /*
     void x_ReadBlob(CID1server_back& id1_reply,
@@ -101,6 +98,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2003/10/02 19:28:34  kuznets
+* First working revision
+*
 * Revision 1.2  2003/10/01 19:32:01  kuznets
 * Work in progress
 *
