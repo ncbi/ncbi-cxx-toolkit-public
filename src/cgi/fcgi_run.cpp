@@ -370,7 +370,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             FCGX_SetExitStatus(*result, pfout);
         }
         catch (exception& e) {
-            string msg = "CCgiApplication::ProcessRequest() failed: ";
+            string msg = "(FCGI) CCgiApplication::ProcessRequest() failed: ";
             msg += e.what();
 
             // Logging
@@ -386,6 +386,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 stat->Submit(msg);
             }
 
+            // Exception reporting
+            CException* ex = dynamic_cast<CException*> (&e);
+            if ( ex ) {
+                NCBI_REPORT_EXCEPTION
+                    ("(FastCGI) CCgiApplication::x_RunFastCGI", *ex);
+            }
+
+            // (If to) abrupt the FCGI loop on error
             bool is_stop_onfail = reg.GetBool("FastCGI", "StopIfFailed",
                                               false, CNcbiRegistry::eErrPost);
             if ( is_stop_onfail ) {     // configured to stop on error
@@ -444,6 +452,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.31  2003/05/08 21:28:02  vakatov
+ * x_RunFastCGI():  Report exception (if any thrown) via the exception
+ * reporting mechanism after each iteration.
+ *
  * Revision 1.30  2003/05/07 13:27:04  kuznets
  * Corrected fast CGI ProcessRequest timing measurements
  *
