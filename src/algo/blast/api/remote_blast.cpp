@@ -35,11 +35,8 @@
 #include <algo/blast/api/remote_blast.hpp>
 
 #include <objects/blast/blastclient.hpp>
-#include <objects/blast/Blast4_request.hpp>
-#include <objects/blast/Blast4_request_body.hpp>
-#include <objects/blast/Blast4_error.hpp>
-#include <objects/blast/Blas_get_searc_resul_reque.hpp>
-#include <objects/blast/Blast4_error_code.hpp>
+#include <objects/blast/blast__.hpp>
+#include <objects/scoremat/scoremat__.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -704,7 +701,36 @@ void CRemoteBlast::SetQueries(CRef<objects::CScore_matrix_parameters> pssm)
 {
     if (pssm.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
-                   "Empty reference for query.");
+                   "Empty reference for query pssm.");
+    }
+    
+    if (! pssm->GetMatrix().CanGetQuery()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty reference for pssm component pssm.matrix.query.");
+    }
+    
+    string psi_program("blastp");
+    string old_service("plain");
+    string new_service("psi");
+    
+    if (m_QSR->GetProgram() != psi_program) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "PSI-Blast is only supported for blastp.");
+    }
+    
+    if (m_QSR->GetService().empty()) {
+        NCBI_THROW(CBlastException, eInternal,
+                   "Internal error: service is not set.");
+    }
+    
+    if ((m_QSR->GetService() != old_service) &&
+        (m_QSR->GetService() != new_service)) {
+        
+        // Allowing "psi" allows the matrix to be set, then replaced.
+        
+        NCBI_THROW(CBlastException, eBadParameter,
+                   string("PSI-Blast cannot also be ") +
+                   m_QSR->GetService() + ".");
     }
     
     CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
@@ -712,6 +738,8 @@ void CRemoteBlast::SetQueries(CRef<objects::CScore_matrix_parameters> pssm)
     
     m_QSR->SetQueries(*queries_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
+    
+    m_QSR->SetService(new_service);
 }
 
 void CRemoteBlast::SetDatabase(const char * x)
@@ -768,6 +796,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/05/12 19:26:49  bealer
+* - Additional checking for PSSM queries.
+* - PSSM query now implies service="psi".
+*
 * Revision 1.11  2004/05/10 15:10:08  bealer
 * - Error processing problem: messages should be treated as optional.
 *
