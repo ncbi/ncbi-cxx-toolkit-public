@@ -467,16 +467,7 @@ CPIDGuard::CPIDGuard(const string& filename, const string& dir)
             }
         }
     }}
-    {{
-        CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
-        if (out.good()) {
-            out << GetPID() << endl;
-        } else {
-            NCBI_THROW(CPIDGuardException, eCouldntOpen,
-                       "Unable to open PID file " + m_Path + " for writing: "
-                       + strerror(errno));
-        }
-    }}
+    UpdatePID();
 }
 
 
@@ -489,12 +480,30 @@ void CPIDGuard::Release(void)
 }
 
 
+void CPIDGuard::UpdatePID(TPid pid) {
+    if (pid == 0) {
+        pid = GetPID();
+    }
+    CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    if (out.good()) {
+        out << pid << endl;
+    } else {
+        NCBI_THROW(CPIDGuardException, eCouldntOpen,
+                   "Unable to open PID file " + m_Path + " for writing: "
+                   + strerror(errno));
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/09/23 21:13:53  ucko
+ * +CPIDGuard::UpdatePID (code mostly factored out of constructor)
+ *
  * Revision 1.31  2003/08/12 17:24:58  ucko
  * Add support for PID files.
  *
