@@ -198,8 +198,10 @@ CDataType* CCodeGenerator::ResolveMain(const string& fullName) const
 const string& CCodeGenerator::ResolveFileName(const string& name) const
 {
     TOutputFiles::const_iterator i = m_Files.find(name);
-    _ASSERT(i != m_Files.end());
-    return i->second->GetFileBaseName();
+    if (i != m_Files.end()) {
+        return i->second->GetFileBaseName();
+    }
+    return name;
 }
 
 void CCodeGenerator::IncludeAllMainTypes(void)
@@ -630,6 +632,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2002/12/17 19:03:26  gouriano
+* corrected ResolveFileName for external definitions
+*
 * Revision 1.45  2002/12/17 16:22:47  gouriano
 * separated class name from the name of the file in which it will be written
 *
