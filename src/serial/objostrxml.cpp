@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/01/10 17:48:41  gouriano
+* added check for empty container
+*
 * Revision 1.44  2003/01/10 16:54:10  gouriano
 * fixed a bug with optional class members
 *
@@ -796,6 +799,8 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
                 WriteObject(cType->GetElementPtr(i), elementType);
 
             } while ( cType->NextElement(i) );
+        } else {
+           ThrowError(fInvalidData, "container is empty");
         }
     }
     else {
@@ -807,6 +812,8 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
                 WriteObject(cType->GetElementPtr(i), elementType);
                 EndArrayElement();
             } while ( cType->NextElement(i) );
+        } else {
+           ThrowError(fInvalidData, "container is empty");
         }
 
         END_OBJECT_FRAME();
