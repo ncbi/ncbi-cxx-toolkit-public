@@ -492,7 +492,10 @@ private:
                 "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
                 "VALUES( ";
             s_MakeValueList(m_Key, m_Version, m_SubKey, &ins_blob_sql);
-            ins_blob_sql += ", NULL)";
+            // it should be NULL here but it gives an error with FTDS :(
+            // if porting to normal RDBMS it may need attention
+            ins_blob_sql += ", ' ')";
+//            ins_blob_sql += ", NULL)";
             stmt->ExecuteUpdate(ins_blob_sql);
 
             cg.Reset(cur = m_Conn->GetCursor("wrt_upd_cur", upd_blob_sql));
@@ -660,7 +663,10 @@ void CDBAPI_Cache::Store(const string&  key,
             "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
             "VALUES( ";
         s_MakeValueList(key, version, subkey, &ins_blob_sql);
-        ins_blob_sql += ", NULL)";
+        // it should be NULL here but it gives an error with FTDS :(
+        // if porting to normal RDBMS it may need attention
+        ins_blob_sql += ", ' ')";
+        
 
         stmt->ExecuteUpdate(ins_blob_sql);
         x_UpdateBlob(*stmt, key, version, subkey, data, size);
@@ -1132,7 +1138,10 @@ bool CDBAPI_Cache::x_UpdateBlob(IStatement&    stmt,
                 "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
                 "VALUES( ";
             s_MakeValueList(key, version, subkey, &ins_blob_sql);
-            ins_blob_sql += ", NULL)";
+            // it should be NULL here but it gives an error with FTDS :(
+            // if porting to normal RDBMS it may need attention
+            ins_blob_sql += ", ' ')";
+//            ins_blob_sql += ", NULL)";
             stmt.ExecuteUpdate(ins_blob_sql);
             // rows = stmt.GetRowCount();
         }
@@ -1200,6 +1209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/25 15:44:08  kuznets
+ * INSERT non-NULL BLOBs (workaround bug in FTDS)
+ *
  * Revision 1.10  2004/07/26 14:06:03  kuznets
  * + Open with all connection parameters
  *
