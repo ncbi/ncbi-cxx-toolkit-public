@@ -384,12 +384,8 @@ CBlastOption::SetTblastn()
     // this is needed to avoid using MemFree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    if (gc) {
-        m_DbOpts->gen_code_string = 
-            (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
-        copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
-        delete gc;
-    }
+
+    SetDbGeneticCodeStr(gc);
 }
 
 void 
@@ -504,6 +500,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/21 19:32:08  dondosha
+* Call SetDbGeneticCodeStr when creating a database gen. code string, to avoid code duplication
+*
 * Revision 1.13  2003/08/19 20:28:10  dondosha
 * EProgram enum type is no longer part of CBlastOption class
 *
