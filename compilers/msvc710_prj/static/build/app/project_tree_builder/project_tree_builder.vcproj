@@ -116,6 +116,7 @@
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_utils.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\resolver.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\msvc_configure_prj_generator.cpp"></File>
+      <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_projects.cpp"></File>
     </Filter>
     <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\Configuration.hpp"></File>
@@ -151,6 +152,7 @@
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_builder_app.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_datatool_generated_src.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_item.hpp"></File>
+      <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_projects.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_src_resolver.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_utils.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\resolver.hpp"></File>
