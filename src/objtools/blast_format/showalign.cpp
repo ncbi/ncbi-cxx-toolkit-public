@@ -1309,11 +1309,13 @@ const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int 
 	    eachSeqloc.Set(i, eachSeqloc.GetTo());
 	  }
 	  if (m_SeqLocChar==eX){
-	    actualSeq[i-start]='X';
+              if(isalpha(actualSeq[i-start])){
+                  actualSeq[i-start]='X';
+              }
 	  } else if (m_SeqLocChar==eN){
-	    actualSeq[i-start]='n';
+              actualSeq[i-start]='n';
 	  } else if (m_SeqLocChar==eLowerCase){
-	    actualSeq[i-start]=tolower(actualSeq[i-start]);
+              actualSeq[i-start]=tolower(actualSeq[i-start]);
 	  }
 	  //store seqloc start for font tag below
 	  if ((m_AlignOption & eHtml) && i == min<int>(to, start+len)){ 
@@ -2227,6 +2229,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.55  2005/01/25 15:34:53  jianye
+*Show gap as - in masked region
+*
 *Revision 1.54  2005/01/03 21:05:56  jianye
 *highlight subject seq for PairwiseWithIdentities format
 *
