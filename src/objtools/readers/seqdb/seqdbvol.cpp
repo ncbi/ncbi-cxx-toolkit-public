@@ -165,14 +165,27 @@ Int4 CSeqDBVol::GetSeqLengthApprox(Uint4 oid) const
 
 static CMutex s_MapNaMutex;
 
+/// Build NA2 to NcbiNA4 translation table
+///
+/// This builds a translation table for nucleotide data.  The table
+/// will be used by s_SeqDBMapNA2ToNA4().  The table is indexed by the
+/// packed nucleotide representation, or "NA2" format, which encodes
+/// four bases per byte.  The elements of the table are the unpacked
+/// "Ncbi-NA4" representation, which encodes two bases per byte.
+///
+/// @return
+///    The NA2 to NA4 translation table
 static vector<Uint1>
-s_SeqDBMapNA2ToNA4Setup(void)
+s_SeqDBMapNA2ToNA4Setup()
 {
     vector<Uint1> translated;
     translated.resize(512);
     
-    Uint1 convert[16] = {17,  18,  20,  24,  33,  34,  36,  40,
-                         65,  66,  68,  72, 129, 130, 132, 136};
+    Uint1 convert[16] = { 0x11,  0x12, 0x14, 0x18,
+                          0x21,  0x22, 0x24, 0x28,
+                          0x41,  0x42, 0x44, 0x48,
+                          0x81,  0x82, 0x84, 0x88 };
+    
     Int2 pair1 = 0;
     Int2 pair2 = 0;
     
@@ -188,6 +201,18 @@ s_SeqDBMapNA2ToNA4Setup(void)
     return translated;
 }
 
+/// Convert sequence data from NA2 to NA4 format
+///
+/// This uses a translation table to convert nucleotide data.  The
+/// input data is in NA2 format, the output data will be in NcbiNA4
+/// format.
+///
+/// @param buf2bit
+///    The NA2 input data.
+/// @param buf4bit
+///    The NcbiNA4 output data.
+/// @param base_length
+///    The length (in bases) of the input data.
 static void
 s_SeqDBMapNA2ToNA4(const char   * buf2bit,
                    vector<char> & buf4bit,
@@ -224,6 +249,16 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
     _ASSERT(estimated_length == buf4bit.size());
 }
 
+/// Build NA2 to Ncbi-NA8 translation table
+///
+/// This builds a translation table for nucleotide data.  The table
+/// will be used by s_SeqDBMapNA2ToNA8().  The table is indexed by the
+/// packed nucleotide representation, or "NA2" format, which encodes
+/// four bases per byte.  The elements of the table are the unpacked
+/// "Ncbi-NA8" representation, which encodes one base per byte.
+///
+/// @return
+///    The NA2 to NA8 translation table
 static vector<Uint1>
 s_SeqDBMapNA2ToNA8Setup(void)
 {
@@ -248,6 +283,21 @@ s_SeqDBMapNA2ToNA8Setup(void)
     return translated;
 }
 
+/// Convert sequence data from NA2 to NA8 format
+///
+/// This uses a translation table to convert nucleotide data.  The
+/// input data is in NA2 format, the output data will be in Ncbi-NA8
+/// format.  This function also optionally adds sentinel bytes to the
+/// start and end of the data (needed by some applications).
+///
+/// @param buf2bit
+///    The NA2 input data
+/// @param buf8bit
+///    The Ncbi-NA8 output data
+/// @param base_length
+///    The length (in bases) of the input data
+/// @param sentinel_bytes
+///    Specify true if sentinel bytes should be included
 static void
 s_SeqDBMapNA2ToNA8(const char   * buf2bit,
                    vector<char> & buf8bit,
@@ -303,6 +353,14 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
     _ASSERT(base_length == (buf8bit.size() - sreserve));
 }
 
+/// Convert sequence data from Ncbi-NA8 to Blast-NA8 format
+///
+/// This uses a translation table to convert nucleotide data.  The
+/// input data is in Ncbi-NA8 format, the output data will be in
+/// Blast-NA8 format.  The data is converted in-place.
+///
+/// @param buf
+///    The array of nucleotides to convert
 static void
 s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
 {
@@ -334,11 +392,33 @@ s_SeqDBMapNcbiNA8ToBlastNA8(vector<char> & buf)
 // NEW (long) version
 //--------------------
 
+/// Get length of ambiguous region (new version)
+///
+/// Given an ambiguity element in the new format, this returns the
+/// length of the ambiguous region.
+///
+/// @param ambchars
+///     The packed ambiguity data
+/// @param i
+///     The index into the ambiguity data
+/// @return
+///     The region length
 inline Uint4 s_ResLenNew(const vector<Int4> & ambchars, Uint4 i)
 {
     return (ambchars[i] >> 16) & 0xFFF;
 }
 
+/// Get position of ambiguous region (new version)
+///
+/// Given an ambiguity element in the new format, this returns the
+/// position of the ambiguous region.
+///
+/// @param ambchars
+///     The packed ambiguity data
+/// @param i
+///     The index into the ambiguity data
+/// @return
+///     The region length
 inline Uint4 s_ResPosNew(const vector<Int4> & ambchars, Uint4 i)
 {
     return ambchars[i+1];
@@ -348,35 +428,77 @@ inline Uint4 s_ResPosNew(const vector<Int4> & ambchars, Uint4 i)
 // OLD (compact) version
 //-----------------------
 
+/// Get ambiguous residue value (old version)
+///
+/// Given an ambiguity element in the old format, this returns the
+/// residue value to use for all bases in the ambiguous region.
+///
+/// @param ambchars
+///     The packed ambiguity data
+/// @param i
+///     The index into the ambiguity data
+/// @return
+///     The residue value
 inline Uint4 s_ResVal(const vector<Int4> & ambchars, Uint4 i)
 {
     return (ambchars[i] >> 28) & 0xF;
 }
 
+/// Get ambiguous region length (old version)
+///
+/// Given an ambiguity element in the old format, this returns the
+/// length of the ambiguous region.
+///
+/// @param ambchars
+///     The packed ambiguity data
+/// @param i
+///     The index into the ambiguity data
+/// @return
+///     The residue value
 inline Uint4 s_ResLenOld(const vector<Int4> & ambchars, Uint4 i)
 {
     return (ambchars[i] >> 24) & 0xF;
 }
 
+/// Get ambiguous residue value (old version)
+///
+/// Given an ambiguity element in the old format, this returns the
+/// position of the ambiguous region.
+///
+/// @param ambchars
+///     The packed ambiguity data
+/// @param i
+///     The index into the ambiguity data
+/// @return
+///     The residue value
 inline Uint4 s_ResPosOld(const vector<Int4> & ambchars, Uint4 i)
 {
     return ambchars[i] & 0xFFFFFF; // RES_OFFSET
 }
 
-
-static bool
+/// Rebuild an ambiguous region from sequence and ambiguity data
+///
+/// When sequence data for a blast database is built, ambiguous
+/// regions are replaced with random strings of the four standard
+/// nucleotides.  The ambiguity data is seperately encoded as a
+/// sequence of integer values.  This function unpacks the ambiguity
+/// data and replaces the randomized bases with correct (ambiguous)
+/// encodings.  This version works with 4 bit representations.
+///
+/// @param buf4bit
+///     Sequence data for a sequence
+/// @param amb_chars
+///     Corresponding ambiguous data
+static void
 s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
                       const vector<Int4> & amb_chars)
 {
-    if (buf4bit.empty())
-        return false;
-    
     if (amb_chars.empty()) 
-        return true;
+        return;
     
     Uint4 amb_num = amb_chars[0];
     
-    /* Check if highest order bit set. */
+    // Check if highest order bit set.
     bool new_format = (amb_num & 0x80000000) != 0;
     
     if (new_format) {
@@ -418,23 +540,36 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
             }
     	}
         
-	if (new_format) /* for new format we have 8 bytes for each element. */
+	if (new_format) // for new format we have 8 bytes for each element.
             i++;
     }
-    
-    return true;
 }
 
-static bool
+/// Rebuild an ambiguous region from sequence and ambiguity data
+///
+/// When sequence data for a blast database is built, ambiguous
+/// regions are replaced with random strings of the four standard
+/// nucleotides.  The ambiguity data is seperately encoded as a
+/// sequence of integer values.  This function unpacks the ambiguity
+/// data and replaces the randomized bases with correct (ambiguous)
+/// encodings.  This version works with 8 bit representations.
+///
+/// @param buf8bit
+///     Sequence data for a sequence
+/// @param amb_chars
+///     Corresponding ambiguous data
+/// @param sentinel
+///     True if sentinel bytes are used
+static void
 s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
                       const vector<Int4> & amb_chars,
                       bool                 sentinel)
 {
     if (buf4bit.empty())
-        return false;
+        return;
     
     if (amb_chars.empty()) 
-        return true;
+        return;
     
     Uint4 amb_num = amb_chars[0];
     
@@ -473,10 +608,20 @@ s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
 	if (new_format) /* for new format we have 8 bytes for each element. */
             i++;
     }
-    
-    return true;
 }
 
+/// Store protein sequence data in a Seq-inst
+///
+/// This function reads length elements from seq_buffer and stores
+/// them in a Seq-inst object.  It also sets appropriate encoding
+/// information in that object.
+///
+/// @param seqinst
+///     The Seq-inst to return the data in
+/// @param seq_buffer
+///     The input sequence data
+/// @param length
+///     The length (in bases) of the input data
 static void
 s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
                         const char * seq_buffer,
@@ -501,6 +646,19 @@ s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
     seqinst.SetMol(CSeq_inst::eMol_aa);
 }
 
+/// Store non-ambiguous nucleotide sequence data in a Seq-inst
+///
+/// This function reads length elements from seq_buffer and stores
+/// them in a Seq-inst object.  It also sets appropriate encoding
+/// information in that object.  No ambiguity information is used.
+/// The input array is assumed to be in 2 bit representation.
+///
+/// @param seqinst
+///     The Seq-inst to return the data in
+/// @param seq_buffer
+///     The input sequence data
+/// @param length
+///     The length (in bases) of the input data
 static void
 s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
                         const char   * seq_buffer,
@@ -524,6 +682,21 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
     seqinst.SetMol(CSeq_inst::eMol_na);
 }
 
+/// Store non-ambiguous nucleotide sequence data in a Seq-inst
+///
+/// This function reads length elements from seq_buffer and stores
+/// them in a Seq-inst object.  It also sets appropriate encoding
+/// information in that object.  No ambiguity information is used.
+/// The input array is assumed to be in Ncbi-NA4 representation.
+///
+/// @param seqinst
+///     The Seq-inst to return the data in
+/// @param seq_buffer
+///     The input sequence data in Ncbi-NA4 format
+/// @param length
+///     The length (in bases) of the input data
+/// @param amb_chars
+///     The ambiguity data for this sequence
 static void
 s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
                         const char   * seq_buffer,
@@ -538,48 +711,17 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
     seqinst.SetMol(CSeq_inst::eMol_na);
 }
 
-void s_GetDescrFromDefline(CRef<CBlast_def_line_set> deflines, string & descr)
-{
-    descr.erase();
-    
-    string seqid_str;
-    
-    typedef list< CRef<CBlast_def_line> >::const_iterator TDefIt; 
-    typedef list< CRef<CSeq_id        > >::const_iterator TSeqIt;
-   
-    const list< CRef<CBlast_def_line> > & dl = deflines->Get();
-    
-    for(TDefIt iter = dl.begin(); iter != dl.end(); iter++) {
-        ostringstream oss;
-        
-        const CBlast_def_line & defline = **iter;
-        
-        if (! descr.empty()) {
-            //oss << "\1";
-            oss << " ";
-        }
-        
-        if (defline.CanGetSeqid()) {
-            const list< CRef<CSeq_id > > & sl = defline.GetSeqid();
-            
-            for (TSeqIt seqit = sl.begin(); seqit != sl.end(); seqit++) {
-                (*seqit)->WriteAsFasta(oss);
-            }
-        }
-        
-        if (defline.CanGetTitle()) {
-            oss << defline.GetTitle();
-        }
-        
-        descr += oss.str();
-    }
-}
-
-// This is meant to mimic the readdb behavior.  It produces a string
-// with the title of the first defline, then the seqids plus title for
-// each subsequent defline.
-
-void s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
+/// Get the title string for a CBioseq
+///
+/// GetBioseq will use this function to get a title field when
+/// constructing the CBioseq object.
+///
+/// @param deflines
+///   The set of deflines for this sequence.
+/// @param title
+///   The returned title string
+static void
+s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
 {
     title.erase();
     
@@ -642,7 +784,19 @@ void s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
     }
 }
 
-static bool s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & a, const CSeq_id & b)
+/// Search for a Seq-id in a list of Seq-ids
+///
+/// This iterates over a list of Seq-ids, and returns true if a
+/// specific Seq-id is equivalent to one found in the list.
+///
+/// @param seqids
+///     A list of Seq-ids to search
+/// @param seqid
+///     The Seq-id to search for
+/// @return
+///     True if the Seq-id was found
+static bool
+s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & seqid)
 {
     typedef list< CRef<CSeq_id> > TSeqidList;
     
@@ -1047,9 +1201,7 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
 
 char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLockHold & locked) const
 {
-    // Specifying an allocation type of zero uses the atlas to do the
-    // allocation.  This is not intended to be visible to the end
-    // user, so it is not enumerated in seqdbcommon.hpp.
+    // Allocation using the atlas is not intended for the end user.
     
     char * retval = 0;
     
@@ -1057,11 +1209,6 @@ char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type, CSeqDBLo
     case eMalloc:
         retval = (char*) malloc(length);
         break;
-        
-// MemNew is not available.
-//     case eMemNew:
-//         retval = (char*) MemNew(length);
-//         break;
         
     case eNew:
         retval = new char[length];
