@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 class CPushback_Streambuf : public streambuf
 {
-    friend class CStreamUtils;
+    friend struct CStreamUtils;
 
 public:
     CPushback_Streambuf(istream& istream, CT_CHAR_TYPE* buf,
@@ -373,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2002/12/19 14:50:42  dicuccio
+ * Changed a friend class -> friend struct (relieves a warning for MSVC)
+ *
  * Revision 1.13  2002/11/28 03:28:01  lavr
  * Comments updated
  *
