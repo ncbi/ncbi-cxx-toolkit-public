@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/02/14 00:59:40  vakatov
+* Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
+*
 * Revision 1.4  2002/02/08 15:50:32  kholodov
 * Modified: integer types used are Int8, Int4, Int2, Uint1
 * Added: factories for CVariants of a particular type
@@ -58,7 +61,7 @@ BEGIN_NCBI_SCOPE
 
 const char* CVariantException::what() const throw() 
 {
-  return m_msg.c_str();
+    return m_msg.c_str();
 }
 
 //==================================================================
@@ -138,309 +141,312 @@ CVariant CVariant::Numeric(unsigned int precision,
 
 
 CVariant::CVariant(EDB_Type type)
-  : m_data(0)
+    : m_data(0)
 {
-  switch(type) {
-  case eDB_Int:
-    m_data = new CDB_Int();
-    break;  
-  case eDB_SmallInt:
-    m_data = new CDB_SmallInt();
-    break;  
-  case eDB_TinyInt:
-    m_data = new CDB_TinyInt();
-    break;  
-  case eDB_BigInt:
-    m_data = new CDB_BigInt();
-    break;  
-  case eDB_VarChar:
-    m_data = new CDB_VarChar();
-    break;  
-  case eDB_Char:
-    m_data = new CDB_Char();
-    break;  
-  case eDB_VarBinary:
-    m_data = new CDB_Binary();
-    break;  
-  case eDB_Binary:
-    m_data = new CDB_Binary();
-    break;  
-  case eDB_Float:
-    m_data = new CDB_Float();
-    break;  
-  case eDB_Double:
-    m_data = new CDB_Double();
-    break;  
-  case eDB_DateTime:
-    m_data = new CDB_DateTime();
-    break;
-  case eDB_SmallDateTime:
-    m_data = new CDB_SmallDateTime();
-    break;
-  case eDB_Text:
-    m_data = new CDB_Text();
-    break;
-  case eDB_Image:
-    m_data = new CDB_Image();
-    break;
-  case eDB_Bit:
-    m_data = new CDB_Bit();
-    break;
-  case eDB_Numeric:
-    m_data = new CDB_Numeric();
-    break;
-  case eDB_UnsupportedType:
+    switch(type) {
+    case eDB_Int:
+        m_data = new CDB_Int();
+        break;  
+    case eDB_SmallInt:
+        m_data = new CDB_SmallInt();
+        break;  
+    case eDB_TinyInt:
+        m_data = new CDB_TinyInt();
+        break;  
+    case eDB_BigInt:
+        m_data = new CDB_BigInt();
+        break;  
+    case eDB_VarChar:
+        m_data = new CDB_VarChar();
+        break;  
+    case eDB_Char:
+        m_data = new CDB_Char();
+        break;  
+    case eDB_VarBinary:
+        m_data = new CDB_Binary();
+        break;  
+    case eDB_Binary:
+        m_data = new CDB_Binary();
+        break;  
+    case eDB_Float:
+        m_data = new CDB_Float();
+        break;  
+    case eDB_Double:
+        m_data = new CDB_Double();
+        break;  
+    case eDB_DateTime:
+        m_data = new CDB_DateTime();
+        break;
+    case eDB_SmallDateTime:
+        m_data = new CDB_SmallDateTime();
+        break;
+    case eDB_Text:
+        m_data = new CDB_Text();
+        break;
+    case eDB_Image:
+        m_data = new CDB_Image();
+        break;
+    case eDB_Bit:
+        m_data = new CDB_Bit();
+        break;
+    case eDB_Numeric:
+        m_data = new CDB_Numeric();
+        break;
+    case eDB_UnsupportedType:
+        break;
+    }
     throw CVariantException("CVariant::ctor(): unsupported type");
-    break;
-  }
 }
 
 CVariant::CVariant(CDB_Object* o) 
-  : m_data(o) 
+    : m_data(o) 
 {
-  return;
+    return;
 }
 
 
 CVariant::CVariant(Int8 v) 
-  : m_data(new CDB_BigInt(v)) {}
+    : m_data(new CDB_BigInt(v)) {}
 
 
 CVariant::CVariant(Int4 v) 
-  : m_data(new CDB_Int(v)) {}
+    : m_data(new CDB_Int(v)) {}
 
 //CVariant::CVariant(int v) 
 //: m_data(new CDB_Int(v)) {}
 
 CVariant::CVariant(Int2 v) 
-  : m_data(new CDB_SmallInt(v)) {}
+    : m_data(new CDB_SmallInt(v)) {}
 
 CVariant::CVariant(Uint1 v) 
-  : m_data(new CDB_TinyInt(v)) {}
+    : m_data(new CDB_TinyInt(v)) {}
 
 CVariant::CVariant(float v)
-  : m_data(new CDB_Float(v)) {}
+    : m_data(new CDB_Float(v)) {}
 
 CVariant::CVariant(double v) 
-  : m_data(new CDB_Double(v)) {}
+    : m_data(new CDB_Double(v)) {}
 
 CVariant::CVariant(bool v) 
-  : m_data(new CDB_Bit(v ? 1 : 0)) {}
+    : m_data(new CDB_Bit(v ? 1 : 0)) {}
 
 CVariant::CVariant(const string& v) 
-  : m_data(new CDB_VarChar(v)) {}
+    : m_data(new CDB_VarChar(v)) {}
 
 CVariant::CVariant(const char* s) 
-  : m_data(new CDB_VarChar(s)) {}
+    : m_data(new CDB_VarChar(s)) {}
 
 CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
-  : m_data(0)
+    : m_data(0)
 {
 
-  switch(fmt) {
-  case eShort:
-    m_data = new CDB_SmallDateTime(v);
-    break;
-  case eLong:
-    m_data = new CDB_DateTime(v);
-    break;
-  default:
-    throw CVariantException("CVariant::ctor(): unsupported datetime type");
-  }
+    switch(fmt) {
+    case eShort:
+        m_data = new CDB_SmallDateTime(v);
+        break;
+    case eLong:
+        m_data = new CDB_DateTime(v);
+        break;
+    default:
+        throw CVariantException("CVariant::ctor(): unsupported datetime type");
+    }
 }
 
 
 CVariant::CVariant(const CVariant& v)
-  : m_data(0)
+    : m_data(0)
 {
-  if( v.GetData() != 0 ) {
-    m_data = v.GetData()->Clone();
-  }
+    if( v.GetData() != 0 ) {
+        m_data = v.GetData()->Clone();
+    }
 }
 			      
 CVariant::~CVariant(void) 
 {
-  delete m_data;
+    delete m_data;
 }
 
 
 CDB_Object* CVariant::GetData() const { 
-  return m_data; 
+    return m_data; 
 }
 
 CDB_Object* CVariant::GetNonNullData() const {
-  if( m_data == 0 )
-    throw CVariantException("CVariant::GetNonNullData(): null data");
+    if( m_data == 0 )
+        throw CVariantException("CVariant::GetNonNullData(): null data");
   
-  return m_data;
+    return m_data;
 }
 
 void CVariant::SetData(CDB_Object* o) {
-  delete m_data;
-  m_data = o;
+    delete m_data;
+    m_data = o;
 }
 
 
 EDB_Type CVariant::GetType() const
 {
-  return GetNonNullData()->GetType();
+    return GetNonNullData()->GetType();
 }
 
 string CVariant::GetString(void) const 
 {
-  CNcbiOstrstream s;
+    CNcbiOstrstream s;
 
-  if( IsNull() )
-    return "null";
+    if( IsNull() )
+        return "null";
 
-  switch( GetType() ) {
-  case eDB_Char:
-    return ((CDB_Char*)GetData())->Value();
-  case eDB_VarChar:
-    return ((CDB_VarChar*)GetData())->Value();
-  case eDB_TinyInt:
-    s << (int)GetByte(); 
-    return CNcbiOstrstreamToString(s);
-  case eDB_SmallInt:      
-    s << GetInt2(); 
-    return CNcbiOstrstreamToString(s);
-  case eDB_Int:
-    s << GetInt4(); 
-    return CNcbiOstrstreamToString(s);
-  case eDB_Float:
-    s << GetFloat(); 
-    return CNcbiOstrstreamToString(s);
-  case eDB_Double:
-    s << GetDouble(); 
-    return CNcbiOstrstreamToString(s);
-  case eDB_Bit:
-    s << GetBit(); 
-    return CNcbiOstrstreamToString(s);
-  case eDB_DateTime:
-  case eDB_SmallDateTime:
-    return GetCTime().AsString();
-  default:
-    throw CVariantException("CVariant::GetString(): type not supported");
-  }
+    switch( GetType() ) {
+    case eDB_Char:
+        return ((CDB_Char*)GetData())->Value();
+    case eDB_VarChar:
+        return ((CDB_VarChar*)GetData())->Value();
+    case eDB_TinyInt:
+        s << (int)GetByte(); 
+        return CNcbiOstrstreamToString(s);
+    case eDB_SmallInt:      
+        s << GetInt2(); 
+        return CNcbiOstrstreamToString(s);
+    case eDB_Int:
+        s << GetInt4(); 
+        return CNcbiOstrstreamToString(s);
+    case eDB_Float:
+        s << GetFloat(); 
+        return CNcbiOstrstreamToString(s);
+    case eDB_Double:
+        s << GetDouble(); 
+        return CNcbiOstrstreamToString(s);
+    case eDB_Bit:
+        s << GetBit(); 
+        return CNcbiOstrstreamToString(s);
+    case eDB_DateTime:
+    case eDB_SmallDateTime:
+        return GetCTime().AsString();
+    default:
+        break;
+    }
   
-  return string("");
-
+    throw CVariantException("CVariant::GetString(): type not supported");
 }
+
 
 Int8 CVariant::GetInt8() const
 {
-  crash( GetType() == eDB_BigInt );
-  return ((CDB_BigInt*)GetData())->Value();
+    crash( GetType() == eDB_BigInt );
+    return ((CDB_BigInt*)GetData())->Value();
 }
 
 
 Int4 CVariant::GetInt4() const
 {
-  crash( GetType() == eDB_Int );
-  return ((CDB_Int*)GetData())->Value();
+    crash( GetType() == eDB_Int );
+    return ((CDB_Int*)GetData())->Value();
 }
 
 Int2 CVariant::GetInt2() const
 {
-  crash( GetType() == eDB_SmallInt );
+    crash( GetType() == eDB_SmallInt );
 
-  return ((CDB_SmallInt*)GetData())->Value();
+    return ((CDB_SmallInt*)GetData())->Value();
 }
 
 Uint1 CVariant::GetByte() const
 {
-  crash( GetType() == eDB_TinyInt );
+    crash( GetType() == eDB_TinyInt );
 
-  return ((CDB_TinyInt*)GetData())->Value();
+    return ((CDB_TinyInt*)GetData())->Value();
 }
 
 float CVariant::GetFloat() const
 {
   
-  crash( GetType() == eDB_Float );
+    crash( GetType() == eDB_Float );
 
-  return ((CDB_Float*)GetData())->Value();
+    return ((CDB_Float*)GetData())->Value();
 }
 
 double CVariant::GetDouble() const
 {
-  crash( GetType() == eDB_Double );
+    crash( GetType() == eDB_Double );
 
-  return ((CDB_Double*)GetData())->Value();
+    return ((CDB_Double*)GetData())->Value();
 }
 
 bool CVariant::GetBit() const
 {
-  crash( GetType() == eDB_Bit );
+    crash( GetType() == eDB_Bit );
 
-  return ((CDB_Bit*)GetData())->Value() != 0;
+    return ((CDB_Bit*)GetData())->Value() != 0;
 }
 
 const CTime& CVariant::GetCTime() const
 {
-  switch(GetType()) {
-  case eDB_DateTime:
-    return ((CDB_DateTime*)GetData())->Value();
-  case eDB_SmallDateTime:
-    return ((CDB_SmallDateTime*)GetData())->Value();
-  default:
-    throw CVariantException("CVariant::GetCTime(): invalid type");
-  }
+    switch(GetType()) {
+    case eDB_DateTime:
+        return ((CDB_DateTime*)GetData())->Value();
+    case eDB_SmallDateTime:
+        return ((CDB_SmallDateTime*)GetData())->Value();
+    default:
+        throw CVariantException("CVariant::GetCTime(): invalid type");
+    }
 }
 
 bool CVariant::IsNull() const
 {
-  return GetData() == 0 ? true : GetData()->IsNULL();
+    return GetData() == 0 ? true : GetData()->IsNULL();
 }
 
 CVariant& CVariant::operator=(const CVariant& v)
 {
-  CVariant temp(v);
-  swap(m_data, temp.m_data);
-  return *this;
+    CVariant temp(v);
+    swap(m_data, temp.m_data);
+    return *this;
 }
 
-bool CVariant::operator<(const CVariant& v) const 
+bool CVariant::operator< (const CVariant& v) const 
 {
-  bool less = false;
+    bool less = false;
 
-  if( IsNull() || v.IsNull() ) {
-    less = IsNull() && !v.IsNull();
-  }
-  else {
-    if( GetType() != v.GetType() ) {
-      throw CVariantException("CVariant::operator<(): cannot compare different types");
+    if( IsNull() || v.IsNull() ) {
+        less = IsNull() && !v.IsNull();
     }
+    else {
+        if( GetType() != v.GetType() ) {
+            throw CVariantException
+                ("CVariant::operator<(): cannot compare different types");
+        }
 
-    switch( GetType() ) {
-    case eDB_Char:
-    case eDB_VarChar:
-      less = GetString() < v.GetString();
-      break;
-    case eDB_TinyInt:
-      less = GetByte() < v.GetByte();
-      break;
-    case eDB_SmallInt:      
-      less = GetInt2() < v.GetInt2();
-      break;
-    case eDB_Int:
-      less = GetInt4() < v.GetInt4();
-      break;
-    case eDB_Float:
-      less = GetFloat() < v.GetFloat();
-      break;
-    case eDB_Double:
-      less = GetDouble() < v.GetDouble();
-      break;
-    case eDB_DateTime:
-    case eDB_SmallDateTime:
-      less = GetCTime() < v.GetCTime();
-      break;
-    default:
-      throw CVariantException("CVariant::operator<(): type not supported");
+        switch( GetType() ) {
+        case eDB_Char:
+        case eDB_VarChar:
+            less = GetString() < v.GetString();
+            break;
+        case eDB_TinyInt:
+            less = GetByte() < v.GetByte();
+            break;
+        case eDB_SmallInt:      
+            less = GetInt2() < v.GetInt2();
+            break;
+        case eDB_Int:
+            less = GetInt4() < v.GetInt4();
+            break;
+        case eDB_Float:
+            less = GetFloat() < v.GetFloat();
+            break;
+        case eDB_Double:
+            less = GetDouble() < v.GetDouble();
+            break;
+        case eDB_DateTime:
+        case eDB_SmallDateTime:
+            less = GetCTime() < v.GetCTime();
+            break;
+        default:
+            throw CVariantException
+                ("CVariant::operator<(): type not supported");
+        }
     }
-  }
-  return less;
+    return less;
 }
+
 
 END_NCBI_SCOPE

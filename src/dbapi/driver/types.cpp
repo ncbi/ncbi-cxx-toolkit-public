@@ -58,6 +58,30 @@ void CDB_Object::AssignNULL()
 }
 
 
+CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
+{
+    switch ( type ) {
+    case eDB_Int             : return new CDB_Int          ();
+    case eDB_SmallInt        : return new CDB_SmallInt     ();
+    case eDB_TinyInt         : return new CDB_TinyInt      ();
+    case eDB_BigInt          : return new CDB_BigInt       ();
+    case eDB_VarChar         : return new CDB_VarChar      ();
+    case eDB_Char            : return new CDB_Char     (size);
+    case eDB_VarBinary       : return new CDB_VarBinary    ();
+    case eDB_Binary          : return new CDB_Binary   (size);
+    case eDB_Float           : return new CDB_Float        ();
+    case eDB_Double          : return new CDB_Double       ();
+    case eDB_DateTime        : return new CDB_DateTime     ();
+    case eDB_SmallDateTime   : return new CDB_SmallDateTime();
+    case eDB_Text            : return new CDB_Text         ();
+    case eDB_Image           : return new CDB_Image        ();
+    case eDB_Bit             : return new CDB_Bit          ();
+    case eDB_Numeric         : return new CDB_Numeric      ();
+    case eDB_UnsupportedType : break;
+    }
+    throw CDB_ClientEx(eDB_Error, 2, "CDB_Object::Create", "unknown type");
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Int::
@@ -306,7 +330,7 @@ CDB_Object* CDB_Image::Clone() const
 {
     if ( !m_Null ) {
         throw CDB_ClientEx(eDB_Error, 1, "CDB_Image::Clone",
-                        "Clone for the non NULL image is not supported");
+                           "Clone for the non NULL image is not supported");
     }
     return new CDB_Image;
 }
@@ -341,7 +365,7 @@ CDB_Object* CDB_Text::Clone() const
 {
     if ( !m_Null ) {
         throw CDB_ClientEx(eDB_Error, 1, "CDB_Text::Clone",
-                        "Clone for the non NULL text is not supported");
+                           "Clone for the non-NULL text is not supported");
     }
     return new CDB_Text;
 }
@@ -548,27 +572,28 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
                                    const char* val)
 {
 
-    if((m_Precision == 0) && (precision == 0) && val) {
-	precision= strlen(val);
-	if(scale == 0) {
-	    scale= precision - (Uint1)strcspn(val, ".");
-	    if(scale > 1) --scale;
-	}
+    if (m_Precision == 0  &&  precision == 0  &&  val) {
+        precision= (unsigned int) strlen(val);
+        if (scale == 0) {
+            scale= precision - (Uint1) strcspn(val, ".");
+            if (scale > 1)
+                --scale;
+        }
     }
 
     if (!precision  ||  precision > kMaxPrecision) {
         throw CDB_ClientEx(eDB_Error, 100, "CDB_Numeric::x_MakeFromString",
-                        "illegal precision");
+                           "illegal precision");
     }
     if (scale > precision) {
         throw CDB_ClientEx(eDB_Error, 101, "CDB_Numeric::x_MakeFromString",
-                        "scale can not be more than precision");
+                           "scale can not be more than precision");
     }
 
     bool is_negative= false;
     if(*val == '-') {
-	is_negative= true;
-	++val;
+        is_negative= true;
+        ++val;
     }
 
     while (*val == '0') {
@@ -584,14 +609,14 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
             break;
         } else {
             throw CDB_ClientEx(eDB_Error, 102, "CDB_Numeric::x_MakeFromString",
-                            "string can not be converted");
+                               "string can not be converted");
         }
         ++val;
     }
 
     if (precision - n < scale) {
         throw CDB_ClientEx(eDB_Error, 103, "CDB_Numeric::x_MakeFromString",
-                        "string can not be converted because of overflow");
+                           "string can not be converted because of overflow");
     }
 
     unsigned int dec = 0;
@@ -639,40 +664,6 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
     m_Null      = false;
 }
 
-CDB_Object* CDB_Object::create(EDB_Type type, size_t size)
-{
-    switch(type) {
-        case eDB_Int          : return new CDB_Int          ();
-        case eDB_SmallInt     : return new CDB_SmallInt     ();
-        case eDB_TinyInt      : return new CDB_TinyInt      ();
-        case eDB_BigInt       : return new CDB_BigInt       ();
-        case eDB_VarChar      : return new CDB_VarChar      ();
-        case eDB_Char         :
-          if((int)size == -1) {
-            return new CDB_Char();
-          }
-          else{
-            return new CDB_Char(size);
-          }
-        case eDB_VarBinary    : return new CDB_VarBinary    ();
-        case eDB_Binary       :
-          if((int)size == -1) {
-            return new CDB_Binary();
-          }
-          else{
-            return new CDB_Binary(size);
-          }
-        case eDB_Float        : return new CDB_Float        ();
-        case eDB_Double       : return new CDB_Double       ();
-        case eDB_DateTime     : return new CDB_DateTime     ();
-        case eDB_SmallDateTime: return new CDB_SmallDateTime();
-        case eDB_Text         : return new CDB_Text         ();
-        case eDB_Image        : return new CDB_Image        ();
-        case eDB_Bit          : return new CDB_Bit          ();
-        case eDB_Numeric      : return new CDB_Numeric      ();
-    }
-    return NULL;
-}
 
 END_NCBI_SCOPE
 
@@ -681,6 +672,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/02/14 00:59:42  vakatov
+ * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
+ *
  * Revision 1.6  2002/02/13 22:37:26  sapojnik
  * new_CDB_Object() renamed to CDB_Object::create()
  *

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/14 00:59:40  vakatov
+* Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -46,105 +49,106 @@
 
 
 CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
-  : m_buf(0), 
+    : m_buf(0), 
     m_size(bufsize > 0 ? bufsize : DEF_BUFSIZE), 
     m_len(0), m_rs(0), m_cmd(0)
 { 
-  m_buf = new CT_CHAR_TYPE[m_size * 2]; // read and write buffer in one
-  setg(0, 0, 0); // call underflow on the first read
+    m_buf = new CT_CHAR_TYPE[m_size * 2]; // read and write buffer in one
+    setg(0, 0, 0); // call underflow on the first read
 
-  setp(getPBuf(), getPBuf() + m_size);
+    setp(getPBuf(), getPBuf() + m_size);
 }
 
 CByteStreamBuf::~CByteStreamBuf()
 {
-  if( m_rs != 0 && m_len > 0 )
-    m_rs->SkipItem();
+    if( m_rs != 0 && m_len > 0 )
+        m_rs->SkipItem();
 
-  delete[] m_buf;
-  delete m_cmd;
+    delete[] m_buf;
+    delete m_cmd;
 }
 
 CT_CHAR_TYPE* CByteStreamBuf::getGBuf()
 {
-  return m_buf;
+    return m_buf;
 }
 
 CT_CHAR_TYPE* CByteStreamBuf::getPBuf() 
 {
-  return m_buf + m_size;
+    return m_buf + m_size;
 }
 
 void CByteStreamBuf::SetCmd(CDB_SendDataCmd* cmd) {
-  delete m_cmd;
-  m_cmd = cmd;
+    delete m_cmd;
+    m_cmd = cmd;
 }
 
 void CByteStreamBuf::SetRs(CDB_Result* rs) {
-  delete m_rs;
-  m_rs = rs;
+    delete m_rs;
+    m_rs = rs;
 }
 
 CT_INT_TYPE CByteStreamBuf::underflow()
 {
-  if( m_rs == 0 )
-    throw runtime_error("CByteStreamBuf::underflow(): CDB_Result* is null");
+    if( m_rs == 0 )
+        throw runtime_error("CByteStreamBuf::underflow(): CDB_Result* is null");
   
-  static size_t total = 0;
+    static size_t total = 0;
 
-  m_len = m_rs->ReadItem(getGBuf(), m_size);
-  total += m_len;
-  if( m_len == 0 ) {
-    NcbiCout << "Total read from readItem: " << total << endl;
-    return CT_EOF;
-  }
-  else {
-    setg(getGBuf(), getGBuf(), getGBuf() + m_len);
-    return CT_TO_INT_TYPE(*getGBuf());
-  }
+    m_len = m_rs->ReadItem(getGBuf(), m_size);
+    total += m_len;
+    if( m_len == 0 ) {
+        NcbiCout << "Total read from readItem: " << total << endl;
+        return CT_EOF;
+    }
+    else {
+        setg(getGBuf(), getGBuf(), getGBuf() + m_len);
+        return CT_TO_INT_TYPE(*getGBuf());
+    }
     
 }
 
 CT_INT_TYPE CByteStreamBuf::overflow(CT_INT_TYPE c)
 {
-  if( m_cmd == 0 )
-    throw runtime_error("CByteStreamBuf::overflow(): CDB_SendDataCmd* is null");
+    if( m_cmd == 0 ) {
+        throw runtime_error
+            ("CByteStreamBuf::overflow(): CDB_SendDataCmd* is null");
+    }
 
-  static size_t total = 0;
-  size_t put = m_cmd->SendChunk(pbase(), pptr() - pbase());
-  total += put;
-  if( put > 0 ) {
-    setp(getPBuf(), getPBuf() + m_size );
+    static size_t total = 0;
+    size_t put = m_cmd->SendChunk(pbase(), pptr() - pbase());
+    total += put;
+    if( put > 0 ) {
+        setp(getPBuf(), getPBuf() + m_size );
 
-    if( ! CT_EQ_INT_TYPE(c, CT_EOF) )
-      sputc(CT_TO_CHAR_TYPE(c));
+        if( ! CT_EQ_INT_TYPE(c, CT_EOF) )
+            sputc(CT_TO_CHAR_TYPE(c));
 
-    return c;
-  }
-  else {
-    NcbiCout << "Total sent: " << total << endl;
-    return CT_EOF;
-  }
+        return c;
+    }
+    else {
+        NcbiCout << "Total sent: " << total << endl;
+        return CT_EOF;
+    }
     
 }
 
 int CByteStreamBuf::sync()
 {
-  overflow(CT_EOF);
-  return 0;
+    overflow(CT_EOF);
+    return 0;
 }
 
 streambuf* 
 CByteStreamBuf::setbuf(CT_CHAR_TYPE* /*p*/, streamsize /*n*/)
 {
-  throw runtime_error("CByteStreamBuf::setbuf(): not allowed");
-  return this;
+    throw runtime_error("CByteStreamBuf::setbuf(): not allowed");
 }
 
 
 streamsize CByteStreamBuf::showmanyc() 
 {
-  streamsize left = egptr() - gptr();
-  return left > 1 ? left : -1;
+    streamsize left = egptr() - gptr();
+    return left > 1 ? left : -1;
 }
 //======================================================

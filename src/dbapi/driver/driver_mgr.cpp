@@ -34,19 +34,20 @@
 
 BEGIN_NCBI_SCOPE
 
+
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
-				 FDBAPI_CreateContext driver_ctx_func)
+                                 FDBAPI_CreateContext driver_ctx_func)
 {
     if(m_NofDrvs < m_NofRoom) {
-	CFastMutexGuard mg(m_Mutex2);
-	for(unsigned int i= m_NofDrvs; i--; ) {
-	    if(m_Drivers[i].drv_name == driver_name) {
-		m_Drivers[i].drv_func= driver_ctx_func;
-		return;
-	    }
-	}
-	m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
-	m_Drivers[m_NofDrvs].drv_name= driver_name;
+        CFastMutexGuard mg(m_Mutex2);
+        for(unsigned int i= m_NofDrvs; i--; ) {
+            if(m_Drivers[i].drv_name == driver_name) {
+                m_Drivers[i].drv_func= driver_ctx_func;
+                return;
+            }
+        }
+        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
+        m_Drivers[m_NofDrvs].drv_name= driver_name;
     }
     else {
         throw CDB_ClientEx(eDB_Error, 101, "C_DriverMgr::RegisterDriver",
@@ -55,64 +56,52 @@ void C_DriverMgr::RegisterDriver(const string&        driver_name,
 	
 }
 
+
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
 {
     CFastMutexGuard mg(m_Mutex1);
     unsigned int i;
     
     for(i= m_NofDrvs; i--; ) {
-	if(m_Drivers[i].drv_name == driver_name) {
-	    return m_Drivers[i].drv_func;
-	}
+        if(m_Drivers[i].drv_name == driver_name) {
+            return m_Drivers[i].drv_func;
+        }
     }
     
     if (!LoadDriverDll(driver_name)) {
-            return 0;
+        return 0;
     }
 
     for(i= m_NofDrvs; i--; ) {
-	if(m_Drivers[i].drv_name == driver_name) {
-	    return m_Drivers[i].drv_func;
-	}
+        if(m_Drivers[i].drv_name == driver_name) {
+            return m_Drivers[i].drv_func;
+        }
     }
-}
 
-static void DriverDllName(string& dll_name, const string& driver_name)
-{
-    dll_name= "dbapi_driver_";
-    dll_name+= driver_name;
-}
-
-static void DriverEntryPointName(string& entry_point_name, const string& driver_name)
-{
-    entry_point_name= "DBAPI_E_";
-    entry_point_name+= driver_name;
+    throw CDB_ClientEx(eDB_Error, 200, "C_DriverMgr::GetDriver",
+                       "internal error");
 }
 
 
 bool C_DriverMgr::LoadDriverDll(const string& driver_name)
 {
-    string dll_name;
-    DriverDllName(dll_name, driver_name);
-
     try {
-	CDll drvDll(dll_name);
-	string entry_point_name;
-	DriverEntryPointName(entry_point_name, driver_name);
+        CDll drv_dll("dbapi_driver_" + driver_name);
 
-	FDllEntryPoint entry_point;
-	if(!drvDll.GetEntryPoint(entry_point_name, &entry_point)) {
-	    drvDll.Unload();
-	    return false;
-	}
-	FDriverRegister reg= (FDriverRegister)((*entry_point)());
-	(*reg)(*this);
-	return true;
+        FDllEntryPoint entry_point;
+        if ( !drv_dll.GetEntryPoint("DBAPI_E_" + driver_name, &entry_point) ) {
+            drv_dll.Unload();
+            return false;
+        }
+        FDriverRegister reg = entry_point();
+        reg(*this);
+        return true;
     }
     catch (exception&) {
-	return false;
+        return false;
     }
 }
+
 
 END_NCBI_SCOPE
 
@@ -121,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/02/14 00:59:42  vakatov
+ * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
+ *
  * Revision 1.5  2002/01/23 21:29:48  soussov
  * replaces map with array
  *

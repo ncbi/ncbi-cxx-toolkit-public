@@ -86,9 +86,9 @@ public:
     virtual EDB_Type    GetType() const = 0;
     virtual CDB_Object* Clone()   const = 0;
 
-    // Returns a new object of a given type;
-    // size matters only for eDB_Char, eDB_Binary.
-    static CDB_Object* create(EDB_Type type, size_t size=-1);
+    // Create and return a new object (with internal value NULL) of type "type".
+    // NOTE:  "size" matters only for eDB_Char, eDB_Binary.
+    static CDB_Object* Create(EDB_Type type, size_t size = 1);
 
 protected:
     bool m_Null;
@@ -280,8 +280,7 @@ protected:
 class CDB_Char : public CDB_Object
 {
 public:
-    // static const size_t kMaxCharSize = 255; <<=not compatible with MS compiler
-    enum {kMaxCharSize = 255 };
+    enum { kMaxCharSize = 255 };
 
     CDB_Char(size_t s = 1) : CDB_Object(true) {
         m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
@@ -428,7 +427,6 @@ protected:
 class CDB_Binary : public CDB_Object
 {
 public:
-    // static const size_t kMaxBinSize = 255; <<=not compatible with MS compiler
     enum { kMaxBinSize = 255 };
 
     CDB_Binary(size_t s = 1) : CDB_Object(true) {
@@ -818,7 +816,6 @@ protected:
     unsigned char m_Body[34];
 };
 
-CDB_Object* new_CDB_Object(EDB_Type type, size_t size);
 
 END_NCBI_SCOPE
 
@@ -829,6 +826,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/02/14 00:59:38  vakatov
+ * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
+ *
  * Revision 1.7  2002/02/13 22:37:27  sapojnik
  * new_CDB_Object() renamed to CDB_Object::create()
  *
