@@ -281,6 +281,8 @@ TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
     _ASSERT(!info->HasDataSource());
     TMainLock::TWriteLockGuard guard(m_DSMainLock);
     TMainLock::TWriteLockGuard guard2(m_DSCacheLock);
+    _ASSERT(!IsLocked(*info));
+    _ASSERT(!info->HasDataSource());
     TBlobId blob_id = info->GetBlobId();
     if ( !blob_id ) {
         blob_id = info;
@@ -349,9 +351,17 @@ inline
 void x_MapObject(Map& info_map, const Ref& ref, const Info& info)
 {
     typedef typename Map::value_type value_type;
-    if ( !info_map.insert(value_type(ref, info)).second ) {
+    pair<typename Map::iterator, bool> ins =
+        info_map.insert(value_type(ref, info));
+    if ( !ins.second ) {
+        CNcbiOstrstream str;
+        str << "CDataSource::x_Map(): object already mapped: " <<
+            typeid(*ref).name() <<
+            " ref: " << NStr::PtrToString(ref.GetPointer()) <<
+            " ptr: " << NStr::PtrToString(info) <<
+            " was: " << NStr::PtrToString(ins.first->second);
         NCBI_THROW(CObjMgrException, eOtherError,
-                   "CDataSource::x_Map(): object already mapped");
+                   CNcbiOstrstreamToString(str));
     }
 }
 
