@@ -258,6 +258,24 @@ CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
 }
 
 
+CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
+                                       CRWLock*   lk,
+                                       bool       pass_lk_ownership,
+                                       streamsize buf_size)
+    : CConn_IOStream(MEMORY_CreateConnectorEx
+                     (buf, MT_LOCK_cxx2c(lk, pass_lk_ownership)),
+                     0, buf_size), m_Buf(buf)
+{
+    return;
+}
+
+
+CConn_MemoryStream::~CConn_MemoryStream()
+{
+    BUF_Destroy(m_Buf);
+}
+
+
 string& CConn_MemoryStream::ToString(string& str)
 {
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
@@ -325,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2004/10/27 18:53:23  lavr
+ * +CConn_MemoryStream(BUF buf,...)
+ *
  * Revision 6.36  2004/10/27 15:49:45  lavr
  * +CConn_MemoryStream::ToCStr()
  *

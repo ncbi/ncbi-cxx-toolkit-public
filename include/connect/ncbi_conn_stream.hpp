@@ -281,8 +281,19 @@ public:
                        bool       pass_lk_ownership = true,
                        streamsize buf_size = kConn_DefaultBufSize);
 
-    string& ToString(string&);  // fill in the data, return the argument
-    char*   ToCStr(void);       // '\0'-terminated; delete when done using it 
+    // Build a stream on top of NCBI buffer (which could in turn
+    // be built over a memory area of a specified size).
+    CConn_MemoryStream(BUF        buf,
+                       CRWLock*   lk = 0,
+                       bool       pass_lk_ownership = true,
+                       streamsize buf_size = kConn_DefaultBufSize);
+    virtual ~CConn_MemoryStream();
+
+    string& ToString(string&); ///< fill in the data, return the argument
+    char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
+
+protected:
+    BUF     m_Buf;             ///< Underlying buffer (if used)
 
 private:
     // Disable copy constructor and assignment.
@@ -352,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.31  2004/10/27 18:53:22  lavr
+ * +CConn_MemoryStream(BUF buf,...)
+ *
  * Revision 6.30  2004/10/27 16:09:32  lavr
  * +CConn_MemoryStream::ToCStr()
  *
