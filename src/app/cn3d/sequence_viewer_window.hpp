@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/09 15:48:43  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.1  2001/03/01 20:15:29  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -53,32 +56,38 @@ public:
     SequenceViewerWindow(SequenceViewer *parentSequenceViewer);
     ~SequenceViewerWindow(void);
 
-    void OnShowHideRows(wxCommandEvent& event);
-    void OnDeleteRow(wxCommandEvent& event);
-    void OnMoveRow(wxCommandEvent& event);
-
     bool RequestEditorEnable(bool enable);
     void EnableDerivedEditorMenuItems(bool enabled);
-
-    // menu identifiers - additional items beyond base class items
-    enum {
-        // view menu
-        MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
-
-        // mouse mode
-        MID_MOVE_ROW,
-    };
 
     DECLARE_EVENT_TABLE()
 
 private:
     SequenceViewer *sequenceViewer;
 
+    // menu identifiers - additional items beyond base class items
+    enum {
+        // view menu
+        MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
+        // mouse mode
+        MID_MOVE_ROW,
+        // update menu
+        MID_SHOW_UPDATES,
+        MID_REALIGN_ROWS
+    };
+
+    void OnShowHideRows(wxCommandEvent& event);
+    void OnDeleteRow(wxCommandEvent& event);
+    void OnMoveRow(wxCommandEvent& event);
+    void OnShowUpdates(wxCommandEvent& event);
+    void OnRealignRows(wxCommandEvent& event);
+
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
     bool QueryShowAllRows(void);
 
     void OnCloseWindow(wxCloseEvent& event);
+
+    wxMenu *updateMenu;
 
 public:
     // ask if user wants to save edits; return value indicates whether program should

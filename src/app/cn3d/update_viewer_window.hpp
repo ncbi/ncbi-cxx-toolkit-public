@@ -26,44 +26,50 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Class definition for the Show/Hide dialog callback interface
+*      implementation of GUI part of update viewer
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2001/03/09 15:48:43  thiessen
+* Revision 1.1  2001/03/09 15:48:44  thiessen
 * major changes to add initial update viewer
-*
-* Revision 1.2  2000/12/15 15:52:08  thiessen
-* show/hide system installed
-*
-* Revision 1.1  2000/11/17 19:47:38  thiessen
-* working show/hide alignment row
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_SHOW_HIDE_CALLBACK__HPP
-#define CN3D_SHOW_HIDE_CALLBACK__HPP
+#ifndef CN3D_UPDATE_VIEWER_WINDOW__HPP
+#define CN3D_UPDATE_VIEWER_WINDOW__HPP
 
-#include <corelib/ncbistd.hpp>
-
-#include <vector>
+#include "cn3d/viewer_window_base.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
-class ShowHideCallbackObject
+class UpdateViewer;
+class SequenceDisplay;
+
+class UpdateViewerWindow : public ViewerWindowBase
 {
 public:
-    // called by the ShowHideDialog when the user hits 'done' or 'apply'
-    virtual void ShowHideCallbackFunction(const std::vector < bool > & itemsEnabled) = 0;
+    UpdateViewerWindow(UpdateViewer *parentUpdateViewer);
+    ~UpdateViewerWindow(void);
 
-    // called when the selection changes - the callback can then change the status
-    // of itemsEnabled, which will in turn be reflected in the listbox selection
-    virtual void SelectionChangedCallback(
-        const std::vector < bool >& original, std::vector < bool > & itemsEnabled) { }
+    bool RequestEditorEnable(bool enable);
+    void EnableDerivedEditorMenuItems(bool enabled);
+
+    DECLARE_EVENT_TABLE()
+
+private:
+    UpdateViewer *updateViewer;
+
+    // menu identifiers - additional items beyond base class items
+//    enum {
+//    };
+
+    void OnCloseWindow(wxCloseEvent& event);
+
+public:
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_SHOW_HIDE_CALLBACK__HPP
+#endif // CN3D_UPDATE_VIEWER_WINDOW__HPP

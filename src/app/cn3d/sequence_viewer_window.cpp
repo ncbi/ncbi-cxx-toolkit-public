@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.4  2001/03/06 20:20:51  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -69,10 +72,13 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_SHOW_HIDE_ROWS,                  SequenceViewerWindow::OnShowHideRows)
     EVT_MENU      (MID_DELETE_ROW,                      SequenceViewerWindow::OnDeleteRow)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
+    EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
+    EVT_MENU      (MID_REALIGN_ROWS,                    SequenceViewerWindow::OnRealignRows)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
-    ViewerWindowBase(parentSequenceViewer), sequenceViewer(parentSequenceViewer)
+    ViewerWindowBase(parentSequenceViewer, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(1000,200)),
+    sequenceViewer(parentSequenceViewer)
 {
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
 
@@ -80,6 +86,12 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     editMenu->Append(MID_DELETE_ROW, "Delete &Row", "", true);
 
     mouseModeMenu->Append(MID_MOVE_ROW, "&Move Row", "", true);
+
+    updateMenu = new wxMenu;
+    updateMenu->Append(MID_SHOW_UPDATES, "&Show Updates");
+    updateMenu->AppendSeparator();
+    updateMenu->Append(MID_REALIGN_ROWS, "&Realign Rows");
+    menuBar->Append(updateMenu, "&Update");
 
     EnableDerivedEditorMenuItems(false);
 }
@@ -112,6 +124,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
             menuBar->Enable(MID_SHOW_HIDE_ROWS, false);     // can't show/hide in non-alignment display
         menuBar->Enable(MID_DELETE_ROW, enabled);           // can only delete row when editor is on
         menuBar->Enable(MID_MOVE_ROW, enabled);             // can only move row when editor is on
+        menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
     }
 }
 
@@ -141,9 +154,17 @@ bool SequenceViewerWindow::RequestEditorEnable(bool enable)
 
 bool SequenceViewerWindow::SaveDialog(bool canCancel)
 {
+    static bool overrideCanCancel = false, prevCanCancel;
+    if (overrideCanCancel) {
+        canCancel = prevCanCancel;
+        overrideCanCancel = false;
+    }
+
     // if editor is checked on, then this save command was initiated outside the menu;
     // if so, then need to turn off editor pretending it was done from 'enable editor' menu item
     if (menuBar->IsChecked(MID_ENABLE_EDIT)) {
+        overrideCanCancel = true;
+        prevCanCancel = canCancel;
         Command(MID_ENABLE_EDIT);
         return true;
     }
@@ -185,7 +206,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->GetTitle().c_str());
     ShowHideDialog dialog(
         titleStrs,
-        visibilities,
+        &visibilities,
         sequenceViewer->alignmentManager,
         NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
     dialog.Activate();
@@ -210,8 +231,53 @@ bool SequenceViewerWindow::QueryShowAllRows(void)
 
     // show all rows
     for (i=0; i<visibilities.size(); i++) visibilities[i] = true;
-    sequenceViewer->alignmentManager->SelectionCallback(visibilities);
+    sequenceViewer->alignmentManager->ShowHideCallbackFunction(visibilities);
     return true;
+}
+
+// process events from the realign menu
+void SequenceViewerWindow::OnShowUpdates(wxCommandEvent& event)
+{
+    sequenceViewer->alignmentManager->ShowUpdateWindow();
+}
+
+void SequenceViewerWindow::OnRealignRows(wxCommandEvent& event)
+{
+    std::vector < bool > selectedSlaves;
+    sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&selectedSlaves);
+
+    // sanity check - make sure all rows are visible; then un-mark all
+    int i;
+    for (i=0; i<selectedSlaves.size(); i++) {
+        if (!selectedSlaves[i]) break;
+        selectedSlaves[i] = false;
+    }
+    if (i != selectedSlaves.size()) {
+        ERR_POST(Error << "SequenceViewerWindow::OnRealignRows() - all rows should be visible at this point");
+        return;
+    }
+
+    std::vector < const Sequence * > slaveSequences;
+    sequenceViewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
+    wxString *titleStrs = new wxString[slaveSequences.size()];
+    for (int i=0; i<slaveSequences.size(); i++)
+        titleStrs[i] = slaveSequences[i]->GetTitle().c_str();
+
+    wxString title = "Realign Slaves of ";
+    title.Append(sequenceViewer->GetFirstCurrentAlignment()->GetMaster()->GetTitle().c_str());
+    ShowHideDialog dialog(
+        titleStrs,
+        &selectedSlaves,
+        NULL,   // no "apply" button or callback
+        NULL, -1, title, wxPoint(400, 50), wxSize(200, 300));
+    dialog.Activate();
+
+    // do nothing if none selected for realignment
+    for (i=0; i<selectedSlaves.size(); i++) if (selectedSlaves[i]) break;
+    if (i == selectedSlaves.size()) return;
+
+    sequenceViewer->alignmentManager->
+        RealignSlaveSequences(sequenceViewer->GetFirstCurrentAlignment(), selectedSlaves);
 }
 
 END_SCOPE(Cn3D)

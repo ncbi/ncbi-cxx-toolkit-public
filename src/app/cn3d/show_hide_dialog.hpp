@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/09 15:48:43  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.2  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -71,9 +74,9 @@ public:
     };
 
     ShowHideDialog(
-        const wxString items[],                 // must have itemsEnabled.size() wxStrings
-        std::vector < bool >& itemsEnabled,
-        ShowHideCallback *callback,
+        const wxString items[],                 // must have items->size() wxStrings
+        std::vector < bool > *itemsOn,          // modified (upon Activate()) to reflect user selection
+        ShowHideCallbackObject *callback,
         wxWindow* parent,
         wxWindowID id,
         const wxString& title,
@@ -83,14 +86,16 @@ public:
 
     void Activate(void);
 
+private:
     void OnSelection(wxCommandEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnCloseWindow(wxCommandEvent& event);
 
-private:
     void EndEventLoop(void);
 
-    ShowHideCallback *callbackObject;
+    std::vector < bool > *itemsEnabled;
+
+    ShowHideCallbackObject *callbackObject;
     wxListBox *listBox;
     wxButton *applyB, *cancelB;
     bool dialogActive;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/09 15:49:04  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.4  2001/03/06 20:49:14  thiessen
 * fix row->alignment bug
 *
@@ -53,6 +56,8 @@
 #include "cn3d/viewer_base.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/style_manager.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -69,6 +74,16 @@ static const char
     blockOneColumnChar = '^',
     blockInsideChar = '-';
 static const std::string blockBoundaryStringTitle("(blocks)");
+
+// color converter
+static inline void Vector2wxColor(const Vector& colorVec, wxColor *colorWX)
+{
+    colorWX->Set(
+        static_cast<unsigned char>((colorVec[0] + 0.000001) * 255),
+        static_cast<unsigned char>((colorVec[1] + 0.000001) * 255),
+        static_cast<unsigned char>((colorVec[2] + 0.000001) * 255)
+    );
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,11 +171,7 @@ bool DisplayRowFromString::GetCharacterTraitsAt(int column,
     if (hasBackgroundColor) {
         *drawBackground = true;
         // convert vector color to wxColour
-        cellBackgroundColor->Set(
-            static_cast<unsigned char>((backgroundColor[0] + 0.000001) * 255),
-            static_cast<unsigned char>((backgroundColor[1] + 0.000001) * 255),
-            static_cast<unsigned char>((backgroundColor[2] + 0.000001) * 255)
-        );
+        Vector2wxColor(backgroundColor, cellBackgroundColor);
     } else {
         *drawBackground = false;
     }
@@ -260,12 +271,13 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
     // set title
     *title = sequence->GetTitle().c_str();
 
-    // set color
+    // set color - by object if there's an associated molecule
     const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment*>(displayRow);
-    if (alnRow && alnRow->alignment->IsMaster(sequence))
-        color->Set(255,0,0);    // red
+    const Molecule *molecule;
+    if (alnRow && (molecule=alnRow->alignment->GetSequenceOfRow(alnRow->row)->molecule) != NULL)
+        Vector2wxColor(molecule->parentSet->styleManager->GetObjectColor(molecule), color);
     else
-        color->Set(0,0,0);      // black
+        color->Set(0,0,0);      // ... black otherwise
 
     return true;
 }
@@ -289,13 +301,7 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
             (*viewerWindow) ? (*viewerWindow)->GetCurrentJustification() : BlockMultipleAlignment::eLeft,
             character, &colorVec, drawBackground, cellBackgroundColor))
         return false;
-
-    // convert vector color to wxColour
-    color->Set(
-        static_cast<unsigned char>((colorVec[0] + 0.000001) * 255),
-        static_cast<unsigned char>((colorVec[1] + 0.000001) * 255),
-        static_cast<unsigned char>((colorVec[2] + 0.000001) * 255)
-    );
+    Vector2wxColor(colorVec, color);
 
     return true;
 }
@@ -369,7 +375,12 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                     !selectedRow->alignment || selectedRow->alignment->NRows() <= 2) {
                     ERR_POST(Warning << "Can't delete that row...");
                 } else {
-                    // delete row based on alignment row # (not display row #)
+
+                    // redraw molecule associated with removed row
+                    const Molecule *molecule =
+                        selectedRow->alignment->GetSequenceOfRow(selectedRow->row)->molecule;
+
+                    // delete row based on alignment row # (not display row #); redraw molecule
                     if (selectedRow->alignment->DeleteRow(selectedRow->row)) {
 
                         // delete this row from the display, and update higher row #'s
@@ -379,16 +390,19 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                                 *currentARow = dynamic_cast<DisplayRowFromAlignment*>(*r);
                             if (!currentARow)
                                 continue;
-                            else if (currentARow == selectedRow)
-                                toDelete = r;
                             else if (currentARow->row > selectedRow->row)
                                 (currentARow->row)--;
+                            else if (currentARow == selectedRow) {
+                                toDelete = r;
+                                delete *r;
+                            }
                         }
                         rows.erase(toDelete);
 
                         (*viewerWindow)->DeleteRowOff();
-                        UpdateMaxRowWidth();
                         UpdateAfterEdit(selectedRow->alignment);
+                        if (molecule && (*viewerWindow)->AlwaysSyncStructures())
+                            GlobalMessenger()->PostRedrawMolecule(molecule);
                     }
                 }
             }
@@ -397,6 +411,29 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     }
 
     return true;
+}
+
+void SequenceDisplay::RecreateFromEditedMultiple(BlockMultipleAlignment *multiple)
+{
+    if (!IsEditable()) {
+        ERR_POST(Error << "SequenceDisplay::RecreateFromEditedMultiple() - non-editable alignment");
+		return;
+	}
+
+    int i;
+    for (i=0; i<rows.size(); i++) delete rows[i];
+    rows.clear();
+
+    // block boundaries
+    DisplayRowFromString *blockBoundaryRow =
+        new DisplayRowFromString("", Vector(0,0,0), blockBoundaryStringTitle,
+            true, Vector(0.8,0.8,1), multiple);
+    AddRow(blockBoundaryRow);
+
+    // display alignment
+    for (i=0; i<multiple->NRows(); i++) AddRowFromAlignment(i, multiple);
+
+    UpdateAfterEdit(multiple);
 }
 
 void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
@@ -496,7 +533,7 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
     if (masterOK) {
         rows = newRows;
         (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
-        GlobalMessenger()->PostRedrawSequenceViewer((*viewerWindow)->viewer);
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
     }
 }
 
@@ -541,7 +578,6 @@ void SequenceDisplay::AddBlockBoundaryRows(void)
         ri = r;
         rows.insert(ri, blockBoundaryRow);
         r++;
-        if (blockBoundaryRow->Width() > maxRowWidth) maxRowWidth = blockBoundaryRow->Width();
         UpdateBlockBoundaryRow(blockBoundaryRow->alignment);
     }
 
@@ -576,19 +612,48 @@ void SequenceDisplay::UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAl
     GlobalMessenger()->PostRedrawSequenceViewer((*viewerWindow)->viewer);
 }
 
+template < class T >
+static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
+{
+    if (v.size() != remove.size()) {
+#ifndef _DEBUG
+		// MSVC gets internal compiler error here on debug builds... ugh!
+        ERR_POST(Error << "VectorRemoveElements() - size mismatch");
+#endif
+        return;
+    }
+
+    std::vector < T > copy(v.size() - nToRemove);
+    int i, nRemoved = 0;
+    for (i=0; i<v.size(); i++) {
+        if (remove[i])
+            nRemoved++;
+        else
+            copy[i - nRemoved] = v[i];
+    }
+    if (nRemoved != nToRemove) {
+#ifndef _DEBUG
+        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
+#endif
+        return;
+    }
+
+    v = copy;
+}
+
 void SequenceDisplay::RemoveBlockBoundaryRows(void)
 {
-    RowVector::iterator r = rows.begin(), rr, re = rows.end();
-    while (r != re) {
-        DisplayRowFromString *blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(*r);
-
-        rr = r;
-        r++;
+    std::vector < bool > toRemove(rows.size(), false);
+    int nToRemove = 0;
+    for (int row=0; row<rows.size(); row++) {
+        DisplayRowFromString *blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(rows[row]);
         if (blockBoundaryRow && blockBoundaryRow->title == blockBoundaryStringTitle) {
             delete blockBoundaryRow;
-            rows.erase(rr);
+            toRemove[row] = true;
+            nToRemove++;
         }
     }
+    VectorRemoveElements(rows, toRemove, nToRemove);
     UpdateMaxRowWidth();
     (*viewerWindow)->UpdateDisplay(this);
 }

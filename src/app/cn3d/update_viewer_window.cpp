@@ -26,44 +26,66 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Class definition for the Show/Hide dialog callback interface
+*      implementation of GUI part of update viewer
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2001/03/09 15:48:43  thiessen
+* Revision 1.1  2001/03/09 15:49:06  thiessen
 * major changes to add initial update viewer
-*
-* Revision 1.2  2000/12/15 15:52:08  thiessen
-* show/hide system installed
-*
-* Revision 1.1  2000/11/17 19:47:38  thiessen
-* working show/hide alignment row
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_SHOW_HIDE_CALLBACK__HPP
-#define CN3D_SHOW_HIDE_CALLBACK__HPP
-
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#include <vector>
+#include <wx/wx.h>
+
+#include "cn3d/update_viewer_window.hpp"
+#include "cn3d/update_viewer.hpp"
+#include "cn3d/messenger.hpp"
+#include "cn3d/sequence_display.hpp"
+
+USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-class ShowHideCallbackObject
-{
-public:
-    // called by the ShowHideDialog when the user hits 'done' or 'apply'
-    virtual void ShowHideCallbackFunction(const std::vector < bool > & itemsEnabled) = 0;
+BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
+    INCLUDE_VIEWER_WINDOW_BASE_EVENTS
+    EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
+END_EVENT_TABLE()
 
-    // called when the selection changes - the callback can then change the status
-    // of itemsEnabled, which will in turn be reflected in the listbox selection
-    virtual void SelectionChangedCallback(
-        const std::vector < bool >& original, std::vector < bool > & itemsEnabled) { }
-};
+UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
+    ViewerWindowBase(parentUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,200), wxSize(1000,300)),
+    updateViewer(parentUpdateViewer)
+{
+    menuBar->Enable(MID_SELECT_COLS, false);
+    EnableDerivedEditorMenuItems(false);
+}
+
+UpdateViewerWindow::~UpdateViewerWindow(void)
+{
+}
+
+void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
+{
+    if (viewer) {
+        viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
+        viewer->GUIDestroyed(); // make sure UpdateViewer knows the GUI is gone
+        GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
+    }
+    Destroy();
+}
+
+void UpdateViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
+{
+}
+
+bool UpdateViewerWindow::RequestEditorEnable(bool enable)
+{
+    return true;
+}
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_SHOW_HIDE_CALLBACK__HPP

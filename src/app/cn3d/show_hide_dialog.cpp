@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.2  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -56,8 +59,8 @@ END_EVENT_TABLE()
 
 ShowHideDialog::ShowHideDialog(
     const wxString items[],
-    std::vector < bool >& itemsEnabled,
-    ShowHideCallback *callback,
+    std::vector < bool > *itemsOn,
+    ShowHideCallbackObject *callback,
     wxWindow* parent,
     wxWindowID id,
     const wxString& title,
@@ -65,41 +68,64 @@ ShowHideDialog::ShowHideDialog(
     const wxSize& size
 ) :
     wxFrame(parent, id, title, pos, size, wxCAPTION | wxRESIZE_BORDER | wxFRAME_FLOAT_ON_PARENT),
-    callbackObject(callback)
+    itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL)
 {
     SetAutoLayout(true);
     SetSizeHints(150, 100);
 
     static const int margin = 0;
 
-    wxButton *doneB = new wxButton(this, B_DONE, "Done");
-    wxLayoutConstraints *c1 = new wxLayoutConstraints();
-    c1->bottom.SameAs       (this,      wxBottom,   margin);
-    c1->right.SameAs        (this,      wxRight,    margin);
-    c1->width.PercentOf     (this,      wxWidth,    33);
-    c1->height.AsIs         ();
-    doneB->SetConstraints(c1);
+	wxButton *doneB;
+    if (callbackObject) {
+        doneB = new wxButton(this, B_DONE, "Done");
+        wxLayoutConstraints *c1 = new wxLayoutConstraints();
+        c1->bottom.SameAs       (this,      wxBottom,   margin);
+        c1->right.SameAs        (this,      wxRight,    margin);
+        c1->width.PercentOf     (this,      wxWidth,    33);
+        c1->height.AsIs         ();
+        doneB->SetConstraints(c1);
 
-    applyB = new wxButton(this, B_APPLY, "Apply");
-    wxLayoutConstraints *c2 = new wxLayoutConstraints();
-    c2->bottom.SameAs       (this,      wxBottom,   margin);
-    c2->left.SameAs         (this,      wxLeft,     margin);
-    c2->width.PercentOf     (this,      wxWidth,    33);
-    c2->top.SameAs          (doneB,     wxTop);
-    applyB->SetConstraints(c2);
-    applyB->Enable(false);
+        applyB = new wxButton(this, B_APPLY, "Apply");
+        wxLayoutConstraints *c2 = new wxLayoutConstraints();
+        c2->bottom.SameAs       (this,      wxBottom,   margin);
+        c2->left.SameAs         (this,      wxLeft,     margin);
+        c2->width.PercentOf     (this,      wxWidth,    33);
+        c2->top.SameAs          (doneB,     wxTop);
+        applyB->SetConstraints(c2);
+        applyB->Enable(false);
 
-    cancelB = new wxButton(this, B_CANCEL, "Cancel");
-    wxLayoutConstraints *c3 = new wxLayoutConstraints();
-    c3->bottom.SameAs       (this,      wxBottom,   margin);
-    c3->left.RightOf        (applyB,                margin);
-    c3->right.LeftOf        (doneB,                 margin);
-    c3->top.SameAs          (doneB,     wxTop);
-    cancelB->SetConstraints(c3);
-    cancelB->Enable(false);
+        cancelB = new wxButton(this, B_CANCEL, "Cancel");
+        wxLayoutConstraints *c3 = new wxLayoutConstraints();
+        c3->bottom.SameAs       (this,      wxBottom,   margin);
+        c3->left.RightOf        (applyB,                margin);
+        c3->right.LeftOf        (doneB,                 margin);
+        c3->top.SameAs          (doneB,     wxTop);
+        cancelB->SetConstraints(c3);
+        cancelB->Enable(false);
+    }
+
+    // don't include Apply button if no callback object given
+    else {
+        doneB = new wxButton(this, B_DONE, "Done");
+        wxLayoutConstraints *c1 = new wxLayoutConstraints();
+        c1->bottom.SameAs       (this,      wxBottom,   margin);
+        c1->right.SameAs        (this,      wxRight,    margin);
+        c1->width.PercentOf     (this,      wxWidth,    50);
+        c1->height.AsIs         ();
+        doneB->SetConstraints(c1);
+
+        cancelB = new wxButton(this, B_CANCEL, "Cancel");
+        wxLayoutConstraints *c3 = new wxLayoutConstraints();
+        c3->bottom.SameAs       (this,      wxBottom,   margin);
+        c3->left.SameAs         (this,      wxLeft,     margin);
+        c3->right.LeftOf        (doneB,                 margin);
+        c3->top.SameAs          (doneB,     wxTop);
+        cancelB->SetConstraints(c3);
+        cancelB->Enable(false);
+    }
 
     listBox = new wxListBox(this, LISTBOX, wxDefaultPosition, wxDefaultSize,
-        itemsEnabled.size(), items, wxLB_EXTENDED | wxLB_HSCROLL | wxLB_NEEDED_SB);
+        itemsEnabled->size(), items, wxLB_EXTENDED | wxLB_HSCROLL | wxLB_NEEDED_SB);
     wxLayoutConstraints *c4 = new wxLayoutConstraints();
     c4->top.SameAs          (this,      wxTop,      margin);
     c4->left.SameAs         (this,      wxLeft,     margin);
@@ -110,20 +136,15 @@ ShowHideDialog::ShowHideDialog(
     Layout();   // just to be safe; really only needed if this window isn't made resizable
 
     // set initial item selection (reverse order, so scroll bar is initially at the top)
-    beforeChange.resize(itemsEnabled.size());
-    for (int i=itemsEnabled.size()-1; i>=0; i--) {
-        listBox->SetSelection(i, itemsEnabled[i]);
-        beforeChange[i] = itemsEnabled[i];
+    beforeChange.resize(itemsEnabled->size());
+    for (int i=itemsEnabled->size()-1; i>=0; i--) {
+        listBox->SetSelection(i, (*itemsEnabled)[i]);
+        beforeChange[i] = (*itemsEnabled)[i];
     }
 }
 
 void ShowHideDialog::Activate(void)
 {
-    if (!callbackObject) {
-        ERR_POST(Error << "ShowHideDialog must be created with non-null callback pointer");
-        return;
-    }
-
     dialogActive = true;
     Show(true);
     MakeModal(true);
@@ -150,48 +171,51 @@ void ShowHideDialog::EndEventLoop(void)
 
 void ShowHideDialog::OnSelection(wxCommandEvent& event)
 {
-    // do the selection changed callback, and adjust selections accordingly
-    std::vector < bool > itemsEnabled(listBox->Number());
+    // update selection list
     int i;
     for (i=0; i<listBox->Number(); i++)
-        itemsEnabled[i] = listBox->Selected(i);
-    callbackObject->SelectionChangedCallback(beforeChange, itemsEnabled);
+        (*itemsEnabled)[i] = listBox->Selected(i);
 
-    // apply changes
-    int pV = listBox->GetScrollPos(wxVERTICAL);
-    listBox->Show(false);
-    for (i=0; i<listBox->Number(); i++) {
-        listBox->SetSelection(i, itemsEnabled[i]);
-        beforeChange[i] = itemsEnabled[i];
-    }
-    // horrible kludge to keep vertical scroll at same position...
-    if (pV >= 0 && pV < listBox->Number()) {
-        listBox->SetSelection(listBox->Number() - 1, true);
-        listBox->SetSelection(listBox->Number() - 1, itemsEnabled[listBox->Number() - 1]);
-        listBox->SetSelection(pV, true);
-        listBox->SetSelection(pV, itemsEnabled[pV]);
-    }
-    listBox->Show(true);
+    if (callbackObject) {
+        // do the selection changed callback, and adjust selections accordingly
+        callbackObject->SelectionChangedCallback(beforeChange, *itemsEnabled);
 
-    applyB->Enable(true);
+        // apply changes
+        int pV = listBox->GetScrollPos(wxVERTICAL);
+        listBox->Show(false);
+        for (i=0; i<listBox->Number(); i++) {
+            listBox->SetSelection(i, (*itemsEnabled)[i]);
+            beforeChange[i] = (*itemsEnabled)[i];
+        }
+        // horrible kludge to keep vertical scroll at same position...
+        if (pV >= 0 && pV < listBox->Number()) {
+            listBox->SetSelection(listBox->Number() - 1, true);
+            listBox->SetSelection(listBox->Number() - 1, (*itemsEnabled)[listBox->Number() - 1]);
+            listBox->SetSelection(pV, true);
+            listBox->SetSelection(pV, (*itemsEnabled)[pV]);
+        }
+        listBox->Show(true);
+        applyB->Enable(true);
+    }
+
     cancelB->Enable(true);
 }
 
 void ShowHideDialog::OnButton(wxCommandEvent& event)
 {
     if (event.GetId() == B_CANCEL) {
+        // restore item list to original state
+        for (int i=0; i<beforeChange.size(); i++)
+            (*itemsEnabled)[i] = beforeChange[i];
         EndEventLoop();
     }
 
     else if (event.GetId() == B_DONE || event.GetId() == B_APPLY) {
 
         // only do this if selection has changed since last time
-        if (applyB->IsEnabled()) {
+        if (callbackObject && applyB && applyB->IsEnabled()) {
             // do the callback with the current selection state
-            std::vector < bool > itemsEnabled(listBox->Number());
-            for (int i=0; i<listBox->Number(); i++)
-                itemsEnabled[i] = listBox->Selected(i);
-            callbackObject->SelectionCallback(itemsEnabled);
+            callbackObject->ShowHideCallbackFunction(*itemsEnabled);
             applyB->Enable(false);
             cancelB->Enable(false);
         }

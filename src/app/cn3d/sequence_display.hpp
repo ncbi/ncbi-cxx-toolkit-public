@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/09 15:48:43  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.2  2001/03/06 20:20:43  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -193,6 +196,11 @@ public:
     void UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const;
     void AddBlockBoundaryRows(void);
     void RemoveBlockBoundaryRows(void);
+
+    // recreate the display from the given alignment.
+    // NOTE: this assumes the display is from only a single alignment, and will put the block
+    // boundary row at the top, regardless of where it was initially
+    void RecreateFromEditedMultiple(BlockMultipleAlignment *multiple);
 
     // create a new copy of this object
     SequenceDisplay * Clone(BlockMultipleAlignment *newAlignment) const;

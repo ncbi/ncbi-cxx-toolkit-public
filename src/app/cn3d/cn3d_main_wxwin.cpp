@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/03/09 15:49:04  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.28  2001/03/06 20:20:50  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -504,7 +507,7 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
 
             ShowHideDialog dialog(
                 titles,
-                structureVisibilities,
+                &structureVisibilities,
                 glCanvas->structureSet->showHideManager,
                 NULL, -1, "Show/Hide Structures", wxPoint(400, 50), wxSize(200, 300));
             dialog.Activate();
@@ -534,7 +537,7 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
 void Cn3DMainFrame::OnAlignStructures(wxCommandEvent& event)
 {
     if (glCanvas->structureSet) {
-        glCanvas->structureSet->alignmentManager->RealignAllSlaves();
+        glCanvas->structureSet->alignmentManager->RealignAllSlaveStructures();
         glCanvas->SetCurrent();
         glCanvas->Refresh(false);
     }

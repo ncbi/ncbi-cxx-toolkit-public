@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.8  2001/03/01 20:15:51  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -295,10 +298,10 @@ void ShowHideManager::GetShowHideInfo(
     }
 }
 
-void ShowHideManager::SelectionCallback(const std::vector < bool >& itemsEnabled)
+void ShowHideManager::ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled)
 {
     if (itemsEnabled.size() != structureInfo.size()) {
-        ERR_POST(Error << "ShowHideManager::SelectionCallback() - wrong size list");
+        ERR_POST(Error << "ShowHideManager::ShowHideCallbackFunction() - wrong size list");
         return;
     }
 

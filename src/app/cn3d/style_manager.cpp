@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/03/09 15:49:05  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.24  2001/02/13 20:33:50  thiessen
 * add information content coloring
 *
@@ -828,6 +831,14 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
 {
     // eventually this will know about annotations...
     return globalStyle;
+}
+
+const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
+{
+    static const Vector black(0,0,0);
+    const StructureObject *object;
+    if (!molecule || !molecule->GetParentOfType(&object)) return black;
+    return molecule->parentSet->colors->Get(Colors::eCycle1, object->id - 1);
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/03/09 15:48:42  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.27  2001/03/02 15:33:43  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -136,8 +139,9 @@ class SequenceViewer;
 class Messenger;
 class BlockMultipleAlignment;
 class Threader;
+class UpdateViewer;
 
-class AlignmentManager : public ShowHideCallback
+class AlignmentManager : public ShowHideCallbackObject
 {
 public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
@@ -160,12 +164,12 @@ public:
 
     // recomputes structure alignments for all slave structures in the current
     // sequence alignment
-    void RealignAllSlaves(void) const;
+    void RealignAllSlaveStructures(void) const;
 
     // stuff relating to show/hide of alignment rows (slaves)
     void GetAlignmentSetSlaveSequences(std::vector < const Sequence * > *sequences) const;
     void GetAlignmentSetSlaveVisibilities(std::vector < bool > *visibilities) const;
-    void SelectionCallback(const std::vector < bool >& itemsEnabled);
+    void ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled);
     void NewMultipleWithRows(const std::vector < bool >& visibilities);
 
     // find out if a residue is aligned - only works for non-repeated sequences!
@@ -178,7 +182,9 @@ public:
     // (e.g., for coloring by sequence conservation)
     const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
 
-    // threader functions
+    // update/threader functions
+    void ShowUpdateWindow(void) const;
+    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < bool >& selectedSlaves);
     void TestThreader(void);
 
 private:
@@ -190,6 +196,9 @@ private:
 
     // viewer for the current alignment - will own the current alignment (if any)
     SequenceViewer *sequenceViewer;
+
+    // viewer for updates (grab-bag of pairwise alignments)
+    UpdateViewer *updateViewer;
 };
 
 END_SCOPE(Cn3D)

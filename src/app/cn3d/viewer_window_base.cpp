@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/09 15:49:06  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.4  2001/03/07 13:39:12  thiessen
 * damn string namespace weirdness again
 *
@@ -58,8 +61,9 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer) :
-    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(1000,200)),
+ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
+    const char* title, const wxPoint& pos, const wxSize& size) :
+    wxFrame(NULL, -1, title, pos, size),
     viewerWidget(NULL), viewer(parentViewer)
 {
     if (!parentViewer) ERR_POST(Error << "ViewerWindowBase::ViewerWindowBase() - got NULL pointer");
@@ -159,7 +163,7 @@ void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
     int vsX, vsY;   // to preserve scroll position
     viewerWidget->GetScroll(&vsX, &vsY);
     viewerWidget->AttachAlignment(display, vsX, vsY);
-    GlobalMessenger()->PostRedrawSequenceViewer(viewer);
+    GlobalMessenger()->PostRedrawAllSequenceViewers();
 }
 
 void ViewerWindowBase::OnTitleView(wxCommandEvent& event)

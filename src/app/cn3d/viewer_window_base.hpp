@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/09 15:48:44  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.2  2001/03/02 03:26:36  thiessen
 * fix dangling pointer upon app close
 *
@@ -126,8 +129,9 @@ public:
 protected:
 
     // can't instantiate base class
-    ViewerWindowBase(ViewerBase *parentViewer);
-    ~ViewerWindowBase(void);
+    ViewerWindowBase(ViewerBase *parentViewer, const char* title,
+        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
+    virtual ~ViewerWindowBase(void);
 
     SequenceViewerWidget *viewerWidget;
     ViewerBase *viewer;
@@ -144,6 +148,34 @@ protected:
     BlockMultipleAlignment::eUnalignedJustification GetCurrentJustification(void) const
         { return currentJustification; }
 
+    void SplitBlockOff(void)
+    {
+        menuBar->Check(MID_SPLIT_BLOCK, false);
+        SetCursor(wxNullCursor);
+    }
+    void MergeBlocksOff(void)
+    {
+        menuBar->Check(MID_MERGE_BLOCKS, false);
+        viewerWidget->SetMouseMode(prevMouseMode);
+        SetCursor(wxNullCursor);
+    }
+    void CreateBlockOff(void)
+    {
+        menuBar->Check(MID_CREATE_BLOCK, false);
+        viewerWidget->SetMouseMode(prevMouseMode);
+        SetCursor(wxNullCursor);
+    }
+    void DeleteBlockOff(void)
+    {
+        menuBar->Check(MID_DELETE_BLOCK, false);
+        SetCursor(wxNullCursor);
+    }
+    void DeleteRowOff(void)
+    {
+        menuBar->Check(MID_DELETE_ROW, false);
+        SetCursor(wxNullCursor);
+    }
+
 public:
 
     void Refresh(void) { viewerWidget->Refresh(false); }
@@ -153,45 +185,16 @@ public:
         Destroy();
     }
 
-    bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
-
     void EnableUndo(bool enabled) { menuBar->Enable(MID_UNDO, enabled); }
 
     bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }
-    void SplitBlockOff(void) {
-        menuBar->Check(MID_SPLIT_BLOCK, false);
-        SetCursor(wxNullCursor);
-    }
-
     bool DoMergeBlocks(void) const { return menuBar->IsChecked(MID_MERGE_BLOCKS); }
-    void MergeBlocksOff(void)
-    {
-        menuBar->Check(MID_MERGE_BLOCKS, false);
-        viewerWidget->SetMouseMode(prevMouseMode);
-        SetCursor(wxNullCursor);
-    }
-
     bool DoCreateBlock(void) const { return menuBar->IsChecked(MID_CREATE_BLOCK); }
-    void CreateBlockOff(void)
-    {
-        menuBar->Check(MID_CREATE_BLOCK, false);
-        viewerWidget->SetMouseMode(prevMouseMode);
-        SetCursor(wxNullCursor);
-    }
-
     bool DoDeleteBlock(void) const { return menuBar->IsChecked(MID_DELETE_BLOCK); }
-    void DeleteBlockOff(void) {
-        menuBar->Check(MID_DELETE_BLOCK, false);
-        SetCursor(wxNullCursor);
-    }
 
-    // for implementational reasons, this is left as part of the base class; but the 'delete row'
+    // for implementational convenience, this is left as part of the base class; but the 'delete row'
     // menu item isn't included in the edit menu in the base class
     bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
-    void DeleteRowOff(void) {
-        menuBar->Check(MID_DELETE_ROW, false);
-        SetCursor(wxNullCursor);
-    }
 
     void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }

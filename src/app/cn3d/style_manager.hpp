@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/03/09 15:48:44  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.19  2001/02/13 20:31:45  thiessen
 * add information content coloring
 *
@@ -201,6 +204,7 @@ class Helix3D;
 class HelixStyle;
 class Strand3D;
 class StrandStyle;
+class Molecule;
 
 class StyleManager
 {
@@ -248,6 +252,7 @@ public:
     const StyleSettings& GetGlobalStyle(void) const { return globalStyle; }
     const StyleSettings& GetStyleForResidue(const StructureObject *object,
         int moleculeID, int residueID) const;
+    const Vector& GetObjectColor(const Molecule *molecule) const;
 
     void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
     void SetToWireframe(void) { globalStyle.SetToWireframe(); }

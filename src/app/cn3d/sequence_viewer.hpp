@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/03/09 15:48:43  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.16  2001/03/01 20:15:29  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -63,6 +66,7 @@ public:
     ~SequenceViewer(void);
 
     void Refresh(void);
+    void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;

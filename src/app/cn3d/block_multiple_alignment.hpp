@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/09 15:48:42  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.6  2001/03/06 20:20:43  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -178,6 +181,13 @@ public:
     // delete a row; returns true if successful
     bool DeleteRow(int row);
 
+    // this function does two things: it extracts from a multiple alignment all slave rows marked for
+    // removal (removeSlaves[i] == true); and for each slave removed, creates a new BlockMultipleAlignment
+    // that contains the alignment of just that slave with the master, as it was in the original multiple
+    // (i.e., not according to the corresponding pre-IBM MasterSlaveAlignment)
+    typedef std::list < BlockMultipleAlignment * > AlignmentList;
+    bool ExtractRows(const std::vector < bool >& removeSlaves, AlignmentList *pairwiseAlignments);
+
 private:
     ConservationColorer *conservationColorer;
 
@@ -235,17 +245,23 @@ public:
 
     // delete a row
     virtual void DeleteRow(int row) = 0;
+    virtual void DeleteRows(std::vector < bool >& removeRows, int nToRemove) = 0;
 
     // makes a new copy of itself
     virtual Block * Clone(const BlockMultipleAlignment *newMultiple) const = 0;
 
 protected:
+    Block(const BlockMultipleAlignment *multiple) :
+        parentAlignment(multiple), ranges(multiple->NRows()) { }
+
     typedef std::vector < Range > RangeList;
     RangeList ranges;
 
     const BlockMultipleAlignment *parentAlignment;
 
 public:
+    virtual ~Block(void) { }    // virtual destructor for base class
+
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
     const Range* GetRangeOfRow(int row) const { return &(ranges[row]); }
 
@@ -256,12 +272,7 @@ public:
         ranges[row].to = to;
     }
 
-    Block(const BlockMultipleAlignment *multiple) :
-        parentAlignment(multiple), ranges(multiple->NRows()) { }
-
     int NSequences(void) const { return ranges.size(); }
-
-    virtual ~Block(void) { }    // virtual destructor for base class
 };
 
 
@@ -281,6 +292,7 @@ public:
     char GetCharacterAt(int blockColumn, int row) const;
 
     void DeleteRow(int row);
+    void DeleteRows(std::vector < bool >& removeRows, int nToRemove);
 
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };
@@ -294,12 +306,15 @@ class UnalignedBlock : public Block
 public:
     UnalignedBlock(const BlockMultipleAlignment *multiple) : Block(multiple) { }
 
+    void Resize(void);  // recompute block width from current ranges
+
     bool IsAligned(void) const { return false; }
 
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
 
     void DeleteRow(int row);
+    void DeleteRows(std::vector < bool >& removeRows, int nToRemove);
 
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };

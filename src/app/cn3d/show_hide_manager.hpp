@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/09 15:48:43  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.6  2000/12/19 16:38:30  thiessen
 * tweaks to show/hide
 *
@@ -70,7 +73,7 @@ class StructureSet;
 class ShowHideInfo;
 class StructureObject;
 
-class ShowHideManager : public ShowHideCallback
+class ShowHideManager : public ShowHideCallbackObject
 {
 public:
     ~ShowHideManager();
@@ -93,7 +96,7 @@ public:
 
     // used for show/hide dialog to get list of names and visibility status
     void GetShowHideInfo(std::vector < std::string > *names, std::vector < bool > *visibilities) const;
-    void SelectionCallback(const std::vector < bool >& itemsEnabled);
+    void ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled);
     void SelectionChangedCallback(const std::vector < bool >& original, std::vector < bool >& itemsEnabled);
     void ConstructShowHideArray(const StructureSet *structureSet);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/03/09 15:49:03  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.42  2001/03/06 20:20:50  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -171,6 +174,8 @@
 #include "cn3d/molecule.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/cn3d_threader.hpp"
+#include "cn3d/update_viewer.hpp"
+#include "cn3d/sequence_display.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -179,17 +184,25 @@ BEGIN_SCOPE(Cn3D)
 
 ///// AlignmentManager methods /////
 
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet) :
-    sequenceViewer(NULL)
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
 {
+    sequenceViewer = new SequenceViewer(this);
+    GlobalMessenger()->AddSequenceViewer(sequenceViewer);
+
+    updateViewer = new UpdateViewer();
+    GlobalMessenger()->AddSequenceViewer(updateViewer);
+
     threader = new Threader();
+
     NewAlignments(sSet, aSet);
 }
 
 AlignmentManager::~AlignmentManager(void)
 {
     GlobalMessenger()->RemoveSequenceViewer(sequenceViewer);
+    GlobalMessenger()->RemoveSequenceViewer(updateViewer);
     delete sequenceViewer;
+    delete updateViewer;
     delete threader;
 }
 
@@ -197,12 +210,6 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
 {
     sequenceSet = sSet;
     alignmentSet = aSet;
-
-    // create a sequence viewer for this alignment
-    if (!sequenceViewer) {
-        sequenceViewer = new SequenceViewer(this);
-        GlobalMessenger()->AddSequenceViewer(sequenceViewer);
-    }
 
     if (!alignmentSet) {
         sequenceViewer->DisplaySequences(&(sequenceSet->sequences));
@@ -351,7 +358,7 @@ static void GetAlignedResidueIndexes(
     }
 }
 
-void AlignmentManager::RealignAllSlaves(void) const
+void AlignmentManager::RealignAllSlaveStructures(void) const
 {
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
     if (!multiple) return;
@@ -443,11 +450,11 @@ void AlignmentManager::GetAlignmentSetSlaveVisibilities(std::vector < bool > *vi
     *visibilities = slavesVisible;
 }
 
-void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnabled)
+void AlignmentManager::ShowHideCallbackFunction(const std::vector < bool >& itemsEnabled)
 {
     if (itemsEnabled.size() != slavesVisible.size() ||
         itemsEnabled.size() != alignmentSet->alignments.size()) {
-        ERR_POST(Error << "AlignmentManager::SelectionCallback() - wrong size list");
+        ERR_POST(Error << "AlignmentManager::ShowHideCallbackFunction() - wrong size list");
         return;
     }
 
@@ -475,6 +482,7 @@ void AlignmentManager::SelectionCallback(const std::vector < bool >& itemsEnable
 
     // do necessary redraws + show/hides: sequences + chains in the alignment
     sequenceViewer->Refresh();
+    GlobalMessenger()->PostRedrawAllSequenceViewers();
     GlobalMessenger()->UnPostRedrawSequenceViewer(sequenceViewer);  // Refresh() does this already
 }
 
@@ -527,6 +535,36 @@ const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int
         return currentAlignment->GetAlignmentColor(sequence, seqIndex);
     else
         return NULL;
+}
+
+void AlignmentManager::ShowUpdateWindow(void) const
+{
+    updateViewer->CreateUpdateWindow();
+}
+
+void AlignmentManager::RealignSlaveSequences(
+    BlockMultipleAlignment *multiple, const std::vector < bool >& selectedSlaves)
+{
+    if (!multiple) {
+        ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - NULL multiple alignment");
+        return;
+    }
+    if (selectedSlaves.size() != alignmentSet->alignments.size() ||
+        selectedSlaves.size() != multiple->NRows() - 1) {
+        ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong size selection list");
+        return;
+    }
+
+    // create alignments for each master/slave pair, then update displays
+    UpdateViewer::AlignmentList alignments;
+    TESTMSG("extracting rows");
+    if (multiple->ExtractRows(selectedSlaves, &alignments)) {
+        TESTMSG("recreating display");
+        sequenceViewer->GetCurrentDisplay()->RecreateFromEditedMultiple(multiple);
+        TESTMSG("creating update window");
+        updateViewer->DisplayAlignments(alignments);
+        TESTMSG("done");
+    }
 }
 
 void AlignmentManager::TestThreader(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/03/09 15:49:04  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.36  2001/03/02 15:32:52  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -242,6 +245,11 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         sequenceWindow->UpdateDisplay(display);
     else
         CreateSequenceWindow();
+}
+
+void SequenceViewer::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment)
+{
+    GetCurrentDisplay()->UpdateAfterEdit(forAlignment);
 }
 
 END_SCOPE(Cn3D)

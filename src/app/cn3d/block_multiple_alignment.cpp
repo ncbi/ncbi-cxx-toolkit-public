@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/09 15:49:03  thiessen
+* major changes to add initial update viewer
+*
 * Revision 1.7  2001/03/06 20:20:50  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -996,6 +999,112 @@ BlockMultipleAlignment::GetUngappedAlignedBlocks(void) const
     return uabs;
 }
 
+template < class T >
+static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
+{
+    if (v.size() != remove.size()) {
+#ifndef _DEBUG
+		// MSVC gets internal compiler error here on debug builds... ugh!
+        ERR_POST(Error << "VectorRemoveElements() - size mismatch");
+#endif
+        return;
+    }
+
+    std::vector < T > copy(v.size() - nToRemove);
+    int i, nRemoved = 0;
+    for (i=0; i<v.size(); i++) {
+        if (remove[i])
+            nRemoved++;
+        else
+            copy[i - nRemoved] = v[i];
+    }
+    if (nRemoved != nToRemove) {
+#ifndef _DEBUG
+        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
+#endif
+        return;
+    }
+
+    v = copy;
+}
+
+bool BlockMultipleAlignment::ExtractRows(
+    const std::vector < bool >& removeSlaves, AlignmentList *pairwiseAlignments)
+{
+    if (removeSlaves.size() != NRows() - 1) {
+        ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - wrong size slave list");
+        return false;
+    }
+
+    int i, nToRemove = 0, nRemoved = 0;
+    BlockList::const_iterator b, br, be = blocks.end();
+    std::vector < bool > removeRows(removeSlaves.size() + 1);
+
+    TESTMSG("creating new pairwise alignments");
+
+    SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
+    removeRows[0] = false;
+    for (i=0; i<removeSlaves.size(); i++) {
+
+        // count how many rows will be removed
+        removeRows[i + 1] = removeSlaves[i];
+        if (removeSlaves[i]) {
+            nToRemove++;
+
+            // redraw molecule associated with removed row
+            const Molecule *molecule = GetSequenceOfRow(i + 1)->molecule;
+            if (molecule) GlobalMessenger()->PostRedrawMolecule(molecule);
+
+            // create new pairwise alignment from each removed row
+            SequenceList *newSeqs = new SequenceList(2);
+            (*newSeqs)[0] = (*sequences)[0];
+            (*newSeqs)[1] = (*sequences)[i + 1];   // removed slave
+            BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs);
+            for (b=blocks.begin(); b!=be; b++) {
+                UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
+                if (ABlock) {
+                    UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
+                    const Block::Range *range = ABlock->GetRangeOfRow(0);
+                    newABlock->SetRangeOfRow(0, range->from, range->to);
+                    range = ABlock->GetRangeOfRow(i + 1);
+                    newABlock->SetRangeOfRow(1, range->from, range->to);
+                    newABlock->width = range->to - range->from + 1;
+                    newAlignment->AddAlignedBlockAtEnd(newABlock);
+                }
+            }
+            if (!newAlignment->AddUnalignedBlocks() ||
+                !newAlignment->UpdateBlockMapAndConservationColors()) {
+                ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
+                return false;
+            }
+            pairwiseAlignments->push_back(newAlignment);
+        }
+    }
+    SetDiagPostLevel(eDiag_Info);
+    if (nToRemove == 0) return false;
+
+    // remove sequences
+    TESTMSG("deleting sequences");
+    VectorRemoveElements(*(const_cast<SequenceList*>(sequences)), removeRows, nToRemove);
+
+    // delete row from all blocks, removing any zero-width blocks
+    TESTMSG("deleting alignment rows from blocks");
+    b = blocks.begin();
+    while (b != be) {
+        (*b)->DeleteRows(removeRows, nToRemove);
+        if ((*b)->width == 0) {
+            br = b;
+            b++;
+            TESTMSG("deleting block resized to zero width");
+            RemoveBlock(*br);
+        } else
+            b++;
+    }
+
+    // update total alignment width
+    UpdateBlockMapAndConservationColors();
+    return true;
+}
 
 ///// UngappedAlignedBlock methods /////
 
@@ -1021,6 +1130,11 @@ void UngappedAlignedBlock::DeleteRow(int row)
     RangeList::iterator r = ranges.begin();
     for (int i=0; i<row; i++) r++;
     ranges.erase(r);
+}
+
+void UngappedAlignedBlock::DeleteRows(std::vector < bool >& removeRows, int nToRemove)
+{
+    VectorRemoveElements(ranges, removeRows, nToRemove);
 }
 
 
@@ -1064,18 +1178,27 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
     return seqIndex;
 }
 
-void UnalignedBlock::DeleteRow(int row)
+void UnalignedBlock::Resize(void)
 {
-    RangeList::iterator r = ranges.begin();
-    for (int i=0; i<row; i++) r++;
-    ranges.erase(r);
-
-    // reset block width
     width = 0;
     for (int i=0; i<NSequences(); i++) {
         int blockWidth = ranges[i].to - ranges[i].from + 1;
         if (blockWidth > width) width = blockWidth;
     }
+}
+
+void UnalignedBlock::DeleteRow(int row)
+{
+    RangeList::iterator r = ranges.begin();
+    for (int i=0; i<row; i++) r++;
+    ranges.erase(r);
+    Resize();
+}
+
+void UnalignedBlock::DeleteRows(std::vector < bool >& removeRows, int nToRemove)
+{
+    VectorRemoveElements(ranges, removeRows, nToRemove);
+    Resize();
 }
 
 Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
