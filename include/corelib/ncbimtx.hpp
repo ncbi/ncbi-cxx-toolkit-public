@@ -50,10 +50,12 @@
 #   define  INTERNAL_MUTEX_DEBUG
 #endif
 
+
 /** @addtogroup Threads
  *
  * @{
  */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -785,6 +787,7 @@ private:
 
 /* @} */
 
+
 #include <corelib/ncbimtx.inl>
 
 /////////////////////////////////////////////////////////////////////////////
@@ -795,6 +798,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/03/31 13:30:31  siyan
+ * Minor changes to doxygen support
+ *
  * Revision 1.20  2003/03/31 13:09:19  siyan
  * Added doxygen support
  *

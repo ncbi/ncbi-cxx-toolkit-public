@@ -62,6 +62,7 @@
 #include <set>
 #include <list>
 
+
 /** @addtogroup Threads
  *
  * @{
@@ -270,7 +271,9 @@ private:
     static void AddUsedTls(CTlsBase* tls);
 };
 
+
 /* @} */
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -346,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/03/31 13:30:13  siyan
+ * Minor changes to doxygen support
+ *
  * Revision 1.16  2003/03/31 13:02:47  siyan
  * Added doxygen support
  *
