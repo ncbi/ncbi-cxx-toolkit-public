@@ -82,6 +82,9 @@ public:
                             TNumrow row, 
                             const CAlnMap::TSignedRange& aln_rng)         const;
 
+    // creates a vertical string of residues for a given aln pos
+    // optionally, returns a distribution of residues
+    // optionally, counts the gaps in this distribution
     string& GetColumnVector(string& buffer,
                             TSeqPos aln_pos,
                             TResidueCount * residue_count = 0,
@@ -354,6 +357,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2004/03/30 16:37:43  todorov
+ * +GetColumnVector comments
+ *
  * Revision 1.32  2003/12/22 19:14:13  todorov
  * Only left constructors that accept CScope&
  *
