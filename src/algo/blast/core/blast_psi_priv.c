@@ -1102,6 +1102,7 @@ _PSICalculateNormalizedSequenceWeights(
     ASSERT(aligned_blocks);
     ASSERT(seq_weights);
     ASSERT(aligned_seqs);
+    ASSERT(position >= 0 && position < msa->dimensions->query_length);
 
     for (i = (Uint4) aligned_blocks->pos_extnt[position].left; 
          i <= (Uint4) aligned_blocks->pos_extnt[position].right; i++) {
@@ -1116,6 +1117,9 @@ _PSICalculateNormalizedSequenceWeights(
 
         memset((void*) residue_counts_for_column, 0, 
                sizeof(Uint4)*BLASTAA_SIZE);
+
+        /* Assert that the alignment extents have sane values */
+        ASSERT(i >= 0 && i < msa->dimensions->query_length);
 
         /* Count number of residues in column i of the alignment extent
          * corresponding to position */
@@ -2058,6 +2062,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/09/23 19:51:44  camacho
+ * Added sanity checks
+ *
  * Revision 1.25  2004/09/17 02:06:34  camacho
  * Renaming of diagnostics structure fields
  *
