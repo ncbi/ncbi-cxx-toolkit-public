@@ -133,7 +133,8 @@ public:
         eVariableLength  // variable-length (like string)
     };
     CBDB_Field(ELengthType length_type = eFixedLength);
-
+    virtual ~CBDB_Field() {}
+    
     // Virtual constructor - class factory for BDB fields.
     // Default (zero) value of 'buf-len' uses GetBufferSize().
     // For fixed length fields this buf_size parameter has no effect
@@ -1177,6 +1178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/27 16:13:21  kuznets
+ * Destructors of key classes declared virtual to make GCC happy
+ *
  * Revision 1.4  2003/05/22 19:31:51  kuznets
  * +CBDB_FieldString::operator= (const string& str)
  *

@@ -101,7 +101,7 @@ public:
 
 public:
     CBDB_RawFile();
-    ~CBDB_RawFile();
+    virtual ~CBDB_RawFile();
 
     // Open file with specified access mode
     void Open(const char* filename, EOpenMode open_mode);
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/27 16:13:21  kuznets
+ * Destructors of key classes declared virtual to make GCC happy
+ *
  * Revision 1.4  2003/05/05 20:14:41  kuznets
  * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
  * management.
