@@ -156,13 +156,26 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     SConnNetInfo *net_info = data->net_info;
     CONNECTOR conn = 0;
     const char *arch;
+    unsigned int ip;
+    char addr[64];
     char* s;
     CONN c;
 
     /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
     if ((arch = CORE_GetPlatform()) != 0 && *arch)
         ConnNetInfo_PreOverrideArg(net_info, platform, arch);
-    ConnNetInfo_PreOverrideArg(net_info, address, net_info->client_host);
+    if (!strchr(net_info->client_host, '.')                    &&
+        (ip = SOCK_gethostbyname(net_info->client_host)) != 0  &&
+        SOCK_ntoa(ip, addr, sizeof(addr)) == 0) {
+        if ((s= malloc(strlen(net_info->client_host) + strlen(addr) + 3)) != 0)
+            sprintf(s, "%s(%s)", net_info->client_host, addr);
+        else
+            s = net_info->client_host;
+    } else
+        s = net_info->client_host;
+    ConnNetInfo_PreOverrideArg(net_info, address, s);
+    if (s != net_info->client_host)
+        free(s);
     if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
         ConnNetInfo_DeleteArg(net_info, platform);
         if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
@@ -415,6 +428,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2003/05/14 15:43:31  lavr
+ * Add host address in dispatcher's CGI query
+ *
  * Revision 6.55  2003/02/13 21:38:22  lavr
  * Comply with new SERV_Preference() prototype
  *
