@@ -148,6 +148,10 @@ SOURCE=.\..\src\common\clipcmn.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\..\src\common\cmdline.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\..\src\common\cmndata.cpp
 # End Source File
 # Begin Source File
