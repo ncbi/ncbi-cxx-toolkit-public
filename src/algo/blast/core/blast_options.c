@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.95  2004/04/16 14:17:06  papadopo
+ * add use of RPS-specific defines, remove RPS argument to FillLookupTableOptions
+ *
  * Revision 1.94  2004/04/07 03:06:16  camacho
  * Added blast_encoding.[hc], refactoring blast_stat.[hc]
  *
@@ -550,10 +553,12 @@ static double GetUngappedCutoff(Uint1 program)
    case blast_type_blastn:
       return UNGAPPED_CUTOFF_E_BLASTN;
    case blast_type_blastp: 
+   case blast_type_rpsblast: 
       return UNGAPPED_CUTOFF_E_BLASTP;
    case blast_type_blastx: 
       return UNGAPPED_CUTOFF_E_BLASTX;
    case blast_type_tblastn:
+   case blast_type_rpstblastn:
       return UNGAPPED_CUTOFF_E_TBLASTN;
    case blast_type_tblastx:
       return UNGAPPED_CUTOFF_E_TBLASTX;
@@ -1040,11 +1045,13 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
       (*options)->alphabet_size = BLASTAA_SIZE;
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
-      if (program_number == blast_type_blastp)
+      if (program_number == blast_type_blastp ||
+          program_number == blast_type_rpsblast)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTP;
       else if (program_number == blast_type_blastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-      else if (program_number == blast_type_tblastn)
+      else if (program_number == blast_type_tblastn ||
+               program_number == blast_type_rpstblastn)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
       else if (program_number == blast_type_tblastx)
          (*options)->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
@@ -1088,7 +1095,7 @@ Int2
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program_number, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
-   Boolean use_pssm, Boolean rps_blast)
+   Boolean use_pssm)
 {
    if (!options)
       return 1;
@@ -1116,7 +1123,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
 
    if (use_pssm)
       options->use_pssm = use_pssm;
-   if (rps_blast)
+   if (program_number == blast_type_rpsblast ||
+       program_number == blast_type_rpstblastn)
       options->lut_type = RPS_LOOKUP_TABLE;
    if (word_size)
       options->word_size = word_size;
@@ -1350,10 +1358,12 @@ BlastHitSavingParametersNew(Uint1 program_number,
       set it in the paramters */
    params->do_sum_stats = options->do_sum_stats;
    /* Sum statistics is used anyway for all ungapped searches and all 
-      translated gapped searches */
+      translated gapped searches (except RPS translated searches) */
    if (!gapped_calculation || 
        (program_number != blast_type_blastn && 
-        program_number != blast_type_blastp))
+        program_number != blast_type_blastp &&
+        program_number != blast_type_rpsblast &&
+        program_number != blast_type_rpstblastn))
       params->do_sum_stats = TRUE;
    if (program_number == blast_type_blastn || !gapped_calculation) {
       params->gap_prob = BLAST_GAP_PROB;
@@ -1544,6 +1554,7 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
 	Int4 expected_length, gap_size, query_length;
 	Int8 search_sp;
    Boolean translated_subject = (program == blast_type_tblastn || 
+                                 program == blast_type_rpstblastn || 
                                  program == blast_type_tblastx);
 
 	/* Do this for the first context, should this be changed?? */
