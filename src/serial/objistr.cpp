@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/09/23 20:25:04  vasilche
+* Added support HAVE_NCBI_C
+*
 * Revision 1.24  1999/09/23 18:56:58  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -605,7 +608,7 @@ extern "C" {
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
     : m_In(in), m_Count(0)
 {
-#ifdef HAVE_NO_NCBI_LIB
+#if !HAVE_NCBI_C
 	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
@@ -615,7 +618,7 @@ CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
 
 CObjectIStream::AsnIo::~AsnIo(void)
 {
-#ifdef HAVE_NO_NCBI_LIB
+#if !HAVE_NCBI_C
 	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     AsnIoClose(*this);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/23 20:25:04  vasilche
+* Added support HAVE_NCBI_C
+*
 * Revision 1.23  1999/09/23 18:57:01  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -344,7 +347,7 @@ unsigned CObjectOStreamAsn::GetAsnFlags(void)
 
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
-#ifdef HAVE_NO_NCBI_LIB
+#if !HAVE_NCBI_C
 	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
 #else
     size_t indent = asn->indent_level = m_Ident;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/23 20:25:03  vasilche
+* Added support HAVE_NCBI_C
+*
 * Revision 1.22  1999/09/23 18:56:57  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -168,7 +171,7 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
-#ifdef HAVE_NO_NCBI_LIB
+#if !HAVE_NCBI_C
 END_NCBI_SCOPE
 
 extern "C" {
