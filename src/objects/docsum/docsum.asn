@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.22 2001/08/20 20:19:45 sherry Exp $
+-- $Id: docsum.asn,v 1.23 2001/08/20 20:27:57 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.23  2001/08/20 20:27:57  sherry
+-- added source-db (5) for RefSeq-genomic and ncbi-build-id for build number of genome mapping data
+--
 -- Revision 1.22  2001/08/20 20:19:45  sherry
 -- source-db (2) defined for GenBank STS division
 --
@@ -259,6 +262,7 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 						-- should be concatenated in order to reconstruct the complete flanking sequence.
 						-- Sequence should be assembled as seq-5 + observed + seq-3
 	seq-ss-exemplar INTEGER,		-- dbSNP ss# selected as source of refSNP flanking sequence, ss# part of ss-list below 
+	ncbi-build-id INTEGER OPTIONAL,		-- NCBI build number for data on genome mapping to synchronize with NCBI MapViewer
 	num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in genome-mapset
 	num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in genome-mapset
 	num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in genome-mapset
@@ -421,6 +425,7 @@ NSE-SeqLoc ::= SEQUENCE {
 		ref-mrna (1),			-- NCBI RefSeq mRNA
 		gb-sts (2),			-- GenBank STS division
 		gb-mrna (4),			-- Genbank mrna
+		ref-genome(5),			-- NCBI RefSeq genomic
 		gb-small (6),			-- Genbank genomic < 30kb in length
 		hgs-finish (10),		-- genome sequence, finished
 		hgs-draft (11),			-- genome sequence, draft
