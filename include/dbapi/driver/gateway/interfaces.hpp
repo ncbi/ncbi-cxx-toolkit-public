@@ -1,5 +1,5 @@
-#ifndef DBAPI_DRIVER_RDBLIB___INTERFACES__HPP
-#define DBAPI_DRIVER_RDBLIB___INTERFACES__HPP
+#ifndef DBAPI_DRIVER_GATEWAY___INTERFACES__HPP
+#define DBAPI_DRIVER_GATEWAY___INTERFACES__HPP
 
 /* $Id$
  * ===========================================================================
@@ -28,14 +28,15 @@
  *
  * Author:  Victor Sapojnikov
  *
- * File Description:  Driver for DBLib server
+ * File Description:
+ *   A gateway to remote database driver that is running on sss server.
  *
  */
 
 // prevent WINSOCK.H from being included - we use WINSOCK2.H
 #define _WINSOCKAPI_
 
-#include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
 
 #include <dbapi/driver/gateway/comprot_cli.hpp>
@@ -49,18 +50,6 @@ BEGIN_NCBI_SCOPE
 class CGWContext;
 class CGW_Connection;
 class CGW_RPCCmd;
-
-/*
-class CGW_LangCmd;
-class CGW_CursorCmd;
-class CGW_BCPInCmd;
-class CGW_SendDataCmd;
-class CGW_RowResult;
-class CGW_ParamResult;
-class CGW_ComputeResult;
-class CGW_StatusResult;
-class CGW_BlobResult;
-*/
 
 class CGW_Base
 {
@@ -194,18 +183,12 @@ protected:
     // void DropCmd(CDB_BaseEnt& cmd);
 
     //// Not implemented yet:
-    virtual bool SendData(
-      I_ITDescriptor& desc, CDB_Image& img, bool log_it = true)
-    { return false; }
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it = true) { return false; }
 
-    virtual bool SendData(
-      I_ITDescriptor& desc, CDB_Text&  txt, bool log_it = true)
-    { return false; }
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt, bool log_it = true) { return false; }
 
-    virtual void PushMsgHandler(CDB_UserHandler* h)
-    {}
-    virtual void PopMsgHandler (CDB_UserHandler* h)
-    {}
+    virtual void PushMsgHandler(CDB_UserHandler* h) {}
+    virtual void PopMsgHandler (CDB_UserHandler* h) {}
     // virtual void Release() {}
 };
 
@@ -276,10 +259,8 @@ protected:
     }
 
     // Not implemented
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr)
-    { return false; }
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr)
-    { return false; }
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr) { return false; }
+    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr)  { return false; }
 
     virtual bool Send()
     {
@@ -334,12 +315,8 @@ protected:
 
 
     // Not implemented
-    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
-                           bool out_param = false)
-    { return false; }
-    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
-                          bool out_param = false)
-    { return false; }
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr, bool out_param = false) { return false; }
+    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr, bool out_param = false) { return false; }
 
     virtual bool Send()
     {
@@ -399,8 +376,7 @@ protected:
     }
 
     // Binding
-    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr)
-    { return false; }
+    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr) { return false; }
 
     // Send row to the server
     virtual bool SendRow()
@@ -640,13 +616,16 @@ public:
 END_NCBI_SCOPE
 
 
-#endif  /* DBAPI_DRIVER_RDBLIB___INTERFACES__HPP */
+#endif  /* DBAPI_DRIVER_GATEWAY___INTERFACES__HPP */
 
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/03/26 17:56:29  sapojnik
+ * cosmetic/code formatting changes
+ *
  * Revision 1.4  2002/03/19 21:45:09  sapojnik
  * some small bugs fixed after testing - the ones related to Connection:SendDataCmd,DropCmd; BaseCmd:Send
  *
