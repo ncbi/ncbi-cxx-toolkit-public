@@ -139,6 +139,9 @@ bool CTDS_RPCCmd::WasCanceled() const
 CDB_Result* CTDS_RPCCmd::Result()
 {
     if (m_Res) {
+        if(m_RowCount < 0) {
+            m_RowCount = DBCOUNT(m_Cmd);
+        }
         delete m_Res;
         m_Res = 0;
     }
@@ -160,6 +163,7 @@ CDB_Result* CTDS_RPCCmd::Result()
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
         m_Res = new CTDS_ComputeResult(m_Cmd, &m_Status);
+        m_RowCount = 1;
         return Create_Result(*m_Res);
     }
 
@@ -168,6 +172,7 @@ CDB_Result* CTDS_RPCCmd::Result()
         case SUCCEED:
             if (DBCMDROW(m_Cmd) == SUCCEED) { // we may get rows in this result
                 m_Res = new CTDS_RowResult(m_Cmd, &m_Status);
+                m_RowCount = -1;
                 return Create_Result(*m_Res);
             } else {
                 m_RowCount = DBCOUNT(m_Cmd);
@@ -191,6 +196,7 @@ CDB_Result* CTDS_RPCCmd::Result()
         int n = dbnumrets(m_Cmd);
         if (n > 0) {
             m_Res = new CTDS_ParamResult(m_Cmd, n);
+            m_RowCount = 1;
             return Create_Result(*m_Res);
         }
     }
@@ -199,6 +205,7 @@ CDB_Result* CTDS_RPCCmd::Result()
         m_Status = 6;
         if (dbhasretstat(m_Cmd)) {
             m_Res = new CTDS_StatusResult(m_Cmd);
+            m_RowCount = 1;
             return Create_Result(*m_Res);
         }
     }
@@ -222,7 +229,7 @@ bool CTDS_RPCCmd::HasFailed() const
 
 int CTDS_RPCCmd::RowCount() const
 {
-    return m_RowCount;
+    return (m_RowCount < 0)? DBCOUNT(m_Cmd) : m_RowCount;
 }
 
 
@@ -475,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/22 20:11:07  soussov
+ * fixes the RowCount calculations
+ *
  * Revision 1.6  2002/02/22 22:12:45  soussov
  * fixes bug with return params result
  *
