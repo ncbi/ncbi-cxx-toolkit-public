@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/04/06 16:44:14  grichenk
+ * Redesigned to use MT test suite API from "test_mt.[ch]pp"
+ *
  * Revision 6.1  2001/03/30 22:46:59  grichenk
  * Initial revision
  *
@@ -37,187 +40,59 @@
  * ===========================================================================
  */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
+#include "test_mt.hpp"
 #include <corelib/ncbidiag.hpp>
 #include <algorithm>
 
 USING_NCBI_SCOPE;
 
-#ifndef _DEBUG
-inline
-void s_Verify(bool expr)
-{
-    if ( !expr ) {
-        throw runtime_error("Test failed");
-    }
-}
-#else
-#include <assert.h>
-#define s_Verify assert
-#endif
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Globals
-
-
-const unsigned int   cNumThreadsMin = 1;
-const unsigned int   cNumThreadsMax = 500;
-const int   cSpawnByMin    = 1;
-const int   cSpawnByMax    = 100;
-
-static unsigned int  sNumThreads    = 40;
-static int  sSpawnBy       = 13;
-
-static unsigned int  s_NextIndex    = 0;
-
-
-CFastMutex s_GlobalLock;
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Test thread
-
-
-class CTestThread : public CThread
-{
-public:
-    CTestThread(int idx);
-protected:
-    ~CTestThread(void);
-    virtual void* Main(void);
-    virtual void  OnExit(void);
-private:
-    int m_Idx;
-};
-
-
-CTestThread::CTestThread(int idx) : m_Idx(idx)
-{
-}
-
-
-CTestThread::~CTestThread(void)
-{
-}
-
-
-void CTestThread::OnExit(void)
-{
-}
-
-CRef<CTestThread> thr[cNumThreadsMax];
-
-void* CTestThread::Main(void)
-{
-    for (int i = 0; i<sSpawnBy; i++) {
-        int idx;
-        {{
-            CFastMutexGuard spawn_guard(s_GlobalLock);
-            if (s_NextIndex >= sNumThreads) {
-                break;
-            }
-            idx = s_NextIndex;
-            s_NextIndex++;
-        }}
-        thr[idx] = new CTestThread(idx);
-        thr[idx]->Run();
-        LOG_POST("Thread " + NStr::IntToString(idx) + " created");
-    }
-
-    LOG_POST("LOG message from thread " + NStr::IntToString(m_Idx));
-    ERR_POST("ERROR message from thread " + NStr::IntToString(m_Idx));
-
-    return 0;
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
 
-class CThreadedApp : public CNcbiApplication
+class CTestDiagApp : public CThreadedApp
 {
-    void Init(void);
-    int Run(void);
+public:
+    virtual bool Thread_Init(int idx);
+    virtual bool Thread_Run(int idx);
+protected:
+    virtual bool TestApp_Init(void);
+    virtual bool TestApp_Exit(void);
 };
 
 
-void CThreadedApp::Init(void)
+static char str[c_NumThreadsMax*200] = "";
+static ostrstream sout(str, c_NumThreadsMax*200, ios::out);
+
+
+bool CTestDiagApp::Thread_Init(int idx)
 {
-    // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // sNumThreads
-    arg_desc->AddDefaultKey
-        ("threads", "NumThreads",
-         "Total number of threads to create and run",
-         CArgDescriptions::eInteger, NStr::IntToString(sNumThreads));
-    arg_desc->SetConstraint
-        ("threads", new CArgAllow_Integers(cNumThreadsMin, cNumThreadsMax));
-
-    // sSpawnBy
-    arg_desc->AddDefaultKey
-        ("spawnby", "SpawnBy",
-         "Threads spawning factor",
-         CArgDescriptions::eInteger, NStr::IntToString(sSpawnBy));
-    arg_desc->SetConstraint
-        ("spawnby", new CArgAllow_Integers(cSpawnByMin, cSpawnByMax));
-
-
-    string prog_description =
-        "NCBIDIAG test.";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, false);
-
-    SetupArgDescriptions(arg_desc.release());
+    LOG_POST("Thread " + NStr::IntToString(idx) + " created");
+    return true;
 }
 
-
-int CThreadedApp::Run(void)
+bool CTestDiagApp::Thread_Run(int idx)
 {
-    // Process command line
-    const CArgs& args = GetArgs();
+    LOG_POST("LOG message from thread " + NStr::IntToString(idx));
+    ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
+    return true;
+}
 
-    sNumThreads = args["threads"].AsInteger();
-    sSpawnBy    = args["spawnby"].AsInteger();
-
+bool CTestDiagApp::TestApp_Init(void)
+{
     NcbiCout << NcbiEndl
              << "Testing NCBIDIAG with "
-             << NStr::IntToString(sNumThreads)
+             << NStr::IntToString(s_NumThreads)
              << " threads..."
              << NcbiEndl;
     // Output to the string stream -- to verify the result
-    static char str[cNumThreadsMax*200] = "";
-    static ostrstream sout(str, cNumThreadsMax*200, ios::out);
     SetDiagStream(&sout);
 
-    // Create and run threads
-    for (int i=0; i<sSpawnBy; i++) {
-        int idx;
-        {{
-            CFastMutexGuard spawn_guard(s_GlobalLock);
-            if (s_NextIndex >= sNumThreads) {
-                break;
-            }
-            idx = s_NextIndex;
-            s_NextIndex++;
-        }}
+    return true;
+}
 
-        thr[idx] = new CTestThread(idx);
-        thr[idx]->Run();
-        LOG_POST("Thread " + NStr::IntToString(idx) + " created");
-    }
-
-    // Wait for all threads
-    for (unsigned int i=0; i<sNumThreads; i++) {
-        thr[i]->Join();
-    }
-
+bool CTestDiagApp::TestApp_Exit(void)
+{
     // Verify the result
     string test_res(str);
     typedef list<string> string_list;
@@ -226,10 +101,10 @@ int CThreadedApp::Run(void)
     // Get the list of messages and check the size
     NStr::Split(test_res, "\xA\xD", messages);
 
-    s_Verify(messages.size() == sNumThreads*3);
+    s_Verify(messages.size() == s_NumThreads*3);
 
     // Verify "created" messages
-    for (unsigned int i=0; i<sNumThreads; i++) {
+    for (unsigned int i=0; i<s_NumThreads; i++) {
         string_list::iterator it = find(
             messages.begin(),
             messages.end(),
@@ -237,10 +112,10 @@ int CThreadedApp::Run(void)
         s_Verify(it != messages.end());
         messages.erase(it);
     }
-    s_Verify(messages.size() == sNumThreads*2);
+    s_Verify(messages.size() == s_NumThreads*2);
 
     // Verify "Error" messages
-    for (unsigned int i=0; i<sNumThreads; i++) {
+    for (unsigned int i=0; i<s_NumThreads; i++) {
         string_list::iterator it = find(
             messages.begin(),
             messages.end(),
@@ -248,10 +123,10 @@ int CThreadedApp::Run(void)
         s_Verify(it != messages.end());
         messages.erase(it);
     }
-    s_Verify(messages.size() == sNumThreads);
+    s_Verify(messages.size() == s_NumThreads);
 
     // Verify "Log" messages
-    for (unsigned int i=0; i<sNumThreads; i++) {
+    for (unsigned int i=0; i<s_NumThreads; i++) {
         string_list::iterator it = find(
             messages.begin(),
             messages.end(),
@@ -265,8 +140,8 @@ int CThreadedApp::Run(void)
     SetDiagStream(0);
 
     NcbiCout << "Test completed successfully!"
-             << NcbiEndl << NcbiEndl << NcbiEndl;
-    return 0;
+             << NcbiEndl << NcbiEndl;
+    return true;
 }
 
 
@@ -276,6 +151,6 @@ int CThreadedApp::Run(void)
 
 int main(int argc, const char* argv[]) 
 {
-    CThreadedApp app;
+    CTestDiagApp app;
     return app.AppMain(argc, argv, 0, eDS_Default, 0);
 }
