@@ -314,11 +314,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     if (point > 0.0 && iter->preference) {
         if (total != access) {
-            p = SERV_Preference(iter->preference,
-                                access/total, total/data->n_node);
+            p = SERV_Preference(iter->preference, access/total, data->n_node);
             status = total*p;
             p = total*(1.0 - p)/(total - access);
-            assert(access);
             for (i = 0; i < data->n_node; i++) {
                 data->s_node[i].status *= p;
                 if (p*point <= data->s_node[i].status)
@@ -417,6 +415,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2003/02/13 21:38:22  lavr
+ * Comply with new SERV_Preference() prototype
+ *
  * Revision 6.54  2003/02/06 17:35:36  lavr
  * Move reset of disp_fail to correct place in s_Resolve()
  *
