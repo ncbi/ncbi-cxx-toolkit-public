@@ -15,6 +15,7 @@
 #
 ###########################################################################
 
+echo "[`date`]"
 
 cvs_location=`echo '$Source$' | sed "s%\$\Source: *\([^$][^$]*\)\$.*%\1%"`
 cvs_revision=`echo '$Revision$' | sed "s%\$\Revision: *\([^$][^$]*\)\$.*%\1%"`
@@ -163,7 +164,7 @@ test -d "$install_dir/inc"  ||  mkdir "$install_dir/inc"  ||  \
    Usage "Failed to create $install_dir/inc"
 i_cfg="$install_dir/inc/ncbiconf.h"
 b_cfg="$build_dir/inc/ncbiconf.h"
-diff "$b_cfg" "$i_cfg"  ||  \
+diff "$b_cfg" "$i_cfg" 2>/dev/null  ||  \
    cp -p "$b_cfg" "$i_cfg"  ||  Usage "Failed copy to:  $i_cfg"
 
 # Remove various unneeded files
