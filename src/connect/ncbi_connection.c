@@ -73,7 +73,7 @@
 /* Connection state
  */
 typedef enum ECONN_StateTag {
-    eCONN_Unusable = -1,
+    eCONN_Unusable = -1,               /* this should be iff !conn->meta.list*/
     eCONN_Closed   =  0,
     eCONN_Open     =  1
 } ECONN_State;
@@ -117,16 +117,12 @@ extern EIO_Status CONN_Create
     EIO_Status status = eIO_Unknown;
 
     if ( conn ) {
-        int i;
-        conn->state = eCONN_Unusable;
+        conn->state     = eCONN_Unusable;
         conn->c_timeout = CONN_DEFAULT_TIMEOUT;
         conn->r_timeout = CONN_DEFAULT_TIMEOUT;
         conn->w_timeout = CONN_DEFAULT_TIMEOUT;
         conn->l_timeout = CONN_DEFAULT_TIMEOUT;
-        for (i = 0; i < CONN_N_CALLBACKS; i++)
-            memset(&conn->callback[i], 0, sizeof(conn->callback[i]));
-        status = CONN_ReInit(conn, connector);
-        if (status != eIO_Success) {
+        if ((status = CONN_ReInit(conn, connector)) != eIO_Success) {
             free(conn);
             conn = 0;
         }
@@ -148,6 +144,7 @@ extern EIO_Status CONN_ReInit
 
     /* check arg */
     if (!connector  &&  !conn->meta.list) {
+        assert(conn->state == eCONN_Unusable);
         status = eIO_Unknown;
         CONN_LOG(eLOG_Error,
                  "[CONN_ReInit]  Cannot re-init empty connection with NULL");
@@ -205,11 +202,14 @@ extern EIO_Status CONN_ReInit
     }
 
     if (connector  &&  !x_conn) {
+        assert(conn->state == eCONN_Unusable);
         /* Setup the new connector */
-        METACONN_Add(&conn->meta, connector);
+        if (METACONN_Add(&conn->meta, connector) != eIO_Success)
+            return eIO_Unknown;
         conn->state = eCONN_Closed;
     }
 
+    assert(conn->state != eCONN_Open);
     return eIO_Success;
 }
 
@@ -219,12 +219,7 @@ static EIO_Status s_Open
 {
     EIO_Status status;
 
-    assert(conn->state == eCONN_Closed);
-    if ( !conn->meta.list ) {
-        status = eIO_Unknown;
-        CONN_LOG(eLOG_Error, "[CONN_Open]  Cannot open empty connection");
-        return status;
-    }
+    assert(conn->state == eCONN_Closed  &&  conn->meta.list != 0);
 
     /* call current connector's "OPEN" method */
     status = conn->meta.open
@@ -342,6 +337,7 @@ extern EIO_Status CONN_Wait
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
         return status;
+    assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
 
     /* check if there is a PEEK'ed data in the input */
     if (event == eIO_Read && BUF_Size(conn->buf))
@@ -371,15 +367,19 @@ extern EIO_Status CONN_Write
 {
     EIO_Status status;
 
+    if (!n_written)
+        return eIO_InvalidArg;
     *n_written = 0;
+
     CONN_NOT_NULL("Write");
 
-    if (conn->state == eCONN_Unusable  ||  !n_written)
+    if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
 
     /* open connection, if not yet opened */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
         return status;
+    assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
 
     /* call current connector's "WRITE" method */
     status = conn->meta.write
@@ -408,6 +408,7 @@ extern EIO_Status CONN_Flush
     /* perform open, if not opened yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
         return status;
+    assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
 
     /* call current connector's "FLUSH" method */
     status = conn->meta.flush
@@ -511,13 +512,22 @@ extern EIO_Status CONN_Read
  size_t*        n_read,
  EIO_ReadMethod how)
 {
+    EIO_Status status;
+
+    if (!n_read)
+        return eIO_InvalidArg;
     *n_read = 0;
     CONN_NOT_NULL("Read");
 
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
 
-    /* flush the unwritten output data, if any (NB: also opens connection) */
+    /* perform open, if not opened yet */
+    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
+        return status;
+    assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
+
+    /* flush the unwritten output data */
     CONN_Flush(conn);
 
     switch (how) {
@@ -536,7 +546,7 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 {
     CONN_NOT_NULL("Status");
 
-    if (conn->state == eCONN_Unusable)
+    if (conn->state == eCONN_Unusable  ||  !conn->meta.list)
         return eIO_Unknown;
 
     if (dir != eIO_Read  &&  dir != eIO_Write)
@@ -556,14 +566,19 @@ extern EIO_Status CONN_Close(CONN conn)
 {
     CONN_NOT_NULL("Close");
 
-    /* callback established? call it first, if so */
-    if (conn->callback[eCONN_OnClose].func)
-        conn->callback[eCONN_OnClose].func(conn, eCONN_OnClose,
-                                           conn->callback[eCONN_OnClose].data);
-    /* now close the connection */
+    if (conn->state != eCONN_Unusable) {
+        /* callback established? call it first, if so */
+        if (conn->callback[eCONN_OnClose].func) {
+            conn->callback[eCONN_OnClose].func
+                (conn, eCONN_OnClose, conn->callback[eCONN_OnClose].data);
+        }
+    }
+    conn->callback[eCONN_OnClose].func = 0; /* allow close CB only once */
+    /* now close the connection - this also makes it "eCONN_Unusable" */
     if ( conn->meta.list )
         CONN_ReInit(conn, 0);
     BUF_Destroy(conn->buf);
+    conn->buf = 0;
     free(conn);
     return eIO_Success;
 }
@@ -573,7 +588,8 @@ extern const char* CONN_GetType(CONN conn)
 {
     CONN_NOT_NULL_EX("GetType", 0);
 
-    return conn->meta.get_type? conn->meta.get_type(conn->meta.c_get_type) : 0;
+    return conn->state == eCONN_Unusable  ||  !conn->meta.list   ||
+        !conn->meta.get_type ? 0 : conn->meta.get_type(conn->meta.c_get_type);
 }
 
 
@@ -667,6 +683,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2002/09/19 19:43:46  lavr
+ * Add more assert()'s and do not rely on CONN_Flush() to open in CONN_Read()
+ *
  * Revision 6.26  2002/09/06 15:43:20  lavr
  * Bug fixes of late assignments in Read and Write; Flush changed to open
  * connection if not yet open; more error logging
