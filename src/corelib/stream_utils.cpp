@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/02/04 20:22:34  lavr
+ * Stream positioning added; more assert()'s to check standard compliance
+ *
  * Revision 1.5  2002/01/28 20:26:39  lavr
  * Completely redesigned
  *
@@ -53,14 +56,14 @@
 #include <string.h>
 
 
-#ifdef NCBI_COMPILER_GCC
-#  if NCBI_COMPILER_VERSION < 300
-#    define PUBSYNC sync
-#  else
-#    define PUBSYNC pubsync
-#  endif
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
+#  define PUBSYNC    sync
+#  define PUBSEEKOFF seekoff
+#  define PUBSEEKPOS seekpos
 #else
-#  define PUBSYNC pubsync
+#  define PUBSYNC    pubsync
+#  define PUBSEEKOFF pubseekoff
+#  define PUBSEEKPOS pubseekpos
 #endif
 
 
@@ -82,21 +85,26 @@ public:
     virtual ~CPushback_Streambuf();
 
 protected:
+    virtual CT_POS_TYPE  seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                 IOS_BASE::openmode which);
+    virtual CT_POS_TYPE  seekpos(CT_POS_TYPE pos, IOS_BASE::openmode which);
+
     virtual CT_INT_TYPE  overflow(CT_INT_TYPE c);
     virtual streamsize   xsputn(const CT_CHAR_TYPE* buf, streamsize n);
     virtual CT_INT_TYPE  underflow(void);
     virtual streamsize   xsgetn(CT_CHAR_TYPE* buf, streamsize n);
     virtual streamsize   showmanyc(void);
 
-    virtual int          sync(void);
-
     virtual CT_INT_TYPE  pbackfail(CT_INT_TYPE c = CT_EOF);
+
+    virtual int          sync(void);
 
     // declared setbuf here to only throw an exception at run-time
     virtual streambuf*   setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
     void                 x_FillBuffer(void);
+    void                 x_DropBuffer(void);
 
     istream&             m_Is;      // i/o stream this streambuf is attached to
     streambuf*           m_Sb;      // original streambuf
@@ -132,6 +140,26 @@ CPushback_Streambuf::~CPushback_Streambuf()
 }
 
 
+CT_POS_TYPE CPushback_Streambuf::seekoff(CT_OFF_TYPE off,
+                                         IOS_BASE::seekdir whence,
+                                         IOS_BASE::openmode which)
+{
+    x_DropBuffer();
+    if (whence == ios::cur  &&  (which & ios::in)) {
+        return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
+    }
+    return m_Sb->PUBSEEKOFF(off, whence, which);
+}
+
+
+CT_POS_TYPE CPushback_Streambuf::seekpos(CT_POS_TYPE pos,
+                                         IOS_BASE::openmode which)
+{
+    x_DropBuffer();
+    return m_Sb->PUBSEEKPOS(pos, which);
+}
+
+
 CT_INT_TYPE CPushback_Streambuf::overflow(CT_INT_TYPE c)
 {
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
@@ -154,6 +182,8 @@ streamsize CPushback_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize n)
 CT_INT_TYPE CPushback_Streambuf::underflow(void)
 {
     // we are here because there is no more data in the pushback buffer
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
+
     x_FillBuffer();
     if (gptr() < egptr())
         return CT_TO_INT_TYPE(*gptr());
@@ -171,9 +201,9 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             size_t n_read  = (n <= n_avail) ? n : n_avail;
             memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
             gbump((int) n_read);
-            m       -= streamsize(n_read);
-            buf     += streamsize(n_read);
-            n_total += streamsize(n_read);
+            m       -= (streamsize) n_read;
+            buf     += (streamsize) n_read;
+            n_total += (streamsize) n_read;
         } else {
             x_FillBuffer();
             if (gptr() >= egptr())
@@ -187,7 +217,21 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 streamsize CPushback_Streambuf::showmanyc(void)
 {
     // we are here because (according to the standard) gptr() >= egptr()
+    _ASSERT(!gptr()  ||  gptr() >= egptr());
+
     return m_Sb->in_avail();
+}
+
+
+CT_INT_TYPE CPushback_Streambuf::pbackfail(CT_INT_TYPE /*c*/)
+{
+    /* We always maintain "usual backup condition" (27.5.2.4.3.13) after
+     * underflow(), i.e. 1 byte backup after a good read is always possible.
+     * That is, this function gets called only if the user tries to
+     * back up more than once (although, some attempts may be successful,
+     * this function call denotes that the backup area is full).
+     */
+    return CT_EOF; // always fail
 }
 
 
@@ -202,18 +246,6 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 {
     THROW1_TRACE(runtime_error, "CPushback_Streambuf::setbuf() not allowed");
     return this;
-}
-
-
-CT_INT_TYPE CPushback_Streambuf::pbackfail(CT_INT_TYPE /*c*/)
-{
-    /* We always keep "usual backup condition" (27.5.2.4.3.13) after
-     * underflow(), i.e. 1 byte backup after a good read is always possible.
-     * That is, this function gets called only if the user tries to
-     * back up more than once (although, some attempts may be successful,
-     * this function call denotes that the backup area is full).
-     */
-    return CT_EOF; // always fail
 }
 
 
@@ -259,6 +291,21 @@ void CPushback_Streambuf::x_FillBuffer()
         m_BufSize = buf_size;
         setg(m_Buf, m_Buf, m_Buf + n);
     }
+}
+
+
+void CPushback_Streambuf::x_DropBuffer()
+{
+    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
+    if (sb) {
+        m_Sb     = sb->m_Sb;
+        sb->m_Sb = 0;
+        delete sb;
+        x_DropBuffer();
+        return;
+    }
+    // nothing in the buffer; no putback area as well
+    setg(m_Buf, m_Buf, m_Buf);
 }
 
 
