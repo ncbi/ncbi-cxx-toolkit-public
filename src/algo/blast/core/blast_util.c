@@ -792,13 +792,14 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
    Uint1Ptr buffer, seq, tmp_seq;
    Int4 total_length, index, offset, i, context;
    Int4 length[CODON_LENGTH];
+   Int4Ptr context_offsets = query_info->context_offsets;
 
-   total_length = query_info->context_offsets[query_info->last_context+1] + 1;
+   total_length = context_offsets[query_info->last_context+1] + 1;
 
    buffer = (Uint1Ptr) Malloc(total_length);
 
-   for (index = 0; index < query_info->last_context; index += CODON_LENGTH) {
-      seq = &buffer[query_info->context_offsets[index]];
+   for (index = 0; index <= query_info->last_context; index += CODON_LENGTH) {
+      seq = &buffer[context_offsets[index]];
 
       for (i = 0; i < CODON_LENGTH; ++i) {
          *seq++ = NULLB;
@@ -812,14 +813,14 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
             /* Once one frame is past its end, we are done */
             break;
          }
-         tmp_seq = &query_blk->sequence[query_info->context_offsets[context]];
+         tmp_seq = &query_blk->sequence[context_offsets[index+context]];
          *seq++ = tmp_seq[offset];
       }
    }
 
    /* The mixed-frame protein sequence buffer will be saved in 
       'sequence_start' */
-   query_blk->sequence_start = buffer;
+   query_blk->oof_sequence = buffer;
 
    return 0;
 }
