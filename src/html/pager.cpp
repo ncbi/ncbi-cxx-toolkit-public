@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/06/05 14:20:36  golikov
+* alt text for page numbers added
+*
 * Revision 1.25  2001/05/17 15:05:42  lavr
 * Typos corrected
 *
@@ -337,6 +340,7 @@ void CPagerView::AddImageString(CNCBINode* node, int number,
 
     for ( size_t i = 0; i < s.size(); ++i ) {
         img = new CHTML_image(name, m_ImagesDir + prefix + s[i] + suffix, 0);
+        img->SetAttribute("Alt", name);
         if( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
         if( m_ImgSizeY )
@@ -353,6 +357,7 @@ void CPagerView::AddInactiveImageString(CNCBINode* node, int number,
 
     for ( size_t i = 0; i < s.size(); ++i ) {
         img = new CHTML_img(m_ImagesDir + prefix + s[i] + suffix);
+        img->SetAttribute("Alt", s);
         if( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
         if( m_ImgSizeY )
@@ -377,6 +382,7 @@ void CPagerView::CreateSubNodes()
     if ( firstBlockPage > 0 ) {
         CHTML_image* img = new CHTML_image(CPager::KParam_PreviousPages,
                                            m_ImagesDir + "prev.gif", 0);
+        img->SetAttribute("Alt", CPager::KParam_PreviousPages);
         if( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
         if( m_ImgSizeY )
@@ -398,6 +404,7 @@ void CPagerView::CreateSubNodes()
     if ( lastPage != lastBlockPage ) {
         CHTML_image* img = new CHTML_image(CPager::KParam_NextPages,
                                            m_ImagesDir + "next.gif", 0);
+        img->SetAttribute("Alt", CPager::KParam_NextPages);
         if( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
         if( m_ImgSizeY )
