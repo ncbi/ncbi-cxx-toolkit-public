@@ -609,10 +609,13 @@ void CValidError_feat::ValidateCdregion (
 
     bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
         IsOverlappingGenePseudo(feat);
-    if ( !pseudo  &&  cdregion.CanGetConflict()  &&  !cdregion.GetConflict() ) {
+    bool conflict = cdregion.CanGetConflict()  &&  cdregion.GetConflict();
+    if ( !pseudo  &&  !conflict ) {
         ValidateCdTrans(feat);
         ValidateSplice(feat, false);
         ValidateCdsProductId(feat);
+    } else if ( conflict ) {
+        ValidateCdConflict(cdregion, feat);
     }
 
     ITERATE( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
@@ -707,6 +710,40 @@ void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
     
     PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
         "Expected CDS product absent", feat);
+}
+
+
+void CValidError_feat::ValidateCdConflict
+(const CCdregion& cdregion,
+ const CSeq_feat& feat)
+{
+    CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
+    CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetProduct());
+    
+    // translate the coding region
+    string transl_prot;
+    try {
+        CCdregion_translate::TranslateCdregion(
+            transl_prot, 
+            nuc, 
+            feat.GetLocation(), 
+            cdregion, 
+            false,   // do not include stop codons
+            false);  // do not remove trailing X/B/Z
+    } catch ( const runtime_error& ) {
+    }
+
+    CSeqVector prot_vec = prot.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    string prot_seq;
+    prot_vec.GetSeqData(0, prot_vec.size(), prot_seq);
+
+    if ( transl_prot.empty()  ||  prot_seq.empty()  ||  transl_prot == prot_seq ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_BadConflictFlag,
+            "Coding region conflict flag should not be set", feat);
+    } else {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ConflictFlagSet,
+            "Coding region conflict flag is set", feat);
+    }
 }
 
 
@@ -1935,7 +1972,6 @@ static const string s_BypassCdsTransCheck[] = {
 };
 
 
-
 void CValidError_feat::ReportCdTransErrors
 (const CSeq_feat& feat,
  bool show_stop,
@@ -1966,7 +2002,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     // biological exception
     size_t except_num = sizeof(s_BypassCdsTransCheck) / sizeof(string);
-    if ( feat.GetExcept() && feat.CanGetExcept_text() ) {
+    if ( feat.CanGetExcept()  &&  feat.GetExcept()  &&
+         feat.CanGetExcept_text() ) {
         for ( size_t i = 0; i < except_num; ++i ) {
             if ( NStr::FindNoCase(feat.GetExcept_text(), 
                 s_BypassCdsTransCheck[i]) != string::npos ) {
@@ -2216,7 +2253,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     }
 
-    if ( feat.GetPartial()  && mismatches.empty() ) {
+    if ( feat.CanGetPartial()  &&  feat.GetPartial()  &&
+         mismatches.empty() ) {
         if ( !no_beg  && !no_end ) {
             if ( !got_stop ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem, 
@@ -2575,6 +2613,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/12/16 16:21:34  shomrat
+* Implemented ValidateCdConflict
+*
 * Revision 1.43  2003/10/27 14:18:03  shomrat
 * ValidateImp warns if repeat_region /rpt_unit has same length as feature location but does not have matching sequence
 *
