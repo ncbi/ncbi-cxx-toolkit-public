@@ -416,16 +416,30 @@ protected:
     string FindProgramExecutablePath(int argc, const char* const* argv,
                                      string* real_path = 0);
 
+    /// Get the application's log file name
+    ///
+    /// @return
+    ///   File name
+    const string& GetLogFileName(void) const;
+
 private:
     /// Read standard NCBI application configuration settings.
     ///
     /// [NCBI]:   HeapSizeLimit, CpuTimeLimit
     /// [DEBUG]:  ABORT_ON_THROW, DIAG_POST_LEVEL, MessageFile
-    /// @param cmdline_log
-    ///   Name of already opened log file that has been specified in command line.
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
-    void x_HonorStandardSettings(const string& cmdline_log, CNcbiRegistry* reg = 0);
+    void x_HonorStandardSettings(CNcbiRegistry* reg = 0);
+
+    /// Setup log file
+    ///
+    /// @param name
+    ///   Log file name
+    /// @param mode
+    ///   File open mode
+    /// @return
+    ///   Result of the operation
+    bool x_SetupLogFile(const string& name, ios::openmode mode = ios::out);
 
     /// Setup C++ standard I/O streams' behaviour.
     ///
@@ -453,6 +467,7 @@ private:
     string                     m_ProgramDisplayName;  ///< Display name of app
     string                     m_ExePath;    ///< Program executable path
     string                     m_RealExePath; ///< Symlink-free executable path
+    string                     m_LogFileName; ///< Log file name
 };
 
 
@@ -506,6 +521,11 @@ const string& CNcbiApplication::GetProgramExecutablePath(EFollowLinks
     return follow_links == eFollowLinks ? m_RealExePath : m_ExePath;
 }
 
+inline
+const string& CNcbiApplication::GetLogFileName(void) const
+{
+    return m_LogFileName;
+}
 
 END_NCBI_SCOPE
 
@@ -514,6 +534,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/10/20 14:16:41  gouriano
+ * Give access to logfile name
+ *
  * Revision 1.46  2004/10/18 18:59:36  gouriano
  * Allow to turn the logging on from the config.file
  *

@@ -290,7 +290,6 @@ int CNcbiApplication::AppMain
 
     // Check command line for presence special arguments
     // "-logfile", "-conffile", "-version"
-    string cmdline_log;
     bool is_diag_setup = false;
     if (!m_DisableArgDesc && argc > 1  &&  argv) {
         const char** v = new const char*[argc];
@@ -305,22 +304,10 @@ int CNcbiApplication::AppMain
                 if ( !argv[i++] ) {
                     continue;
                 }
-                const char* log = argv[i];
-                auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log));
-                if ( !os->good() ) {
-                    _TRACE("CNcbiApplication() -- cannot open log file: "
-                           << log);
-                    continue;
+                if (x_SetupLogFile(argv[i])) {
+                    diag = eDS_ToStdlog;
+                    is_diag_setup = true;
                 }
-                _TRACE("CNcbiApplication() -- opened log file: " << log);
-                // (re)direct the global diagnostics to the log.file
-                CNcbiOfstream* os_log = os.release();
-                SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup,
-                              (void*) os_log);
-                diag = eDS_ToStdlog;
-                is_diag_setup = true;
-                cmdline_log = log;
-
                 // Configuration file
             } else if ( NStr::strcmp(argv[i], s_ArgCfgFile) == 0 ) {
                 if ( !argv[i++] ) {
@@ -406,7 +393,7 @@ int CNcbiApplication::AppMain
             // Don't call till after LoadConfig()
             // NOTE: this will override environment variables, 
             // except DIAG_POST_LEVEL which is Set*Fixed*.
-            x_HonorStandardSettings(cmdline_log);
+            x_HonorStandardSettings();
 
             // Do init
             Init();
@@ -566,16 +553,9 @@ bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
     case eDS_ToStdlog: {
         // open log.file
         string log = m_Arguments->GetProgramName() + ".log";
-        auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log.c_str()));
-        if ( !os->good() ) {
-            _TRACE("CNcbiApplication() -- cannot open log file: " << log);
+        if (!x_SetupLogFile(log)) {
             return false;
         }
-        _TRACE("CNcbiApplication() -- opened log file: " << log);
-
-        // (re)direct the global diagnostics to the log.file
-        CNcbiOfstream* os_log = os.release();
-        SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup, (void*) os_log);
         break;
     }
     case eDS_ToMemory: {
@@ -882,8 +862,7 @@ string CNcbiApplication::FindProgramExecutablePath
 }
 
 
-void CNcbiApplication::x_HonorStandardSettings(
-    const string& cmdline_log, CNcbiRegistry* reg)
+void CNcbiApplication::x_HonorStandardSettings( CNcbiRegistry* reg)
 {
     if (reg == 0) {
         reg = m_Config;
@@ -892,28 +871,21 @@ void CNcbiApplication::x_HonorStandardSettings(
     }
 
     // LOG settings
-    if (cmdline_log.empty() ||
-        (!cmdline_log.empty() && reg->GetBool("LOG","IgnoreEnvArg",false))) {
+    if (m_LogFileName.empty() ||
+        (!m_LogFileName.empty() && reg->GetBool("LOG","IgnoreEnvArg",false))) {
         string logname = reg->GetString("LOG","File",kEmptyStr);
         if (!logname.empty()) {
             bool truncate_log = reg->GetBool("LOG","Truncate",false);
             bool nocreate_log = reg->GetBool("LOG","NoCreate",false);
             CFile file_log(logname);
             if (!nocreate_log || file_log.Exists()) {
-                ios::openmode mode = ios::out | (truncate_log ? ios::trunc : ios::app);
-                auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(logname.c_str(), mode));
-                if ( os->good() ) {
-                    _TRACE("CNcbiApplication() -- opened log file: " << logname);
-                    // (re)direct the global diagnostics to the log.file
-                    CNcbiOfstream* os_log = os.release();
-                    SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup,
-                                (void*) os_log);
-                    if (!cmdline_log.empty()) {
-                        CDirEntry(cmdline_log).Remove();
+                string prevlog = GetLogFileName();
+                ios::openmode mode = ios::out |
+                                     (truncate_log ? ios::trunc : ios::app);
+                if (x_SetupLogFile(logname,mode)) {
+                    if (!prevlog.empty()) {
+                        CDirEntry(prevlog).Remove();
                     }
-                } else {
-                    _TRACE("CNcbiApplication() -- cannot open log file: "
-                           << logname);
                 }
             }
         }
@@ -1002,6 +974,21 @@ void CNcbiApplication::x_HonorStandardSettings(
         SetDiagFilter(eDiagFilter_Post, post_filter.c_str());
 }
 
+bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
+{
+    auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(name.c_str(), mode));
+    if ( os->good() ) {
+        _TRACE("CNcbiApplication() -- opened log file: " << name);
+        // (re)direct the global diagnostics to the log.file
+        CNcbiOfstream* os_log = os.release();
+        SetDiagStream(os_log, true, s_DiagToStdlog_Cleanup, (void*) os_log);
+        m_LogFileName = name;
+    } else {
+        _TRACE("CNcbiApplication() -- cannot open log file: " << name);
+        return false;
+    }
+    return true;
+}
 
 END_NCBI_SCOPE
 
@@ -1009,6 +996,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2004/10/20 14:16:24  gouriano
+ * Give access to logfile name
+ *
  * Revision 1.98  2004/10/18 18:59:19  gouriano
  * Allow to turn the logging on from the config.file
  *
