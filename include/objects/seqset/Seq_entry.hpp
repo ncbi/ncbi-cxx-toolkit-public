@@ -90,7 +90,9 @@ enum EReadFastaFlags {
     fReadFasta_ForceType  = 0x4,  // force type regardless of accession
     fReadFasta_NoParseID  = 0x8,  // treat name as local ID regardless of |s
     fReadFasta_ParseGaps  = 0x10, // make a delta sequence if gaps found
-    fReadFasta_OneSeq     = 0x20  // just read the first sequence found
+    fReadFasta_OneSeq     = 0x20, // just read the first sequence found
+    fReadFasta_Redund     = 0x40, // keep going past the first ^A in deflines
+    fReadFasta_NoSeqData  = 0x80  // parse the deflines but skip the data
 };
 typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 
@@ -127,6 +129,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2003/05/09 15:47:11  ucko
+ * +fReadFasta_{Redund,NoSeqData} (suggested by Michel Dumontier)
+ *
  * Revision 1.10  2003/04/24 16:14:12  vasilche
  * Fixed Parentize().
  *
