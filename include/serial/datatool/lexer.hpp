@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/06 20:21:13  gouriano
+* Added name property to lexers - for better diagnostics
+*
 * Revision 1.8  2004/02/25 19:45:47  gouriano
 * Made it possible to define DEFAULT for data members of type REAL
 *
@@ -80,7 +83,7 @@ class ASNLexer : public AbstractLexer
 {
     typedef AbstractLexer CParent;
 public:
-    ASNLexer(CNcbiIstream& in);
+    ASNLexer(CNcbiIstream& in, const string& name);
     virtual ~ASNLexer();
 
     const string& StringValue(void) const

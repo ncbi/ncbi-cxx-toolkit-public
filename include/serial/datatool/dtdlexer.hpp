@@ -42,14 +42,15 @@ BEGIN_NCBI_SCOPE
 class DTDLexer : public AbstractLexer
 {
 public:
-    DTDLexer(CNcbiIstream& in);
+    DTDLexer(CNcbiIstream& in, const string& name);
     virtual ~DTDLexer(void);
 
 protected:
     virtual TToken LookupToken(void);
     virtual void LookupComments(void);
 
-    bool ProcessComment(void);
+    bool   ProcessComment(void);
+    bool   IsIdentifierSymbol(char c);
     TToken LookupIdentifier(void);
     TToken LookupKeyword(void);
     TToken LookupEntity(void);
@@ -58,6 +59,7 @@ protected:
 
 private:
     size_t m_CharsToSkip;
+    bool m_IdentifierEnd;
 };
 
 END_NCBI_SCOPE
@@ -68,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/01/06 20:21:13  gouriano
+ * Added name property to lexers - for better diagnostics
+ *
  * Revision 1.2  2002/10/18 14:35:42  gouriano
  * added parsing of internal parsed entities
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/01/06 20:22:38  gouriano
+* Added name property to lexers - for better diagnostics
+*
 * Revision 1.18  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -101,8 +104,8 @@ inline bool IsDigit(char c)
     return isdigit(c) ? true : false;
 }
 
-ASNLexer::ASNLexer(CNcbiIstream& in)
-    : AbstractLexer(in)
+ASNLexer::ASNLexer(CNcbiIstream& in, const string& name)
+    : AbstractLexer(in,name)
 {
 }
 

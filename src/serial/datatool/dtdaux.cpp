@@ -300,8 +300,8 @@ const list<DTDAttribute>& DTDElement::GetAttributes(void) const
 /////////////////////////////////////////////////////////////////////////////
 // DTDEntityLexer
 
-DTDEntityLexer::DTDEntityLexer(CNcbiIstream& in, bool autoDelete)
-    : DTDLexer(in)
+DTDEntityLexer::DTDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete)
+    : DTDLexer(in,name)
 {
     m_Str = &in;
     m_AutoDelete = autoDelete;
@@ -320,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/01/06 20:22:14  gouriano
+ * Added name property to lexers - for better diagnostics
+ *
  * Revision 1.2  2004/05/17 21:03:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

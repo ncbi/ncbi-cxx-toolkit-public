@@ -207,7 +207,7 @@ private:
 class DTDEntityLexer : public DTDLexer
 {
 public:
-    DTDEntityLexer(CNcbiIstream& in, bool autoDelete=true);
+    DTDEntityLexer(CNcbiIstream& in, const string& name, bool autoDelete=true);
     virtual ~DTDEntityLexer(void);
 protected:
     CNcbiIstream* m_Str;
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/01/06 20:21:13  gouriano
+ * Added name property to lexers - for better diagnostics
+ *
  * Revision 1.2  2005/01/03 16:51:34  gouriano
  * Added parsing of conditional sections
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/01/06 20:21:54  gouriano
+* Added name property to lexers - for better diagnostics
+*
 * Revision 1.20  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -100,25 +103,26 @@ BEGIN_NCBI_SCOPE
 
 #define READ_AHEAD 1024
 
-AbstractLexer::AbstractLexer(CNcbiIstream& in)
+AbstractLexer::AbstractLexer(CNcbiIstream& in, const string& name)
     : m_Input(in), m_Line(1),
       m_Buffer(new char[READ_AHEAD]), m_AllocEnd(m_Buffer + READ_AHEAD),
       m_Position(m_Buffer), m_DataEnd(m_Position),
-      m_TokenStart(0)
+      m_TokenStart(0), m_Name(name)
 {
 }
 
 AbstractLexer::~AbstractLexer(void)
 {
-    delete []m_Buffer;
+    delete [] m_Buffer;
 }
 
 void AbstractLexer::LexerError(const char* error)
 {
     NCBI_THROW(CDatatoolException,eWrongInput,
-                 "LINE " + NStr::IntToString(CurrentLine()) +
-                 ", TOKEN " + m_TokenText +
-                 " -- lexer error: " + error);
+               m_Name + ": "
+               "LINE " + NStr::IntToString(CurrentLine()) +
+               ", TOKEN " + m_TokenText +
+               " -- lexer error: " + error);
 }
 
 void AbstractLexer::LexerWarning(const char* error)

@@ -566,7 +566,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
 
             case SourceFile::eASN:
                 {
-                    ASNLexer lexer(fName);
+                    ASNLexer lexer(fName,name);
                     lexer.AllowIDsEndingWithMinus(GetArgs()["lax_syntax"]);
                     ASNParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
@@ -574,7 +574,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
                 break;
             case SourceFile::eDTD:
                 {
-                    DTDLexer lexer(fName);
+                    DTDLexer lexer(fName,name);
                     DTDParser parser(lexer);
                     fileSet.AddFile(parser.Modules(name));
                 }
@@ -599,6 +599,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2005/01/06 20:23:03  gouriano
+* Added name property to lexers - for better diagnostics
+*
 * Revision 1.76  2004/12/20 20:29:16  gouriano
 * Eliminate compiler warnings
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/01/06 20:21:13  gouriano
+* Added name property to lexers - for better diagnostics
+*
 * Revision 1.10  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -92,7 +95,7 @@ class CComments;
 
 class AbstractLexer {
 public:
-    AbstractLexer(CNcbiIstream& in);
+    AbstractLexer(CNcbiIstream& in, const string& name);
     virtual ~AbstractLexer(void);
     
     const AbstractToken& NextToken(void)
@@ -251,6 +254,7 @@ private:
     AbstractToken m_NextToken;
     string m_TokenText;
     list<CComment> m_Comments;
+    string m_Name;
 };
 
 END_NCBI_SCOPE
