@@ -176,7 +176,7 @@ public:
 
     void fastopen(const char* s, IOS_BASE::openmode mode = IOS_BASE::in)
     {
-        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode)))
+        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode | in)))
             setstate(failbit);
         else
             (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
@@ -211,7 +211,7 @@ public:
 
     void fastopen(const char* s, IOS_BASE::openmode mode = IOS_BASE::out)
     {
-        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode)))
+        if (is_open()  ||  !(m_Fp = __Fiopen(s, mode | out)))
             setstate(failbit);
         else
             (void) new (rdbuf()) basic_filebuf<char, char_traits<char> >(m_Fp);
@@ -520,6 +520,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/11/05 13:41:14  lavr
+ * Enforce direction in CNcbiIfstream and CNcbiOfstream for MSVC
+ *
  * Revision 1.36  2003/10/20 15:27:17  lavr
  * Implementations of CNcbiFstreams that forcedly turn on stream
  * buffering in MSVC (caution: very kludgy and ad hoc solution)
