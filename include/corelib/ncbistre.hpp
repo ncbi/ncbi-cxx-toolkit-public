@@ -159,6 +159,7 @@ typedef IO_PREFIX::strstream     CNcbiStrstream;
 typedef IO_PREFIX::filebuf       CNcbiFilebuf;
 
 #ifdef NCBI_COMPILER_MSVC
+#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 class CNcbiIfstream : public IO_PREFIX::ifstream
 {
 public:
@@ -188,12 +189,17 @@ public:
 private:
     FILE* m_Fp;
 };
+#  else
+/// Portable alias for ifstream.
+typedef IO_PREFIX::ifstream      CNcbiIfstream;
+#  endif
 #else
 /// Portable alias for ifstream.
 typedef IO_PREFIX::ifstream      CNcbiIfstream;
 #endif
 
 #ifdef NCBI_COMPILER_MSVC
+#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 class CNcbiOfstream : public IO_PREFIX::ofstream
 {
 public:
@@ -223,12 +229,17 @@ public:
 private:
     FILE* m_Fp;
 };
+#  else
+/// Portable alias for ofstream.
+typedef IO_PREFIX::ofstream      CNcbiOfstream;
+#  endif
 #else
 /// Portable alias for ofstream.
 typedef IO_PREFIX::ofstream      CNcbiOfstream;
 #endif
 
 #ifdef NCBI_COMPILER_MSVC
+#  if _MSC_VER >= 1200  &&  _MSC_VER < 1300
 class CNcbiFstream : public IO_PREFIX::fstream
 {
 public:
@@ -260,6 +271,10 @@ public:
 private:
     FILE* m_Fp;
 };
+#  else
+/// Portable alias for fstream.
+typedef IO_PREFIX::fstream       CNcbiFstream;
+#  endif
 #else
 /// Portable alias for fstream.
 typedef IO_PREFIX::fstream       CNcbiFstream;
@@ -518,6 +533,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/11/26 15:21:08  lavr
+ * Do ad-hoc fstream fix conditionally for MSVC 6 only
+ *
  * Revision 1.38  2003/11/18 11:57:46  siyan
  * Changed so @addtogroup does not cross namespace boundary
  *
