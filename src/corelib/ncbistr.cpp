@@ -1347,7 +1347,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                 best_score = eNewline;
                 break;
             } else if (isspace(c)) {
-                if (!do_flat  &&  pos2 > 0  &&  isspace(str[pos2 - 1])) {
+                if ( !do_flat  &&  pos2 > 0  &&  isspace(str[pos2 - 1])) {
                     continue; // take the first space of a group
                 }
                 score = eSpace;
@@ -1361,22 +1361,16 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             } else if (c == ','  &&  score_pos < len - 1  &&  column < width) {
                 score = eComma;
                 ++score_pos;
-            } else if (ispunct(c)) {
-                if (do_flat) {
-                    // ignore all punctuation other than commas and dashes
-                    if ((c == ','  ||  c == '-')  &&  score_pos < len - 1  &&  column < width) {
-                        score = ((c == ',') ? eComma : ePunct);
-                        ++score_pos;
-                    }
-                } else {
-                    if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
-		        ||  c == '`') { // opening element
-                        score = ePunct;
-                    } else if (score_pos < len - 1  &&  column < width) {
-                        // Prefer breaking *after* most types of punctuation.
-                        score = ePunct;
-                        ++score_pos;
-                    }
+            } else if (do_flat ? c == '-' : ispunct(c)) {
+                // For flat files, only whitespace, hyphens and commas
+                // are special.
+                if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
+                    ||  c == '`') { // opening element
+                    score = ePunct;
+                } else if (score_pos < len - 1  &&  column < width) {
+                    // Prefer breaking *after* most types of punctuation.
+                    score = ePunct;
+                    ++score_pos;
                 }
             }
 
@@ -1689,6 +1683,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.128  2004/11/24 15:30:20  ucko
+ * Simplify logic in Wrap slightly.
+ *
  * Revision 1.127  2004/11/24 15:17:02  shomrat
  * Implemented flat-file specific line wrap
  *
