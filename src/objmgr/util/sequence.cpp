@@ -71,6 +71,7 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <util/strsearch.hpp>
 
@@ -2705,8 +2706,9 @@ CSeq_loc* SeqLocMergeOne
     TSeqPos seq_len = inst.IsSetLength() ? inst.GetLength() : 0;
 
     // map the location to the target bioseq
-    CRef<CSeq_loc> mapped_loc(target.MapLocation(loc));
-    _ASSERT(IsOneBioseq(*mapped_loc));  // doesn't have multiple bioseqs
+    CSeq_loc_Mapper mapper(target);
+    mapper.PreserveDestinationLocs();
+    CRef<CSeq_loc> mapped_loc = mapper.Map(loc);
 
     ENa_strand strand = GetStrand(*mapped_loc);
     bool rearranged = false;
@@ -4111,6 +4113,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.85  2004/08/19 15:26:56  shomrat
+* Use Seq_loc_Mapper in SeqLocMerge
+*
 * Revision 1.84  2004/07/21 15:51:25  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
