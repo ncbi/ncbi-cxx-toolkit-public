@@ -59,68 +59,7 @@ static char const rcsid[] =
 #include "blast_gapalign_priv.h"
 #include "blast_psi_priv.h"
 #include "blast_hits_priv.h"
-
-/** Compares HSPs in an HSP array and deletes those whose ranges are completely
- * included in other HSP ranges. The HSPs must be sorted by e-value/score 
- * coming into this function. Null HSPs must be purged after this function is
- * called.
- * @param hsp_array Array of BlastHSP's [in]
- * @param hspcnt Size of the array [in]
- * @param is_ooframe Is this a search with out-of-frame gapping? [in]
- */
-static void 
-s_BlastCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt, 
-                                   Boolean is_ooframe)
-{
-   Int4 index, index1;
-   BlastHSP* hsp,* hsp1;
-   
-   for (index = 0; index < hspcnt; index++) {
-      hsp = hsp_array[index];
-      
-      if (hsp == NULL)
-         continue;
-      
-      for (index1 = 0; index1 < index; index1++) {
-         hsp1 = hsp_array[index1];
-         
-         if (hsp1 == NULL)
-            continue;
-         
-         if(is_ooframe) {
-            if (SIGN(hsp1->query.frame) != SIGN(hsp->query.frame))
-               continue;
-         } else {
-            if (hsp->context != hsp1->context)
-               continue;
-         }
-         
-         /* Check of the start point of this HSP */
-         if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, 
-                hsp->query.offset, hsp1->subject.offset, hsp1->subject.end, 
-                hsp->subject.offset) == TRUE) {
-            /* Check of the end point of this HSP */
-            if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, 
-                   hsp->query.end, hsp1->subject.offset, hsp1->subject.end, 
-                   hsp->subject.end) == TRUE) {
-               /* Now checking correct strand */
-               if (SIGN(hsp1->query.frame) == SIGN(hsp->query.frame) &&
-                   SIGN(hsp1->subject.frame) == SIGN(hsp->subject.frame)){
-                  
-                  /* If we come here through all these if-s - this
-                     mean, that current HSP should be removed. */
-                  
-                  if(hsp_array[index] != NULL) {
-                     hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-                     break;
-                  }
-               }
-            }
-         }
-      }
-   }
-   return;
-}
+#include "blast_itree.h"
 
 /** Window size used to scan HSP for highest score region, where gapped
  * extension starts. 
@@ -193,101 +132,6 @@ s_SavePatternLengthInGapAlignStruct(Int4 length,
    gap_align->query_stop = length;
 }
 
-
-/** Check whether an HSP is already contained within another higher scoring HSP.
- * "Containment" is defined by the macro CONTAINED_IN_HSP.  
- * the implicit assumption here is that HSP's are sorted by score
- * The main goal of this routine is to eliminate double gapped extensions of HSP's.
- *
- * @param hsp_array Full Array of all HSP's found so far. [in]
- * @param hsp HSP to be compared to other HSP's [in]
- * @param max_index Compare above HSP to all HSP's in hsp_array up to 
- *                  max_index [in]
- * @param is_ooframe TRUE if out-of-frame gapped alignment 
- *                   (blastx and tblastn only). [in]
- */
-static Boolean
-s_HSPContainedInHSPCheck(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index, Boolean is_ooframe)
-{
-      BlastHSP* hsp1;
-      Boolean delete_hsp=FALSE;
-      Boolean hsp_start_is_contained=FALSE;
-      Boolean hsp_end_is_contained=FALSE;
-      Int4 index;
-
-      for (index=0; index<max_index; index++) {
-         hsp_start_is_contained = FALSE;
-         hsp_end_is_contained = FALSE;
-         
-         hsp1 = hsp_array[index];
-         if (hsp1 == NULL)
-            continue;
-         
-         if(is_ooframe) {
-            if (SIGN(hsp1->query.frame) != SIGN(hsp->query.frame))
-               continue;
-         } else {
-            if (hsp->context != hsp1->context)
-               continue;
-         }
-         
-         if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, hsp->query.offset, hsp1->subject.offset, hsp1->subject.end, hsp->subject.offset) == TRUE) {
-            if (SIGN(hsp1->query.frame) == SIGN(hsp->query.frame) &&
-                SIGN(hsp1->subject.frame) == SIGN(hsp->subject.frame))
-               hsp_start_is_contained = TRUE;
-         }
-         if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, hsp->query.end, hsp1->subject.offset, hsp1->subject.end, hsp->subject.end) == TRUE) {
-            if (SIGN(hsp1->query.frame) == SIGN(hsp->query.frame) &&
-                SIGN(hsp1->subject.frame) == SIGN(hsp->subject.frame))
-               hsp_end_is_contained = TRUE;
-         }
-         if (hsp_start_is_contained && hsp_end_is_contained && hsp->score <= hsp1->score) {
-            delete_hsp = TRUE;
-            break;
-         }
-      }
-
-      return delete_hsp;
-}
-
-/** Check whether an HSP is already contained within another higher scoring HSP.
- * This is done AFTER the gapped alignment has been performed
- *
- * @param hsp_array Full Array of all HSP's found so far. [in][out]
- * @param hsp HSP to be compared to other HSP's [in]
- * @param max_index compare above HSP to all HSP's in hsp_array up to max_index [in]
- */
-static Boolean
-s_HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index)
-{
-            BlastHSP* hsp2;
-            Boolean keep=TRUE;
-            Int4 index;
-
-            for (index=0; index<max_index; index++) {
-               hsp2 = hsp_array[index];
-               if (hsp2 == NULL)
-                  continue;
-               
-               /* Check if both HSP's start or end on the same diagonal 
-                  (and are on same strands). */
-               if (((hsp->query.offset == hsp2->query.offset &&
-                     hsp->subject.offset == hsp2->subject.offset) ||
-                    (hsp->query.end == hsp2->query.end &&
-                     hsp->subject.end == hsp2->subject.end))  &&
-                   hsp->context == hsp2->context &&
-                   hsp->subject.frame == hsp2->subject.frame) {
-                  if (hsp2->score > hsp->score) {
-                     keep = FALSE;
-                     break;
-                  } else {
-                     hsp_array[index] = Blast_HSPFree(hsp2);
-                  }
-               }
-            }
-
-            return keep;
-}
 
 Int2
 Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp, 
@@ -482,12 +326,6 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
    BlastScoringOptions* score_options = score_params->options;
    const Boolean kGapped = score_options->gapped_calculation;
 
-   /* Now try to detect simular alignments */
-   s_BlastCheckHSPInclusion(hsp_list->hsp_array, hsp_list->hspcnt, 
-                            score_options->is_ooframe);
-   
-   Blast_HSPListPurgeNullHSPs(hsp_list);
-   
    /* Revert query and subject to their traditional meanings. 
       This involves switching the offsets around and reversing
       any traceback information */
@@ -562,6 +400,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        program_number == eBlastTypeRpsTblastn); 
    BlastQueryInfo* query_info = query_info_in;
    Int4 offsets[2];
+   BlastIntervalTree* tree = NULL;
    
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -612,6 +451,14 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    /* Make sure the HSPs in the HSP list are sorted by score, as they should 
       be. */
    ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
+
+   /* set up the tree for HSP containment tests. subject_length 
+      is zero only for translated subject sequences, whose maximum
+      length is bounded by the length of the first frame */
+
+   tree = Blast_IntervalTreeInit(0, query_blk->length,
+                                 0, (subject_length > 0 ? subject_length :
+                                 subject_blk->length / CODON_LENGTH) );
 
    for (index=0; index < hsp_list->hspcnt; index++) {
       hsp = hsp_array[index];
@@ -671,7 +518,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
           are applied there. Such corrections should be added */
 
       if (program_number == eBlastTypeRpsBlast ||
-          !s_HSPContainedInHSPCheck(hsp_array, hsp, index, kIsOutOfFrame)) {
+          !BlastIntervalTreeContainsHSP(tree, hsp,
+                       query_info->contexts[hsp->context].query_offset, 0)) {
 
          Int4 start_shift = 0;
          Int4 adjusted_s_length;
@@ -767,10 +615,11 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
             if (keep) {
                Blast_HSPAdjustSubjectOffset(hsp, subject_blk, kIsOutOfFrame, 
                                             start_shift);
-               keep = s_HSPCheckForDegenerateAlignments(hsp_array, hsp, index);
+               BlastIntervalTreeAddHSP(hsp, tree, query_info);
             }
-            if (!keep)
+            else {
                hsp_array[index] = Blast_HSPFree(hsp);
+            }
          } else {
             /* Score is below threshold */
             gap_align->edit_block = GapEditBlockDelete(gap_align->edit_block);
@@ -792,17 +641,40 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
        sfree(frame_offsets_a);
    }
    
-   /* Free the local query_info structure, if necessary (RPS tblastn only) */
-   if (query_info != query_info_in)
-      sfree(query_info);
+   /* Remove any HSPs that share a starting or ending diagonal
+      with a higher-scoring HSP. */
+   hsp_list->hspcnt = Blast_CheckHSPsForCommonEndpoints(hsp_list->hsp_array, 
+                                                        hsp_list->hspcnt);
    
    /* Sort HSPs by score again, as the scores might have changed. */
    Blast_HSPListSortByScore(hsp_list);
 
+   /* Remove any HSPs that are contained within other HSPs.
+      Since the list is sorted by score already, any HSP
+      contained by a previous HSP is guaranteed to have a
+      lower score, and may be purged */
+   Blast_IntervalTreeReset(tree);
+   for (index = 0; index < hsp_list->hspcnt; index++) {
+       hsp = hsp_array[index];
+
+       if (BlastIntervalTreeContainsHSP(tree, hsp,
+                        query_info->contexts[hsp->context].query_offset, 0)) {
+           hsp_array[index] = Blast_HSPFree(hsp);
+       }
+       else {
+           BlastIntervalTreeAddHSP(hsp, tree, query_info);
+       }
+   }
+   tree = Blast_IntervalTreeFree(tree);
+   Blast_HSPListPurgeNullHSPs(hsp_list);
+
+   /* Free the local query_info structure, if necessary (RPS tblastn only) */
+   if (query_info != query_info_in)
+      sfree(query_info);
+   
    s_HSPListPostTracebackUpdate(program_number, hsp_list, query_info_in, 
                                 score_params, hit_params, sbp, 
                                 subject_blk->length);
-   
    
    return 0;
 }
