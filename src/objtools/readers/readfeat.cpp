@@ -818,29 +818,29 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
 
 {
     switch (qtype) {
-        eQual_allele:
-        eQual_bound_moiety:
-        eQual_clone:
-        eQual_cons_splice:
-        eQual_direction:
-        eQual_EC_number:
-        eQual_frequency:
-        eQual_function:
-        eQual_insertion_seq:
-        eQual_label:
-        eQual_map:
-        eQual_number:
-        eQual_organism:
-        eQual_PCR_conditions:
-        eQual_phenotype:
-        eQual_product:
-        eQual_replace:
-        eQual_rpt_family:
-        eQual_rpt_type:
-        eQual_rpt_unit:
-        eQual_standard_name:
-        eQual_transposon:
-        eQual_usedin:
+        case eQual_allele:
+        case eQual_bound_moiety:
+        case eQual_clone:
+        case eQual_cons_splice:
+        case eQual_direction:
+        case eQual_EC_number:
+        case eQual_frequency:
+        case eQual_function:
+        case eQual_insertion_seq:
+        case eQual_label:
+        case eQual_map:
+        case eQual_number:
+        case eQual_organism:
+        case eQual_PCR_conditions:
+        case eQual_phenotype:
+        case eQual_product:
+        case eQual_replace:
+        case eQual_rpt_family:
+        case eQual_rpt_type:
+        case eQual_rpt_unit:
+        case eQual_standard_name:
+        case eQual_transposon:
+        case eQual_usedin:
             {
                 CSeq_feat::TQual& qlist = sfp->SetQual ();
                 CRef<CGb_qual> gbq (new CGb_qual);
@@ -860,35 +860,35 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                                                          const string& qual, const string& val)
 
 {
-    EQual                  qtyp;
+    EQual                  qtype;
     CSeqFeatData::E_Choice typ;
 
     if (m_QualKeys.find (qual) != m_QualKeys.end ()) {
-        qtyp = m_QualKeys [qual];
-        if (qtyp != eQual_bad) {
+        qtype = m_QualKeys [qual];
+        if (qtype != eQual_bad) {
             CSeqFeatData& sfdata = sfp->SetData ();
             typ = sfdata.Which ();
             switch (typ) {
                 case CSeqFeatData::e_Gene:
-                    if (x_AddQualifierToGene (sfdata, qtyp, val)) return true;
+                    if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Cdregion:
-                    if (x_AddQualifierToCdregion (sfp, sfdata, qtyp, val)) return true;
+                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Rna:
-                    if (x_AddQualifierToRna (sfdata, qtyp, val)) return true;
+                    if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
                     break;
                 case CSeqFeatData::e_Imp:
-                    if (x_AddQualifierToImp (sfp, sfdata, qtyp, qual, val)) return true;
+                    if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
                     break;
                 case CSeqFeatData::e_Region:
-                    if (qtyp == eQual_region_name) {
+                    if (qtype == eQual_region_name) {
                         sfdata.SetRegion (val);
                         return true;
                     }
                     break;
                 case CSeqFeatData::e_Bond:
-                    if (qtyp == eQual_bond_type) {
+                    if (qtype == eQual_bond_type) {
                         if (m_BondKeys.find (val) != m_BondKeys.end ()) {
                             CSeqFeatData::EBond btyp = m_BondKeys [val];
                             sfdata.SetBond (btyp);
@@ -897,7 +897,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     }
                     break;
                 case CSeqFeatData::e_Site:
-                    if (qtyp == eQual_site_type) {
+                    if (qtype == eQual_site_type) {
                         if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
                             CSeqFeatData::ESite styp = m_SiteKeys [val];
                             sfdata.SetSite (styp);
@@ -908,18 +908,18 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 default:
                     break;
             }
-            switch (qtyp) {
-                eQual_pseudo:
+            switch (qtype) {
+                case eQual_pseudo:
                     sfp->SetPseudo (true);
                     return true;
-                eQual_partial:
+                case eQual_partial:
                     sfp->SetPartial (true);
                     return true;
-                eQual_exception:
+                case eQual_exception:
                     sfp->SetExcept (true);
                     sfp->SetExcept_text (val);
                     return true;
-                eQual_evidence:
+                case eQual_evidence:
                     if (val == "experimental") {
                         sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
                     } else if (val == "not_experimental" || val == "non_experimental" ||
@@ -927,40 +927,40 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
                     }
                     return true;
-                eQual_note:
+                case eQual_note:
                     {
-                        CSeq_feat::TComment& comment = sfp->SetComment ();
-                        if (comment.empty ()) {
-                            sfp->SetComment (val);
+                        if (sfp->CanGetComment ()) {
+                            const CSeq_feat::TComment& comment = sfp->GetComment ();
+                            CSeq_feat::TComment revised = comment + "; " + val;
+                            sfp->SetComment (revised);
                         } else {
-                            comment += "; " + val;
-                            sfp->SetComment (comment);
+                            sfp->SetComment (val);
                         }
                         return true;
                     }
-                eQual_allele:
-                eQual_bound_moiety:
-                eQual_clone:
-                eQual_cons_splice:
-                eQual_direction:
-                eQual_EC_number:
-                eQual_frequency:
-                eQual_function:
-                eQual_insertion_seq:
-                eQual_label:
-                eQual_map:
-                eQual_number:
-                eQual_organism:
-                eQual_PCR_conditions:
-                eQual_phenotype:
-                eQual_product:
-                eQual_replace:
-                eQual_rpt_family:
-                eQual_rpt_type:
-                eQual_rpt_unit:
-                eQual_standard_name:
-                eQual_transposon:
-                eQual_usedin:
+                case eQual_allele:
+                case eQual_bound_moiety:
+                case eQual_clone:
+                case eQual_cons_splice:
+                case eQual_direction:
+                case eQual_EC_number:
+                case eQual_frequency:
+                case eQual_function:
+                case eQual_insertion_seq:
+                case eQual_label:
+                case eQual_map:
+                case eQual_number:
+                case eQual_organism:
+                case eQual_PCR_conditions:
+                case eQual_phenotype:
+                case eQual_product:
+                case eQual_replace:
+                case eQual_rpt_family:
+                case eQual_rpt_type:
+                case eQual_rpt_unit:
+                case eQual_standard_name:
+                case eQual_transposon:
+                case eQual_usedin:
                     {
                         CSeq_feat::TQual& qlist = sfp->SetQual ();
                         CRef<CGb_qual> gbq (new CGb_qual);
@@ -972,7 +972,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 default:
                     break;
             }
-
         }
     }
     return true;
