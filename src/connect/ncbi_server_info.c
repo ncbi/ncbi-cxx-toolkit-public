@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2000/10/05 21:31:23  lavr
+ * Standalone connection marked "stateful" by default
+ *
  * Revision 6.13  2000/06/05 20:21:20  lavr
  * Eliminated gcc warning: "subscript has type `char'" in calls to
  * classification macros (<ctype.h>) by explicit casting to unsigned chars
@@ -463,7 +466,7 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->type = fSERV_Standalone;
         info->host = host;
         info->port = port;
-        info->stat = 0;
+        info->stat = 1;
         info->flag = fSERV_Regular;
         info->time = 0;
         info->rate = 0;
