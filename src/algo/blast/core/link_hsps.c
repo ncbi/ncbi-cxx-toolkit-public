@@ -98,12 +98,14 @@ typedef struct LinkHSPStruct {
  * One array of helpers will be allocated for each thread.
  */
 typedef struct LinkHelpStruct {
-  LinkHSPStruct* ptr;
-  Int4 q_off_trim;
-  Int4 s_off_trim;
-  Int4 sum[eOrderingMethods];
-  Int4 maxsum1;
-  Int4 next_larger;
+  LinkHSPStruct* ptr;         /**< The HSP to which the info belongs */
+  Int4 q_off_trim;            /**< query start of trimmed HSP */
+  Int4 s_off_trim;            /**< subject start of trimmed HSP */
+  Int4 sum[eOrderingMethods]; /**< raw score of linked set containing HSP(?) */
+  Int4 maxsum1;               /**< threshold for stopping link attempts (?) */
+  Int4 next_larger;           /**< offset into array of HelpStructs containing
+                                   HSP with higher score, used in bailout
+                                   calculations */
 } LinkHelpStruct;
 
 /** Calculates e-value of a set of HSPs with sum statistics.
@@ -112,7 +114,7 @@ typedef struct LinkHelpStruct {
  * @param subject_length Subject sequence length [in]
  * @param link_hsp_params Parameters for linking HSPs [in]
  * @param head_hsp Set of HSPs with previously calculated sum score/evalue [in]
- * @param hsp New HSP candidate to join the set [in]
+ * @param new_hsp New HSP candidate to join the set [in]
  * @param xsum Normalized score for the collection if HSPs[out]
  * @return E-value of all the HSPs together
  */
@@ -1359,6 +1361,7 @@ s_AddHSPToLinkedSet(LinkHSPStruct** head_hsp_ptr, LinkHSPStruct* new_hsp,
  * @param subject_length Subject sequence length [in]
  * @param sbp Scoring and statistical parameters [in]
  * @param link_hsp_params Parameters for linking HSPs [in]
+ * @param gapped_calculation TRUE if input HSPs are from a gapped search [in]
  */
 static Int2
 s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list, 
