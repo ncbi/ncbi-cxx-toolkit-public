@@ -29,8 +29,8 @@
  *
  */
 
-#include <util/compress/streambuf.hpp>
 #include <memory>
+#include "streambuf.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -789,6 +789,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/11 19:55:28  ivanov
+ * Move streambuf.hpp from 'include/...' to 'src/...'
+ *
  * Revision 1.1  2003/04/07 20:21:35  ivanov
  * Initial revision
  *

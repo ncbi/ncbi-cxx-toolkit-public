@@ -38,13 +38,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// Default input (get) compression stream buffer size
-const streamsize kCompressionDefaultInBufSize = 16*1024;
-
-// Default output (put) compression stream buffer size
-const streamsize kCompressionDefaultOutBufSize = 16*1024;
-
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -242,6 +235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2003/04/11 19:54:47  ivanov
+ * Move streambuf.hpp from 'include/...' to 'src/...'
+ *
  * Revision 1.1  2003/04/07 20:42:11  ivanov
  * Initial revision
  *

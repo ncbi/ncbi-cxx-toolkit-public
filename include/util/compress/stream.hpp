@@ -33,11 +33,13 @@
  */
 
 #include <util/compress/compress.hpp>
-#include <util/compress/streambuf.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+
+// Forward declaration
+class CCompressionBaseStreambuf;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -224,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/11 19:57:25  ivanov
+ * Move streambuf.hpp from 'include/...' to 'src/...'
+ *
  * Revision 1.1  2003/04/07 20:42:11  ivanov
  * Initial revision
  *

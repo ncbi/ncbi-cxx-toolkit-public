@@ -35,7 +35,16 @@
 #include <corelib/ncbistd.hpp>
 
 
+
 BEGIN_NCBI_SCOPE
+
+
+// Default input (get) compression stream buffer size
+const streamsize kCompressionDefaultInBufSize = 16*1024;
+
+// Default output (put) compression stream buffer size
+const streamsize kCompressionDefaultOutBufSize = 16*1024;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -276,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/04/11 19:57:25  ivanov
+ * Move streambuf.hpp from 'include/...' to 'src/...'
+ *
  * Revision 1.2  2003/04/08 20:48:51  ivanov
  * Added class-key declaration for friend classes in the CCompression
  *
