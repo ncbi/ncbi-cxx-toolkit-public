@@ -74,6 +74,88 @@ struct tm res;
 	return str;
 }
 
+#if defined(HAVE_GETADDRINFO) || defined(HAVE_GETNAMEINFO)
+static
+int s_make_hostent(struct hostent* he, char* buf, int len, const struct addrinfo* ai)
+{
+	static int ptr_size = sizeof(char*);
+	int pos = 0, namelen, addrnum = 0, maxaddrs;
+	const struct addrinfo* it;
+
+	memset(he, 0, sizeof(*he));
+
+	namelen = strlen(ai->ai_canonname);
+	if (pos + namelen >= len) {
+		return NO_RECOVERY;
+	}
+	if (he->h_name != ai->ai_canonname) {
+		/* already present in dummy structure passed by tds_ghba_r */
+		he->h_name = strcpy(buf + pos, ai->ai_canonname);
+	}
+	pos += namelen;
+
+	pos += ptr_size - ((pos + (size_t)buf) % ptr_size); /* align */
+	if (pos + ptr_size > len) {
+		return NO_RECOVERY;
+	}
+	he->h_aliases = (char**)(buf + pos);
+	he->h_aliases[0] = 0;
+	pos += ptr_size;
+
+	he->h_addrtype = ai->ai_family;
+	he->h_length = ai->ai_addrlen;
+	if (pos + ptr_size > len) {
+		return NO_RECOVERY;
+	}
+	he->h_addr_list = (char**)(buf + pos);
+	pos += ptr_size;
+	maxaddrs = (len - pos) / (ptr_size + ai->ai_addrlen);
+	if (maxaddrs == 0) {
+		he->h_addr_list[0] = 0;
+		return NO_RECOVERY;
+	}
+	pos += ptr_size * maxaddrs;
+	
+	for (it = ai;  it != 0  &&  addrnum < maxaddrs;  it = it->ai_next) {
+		if (it->ai_family == ai->ai_family) {
+			switch (ai->ai_family) {
+			case PF_INET:
+				memcpy(buf + pos,
+				       &((struct sockaddr_in*)(it->ai_addr))
+				           ->sin_addr,
+				       it->ai_addrlen);
+				break;
+			case PF_INET6:
+				memcpy(buf + pos,
+				       &((struct sockaddr_in6*)(it->ai_addr))
+				           ->sin6_addr,
+				       it->ai_addrlen);
+				break;
+			}
+			he->h_addr_list[addrnum] = buf + pos;
+			pos += it->ai_addrlen;
+			++addrnum;
+		}
+	}
+	he->h_addr_list[addrnum] = 0;
+
+	return 0;
+}
+
+static
+int s_convert_ai_errno(int ai_errno)
+{
+	switch (ai_errno) {
+	case EAI_NONAME:      return HOST_NOT_FOUND;
+	case EAI_ADDRFAMILY:  return NO_ADDRESS;
+	case EAI_NODATA:      return NO_DATA;
+	case EAI_FAIL:        return NO_RECOVERY;
+	case EAI_AGAIN:       return TRY_AGAIN;
+	default:              return TRY_AGAIN;
+	}
+}
+#endif
+
 struct hostent   *
 tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
@@ -83,21 +165,77 @@ tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer
 #else
 
 #if defined(HAVE_FUNC_GETHOSTBYNAME_R_6)
-        struct hostent result_buf;
-        gethostbyname_r(servername, &result_buf, buffer, buflen, &result, h_errnop);
+	if (gethostbyname_r(servername, result, buffer, buflen, &result, h_errnop))
+		return NULL;
+
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_5)
         gethostbyname_r(servername, result, buffer, buflen, h_errnop);
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_3)
-        struct hostent_data data;
-        gethostbyname_r(servername, result, &data);
-#elif defined(HAVE_FUNC_GETHOSTBYNAME_R)  ||  defined(HAVE_GETHOSTBYNAME_R)
-#error gethostbyname_r style unknown
-#else
-        result = gethostbyname(servername);
+	struct hostent_data data;
+	gethostbyname_r(servername, result, &data);
+#elif defined(HAVE_GETADDRINFO)
+	struct addrinfo hints, *out = 0;
+	int ai_errno;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_INET;
+	ai_errno = getaddrinfo(servername, 0, &hints, &out);
+	if (ai_errno == 0  &&  out) {
+		*h_errnop = s_make_hostent(result, buffer, buflen, out);
+	} else {
+		*h_errnop = s_convert_ai_errno(ai_errno);
+	}
+	if (out) {
+		freeaddrinfo(out);
+	}
+#elif defined(_REENTRANT)
+#error gethostbyname_r style unknown and getaddrinfo unavailable
 #endif
 
         return result;
 #endif
+}
+
+static
+socklen_t s_make_sa(const char *addr, int len, int type, void *buf, int blen)
+{
+	switch (type) {
+	case PF_INET:
+	{
+		struct sockaddr_in* sain = (struct sockaddr_in*)buf;
+		if (sizeof(*sain) > blen) {
+			return 0;
+		}
+		memset(sain, 0, sizeof(*sain));
+		sain->sin_family = type;
+		memcpy(&sain->sin_addr, addr, len);
+#ifdef HAVE_SIN_LEN
+		sain->sin_len = len;
+#endif
+		return sizeof(*sain);
+	}
+
+#ifdef PF_INET6
+	case PF_INET6:
+	{
+		struct sockaddr_in6* sa6 = (struct sockaddr_in6*)buf;
+		if (sizeof(*sa6) > blen) {
+			return 0;
+		}
+		memset(sa6, 0, sizeof(*sa6));
+		sa6->sin6_family = type;
+		memcpy(&sa6->sin6_addr, addr, len);
+#ifdef HAVE_SIN_LEN
+		sa6->sin6_len = len;
+#endif
+		return sizeof(*sa6);
+	}
+#endif
+
+	default:
+		return 0;
+	}
+	
 }
 
 struct hostent   *
@@ -109,22 +247,84 @@ tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result,
 #else
 
 #if defined(HAVE_FUNC_GETHOSTBYADDR_R_8)
-        struct hostent result_buf;
-        gethostbyaddr_r(addr, len, type, &result_buf, buffer, buflen, &result, h_errnop);
+	if (gethostbyaddr_r(addr, len, type, result, buffer, buflen, &result, h_errnop))
+		return NULL;
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_7)
         gethostbyaddr_r(addr, len, type, result, buffer, buflen, h_errnop);
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_5)
-        struct hostent_data data;
-        gethostbyaddr_r(addr, len, type, result, &data);
-#elif defined(HAVE_FUNC_GETHOSTBYADDR_R)  ||  defined(HAVE_GETHOSTBYADDR_R)
-#error gethostbyaddr_r style unknown
+	struct hostent_data data;
+	gethostbyaddr_r(addr, len, type, result, &data);
+#elif defined(HAVE_GETNAMEINFO)
+	struct sockaddr* sa = (struct sockaddr*)buffer;
+	socklen_t salen;
+	int ai_errno;
+
+	salen = s_make_sa(addr, len, type, buffer, buflen);
+	if (salen <= 0) {
+		*h_errnop = NO_RECOVERY;
+		return NULL;
+	}
+	ai_errno = getnameinfo(sa, salen, buffer + salen, buflen - salen, 0, 0, 0);
+	if (ai_errno == 0) {
+		struct addrinfo ai; /* much easier to construct than hostent */
+		ai.ai_family 	= type;
+		ai.ai_addrlen 	= salen;
+		ai.ai_addr 		= sa;
+		ai.ai_canonname = buffer + salen;
+		ai.ai_next 		= 0;
+		*h_errnop = s_make_hostent(result, buffer + salen, buflen - salen, &ai);
+	} else {
+		*h_errnop = s_convert_ai_errno(ai_errno);
+	}
 #else
-        result = gethostbyaddr(addr, len, type);
+#error gethostbyaddr_r style unknown and getnameinfo unavailable
 #endif
 
         return result;
 #endif
 }
+
+#ifdef HAVE_GETADDRINFO
+static
+int s_make_servent(struct servent* se, char* buf, int len, const struct addrinfo* ai, const char* name, const char* proto)
+{
+	static int ptr_size = sizeof(char*);
+	int pos = 0, namelen;
+	const struct addrinfo* it;
+
+	memset(se, 0, sizeof(*se));
+
+	namelen = strlen(name);
+	if (pos + namelen >= len) {
+		return NO_RECOVERY;
+	}
+	se->s_name = strcpy(buf + pos, ai->ai_canonname);
+	pos += namelen;
+
+	pos += ptr_size - ((pos + (size_t)buf) % ptr_size); /* align */
+	if (pos + ptr_size > len) {
+		return NO_RECOVERY;
+	}
+	se->s_aliases = (char**)(buf + pos);
+	se->s_aliases[0] = 0;
+	pos += ptr_size;
+
+	switch (ai->ai_family) {
+	case PF_INET:
+		se->s_port = ((struct sockaddr_in*)(it->ai_addr))->sin_port;
+		break;
+	case PF_INET6:
+		se->s_port = ((struct sockaddr_in6*)(it->ai_addr))->sin6_port;
+		break;
+	}
+	if (proto  &&  pos + strlen(proto) < len) {
+		se->s_proto = strcpy(buf + pos, proto);
+		pos += strlen(proto) + 1;
+	}
+
+	return 0;
+}
+#endif
 
 struct servent *
 tds_getservbyname_r(const char *name, char *proto, struct servent *result, char *buffer, int buflen)
@@ -136,17 +336,42 @@ tds_getservbyname_r(const char *name, char *proto, struct servent *result, char 
 #else
 
 #if defined(HAVE_FUNC_GETSERVBYNAME_R_6)
-        struct servent result_buf;
-        getservbyname_r(name, proto, &result_buf, buffer, buflen, &result);
+	if (getservbyname_r(name, proto, result, buffer, buflen, &result))
+		return NULL;
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_5)
         getservbyname_r(name, proto, result, buffer, buflen);
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_4)
-        struct servent_data data;
-        getservbyname_r(name, proto, result, &data);
-#elif defined(HAVE_FUNC_GETSERVBYNAME_R)  ||  defined(HAVE_GETSERVBYNAME_R)
-#error getservbyname_r style unknown
+	struct servent_data data;
+	getservbyname_r(name, proto, result, &data);
+#elif defined(HAVE_GETADDRINFO)
+	struct addrinfo hints, *out = 0;
+	struct protoent* pe;
+	int status;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_INET;
+	if (proto) {
+		pe = getprotobyname(proto);
+		if (pe) {
+			/* might as well canonicalize */
+			proto             = pe->p_name;
+			hints.ai_protocol = pe->p_proto;
+		}
+	}
+	status = getaddrinfo(0, name, &hints, &out);
+	if (status == 0  &&  out) {
+		status = s_make_servent(result, buffer, buflen, out, name, proto);
+		if (status != 0) {
+			result = 0;
+		}
+	} else {
+		result = 0;
+	}
+	if (out) {
+		freeaddrinfo(out);
+	}
 #else
-        result = getservbyname(name, proto);
+#error getservbyname_r style unknown and getaddrinfo unavailable
 #endif
 
         return result;
