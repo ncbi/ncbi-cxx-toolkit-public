@@ -342,7 +342,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
         // data
         CSeq_data& data = seq_inst->SetSeq_data();
         if (mol == CSeq_inst::eMol_aa) {
-            data.SetIupacna().Set(seq_str);
+            data.SetIupacaa().Set(seq_str);
         } else {
             data.SetIupacna().Set(seq_str);
             CSeqportUtil::Pack(&data);
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/24 17:52:12  jcherry
+ * iupacaa for proteins
+ *
  * Revision 1.5  2004/02/20 16:40:57  ucko
  * Fix path to aln_reader.hpp again
  *
