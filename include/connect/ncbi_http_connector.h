@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/05/23 21:52:00  lavr
+ * +fHCC_NoUpread
+ *
  * Revision 6.5  2001/01/25 16:53:22  lavr
  * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
  *
@@ -122,7 +125,8 @@ typedef enum {
     fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data              */
     fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
     fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
-    fHCC_DropUnread       = 0x40  /* Each microsession drops yet unread data */
+    fHCC_DropUnread       = 0x40, /* Each microsession drops yet unread data */
+    fHCC_NoUpread         = 0x80  /* Do not use SOCK_ReadWhileWrite() at all */
 } EHCC_Flags;
 typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
 

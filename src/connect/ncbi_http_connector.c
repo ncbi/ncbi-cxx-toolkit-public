@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/05/23 21:52:44  lavr
+ * +fHCC_NoUpread
+ *
  * Revision 6.14  2001/05/17 15:02:51  lavr
  * Typos corrected
  *
@@ -249,8 +252,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
              uuu->info->debug_printout == eDebugPrintout_None ? eOff :
              eDefault);
 
-        if (uuu->sock)
+        if (uuu->sock) {
+            if (!(uuu->flags & fHCC_NoUpread))
+                SOCK_SetReadOnWrite(uuu->sock, eOn);
             return eIO_Success;
+        }
 
         if (!s_Adjust(uuu))
             break;
@@ -289,18 +295,11 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
                 char       buf[4096];
                 size_t     n_written;
                 size_t     size = BUF_PeekAt(uuu->obuf, off, buf, sizeof(buf));
-                STimeout   poll_tmo = {0, 0};
                 
                 status = SOCK_Write(uuu->sock, buf, size, &n_written);
                 if (status != eIO_Success)
                     break;
                 off += n_written;
-                if (SOCK_Wait(uuu->sock, eIO_Read, &poll_tmo) == eIO_Success) {
-                    size_t n;
-                    /* Pull incoming data from socket - stall protection */
-                    SOCK_SetTimeout(uuu->sock, eIO_Read, &poll_tmo);
-                    SOCK_Read(uuu->sock, 0, 2000000000/*!*/, &n, eIO_Peek);
-                }
             } while (off < size);
         }
         /* shutdown the socket for writing */
