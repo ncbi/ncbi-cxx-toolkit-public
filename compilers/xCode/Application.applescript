@@ -448,14 +448,6 @@ on ValidatePaths()
 	end if
 	
 	-- check paths"
-	if (do shell script "file " & ThePCREPath & "/include/pcre.h") contains "No such file or directory" then
-		return "PCRE installation was not found at " & ThePCREPath
-	end if
-	
-	if (do shell script "file " & ThePCREPath & "/include/pcre.h") contains "No such file or directory" then
-		return "PCRE installation was not found at " & ThePCREPath
-	end if
-	
 	if (do shell script "file " & ThePCREPath & "/include/tiff.h") contains "No such file or directory" then
 		return "Lib TIFF installation was not found at " & ThePCREPath
 	end if
@@ -538,6 +530,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/10/26 17:52:57  lebedev
+ * Check for external PCRE library removed
+ *
  * Revision 1.10  2004/09/29 15:24:52  lebedev
  * Option to select individual package (lib, tool, application) added
  *
