@@ -53,7 +53,7 @@ public:
     int  Run (void);
 
 private:
-    auto_ptr<CObjectIStream> x_OpenIStream(const CArgs& args);
+    CObjectIStream* x_OpenIStream(const CArgs& args);
 
     CFlatFileGenerator* x_CreateFlatFileGenerator(CScope& scope, 
         const CArgs& args);
@@ -166,7 +166,7 @@ int CAsn2FlatApp::Run(void)
     const CArgs&   args = GetArgs();
 
     // open the input file (default: stdin)
-    auto_ptr<CObjectIStream> in = x_OpenIStream(args);
+    auto_ptr<CObjectIStream> in(x_OpenIStream(args));
 
     // read in the seq-entry
     // ??? differ batch processing handling 
@@ -189,7 +189,7 @@ int CAsn2FlatApp::Run(void)
 }
 
 
-auto_ptr<CObjectIStream> CAsn2FlatApp::x_OpenIStream(const CArgs& args)
+CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
     // file format
     ESerialDataFormat format = eSerial_AsnText;
@@ -318,6 +318,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/20 20:41:53  ucko
+* Don't try to return auto_ptrs, or construct them with "=".
+*
 * Revision 1.1  2004/01/14 15:03:29  shomrat
 * Initial Revision
 *
