@@ -42,6 +42,13 @@
 /* This header must go last */
 #include "test_assert.h"
 
+#ifdef NCBI_OS_BSD
+   /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
+#  define MAX_DGRAM_SIZE 9*1024
+#else
+   /* This is the maximal datagram size defined by the UDP standard */
+#  define MAX_DGRAM_SIZE 65535
+#endif
 
 #define DEFAULT_PORT 55555
 
@@ -63,6 +70,7 @@ static int s_Server(int x_port)
     unsigned int   peeraddr;
     unsigned short peerport, port;
     size_t         msgsize, n, len;
+    char           minibuf[255];
 
     if (x_port <= 0) {
         CORE_LOG(eLOG_Error, "[Server]  Port wrongly specified");
@@ -92,12 +100,15 @@ static int s_Server(int x_port)
         return 1;
     }
 
-    if ((status = DSOCK_RecvMsg(server, 0, 0, 0, &msgsize,
+    len = (size_t)(((double) rand()/(double) RAND_MAX)*sizeof(minibuf));
+    if ((status = DSOCK_RecvMsg(server, 0, minibuf, len, &msgsize,
                                 &peeraddr, &peerport)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Server]  Error reading from DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
+    if (len > msgsize)
+        len = msgsize;
 
     if (SOCK_ntoa(peeraddr, addr, sizeof(addr)) != 0)
         strcpy(addr, "<unknown>");
@@ -109,9 +120,10 @@ static int s_Server(int x_port)
         CORE_LOG_ERRNO(eLOG_Error, errno, "[Server]  Cannot alloc msg buf");
         return 1;
     }
+    if (len)
+        memcpy(buf, minibuf, len);
 
-    len = 0;
-    do {
+    while (len < msgsize) {
         n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len) +0.5);
         if ((status = SOCK_Read(server, buf + len, n, &n, eIO_ReadPlain))
             != eIO_Success) {
@@ -120,7 +132,7 @@ static int s_Server(int x_port)
             return 1;
         }
         len += n;
-    } while (len < msgsize);
+    }
     assert(SOCK_Read(server, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
 
     CORE_LOG(eLOG_Note, "[Server]  Bouncing the message to sender");
@@ -133,8 +145,7 @@ static int s_Server(int x_port)
         return 1;
     }
 
-    len = 0;
-    do {
+    for (len = 0; len < msgsize; len += n) {
         n = (size_t)(((double) rand()/(double) RAND_MAX)*(msgsize - len) +0.5);
         if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
             != eIO_Success) {
@@ -142,8 +153,7 @@ static int s_Server(int x_port)
                                   (unsigned long) len, IO_StatusStr(status)));
             return 1;
         }
-        len += n;
-    } while (len < msgsize);
+    }
 
     free(buf);
 
@@ -188,7 +198,7 @@ static int s_Client(int x_port)
         return 1;
     }
 
-    msgsize = (size_t)(((double) rand()/(double) RAND_MAX)*((1 << 16) - 10));
+    msgsize = (size_t)(((double)rand()/(double)RAND_MAX)*(MAX_DGRAM_SIZE-10));
     CORE_LOGF(eLOG_Note, ("[Client]  Generating a message %lu bytes long",
                           (unsigned long) msgsize));
 
@@ -307,6 +317,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/02/06 04:34:28  lavr
+ * Do not exceed maximal dgram size on BSD; trickier readout in s_Server()
+ *
  * Revision 6.3  2003/02/04 22:04:47  lavr
  * Protection from truncation to 0 in double->int conversion
  *
