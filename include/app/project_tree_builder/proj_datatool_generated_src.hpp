@@ -46,6 +46,15 @@ public:
     string       m_SourceBaseDir;
 
     list<string> m_ImportModules;
+
+    list<string> m_GeneratedHpp;
+    list<string> m_GeneratedCpp;
+    list<string> m_GeneratedHppLocal;
+    list<string> m_GeneratedCppLocal;
+    list<string> m_SkippedHpp;
+    list<string> m_SkippedCpp;
+    list<string> m_SkippedHppLocal;
+    list<string> m_SkippedCppLocal;
     
     static void LoadFrom(const string&          source_file_path, 
                          CDataToolGeneratedSrc* src);
@@ -63,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/13 23:06:45  gorelenk
+ * Added data members-abstraction of datatool generated files.
+ *
  * Revision 1.1  2004/01/30 20:37:37  gorelenk
  * Initial revision
  *

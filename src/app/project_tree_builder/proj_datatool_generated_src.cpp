@@ -29,6 +29,7 @@
 
 #include <app/project_tree_builder/proj_datatool_generated_src.hpp>
 #include <app/project_tree_builder/file_contents.hpp>
+#include <app/project_tree_builder/proj_builder_app.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -80,18 +81,80 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
     src->m_SourceBaseDir = dir;
     src->m_SourceFile    = base + ext;
 
-    CSimpleMakeFileContents fc(CDirEntry::ConcatPath(dir, base + ".module"));
+    {{
+        // module file
+        CSimpleMakeFileContents fc(CDirEntry::ConcatPath(dir, 
+                                                         base + ".module"));
     
-    CSimpleMakeFileContents::TContents::const_iterator p = 
-        fc.m_Contents.find("MODULE_IMPORT");
-    if (p != fc.m_Contents.end()) {
-        const list<string>& modules = p->second;
-        ITERATE(list<string>, p, modules) {
-            // add ext from source file to all modules to import
-            const string& module = *p;
-            src->m_ImportModules.push_back(module + ext);
+        CSimpleMakeFileContents::TContents::const_iterator p = 
+            fc.m_Contents.find("MODULE_IMPORT");
+        if (p != fc.m_Contents.end()) {
+            const list<string>& modules = p->second;
+            ITERATE(list<string>, p, modules) {
+                // add ext from source file to all modules to import
+                const string& module = *p;
+                src->m_ImportModules.push_back(module + ext);
+            }
         }
-    }
+    }}
+
+    {{
+        // files file
+        string files_path = CDirEntry::ConcatPath(dir, 
+                                                  base + ".files");
+
+        if ( CDirEntry(files_path).Exists() ) {
+
+            CSimpleMakeFileContents fc(files_path);
+
+            // GENERATED_HPP
+            CSimpleMakeFileContents::TContents::const_iterator p = 
+                fc.m_Contents.find("GENERATED_HPP");
+            if (p != fc.m_Contents.end())
+                src->m_GeneratedHpp = p->second;
+
+            // GENERATED_CPP
+            p = fc.m_Contents.find("GENERATED_CPP");
+            if (p != fc.m_Contents.end())
+                src->m_GeneratedCpp = p->second;
+
+            // GENERATED_HPP_LOCAL
+            p = fc.m_Contents.find("GENERATED_HPP_LOCAL");
+            if (p != fc.m_Contents.end())
+                src->m_GeneratedHppLocal = p->second;
+
+            // GENERATED_CPP_LOCAL
+            p = fc.m_Contents.find("GENERATED_CPP_LOCAL");
+            if (p != fc.m_Contents.end())
+                src->m_GeneratedCppLocal = p->second;
+
+            // SKIPPED_HPP
+            p = fc.m_Contents.find("SKIPPED_HPP");
+            if (p != fc.m_Contents.end())
+                src->m_SkippedHpp = p->second;
+
+            // SKIPPED_CPP
+            p = fc.m_Contents.find("SKIPPED_CPP");
+            if (p != fc.m_Contents.end())
+                src->m_SkippedCpp = p->second;
+
+            // SKIPPED_HPP_LOCAL
+            p = fc.m_Contents.find("SKIPPED_HPP_LOCAL");
+            if (p != fc.m_Contents.end())
+                src->m_SkippedHppLocal = p->second;
+
+            // SKIPPED_CPP_LOCAL
+            p = fc.m_Contents.find("SKIPPED_CPP_LOCAL");
+            if (p != fc.m_Contents.end())
+                src->m_SkippedCppLocal = p->second;
+        } else {
+            LOG_POST(Warning << "Can not find file : " 
+                                + files_path + " for datatool source");
+        }
+
+
+    }}
+
 }
 
 
@@ -106,14 +169,32 @@ void CDataToolGeneratedSrc::Clear(void)
     m_SourceFile.erase();
     m_SourceBaseDir.erase();
     m_ImportModules.clear();
+
+    m_GeneratedHpp.clear();
+    m_GeneratedCpp.clear();
+    m_GeneratedHppLocal.clear();
+    m_GeneratedCppLocal.clear();
+    m_SkippedHpp.clear();
+    m_SkippedCpp.clear();
+    m_SkippedHppLocal.clear();
+    m_SkippedCppLocal.clear();
 }
 
 
 void CDataToolGeneratedSrc::SetFrom(const CDataToolGeneratedSrc& src)
 {
-    m_SourceFile     = src.m_SourceFile;
-    m_SourceBaseDir  = src.m_SourceBaseDir;
-    m_ImportModules        = src.m_ImportModules;
+    m_SourceFile        = src.m_SourceFile;
+    m_SourceBaseDir     = src.m_SourceBaseDir;
+    m_ImportModules     = src.m_ImportModules;
+
+    m_GeneratedHpp      = src.m_GeneratedHpp;
+    m_GeneratedCpp      = src.m_GeneratedCpp;
+    m_GeneratedHppLocal = src.m_GeneratedHppLocal;
+    m_GeneratedCppLocal = src.m_GeneratedCppLocal;
+    m_SkippedHpp        = src.m_SkippedHpp;
+    m_SkippedCpp        = src.m_SkippedCpp;
+    m_SkippedHppLocal   = src.m_SkippedHppLocal;
+    m_SkippedCppLocal   = src.m_SkippedCppLocal;
 }
 
 
@@ -124,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/13 23:07:38  gorelenk
+ * Added data members-abstraction of datatool generated files.
+ *
  * Revision 1.1  2004/01/30 20:44:22  gorelenk
  * Initial revision.
  *
