@@ -52,9 +52,13 @@
 #include <objects/blast/Blast4_ka_block.hpp>
 #include <objects/scoremat/Score_matrix_parameters.hpp>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
-USING_SCOPE(ncbi::objects);
 
 /// API for Remote Blast Requests
 ///
@@ -139,7 +143,7 @@ public:
     
     void SetDatabase(const char * x)
     {
-        CRef<CBlast4_subject> subject_p(new CBlast4_subject);
+        CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
         subject_p->SetDatabase(x);
         m_QSR->SetSubject(*subject_p);
     }
@@ -260,7 +264,8 @@ private:
     void x_SetOneParam(const char * name, const int * x); // not used (yet)
     void x_SetOneParam(const char * name, const list<int> * x);
     void x_SetOneParam(const char * name, const char ** x);
-    void x_SetOneParam(const char * name, CScore_matrix_parameters * matrix);
+    void x_SetOneParam(const char * name, 
+                       objects::CScore_matrix_parameters * matrix);
     
     // State helpers (for readability)
     enum EState {
@@ -288,10 +293,15 @@ private:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/19 18:56:17  camacho
+ * Correct use of namespaces
+ *
  * Revision 1.1  2004/02/18 17:30:22  bealer
  * - Rename of blast4_options, plus changes:
  *   - Add timeout for SubmitSync
