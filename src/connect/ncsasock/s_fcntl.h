@@ -18,13 +18,6 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
  *	@(#)fcntl.h	5.5 (Berkeley) 5/29/90
-*
-*
-* RCS Modification History:
-* $Log$
-* Revision 1.3  1995/05/17 17:57:13  epstein
-* add RCS log revision history
-*
  */
 
 #ifndef F_DUPFD
@@ -72,7 +65,7 @@
 #endif /* !COMP_THINKC */
 #define	FNDELAY		O_NONBLOCK
 #endif
-/*			00008		/* unused */
+/*			00008	*/	/* unused */
 #ifndef COMP_THINKC
 #define	O_APPEND	00010		/* set append mode */
 #ifndef _POSIX_SOURCE
@@ -83,18 +76,18 @@
 #define	O_MARK		00020		/* mark during gc() */
 #define	O_DEFER		00040		/* defer for next gc pass */
 #endif
-/*			00080		/* unused */
+/*			00080	*/	/* unused */
 #ifndef _POSIX_SOURCE
 #define	O_ASYNC		00100		/* signal pgrp when data ready */
 #define	FASYNC		O_ASYNC
 #define	O_SHLOCK	00200		/* shared file lock present */
 #define	O_EXLOCK	00400		/* exclusive file lock present */
-/*			00800		/* unused */
+/*			00800	*/	/* unused */
 #endif
 #define	O_CREAT		01000		/* create if nonexistant */
 #define	O_TRUNC		02000		/* truncate to zero length */
 #define	O_EXCL		04000		/* error if already exists */
-/*			08000		/* unused */
+/*			08000	*/	/* unused */
 
 /* defined by POSIX 1003.1; BSD default, so no bit required */
 #define	O_NOCTTY	0		/* don't assign controlling terminal */

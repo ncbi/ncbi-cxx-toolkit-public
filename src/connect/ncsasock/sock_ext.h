@@ -10,13 +10,6 @@
  *      152 Computing Applications Building
  *      605 E. Springfield Ave.
  *      Champaign, IL  61820
-*
-*
-* RCS Modification History:
-* $Log$
-* Revision 1.2  1995/05/17 17:57:52  epstein
-* add RCS log revision history
-*
  */
 
 /*
@@ -30,11 +23,11 @@
 
 #ifndef __MEMORY__
 #include <Memory.h>
-#endif  __MEMORY__
+#endif  /* __MEMORY__ */
 
 #ifndef _TYPES_
 #include <s_types.h>
-#endif  _TYPES_
+#endif  /*_TYPES_ */
 
 #ifndef ipBadLapErr
 #include <MacTCPCommonTypes.h>
@@ -163,4 +156,4 @@ ip_addr inet_addr(char *address);
 
 
 #endif /* SOCK_STATE_NO_STREAM */
-#endif  __socket_ext__
+#endif  /*__socket_ext__ */
