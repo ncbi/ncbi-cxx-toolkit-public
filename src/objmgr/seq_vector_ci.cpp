@@ -59,6 +59,11 @@ void copy_8bit_any(DstIter dst, size_t count,
                    const SrcCont& srcCont, size_t srcPos,
                    const char* table, bool reverse)
 {
+    size_t endPos = srcPos + count;
+    if ( endPos < srcPos || endPos > srcCont.size() ) {
+        NCBI_THROW(CSeqVectorException, eOutOfRange,
+                   "reference out of range of Seq-inst data");
+    }
     if ( table ) {
         if ( reverse ) {
             copy_8bit_table_reverse(dst, count, srcCont, srcPos, table);
@@ -84,6 +89,11 @@ void copy_4bit_any(DstIter dst, size_t count,
                    const SrcCont& srcCont, size_t srcPos,
                    const char* table, bool reverse)
 {
+    size_t endPos = srcPos + count;
+    if ( endPos < srcPos || endPos / 2 > srcCont.size() ) {
+        NCBI_THROW(CSeqVectorException, eOutOfRange,
+                   "reference out of range of Seq-inst data");
+    }
     if ( table ) {
         if ( reverse ) {
             copy_4bit_table_reverse(dst, count, srcCont, srcPos, table);
@@ -109,6 +119,11 @@ void copy_2bit_any(DstIter dst, size_t count,
                    const SrcCont& srcCont, size_t srcPos,
                    const char* table, bool reverse)
 {
+    size_t endPos = srcPos + count;
+    if ( endPos < srcPos || endPos / 4 > srcCont.size() ) {
+        NCBI_THROW(CSeqVectorException, eOutOfRange,
+                   "reference out of range of Seq-inst data");
+    }
     if ( table ) {
         if ( reverse ) {
             copy_2bit_table_reverse(dst, count, srcCont, srcPos, table);
@@ -627,6 +642,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/11/07 17:00:13  vasilche
+* Added check for out of bounds withing CSeq_inst to avoid coredump.
+*
 * Revision 1.27  2003/10/08 14:16:55  vasilche
 * Removed circular reference CSeqVector <-> CSeqVector_CI.
 *
