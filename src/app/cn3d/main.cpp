@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/07/27 17:39:21  thiessen
+* catch exceptions upon bad file read
+*
 * Revision 1.12  2000/07/27 13:30:51  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -270,13 +273,14 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer.AttachStructureSet(NULL);
+        glCanvas->Refresh();
     }
 
     // initialize the binary input stream 
     auto_ptr<CNcbiIstream> inStream;
     inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
-        ERR_POST(Error << "Cannot open input file '" << filename << "'");
+        ERR_POST(Error << "Cannot open file '" << filename << "'");
         return;
     }
 
@@ -286,7 +290,12 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     // Read the CNcbi_mime_asn1 data 
     CNcbi_mime_asn1 mime;
-    *inObject >> mime;
+    try {
+        *inObject >> mime;
+    } catch (exception& e) {
+        ERR_POST(Error << "Cannot read file '" << filename << "'\nreason: " << e.what());
+        return;
+    }
 
     // Create StructureSet from mime data
     glCanvas->structureSet = new StructureSet(mime);
