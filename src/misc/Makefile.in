@@ -6,7 +6,7 @@
 # Meta-makefile for misc code
 #################################
 
-SUB_PROJ            = third_party third_party_static
+SUB_PROJ            = third_party third_party_static grid_cgi
 EXPENDABLE_SUB_PROJ = cgi_redirect
 
 
