@@ -15,11 +15,7 @@ builddir = $(NCBI)/$(VERSION_STABILITY)/$(BUILD_TYPE)/build
 include $(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
-LOCAL_CPPFLAGS = $(BLAST_CPPFLAGS) $(NCBI_C_INCLUDE) -I../../include -I../
-
-# Local definitions
-LIBBLASTXX = -L../ -lblastxx
-LOCAL_LDFLAGS = $(LIBBLASTXX) -L../../lib -lblast
+LOCAL_CPPFLAGS = $(BLAST_CPPFLAGS)
 
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
@@ -27,23 +23,19 @@ APP = blast2seq
 SRC = blast2seq
 # OBJ =
 
-# PRE_LIBS = $(NCBI_C_LIBPATH) .....
-PRE_LIBS = $(LOCAL_LDFLAGS) $(NCBI_C_LIBPATH) -lncbitool -lncbiid1 -lnetcli \
-		-lncbiobj -lncbi -lm $(NCBI_OTHERLIBS_MT)
+PRE_LIBS = -lblastxx
 
 LIB = xobjread xobjutil xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
 		dbapi_driver xser xutil xconnect xncbi
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
-
-# LIB      = xser xhtml xcgi xconnect xutil xncbi
 
 ## If you need the C toolkit...
-# LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
-# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+LIBS     = $(NCBI_C_LIBPATH) -lncbitool -lncbiobj -lblast -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I../../include -I../
+LDFLAGS  = $(ORIG_LDFLAGS) $(BLAST_PROFILE) -L../ -L../../lib
 
-CFLAGS   = $(ORIG_CFLAGS)
-CXXFLAGS = $(ORIG_CXXFLAGS)
-LDFLAGS  = $(ORIG_LDFLAGS) $(BLAST_PROFILE)
+# CFLAGS   = $(ORIG_CFLAGS)
+# CXXFLAGS = $(ORIG_CXXFLAGS)
+# LDFLAGS  = $(ORIG_LDFLAGS)
 #                                                                         ###
 #############################################################################
 
