@@ -10,7 +10,7 @@ all: sources makefiles
 
 all_files: sources makefiles
 
-sources: $(FILES)
+sources: $(FILES) $(MODULE).cpp
 
 clean_sources:
 	-rm $(FILES)
@@ -28,6 +28,12 @@ purge_all_files:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
 	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -of $@ -or $(MODULE_PATH) -oR $(top_srcdir) -od $(MODULE).def
 
+$(MODULE)_.cpp: $(FILES)
+	for f in `grep GENFILES_LOCAL $(FILES) | sed 's/^.*=//'`; do echo '#include "'$$f'_.cpp"'; done > $(MODULE)_.cpp
+
+$(MODULE).cpp: $(MODULE)_.cpp
+	sed 's/_\.cpp/\.cpp/' $(MODULE)_.cpp > $(MODULE).cpp
+
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
 Makefile.in: $(MODULEFILE)
@@ -41,10 +47,11 @@ Makefile.in: $(MODULEFILE)
 Makefile.$(MODULE).lib: $(MODULEFILE)
 	@echo Updating $@
 	@( \
-		echo 'LIB = $(MODULE)'; \
-		echo 'include $$(srcdir)/$(MODULE).files'; \
-		echo 'LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_)'; \
-		echo 'AR = -strip -x *.o SunWS_cache/*/*.o; $$(CONF_AR)'; \
+		echo 'LIB = $$(TMPL)'; \
+		echo 'LIBOBJ = $$(LIB) $$(LIB)_'; \
+		echo '#include $$(srcdir)/$(MODULE).files'; \
+		echo '#LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_)'; \
+		echo '#AR = -strip -x *.o SunWS_cache/*/*.o; $$(CONF_AR)'; \
 	) > $@
 
 $(MODULEFILE):
