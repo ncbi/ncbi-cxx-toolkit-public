@@ -142,6 +142,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    EOverlapType GetOverlapType(void)
+        {
+            return m_OverlapType;
+        }
     SAnnotSelector& SetOverlapType(EOverlapType overlap_type)
         {
             m_OverlapType = overlap_type;
@@ -156,12 +160,20 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return SetOverlapType(eOverlap_TotalRange);
         }
 
+    ESortOrder GetSortOrder(void)
+        {
+            return m_SortOrder;
+        }
     SAnnotSelector& SetSortOrder(ESortOrder sort_order)
         {
             m_SortOrder = sort_order;
             return *this;
         }
 
+    EResolveMethod GetResolveMethod(void)
+        {
+            return m_ResolveMethod;
+        }
     SAnnotSelector& SetResolveMethod(EResolveMethod resolve_method)
         {
             m_ResolveMethod = resolve_method;
@@ -180,6 +192,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return SetResolveMethod(eResolve_All);
         }
 
+    int GetResolveDepth(void)
+        {
+            return m_ResolveDepth;
+        }
     SAnnotSelector& SetResolveDepth(int depth)
         {
             m_ResolveDepth = depth;
@@ -187,6 +203,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<SAnnotTypeSelector> TAdaptiveTriggers;
+    bool GetAdaptiveDepth(void)
+        {
+            return m_AdaptiveDepth;
+        }
     SAnnotSelector& SetAdaptiveDepth(bool value = true)
         {
             m_AdaptiveDepth = value;
@@ -196,6 +216,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 
     // set maximum count of annotations to find
     // if max_size == 0 - no limit
+    size_t GetMaxSize(void)
+        {
+            return m_MaxSize;
+        }
     SAnnotSelector& SetMaxSize(size_t max_size)
         {
             m_MaxSize = max_size? max_size: kMax_UInt;
@@ -220,6 +244,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return SetSegmentSelect(eSegmentSelect_Last);
         }
 
+    bool HasLimit(void)
+        {
+            return m_LimitObject;
+        }
     SAnnotSelector& SetLimitNone(void);
     SAnnotSelector& SetLimitTSE(const CSeq_entry* limit);
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* limit);
@@ -228,6 +256,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
 
+    EIdResolving GetIdResolving(void)
+        {
+            return m_IdResolving;
+        }
     SAnnotSelector& SetIdResolvingLoaded(void)
         {
             m_IdResolving = eLoadedOnly;
@@ -281,6 +313,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool ExcludedTSE(const CSeq_entry_Handle& tse) const;
 
     // No locations mapping flag. Set to true by CAnnot_CI.
+    bool GetNoMapping(void)
+        {
+            return m_NoMapping;
+        }
     SAnnotSelector& SetNoMapping(bool value = true)
         {
             m_NoMapping = value;
@@ -335,6 +371,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/09/07 14:11:11  grichenk
+* Added getters
+*
 * Revision 1.32  2004/08/25 17:11:25  grichenk
 * Removed obsolete SAnnotSelector::SetCombineMethod()
 *
