@@ -536,9 +536,9 @@ public:
 
 private:
     // Close socket persistently
-    bool CloseSocket(int sock);
+    bool x_CloseSocket(int sock);
     // Set socket i/o buffer size (dir: SO_SNDBUF, SO_RCVBUF)
-    bool SetSocketBufferSize(int sock, size_t pipesize, int dir);
+    bool x_SetSocketBufSize(int sock, size_t pipesize, int dir);
 
 private:
     int     m_LSocket;    // Listening socket
@@ -585,8 +585,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         // Set buffer size
         if ( m_PipeSize != CNamedPipe::kDefaultPipeSize) {
-            if ( !SetSocketBufferSize(sock, m_PipeSize, SO_SNDBUF)  ||
-                 !SetSocketBufferSize(sock, m_PipeSize, SO_RCVBUF) ) {
+            if ( !x_SetSocketBufSize(sock, m_PipeSize, SO_SNDBUF)  ||
+                 !x_SetSocketBufSize(sock, m_PipeSize, SO_RCVBUF) ) {
                 throw "UNIX socket set buffer size failed";
             }
         }
@@ -628,18 +628,19 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 throw "UNIX socket connect() failed";
             }
 
-            // Wait for socket to become ready (if timeout is set or infinite)
             if (!timeout  ||  timeout->sec  ||  timeout->usec) {
-                // Auto-resume if interrupted by a signal
-                for (;;) {
+                // Wait for socket to connect (if timeout is set or infinite)
+                for (;;) { // Auto-resume if interrupted by a signal
+                    struct timeval* tmp;
                     struct timeval  tm;
-                    struct timeval* tmp = 0;
 
                     if ( !timeout ) {
-                        tm.tv_sec  = timeout->usec / 1000000 + timeout->sec;
-                        tm.tv_usec = timeout->usec % 1000000;
+                        // NB: Timeout has been normalized already
+                        tm.tv_sec  = timeout->sec;
+                        tm.tv_usec = timeout->usec;
                         tmp = &tm;
-                    } 
+                    } else
+                        tmp = 0;
                     fd_set wfds;
                     fd_set efds;
                     FD_ZERO(&wfds);
@@ -648,7 +649,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     FD_SET(sock, &efds);
                     n = select(sock + 1, 0, &wfds, &efds, tmp);
                     if (n == 0) {
-                        CloseSocket(sock);
+                        x_CloseSocket(sock);
                         Close();
                         return eIO_Timeout;
                     }
@@ -683,7 +684,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
     }
     catch (const char* what) {
         if (sock >= 0) {
-            CloseSocket(sock);
+            x_CloseSocket(sock);
         }
         Close();
         ERR_POST(s_FormatErrorMessage("Open", what));
@@ -765,14 +766,16 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
         // Wait for the client to connect
         for (;;) { // Auto-resume if interrupted by a signal
+            struct timeval* tmp;
             struct timeval  tm;
-            struct timeval* tmp = 0;
 
             if ( !timeout ) {
-                tm.tv_sec  = timeout->usec / 1000000 + timeout->sec;
-                tm.tv_usec = timeout->usec % 1000000;
+                // NB: Timeout has been normalized already
+                tm.tv_sec  = timeout->sec;
+                tm.tv_usec = timeout->usec;
                 tmp = &tm;
-            }   
+            } else
+                tmp = 0;
             fd_set rfds;
             fd_set efds;
             FD_ZERO(&rfds);
@@ -806,8 +809,8 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         }
         // Set buffer size
         if ( m_PipeSize != CNamedPipe::kDefaultPipeSize) {
-            if ( !SetSocketBufferSize(sock, m_PipeSize, SO_SNDBUF)  ||
-                 !SetSocketBufferSize(sock, m_PipeSize, SO_RCVBUF) ) {
+            if ( !x_SetSocketBufSize(sock, m_PipeSize, SO_SNDBUF)  ||
+                 !x_SetSocketBufSize(sock, m_PipeSize, SO_RCVBUF) ) {
                 throw "UNIX socket set buffer size failed";
             }
         }
@@ -818,7 +821,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
     }
     catch (const char* what) {
         if (sock >= 0) {
-            CloseSocket(sock);
+            x_CloseSocket(sock);
         }
         Close();
         ERR_POST(s_FormatErrorMessage("Listen", what));
@@ -847,7 +850,7 @@ EIO_Status CNamedPipeHandle::Close(void)
 
     // Close listening socket
     if (m_LSocket >= 0) {
-        if ( !CloseSocket(m_LSocket) ) {
+        if ( !x_CloseSocket(m_LSocket) ) {
             ERR_POST(s_FormatErrorMessage("Close",
                                           "UNIX socket close() failed"));
         }
@@ -927,10 +930,10 @@ EIO_Status CNamedPipeHandle::Status(EIO_Event direction)
 }
 
 
-bool CNamedPipeHandle::CloseSocket(int sock)
+bool CNamedPipeHandle::x_CloseSocket(int sock)
 {
     if (sock >= 0) {
-        for (;;) {
+        for (;;) { // Close persistently
             if (close(sock) == 0) {
                 break;
             }
@@ -943,11 +946,11 @@ bool CNamedPipeHandle::CloseSocket(int sock)
 }
 
 
-bool CNamedPipeHandle::SetSocketBufferSize(int sock, size_t pipesize, int dir)
+bool CNamedPipeHandle::x_SetSocketBufSize(int sock, size_t pipesize, int dir)
 {
-    socklen_t bs_old = 0;
-    socklen_t bs_len = sizeof(bs_old);
-    socklen_t bs_new = (socklen_t) pipesize;
+    int       bs_old = 0;
+    int       bs_new = (int) pipesize;
+    socklen_t bs_len = (socklen_t) sizeof(bs_old);
 
     if (getsockopt(sock, SOL_SOCKET, dir, &bs_old, &bs_len) == 0  &&
         bs_new > bs_old) {
@@ -1004,7 +1007,7 @@ EIO_Status CNamedPipe::Read(void* buf, size_t count, size_t* n_read)
 }
 
 
-EIO_Status CNamedPipe::Write(const void* buf, size_t count, size_t*  n_written)
+EIO_Status CNamedPipe::Write(const void* buf, size_t count, size_t* n_written)
 {
     if ( n_written ) {
         *n_written = 0;
@@ -1199,6 +1202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/25 04:41:22  lavr
+ * Few minor style and performance changes
+ *
  * Revision 1.16  2003/09/23 21:31:10  ucko
  * Fix typo (FD_SET for FD_ISSET in two adjacent lines)
  *
@@ -1209,7 +1215,7 @@ END_NCBI_SCOPE
  * Added deleting OS-specific pipe handle in the destructor
  *
  * Revision 1.13  2003/09/05 19:52:37  ivanov
- * + UNIX CNamedPipeHandle::SetSocketBufferSize()
+ * + UNIX CNamedPipeHandle::SetSocketBufSize()
  *
  * Revision 1.12  2003/09/03 14:48:32  ivanov
  * Fix for previous commit
