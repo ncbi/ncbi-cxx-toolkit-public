@@ -559,10 +559,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
-                // no specific assignment for CP yet
-            case 'P':                               return eAcc_gb_other_nuc;
+            case 'P':                               return eAcc_gb_genome;
             case 'Q':                               return eAcc_embl_patent;
             case 'R':                               return eAcc_embl_genome;
+                // no specific assignments for CS-CU yet
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
@@ -1512,6 +1512,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.86  2004/07/14 19:02:40  ucko
+ * CP is now specifically assigned to GenBank genomes.
+ *
  * Revision 6.85  2004/06/28 14:21:10  dicuccio
  * Implement flag: treat the db portion of a general ID as content or not
  *
