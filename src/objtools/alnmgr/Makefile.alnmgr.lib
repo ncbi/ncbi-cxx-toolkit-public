@@ -6,6 +6,5 @@
 LIB = xalnmgr
 SRC = alnmap alnvec alnmix merge
 
-# The merging code needs the C Toolkit for now...
-REQUIRES = C-Toolkit
+# The merging code needs the C Toolkit for full functionality
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
