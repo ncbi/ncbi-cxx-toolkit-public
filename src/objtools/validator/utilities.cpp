@@ -1112,7 +1112,7 @@ CSeqVector GetSequenceFromLoc
         CSeqMap::CreateSeqMapForSeq_loc(loc, &scope);
     ENa_strand strand = sequence::GetStrand(loc, &scope);
 
-    return CSeqVector(map, scope, coding, strand);
+    return CSeqVector(*map, scope, coding, strand);
 }
 
 
@@ -1142,6 +1142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/12/06 17:42:45  ucko
+* GetSequenceFromLoc: don't use the CSeqVector constructor that just disappeared.
+*
 * Revision 1.22  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *
