@@ -120,13 +120,15 @@ protected:
     CInitMutex_Base(void)
         {
         }
+    // Copy constructor to allow CInitMutex_Base placement in STL containers.
+    // It doesn't copy mutex/object, just verifies that source is empty too.
     CInitMutex_Base(const CInitMutex_Base& _DEBUG_ARG(mutex))
         {
             _ASSERT(!mutex.m_Mutex && !mutex.m_Object);
         }
     ~CInitMutex_Base(void)
         {
-            _ASSERT(!m_Mutex);
+            _ASSERT(!m_Mutex || m_Mutex->ReferencedOnlyOnce());
         }
 
     friend class CInitMutexPool;
@@ -281,6 +283,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/09/13 18:31:20  vasilche
+* Fixed ASSERT condition.
+*
 * Revision 1.3  2003/07/01 18:02:37  vasilche
 * Removed invalid assert.
 * Moved asserts from .hpp to .cpp file.
