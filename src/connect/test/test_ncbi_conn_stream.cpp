@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/13 00:01:26  lavr
+ * Changes in REG_cxx2c() prototype -> appropriate changes in the test
+ * Explicit registry at the end
+ *
  * Revision 6.2  2001/01/12 05:49:31  vakatov
  * Get rid of unused "argc", "argv" in main()
  *
@@ -67,7 +71,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     return reg;
 }
 
-const size_t kBufferSize = 50*1024;
+const size_t kBufferSize = 300*1024;
 
 END_NCBI_SCOPE
 
@@ -78,7 +82,7 @@ int main(void)
 
     SetDiagTrace(eDT_Enable);
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    CORE_SetREG(REG_cxx2c(s_CreateRegistry()));
+    CORE_SetREG(REG_cxx2c(s_CreateRegistry(), true));
 
     CConn_HttpStream ios(0, "User-Header: My header\r\n", fHCC_UrlEncodeArgs);
 
@@ -122,6 +126,8 @@ int main(void)
         cerr << "Not entirely bounced " << i+1 << endl;
     else
         cerr << "Reply received okay!" << endl;
+
+    CORE_SetREG(0);
 
     return 0/*okay*/;
 }
