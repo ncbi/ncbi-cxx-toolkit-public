@@ -149,6 +149,7 @@ private:
     void UpdatePrefix(void);
 
     // the bitwise OR combination of "EDiagPostFlag"
+    NCBI_XNCBI_EXPORT
     static TDiagPostFlags sm_PostFlags;
     // extra flags ORed in for traces
     static TDiagPostFlags sm_TraceFlags;
@@ -171,6 +172,7 @@ private:
     static void DiagHandler(SDiagMessage& mess);
 
     // Symbolic name for the severity levels(used by CNcbiDiag::SeverityName)
+    NCBI_XNCBI_EXPORT
     static const char* sm_SeverityName[eDiag_Trace+1];
 
     // Application-wide diagnostic handler
@@ -452,6 +454,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/08/17 14:34:25  dicuccio
+ * Added export specifiers for some static variables
+ *
  * Revision 1.43  2004/04/26 19:28:24  ucko
  * Make previous change compiler-dependent due to MSVC bugginess.
  *
