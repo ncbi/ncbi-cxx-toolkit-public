@@ -461,7 +461,7 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
 
     // boundaries check
     if (range.GetTo() < 0
-        ||  (TSeqPos)range.GetFrom() > GetAlnStop(GetNumSegs() - 1)) {
+        ||  range.GetFrom() > (TSignedSeqPos) GetAlnStop(GetNumSegs() - 1)) {
         return vec;
     }
 
@@ -472,19 +472,135 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
         first_seg = 0;
     } else {        
         first_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetFrom()));
-        if (GetAlnStart(aln_seg) != (TSeqPos)range.GetFrom()) {
-            vec->m_LeftDelta = range.GetFrom() - GetAlnStart(aln_seg);
-        }
+        vec->m_LeftDelta = range.GetFrom() - GetAlnStart(aln_seg);
     }
     if ((TSeqPos)range.GetTo() > GetAlnStop(GetNumSegs()-1)) {
         last_seg = m_DS->GetNumseg()-1;
     } else {
         last_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetTo()));
-        if (GetAlnStop(aln_seg) != (TSeqPos)range.GetTo()) {
-            vec->m_RightDelta = GetAlnStop(aln_seg) - range.GetTo();
-        }
+        vec->m_RightDelta = GetAlnStop(aln_seg) - range.GetTo();
     }
     
+    x_GetChunks(vec, row, first_seg, last_seg, flags);
+    return vec;
+}
+
+
+CRef<CAlnMap::CAlnChunkVec>
+CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
+                      TGetChunkFlags flags) const
+{
+    CRef<CAlnChunkVec> vec(new CAlnChunkVec(*this, row));
+
+    // boundaries check
+    if (range.GetTo() < GetSeqStart(row)  ||
+        range.GetFrom() > GetSeqStop(row)) {
+        return vec;
+    }
+
+    // determine the participating segments range
+    TNumseg first_seg, last_seg;
+
+    if (range.GetFrom() < GetSeqStart(row)) {
+        if (IsPositiveStrand(row)) {
+            first_seg = 0;
+        } else {
+            last_seg = m_DS->GetNumseg() - 1;
+        }
+    } else {        
+        if (IsPositiveStrand(row)) {
+            first_seg = GetRawSeg(row, range.GetFrom());
+            vec->m_LeftDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
+        } else {
+            last_seg = GetRawSeg(row, range.GetFrom());
+            vec->m_RightDelta = range.GetFrom() - x_GetRawStart(row, first_seg);
+        }
+    }
+    if (range.GetTo() > GetSeqStop(row)) {
+        if (IsPositiveStrand(row)) {
+            last_seg = m_DS->GetNumseg() - 1;
+        } else {
+            first_seg = 0;
+        }
+    } else {
+        if (IsPositiveStrand(row)) {
+            last_seg = GetRawSeg(row, range.GetTo());
+            vec->m_RightDelta = x_GetRawStop(row, last_seg) - range.GetTo();
+        } else {
+            first_seg = GetRawSeg(row, range.GetTo());
+            vec->m_LeftDelta = x_GetRawStop(row, last_seg) - range.GetTo();
+        }
+    }
+
+    x_GetChunks(vec, row, first_seg, last_seg, flags);
+    return vec;
+}
+
+
+inline
+bool CAlnMap::x_SkipType(TSegTypeFlags type, TGetChunkFlags flags) const
+{
+    bool skip = false;
+    if (type & fSeq) {
+        if (type & fNotAlignedToSeqOnAnchor) {
+            if (flags & fSkipInserts) {
+                skip = true;
+            }
+        } else {
+            if (flags & fSkipAlnSeq) {
+                skip = true;
+            }
+        }
+    } else {
+        if (type & fNotAlignedToSeqOnAnchor) {
+            if (flags & fSkipUnalignedGaps) {
+                skip = true;
+            }
+        } else {
+            if (flags & fSkipDeletions) {
+                skip = true;
+            }
+        }
+    }        
+    return skip;
+}
+
+
+inline
+bool
+CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type, 
+                                   TSegTypeFlags right_type,
+                                   TGetChunkFlags flags) const
+    // returns true if types are the same (as specified by flags)
+{
+    if ((left_type & fSeq) != (right_type & fSeq)) {
+        return false;
+    }
+    if (!(flags & fIgnoreUnaligned)  &&
+        (left_type & fUnalignedOnRight || right_type & fUnalignedOnLeft)) {
+        return false;
+    }
+    if ((left_type & fNotAlignedToSeqOnAnchor) ==
+        (right_type & fNotAlignedToSeqOnAnchor)) {
+        return true;
+    }
+    if (left_type & fSeq) {
+        if (!(flags & fInsertSameAsSeq)) {
+            return false;
+        }
+    } else {
+        if (!(flags & fDeletionSameAsGap)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
+                          TNumrow row,
+                          TNumseg first_seg, TNumseg last_seg,
+                          TGetChunkFlags flags) const
+{
     // add the participating segments to the vector
     for (TNumseg seg = first_seg;  seg <= last_seg;  seg++) {
         TSegTypeFlags type = x_GetRawSegType(row, seg);
@@ -510,7 +626,6 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
         }
         vec->m_StopSegs.push_back(seg); 
     }
-    return vec;
 }
 
 
@@ -620,64 +735,6 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     return chunk;
 }
 
-
-bool CAlnMap::x_SkipType(TSegTypeFlags type, TGetChunkFlags flags) const
-{
-    bool skip = false;
-    if (type & fSeq) {
-        if (type & fNotAlignedToSeqOnAnchor) {
-            if (flags & fSkipInserts) {
-                skip = true;
-            }
-        } else {
-            if (flags & fSkipAlnSeq) {
-                skip = true;
-            }
-        }
-    } else {
-        if (type & fNotAlignedToSeqOnAnchor) {
-            if (flags & fSkipUnalignedGaps) {
-                skip = true;
-            }
-        } else {
-            if (flags & fSkipDeletions) {
-                skip = true;
-            }
-        }
-    }        
-    return skip;
-}
-
-
-bool
-CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type, 
-                                   TSegTypeFlags right_type,
-                                   TGetChunkFlags flags) const
-    // returns true if types are the same (as specified by flags)
-{
-    if ((left_type & fSeq) != (right_type & fSeq)) {
-        return false;
-    }
-    if (!(flags & fIgnoreUnaligned)  &&
-        (left_type & fUnalignedOnRight || right_type & fUnalignedOnLeft)) {
-        return false;
-    }
-    if ((left_type & fNotAlignedToSeqOnAnchor) ==
-        (right_type & fNotAlignedToSeqOnAnchor)) {
-        return true;
-    }
-    if (left_type & fSeq) {
-        if (!(flags & fInsertSameAsSeq)) {
-            return false;
-        }
-    } else {
-        if (!(flags & fDeletionSameAsGap)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -685,6 +742,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/01/15 18:48:30  todorov
+* Added GetSeqChunks to be used with native seq range
+*
 * Revision 1.22  2003/01/08 23:04:47  todorov
 * Fixed a bug in x_CompareAdjacentSegTypes
 *

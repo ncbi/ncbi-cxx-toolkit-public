@@ -174,8 +174,20 @@ public:
     class CAlnChunk;
     class CAlnChunkVec;
     
-    // Get a vector of chunks defined by flags in a range of aln coords
+protected:
+    void x_GetChunks              (CAlnChunkVec * vec,
+                                   TNumrow row,
+                                   TNumseg first_seg,
+                                   TNumseg last_seg,
+                                   TGetChunkFlags flags) const;
+
+public:
+    // Get a vector of chunks defined by flags
+    // in alignment coords range
     CRef<CAlnChunkVec> GetAlnChunks(TNumrow row, const TSignedRange& range,
+                                    TGetChunkFlags flags = fAlnSegsOnly) const;
+    // or in native sequence coords range
+    CRef<CAlnChunkVec> GetSeqChunks(TNumrow row, const TSignedRange& range,
                                     TGetChunkFlags flags = fAlnSegsOnly) const;
 
     class NCBI_XALNMGR_EXPORT CAlnChunkVec : public CObject
@@ -195,8 +207,17 @@ public:
         friend
         CRef<CAlnChunkVec> CAlnMap::GetAlnChunks(TNumrow row,
                                                  const TSignedRange& range,
-                                                 TGetChunkFlags flags = 0)
-            const;
+                                                 TGetChunkFlags flags) const;
+        friend
+        CRef<CAlnChunkVec> CAlnMap::GetSeqChunks(TNumrow row,
+                                                 const TSignedRange& range,
+                                                 TGetChunkFlags flags) const;
+        friend
+        void               CAlnMap::x_GetChunks (CAlnChunkVec * vec,
+                                                 TNumrow row,
+                                                 TNumseg first_seg,
+                                                 TNumseg last_seg,
+                                                 TGetChunkFlags flags) const;
 #endif
 
         // can only be created by CAlnMap::GetAlnChunks
@@ -543,6 +564,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/01/15 18:48:36  todorov
+* Added GetSeqChunks to be used with native seq range
+*
 * Revision 1.15  2003/01/09 22:08:11  todorov
 * Changed the default TGetChunkFlags for consistency
 *
