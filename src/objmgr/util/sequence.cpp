@@ -1618,7 +1618,7 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
 
     // Get pointer to the best/worst id of *seq
     const CSeq_id* tmp_id;
-    if (!best) {
+    if (best) {
         tmp_id = FindBestChoice(seq->GetId(), CSeq_id::BestRank).GetPointer();
     } else {
         tmp_id = FindBestChoice(seq->GetId(), CSeq_id::WorstRank).GetPointer();
@@ -4796,6 +4796,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.98  2004/10/20 18:12:17  grichenk
+* Fixed seq-id ranking.
+*
 * Revision 1.97  2004/10/13 12:57:10  shomrat
 * Fixed overlap containmnet where applicable
 *
