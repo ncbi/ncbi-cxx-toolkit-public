@@ -226,43 +226,6 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
 }
 
 
-#if 0
-TTSE_Lock CDataSource::GetBlobById(const CSeq_id_Handle& idh)
-{
-    TMainLock::TReadLockGuard guard(m_DSMainLock);
-#ifdef DEBUG_MAPS
-    debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_seq);
-#endif
-    TSeq_id2TSE_Set::iterator tse_set = m_TSE_seq.find(idh);
-    if (tse_set == m_TSE_seq.end()) {
-        // Request TSE-info from loader if any
-        if ( m_Loader ) {
-            //
-        }
-        else {
-            // No such blob, no loader to call
-            return TTSE_Lock();
-        }
-//###
-    }
-//###
-    return TTSE_Lock();
-}
-
-
-CConstRef<CBioseq_Info> CDataSource::GetBioseq_Info(const CSeqMatch_Info& info)
-{
-    CRef<CBioseq_Info> ret;
-    // The TSE is locked by the scope, so, it can not be deleted.
-    CTSE_Info::TBioseqs::const_iterator found =
-        info.GetTSE_Info().m_Bioseqs.find(info.GetIdHandle());
-    if ( found != info.GetTSE_Info().m_Bioseqs.end() ) {
-        ret = found->second;
-    }
-    return ret;
-}
-#endif
-
 TTSE_Lock CDataSource::AddTSE(CSeq_entry& tse,
                               CTSE_Info::ESuppression_Level level)
 {
