@@ -1681,17 +1681,22 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             last_is_gap = false;
         }
     }
-    if (num_adjacent_gaps > 1) {
+    if ( num_adjacent_gaps > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq,
-            "There is (are) " + NStr::IntToString(num_adjacent_gaps) +
-            " adjacent gap(s) in delta seq", seq);
+            "There are " + NStr::IntToString(num_adjacent_gaps) +
+            " adjacent gaps in delta seq", seq);
+    } else if ( num_adjacent_gaps == 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq,
+            "There is one adjacent gap in delta seq", seq);
     }
     if (last_is_gap) {
         PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
             "Last delta seq component is a gap", seq);
     }
     if (num_gaps == 0  &&  mi) {
-        if ( tech == CMolInfo::eTech_htgs_2  &&  !GraphsOnBioseq(seq) ) {
+        if ( tech == CMolInfo::eTech_htgs_2  &&
+             !GraphsOnBioseq(seq)  &&
+             !x_IsActiveFin(seq) ) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_BadDeltaSeq,
                 "HTGS 2 delta seq has no gaps and no graphs", seq);
         }
@@ -3137,6 +3142,23 @@ bool CValidError_bioseq::GraphsOnBioseq(const CBioseq& seq) const
 }
 
 
+bool CValidError_bioseq::x_IsActiveFin(const CBioseq& seq) const
+{
+    CSeqdesc_CI gb_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Genbank);
+    if ( gb_desc ) {
+        const CGB_block& gb = gb_desc->GetGenbank();
+        if ( gb.IsSetKeywords() ) {
+            ITERATE( CGB_block::TKeywords, iter, gb.GetKeywords() ) {
+                if ( NStr::CompareNocase(*iter, "HTGS_ACTIVEFIN") == 0 ) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -3146,6 +3168,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/07/15 18:26:03  shomrat
+* suppress BadDeltaSeq - HTGS 2 delta seq has no gaps and no graphs - if HTGS_ACTIVEFIN keyword present
+*
 * Revision 1.41  2003/07/07 18:48:46  shomrat
 * SEQ_INST_TerminalNs is eDiag_Error if 10 or more Ns at either end
 *
