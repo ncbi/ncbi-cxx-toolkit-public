@@ -321,6 +321,11 @@ public:
     const CBDB_Field& GetField(TUnifiedFieldIndex idx) const;
     CBDB_Field& GetField(TUnifiedFieldIndex idx);
 
+	/// Fields deletion is managed by the class when own_fields is TRUE
+	void SetFieldOwnership(bool own_fields);
+	
+	/// Return fields ownership flag
+	bool IsOwnFields() const { return m_OwnFields; }
 
 protected:
     /// Unpack internal record buffers
@@ -376,6 +381,7 @@ private:
     bool                           m_BufsCreated;
     bool                           m_DataBufDisabled;
     bool                           m_LegacyString;
+	bool                           m_OwnFields;
 
     friend class CBDB_FileCursor;
 };
@@ -395,6 +401,7 @@ public:
     CBDB_IdFile();
     virtual void SetCmp(DB* db);  
 };
+
 
 
 /* @} */
@@ -491,7 +498,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/06/17 16:26:32  kuznets
+ * + field ownership flag to file
+ *
  * Revision 1.31  2004/06/03 11:46:11  kuznets
+ *
  * +x_SetByteSwapped
  *
  * Revision 1.30  2004/05/06 18:17:58  rotmistr

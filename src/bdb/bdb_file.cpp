@@ -486,10 +486,20 @@ CBDB_File::CBDB_File(EDuplicateKeys dup_keys)
       m_BufsAttached(false),
       m_BufsCreated(false),
       m_DataBufDisabled(false),
-      m_LegacyString(false)
+      m_LegacyString(false),
+	  m_OwnFields(false)
 {
 }
 
+void CBDB_File::SetFieldOwnership(bool own_fields) 
+{ 
+	m_OwnFields = own_fields; 
+	
+	m_KeyBuf->SetFieldOwnership(own_fields);
+	if (m_DataBuf.get() != 0) {
+		m_DataBuf->SetFieldOwnership(own_fields);
+	}
+}
 
 void CBDB_File::BindKey(const char* field_name,
                         CBDB_Field* key_field,
@@ -521,6 +531,7 @@ void CBDB_File::BindData(const char* field_name,
         m_DataBuf = dbuf;
         m_DataBuf->SetNullable();
         m_DataBuf->SetLegacyStringsCheck(m_LegacyString);
+		m_DataBuf->SetFieldOwnership(m_OwnFields);
     }
 
     m_DataBuf->Bind(data_field);
@@ -809,6 +820,10 @@ EBDB_ErrCode CBDB_File::DeleteCursor(DBC* dbc, EIgnoreError on_error)
 void CBDB_File::x_CheckConstructBuffers()
 {
     if (!m_BufsAttached  &&  !m_BufsCreated) {
+		if (m_KeyBuf->FieldCount() == 0) {
+			BDB_THROW(eInvalidValue, "Empty BDB key (no fields defined).");
+		}
+		
         m_KeyBuf->Construct();
         if ( m_DataBuf.get() ) {
 			m_DataBuf->Construct();
@@ -922,6 +937,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/06/17 16:27:02  kuznets
+ * + field ownership flag to file
+ *
  * Revision 1.38  2004/06/03 11:47:07  kuznets
  * Fixed a bug in setting architecture dependent comparison function
  *
