@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/15 20:31:37  vasilche
+* Fixed error on GCC
+*
 * Revision 1.2  1999/11/15 19:36:13  vasilche
 * Fixed warnings on GCC
 *
@@ -68,7 +71,7 @@ private:
     size_t m_Size;
 };
 
-void CDataMemberContainerType::AddMember(AutoPtr<CDataMember>& member)
+void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
 {
     m_Members.push_back(member);
 }

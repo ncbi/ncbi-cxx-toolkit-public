@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/15 20:31:38  vasilche
+* Fixed error on GCC
+*
 * Revision 1.2  1999/11/15 19:36:13  vasilche
 * Fixed warnings on GCC
 *
@@ -98,7 +101,7 @@ public:
     void FixTypeTree(void) const;
     bool CheckType(void) const;
 
-    void AddMember(AutoPtr<CDataMember>& member);
+    void AddMember(const AutoPtr<CDataMember>& member);
 
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
