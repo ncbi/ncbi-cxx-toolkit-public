@@ -85,20 +85,16 @@ class CNamedPipeHandle;
 ///
 /// For UNIXs the pipe name is a generic file name (with or without path).
 ///
+/// Initially, all timeouts are infinite.
+///
 /// @sa
 ///   CNamedPipeClient, CNamedPipeServer, CPipe
 
 class NCBI_XCONNECT_EXPORT CNamedPipe
 {
 public:
-    /// Special values for timeouts as accepted by member functions.
-    /// Initially, all timeouts are infinite.
-    static const STimeout* const kDefaultTimeout;    ///< use value last set
-    static const STimeout* const kInfiniteTimeout;   ///< ad infinitum
-    static const STimeout* const kNoWait;            ///< zero timeout
-
-    /// Default I/O buffer size
-    static const size_t          kDefaultBufferSize; ///< default I/O buf.size
+    /// Default I/O buffer size.
+    static const size_t kDefaultBufferSize;
 
     /// Constructor.
     CNamedPipe(void);
@@ -304,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/25 14:47:27  lavr
+ * Employ new k..Timeout constants
+ *
  * Revision 1.3  2003/08/20 19:01:05  ivanov
  * Fixed cvs log
  *

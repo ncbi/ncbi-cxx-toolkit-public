@@ -90,7 +90,7 @@ class NCBI_XCONNECT_EXPORT CConn_IOStream : public iostream
 public:
     CConn_IOStream
     (CONNECTOR       connector,
-     const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
+     const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefBufSize,
      bool            do_tie   = true);
     virtual ~CConn_IOStream(void);
@@ -117,7 +117,7 @@ public:
     (const string&   host,         /* host to connect to  */
      unsigned short  port,         /* ... and port number */
      unsigned int    max_try  = 3, /* number of attempts  */
-     const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
+     const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefBufSize);
 
     // This variant uses existing socket "sock" to build the stream upon it.
@@ -127,7 +127,7 @@ public:
     CConn_SocketStream
     (SOCK            sock,         /* socket              */
      unsigned int    max_try  = 3, /* number of attempts  */
-     const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
+     const STimeout* timeout  = kDefaultTimeout,
      streamsize      buf_size = kConn_DefBufSize);
 };
 
@@ -166,14 +166,14 @@ public:
      const string&   user_header = kEmptyStr,
      unsigned short  port        = 80,
      THCC_Flags      flags       = fHCC_AutoReconnect,
-     const STimeout* timeout     = CONN_DEFAULT_TIMEOUT,
+     const STimeout* timeout     = kDefaultTimeout,
      streamsize      buf_size    = kConn_DefBufSize
      );
 
     CConn_HttpStream
     (const string&   url,
      THCC_Flags      flags       = fHCC_AutoReconnect,
-     const STimeout* timeout     = CONN_DEFAULT_TIMEOUT,
+     const STimeout* timeout     = kDefaultTimeout,
      streamsize      buf_size    = kConn_DefBufSize
      );
 
@@ -181,7 +181,7 @@ public:
     (const SConnNetInfo* net_info    = 0,
      const string&       user_header = kEmptyStr,
      THCC_Flags          flags       = fHCC_AutoReconnect,
-     const STimeout*     timeout     = CONN_DEFAULT_TIMEOUT,
+     const STimeout*     timeout     = kDefaultTimeout,
      streamsize          buf_size    = kConn_DefBufSize
      );
 };
@@ -210,7 +210,7 @@ public:
      TSERV_Type            types    = fSERV_Any,
      const SConnNetInfo*   net_info = 0,
      const SSERVICE_Extra* params   = 0,
-     const STimeout*       timeout  = CONN_DEFAULT_TIMEOUT,
+     const STimeout*       timeout  = kDefaultTimeout,
      streamsize            buf_size = kConn_DefBufSize);
 };
 
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/08/25 14:47:00  lavr
+ * Employ new k..Timeout constants
+ *
  * Revision 6.20  2003/04/29 19:58:04  lavr
  * Constructor taking a URL added in CConn_HttpStream
  *
