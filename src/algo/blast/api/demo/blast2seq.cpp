@@ -433,7 +433,10 @@ int CBlast2seqApplication::Run(void)
         ENa_strand query_strand = eNa_strand_unknown;
         ENa_strand subject_strand = eNa_strand_unknown;
 
-        if (program == eBlastn || program == eBlastx) { 
+        bool query_is_aa = (program == eBlastp || 
+                            program == eTblastn || 
+                            program == eRPSBlast);
+        if (!query_is_aa) { 
             int cmdline_strand = args["strand"].AsInteger();
 
             if (cmdline_strand == 1)
@@ -442,7 +445,7 @@ int CBlast2seqApplication::Run(void)
                 query_strand = eNa_strand_minus;
             else
                 query_strand = eNa_strand_both;
-         }
+        }
 
         if (program == eBlastn ||
             program == eTblastn ||
@@ -507,6 +510,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/10/26 19:22:41  dondosha
+ * Set strand to both in query Seq-locs for tblastx
+ *
  * Revision 1.52  2004/08/18 18:14:13  camacho
  * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
  *
