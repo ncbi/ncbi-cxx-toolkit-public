@@ -471,9 +471,9 @@ int ASNIOTestApp::Run(void)
     else
         ERRORMSG(nErrors << " error" << ((nErrors == 1) ? "" : "s") << " encountered");
 #ifdef _DEBUG
-    INFOMSG("(Debug mode build)");
+    INFOMSG("(Debug mode build, " << __DATE__ << ")");
 #else
-    INFOMSG("(Release mode build)");
+    INFOMSG("(Release mode build, " << __DATE__ << ")");
 #endif
     return nErrors;
 }
@@ -500,6 +500,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/15 14:35:13  thiessen
+* add date to output
+*
 * Revision 1.7  2004/01/12 22:43:08  thiessen
 * add ZeroReal test
 *
