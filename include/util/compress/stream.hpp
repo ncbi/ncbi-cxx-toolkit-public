@@ -42,206 +42,178 @@
 
 BEGIN_NCBI_SCOPE
 
-// Default I/O compression stream buffer sizes
-const streamsize kCompressionDefaultInBufSize  = 16*1024;
-const streamsize kCompressionDefaultOutBufSize = 16*1024;
-
-// Forward declaration
-class CCompressionBaseStreambuf;
-
-// Compression underlying I/O stream
-typedef CNcbiIos TCompressionUIOS;
+// Default compression I/O stream buffer size
+const streamsize kCompressionDefaultBufSize = 16*1024;
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// CCompression stream classes
+// CCompression based stream classes
 //
 //////////////////////////////////////////////////////////////////////////////
 //
-// All CCompression based streams works as "adaptors". This means that all
-// input data will be compressed/decompressed and result puts to adaptor's
-// output. *Stream classes have a slave stream specified in the constructor.
-// The slave stream is using as a second adapter gate. The first gate is
-// stream's read/write functions and operators.
-//
-// Processed (compressed/decompressed) data can be obtained from *IStream
-// classes objects via read functions and operator. *IStream classes reads
-// a source data from underlying stream of necessety. Accordingly, *OStream
-// classes objects obtains data via it's write functions and operators and
-// puts processed data into the underlying stream buffer.
+// All CCompression based streams uses a "stream processors" that works as
+// adapters between current stream's I/O interface and a some other stream,
+// specified in the constructor. Any stream processor can implement either
+// compression or decompression.
+
+// On reading from stream, data will be readed from underlying stream,
+// processed by "read stream processor", and next processed data will be
+// carried to called process.
+// Also, all data written into CCompression[IO]Stream stream will be processed
+// using "write stream processor" and further written into underlying stream. 
 // 
 // Note:
-//   Notice that generally the input/output stream you pass to *Stream
-//   class constructor must be in binary mode, because the compressed data
-//   always is binary (decompressed data also can be binary) and the
-//   conversions which happen in text mode will corrupt it.
+//   Notice that generally the input/output stream you pass to
+//   CCompression[IO]Stream class constructor must be in binary mode, because
+//   the compressed data always is binary (decompressed data also can be
+//   binary) and the conversions which happen in text mode will corrupt it.
 //
 // Note:
-//   *Stream class objects must be finalized after use. Only after
-//   finalization all data putted into stream will be processed for sure.
-//   By default finalization called in the class destructor, however it can
-//   be done it any time by call Finalize(). After the finalization you
-//   cannot read/write from/to the stream.
+//   CCompression[IO]Stream class objects must be finalized after use.
+//   Only after finalization all data putted into stream will be processed
+//   for sure. By default finalization called in the class destructor, however
+//   it can be done in any time by call Finalize(). After finalization you
+//   can only read from the stream (if it is derived from istream).
 //
 // Note:
-//   There is one special aspect of CCompressOStream class. Basically
+//   There is one special aspect of CCompression[I]OStream class. Basically
 //   the compression algorithms works on blocks of data. They waits until
 //   a block is full and then compresses it. As long as you only feed data
 //   to the stream without flushing it this works normally. If you flush
 //   the stream, you force a premature end of the data block. This will cause
 //   a worse compression factor. You should avoid flushing a output buffer.
 //
-//   The CCompressIStream class usualy have worse compression than
-//   CCompressOStream because it needs to flush data from compressor very
-//   often. Increasing compressor buffer size can to amend this situation.
+//   Accordingly, the using input stream with compression usualy have worse
+//   compression than output stream with compression. Because a stream needs
+//   to flush data from compressor very often. Increasing compressor buffer
+//   size can to amend this situation.
 //
+
+
+// Forward declaration
+class CCompressionStreamProcessor;
 
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Base stream class
+// CCompressionStream - base stream class
 //
 
-class NCBI_XUTIL_EXPORT CCompressionStream : public iostream
+class NCBI_XUTIL_EXPORT CCompressionStream : virtual public CNcbiIos
 {
 public:
-    // Compressor type
-    enum ECompressorType {
-        eCT_Compress,          // compression
-        eCT_Decompress         // decompression
-    };
-    // The underlying stream type
-    enum EStreamType {
-        eST_Read,              // reading from it
-        eST_Write              // writing into it
-    };
-    // If to delete the used compressor object in the destructor
-    enum EDeleteCompressor {
-        eDelete,    // do      delete compressor object 
-        eNoDelete   // do  not delete compressor object
+    // Stream processing direction
+    enum EDirection {
+        eRead,              // reading from stream
+        eWrite,             // writing into stream
+        eReadWrite          // eRead + eWrite
     };
 
     // 'ctors
-    CCompressionStream(
-        CCompressionProcessor* compressor,
-        ECompressorType        compressor_type,
-        TCompressionUIOS*      stream,
-        EStreamType            stream_type,
-        streamsize             in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize             out_buf_size = kCompressionDefaultOutBufSize,
-        EDeleteCompressor      need_delete_compressor = eNoDelete
-    );
+    // If read/write stream processor is 0, that read/write operation
+    // on this stream will be unsuccessful.
+    CCompressionStream(CNcbiIos&                    stream,
+                       CCompressionStreamProcessor* read_sp,
+                       CCompressionStreamProcessor* write_sp);
     virtual ~CCompressionStream(void);
 
-    // Finalize stream compression.
-    // This function calls a streambuf Finilize() function.
-    // Throws exceptions on error.
-    void Finalize(void);
-
+    // Finalize stream's compression/decompression process for read/write.
+    // This function just calls a streambuf Finalize().
+    virtual void Finalize(CCompressionStream::EDirection dir =
+                          CCompressionStream::eReadWrite);
 protected:
-    CCompressionStreambuf* m_StreamBuf;   // Stream buffer
+    CNcbiIos*                    m_Stream   ; // Underlying stream
+    CCompressionStreambuf*       m_StreamBuf; // Stream buffer
+    CCompressionStreamProcessor* m_Reader;    // Read processor
+    CCompressionStreamProcessor* m_Writer;    // Write processor
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// I/O stream classes
+//
+
+class NCBI_XUTIL_EXPORT CCompressionIStream : public istream,
+                                              public CCompressionStream
+{
+public:
+    CCompressionIStream(CNcbiIos&                    stream,
+                        CCompressionStreamProcessor* stream_processor)
+        : istream(0), CCompressionStream(stream, stream_processor, 0)
+    {}
+};
+
+
+class NCBI_XUTIL_EXPORT CCompressionOStream : public ostream,
+                                              public CCompressionStream
+{
+public:
+    CCompressionOStream(CNcbiIos&                    stream,
+                        CCompressionStreamProcessor* stream_processor)
+        : ostream(0), CCompressionStream(stream, 0, stream_processor)
+    {}
+};
+
+
+class NCBI_XUTIL_EXPORT CCompressionIOStream : public iostream,
+                                               public CCompressionStream
+{
+public:
+    CCompressionIOStream(CNcbiIos&                    stream,
+                         CCompressionStreamProcessor* read_sp,
+                         CCompressionStreamProcessor* write_sp)
+        : iostream(0), CCompressionStream(stream, read_sp, write_sp)
+    {}
+};
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionStreamProcessor class
+//
+// Container class for storing a stream's processor read/write info.
+//
+
+class NCBI_XUTIL_EXPORT CCompressionStreamProcessor
+{
+public:
+    // If to delete the used compression processor in the destructor
+    enum EDeleteProcessor {
+        eDelete,            // do      delete processor object 
+        eNoDelete           // do  not delete processor object
+    };
+
+    // 'ctors
+    CCompressionStreamProcessor(
+        CCompressionProcessor* processor,
+        EDeleteProcessor       need_delete  = eNoDelete,
+        streamsize             in_bufsize   = kCompressionDefaultBufSize,
+        streamsize             out_bufsize  = kCompressionDefaultBufSize
+    );
+    virtual ~CCompressionStreamProcessor(void);
+
 private:
-    CCompressionProcessor* m_Compressor;  // Compressor for destruction
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Input compressing stream.
-//
-// The stream class for reading compressed data from it's input.
-// The data for compression will be readed from the stream "istream".
-//
-
-class NCBI_XUTIL_EXPORT CCompressIStream : public CCompressionStream
-{
-public:
-    CCompressIStream(
-        CCompressionProcessor* compressor,
-        istream*               in_stream,
-        streamsize             in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize             out_buf_size = kCompressionDefaultOutBufSize,
-        EDeleteCompressor      need_delete_compressor = eNoDelete)
-
-        : CCompressionStream(compressor, eCT_Compress, in_stream, eST_Read,
-                             in_buf_size, out_buf_size, need_delete_compressor)
-    {}
-};
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Output compressing stream.
-//
-// Obtaining uncompressed data on the input and putting the compressed
-// data into the underlying stream "ostream".
-//
-
-class NCBI_XUTIL_EXPORT CCompressOStream : public CCompressionStream
-{
-public:
-    CCompressOStream(
-        CCompressionProcessor* compressor,
-        ostream*               out_stream,
-        streamsize             in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize             out_buf_size = kCompressionDefaultOutBufSize,
-        EDeleteCompressor      need_delete_compressor = eNoDelete)
-
-        : CCompressionStream(compressor, eCT_Compress, out_stream, eST_Write,
-                             in_buf_size, out_buf_size, need_delete_compressor)
-    {}
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Input decompressing stream.
-//
-// The stream class for reading decompressed data from it's input.
-// The data for decompression will be readed from the stream "istream".
-//
-
-class NCBI_XUTIL_EXPORT CDecompressIStream : public CCompressionStream
-{
-public:
-    CDecompressIStream(
-        CCompressionProcessor* compressor,
-        istream*               in_stream,
-        streamsize             in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize             out_buf_size = kCompressionDefaultOutBufSize,
-        EDeleteCompressor      need_delete_compressor = eNoDelete)
-
-        : CCompressionStream(compressor, eCT_Decompress, in_stream, eST_Read,
-                             in_buf_size, out_buf_size, need_delete_compressor)
-    {}
-};
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Output decompressing stream.
-//
-// Obtaining compressed data on the input and putting the decompressed
-// data into the underlying stream "ostream".
-//
-
-class NCBI_XUTIL_EXPORT CDecompressOStream : public CCompressionStream
-{
-public:
-    CDecompressOStream(
-        CCompressionProcessor* compressor,
-        ostream*               out_stream,
-        streamsize             in_buf_size  = kCompressionDefaultInBufSize,
-        streamsize             out_buf_size = kCompressionDefaultOutBufSize,
-        EDeleteCompressor      need_delete_compressor = eNoDelete)
-
-        : CCompressionStream(compressor, eCT_Decompress, out_stream, eST_Write,
-                             in_buf_size, out_buf_size, need_delete_compressor)
-    {}
+    CCompressionProcessor* m_Processor;	  // Compression/decompr processor
+    CT_CHAR_TYPE*          m_InBuf;       // Buffer of unprocessed data
+    streamsize             m_InBufSize;   // Unprocessed data buffer size
+    CT_CHAR_TYPE*          m_OutBuf;      // Buffer of processed data
+    streamsize             m_OutBufSize;  // Processed data buffer size 
+    streamsize             m_LastOutAvail;// The size of last data received
+                                          // from compression processor
+    CT_CHAR_TYPE*          m_Begin;       // Begin and end of the pre/post
+    CT_CHAR_TYPE*          m_End;         // processed data in the read/write
+                                          // buffer
+    EDeleteProcessor       m_NeedDelete;  // m_Processor auto-deleting flag
+    CCompressionProcessor::EStatus
+                           m_LastStatus;  // Last compressor status
+    bool                   m_Finalized;   // True if a Finalize() already done
+                                          // for compression processor  
+    // Friend classes
+    friend class CCompressionStreambuf;
 };
 
 
@@ -254,6 +226,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/17 15:49:32  ivanov
+ * The second Compression API redesign. Replaced all standalone compression-
+ * decompression I/O classes with unified CCompression[I/O]Stream classes.
+ * Added CCompressionStreamProcessor base class. Some comments rearrangement.
+ *
  * Revision 1.4  2003/06/04 12:42:01  ucko
  * Use our NcbiIos typedef for portability to old iostream implementations.
  *
