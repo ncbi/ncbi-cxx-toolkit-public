@@ -563,7 +563,12 @@ public:
 
 };
 
-
+/// Functor takes a single nodelist as an argument and tries to
+/// push that nodelist as high as it can. If all of the childred 
+/// of a given node are in the nodelist, the children are removed from 
+/// the nodelist and the parent is added. The process is repeated util
+/// it cannot be reduced anymore.
+///
 template<class TNode, class TSet, class TNodeList>
 class CTreeMinimalSet
 {
@@ -823,6 +828,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/22 17:58:07  kuznets
+ * + more comments on minimal set
+ *
  * Revision 1.5  2004/04/22 13:52:09  kuznets
  * + CTreeMinimalSet
  *
