@@ -49,20 +49,31 @@ void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip);
 
 
 
-CCachedId1Reader::CCachedId1Reader(TConn noConn, IBLOB_Cache* cache)
+CCachedId1Reader::CCachedId1Reader(TConn noConn, 
+                                   IBLOB_Cache* cache,
+                                   EOwnership take_ownership)
     : CId1Reader(noConn),
-      m_Cache(cache)
+      m_Cache(cache),
+      m_OwnCache(take_ownership)
 {
 }
 
 
 CCachedId1Reader::~CCachedId1Reader()
 {
+    if (m_OwnCache == eTakeOwnership) {
+        delete m_Cache;
+    }
 }
 
-void CCachedId1Reader::SetCache(IBLOB_Cache* cache)
+void CCachedId1Reader::SetCache(IBLOB_Cache* cache, EOwnership take_ownership)
 {
+    
+    if (m_OwnCache == eTakeOwnership) {
+        delete m_Cache;
+    }
     m_Cache = cache;
+    m_OwnCache = take_ownership;
 }
 
 IReader* CCachedId1Reader::OpenBlob(const CSeqref& seqref)
@@ -76,6 +87,10 @@ IReader* CCachedId1Reader::OpenBlob(const CSeqref& seqref)
 
     IReader* reader = 
        m_Cache->GetReadStream(blob_key, version); 
+
+    if (reader) {
+        _TRACE("Retriving cached BLOB. key = " << blob_key);
+    }
 
     return reader;
 }
@@ -92,6 +107,10 @@ IWriter* CCachedId1Reader::StoreBlob(const CSeqref& seqref)
     IWriter* writer = 
         m_Cache->GetWriteStream(blob_key, version);
     
+    if (writer) {
+        _TRACE("Writing cache BLOB. key = " << blob_key);
+    }
+
     return writer;    
 }
 
@@ -209,6 +228,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2003/10/03 17:41:44  kuznets
+ * Added an option, that cache is owned by the ID1 reader.
+ *
  * Revision 1.3  2003/10/02 19:29:14  kuznets
  * First working revision
  *
