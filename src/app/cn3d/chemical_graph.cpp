@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/02/13 01:03:56  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.20  2001/02/08 23:01:48  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -301,6 +304,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
                         domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
                         (const_cast<Molecule*>(m->second))->nDomains++;
                         (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
+                        (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] = -1;
                         firstUnassigned = false;
                     }
                     (const_cast<Molecule*>(m->second))->residueDomains[r] = domainID;
@@ -357,11 +361,14 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                 const StructureObject *object;
                 if (!GetParentOfType(&object)) return;
                 (const_cast<StructureObject*>(object))->domainMap[domainID] = molecule;
+                (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] =
+                    f->GetObject().GetId().Get();
                 molecule->nDomains++;
             }
         }
     }
 }
+
 void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set& featureSet)
 {
     TESTMSG("unpacking NCBI sec. struc. features");

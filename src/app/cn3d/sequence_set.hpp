@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/02/13 01:03:03  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.14  2001/02/08 23:01:14  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -124,14 +127,13 @@ public:
     std::string pdbID, sequenceString, accession;
     bool isProtein;
 
-    // corresponding protein chain
+    // corresponding protein chain (if any)
     const Molecule *molecule;
 
     int Length(void) const { return sequenceString.size(); }
-
 	ncbi::objects::CSeq_id * CreateSeqId(void) const;
-
     std::string GetTitle(void) const;
+    int GetOrSetMMDBLink(void) const;
 };
 
 END_SCOPE(Cn3D)

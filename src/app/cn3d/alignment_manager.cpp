@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/02/13 01:03:55  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.37  2001/02/09 20:17:32  thiessen
 * ignore atoms w/o alpha when doing structure realignment
 *
@@ -369,7 +372,7 @@ void AlignmentManager::RealignAllSlaves(void) const
     CVP *masterCoords = new CVP[nResidues], *slaveCoords = new CVP[nResidues];
     if (!masterMol->GetAlphaCoords(nResidues, masterSeqIndexes, masterCoords)) {
         ERR_POST(Warning << "Can't get master alpha coords");
-    } else if (!masterSeq->mmdbLink) {
+    } else if (masterSeq->GetOrSetMMDBLink() == Sequence::VALUE_NOT_SET) {
         ERR_POST(Warning << "Don't know master MMDB ID");
     } else {
 

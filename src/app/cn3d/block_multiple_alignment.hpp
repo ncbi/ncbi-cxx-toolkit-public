@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/02/13 01:03:03  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.4  2001/02/02 20:17:42  thiessen
 * can read in CDD with multi-structure but no struct. alignments
 *
@@ -70,7 +73,7 @@ class BlockMultipleAlignment
 {
 public:
     typedef std::vector < const Sequence * > SequenceList;
-    BlockMultipleAlignment(const SequenceList *sequenceList);
+    BlockMultipleAlignment(const SequenceList *sequenceList);   // list will be owned/freed by this object
 
     ~BlockMultipleAlignment(void);
 
@@ -167,7 +170,10 @@ public:
 
     // shifts (horizontally) the residues in and immediately surrounding an
     // aligned block; retunrs true if any shift occurs.
-    bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex);
+    bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
+
+    // delete a row; returns true if successful
+    bool DeleteRow(int row);
 
 private:
     ConservationColorer *conservationColorer;
@@ -224,8 +230,6 @@ public:
     virtual int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
 
-    typedef std::vector < const Sequence * > SequenceList;
-
     // makes a new copy of itself
     virtual Block * Clone(const BlockMultipleAlignment *newMultiple) const = 0;
 
@@ -250,6 +254,14 @@ public:
         parentAlignment(multiple), ranges(multiple->NRows()) { }
 
     int NSequences(void) const { return ranges.size(); }
+
+    // delete a row
+    void DeleteRow(int row)
+    {
+        RangeList::iterator r = ranges.begin();
+        for (int i=0; i<row; i++) r++;
+        ranges.erase(r);
+    }
 
     virtual ~Block(void) { }    // virtual destructor for base class
 };

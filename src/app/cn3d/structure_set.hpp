@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/02/13 01:03:04  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.38  2001/02/02 20:17:42  thiessen
 * can read in CDD with multi-structure but no struct. alignments
 *
@@ -278,7 +281,8 @@ public:
 
     // empty the structure alignment data, in preparation for recomputing
     void ClearStructureAlignments(int masterMMDBID);
-    void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature);
+    void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature,
+        int masterDomainID, int slaveDomainID);
 };
 
 class ChemicalGraph;
@@ -305,9 +309,11 @@ public:
     typedef LIST_TYPE < const CoordSet * > CoordSetList;
     CoordSetList coordSets;
 
-    // map of domainIDs -> Molecule
+    // map of internal domainID -> Molecule and MMDB-assigned id
     typedef std::map < int, const Molecule * > DomainMap;
     DomainMap domainMap;
+    typedef std::map < int, int > DomainIDMap;
+    DomainIDMap domainID2MMDB;
 
     // public methods
 

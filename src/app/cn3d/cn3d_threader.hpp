@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/02/13 01:03:03  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.1  2001/02/08 23:01:24  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -58,7 +61,7 @@ class Sequence;
 class Threader
 {
 public:
-    Threader(void) { }
+    Threader(void);
     ~Threader(void);
 
     void Test(const BlockMultipleAlignment* multiple);

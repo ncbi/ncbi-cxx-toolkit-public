@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/02/13 01:03:04  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.6  2001/02/08 23:01:14  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -110,6 +113,7 @@ public:
         MID_MERGE_BLOCKS,
         MID_CREATE_BLOCK,
         MID_DELETE_BLOCK,
+        MID_DELETE_ROW,
         MID_SYNC_STRUCS,
         MID_SYNC_STRUCS_ON,
 
@@ -193,6 +197,12 @@ public:
         SetCursor(wxNullCursor);
     }
 
+    bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
+    void DeleteRowOff(void) {
+        menuBar->Check(MID_DELETE_ROW, false);
+        SetCursor(wxNullCursor);
+    }
+
     void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
 };
@@ -220,7 +230,7 @@ public:
 class DisplayRowFromAlignment : public DisplayRow
 {
 public:
-    const int row;
+    int row;
     const BlockMultipleAlignment * const alignment;
 
     DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) :

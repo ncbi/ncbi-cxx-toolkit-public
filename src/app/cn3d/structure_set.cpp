@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/02/13 01:03:57  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.48  2001/02/08 23:01:51  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -565,6 +568,8 @@ StructureSet::~StructureSet(void)
     if (mimeData) delete mimeData;
 }
 
+static const int NO_DOMAIN = -1, MULTI_DOMAIN = 0;
+
 void StructureSet::ClearStructureAlignments(int masterMMDBID)
 {
     // create or empty the Biostruc-annot-set that will contain these alignments
@@ -590,18 +595,36 @@ void StructureSet::ClearStructureAlignments(int masterMMDBID)
     structureAlignments->SetId().front().GetObject().SetMmdb_id(mid);
     // new Biostruc-feature-set
     CRef<CBiostruc_feature_set> featSet(new CBiostruc_feature_set());
-    featSet.GetObject().SetId().Set(masterMMDBID);
+    featSet.GetObject().SetId().Set(NO_DOMAIN);
     structureAlignments->SetFeatures().resize(1, featSet);
 
     // flag a change in data
     dataChanged |= eStructureAlignmentData;
 }
 
-void StructureSet::AddStructureAlignment(CBiostruc_feature *feature)
+void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
+    int masterDomainID, int slaveDomainID)
 {
+    // check master domain ID, to see if alignments have crossed master's domain boundaries
+    int *currentMasterDomainID = &(structureAlignments->SetFeatures().front().GetObject().SetId().Set());
+    if (*currentMasterDomainID == NO_DOMAIN)
+        *currentMasterDomainID = masterDomainID;
+    else if ((*currentMasterDomainID % 100) != (masterDomainID % 100))
+        *currentMasterDomainID = (*currentMasterDomainID / 100) * 100;
+
+    // check to see if this slave domain already has an alignment; if so, increment alignment #
+    CBiostruc_feature_set::TFeatures::const_iterator
+        f, fe = structureAlignments->GetFeatures().front().GetObject().GetFeatures().end();
+    for (f=structureAlignments->GetFeatures().front().GetObject().GetFeatures().begin(); f!=fe; f++) {
+        if ((f->GetObject().GetId().Get() / 10) == (slaveDomainID / 10))
+            slaveDomainID++;
+    }
+    CRef<CBiostruc_feature_id> id(new CBiostruc_feature_id(slaveDomainID));
+    feature->SetId(id);
+
     CRef<CBiostruc_feature> featureRef(feature);
     structureAlignments->SetFeatures().front().GetObject().SetFeatures().resize(
-        structureAlignments->SetFeatures().front().GetObject().GetFeatures().size() + 1, featureRef);
+        structureAlignments->GetFeatures().front().GetObject().GetFeatures().size() + 1, featureRef);
     dataChanged |= eStructureAlignmentData;
 }
 
@@ -913,6 +936,21 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
     return false;
 }
 
+static void AddDomain(int *domain, const Molecule *molecule, const Block::Range *range)
+{
+    const StructureObject *object;
+    if (!molecule->GetParentOfType(&object)) return;
+    for (int l=range->from; l<=range->to; l++) {
+        if (molecule->residueDomains[l] != Molecule::VALUE_NOT_SET) {
+            if (*domain == NO_DOMAIN)
+                *domain = object->domainID2MMDB.find(molecule->residueDomains[l])->second;
+            else if (*domain != MULTI_DOMAIN &&
+                     *domain != object->domainID2MMDB.find(molecule->residueDomains[l])->second)
+                *domain = MULTI_DOMAIN;
+        }
+    }
+}
+
 void StructureObject::RealignStructure(int nCoords,
     const Vector * const *masterCoords, const Vector * const *slaveCoords,
     const double *weights, int slaveRow)
@@ -936,14 +974,6 @@ void StructureObject::RealignStructure(int nCoords,
 
     // create a new Biostruc-feature that contains this alignment
     CBiostruc_feature *feature = new CBiostruc_feature();
-    CRef<CBiostruc_feature_id> id(new CBiostruc_feature_id(mmdbID));
-    feature->SetId(id);
-    CNcbiOstrstream oss;
-    oss << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->GetTitle()
-        << " with master " << multiple->GetSequenceOfRow(0)->GetTitle()
-        << ", as computed by Cn3D" << '\0';
-    feature->SetName(std::string(oss.str()));
-    delete oss.str();
     feature->SetType(CBiostruc_feature::eType_alignment);
     CRef<CBiostruc_feature::C_Location> location(new CBiostruc_feature::C_Location());
     feature->SetLocation(location);
@@ -965,7 +995,11 @@ void StructureObject::RealignStructure(int nCoords,
     graphAlignment.GetObject().SetBiostruc_ids().back() = slaveBID;
     graphAlignment.GetObject().SetAlignment().resize(2);
 
-    // fill out sequence alignment intervals
+    // fill out sequence alignment intervals, tracking domains in alignment
+    int masterDomain = NO_DOMAIN, slaveDomain = NO_DOMAIN;
+    const Molecule
+        *masterMolecule = multiple->GetSequenceOfRow(0)->molecule,
+        *slaveMolecule = multiple->GetSequenceOfRow(slaveRow)->molecule;
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
     if (blocks.get()) {
         CRef<CChem_graph_pntrs>
@@ -992,16 +1026,18 @@ void StructureObject::RealignStructure(int nCoords,
             mi->Reset(masterRIP);
             si->Reset(slaveRIP);
 
-            masterRIP->SetMolecule_id().Set(multiple->GetSequenceOfRow(0)->molecule->id);
-            slaveRIP->SetMolecule_id().Set(multiple->GetSequenceOfRow(slaveRow)->molecule->id);
+            masterRIP->SetMolecule_id().Set(masterMolecule->id);
+            slaveRIP->SetMolecule_id().Set(slaveMolecule->id);
 
             const Block::Range *range = (*b)->GetRangeOfRow(0);
             masterRIP->SetFrom().Set(range->from + 1); // +1 to convert seqLoc to residueID
             masterRIP->SetTo().Set(range->to + 1);
+            AddDomain(&masterDomain, masterMolecule, range);
 
             range = (*b)->GetRangeOfRow(slaveRow);
             slaveRIP->SetFrom().Set(range->from + 1);
             slaveRIP->SetTo().Set(range->to + 1);
+            AddDomain(&slaveDomain, slaveMolecule, range);
         }
     }
 
@@ -1046,8 +1082,26 @@ void StructureObject::RealignStructure(int nCoords,
         }
     }
 
-    // store the new alignment in the Biostruc-annot-set
-    parentSet->AddStructureAlignment(feature);
+    // store the new alignment in the Biostruc-annot-set,
+    // setting the feature id depending on the aligned domain(s)
+    if (masterDomain == NO_DOMAIN) masterDomain = 0;    // can happen if single domain chain
+    if (slaveDomain == NO_DOMAIN) slaveDomain = 0;
+    const StructureObject *masterObject;
+    if (!masterMolecule->GetParentOfType(&masterObject)) return;
+    int
+        masterDomainID = masterObject->mmdbID*10000 + masterMolecule->id*100 + masterDomain,
+        slaveDomainID = mmdbID*100000 + slaveMolecule->id*1000 + slaveDomain*10 + 1;
+    parentSet->AddStructureAlignment(feature, masterDomainID, slaveDomainID);
+
+    // for backward-compatibility with Cn3D 3.5, need name to encode chain/domain
+    CNcbiOstrstream oss;
+    oss << masterMolecule->pdbID << ((char) masterMolecule->pdbChain) << masterDomain << ' '
+        << slaveMolecule->pdbID << ((char) slaveMolecule->pdbChain) << slaveDomain << ' '
+        << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->GetTitle()
+        << " with master " << multiple->GetSequenceOfRow(0)->GetTitle()
+        << ", as computed by Cn3D" << '\0';
+    feature->SetName(std::string(oss.str()));
+    delete oss.str();
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/02/13 01:03:57  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.18  2001/02/08 23:01:50  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -109,6 +112,7 @@
 
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -344,6 +348,17 @@ std::string Sequence::GetTitle(void) const
     oss << '\0';
     auto_ptr<char> chars(oss.str());    // frees memory upon function return
     return std::string(oss.str());
+}
+
+int Sequence::GetOrSetMMDBLink(void) const
+{
+    if (mmdbLink != VALUE_NOT_SET || !molecule)
+        return mmdbLink;
+
+    const StructureObject *object;
+    if (!molecule->GetParentOfType(&object)) return mmdbLink;
+    const_cast<Sequence*>(this)->mmdbLink = object->mmdbID;
+    return mmdbLink;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/02/13 01:03:56  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.3  2001/02/02 20:17:33  thiessen
 * can read in CDD with multi-structure but no struct. alignments
 *
@@ -268,21 +271,22 @@ bool BlockMultipleAlignment::GetSequenceAndIndexAt(
     int alignmentColumn, int row, eUnalignedJustification requestedJustification,
     const Sequence **sequence, int *index, bool *isAligned) const
 {
-    *sequence = sequences->at(row);
+    if (sequence) *sequence = sequences->at(row);
 
     const BlockInfo& blockInfo = blockMap[alignmentColumn];
 
     if (!blockInfo.block->IsAligned()) {
-        *isAligned = false;
+        if (isAligned) *isAligned = false;
         // override requested justification for end blocks
         if (blockInfo.block == blocks.back()) // also true if there's a single aligned block
             requestedJustification = eLeft;
         else if (blockInfo.block == blocks.front())
             requestedJustification = eRight;
     } else
-        *isAligned = true;
+        if (isAligned) *isAligned = true;
 
-    *index = blockInfo.block->GetIndexAt(blockInfo.blockColumn, row, requestedJustification);
+    if (index)
+        *index = blockInfo.block->GetIndexAt(blockInfo.blockColumn, row, requestedJustification);
 
     return true;
 }
@@ -645,7 +649,8 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         return false;
 }
 
-bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex)
+bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex,
+    eUnalignedJustification justification)
 {
     Block
         *blockFrom = blockMap[fromAlignmentIndex].block,
@@ -667,7 +672,11 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
          (ABlock == blockTo && prevUABlock != blockFrom && nextUABlock != blockFrom)))
         return false;
 
-    int requestedShift = toAlignmentIndex - fromAlignmentIndex, actualShift = 0, width = 0;
+    int fromSeqIndex, toSeqIndex;
+    GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, NULL, &fromSeqIndex, NULL);
+    GetSequenceAndIndexAt(toAlignmentIndex, row, justification, NULL, &toSeqIndex, NULL);
+    int requestedShift = toSeqIndex - fromSeqIndex, actualShift = 0, width = 0;
+
     const Block::Range *prevRange = NULL, *nextRange = NULL,
         *range = ABlock->GetRangeOfRow(row);
     if (prevUABlock) prevRange = prevUABlock->GetRangeOfRow(row);
@@ -937,6 +946,26 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     return true;
 }
 
+bool BlockMultipleAlignment::DeleteRow(int row)
+{
+    if (row < 0 || row >= NRows()) {
+        ERR_POST(Error << "BlockMultipleAlignment::DeleteRow() - row out of range");
+        return false;
+    }
+
+    // remove sequence from list
+    SequenceList::iterator s = (const_cast<SequenceList*>(sequences))->begin();
+    for (int i=0; i<row; i++) s++;
+    (const_cast<SequenceList*>(sequences))->erase(s);
+
+    // delete row from all blocks
+    BlockList::iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++)
+        (*b)->DeleteRow(row);
+
+    return true;
+}
+
 BlockMultipleAlignment::UngappedAlignedBlockList *
 BlockMultipleAlignment::GetUngappedAlignedBlocks(void) const
 {
@@ -976,7 +1005,7 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const
 {
     const Block::Range *range = GetRangeOfRow(row);
-    int seqIndex, rangeWidth, extraSpace;
+    int seqIndex, rangeWidth, rangeMiddle, extraSpace;
 
     switch (justification) {
         case BlockMultipleAlignment::eLeft:
@@ -995,10 +1024,11 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
             break;
         case BlockMultipleAlignment::eSplit:
             rangeWidth = (range->to - range->from + 1);
+            rangeMiddle = (rangeWidth / 2) + (rangeWidth % 2);
             extraSpace = width - rangeWidth;
-            if (blockColumn < rangeWidth / 2)
+            if (blockColumn < rangeMiddle)
                 seqIndex = range->from + blockColumn;
-            else if (blockColumn >= extraSpace + rangeWidth / 2)
+            else if (blockColumn >= extraSpace + rangeMiddle)
                 seqIndex = range->to - width + blockColumn + 1;
             else
                 seqIndex = -1;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/02/13 01:03:56  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.1  2001/02/08 23:01:49  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -38,6 +41,7 @@
 
 // C-toolkit stuff
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <ctools/ctools.h>
 #include <objseq.h>
 #include <objalign.h>
 #include <thrdatd.h>
@@ -59,6 +63,11 @@ static const double SCALING_FACTOR = 100000;
 static void AddSeqId(const Sequence *sequence, SeqIdPtr *id, bool addAllTypes);
 static SeqAlignPtr CreateSeqAlign(const BlockMultipleAlignment *multiple);
 
+
+Threader::Threader(void)
+{
+    SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
+}
 
 Threader::~Threader(void)
 {
@@ -172,6 +181,15 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment* multiple, double 
 
     // create SeqAlign from this BlockMultipleAlignment
     SeqAlignPtr seqAlign = CreateSeqAlign(multiple);
+
+    // dump for debugging
+    SeqAlignPtr saChain = seqAlign;
+    AsnIoPtr aip = AsnIoOpen("Seq-align.txt", "w");
+    while (saChain) {
+        SeqAlignAsnWrite(saChain, aip, NULL);
+        saChain = saChain->next;
+    }
+    aip = AsnIoClose(aip);
 
     Seq_Mtf *seqMtf = CddDenDiagCposComp2(
         GetBioseq(multiple->GetMaster()),

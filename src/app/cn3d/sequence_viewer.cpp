@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/02/13 01:03:57  thiessen
+* backward-compatible domain ID's in output; add ability to delete rows
+*
 * Revision 1.33  2001/02/08 23:01:51  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -202,6 +205,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->Append(MID_CREATE_BLOCK, "&Create Block", noHelp, true);
     menu->Append(MID_DELETE_BLOCK, "&Delete Block", noHelp, true);
     menu->AppendSeparator();
+    menu->Append(MID_DELETE_ROW, "Delete &Row", noHelp, true);
+    menu->AppendSeparator();
     menu->Append(MID_SYNC_STRUCS, "Sync Structure &Colors");
     menu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", noHelp, true);
     menuBar->Append(menu, "&Edit");
@@ -304,7 +309,8 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
                 }
                 TESTMSG("turning off editor");
                 viewer->RemoveBlockBoundaryRow();
-                if (menuBar->IsChecked(MID_DRAG_HORIZ)) Command(MID_SELECT_RECT);
+                if (menuBar->IsChecked(MID_DRAG_HORIZ) || menuBar->IsChecked(MID_MOVE_ROW))
+                    Command(MID_SELECT_RECT);
             }
             EnableEditorMenuItems(turnEditorOn);
             break;
@@ -319,6 +325,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoCreateBlock()) CreateBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
+            if (DoDeleteRow()) DeleteRowOff();
             if (DoSplitBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -329,6 +336,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoCreateBlock()) CreateBlockOff();
             if (DoDeleteBlock()) DeleteBlockOff();
+            if (DoDeleteRow()) DeleteRowOff();
             if (DoMergeBlocks()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
@@ -341,6 +349,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
+            if (DoDeleteRow()) DeleteRowOff();
             if (DoCreateBlock()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
@@ -353,10 +362,22 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoCreateBlock()) CreateBlockOff();
+            if (DoDeleteRow()) DeleteRowOff();
             if (DoDeleteBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
                 DeleteBlockOff();
+            break;
+
+        case MID_DELETE_ROW:
+            if (DoSplitBlock()) SplitBlockOff();
+            if (DoMergeBlocks()) MergeBlocksOff();
+            if (DoCreateBlock()) CreateBlockOff();
+            if (DoDeleteBlock()) DeleteBlockOff();
+            if (DoDeleteRow())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                DeleteRowOff();
             break;
 
         case MID_SYNC_STRUCS:
@@ -380,6 +401,7 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
     menuBar->Enable(MID_UNDO, false);
     menuBar->Enable(MID_SHOW_HIDE_ROWS, !enabled);  // can't show/hide when editor is on
     menuBar->Enable(MID_MOVE_ROW, enabled);         // can only move row when editor is on
+    menuBar->Enable(MID_DELETE_ROW, enabled);       // can only delete row when editor is on
 }
 
 void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
@@ -789,6 +811,37 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             }
             return false;
         }
+        if ((*viewerWindow)->DoDeleteRow()) {
+            if (row > 0) {
+                DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+                if (selectedRow == NULL || selectedRow->row == 0 || selectedRow->alignment->NRows() <= 2 ||
+                    selectedRow->alignment != (*viewerWindow)->viewer->GetCurrentAlignment()) {
+                    ERR_POST(Warning << "Can't delete that row...");
+                } else {
+                    // delete row based on alignment row # (not display row #)
+                    if ((*viewerWindow)->viewer->GetCurrentAlignment()->DeleteRow(selectedRow->row)) {
+
+                        // delete this row from the display, and update higher row #'s
+                        RowVector::iterator r, re = rows.end(), toDelete;
+                        for (r=rows.begin(); r!=re; r++) {
+                            DisplayRowFromAlignment
+                                *currentARow = dynamic_cast<DisplayRowFromAlignment*>(*r);
+                            if (!currentARow)
+                                continue;
+                            else if (currentARow == selectedRow)
+                                toDelete = r;
+                            else if (currentARow->row > selectedRow->row)
+                                (currentARow->row)--;
+                        }
+                        rows.erase(toDelete);
+
+                        (*viewerWindow)->DeleteRowOff();
+                        UpdateAfterEdit();
+                    }
+                }
+            }
+            return false;
+        }
     }
 
     return true;
@@ -855,7 +908,9 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
             // process drag on regular row - block row shift
             DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
             if (alnRow) {
-                if ((*viewerWindow)->viewer->GetCurrentAlignment()->ShiftRow(alnRow->row, columnFrom, columnTo))
+                if ((*viewerWindow)->viewer->GetCurrentAlignment()->
+                        ShiftRow(alnRow->row, columnFrom, columnTo,
+                            (*viewerWindow)->GetCurrentJustification()))
                     UpdateAfterEdit();
                 return;
             }
