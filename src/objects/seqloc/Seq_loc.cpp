@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  .......
+ * Author:   Author:  Cliff Clausen, Eugene Vasilchenko
  *
  * File Description:
  *   .......
@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/10/22 11:40:32  clausen
+ * Added Compare() implementation
+ *
  * Revision 6.4  2001/01/03 18:59:09  vasilche
  * Added missing include.
  *
@@ -52,36 +55,44 @@
  * ===========================================================================
  */
 
-// standard includes
+#include <objects/objmgr/scopes.hpp>
 
-// generated includes
-#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/PDB_mol_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
-// generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 // destructor
 CSeq_loc::~CSeq_loc(void)
 {
 }
 
+
 // returns length, in residues, of Seq_loc
 // return = -1 = couldn't calculate due to error
 // return = -2 = couldn't calculate because of data type
 int CSeq_loc::GetLength(void) const
 {
-	switch (Which()) {
+    switch (Which()) {
     case e_not_set:      /* this should never be */
         return eError;
     case e_Bond:         /* can't calculate length */
@@ -105,49 +116,1126 @@ int CSeq_loc::GetLength(void) const
     default:
         break;
     }
-	return eError;   /* new unsupported type */
+    return eError;   /* new unsupported type */
 }
 
 // returns enclosing location range
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
-	switch (Which()) {
-    case e_not_set:      /* this should never be */
+    switch (Which()) {
+    case e_not_set:
+        // this should never be...
         THROW1_TRACE(runtime_error,
                      "CSeq_loc::GetTotalRange(): unset CSeq_loc");
-    case e_Bond:         /* can't calculate length */
-    case e_Feat:
-        break; // undefined
-    case e_Pnt:
-        {
-            int point = GetPnt().GetPoint();
-            return TRange(point, point);
-        }
-    case e_Int:
-        {
-            const CSeq_interval& interval = GetInt();
-            return TRange(interval.GetFrom(), interval.GetTo());
-        }
+    case e_Pnt: {
+        int point = GetPnt().GetPoint();
+        return TRange(point, point);
+    }
+    case e_Int: {
+        const CSeq_interval& interval = GetInt();
+        return TRange(interval.GetFrom(), interval.GetTo());
+    }
     case e_Empty:
         return TRange::GetEmpty();
     case e_Whole:
         return TRange::GetWhole();
-    case e_Packed_int:
-        break; // undefined
     case e_Mix:
         return GetMix().GetTotalRange();
-    case e_Packed_pnt:
-        break; // undefined
-    case e_Equiv:
-        break; // undefined
     default:
-        break;
+        break; // no way to calculate the length, so just leave it undefined
     }
     THROW1_TRACE(runtime_error,
                  "CSeq_loc::GetTotalRange(): undefined range");
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Comparisons...
+//
+
+// Anonymous namespace used since WorkShop compilers have
+// problems with static keyword in some cases below. Specifically, if
+// a static function instantiates a template function which in turn
+// calls the function that instantiated it, the WorkShop compilers will
+// complain that the call made to the instantiating function from the
+// template is unusable
+#  define BEGIN_SEQLOC_ANONYMOUS_NAMESPACE namespace {
+#  define END_SEQLOC_ANONYMOUS_NAMESPACE   }
+
+
+BEGIN_SEQLOC_ANONYMOUS_NAMESPACE
+
+
+CSeq_loc::ECompare s_Compare
+(const CSeq_loc&,
+ const CSeq_loc&,
+ CScope*);
+
+
+int s_RetA[5][5] = {
+    { 0, 4, 2, 2, 4 },
+    { 4, 1, 4, 1, 4 },
+    { 2, 4, 2, 2, 4 },
+    { 2, 1, 2, 3, 4 },
+    { 4, 4, 4, 4, 4 }
+};
+
+int s_RetB[5][5] = {
+    { 0, 1, 4, 1, 4 },
+    { 1, 1, 4, 1, 1 },
+    { 4, 4, 2, 2, 4 },
+    { 1, 1, 4, 3, 4 },
+    { 4, 1, 4, 4, 4 }
+};
+
+
+// Determines if two CSeq_locs are from same CBioseq
+inline bool s_IsSameBioseq
+(const CSeq_id& id1,
+ const CSeq_id& id2,
+ CScope*        scope)
+{
+    // First check if the CSeq_ids can be determined to be the same
+    // by just looking at the CSeq_ids.
+    if (id1.Compare(id2) == CSeq_id::e_YES) {
+        return true;
+    }
+
+    // Next, use the scope, if there is one, to determine if
+    // there is a CBioseq within the scope that has both
+    // CSeq_ids as identifiers.
+    if ( scope ) {
+        CBioseqHandle h1 = scope->GetBioseqHandle(id1);
+        CBioseqHandle h2 = scope->GetBioseqHandle(id2);
+        return h1 && (h1 == h2);
+    }
+
+    return false;
+}
+
+
+// Returns the length of a CBioseq if it can be determined, else -1
+inline int s_GetSeqLength(const CSeq_id& seq_id, CScope* scope)
+{
+    if( !scope ) {
+        return -1;
+    }
+
+    // Get the CBioseq core (less the sequence data).
+    // The CSeq_inst within the CBioseq holds the sequence length.
+    CBioseqHandle             h1   = scope->GetBioseqHandle(seq_id);
+    const CScope::TBioseqCore bs   = scope->GetBioseqCore(h1);
+    const CSeq_inst&          inst = bs->GetInst();
+
+    return inst.IsSetLength() ? inst.GetLength() : -1;
+}
+
+
+// Returns the complement of an ECompare value
+inline CSeq_loc::ECompare s_Complement(CSeq_loc::ECompare cmp)
+{
+    switch ( cmp ) {
+    case CSeq_loc::eContains:
+        return CSeq_loc::eContained;
+    case CSeq_loc::eContained:
+        return CSeq_loc::eContains;
+    default:
+        return cmp;
+    }
+}
+
+
+// Compare two Whole sequences
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_id& id1,
+ const CSeq_id& id2,
+ CScope*        scope)
+{
+    // If both sequences from same CBioseq, they are the same
+    if ( s_IsSameBioseq(id1, id2, scope) ) {
+        return CSeq_loc::eSame;
+    } else {
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare Whole sequence with a Bond
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_id&   id,
+ const CSeq_bond& bond,
+ CScope*          scope)
+{
+    unsigned int count = 0;
+
+    // Increment count if bond point A is from same CBioseq as id
+    if ( s_IsSameBioseq(id, bond.GetA().GetId(), scope) ) {
+        ++count;
+    }
+
+    // Increment count if second point in bond is set and is from
+    // same CBioseq as id.
+    if (bond.IsSetB()  &&  s_IsSameBioseq(id, bond.GetB().GetId(), scope)) {
+        ++count;
+    }
+
+    switch ( count ) {
+    case 1:
+        if ( bond.IsSetB() ) {
+            // One of two bond points are from same CBioseq as id --> overlap
+            return CSeq_loc::eOverlap;
+        } else {
+            // There is only one bond point set --> id contains bond
+            return CSeq_loc::eContains;
+        }
+    case 2:
+        // Both bond points are from same CBioseq as id --> id contains bond
+        return CSeq_loc::eContains;
+    default:
+        // id and bond do not overlap
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare Whole sequence with an interval
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_id&       id,
+ const CSeq_interval& interval,
+ CScope*              scope)
+{
+    // If interval is from same CBioseq as id and interval is
+    // [0, length of id-1], then they are the same. If interval is from same
+    // CBioseq as id, but interval is not [0, length of id -1] then id
+    // contains seqloc.
+    if ( s_IsSameBioseq(id, interval.GetId(), scope) ) {
+        if (interval.GetFrom() == 0  &&
+            interval.GetTo()   == s_GetSeqLength(id, scope) - 1) {
+            return CSeq_loc::eSame;
+        } else {
+            return CSeq_loc::eContains;
+        }
+    } else {
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare Whole sequence with a point
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_id&     id,
+ const CSeq_point&  point,
+ CScope*            scope)
+{
+    // If point from the same CBioseq as id, then id contains point
+    if ( s_IsSameBioseq(id, point.GetId(), scope) ) {
+        return CSeq_loc::eContains;
+    } else {
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare Whole sequence with packed points
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_id&        id,
+ const CPacked_seqpnt& packed,
+ CScope*               scope)
+{
+    // If packed from same CBioseq as id, then id contains packed
+    if ( s_IsSameBioseq(id, packed.GetId(), scope) ) {
+        return CSeq_loc::eContains;
+    } else {
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare an interval with a bond
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_interval& interval,
+ const CSeq_bond&     bond,
+ CScope*              scope)
+{
+    unsigned int count = 0;
+
+    // Increment count if interval contains the first point of the bond
+    if (s_IsSameBioseq(interval.GetId(), bond.GetA().GetId(), scope)  &&
+        interval.GetFrom() <= bond.GetA().GetPoint()  &&
+        interval.GetTo()   >= bond.GetA().GetPoint()) {
+        ++count;
+    }
+
+    // Increment count if the second point of the bond is set and the
+    // interval contains the second point.
+    if (bond.IsSetB()  &&
+        s_IsSameBioseq(interval.GetId(), bond.GetB().GetId(), scope)  &&
+        interval.GetFrom() <= bond.GetB().GetPoint()  &&
+        interval.GetTo()   >= bond.GetB().GetPoint()) {
+        ++count;
+    }
+
+    switch ( count ) {
+    case 1:
+        if ( bond.IsSetB() ) {
+            // The 2nd point of the bond is set
+            return CSeq_loc::eOverlap;
+        } else {
+            // The 2nd point of the bond is not set
+            return CSeq_loc::eContains;
+        }
+    case 2:
+        // Both points of the bond are in the interval
+        return CSeq_loc::eContains;
+    default:
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare a bond with an interval
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_bond&     bond,
+ const CSeq_interval& interval,
+ CScope*              scope)
+{
+    // Just return the complement of comparing an interval with a bond
+    return s_Complement(s_Compare(interval, bond, scope));
+}
+
+
+// Compare an interval to an interval
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_interval& intA,
+ const CSeq_interval& intB,
+ CScope*              scope)
+{
+    // If the intervals are not on the same bioseq, then there is no overlap
+    if ( !s_IsSameBioseq(intA.GetId(), intB.GetId(), scope) ) {
+        return CSeq_loc::eNoOverlap;
+    }
+
+    // Compare two intervals
+    int fromA = intA.GetFrom();
+    int toA   = intA.GetTo();
+    int fromB = intB.GetFrom();
+    int toB   = intB.GetTo();
+
+    if (fromA == fromB  &&  toA == toB) {
+        // End points are the same --> the intervals are the same.
+        return CSeq_loc::eSame;
+    } else if (fromA <= fromB  &&  toA >= toB) {
+        // intA contains intB
+        return CSeq_loc::eContains;
+    } else if (fromA >= fromB  &&  toA <= toB) {
+        // intB contains intA
+        return CSeq_loc::eContained;
+    } else if (fromA > toB  ||  toA < fromB) {
+        // No overlap
+        return CSeq_loc::eNoOverlap;
+    } else {
+        // The only possibility left is overlap
+        return CSeq_loc::eOverlap;
+    }
+}
+
+
+// Compare an interval and a point
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_interval& interval,
+ const CSeq_point&    point,
+ CScope*              scope)
+{
+    // If not from same CBioseq, then no overlap
+    if ( !s_IsSameBioseq(interval.GetId(), point.GetId(), scope) ) {
+        return CSeq_loc::eNoOverlap;
+    }
+
+    // If point in interval, then interval contains point
+    int pnt = point.GetPoint();
+    if (interval.GetFrom() <= pnt  &&  interval.GetTo() >= pnt ) {
+        return CSeq_loc::eContains;
+    }
+
+    // Only other possibility
+    return CSeq_loc::eNoOverlap;
+}
+
+
+// Compare a point and an interval
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_point&    point,
+ const CSeq_interval& interval,
+ CScope*              scope)
+{
+    // The complement of comparing an interval with a point.
+    return s_Complement(s_Compare(interval, point, scope));
+}
+
+
+// Compare a point with a point
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_point& pntA,
+ const CSeq_point& pntB,
+ CScope*           scope)
+{
+    // If points are on same bioseq and coordinates are the same, then same.
+    if (s_IsSameBioseq(pntA.GetId(), pntB.GetId(), scope)  &&
+        pntA.GetPoint() == pntB.GetPoint() ) {
+        return CSeq_loc::eSame;
+    }
+
+    // Otherwise they don't overlap
+    return CSeq_loc::eNoOverlap;
+}
+
+
+// Compare a point with packed point
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_point&     point,
+ const CPacked_seqpnt& points,
+ CScope*               scope)
+{
+    // If on the same bioseq, and any of the packed points are the
+    // same as point, then the point is contained in the packed point
+    if ( s_IsSameBioseq(point.GetId(), points.GetId(), scope) ) {
+        int pnt = point.GetPoint();
+
+        // This loop will only be executed if points.GetPoints().size() > 0
+        iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+            if (pnt == *it) {
+                return CSeq_loc::eContained;
+            }
+        }
+    }
+
+    // Otherwise, no overlap
+    return CSeq_loc::eNoOverlap;
+}
+
+
+// Compare a point with a bond
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_point& point,
+ const CSeq_bond&  bond,
+ CScope*           scope)
+{
+    unsigned int count = 0;
+
+    // If the first point of the bond is on the same CBioseq as point
+    // and the point coordinates are the same, increment count by 1
+    if (s_IsSameBioseq(point.GetId(), bond.GetA().GetId(), scope)  &&
+        bond.GetA().GetPoint() == point.GetPoint()) {
+        ++count;
+    }
+
+    // If the second point of the bond is set, the points are from the
+    // same CBioseq, and the coordinates of the points are the same,
+    // increment the count by 1.
+    if (bond.IsSetB()  &&
+        s_IsSameBioseq(point.GetId(), bond.GetB().GetId(), scope)  &&
+        bond.GetB().GetPoint() == point.GetPoint()) {
+        ++count;
+    }
+
+    switch ( count ) {
+    case 1:
+        if ( bond.IsSetB() ) {
+            // The second point of the bond is set -- overlap
+            return CSeq_loc::eOverlap;
+            // The second point of the bond is not set -- same
+        } else {
+            return CSeq_loc::eSame;
+        }
+    case 2:
+        // Unlikely case -- can happen if both points of the bond are the same
+        return CSeq_loc::eSame;
+    default:
+        // All that's left is no overlap
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare packed point with an interval
+inline CSeq_loc::ECompare s_Compare
+(const CPacked_seqpnt& points,
+ const CSeq_interval&  interval,
+ CScope*               scope)
+{
+    // If points and interval are from same bioseq and some points are
+    // in interval, then overlap. If all points are in interval, then
+    // contained. Else, no overlap.
+    if ( s_IsSameBioseq(points.GetId(), interval.GetId(), scope) ) {
+        bool got_one    = false;
+        bool missed_one = false;
+        int from = interval.GetFrom();
+        int to   = interval.GetTo();
+
+        // This loop will only be executed if points.GetPoints().size() > 0
+        iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+            if (from <= *it  &&  to >= *it) {
+                got_one = true;
+            } else {
+                missed_one = true;
+            }
+            if (got_one  &&  missed_one) {
+                break;
+            }
+        }
+
+        if ( !got_one ) {
+            return CSeq_loc::eNoOverlap;
+        } else if ( missed_one ) {
+            return CSeq_loc::eOverlap;
+        } else {
+            return CSeq_loc::eContained;
+        }
+    }
+
+    return CSeq_loc::eNoOverlap;
+}
+
+
+// Compare two packed points
+inline CSeq_loc::ECompare s_Compare
+(const CPacked_seqpnt& pntsA,
+ const CPacked_seqpnt& pntsB,
+ CScope*               scope)
+{
+    if ( !s_IsSameBioseq(pntsA.GetId(), pntsB.GetId(), scope) ) {
+        return CSeq_loc::eNoOverlap;
+    }
+
+    const CSeq_loc::TPoints& pointsA = pntsA.GetPoints();
+    const CSeq_loc::TPoints& pointsB = pntsB.GetPoints();
+
+    // Check for equality. Note order of points is significant
+    if (pointsA.size() == pointsB.size()) {
+        CSeq_loc::TPoints::const_iterator iA = pointsA.begin();
+        CSeq_loc::TPoints::const_iterator iB = pointsB.begin();
+        bool check_containtment = false;
+        // This loop will only be executed if pointsA.size() > 0
+        while (iA != pointsA.end()) {
+            if (*iA != *iB) {
+                check_containtment = true;
+                break;
+            }
+            ++iA;
+            ++iB;
+        }
+
+        if ( !check_containtment ) {
+            return CSeq_loc::eSame;
+        }
+    }
+
+    // Check for containment
+    unsigned int hits = 0;
+    // This loop will only be executed if pointsA.size() > 0
+    iterate(CSeq_loc::TPoints, iA, pointsA) {
+        iterate(CSeq_loc::TPoints, iB, pointsB) {
+            hits += (*iA == *iB) ? 1 : 0;
+        }
+    }
+    if (hits == pointsA.size()) {
+        return CSeq_loc::eContained;
+    } else if (hits == pointsB.size()) {
+        return CSeq_loc::eContains;
+    } else if (hits == 0) {
+        return CSeq_loc::eNoOverlap;
+    } else {
+        return CSeq_loc::eOverlap;
+    }
+}
+
+
+// Compare packed point with bond
+CSeq_loc::ECompare s_Compare
+(const CPacked_seqpnt& points,
+ const CSeq_bond&      bond,
+ CScope*               scope)
+{
+    // If all set bond points (can be just 1) are in points, then contains. If
+    // one, but not all bond points in points, then overlap, else, no overlap
+    const CSeq_point& bondA = bond.GetA();
+    CSeq_loc::ECompare cmp = CSeq_loc::eNoOverlap;
+
+    // Check for containment of the first residue in the bond
+    if ( s_IsSameBioseq(points.GetId(), bondA.GetId(), scope) ) {
+        int pntA = bondA.GetPoint();
+
+        // This loop will only be executed if points.GetPoints().size() > 0
+        iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+            if (pntA == *it) {
+                cmp = CSeq_loc::eContains;
+                break;
+            }
+        }
+    }
+
+    // Check for containment of the second residue of the bond if it exists
+    if ( !bond.IsSetB() ) {
+        return cmp;
+    }
+
+    const CSeq_point& bondB = bond.GetB();
+    if ( !s_IsSameBioseq(points.GetId(), bondB.GetId(), scope) ) {
+        return cmp;
+    }
+
+    int pntB = bondB.GetPoint();
+    // This loop will only be executed if points.GetPoints().size() > 0
+    iterate(CSeq_loc::TPoints, it, points.GetPoints()) {
+        if (pntB == *it) {
+            if (cmp == CSeq_loc::eContains) {
+                return CSeq_loc::eContains;
+            } else {
+                return CSeq_loc::eOverlap;
+            }
+        }
+    }
+
+    return cmp == CSeq_loc::eContains ? CSeq_loc::eOverlap : cmp;
+}
+
+
+// Compare a bond with a bond
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_bond& bndA,
+ const CSeq_bond& bndB,
+ CScope*          scope)
+{
+    // Performs two comparisons. First comparison is comparing the a points
+    // of each bond and the b points of each bond. The second comparison
+    // compares point a of bndA with point b of bndB and point b of bndA
+    // with point a of bndB. The best match is used.
+    CSeq_loc::ECompare cmp1, cmp2;
+    int div = static_cast<int> (CSeq_loc::eSame);
+
+    // Compare first points in each bond
+    cmp1 = s_Compare(bndA.GetA(), bndB.GetA(), scope);
+
+    // Compare second points in each bond if both exist
+    if (bndA.IsSetB()  &&  bndB.IsSetB() ) {
+        cmp2 = s_Compare(bndA.GetB(), bndB.GetB(), scope);
+    } else {
+        cmp2 = CSeq_loc::eNoOverlap;
+    }
+    int count1 = (static_cast<int> (cmp1) + static_cast<int> (cmp2)) / div;
+
+    // Compare point A of bndA with point B of bndB (if it exists)
+    if ( bndB.IsSetB() ) {
+        cmp1 = s_Compare(bndA.GetA(), bndB.GetB(), scope);
+    } else {
+        cmp1 = CSeq_loc::eNoOverlap;
+    }
+
+    // Compare point B of bndA (if it exists) with point A of bndB.
+    if ( bndA.IsSetB() ) {
+        cmp2 = s_Compare(bndA.GetB(), bndB.GetA(), scope);
+    } else {
+        cmp2 = CSeq_loc::eNoOverlap;
+    }
+    int count2 = (static_cast<int> (cmp1) + static_cast<int> (cmp2)) / div;
+
+    // Determine best match
+    int count = (count1 > count2) ? count1 : count2;
+
+    // Return based upon count in the obvious way
+    switch ( count ) {
+    case 1:
+        if (!bndA.IsSetB()  &&  !bndB.IsSetB()) {
+            return CSeq_loc::eSame;
+        } else if ( !bndB.IsSetB() ) {
+            return CSeq_loc::eContains;
+        } else if ( !bndA.IsSetB() ) {
+            return CSeq_loc::eContained;
+        } else {
+            return CSeq_loc::eOverlap;
+        }
+    case 2:
+        return CSeq_loc::eSame;
+    default:
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+
+// Compare an interval with a whole sequence
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_interval& interval,
+ const CSeq_id&       id,
+ CScope*              scope)
+{
+    // Return the complement of comparing id with interval
+    return s_Complement(s_Compare(id, interval, scope));
+}
+
+
+// Compare an interval with a packed point
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_interval&  interval,
+ const CPacked_seqpnt& packed,
+ CScope*               scope)
+{
+    // Return the complement of comparing packed points and an interval
+    return s_Complement(s_Compare(packed, interval, scope));
+}
+
+
+// Compare a Packed Interval with one of Whole, Interval, Point,
+// Packed Point, or Bond.
+template <class T>
+CSeq_loc::ECompare s_Compare
+(const CPacked_seqint& intervals,
+ const T&              slt,
+ CScope*               scope)
+{
+    // Check that intervals is not empty
+    if(intervals.Get().size() == 0) {
+        return CSeq_loc::eNoOverlap;
+    }
+
+    CSeq_loc::ECompare cmp1 , cmp2;
+    CSeq_loc::TIntervals::const_iterator it = intervals.Get().begin();
+    cmp1 = s_Compare(**it, slt, scope);
+
+    // This loop will be executed only if intervals.Get().size() > 1
+    for (++it;  it != intervals.Get().end();  ++it) {
+        cmp2 = s_Compare(**it, slt, scope);
+        cmp1 = static_cast<CSeq_loc::ECompare> (s_RetA[cmp1][cmp2]);
+    }
+    return cmp1;
+}
+
+
+// Compare one of Whole, Interval, Point, Packed Point, or Bond with a
+// Packed Interval.
+template <class T>
+CSeq_loc::ECompare s_Compare
+(const T&              slt,
+ const CPacked_seqint& intervals,
+ CScope*               scope)
+{
+    // Check that intervals is not empty
+    if(intervals.Get().size() == 0) {
+        return CSeq_loc::eNoOverlap;
+    }
+
+    CSeq_loc::ECompare cmp1 , cmp2;
+    CSeq_loc::TIntervals::const_iterator it = intervals.Get().begin();
+    cmp1 = s_Compare(slt, **it, scope);
+
+    // This loop will be executed only if intervals.Get().size() > 1
+    for (++it;  it != intervals.Get().end();  ++it) {
+        cmp2 = s_Compare(slt, **it, scope);
+        cmp1 = static_cast<CSeq_loc::ECompare> (s_RetB[cmp1][cmp2]);
+    }
+    return cmp1;
+}
+
+
+// Compare a CSeq_loc and a CSeq_interval. Used by s_Compare_Help below
+// when comparing list<CRef<CSeq_loc>> with list<CRef<CSeq_interval>>.
+// By wrapping the CSeq_interval in a CSeq_loc, s_Compare(const CSeq_loc&,
+// const CSeq_loc&, CScope*) can be called. This permits CPacked_seqint type
+// CSeq_locs to be treated the same as CSeq_loc_mix and CSeq_loc_equiv type
+// CSeq_locs
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_loc&      sl,
+ const CSeq_interval& si,
+ CScope*              scope)
+{
+    CRef<CSeq_interval> cr(const_cast<CSeq_interval*>(&si));
+    CSeq_loc nsl;
+    nsl.SetInt(cr);
+    return s_Compare(sl, nsl, scope);
+}
+
+
+// Compare a CSeq_interval and a CSeq_loc. Used by s_Compare_Help below
+// when comparing TLocations with TIntervals. By
+// wrapping the CSeq_interval in a CSeq_loc, s_Compare(const CSeq_loc&,
+// const CSeq_loc&, CScope*) can be called. This permits CPacked_seqint type
+// CSeq_locs to be treated the same as CSeq_loc_mix and CSeq_loc_equiv type
+// CSeq_locs
+inline CSeq_loc::ECompare s_Compare
+(const CSeq_interval& si,
+ const CSeq_loc&      sl,
+ CScope*              scope)
+{
+    CRef<CSeq_interval> cr(const_cast<CSeq_interval*>(&si));
+    CSeq_loc nsl;
+    nsl.SetInt(cr);
+    return s_Compare(nsl, sl, scope);
+}
+
+
+// Called by s_Compare() below for <CSeq_loc, CSeq_loc>,
+// <CSeq_loc, CSeq_interval>, <CSeq_interval, CSeq_loc>, and
+// <CSeq_interval, CSeq_interval>
+template <class T1, class T2>
+CSeq_loc::ECompare s_Compare_Help
+(const list<CRef<T1> >& mec,
+ const list<CRef<T2> >& youc,
+ const CSeq_loc&        you,
+ CScope*                scope)
+{
+    // If either mec or youc is empty, return eNoOverlap
+    if(mec.size() == 0 || youc.size() == 0) {
+        return CSeq_loc::eNoOverlap;
+    }
+
+    list<CRef<T1> >::const_iterator mit = mec.begin();
+    list<CRef<T2> >::const_iterator yit = youc.begin();
+    CSeq_loc::ECompare cmp1, cmp2;
+
+    // Check for equality of the lists. Note, order of the lists contents are
+    // significant
+    if (mec.size() == youc.size()) {
+        bool check_contained = false;
+
+        for ( ;  mit != mec.end()  &&  yit != youc.end();  ++mit, ++yit) {
+            if (s_Compare(**mit, ** yit, scope) != CSeq_loc::eSame) {
+                check_contained = true;
+                break;
+            }
+        }
+
+        if ( !check_contained ) {
+            return CSeq_loc::eSame;
+        }
+    }
+
+    // Check if mec contained in youc
+    mit = mec.begin();
+    yit = youc.begin();
+    bool got_one = false;
+    while (mit != mec.end()  &&  yit != youc.end()) {
+        cmp1 = s_Compare(**mit, **yit, scope);
+        switch ( cmp1 ) {
+        case CSeq_loc::eNoOverlap:
+            ++yit;
+            break;
+        case CSeq_loc::eSame:
+            ++mit;
+            ++yit;
+            got_one = true;
+            break;
+        case CSeq_loc::eContained:
+            ++mit;
+            got_one = true;
+            break;
+        default:
+            got_one = true;
+            // artificial trick -- just to get out the loop "prematurely"
+            yit = youc.end();
+        }
+    }
+    if (mit == mec.end()) {
+        return CSeq_loc::eContained;
+    }
+
+    // Check if mec contains youc
+    mit = mec.begin();
+    yit = youc.begin();
+    while (mit != mec.end()  &&  yit != youc.end() ) {
+        cmp1 = s_Compare(**yit, **mit, scope);
+        switch ( cmp1 ) {
+        case CSeq_loc::eNoOverlap:
+            ++mit;
+            break;
+        case CSeq_loc::eSame:
+            ++mit;
+            ++yit;
+            got_one = true;
+            break;
+        case CSeq_loc::eContained:
+            ++yit;
+            got_one = true;
+            break;
+        default:
+            got_one = true;
+            // artificial trick -- just to get out the loop "prematurely"
+            mit = mec.end();
+        }
+    }
+    if (yit == youc.end()) {
+        return CSeq_loc::eContains;
+    }
+
+    // Check for overlap of mec and youc
+    if ( got_one ) {
+        return CSeq_loc::eOverlap;
+    }
+    mit = mec.begin();
+    cmp1 = s_Compare(**mit, you, scope);
+    for (++mit;  mit != mec.end();  ++mit) {
+        cmp2 = s_Compare(**mit, you, scope);
+        cmp1 = static_cast<CSeq_loc::ECompare> (s_RetA[cmp1][cmp2]);
+    }
+    return cmp1;
+}
+
+
+// Compares two Seq-locs
+CSeq_loc::ECompare s_Compare
+(const CSeq_loc& me,
+ const CSeq_loc& you,
+ CScope*         scope)
+{
+    // Handle the case where me is one of e_Mix, e_Equiv, e_Packed_int
+    switch ( me.Which() ) {
+    case CSeq_loc::e_Mix:
+    case CSeq_loc::e_Equiv: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Mix:
+        case CSeq_loc::e_Equiv: {
+            const CSeq_loc::TLocations& pmc = (me.Which() == CSeq_loc::e_Mix) ?
+                me.GetMix().Get() : me.GetEquiv().Get();
+            const CSeq_loc::TLocations& pyc = (you.Which() ==CSeq_loc::e_Mix) ?
+                you.GetMix().Get() : you.GetEquiv().Get();
+            return s_Compare_Help(pmc, pyc, you, scope);
+        }
+        case CSeq_loc::e_Packed_int: {
+            const CSeq_loc::TLocations& pmc = (me.Which() == CSeq_loc::e_Mix) ?
+                me.GetMix().Get() : me.GetEquiv().Get();
+            const CSeq_loc::TIntervals& pyc = you.GetPacked_int().Get();
+            return s_Compare_Help(pmc,pyc, you, scope);
+        }
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Whole:
+        case CSeq_loc::e_Int:
+        case CSeq_loc::e_Pnt:
+        case CSeq_loc::e_Packed_pnt:
+        case CSeq_loc::e_Bond:
+        case CSeq_loc::e_Feat: {
+            const CSeq_loc::TLocations& pmec =
+                (me.Which() == CSeq_loc::e_Mix) ?
+                me.GetMix().Get() : me.GetEquiv().Get();
+
+            //Check that pmec is not empty
+            if(pmec.size() == 0) {
+                return CSeq_loc::eNoOverlap;
+            }
+
+            CSeq_loc::TLocations::const_iterator mit = pmec.begin();
+            CSeq_loc::ECompare cmp1, cmp2;
+            cmp1 = s_Compare(**mit, you, scope);
+
+            // This loop will only be executed if pmec.size() > 1
+            for (++mit;  mit != pmec.end();  ++mit) {
+                cmp2 = s_Compare(**mit, you, scope);
+                cmp1 = static_cast<CSeq_loc::ECompare> (s_RetA[cmp1][cmp2]);
+            }
+            return cmp1;
+        }
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Packed_int: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Mix:
+        case CSeq_loc::e_Equiv: {
+            const CSeq_loc::TLocations& pyc = (you.Which()==CSeq_loc::e_Mix) ?
+                you.GetMix().Get() : you.GetEquiv().Get();
+            const CSeq_loc::TIntervals& pmc = me.GetPacked_int().Get();
+            return s_Compare_Help(pmc,pyc, you, scope);
+        }
+        case CSeq_loc::e_Packed_int: {
+            const CSeq_loc::TIntervals& mc = me.GetPacked_int().Get();
+            const CSeq_loc::TIntervals& yc = you.GetPacked_int().Get();
+            return s_Compare_Help(mc, yc, you, scope);
+        }
+        default:
+            // All other cases are handled below
+            break;
+        }
+    }
+    default:
+        // All other cases are handled below
+        break;
+    }
+
+    // Note, at this point, me is not one of e_Mix or e_Equiv
+    switch ( you.Which() ) {
+    case CSeq_loc::e_Mix:
+    case CSeq_loc::e_Equiv: {
+        const CSeq_loc::TLocations& pyouc = (you.Which() == CSeq_loc::e_Mix) ?
+            you.GetMix().Get() : you.GetEquiv().Get();
+
+        // Check that pyouc is not empty
+        if(pyouc.size() == 0) {
+            return CSeq_loc::eNoOverlap;
+        }
+
+        CSeq_loc::TLocations::const_iterator yit = pyouc.begin();
+        CSeq_loc::ECompare cmp1, cmp2;
+        cmp1 = s_Compare(me, **yit, scope);
+
+        // This loop will only be executed if pyouc.size() > 1
+        for (++yit;  yit != pyouc.end();  ++yit) {
+            cmp2 = s_Compare(me, **yit, scope);
+            cmp1 = static_cast<CSeq_loc::ECompare> (s_RetB[cmp1][cmp2]);
+        }
+        return cmp1;
+    }
+    // All other cases handled below
+    default:
+        break;
+    }
+
+    switch ( me.Which() ) {
+    case CSeq_loc::e_Null: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Null:
+            return CSeq_loc::eSame;
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Empty: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Empty:
+            if ( s_IsSameBioseq(me.GetEmpty(), you.GetEmpty(), scope) ) {
+                return CSeq_loc::eSame;
+            } else {
+                return CSeq_loc::eNoOverlap;
+            }
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Packed_int: {
+        // Comparison of two e_Packed_ints is handled above
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Whole:
+            return s_Compare(me.GetPacked_int(), you.GetWhole(), scope);
+        case CSeq_loc::e_Int:
+            return s_Compare(me.GetPacked_int(), you.GetInt(), scope);
+        case CSeq_loc::e_Pnt:
+            return s_Compare(me.GetPacked_int(), you.GetPnt(), scope);
+        case CSeq_loc::e_Packed_pnt:
+            return s_Compare(me.GetPacked_int(), you.GetPacked_pnt(), scope);
+        case CSeq_loc::e_Bond:
+            return s_Compare(me.GetPacked_int(), you.GetBond(), scope);
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Whole: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Whole:
+            return s_Compare(me.GetWhole(), you.GetWhole(), scope);
+        case CSeq_loc::e_Bond:
+            return s_Compare(me.GetWhole(), you.GetBond(), scope);
+        case CSeq_loc::e_Int:
+            return s_Compare(me.GetWhole(), you.GetInt(), scope);
+        case CSeq_loc::e_Pnt:
+            return s_Compare(me.GetWhole(), you.GetPnt(), scope);
+        case CSeq_loc::e_Packed_pnt:
+            return s_Compare(me.GetWhole(), you.GetPacked_pnt(), scope);
+        case CSeq_loc::e_Packed_int:
+            return s_Compare(me.GetWhole(), you.GetPacked_int(), scope);
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Int: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Whole:
+            return s_Compare(me.GetInt(), you.GetWhole(), scope);
+        case CSeq_loc::e_Bond:
+            return s_Compare(me.GetInt(), you.GetBond(), scope);
+        case CSeq_loc::e_Int:
+            return s_Compare(me.GetInt(), you.GetInt(), scope);
+        case CSeq_loc::e_Pnt:
+            return s_Compare(me.GetInt(), you.GetPnt(), scope);
+        case CSeq_loc::e_Packed_pnt:
+            return s_Compare(me.GetInt(), you.GetPacked_pnt(), scope);
+        case CSeq_loc::e_Packed_int:
+            return s_Compare(me.GetInt(), you.GetPacked_int(), scope);
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Pnt: {
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Whole:
+            return s_Complement(s_Compare(you.GetWhole(), me.GetPnt(), scope));
+        case CSeq_loc::e_Int:
+            return s_Compare(me.GetPnt(), you.GetInt(), scope);
+        case CSeq_loc::e_Pnt:
+            return s_Compare(me.GetPnt(), you.GetPnt(), scope);
+        case CSeq_loc::e_Packed_pnt:
+            return s_Compare(me.GetPnt(), you.GetPacked_pnt(), scope);
+        case CSeq_loc::e_Bond:
+            return s_Compare(me.GetPnt(), you.GetBond(), scope);
+        case CSeq_loc::e_Packed_int:
+            return s_Compare(me.GetPnt(), you.GetPacked_int(), scope);
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Packed_pnt: {
+        const CPacked_seqpnt& packed = me.GetPacked_pnt();
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Whole:
+            return s_Complement(s_Compare(you.GetWhole(), packed, scope));
+        case CSeq_loc::e_Int:
+            return s_Compare(packed, you.GetInt(), scope);
+        case CSeq_loc::e_Pnt:
+            return s_Complement(s_Compare(you.GetPnt(), packed, scope));
+        case CSeq_loc::e_Packed_pnt:
+            return s_Compare(packed, you.GetPacked_pnt(),scope);
+        case CSeq_loc::e_Bond:
+            return s_Compare(packed, you.GetBond(), scope);
+        case CSeq_loc::e_Packed_int:
+            return s_Compare(me.GetPacked_pnt(), you.GetPacked_int(), scope);
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    case CSeq_loc::e_Bond: {
+        const CSeq_bond& bnd = me.GetBond();
+        switch ( you.Which() ) {
+        case CSeq_loc::e_Whole:
+            return s_Complement(s_Compare(you.GetWhole(), bnd, scope));
+        case CSeq_loc::e_Bond:
+            return s_Compare(bnd, you.GetBond(), scope);
+        case CSeq_loc::e_Int:
+            return s_Compare(bnd, you.GetInt(), scope);
+        case CSeq_loc::e_Packed_pnt:
+            return s_Complement(s_Compare(you.GetPacked_pnt(), bnd, scope));
+        case CSeq_loc::e_Pnt:
+            return s_Complement(s_Compare(you.GetPnt(), bnd, scope));
+        case CSeq_loc::e_Packed_int:
+            return s_Complement(s_Compare(you.GetPacked_int(), bnd, scope));
+        default:
+            return CSeq_loc::eNoOverlap;
+        }
+    }
+    default:
+        return CSeq_loc::eNoOverlap;
+    }
+}
+
+END_SEQLOC_ANONYMOUS_NAMESPACE
+
+
+CSeq_loc::ECompare CSeq_loc::Compare
+(const CSeq_loc& seqloc,
+ CScope*         scope)
+    const
+{
+    return s_Compare(*this, seqloc, scope);
+}
+
+
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
