@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/01/17 20:52:35  grichenk
+* Fixed another bug in long binary tags processing
+*
 * Revision 1.64  2002/01/14 17:58:11  grichenk
 * Fixed long tags processing
 *
@@ -546,7 +549,7 @@ void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
     for ( SIZE_TYPE i = 0; i <= last; ++i ) {
         char c = tag[i];
         _ASSERT( (c & 0x80) == 0 );
-        if ( i == last )
+        if ( i != last )
             c |= 0x80;
         WriteByte(c);
     }

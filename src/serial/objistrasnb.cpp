@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2002/01/17 20:52:35  grichenk
+* Fixed another bug in long binary tags processing
+*
 * Revision 1.55  2002/01/14 17:58:11  grichenk
 * Fixed long tags processing
 *
@@ -382,7 +385,7 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
     string name;
     size_t i = 1;
     Uint1 c;
-    while ( ((c = PeekTagByte(i++)) & 0x80) == 0 ) {
+    while ( ((c = PeekTagByte(i++)) & 0x80) != 0 ) {
         name += char(c);
         if ( i > 1024 ) {
             ThrowError(eOverflow, "tag number is too big");
@@ -413,7 +416,7 @@ Uint1 CObjectIStreamAsnBinary::PeekAnyTag(void)
             ThrowError(eOverflow, "tag number is too big");
         }
         byte = PeekTagByte(i++);
-    } while ( (byte & 0x80) == 0 );
+    } while ( (byte & 0x80) != 0 );
     m_CurrentTagLength = i;
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagParsed;
