@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/20 21:00:18  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.21  1999/12/17 19:05:19  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -63,11 +66,12 @@
 #include "filecode.hpp"
 #include "generate.hpp"
 #include "exceptions.hpp"
+#include "fileutil.hpp"
 
 USING_NCBI_SCOPE;
 
 CCodeGenerator::CCodeGenerator(void)
-    : m_ExcludeRecursion(false)
+    : m_ExcludeRecursion(false), m_HeadersDirNameSource(eFromNone)
 {
 	m_MainFiles.SetModuleContainer(this);
 	m_ImportFiles.SetModuleContainer(this); 
@@ -77,14 +81,40 @@ CCodeGenerator::~CCodeGenerator(void)
 {
 }
 
+const CNcbiRegistry& CCodeGenerator::GetConfig(void) const
+{
+    return m_Config;
+}
+
 const string& CCodeGenerator::GetSourceFileName(void) const
 {
     return NcbiEmptyString;
 }
 
-const CNcbiRegistry& CCodeGenerator::GetConfig(void) const
+const string& CCodeGenerator::GetHeadersPrefix(void) const
 {
-    return m_Config;
+    return m_HeadersDirPrefix;
+}
+
+void CCodeGenerator::SetHeadersDirPrefix(const string& prefix)
+{
+    m_HeadersDirPrefix = prefix;
+}
+
+EHeadersDirNameSource CCodeGenerator::GetHeadersDirNameSource(void) const
+{
+    return m_HeadersDirNameSource;
+}
+
+void CCodeGenerator::SetHeadersDirNameSource(EHeadersDirNameSource source)
+{
+    m_HeadersDirNameSource = source;
+}
+
+CDataType* CCodeGenerator::InternalResolve(const string& module,
+                                           const string& name) const
+{
+    return ExternalResolve(module, name);
 }
 
 void CCodeGenerator::LoadConfig(const string& fileName)
@@ -99,12 +129,6 @@ void CCodeGenerator::LoadConfig(const string& fileName)
             ERR_POST(Fatal << "cannot open file " << fileName);
         m_Config.Read(in);
     }
-}
-
-CDataType* CCodeGenerator::InternalResolve(const string& module,
-                                           const string& name) const
-{
-    return ExternalResolve(module, name);
 }
 
 CDataType* CCodeGenerator::ExternalResolve(const string& module,
@@ -207,7 +231,7 @@ void CCodeGenerator::IncludeTypes(const string& typeList)
 }
 
 static inline
-string MkDir(const string& s)
+string MkDirName(const string& s)
 {
     SIZE_TYPE length = s.size();
     if ( length == 0 || s[length-1] == '/' )
@@ -218,9 +242,8 @@ string MkDir(const string& s)
 
 void CCodeGenerator::GenerateCode(void)
 {
-    m_HeadersDir = MkDir(m_HeadersDir);
-    m_SourcesDir = MkDir(m_SourcesDir);
-    m_HeaderPrefix = MkDir(m_Config.Get("-", "headers_prefix"));
+    m_HeadersDir = MkDirName(m_HeadersDir);
+    m_SourcesDir = MkDirName(m_SourcesDir);
 
     // collect types
     iterate ( TTypeNames, ti, m_GenerateTypes ) {
@@ -242,7 +265,7 @@ void CCodeGenerator::GenerateCode(void)
         fileList << "GENFILES =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
-                fileList << ' ' << filei->first << "_Base";
+                fileList << ' ' << BaseName(filei->first) << "_Base";
             }
         }
         fileList << NcbiEndl;
@@ -250,7 +273,7 @@ void CCodeGenerator::GenerateCode(void)
         fileList << "GENUSERFILES =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
-                fileList << ' ' << filei->first;
+                fileList << ' ' << BaseName(filei->first);
             }
         }
         fileList << NcbiEndl;
@@ -262,7 +285,7 @@ bool CCodeGenerator::AddType(const CDataType* type)
     string fileName = type->FileName();
     AutoPtr<CFileCode>& file = m_Files[fileName];
     if ( !file )
-        file = new CFileCode(fileName, m_HeaderPrefix);
+        file = new CFileCode(fileName);
     return file->AddType(type);
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/20 21:00:17  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.5  1999/12/03 21:42:12  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -50,8 +53,8 @@
 #include "type.hpp"
 #include <typeinfo>
 
-CFileCode::CFileCode(const string& baseName, const string& headerPrefix)
-    : m_BaseName(baseName), m_HeaderPrefix(headerPrefix)
+CFileCode::CFileCode(const string& baseName)
+    : m_BaseName(baseName)
 {
 }
 
@@ -61,12 +64,12 @@ CFileCode::~CFileCode(void)
 
 string CFileCode::GetHPPName(void) const
 {
-    return GetHeaderPrefix() + GetFileBaseName() + "_Base.hpp";
+    return GetFileBaseName() + "_Base.hpp";
 }
 
 string CFileCode::GetUserHPPName(void) const
 {
-    return GetHeaderPrefix() + GetFileBaseName() + ".hpp";
+    return GetFileBaseName() + ".hpp";
 }
 
 string CFileCode::GetCPPName(void) const
@@ -113,7 +116,7 @@ string CFileCode::Include(const string& s) const
     case '"':
         return s;
     default:
-        return '<' + GetHeaderPrefix() + s + ".hpp>";
+        return '<' + s + ".hpp>";
     }
 }
 

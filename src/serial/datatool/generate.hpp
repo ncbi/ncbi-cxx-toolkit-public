@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/12/20 21:00:18  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.8  1999/12/09 20:01:23  vasilche
 * Fixed bug with missed internal classes.
 *
@@ -101,6 +104,10 @@ public:
     // generation interface
     const CNcbiRegistry& GetConfig(void) const;
     const string& GetSourceFileName(void) const;
+    const string& GetHeadersPrefix(void) const;
+    void SetHeadersDirPrefix(const string& prefix);
+    EHeadersDirNameSource GetHeadersDirNameSource(void) const;
+    void SetHeadersDirNameSource(EHeadersDirNameSource source);
     CDataType* InternalResolve(const string& moduleName,
                                const string& typeName) const;
 
@@ -135,7 +142,8 @@ private:
     string m_FileListFileName;
     string m_HeadersDir;
     string m_SourcesDir;
-    string m_HeaderPrefix;
+    string m_HeadersDirPrefix;
+    EHeadersDirNameSource m_HeadersDirNameSource;
 
     TOutputFiles m_Files;
 };

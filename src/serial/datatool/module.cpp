@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/20 21:00:19  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.12  1999/11/22 21:04:49  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
@@ -47,6 +50,7 @@
 #include "moduleset.hpp"
 #include "exceptions.hpp"
 #include "type.hpp"
+#include "fileutil.hpp"
 
 CDataTypeModule::CDataTypeModule(const string& n)
     : m_Errors(false), m_Name(n), m_ModuleContainer(0)
@@ -223,6 +227,19 @@ CDataType* CDataTypeModule::InternalResolve(const string& typeName) const
 const string& CDataTypeModule::GetSourceFileName(void) const
 {
     return GetModuleContainer().GetSourceFileName();
+}
+
+string CDataTypeModule::GetHeadersPrefix(void) const
+{
+    const string& prefix = GetModuleContainer().GetHeadersPrefix();
+    switch ( GetModuleContainer().GetHeadersDirNameSource() ) {
+    case eFromSourceFileName:
+        return Path(prefix, BaseName(GetSourceFileName()));
+    case eFromModuleName:
+        return Path(prefix, GetName());
+    default:
+        return prefix;
+    }
 }
 
 const string& CDataTypeModule::GetVar(const string& section,

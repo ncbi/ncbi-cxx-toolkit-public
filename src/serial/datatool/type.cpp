@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/12/20 21:00:19  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.34  1999/12/08 19:06:24  vasilche
 * Fixed uninitialized variable.
 *
@@ -61,6 +64,7 @@
 #include "reftype.hpp"
 #include "unitype.hpp"
 #include "choicetype.hpp"
+#include "fileutil.hpp"
 
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
@@ -285,7 +289,7 @@ string CDataType::FileName(void) const
     if ( parent ) {
         return parent->FileName() + "_M";
     }
-    return Identifier(m_MemberName);
+    return Path(GetModule()->GetHeadersPrefix(), Identifier(m_MemberName));
 }
 
 string CDataType::Namespace(void) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/12/20 21:00:19  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.9  1999/11/19 15:48:10  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -63,19 +66,31 @@ class CModuleContainer;
 class CModuleSet;
 class CFileSet;
 
+enum EHeadersDirNameSource {
+    eFromNone,
+    eFromSourceFileName,
+    eFromModuleName
+};
+
 class CModuleContainer
 {
 public:
     typedef map<string, AutoPtr<CDataTypeModule> > TModules;
 
+    CModuleContainer(void);
     virtual ~CModuleContainer(void);
 
-    virtual const CNcbiRegistry& GetConfig(void) const = 0;
-    virtual const string& GetSourceFileName(void) const = 0;
+    virtual const CNcbiRegistry& GetConfig(void) const;
+    virtual const string& GetSourceFileName(void) const;
+    virtual const string& GetHeadersPrefix(void) const;
+    virtual EHeadersDirNameSource GetHeadersDirNameSource(void) const;
     virtual CDataType* InternalResolve(const string& moduleName,
-                                       const string& typeName) const = 0;
+                                       const string& typeName) const;
 
-    
+	void SetModuleContainer(const CModuleContainer* parent);
+	const CModuleContainer& GetModuleContainer(void) const;
+private:
+    const CModuleContainer* m_Parent;
 };
 
 class CFileSet : public CModuleContainer
@@ -83,25 +98,7 @@ class CFileSet : public CModuleContainer
 public:
     typedef list< AutoPtr< CModuleSet > > TModuleSets;
 
-    CFileSet(void);
-	
-	const CModuleContainer& GetModuleContainer(void) const
-		{
-			_ASSERT(m_Parent != 0);
-			return *m_Parent;
-		}
-	void SetModuleContainer(const CModuleContainer* parent)
-		{
-			_ASSERT(m_Parent == 0 && parent != 0);
-			m_Parent = parent;
-		}
-
     void AddFile(const AutoPtr<CModuleSet>& moduleSet);
-
-    const CNcbiRegistry& GetConfig(void) const;
-    const string& GetSourceFileName(void) const;
-    CDataType* InternalResolve(const string& moduleName,
-                               const string& typeName) const;
 
     const TModuleSets& GetModuleSets(void) const
         {
@@ -124,7 +121,6 @@ public:
                                   bool allowInternal = false) const;
 
 private:
-    const CModuleContainer* m_Parent;
     TModuleSets m_ModuleSets;
 };
 
@@ -138,24 +134,14 @@ public:
 
     void PrintASN(CNcbiOstream& out) const;
 
-    const CNcbiRegistry& GetConfig(void) const;
     const string& GetSourceFileName(void) const;
 
     void AddModule(const AutoPtr<CDataTypeModule>& module);
-
-    const CModuleContainer& GetModuleContainer(void) const
-        {
-            _ASSERT(m_ModuleContainer != 0);
-            return *m_ModuleContainer;
-        }
 
     const TModules& GetModules(void) const
         {
             return m_Modules;
         }
-
-    CDataType* InternalResolve(const string& moduleName,
-                               const string& typeName) const;
 
     CDataType* ExternalResolve(const string& moduleName,
                                const string& typeName,
@@ -166,7 +152,6 @@ public:
 private:
     TModules m_Modules;
     string m_SourceFileName;
-    const CFileSet* m_ModuleContainer;
 
     friend class CFileSet;
 };

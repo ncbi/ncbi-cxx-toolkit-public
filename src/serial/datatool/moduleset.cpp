@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/20 21:00:19  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.13  1999/11/15 19:36:17  vasilche
 * Fixed warnings on GCC
 *
@@ -42,12 +45,55 @@
 #include "type.hpp"
 #include "exceptions.hpp"
 
+CModuleContainer::CModuleContainer(void)
+    : m_Parent(0)
+{
+}
+
 CModuleContainer::~CModuleContainer(void)
 {
 }
 
+void CModuleContainer::SetModuleContainer(const CModuleContainer* parent)
+{
+    _ASSERT(m_Parent == 0 && parent != 0);
+    m_Parent = parent;
+}
+
+const CModuleContainer& CModuleContainer::GetModuleContainer(void) const
+{
+    _ASSERT(m_Parent != 0);
+    return *m_Parent;
+}
+
+const CNcbiRegistry& CModuleContainer::GetConfig(void) const
+{
+    return GetModuleContainer().GetConfig();
+}
+
+const string& CModuleContainer::GetSourceFileName(void) const
+{
+    return GetModuleContainer().GetSourceFileName();
+}
+
+const string& CModuleContainer::GetHeadersPrefix(void) const
+{
+    return GetModuleContainer().GetHeadersPrefix();
+}
+
+EHeadersDirNameSource CModuleContainer::GetHeadersDirNameSource(void) const
+{
+    return GetModuleContainer().GetHeadersDirNameSource();
+}
+
+CDataType* CModuleContainer::InternalResolve(const string& module,
+                                             const string& type) const
+{
+    return GetModuleContainer().InternalResolve(module, type);
+}
+
 CModuleSet::CModuleSet(const string& name)
-    : m_SourceFileName(name), m_ModuleContainer(0)
+    : m_SourceFileName(name)
 {
 }
 
@@ -94,20 +140,9 @@ void CModuleSet::PrintASN(CNcbiOstream& out) const
     }
 }
 
-const CNcbiRegistry& CModuleSet::GetConfig(void) const
-{
-    return GetModuleContainer().GetConfig();
-}
-
 const string& CModuleSet::GetSourceFileName(void) const
 {
     return m_SourceFileName;
-}
-
-CDataType* CModuleSet::InternalResolve(const string& moduleName,
-                                       const string& typeName) const
-{
-    return GetModuleContainer().InternalResolve(moduleName, typeName);
 }
 
 CDataType* CModuleSet::ExternalResolve(const string& moduleName,
@@ -152,31 +187,10 @@ CDataType* CModuleSet::ResolveInAnyModule(const string& typeName,
     }
 }
 
-CFileSet::CFileSet(void)
-    : m_Parent(0)
-{
-}
-
 void CFileSet::AddFile(const AutoPtr<CModuleSet>& moduleSet)
 {
-    moduleSet->m_ModuleContainer = this;
+    moduleSet->SetModuleContainer(this);
     m_ModuleSets.push_back(moduleSet);
-}
-
-const CNcbiRegistry& CFileSet::GetConfig(void) const
-{
-    return GetModuleContainer().GetConfig();
-}
-
-const string& CFileSet::GetSourceFileName(void) const
-{
-    return GetModuleContainer().GetSourceFileName();
-}
-
-CDataType* CFileSet::InternalResolve(const string& module,
-                                     const string& type) const
-{
-    return GetModuleContainer().InternalResolve(module, type);
 }
 
 void CFileSet::PrintASN(CNcbiOstream& out) const

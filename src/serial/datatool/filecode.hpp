@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/20 21:00:17  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.3  1999/11/19 15:48:10  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -59,7 +62,7 @@ public:
     typedef map<string, string> TForwards;
     typedef map<string, AutoPtr<CClassCode> > TClasses;
 
-    CFileCode(const string& baseName, const string& headerPrefix);
+    CFileCode(const string& baseName);
     ~CFileCode(void);
 
     bool AddType(const CDataType* type);

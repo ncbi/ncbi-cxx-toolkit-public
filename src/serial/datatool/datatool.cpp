@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/12/20 21:00:18  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.20  1999/12/01 17:36:26  vasilche
 * Fixed CHOICE processing.
 *
@@ -49,6 +52,7 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <memory>
+#include "fileutil.hpp"
 #include "parser.hpp"
 #include "lexer.hpp"
 #include "moduleset.hpp"
@@ -57,115 +61,6 @@
 #include "generate.hpp"
 
 USING_NCBI_SCOPE;
-
-class SourceFile
-{
-public:
-    SourceFile(const string& name, bool binary = false);
-    ~SourceFile(void);
-
-    operator CNcbiIstream&(void) const
-        {
-            return *m_StreamPtr;
-        }
-
-private:
-    CNcbiIstream* m_StreamPtr;
-    bool m_Open;
-};
-
-SourceFile::SourceFile(const string& name, bool binary)
-{
-    if ( name == "stdin" || name == "-" ) {
-        m_StreamPtr = &NcbiCin;
-        m_Open = false;
-    }
-    else {
-        m_StreamPtr = new CNcbiIfstream(name.c_str(),
-                                        binary?
-                                            IOS_BASE::in | IOS_BASE::binary:
-                                            IOS_BASE::in);
-        if ( !*m_StreamPtr ) {
-            delete m_StreamPtr;
-            m_StreamPtr = 0;
-            ERR_POST(Fatal << "cannot open file " << name);
-        }
-        m_Open = true;
-    }
-}
-
-SourceFile::~SourceFile(void)
-{
-    if ( m_Open ) {
-        delete m_StreamPtr;
-    }
-}
-
-class DestinationFile
-{
-public:
-    DestinationFile(const string& name, bool binary = false);
-    ~DestinationFile(void);
-
-    operator CNcbiOstream&(void) const
-        {
-            return *m_StreamPtr;
-        }
-
-private:
-    CNcbiOstream* m_StreamPtr;
-    bool m_Open;
-};
-
-DestinationFile::DestinationFile(const string& name, bool binary)
-{
-    if ( name == "stdout" || name == "-" ) {
-        m_StreamPtr = &NcbiCout;
-        m_Open = false;
-    }
-    else {
-        m_StreamPtr = new CNcbiOfstream(name.c_str(),
-                                        binary?
-                                            IOS_BASE::out | IOS_BASE::binary:
-                                            IOS_BASE::out);
-        if ( !*m_StreamPtr ) {
-            delete m_StreamPtr;
-            m_StreamPtr = 0;
-            ERR_POST(Fatal << "cannot open file " << name);
-        }
-        m_Open = true;
-    }
-}
-
-DestinationFile::~DestinationFile(void)
-{
-    if ( m_Open ) {
-        delete m_StreamPtr;
-    }
-}
-
-enum EFileType {
-    eNone,
-    eASNText,
-    eASNBinary,
-    eXMLText
-};
-
-struct FileInfo {
-    FileInfo(void)
-        : type(eNone)
-        { }
-    FileInfo(const string& n, EFileType t)
-        : name(n), type(t)
-        { }
-
-    operator bool(void) const
-        { return !name.empty(); }
-    operator const string&(void) const
-        { return name; }
-    string name;
-    EFileType type;
-};
 
 typedef pair<AnyType, TTypeInfo> TObject;
 
@@ -195,6 +90,8 @@ static void Help(void)
         "  -oh Directory for generated C++ headers [Directory] Optional" << NcbiEndl <<
         "  -oc Directory for generated C++ code [Directory] Optional" << NcbiEndl <<
         "  -of File for list of generated C++ files [File Out] Optional" << NcbiEndl <<
+        "  -or Generate .CPP/.HPP files in dirs by on module file name [prefix]" << NcbiEndl <<
+        "  -oR set root directory in NCBI C++ toolkit tree [root] [prefix]" << NcbiEndl <<
         "  -i  Ignore unresolved symbols Optional" << NcbiEndl;
 }
 
@@ -351,6 +248,21 @@ int main(int argc, const char*argv[])
                     break;
                 case 'c':
                     generator.SetSourcesDir(DirArgument(argv[++i]));
+                    break;
+                case 'r':
+                    generator.SetHeadersDirPrefix(StringArgument(argv[++i]));
+                    generator.SetHeadersDirNameSource(eFromSourceFileName);
+                    break;
+                case 'R':
+                    {
+                        string rootDir = DirArgument(argv[++i]);
+                        string subDir = StringArgument(argv[++i]);
+                        
+                        generator.SetHeadersDir(Path(rootDir, "include"));
+                        generator.SetSourcesDir(Path(rootDir, "src"));
+                        generator.SetHeadersDirPrefix(subDir);
+                        generator.SetHeadersDirNameSource(eFromSourceFileName);
+                    }
                     break;
                 case 'f':
                     generator.SetFileListFileName(FileOutArgument(argv[++i]));

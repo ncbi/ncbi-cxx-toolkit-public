@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/12/20 21:00:19  vasilche
+* Added generation of sources in different directories.
+*
 * Revision 1.11  1999/11/19 15:48:10  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -74,6 +77,7 @@ public:
 
     const string& GetVar(const string& section, const string& value) const;
     const string& GetSourceFileName(void) const;
+    string GetHeadersPrefix(void) const;
     
     void AddDefinition(const string& name, const AutoPtr<CDataType>& type);
     void AddExports(const TExports& exports);
