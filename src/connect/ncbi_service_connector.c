@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/05/03 16:37:09  lavr
+ * Flow control fixed in s_Open for firewall connection
+ *
  * Revision 6.16  2001/04/26 20:20:57  lavr
  * Default tags are explicilty used to differ from a Web browser
  *
@@ -532,12 +535,13 @@ static EIO_Status s_VT_Open
         
         ConnNetInfo_Destroy(net_info);
         
-        if (uuu->info->firewall)
-            break;
-        
-        if (!conn)
-            continue;
-        
+        if (!conn) {
+            if (uuu->info->firewall)
+                break;
+            else
+                continue;
+        }
+
         METACONN_Add(&uuu->meta, conn);
         conn->meta = meta;
         conn->next = meta->list;
