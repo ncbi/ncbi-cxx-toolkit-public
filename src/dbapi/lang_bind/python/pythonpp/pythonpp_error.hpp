@@ -38,7 +38,7 @@
 #ifdef _MSC_VER
 // disable warning C4005: macro redefinition.
 #pragma warning(disable: 4005)
-#else
+#endif
 
 #ifdef HAVE_GETHOSTBYNAME_R
 #undef HAVE_GETHOSTBYNAME_R
@@ -48,9 +48,18 @@
 #undef _POSIX_C_SOURCE
 #endif
 
+#include <Python.h>
+
+#ifdef HAVE_GETHOSTBYNAME_R
+#undef HAVE_GETHOSTBYNAME_R
 #endif
 
-#include <Python.h>
+#ifdef _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
+#endif
+
+#include <corelib/ncbistl.hpp>
+#include <corelib/ncbidbg.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -612,6 +621,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/27 19:17:10  ssikorsk
+* Fixed: compilation errors on Unix
+*
 * Revision 1.2  2005/01/27 18:50:03  ssikorsk
 * Fixed: a bug with transactions
 * Added: python 'transaction' object
