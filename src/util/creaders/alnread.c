@@ -4541,6 +4541,8 @@ s_AugmentOffsetList
     int           line_counter, forecast_position, line_skip;
     EBool         skipped_previous = eFalse;
     int           num_chars;
+    int           num_additional_offsets = 0;
+    int           max_additional_offsets = 5000; /* if it's that bad, forget it */
 
     if (list == NULL  ||  anchorpattern == NULL) {
         return offset_list;
@@ -4558,7 +4560,7 @@ s_AugmentOffsetList
     next_offset = offset_list;
     line_counter = 0;
     sip = list;
-    while (sip != NULL) {
+    while (sip != NULL  &&  num_additional_offsets < max_additional_offsets) {
         /* if we are somehow out of synch, don't get caught in infinite loop */
         if (next_offset != NULL  &&  line_counter > next_offset->ival) {
             next_offset = next_offset->next;
@@ -4576,6 +4578,7 @@ s_AugmentOffsetList
         } else if (skipped_previous) {
             line_skip = 0;
             while (sip != NULL  &&  line_skip < sip->num_appearances 
+                  &&  num_additional_offsets < max_additional_offsets
                   &&  (next_offset == NULL
                        ||  line_counter < next_offset->ival)) {
                 /* see if we can build a pattern that matches the pattern 
@@ -4587,6 +4590,7 @@ s_AugmentOffsetList
                                                      sip);
                 if (forecast_position > 0) {
                     new_offset = s_IntLinkNew (forecast_position, NULL);
+                    num_additional_offsets++;
                     if (new_offset == NULL) {
                         return NULL;
                     }
@@ -4627,6 +4631,11 @@ s_AugmentOffsetList
             line_counter += sip->num_appearances;
             sip = sip->next;
         }
+    }
+    if (num_additional_offsets >= max_additional_offsets)
+    {
+      s_IntLinkFree (offset_list);
+      offset_list = NULL;
     }
     return offset_list;
 }
@@ -5759,6 +5768,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/01/10 19:31:09  bollin
+ * limit how hard we will try to read a badly formatted alignment
+ *
  * Revision 1.15  2004/12/21 15:13:44  bollin
  * handle blocks of organism definition lines in NEXUS files that do not
  * separate the definition lines from the sequence data
