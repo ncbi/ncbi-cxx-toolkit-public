@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.26  2004/02/19 15:23:21  kholodov
+* Fixed: attempt to delete cached CDB_Result when it was already deleted by the CResultSet object
+*
 * Revision 1.25  2004/02/10 18:50:44  kholodov
 * Modified: made Move() method const
 *
@@ -362,7 +365,6 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
 void CResultSet::Close()
 {
     delete m_rs;
-    m_rs = 0;
     delete m_istr;
     m_istr = 0;
     delete m_ostr;

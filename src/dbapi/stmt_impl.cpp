@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2004/02/19 15:23:21  kholodov
+* Fixed: attempt to delete cached CDB_Result when it was already deleted by the CResultSet object
+*
 * Revision 1.12  2004/02/10 18:50:44  kholodov
 * Modified: made Move() method const
 *
@@ -234,6 +237,7 @@ int CStatement::GetRowCount()
 
 void CStatement::Close()
 {
+    delete m_rs;
     delete m_cmd;
     m_cmd = 0;
     m_rowCount = -1;
@@ -268,9 +272,16 @@ void CStatement::Action(const CDbapiEvent& e)
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
+        CResultSet *rs;
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
+        }
+        else if((rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
+            if( rs->GetCDB_Result() == m_rs ) {
+                _TRACE("Clearing cached CDB_Result " << (void*)rs); 
+                m_rs = 0;
+            }
         }
     }
 }
