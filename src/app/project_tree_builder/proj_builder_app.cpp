@@ -438,13 +438,16 @@ USING_NCBI_SCOPE;
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return GetApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return GetApp().AppMain(argc, argv, 0, eDS_Default);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/02/12 18:46:20  ivanov
+ * Removed extra argument from AppMain() call to autoload .ini file
+ *
  * Revision 1.16  2004/02/12 17:41:52  gorelenk
  * Implemented creation of MasterProject and ConfigureProject in different
  * folder.
