@@ -123,10 +123,26 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
+    unsigned seq_length = count;
 
     unsigned alpha_content = 0;
 
-    for (unsigned i = 0; i < count; ++i) {
+    unsigned int i = 0;
+    if (buf[0] == '>') { // FASTA ?
+        for (; buf[i] != '\n' && i < count; ++i) {
+            // skip the first line (presumed this is free-text information)
+            unsigned char ch = buf[i];
+            if (isalnum(ch) || isspace(ch)) {
+                ++alpha_content;
+            }
+        }
+        seq_length = count - i;
+        if (seq_length == 0) {
+            return eUnknown;   // No way to tell what format is this...
+        }
+    }
+
+    for (; i < count; ++i) {
         unsigned char ch = buf[i];
         char upch = toupper(ch);
 
@@ -139,10 +155,14 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         if (isProtein_Alphabet(upch)) {
             ++amino_acid_content;
         }
+        if (ch == '\n') {
+            ++alpha_content;
+            --seq_length;
+        }
     }
 
-    double dna_content = (double)ATGC_content / (double)count;
-    double prot_content = (double)amino_acid_content / (double)count;
+    double dna_content = (double)ATGC_content / (double)seq_length;
+    double prot_content = (double)amino_acid_content / (double)seq_length;
     double a_content = (double)alpha_content / (double)count;
     if (buf[0] == '>') {
         if (dna_content > 0.7 && a_content > 0.91) {
@@ -188,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/07 19:54:06  kuznets
+ * Improved format recognition of short fasta files
+ *
  * Revision 1.4  2003/06/20 20:58:04  kuznets
  * Cleaned up amino-acid alphabet recognition.
  *
