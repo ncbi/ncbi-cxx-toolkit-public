@@ -355,11 +355,12 @@ void x_MapObject(Map& info_map, const Ref& ref, const Info& info)
         info_map.insert(value_type(ref, info));
     if ( !ins.second ) {
         CNcbiOstrstream str;
-        str << "CDataSource::x_Map(): object already mapped: " <<
-            typeid(*ref).name() <<
-            " ref: " << NStr::PtrToString(ref.GetPointer()) <<
-            " ptr: " << NStr::PtrToString(info) <<
-            " was: " << NStr::PtrToString(ins.first->second);
+        str << "CDataSource::x_Map(): object already mapped:" <<
+            " " << typeid(typename Ref::TObjectType).name() <<
+            " ref: " << ref.GetPointerOrNull() <<
+            " " << typeid(typename Info::TObjectType).name() <<
+            " ptr: " << info.GetPointerOrNull() <<
+            " was: " << ins.first->second.GetPointerOrNull();
         NCBI_THROW(CObjMgrException, eOtherError,
                    CNcbiOstrstreamToString(str));
     }
