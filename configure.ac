@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.270 2004/02/09 16:36:45 ucko Exp $
+#  $Id: configure.ac,v 1.271 2004/02/10 20:22:52 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1159,7 +1159,7 @@ else
    STRIP=@:
 fi
 case "$host_os" in
-   irix* )
+   irix* | aix5.[2-9]* )
      # lorder and tsort exist but don't work.
      LORDER=echo
      TSORT=cat

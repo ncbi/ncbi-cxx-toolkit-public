@@ -4396,7 +4396,7 @@ else
    STRIP=@:
 fi
 case "$host_os" in
-   irix* )
+   irix* | aix5.[2-9]* )
      # lorder and tsort exist but don't work.
      LORDER=echo
      TSORT=cat
