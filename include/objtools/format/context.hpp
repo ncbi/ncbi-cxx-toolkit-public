@@ -167,6 +167,7 @@ public:
     const CFlatFileConfig& Config(void) const;
     const SAnnotSelector* GetAnnotSelector(void) const;
     const CSeq_loc* GetMasterLocation(void) const;
+    bool IsGenbankFormat(void) const;
 
 private:
     void x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc);
@@ -446,6 +447,15 @@ CMolInfo::TBiomol CBioseqContext::GetBiomol(void) const
 }
 
 
+inline
+bool CBioseqContext::IsGenbankFormat(void) const
+{
+    return (Config().IsFormatGenbank()  ||
+            Config().IsFormatGBSeq()    ||
+            Config().IsFormatDDBJ());
+}
+
+
 // -------- CFlatFileContext
 
 inline
@@ -479,6 +489,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/04/27 15:09:31  shomrat
+* + IsGenbankFormat
+*
 * Revision 1.15  2004/04/22 16:11:24  ucko
 * Move CBioseqContext::SetMaster's body to the end of the file, as some
 * compilers insist on seeing CMasterContext's full definition first.
