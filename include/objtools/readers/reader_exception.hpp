@@ -38,12 +38,12 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_SEQSET_EXPORT CObjReaderException : public CException
+class NCBI_XOBJREAD_EXPORT CObjReaderException : public CException
 {
     NCBI_EXCEPTION_DEFAULT(CObjReaderException,CException);
 };
 
-class NCBI_SEQSET_EXPORT CObjReaderParseException :
+class NCBI_XOBJREAD_EXPORT CObjReaderParseException :
     public CParseTemplException<CObjReaderException>
 {
 public:
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/06/06 13:46:04  ucko
+* Use the right _EXPORT macro.
+*
 * Revision 1.1  2003/06/04 17:27:36  ucko
 * Created based on seqset_exception.hpp
 *
