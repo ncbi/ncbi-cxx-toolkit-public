@@ -65,6 +65,7 @@
 #  define NCBI_XNCBI_EXPORTS
 #  define NCBI_XSERIAL_EXPORTS
 #  define NCBI_XUTIL_EXPORTS
+#  define NCBI_XREGEXP_EXPORTS
 #endif
 
 
@@ -172,6 +173,67 @@
 #endif
 
 
+/*
+ * Definitions for GUI_UTILS.DLL
+ */
+#ifdef NCBI_GUIUTILS_EXPORTS
+#  define NCBI_GUIOPENGL_EXPORTS
+#  define NCBI_GUIMATH_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_CORE.DLL
+ */
+#ifdef NCBI_GUICORE_EXPORTS
+#  define NCBI_XGBPLUGIN_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_WIDGETS.DLL
+ */
+#ifdef NCBI_GUIWIDGETS_EXPORTS
+#  define NCBI_GUIWIDGETS_FL_EXPORTS
+#  define NCBI_GUIWIDGETS_GL_EXPORTS
+#  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
+#  define NCBI_GUIWIDGETS_FLU_EXPORTS
+#  define NCBI_GUIWIDGETS_TABLE_EXPORTS
+#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_WIDGETS_ALN.DLL
+ */
+#ifdef NCBI_GUIWIDGETSALN_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_WIDGETS_SEQ.DLL
+ */
+#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQ_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQICON_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQINFO_EXPORTS
+#endif
+
+/*
+ * Definitions for GUI_WIDGETS_SEQ.DLL
+ */
+#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
+#endif
+
+
 /* ------------------------------------------------- */
 
 /*
@@ -205,6 +267,15 @@
 #  define NCBI_XIMAGE_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XIMAGE_EXPORT       __declspec(dllimport)
+#endif
+ 
+/*
+ * Export specifier for library xregexp
+ */
+#ifdef NCBI_XREGEXP_EXPORTS
+#  define NCBI_XREGEXP_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XREGEXP_EXPORT       __declspec(dllimport)
 #endif
  
 /*
@@ -899,66 +970,6 @@
 
 
 /*
- * Definitions for GUI_UTILS.DLL
- */
-#ifdef NCBI_GUIUTILS_EXPORTS
-#  define NCBI_GUIOPENGL_EXPORTS
-#  define NCBI_GUIMATH_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_CORE.DLL
- */
-#ifdef NCBI_GUICORE_EXPORTS
-#  define NCBI_XGBPLUGIN_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS.DLL
- */
-#ifdef NCBI_GUIWIDGETS_EXPORTS
-#  define NCBI_GUIWIDGETS_FL_EXPORTS
-#  define NCBI_GUIWIDGETS_GL_EXPORTS
-#  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_FLU_EXPORTS
-#  define NCBI_GUIWIDGETS_TABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS_ALN.DLL
- */
-#ifdef NCBI_GUIWIDGETSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS_SEQ.DLL
- */
-#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQICON_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQINFO_EXPORTS
-#endif
-
-/*
- * Definitions for GUI_WIDGETS_SEQ.DLL
- */
-#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
-#endif
-
-/*
  * Export specifier for library gui_core
  */
 #ifdef NCBI_GUICORE_EXPORTS
@@ -1456,6 +1467,7 @@
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
+#  define NCBI_XREGEXP_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XSQLITE_EXPORT
 #  define NCBI_XUTIL_EXPORT
@@ -1466,7 +1478,6 @@
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
 
-#define NCBI_REGEXP_EXPORT
 #define NCBI_TEST_MT_EXPORT
 
 
@@ -1477,6 +1488,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.64  2004/03/12 13:56:46  dicuccio
+ * Renamed NCBI_REGEXP_EXPORT -> NCBI_XREGEXP_EXPORT; restored to non-static.
+ * Moved GUI modules to top
+ *
  * Revision 1.63  2004/03/11 16:52:25  gorelenk
  * Added STATIC LIBRARIES SECTION  - place for static-only libraries export
  * prefix defines.
