@@ -45,7 +45,7 @@
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/aa_lookup.h>
+#include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
 
@@ -112,7 +112,7 @@ CBl2Seq::x_ResetQueryDs()
     mi_clsQueries.Reset(NULL);
     mi_clsQueryInfo.Reset(NULL);
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
-    mi_pLookupTable = BlastLookupTableDestruct(mi_pLookupTable);
+    mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
     mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
     // TODO: should clean filtered regions?
 }
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2003/09/10 20:01:30  dondosha
+ * Use lookup_wrap.h
+ *
  * Revision 1.31  2003/09/09 20:31:13  camacho
  * Add const type qualifier
  *
