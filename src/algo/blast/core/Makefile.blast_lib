@@ -5,10 +5,10 @@
 # 
 #
 
+#include ../NewBlast.mk
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
-builddir = /netopt/ncbi_tools/c++/Debug/build
-# builddir = $(NCBI)/c++/Release/build
+builddir = $(NCBI)/$(VERSION_STABILITY)/$(BUILD_TYPE)/build
 
 
 ###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 5 LINES !!!
