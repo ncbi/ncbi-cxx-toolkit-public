@@ -488,7 +488,7 @@ static const TRefSeqType sc_RefSeqArray[] = {
     TRefSeqType("YP_", CSeq_id::eAcc_refseq_prot_predicted),
     TRefSeqType("ZP_", CSeq_id::eAcc_refseq_wgs_prot)
 };
-typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo> TRefSeqMap;
+typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo, PCase> TRefSeqMap;
 static const TRefSeqMap sc_RefSeqMap(sc_RefSeqArray, sizeof(sc_RefSeqArray));
 
 
@@ -1546,6 +1546,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.97  2005/01/13 15:59:23  dicuccio
+ * Use PCase for case-sensitive comparisons in CStaticArrayMap<> - avoids
+ * comparison by pointer
+ *
  * Revision 6.96  2005/01/13 15:31:41  ucko
  * IdentifyAccession: use a CStaticArrayMap for RefSeq prefixes, and
  * recognize AP_ and YP_.
