@@ -442,7 +442,7 @@ CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align)
         x_Init(align.GetSegs().GetPacked());
         break;
     case CSeq_align::C_Segs::e_Disc:
-        // x_Init(align.GetSegs().GetDisc());
+        x_Init(align.GetSegs().GetDisc());
         break;
     }
 }
@@ -1322,6 +1322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/01/28 22:09:35  grichenk
+* Added CSeq_align_Mapper initialization for e_Disc
+*
 * Revision 1.13  2004/01/28 20:54:36  vasilche
 * Fixed mapping of annotations.
 *
