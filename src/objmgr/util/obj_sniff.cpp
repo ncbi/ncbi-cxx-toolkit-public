@@ -169,36 +169,59 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
 void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
 {
     TCandidates::const_iterator it;
+    TCandidates::const_iterator it_prev_cand = m_Candidates.end();
+    TCandidates::const_iterator it_end = m_Candidates.end();
 
-    while (true) {
-        try {
+    string header;
+
+    try {
+        while (true) {
             m_StreamOffset = input.GetStreamOffset();
-            string header = input.ReadFileHeader();
+            header = input.ReadFileHeader();
 
-            for (it = m_Candidates.begin(); it < m_Candidates.end(); ++it) {
-                if (header != it->type_info.GetTypeInfo()->GetName()) {
+            if (it_prev_cand != it_end) {
+                // Check the previously found candidate first
+                // (performance optimization)
+                if (header == it_prev_cand->type_info.GetTypeInfo()->GetName()) {
+                    it = it_prev_cand;
+                    CObjectInfo object_info(it->type_info.GetTypeInfo());
+
+                    input.Read(object_info, CObjectIStream::eNoFileHeader);
+                    m_TopLevelMap.push_back(
+                        SObjectDescription(it->type_info, m_StreamOffset));
+
+                    LOG_POST(Info 
+                             << "ASN.1 text top level object found:" 
+                             << it->type_info.GetTypeInfo()->GetName());
                     continue;
                 }
-                CObjectInfo object_info(it->type_info.GetTypeInfo());
+            } else {
+                // Scan through all candidates
+                for (it = m_Candidates.begin(); it < it_end; ++it) {
+                    if (header == it->type_info.GetTypeInfo()->GetName()) {
+                        it_prev_cand = it;
 
-                input.Read(object_info, CObjectIStream::eNoFileHeader);
-                m_TopLevelMap.push_back(
-                              SObjectDescription(it->type_info, m_StreamOffset));
+                        CObjectInfo object_info(it->type_info.GetTypeInfo());
 
-                LOG_POST(Info 
-                         << "ASN.1 text top level object found:" 
-                         << it->type_info.GetTypeInfo()->GetName() );                
-            } // for
-        }
-        catch (CEofException& ) {
-            break;
-        }
-        catch (CException& e) {
-            LOG_POST(Info << "Exception reading ASN.1 text " << e.what());
-            break;
-        }
+                        input.Read(object_info, CObjectIStream::eNoFileHeader);
+                        m_TopLevelMap.push_back(
+                            SObjectDescription(it->type_info, m_StreamOffset));
 
-    } // while
+                        LOG_POST(Info 
+                                 << "ASN.1 text top level object found:" 
+                                 << it->type_info.GetTypeInfo()->GetName());
+                        break;
+                    }
+                } // for
+            }
+
+        } // while
+    }
+    catch (CEofException& ) {
+    }
+    catch (CException& e) {
+        LOG_POST(Info << "Exception reading ASN.1 text " << e.what());
+    }
 }
 
 
@@ -250,6 +273,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2004/02/04 13:53:03  kuznets
+* Performance optimizations in CObjectsSniffer::ProbeASN1_Text
+*
 * Revision 1.15  2004/01/05 15:01:37  kuznets
 * Sniffer::Probe() : restoring source stream offset after a failure.
 *
