@@ -598,6 +598,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
             break;
         }
     }
+    x_ValidateCompletness(seq, *mi);
     
     // Check that proteins in nuc_prot set have a CdRegion
     if ( seq.IsAa()  &&  CdError(seq) ) {
@@ -1941,6 +1942,47 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
         PostErr(sev, eErr_SEQ_FEAT_MultiIntervalGene,
             "Gene feature on non-segmented sequence should not "
             "have multiple intervals", fi->GetOriginalFeature());
+    }
+}
+
+
+void CValidError_bioseq::x_ValidateCompletness
+(const CBioseq& seq,
+ const CMolInfo& mi)
+{
+    if ( !mi.IsSetCompleteness() ) {
+        return;
+    }
+    if ( !seq.IsNa() ) {
+        return;
+    }
+
+    CMolInfo::TCompleteness comp = mi.GetCompleteness();
+    CMolInfo::TBiomol biomol = mi.IsSetBiomol() ? 
+        mi.GetBiomol() : CMolInfo::eBiomol_unknown;
+
+    if ( comp == CMolInfo::eCompleteness_complete  &&
+         biomol == CMolInfo::eBiomol_genomic ) {
+        bool is_gb = false;
+        ITERATE (CBioseq::TId, it, seq.GetId()) {
+            if ( (*it)->IsGenbank() ) {
+                is_gb = true;
+                break;
+            }
+        }
+
+        if ( is_gb ) {
+            CSeqdesc_CI desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Title);
+            if ( desc ) {
+                const string& title = desc->GetTitle();
+                if ( !title.empty()  &&
+                     (NStr::FindNoCase(title, "complete sequence") == NPOS  ||
+                      NStr::FindNoCase(title, "complete genome") == NPOS) ) {
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_UnwantedCompleteFlag,
+                        "Suspicious use of complete", *desc);
+                }
+            }
+        }
     }
 }
 
@@ -3423,6 +3465,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2004/03/10 21:23:51  shomrat
+* Check for unwanted complete flag
+*
 * Revision 1.62  2004/02/26 13:58:09  shomrat
 * Do not complain about length > 350000 if NT or NC
 *
