@@ -283,7 +283,7 @@ extern void CONNECT_InitInternal(void)
         }
         STD_CATCH_ALL("CONNECT_InitInternal() failed");
     } else {
-        s_ConnectInit = eConnect_InitExplicit;
+        s_ConnectInit = eConnectInit_Explicit;
     }
     CORE_UNLOCK;
     s_ConnectInitMutex.Unlock();
@@ -296,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2004/09/22 18:35:11  ucko
+ * Fix typo in previous revision.
+ *
  * Revision 6.22  2004/09/22 16:40:45  lavr
  * Do not perform weak init if C level REG/LOG/LOCK seen as being used
  *
