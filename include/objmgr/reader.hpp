@@ -1,6 +1,5 @@
 #ifndef READER__HPP_INCLUDED
 #define READER__HPP_INCLUDED
-/* */
 
 /*  $Id$
 * ===========================================================================
@@ -159,6 +158,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2002/03/26 20:19:23  coremake
+* fake change
+*
 * Revision 1.9  2002/03/26 20:07:05  coremake
 * fake change
 *
