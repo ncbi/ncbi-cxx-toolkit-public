@@ -23,7 +23,9 @@ property pCreateProfiledTargets : false
 property pShouldBuild : true
 
 -- Whether to create projects in the specified category.
+property pCreateCoreLibs : true
 property pCreateObjectLibs : true (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : true
 property pCreateSocketLibs : true (* whether to create/compile socket libs *)
 property pCreateGuiLibs : true
 
@@ -213,17 +215,19 @@ on SetProjectData()
 			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c"})
 	end if
 	
-	AddSimpleProjectExceptFiles("xncbi", {}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
-	AddSimpleProject("xalgo", {}, "algo")
-	AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
-	AddSimpleProject("dbapi", {}, "dbapi")
-	AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
-	AddSimpleProject("xhtml", {}, "html")
-	AddSimpleProjectListFiles("xcser", {}, "serial", {"asntypes.cpp", "serialasn.cpp"})
-	AddSimpleProjectExceptFiles("xser", {}, "serial", Â
-		{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"})
-	AddSimpleProject("xutil", {}, "util")
-	AddSimpleProject("ximage", {}, "util:image")
+	if pCreateCoreLibs then
+		AddSimpleProjectExceptFiles("xncbi", {}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
+		AddSimpleProject("xalgo", {}, "algo")
+		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
+		AddSimpleProject("dbapi", {}, "dbapi")
+		AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
+		AddSimpleProject("xhtml", {}, "html")
+		AddSimpleProjectListFiles("xcser", {}, "serial", {"asntypes.cpp", "serialasn.cpp"})
+		AddSimpleProjectExceptFiles("xser", {}, "serial", Â
+			{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"})
+		AddSimpleProject("xutil", {}, "util")
+		AddSimpleProject("ximage", {}, "util:image")
+	end if
 	
 	if pCreateObjectLibs then
 		AddObject("access")
@@ -277,7 +281,9 @@ on SetProjectData()
 		AddObject("submit")
 		AddProject(ObjectData("taxon1", {"cache", "ctreecont", "taxon1", "utils"}))
 		AddObject("tinyseq")
-		
+	end if
+	
+	if pCreateObjToolsLibs then
 		AddSimpleProject("xobjmgr", {}, "objmgr")
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
@@ -285,6 +291,7 @@ on SetProjectData()
 		AddSimpleProject("xflat", {}, "objtools:flat")
 		--  AddSimpleProject("lds", {}, "objtools:lds") -- no bdb on Mac.
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
+		AddSimpleProject("xobjread", {}, "objtools:readers")
 	end if
 	
 	-- GUI libs.
@@ -351,7 +358,7 @@ on SetProjectData()
 			UsualStatics & {"xvalidate"})
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			UsualStatics & {"submit"})
+			UsualStatics & {"submit", "xobjread"})
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", Â
 			UsualStatics)
 		
@@ -724,10 +731,14 @@ on SetupTarget(proj, targetIndex)
 		-- Add user libraries.
 		set filesToAdd to {}
 		repeat with i in projLibs
-			copy gLibsDir & i & fileNameSuffix & pStaticLibExt to end of filesToAdd
+			if exists file (gLibsDir & i & fileNameSuffix & pStaticLibExt) of application "Finder" then
+				copy (gLibsDir & i & fileNameSuffix & pStaticLibExt) to end of filesToAdd
+			end if
 		end repeat
 		repeat with i in dynaLibs
-			copy gLibsDir & i & fileNameSuffix & pDynaLibExt to end of filesToAdd
+			if exists file (gLibsDir & i & fileNameSuffix & pDynaLibExt) of application "Finder" then
+				copy (gLibsDir & i & fileNameSuffix & pDynaLibExt) to end of filesToAdd
+			end if
 		end repeat
 		
 		if projFeatures contains "libdl" then
@@ -735,13 +746,13 @@ on SetupTarget(proj, targetIndex)
 			copy "/sw/lib/libdl.a" to end of filesToAdd
 		end if
 		
-		try
-			Add Files filesToAdd
-		on error errmsg number errnum
-			-- ignore errors when none of those libraries exist.
-			-- happens when populating a target when we haven't built any of the libraries for that target spec.
-			if errnum is not 9393 then error errmsg number errnum
-		end try
+		-- try
+		Add Files filesToAdd
+		-- on error errmsg number errnum
+		-- ignore errors when none of those libraries exist.
+		-- happens when populating a target when we haven't built any of the libraries for that target spec.
+		-- 	if errnum is not 9393 then error errmsg number errnum
+		-- end try
 		
 		-- Add resources.
 		set filesToAdd to {}
@@ -811,6 +822,7 @@ end CreateProject
 
 on CreateAndBuildAllProjects()
 	CreateFolder(gProjectsDir)
+	CleanupFiles(gProjectsDir)
 	set targetSpecs to GetTargetSpecs()
 	
 	repeat with proj in gProjectData
@@ -896,7 +908,7 @@ on BuildProject(projName, targetSpecs)
 					on error errmsg number errnum
 						if (errnum = 5) then
 							set errFileName to (gProjectsDir & projName & thisTarget & ".errs")
-							Save Error Window As errFileName
+							Save Error Window As (file errFileName)
 							close first window
 						else
 							error errmsg number errnum
@@ -939,14 +951,16 @@ on GetStationeryName(proj)
 			duplicate file (stationeryName) of folder gRsrcsDir to folder stationeryDir
 		end if
 	end tell
+	(*
 	my CleanupFolder(stationeryDir, stationeryName)
 	try
 		tell application "Finder" to delete file (stationeryDir & ".DS_Store")
 	end try
-	
+	*)
 	return (stationeryDir & stationeryName)
 end GetStationeryName
 
+(*
 -- Delete everything in the folder 'thePath' except the saveFile.
 on CleanupFolder(thePath, saveFile)
 	repeat with f in list folder (thePath) with invisibles
@@ -960,6 +974,7 @@ on CleanupFolder(thePath, saveFile)
 		end if
 	end repeat
 end CleanupFolder
+*)
 
 on CleanupFiles(thePath)
 	-- get rid of all the files and folders starting with 'trashme' in thePath
