@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/02/21 17:17:13  grichenk
+* Prohibited unnamed members in ASN.1 specifications
+*
 * Revision 1.35  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -488,10 +491,15 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
     return true;
 }
 
+
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
     : m_Name(name), m_Type(type), m_Optional(false)
 {
-  m_Type->SetDataMember(this);
+    if ( m_Name.empty() ) {
+        THROW1_TRACE(runtime_error,
+                     string("Unnamed member in ASN.1 specification"));
+    }
+    m_Type->SetDataMember(this);
 }
 
 CDataMember::~CDataMember(void)
