@@ -122,6 +122,10 @@ public:
         {
             m_PchHeader = name;
         }
+    static const string& GetPchHeader(void)
+        {
+            return m_PchHeader;
+        }
 private:
     const CCodeGenerator* m_CodeGenerator;
     bool m_UseQuotedForm;
@@ -159,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2004/05/19 15:45:46  gouriano
+* Add precompiled header into combining files as well
+*
 * Revision 1.17  2004/05/17 14:51:23  gouriano
 * Added possibility to include precompiled header
 *

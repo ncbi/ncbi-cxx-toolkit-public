@@ -449,6 +449,11 @@ void CCodeGenerator::GenerateCode(void)
             if ( !out )
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
             
+            if (!CFileCode::GetPchHeader().empty()) {
+                out <<
+                    "#include <" << CFileCode::GetPchHeader() << ">\n";
+            }
+
             ITERATE ( TOutputFiles, filei, m_Files ) {
                 out << "#include \""<<BaseName(
                     filei->second->GetFileBaseName())<<
@@ -804,6 +809,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/05/19 15:46:19  gouriano
+* Add precompiled header into combining files as well
+*
 * Revision 1.58  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
