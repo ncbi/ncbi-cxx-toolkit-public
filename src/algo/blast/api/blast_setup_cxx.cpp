@@ -70,8 +70,6 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 {
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
-    TSeqPos remainder;          // number of bases packed in ncbi2na format in
-                                // last byte of buffer
 
     _ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
 
@@ -81,26 +79,20 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
                      ((vec[i+2] & LAST2BITS)<<2) |
                      ((vec[i+3] & LAST2BITS)<<0);
     }
-    if ( (remainder = vec.size()%COMPRESSION_RATIO) == 0) {
-        buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
-                     ((vec[i+1] & LAST2BITS)<<4) |
-                     ((vec[i+2] & LAST2BITS)<<2) |
-                     ((vec[i+3] & LAST2BITS)<<0);
-    } else {
-        Uint1 bit_shift = 0;
 
-        buffer[ci] = 0;
-        for (; i < vec.size(); i++) {
+    buffer[ci] = 0;
+    for (; i < vec.size(); i++) {
+            Uint1 bit_shift = 0;
             switch (i%COMPRESSION_RATIO) {
-            case 0: bit_shift = 6; break;
-            case 1: bit_shift = 4; break;
-            case 2: bit_shift = 2; break;
-            default: abort();   // should never happen
+               case 0: bit_shift = 6; break;
+               case 1: bit_shift = 4; break;
+               case 2: bit_shift = 2; break;
+               default: abort();   // should never happen
             }
             buffer[ci] |= ((vec[i] & LAST2BITS)<<bit_shift);
-        }
-        buffer[ci] |= remainder;
     }
+    buffer[ci] |= vec.size()%COMPRESSION_RATIO;    // Number of bases in the last byte.
+   
 }
 
 Uint1*
@@ -176,7 +168,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& len, CScope* scope,
     case NCBI2NA_ENCODING:
         _ASSERT(add_nucl_sentinel == false);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
-        buflen = (sv.size()+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
+        buflen = (sv.size()/COMPRESSION_RATIO) + 1;
         if (strand == eNa_strand_both)
             buflen *= 2;
 
@@ -373,6 +365,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/08/28 15:49:02  madden
+* Fix for packing DNA as well as correct buflen
+*
 * Revision 1.16  2003/08/25 16:24:14  camacho
 * Updated BLASTGetMatrixPath
 *
