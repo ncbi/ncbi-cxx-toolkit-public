@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/09/12 20:30:49  kans
+ * added member functions IsPartialLeft and IsPartialRight
+ *
  * Revision 6.3  2002/06/06 20:48:16  clausen
  * Moved IsValid to objects/util/sequence.cpp
  *
@@ -52,6 +55,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 // generated includes
+#include <objects/general/Int_fuzz.hpp>
 
 // generated classes
 
@@ -64,6 +68,77 @@ CSeq_interval::~CSeq_interval(void)
 {
 }
 
+bool CSeq_interval::IsPartialLeft (void)
+{
+    bool minus_strand = false;
+
+    if (IsSetStrand ()) {
+        switch (GetStrand ()) {
+            case eNa_strand_minus :
+                minus_strand = true;
+                break;
+            case eNa_strand_both_rev :
+                minus_strand = true;
+                break;
+            default :
+                break;
+        }
+    }
+
+    if (minus_strand) {
+        if (IsSetFuzz_to ()) {
+            const CInt_fuzz & ifp = GetFuzz_to ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz_from ()) {
+            const CInt_fuzz & ifp = GetFuzz_from ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool CSeq_interval::IsPartialRight (void)
+{
+    bool minus_strand = false;
+
+    if (IsSetStrand ()) {
+        switch (GetStrand ()) {
+            case eNa_strand_minus :
+                minus_strand = true;
+                break;
+            case eNa_strand_both_rev :
+                minus_strand = true;
+                break;
+            default :
+                break;
+        }
+    }
+
+    if (minus_strand) {
+        if (IsSetFuzz_from ()) {
+            const CInt_fuzz & ifp = GetFuzz_from ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+                return true;
+            }
+        }
+    } else {
+        if (IsSetFuzz_to ()) {
+            if (IsSetFuzz_to ()) {
+                const CInt_fuzz & ifp = GetFuzz_to ();
+                if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

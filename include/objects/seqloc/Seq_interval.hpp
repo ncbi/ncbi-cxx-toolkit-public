@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/09/12 20:29:55  kans
+ * added member functions IsPartialLeft and IsPartialRight
+ *
  * Revision 1.6  2002/06/07 11:24:24  clausen
  * Added related function comment
  *
@@ -87,6 +90,10 @@ public:
 
     // Get the length of the interval
     TSeqPos GetLength(void) const;
+
+    // check left (5') or right (3') end of location for e_Lim fuzz
+    bool IsPartialLeft (void);
+    bool IsPartialRight (void);
         
 private:
     // Prohibit copy constructor & assignment operator
