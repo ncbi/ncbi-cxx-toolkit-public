@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.20 2001/11/09 18:00:56 ucko Exp $
+#  $Id: configure.ac,v 1.21 2001/11/19 19:04:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -93,8 +93,8 @@ AC_ARG_WITH(extra-action,
    [ --with-extra-action=    script to call after the configuration is complete])
 AC_ARG_WITH(autodep,
    [ --with-autodep          automatic generation of dependencies (GNU make)])
-AC_ARG_WITH(foobar,
-   [ --exec-prefix=          specify a non-default build directory name])
+AC_ARG_WITH(build-root,
+   [ --with-build-root=DIR   specify a non-default build directory name])
 AC_ARG_WITH(suffix,
    [ --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name])
 AC_ARG_WITH(hostspec,
@@ -204,8 +204,8 @@ for x_arg in "$@" ; do
       AC_MSG_ERROR(["  $x_arg:  requires value;  use --help to show usage"])
       ;;
 
-      --with-extra-action=* | --exec-prefix=* | --with-projects=* \
-      | --cache-file=* | --build=* | --host=* | [[A-Z]*=*] \
+      --with-extra-action=* | --exec-prefix=* | --with-build-root=* \
+      | --with-projects=* | --cache-file=* | --build=* | --host=* | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -334,6 +334,7 @@ else
 fi
 
 ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%' | sed 's%^\([0-9][0-9]\)$%\10%'`"
+compiler_version=$ncbi_compiler_ver
 changequote([, ])dnl
 
 AC_DEFINE_UNQUOTED(NCBI_COMPILER_$ncbi_compiler, 1)
@@ -390,6 +391,10 @@ if test -x "$x_CXX" ; then
 fi
 CXX_PATH="`dirname $x_CXX`"
 x_CXX=
+
+### Which of these is better?
+#compiler_root=`dirname CXX_PATH`
+compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
 
 changequote([, ])dnl
 
@@ -823,9 +828,15 @@ case "$host_os" in
 	;;
 esac
 
-#### Check if "${exec_prefix}" is defined;  provide a default one
-if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
-   exec_prefix="${srcdir}/${compiler}"
+#### Check if "${build_root}" is defined;  provide a default one
+if test -n "${with_build_root}" ; then
+   build_root=${with_build_root}
+elif test -n "${exec_prefix}"  &&  test "${exec_prefix}" != "NONE" ; then
+   build_root=${exec_prefix}
+fi
+
+if test -z "${build_root}" ; then
+   build_root="${srcdir}/${compiler}"
 else
    with_suffix=${with_suffix:="no"}
 fi
@@ -840,35 +851,35 @@ fi
    fi
    DEBUG_SFX=${release_debug}
 
-#### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${exec_prefix}"
+#### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${build_root}"
 if test "$with_suffix" != "no" ; then
-   exec_prefix="${exec_prefix}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}"
+   build_root="${build_root}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}"
 fi
 
 
-#### Add full host specs to "${exec_prefix}"
+#### Add full host specs to "${build_root}"
 if test "$with_hostspec" = "yes" ; then
-   exec_prefix="${exec_prefix}--${host}"
+   build_root="${build_root}--${host}"
 fi
 
 
-#### Check if there is "${exec_prefix}" dir
-test -d "${exec_prefix}"  ||  mkdir -p "${exec_prefix}"
+#### Check if there is "${build_root}" dir
+test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
 
-#### Make "exec_prefix" absolute
-case "${exec_prefix}" in
+#### Make "build_root" absolute
+case "${build_root}" in
    /* ) ;;
    . )
       CDPATH=
       if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
       then
-         exec_prefix="$PWD"
+         build_root="$PWD"
       else
-         exec_prefix="`(cd ${exec_prefix}; pwd)`"
+         build_root="`(cd ${build_root}; pwd)`"
       fi
    ;;
-   *  ) exec_prefix="`(cd ${exec_prefix}; pwd)`" ;;
+   *  ) build_root="`(cd ${build_root}; pwd)`" ;;
 esac
 
 
@@ -889,17 +900,17 @@ esac
 
 
 #### Source, include, and build directories
-ncbiconf="$exec_prefix/inc/ncbiconf.h"
-if test "$exec_prefix" = "$srcdir" ; then
+ncbiconf="$build_root/inc/ncbiconf.h"
+if test "$build_root" = "$srcdir" ; then
    builddir="$srcdir/src"
 else
-   builddir="$exec_prefix/build"
+   builddir="$build_root/build"
 fi
-status_dir="$exec_prefix/status"
+status_dir="$build_root/status"
 
 
 #### Create build directories
-mkdir -p "$builddir" "$exec_prefix/lib" "$exec_prefix/bin"
+mkdir -p "$builddir" "$build_root/lib" "$build_root/bin"
 
 
 #### Check if the target directory already has a configured system in it
@@ -2281,7 +2292,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath")
 
 ### Template substitutions
-AC_SUBST(exec_prefix)
+AC_SUBST(build_root)
 
 AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
@@ -2389,6 +2400,10 @@ AC_SUBST(UNIX_LIB_PROJ)
 AC_SUBST(UNIX_APP_PROJ)
 AC_SUBST(UNIX_SUB_PROJ)
 
+AC_SUBST(compiler)
+AC_SUBST(compiler_root)
+AC_SUBST(compiler_version)
+
 
 #############################################################################
 ### Create output files and do some post-configuration
@@ -2415,7 +2430,7 @@ AC_CONFIG_FILES($configurables)
 AC_CONFIG_COMMANDS([default], [
 status_dir="$SAVE_status_dir"
 builddir="$SAVE_builddir"
-exec_prefix="$SAVE_exec_prefix"
+build_root="$SAVE_build_root"
 x_configurables="$SAVE_x_configurables"
 ncbiconf="$SAVE_ncbiconf"
 CFLAGS="$SAVE_CFLAGS"
@@ -2441,7 +2456,7 @@ echo "$x_configurables" | while read x_file ; do
 done
 
 dnl make all shell scripts *.sh be executable
-find "$exec_prefix/." -name '*.sh' -print | while read x_file ; do
+find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done
 
@@ -2459,7 +2474,7 @@ done
 
 dnl execute extra-action
 if test -n "$with_extra_action" ; then
-   with_extra_action=`echo "$with_extra_action" | sed "s%{}%$exec_prefix%g"`
+   with_extra_action=`echo "$with_extra_action" | sed "s%{}%$build_root%g"`
    echo
    echo "executing:  $with_extra_action..."
    eval $with_extra_action
@@ -2516,7 +2531,7 @@ EOCONF
 ], [
 SAVE_status_dir="$status_dir"
 SAVE_builddir="$builddir"
-SAVE_exec_prefix="$exec_prefix"
+SAVE_build_root="$build_root"
 SAVE_x_configurables="$x_configurables"
 SAVE_ncbiconf="$ncbiconf"
 SAVE_CFLAGS="$CFLAGS"

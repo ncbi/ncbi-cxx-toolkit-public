@@ -12,7 +12,7 @@ done
 mv ${testprefix}test.asn test.asn
 mv ${testprefix}test.asb test.asb
 
-@exec_prefix@/bin/serialtest > test.out 2> test.err
+@build_root@/bin/serialtest > test.out 2> test.err
 
 for f in webenv.ent webenv.bin test.asn test.asb; do
     i=`tr -d "\n " < $f`

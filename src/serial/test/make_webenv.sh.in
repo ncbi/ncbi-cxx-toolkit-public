@@ -7,12 +7,12 @@ if test ! -d webenv ;  then
     mkdir webenv
 fi
 
-if test ! -x "@exec_prefix@/bin/datatool" ;  then
+if test ! -x "@build_root@/bin/datatool" ;  then
     echo Error: datatool not found
     exit 3
 fi
 
-"@exec_prefix@/bin/datatool" \
+"@build_root@/bin/datatool" \
     -m twebenv.asn -oA -oph webenv -opc webenv
 
 cat > we_cpp___.cpp <<\EOF

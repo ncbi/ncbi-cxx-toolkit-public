@@ -545,22 +545,22 @@ name can be alternated by passing the following flags to the
   <li> <i><b>--with-hostspec</b></i> --
        add full host specs to the <i>build tree</i> name
        <br><i>Example:</i> <i><b>GCC-Debug--i586-pc-linux-gnu/</b></i>
-  <li> <i><b>--exec-prefix=</b>/home/foo/bar</i> --
+  <li> <i><b>--with-build-root=</b>/home/foo/bar</i> --
        specify your own <i>build tree</i> path and name
 </ul>
 
-With <i><b>--exec-prefix=</b></i> you still can explicitly use
+With <i><b>--with-build-root=</b></i> you still can explicitly use
 <i><b>--with-suffix</b></i> and <i><b>--with-hostspec</b></i>
 to add suffix(es) to your <i>build tree</i> name in a manner described above.
 <br><i>Example:</i>
-<i><b>--exec-prefix=</b>/home/foo/bar</i>
+<i><b>--with-build-root=</b>/home/foo/bar</i>
 <i><b>--with-mt </b></i>
 <i><b>--with-suffix</b></i>
 would deploy the new <i>build tree</i> in
 <i><b>/home/foo/bar-DebugMT</b></i>.
 
 <p>
-There is also a special case with "<i><b>--exec_prefix=</b>.</i>"
+There is also a special case with "<i><b>--with-build-root=</b>.</i>"
 for those who prefer to put object files, libraries and executables to where
 the sources are located. But be advised that this will disallow you
 to configure for other <i>build trees</i>.

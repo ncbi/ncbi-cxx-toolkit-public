@@ -20,7 +20,7 @@
 ### Configurable paths
 
 top_srcdir  = @top_srcdir@
-exec_prefix = @exec_prefix@
+build_root  = @build_root@
 builddir    = @builddir@
 status_dir  = @status_dir@
 
@@ -28,9 +28,9 @@ status_dir  = @status_dir@
 ### Paths
 
 includedir  = $(top_srcdir)/include
-incdir      = $(exec_prefix)/inc
-libdir      = $(exec_prefix)/lib
-bindir      = $(exec_prefix)/bin
+incdir      = $(build_root)/inc
+libdir      = $(build_root)/lib
+bindir      = $(build_root)/bin
 runpath     = @runpath@
 
 
