@@ -27,6 +27,7 @@ NCBI DBAPI Driver Reference</h1>
 		  <li> <a href="#ref_DriversDBLIB">Sybase DBLIB</a> </li>
 		  <li> <a href="#ref_DriversMSDBLIB">Microsoft DBLIB</a> </li>
 		  <li> <a href="#ref_DriversFTDS">FreeTDS</a> </li>
+		  <li> <a href="#ref_DriversODBC">ODBC</a> </li>
 		</ul>
 	 </li>
 </ul>
@@ -979,22 +980,22 @@ Microsoft DBLIB</h4>
 <li>
 Registration function (for the manual, static registration)
 <dt><dd><tt>
-<a href="../lxr/ident?i=DBAPI_RegisterDriver_DBLIB&d=f">
-DBAPI_RegisterDriver_DBLIB()</a>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_MSDBLIB&d=f">
+DBAPI_RegisterDriver_MSDBLIB()</a>
 </tt></dd>
 </dt></li>
 
 <li>
 Driver default name (for the run-time loading from a DLL)
 <dt><dd><tt>
-"dblib"
+"msdblib"
 </tt></dd>
 </dt></li>
 
 <li>
 Driver library
 <dt><dd><tt>
-DBLIB.LIB
+MSDBLIB.LIB
 </tt></dd>
 </dt></li>
 
@@ -1008,8 +1009,8 @@ NTWDBLIB.LIB
 <li>
 <i>Microsoft DBLIB</i>-specific header (contains <b>non-portable</b> extensions)
 <dt><dd><tt>
-<a href="../lxr/source/include/dbapi/driver/dblib/interfaces.hpp">
-dbapi/driver/dblib/interfaces.hpp</a>
+<a href="../lxr/source/include/dbapi/driver/msdblib/interfaces.hpp">
+dbapi/driver/msdblib/interfaces.hpp</a>
 </tt></dd>
 </dt></li>
 
@@ -1142,6 +1143,77 @@ and can be pretty slow.
 
 </ul>
 
+<!-- --------------------------------- -->
+
+<a name="ref_DriversODBC"></a>
+<h4>
+ODBC</h4>
+<p>
+
+<ul>
+
+<li>
+Registration function (for the manual, static registration)
+<dt><dd><tt>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_ODBC&d=f">
+DBAPI_RegisterDriver_ODBC()</a>
+</tt></dd>
+</dt></li>
+
+<li>
+Driver default name (for the run-time loading from a DLL)
+<dt><dd><tt>
+"odbc"
+</tt></dd>
+</dt></li>
+
+<li>
+Driver library
+<dt><dd><tt>
+ODBC.LIB
+</tt></dd>
+</dt></li>
+
+<li>
+<i>ODBC</i> libraries and headers used by the driver
+<dt><dd><tt>
+ODBC32.LIB ODBCCP32.LIB ODBCBCP.LIB
+</tt></dd>
+</dt></li>
+
+<li>
+<i>ODBC</i>-specific header (contains <b>non-portable</b> extensions)
+<dt><dd><tt>
+<a href="../lxr/source/include/dbapi/driver/odbc/interfaces.hpp">
+dbapi/driver/odbc/interfaces.hpp</a>
+</tt></dd>
+</dt></li>
+
+<li>
+<i>ODBC</i>-specific driver context attributes
+<dt><dd><tt>
+"version", <i>default =</i> <b>"3"</b>
+(also allowed: <b>"2"</b>)
+</tt></dd>
+<dd><tt>
+"use_dsn", <i>default =</i> <b>"false"</b>
+ (if you have set this attribute to <b>"true"</b>, you need to define your <i>data source</i> using
+"Control Panel"/"Administrative Tools"/"Data Sources (ODBC)")
+</tt></dd>
+</dt></li>
+
+<li>
+Caveats
+<ol>
+<li><tt>
+The <b>CDB_Result::GetImageOrTextDescriptor()</b> does not work for ODBC driver. You need to use
+<a href="../lxr/ident?i=CDB_ITDescriptor&d=C">CDB_ITDescriptor</a> instead. The other way to deal
+with <b>texts/images</b> in ODBC is through the <a href="../lxr/ident?i=CDB_CursorCmd&d=C">CDB_CursorCmd</a>
+ methods: <b>UpdateTextImage</b> and <b>SendDataCmd</b>.
+</tt></dd>
+</ol></li>
+
+</ul>
 
 <!-- --------------------------------- -->
 
