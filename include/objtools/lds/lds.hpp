@@ -63,10 +63,6 @@ public:
     // Open LDS database (Read/Write mode)
     void Open();
 
-    // Syncronize LDS database content with directory. 
-    // Function will do format guessing, files parsing, etc
-    void SyncWithDir(const string& dir_name);
-
     // Return reference on database tables
     SLDS_TablesCollection& GetTables() { return m_db; }
 
@@ -92,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/06/16 15:39:03  kuznets
+ * Removing dead code.
+ *
  * Revision 1.8  2003/06/16 14:54:08  kuznets
  * lds splitted into "lds" and "lds_admin"
  *
