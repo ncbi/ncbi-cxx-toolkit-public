@@ -9,5 +9,7 @@ ASN_DEP = id2
 # Build shared version when possible
 LIB_OR_DLL = both
 
-# Dependencies for shared library
-DLL_LIB = xconnect ncbi_xreader
+CPPFLAGS = $(ORIG_CPPFLAGS) $(Z_INCLUDE)
+
+# Dependencies for shared library (disabled due to problems on Darwin)
+# DLL_LIB = xconnect ncbi_xreader
