@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/03/18 17:54:50  vasilche
+* CNCBINode will try to call PrintEnd if exception in PrintChildren
+* occures
+*
 * Revision 1.8  1999/01/25 19:32:44  vasilche
 * Virtual destructors now work properly.
 *
@@ -225,7 +229,16 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out)
     }
 
     PrintBegin(out);
-    PrintChildren(out);
+
+    try {
+        PrintChildren(out);
+    }
+    catch (...) {
+        ERR_POST("CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
+        PrintEnd(out);
+        throw;
+    }
+
     PrintEnd(out);
     return out;
 }
