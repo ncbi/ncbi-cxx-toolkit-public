@@ -327,24 +327,27 @@ static Int2 SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
     if (!seqdb || !itr)
         return BLAST_SEQSRC_ERROR;
 
-    // Point current position to the next oid.
-    if (itr->next_oid == UINT4_MAX) {
-        return BLAST_SEQSRC_EOF;
-    } else if (itr->next_oid == 0) {
-        itr->current_pos = 0;
-        if (!(*seqdb)->CheckOrFindOID(itr->current_pos))
-            return BLAST_SEQSRC_EOF;
-    } else {
-        itr->current_pos = itr->next_oid;
-    }
+    vector<Uint4> oid_list(itr->chunk_sz);
 
-    // Find the new next oid.
-    itr->next_oid = itr->current_pos + 1;
-    if (!(*seqdb)->CheckOrFindOID(itr->next_oid))
-        itr->next_oid = UINT4_MAX;
-    itr->itr_type = eOidRange;
-    itr->oid_range[0] = itr->current_pos;
-    itr->oid_range[1] = itr->current_pos + 1;
+    CSeqDB::EOidListType chunk_type = 
+        (*seqdb)->GetNextOIDChunk(itr->oid_range[0], itr->oid_range[1], 
+                                  oid_list);
+    
+    if (chunk_type == CSeqDB::eOidRange) {
+        if (itr->oid_range[1] <= itr->oid_range[0])
+            return BLAST_SEQSRC_EOF;
+        itr->itr_type = eOidRange;
+        itr->current_pos = itr->oid_range[0];
+    } else if (chunk_type == CSeqDB::eOidList) {
+        itr->itr_type = eOidList;
+        itr->chunk_sz = oid_list.size();
+        if (itr->chunk_sz == 0)
+            return BLAST_SEQSRC_EOF;
+        itr->current_pos = 0;
+        Uint4 index;
+        for (index = 0; index < itr->chunk_sz; ++index)
+            itr->oid_list[index] = oid_list[index];
+    }
 
     return BLAST_SEQSRC_SUCCESS;
 }
@@ -358,8 +361,8 @@ static Int4 SeqDbIteratorNext(void* seqsrc, BlastSeqSrcIterator* itr)
     ASSERT(bssp);
     ASSERT(itr);
 
-    /* If iterator is uninitialized/invalid, retrieve the next chunk from the
-     * BlastSeqSrc */
+    /* If internal iterator is uninitialized/invalid, retrieve the next chunk 
+       from the BlastSeqSrc */
     if (itr->current_pos == UINT4_MAX) {
         status = BLASTSeqSrcGetNextChunk(bssp, itr);
         if (status == BLAST_SEQSRC_ERROR || status == BLAST_SEQSRC_EOF) {
@@ -367,19 +370,23 @@ static Int4 SeqDbIteratorNext(void* seqsrc, BlastSeqSrcIterator* itr)
         }
     }
 
+    Uint4 last_pos = 0;
+
     if (itr->itr_type == eOidRange) {
-        retval = itr->current_pos++;
-        if (itr->current_pos >= itr->oid_range[1]) {
-            itr->current_pos = UINT4_MAX;   /* invalidate iterator */
-        }
+        retval = itr->current_pos;
+        last_pos = itr->oid_range[1];
     } else if (itr->itr_type == eOidList) {
-        /* Unimplemented iterator type! */
-        fprintf(stderr, "eOidList iterator type is not implemented\n");
-        abort();
+        retval = itr->oid_list[itr->current_pos];
+        last_pos = itr->chunk_sz;
     } else {
         /* Unsupported/invalid iterator type! */
         fprintf(stderr, "Invalid iterator type: %d\n", itr->itr_type);
         abort();
+    }
+
+    ++itr->current_pos;
+    if (itr->current_pos >= last_pos) {
+        itr->current_pos = UINT4_MAX;  /* invalidate internal iteration */
     }
 
     return retval;
@@ -493,6 +500,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/07/06 15:50:33  dondosha
+ * Use GetNextOIDChunk function from CSeqDb for iteration
+ *
  * Revision 1.14  2004/06/23 14:07:01  dondosha
  * Call RetSequence for memory-mapped buffer
  *
