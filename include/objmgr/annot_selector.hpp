@@ -46,6 +46,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
 {
     typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
     typedef CSeqFeatData::E_Choice       TFeatChoice;
+    typedef CSeqFeatData::ESubtype       TFeatSubtype;
     // Flag to indicate location overlapping method
     enum EOverlapType {
         eOverlap_Intervals,  // default - overlapping of individual intervals
@@ -84,6 +85,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
                    int feat_product = false)
         : m_AnnotChoice(annot),
           m_FeatChoice(feat),
+          m_FeatSubtype(CSeqFeatData::eSubtype_any),
           m_FeatProduct(feat_product),
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
@@ -97,6 +99,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
                    int feat_product = false)
         : m_AnnotChoice(CSeq_annot::C_Data::e_Ftable),
           m_FeatChoice(feat),
+          m_FeatSubtype(CSeqFeatData::eSubtype_any),
           m_FeatProduct(feat_product),
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
@@ -124,6 +127,16 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
     TFeatChoice GetFeatChoice(void) const
         {
             return m_FeatChoice;
+        }
+
+    SAnnotSelector& SetFeatSubtype(TFeatSubtype subtype)
+        {
+            m_FeatSubtype = subtype;
+            return *this;
+        }
+    TFeatSubtype GetFeatSubtype(void) const
+        {
+            return m_FeatSubtype;
         }
 
     SAnnotSelector& SetByProduct(bool byProduct = true)
@@ -223,6 +236,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
 protected:
     TAnnotChoice          m_AnnotChoice;  // Annotation type
     TFeatChoice           m_FeatChoice;   // Seq-feat subtype
+    TFeatSubtype          m_FeatSubtype;  // Seq-feat subtype
     int                   m_FeatProduct;  // "true" for searching products
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
@@ -240,6 +254,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/31 21:48:17  grichenk
+* Added possibility to select feature subtype through SAnnotSelector.
+*
 * Revision 1.7  2003/03/18 14:46:35  grichenk
 * Set limit object type to "none" if the object is null.
 *

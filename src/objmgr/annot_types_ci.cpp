@@ -871,6 +871,12 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 }
             }
 
+            if (m_AnnotChoice == CSeq_annot::C_Data::e_Ftable
+                &&  m_FeatSubtype != CSeqFeatData::eSubtype_any
+                &&  m_FeatSubtype != annot_info.GetFeatFast()->GetData().GetSubtype()) {
+                continue;
+            }
+
             if ( m_OverlapType == eOverlap_Intervals &&
                  !hr.IntersectingWith(annot_index.m_HandleRange->second) ) {
                 continue;
@@ -984,6 +990,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/03/31 21:48:29  grichenk
+* Added possibility to select feature subtype through SAnnotSelector.
+*
 * Revision 1.62  2003/03/27 19:40:11  vasilche
 * Implemented sorting in CGraph_CI.
 * Added Rewind() method to feature/graph/align iterators.
