@@ -297,6 +297,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 				status = s_ParseSegOptions(buffer, &window, &locut, &hicut);
                                 if (status)
                                 {
+                                     segOptions = SSegOptionsFree(segOptions);
                                      sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                      if (blast_message)
                                        Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
@@ -319,6 +320,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 				status = s_ParseDustOptions(buffer, &level, &window, &linker);
                                 if (status)
                                 {
+                                     dustOptions = SDustOptionsFree(dustOptions);
                                      sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                      if (blast_message)
                                        Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
@@ -341,6 +343,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
                              status = s_ParseRepeatOptions(buffer, &dbname); 
                              if (status)
                              {
+                                  repeatOptions = SRepeatFilterOptionsFree(repeatOptions);
                                   sprintf(error_buffer, "Error parsing filter string: %s", buffer);
                                   if (blast_message)
                                      Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1,
