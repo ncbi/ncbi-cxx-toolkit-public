@@ -97,7 +97,7 @@ bool CTestDiagApp::TestApp_Exit(void)
     // Get the list of messages and check the size
     NStr::Split(test_res, "\r\n", messages);
 
-    assert(messages.size() == s_NumThreads*4);
+    assert(messages.size() == s_NumThreads*3+1);
 
     // Verify "created" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -108,7 +108,7 @@ bool CTestDiagApp::TestApp_Exit(void)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads*3);
+    assert(messages.size() == s_NumThreads*2+1);
 
     // Verify "Error" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -119,7 +119,7 @@ bool CTestDiagApp::TestApp_Exit(void)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads*2);
+    assert(messages.size() == s_NumThreads+1);
 
     // Verify "Log" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -130,7 +130,7 @@ bool CTestDiagApp::TestApp_Exit(void)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads);
+    assert(messages.size() == 1);
 
     // Cleaunp
     SetDiagStream(0);
@@ -155,6 +155,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2003/05/17 15:00:39  grichenk
+ * Fixed number of message lines
+ *
  * Revision 6.6  2003/05/08 20:50:12  grichenk
  * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
  *
