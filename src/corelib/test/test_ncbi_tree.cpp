@@ -65,10 +65,10 @@ void CTestApplication::Init(void)
     SetDiagPostLevel(eDiag_Info);
 }
 
-bool TestFunctor1(CTreeNode<int>& tr, int delta)
+ETreeTraverseCode TestFunctor1(CTreeNode<int>& tr, int delta)
 {
     cout << tr.GetValue() << " :" << delta << endl;
-    return false;
+    return eTreeTraverse;
 }
 
 static void s_TEST_Tree()
@@ -275,6 +275,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2004/01/14 17:38:27  kuznets
+ * Reflecting changed in ncbi_tree
+ *
  * Revision 1.6  2004/01/14 17:03:28  kuznets
  * + test case for PairTreeTraceNode
  *
