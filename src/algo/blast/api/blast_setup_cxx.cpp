@@ -253,7 +253,7 @@ BLASTFindGeneticCode(int genetic_code)
 char* 
 BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
 {
-    char* retval = NULL;
+    char* retval = NULL, *p = NULL;
     string full_path;       // full path to matrix file
 
     if (!matrix_name)
@@ -265,7 +265,6 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     // Look for matrix file in local directory
     full_path = mtx;
     if (CFile(full_path).Exists()) {
-        retval = strdup(full_path.c_str());
         return retval;
     }
 
@@ -277,6 +276,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
+        p = strstr(retval, matrix_name);
+        *p = NULLB;
         return retval;
     }
 
@@ -288,6 +289,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
+        p = strstr(retval, matrix_name);
+        *p = NULLB;
         return retval;
     }
 
@@ -297,6 +300,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
+        p = strstr(retval, matrix_name);
+        *p = NULLB;
         return retval;
     }
 
@@ -313,6 +318,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         full_path += mtx;
         if (CFile(full_path).Exists()) {
             retval = strdup(full_path.c_str());
+            p = strstr(retval, matrix_name);
+            *p = NULLB;
             return retval;
         }
     }
@@ -325,6 +332,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
+        p = strstr(retval, matrix_name);
+        *p = NULLB;
         return retval;
     }
 #endif
@@ -336,6 +345,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         full_path += mtx;
         if (CFile(full_path).Exists()) {
             retval = strdup(full_path.c_str());
+            p = strstr(retval, matrix_name);
+            *p = NULLB;
             return retval;
         }
     }
@@ -346,6 +357,8 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     full_path += mtx;
     if (CFile(full_path).Exists()) {
         retval = strdup(full_path.c_str());
+        p = strstr(retval, matrix_name);
+        *p = NULLB;
         return retval;
     }
 #endif
@@ -360,6 +373,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/08/25 16:24:14  camacho
+* Updated BLASTGetMatrixPath
+*
 * Revision 1.15  2003/08/19 17:39:07  camacho
 * Minor fix to use of metaregistry class
 *
