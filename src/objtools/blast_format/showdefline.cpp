@@ -161,8 +161,9 @@ static string s_GetIdUrl(const CBioseq::TId& ids, int gi, string& user_url,
         }
     } else { //need to use user_url 
         bool nodb_path =  false;
-        CRef<CSeq_id> id_general = GetSeq_idByType(ids, CSeq_id::e_General);
-        CRef<CSeq_id> id_other = GetSeq_idByType(ids, CSeq_id::e_Other);       
+        CConstRef<CSeq_id> id_general = GetSeq_idByType(ids,
+                                                        CSeq_id::e_General);
+        CConstRef<CSeq_id> id_other = GetSeq_idByType(ids, CSeq_id::e_Other);       
         if(!id_general.Empty() && 
            id_general->AsFastaString().find("gnl|BL_ORD_ID")){ 
             /* We do need to make security protected link to BLAST gnl */
@@ -801,6 +802,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.9  2005/02/15 17:47:29  grichenk
+*Replaces CRef<CSeq_id> with CConstRef<CSeq_id>
+*
 *Revision 1.8  2005/02/15 15:49:03  jianye
 *fix compiler warning
 *
