@@ -649,12 +649,18 @@ static void s_TEST_BDB_Query(void)
     }}
 
     {{
-    const char* ch = "id = '1' AND test";
+    const char* ch = "test";
     BDB_ParseQuery(ch, &query);
     bres = scanner.StaticEvaluate(query);
     assert(bres);
     }}
 
+    {{
+    const char* ch = "id = '1' AND test";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
 
     cout << "======== Query test ok." << endl;
 }
@@ -1741,7 +1747,6 @@ int CBDB_Test::Run(void)
 
     try
     {
-/*
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1769,7 +1774,7 @@ int CBDB_Test::Run(void)
         s_TEST_ICache();
 
         s_TEST_IntCache(); 
-*/
+
         s_TEST_BDB_Query();
 
 
@@ -1805,6 +1810,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/03/10 16:22:22  kuznets
+ * + more tests
+ *
  * Revision 1.39  2004/03/10 16:19:55  kuznets
  * + test case for single word queries
  *
