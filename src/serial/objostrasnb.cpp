@@ -551,7 +551,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
         ThrowError(fOverflow, "buffer overflow");
     _ASSERT(strlen(buffer) == size_t(width));
     if ( precision != 0 ) { // skip trailing zeroes
-        while ( buffer[width - 1] == '0' ) {
+        while ( width > 1  &&  buffer[width - 1] == '0' ) {
             --width;
         }
         if ( buffer[width - 1] == '.' )
@@ -1143,6 +1143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2004/01/12 22:35:37  ucko
+* WriteDouble2: represent 0 as "0", not ""!
+*
 * Revision 1.84  2004/01/05 14:25:21  gouriano
 * Added possibility to set serialization hooks by stack path
 *
