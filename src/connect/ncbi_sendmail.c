@@ -227,7 +227,7 @@ extern const char* CORE_SendMail(const char* to,
 
 /* In two macros below the smartest (or, weak-minded?) Sun
  * C compiler warned about unreachable end-of-loop condition
- * (well, it thinks the "condition" is there, dumb!), if we
+ * (well, it thinks "a condition" is there, dumb!), if we
  * used 'return' right before the end of 'while' statement.
  * So we now added "check" and "conditional" exit, which makes
  * the Sun compiler much happier, and less wordy :-)
@@ -440,6 +440,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/02/08 21:05:55  lavr
+ * Unimportant change in comments
+ *
  * Revision 6.16  2002/10/28 15:43:29  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *

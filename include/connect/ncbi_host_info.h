@@ -63,7 +63,7 @@ extern NCBI_XCONNECT_EXPORT int HINFO_TaskCount(HOST_INFO host_info);
 
 /* Return non-zero on success and store load averages in the
  * provided array "lavg", with the standard load average for last
- * minute stored at the index [0], and instant load average
+ * minute stored at index [0], and instant load average
  * (aka BLAST) stored at index [1]. Return 0 on error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ HINFO_LoadAverage
@@ -114,6 +114,9 @@ extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment(HOST_INFO host_info);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/02/08 21:03:51  lavr
+ * Unimportant change in comments
+ *
  * Revision 6.3  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *
