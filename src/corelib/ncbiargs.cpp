@@ -1541,10 +1541,11 @@ bool CArgDescriptions::x_CreateArg
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
     // Check if all mandatory unnamed positional arguments are provided
-    if (m_PosArgs.size() < n_plain  &&  n_plain < m_PosArgs.size() + m_nExtra){
+    if (m_PosArgs.size() <= n_plain  &&  
+        n_plain < m_PosArgs.size() + m_nExtra){
         NCBI_THROW(CArgException,eNoArg,
             "Too few (" + NStr::UIntToString(n_plain) +
-            "unnamed positional arguments. Must define at least " +
+            ") unnamed positional arguments. Must define at least " +
             NStr::UIntToString(m_nExtra));
     }
 
@@ -2134,6 +2135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2003/02/10 18:07:07  kuznets
+ * Fixed problem with mandatory extra args
+ *
  * Revision 1.42  2002/11/04 21:29:04  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *

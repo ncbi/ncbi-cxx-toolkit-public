@@ -462,6 +462,13 @@ public:
                              &n_plain, *args) )
                 i++;
         }
+
+        // Check if there were any arguments at all
+
+        if (n_plain == kMax_UInt) {
+            n_plain = 0;
+        }
+
         // Post-processing consistency checks
         x_PostCheck(*args, n_plain);
         return args.release();
@@ -658,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/02/10 18:06:15  kuznets
+ * Fixed problem with mandatory extra args
+ *
  * Revision 1.26  2002/12/26 12:51:41  dicuccio
  * Fixed some minor niggling errors with export specifiers in the wrong places.
  *
