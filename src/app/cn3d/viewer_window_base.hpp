@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/06/05 15:59:38  thiessen
+* fix for Solaris
+*
 * Revision 1.19  2002/06/05 14:28:43  thiessen
 * reorganize handling of window titles
 *
@@ -154,8 +157,6 @@ public:
     // override to set customized window title
     virtual void SetWindowTitle(void) = 0;
 
-protected:
-
     // menu callbacks
     void OnTitleView(wxCommandEvent& event);
     void OnEditMenu(wxCommandEvent& event);
@@ -163,6 +164,8 @@ protected:
     void OnJustification(wxCommandEvent& event);
     void OnShowGeomVltns(wxCommandEvent& event);
     void OnFindPattern(wxCommandEvent& event);
+
+protected:
 
     // menu identifiers
     enum {
