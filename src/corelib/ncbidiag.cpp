@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/12/16 17:22:51  vakatov
+* Fixed "delete" to "delete[]"
+*
 * Revision 1.11  1999/09/27 16:23:23  vasilche
 * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
 * so that they will be much easier for compilers to eat.
@@ -305,7 +308,7 @@ static void s_ToStream_Handler(const SDiagMessage& mess)
     CNcbiOstream& os = *x_data->os;
     char* str = mess.Compose();
     os << str;
-    delete str;
+    delete[] str;
     os << NcbiEndl;
     if ( x_data->quick_flush )
         os << NcbiFlush;
