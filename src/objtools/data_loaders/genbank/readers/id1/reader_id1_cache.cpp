@@ -557,9 +557,7 @@ void CCachedId1Reader::GetTSEBlob(CTSE_Info& tse_info,
 
 
 CRef<CSeq_annot_SNP_Info>
-CCachedId1Reader::GetSNPAnnot(CTSE_Info& tse_info,
-                              const CBlob_id& blob_id,
-                              TConn conn)
+CCachedId1Reader::GetSNPAnnot(const CBlob_id& blob_id, TConn conn)
 {
     if ( m_BlobCache ) {
         string key = GetBlobKey(blob_id);
@@ -574,7 +572,7 @@ CCachedId1Reader::GetSNPAnnot(CTSE_Info& tse_info,
         }
 
         // load SNP table from GenBank
-        snp_annot_info = TParent::GetSNPAnnot(tse_info, blob_id, conn);
+        snp_annot_info = TParent::GetSNPAnnot(blob_id, conn);
         
         // and store SNP table in cache
         StoreSNPTable(*snp_annot_info, key, version);
@@ -582,7 +580,7 @@ CCachedId1Reader::GetSNPAnnot(CTSE_Info& tse_info,
         return snp_annot_info;
     }
 
-    return TParent::GetSNPAnnot(tse_info, blob_id, conn);
+    return TParent::GetSNPAnnot(blob_id, conn);
 }
 
 
@@ -596,7 +594,7 @@ void CCachedId1Reader::GetTSEChunk(CTSE_Chunk_Info& chunk_info,
     }
 
     string key = GetBlobKey(blob_id);
-    int version = chunk_info.GetTSE_Info().GetBlobVersion();
+    int version = chunk_info.GetBlobVersion();
     size_t size;
 
 #ifdef ID1_COLLECT_STATS

@@ -38,6 +38,7 @@
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 
@@ -67,105 +68,273 @@ static const char* const SNP_SPLIT_ENV = "SNP_SPLIT";
 static const char* const SNP_TABLE_ENV = "SNP_TABLE";
 static const char* const ENV_YES = "YES";
 
-void SConfigIntValue::x_Initialize(void) const
+#ifdef _DEBUG
+static const char* const CONFIG_DUMP_SECTION = "NCBI";
+static const char* const CONFIG_DUMP_VARIABLE = "CONFIG_DUMP_VARIABLES";
+static bool config_dump = GetConfigFlag(CONFIG_DUMP_SECTION,
+                                        CONFIG_DUMP_VARIABLE);
+#endif
+
+static bool StringToBool(const string& value)
 {
-    if ( m_Initialized ) {
-        return;
-    }
-#ifdef _DEBUG
-    static SConfigBoolValue var = { "NCBI", "CONFIG_DUMP_VARIABLES" };
-    bool dump_variables = (this != &var) && var.GetBool();
-#endif
     try {
-        if ( m_Section ) {
-            CNcbiApplication* app = CNcbiApplication::Instance();
-            if ( app ) {
-                const string& value =
-                    app->GetConfig().Get(m_Section, m_Variable);
-                if ( !value.empty() ) {
-                    x_SetValue(value.c_str());
-#ifdef _DEBUG
-                    if ( dump_variables ) {
-                        LOG_POST("NCBI_CONFIG: int variable "
-                                 " [" << m_Section << "]"
-                                 " " << m_Variable <<
-                                 " (default: " << m_DefaultValue << ")"
-                                 " = " << m_Value <<
-                                 " from registry \"" << value << "\"");
-                    }
-#endif
-                    return;
-                }
-            }
-        }
-        const char* value;
-        if ( m_Section ) {
-            string variable;
-            variable += m_Section;
-            variable += '_';
-            variable += m_Variable;
-            value = getenv(variable.c_str());
-        }
-        else {
-            value = getenv(m_Variable);
-        }
-        if ( value ) {
-            x_SetValue(value);
-#ifdef _DEBUG
-            if ( dump_variables ) {
-                if ( m_Section ) {
-                    LOG_POST("NCBI_CONFIG: int variable "
-                             " [" << m_Section << "]"
-                             " " << m_Variable <<
-                             " (default: " << m_DefaultValue << ")"
-                             " = " << m_Value <<
-                             " from environment "
-                             << m_Section << '_' << m_Variable <<
-                             "=\"" << value << "\"");
-                }
-                else {
-                    LOG_POST("NCBI_CONFIG: int variable "
-                             " [" << m_Section << "]"
-                             " " << m_Variable <<
-                             " (default: " << m_DefaultValue << ")"
-                             " = " << m_Value <<
-                             " from environment "
-                             << m_Variable <<
-                             "=\"" << value << "\"");
-                }
-            }
-#endif
-            return;
-        }
+        return NStr::StringToBool(value);
     }
     catch ( ... ) {
-        // ignored, will use default value
+        return NStr::StringToInt(value) != 0;
     }
-    m_Value = m_DefaultValue;
-    m_Initialized = true;
-#ifdef _DEBUG
-    if ( dump_variables ) {
-        LOG_POST("NCBI_CONFIG: int variable "
-                 " [" << m_Section << "]"
-                 " " << m_Variable <<
-                 " (default: " << m_DefaultValue << ")"
-                 " = " << m_Value <<
-                 " by default");
-    }
-#endif
 }
 
 
-void SConfigIntValue::x_SetValue(const char* value) const
+bool NCBI_XREADER_EXPORT GetConfigFlag(const char* section,
+                                       const char* variable,
+                                       bool default_value)
 {
-    if ( NStr::CompareNocase(value,"YES") == 0 ||
-         NStr::CompareNocase(value,"Y") == 0 ) {
-        m_Value = 1;
+#ifdef _DEBUG
+    bool dump = variable != CONFIG_DUMP_VARIABLE && config_dump;
+#endif
+    if ( section ) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            const string& str = app->GetConfig().Get(section, variable);
+            if ( !str.empty() ) {
+                try {
+                    bool value = StringToBool(str);
+#ifdef _DEBUG
+                    if ( dump ) {
+                        LOG_POST("NCBI_CONFIG: bool variable"
+                                 " [" << section << "]"
+                                 " " << variable <<
+                                 " = " << value <<
+                                 " from registry");
+                    }
+#endif
+                    return value;
+                }
+                catch ( ... ) {
+                    // ignored
+                }
+            }
+        }
+    }
+    const char* str;
+    if ( section ) {
+        string env_var;
+        env_var += section;
+        env_var += '_';
+        env_var += variable;
+        str = getenv(env_var.c_str());
     }
     else {
-        m_Value = NStr::StringToInt(value);
+        str = getenv(variable);
     }
-    m_Initialized = true;
+    if ( str ) {
+        try {
+            bool value = StringToBool(str);
+#ifdef _DEBUG
+            if ( dump ) {
+                if ( section ) {
+                    LOG_POST("NCBI_CONFIG: bool variable"
+                             " [" << section << "]"
+                             " " << variable <<
+                             " = " << value <<
+                             " from env var " << section << '_' << variable);
+                }
+                else {
+                    LOG_POST("NCBI_CONFIG: bool variable "
+                             " " << variable <<
+                             " = " << value <<
+                             " from env var");
+                }
+            }
+#endif
+            return value;
+        }
+        catch ( ... ) {
+            // ignored
+        }
+    }
+    bool value = default_value;
+#ifdef _DEBUG
+    if ( dump ) {
+        if ( section ) {
+            LOG_POST("NCBI_CONFIG: bool variable"
+                     " [" << section << "]"
+                     " " << variable <<
+                     " = " << value <<
+                     " by default");
+        }
+        else {
+            LOG_POST("NCBI_CONFIG: bool variable"
+                     " " << variable <<
+                     " = " << value <<
+                     " by default");
+        }
+    }
+#endif
+    return value;
+}
+
+
+int NCBI_XREADER_EXPORT GetConfigInt(const char* section,
+                                      const char* variable,
+                                      int default_value)
+{
+    if ( section ) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            const string& str = app->GetConfig().Get(section, variable);
+            if ( !str.empty() ) {
+                try {
+                    int value = NStr::StringToInt(str);
+#ifdef _DEBUG
+                    if ( config_dump ) {
+                        LOG_POST("NCBI_CONFIG: int variable"
+                                 " [" << section << "]"
+                                 " " << variable <<
+                                 " = " << value <<
+                                 " from registry");
+                    }
+#endif
+                    return value;
+                }
+                catch ( ... ) {
+                    // ignored
+                }
+            }
+        }
+    }
+    const char* str;
+    if ( section ) {
+        string env_var;
+        env_var += section;
+        env_var += '_';
+        env_var += variable;
+        str = getenv(env_var.c_str());
+    }
+    else {
+        str = getenv(variable);
+    }
+    if ( str ) {
+        try {
+            int value = NStr::StringToInt(str);
+#ifdef _DEBUG
+            if ( config_dump ) {
+                if ( section ) {
+                    LOG_POST("NCBI_CONFIG: int variable"
+                             " [" << section << "]"
+                             " " << variable <<
+                             " = " << value <<
+                             " from env var " << section << '_' << variable);
+                }
+                else {
+                    LOG_POST("NCBI_CONFIG: int variable "
+                             " " << variable <<
+                             " = " << value <<
+                             " from env var");
+                }
+            }
+#endif
+            return value;
+        }
+        catch ( ... ) {
+            // ignored
+        }
+    }
+    int value = default_value;
+#ifdef _DEBUG
+    if ( config_dump ) {
+        if ( section ) {
+            LOG_POST("NCBI_CONFIG: int variable"
+                     " [" << section << "]"
+                     " " << variable <<
+                     " = " << value <<
+                     " by default");
+        }
+        else {
+            LOG_POST("NCBI_CONFIG: int variable"
+                     " " << variable <<
+                     " = " << value <<
+                     " by default");
+        }
+    }
+#endif
+    return value;
+}
+
+
+string NCBI_XREADER_EXPORT GetConfigString(const char* section,
+                                           const char* variable,
+                                           const char* default_value)
+{
+    if ( section ) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            const string& value = app->GetConfig().Get(section, variable);
+            if ( !value.empty() ) {
+#ifdef _DEBUG
+                if ( config_dump ) {
+                    LOG_POST("NCBI_CONFIG: str variable"
+                             " [" << section << "]"
+                             " " << variable <<
+                             " = \"" << value << "\""
+                             " from registry");
+                }
+#endif
+                return value;
+            }
+        }
+    }
+    const char* value;
+    if ( section ) {
+        string env_var;
+        env_var += section;
+        env_var += '_';
+        env_var += variable;
+        value = getenv(env_var.c_str());
+    }
+    else {
+        value = getenv(variable);
+    }
+    if ( value ) {
+#ifdef _DEBUG
+        if ( config_dump ) {
+            if ( section ) {
+                LOG_POST("NCBI_CONFIG: str variable"
+                         " [" << section << "]"
+                         " " << variable <<
+                         " = \"" << value << "\""
+                         " from env var " << section << '_' << variable);
+            }
+            else {
+                LOG_POST("NCBI_CONFIG: str variable"
+                         " " << variable <<
+                         " = \"" << value << "\""
+                         " from env var");
+            }
+        }
+#endif
+        return value;
+    }
+    value = default_value? default_value: "";
+#ifdef _DEBUG
+    if ( config_dump ) {
+        if ( section ) {
+            LOG_POST("NCBI_CONFIG: str variable"
+                     " [" << section << "]"
+                     " " << variable <<
+                     " = \"" << value << "\""
+                     " by default");
+        }
+        else {
+            LOG_POST("NCBI_CONFIG: str variable"
+                     " " << variable <<
+                     " = \"" << value << "\""
+                     " by default");
+        }
+    }
+#endif
+    return value;
 }
 
 
@@ -187,8 +356,9 @@ int CReader::GetConst(const string& ) const
 
 bool CReader::TryStringPack(void)
 {
-    static SConfigBoolValue var = { GENBANK_SECTION, STRING_PACK_ENV, true };
-    return CPackString::TryStringPack() && var.GetBool();
+    static bool var = CPackString::TryStringPack() &&
+        GetConfigFlag(GENBANK_SECTION, STRING_PACK_ENV, true);
+    return var;
 }
 
 
@@ -314,15 +484,15 @@ CId1ReaderBase::~CId1ReaderBase()
 
 bool CId1ReaderBase::TrySNPSplit(void)
 {
-    static SConfigBoolValue var = { GENBANK_SECTION, SNP_SPLIT_ENV, true };
-    return var.GetBool();
+    static bool var = GetConfigFlag(GENBANK_SECTION, SNP_SPLIT_ENV, true);
+    return var;
 }
 
 
 bool CId1ReaderBase::TrySNPTable(void)
 {
-    static SConfigBoolValue var = { GENBANK_SECTION, SNP_TABLE_ENV, true };
-    return var.GetBool();
+    static bool var = GetConfigFlag(GENBANK_SECTION, SNP_TABLE_ENV, true);
+    return var;
 }
 
 
@@ -445,11 +615,10 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                 CRef<CTSE_Chunk_Info> chunk
                     (new CTSE_Chunk_Info(kSkeleton_ChunkId));
                 chunk->x_AddAnnotType(name, type,
-                                      CSeq_id_Handle::GetGiHandle(gi),
-                                      CTSE_Chunk_Info::TLocationRange::GetWhole());
+                                      CSeq_id_Handle::GetGiHandle(gi));
                 chunk->x_AddBioseqPlace(0);
                 chunk->x_AddBioseqId(CSeq_id_Handle::GetHandle(seq_id));
-                chunk->x_TSEAttach(*blob);
+                blob->GetSplitInfo().AddChunk(*chunk);
                 blob.SetLoaded();
                 result.AddTSE_Lock(blob);
                 result.UpdateLoadedSet();
@@ -542,7 +711,7 @@ void CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
     CLoadLockBlob blob(result, blob_id);
     _ASSERT(blob);
     _ASSERT(blob.IsLoaded());
-    CTSE_Chunk_Info& chunk_info = blob->GetChunk(chunk_id);
+    CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
     if ( chunk_info.NotLoaded() ) {
         CInitGuard init(chunk_info, result);
         if ( init ) {
@@ -640,16 +809,14 @@ void CId1ReaderBase::GetSNPBlob(CTSE_Info& tse_info,
     tse_info.SetSeq_entry(*seq_entry);
     tse_info.SetName("SNP");
 
-    CRef<CTSE_Chunk_Info> info(new CTSE_Chunk_Info(kSNP_ChunkId));
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kSNP_ChunkId));
 
-    info->x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
+    chunk->x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
 
-    info->x_AddAnnotType(CAnnotName("SNP"),
-                         SAnnotTypeSelector(CSeqFeatData::eSubtype_variation),
-                         CSeq_id_Handle::GetGiHandle(blob_id.GetSatKey()),
-                         CTSE_Chunk_Info::TLocationRange::GetWhole());
+    chunk->x_AddAnnotType("SNP", CSeqFeatData::eSubtype_variation,
+                          CSeq_id_Handle::GetGiHandle(blob_id.GetSatKey()));
 
-    info->x_TSEAttach(tse_info);
+    tse_info.GetSplitInfo().AddChunk(*chunk);
 }
 
 
@@ -668,9 +835,8 @@ void CId1ReaderBase::GetSNPChunk(CTSE_Chunk_Info& chunk,
 {
     _ASSERT(IsSNPBlob_id(blob_id));
     _ASSERT(chunk.GetChunkId() == kSNP_ChunkId);
-    CRef<CSeq_annot_SNP_Info> snp_annot =
-        GetSNPAnnot(chunk.GetTSE_Info(), blob_id, conn);
-    if ( !chunk.GetTSE_Info().IsUnavailable() ) {
+    CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(blob_id, conn);
+    if ( snp_annot ) {
         CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
         CTSE_Chunk_Info::TPlace place(chunk.eBioseq_set, kSNP_EntryId);
         chunk.x_LoadAnnot(place, annot_info);

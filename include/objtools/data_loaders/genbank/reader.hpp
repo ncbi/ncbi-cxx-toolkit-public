@@ -60,36 +60,15 @@ class CID2S_Chunk;
 class CReaderRequestResult;
 class CLoadLockBlob_ids;
 
-struct NCBI_XREADER_EXPORT SConfigIntValue
-{
-    const char*  m_Section;
-    const char*  m_Variable;
-    int          m_DefaultValue;
-    mutable bool m_Initialized;
-    mutable int  m_Value;
-
-    void Initialize(void) const
-        {
-            if ( !m_Initialized ) {
-                x_Initialize();
-            }
-        }
-    int GetInt(void) const
-        {
-            Initialize();
-            return m_Value;
-        }
-    bool GetBool(void) const
-        {
-            Initialize();
-            return m_Value != 0;
-        }
-private:
-    void x_Initialize(void) const;
-    void x_SetValue(const char* value) const;
-};
-typedef SConfigIntValue SConfigBoolValue;
-
+string NCBI_XREADER_EXPORT GetConfigString(const char* section,
+                                           const char* variable,
+                                           const char* default_value = 0);
+int NCBI_XREADER_EXPORT GetConfigInt(const char* section,
+                                     const char* variable,
+                                     int default_value = 0);
+bool NCBI_XREADER_EXPORT GetConfigFlag(const char* section,
+                                       const char* variable,
+                                       bool default_value = false);
 
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
@@ -197,8 +176,7 @@ public:
 
     virtual TBlobVersion GetVersion(const CBlob_id& blob_id, TConn conn) = 0;
 
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(CTSE_Info& tse_info,
-                                                  const CBlob_id& blob_id,
+    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
                                                   TConn conn) = 0;
     
     enum ESat {

@@ -93,8 +93,8 @@ static STimeSizeStatistics snp_parse;
 int CId1Reader::CollectStatistics(void)
 {
 #ifdef ID1_COLLECT_STATS
-    static SConfigIntValue var = { "GENBANK", "ID1_STATS" };
-    return var.GetInt();
+    static int var = GetConfigInt("GENBANK", "ID1_STATS");
+    return var;
 #else
     return 0;
 #endif
@@ -103,8 +103,8 @@ int CId1Reader::CollectStatistics(void)
 
 static int GetDebugLevel(void)
 {
-    static SConfigIntValue var = { "GENBANK", "ID1_DEBUG" };
-    return var.GetInt();
+    static int var = GetConfigInt("GENBANK", "ID1_DEBUG");
+    return var;
 }
 
 
@@ -360,22 +360,9 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
         try {
             _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
 
-            string id1_svc;
-            {{
-                CNcbiApplication* app = CNcbiApplication::Instance();
-                static const char* env_var = "NCBI_SERVICE_NAME_ID1";
-                if (app) { 
-                    id1_svc = app->GetEnvironment().Get(env_var);
-                } else {
-                    char* s = ::getenv(env_var);
-                    if (s) {
-                        id1_svc = s;
-                    }
-                }
-            }}
-            if ( id1_svc.empty() ) {
-                id1_svc = "ID1";
-            }
+            static string id1_svc = GetConfigString("NCBI",
+                                                    "SERVICE_NAME_ID1",
+                                                    "ID1");
 
             if ( GetDebugLevel() >= eTraceConn ) {
                 NcbiCout << "CId1Reader: New connection to " <<
@@ -831,8 +818,7 @@ static void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
 }
 
 
-CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(CTSE_Info& /*tse_info*/,
-                                                  const CBlob_id& blob_id,
+CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CBlob_id& blob_id,
                                                   TConn conn)
 {
     CRef<CSeq_annot_SNP_Info> snp_annot_info;

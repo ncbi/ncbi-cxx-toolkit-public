@@ -38,6 +38,7 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
@@ -76,16 +77,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#define GENBANK_ID2_DEBUG_ENV "GENBANK_ID2_DEBUG"
-#define GENBANK_ID2_STATS_ENV "GENBANK_ID2_STATS"
-#define GENBANK_ID2_SERVICE_NAME_ENV "GENBANK_ID2_SERVICE_NAME"
 #define DEFAULT_ID2_SERVICE_NAME "ID2LXA"
-#define GENBANK_ID2_CGI_NAME_ENV "GENBANK_ID2_CGI_NAME"
 
 static int GetDebugLevel(void)
 {
-    static SConfigIntValue var = { "GENBANK", "ID2_DEBUG" };
-    return var.GetInt();
+    static int var = GetConfigInt("GENBANK", "ID2_DEBUG");
+    return var;
 }
 
 
@@ -208,7 +205,8 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
         }
     }
     if ( !m_NextConnectTime.IsEmpty() ) {
-        int wait_seconds = (m_NextConnectTime - CTime(CTime::eCurrent)).GetCompleteSeconds();
+        int wait_seconds =
+            (m_NextConnectTime - CTime(CTime::eCurrent)).GetCompleteSeconds();
         if ( wait_seconds > 0 ) {
             _TRACE("CId2Reader: "
                    "waiting "<<wait_seconds<<" before new connection");
@@ -216,55 +214,43 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
         }
     }
 
-    string cgi;
-    string service;
-    {{
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app) { 
-            service = app->GetEnvironment().Get(GENBANK_ID2_SERVICE_NAME_ENV);
-            cgi = app->GetEnvironment().Get(GENBANK_ID2_CGI_NAME_ENV);
-        }
-        else {
-            char* s = ::getenv(GENBANK_ID2_SERVICE_NAME_ENV);
-            if ( s ) {
-                service = s;
-            }
-            s = ::getenv(GENBANK_ID2_CGI_NAME_ENV);
-            if ( s ) {
-                cgi = s;
-            }
-        }
-    }}
-    if ( cgi.empty() && service.empty() ) {
-        service = DEFAULT_ID2_SERVICE_NAME;
-    }
-
     for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
         try {
-            if ( GetDebugLevel() >= eTraceConn ) {
-                CDebugPrinter s;
-                s << "CId2Reader: New connection to ";
-                if ( !cgi.empty() ) {
-                    s << cgi;
-                }
-                else {
-                    s << service;
-                }
-                s << "...\n";
-            }
             STimeout tmout;
             tmout.sec = 20;
             tmout.usec = 0;
             auto_ptr<CConn_IOStream> stream;
-            if ( !cgi.empty() ) {
-                stream.reset(new CConn_HttpStream(cgi/*,
-                                                  fHCC_AutoReconnect,
-                                                  &tmout*/));
+            
+            bool is_service;
+            string dst;
+            if ( dst.empty() ) {
+                static string cgi = GetConfigString("GENBANK",
+                                                    "ID2_CGI_NAME");
+                dst = cgi;
+                is_service = false;
             }
-            else {
-                stream.reset(new CConn_ServiceStream(service,
+            if ( dst.empty() ) {
+                static string srv = GetConfigString("GENBANK",
+                                                    "ID2_SERVICE_NAME",
+                                                    DEFAULT_ID2_SERVICE_NAME);
+                dst = srv;
+                is_service = true;
+            }
+
+            if ( GetDebugLevel() >= eTraceConn ) {
+                CDebugPrinter s;
+                s << "CId2Reader: New connection to " << dst << "...\n";
+            }
+
+            if ( is_service ) {
+                stream.reset(new CConn_ServiceStream(dst,
                                                      fSERV_Any,
                                                      0, 0, &tmout));
+            }
+            else {
+                stream.reset(new CConn_HttpStream(dst/*,
+                                                  fHCC_AutoReconnect,
+                                                  &tmout*/));
             }
             if ( stream->bad() ) {
                 ERR_POST("CId2Reader::x_NewConnection: cannot connect");
@@ -272,14 +258,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
             }
             if ( GetDebugLevel() >= eTraceConn ) {
                 CDebugPrinter s;
-                s << "CId2Reader: New connection to ";
-                if ( !cgi.empty() ) {
-                    s << cgi;
-                }
-                else {
-                    s << service;
-                }
-                s << " opened.\n";
+                s << "CId2Reader: New connection to " << dst << " opened.\n";
             }
             //x_InitConnection(*stream);
             return stream.release();
@@ -557,7 +536,7 @@ void CId2Reader::LoadChunk(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     _ASSERT(blob);
-    if ( !blob->GetChunk(chunk_id).NotLoaded() ) {
+    if ( !blob->GetSplitInfo().GetChunk(chunk_id).NotLoaded() ) {
         return;
     }
     CID2_Request req;
@@ -990,7 +969,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     }
 
     if ( reply.GetBlob_id().IsSetVersion() ) {
-        blob->SetBlobVersion(reply.GetBlob_id().GetVersion());
+        blob->SetBlobVersion(abs(reply.GetBlob_id().GetVersion()));
     }
 
     if ( reply.GetSplit_version() == 0 ) {
@@ -1060,8 +1039,10 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     
     CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
     x_ReadData(reply.GetData(), Begin(*chunk));
-    CSplitParser::Load(blob->GetChunk(reply.GetChunk_id()), *chunk);
-    blob->GetChunk(reply.GetChunk_id()).SetLoaded();
+    CTSE_Chunk_Info& chunk_info =
+        blob->GetSplitInfo().GetChunk(reply.GetChunk_id());
+    CSplitParser::Load(chunk_info, *chunk);
+    chunk_info.SetLoaded();
 }
 
 

@@ -35,6 +35,7 @@
 
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 
@@ -48,7 +49,7 @@ void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
 {
     ITERATE ( CID2S_Split_Info::TChunks, it, split.GetChunks() ) {
         CRef<CTSE_Chunk_Info> chunk = Parse(**it);
-        chunk->x_TSEAttach(tse);
+        tse.GetSplitInfo().AddChunk(*chunk);
     }
 }
 
@@ -98,17 +99,18 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Seq_descr_Info& place)
 {
+    CID2S_Seq_descr_Info::TType_mask types = place.GetType_mask();
     if ( place.IsSetBioseqs() ) {
         ITERATE ( CID2_Bioseq_Ids::Tdata, it, place.GetBioseqs().Get() ) {
             const CID2_Id_Range& range = **it;
             for( int id = range.GetStart(), n = range.GetCount(); n--; ++id ) {
-                chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq, id);
+                chunk.x_AddDescrPlace(types, CTSE_Chunk_Info::eBioseq, id);
             }
         }
     }
     if ( place.IsSetBioseq_sets() ) {
         ITERATE(CID2_Bioseq_set_Ids::Tdata, it, place.GetBioseq_sets().Get()) {
-            chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq_set, *it);
+            chunk.x_AddDescrPlace(types, CTSE_Chunk_Info::eBioseq_set, *it);
         }            
     }
 }
@@ -336,6 +338,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.12  2004/10/07 14:08:10  vasilche
+ * Use static GetConfigXxx() functions.
+ * Try to deal with withdrawn and private blobs without exceptions.
+ * Use correct desc mask in split data.
+ *
  * Revision 1.11  2004/08/31 14:40:10  vasilche
  * Postpone indexing of split blobs.
  *

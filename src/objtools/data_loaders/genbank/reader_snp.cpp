@@ -79,8 +79,8 @@ BEGIN_SCOPE(objects)
 
 static bool CollectSNPStat(void)
 {
-    static SConfigBoolValue var = { "GENBANK", "SNP_TABLE_STAT" };
-    return var.GetBool();
+    static bool var = GetConfigFlag("GENBANK", "SNP_TABLE_STAT");
+    return var;
 }
 
 
@@ -218,8 +218,7 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
     else {
 #ifdef _DEBUG
-        static SConfigIntValue var = { "GENBANK", "SNP_TABLE_DUMP" };
-        static int dump_feature = var.GetInt();
+        static int dump_feature = GetConfigInt("GENBANK", "SNP_TABLE_DUMP");
         if ( dump_feature > 0 ) {
             --dump_feature;
             NcbiCerr <<
@@ -589,6 +588,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.16  2004/10/07 14:08:10  vasilche
+ * Use static GetConfigXxx() functions.
+ * Try to deal with withdrawn and private blobs without exceptions.
+ * Use correct desc mask in split data.
+ *
  * Revision 1.15  2004/09/14 19:10:02  vasilche
  * Use SConfigIntValue and SConfigBoolValue for configurables.
  * Avoid exceptions when dealing with confidential or withdrawn data.

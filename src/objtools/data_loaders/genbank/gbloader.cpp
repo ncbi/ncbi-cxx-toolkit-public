@@ -74,8 +74,6 @@ BEGIN_SCOPE(objects)
 // GBLoader Public interface 
 // 
 
-static const char* const DRV_ENV_VAR = "GENBANK_LOADER_METHOD";
-
 #if defined(HAVE_PUBSEQ_OS)
 static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
 #else
@@ -187,12 +185,11 @@ void CGBDataLoader::x_CreateDriver(const string& driver_name)
         }
     }
 
-    const char* env = ::getenv(DRV_ENV_VAR);
-    if (!env) {
-        env = DEFAULT_DRV_ORDER; // default drivers' order
-    }
+    static string driver_order = GetConfigString("GENBANK",
+                                                 "LOADER_METHOD",
+                                                 DEFAULT_DRV_ORDER);
     list<string> drivers;
-    NStr::Split(env, ":", drivers);
+    NStr::Split(driver_order, ":", drivers);
     ITERATE ( list<string>, drv, drivers ) {
         m_Driver = x_CreateReader(*drv);
         if ( m_Driver )
@@ -201,7 +198,7 @@ void CGBDataLoader::x_CreateDriver(const string& driver_name)
 
     if (!m_Driver) {
         NCBI_THROW(CLoaderException, eNoConnection,
-                   "Could not create driver: " + string(env));
+                   "Could not create driver: " + driver_order);
     }
 }
 
@@ -569,7 +566,7 @@ void CGBDataLoader::GetChunk(TChunk chunk)
     for ( int retry = 0; chunk->NotLoaded() && retry < 3; ++retry ) {
         CGBReaderRequestResult result(this);
         m_Driver->LoadChunk(result,
-                            GetBlobId(chunk->GetTSE_Info()),
+                            GetBlobId(chunk->GetBlobId()),
                             chunk->GetChunkId());
     }
     if ( chunk->NotLoaded() ) {
@@ -628,8 +625,8 @@ void CGBDataLoader::AllocateConn(CGBReaderRequestResult& result)
 #ifdef NCBI_NO_THREADS
     conn = 0;
 #else
-    static SConfigBoolValue var = { "GENBANK", "SINGLE_CONN" };
-    if ( var.GetBool() ) {
+    static bool single_conn = GetConfigFlag("GENBANK", "SINGLE_CONN");
+    if ( single_conn ) {
         conn = 0;
     }
     else {

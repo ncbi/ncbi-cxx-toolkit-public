@@ -66,8 +66,8 @@ static CAtomicCounter s_pubseq_readers;
 #ifdef _DEBUG
 static int GetDebugLevel(void)
 {
-    static SConfigIntValue var = { "GENBANK", "PUBSEQOS_DEBUG" };
-    return var.GetInt();
+    static int var = GetConfigInt("GENBANK", "PUBSEQOS_DEBUG");
+    return var;
 }
 #else
 # define GetDebugLevel() (0)
@@ -439,21 +439,20 @@ void CPubseqReader::GetTSEBlob(CTSE_Info& tse_info,
 {
     CDB_Connection* db_conn = x_GetConnection(conn);
     auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(blob_id, db_conn));
-    auto_ptr<CDB_Result> result(x_ReceiveData(tse_info, *cmd));
+    auto_ptr<CDB_Result> result(x_ReceiveData(&tse_info, *cmd));
     if ( result.get() ) {
         x_ReceiveMainBlob(tse_info, blob_id, *result);
     }
 }
 
 
-CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(CTSE_Info& tse_info,
-                                                     const CBlob_id& blob_id,
+CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(const CBlob_id& blob_id,
                                                      TConn conn)
 {
     CRef<CSeq_annot_SNP_Info> ret;
     CDB_Connection* db_conn = x_GetConnection(conn);
     auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(blob_id, db_conn));
-    auto_ptr<CDB_Result> result(x_ReceiveData(tse_info, *cmd));
+    auto_ptr<CDB_Result> result(x_ReceiveData(0, *cmd));
     if ( result.get() ) {
         ret = x_ReceiveSNPAnnot(*result);
     }
@@ -481,7 +480,7 @@ CDB_RPCCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 }
 
 
-CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info& tse_info, CDB_RPCCmd& cmd)
+CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
 {
     // new row
     CDB_VarChar descrOut("-");
@@ -520,12 +519,16 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info& tse_info, CDB_RPCCmd& cmd)
             }
         }
     }
+    if ( !tse_info ) {
+        NCBI_THROW(CLoaderException, eNoData,
+                   "unexpected missing data in reply");
+    }
     if ( confidential.Value()>0 || withdrawn.Value()>0 ) {
-        tse_info.SetSuppressionLevel(CTSE_Info::eSuppression_private);
+        tse_info->SetSuppressionLevel(CTSE_Info::eSuppression_private);
         return 0;
     }
     else {
-        tse_info.SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
+        tse_info->SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
         return 0;
     }
 }
