@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/06/01 15:37:16  clausen
+ * Changed CPDB_seq_id::Match() to use PCase instead of PNocase
+ *
  * Revision 6.7  2001/01/07 22:00:58  vakatov
  * Upcase((const string&) GetMol()) -- expl.cast (for WorkShop5 compiler)
  *
@@ -80,7 +83,7 @@ CPDB_seq_id::~CPDB_seq_id(void)
 bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 {
     return GetChain() == psip2.GetChain() &&
-        PNocase().Equals(GetMol(), psip2.GetMol());
+        PCase().Equals(GetMol(), psip2.GetMol());
 }
 
     // format a FASTA style string
