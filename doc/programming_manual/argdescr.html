@@ -133,7 +133,7 @@ The <i><a href="#ref_CArgDescriptions">CArgDescriptions</a></i> class provides
 an interface to describe the data type and attributes of&nbsp; command-line
 arguments, via a set of <i>AddXxx()</i> methods.&nbsp; Additional constraints
 on the number of arguments and their acceptable ranges of values can be
-imposed using the <i>Allow()</i> and <i>SetConstraints()</i> methods.&nbsp;
+imposed using the <i>Allow()</i> and <i>SetConstraint()</i> methods.&nbsp;
 The <i>CreateArgs()
 </i>method is passed the values of all command line
 arguments at runtime. It verifies their overall syntactic structure and
@@ -220,7 +220,7 @@ Methods <i>AddXxx() </i>are used to describe the following argument attributes:
 The string that will be used to identify the variable, as in: <i>CArgs[name].
 </i>For
 all tagged variables on the command line, name is also the key (or flag)
-to be used there, as in: "<i>-name valu</i>e" (or "<i>-name"</i>).</dd>
+to be used there, as in: "<i>-name value</i>" (or "<i>-name"</i>).</dd>
 
 <dt>
 <i><font color="#0000B4">synopsis</font></i></dt>
@@ -230,7 +230,6 @@ The automatically generated <i><a href="#ref_CArgDescriptions_Usage">USAGE</a></
 messages include a description for each argument, with the format:</dd>
 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
 <i>-name [synopsis] type [mandatory | optional]</i>
 <dt>
 <i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -486,11 +485,11 @@ checks the command line arguments against the descriptions which have been
 registered. The first step of this process involves a <i>pre-check</i>
 that tests to see if the constraint policy is satisfiable. If so, then
 the individual argument values are loaded and matched against their descriptions,
-and then a <i>post-check</i> is performed to ensure that all of the mandatory
-arguments were present and that the positional arguments satisfied the
-contraint policy.
+and a <i>post-check</i> is performed, to ensure that all of the mandatory
+arguments are present and that the positional arguments satisfy the constraint
+policy.
 <p>Exceptions which are thrown during argument processing can be presented
-to the user, but by themselves do not provide much of information. Catching
+to the user, but by themselves do not provide much information. Catching
 the exception and displaying it <i>along</i> with a <i>USAGE</i> message
 provides a sounder interface to the application, and can be done as follows:
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...executed inside CNcbiApplication::Run()
@@ -518,9 +517,9 @@ class, described below.
 <p>The <i>SetUsageContext()</i> method is used to define the name of the
 program and its description, as it will be displayed by the <i>USAGE</i>
 message that is generated. <i>PrintUsage(some_string)</i> writes its message
-to the <i>some_string, </i>and returns that <i>string</i>, so that it can
-be used with an output operator. The output generated when an exception
-occurs might look something like:
+to <i>some_string, </i>and returns that <i>string</i>, so that it can be
+used with an output operator. The output generated when an exception occurs
+might look something like:
 <pre><font color="#000080">Must specify mandatory argument:&nbsp; "-i &lt;MyInputFile>"&nbsp;
 SYNOPSIS
 &nbsp;&nbsp; myApplic -text -i MyInputFile [-l MyLogFile]&nbsp;
@@ -573,8 +572,8 @@ and is added to a container managed by the <i>CArgs</i> object.&nbsp; All
 <i>named</i>
 arguments can be accessed&nbsp; using the [] operator, as in: <i>myCArgs["f"]</i>,
 where "f" is the name registered for that argument. There are two ways
-to access the <i>Nth</i> unnamed positional argument: 
-<i>myCArgs["#N"]&nbsp;
+to access the <i>Nth</i> unnamed positional argument: <i>myCArgs["#N"]
+
 </i>and&nbsp; <i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
