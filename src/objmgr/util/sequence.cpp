@@ -37,15 +37,10 @@
 
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/IUPACaa.hpp>
-#include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/seqport_util.hpp>
 
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
@@ -56,7 +51,6 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 
-#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objects/seqfeat/Cdregion.hpp>
@@ -1485,231 +1479,6 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
 }
 
 
-SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos) {
-    SIZE_TYPE vbar = str.find('|', pos);
-    if (vbar == NPOS) {
-        return NPOS; // bad
-    }
-
-    switch (CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str())) {
-        // Deliberate fall-through here.
-    case CSeq_id::e_Patent: case CSeq_id::e_Other: // 3 args
-        vbar = str.find('|', vbar + 1);
-
-    case CSeq_id::e_Genbank:   case CSeq_id::e_Embl:    case CSeq_id::e_Pir:
-    case CSeq_id::e_Swissprot: case CSeq_id::e_General: case CSeq_id::e_Ddbj:
-    case CSeq_id::e_Prf:       case CSeq_id::e_Pdb:     case CSeq_id::e_Tpg:
-    case CSeq_id::e_Tpe:       case CSeq_id::e_Tpd:
-        // 2 args
-        if (vbar == NPOS) {
-            return NPOS; // bad
-        }
-        vbar = str.find('|', vbar + 1);
-
-    case CSeq_id::e_Local: case CSeq_id::e_Gibbsq: case CSeq_id::e_Gibbmt:
-    case CSeq_id::e_Giim:  case CSeq_id::e_Gi:
-        // 1 arg
-        if (vbar == NPOS) {
-            return NPOS; // bad
-        }
-        vbar = str.find('|', vbar + 1);
-        break;
-
-    default: // unrecognized or not set
-        return NPOS; // bad
-    }
-
-    return (vbar == NPOS) ? str.size() : vbar;
-}
-
-
-static void s_FixSeqData(CBioseq* seq)
-{
-    if (seq == 0) {
-        return;
-    }
-    CSeq_inst& inst = seq->SetInst();
-    if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
-        TSeqPos length = 0;
-        non_const_iterate (CDelta_ext::Tdata, it,
-                           inst.SetExt().SetDelta().Set()) {
-            if ((*it)->IsLiteral()) {
-                CSeq_literal& lit  = (*it)->SetLiteral();
-                CSeq_data&    data = lit.SetSeq_data();
-                if (data.IsIupacna()) {
-                    lit.SetLength(data.GetIupacna().Get().size());
-                    CSeqportUtil::Pack(&data);
-                } else {
-                    lit.SetLength(data.GetIupacaa().Get().size());
-                }
-                length += lit.GetLength();
-            }
-        }
-    } else {
-        CSeq_data& data = inst.SetSeq_data();
-        if (data.IsIupacna()) {
-            inst.SetLength(data.GetIupacna().Get().size());
-            CSeqportUtil::Pack(&data);
-        } else {
-            inst.SetLength(data.GetIupacaa().Get().size());
-        }        
-    }
-}
-
-
-static CSeq_data& s_LastData(CSeq_inst& inst)
-{
-    if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
-        CDelta_ext::Tdata& delta_data = inst.SetExt().SetDelta().Set();
-        if (delta_data.empty()  ||  !delta_data.back()->IsLiteral()) {
-            CRef<CDelta_seq> delta_seq = new CDelta_seq;
-            delta_data.push_back(delta_seq);
-            return delta_seq->SetLiteral().SetSeq_data();
-        } else {
-            return delta_data.back()->SetLiteral().SetSeq_data();
-        }
-    } else {
-        return inst.SetSeq_data();
-    }
-}
-
-
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
-{
-    CRef<CSeq_entry>       entry = new CSeq_entry;
-    CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
-    CRef<CBioseq>          seq   = 0; // current Bioseq
-    string                 line;
-
-    while ( !in.eof() ) {
-        NcbiGetlineEOL(in, line);
-        if (in.eof()  &&  line.empty()) {
-            break;
-        }
-        if (line[0] == '>') {
-            // new sequence
-            SIZE_TYPE       space = line.find_first_of(" \t");
-            string          name  = line.substr(0, space), local;
-            CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
-
-            s_FixSeqData(seq);
-            seq = new CBioseq;
-            seq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            {{
-                CRef<CSeq_entry> entry2 = new CSeq_entry;
-                entry2->SetSeq(*seq);
-                sset.push_back(entry2);
-            }}
-            if (flags & fReadFasta_NoParseID) {
-                local = name;
-            } else {
-                // try to parse out IDs
-                SIZE_TYPE pos = 0;
-                while (pos < name.size()) {
-                    SIZE_TYPE end = s_EndOfFastaID(name, pos);
-                    if (end == NPOS) {
-                        if (pos > 0) {
-                            NCBI_THROW2(CParseException, eErr,
-                                        "ReadFasta: Bad ID "
-                                        + name.substr(pos),
-                                        pos);
-                        } else {
-                            local = name;
-                            break;
-                        }
-                    }
-
-                    CRef<CSeq_id> id
-                        = new CSeq_id(name.substr(pos, end - pos));
-                    seq->SetId().push_back(id);
-                    if (mol == CSeq_inst::eMol_not_set
-                        &&  !(flags & fReadFasta_ForceType)) {
-                        CSeq_id::EAccessionInfo ai = id->IdentifyAccession();
-                        if (ai & CSeq_id::fAcc_nuc) {
-                            mol = CSeq_inst::eMol_na;
-                        } else if (ai & CSeq_id::fAcc_prot) {
-                            mol = CSeq_inst::eMol_na;
-                        }
-                    }
-                    pos = end + 1;
-                }
-            }
-            
-            if ( !local.empty() ) {
-                seq->SetId().push_back(new CSeq_id(CSeq_id::e_Local, local,
-                                                   kEmptyStr));
-            }
-
-            if (mol == CSeq_inst::eMol_not_set) {
-                if (flags & fReadFasta_AssumeNuc) {
-                    _ASSERT(!(flags & fReadFasta_AssumeProt));
-                    mol = CSeq_inst::eMol_na;
-                } else {
-                    _ASSERT(flags & fReadFasta_AssumeProt);
-                    mol = CSeq_inst::eMol_aa;
-                }
-            }
-
-            if (space != NPOS) {
-                CRef<CSeqdesc> desc = new CSeqdesc;
-                desc->SetTitle(line.substr(space + 1));
-                seq->SetDescr().Set().push_back(desc);
-            }
-        } else {
-            // actual data; may contain embedded junk
-            CSeq_inst& inst = seq->SetInst();
-            string residues;
-            for (SIZE_TYPE i = 0;  i < line.size();  ++i) {
-                char c = line[i];
-                if (isalpha(c)) {
-                    residues += (char)toupper(c);
-                } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
-                    CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
-                    if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
-                        CRef<CDelta_seq> ds = new CDelta_seq;
-                        inst.SetRepr(CSeq_inst::eRepr_delta);
-                        if (inst.IsSetSeq_data()) {
-                            ds->SetLiteral().SetSeq_data(inst.SetSeq_data());
-                            d.push_back(ds);
-                            inst.ResetSeq_data();
-                        }
-                    }
-                    if ( !residues.empty() ) {
-                        CSeq_data& data = s_LastData(inst);
-                        if (inst.GetMol() == CSeq_inst::eMol_aa) {
-                            data.SetIupacaa().Set() += residues;
-                        } else {
-                            data.SetIupacna().Set() += residues;
-                        }                        
-                    }
-                    {{
-                        CRef<CDelta_seq> gap = new CDelta_seq;
-                        gap->SetLoc().SetNull();
-                        d.push_back(gap);
-                    }}
-                }
-            }
-            
-            // Add the accumulated data...
-            {{
-                CSeq_data& data = s_LastData(inst);
-                if (inst.GetMol() == CSeq_inst::eMol_aa) {
-                    data.SetIupacaa().Set() += residues;
-                } else {
-                    data.SetIupacna().Set() += residues;
-                }
-            }}
-        }
-    }
-
-    s_FixSeqData(seq);
-    // simplify if possible
-    if (sset.size() == 1) {
-        entry->SetSeq(*seq);
-    }
-    return entry;
-}
-
 END_SCOPE(sequence)
 
 void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
@@ -2177,6 +1946,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2002/10/23 19:22:39  ucko
+* Move the FASTA reader from objects/util/sequence.?pp to
+* objects/seqset/Seq_entry.?pp because it doesn't need the OM.
+*
 * Revision 1.14  2002/10/23 18:23:59  ucko
 * Clean up #includes.
 * Add a FASTA reader (known to compile, but not otherwise tested -- take care)

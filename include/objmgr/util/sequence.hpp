@@ -176,20 +176,9 @@ bool BadSeqLocSortOrder
  CScope*         scope);
 
 
-enum EReadFastaFlags {
-    fReadFasta_AssumeNuc  = 0x1,  // type to use if no revealing accn found
-    fReadFasta_AssumeProt = 0x2,
-    fReadFasta_ForceType  = 0x4,  // force type regardless of accession
-    fReadFasta_NoParseID  = 0x8,  // treat name as local ID regardless of |s
-    fReadFasta_ParseGaps  = 0x10  // make a delta sequence if gaps found
-};
-typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
-// keeps going until EOF or parse error (-> CParseException)
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0);
-
 END_SCOPE(sequence)
 
-// FASTA-format output
+// FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
 class CFastaOstream {
 public:
     enum EFlags {
@@ -257,6 +246,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/10/23 19:22:52  ucko
+* Move the FASTA reader from objects/util/sequence.?pp to
+* objects/seqset/Seq_entry.?pp because it doesn't need the OM.
+*
 * Revision 1.9  2002/10/23 18:23:43  ucko
 * Add a FASTA reader (known to compile, but not otherwise tested -- take care)
 *
