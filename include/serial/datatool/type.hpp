@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/02/15 21:39:28  kholodov
+* Modified: pointer to parent CDataMember added to CDataType class.
+* Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
+*
 * Revision 1.11  2000/12/15 15:38:35  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -125,7 +129,7 @@ class CTypeStrings;
 class CFileCode;
 class CClassTypeStrings;
 class CNamespace;
-
+class CDataMember;
 
 struct AnyType {
     union {
@@ -267,12 +271,22 @@ public:
             return m_Comments;
         }
 
+  void SetDataMember(CDataMember* dm) {
+    m_DataMember = dm;
+  }
+
+  const CDataMember* GetDataMember(void) const {
+    _ASSERT(m_DataMember);
+    return m_DataMember;
+  }
+
 private:
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
     string m_MemberName;
     int m_SourceLine;
     CComments m_Comments;
+    CDataMember* m_DataMember;
 
     // tree info
     const CUniSequenceDataType* m_Set;

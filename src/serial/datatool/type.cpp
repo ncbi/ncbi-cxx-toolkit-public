@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/02/15 21:39:14  kholodov
+* Modified: pointer to parent CDataMember added to CDataType class.
+* Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
+*
 * Revision 1.57  2000/11/29 17:42:45  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -150,6 +154,7 @@
 #include <serial/datatool/type.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
+#include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/exceptions.hpp>
@@ -183,7 +188,7 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
-      m_Set(0), m_Choice(0), m_Checked(false)
+      m_DataMember(0),  m_Set(0), m_Choice(0), m_Checked(false)
 {
 }
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/02/15 21:39:14  kholodov
+* Modified: pointer to parent CDataMember added to CDataType class.
+* Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
+*
 * Revision 1.21  2000/12/15 15:38:51  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -123,6 +127,7 @@
 #include <serial/datatool/stdstr.hpp>
 #include <serial/datatool/stlstr.hpp>
 #include <serial/datatool/value.hpp>
+#include <serial/datatool/blocktype.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>
@@ -206,8 +211,24 @@ const char* CBoolDataType::GetXMLContents(void) const
 
 void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
+  const char *attr;
+  const CBoolDataValue *val = 
+    dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault());
+
+  if(val) {
+    attr = val->GetValue() ? "'true'" : "'false'";
+  }
+  else if( GetDataMember()->Optional() ) {
+    attr = "#IMPLIED";
+  }
+  else {
+    attr = "#REQUIRED";
+  }
+
+
     out <<
-        "<!ATTLIST "<<XmlTagName()<<" value ( true | false ) #REQUIRED >\n"
+      "<!ATTLIST "<<XmlTagName()<<" value ( true | false ) " 
+	<< attr << " >\n"
         "\n";
 }
 

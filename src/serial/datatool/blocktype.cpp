@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/02/15 21:39:14  kholodov
+* Modified: pointer to parent CDataMember added to CDataType class.
+* Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
+*
 * Revision 1.32  2000/11/29 17:42:42  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
 * Added srcutil.hpp file to reduce file dependancy.
@@ -481,6 +485,7 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
     : m_Name(name), m_Type(type), m_Optional(false)
 {
+  m_Type->SetDataMember(this);
 }
 
 CDataMember::~CDataMember(void)
