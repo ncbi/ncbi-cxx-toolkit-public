@@ -424,8 +424,8 @@ const void* CRawPointer::Add(const void* object, ssize_t offset)
 inline
 ssize_t CRawPointer::Sub(const void* first, const void* second)
 {
-    return
-        static_cast<const char*> (first) - static_cast<const char*> (second);
+    return (ssize_t)/*ptrdiff_t*/
+        (static_cast<const char*> (first) - static_cast<const char*> (second));
 }
 
 
@@ -488,6 +488,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2005/01/25 01:10:08  lavr
+ * Explicit ptrdiff_t->ssize_t casting in CRawPointer::Sub
+ *
  * Revision 1.77  2005/01/24 17:03:58  vasilche
  * New boolean operators support.
  *
