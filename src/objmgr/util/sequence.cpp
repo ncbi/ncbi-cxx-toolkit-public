@@ -1694,9 +1694,9 @@ void CFastaOstream::Write(CBioseq_Handle& handle, const CSeq_loc* location)
 
 void CFastaOstream::WriteTitle(CBioseq_Handle& handle)
 {
-    m_Out
-        << CSeq_id::GetStringDescr(handle.GetBioseq(), CSeq_id::eFormat_FastA)
-        << ' ' << sequence::GetTitle(handle) << NcbiEndl;
+    m_Out << '>' << CSeq_id::GetStringDescr(handle.GetBioseq(),
+                                            CSeq_id::eFormat_FastA)
+          << ' ' << sequence::GetTitle(handle) << NcbiEndl;
 }
 
 
@@ -2505,6 +2505,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2002/12/10 16:56:41  ucko
+* CFastaOstream::WriteTitle: restore leading > accidentally dropped in R1.19.
+*
 * Revision 1.23  2002/12/10 16:34:45  kans
 * implement code break processing in TranslateCdregion
 *
