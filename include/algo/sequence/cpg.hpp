@@ -47,17 +47,6 @@ struct NCBI_XALGOSEQ_EXPORT SCpGIsland {
     unsigned int m_G;
     unsigned int m_T;
     unsigned int m_N;
-
-    bool operator<(const SCpGIsland& island) const {
-        throw runtime_error(string("unimplemented operator"));
-        _ASSERT(0);
-        return true;
-    }
-    bool operator==(const SCpGIsland& island) const {
-        throw runtime_error(string("unimplemented operator"));
-        _ASSERT(0);
-        return true;
-    }
 };
 
 /*---------------------------------------------------------------------------*/
@@ -127,6 +116,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.6  2003/12/12 20:19:20  ivanov
+* Rollback to 1.4
+*
 * Revision 1.5  2003/12/12 20:15:55  ivanov
 * Added unimplemented SCpGIsland:: operators < and == to avoid compilation
 * on MSVC 7
