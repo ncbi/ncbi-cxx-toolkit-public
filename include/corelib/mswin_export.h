@@ -138,6 +138,9 @@
 #  define NCBI_ENTREZGENE_EXPORTS
 #  define NCBI_BIOTREE_EXPORTS
 #  define NCBI_REMAP_EXPORTS
+#  define NCBI_PROJ_EXPORTS
+#  define NCBI_PCASSAY_EXPORTS
+#  define NCBI_PCSUBSTANCE_EXPORTS
 #endif
 
 
@@ -564,6 +567,33 @@
 #  define NCBI_OMSSA_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_OMSSA_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library pcassay
+ */
+#ifdef NCBI_PCASSAY_EXPORTS
+#  define NCBI_PCASSAY_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_PCASSAY_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library pcsubstance
+ */
+#ifdef NCBI_PCSUBSTANCE_EXPORTS
+#  define NCBI_PCSUBSTANCE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_PCSUBSTANCE_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library proj
+ */
+#ifdef NCBI_PROJ_EXPORTS
+#  define NCBI_PROJ_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_PROJ_EXPORT __declspec(dllimport)
 #endif
 
 /*
@@ -1094,6 +1124,9 @@
 #  define NCBI_NCBIMIME_EXPORT
 #  define NCBI_OBJPRT_EXPORT
 #  define NCBI_OMSSA_EXPORT
+#  define NCBI_PCASSAY_EXPORT
+#  define NCBI_PCSUBSTANCE_EXPORT
+#  define NCBI_PROJ_EXPORT
 #  define NCBI_PUBMED_EXPORT
 #  define NCBI_PUB_EXPORT
 #  define NCBI_REMAP_EXPORT
@@ -1173,6 +1206,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.95  2005/03/25 19:30:46  dicuccio
+ * Added export specifiers for objects/proj, objects/pcassay, objects/pcsubstance
+ *
  * Revision 1.94  2005/03/10 21:04:55  vasilche
  * Added NCBI_XREADER_CACHE_EXPORT.
  *
