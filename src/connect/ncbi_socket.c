@@ -2412,8 +2412,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
     /* get peer's address */
-    if (getpeername(xx_sock, (struct sockaddr*) &peer, &peerlen) != 0 ||
-        peerlen != sizeof(peer))
+    if (getpeername(xx_sock, (struct sockaddr*) &peer, &peerlen))
         return eIO_Closed;
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
@@ -3818,6 +3817,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.121  2003/07/23 20:31:01  lavr
+ * SOCK_CreateOnTopEx(): Do not check for returned peer's address size
+ *
  * Revision 6.120  2003/07/18 20:05:49  lavr
  * Fix log message of the previous check-in
  *
