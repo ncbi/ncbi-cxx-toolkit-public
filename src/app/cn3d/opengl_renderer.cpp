@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.47  2001/08/21 01:10:45  thiessen
 * add labeling
 *
@@ -201,6 +204,7 @@
 #include <stdlib.h> // for rand, srand
 
 #include "cn3d/opengl_renderer.hpp"
+#include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/messenger.hpp"
@@ -264,8 +268,9 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
 
 // OpenGLRenderer methods - initialization and setup
 
-OpenGLRenderer::OpenGLRenderer(void) :
-    selectMode(false), currentDisplayList(NO_LIST), structureSet(NULL)
+OpenGLRenderer::OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas) :
+    structureSet(NULL), glCanvas(parentGLCanvas),
+    selectMode(false), currentDisplayList(NO_LIST), cameraAngleRad(0.0)
 {
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
@@ -316,6 +321,8 @@ void OpenGLRenderer::Init(void) const
 
 void OpenGLRenderer::NewView(int selectX, int selectY) const
 {
+    if (cameraAngleRad <= 0.0) return;
+
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
 
@@ -941,7 +948,7 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
         AddTransparentSphere(atomStyle.color, atomStyle.name, site, atomStyle.radius, atomStyle.alpha);
         // but can put labels on now
         if (atomStyle.centerLabel.size() > 0)
-            Label(atomStyle.centerLabel, site, Vector(1,1,1)); // always white
+            DrawLabel(atomStyle.centerLabel, site, Vector(1,1,1)); // always white
     }
 
     displayListEmpty[currentDisplayList] = false;
@@ -986,7 +993,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         ERR_POST(Warning << "worm sides must be an even number");
         wormSides++;
     }
-    GLdouble *fblock = new GLdouble[12 * wormSides];
+    GLdouble *fblock = NULL;
 
     /* First, calculate the coordinate points of the center of the worm,
      * using the Kochanek-Bartels variant of the Hermite curve.
@@ -1037,6 +1044,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 
             /* allocate single block of storage for two circles of points */
             if (!Nx) {
+                fblock = new GLdouble[12 * wormSides];
                 Nx = fblock;
                 Ny = &Nx[wormSides];
                 Nz = &Nx[wormSides * 2];
@@ -1158,7 +1166,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         }
     }
 
-    delete fblock;
+    if (fblock) delete fblock;
 }
 
 static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, double length)
@@ -1474,63 +1482,13 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     displayListEmpty[currentDisplayList] = false;
 }
 
-#if defined(__WXMSW__)
-bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
-{
-    fontHandle = newFontHandle;
-    HDC hdc = wglGetCurrentDC();
-    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(fontHandle));
-    BOOL okay = wglUseFontBitmaps(hdc, 0, 256, FONT_BASE);
-    SelectObject(hdc, currentFont);
-    if (!okay) {
-        ERR_POST(Error << "OpenGLRenderer::SetFont_Windows() - wglUseFontBitmaps() failed");
-        return false;
-    }
-    return true;
-}
-
-#elif defined(__WXGTK__)
-bool OpenGLRenderer::SetFont_GTK(GdkFont *newFont)
-{
-    font = newFont;
-    glXUseXFont(gdk_font_id(font), 0, 256, FONT_BASE);
-    return true;
-}
-
-#endif
-
-bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *height)
-{
-#if defined(__WXMSW__)
-    HDC hdc = wglGetCurrentDC();
-    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(fontHandle));
-    SIZE textSize;
-    BOOL okay = GetTextExtentPoint32(hdc, text.data(), text.size(), &textSize);
-    SelectObject(hdc, currentFont);
-    *width = textSize.cx;
-    *height = 0.6 * textSize.cy; // windows' text heights seem a little off..
-    return (okay != 0);
-
-#elif defined(__WXGTK__)
-    gint lbearing, rbearing, w = 0, ascent = 0, descent = 0;
-    gdk_string_extents(font, text.c_str(), &lbearing, &rbearing, &w, &ascent, &descent);
-    *width = w;
-    *height = ascent + descent;
-    return (*width > 0 && *height > 0);
-
-#else
-    ERR_POST(Error << "OpenGLRenderer::MeasureText() undefined on this platform!");
-    return false;
-#endif
-}
-
-void OpenGLRenderer::Label(const std::string& text, const Vector& center, const Vector& color)
+void OpenGLRenderer::DrawLabel(const std::string& text, const Vector& center, const Vector& color)
 {
     int width, height;
 
     if (text.empty()) return;
-    if (!MeasureText(text, &width, &height)) {
-        ERR_POST(Error << "OpenGLRenderer::MeasureText() failed");
+    if (!glCanvas->MeasureText(text, &width, &height)) {
+        ERR_POST(Error << "MeasureText() failed");
         return;
     }
 

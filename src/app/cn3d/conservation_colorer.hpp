@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.8  2001/06/04 14:33:54  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -68,6 +71,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include "cn3d/vector_math.hpp"
+#include "cn3d/cn3d_colors.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -96,8 +100,6 @@ public:
     // clears everything, including alignment blocks
     void Clear(void);
 
-    static const Vector MinimumConservationColor, MaximumConservationColor;
-
 private:
     typedef std::map < const UngappedAlignedBlock *, std::vector < int > > BlockMap;
     BlockMap blocks;
@@ -125,8 +127,8 @@ public:
     const Vector *GetIdentityColor(const UngappedAlignedBlock *block, int blockColumn)
     {
         CalculateConservationColors();
-        return &(identities[GetProfileIndex(block, blockColumn)]
-            ? MaximumConservationColor : MinimumConservationColor);
+        return GlobalColors()->Get(Colors::eConservationMap,
+            (identities[GetProfileIndex(block, blockColumn)] ? Colors::nConservationMap - 1 : 0));
     }
 
     const Vector *GetVarietyColor(const UngappedAlignedBlock *block, int blockColumn)

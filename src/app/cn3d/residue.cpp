@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/08/24 00:41:36  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.25  2001/08/21 01:10:45  thiessen
 * add labeling
 *
@@ -512,7 +515,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
             if (GlobalMessenger()->IsHighlighted(molecule, id))
                 labelColor = GlobalColors()->Get(Colors::eHighlight);
 
-            parentSet->renderer->Label(labelText, labelPosition, labelColor);
+            parentSet->renderer->DrawLabel(labelText, labelPosition, labelColor);
         }
     }
 

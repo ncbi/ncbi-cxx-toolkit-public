@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.30  2001/08/21 01:10:45  thiessen
 * add labeling
 *
@@ -444,7 +447,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                 // draw label
                 std::string labelText = oss.str();
                 delete oss.str();
-                parentSet->renderer->Label(labelText, labelPosition, labelColor);
+                parentSet->renderer->DrawLabel(labelText, labelPosition, labelColor);
             }
         }
     }

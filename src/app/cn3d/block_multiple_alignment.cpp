@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.26  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -512,7 +515,7 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
 
     switch (colorScheme) {
         case StyleSettings::eAligned:
-            alignedColor = &ConservationColorer::MaximumConservationColor;
+            alignedColor = GlobalColors()->Get(Colors::eConservationMap, Colors::nConservationMap - 1);
             break;
         case StyleSettings::eIdentity:
             alignedColor = conservationColorer->

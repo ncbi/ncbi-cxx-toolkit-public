@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.31  2001/08/13 22:30:52  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -132,16 +135,12 @@
 // do not include GL headers here, so that other modules can more easily
 // access this without potential name conflicts
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <list>
 #include <map>
 #include <vector>
 #include <string>
-
-#ifdef __WXGTK__
-#include <gdk/gdk.h>    // needed for GdkFont
-#endif
 
 #include "cn3d/vector_math.hpp"
 
@@ -153,11 +152,12 @@ class AtomStyle;
 class BondStyle;
 class HelixStyle;
 class StrandStyle;
+class Cn3DGLCanvas;
 
 class OpenGLRenderer
 {
 public:
-    OpenGLRenderer(void);
+    OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas);
 
     // public data
     static const unsigned int NO_NAME;
@@ -226,31 +226,13 @@ public:
     void DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& helixStyle);
     void DrawStrand(const Vector& Nterm, const Vector& Cterm,
         const Vector& unitNormal, const StrandStyle& strandStyle);
-
-    // font methods (some platform-specific, until glCanvas can do fonts...)
-    void Label(const std::string& text, const Vector& center, const Vector& color);
-
-    // set font used by OpenGL (should be part of wxGLCanvas...)
-#if defined(__WXMSW__)
-    // must be same as return type (WXHFONT) of wxFont::GetHFONT()
-    bool SetFont_Windows(unsigned long newFontHandle);
-
-#elif defined(__WXGTK__)
-    bool SetFont_GTK(GdkFont *newFont);
-
-#endif
+    void DrawLabel(const std::string& text, const Vector& center, const Vector& color);
 
 private:
-    // save platform-specific font info
-#if defined(__WXMSW__)
-    unsigned long fontHandle;
-#elif defined(__WXGTK__)
-    GdkFont *font;
-#endif
-
-    bool MeasureText(const std::string& text, int *width, int *height);
 
     StructureSet *structureSet;
+    Cn3DGLCanvas *glCanvas;
+
     void SetColor(int type, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
     void ConstructLogo(void);
 
@@ -271,6 +253,8 @@ private:
 
     // stuff for storing transparent spheres (done during Construct())
     unsigned int currentDisplayList;
+
+    // stuff for rendering transparent spheres (done during Display())
 public:
     typedef struct {
         Vector site, color;
@@ -290,7 +274,6 @@ private:
             transparentSphereMap.erase(i);
     }
 
-    // stuff for rendering transparent spheres (done during Display())
     class SpherePtr
     {
     public:

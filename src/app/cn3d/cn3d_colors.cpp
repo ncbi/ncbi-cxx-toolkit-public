@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.11  2001/08/10 19:45:18  thiessen
 * minor fix for Mac
 *
@@ -85,13 +88,14 @@ const Colors * GlobalColors(void)
 
 
 // # colors for color cycles
-static const int
-    nCycle1 = 10;
+const int
+    Colors::nCycle1 = 10;
 
 // # colors for color maps (must be >1)
-static const int
-    nTemperatureMap = 5,
-    nHydrophobicityMap = 3;
+const int
+    Colors::nTemperatureMap = 5,
+    Colors::nHydrophobicityMap = 3,
+    Colors::nConservationMap = 2;
 
 
 Colors::Colors(void)
@@ -140,6 +144,11 @@ Colors::Colors(void)
     mapColors[eHydrophobicityMap][0].Set(0.2, 0.2, 0.7);
     mapColors[eHydrophobicityMap][1].Set(0.2, 0.5, 0.6);
     mapColors[eHydrophobicityMap][2].Set(0.7, 0.4, 0.3);
+
+    // colors for conservation map
+    mapColors[eConservationMap].resize(nConservationMap);
+    mapColors[eConservationMap][0].Set(100.0/255, 100.0/255, 1.0);
+    mapColors[eConservationMap][1].Set(1.0, 25.0/255, 25.0/255);
 }
 
 const Vector& Colors::Get(eColor which) const
@@ -166,14 +175,18 @@ Vector Colors::Get(eColorMap which, double f) const
         int low = (int) (f / bin);
         double fraction = fmod(f, bin) / bin;
         const Vector &color1 = colorMap[low], &color2 = colorMap[low + 1];
-        return Vector(
-            color1[0] + fraction * (color2[0] - color1[0]),
-            color1[1] + fraction * (color2[1] - color1[1]),
-            color1[2] + fraction * (color2[2] - color1[2])
-        );
+        return (color1 + fraction * (color2 - color1));
     }
     ERR_POST(Error << "Colors::Get() - bad eColorMap " << (int) which << " at " << f);
     return mapColors[0][0];
+}
+
+const Vector* Colors::Get(eColorMap which, int index) const
+{
+    if (which >= 0 && which < eNumColorMaps && index >= 0 && index < mapColors[which].size())
+        return &(mapColors[which][index]);
+    else
+        return NULL;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.9  2001/08/21 01:10:13  thiessen
 * add labeling
 *
@@ -111,16 +114,20 @@ public:
 
         eNumColorCycles
     };
+    static const int nCycle1;
     const Vector& Get(eColorCycle which, int n) const;
 
     // color maps
     enum eColorMap {
         eTemperatureMap = 0,
         eHydrophobicityMap,
+        eConservationMap,
 
         eNumColorMaps
     };
+    static const int nTemperatureMap, nHydrophobicityMap, nConservationMap;
     Vector Get(eColorMap which, double f) const;
+    const Vector* Get(eColorMap which, int index) const;
 
     // light or dark color?
     static bool IsLightColor(const Vector& color)

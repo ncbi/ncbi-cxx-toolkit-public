@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/08/24 00:41:36  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.51  2001/08/21 01:10:46  thiessen
 * add labeling
 *
@@ -270,7 +273,6 @@ static bool SaveLabelStyleToASN(
     lASN->SetSpacing(lSettings.spacing);
     // these casts rely on correspondence of enumerated values!
     lASN->SetType((CCn3d_backbone_label_style::EType) lSettings.type);
-    TESTMSG("type " << lSettings.type);
     lASN->SetNumber((CCn3d_backbone_label_style::ENumber) lSettings.numbering);
     lASN->SetTermini(lSettings.terminiOn);
     lASN->SetWhite(lSettings.white);

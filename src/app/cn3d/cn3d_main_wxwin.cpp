@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.68  2001/08/16 19:21:02  thiessen
 * add face name info to fonts
 *
@@ -823,7 +826,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     Show(true);
 
     // set initial font
-    glCanvas->SetupFontFromRegistry();
+    glCanvas->SetGLFontFromRegistry();
 }
 
 Cn3DMainFrame::~Cn3DMainFrame(void)
@@ -886,7 +889,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
         // call font setup
         TESTMSG("setting new font");
         if (event.GetId() == MID_OPENGL_FONT) {
-            glCanvas->SetupFontFromRegistry();
+            glCanvas->SetGLFontFromRegistry();
             GlobalMessenger()->PostRedrawAllStructures();
         } else if (event.GetId() == MID_SEQUENCE_FONT) {
             GlobalMessenger()->NewSequenceViewerFont();
@@ -1330,23 +1333,19 @@ END_EVENT_TABLE()
 
 Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
-    structureSet(NULL), font(NULL)
+    structureSet(NULL)
 {
-    renderer = new OpenGLRenderer();
+    renderer = new OpenGLRenderer(this);
 }
 
 Cn3DGLCanvas::~Cn3DGLCanvas(void)
 {
     if (structureSet) delete structureSet;
-    if (font) delete font;
     delete renderer;
 }
 
-void Cn3DGLCanvas::SetupFontFromRegistry(void)
+void Cn3DGLCanvas::SetGLFontFromRegistry(void)
 {
-    // delete old font
-    if (font) delete font;
-
     // get font info from registry, and create wxFont
     int size, family, style, weight;
     bool underlined;
@@ -1356,21 +1355,45 @@ void Cn3DGLCanvas::SetupFontFromRegistry(void)
         !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, &style) ||
         !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
         !RegistryGetBoolean(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
-        !RegistryGetString(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, &faceName) ||
-        !(font = new wxFont(size, family, style, weight, underlined,
-            (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str())))
+        !RegistryGetString(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, &faceName))
     {
-        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - error setting up font");
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - error getting font info from registry");
         return;
     }
 
-    // set up font display lists in renderer (needs "native" font structure)
+    // create new font - assignment uses object reference to copy
+    wxFont newFont(size, family, style, weight, underlined,
+            (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str());
+    font = newFont;
+
+    // set up font display lists in dc and renderer
     SetCurrent();
+    memoryDC.SetFont(font);
+
 #if defined(__WXMSW__)
-    renderer->SetFont_Windows(font->GetHFONT());
+    HDC hdc = wglGetCurrentDC();
+    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(font.GetHFONT()));
+    if (!wglUseFontBitmaps(hdc, 0, 256, renderer->FONT_BASE))
+        ERR_POST(Error << "OpenGLRenderer::SetFont() - wglUseFontBitmaps() failed");
+    SelectObject(hdc, currentFont);
+
 #elif defined(__WXGTK__)
-    renderer->SetFont_GTK(font->GetInternalFont());
+    glXUseXFont(gdk_font_id(font.GetInternalFont()), 0, 256, renderer->FONT_BASE);
 #endif
+}
+
+bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height)
+{
+    wxCoord w, h, descent, externalLeading;
+    memoryDC.GetTextExtent(text.c_str(), &w, &h, &descent, &externalLeading);
+    *width = w;
+    *height = h;
+
+    // empirical platform-specific tweaks
+#if defined(__WXMSW__)
+    *height *= 0.6;
+#endif
+	return true;
 }
 
 void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)

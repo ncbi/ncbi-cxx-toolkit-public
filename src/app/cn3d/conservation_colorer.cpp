@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/08/24 00:41:35  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.16  2001/08/13 22:30:59  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -95,10 +98,6 @@ USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
-
-const Vector ConservationColorer::MinimumConservationColor(100.0/255, 100.0/255, 1.0);
-const Vector ConservationColorer::MaximumConservationColor(1.0, 25.0/255, 25.0/255);
-
 
 #define BLOSUMSIZE 24
 static const char Blosum62Fields[BLOSUMSIZE] =
@@ -337,23 +336,19 @@ void ConservationColorer::CalculateConservationColors(void)
     for (profileColumn=0; profileColumn<nColumns; profileColumn++) {
 
         // variety
-        if (maxVariety == minVariety) {
-            varietyColors[profileColumn] = MaximumConservationColor;
-        } else {
-            scale = 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
-            varietyColors[profileColumn] =
-                MaximumConservationColor + (MinimumConservationColor - MaximumConservationColor) * scale;
-        }
+        if (maxVariety == minVariety)
+            scale = 1.0;
+        else
+            scale = 1.0 - 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
+        varietyColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
 
         // weighted variety
-        if (maxWeightedVariety == minWeightedVariety) {
-            weightedVarietyColors[profileColumn] = MaximumConservationColor;
-        } else {
+        if (maxWeightedVariety == minWeightedVariety)
+            scale = 1.0;
+        else
             scale = 1.0 * (weightedVarieties[profileColumn] - minWeightedVariety) /
                 (maxWeightedVariety - minWeightedVariety);
-            weightedVarietyColors[profileColumn] =
-                MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
-        }
+        weightedVarietyColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
 
         // information content, based on absolute scale
         static const float minInform = 0.10f, maxInform = 6.24f;
@@ -361,20 +356,17 @@ void ConservationColorer::CalculateConservationColors(void)
         if (scale < 0.0) scale = 0.0;
         else if (scale > 1.0) scale = 1.0;
         scale = sqrt(scale);    // apply non-linearity so that lower values are better distinguished
-        informationContentColors[profileColumn] =
-            MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
+        informationContentColors[profileColumn] = GlobalColors()->Get(Colors::eConservationMap, scale);
 
         // fit
         CharMap::const_iterator c, ce = fitSums[profileColumn].end();
         for (c=fitSums[profileColumn].begin(); c!=ce; c++) {
-            if (maxFit[profileColumn] == minFit[profileColumn]) {
-                fitColors[profileColumn][c->first] = MaximumConservationColor;
-            } else {
+            if (maxFit[profileColumn] == minFit[profileColumn])
+                scale = 1.0;
+            else
                 scale = 1.0 * (c->second - minFit[profileColumn]) /
-                    (maxFit[profileColumn] - minFit[profileColumn]);
-                fitColors[profileColumn][c->first] =
-                    MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
-            }
+                                (maxFit[profileColumn] - minFit[profileColumn]);
+            fitColors[profileColumn][c->first] = GlobalColors()->Get(Colors::eConservationMap, scale);
         }
     }
 

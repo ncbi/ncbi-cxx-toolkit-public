@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/08/24 00:40:57  thiessen
+* tweak conservation colors and opengl font handling
+*
 * Revision 1.36  2001/08/14 17:17:48  thiessen
 * add user font selection, store in registry
 *
@@ -341,19 +344,22 @@ public:
     Cn3DGLCanvas(wxWindow *parent, int *attribList);
     ~Cn3DGLCanvas(void);
 
-    // public data
     StructureSet *structureSet;
     OpenGLRenderer *renderer;
-    wxFont *font;
 
-    // public methods
-    void SetupFontFromRegistry(void);
+    // font stuff - setup from registry, and measure using currently selected font
+    void SetGLFontFromRegistry(void);
+    bool MeasureText(const std::string& text, int *width, int *height);
 
 private:
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnEraseBackground(wxEraseEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
+
+    // memoryDC is used simply to hold a font for dc.GetTextExtent()
+    wxMemoryDC memoryDC;
+    wxFont font;
 
     DECLARE_EVENT_TABLE()
 };
