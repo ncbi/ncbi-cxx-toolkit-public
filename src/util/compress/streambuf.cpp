@@ -160,9 +160,6 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         }
     } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
 
-    // Sync underlying stream buffers
-    m_Stream->rdbuf()->PUBSYNC();
-
     // Cleanup
     sp->m_Processor->End();
     sp->m_Finalized = true;
@@ -458,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/02/24 15:23:05  ivanov
+ * Rollback to R1.13
+ *
  * Revision 1.15  2005/02/24 14:57:03  ucko
  * Fix typo in previous revision.
  *
