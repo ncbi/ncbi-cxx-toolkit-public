@@ -189,13 +189,13 @@ from SelectSample ";
 
                     rs->BindBlobToVariant(true);
 
-                    for(int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
+                    for(unsigned int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
                         NcbiCout << rsMeta->GetName(i) << "  ";
 
                     NcbiCout << endl;
 
                     while(rs->Next()) { 
-                        for(int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
+                        for(unsigned int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
                             if( rsMeta->GetType(i) == eDB_Text
                                 || rsMeta->GetType(i) == eDB_Image ) {
 
@@ -224,7 +224,12 @@ from SelectSample ";
 #endif
                     
                     } 
-                    //delete rs;
+                    // Use Close() to free database resources and leave DBAPI framwork intact
+                    // All closed DBAPI objects become invalid.
+                    rs->Close();
+                    
+                    // Delete object to get rid of it completely. All child objects will be also deleted
+                    delete rs;
                 }
             }
         }
@@ -367,7 +372,7 @@ begin \
   print 'Print test output' \
   return @id \
 end";
-        //  raiserror('Raise Error test output', 1, 1) \
+        //  raiserror('Raise Error test output', 1, 1) 
 
         stmt->ExecuteUpdate(sql);
         stmt->ExecuteUpdate("print 'test'");
@@ -392,8 +397,9 @@ end";
 
             //NcbiCout << "Row count: " << cstmt->GetRowCount() << endl;
 
-            if( !cstmt->HasRows() )
+            if( !cstmt->HasRows() ) {
                 continue;
+            }
 
             switch( rs->GetResultType() ) {
             case eDB_ParamResult:
@@ -704,6 +710,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/01 21:03:47  kholodov
+* Added comments
+*
 * Revision 1.10  2004/02/27 14:35:44  kholodov
 * Comments added, work in progress
 *
