@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/05/21 16:01:52  vasilche
+* Avoid failed assert while generating exception message.
+*
 * Revision 1.7  2003/04/29 18:30:37  gouriano
 * object data member initialization verification
 *
@@ -170,16 +173,18 @@ void CSerialObject::ThrowUnassigned(TMemberIndex index) const
 {
     if (x_GetVerifyData()) {
         const CTypeInfo* type = GetThisTypeInfo();
-        string message = type->GetModuleName()+"::"+type->GetName()+".";
+        CNcbiOstrstream s;
+        s << type->GetModuleName() << "::" << type->GetName() << ".";
         const CClassTypeInfoBase* classtype =
             dynamic_cast<const CClassTypeInfoBase*>(type);
-        if (classtype) {
-            message +=
-                classtype->GetItems().GetItemInfo(index)->GetId().GetName();
+        if ( classtype &&
+             index >= classtype->GetItems().FirstIndex() &&
+             index <= classtype->GetItems().LastIndex() ) {
+            s << classtype->GetItems().GetItemInfo(index)->GetId().GetName();
         } else {
-            message += NStr::UIntToString(index);
+            s << '[' << index << ']';
         }
-        NCBI_THROW(CUnassignedMember,eGet,message);
+        NCBI_THROW(CUnassignedMember,eGet,CNcbiOstrstreamToString(s));
     }
 }
 
