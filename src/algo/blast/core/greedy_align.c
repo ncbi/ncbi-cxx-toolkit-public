@@ -23,15 +23,15 @@
  *
  * ===========================================================================
  *
- * Functions to perform greedy affine and non-affine gapped alignment; see
- *
- * Zhang et. al., "A Greedy Algorithm for Aligning DNA Sequences"
- * Journal of Computational Biology vol 7 pp 203-214
+ * Functions to perform greedy affine and non-affine gapped alignment
  *
  */
 
 /** @file greedy_align.c
- * Greedy gapped alignment functions
+ * Functions to perform greedy affine and non-affine gapped alignment.
+ * Reference:
+ * Zhang et. al., "A Greedy Algorithm for Aligning DNA Sequences"
+ * Journal of Computational Biology vol 7 pp 203-214
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -175,13 +175,13 @@ MBGapEditScriptFree(MBGapEditScript *script)
     return NULL;
 }
 
-/** Reverse the order of the operations in an edit script
+/** Finish processing an edit script
 
-    @param script The script to be reversed [in/modified]
+    @param script The script to be processed [in/modified]
     @return Pointer to the updated edit script
 */
 static MBGapEditScript *
-s_EditScriptReverseInPlace(MBGapEditScript *script)
+s_ProcessEditScript(MBGapEditScript *script)
 {
     Uint4 i;
     const Uint4 kNumOps = script->num_ops;
@@ -203,15 +203,12 @@ MBSpaceNew()
     SMBSpace* new_space;
     const Int4 kMaxSpace = 1000000; 
 
-    /** @todo FIXME: Later code assumes that a request will
-       never be made for more than kMaxSpace structures at once */
-
     new_space = (SMBSpace*)malloc(sizeof(SMBSpace));
     if (new_space == NULL)
         return NULL;
 
-    new_space->space_array = (SThreeVal*)malloc(
-                                   kMaxSpace * sizeof(SThreeVal));
+    new_space->space_array = (SGreedyOffset*)malloc(
+                                   kMaxSpace * sizeof(SGreedyOffset));
     if (new_space->space_array == NULL) {
         sfree(new_space);
         return NULL;
@@ -248,20 +245,23 @@ void MBSpaceFree(SMBSpace* space)
     }
 }
 
-/** Allocate a specified number of SThreeVal structures from
+/** Allocate a specified number of SGreedyOffset structures from
     a memory pool
 
     @param pool The memory pool [in]
     @param num_alloc The number of structures to allocate [in]
     @return Pointer to the allocated memory, or NULL in case of error
 */
-static SThreeVal* 
+static SGreedyOffset* 
 s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
 {
-    SThreeVal* out_ptr;
+    SGreedyOffset* out_ptr;
     if (num_alloc < 0) 
         return NULL;  
     
+    /** @todo FIXME: Calling code must never ask for more
+        than kMaxSpace structures (defined in MBSpaceNew()) */
+
     while (pool->space_used + num_alloc > pool->space_allocated) {
        if (pool->next == NULL) {
           pool->next = MBSpaceNew();
@@ -281,120 +281,137 @@ s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
     return out_ptr;
 }
 
-/** During the traceback for a greedy affine alignment,
-    determine the state of the traceback that results
-    from moving a specified number of diagonals upwards
-    in the traceback array from a match
+/** During the traceback for a greedy alignment with affine
+    gap penalties, determine the next state of the traceback after
+    moving upwards in the traceback array from a substitution
 
-    @param flast_d 2-D Array of traceback scores [in]
-    @param lower Array of per-diagonal lower bounds [in]
-    @param upper Array of per-diagonal upper bounds [in]
-    @param d Starting score / ending score(?) [in/modified]
-    @param diag Starting diagonal(?) [in]
-    @param Mis_cost Cost of a mismatch [in]
-    @param row1 The row of the traceback array where
-                the next score occurs(?) [out]
+    @param last_seq2_off Array of offsets into the second sequence;
+                        last_seq2_off[d][k] gives the largest offset into
+                        the second sequence that lies on diagonal k and
+                        has distance d [in]
+    @param diag_lower Array of lower bounds on diagonal index [in]
+    @param diag_upper Array of upper bounds on diagonal index [in]
+    @param d Starting distance [in][out]
+    @param diag Starting diagonal [in]
+    @param op_cost The sum of the match and mismatch scores [in]
+    @param seq2_index The offset into the second sequence after the traceback
+                operation has completed [out]
     @return The state for the next traceback operation
 */
 static enum EOpType 
-s_GetLastC(SThreeVal** flast_d, Int4* lower, Int4* upper, 
-          Int4* d, Int4 diag, Int4 Mis_cost, Int4* row1)
+s_GetNextAffineTbackFromMatch(SGreedyOffset** last_seq2_off, Int4* diag_lower, 
+                           Int4* diag_upper, Int4* d, Int4 diag, Int4 op_cost, 
+                           Int4* seq2_index)
 {
-    Int4 row;
+    Int4 new_seq2_index;
     
-    if (diag >= lower[(*d)-Mis_cost] && 
-        diag <= upper[(*d)-Mis_cost]) {
+    if (diag >= diag_lower[(*d) - op_cost] && 
+        diag <= diag_upper[(*d) - op_cost]) {
 
-        row = flast_d[(*d)-Mis_cost][diag].C;
-        if (row >= MAX(flast_d[*d][diag].I, flast_d[*d][diag].D)) {
-            *d = *d-Mis_cost;
-            *row1 = row;
+        new_seq2_index = last_seq2_off[(*d) - op_cost][diag].match_off;
+        if (new_seq2_index >= MAX(last_seq2_off[*d][diag].insert_off, 
+                                  last_seq2_off[*d][diag].delete_off)) {
+            *d -= op_cost;
+            *seq2_index = new_seq2_index;
             return eEditOpReplace;
         }
     }
-    if (flast_d[*d][diag].I > flast_d[*d][diag].D) {
-        *row1 = flast_d[*d][diag].I;
+    if (last_seq2_off[*d][diag].insert_off > 
+                        last_seq2_off[*d][diag].delete_off) {
+        *seq2_index = last_seq2_off[*d][diag].insert_off;
         return eEditOpInsert;
     } 
     else {
-        *row1 = flast_d[*d][diag].D;
+        *seq2_index = last_seq2_off[*d][diag].delete_off;
         return eEditOpDelete;
     }
 }
 
-/** During the traceback for a greedy affine alignment,
-    determine the state of the traceback that results
-    from moving a specified number of diagonals upwards
-    in the traceback array from an insertion or deletion
+/** During the traceback for a greedy alignment with affine
+    gap penalties, determine the next state of the traceback after
+    moving upwards in the traceback array from an insertion or deletion
 
-    @param flast_d 2-D Array of scores [in]
-    @param lower Array of per-diagonal lower bounds [in]
-    @param upper Array of per-diagonal upper bounds [in]
-    @param d Starting score / ending score(?) [in/modified]
-    @param diag Starting diagonal(?) [in]
-    @param GO_cost Cost to open a gap [in]
-    @param GE_cost Cost to extend a gap [in]
+    @param last_seq2_off Array of offsets into the second sequence;
+                        last_seq2_off[d][k] gives the largest offset into
+                        the second sequence that lies on diagonal k and
+                        has distance d [in]
+    @param diag_lower Array of lower bounds on diagonal index [in]
+    @param diag_upper Array of upper bounds on diagonal index [in]
+    @param d Starting distance [in][out]
+    @param diag Starting diagonal [in]
+    @param gap_open open a gap [in]
+    @param gap_extend (Modified) cost to extend a gap [in]
     @param IorD The state of the traceback at present [in]
     @return The state for the next traceback operation
 */
 static enum EOpType 
-s_GetLastID(SThreeVal** flast_d, Int4* lower, Int4* upper, 
-            Int4* d, Int4 diag, Int4 GO_cost, 
-            Int4 GE_cost, enum EOpType IorD)
+s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower, 
+                    Int4* diag_upper, Int4* d, Int4 diag, Int4 gap_open, 
+                    Int4 gap_extend, enum EOpType IorD)
 {
-    Int4 ndiag; 
-    Int4 row;
+    Int4 new_diag; 
+    Int4 new_seq2_index;
+    Int4 gap_open_extend = gap_open + gap_extend;
 
     if (IorD == eEditOpInsert)
-        ndiag = diag - 1;
+        new_diag = diag - 1;
     else 
-        ndiag = diag + 1;
+        new_diag = diag + 1;
 
-    if (ndiag >= lower[(*d)-GE_cost] && 
-        ndiag <= upper[(*d)-GE_cost]) {
+    if (new_diag >= diag_lower[(*d) - gap_extend] && 
+        new_diag <= diag_upper[(*d) - gap_extend]) {
 
         if (IorD == eEditOpInsert)
-            row = flast_d[(*d)-GE_cost][ndiag].I;
+            new_seq2_index = 
+                    last_seq2_off[(*d) - gap_extend][new_diag].insert_off;
         else
-            row = flast_d[(*d)-GE_cost][ndiag].D;
+            new_seq2_index = 
+                    last_seq2_off[(*d) - gap_extend][new_diag].delete_off;
     }
     else {
-        row = -100;
+        new_seq2_index = -100;
     }
 
-    if (ndiag >= lower[(*d)-GO_cost-GE_cost] && 
-        ndiag <= upper[(*d)-GO_cost-GE_cost] && 
-        row < flast_d[(*d)-GO_cost-GE_cost][ndiag].C) {
+    if (new_diag >= diag_lower[(*d) - gap_open_extend] && 
+        new_diag <= diag_upper[(*d) - gap_open_extend] && 
+        new_seq2_index < 
+                last_seq2_off[(*d) - gap_open_extend][new_diag].match_off) {
 
-        *d = (*d) - GO_cost - GE_cost;
+        *d -= gap_open_extend;
         return eEditOpReplace;
     }
-    *d = (*d) - GE_cost;
+
+    *d -= gap_extend;
     return IorD;
 }
 
 /** During the traceback for a non-affine greedy alignment,
-    compute the diagonal that the next traceback operation
-    will use
+    compute the distance that will result from the next 
+    traceback operation
 
-    @param flast_d 2-D Array of scores [in]
-    @param d Starting score(?) [in]
-    @param diag Starting diagonal(?) [in]
-    @param row1 The next traceback row to examine(?) [out]
-    @return The next diagonal in the traceback
+    @param last_seq2_off Array of offsets into the second sequence;
+                        last_seq2_off[d][k] gives the largest offset into
+                        the second sequence that lies on diagonal k and
+                        has distance d [in]
+    @param d Starting distance [in]
+    @param diag Index of diagonal that produced the starting distance [in]
+    @param seq2_index The offset into the second sequence after the traceback
+                operation has completed [out]
+    @return The next distance remaining after the traceback operation
 */
 static Int4 
-s_GetLast(Int4 **flast_d, Int4 d, Int4 diag, Int4 *row1)
+s_GetNextTback(Int4 **last_seq2_off, Int4 d, Int4 diag, Int4 *seq2_index)
 {
-    if (flast_d[d-1][diag-1] > MAX(flast_d[d-1][diag], flast_d[d-1][diag+1])) {
-        *row1 = flast_d[d-1][diag-1];
+    if (last_seq2_off[d-1][diag-1] > 
+                MAX(last_seq2_off[d-1][diag], last_seq2_off[d-1][diag+1])) {
+        *seq2_index = last_seq2_off[d-1][diag-1];
         return diag - 1;
     } 
-    if (flast_d[d-1][diag] > flast_d[d-1][diag+1]) {
-        *row1 = flast_d[d-1][diag];
+    if (last_seq2_off[d-1][diag] > last_seq2_off[d-1][diag+1]) {
+        *seq2_index = last_seq2_off[d-1][diag];
         return diag;
     }
-    *row1 = flast_d[d-1][diag+1];
+    *seq2_index = last_seq2_off[d-1][diag+1];
     return diag + 1;
 }
 
@@ -403,91 +420,124 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                        const Uint1* seq2, Int4 len2,
                        Boolean reverse, Int4 xdrop_threshold, 
                        Int4 match_cost, Int4 mismatch_cost,
-                       Int4* extent1, Int4* extent2, 
+                       Int4* seq1_align_len, Int4* seq2_align_len, 
                        SGreedyAlignMem* aux_data, 
                        MBGapEditScript *script, Uint1 rem)
 {
-    Int4 col;               /* column number */
-    Int4 row;               /* row number */
-    Int4 d;                 /* current distance */
-    Int4 k;                 /* current diagonal */
-    Int4 flower, fupper;    /* boundaries for searching diagonals */
-    Int4 MAX_D;             /* maximum cost */
-    Int4 ORIGIN;
-    Int4 final_dist = 0;
-    Int4** flast_d = aux_data->flast_d; /* rows containing the last d */
-    Int4* max_row;                      /* reached for cost d=0, ... len1.  */
-    
-    Int4 match_cost_half = match_cost / 2;
-    Int4 op_cost = mismatch_cost + match_cost;
-    Int4 d_dropoff = ICEIL(xdrop_threshold + match_cost_half, op_cost);
-    
-    Int4 cur_max; 
-    Int4 b_diag = 0; 
-    Int4 best_diag = INT4_MAX / 2;
-    Int4* max_row_free = aux_data->max_row_free;
-    char nlower, nupper;
-    SMBSpace* mem_pool = aux_data->space;
-    Int4 max_len = len2;
+    Int4 seq1_index;
+    Int4 seq2_index;
+    Int4 index;
+    Int4 d;
+    Int4 k;
+    Int4 diag_lower, diag_upper;
+    Int4 max_dist;
+    Int4 diag_origin;
+    Int4 best_dist;
+    Int4 best_diag;
+    Int4** last_seq2_off;
+    Int4* max_score;
+    Int4 xdrop_offset;
+    Boolean end1_reached, end2_reached;
+    SMBSpace* mem_pool;
+    const Int4 kInvalidOffset = -1;
  
-    MAX_D = (Int4) (len1 / GREEDY_MAX_COST_FRACTION + 1);
-    ORIGIN = MAX_D + 2;
-    *extent1 = 0;
-    *extent2 = 0;
-    
-    /* find the offset of the first mismatch between
-       seq1 and seq2 */
+    /* ordinary dynamic programming alignment, for each offset
+       in seq1, walks through offsets in seq2 until an X-dropoff
+       test fails, saving the best score encountered along 
+       the way. Instead of score, this code tracks the 'distance'
+       (number of mismatches plus number of gaps) between seq1
+       and seq2. Instead of walking through sequence offsets, it
+       walks through diagonals that can achieve a given distance */
 
-    row = 0;
+    best_dist = 0;
+    best_diag = 0;
+
+    /* set the number of distinct distances the algorithm will
+       examine in the search for an optimal alignment. The 
+       heuristic worst-case running time of the algorithm is 
+       O(max_dist**2 + (len1+len2)); for sequences which are
+       very similar, the average running time will be sig-
+       nificantly better than this */
+
+    max_dist = len1 / GREEDY_MAX_COST_FRACTION + 1;
+
+    /* the main loop assumes that the index of all diagonals is
+       biased to lie in the middle of allocated bookkeeping 
+       structures */
+
+    diag_origin = max_dist + 2;
+
+    /* last_seq2_off[d][k] is the largest offset into seq2 that
+       lies on diagonal k and has distance d */
+
+    last_seq2_off = aux_data->last_seq2_off;
+
+    /* Instead of tracking the best alignment score and using
+       xdrop_theshold directly, track the best score for each
+       unique distance and use the best score for some previously
+       computed distance to implement the X-dropoff test.
+
+       xdrop_offset gives the distance backwards in the score
+       array to look */
+
+    xdrop_offset = ICEIL(xdrop_threshold + match_cost / 2, 
+                           match_cost + mismatch_cost);
+    
+    /* find the offset of the first mismatch between seq1 and seq2 */
+
+    seq1_index = 0;
     if (reverse) {
         if (rem == 4) {
-            while (row < len1 && row < len2) {
-                if (seq2[len2-1-row] != seq1[len1-1-row])
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[len2-1 - seq1_index] != seq1[len1-1 - seq1_index])
                     break;
-                row++;
+                seq1_index++;
             }
         } 
         else {
-            while (row < len1 && row < len2) {
-                if (seq2[len2-1-row] != 
-                                NCBI2NA_UNPACK_BASE(seq1[(len1-1-row) / 4], 
-                                                    3 - (len1-1-row) % 4)) 
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[len2-1 - seq1_index] != 
+                          NCBI2NA_UNPACK_BASE(seq1[(len1-1 - seq1_index) / 4], 
+                                              3 - (len1-1 - seq1_index) % 4)) 
                     break;
-                row++;
+                seq1_index++;
             }
         }
     } 
     else {
         if (rem == 4) {
-            while (row < len1 && row < len2) {
-                if (seq2[row] != seq1[row])
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[seq1_index] != seq1[seq1_index])
                     break; 
-                row++;
+                seq1_index++;
             }
         } 
         else {
-            while (row < len1 && row < len2) {
-                if (seq2[row] != NCBI2NA_UNPACK_BASE(seq1[(row+rem) / 4], 
-                                                     3 - (row+rem) % 4))
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[seq1_index] != 
+                          NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4], 
+                                              3 - (seq1_index + rem) % 4))
                     break;
-                row++;
+                seq1_index++;
             }
         }
     }
 
     /* update the extents of the alignment, and bail out
-       early if no further work is needed. */
+       early if no further work is needed */
 
-    *extent1 = row;
-    *extent2 = row;
-    if (row == len1 || row == len2) {
+    *seq1_align_len = seq1_index;
+    *seq2_align_len = seq1_index;
+
+    if (seq1_index == len1 || seq1_index == len2) {
         if (script != NULL)
-            s_EditScriptAdd(script, eEditOpReplace, row);
-        return final_dist;
+            s_EditScriptAdd(script, eEditOpReplace, seq1_index);
+        return best_dist;
     }
 
     /* set up the memory pool */
 
+    mem_pool = aux_data->space;
     if (script == NULL) {
        mem_pool = NULL;
     } 
@@ -498,174 +548,299 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
         s_RefreshMBSpace(mem_pool);
     }
     
-    max_row = max_row_free + d_dropoff;
-    for (k = 0; k < d_dropoff; k++)
-        max_row_free[k] = 0;
+    /* set up the array of per-distance maximum scores. There
+       are max_diags + xdrop_offset distances to track, the first
+       xdrop_offset of which are 0 */
+
+    max_score = aux_data->max_score + xdrop_offset;
+    for (index = 0; index < xdrop_offset; index++)
+        aux_data->max_score[index] = 0;
     
-    flast_d[0][ORIGIN] = row;
-    max_row[0] = row * match_cost;
-    flower = ORIGIN - 1;
-    fupper = ORIGIN + 1;
-    d = 1;
-    nupper = nlower = 0;
+    /* fill in the initial offsets of the distance matrix */
 
-    while (d <= MAX_D) {
-        Int4 x, flower0, fupper0;
+    last_seq2_off[0][diag_origin] = seq1_index;
+    max_score[0] = seq1_index * match_cost;
+    diag_lower = diag_origin - 1;
+    diag_upper = diag_origin + 1;
+    end1_reached = end2_reached = FALSE;
 
-        flast_d[d - 1][flower-1] = -1;
-        flast_d[d - 1][flower] = -1;
-        flast_d[d - 1][fupper] = -1;
-        flast_d[d - 1][fupper+1] = -1;
+    /* for each distance */
 
-        x = max_row[d - d_dropoff] + op_cost * d - xdrop_threshold;
-        x = ICEIL(x, match_cost_half);        
-        cur_max = 0;
-        flower0 = flower;
-        fupper0 = fupper;
+    for (d = 1; d <= max_dist; d++) {
+        Int4 xdrop_score;
+        Int4 curr_extent;
+        Int4 curr_score;
+        Int4 curr_diag;
+        Int4 orig_diag_lower;
+        Int4 orig_diag_upper;
 
-        for (k = flower0; k <= fupper0; k++) {
-            row = MAX(flast_d[d - 1][k + 1], flast_d[d - 1][k]) + 1;
-            row = MAX(row, flast_d[d - 1][k - 1]);
-            col = row + k - ORIGIN;
-            if (row + col >= x) {
-                fupper = k;
+        /* assign impossible seq2 offsets to any diagonals that
+           are not in the range (diag_lower,diag_upper).
+           These will serve as sentinel values for the
+           inner loop */
+
+        last_seq2_off[d - 1][diag_lower-1] = kInvalidOffset;
+        last_seq2_off[d - 1][diag_lower] = kInvalidOffset;
+        last_seq2_off[d - 1][diag_upper] = kInvalidOffset;
+        last_seq2_off[d - 1][diag_upper+1] = kInvalidOffset;
+
+        /* compute the score for distance d that corresponds to
+           the X-dropoff criterion */
+
+        xdrop_score = max_score[d - xdrop_offset] + 
+                      (match_cost + mismatch_cost) * d - xdrop_threshold;
+        xdrop_score = ICEIL(xdrop_score, match_cost / 2);        
+        curr_extent = 0;
+        orig_diag_lower = diag_lower;
+        orig_diag_upper = diag_upper;
+
+        /* for each diagonal of interest */
+
+        for (k = orig_diag_lower; k <= orig_diag_upper; k++) {
+
+            /* find the largest offset into seq2 that increases
+               the distance from d-1 to d (i.e. keeps the alignment
+               from getting worse for as long as possible), then 
+               choose the offset into seq1 that will keep the
+               resulting diagonal fixed at k 
+             
+               Note that this requires kInvalidOffset to be smaller
+               than any valid offset into seq2, i.e. to be negative */
+
+            seq2_index = MAX(last_seq2_off[d - 1][k + 1], 
+                             last_seq2_off[d - 1][k    ]) + 1;
+            seq2_index = MAX(seq2_index, last_seq2_off[d - 1][k - 1]);
+            seq1_index = seq2_index + k - diag_origin;
+
+            if (seq1_index + seq2_index >= xdrop_score) {
+
+                /* passed X-dropoff test; set the new current
+                   upper bound on diagonals to test */
+
+                diag_upper = k;
             }
             else {
-                if (k == flower)
-                    flower++;
+
+                /* failed the X-dropoff test; remove the current
+                   diagonal from consideration, possibly narrowing
+                   the range of diagonals to test */
+
+                if (k == diag_lower)
+                    diag_lower++;
                 else
-                    flast_d[d][k] = -1;
+                    last_seq2_off[d][k] = kInvalidOffset;
                 continue;
             }
             
-            if (row > max_len || row < 0) {
-                flower = k + 1; 
-                nlower = 1;
+            /* make sure the chosen index has not walked off seq2 */
+
+            if (seq2_index > len2 || seq2_index < 0) {
+                diag_lower = k + 1; 
+                end2_reached = TRUE;
             } 
             else {
-                /* Slide down the diagonal. */
+
+                /* slide down diagonal k until a mismatch 
+                   occurs. As long as only matches are encountered,
+                   the current distance d will not change */
+
                 if (reverse) {
                     if (rem == 4) {
-                        while (row < len2 && col < len1 && 
-                               seq2[len2-1-row] == seq1[len1-1-col]) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                                        seq2[len2-1 - seq2_index] == 
+                                        seq1[len1-1 - seq1_index]) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     } 
                     else {
-                        while (row < len2 && col < len1 && seq2[len2-1-row] == 
-                               NCBI2NA_UNPACK_BASE(seq1[(len1-1-col) / 4],
-                                                    3 - (len1-1-col) % 4)) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                            seq2[len2-1 - seq2_index] == 
+                            NCBI2NA_UNPACK_BASE(seq1[(len1-1-seq1_index) / 4],
+                                                 3 - (len1-1-seq1_index) % 4)) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     }
                 } 
                 else {
                     if (rem == 4) {
-                        while (row < len2 && col < len1 && 
-                               seq2[row] == seq1[col]) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                               seq2[seq2_index] == seq1[seq1_index]) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     } 
                     else {
-                        while (row < len2 && col < len1 && seq2[row] == 
-                               NCBI2NA_UNPACK_BASE(seq1[(col+rem) / 4],
-                                                    3 - (col+rem) % 4)) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                            seq2[seq2_index] == 
+                            NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4],
+                                                 3 - (seq1_index + rem) % 4)) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     }
                 }
             }
-            flast_d[d][k] = row;
-            if (row + col > cur_max) {
-                cur_max = row + col;
-                b_diag = k;
-            }
-            if (row == len2) {
-                flower = k + 1; 
-                nlower = 1;
-            }
-            if (col == len1) {
-                fupper = k - 1; 
-                nupper = 1;
-            }
-        }
 
-        k = cur_max * match_cost_half - d * op_cost;
-        if (max_row[d - 1] < k) {
-            max_row[d] = k;
-            final_dist = d;
-            best_diag = b_diag;
-            *extent2 = flast_d[d][b_diag];
-            *extent1 = (*extent2) + b_diag - ORIGIN;
+            /* set the new largest seq2 offset that achieves
+               distance d on diagonal k */
+
+            last_seq2_off[d][k] = seq2_index;
+
+            /* since all values of k are constrained to have the
+               same distance d, the value of k which maximizes the
+               alignment score is the one that covers the most
+               of seq1 and seq2 */
+
+            if (seq1_index + seq2_index > curr_extent) {
+                curr_extent = seq1_index + seq2_index;
+                curr_diag = k;
+            }
+
+            /* clamp the bounds on diagonals to avoid walking off
+               either sequence */
+
+            if (seq2_index == len2) {
+                diag_lower = k + 1; 
+                end2_reached = TRUE;
+            }
+            if (seq1_index == len1) {
+                diag_upper = k - 1; 
+                end1_reached = TRUE;
+            }
+        }   /* end loop over diagonals */
+
+        /* compute the maximum score possible for distance d */
+
+        curr_score = curr_extent * (match_cost / 2) - 
+                        d * (match_cost + mismatch_cost);
+
+        /* if this is the best score seen so far, update the
+           statistics of the best alignment */
+
+        if (curr_score > max_score[d - 1]) {
+            max_score[d] = curr_score;
+            best_dist = d;
+            best_diag = curr_diag;
+            *seq2_align_len = last_seq2_off[d][best_diag];
+            *seq1_align_len = (*seq2_align_len) + best_diag - diag_origin;
         } 
         else {
-            max_row[d] = max_row[d - 1];
+            max_score[d] = max_score[d - 1];
         }
-        if (flower > fupper)
+
+        /* alignment has finished if the lower and upper bounds
+           on diagonals to check have converged to each other */
+
+        if (diag_lower > diag_upper)
             break;
 
-        d++;
-        if (nlower == 0) 
-            flower--; 
-        if (nupper == 0) 
-            fupper++;
+        /* set up for the next distance to examine */
+
+        if (!end2_reached)
+            diag_lower--; 
+        if (!end1_reached)
+            diag_upper++;
+
+        /* if no traceback is specified, the next row of
+           last_seq2_off can reuse previously allocated memory */
+
         if (script == NULL) {
-           flast_d[d] = flast_d[d - 2];
+
+            /** @todo FIXME The following assumes two arrays of
+                at least max_dist+4 Int4's have already been allocated */
+
+            last_seq2_off[d + 1] = last_seq2_off[d - 1];
         }
         else {
-           /* space array consists of SThreeVal structures which are 
-              3 times larger than Int4, so divide requested amount by 3
-           */
-           flast_d[d] = (Int4*) s_GetMBSpace(mem_pool, 
-                                             (fupper - flower + 7) / 3);
-           if (flast_d[d] != NULL)
-              flast_d[d] = flast_d[d] - flower + 2;
-           else
-              return final_dist;
+
+            /* traceback requires all rows of last_seq2_off to be saved,
+               so a new row must be allocated. The allocator provides 
+               SThreeVal structures which are 3 times larger than Int4, 
+               so divide requested amount by 3 */
+
+            /** @todo FIXME Should make allocator more general */
+
+            last_seq2_off[d + 1] = (Int4*) s_GetMBSpace(mem_pool, 
+                                     (diag_upper - diag_lower + 7) / 3);
+
+            /* move the origin for this row backwards */
+
+            last_seq2_off[d + 1] = last_seq2_off[d + 1] - diag_lower + 2;
         }
-    }
+    }   /* end loop over distinct distances */
+
     
-    /* perform traceback if desired */
+    if (script == NULL)
+        return best_dist;
 
-    if (script != NULL) {
-        Int4 diag;
+    /* perform traceback */
 
-        d = final_dist; 
-        diag = best_diag;
-        row = *extent2; 
-        col = *extent1;
+    d = best_dist; 
+    seq1_index = *seq1_align_len;
+    seq2_index = *seq2_align_len; 
 
-        while (d > 0) {
-            Int4 row1, col1, diag1;
-            diag1 = s_GetLast(flast_d, d, diag, &row1);
-            col1 = row1 + diag1 - ORIGIN;
-            if (diag1 == diag) {
-                if (row - row1 > 0) {
-                    s_EditScriptAdd(script, eEditOpReplace, row - row1);
-                }
-            } 
-            else if (diag1 < diag) {
-                if (row - row1 > 0) {
-                    s_EditScriptAdd(script, eEditOpReplace, row - row1);
-                }
-                s_EditScriptAdd(script, eEditOpInsert, 1);
-            } 
-            else {
-                if (row - row1 - 1 > 0) {
-                    s_EditScriptAdd(script, eEditOpReplace, row - row1 - 1);
-                }
-                s_EditScriptAdd(script, eEditOpDelete, 1);
+    /* for all positive distances */
+
+    while (d > 0) {
+        Int4 new_diag;
+        Int4 new_seq1_index;
+        Int4 new_seq2_index;
+
+        /* retrieve the value of the diagonal after the next
+           traceback operation. best_diag starts off with the
+           value computed during the alignment process */
+
+        new_diag = s_GetNextTback(last_seq2_off, d, 
+                                  best_diag, &new_seq2_index);
+        new_seq1_index = new_seq2_index + new_diag - diag_origin;
+
+        if (new_diag == best_diag) {
+
+            /* same diagonal: issue a group of substitutions */
+
+            if (seq2_index - new_seq2_index > 0) {
+                s_EditScriptAdd(script, eEditOpReplace, 
+                                seq2_index - new_seq2_index);
             }
-            d--; 
-            diag = diag1; 
-            col = col1; 
-            row = row1;
+        } 
+        else if (new_diag < best_diag) {
+
+            /* smaller diagonal: issue a group of substitutions
+               and then a gap in seq2 */
+
+            if (seq2_index - new_seq2_index > 0) {
+                s_EditScriptAdd(script, eEditOpReplace, 
+                                seq2_index - new_seq2_index);
+            }
+            s_EditScriptAdd(script, eEditOpInsert, 1);
+        } 
+        else {
+            /* larger diagonal: issue a group of substitutions
+               and then a gap in seq1 */
+
+            if (seq2_index - new_seq2_index - 1 > 0) {
+                s_EditScriptAdd(script, eEditOpReplace, 
+                                seq2_index - new_seq2_index -1);
+            }
+            s_EditScriptAdd(script, eEditOpDelete, 1);
         }
-        s_EditScriptAdd(script, eEditOpReplace, flast_d[0][ORIGIN]);
-        if (!reverse) 
-            s_EditScriptReverseInPlace(script);
+        d--; 
+        best_diag = new_diag; 
+        seq1_index = new_seq1_index;
+        seq2_index = new_seq2_index; 
     }
-    return final_dist;
+
+    /* handle the final group of substitutions back to distance zero,
+       i.e. back to offset zero of seq1 and seq2 */
+
+    s_EditScriptAdd(script, eEditOpReplace, last_seq2_off[0][diag_origin]);
+
+    if (!reverse) 
+        s_ProcessEditScript(script);
+
+    return best_dist;
 }
 
 /** See greedy_align.h for description */
@@ -673,104 +848,149 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                               const Uint1* seq2, Int4 len2,
                               Boolean reverse, Int4 xdrop_threshold, 
                               Int4 match_score, Int4 mismatch_score, 
-                              Int4 gap_open, Int4 gap_extend,
-                              Int4* extent1, Int4* extent2, 
+                              Int4 in_gap_open, Int4 in_gap_extend,
+                              Int4* seq1_align_len, Int4* seq2_align_len, 
                               SGreedyAlignMem* aux_data, 
                               MBGapEditScript *script, Uint1 rem)
 {
-    Int4 col;                        /* column number */
-    Int4 row;                        /* row number */
-    Int4 d;                        /* current distance */
-    Int4 k;                        /* current diagonal */
-    Int4 flower, fupper;         /* boundaries for searching diagonals */
-    Int4 MAX_D;                         /* maximum cost */
-    Int4 ORIGIN;
-    Int4 final_score = 0;
-    SThreeVal** flast_d;        /* rows containing the last d */
-    Int4* max_row_free;
-    Int4* max_row;                /* reached for cost d=0, ... len1.  */
-    Int4 Mis_cost, GO_cost, GE_cost;
-    Int4 D_diff, gd;
+    Int4 seq1_index;
+    Int4 seq2_index;
+    Int4 index;
+    Int4 d;
+    Int4 k;
+    Int4 max_dist;
+    Int4 scaled_max_dist;
+    Int4 diag_origin;
+    Int4 best_dist;
+    Int4 best_diag;
+    SGreedyOffset** last_seq2_off;
+    Int4* max_score;
+    Int4 xdrop_offset;
+    Int4 end1_diag, end2_diag;
+    SMBSpace* mem_pool;
+
+    Int4 op_cost;
+    Int4 gap_open;
+    Int4 gap_extend;
+    Int4 gap_open_extend;
+    Int4 max_penalty;
+    Int4 score_common_factor;
     Int4 match_score_half;
-    Int4 max_cost;
-    Int4 *lower, *upper;
-    
-    Int4 cur_max; 
-    Int4 b_diag = 0; 
-    Int4 best_diag = INT4_MAX/2;
-    char nlower = 0, nupper = 0;
-    SMBSpace* mem_pool = aux_data->space;
-    Int4 stop_condition;
-    Int4 max_d;
-    Int4* uplow_free;
-    Int4 max_len = len2;
-    const Int4 kMaxScore = 100000000;   /* represents infinity */
+
+    Int4 *diag_lower; 
+    Int4 *diag_upper;
+    Int4 curr_diag_lower; 
+    Int4 curr_diag_upper;
+
+    Int4 num_nonempty_dist;
+    const Int4 kInvalidDiag = 100000000; /* larger than any valid diag. index */
  
+    /* make sure bits of match_score don't disappear if it
+       is divided by 2 */
+
     if (match_score % 2 == 1) {
         match_score *= 2;
         mismatch_score *= 2;
         xdrop_threshold *= 2;
-        gap_open *= 2;
-        gap_extend *= 2;
+        in_gap_open *= 2;
+        in_gap_extend *= 2;
     }
 
-    if (gap_open == 0 && gap_extend == 0) {
+    if (in_gap_open == 0 && in_gap_extend == 0) {
        return BLAST_GreedyAlign(seq1, len1, seq2, len2, reverse, 
-                                   xdrop_threshold, match_score, 
-                                   mismatch_score, extent1, extent2, 
-                                   aux_data, script, rem);
+                                xdrop_threshold, match_score, 
+                                mismatch_score, seq1_align_len, 
+                                seq2_align_len, aux_data, script, 
+                                rem);
     }
     
-    match_score_half = match_score / 2;
-    Mis_cost = mismatch_score + match_score;
-    GO_cost = gap_open;
-    GE_cost = gap_extend + match_score_half;
-    gd = BLAST_Gdb3(&Mis_cost, &GO_cost, &GE_cost);
-    D_diff = ICEIL(xdrop_threshold + match_score_half, gd);
-    
-    MAX_D = (Int4) (len1/GREEDY_MAX_COST_FRACTION + 1);
-    max_d = MAX_D * GE_cost;
-    ORIGIN = MAX_D + 2;
-    max_cost = MAX(Mis_cost, GO_cost + GE_cost);
-    *extent1 = 0;
-    *extent2 = 0;
-    
-    /* find the offset of the first mismatch between
-       seq1 and seq2 */
+    /* ordinary dynamic programming alignment, for each offset
+       in seq1, walks through offsets in seq2 until an X-dropoff
+       test fails, saving the best score encountered along 
+       the way. Instead of score, this code tracks the 'distance'
+       (number of mismatches plus number of gaps) between seq1
+       and seq2. Instead of walking through sequence offsets, it
+       walks through diagonals that can achieve a given distance */
 
-    row = 0;
+    best_dist = 0;
+    best_diag = 0;
+
+    /* fill in derived scores and penalties */
+
+    match_score_half = match_score / 2;
+    op_cost = match_score + mismatch_score;
+    gap_open = in_gap_open;
+    gap_extend = in_gap_extend + match_score_half;
+    gap_open_extend = gap_open + gap_extend;
+    score_common_factor = BLAST_Gdb3(&op_cost, &gap_open, &gap_extend);
+    max_penalty = MAX(op_cost, gap_open_extend);
+    
+    /* set the number of distinct distances the algorithm will
+       examine in the search for an optimal alignment */
+
+    max_dist = len1 / GREEDY_MAX_COST_FRACTION + 1;
+    scaled_max_dist = max_dist * gap_extend;
+    
+    /* the main loop assumes that the index of all diagonals is
+       biased to lie in the middle of allocated bookkeeping structures */
+
+    diag_origin = max_dist + 2;
+
+    /* last_seq2_off[d][k] is the largest offset into seq2 that
+       lies on diagonal k and has distance d. Unlike the non-affine
+       case, the largest offset for paths ending in an insertion,
+       deletion, and match must all be separately saved for
+       each d and k */
+
+    last_seq2_off = aux_data->last_seq2_off_affine;
+
+    /* Instead of tracking the best alignment score and using
+       xdrop_theshold directly, track the best score for each
+       unique distance and use the best score for some previously
+       computed distance to implement the X-dropoff test.
+
+       xdrop_offset gives the distance backwards in the score
+       array to look */
+
+    xdrop_offset = ICEIL(xdrop_threshold + match_score_half,
+                         score_common_factor);
+
+    /* find the offset of the first mismatch between seq1 and seq2 */
+
+    seq1_index = 0;
     if (reverse) {
         if (rem == 4) {
-            while (row < len1 && row < len2) {
-                if (seq2[len2-1-row] != seq1[len1-1-row])
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[len2-1 - seq1_index] != seq1[len1-1 - seq1_index])
                     break;
-                row++;
+                seq1_index++;
             }
         } 
         else {
-            while (row < len1 && row < len2) {
-                if (seq2[len2-1-row] != 
-                                NCBI2NA_UNPACK_BASE(seq1[(len1-1-row) / 4], 
-                                                    3 - (len1-1-row) % 4)) 
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[len2-1 - seq1_index] != 
+                          NCBI2NA_UNPACK_BASE(seq1[(len1-1 - seq1_index) / 4], 
+                                              3 - (len1-1 - seq1_index) % 4)) 
                     break;
-                row++;
+                seq1_index++;
             }
         }
     } 
     else {
         if (rem == 4) {
-            while (row < len1 && row < len2) {
-                if (seq2[row] != seq1[row])
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[seq1_index] != seq1[seq1_index])
                     break; 
-                row++;
+                seq1_index++;
             }
         } 
         else {
-            while (row < len1 && row < len2) {
-                if (seq2[row] != NCBI2NA_UNPACK_BASE(seq1[(row+rem) / 4], 
-                                                     3 - (row+rem) % 4))
+            while (seq1_index < len1 && seq1_index < len2) {
+                if (seq2[seq1_index] != 
+                          NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4], 
+                                              3 - (seq1_index + rem) % 4))
                     break;
-                row++;
+                seq1_index++;
             }
         }
     }
@@ -778,16 +998,18 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     /* update the extents of the alignment, and bail out
        early if no further work is needed */
 
-    *extent1 = row;
-    *extent2 = row;
-    if (row == len1 || row == len2) {
+    *seq1_align_len = seq1_index;
+    *seq2_align_len = seq1_index;
+
+    if (seq1_index == len1 || seq1_index == len2) {
         if (script != NULL)
-            s_EditScriptAdd(script, eEditOpReplace, row);
-        return row * match_score;
+            s_EditScriptAdd(script, eEditOpReplace, seq1_index);
+        return best_dist;
     }
 
     /* set up the memory pool */
 
+    mem_pool = aux_data->space;
     if (script == NULL) {
         mem_pool = NULL;
     } 
@@ -798,241 +1020,370 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
         s_RefreshMBSpace(mem_pool);
     }
 
-    flast_d = aux_data->flast_d_affine;
-    max_row_free = aux_data->max_row_free;
-    max_row = max_row_free + D_diff;
-    for (k = 0; k < D_diff; k++)
-        max_row_free[k] = 0;
+    /* set up the array of per-distance maximum scores. There
+       are scaled_max_diags + xdrop_offset distances to track, 
+       the first xdrop_offset of which are 0 */
 
-    uplow_free = aux_data->uplow_free;
-    lower = uplow_free;
-    upper = uplow_free + max_d + 1 + max_cost;
+    max_score = aux_data->max_score + xdrop_offset;
+    for (index = 0; index < xdrop_offset; index++)
+        aux_data->max_score[index] = 0;
 
-    /* set boundary for -1,-2,...,-max_cost+1*/
-    for (k = 0; k < max_cost; k++) {
-        lower[k] = kMaxScore;  
-        upper[k] = -kMaxScore;
+    /* For affine greedy alignment, contributions to distance d
+       can come from distances further back than d-1 (which is
+       sufficient for non-affine alignment). Where non-affine
+       alignment only needs to track the current bounds on diagonals
+       to test, the present code must also track bounds for 
+       max_penalty previous distances. These share the same
+       preallocated array */
+
+    diag_lower = aux_data->diag_bounds;
+    diag_upper = aux_data->diag_bounds + 
+                 scaled_max_dist + 1 + max_penalty;
+
+    /* the first max_penalty elements correspond to negative
+       distances; initialize with an empty range of diagonals */
+
+    for (index = 0; index < max_penalty; index++) {
+        diag_lower[index] = kInvalidDiag;  
+        diag_upper[index] = -kInvalidDiag;
     }
-    lower += max_cost;
-    upper += max_cost; 
+    diag_lower += max_penalty;
+    diag_upper += max_penalty; 
     
-    flast_d[0][ORIGIN].C = row;
-    flast_d[0][ORIGIN].I = -2;
-    flast_d[0][ORIGIN].D = -2;
-    max_row[0] = row * match_score;
-    lower[0] = ORIGIN;
-    upper[0] = ORIGIN;
-    flower = ORIGIN - 1;
-    fupper = ORIGIN + 1;
-    
+    /* fill in the initial offsets of the distance matrix */
+
+    last_seq2_off[0][diag_origin].match_off = seq1_index;
+    last_seq2_off[0][diag_origin].insert_off = -2;
+    last_seq2_off[0][diag_origin].delete_off = -2;
+    max_score[0] = seq1_index * match_score;
+    diag_lower[0] = diag_origin;
+    diag_upper[0] = diag_origin;
+    curr_diag_lower = diag_origin - 1;
+    curr_diag_upper = diag_origin + 1;
+    end1_diag = 0;
+    end2_diag = 0;
+    num_nonempty_dist = 1;
     d = 1;
-    stop_condition = 1;
-    while (d <= max_d) {
-        Int4 x, flower0, fupper0;
 
-        x = max_row[d - D_diff] + gd * d - xdrop_threshold;
-        x = ICEIL(x, match_score_half);
-        if (x < 0) 
-            x = 0;
-        cur_max = 0;
-        flower0 = flower;
-        fupper0 = fupper;
+    /* for each distance */
 
-        for (k = flower0; k <= fupper0; k++) {
-            row = -2;
-            if (k+1 <= upper[d-GO_cost-GE_cost] && 
-                k+1 >= lower[d-GO_cost-GE_cost]) {
-                row = flast_d[d-GO_cost-GE_cost][k+1].C;
+    while (d <= scaled_max_dist) {
+        Int4 xdrop_score;
+        Int4 curr_score;
+        Int4 curr_extent;
+        Int4 curr_diag;
+        Int4 tmp_diag_lower;
+        Int4 tmp_diag_upper;
+
+        /* compute the score for distance d that corresponds to
+           the X-dropoff criterion */
+
+        xdrop_score = max_score[d - xdrop_offset] + 
+                      score_common_factor * d - xdrop_threshold;
+        xdrop_score = ICEIL(xdrop_score, match_score_half);
+        if (xdrop_score < 0) 
+            xdrop_score = 0;
+
+        /* for each diagonal of interest */
+
+        curr_extent = 0;
+        tmp_diag_lower = curr_diag_lower;
+        tmp_diag_upper = curr_diag_upper;
+
+        for (k = tmp_diag_lower; k <= tmp_diag_upper; k++) {
+
+            seq2_index = -2;
+
+            /* As with the non-affine algorithm, the object is
+               to find the largest offset into seq2 that can
+               achieve distance d from diagonal k. Here, however,
+               contributions are possible from distances < d-1 */
+
+            /* begin by assuming the best offset comes from opening
+               a gap in seq1. Since opening a gap costs gap_open_extend,
+               use the offset associated with a match from that
+               far back in the table. Do not use diagonal k+1 if
+               it was not valid back then */
+
+            if (k + 1 <= diag_upper[d - gap_open_extend] && 
+                k + 1 >= diag_lower[d - gap_open_extend]) {
+                seq2_index = last_seq2_off[d - gap_open_extend][k+1].match_off;
             }
-            if (k+1  <= upper[d-GE_cost] && k+1 >= lower[d-GE_cost] &&
-                row < flast_d[d-GE_cost][k+1].D) {
-                row = flast_d[d-GE_cost][k+1].D;
-            }
-            row++;
 
-            if (2 * row + k - ORIGIN >= x) {
-                flast_d[d][k].D = row;
+            /* Replace with the offset derived from extending a gap
+               in seq2, if that is larger */
+
+            if (k + 1 <= diag_upper[d - gap_extend] && 
+                k + 1 >= diag_lower[d - gap_extend] &&
+                seq2_index < last_seq2_off[d - gap_extend][k+1].delete_off) {
+                seq2_index = last_seq2_off[d - gap_extend][k+1].delete_off;
+            }
+            seq2_index++;
+
+            /* Whether or not this offset will be used, save it
+               if it passes the X-dropoff test */
+
+            if (2 * seq2_index + k - diag_origin >= xdrop_score) {
+                last_seq2_off[d][k].delete_off = seq2_index;
             }
             else {
-                flast_d[d][k].D = -2;
+                last_seq2_off[d][k].delete_off = -2;
             }
-            row = -1; 
 
-            if (k-1 <= upper[d-GO_cost-GE_cost] && 
-                k-1 >= lower[d-GO_cost-GE_cost]) {
-                row = flast_d[d-GO_cost-GE_cost][k-1].C;
+
+            seq2_index = -1; 
+
+            /* repeat the process assuming a gap is opened or
+               extended in seq2 */
+
+            if (k - 1 <= diag_upper[d - gap_open_extend] && 
+                k - 1 >= diag_lower[d - gap_open_extend]) {
+                seq2_index = last_seq2_off[d - gap_open_extend][k-1].match_off;
             }
-            if (k-1 <= upper[d-GE_cost] && 
-                k-1 >= lower[d-GE_cost] &&
-                row < flast_d[d-GE_cost][k-1].I) {
-                row = flast_d[d-GE_cost][k-1].I;
+            if (k - 1 <= diag_upper[d - gap_extend] && 
+                k - 1 >= diag_lower[d - gap_extend] &&
+                seq2_index < last_seq2_off[d - gap_extend][k-1].insert_off) {
+                seq2_index = last_seq2_off[d - gap_extend][k-1].insert_off;
             }
-            if (2 * row + k - ORIGIN >= x) {
-                flast_d[d][k].I = row;
+            if (2 * seq2_index + k - diag_origin >= xdrop_score) {
+                last_seq2_off[d][k].insert_off = seq2_index;
             }
             else {
-                flast_d[d][k].I = -2;
+                last_seq2_off[d][k].insert_off = -2;
             }
             
-            row = MAX(flast_d[d][k].I, flast_d[d][k].D);
-            if (k <= upper[d-Mis_cost] && 
-                k >= lower[d-Mis_cost]) {
-                row = MAX(flast_d[d-Mis_cost][k].C+1,row);
+            /* Compare the greater of the two previous answers with
+               the offset associated with a match on diagonal k. */
+
+            seq2_index = MAX(last_seq2_off[d][k].insert_off, 
+                             last_seq2_off[d][k].delete_off);
+            if (k <= diag_upper[d - op_cost] && 
+                k >= diag_lower[d - op_cost]) {
+                seq2_index = MAX(seq2_index, 
+                                 last_seq2_off[d - op_cost][k].match_off + 1);
             }
             
-            col = row + k - ORIGIN;
-            if (row + col >= x) {
-                fupper = k;
+            /* choose the offset into seq1 so as to remain on diagonal k */
+
+            seq1_index = seq2_index + k - diag_origin;
+
+            /* perform the X-dropoff test, adjusting the current
+               bounds on diagonals to check */
+
+            if (seq1_index + seq2_index >= xdrop_score) {
+                curr_diag_upper = k;
             }
             else {
-                if (k == flower)
-                    flower++;
+                if (k == curr_diag_lower)
+                    curr_diag_lower++;
                 else
-                    flast_d[d][k].C = -2;
+                    last_seq2_off[d][k].match_off = -2;
                 continue;
             }
 
-            if (row > max_len || row < -2) {
-                flower = k; nlower = k+1; 
+            if (seq2_index > len2 || seq2_index < -2) {
+                curr_diag_lower = k; 
+                end2_diag = k + 1; 
             } 
             else {
-                /* slide down the diagonal */
+
+                /* slide down diagonal k until a mismatch 
+                   occurs. As long as only matches are encountered,
+                   the current distance d will not change */
+
                 if (reverse) {
                     if (rem == 4) {
-                        while (row < len2 && col < len1 && 
-                               seq2[len2-1-row] == seq1[len1-1-col]) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                                        seq2[len2-1 - seq2_index] == 
+                                        seq1[len1-1 - seq1_index]) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     } 
                     else {
-                        while (row < len2 && col < len1 && seq2[len2-1-row] == 
-                               NCBI2NA_UNPACK_BASE(seq1[(len1-1-col) / 4],
-                                                    3 - (len1-1-col) % 4)) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                            seq2[len2-1 - seq2_index] == 
+                            NCBI2NA_UNPACK_BASE(seq1[(len1-1-seq1_index) / 4],
+                                                 3 - (len1-1-seq1_index) % 4)) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     }
                 } 
                 else {
                     if (rem == 4) {
-                        while (row < len2 && col < len1 && 
-                               seq2[row] == seq1[col]) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                               seq2[seq2_index] == seq1[seq1_index]) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     } 
                     else {
-                        while (row < len2 && col < len1 && seq2[row] == 
-                               NCBI2NA_UNPACK_BASE(seq1[(col+rem) / 4],
-                                                    3 - (col+rem) % 4)) {
-                            ++row; ++col;
+                        while (seq1_index < len1 && seq2_index < len2 && 
+                            seq2[seq2_index] == 
+                            NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4],
+                                                 3 - (seq1_index + rem) % 4)) {
+                            ++seq1_index;
+                            ++seq2_index;
                         }
                     }
                 }
             }
-            flast_d[d][k].C = row;
-            if (row + col > cur_max) {
-                cur_max = row + col;
-                b_diag = k;
-            }
-            if (row == len2) {
-                flower = k; 
-                nlower = k+1;
-            }
-            if (col == len1) {
-                fupper = k; 
-                nupper = k-1;
-            }
-        }
 
-        k = cur_max * match_score_half - d * gd;
-        if (max_row[d - 1] < k) {
-            max_row[d] = k;
-            final_score = d;
-            best_diag = b_diag;
-            *extent2 = flast_d[d][b_diag].C;
-            *extent1 = (*extent2) + b_diag - ORIGIN;
+            /* since all values of k are constrained to have the
+               same distance d, the value of k which maximizes the
+               alignment score is the one that covers the most
+               of seq1 and seq2 */
+
+            last_seq2_off[d][k].match_off = seq2_index;
+            if (seq1_index + seq2_index > curr_extent) {
+                curr_extent = seq1_index + seq2_index;
+                curr_diag = k;
+            }
+
+            /* clamp the bounds on diagonals to avoid walking off
+               either sequence */
+
+            if (seq1_index == len1) {
+                curr_diag_upper = k; 
+                end1_diag = k - 1;
+            }
+            if (seq2_index == len2) {
+                curr_diag_lower = k; 
+                end2_diag = k + 1;
+            }
+        }  /* end loop over diagonals */
+
+        /* compute the maximum score possible for distance d */
+
+        curr_score = curr_extent * match_score_half - d * score_common_factor;
+
+        /* if this is the best score seen so far, update the
+           statistics of the best alignment */
+
+        if (curr_score > max_score[d - 1]) {
+            max_score[d] = curr_score;
+            best_dist = d;
+            best_diag = curr_diag;
+            *seq2_align_len = last_seq2_off[d][best_diag].match_off;
+            *seq1_align_len = (*seq2_align_len) + best_diag - diag_origin;
         } 
         else {
-            max_row[d] = max_row[d - 1];
+            max_score[d] = max_score[d - 1];
         }
 
-        if (flower <= fupper) {
-            stop_condition++;
-            lower[d] = flower; 
-            upper[d] = fupper;
+        /* save the bounds on diagonals to examine for distance d.
+           Note that in the non-affine case the alignment could stop
+           if these bounds converged to each other. Here, however,
+           it's possible for distances less than d to continue the
+           alignment even if no diagonals are available at distance d.
+           Hence we can only stop if max_penalty consecutive ranges
+           of diagonals are empty */
+
+        if (curr_diag_lower <= curr_diag_upper) {
+            num_nonempty_dist++;
+            diag_lower[d] = curr_diag_lower; 
+            diag_upper[d] = curr_diag_upper;
         } 
         else {
-            lower[d] = kMaxScore; 
-            upper[d] = -kMaxScore;
+            diag_lower[d] = kInvalidDiag; 
+            diag_upper[d] = -kInvalidDiag;
         }
 
-        if (lower[d-max_cost] <= upper[d-max_cost]) 
-            stop_condition--;
-        if (stop_condition == 0) 
+        if (diag_lower[d - max_penalty] <= diag_upper[d - max_penalty]) 
+            num_nonempty_dist--;
+
+        if (num_nonempty_dist == 0) 
             break;
         
+        /* compute the range of diagonals to test for the next
+           value of d. These must be conservative, in that any
+           diagonal that could possibly contribute must be allowed */
+
         d++;
-        flower = MIN(lower[d-Mis_cost], 
-                     MIN(lower[d-GO_cost-GE_cost], lower[d-GE_cost])-1);
-        if (nlower > 0) 
-            flower = MAX(flower, nlower);
+        curr_diag_lower = MIN(diag_lower[d - gap_open_extend], 
+                              diag_lower[d - gap_extend]) - 1;
+        curr_diag_lower = MIN(curr_diag_lower, diag_lower[d - op_cost]);
 
-        fupper = MAX(upper[d-Mis_cost], 
-                     MAX(upper[d-GO_cost-GE_cost], upper[d-GE_cost])+1);
-        if (nupper > 0) 
-            fupper = MIN(fupper, nupper);
+        if (end2_diag > 0) 
+            curr_diag_lower = MAX(curr_diag_lower, end2_diag);
 
-        if (d > max_cost) {
-           if (script == NULL) {
-               flast_d[d] = flast_d[d - max_cost-1];
-           } 
-           else {
-               flast_d[d] = s_GetMBSpace(mem_pool, fupper-flower+1)-flower;
-               if (flast_d[d] == NULL)
-                   return final_score;
-           }
+        curr_diag_upper = MAX(diag_upper[d - gap_open_extend], 
+                              diag_upper[d - gap_extend]) + 1;
+        curr_diag_upper = MAX(curr_diag_upper,
+                              diag_upper[d - op_cost]);
+
+        if (end1_diag > 0) 
+            curr_diag_upper = MIN(curr_diag_upper, end1_diag);
+
+        if (d > max_penalty) {
+            if (script == NULL) {
+
+                /* if no traceback is specified, the next row of
+                   last_seq2_off can reuse previously allocated memory */
+
+                last_seq2_off[d] = last_seq2_off[d - max_penalty - 1];
+            } 
+            else {
+
+                /* traceback requires all rows of last_seq2_off to be saved,
+                   so a new row must be allocated */
+
+                last_seq2_off[d] = s_GetMBSpace(mem_pool, 
+                                   curr_diag_upper - curr_diag_lower + 1) - 
+                                   curr_diag_lower;
+            }
         }
-    }
+    }  /* end loop over distances */
     
     /* compute the traceback if desired */
 
     if (script != NULL) { 
-        Int4 row1, diag; 
+        Int4 new_seq2_index;
         enum EOpType state;
 
-        d = final_score; 
-        diag = best_diag;
-        row = *extent2; 
+        d = best_dist; 
+        seq2_index = *seq2_align_len; 
         state = eEditOpReplace;
+
         while (d > 0) {
             if (state == eEditOpReplace) {
-                /* diag unchanged */
-                state = s_GetLastC(flast_d, lower, upper, 
-                                  &d, diag, Mis_cost, &row1);
-                if (row - row1 > 0) 
-                    s_EditScriptAdd(script, eEditOpReplace, row-row1);
-                row = row1;
+                /* substitution */
+                state = s_GetNextAffineTbackFromMatch(last_seq2_off, 
+                                       diag_lower, diag_upper, &d, best_diag, 
+                                       op_cost, &new_seq2_index);
+
+                if (seq2_index - new_seq2_index > 0) 
+                    s_EditScriptAdd(script, eEditOpReplace, 
+                                    seq2_index - new_seq2_index);
+
+                seq2_index = new_seq2_index;
+            } 
+            else if (state == eEditOpInsert) {
+                /* gap in seq1 */
+                state = s_GetNextAffineTbackFromIndel(last_seq2_off, 
+                                     diag_lower, diag_upper, &d, best_diag, 
+                                     gap_open, gap_extend, eEditOpInsert);
+                best_diag--;
+                s_EditScriptAdd(script, eEditOpInsert, 1);
             } 
             else {
-                if (state == eEditOpInsert) {
-                    /*row unchanged */
-                    state = s_GetLastID(flast_d, lower, upper, &d, 
-                                  diag, GO_cost, GE_cost, eEditOpInsert);
-                    diag--;
-                    s_EditScriptAdd(script, eEditOpInsert, 1);
-                } 
-                else {
-                    s_EditScriptAdd(script, eEditOpDelete, 1);
-                    state = s_GetLastID(flast_d, lower, upper, &d, 
-                                  diag, GO_cost, GE_cost, eEditOpDelete);
-                    diag++;
-                    row--;
-                }
+                /* gap in seq2 */
+                s_EditScriptAdd(script, eEditOpDelete, 1);
+                state = s_GetNextAffineTbackFromIndel(last_seq2_off, 
+                                     diag_lower, diag_upper, &d, best_diag, 
+                                     gap_open, gap_extend, eEditOpDelete);
+                best_diag++;
+                seq2_index--;
             }
         }
-        s_EditScriptAdd(script, eEditOpReplace, flast_d[0][ORIGIN].C);
+
+        s_EditScriptAdd(script, eEditOpReplace, 
+                        last_seq2_off[0][diag_origin].match_off);
+
         if (!reverse) 
-            s_EditScriptReverseInPlace(script);
+            s_ProcessEditScript(script);
     }
-    final_score = max_row[final_score];
-    return final_score;
+
+    return max_score[best_dist];
 }
