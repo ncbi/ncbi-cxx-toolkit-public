@@ -166,13 +166,13 @@ private:
     void x_AddQuals(const CProt_ref& prot) const;
     void x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CFFContext& ctx,
-        bool& pseudo) const;
+        bool& pseudo, bool& had_prot_desc) const;
     const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
     void x_AddRnaQuals(const CSeq_feat& feat, CFFContext& ctx,
         bool& pseudo) const;
     void x_AddProtQuals(const CSeq_feat& feat, CFFContext& ctx,
-        bool pseudo) const;
+        bool& pseudo, bool& had_prot_desc, string& precursor_comment) const;
     void x_AddRegionQuals(const CSeq_feat& feat, CFFContext& ctx) const;
     void x_AddQuals(const CGene_ref& gene) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/13 16:42:24  shomrat
+* Additions due to GBSeq format
+*
 * Revision 1.11  2004/04/07 14:25:03  shomrat
 * Added FTable format methods
 *
