@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/12/30 20:00:00  lavr
+ * Redirect on non-empty location only
+ *
  * Revision 6.18  2001/12/30 19:41:07  lavr
  * Process error codes 301 and 302 (document moved) and reissue HTTP request
  *
@@ -376,12 +379,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                    &http_v1, &http_v2, &http_status) != 3  ||
             http_status < 200  ||  299 < http_status) {
             server_error = 1/*true*/;
-            if (http_status == 301 || http_status == 302)
+            if (http_status == 301  ||  http_status == 302)
                 moved = 1;
         }
 
         /* skip HTTP header */
-        if (uuu->net_info->debug_printout || uuu->parse_http_hdr || moved) {
+        if (uuu->net_info->debug_printout  ||  uuu->parse_http_hdr  || moved) {
             char data[256], *header;
             size_t hdrsize, n_read;
 
@@ -417,7 +420,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                     server_error = 1;
             }
 
-            if (moved && header) {
+            if (moved  &&  header) {
                 const char k_LocationTag[] = "\nLocation: ";
                 char* location = strstr(header, k_LocationTag);
 
@@ -439,7 +442,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                         if (isspace((unsigned char)(*s)))
                             break;
                     *s = 0;
-                    *redirect = strdup(location);
+                    if (*location)
+                        *redirect = strdup(location);
                 }
             }
 
@@ -447,7 +451,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                 free(header);
 
             /* skip & printout the content, if server err detected */
-            if (server_error && uuu->net_info->debug_printout) {
+            if (server_error  &&  uuu->net_info->debug_printout) {
                 fprintf(stderr, "\n\
 ----- [BEGIN] Detected a server error -----\n");
                 for (;;) {
