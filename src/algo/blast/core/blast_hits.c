@@ -544,64 +544,6 @@ evalue_compare_hsps(const void* v1, const void* v2)
    return score_compare_hsps(v1, v2);
 }
 
-/** Comparison callback function for sorting HSPs by diagonal and flagging
- * the HSPs contained in or identical to other HSPs for future deletion.
-*/
-static int
-diag_uniq_compare_hsps(const void* v1, const void* v2)
-{
-   BlastHSP* h1,* h2;
-   BlastHSP** hp1,** hp2;
-   
-   hp1 = (BlastHSP**) v1;
-   hp2 = (BlastHSP**) v2;
-   h1 = *hp1;
-   h2 = *hp2;
-   
-   if (h1==NULL && h2==NULL) return 0;
-   else if (h1==NULL) return 1;
-   else if (h2==NULL) return -1;
-   
-   /* Separate different queries and/or strands */
-   if (h1->context < h2->context)
-      return -1;
-   else if (h1->context > h2->context)
-      return 1;
-   
-   /* Check if one HSP is contained in the other, if so, 
-      leave only the longer one, given it has lower evalue */
-   if (h1->query.offset >= h2->query.offset && 
-       h1->query.end <= h2->query.end &&  
-       h1->subject.offset >= h2->subject.offset && 
-       h1->subject.end <= h2->subject.end && 
-       h1->score <= h2->score) { 
-      (*hp1)->score = 0;
-   } else if (h1->query.offset <= h2->query.offset &&  
-              h1->query.end >= h2->query.end &&  
-              h1->subject.offset <= h2->subject.offset && 
-              h1->subject.end >= h2->subject.end && 
-              h1->score >= h2->score) { 
-      (*hp2)->score = 0;
-   }
-   
-   return (h1->query.offset - h1->subject.offset) -
-      (h2->query.offset - h2->subject.offset);
-}
-
-static int
-null_compare_hsps(const void* v1, const void* v2)
-{
-   BlastHSP* h1,* h2;
-   
-   h1 = *((BlastHSP**) v1);
-   h2 = *((BlastHSP**) v2);
-   
-   if ((h1 && h2) || (!h1 && !h2))
-      return 0;
-   else if (!h1) return 1;
-   else return -1;
-}
-
 /** Comparison callback for sorting HSPs by diagonal. Do not compare
  * diagonals for HSPs from different contexts. The absolute value of the
  * return is the diagonal difference between the HSPs.
