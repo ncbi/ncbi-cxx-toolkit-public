@@ -639,6 +639,14 @@ static void s_TEST_BDB_Query(void)
     assert(bres);
     }}
 
+    {{
+    const char* ch = "id = '1' AND test";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+
     cout << "======== Query test ok." << endl;
 }
 
@@ -1724,7 +1732,6 @@ int CBDB_Test::Run(void)
 
     try
     {
-
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1788,6 +1795,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/03/08 13:36:09  kuznets
+ * One more test case for queries
+ *
  * Revision 1.37  2004/03/01 14:07:11  kuznets
  * + test case for queries
  *
