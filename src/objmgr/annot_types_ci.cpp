@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/18 15:51:18  gouriano
+* *** empty log message ***
+*
 * Revision 1.2  2002/01/16 16:25:57  gouriano
 * restructured objmgr
 *
@@ -71,7 +74,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
     CMutexGuard guard(CScope::sm_Scope_Mutex);
     for (set<CDataSource*>::iterator it = m_Sources.begin();
         it != m_Sources.end(); ++it) {
-        (*it)->x_ResloveLocationHandles(*m_Location);
+        (*it)->x_ResolveLocationHandles(*m_Location);
     }
     for ( ; m_CurrentSource != m_Sources.end(); ++m_CurrentSource ) {
         m_CurrentAnnot = CAnnot_CI( **m_CurrentSource, *m_Location, m_Selector);
