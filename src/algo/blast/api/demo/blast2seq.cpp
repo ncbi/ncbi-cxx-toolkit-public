@@ -399,13 +399,7 @@ int CBlast2seqApplication::Run(void)
     sw.Start();
     CBl2Seq blaster(query_loc, subject_loc, prog);
     ProcessCommandLineArgs(blaster.SetOptions());
-
-    TSeqAlignVector seqalignv;
-
-    if (query_loc.size() > 0)
-        seqalignv = blaster.MultiQRun();
-    else
-        seqalignv.push_back(blaster.Run());
+    TSeqAlignVector seqalignv = blaster.MultiQRun();
 
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
@@ -513,6 +507,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/10/08 15:27:02  camacho
+ * Remove unnecessary conditional
+ *
  * Revision 1.21  2003/10/07 17:37:10  dondosha
  * Lower case mask is now a boolean argument in call to BLASTGetSeqLocFromStream
  *
