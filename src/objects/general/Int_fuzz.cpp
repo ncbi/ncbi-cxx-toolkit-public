@@ -301,7 +301,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
         }
     } else if (hit_pct) {
         n1 += (TSignedSeqPos)floor(0.5 * (min_delta + max_delta + 1));
-        SetPct((TSeqPos)floor(500.0 * (max_delta - min_delta) / n1 + 0.5);
+        SetPct((TSeqPos)floor(500.0 * (max_delta - min_delta) / n1 + 0.5));
     } else if (min_delta + max_delta < 0.5) { // symmetric
         SetP_m(max_delta_sp);
     } else {
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.7  2003/10/15 16:22:24  ucko
+ * Sigh, add missing parenthesis.
+ *
  * Revision 6.6  2003/10/15 16:20:09  ucko
  * portability fixes to use of double in CInt_fuzz::Add
  *
