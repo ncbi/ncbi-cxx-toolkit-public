@@ -4,6 +4,5 @@ LIB = ct_ftds
 SRC = blk cs ct ctutil
 
 DLL_LIB = tds_ftds
-LIB_OR_DLL = both
 
 CPPFLAGS = $(FTDS8_INCLUDE) $(ORIG_CPPFLAGS)

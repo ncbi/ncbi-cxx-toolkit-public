@@ -4,6 +4,4 @@ LIB = tds_ftds
 SRC = asprintf challenge config convert login mem numeric query \
       read token util write iconv locale threadsafe
 
-LIB_OR_DLL = both
-
 CPPFLAGS = $(FTDS8_INCLUDE) $(ORIG_CPPFLAGS)
