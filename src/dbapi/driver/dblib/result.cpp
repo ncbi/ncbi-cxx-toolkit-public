@@ -1418,8 +1418,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/01/11 20:11:43  vakatov
+ * Fixed CVS logs from prev. revision that messed up the compilation
+ *
  * Revision 1.9  2002/01/10 22:05:52  sapojnik
- * MS-specific workarounds needed to use blobs via I_ITDescriptor - see /*Text,Image*/
+ * MS-specific workarounds needed to use blobs via I_ITDescriptor
+ * (see Text,Image)
  *
  * Revision 1.8  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
