@@ -504,26 +504,10 @@ static SIZE_TYPE s_URL_Decode(string& str)
 
 
 // Add another entry to the container of entries
-void s_AddEntry(TCgiEntries& entries, const string& name, const string& value)
-{
-    entries.insert(TCgiEntries::value_type(name, value));
-}
-
-void s_AddEntry(TCgiEntriesEx& entries, const string& name,
+void s_AddEntry(TCgiEntries& entries, const string& name,
                 const string& value, const string& filename = kEmptyStr)
 {
-    entries.insert(TCgiEntriesEx::value_type(name,
-                                             CCgiEntry(value, filename)));
-}
-
-
-// Populate entries_ex from entries
-void s_CopyEntries(TCgiEntriesEx& entries_ex, const TCgiEntries& entries)
-{
-    // entries_ex.erase();
-    iterate (TCgiEntries, it, entries) {
-        s_AddEntry(entries_ex, it->first, it->second);
-    }
+    entries.insert(TCgiEntries::value_type(name, CCgiEntry(value, filename)));
 }
 
 
@@ -596,10 +580,9 @@ static void s_ParseQuery(const string& str,
 }
 
 
-static void s_ParseMultipartEntries(const string&  boundary,
-                                    const string&  str,
-                                    TCgiEntries&   entries,
-                                    TCgiEntriesEx& entries_ex)
+static void s_ParseMultipartEntries(const string& boundary,
+                                    const string& str,
+                                    TCgiEntries&  entries)
 {
     // some constants in string
     const string s_NameStart("Content-Disposition: form-data; name=\"");
@@ -621,14 +604,11 @@ static void s_ParseMultipartEntries(const string&  boundary,
             str[eol-1] == '-'  &&  str[eol-2] == '-') {
             // last boundary
             if (partStart == NPOS) {
-                s_AddEntry(entries,    name, kEmptyStr);
-                s_AddEntry(entries_ex, name, kEmptyStr, filename);
+                s_AddEntry(entries, name, kEmptyStr, filename);
             }
             if (partStart != 0) {
                 SIZE_TYPE partEnd = pos - s_Eol.size();
-                s_AddEntry(entries,
-                           name, str.substr(partStart, partEnd - partStart));
-                s_AddEntry(entries_ex, name,
+                s_AddEntry(entries, name,
                            str.substr(partStart, partEnd - partStart),
                            filename);
             }
@@ -643,14 +623,11 @@ static void s_ParseMultipartEntries(const string&  boundary,
             NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
             // boundary
             if (partStart == NPOS) {
-                s_AddEntry(entries,    name, kEmptyStr);
-                s_AddEntry(entries_ex, name, kEmptyStr, filename);
+                s_AddEntry(entries, name, kEmptyStr, filename);
             }
             else if (partStart != 0) {
                 SIZE_TYPE partEnd = pos - s_Eol.size();
                 s_AddEntry(entries,
-                           name, str.substr(partStart, partEnd - partStart));
-                s_AddEntry(entries_ex,
                            name, str.substr(partStart, partEnd - partStart),
                            filename);
             }
@@ -696,7 +673,7 @@ CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
 
 
 static void s_ParsePostQuery(const string& content_type, const string& str,
-                             TCgiEntries& entries, TCgiEntriesEx& entries_ex)
+                             TCgiEntries& entries)
 {
     if (content_type.empty()  ||
         content_type == "application/x-www-form-urlencoded") {
@@ -706,10 +683,8 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
         SIZE_TYPE eol = str.find_first_of("\r\n");
         if (eol != NPOS) {
             err_pos = CCgiRequest::ParseEntries(str.substr(0, eol), entries);
-            s_CopyEntries(entries_ex, entries);
         } else {
             err_pos = CCgiRequest::ParseEntries(str, entries);
-            s_CopyEntries(entries_ex, entries);
         }
         if ( err_pos != 0 ) {
             throw CParseException("Init CCgiRequest::ParseFORM(\"" +
@@ -725,7 +700,7 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
             throw CParseException("CCgiRequest::ParsePostQuery(\"" +
                                   content_type + "\"): no boundary field", 0);
         s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
-                                str, entries, entries_ex);
+                                str, entries);
         return;
     }
 
@@ -814,7 +789,6 @@ void CCgiRequest::x_Init
         if ( query_string ) {
             s_ParseQuery(*query_string, m_Entries, m_Indexes,
                          (flags & fIndexesNotEntries) == 0);
-            s_CopyEntries(m_EntriesEx, m_Entries);
         }
     }}
 
@@ -870,7 +844,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
                 }
             }
             // parse query from the POST content
-            s_ParsePostQuery(content_type, str, m_Entries, m_EntriesEx);
+            s_ParsePostQuery(content_type, str, m_Entries);
             m_Input    = 0;
             m_InputFD = -1;
         }
@@ -914,7 +888,6 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
         image_name = name;
     }
     s_AddEntry(m_Entries,   kEmptyStr, image_name);
-    s_AddEntry(m_EntriesEx, kEmptyStr, image_name);
 }
 
 
@@ -941,19 +914,7 @@ const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
 }
 
 
-const string& CCgiRequest::GetEntry(const string& name, bool* is_found)
-    const
-{
-    TCgiEntriesCI it = GetEntries().find(name);
-    bool x_found = (it != GetEntries().end());
-    if ( is_found ) {
-        *is_found = x_found;
-    }
-    return x_found ? it->second : kEmptyStr;
-}
-
-
-const CCgiEntry& CCgiRequest::GetEntryEx(const string& name, bool* is_found)
+const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
     const
 {
     static const CCgiEntry kEmptyEntry(kEmptyStr);
@@ -1146,6 +1107,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.56  2002/07/10 18:40:21  ucko
+* Made CCgiEntry-based functions the only version; kept "Ex" names as
+* temporary synonyms, to go away in a few days.
+*
 * Revision 1.55  2002/07/05 20:45:46  ucko
 * Add a couple of missing calls to the extended version of s_AddEntry.
 *

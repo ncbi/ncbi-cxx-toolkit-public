@@ -158,8 +158,10 @@ public:
     // return entry from request
     // return empty string if no such entry
     // throw runtime_error if there are several entries with the same name
-    string GetRequestValue(const string& name) const;
-    CCgiEntry GetRequestValueEx(const string& name) const;
+    CCgiEntry GetRequestValue(const string& name) const;
+    // Temporary synonym
+    CCgiEntry GetRequestValueEx(const string& name) const
+        { return GetRequestValue(name); }
 
     void AddRequestValue(const string& name, const CCgiEntry& value);
     void RemoveRequestValues(const string& name);
@@ -297,13 +299,6 @@ void CCgiContext::ClearMsg(void)
 
 
 inline
-string CCgiContext::GetRequestValue(const string& name) const
-{
-    return GetRequestValueEx(name).GetValue();
-}
-
-
-inline
 CCgiContext::TStreamStatus CCgiContext::GetStreamStatus(void) const
 {
     STimeout timeout = {0, 0};
@@ -316,6 +311,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2002/07/10 18:39:44  ucko
+* Made CCgiEntry-based functions the only version; kept "Ex" names as
+* temporary synonyms, to go away in a few days.
+*
 * Revision 1.19  2002/07/03 20:24:30  ucko
 * Extend to support learning uploaded files' names; move CVS logs to end.
 *

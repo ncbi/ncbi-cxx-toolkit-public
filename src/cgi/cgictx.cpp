@@ -166,10 +166,10 @@ CCgiServerContext& CCgiContext::x_GetServerContext(void) const
 }
 
 
-CCgiEntry CCgiContext::GetRequestValueEx(const string& name) const
+CCgiEntry CCgiContext::GetRequestValue(const string& name) const
 {
-    pair<TCgiEntriesExCI, TCgiEntriesExCI> range =
-        GetRequest().GetEntriesEx().equal_range(name);
+    pair<TCgiEntriesCI, TCgiEntriesCI> range =
+        GetRequest().GetEntries().equal_range(name);
 
     if (range.second == range.first)
         return kEmptyStr;
@@ -190,15 +190,12 @@ CCgiEntry CCgiContext::GetRequestValueEx(const string& name) const
 void CCgiContext::RemoveRequestValues(const string& name)
 {
     GetRequest().GetEntries().erase(name);
-    GetRequest().GetEntriesEx().erase(name);
 }
 
 
 void CCgiContext::AddRequestValue(const string& name, const CCgiEntry& value)
 {
-    GetRequest().GetEntries().insert(TCgiEntries::value_type
-                                     (name, value.GetValue()));
-    GetRequest().GetEntriesEx().insert(TCgiEntriesEx::value_type(name, value));
+    GetRequest().GetEntries().insert(TCgiEntries::value_type(name, value));
 }
 
 
@@ -272,6 +269,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2002/07/10 18:40:44  ucko
+* Made CCgiEntry-based functions the only version; kept "Ex" names as
+* temporary synonyms, to go away in a few days.
+*
 * Revision 1.26  2002/07/03 20:24:31  ucko
 * Extend to support learning uploaded files' names; move CVS logs to end.
 *
