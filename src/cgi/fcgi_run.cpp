@@ -267,10 +267,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     {{
         int x_watch_timeout = reg.GetInt("FastCGI", "WatchFile.Timeout",
                                          0, 0, CNcbiRegistry::eErrPost);
-        if (watcher.get()  &&  x_watch_timeout <= 0) {
-            ERR_POST("CCgiApplication::x_RunFastCGI:  non-positive "
+        if (x_watch_timeout <= 0) {
+            if (watcher.get()) {
+                ERR_POST
+                    ("CCgiApplication::x_RunFastCGI:  non-positive "
                      "[FastCGI].WatchFile.Timeout conf.param. value ignored: "
                      << x_watch_timeout);
+            }
         } else {
             watch_timeout = (unsigned int) x_watch_timeout;
         }
@@ -514,6 +517,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.37  2003/10/09 20:07:04  ucko
+ * Rework previous change to avoid possibly setting a negative (-> really
+ * large) timeout.
+ *
  * Revision 1.36  2003/10/09 18:40:26  ucko
  * Complain about zero/unset WatchFile.Timeout only if WatchFile.Name was
  * actually set.
