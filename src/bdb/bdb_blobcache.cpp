@@ -758,7 +758,12 @@ bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
     unsigned ts = (unsigned)m_IntCacheDB.time_stamp;
     time_t curr = (unsigned)time_stamp.GetTimeT();
 
-    if (ts + m_ExpirationTime >  curr) {
+    if (ts + m_ExpirationTime <  curr) {
+    /*
+        LOG_POST(Info << "Int cache item expired:" 
+                      << ts << " curr=" << curr 
+                      << " diff=" << curr - ts );
+    */
         value.resize(0);
         return false;
     }
@@ -824,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/10/20 19:58:26  kuznets
+ * Fixed bug in int cache expiration algorithm
+ *
  * Revision 1.14  2003/10/20 17:53:03  kuznets
  * Dismissed blob cache entry overwrite protection.
  *
