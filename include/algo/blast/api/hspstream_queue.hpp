@@ -65,12 +65,14 @@ public:
     /// Check if wait on semaphore is needed
     bool NeedWait();
 private:
-    std::list<BlastHSPList*> m_resultsQueue;
-    bool m_writingDone;
-    CFastMutex m_Mutex;
-    CSemaphore* m_Sema;
+    std::list<BlastHSPList*> m_resultsQueue; /**< Queue in a form of a linked 
+                                                list of HSP lists. */
+    bool m_writingDone; /**< Has writing to the queue finished? */
+    CFastMutex m_Mutex; /**< Mutex for writing to the queue. */
+    CSemaphore* m_Sema; /**< Semaphore fore reading from the queue. */
 };
 
+/// Function to initialize a queue HSP stream.
 BlastHSPStream* Blast_HSPListCQueueInit();
 
 /* @} */
@@ -79,6 +81,9 @@ BlastHSPStream* Blast_HSPListCQueueInit();
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/06/22 16:24:39  dondosha
+* Added doxygen comments
+*
 * Revision 1.1  2004/06/15 16:25:23  dondosha
 * Implementation of an HSP list queue
 *

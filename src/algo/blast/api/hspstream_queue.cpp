@@ -40,6 +40,7 @@ static char const rcsid[] =
 
 USING_NCBI_SCOPE;
 
+/// Constructor for the queue HSP stream data class
 CBlastHSPListQueueData::CBlastHSPListQueueData()
 {
     // Set maximal count to INT4_MAX, since we don't want to bound the 
@@ -48,6 +49,7 @@ CBlastHSPListQueueData::CBlastHSPListQueueData()
     m_writingDone = false;
 }
 
+/// Destructor for the queue HSP stream data class
 CBlastHSPListQueueData::~CBlastHSPListQueueData()
 {
     // Delete any HSP lists remaining in the queue.
@@ -58,12 +60,19 @@ CBlastHSPListQueueData::~CBlastHSPListQueueData()
     delete m_Sema;
 }
 
+/// Checks whether wait on a semaphore is needed before reading from the 
+/// results queue.
 bool CBlastHSPListQueueData::NeedWait()
 {
    CFastMutexGuard g(m_Mutex);
    return (!m_writingDone && m_resultsQueue.empty());
 }
 
+/** Read an HSP list from the results queue. Wait on a semaphore until there
+ * is something to read, or until queue is closed for writing.
+ * @param hsp_list The read HSP list [out]
+ * @return Status: success, error or end of reading.
+ */
 int CBlastHSPListQueueData::Read(BlastHSPList** hsp_list)
 {
    int status = kBlastHSPStream_Error;
@@ -86,6 +95,10 @@ int CBlastHSPListQueueData::Read(BlastHSPList** hsp_list)
    return status;
 }
 
+/** Insert an HSP list into the queue.
+ * @param hsp_list The HSP list to insert. [in]
+ * @return Status: success or error, if writing is not allowed.
+ */
 int CBlastHSPListQueueData::Write(BlastHSPList** hsp_list)
 {
     /* If input is empty, don't do anything, but return success */
@@ -102,6 +115,7 @@ int CBlastHSPListQueueData::Write(BlastHSPList** hsp_list)
     return kBlastHSPStream_Success;
 }
 
+/// Close the queue for writing.
 void CBlastHSPListQueueData::Close()
 {
     CFastMutexGuard g(m_Mutex);
@@ -113,6 +127,10 @@ void CBlastHSPListQueueData::Close()
 
 extern "C" {
 
+/** Deallocate memory for the HSP stream.
+ * @param hsp_stream HSP stream to free. [in]
+ * @return NULL.
+ */
 BlastHSPStream* BlastHSPListCQueueFree(BlastHSPStream* hsp_stream) 
 {
    CBlastHSPListQueueData* stream_data = 
@@ -123,6 +141,11 @@ BlastHSPStream* BlastHSPListCQueueFree(BlastHSPStream* hsp_stream)
    return NULL;
 }
 
+/** Read from an HSP stream.
+ * @param hsp_stream Stream to read from [in]
+ * @param hsp_list The read HSP list [out]
+ * @return Status: success, error or end of reading.
+ */
 int BlastHSPListCQueueRead(BlastHSPStream* hsp_stream, 
                            BlastHSPList** hsp_list) 
 {
@@ -132,6 +155,11 @@ int BlastHSPListCQueueRead(BlastHSPStream* hsp_stream,
    return stream_data->Read(hsp_list);
 }
 
+/** Write to the HSP stream. 
+ * @param hsp_stream Stream to write to [in]
+ * @param hsp_list HSP list to write to the stream [in]
+ * @return Status: success or error.
+ */
 int BlastHSPListCQueueWrite(BlastHSPStream* hsp_stream, 
                             BlastHSPList** hsp_list)
 {
@@ -141,6 +169,9 @@ int BlastHSPListCQueueWrite(BlastHSPStream* hsp_stream,
    return stream_data->Write(hsp_list);
 }
 
+/** Close the HSP stream for future writing.
+ * @param hsp_stream Stream to close [in]
+ */
 void BlastHSPListCQueueClose(BlastHSPStream* hsp_stream)
 {
    CBlastHSPListQueueData* stream_data = 
@@ -148,6 +179,11 @@ void BlastHSPListCQueueClose(BlastHSPStream* hsp_stream)
    stream_data->Close();
 }
 
+/** Initialize the function pointers and data structure for a BlastHSPStream.
+ * @param hsp_stream HSP stream to initialize [in] [out]
+ * @param args Pointer to an instance of the CBlastHSPListQueueData class. [in]
+ * @return Filled HSP stream.
+ */
 BlastHSPStream* 
 BlastHSPListCQueueNew(BlastHSPStream* hsp_stream, void* args) 
 {
@@ -168,6 +204,9 @@ BlastHSPListCQueueNew(BlastHSPStream* hsp_stream, void* args)
 
 }   // end extern "C"
 
+/** Initialize a BlastHSPStream with a queue data structure.
+ * @return The initialized HSP stream.
+ */
 BlastHSPStream* Blast_HSPListCQueueInit()
 {
     CBlastHSPListQueueData* stream_data = 
