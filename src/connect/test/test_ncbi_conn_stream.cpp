@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/03/24 16:25:25  lavr
+ * Changed "ray" -> "ray.nlm.nih.gov"
+ *
  * Revision 6.17  2002/03/22 19:46:37  lavr
  * Test_assert.h made last among the include files
  *
@@ -108,8 +111,8 @@ static CNcbiRegistry* s_CreateRegistry(void)
 
     // Compose a test registry
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,           "ray");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,           "ray.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,       "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "5.0");
