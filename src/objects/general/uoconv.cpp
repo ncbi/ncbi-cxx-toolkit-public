@@ -36,6 +36,7 @@
 #include <objects/general/uoconv.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_field.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <serial/objectiter.hpp>
 
@@ -534,6 +535,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/21 13:14:50  dicuccio
+* Include user-object header in implementation, not header
+*
 * Revision 1.2  2004/10/28 18:41:12  dicuccio
 * Dropped unused local variables in exceptions - clears compiler warning
 *
