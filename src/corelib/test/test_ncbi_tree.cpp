@@ -35,6 +35,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_tree.hpp>
 #include <algo/tree/tree_algo.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
 #include <algorithm>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -222,6 +223,57 @@ static void s_TEST_Tree()
     delete tr5;
 }
 
+struct IdValue
+{
+    int id;
+    
+    IdValue() : id(0) {}
+    IdValue(int v) : id(v) {}
+
+    operator int() const { return id; }
+    int GetId() const { return id; }
+};
+
+static string s_IdValueToStr(const IdValue& idv)
+{
+    return NStr::IntToString(idv.id);
+}
+
+static void s_TEST_IdTreeOperations()
+{
+    cout << "--------------------- s_TEST_IdTreeOperations " << endl;
+
+    typedef CTreeNode<IdValue> TTree;
+
+    TTree* tr = new TTree(0);
+
+    TTree* tr10 = tr->AddNode(10);
+    TTree* tr11 = tr->AddNode(11);
+    TTree* tr110 = tr10->AddNode(110);
+    TTree* tr1100 = tr110->AddNode(1100);
+
+    TreePrint(cout, *tr, s_IdValueToStr);
+
+    typedef vector<TTree*> TNodeList;
+    TNodeList node_list;
+    node_list.push_back(tr10);
+    node_list.push_back(tr11);
+    node_list.push_back(tr110);
+    node_list.push_back(tr1100);
+
+    TNodeList res_node_list;
+
+    CTreeNonRedundantSet<TTree, bm::bvector<>, TNodeList> nr_func;
+    nr_func(node_list, res_node_list);
+
+    ITERATE(TNodeList, it, res_node_list) {
+        cout << (*it)->GetValue().GetId() << "; ";
+    }
+
+    delete tr;
+
+    cout << "--------------------- s_TEST_IdTreeOperations ok" << endl;
+}
 
 static void s_TEST_IdTree()
 {
@@ -294,6 +346,8 @@ static void s_TEST_IdTree()
     delete tr;
 }
 
+
+
 int CTestApplication::Run(void)
 {
 
@@ -321,6 +375,8 @@ int CTestApplication::Run(void)
 
     s_TEST_IdTree();
 
+    s_TEST_IdTreeOperations();
+
     return 0;
 }
 
@@ -339,6 +395,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.13  2004/04/21 12:58:32  kuznets
+ * + s_TEST_IdTreeOperations
+ *
  * Revision 1.12  2004/04/19 16:01:30  kuznets
  * + #include <algo/tree/tree_algo.hpp>
  *
