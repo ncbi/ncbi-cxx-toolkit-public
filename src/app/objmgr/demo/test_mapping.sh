@@ -31,13 +31,13 @@ EOF
             for minus in "" 1; do
               for ints in 1 2; do
                 if test "$ints" = 1; then
-                    from=400
-                    to=600
-                else
                     from=300
-                    fromm=400
+                    to=599
+                else
+                    from=200
+                    fromm=299
                     tom=600
-                    to=700
+                    to=699
                 fi
 
                 label="$gi: "
@@ -143,65 +143,65 @@ cat <<EOF
         mol dna,
         topology circular,
         ext seg {
-          int {
+          int { -- 0
             from 500,
             to 999,
             id gi 9500
           },
-          int {
+          int { -- 500
             from 0,
             to 999,
             id gi 0500
           },
-          int {
+          int { -- 1500
             from 0,
             to 999,
             strand minus,
             id gi 1500
           },
-          int {
+          int { -- 2500
             from 0,
-            to 449,
+            to 499,
             id gi 2500
           },
-          int {
+          int { -- 3000
             from 0,
-            to 449,
+            to 499,
             strand minus,
             id gi 3500
           },
-          int {
+          int { -- 3500
             from 500,
             to 999,
             id gi 4500
           },
-          int {
+          int { -- 4000
             from 500,
             to 999,
             strand minus,
             id gi 5500
           },
-          int {
+          int { -- 4500
             from 450,
             to 549,
             id gi 6500
           },
-          int {
+          int { -- 4600
             from 450,
             to 549,
             strand minus,
             id gi 7500
           },
-          int {
+          int { -- 4700
             from 0,
             to 999,
             id gi 8500
           },
-          int {
+          int { -- 5700
             from 0,
             to 499,
             id gi 9500
-          }
+          }     -- 6200
         }
       }
     }
