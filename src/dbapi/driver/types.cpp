@@ -553,7 +553,7 @@ EDB_Type CDB_SmallDateTime::GetType() const
 
 CDB_Object* CDB_SmallDateTime::Clone() const
 {
-    return new CDB_SmallDateTime(Value());
+    return m_Null ? new CDB_SmallDateTime : new CDB_SmallDateTime(Value());
 }
 
 void CDB_SmallDateTime::AssignValue(CDB_Object& v)
@@ -577,7 +577,7 @@ EDB_Type CDB_DateTime::GetType() const
 
 CDB_Object* CDB_DateTime::Clone() const
 {
-    return new CDB_DateTime(Value());
+    return m_Null ? new CDB_DateTime : new CDB_DateTime(Value());
 }
 
 void CDB_DateTime::AssignValue(CDB_Object& v)
@@ -876,6 +876,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/08/13 18:02:11  soussov
+ * fixes bug in Clone() for [Small]DateTime
+ *
  * Revision 1.13  2003/05/13 16:54:40  sapojnik
  * CDB_Object::Create() - support for LongChar, LongBinary
  *
