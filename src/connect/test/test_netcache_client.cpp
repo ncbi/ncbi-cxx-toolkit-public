@@ -373,7 +373,7 @@ void s_ReadUpdateCharTest(const string& host, unsigned short port)
 }
 
 
-
+/*
 void s_TestAlive(const string& host, unsigned short port)
 {
     CNetCacheClient ncc (host, port, "test");
@@ -387,7 +387,7 @@ void s_TestAlive(const string& host, unsigned short port)
         assert(b);        
     }
 }
-
+*/
         
 
 void s_TestClientLB(const string& service_name)
@@ -665,6 +665,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/02/15 15:20:53  kuznets
+ * IsAlive test commented out
+ *
  * Revision 1.29  2005/02/07 13:04:21  kuznets
  * Do not use empty client name
  *
