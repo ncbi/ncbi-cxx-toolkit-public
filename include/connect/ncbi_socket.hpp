@@ -31,9 +31,9 @@
  * File Description:
  *   C++ wrapper for the C "SOCK" API (UNIX, MS-Win, MacOS, Darwin)
  *   NOTE:  for more details and documentation see "ncbi_socket.h"
- *     CSocketAPI
  *     CSocket
  *     CListeningSocket
+ *     CSocketAPI
  *
  * ---------------------------------------------------------------------------
  */
@@ -64,7 +64,8 @@ public:
     // NOTE: the created underlying "SOCK" will be owned by the "CSocket".
     CSocket(const string&   host,
             unsigned short  port,      // always in host byte order
-            const STimeout* timeout = 0/*infinite*/);
+            const STimeout* timeout = 0/*infinite*/,
+            ESwitch         do_log  = eDefault);
 
     // Call Close(), then self-destruct
     ~CSocket(void);
@@ -81,7 +82,8 @@ public:
     // NOTE:  should not be called if already connected.
     EIO_Status Connect(const string&   host,
                        unsigned short  port,      // always in host byte order
-                       const STimeout* timeout = 0/*infinite*/);
+                       const STimeout* timeout = 0/*infinite*/,
+                       ESwitch         do_log  = eDefault);
 
     // Reconnect to the same address.
     // NOTE 1:  the socket must not be closed by the time this call is made.
@@ -432,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/12/04 16:54:08  lavr
+ * Add extra parameter "log" to CSocket() constructor and CSocket::Connect()
+ *
  * Revision 6.11  2002/11/14 01:11:33  lavr
  * Minor formatting changes
  *
