@@ -40,6 +40,51 @@
 
 BEGIN_NCBI_SCOPE
 
+#if defined(SOAPSERVER_INTERNALSTORAGE)
+
+static const size_t s_Step = 16;
+CSoapServerApplication::Storage::Storage(void)
+{
+    m_Capacity=s_Step;
+    m_Current = 0;
+    m_Buffer = new TWebMethod[m_Capacity];
+}
+CSoapServerApplication::Storage::Storage(const Storage& src)
+{
+    m_Capacity = src.m_Capacity;
+    m_Current = src.m_Current;
+    m_Buffer = new TWebMethod[m_Capacity];
+    memcpy( m_Buffer, src.m_Buffer, m_Capacity * sizeof(TWebMethod));
+}
+CSoapServerApplication::Storage::~Storage(void)
+{
+    delete [] m_Buffer;
+}
+CSoapServerApplication::Storage::const_iterator
+CSoapServerApplication::Storage::begin(void) const
+{
+    return m_Buffer;
+}
+CSoapServerApplication::Storage::const_iterator
+CSoapServerApplication::Storage::end(void) const
+{
+    return m_Buffer+m_Current;
+}
+void CSoapServerApplication::Storage::push_back(TWebMethod value)
+{
+    if (m_Current >= m_Capacity) {
+        TWebMethod* newbuf = new TWebMethod[m_Capacity+s_Step];
+        memcpy( newbuf, m_Buffer, m_Capacity * sizeof(TWebMethod));
+        m_Capacity += s_Step;
+        delete [] m_Buffer;
+        m_Buffer = newbuf;
+    }
+    *(m_Buffer + m_Current) = value;
+    ++m_Current;
+}
+#endif
+
+
 CSoapServerApplication::CSoapServerApplication(
     const string& wsdl_filename, const string& namespace_name)
     : CCgiApplication(), m_DefNamespace(namespace_name), m_Wsdl(wsdl_filename)
@@ -111,8 +156,10 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     for (types_in = m_Types.begin(); types_in != m_Types.end(); ++types_in) {
         soap_in.RegisterObjectType(*types_in);
     }
-    CObjectIStream *is = CObjectIStream::Open(eSerial_Xml,*request.GetInputStream());
-    *is >> soap_in;
+    {
+        auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_Xml,*request.GetInputStream()));
+        *is >> soap_in;
+    }
 
 // find listeners
     const TListeners* listeners = x_FindListeners(soap_in);
@@ -123,7 +170,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     if (listeners) {
         TListeners::const_iterator it;
         for (it = listeners->begin(); it != listeners->end(); ++it) {
-        const TSoapServerCallback listener = **it;
+            const TWebMethod listener = *it;
             if (!(this->*listener)(soap_out, soap_in)) {
                 break;
             }
@@ -131,9 +178,10 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     }
 
 // send it back
-    CObjectOStream *out = CObjectOStream::Open(eSerial_Xml,response.out());
-    *out << soap_out;
-    delete out;
+    {
+        auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_Xml,response.out()));
+        *out << soap_out;
+    }	
     return true;
 }
 
@@ -188,7 +236,7 @@ CSoapServerApplication::RegisterObjectType(TTypeInfoGetter type_getter)
 }
 
 void
-CSoapServerApplication::AddMessageListener(TSoapServerCallback* listener,
+CSoapServerApplication::AddMessageListener(TWebMethod listener,
                                            const string& message_name,
                                            const string& namespace_name)
 {
@@ -196,14 +244,15 @@ CSoapServerApplication::AddMessageListener(TSoapServerCallback* listener,
     if (ns.empty()) {
         ns = m_DefNamespace;
     }
-    TListeners* listeners = x_FindListenersByName(message_name, namespace_name);
+    TListeners* listeners = x_FindListenersByName(message_name, ns);
     if (listeners) {
         listeners->push_back(listener);
     } else {
         TListeners new_listeners;
         new_listeners.push_back(listener);
         m_Listeners.insert(
-            pair<string const, pair<string,TListeners> >(message_name, make_pair(ns,new_listeners)));
+            pair<string const, pair<string,TListeners> >(message_name,
+                make_pair(ns,new_listeners)));
     }
 }
 
@@ -213,6 +262,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/28 15:16:20  gouriano
+* More fixes for GCC 2.95
+*
 * Revision 1.3  2004/06/25 17:24:00  gouriano
 * Added incoming object types registration. Corrected for GCC 2.95
 *

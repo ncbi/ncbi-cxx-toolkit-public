@@ -40,15 +40,44 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //  CSoapServerApplication
 //
+#if defined(NCBI_COMPILER_GCC)
+#  if NCBI_COMPILER_VERSION < 300
+#    define SOAPSERVER_INTERNALSTORAGE
+#  endif
+#endif
+
 
 class CSoapServerApplication;
-typedef bool (CSoapServerApplication::*TSoapServerCallback)(
-    CSoapMessage& response, const CSoapMessage& request);
 
 class CSoapServerApplication : public CCgiApplication
 {
 public:
-    typedef vector<TSoapServerCallback*> TListeners;
+    typedef bool (CSoapServerApplication::*TWebMethod)(
+        CSoapMessage& response, const CSoapMessage& request);
+
+#if defined(SOAPSERVER_INTERNALSTORAGE)
+// 'vector<TWebMethod>' looks simple,
+// but I could not make it compile on GCC 2.95
+    class Storage
+    {
+    public:
+        Storage(void);
+        Storage(const Storage& src);
+        ~Storage(void);
+        typedef TWebMethod* const_iterator;
+        const_iterator begin(void) const;
+        const_iterator end(void) const;
+        void push_back(TWebMethod value);
+    private:
+        TWebMethod* m_Buffer;
+        size_t m_Capacity;
+        size_t m_Current;
+    };
+    typedef Storage TListeners;
+#else
+    typedef vector<TWebMethod> TListeners;
+#endif
+
 
     CSoapServerApplication(const string& wsdl_filename,
                            const string& namespace_name);
@@ -59,7 +88,7 @@ public:
     void SetWsdlFilename(const string& wsdl_filename);
 
     void RegisterObjectType(TTypeInfoGetter type_getter);
-    void AddMessageListener(TSoapServerCallback* listener,
+    void AddMessageListener(TWebMethod listener,
                             const string& message_name,
                             const string& namespace_name = kEmptyStr);
 
