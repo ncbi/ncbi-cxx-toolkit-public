@@ -598,6 +598,13 @@ diag_compare_hsps(const void* v1, const void* v2)
       (h2->query.offset - h2->subject.offset);
 }
 
+/** An auxiliary structure used for merging HSPs */
+typedef struct BlastHSPSegment {
+   Int4 q_start, q_end;
+   Int4 s_start, s_end;
+   struct BlastHSPSegment* next;
+} BlastHSPSegment;
+
 #define OVERLAP_DIAG_CLOSE 10
 /** Merge the two HSPs if they intersect.
  * @param hsp1 The first HSP; also contains the result of merge. [in] [out]
@@ -608,7 +615,7 @@ diag_compare_hsps(const void* v1, const void* v2)
 static Boolean
 Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
 {
-   BLASTHSPSegment* segments1,* segments2,* new_segment1,* new_segment2;
+   BlastHSPSegment* segments1,* segments2,* new_segment1,* new_segment2;
    GapEditScript* esp1,* esp2,* esp;
    Int4 end = start + DBSEQ_CHUNK_OVERLAP - 1;
    Int4 min_diag, max_diag, num1, num2, dist = 0, next_dist = 0;
@@ -631,7 +638,7 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
          return FALSE;
    }
    /* Find whether these HSPs have an intersection point */
-   segments1 = (BLASTHSPSegment*) calloc(1, sizeof(BLASTHSPSegment));
+   segments1 = (BlastHSPSegment*) calloc(1, sizeof(BlastHSPSegment));
    
    esp1 = hsp1->gap_info->esp;
    esp2 = hsp2->gap_info->esp;
@@ -661,8 +668,8 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    new_segment1 = segments1;
    
    for (esp = esp1->next; esp; esp = esp->next) {
-      new_segment1->next = (BLASTHSPSegment*)
-         calloc(1, sizeof(BLASTHSPSegment));
+      new_segment1->next = (BlastHSPSegment*)
+         calloc(1, sizeof(BlastHSPSegment));
       new_segment1->next->q_start = new_segment1->q_end + 1;
       new_segment1->next->s_start = new_segment1->s_end + 1;
       new_segment1 = new_segment1->next;
@@ -680,7 +687,7 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    
    /* Now create the second segments list */
    
-   segments2 = (BLASTHSPSegment*) calloc(1, sizeof(BLASTHSPSegment));
+   segments2 = (BlastHSPSegment*) calloc(1, sizeof(BlastHSPSegment));
    segments2->q_start = hsp2->query.offset;
    segments2->s_start = hsp2->subject.offset;
    segments2->q_end = segments2->q_start + esp2->num - 1;
@@ -690,8 +697,8 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    
    for (esp = esp2->next; esp && new_segment2->s_end < end; 
         esp = esp->next) {
-      new_segment2->next = (BLASTHSPSegment*)
-         calloc(1, sizeof(BLASTHSPSegment));
+      new_segment2->next = (BlastHSPSegment*)
+         calloc(1, sizeof(BlastHSPSegment));
       new_segment2->next->q_start = new_segment2->q_end + 1;
       new_segment2->next->s_start = new_segment2->s_end + 1;
       new_segment2 = new_segment2->next;
