@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/11 01:46:16  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.5  2000/09/08 20:16:55  thiessen
 * working dynamic alignment views
 *
@@ -59,6 +62,7 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/vector_math.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -242,7 +246,8 @@ public:
 };
 
 
-SequenceViewer::SequenceViewer(void) : viewerWindow(NULL), display(NULL)
+SequenceViewer::SequenceViewer(Messenger *mesg) :
+    viewerWindow(NULL), display(NULL), messenger(mesg)
 {
 }
 
@@ -267,6 +272,7 @@ void SequenceViewer::DestroyGUI(void)
 
 void SequenceViewer::Refresh(void)
 {
+    TESTMSG("refreshing SequenceViewer");
     if (viewerWindow)
         viewerWindow->Refresh();
     else
@@ -277,6 +283,7 @@ void SequenceViewer::NewAlignment(const ViewableAlignment *display)
 {
     if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
     viewerWindow->NewAlignment(display);
+    messenger->PostRedrawSequenceViewers();
 }
 
 void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)

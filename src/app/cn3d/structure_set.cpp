@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/09/11 01:46:16  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.26  2000/08/30 19:48:43  thiessen
 * working sequence window
 *
@@ -138,6 +141,7 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/alignment_manager.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -235,12 +239,12 @@ void StructureSet::MatchSequencesToMolecules(void)
     }
 }
 
-StructureSet::StructureSet(const CNcbi_mime_asn1& mime, SequenceViewer * const *seqViewer) :
+StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
     StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
     sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    sequenceViewer(seqViewer)
+    messenger(mesg)
 {
     StructureObject *object;
     parentSet = this;
@@ -257,7 +261,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, SequenceViewer * const *
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime.GetStrucseq().GetSequences());
         MatchSequencesToMolecules();
-        alignmentManager = new AlignmentManager(sequenceSet, NULL, sequenceViewer);
+        alignmentManager = new AlignmentManager(sequenceSet, NULL, messenger);
 
     } else if (mime.IsStrucseqs()) {
         object = new StructureObject(this, mime.GetStrucseqs().GetStructure(), true);
@@ -265,7 +269,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, SequenceViewer * const *
         sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, sequenceViewer);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -286,7 +290,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, SequenceViewer * const *
         sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, sequenceViewer);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, messenger);
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);
@@ -420,8 +424,10 @@ void StructureSet::SelectedAtom(unsigned int name)
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return;
 
+    // to test highlighting recolor for now
     object->parentSet->styleManager->HighlightResidue(object, molecule->id, residue->id);
-    object->graph->RedrawMolecule(molecule->id); // to test highlighting recolor for now
+    messenger->PostRedrawMolecule(object, molecule->id);
+    messenger->PostRedrawSequenceViewers();
 
     TESTMSG("rotating about " << object->pdbID
         << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/09/11 01:45:54  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.22  2000/08/30 19:49:05  thiessen
 * working sequence window
 *
@@ -127,11 +130,12 @@ class SequenceSet;
 class AlignmentSet;
 class AlignmentManager;
 class SequenceViewer;
+class Messenger;
 
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime, SequenceViewer * const *seqViewer);
+    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime, Messenger *messenger);
     ~StructureSet(void);
 
     // public data
@@ -146,8 +150,8 @@ public:
     const AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
 
-    // handle to SequenceViewer - is owned by wxApp
-    SequenceViewer * const *sequenceViewer;
+    // handle to Messenger - is owned by wxApp
+    Messenger *messenger;
 
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;

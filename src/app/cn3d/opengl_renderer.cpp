@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/09/11 01:46:15  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.26  2000/09/08 20:16:55  thiessen
 * working dynamic alignment views
 *
@@ -130,6 +133,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/messenger.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -1371,7 +1375,8 @@ bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
         ERR_POST(Error << "OpenGLRenderer::SetFont_Windows() - wglUseFontBitmaps() failed");
         return false;
     }
-    Construct(); // text position dependent on font details
+    if (structureSet)
+        structureSet->messenger->PostRedrawAllStructures(); // text position dependent on font details
 	return true;
 }
 

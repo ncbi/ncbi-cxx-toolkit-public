@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/11 01:46:16  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.4  2000/09/09 14:35:15  thiessen
 * fix wxWin problem with large alignments
 *
@@ -112,8 +115,6 @@ bool SequenceViewerWidget::AttachAlignment(const ViewableAlignment *newAlignment
         // remove scrollbars
         SetScrollbars(0, 0, 0, 0);
     }
-
-    Refresh();
 
     return true;
 }

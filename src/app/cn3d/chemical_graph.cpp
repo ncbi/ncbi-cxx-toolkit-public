@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/11 01:46:14  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.12  2000/08/27 18:52:20  thiessen
 * extract sequence information
 *
@@ -235,7 +238,11 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     const StructureObject *object;
     if (!GetParentOfType(&object)) return false;
 
-    TESTMSG("drawing ChemicalGraph of object " << object->pdbID);
+    if (moleculeToRedraw != -1)
+        TESTMSG("drawing molecule " << moleculeToRedraw
+            << " of ChemicalGraph of object " << object->pdbID);
+    else
+        TESTMSG("drawing ChemicalGraph of object " << object->pdbID);
 
     // put each protein (with its 3d-objects) or nucleotide chain in its own display list
     bool continueDraw;

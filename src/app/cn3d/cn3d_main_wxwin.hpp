@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/11 01:45:53  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.4  2000/09/03 18:45:56  thiessen
 * working generalized sequence viewer
 *
@@ -77,12 +80,11 @@
 #ifndef CN3D_MAIN__HPP
 #define CN3D_MAIN__HPP
 
-// this header should only be #included from cn3d_main_wxwin.cpp. The first
-// include file in cn3d_main_wxwin.cpp is <wx/wx.h>, so this should already
-// have been set up before this header is read. This also (intentionally)
-// prevents this header from being used by other modules.
-
-// For now, this module will contain a simple wxWindows + wxGLCanvas interface
+#include <wx/wx.h>
+#if !wxUSE_GLCANVAS
+#error Please set wxUSE_GLCANVAS to 1 in setup.h.
+#endif
+#include <wx/glcanvas.h>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/opengl_renderer.hpp"
@@ -92,6 +94,7 @@ BEGIN_SCOPE(Cn3D)
 
 class Cn3DMainFrame;
 class SequenceViewer;
+class Messenger;
 
 // Define a new application type
 class Cn3DApp: public wxApp
@@ -99,10 +102,19 @@ class Cn3DApp: public wxApp
 public:
     bool OnInit(void);
 
+    // used for processing display updates when system is idle
+    void OnIdle(wxIdleEvent& event);
+
+    // one messenger only
+    Messenger *messenger;
+
+    // for now, there is only one structure window
     Cn3DMainFrame *structureWindow;
 
     // for now, there is only one sequence viewer
     SequenceViewer *sequenceViewer;
+
+    DECLARE_EVENT_TABLE()
 };
 
 class Cn3DGLCanvas;
@@ -110,8 +122,8 @@ class Cn3DGLCanvas;
 class Cn3DMainFrame: public wxFrame
 {
 public:
-    Cn3DMainFrame(Cn3DApp *app, SequenceViewer **seqViewer,
-        wxFrame *frame, const wxString& title,
+    Cn3DMainFrame(Messenger *messenger,
+        wxFrame *parent, const wxString& title,
         const wxPoint& pos, const wxSize& size, long style = wxDEFAULT_FRAME_STYLE);
     ~Cn3DMainFrame();
 
@@ -148,19 +160,17 @@ public:
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
 
-    // need to find a better way to do this...
-    SequenceViewer **sequenceViewer;
-
-DECLARE_EVENT_TABLE()
+    DECLARE_EVENT_TABLE()
 
 private:
-    Cn3DApp *parentApp;
+    Messenger *messenger;
 };
 
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    Cn3DGLCanvas(Cn3DMainFrame *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
+    Cn3DGLCanvas(Messenger *messenger,
+        wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
         const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
         int *gl_attrib = NULL);
     ~Cn3DGLCanvas(void);
@@ -177,10 +187,10 @@ public:
     void OnChar(wxKeyEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
-DECLARE_EVENT_TABLE()
+    DECLARE_EVENT_TABLE()
 
 private:
-    Cn3DMainFrame *parentFrame;
+    Messenger *messenger;
 };
 
 

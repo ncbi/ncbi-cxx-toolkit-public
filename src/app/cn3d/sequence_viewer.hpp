@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/11 01:45:54  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.3  2000/09/08 20:16:10  thiessen
 * working dynamic alignment views
 *
@@ -59,13 +62,14 @@ class Sequence;
 class BlockMultipleAlignment;
 class SequenceViewerWindow;
 class SequenceDisplay;
+class Messenger;
 
 class SequenceViewer
 {
     friend class SequenceViewerWindow;
 
 public:
-    SequenceViewer(void);
+    SequenceViewer(Messenger *messenger);
     ~SequenceViewer(void);
 
     void NewAlignment(const ViewableAlignment *display);
@@ -82,6 +86,7 @@ public:
 
 private:
 
+    Messenger *messenger;
     SequenceViewerWindow *viewerWindow;
     SequenceDisplay *display;
 };

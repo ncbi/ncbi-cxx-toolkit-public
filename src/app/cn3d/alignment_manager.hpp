@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/11 01:45:52  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.4  2000/09/08 20:16:10  thiessen
 * working dynamic alignment views
 *
@@ -64,12 +67,12 @@ class AlignmentSet;
 class MasterSlaveAlignment;
 class BlockMultipleAlignment;
 class SequenceViewer;
+class Messenger;
 
 class AlignmentManager
 {
 public:
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet,
-        SequenceViewer * const *seqViewer);
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, Messenger *messenger);
     ~AlignmentManager(void);
 
     const SequenceSet *sequenceSet;
@@ -78,14 +81,14 @@ public:
     // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
-    const BlockMultipleAlignment *
+    BlockMultipleAlignment *
 		CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
 
 private:
     // for now, will own the current multiple alignment
     BlockMultipleAlignment *currentMultipleAlignment;
 
-    SequenceViewer * const *sequenceViewer;
+    Messenger *messenger;
 
 public:
     const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const

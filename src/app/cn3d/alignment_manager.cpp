@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/11 01:46:13  thiessen
+* working messenger for sequence<->structure window communication
+*
 * Revision 1.5  2000/09/08 20:16:55  thiessen
 * working dynamic alignment views
 *
@@ -53,8 +56,8 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
-#include "cn3d/sequence_viewer.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -62,28 +65,31 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet,
-    SequenceViewer * const *seqViewer) :
+    Messenger *mesg) :
     sequenceSet(sSet), alignmentSet(aSet), currentMultipleAlignment(NULL),
-    sequenceViewer(seqViewer)
+    messenger(mesg)
 {
     if (!alignmentSet) {
-        (*sequenceViewer)->DisplaySequences(&(sequenceSet->sequences));
+        messenger->DisplaySequences(&(sequenceSet->sequences));
         return;
     }
+
+	// remove old alignment
+	if (currentMultipleAlignment) delete currentMultipleAlignment;
 
     // for testing, make a multiple with all rows
     AlignmentList alignments;
     AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
     for (a=alignmentSet->alignments.begin(); a!=ae; a++) alignments.push_back(*a);
-    CreateMultipleFromPairwiseWithIBM(alignments);
+    currentMultipleAlignment = CreateMultipleFromPairwiseWithIBM(alignments);
 
-    (*sequenceViewer)->DisplayAlignment(currentMultipleAlignment);
+    messenger->DisplayAlignment(currentMultipleAlignment);
 }
 
 AlignmentManager::~AlignmentManager(void)
 {
     if (currentMultipleAlignment) delete currentMultipleAlignment;
-    (*sequenceViewer)->ClearGUI();
+    messenger->ClearSequenceViewers();
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
@@ -107,11 +113,9 @@ static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
     return true;
 }
 
-const BlockMultipleAlignment *
+BlockMultipleAlignment *
 AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments)
 {
-    if (currentMultipleAlignment) delete currentMultipleAlignment;
-
     AlignmentList::const_iterator a, ae = alignments.end();
 
     // create sequence list; fill with sequences of master + slaves
@@ -120,7 +124,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
     BlockMultipleAlignment::SequenceList::iterator s = sequenceList->begin();
     *(s++) = alignmentSet->master;
     for (a=alignments.begin(); a!=ae; a++, s++) *s = (*a)->slave;
-    currentMultipleAlignment = new BlockMultipleAlignment(sequenceList);
+    BlockMultipleAlignment *multipleAlignment = new BlockMultipleAlignment(sequenceList);
 
     // each block is a continuous region on the master, over which each master
     // residue is aligned to a residue of each slave, and where there are no
@@ -154,24 +158,23 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
             newBlock->SetRangeOfRow(row, 
                 (*a)->masterToSlave[masterFrom],
                 (*a)->masterToSlave[masterTo]);
-
             //TESTMSG("slave->from " << b->from+1 << ", slave->to " << b->to+1);
         }
 
         // copy new block into alignment
-        currentMultipleAlignment->AddAlignedBlockAtEnd(newBlock);
+        multipleAlignment->AddAlignedBlockAtEnd(newBlock);
 
         // start looking for next block
         masterFrom = masterTo + 1;
     }
 
-    if (!currentMultipleAlignment->AddUnalignedBlocksAndIndex()) {
+    if (!multipleAlignment->AddUnalignedBlocksAndIndex()) {
         ERR_POST(Error << "AlignmentManager::CreateMultipleFromPairwiseWithIBM() - "
             "AddUnalignedBlocksAndIndex() failed");
         return NULL;
     }
 
-    return currentMultipleAlignment;
+    return multipleAlignment;
 }
 
 
