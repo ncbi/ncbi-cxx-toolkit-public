@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.314 2004/08/09 20:37:49 vakatov Exp $
+#  $Id: configure.ac,v 1.315 2004/08/23 18:46:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1392,9 +1392,17 @@ if test "$with_hostspec" = "yes" ; then
    build_root="${build_root}--${host}"
 fi
 
+case "$host_os" in
+   linux*)
+      kver=`uname -r`
+      libcver=`locale --version | awk 'NR == 1 { print $NF }'`
+      verbose_host=$host_cpu-$host_vendor-linux$kver-gnu$libcver
+      ;;
+   *) verbose_host=$host ;;
+esac
 
 #### Overall configuration mode summary
-signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
 
 #### Check if there is "${build_root}" dir

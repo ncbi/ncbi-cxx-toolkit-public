@@ -4970,9 +4970,17 @@ if test "$with_hostspec" = "yes" ; then
    build_root="${build_root}--${host}"
 fi
 
+case "$host_os" in
+   linux*)
+      kver=`uname -r`
+      libcver=`locale --version | awk 'NR == 1 { print $NF }'`
+      verbose_host=$host_cpu-$host_vendor-linux$kver-gnu$libcver
+      ;;
+   *) verbose_host=$host ;;
+esac
 
 #### Overall configuration mode summary
-signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
 
 
 #### Check if there is "${build_root}" dir
