@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/10/17 18:00:10  vasilche
+* CNCBINode::AppendChild() can throw exception if added child was not
+* allocated on heap.
+*
 * Revision 1.20  2000/08/22 16:25:39  vasilche
 * Avoid internal error of Forte compiler.
 *
@@ -129,6 +133,10 @@ CNCBINode::~CNCBINode(void)
 // append a child
 void CNCBINode::DoAppendChild(CNCBINode* child)
 {
+    if ( !child->CanBeDeleted() ) {
+        THROW1_TRACE(runtime_error,
+                     "AppendChild() of node allocated in stack");
+    }
     GetChildren().push_back(child);
 }
 
