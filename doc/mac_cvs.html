@@ -4,32 +4,6 @@
 
 <h1>Using CVS on Mac OS in NCBI</h1>
 
-<h2>Setting up your account on the server</h2>
-
-<p>Before you can successfully use a CVS client, you must set up your
-account on <span class="ncbi_value">ray</span>, the CVS server.  The statements beginning
-with '$' are shell commands that you should enter.  Occurances of
-<span class="ncbi_value">parameter</span> need to be replaced.  The character '#' begins
-a comment, which should be omitted.</p>
-
-<ol>
-  <li>Log into <span class="ncbi_value">ray</span>.</li>
-  <li>
-    <span class="ncbi_cmd">$ echo hostname username >> .rhosts</span>
-  </li>
-
-  <li>
-    <span class="ncbi_cmd">$ chmod 600 .rhosts</span>
-  </li>
-
-  <li>
-    Edit the file <span class="ncbi_file">.ncbi_hints</span>.  On the line
-    starting with "<span class="ncbi_value">facilities</span>", append
-    "<span class="ncbi_value">ncbi_tools</span>".
-  </li>
-
-  <li>Log into <span class="ncbi_value">ray</span> again.</li>
-
   <!--
   <li>
     $ <span class="ncbi_cmd">mkdir bin</span>
@@ -46,19 +20,15 @@ a comment, which should be omitted.</p>
 
 <ol>
   <li>
-    Download <a href=
-    "http://www.maccvs.org/download/MacCVS_Pro_2.5b2.sit">MacCVS
-    Pro 2.5b2</a> (the latest release version as of 2001-03-14)
+    Download MacCVS
+    Pro 2.7d3</a> (the latest release version as of 2001-03-05)
     from <a href=
-    "http://www.maccvs.org/" class="ncbi_url">http://www.maccvs.org/</a>.
-    Although it's labeled as a beta, it's been used for years and
-    the maintainers have not found an update necessary.
+    "http://sourceforge.net/projects/maccvspro" class="ncbi_url">http://sourceforge.net/projects/maccvspro</a>.
   </li>
 
   <li>
     Put the expanded folder somewhere appropriate, e.g. with other
-    development tools.  Launch the MacCVS Pro application.  (It's
-    not necessary to use the debug version.)
+    development tools.  Launch the MacCVS Pro application.
   </li>
 
   <li>
@@ -83,13 +53,16 @@ a comment, which should be omitted.</p>
       <ul>
         <li><i>CVS Server Settings</i>
           <ul>
-            <li><i>Server Hostname</i>:  <span class="ncbi_value">ray</span></li>
+            <li><i>Server Hostname</i>:  <span class="ncbi_value">cvsvault.ncbi.nlm.nih.gov</span></li>
             <li><i>CVS Root</i>:  <span class="ncbi_dir">/src/NCBI/vault.ncbi</span></li>
           </ul>
         </li>
-        <li><i>Authentication Method</i>:  <span class="ncbi_value">RSH</span>
+        <li><i>Authentication Method</i>:  <span class="ncbi_value">Password</span>
           <ul>
             <li><i>CVS User Name</i>:  <span class="ncbi_value">username</span></li>
+          </ul>
+          <ul>
+            <li><i>CVS Password</i>:  <span class="ncbi_value"><b>allowed</b></span></li>
           </ul>
         </li>
         </ul>
@@ -122,7 +95,7 @@ a comment, which should be omitted.</p>
     <tr>
 <td>
     <address>
-    <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Joshua Juran</a>
+    <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Vlad Lebedev</a>
     </address>
 </td>
 <td align=right>
