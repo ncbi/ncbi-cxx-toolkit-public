@@ -173,6 +173,13 @@ void CSeq_loc_mix::AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
 }
 
 
+void CSeq_loc_mix::SetStrand(ENa_strand strand)
+{
+    NON_CONST_ITERATE (Tdata, it, Set()) {
+        (*it)->SetStrand(strand);
+    }
+}
+
 void CSeq_loc_mix::FlipStrand(void)
 {
     NON_CONST_ITERATE (Tdata, it, Set()) {
@@ -187,6 +194,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.17  2004/11/19 15:42:33  shomrat
+ * + SetStrand
+ *
  * Revision 6.16  2004/10/25 18:01:33  shomrat
  * + FlipStrand
  *

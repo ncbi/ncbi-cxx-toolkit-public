@@ -112,6 +112,9 @@ public:
     /// Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
 
+    /// Set the strand for all of the location's ranges.
+    void SetStrand(ENa_strand strand);
+
     /// Return start and stop positions of the seq-loc.
     /// End may be less than Start for circular sequences.
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
@@ -574,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/11/19 15:40:57  shomrat
+ * + SetStrand
+ *
  * Revision 1.42  2004/11/15 22:21:48  grichenk
  * Doxygenized comments, fixed group names.
  *

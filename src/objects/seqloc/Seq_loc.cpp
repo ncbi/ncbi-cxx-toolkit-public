@@ -1374,11 +1374,25 @@ void CSeq_loc::ChangeToMix(void)
     case e_not_set:
         {
             SetMix();
-            return;
+            break;
         }
     case e_Mix:
         {
-            return;
+            break;
+        }
+    case e_Packed_int:
+        {
+            // unpack
+            CRef<CSeq_loc> self(new CSeq_loc);
+            self->Assign(*this, eShallow);
+
+            CSeq_loc_mix& mix = SetMix();
+            NON_CONST_ITERATE (CPacked_seqint::Tdata, it, self->SetPacked_int().Set()) {
+                CRef<CSeq_loc> ival(new CSeq_loc);
+                ival->SetInt(**it);
+                mix.Set().push_back(ival);
+            }
+            break;
         }
     default:
         {
@@ -2289,6 +2303,31 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
 }
 
 
+void CSeq_loc::SetStrand(ENa_strand strand)
+{
+    switch ( Which() ) {
+    case e_Int:
+        SetInt().SetStrand(strand);
+        break;
+    case e_Pnt:
+        SetPnt().SetStrand(strand);
+        break;
+    case e_Packed_int:
+        SetPacked_int().SetStrand(strand);
+        break;
+    case e_Packed_pnt:
+        SetPacked_pnt().SetStrand(strand);
+        break;
+    case e_Mix:
+        SetMix().SetStrand(strand);
+        break;
+
+    default:
+        break;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -2296,6 +2335,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.51  2004/11/19 15:42:10  shomrat
+ * + SetStrand
+ *
  * Revision 6.50  2004/11/16 18:31:22  grichenk
  * Simplified resulting seq-loc in Add/Merge/Subtract
  *

@@ -181,6 +181,13 @@ void CPacked_seqint::AddIntervals(const Tdata& ivals)
 }
 
 
+void CPacked_seqint::SetStrand(TStrand strand)
+{
+    NON_CONST_ITERATE (Tdata, it, Set()) {
+        (*it)->SetStrand(strand);
+    }
+}
+
 void CPacked_seqint::FlipStrand(void)
 {
     NON_CONST_ITERATE (Tdata, it, Set()) {
@@ -197,6 +204,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.11  2004/11/19 15:42:21  shomrat
+ * + SetStrand
+ *
  * Revision 6.10  2004/10/25 18:01:33  shomrat
  * + FlipStrand
  *

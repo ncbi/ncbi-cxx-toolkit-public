@@ -89,7 +89,10 @@ public:
     TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
     TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
 
-    // Flip the strand (e.g. plus to minus)
+    /// Set the strand for all of the location's ranges.
+    void SetStrand(ENa_strand strand);
+
+    /// Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
 
 private:
@@ -119,6 +122,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/11/19 15:41:23  shomrat
+ * + SetStrand
+ *
  * Revision 1.10  2004/10/25 18:00:42  shomrat
  * + FlipStrand
  *
