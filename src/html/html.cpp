@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/10 00:17:27  lewisg
+* fix index in InsertInTable
+*
 * Revision 1.7  1998/12/09 23:00:54  lewisg
 * use new cgiapp class
 *
@@ -376,7 +379,7 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
     list <CNCBINode *>::iterator iyChildren;
 
     if(!Child) return NULL;
-    iy = 1;
+    iy = 0;
     iChildren = m_ChildNodes.begin();
 
     while (iy < y && iChildren != m_ChildNodes.end()) {
@@ -384,7 +387,7 @@ CNCBINode * CHTML_table::InsertInTable(int x, int y, CNCBINode * Child)  // todo
         iChildren++;
     }
 
-    ix = 1;
+    ix = 0;
     iyChildren = ((CHTMLNode *)(* iChildren))->ChildBegin();
 
     while (ix < x && iyChildren != ((CHTMLNode *)(*iChildren))->ChildEnd()) {
