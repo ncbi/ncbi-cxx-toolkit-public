@@ -76,10 +76,9 @@ CopyFiles()
         src_file=$src_dir/lib/lib$x.so 
         if [ -f $src_file ]; then
             rm -f $target_dir/lib/lib$x.so
-            $BINCOPY $src_file $target_dir/lib/ \
-                || Error "Cannot copy file $x"
+            COMMON_Exec $BINCOPY $src_file $target_dir/lib/ 
         else
-            Error "File not found: $src_file"
+            COMMON_Error "File not found: $src_file"
         fi
     done
 
