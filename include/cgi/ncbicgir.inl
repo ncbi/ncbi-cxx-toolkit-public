@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/11 18:00:53  vasilche
+* Added cookies and output stream
+*
 * Revision 1.2  1998/12/10 19:58:19  vasilche
 * Header option made more generic
 *
@@ -47,9 +50,81 @@ inline void CCgiResponse::SetContentType(const string& type)
     SetHeaderValue(sm_ContentTypeName, type);
 }
 
-inline string CCgiResponse::GetContentType() const
+inline string CCgiResponse::GetContentType(void) const
 {
     return GetHeaderValue(sm_ContentTypeName);
+}
+
+inline const CCgiCookies& CCgiResponse::Cookies(void) const
+{
+    return m_Cookies;
+}
+
+inline CCgiCookies& CCgiResponse::Cookies(void)
+{
+    return m_Cookies;
+}
+
+inline void CCgiResponse::AddCookie(const string& name, const string& value)
+{
+    m_Cookies.Add(name, value);
+}
+
+inline void CCgiResponse::AddCookie(const CCgiCookie& cookie)
+{
+    m_Cookies.Add(cookie);
+}
+
+inline void CCgiResponse::AddCookies(const CCgiCookies& cookies)
+{
+    m_Cookies.Add(cookies);
+}
+
+inline void CCgiResponse::RemoveCookie(const string& name)
+{
+    m_Cookies.Remove(name);
+}
+
+inline void CCgiResponse::RemoveAllCookies(void)
+{
+    m_Cookies.Clear();
+}
+
+inline bool CCgiResponse::HaveCookies(void) const
+{
+    return !m_Cookies.Empty();
+}
+
+inline bool CCgiResponse::HaveCookie(const string& name) const
+{
+    return m_Cookies.Find(name) != 0;
+}
+
+inline CCgiCookie* CCgiResponse::FindCookie(const string& name) const
+{
+    return m_Cookies.Find(name);
+}
+
+inline CNcbiOstream* CCgiResponse::SetOutput(CNcbiOstream* out)
+{
+    CNcbiOstream* old = m_Output;
+    m_Output = out;
+    return old;
+}
+
+inline CNcbiOstream* CCgiResponse::GetOutput(void) const
+{
+    return m_Output;
+}
+
+inline void CCgiResponse::Flush(void) const
+{
+    out() << NcbiFlush;
+}
+
+inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
+{
+    return WriteHeader(out());
 }
 
 #endif /* def NCBICGIR__HPP  &&  ndef NCBICGIR__INL */

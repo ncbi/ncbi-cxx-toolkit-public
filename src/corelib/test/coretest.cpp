@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1998/12/11 18:00:56  vasilche
+* Added cookies and output stream
+*
 * Revision 1.26  1998/12/10 22:59:49  vakatov
 * CNcbiRegistry:: API is ready(and by-and-large tested)
 *
@@ -121,6 +124,7 @@
 #include <cgiapp.hpp>
 #include <ncbireg.hpp>
 #include <ncbires.hpp>
+#include <ncbicgir.hpp>
 #include <algorithm>
 #include <time.h>
 
@@ -716,7 +720,29 @@ static void TestCgi(int argc, char* argv[])
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
 }
 
+void TestCgiResponse(int argc, char** argv)
+{
+    NcbiCout << "Starting CCgiResponse test" << NcbiEndl;
 
+    CCgiResponse response;
+    
+    response.SetOutput(&NcbiCout);
+
+    if (argc > 2)
+        response.AddCookies(CCgiCookies(argv[2]));
+
+    response.RemoveCookie("to-Remove");
+
+    NcbiCout << "Cookies: " << response.Cookies();
+
+    NcbiCout << "Now generated HTTP response:" << NcbiEndl;
+
+    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
+    //    sleep(2);
+    response.out() << "Data2" << NcbiEndl << NcbiFlush;
+
+    NcbiCout << "End of HTTP response" << NcbiEndl;
+}
 
 /////////////////////////////////
 // Test CGI application
@@ -740,6 +766,8 @@ int CTestApplication::Run(void)
     TestRegistry();
 
     TestCgi(m_Argc, m_Argv);
+
+    TestCgiResponse(m_Argc, m_Argv);
 
     return 0;
 }

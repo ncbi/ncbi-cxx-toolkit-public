@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/11 18:00:54  vasilche
+* Added cookies and output stream
+*
 * Revision 1.2  1998/12/10 19:58:22  vasilche
 * Header option made more generic
 *
@@ -43,6 +46,7 @@
 #include <ncbicgir.hpp>
 #include <list>
 #include <map>
+#include <time.h>
 
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
@@ -66,10 +70,12 @@ inline bool s_ZeroTime(const tm& date)
 }
 
 CCgiResponse::CCgiResponse()
+    : m_Output(0)
 {
 }
 
 CCgiResponse::CCgiResponse(const CCgiResponse& response)
+    : m_Output(0)
 {
     m_HeaderValues = response.m_HeaderValues;
 }
@@ -84,7 +90,7 @@ CCgiResponse& CCgiResponse::operator=(const CCgiResponse& response)
     return *this;
 }
 
-bool CCgiResponse::HaveHeader(const string& name) const
+bool CCgiResponse::HaveHeaderValue(const string& name) const
 {
     TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
     return xx_HeaderValues.find(name) != xx_HeaderValues.end();
@@ -127,21 +133,27 @@ void CCgiResponse::SetHeaderValue(const string &name, const tm& date)
     }
 }
 
+CNcbiOstream& CCgiResponse::out(void) const
+{
+    if ( !m_Output )
+        throw runtime_error("CCgiResponse: Null output stream");
+    return *m_Output;
+}
+
 CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
 {
     TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
     for ( TMap::const_iterator i = xx_HeaderValues.begin();
           i != xx_HeaderValues.end(); ++i ) {
-        out << i->first << ": " << i->second << endl;
+        out << i->first << ": " << i->second << NcbiEndl;
     }
-    if ( !HaveHeader(sm_ContentTypeName) )
-        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << endl;
-    return out << endl;
-}
-
-CNcbiOstream& CCgiResponse::WriteBody(CNcbiOstream& out) const
-{
-    return out;
+    if ( !HaveHeaderValue(sm_ContentTypeName) ) {
+        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << NcbiEndl;
+    }
+    if ( HaveCookies() ) {
+        out << m_Cookies;
+    }
+    return out << NcbiEndl;
 }
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

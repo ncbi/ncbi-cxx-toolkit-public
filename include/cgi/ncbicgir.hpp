@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/11 18:00:52  vasilche
+* Added cookies and output stream
+*
 * Revision 1.2  1998/12/10 19:58:18  vasilche
 * Header option made more generic
 *
@@ -44,13 +47,13 @@
 
 #include <ncbistd.hpp>
 #include <ncbistre.hpp>
+#include <ncbicgi.hpp>
 #include <list>
 #include <map>
 
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
-
 
 class CCgiResponse {
 public:
@@ -71,7 +74,7 @@ public:
 
     // Header getter
     string GetHeaderValue(const string& name) const;
-    bool HaveHeader(const string& name) const;
+    bool HaveHeaderValue(const string& name) const;
 
     // Specific header setters:
     // Set content type
@@ -79,28 +82,57 @@ public:
 
     // Specific header getters:
     // Get content type
-    string GetContentType() const;
+    string GetContentType(void) const;
 
+    // Get cookies set
+    const CCgiCookies& Cookies(void) const;
+    CCgiCookies& Cookies(void);
+
+    // Add cookies
+    void AddCookie(const string& name, const string& value);
+    void AddCookie(const CCgiCookie& cookie);
+    void AddCookies(const CCgiCookies& cookies);
+
+    // Remove cookies
+    void RemoveCookie(const string& name);
+    void RemoveAllCookies(void);
+
+    // Query cookies
+    bool HaveCookies(void) const;
+    bool HaveCookie(const string& name) const;
+    CCgiCookie* FindCookie(const string& name) const;
+    
+    // Set default output stream
+    // returns previous output stream
+    CNcbiOstream* SetOutput(CNcbiOstream* out);
+
+    // Query output stream
+    CNcbiOstream* GetOutput(void) const;
+
+    // Conversion to ostream so that it's possible to write:
+    //    response.out() << something << flush;
+    CNcbiOstream& out(void) const;
+
+    // Flushes output stream
+    void Flush() const;
 
     // Write HTTP response header
-    virtual CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
-
-    // Write HTTP response body
-    virtual CNcbiOstream& WriteBody(CNcbiOstream& out) const;
-
-    // Writes generated HTTP response
-    // throws
-    void Write(CNcbiIstream& data, CNcbiOstream& out) const;
-    void Write(CNcbiOstream& out) const;
+    CNcbiOstream& WriteHeader() const;
+    CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
 
 protected:
 
+    // String, containing
     static const string sm_ContentTypeName;
     static const string sm_ContentTypeDefault;
     
     typedef map<string, string> TMap;
+
     TMap m_HeaderValues;
 
+    CCgiCookies m_Cookies;
+
+    CNcbiOstream* m_Output;
 };
 
 
