@@ -122,7 +122,32 @@ try {
 STD_CATCH("It happened inside SomeFunc()...");
 </pre>
 
+	 <p>
+	 One is encouraged to write
+	 <a href="http://www.cygnus.com/misc/wp/dec96pub/except.html#except.spec">
+		exception specifications</a>
+	 for NCBI C++ functions. However, due to some discrepancy in how different
+	 compilers handle <i>unexpected</i> exception events we decided to use
+	 <i>THROWS_NONE</i> and <i>THROWS()</i> preprocessor macros for the case
+	 of "poor" compilers.
+	 
+	 <p>
+	 Thus, you must use:
+<pre>
+void f1(int i) THROWS_NONE;
+int  f2(void) THROWS((e0));
+int  f3(long) THROWS((e1,e2));
+</pre>
+	 in the place of:
+<pre>
+void f1(int i) throw();
+int  f2(void)  throw(e0);
+int  f3(long)  throw(e1,e2);
+</pre>
+	 respectively. -- (Please note the double parenthesis for <i>THROWS()</i>.)
 
+
+	 <br></br>
 	 <br></br>
 	 <a name="ref_Message"><h2>Standard NCBI C++ message posting</h2></a>
 
