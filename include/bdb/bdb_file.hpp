@@ -246,6 +246,13 @@ public:
                   size_t buf_size = 0, 
                   ENullable is_null = eNullable);
 
+    /// Get Buffer manager for key section of the file
+    const CBDB_BufferManager* GetKeyBuffer() const { return m_KeyBuf.get(); }
+
+    /// Get Buffer manager for data section of the file
+    const CBDB_BufferManager* GetDataBuffer() const { return m_DataBuf.get(); }
+
+
     /// Sets maximum number of key fields participating in comparison
     /// Should be less than total number of key fields
     void SetFieldCompareLimit(unsigned int n_fields);
@@ -256,6 +263,7 @@ public:
 
     /// Free the DBT structure created by CloneDBT_Key.
     static void DestroyDBT_Clone(DBT* dbt);
+
 
 protected:
     /// Unpack internal record buffers
@@ -280,6 +288,7 @@ protected:
     /// data structures (BLOB storage, etc.) Caller takes full
     /// responsibility for filling m_DBT_Data with correct values.
     void DisableDataBufProcessing() { m_DataBufDisabled = true; }
+
 
 private:
     CBDB_File(const CBDB_File&);
@@ -400,6 +409,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/10/27 14:20:31  kuznets
+ * + Buffer manager accessor functions for CBDB_File
+ *
  * Revision 1.22  2003/10/16 19:26:07  kuznets
  * Added field comparison limit to the fields manager
  *
