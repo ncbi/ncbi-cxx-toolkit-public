@@ -10,6 +10,5 @@ SRC   = $(SRC_C)
 
 LIB = blast
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(FAST_CPPFLAGS) -I$(top_srcdir)/include/algo/blast/core
-CFLAGS   = $(ORIG_CFLAGS) $(FAST_CFLAGS) -I$(top_srcdir)/include/algo/blast/core
-LDFLAGS  = $(ORIG_LDFLAGS) $(FAST_LDFLAGS)
+CFLAGS  = $(FAST_CFLAGS)
+LDFLAGS = $(FAST_LDFLAGS)
