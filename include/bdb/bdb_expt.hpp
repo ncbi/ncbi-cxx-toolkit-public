@@ -126,7 +126,8 @@ public:
         eInvalidOperation,
         eTransInProgress,
         eNull,
-        eQueryError
+        eQueryError,
+        eQuerySyntaxError,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -141,6 +142,7 @@ public:
         case eNull:              return "eNull";
         case eTransInProgress:   return "eTransInProgress";
         case eQueryError:        return "eQueryError";
+        case eQuerySyntaxError:  return "eQuerySyntaxError";
         default:                 return  CException::GetErrCodeString();
         }
     }
@@ -186,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/24 16:29:59  kuznets
+ * Add error codes associated with queries (syntax, execution, etc.)
+ *
  * Revision 1.10  2004/02/13 14:58:28  kuznets
  * + eQuery error code
  *
