@@ -345,7 +345,6 @@ SetupSubjects(const TSeqLocVector& subjects,
 
     Uint1 encoding;
     bool use_sentinels = true;
-    int status = 0;
 
     if (prog == eBlastn) {
         encoding = BLASTNA_ENCODING;
@@ -572,7 +571,6 @@ FindGeneticCode(int genetic_code)
 string
 FindMatrixPath(const char* matrix_name, bool is_prot)
 {
-    //char* retval = NULL, *p = NULL;
     string retval;
     string full_path;       // full path to matrix file
 
@@ -696,7 +694,8 @@ GetNumberOfFrames(EProgram p)
         retval = 6;
         break;
     default:
-        abort();
+        NCBI_THROW(CBlastException, eBadParameter, 
+                   "Cannot get number of frames for invalid program type");
     }
 
     return retval;
@@ -708,6 +707,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/09/29 20:35:03  camacho
+* Replace abort() with exception in GetNumberOfFrames
+*
 * Revision 1.29  2003/09/16 16:48:13  dondosha
 * Use BLAST_PackDNA and BlastSetUp_SeqBlkNew from the core blast library for setting up subject sequences
 *
