@@ -70,7 +70,7 @@ public:
     CSeq_entry_CI(void);
 
     /// Create an iterator that enumerates seq-entries
-    /// related to the given seq-entrie
+    /// related to the given seq-entry
     CSeq_entry_CI(const CSeq_entry_Handle& entry);
 
     /// Create an iterator that enumerates seq-entries
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/10/01 19:47:20  kononenk
+* Fixed typo in doxygen documentation
+*
 * Revision 1.3  2004/10/01 14:54:54  kononenk
 * Added doxygen formatting
 *
