@@ -1,0 +1,469 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Soussov
+ *
+ * File Description:  ODBC language command
+ *
+ */
+
+#include <dbapi/driver/odbc/interfaces.hpp>
+
+
+BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CODBC_LangCmd::
+//
+
+CODBC_LangCmd::CODBC_LangCmd(CODBC_Connection* conn, SQLHSTMT cmd,
+                           const string& lang_query,
+                           unsigned int nof_params) :
+    m_Connect(conn), m_Cmd(cmd), m_Query(lang_query), m_Params(nof_params), 
+    m_Reporter(&conn->m_MsgHandlers, SQL_HANDLE_STMT, cmd)
+{
+    m_WasSent   =  false;
+    m_HasFailed =  false;
+    m_Res       =  0;
+    m_RowCount  = -1;
+}
+
+
+bool CODBC_LangCmd::More(const string& query_text)
+{
+    m_Query.append(query_text);
+    return true;
+}
+
+
+bool CODBC_LangCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
+{
+    return
+        m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
+}
+
+
+bool CODBC_LangCmd::SetParam(const string& param_name, CDB_Object* param_ptr)
+{
+    return
+        m_Params.SetParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
+}
+
+
+bool CODBC_LangCmd::Send()
+{
+    if (m_WasSent)
+        Cancel();
+
+    m_HasFailed = false;
+
+    CMemPot bindGuard;
+    string q_str;
+
+	if(m_Params.NofParams() > 0) {
+		SQLINTEGER* indicator= (SQLINTEGER*)
+				bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
+
+		if (!x_AssignParams(q_str, bindGuard, indicator)) {
+			SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+			m_HasFailed = true;
+			throw CDB_ClientEx(eDB_Error, 420003, "CODBC_LangCmd::Send",
+                           "cannot assign params");
+		}
+	}
+
+    string* real_query;
+    if(!q_str.empty()) {
+        q_str.append(m_Query);
+        real_query= &q_str;
+    }
+    else {
+        real_query= &m_Query;
+    }
+
+    switch(SQLExecDirect(m_Cmd, (SQLCHAR*)real_query->c_str(), SQL_NTS)) {
+    case SQL_SUCCESS:
+        m_hasResults= true;
+        break;
+
+    case SQL_NO_DATA:
+        m_hasResults= false;
+        m_RowCount= 0;
+        break;
+
+    case SQL_ERROR:
+        m_Reporter.ReportErrors();
+        SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+        m_HasFailed = true;
+        throw CDB_ClientEx(eDB_Fatal, 420001, "CODBC_LangCmd::Send",
+                           "SQLExecDirect failed");
+
+    case SQL_SUCCESS_WITH_INFO:
+        m_Reporter.ReportErrors();
+        m_hasResults= true;
+        break;
+
+    case SQL_STILL_EXECUTING:
+        m_Reporter.ReportErrors();
+        SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+        m_HasFailed = true;
+        throw CDB_ClientEx(eDB_Fatal, 420002, "CODBC_LangCmd::Send",
+                           "Some other query is executing on this connection");
+        
+    case SQL_INVALID_HANDLE:
+        m_HasFailed= true;
+        throw CDB_ClientEx(eDB_Fatal, 420004, "CODBC_LangCmd::Send",
+                           "The statement handler is invalid (memory corruption suspected)");
+        
+    default:
+        m_Reporter.ReportErrors();
+        SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+        m_HasFailed = true;
+        throw CDB_ClientEx(eDB_Fatal, 420005, "CODBC_LangCmd::Send",
+                           "Unexpected error");
+        
+    }
+
+    m_WasSent = true;
+    return true;
+}
+
+
+bool CODBC_LangCmd::WasSent() const
+{
+    return m_WasSent;
+}
+
+
+bool CODBC_LangCmd::Cancel()
+{
+    if (m_WasSent) {
+        if (m_Res) {
+            delete m_Res;
+            m_Res = 0;
+        }
+        m_WasSent = false;
+        switch(SQLFreeStmt(m_Cmd, SQL_CLOSE)) {
+        case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+        case SQL_SUCCESS:           break;
+        case SQL_ERROR:             m_Reporter.ReportErrors();
+        default:                    return false;
+        }
+    }
+
+    SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+    // m_Query.erase();
+    return true;
+}
+
+
+bool CODBC_LangCmd::WasCanceled() const
+{
+    return !m_WasSent;
+}
+
+
+CDB_Result* CODBC_LangCmd::Result()
+{
+    if (m_Res) {
+        delete m_Res;
+        m_Res = 0;
+        m_hasResults= xCheck4MoreResults();
+    }
+
+    if (!m_WasSent) {
+        throw CDB_ClientEx(eDB_Error, 420010, "CODBC_LangCmd::Result",
+                           "a command has to be sent first");
+    }
+
+    if(!m_hasResults) {
+		m_WasSent= false;
+        return 0;
+    }
+
+    SQLSMALLINT nof_cols= 0;
+
+    while(m_hasResults) {
+        switch(SQLNumResultCols(m_Cmd, &nof_cols)) {
+        case SQL_SUCCESS_WITH_INFO:
+            m_Reporter.ReportErrors();
+
+        case SQL_SUCCESS:
+            break;
+
+        case SQL_ERROR:
+            m_Reporter.ReportErrors();
+            throw CDB_ClientEx(eDB_Error, 420011, "CODBC_LangCmd::Result",
+                               "SQLNumResultCols failed");
+        default:
+            throw CDB_ClientEx(eDB_Error, 420012, "CODBC_LangCmd::Result",
+                               "SQLNumResultCols failed (memory corruption suspected)");
+        }
+
+        if(nof_cols < 1) { // no data in this result set
+			SQLINTEGER rc;
+			switch(SQLRowCount(m_Cmd, &rc)) {
+				case SQL_SUCCESS_WITH_INFO:
+					m_Reporter.ReportErrors(); 
+				case SQL_SUCCESS: break;
+				case SQL_ERROR:
+						m_Reporter.ReportErrors();
+						throw CDB_ClientEx(eDB_Error, 420013, "CODBC_LangCmd::Result",
+                               "SQLRowCount failed");
+				default:
+					throw CDB_ClientEx(eDB_Error, 420014, "CODBC_LangCmd::Result",
+						"SQLRowCount failed (memory corruption suspected)");
+			}
+
+            m_RowCount = rc;
+            m_hasResults= xCheck4MoreResults();
+            continue;
+        }
+
+        m_Res = new CODBC_RowResult(nof_cols, m_Cmd, m_Reporter);
+        return Create_Result(*m_Res);
+    }
+
+    m_WasSent = false;
+    return 0;
+}
+
+
+bool CODBC_LangCmd::HasMoreResults() const
+{
+    return m_hasResults;
+}
+
+
+bool CODBC_LangCmd::HasFailed() const
+{
+    return m_HasFailed;
+}
+
+
+int CODBC_LangCmd::RowCount() const
+{
+    return m_RowCount;
+}
+
+
+void CODBC_LangCmd::Release()
+{
+    m_BR = 0;
+    if (m_WasSent) {
+        Cancel();
+        m_WasSent = false;
+    }
+    m_Connect->DropCmd(*this);
+    delete this;
+}
+
+
+CODBC_LangCmd::~CODBC_LangCmd()
+{
+    if (m_BR)
+        *m_BR = 0;
+    if (m_WasSent)
+        Cancel();
+    SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+}
+
+
+bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER* indicator)
+{
+    for (unsigned int n = 0; n < m_Params.NofParams(); n++) {
+        const string& name  =  m_Params.GetParamName(n);
+        CDB_Object&   param = *m_Params.GetParam(n);
+        const char*   type;
+
+        switch (param.GetType()) {
+        case eDB_Int: {
+            CDB_Int& val = dynamic_cast<CDB_Int&> (param);
+            type = "int";
+            indicator[n]= 4;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SLONG, 
+                             SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator+n);
+            break;
+        }
+        case eDB_SmallInt: {
+            CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
+            type = "smallint";
+            indicator[n]= 2;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SSHORT, 
+                             SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator+n);
+            break;
+        }
+        case eDB_TinyInt: {
+            CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
+            type = "tinyint";
+            indicator[n]= 1;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_UTINYINT, 
+                             SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator+n);
+            break;
+        }
+        case eDB_BigInt: {
+            CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
+            type = "numeric";
+            indicator[n]= 8;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SBIGINT, 
+                             SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator+n);
+            
+            break;
+        }
+        case eDB_Char: {
+            CDB_Char& val = dynamic_cast<CDB_Char&> (param);
+            type= "varchar(255)";
+            indicator[n]= SQL_NTS;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
+            break;
+        }
+        case eDB_VarChar: {
+            CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
+            type = "varchar(255)";
+            indicator[n]= SQL_NTS;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+                             SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
+            break;
+        }
+        case eDB_Binary: {
+            CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
+            type = "varbinary(255)";
+            indicator[n]= val.Size();
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
+            break;
+        }
+        case eDB_VarBinary: {
+            CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
+            type = "varbinary(255)";
+            indicator[n]= val.Size();
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+                             SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
+            break;
+        }
+        case eDB_Float: {
+            CDB_Float& val = dynamic_cast<CDB_Float&> (param);
+            type = "real";
+            indicator[n]= 4;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_FLOAT, 
+                             SQL_REAL, 4, 0, val.BindVal(), 4, indicator+n);
+            break;
+        }
+        case eDB_Double: {
+            CDB_Double& val = dynamic_cast<CDB_Double&> (param);
+            type = "float";
+            indicator[n]= 8;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_DOUBLE, 
+                             SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator+n);
+            break;
+        }
+        case eDB_SmallDateTime: {
+            CDB_SmallDateTime& val = dynamic_cast<CDB_SmallDateTime&> (param);
+            type = "smalldatetime";
+            SQL_TIMESTAMP_STRUCT* ts= 0;
+            if(!val.IsNULL()) {
+                ts= (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
+                const CTime& t= val.Value();
+                ts->year= t.Year();
+                ts->month= t.Month();
+                ts->day= t.Day();
+                ts->hour= t.Hour();
+                ts->minute= t.Minute();
+                ts->second= 0;
+                ts->fraction= 0;
+                indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
+            }
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
+                             SQL_TYPE_TIMESTAMP, 0, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT), 
+                             indicator+n);
+            break;
+        }
+        case eDB_DateTime: {
+            CDB_DateTime& val = dynamic_cast<CDB_DateTime&> (param);
+            type = "datetime";
+            SQL_TIMESTAMP_STRUCT* ts= 0;
+            if(!val.IsNULL()) {
+                ts= (SQL_TIMESTAMP_STRUCT*)bind_guard.Alloc(sizeof(SQL_TIMESTAMP_STRUCT));
+                const CTime& t= val.Value();
+                ts->year= t.Year();
+                ts->month= t.Month();
+                ts->day= t.Day();
+                ts->hour= t.Hour();
+                ts->minute= t.Minute();
+                ts->second= t.Second();
+                ts->fraction= t.NanoSecond();
+                indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
+            }
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
+                             SQL_TYPE_TIMESTAMP, 0, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT), 
+                             indicator+n);
+            break;
+        }
+        default:
+            return false;
+        }
+
+        cmd += "declare " + name + ' ' + type + ";select " + name + " = ?;";
+
+        if(param.IsNULL()) {
+            indicator[n]= SQL_NULL_DATA;
+        }
+    }
+    return true;
+}
+
+
+bool CODBC_LangCmd::xCheck4MoreResults()
+{
+    switch(SQLMoreResults(m_Cmd)) {
+    case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+    case SQL_SUCCESS:           return true;
+    case SQL_NO_DATA:           return false;
+    case SQL_ERROR:             
+        m_Reporter.ReportErrors();
+        throw CDB_ClientEx(eDB_Error, 420014, "CODBC_LangCmd::xCheck4MoreResults",
+                           "SQLMoreResults failed");
+    default:
+        throw CDB_ClientEx(eDB_Error, 420015, "CODBC_LangCmd::xCheck4MoreResults",
+                           "SQLMoreResults failed (memory corruption suspected)");
+    }
+}
+
+END_NCBI_SCOPE
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2002/06/18 22:06:24  soussov
+ * initial commit
+ *
+ *
+ * ===========================================================================
+ */

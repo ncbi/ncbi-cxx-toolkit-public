@@ -1,0 +1,381 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Soussov
+ *
+ * File Description:  Driver for ODBC server
+ *
+ */
+
+#include <corelib/ncbimtx.hpp>
+#include <dbapi/driver/odbc/interfaces.hpp>
+#include <dbapi/driver/util/numeric_convert.hpp>
+#include <Odbcss.h>
+
+BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CODBC_Reporter::
+//
+void CODBC_Reporter::ReportErrors()
+{
+    SQLINTEGER NativeError;
+    SQLSMALLINT MsgLen;
+    SQLCHAR SqlState[6];
+    SQLCHAR Msg[1024];
+
+    if(!m_HStack) return;
+
+    for(SQLSMALLINT i= 1; i < 128; i++) {
+        switch(SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError, 
+                             Msg, sizeof(Msg), &MsgLen)) {
+        case SQL_SUCCESS:
+            if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
+                CDB_TimeoutEx to(NativeError, "odbc", (const char*)Msg);
+                m_HStack->PostMsg(&to);
+            }
+            else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
+                CDB_DeadlockEx dl("odbc", (const char*)Msg);
+                m_HStack->PostMsg(&dl);
+            }
+            else if(NativeError != 5701 && NativeError != 5703){
+                CDB_SQLEx se(eDB_Unknown, NativeError, "odbc", (const char*)Msg, 
+					(const char*)SqlState, 0);
+                m_HStack->PostMsg(&se);
+            }
+            continue;
+
+        case SQL_NO_DATA: break;
+
+        case SQL_SUCCESS_WITH_INFO:
+            {
+                CDB_DSEx dse(eDB_Unknown, 777, "odbc", "Message is too long to be retrieved");
+                m_HStack->PostMsg(&dse);
+            }
+            continue;
+
+        default:
+            {
+                CDB_ClientEx ce(eDB_Warning, 420016, "CODBC_Reporter::ReportErrors",
+                                "SQLGetDiagRec failed (memory corruption suspected)");
+                m_HStack->PostMsg(&ce);
+            }
+            break;
+        }
+        break;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CODBCContext::
+//
+
+
+
+
+CODBCContext::CODBCContext(SQLINTEGER version) : m_Reporter(0, SQL_HANDLE_ENV, 0)
+{
+
+    if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
+        throw CDB_ClientEx(eDB_Fatal, 400001, "CODBCContext::CODBCContext",
+                           "Can not allocate a context");
+    }
+
+    m_Reporter.SetHandle(m_Context);
+    m_Reporter.SetHandlerStack(&m_CntxHandlers);
+
+    SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
+	
+    
+    m_PacketSize= 0;
+    m_LoginTimeout= 0;
+    m_Timeout= 0;
+    m_TextImageSize= 0;
+}
+
+
+bool CODBCContext::SetLoginTimeout(unsigned int nof_secs)
+{
+    m_LoginTimeout= (SQLUINTEGER)nof_secs;
+    return true;
+}
+
+
+bool CODBCContext::SetTimeout(unsigned int nof_secs)
+{
+    m_Timeout= (SQLUINTEGER)nof_secs;
+
+    for (int i = m_NotInUse.NofItems(); i--;) {
+        CODBC_Connection* t_con
+            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+        t_con->ODBC_SetTimeout(m_Timeout);
+    }
+
+    for (int i = m_InUse.NofItems(); i--;) {
+        CODBC_Connection* t_con
+            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+        t_con->ODBC_SetTimeout(m_Timeout);
+    }
+    return true;
+}
+
+
+bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
+{
+    m_TextImageSize = (SQLUINTEGER) nof_bytes;
+    for (int i = m_NotInUse.NofItems(); i--;) {
+        CODBC_Connection* t_con
+            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+        t_con->ODBC_SetTextImageSize(m_TextImageSize);
+    }
+    
+    for (int i = m_InUse.NofItems(); i--;) {
+        CODBC_Connection* t_con
+            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+        t_con->ODBC_SetTextImageSize(m_TextImageSize);
+    }
+    return true;
+}
+
+
+CDB_Connection* CODBCContext::Connect(const string&   srv_name,
+                                      const string&   user_name,
+                                      const string&   passwd,
+                                      TConnectionMode mode,
+                                      bool            reusable,
+                                      const string&   pool_name)
+{
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
+    if (reusable  &&  m_NotInUse.NofItems() > 0) {
+        // try to get a connection from the pot
+        if ( !pool_name.empty() ) {
+            // use a pool name
+            for (int i = m_NotInUse.NofItems();  i--; ) {
+                CODBC_Connection* t_con
+                    = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+
+                if (pool_name.compare(t_con->PoolName()) == 0) {
+                    m_NotInUse.Remove(i);
+                    m_InUse.Add((TPotItem) t_con);
+                    t_con->Refresh();
+                    return Create_Connection(*t_con);
+                }
+            }
+        }
+
+        if ( srv_name.empty() )
+            return 0;
+
+        // try to use a server name
+        for (int i = m_NotInUse.NofItems();  i--; ) {
+            CODBC_Connection* t_con
+                = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+
+            if (srv_name.compare(t_con->ServerName()) == 0) {
+                m_NotInUse.Remove(i);
+                m_InUse.Add((TPotItem) t_con);
+                t_con->Refresh();
+                return Create_Connection(*t_con);
+            }
+        }
+    }
+
+    // new connection needed
+    if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
+        throw CDB_ClientEx(eDB_Error, 100010, "CODBCContext::Connect",
+                           "You have to provide server name, user name and "
+                           "password to connect to the server");
+    }
+
+    SQLHDBC con = x_ConnectToServer(srv_name, user_name, passwd, mode);
+    if (con == 0) {
+        throw CDB_ClientEx(eDB_Error, 100011, "CTLibContext::Connect",
+                           "Can not connect to the server");
+    }
+
+    CODBC_Connection* t_con = new CODBC_Connection(this, con, reusable, pool_name);
+    t_con->m_MsgHandlers = m_ConnHandlers;
+    t_con->m_Server      = srv_name;
+    t_con->m_User        = user_name;
+    t_con->m_Passwd      = passwd;
+//    t_con->m_BCPAble     = (mode & fBcpIn) != 0;
+    t_con->m_SecureLogin = (mode & fPasswordEncrypted) != 0;
+
+    m_InUse.Add((TPotItem) t_con);
+
+    return Create_Connection(*t_con);
+}
+
+
+unsigned int CODBCContext::NofConnections(const string& srv_name) const
+{
+    if ( srv_name.empty() ) {
+        return m_InUse.NofItems() + m_NotInUse.NofItems();
+    }
+
+    int n = 0;
+
+    for (int i = m_NotInUse.NofItems(); i--;) {
+        CODBC_Connection* t_con
+            = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
+        if (srv_name.compare(t_con->ServerName()) == 0)
+            ++n;
+    }
+
+    for (int i = m_InUse.NofItems(); i--;) {
+        CODBC_Connection* t_con
+            = static_cast<CODBC_Connection*> (m_InUse.Get(i));
+        if (srv_name.compare(t_con->ServerName()) == 0)
+            ++n;
+    }
+
+    return n;
+}
+
+
+CODBCContext::~CODBCContext()
+{
+    if ( !m_Context ) {
+        return;
+    }
+
+    // close all connections first
+    for (int i = m_NotInUse.NofItems();  i--; ) {
+        CODBC_Connection* t_con = static_cast<CODBC_Connection*>(m_NotInUse.Get(i));
+        delete t_con;
+    }
+
+    for (int i = m_InUse.NofItems();  i--; ) {
+        CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
+        delete t_con;
+    }
+
+	SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+}
+
+
+void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
+{
+    m_PacketSize = packet_size;
+}
+
+
+SQLHENV CODBCContext::ODBC_GetContext() const
+{
+    return m_Context;
+}
+
+
+SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
+                                               const string&   user_name,
+                                               const string&   passwd,
+                                               TConnectionMode mode)
+{
+    SQLHDBC con;
+    SQLRETURN r;
+
+    r= SQLAllocHandle(SQL_HANDLE_DBC, m_Context, &con);
+    if((r != SQL_SUCCESS) && (r != SQL_SUCCESS_WITH_INFO))
+        return 0;
+
+    if(m_Timeout) {
+        SQLSetConnectAttr(con, SQL_ATTR_CONNECTION_TIMEOUT, (void*)m_Timeout, 0);
+    }
+    
+    if(m_LoginTimeout) {
+        SQLSetConnectAttr(con, SQL_ATTR_LOGIN_TIMEOUT, (void*)m_LoginTimeout, 0);
+    }
+    
+    if(m_PacketSize) {
+        SQLSetConnectAttr(con, SQL_ATTR_PACKET_SIZE, (void*)m_PacketSize, 0);
+    }
+    
+    if((mode & fBcpIn) != 0) {
+        SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (void*) SQL_BCP_ON, SQL_IS_INTEGER);
+    }
+ 
+	string connect_str("DRIVER={SQL Server};SERVER=");
+	connect_str+= srv_name;
+	connect_str+= ";UID=";
+	connect_str+= user_name;
+	connect_str+= ";PWD=";
+	connect_str+= passwd;
+#if 0
+    switch(SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
+                  (SQLCHAR*) user_name.c_str(), SQL_NTS,
+                  (SQLCHAR*) passwd.c_str(), SQL_NTS)) {
+#endif
+    switch(SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS, 
+		0, 0, 0, SQL_DRIVER_NOPROMPT)) {
+	case SQL_SUCCESS_WITH_INFO:
+		xReportConError(con);
+	case SQL_SUCCESS: return con;
+	
+	case SQL_ERROR:
+		xReportConError(con);
+        SQLFreeHandle(SQL_HANDLE_DBC, con);
+		break;
+	default:
+		m_Reporter.ReportErrors();
+        break;
+    }
+    
+    return 0;
+}
+
+void CODBCContext::xReportConError(SQLHDBC con)
+{
+	m_Reporter.SetHandleType(SQL_HANDLE_DBC);
+    m_Reporter.SetHandle(con);
+	m_Reporter.ReportErrors();
+	m_Reporter.SetHandleType(SQL_HANDLE_ENV);
+    m_Reporter.SetHandle(m_Context);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Miscellaneous
+//
+
+
+
+END_NCBI_SCOPE
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2002/06/18 22:06:24  soussov
+ * initial commit
+ *
+ *
+ * ===========================================================================
+ */
