@@ -78,11 +78,24 @@ BEGIN_SCOPE(sequence)
  * @{
  */
 
+ 
+enum EAccessionVersion {
+    eWithAccessionVersion,    ///< accession.version (when possible)
+    eWithoutAccessionVersion  ///< accession only, even if version is available
+};
+
+/// Given an accession string retrieve the GI id.
+/// if no GI was found returns 0.
 NCBI_XOBJUTIL_EXPORT
 int GetGiForAccession(const string& acc, CScope& scope);
 
+/// Retrieve the accession for a given GI.
+/// if no accession was found returns and empty string.
 NCBI_XOBJUTIL_EXPORT
-string GetAccessionForGi(int gi, CScope& scope, bool with_version = true);
+string GetAccessionForGi(int           gi,
+                         CScope&       scope,
+                         EAccessionVersion use_version = eWithAccessionVersion);
+
 
 /// Retrieve a particular seq-id from a given bioseq handle.  This uses
 /// CSynonymsSet internally to decide which seq-id should be used.
@@ -651,6 +664,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.58  2005/01/10 15:09:53  shomrat
+* Changed GetAccessionForGi
+*
 * Revision 1.57  2005/01/06 21:04:00  ucko
 * CFastaOstream: support CSeq_entry_Handle.
 *

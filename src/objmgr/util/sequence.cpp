@@ -283,8 +283,13 @@ int GetGiForAccession(const string& acc, CScope& scope)
 }
 
 
-string GetAccessionForGi(int gi, CScope& scope, bool with_version)
+string GetAccessionForGi
+(int           gi,
+ CScope&       scope,
+ EAccessionVersion use_version)
 {
+    bool with_version = (use_version == eWithAccessionVersion);
+
     try {
         CSeq_id gi_id(CSeq_id::e_Gi, gi);
         return GetId(gi_id, scope, eGetId_ForceAcc).GetSeqIdString(with_version);
@@ -2551,6 +2556,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.113  2005/01/10 15:10:11  shomrat
+* Changed GetAccessionForGi
+*
 * Revision 1.112  2005/01/06 21:04:25  ucko
 * CFastaOstream: support CSeq_entry_Handle, and improve support for
 * limiting the output to a particular location.
