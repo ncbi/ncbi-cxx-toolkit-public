@@ -10,21 +10,28 @@ script_args="$*"
 action="$1"
 shift 1
 
+if test "$1" = "-q" ; then
+  quiet="yes"
+  shift 1
+else
+  quiet="no"
+fi
 
 Usage()
 {
   cat << EOF
-"$script_name $script_args"::  $1!
-
-USAGE:   $script_name <action> <f1> <f2> ... <fN> <dest_dir>
-         $script_name <action> <src_file> <dest_file>
-Example: $script_name "cp -p" abc.o ../def.a /tmp
-Synopsis:
+USAGE:   $script_name <action> [-q] <f1> <f2> ... <fN> <dest_dir>
+         $script_name <action> [-q] <src_file> <dest_file>
+EXAMPLE: $script_name "cp -p" abc.o ../def.a /tmp
+SYNOPSIS:
    Execute "action f dest_dir/f" for all files "f1", "f2", ..., "fN" that are
    missing in "dest_dir" or different (in the sense of "cmp -s")
    from their existing counterparts in "dest_dir".
    If the 1st arg is a file and "dest_file" does not exist or if it is
    different from "src_file" then execute "action src_file dest_file".
+   [-q] -- the "smart quiet" optional flag: ignore error if no files specified.
+
+ERROR: "$script_name $script_args"::  $1!
 EOF
 
   exit 1
@@ -41,7 +48,14 @@ ExecAction()
 }
 
 
-test $# -gt 1  ||  Usage "too few cmd.-line parameters"
+test $# -lt 1  &&  Usage "too few cmd.-line parameters"
+if test $# -lt 2 ; then
+  if test "$quiet" = "yes"  &&  test -d "$1" ; then
+    exit 0
+  fi
+  Usage "too few cmd.-line parameters"
+fi
+
 
 args=
 i=0
