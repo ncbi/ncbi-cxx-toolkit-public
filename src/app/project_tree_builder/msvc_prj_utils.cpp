@@ -249,6 +249,7 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
         custom_build->SetAttlist().SetDescription(build_info.m_Description);
         custom_build->SetAttlist().SetCommandLine(build_info.m_CommandLine);
         custom_build->SetAttlist().SetOutputs(build_info.m_Outputs);
+        custom_build->SetAttlist().SetAdditionalDependencies(build_info.m_AdditionalDependencies);
         file_config->SetTool(*custom_build);
 
         file->SetFileConfiguration().push_back(file_config);
@@ -263,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/30 20:46:55  gorelenk
+ * Added support of ASN projects.
+ *
  * Revision 1.5  2004/01/28 17:55:49  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,

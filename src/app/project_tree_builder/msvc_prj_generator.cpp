@@ -25,6 +25,10 @@ static void s_CollectRelPathes(const string&       path_from,
                                const list<string>& file_masks,
                                list<string>*       rel_pathes);
 
+static 
+void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
+                                   const CDataToolGeneratedSrc& src,                                   
+                                   SCustomBuildInfo*            build_info);
 
 //-----------------------------------------------------------------------------
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<SConfigInfo>& configs)
@@ -462,6 +466,26 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
                 AddCustomBuildFileToFilter(filter, m_Configs, build_info);
             }
 
+            xmlprj.SetFiles().SetFilter().push_back(filter);
+        }
+    }}
+    {{
+        //Datatool files
+        if ( !prj.m_DatatoolSources.empty() ) {
+            
+            CRef<CFilter> filter(new CFilter());
+            filter->SetAttlist().SetName("Datatool Files");
+            filter->SetAttlist().SetFilter("");
+
+            ITERATE(list<CDataToolGeneratedSrc>, p, prj.m_DatatoolSources) {
+
+                const CDataToolGeneratedSrc& src = *p;
+                SCustomBuildInfo build_info;
+                CreateDatatoolCustomBuildInfo(prj, src, &build_info);
+                AddCustomBuildFileToFilter(filter, m_Configs, build_info);
+            }
+
+            xmlprj.SetFiles().SetFilter().push_back(filter);
         }
     }}
 
@@ -481,6 +505,57 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
 }
 
+static 
+void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
+                                   const CDataToolGeneratedSrc& src,                                   
+                                   SCustomBuildInfo*            build_info)
+{
+    build_info->Clear();
+
+    //SourceFile
+    build_info->m_SourceFile = 
+        CDirEntry::ConcatPath(prj.m_SourcesBaseDir, src.m_SourceFile);
+
+    //CommandLine
+    //exe location
+    string tool_exe_location("");
+    if (prj.m_ProjType == CProjItem::eApp)
+        tool_exe_location = GetApp().GetDatatoolPathForApp();
+    else if (prj.m_ProjType == CProjItem::eLib)
+        tool_exe_location = GetApp().GetDatatoolPathForLib();
+    else
+        return;
+    //command line
+    string tool_cmd_prfx = GetApp().GetDatatoolCommandLine();
+    tool_cmd_prfx += " -oR ";
+    tool_cmd_prfx += GetApp().GetProjectTreeInfo().m_Root;
+
+    string tool_cmd(tool_cmd_prfx);
+    if ( !src.m_ImportModules.empty() ) {
+        tool_cmd += " -M \"";
+        tool_cmd += NStr::Join(src.m_ImportModules, " ");
+        tool_cmd += '"';
+    }
+    build_info->m_CommandLine = "@echo on\n" + tool_exe_location + " " + tool_cmd;
+
+    //Description
+    build_info->m_Description = 
+        "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
+
+    //Outputs
+    string outputs("");
+    ITERATE(list<string>, p, prj.m_Sources) {
+        string src_base;
+        CDirEntry::SplitPath(*p, NULL, &src_base);
+        outputs += "$(InputDir)";
+        outputs += src_base;
+        outputs +=".cpp;";
+    }
+    build_info->m_Outputs = outputs;
+
+    //Additional Dependencies
+    build_info->m_AdditionalDependencies = tool_exe_location;
+}
 
 struct PSourcesExclude
 {
@@ -620,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/01/30 20:46:55  gorelenk
+ * Added support of ASN projects.
+ *
  * Revision 1.9  2004/01/29 15:48:58  gorelenk
  * Support of projects fitering transfered to CProjBulderApp class
  *
