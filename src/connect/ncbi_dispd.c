@@ -215,7 +215,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
         if (sscanf(p, "%u: %n", &d1, &d2) < 1)
             return 0/*not updated*/;
         if ((info = SERV_ReadInfo(p + d2)) != 0) {
-            assert(info->rate);
+            assert(info->rate != 0.0);
             info->time += now; /* expiration time now */
             if (s_AddServerInfo(data, info))
                 return 1/*updated*/;
@@ -390,6 +390,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2002/09/24 15:08:50  lavr
+ * Change non-zero rate assertion into more readable (info->rate != 0)
+ *
  * Revision 6.43  2002/09/18 16:31:38  lavr
  * Temporary fix for precision loss removed & replaced with assert()
  *
