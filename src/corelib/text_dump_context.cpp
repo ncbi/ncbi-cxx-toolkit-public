@@ -32,7 +32,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/text_dump_context.hpp>
-#include <sstream>
 
 BEGIN_NCBI_SCOPE
 
@@ -104,40 +103,43 @@ void CTextDumpContext::PutValue(unsigned int level, const string& /*frame*/,
 
 void CTextDumpContext::x_IndentLine(unsigned int level, char c, int len)
 {
-    stringstream tmp;
+    string tmp;
     for (int i=1; i<level; ++i) {
         for (int l=0; l<len; ++l) {
-            tmp.put(c);
+            tmp+=c;
         }
     }
-    m_Out << tmp.str();
+    m_Out << tmp;
 }
 
 void CTextDumpContext::x_InsertPageBreak(const string& title, char c, int len)
 {
-    stringstream tmp;
+    string tmp;
     if (!title.empty()) {
         int i1 = (len - title.length() - 2)/2;
         int l;
         for (l=0; l<i1; ++l) {
-            tmp.put(c);
+            tmp+=c;
         }
-        tmp << " " << title << " ";
+        tmp += " " + title + " ";
         for (l=0; l<i1; ++l) {
-            tmp.put(c);
+            tmp+=c;
         }
     } else {
         for (int l=0; l<len; ++l) {
-            tmp.put(c);
+            tmp+=c;
         }
     }
-    m_Out << tmp.str() << endl;
+    m_Out << tmp << endl;
 }
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
+ *  Revision 1.2  2002/05/14 16:58:58  gouriano
+ *  removed stringstream usage - replaced by plain string
+ *
  *  Revision 1.1  2002/05/14 14:44:25  gouriano
  *  added DebugDump function to CObject
  *
