@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/27 14:59:29  thiessen
+* minor fix to avoid Mac compiler error
+*
 * Revision 1.4  2000/07/06 16:21:19  vasilche
 * Added interface to primitive types in CObjectInfo & CConstObjectInfo.
 *
@@ -153,7 +156,7 @@ bool CConstObjectInfo::ClassMemberIsSet(TMemberIndex index) const
         return mInfo->GetSetFlag(GetObjectPtr());
     
     if ( mInfo->CanBeDelayed() &&
-         mInfo->GetDelayBuffer(GetObjectPtr()) )
+         mInfo->GetDelayBuffer(GetObjectPtr()).Delayed() )
         return true;
 
     if ( mInfo->Optional() ) {
