@@ -94,7 +94,6 @@ CConstRef<CBioseq_set> CBioseq_set_Info::GetBioseq_setCore(void) const
 void CBioseq_set_Info::x_DSAttachContents(CDataSource& ds)
 {
     TParent::x_DSAttachContents(ds);
-    //ds.x_MapSeq_entry(*this);
     // members
     NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
         (*it)->x_DSAttach(ds);
@@ -108,7 +107,6 @@ void CBioseq_set_Info::x_DSDetachContents(CDataSource& ds)
     NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
         (*it)->x_DSDetach(ds);
     }
-    //ds.x_UnmapSeq_entry(*this);
     TParent::x_DSDetachContents(ds);
 }
 
@@ -430,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/17 15:55:50  vasilche
+ * Removed obsolete commented code.
+ *
  * Revision 1.8  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.
