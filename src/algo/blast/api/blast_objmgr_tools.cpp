@@ -729,6 +729,12 @@ x_GetSequenceLengthAndId(const SSeqLoc* ss,          // [in]
             CRef<CSeq_id>* seqid_ref = (CRef<CSeq_id>*)seqid_wrap->ptr;
             seqid.Reset(seqid_ref->GetPointer());
             delete seqid_ref;
+        } else {
+            /** FIXME!!! This is wrong, because the id created here will 
+                not be registered! However if sequence source returns a 
+                C object, we cannot handle it here. */
+            string id_str(BLASTSeqSrcGetSeqIdStr(seq_src, (void*) &oid));
+            seqid.Reset(new CSeq_id(id_str));
         }
         ListNodeFree(seqid_wrap);
         *length = BLASTSeqSrcGetSeqLen(seq_src, (void*) &oid);
@@ -947,6 +953,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/07/19 21:04:20  dondosha
+* Added back case when BlastSeqSrc returns a wrong type Seq-id - then retrieve a seqid string and construct CSeq_id from it
+*
 * Revision 1.12  2004/07/19 14:58:47  dondosha
 * Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
 *
