@@ -44,13 +44,13 @@ BEGIN_NCBI_SCOPE
 
 // Default page template
 const char* const kDefaultRedirectTemplate = "\
-<html><head><title><@TITLE@></title></head>\n \
+<html><head><title><@_TITLE_@></title></head>\n \
 <body>\n \
     <center>\n \
-    <h1><@HEADER@></h1>\n \
-    <h3><@MESSAGE@></h3>\n \
+    <h1><@_HEADER_@></h1>\n \
+    <h3><@_MESSAGE_@></h3>\n \
     <p>This web page has moved. Please, update your bookmarks and links.</p>\n \
-    <p><a href=\"<@URL@>\">Go to the new page</a></p>.\n \
+    <p><a href=\"<@_URL_@>\">Go to the new page</a></p>.\n \
     </center> \
 </body> \
 </html>";
@@ -62,12 +62,12 @@ void CCgiRedirectApplication::Init(void)
     const CNcbiRegistry& reg = GetConfig();
 
     // Set page title and messages
-    m_Page.SetTitle(reg.Get("Main", "PageTitle"));
-    m_Page.AddTagMap("HEADER",    new CHTMLText(reg.Get("Main", "Header")));
-    m_Page.AddTagMap("MESSAGE",   new CHTMLText(reg.Get("Main", "Message")));
+    m_Page.AddTagMap("_TITLE_",  new CHTMLText(reg.Get("Main","PageTitle")));
+    m_Page.AddTagMap("_HEADER_", new CHTMLText(reg.Get("Main","Header")));
+    m_Page.AddTagMap("_MESSAGE_",new CHTMLText(reg.Get("Main","Message")));
     
     // Wait time before redirect (if used by template)
-    m_Page.AddTagMap("TIMER", new CHTMLText(reg.Get("Main", "Timer")));
+    m_Page.AddTagMap("_TIMER_",  new CHTMLText(reg.Get("Main", "Timer")));
 
     // Set page template.
     string template_name = reg.Get("Main", "Template");
@@ -124,7 +124,7 @@ int CCgiRedirectApplication::ProcessRequest(CCgiContext& ctx)
     // Gnerate URLs
 
     string base_url = reg.Get("Main", "BaseUrl");
-    m_Page.AddTagMap("BASEURL", new CHTMLText(base_url));
+    m_Page.AddTagMap("_BASEURL_", new CHTMLText(base_url));
 
     string url;
 
@@ -143,7 +143,7 @@ int CCgiRedirectApplication::ProcessRequest(CCgiContext& ctx)
         // Map each entry.
         m_Page.AddTagMap(i->first, new CHTMLText(i->second));
     }
-    m_Page.AddTagMap("URL", new CHTMLText(base_url + "?" + url));
+    m_Page.AddTagMap("_URL_", new CHTMLText(base_url + "?" + url));
 
     // Compose and flush the resultant HTML page
     try {
@@ -245,6 +245,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 15:25:37  ivanov
+ * Enclosed mapped tag names with undescores to avoid conflicts default tags
+ * with names of automaticaly mapped entries.
+ *
  * Revision 1.2  2004/02/10 13:31:44  ivanov
  * Added missed \n in the default template
  *
