@@ -1165,14 +1165,18 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
     // subject sequences go on separate rows if requested
     if (m_MergeFlags & fQuerySeqMergeOnly) {
         if (seq2->m_DsIdx) {
-            if (seq2->m_DsIdx == match->m_DsIdx) {
-                return eSecondRowFitsOk;
-            } else {
-                return eForceSeparateRow;
+            if ( !(m_MergeFlags & fTruncateOverlaps) ) {
+                if (seq2->m_DsIdx == match->m_DsIdx) {
+                    return eSecondRowFitsOk;
+                } else {
+                    return eForceSeparateRow;
+                }
             }
         } else {
             seq2->m_DsIdx = match->m_DsIdx;
-            return eSecondRowFitsOk;
+            if ( !(m_MergeFlags & fTruncateOverlaps) ) {
+                return eSecondRowFitsOk;
+            }
         }
     }
 
@@ -1401,6 +1405,14 @@ CAlnMix::x_SecondRowFits(CAlnMixMatch * match) const
 
                 start_i++;
             }
+        }
+    }
+    if (m_MergeFlags & fQuerySeqMergeOnly) {
+        _ASSERT(m_MergeFlags & fTruncateOverlaps);
+        if (seq2->m_DsIdx == match->m_DsIdx) {
+            return eSecondRowFitsOk;
+        } else {
+            return eForceSeparateRow;
         }
     }
     return eSecondRowFitsOk;
@@ -2208,6 +2220,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.116  2005/02/08 15:58:37  todorov
+* Added handling for best reciprocal hits.
+*
 * Revision 1.115  2004/11/02 18:31:01  todorov
 * Changed (mostly shortened) a few internal members' names
 * for convenience and consistency
