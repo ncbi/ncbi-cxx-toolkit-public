@@ -441,11 +441,6 @@ private:
 ///
 /// Models the files in a file system. Basic functionality is derived from
 /// CDirEntry and extended for files.
-///
-/// NOTE: Next functions are unsafe in multithreaded applications:
-///       - GetTmpName() (use GetTmpNameEx() -- it is safe);
-///       - CreateTmpFile() with empty first parameter
-///         (use CreateTmpFileEx() -- it is safe);
 
 class NCBI_XNCBI_EXPORT CFile : public CDirEntry
 {
@@ -903,6 +898,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/08/29 16:56:27  ivanov
+ * Removed commit about unsafe GetTmpName() and CreateTmpFile() functions in the MT env
+ *
  * Revision 1.23  2003/08/08 13:35:29  siyan
  * Changed GetTmpNameExt to GetTmpNameEx, as this is the more appropriate name.
  *
