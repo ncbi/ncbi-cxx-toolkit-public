@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2001/10/13 14:13:25  thiessen
+* fix wx version sting
+*
 * Revision 1.94  2001/10/12 14:52:05  thiessen
 * fix for wxGTK crash
 *
@@ -686,8 +689,7 @@ void Cn3DApp::InitRegistry(void)
 
 bool Cn3DApp::OnInit(void)
 {
-    TESTMSG("Welcome to Cn3D++! (built " << __DATE__
-        << " with wxWindows " << wxVERSION_NUM_DOT_STRING << ')');
+    TESTMSG("Welcome to Cn3D++!\nbuilt " << __DATE__ << " with " << wxVERSION_STRING);
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
