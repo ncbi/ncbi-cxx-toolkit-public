@@ -269,8 +269,8 @@ CReader* CGBDataLoader::x_CreateReader(const string& env)
         try {
             return m_ReaderPluginManager->CreateInstance("id1_reader");
         }
-        catch ( exception& _DEBUG_ARG(e) ) {
-            GBLOG_POST("CId1Reader is not available ::" << e.what());
+        catch ( exception& e ) {
+            LOG_POST("CId1Reader is not available ::" << e.what());
             return 0;
         }
         catch ( ... ) {
@@ -1233,6 +1233,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2003/12/30 17:43:17  vasilche
+* Fixed warning about unused variable.
+*
 * Revision 1.96  2003/12/30 16:41:19  vasilche
 * Removed warning about unused variable.
 *
