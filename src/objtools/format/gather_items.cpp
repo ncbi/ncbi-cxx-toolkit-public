@@ -66,12 +66,13 @@
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/basecount_item.hpp>
 #include <objtools/format/items/sequence_item.hpp>
-#include <objtools/format/items/endsection_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/items/segment_item.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/embl_gather.hpp>
+#include <objtools/format/gff_gather.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -92,18 +93,19 @@ CFlatGatherer* CFlatGatherer::New(TFormat format)
         //case CFlatFileGenerator<>::eFormat_GBSeq:
         //case CFlatFileGenerator<>::eFormat_Index:
         return new CGenbankGatherer;
-        break;
         
     case CFlatFileGenerator::eFormat_EMBL:
         return new CEmblGatherer;
-        break;
+
+    case CFlatFileGenerator::eFormat_GFF:
+        return new CGFFGatherer;
         
     case CFlatFileGenerator::eFormat_DDBJ:
-        //return new CDdbjGatherItems;
-        break;
-        
+    case CFlatFileGenerator::eFormat_GBSeq:
+    case CFlatFileGenerator::eFormat_FTable:
     default:
-        // Throw exception - unrecognized format
+        NCBI_THROW(CFlatException, eNotSupported, 
+            "This format is currently not supported");
         break;
     }
 
@@ -116,7 +118,9 @@ void CFlatGatherer::Gather(CFFContext& ctx, CFlatItemOStream& os) const
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
 
+    os << new CStartItem(ctx);
     x_GatherSeqEntry(ctx.GetTSE());
+    os << new CEndItem(ctx);
 }
 
 
@@ -408,17 +412,20 @@ void CFlatGatherer::x_IdComments(CFFContext& ctx) const
         switch ( id.Which() ) {
         case CSeq_id::e_Other:
             {{
-                if ( ctx.IsNC() ) {
+                if ( ctx.IsRSCompleteGenomic() ) {
                     if ( !genome_build_number.empty() ) {
                         x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
                     }
                 }
-                if ( ctx.IsNT()  ||  ctx.IsNW() ) {
+                if ( ctx.IsRSContig()  ||  ctx.IsRSIntermedWGS() ) {
                     if ( !has_ref_track_status ) {
                         x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
                     }
                 }
-                if ( ctx.IsXP()  ||  ctx.IsXM()  ||  ctx.IsXR()  ||  ctx.IsZP() ) {
+                if ( ctx.IsRSPredictedProtein()  ||
+                     ctx.IsRSPredictedMRna()     ||
+                     ctx.IsRSPredictedNCRna()    ||
+                     ctx.IsRSWGSProt() ) {
                     SModelEvidance me;
                     if ( GetModelEvidance(ctx.GetHandle(), ctx.GetScope(), me) ) {
                         string str = CCommentItem::GetStringForModelEvidance(me);
@@ -653,30 +660,65 @@ void CFlatGatherer::x_GatherSequence(void) const
 // source
 
 static void s_CollectBioSources
-(CFFContext& ctx,
- set< CConstRef<CBioSource> >& bsrcs)
+(set< CRef<CSourceFeatureItem> >,
+ CFFContext& ctx)
 {
-    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source);  it;  ++it) {
-        bsrcs.insert(CConstRef<CBioSource>(&it->GetSource()));
+    /*
+    CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source);  it;  ++it) {
+        CRef<CSourceFeatureItem> bsrc(new CSourceFeatureItem(it->GetSource(), ctx));
+        srcs.insert(bsrc);
     }
+    */
 }
 
 
 void CFlatGatherer::x_GatherSourceFeatures(void) const
 {
-    set< CConstRef<CBioSource> > bsrcs;
+    set< CRef<CSourceFeatureItem> > srcs;
+
+    // collect biosources on bioseq
+
+    for ( CSeqdesc_CI it(m_Context->GetHandle(), CSeqdesc::e_Source);  it;  ++it) {
+        CRef<CSourceFeatureItem> bsrc(new CSourceFeatureItem(it->GetSource(), *m_Context));
+        srcs.insert(bsrc);
+        if ( !m_Context->IsSP() ) {
+            break;  // do not loop unless SwissProt
+        }
+    }
+
+    if ( m_Context->IsSegmented() ) {
+        // collect biosource descriptors on local parts
+
+    }
+
+    // if protein with no sources, get sources applicable to DNA location of CDS
+
+    if ( !m_Context->IsFormatFTable()  ||  m_Context->IsModeDump() ) {
+        // if no source found create one
+    }
+
+    // sort by hash values
+
+    // unique sources, excise duplicates from list
+
+    // sort again, by location this time
+
+    // if the descriptor has a focus, subtract out all the other source locations.
+
+    // if features completely subtracted descriptor intervals, suppress in release, entrez modes.
+
   
-    s_CollectBioSources(*m_Context, bsrcs);
+    
+
 }
 
 
-void CFlatGatherer::x_GatherFeatures(void) const
+void CFlatGatherer::x_GatherFeatures(bool source) const
 {
     CFFContext& ctx = *m_Context;
     CScope& scope = ctx.GetScope();
     typedef CConstRef<CFeatureItemBase> TFFRef;
     list<TFFRef> l, l2;
-    bool source = true;
     CFlatItemOStream& out = *m_ItemOS;
     
     // XXX -- should select according to flags; may require merging/re-sorting.
@@ -699,8 +741,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
                          SAnnotSelector::eOverlap_Intervals,
                          CFeat_CI::eResolve_All, CFeat_CI::e_Product);
              it;  ++it) {
-            l.push_back(TFFRef(new CFeatureItem
-                (*it, ctx, &it->GetProduct(), true)));
+            out << new CFeatureItem(*it, ctx, &it->GetProduct(), true);
         }
     }
     if (source) {
@@ -717,20 +758,21 @@ void CFlatGatherer::x_GatherFeatures(void) const
                 break;
             }
         }
-    }
-    for (CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
-                     SAnnotSelector::eOverlap_Intervals,
-                     CFeat_CI::eResolve_All);
-         it;  ++it) {
-        switch (it->GetData().Which()) {
-        case CSeqFeatData::e_Pub:  // done as REFERENCEs
-            break;
-        case CSeqFeatData::e_Org:
-        case CSeqFeatData::e_Biosrc: // sone as source
-            break;
-        default:
-            out << new CFeatureItem(*it, ctx);
-            break;
+    } else {
+        for (CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
+            SAnnotSelector::eOverlap_Intervals,
+            CFeat_CI::eResolve_All);
+        it;  ++it) {
+            switch (it->GetData().Which()) {
+            case CSeqFeatData::e_Pub:  // done as REFERENCEs
+                break;
+            case CSeqFeatData::e_Org:
+            case CSeqFeatData::e_Biosrc: // sone as source
+                break;
+            default:
+                out << new CFeatureItem(*it, ctx);
+                break;
+            }
         }
     }
     /*
@@ -832,6 +874,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:15:03  shomrat
+* minor changes to accomodate for GFF format
+*
 * Revision 1.2  2003/12/18 17:43:34  shomrat
 * context.hpp moved
 *
