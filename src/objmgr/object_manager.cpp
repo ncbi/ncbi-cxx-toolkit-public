@@ -47,6 +47,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+const string kObjectManagerPtrName = "ObjectManagerPtr";
 
 static CRef<CObjectManager> s_ObjectManager;
 DEFINE_STATIC_FAST_MUTEX(s_ObjectManagerInstanceMutex);
@@ -487,6 +488,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/07/30 14:23:55  ucko
+* Make kObjectManagerPtrName extern (defined in object_manager.cpp) to
+* ensure that it's always properly available on WorkShop.
+*
 * Revision 1.39  2004/07/28 14:02:57  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *

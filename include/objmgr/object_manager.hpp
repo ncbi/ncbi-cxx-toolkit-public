@@ -35,110 +35,6 @@
 * File Description:
 *           Object manager manages data objects,
 *           provides them to Scopes when needed
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.27  2004/07/29 14:04:05  grichenk
-* FindDataLoader() made public again.
-*
-* Revision 1.26  2004/07/28 14:02:56  grichenk
-* Improved MT-safety of RegisterInObjectManager(), simplified the code.
-*
-* Revision 1.25  2004/07/26 14:13:31  grichenk
-* RegisterInObjectManager() return structure instead of pointer.
-* Added CObjectManager methods to manipuilate loaders.
-*
-* Revision 1.24  2004/07/21 15:51:23  grichenk
-* CObjectManager made singleton, GetInstance() added.
-* CXXXXDataLoader constructors made private, added
-* static RegisterInObjectManager() and GetLoaderNameFromArgs()
-* methods.
-*
-* Revision 1.23  2004/07/12 15:24:59  grichenk
-* Reverted changes related to CObjectManager singleton
-*
-* Revision 1.22  2004/07/12 15:05:31  grichenk
-* Moved seq-id mapper from xobjmgr to seq library
-*
-* Revision 1.21  2004/06/10 16:21:27  grichenk
-* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
-* returns CRef<> which is locked by CObjectManager.
-*
-* Revision 1.20  2004/03/24 18:30:28  vasilche
-* Fixed edit API.
-* Every *_Info object has its own shallow copy of original object.
-*
-* Revision 1.19  2004/03/16 15:47:26  vasilche
-* Added CBioseq_set_Handle and set of EditHandles
-*
-* Revision 1.18  2003/09/30 16:21:59  vasilche
-* Updated internal object manager classes to be able to load ID2 data.
-* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
-* Scope caches results of requests for data to data loaders.
-* Optimized CSeq_id_Handle for gis.
-* Optimized bioseq lookup in scope.
-* Reduced object allocations in annotation iterators.
-* CScope is allowed to be destroyed before other objects using this scope are
-* deleted (feature iterators, bioseq handles etc).
-* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
-* Added 'adaptive' option to objmgr_demo application.
-*
-* Revision 1.17  2003/08/04 17:04:27  grichenk
-* Added default data-source priority assignment.
-* Added support for iterating all annotations from a
-* seq-entry or seq-annot.
-*
-* Revision 1.16  2003/06/30 18:41:05  vasilche
-* Removed unused commented code.
-*
-* Revision 1.15  2003/06/19 18:23:44  vasilche
-* Added several CXxx_ScopeInfo classes for CScope related information.
-* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
-* Some fine tuning of locking in CScope.
-*
-* Revision 1.13  2003/04/09 16:04:29  grichenk
-* SDataSourceRec replaced with CPriorityNode
-* Added CScope::AddScope(scope, priority) to allow scope nesting
-*
-* Revision 1.12  2003/03/26 20:59:22  grichenk
-* Removed commented-out code
-*
-* Revision 1.11  2003/03/11 14:15:49  grichenk
-* +Data-source priority
-*
-* Revision 1.10  2003/01/29 22:03:43  grichenk
-* Use single static CSeq_id_Mapper instead of per-OM model.
-*
-* Revision 1.9  2002/12/26 20:51:35  dicuccio
-* Added Win32 export specifier
-*
-* Revision 1.8  2002/08/28 17:05:13  vasilche
-* Remove virtual inheritance
-*
-* Revision 1.7  2002/06/04 17:18:32  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.6  2002/05/28 18:01:10  gouriano
-* DebugDump added
-*
-* Revision 1.5  2002/05/06 03:30:36  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.4  2002/02/21 19:27:00  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.3  2002/01/23 21:59:29  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:26:36  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:04:02  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbiobj.hpp>
@@ -172,7 +68,7 @@ class CScope_Impl;
 class CSeq_id_Mapper;
 
 // Name used for object manager in TPluginManagerParamTree
-const string kObjectManagerPtrName = "ObjectManagerPtr";
+extern const string kObjectManagerPtrName;
 
 // Structure returned by RegisterInObjectManager() method
 template<class TLoader>
@@ -320,5 +216,115 @@ private:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.28  2004/07/30 14:23:23  ucko
+* Make kObjectManagerPtrName extern (defined in object_manager.cpp) to
+* ensure that it's always properly available on WorkShop.
+*
+* Revision 1.27  2004/07/29 14:04:05  grichenk
+* FindDataLoader() made public again.
+*
+* Revision 1.26  2004/07/28 14:02:56  grichenk
+* Improved MT-safety of RegisterInObjectManager(), simplified the code.
+*
+* Revision 1.25  2004/07/26 14:13:31  grichenk
+* RegisterInObjectManager() return structure instead of pointer.
+* Added CObjectManager methods to manipuilate loaders.
+*
+* Revision 1.24  2004/07/21 15:51:23  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
+* Revision 1.23  2004/07/12 15:24:59  grichenk
+* Reverted changes related to CObjectManager singleton
+*
+* Revision 1.22  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
+* Revision 1.21  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
+* Revision 1.20  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
+* Revision 1.19  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
+* Revision 1.18  2003/09/30 16:21:59  vasilche
+* Updated internal object manager classes to be able to load ID2 data.
+* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
+* Scope caches results of requests for data to data loaders.
+* Optimized CSeq_id_Handle for gis.
+* Optimized bioseq lookup in scope.
+* Reduced object allocations in annotation iterators.
+* CScope is allowed to be destroyed before other objects using this scope are
+* deleted (feature iterators, bioseq handles etc).
+* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
+* Added 'adaptive' option to objmgr_demo application.
+*
+* Revision 1.17  2003/08/04 17:04:27  grichenk
+* Added default data-source priority assignment.
+* Added support for iterating all annotations from a
+* seq-entry or seq-annot.
+*
+* Revision 1.16  2003/06/30 18:41:05  vasilche
+* Removed unused commented code.
+*
+* Revision 1.15  2003/06/19 18:23:44  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
+*
+* Revision 1.13  2003/04/09 16:04:29  grichenk
+* SDataSourceRec replaced with CPriorityNode
+* Added CScope::AddScope(scope, priority) to allow scope nesting
+*
+* Revision 1.12  2003/03/26 20:59:22  grichenk
+* Removed commented-out code
+*
+* Revision 1.11  2003/03/11 14:15:49  grichenk
+* +Data-source priority
+*
+* Revision 1.10  2003/01/29 22:03:43  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
+* Revision 1.9  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
+* Revision 1.8  2002/08/28 17:05:13  vasilche
+* Remove virtual inheritance
+*
+* Revision 1.7  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.6  2002/05/28 18:01:10  gouriano
+* DebugDump added
+*
+* Revision 1.5  2002/05/06 03:30:36  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.4  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:04:02  gouriano
+* restructured objmgr
+*
+* ===========================================================================
+*/
 
 #endif // OBJECT_MANAGER__HPP
