@@ -101,17 +101,12 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
 
 Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table */
                              Uint1Ptr w,
-			     Int4 query_offset,
-			     Int4 query_context)
+			     Int4 query_offset)
 {
   Int4 index=0;
   Int4 chain_size = 0; /* total number of elements in the chain */
   Int4 hits_in_chain = 0; /* number of occupied elements in the chain, not including the zeroth and first positions */ 
   Int4 * chain = NULL;
-  Int4 lo=0;
-
-  SET_OFFSET(lo, query_offset);
-  SET_CONTEXT(lo, query_context);
     
   /* compute its index, */
   _ComputeIndex(lookup->wordsize,lookup->charsize,lookup->mask, w, &index);
@@ -146,7 +141,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
     }
   
   /* add the hit */
-  chain[ chain[1] + 2 ] = lo;
+  chain[ chain[1] + 2 ] = query_offset;
   chain[1] += 1;
 
   return 0;
@@ -398,7 +393,7 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
   /* index queries */
   for(i=0;i<num_queries;i++)
     {
-      _BlastAaLookupIndexQuery(lookup, matrix, &(query[i]), &(locations[i]), i);
+      _BlastAaLookupIndexQuery(lookup, matrix, &(query[i]), &(locations[i]));
     }
 
   /* free neighbor array*/
@@ -411,8 +406,7 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
 Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlkPtr query,
-			      ValNodePtr location,
-			      Int4 context)
+			      ValNodePtr location)
 {
   ValNodePtr loc;
   Int4 from, to;
@@ -428,8 +422,7 @@ Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
 	  AddNeighboringWords(lookup,
 			      matrix,
 			      query,
-			      w,
-			      context);
+			      w);
 	}      
     }
   return 0;
@@ -463,7 +456,7 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup)
   return 0;
 }
 
-Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBlkPtr query, Int4 offset, Int4 context)
+Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBlkPtr query, Int4 offset)
 {
   Uint1Ptr s = lookup->neighbors;
   Uint1Ptr s_end=s + lookup->neighbors_length - lookup->wordsize;
@@ -473,7 +466,7 @@ Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBl
   
   if (lookup->threshold == 0)
     {
-      BlastAaLookupAddWordHit(lookup, w, offset, context);
+      BlastAaLookupAddWordHit(lookup, w, offset);
       lookup->exact_matches++;
       return 0;
     }
@@ -500,7 +493,7 @@ Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBl
         }
         
       if ( (score >= lookup->threshold) || exact )
-        BlastAaLookupAddWordHit(lookup,s,offset,context);
+        BlastAaLookupAddWordHit(lookup,s,offset);
       s ++;
     }
   return 0;

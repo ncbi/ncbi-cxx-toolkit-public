@@ -56,14 +56,6 @@ extern "C" {
 #define PV_SET(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] |= 1 << ((index) & PV_ARRAY_MASK) )
 #define PV_TEST(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] & 1 << ((index) & PV_ARRAY_MASK) )
 
-  /* tblastx needs 36 frames, so 6 bits for context, leaving 26 for offset */
-
-#define GET_OFFSET(h) ((h)&0x3ffffff)
-#define GET_CONTEXT(h) (((h)>>26)&0x3f)
-
-#define SET_OFFSET(h,offset) ((h) |= (offset) & 0x3ffffff)
-#define SET_CONTEXT(h,context) ((h) |= ((context) << 26))
-
   /* structure defining one cell of the compacted lookup table */
   /* stores the number of hits and
       up to three hits if the total number of hits is <= 3
@@ -105,19 +97,17 @@ extern "C" {
     Int4 neighbors_length; /* length of neighboring word array */
   } LookupTable, * LookupTablePtr;
   
-  /** Create a mapping from word w to the supplied query offset and context.
+  /** Create a mapping from word w to the supplied query offset
  *
  * @param lookup the lookup table [in]
  * @param w pointer to the beginning of the word [in]
  * @param query_offset the offset in the query where the word occurs [in]
- * @param query_context the context of the query [in]
  * @return Zero.
  */
 
 Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup,
                              Uint1Ptr w,
-                             Int4 query_offset,
-                             Int4 query_context);
+                             Int4 query_offset);
 
 /** Convert the chained lookup table to the pv_array and thick_backbone.
  *
@@ -194,15 +184,13 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
  * @param query the array of queries to index
  * @param unmasked_regions a ValNodePtr which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
 i
- * @param context the context identifier of the query
  * @return Zero.
  */
 
 Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlkPtr query,
-			      ValNodePtr unmasked_regions,
-			      Int4 context);
+			      ValNodePtr unmasked_regions);
 
 /** Create a sequence containing all possible words as subsequences.
  *
@@ -227,15 +215,13 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup);
  * @param matrix the substitution matrix [in]
  * @param query the query sequence [in]
  * @param offset the offset of the word
- * @param context the context identifier of the query
  * @return Zero.
  */
 
 Int4 AddNeighboringWords(LookupTablePtr lookup,
 			 Int4 ** matrix,
 			 BLAST_SequenceBlkPtr query,
-			 Int4 offset,
-			 Int4 context);
+			 Int4 offset);
 
 #define SET_HIGH_BIT(x) (x |= 0x80000000)
 #define CLEAR_HIGH_BIT(x) (x &= 0x7FFFFFFF)
