@@ -486,12 +486,12 @@ inline EChargeState CMSPeak::GetComputedCharge(void)
     return ComputedCharge; 
 }
 
-inline unsigned CMSPeak::GetNum(int Which = MSORIGINAL) 
+inline unsigned CMSPeak::GetNum(int Which) 
 { 
     return Num[Which];
 }
 
-inline CMZI * CMSPeak::GetMZI(int Which = MSORIGINAL) 
+inline CMZI * CMSPeak::GetMZI(int Which) 
 { 
     return MZI[Which];
 }
@@ -657,6 +657,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.2  2003/10/21 03:43:20  lewisg
+  fix double default
+
   Revision 1.1  2003/10/20 21:32:13  lewisg
   ommsa toolkit version
 
