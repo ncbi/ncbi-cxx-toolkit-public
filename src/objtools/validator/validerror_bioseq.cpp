@@ -2420,8 +2420,10 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eBiomol_other:
             if ( !m_Imp.IsXR() ) {
                 if ( !IsSynthetic(seq) ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                        "Molinfo-biomol other used", seq, desc);
+                    if ( !x_IsMicroRNA(seq)) {
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                            "Molinfo-biomol other used", seq, desc);
+                    }
                 }
             }
             break;
@@ -2511,6 +2513,24 @@ bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
             const CSeqdesc::TSource& source = sd->GetSource();
             if ( source.CanGetOrigin()  &&
                  source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_bioseq::x_IsMicroRNA(const CBioseq& seq) const 
+{
+    SAnnotSelector selector(CSeqFeatData::e_Rna);
+    selector.SetFeatSubtype(CSeqFeatData::eSubtype_otherRNA);
+    CFeat_CI fi(m_Scope->GetBioseqHandle(seq), 0, 0, selector);
+
+    for ( ; fi; ++fi ) {
+        const CRNA_ref& rna_ref = fi->GetData().GetRna();
+        if ( rna_ref.IsSetExt()  &&  rna_ref.GetExt().IsName() ) {
+            if ( NStr::Find(rna_ref.GetExt().GetName(), "microRNA") != NPOS ) {
                 return true;
             }
         }
@@ -3219,6 +3239,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/09/22 20:24:32  shomrat
+* IsMicroRNA feature test for molinfo-biomol.other
+*
 * Revision 1.45  2003/09/04 13:45:58  shomrat
 * Changed ValidateGraphValues to work with CSeqVector_CI
 *
