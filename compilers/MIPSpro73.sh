@@ -8,9 +8,6 @@
 # $Revision$  // by Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
 #############################################################################
 
-## Setup for the local (NCBI) environment
-NCBI_COMPILER="MIPSpro73"
-
 
 #  32/64-bit architecture
 case "$1" in
@@ -28,8 +25,8 @@ shift
 #  Build directory (optional)
 if test -n "$1" ; then
   case "$1" in
-   -* ) EXEC_PREFIX= ;;
-   *  ) EXEC_PREFIX="--exec-prefix=$1" ; shift ;;
+   -* )  EXEC_PREFIX= ;;
+   *  )  EXEC_PREFIX="--exec-prefix=$1" ;  shift ;;
   esac
 fi
 
@@ -40,6 +37,6 @@ CXX="CC"
 
 
 ## Configure
-export CC CXX NCBI_COMPILER
+export CC CXX
 
 ${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $EXEC_PREFIX $ARCH "$@"

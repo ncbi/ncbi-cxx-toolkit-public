@@ -9,9 +9,6 @@
 #############################################################################
 
 
-NCBI_COMPILER="KCC"
-
-
 ## Path to the compiler
 CXX="KCC"
 CC="$CXX"
@@ -53,6 +50,6 @@ fi
 
 
 ## Configure
-export CC CXX NCBI_COMPILER
+export CC CXX
 
 ${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $EXEC_PREFIX $ARCH "$@"

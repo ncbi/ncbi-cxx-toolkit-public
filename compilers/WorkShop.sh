@@ -70,6 +70,6 @@ fi
 
 
 ## Configure
-export CC CXX THREAD_LIBS NCBI_COMPILER
+export CC CXX
 
 ${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $EXEC_PREFIX $ARCH --with-internal "$@"
