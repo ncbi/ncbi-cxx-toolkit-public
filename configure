@@ -884,8 +884,7 @@ Optional Packages:
  --with-check=           run test suite after the build
  --with-ncbi-public      ensure compatibility for all in-house platforms
  --with-strip            strip binaries at build time
- --with-pch              precompile headers even without autodep (unsafe)
- --without-pch           do not use precompiled headers
+ --with-pch              use precompiled headers if possible
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
@@ -1602,12 +1601,6 @@ fi;
 # Check whether --with-pch or --without-pch was given.
 if test "${with_pch+set}" = set; then
   withval="$with_pch"
-
-fi;
-
-# Check whether --with-pch2 or --without-pch2 was given.
-if test "${with_pch2+set}" = set; then
-  withval="$with_pch2"
 
 fi;
 
@@ -4387,7 +4380,7 @@ fi
 
 ### Support for precompiled headers
 GCCPCH="#"
-if test "$compiler" = GCC -a "$with_pch" != "no"; then
+if test "$compiler" = GCC -a "$with_pch" = "yes"; then
    echo "$as_me:$LINENO: checking whether $CXX supports precompiled headers" >&5
 echo $ECHO_N "checking whether $CXX supports precompiled headers... $ECHO_C" >&6
 if test "${ncbi_cv_cxx_pch+set}" = set; then

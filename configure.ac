@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.302 2004/05/17 13:55:13 ucko Exp $
+#  $Id: configure.ac,v 1.303 2004/05/17 18:54:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -129,9 +129,7 @@ AC_ARG_WITH(ncbi-public,
 AC_ARG_WITH(strip,
    [ --with-strip            strip binaries at build time])
 AC_ARG_WITH(pch,
-   [ --with-pch              precompile headers even without autodep (unsafe)])
-AC_ARG_WITH(pch2,
-   [ --without-pch           do not use precompiled headers])
+   [ --with-pch              use precompiled headers if possible])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -1209,7 +1207,7 @@ fi
 
 ### Support for precompiled headers
 GCCPCH="#"
-if test "$compiler" = GCC -a "$with_pch" != "no"; then
+if test "$compiler" = GCC -a "$with_pch" = "yes"; then
    AC_CACHE_CHECK([whether $CXX supports precompiled headers], ncbi_cv_cxx_pch,
       [echo '#include <iostream>' > conftest.hpp
        echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD
