@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/06/06 21:00:42  clausen
+* Added include for scope.hpp
+*
 * Revision 1.17  2002/05/31 17:53:00  grichenk
 * Optimized for better performance (CTSE_Info uses atomic counter,
 * delayed annotations indexing, no location convertions in
@@ -95,6 +98,7 @@
 #include "tse_info.hpp"
 #include "handle_range.hpp"
 #include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
