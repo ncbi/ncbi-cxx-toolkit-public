@@ -93,10 +93,11 @@ public:
     eShowBlastInfo = (1 << 8),  //show defline and score info for blast pairwise alignment
     eShowBlastStyleId = (1 << 9),  //show seqid as "Query" and "Sbjct" respectively for pairwise alignment.  Default shows seqid as is
     eNewTargetWindow = (1 << 10),  //clicking url link will open a new window
-    eShowCdsFeature = (1 << 11),  //show cds for sequence.  Need to fetch from id server, a bit slow. 
-    eShowGeneFeature = (1 << 12), //show gene for sequence.  Need to fetch from id server, a bit slow.
+    eShowCdsFeature = (1 << 11),  //show cds encoded protein seq for sequence.  Need to fetch from id server, a bit slow.  Only available for non-anchored alignment  
+    eShowGeneFeature = (1 << 12), //show gene for sequence.  Need to fetch from id server, a bit slow.  Only available for non-anchored alignment
     eMasterAnchored = (1 << 13),  //Query anchored, for multialignment only, default not anchored
     eColorDifferentBases = (1 << 14)  //coloring mismatches for subject seq
+    
   };
 
   //Need to set eShowMiddleLine to get this
@@ -229,13 +230,13 @@ private:
   void AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bdl, int firstGi,int gi, CNcbiOstream& out) const;
   string getUrl(const list<CRef<CSeq_id> >& ids, int row) const;
   string getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row, const string& alternativeUrl) const;
-  void getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const;
+  void getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row, string& sequence) const;
 
   void fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString, list<insertInformation*>& insertList) const;
   void doFills(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<insertInformation*>& insertList, list<string>& inserts) const;
   string getSegs(int row) const;
   const void fillIdentityInfo(const string& sequenceStandard, const string& sequence , int& match, int& positive, string& middleLine);
-  void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;  
+  void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId,string& alternativeFeatStr) const;  
   void setDbGi();
   void GetInserts(list<insertInformation*>& insertList, CAlnMap::TSeqPosList& insertAlnStart, CAlnMap::TSeqPosList& insertSeqStart, CAlnMap::TSeqPosList& insertLength,  int lineAlnStop);
   void x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& avList);
@@ -251,6 +252,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.13  2003/12/01 23:15:56  jianye
+*Added showing CDR product
+*
 *Revision 1.12  2003/10/28 22:41:57  jianye
 *Added downloading sub seq capability for long seq
 *
@@ -267,3 +271,4 @@ END_NCBI_SCOPE
 *===========================================
 */
 #endif
+
