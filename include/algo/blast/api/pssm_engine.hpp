@@ -68,7 +68,7 @@ END_SCOPE(objects)
 // to be used when initializing an AutoPtr with the return value of
 // PsiAlignmentDataNew
 template <>
-struct ncbi::CDeleter<PsiAlignmentData> {
+struct CDeleter<PsiAlignmentData> {
     static void Delete(PsiAlignmentData* p)
     { PSIAlignmentDataFree(p); }
 };
@@ -176,6 +176,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/05/28 17:32:32  ucko
+ * Remove redundant ncbi:: from specialization of CDeleter, as it
+ * confuses some compilers.
+ *
  * Revision 1.1  2004/05/28 16:39:42  camacho
  * Initial revision
  *
