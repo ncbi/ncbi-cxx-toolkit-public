@@ -37,8 +37,8 @@
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
-#include <algo/align/nw_spliced_aligner16.hpp>
-#include <algo/align/nw_spliced_aligner32.hpp>
+#include <algo/align/nw/nw_spliced_aligner16.hpp>
+#include <algo/align/nw/nw_spliced_aligner32.hpp>
 #include <algo/align/splign/splign.hpp>
 #include <algo/align/splign/splign_simple.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
@@ -651,6 +651,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/12/16 23:12:26  kapustin
+ * algo/align rearrangement
+ *
  * Revision 1.31  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/align/splign/splign_hit.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/align_exception.hpp>
 #include <corelib/ncbistre.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -472,6 +472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/12/16 23:12:26  kapustin
+* algo/align rearrangement
+*
 * Revision 1.8  2004/05/24 16:13:57  gorelenk
 * Added PCH ncbi_pch.hpp
 *

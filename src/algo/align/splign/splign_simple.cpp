@@ -36,8 +36,8 @@
 #include "messages.hpp"
 #include <algo/align/splign/splign_simple.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
-#include <algo/align/nw_spliced_aligner16.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/nw_spliced_aligner16.hpp>
+#include <algo/align/nw/align_exception.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/scope.hpp>
@@ -211,6 +211,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.11  2004/12/16 23:12:26  kapustin
+* algo/align rearrangement
+*
 * Revision 1.10  2004/11/29 14:37:16  kapustin
 * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
 *

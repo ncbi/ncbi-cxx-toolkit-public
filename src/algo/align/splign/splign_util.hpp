@@ -34,7 +34,7 @@
 */
 
 
-#include <algo/align/nw_aligner.hpp>
+#include <algo/align/nw/nw_aligner.hpp>
 #include <algo/align/splign/splign_hit.hpp>
 
 
@@ -157,6 +157,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/12/16 23:12:26  kapustin
+ * algo/align rearrangement
+ *
  * Revision 1.5  2004/11/29 15:55:55  kapustin
  * -ScoreByTranscript
  *

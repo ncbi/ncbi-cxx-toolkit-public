@@ -36,10 +36,10 @@
 #include "messages.hpp"
 
 #include <algo/align/splign/splign_compartment_finder.hpp>
-#include <algo/align/nw_spliced_aligner16.hpp>
+#include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/splign/splign.hpp>
-#include <algo/align/nw_formatter.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/nw_formatter.hpp>
+#include <algo/align/nw/align_exception.hpp>
 
 #include <deque>
 #include <math.h>
@@ -1463,6 +1463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/12/16 23:12:26  kapustin
+ * algo/align rearrangement
+ *
  * Revision 1.24  2004/12/01 14:55:08  kapustin
  * +ElemToBuffer
  *

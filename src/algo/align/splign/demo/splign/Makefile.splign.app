@@ -8,8 +8,10 @@
 APP = splign
 SRC = seq_loader splign_app
 
-LIB = xalgosplign xalgoalign xblast seqdb xnetblastcli blastdb xnetblast \
-      scoremat xobjutil xobjread tables $(OBJMGR_LIBS:%=%$(STATIC))
+LIB = xalgoalignsplign xalgoalignnw \
+      xblast seqdb xnetblastcli blastdb xnetblast \
+      scoremat xobjutil xobjread tables \
+      $(OBJMGR_LIBS:%=%$(STATIC))
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

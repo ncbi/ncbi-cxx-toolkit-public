@@ -35,7 +35,7 @@
 
 #include <corelib/ncbi_limits.hpp>
 #include <algo/align/splign/splign_compartment_finder.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/align_exception.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/12/16 23:12:26  kapustin
+ * algo/align rearrangement
+ *
  * Revision 1.9  2004/12/06 22:13:36  kapustin
  * File header update
  *

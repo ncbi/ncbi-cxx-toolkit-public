@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include "splign_hitparser.hpp"
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/align_exception.hpp>
 
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbistre.hpp>
@@ -1348,6 +1348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/12/16 23:12:26  kapustin
+* algo/align rearrangement
+*
 * Revision 1.8  2004/06/08 20:48:42  kapustin
 * Fix SLC memory issue
 *

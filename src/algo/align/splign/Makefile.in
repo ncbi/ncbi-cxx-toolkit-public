@@ -3,7 +3,8 @@
 # Meta-makefile (algo/align/splign)
 #################################
 
-LIB_PROJ = xalgosplign
+LIB_PROJ = xalgoalignsplign
+SUB_PROJ = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

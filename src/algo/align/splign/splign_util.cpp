@@ -34,7 +34,7 @@
 #include "splign_util.hpp"
 #include "splign_hitparser.hpp"
 #include "messages.hpp"
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/align_exception.hpp>
 
 #include <algorithm>
 #include <math.h>
@@ -311,6 +311,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/12/16 23:12:26  kapustin
+ * algo/align rearrangement
+ *
  * Revision 1.10  2004/11/29 15:55:55  kapustin
  * -ScoreByTranscript
  *
