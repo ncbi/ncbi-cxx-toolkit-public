@@ -547,7 +547,7 @@ void CBDB_BLOB_Cache::Purge(time_t           access_time,
         const char* key = m_AttrDB.key;
         int overflow = m_AttrDB.overflow;
 
-        if (t < access_time) {
+        if (access_time == 0 || t < access_time) {
             x_DropBLOB(key, version, overflow);
         }
     }
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/10/20 20:35:33  kuznets
+ * Blob cache Purge improved.
+ *
  * Revision 1.17  2003/10/20 20:34:03  kuznets
  * Fixed bug with writing BLOB overflow attribute
  *
