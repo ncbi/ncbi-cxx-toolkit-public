@@ -149,6 +149,9 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
 {
     string buff;
     buffer.erase();
+
+    CSeqVector& seq_vec = x_GetSeqVector(row);
+    TSignedSeqPos seq_vec_size = seq_vec.size();
     
     // get the chunks which are aligned to seq on anchor
     CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
@@ -160,9 +163,15 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
                 
         if (chunk->GetType() & fSeq) {
             // add the sequence string
-            x_GetSeqVector(row).GetSeqData(chunk->GetRange().GetFrom(),
-                                           chunk->GetRange().GetTo()+1,
-                                           buff);
+            if (IsPositiveStrand(row)) {
+                seq_vec.GetSeqData(chunk->GetRange().GetFrom(),
+                                   chunk->GetRange().GetTo() + 1,
+                                   buff);
+            } else {
+                seq_vec.GetSeqData(seq_vec_size - chunk->GetRange().GetTo() - 1,
+                                   seq_vec_size - chunk->GetRange().GetFrom(),
+                                   buff);
+            }
             buffer += buff;
         } else {
             // add appropriate number of gap/end chars
@@ -545,12 +554,13 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
 
 int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
 {
-    TNumrow numrows = m_DS->GetDim();
-    TNumrow index1 = row1, index2 = row2;
-    int     start1, start2;
-    string  buff1, buff2;
-    bool    isAA1, isAA2;
-    int     score = 0;
+    TNumrow       numrows = m_DS->GetDim();
+    TNumrow       index1 = row1, index2 = row2;
+    TSeqPos       start1, start2;
+    string        buff1, buff2;
+    bool          isAA1, isAA2;
+    int           score = 0;
+    TSignedSeqPos len;
     
     isAA1 = GetBioseqHandle(row1).GetBioseqCore()
         ->GetInst().GetMol() == CSeq_inst::eMol_aa;
@@ -558,17 +568,36 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
     isAA2 = GetBioseqHandle(row2).GetBioseqCore()
         ->GetInst().GetMol() == CSeq_inst::eMol_aa;
 
+    CSeqVector&   seq_vec1 = x_GetSeqVector(row1);
+    TSignedSeqPos size1 = seq_vec1.size();
+    CSeqVector &  seq_vec2 = x_GetSeqVector(row2);
+    TSignedSeqPos size2 = seq_vec2.size();
+
     for (TNumseg seg = 0; seg < m_DS->GetNumseg(); seg++) {
         start1 = m_DS->GetStarts()[index1];
         start2 = m_DS->GetStarts()[index2];
 
         if (start1 >=0  &&  start2 >= 0) {
-            x_GetSeqVector(row1).GetSeqData(start1,
-                                            start1 + m_DS->GetLens()[seg],
-                                            buff1);
-            x_GetSeqVector(row2).GetSeqData(start2,
-                                            start2 + m_DS->GetLens()[seg],
-                                            buff2);
+            len = m_DS->GetLens()[seg];
+
+            if (IsPositiveStrand(row1)) {
+                seq_vec1.GetSeqData(start1,
+                                    start1 + len,
+                                    buff1);
+            } else {
+                seq_vec1.GetSeqData(size1 - (start1 + len),
+                                    size1 - start1,
+                                    buff1);
+            }
+            if (IsPositiveStrand(row2)) {
+                seq_vec2.GetSeqData(start2,
+                                    start2 + len,
+                                    buff2);
+            } else {
+                seq_vec2.GetSeqData(size2 - (start2 + len),
+                                    size2 - start2,
+                                    buff2);
+            }
             score += CalculateScore(buff1, buff2, isAA1, isAA2);
         }
 
@@ -585,6 +614,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/01/27 22:30:30  todorov
+* Attune to seq_vector interface change
+*
 * Revision 1.18  2003/01/23 21:31:08  todorov
 * Removed the original, inefficient GetXXXString methods
 *

@@ -270,20 +270,36 @@ void CAlnMix::Add(const CDense_seg &ds)
                             // calc the score by seq comp
                             string s1, s2;
 
-                            aln_seq1->m_BioseqHandle->GetSeqVector
-                                (CBioseq_Handle::eCoding_Iupac,
-                                 strand1 == eNa_strand_minus ?
-                                 CBioseq_Handle::eStrand_Minus :
-                                 CBioseq_Handle::eStrand_Plus).
-                                GetSeqData(start1, start1 + len, s1);
-                            
-                            aln_seq2->m_BioseqHandle->GetSeqVector
-                                (CBioseq_Handle::eCoding_Iupac,
-                                 strand2 == eNa_strand_minus ?
-                                 CBioseq_Handle::eStrand_Minus :
-                                 CBioseq_Handle::eStrand_Plus).
-                                GetSeqData(start2, start2 + len, s2);
-
+                            if (strand1 == eNa_strand_minus) {
+                                CSeqVector seq_vec = 
+                                    aln_seq1->m_BioseqHandle->GetSeqVector
+                                    (CBioseq_Handle::eCoding_Iupac,
+                                     CBioseq_Handle::eStrand_Minus);
+                                TSignedSeqPos size = seq_vec.size();
+                                seq_vec.GetSeqData(size - (start1 + len),
+                                                   start1, 
+                                                   s1);
+                            } else {
+                                aln_seq1->m_BioseqHandle->GetSeqVector
+                                    (CBioseq_Handle::eCoding_Iupac,
+                                     CBioseq_Handle::eStrand_Plus).
+                                    GetSeqData(start1, start1 + len, s1);
+                            }                                
+                            if (strand2 ==  eNa_strand_minus) {
+                                CSeqVector seq_vec = 
+                                    aln_seq2->m_BioseqHandle->GetSeqVector
+                                    (CBioseq_Handle::eCoding_Iupac,
+                                     CBioseq_Handle::eStrand_Minus);
+                                TSignedSeqPos size = seq_vec.size();
+                                seq_vec.GetSeqData(size - (start2 + len),
+                                                   start2, 
+                                                   s2);
+                            } else {
+                                aln_seq2->m_BioseqHandle->GetSeqVector
+                                    (CBioseq_Handle::eCoding_Iupac,
+                                     CBioseq_Handle::eStrand_Plus).
+                                    GetSeqData(start2, start2 + len, s2);
+                            }
 
                             match->m_Score = 
                                 CAlnVec::CalculateScore
@@ -939,15 +955,25 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
                 
                     start1 = seg1->m_StartIts[seq1]->first;
 
-                    seq1->m_BioseqHandle->GetSeqVector
-                        (CBioseq_Handle::eCoding_Iupac,
-                         seq1->m_PositiveStrand ? 
-                         eNa_strand_plus : eNa_strand_minus).
-                        GetSeqData(start1, start1 + seg1->m_Len, s1);
+                    if (seq1->m_PositiveStrand) {
+                        seq1->m_BioseqHandle->GetSeqVector
+                            (CBioseq_Handle::eCoding_Iupac,
+                             CBioseq_Handle::eStrand_Plus).
+                            GetSeqData(start1, start1 + seg1->m_Len, s1);
+                    } else {
+                        CSeqVector seq_vec = 
+                            seq1->m_BioseqHandle->GetSeqVector
+                            (CBioseq_Handle::eCoding_Iupac,
+                             CBioseq_Handle::eStrand_Minus);
+                        TSignedSeqPos size = seq_vec.size();
+                        seq_vec.GetSeqData(size - (start1 + seg1->m_Len),
+                                           size - start1, 
+                                           s1);
+                    }                                
 
                     score1 = 
                         CAlnVec::CalculateScore(s1, s1,
-                                                  seq1->m_IsAA, seq1->m_IsAA);
+                                                seq1->m_IsAA, seq1->m_IsAA);
 
                     cache = true;
                 }
@@ -956,11 +982,23 @@ void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
 
                 TSeqPos start2 = seg2->m_StartIts[seq2]->first;
                             
-                seq2->m_BioseqHandle->GetSeqVector
-                    (CBioseq_Handle::eCoding_Iupac,
-                     seq2->m_PositiveStrand ? 
-                     eNa_strand_plus : eNa_strand_minus).
-                    GetSeqData(start2, start2 + seg2->m_Len, s2);
+                if (seq2->m_PositiveStrand) {
+                    seq2->m_BioseqHandle->GetSeqVector
+                        (CBioseq_Handle::eCoding_Iupac,
+                         CBioseq_Handle::eStrand_Plus).
+                        GetSeqData(start2, start2 + seg2->m_Len, s2);
+                } else {
+                    CSeqVector seq_vec = 
+                        seq2->m_BioseqHandle->GetSeqVector
+                        (CBioseq_Handle::eCoding_Iupac,
+                         CBioseq_Handle::eStrand_Minus);
+                    TSignedSeqPos size = seq_vec.size();
+                    seq_vec.GetSeqData(size - (start2 + seg2->m_Len),
+                                       size - start2, 
+                                       s2);
+                }                                
+                
+                
 
                 int score2 = 
                     CAlnVec::CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
@@ -1093,6 +1131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/01/27 22:30:30  todorov
+* Attune to seq_vector interface change
+*
 * Revision 1.26  2003/01/23 16:30:18  todorov
 * Moved calc score to alnvec
 *

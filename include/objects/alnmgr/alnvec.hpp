@@ -1,3 +1,4 @@
+
 #ifndef OBJECTS_ALNMGR___ALNVEC__HPP
 #define OBJECTS_ALNMGR___ALNVEC__HPP
 
@@ -169,7 +170,9 @@ CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
     }
     TSegTypeFlags type = GetSegType(row, GetSeg(aln_pos));
     if (type & fSeq) {
-        return x_GetSeqVector(row)[GetSeqPosFromAlnPos(row, aln_pos)];
+        CSeqVector& seq_vec = x_GetSeqVector(row);
+        TSignedSeqPos pos = GetSeqPosFromAlnPos(row, aln_pos);
+        return seq_vec[IsPositiveStrand(row) ? pos : seq_vec.size() - pos - 1];
     } else {
         if (type & fNoSeqOnLeft  ||  type & fNoSeqOnRight) {
             return GetEndChar();
@@ -185,7 +188,13 @@ string& CAlnVec::GetSeqString(string& buffer,
                               TNumrow row,
                               TSeqPos seq_from, TSeqPos seq_to) const
 {
-    x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
+    if (IsPositiveStrand(row)) {
+        x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buffer);
+    } else {
+        CSeqVector& seq_vec = x_GetSeqVector(row);
+        TSignedSeqPos size = seq_vec.size();
+        seq_vec.GetSeqData(size - seq_to - 1, size - seq_from, buffer);
+    }        
     return buffer;
 }
 
@@ -195,9 +204,17 @@ string& CAlnVec::GetSegSeqString(string& buffer,
                                  TNumrow row,
                                  TNumseg seg, int offset) const
 {
-    x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
-                                   GetStop (row, seg, offset) + 1,
-                                   buffer);
+    if (IsPositiveStrand(row)) {
+        x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
+                                       GetStop (row, seg, offset) + 1,
+                                       buffer);
+    } else {
+        CSeqVector& seq_vec = x_GetSeqVector(row);
+        TSignedSeqPos size = seq_vec.size();
+        x_GetSeqVector(row).GetSeqData(size - GetStop(row, seg, offset) - 1,
+                                       size - GetStart(row, seg, offset),
+                                       buffer);
+    }        
     return buffer;
 }
 
@@ -207,7 +224,17 @@ string& CAlnVec::GetSeqString(string& buffer,
                               TNumrow row,
                               const CAlnMap::TRange& seq_rng) const
 {
-    x_GetSeqVector(row).GetSeqData(seq_rng.GetFrom(), seq_rng.GetTo() + 1, buffer);
+    if (IsPositiveStrand(row)) {
+        x_GetSeqVector(row).GetSeqData(seq_rng.GetFrom(),
+                                       seq_rng.GetTo() + 1,
+                                       buffer);
+    } else {
+        CSeqVector& seq_vec = x_GetSeqVector(row);
+        TSignedSeqPos size = seq_vec.size();
+        x_GetSeqVector(row).GetSeqData(size - seq_rng.GetTo() - 1,
+                                       size - seq_rng.GetFrom(),
+                                       buffer);
+    }        
     return buffer;
 }
 
@@ -317,6 +344,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2003/01/27 22:30:24  todorov
+ * Attune to seq_vector interface change
+ *
  * Revision 1.17  2003/01/23 21:30:50  todorov
  * Removing the original, inefficient GetXXXString methods
  *
