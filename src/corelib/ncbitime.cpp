@@ -43,10 +43,10 @@
 
 #if defined(NCBI_OS_MAC)  ||  defined(NCBI_OS_DARWIN)
 #  ifdef NCBI_OS_MAC
-#  include <OSUtils.h>
-#else
-#  include <CoreServices/CoreServices.h>
-#endif
+#    include <OSUtils.h>
+#  else
+#    include <CoreServices/CoreServices.h>
+#  endif
 
 typedef
 struct MyTZDLS {
@@ -1154,6 +1154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2002/06/19 17:18:05  ucko
+ * Fix confusing indentation introduced by R1.19.
+ *
  * Revision 1.19  2002/06/19 16:18:36  lebedev
  * Added CoreServices.h for Darwin (timezone and daylight
  *
