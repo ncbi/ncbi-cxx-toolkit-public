@@ -1,5 +1,5 @@
-#ifndef UTIL__LOCALCACHE__HPP
-#define UTIL__LOCALCACHE__HPP
+#ifndef UTIL__BLOBCACHE__HPP
+#define UTIL__BLOBCACHE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,7 +28,7 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: Local cache interface specs. 
+ * File Description: BLOB cache interface specs. 
  *
  */
 
@@ -50,58 +50,67 @@ struct ICacheStream
 
 //////////////////////////////////////////////////////////////////
 //
-// Local cache read/write/maintanance interface.
+// BLOB cache read/write/maintanance interface.
 //
 
-struct ILocalCache
+class IBLOB_Cache
 {
-    virtual ~ILocalCache(){}
+public:
 
     enum EKeepOldVersions
     {
         eKeepOld,
-        eCleanOld
+        eDropOld
     };
 
     // Add or replace BLOB
-    // old_flag parameter specifies our approach to old versions of the same BLOB
+    // flag parameter specifies our approach to old versions of the same BLOB
     // (keep or drop)
     virtual void Store(const string& key,
                        int version, 
-                       const void* data, size_t size,
-                       EKeepOldVersions old_flag=eCleanOld)=0;
+                       const void* data, 
+                       size_t size,
+                       EKeepOldVersions flag=eDropOld) = 0;
 
-    // Check if BLOB exists in the database, return non zero size.
+    // Check if BLOB exists, return non zero size.
     // 0 value indicates that BLOB does not exist in the cache
-    virtual size_t BlobSize(const string& key,
-                            int version)=0;
+    virtual size_t GetSize(const string& key,
+                           int version) = 0;
 
     // Fetch the BLOB
-    // Function returns false if BLOB does not exists. 
+    // Function returns FALSE if BLOB does not exists. 
     // Throws an exception if provided memory is insufficient to read the BLOB
-    virtual bool ReadBlob(const string& key, 
-                          int version, 
-                          void* buf, size_t buf_size)=0;
+    virtual bool Read(const string& key, 
+                      int version, 
+                      void* buf, 
+                      size_t buf_size) = 0;
 
     // Return sequential stream interface pointer to read BLOB data.
     // Function returns NULL if BLOB does not exist
     virtual ICacheStream* GetReadStream(const string& key, 
-                                        int version)=0;
+                                        int version) = 0;
 
     // Return sequential stream interface pointer to write BLOB data.
     virtual ICacheStream* GetWriteStream(const string& key, 
                                          int version,
-                                         EKeepOldVersions old_flag=eCleanOld)=0;
+                                         EKeepOldVersions flag=eDropOld) = 0;
 
     // Remove all versions of the specified BLOB
-    virtual void RemoveBlob(const string& key1, const string& key2)=0;
+    virtual void Remove(const string& key) = 0;
 
     // Return access time for the specified BLOB
-    virtual time_t GetBlobAccessTime(const string& key,
-                                     int version)=0;
+    virtual time_t GetAccessTime(const string& key,
+                                 int version)=0;
 
     // Delete all BLOBs with access time older than specified
-    virtual Purge(time_t access_time)=0;
+    virtual void Purge(time_t access_time) = 0;
+
+    // Delete BLOBs with access time older than specified
+    virtual void Purge(const string& key, time_t access_time) = 0;
+
+
+    virtual ~IBLOB_Cache(){}
+
 };
 
 END_NCBI_SCOPE
@@ -109,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/22 18:40:34  kuznets
+ * Minor cosmetics fixed
+ *
  * Revision 1.1  2003/09/17 20:51:15  kuznets
  * Local cache interface - first revision
  *
