@@ -46,11 +46,11 @@ BEGIN_NCBI_SCOPE
 
 /// Result codes for I/O operations
 /// @sa IReader, IWriter, IReaderWriter
-enum EIO_Result {
-    eIO_NotImplemented = -1,
-    eIO_Success = 0,
-    eIO_Error,
-    eIO_Eof
+enum ERW_Result {
+    eRW_NotImplemented = -1,
+    eRW_Success = 0,
+    eRW_Error,
+    eRW_Eof
 };
 
 
@@ -65,16 +65,16 @@ public:
     /// to by buf argument.  Store the number of bytes actually read,
     /// or 0 on EOF or error, via the pointer "bytes_read", if provided.
     /// Special case:  if count passed as 0, then the value of
-    /// buf is ignored, and the return value is always eIO_Success, but
+    /// buf is ignored, and the return value is always eRW_Success, but
     /// no change is actually done to the state of input device.
-    virtual EIO_Result Read(void*   buf,
+    virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0) = 0;
 
     /// Return the number of bytes ready to be read from input
     /// device without blocking.  Return 0 if no such number is
     /// available (in case of an error or EOF).
-    virtual EIO_Result PendingCount(size_t* count) = 0;
+    virtual ERW_Result PendingCount(size_t* count) = 0;
 
     virtual ~IReader() {}
 };
@@ -91,7 +91,7 @@ public:
     /// of bytes actually written, or 0 if either count was
     /// passed as 0 (buf is ignored in this case) or an error occured,
     /// via the "bytes_written" pointer, if provided.
-    virtual EIO_Result Write(const void* buf,
+    virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0) = 0;
 
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/29 16:06:59  lavr
+ * Change ERW_Result enumeration and members names
+ *
  * Revision 1.6  2003/09/25 13:35:50  kuznets
  * Minor syntax issue corrected.
  *
@@ -123,10 +126,10 @@ END_NCBI_SCOPE
  * Doxygenification
  *
  * Revision 1.4  2003/09/24 15:56:24  kuznets
- * Minor syntax error fixed in EIO_Result declaration
+ * Minor syntax error fixed in ERW_Result declaration
  *
  * Revision 1.3  2003/09/24 15:45:36  lavr
- * Changed to use eIO_Result in return codes; pointers to store I/O counts
+ * Changed to use ERW_Result in return codes; pointers to store I/O counts
  *
  * Revision 1.2  2003/09/22 22:38:21  vakatov
  * Minor (mostly style) fixes;  renaming
