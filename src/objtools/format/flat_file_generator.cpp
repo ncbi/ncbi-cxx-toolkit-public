@@ -124,7 +124,7 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
-(const CSeq_submit& submit,
+(CSeq_submit& submit,
  CScope& scope,
  CFlatItemOStream& item_os)
 {
@@ -136,9 +136,9 @@ void CFlatFileGenerator::Generate
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
     // Seq-entry
-    CConstRef<CSeq_entry> e(submit.GetData().GetEntrys().front());
+    CRef<CSeq_entry> e(submit.SetData().SetEntrys().front());
     if ( e ) {
-        CSeq_entry_Handle entry = scope.GetSeq_entryHandle(*e);
+        CSeq_entry_Handle entry = scope.AddTopLevelSeqEntry(*e);
         m_Ctx->SetSubmit(submit.GetSub());
         Generate(entry, item_os);
     }
@@ -194,7 +194,7 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
-(const CSeq_submit& submit,
+(CSeq_submit& submit,
  CScope& scope,
  CNcbiOstream& os)
 {
@@ -256,6 +256,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/02/07 14:58:48  shomrat
+* unconst Seq-submit objcets
+*
 * Revision 1.10  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
