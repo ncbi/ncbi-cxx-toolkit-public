@@ -17766,7 +17766,7 @@ if test "$with_sss" != "no" ; then
    local_sss=${srcdir}/src/internal/sss
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
-       -a -f "${local_sss}srv/srv/ssssrv.cpp"; then
+       -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
       with_included_sss=yes
       NCBI_SSS_PATH=$local_sss
       NCBI_SSS_INCLUDE="\$(incdir)/sss"

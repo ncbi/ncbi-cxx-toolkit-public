@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.292 2004/04/19 15:55:47 ucko Exp $
+#  $Id: configure.ac,v 1.293 2004/04/20 18:21:43 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2989,7 +2989,7 @@ if test "$with_sss" != "no" ; then
    local_sss=${srcdir}/src/internal/sss
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
-       -a -f "${local_sss}srv/srv/ssssrv.cpp"; then
+       -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
       with_included_sss=yes
       NCBI_SSS_PATH=$local_sss
       NCBI_SSS_INCLUDE="\$(incdir)/sss"
