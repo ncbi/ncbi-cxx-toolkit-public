@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.143  2002/06/05 15:15:37  thiessen
+* make log window float on parent
+*
 * Revision 1.142  2002/06/05 14:28:38  thiessen
 * reorganize handling of window titles
 *
@@ -673,7 +676,7 @@ public:
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
             wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
-                | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR
+                | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
 #endif
             )
     {
