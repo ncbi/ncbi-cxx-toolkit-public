@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/09/26 18:11:01  gouriano
+* added more checks for MemberId
+*
 * Revision 1.22  2002/09/25 19:37:36  gouriano
 * added the possibility of having no tag prefix in XML I/O streams
 *
@@ -818,7 +821,8 @@ void CObjectIStreamXml::CloseStackTag(size_t level)
     }
     else {
         CLightString tagName = ReadName(BeginClosingTag());
-        if (!FetchFrameFromTop(level).GetMemberId().HaveNoPrefix()) {
+        const TFrame& frame = FetchFrameFromTop(level);
+        if (!frame.HasMemberId() || !frame.GetMemberId().HaveNoPrefix()) {
             CLightString rest = SkipStackTagName(tagName, level);
             if ( !rest.Empty() )
                 ThrowError(eFormatError, "unexpected tag");
