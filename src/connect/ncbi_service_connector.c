@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/05/11 15:32:05  lavr
+ * Minor patch in code of 'fallback to STATELESS'
+ *
  * Revision 6.18  2001/05/08 20:27:05  lavr
  * Patches in re-try code
  *
@@ -92,6 +95,9 @@
  */
 
 #include "ncbi_comm.h"
+#if defined(_DEBUG) && !defined(NDEBUG)
+#include "ncbi_priv.h"
+#endif
 #include "ncbi_servicep.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
@@ -209,6 +215,11 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
             if (strncasecmp(header, kStateless, sizeof(kStateless) - 1) == 0) {
                 /* Special keyword for switching into stateless mode */
                 uuu->host = (unsigned int)(-1);
+#if defined(_DEBUG) && !defined(NDEBUG)
+                if (uuu->info->debug_printout)
+                    CORE_LOG(eLOG_Warning,
+                             "[SERVICE] Fallback to stateless requested");
+#endif
                 break;
             }
             if (sscanf(header, "%d.%d.%d.%d %hu %x",
@@ -354,7 +365,7 @@ static CONNECTOR s_Open
  const STimeout*    timeout,
  const SSERV_Info*  info,
  SConnNetInfo*      net_info,
- int/*bool*/        second_call)
+ int/*bool*/        second_try)
 {
     const char* header = 0;
 
@@ -362,7 +373,7 @@ static CONNECTOR s_Open
         /* Not a firewall/relay connection here */
         EReqMethod req_method;
         /* We know the connection point, let's try to use it! */
-        assert(!net_info->firewall && !second_call);
+        assert(!net_info->firewall && !second_try);
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
         switch (info->type) {
@@ -415,7 +426,7 @@ static CONNECTOR s_Open
         assert(net_info->firewall);
         s_AdjustNetInfo(net_info,
                         net_info->stateless ? eReqMethod_Post : eReqMethod_Get,
-                        0, 0, second_call ? 0 : "service", uuu->serv);
+                        0, 0, second_try ? 0 : "service", uuu->serv);
         header = net_info->stateless
             ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
               "Relay-Mode: FIREWALL\r\n"
@@ -467,10 +478,10 @@ static CONNECTOR s_Open
             if (!uuu->host)
                 return 0/*No connection info returned*/;
             if (uuu->host == (unsigned int)(-1)) {
-                assert(!info && !second_call); /*firewall mode only*/
+                assert(!info && !second_try); /*firewall mode only*/
                 /* Try to use stateless mode instead */
                 net_info->stateless = 1;
-                return s_Open(uuu, timeout, 0, net_info, 1/*second call*/);
+                return s_Open(uuu, timeout, 0, net_info, 1/*second try*/);
             }
             SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
             net_info->port = uuu->port;
