@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/04/15 19:22:24  lavr
+ * Register MSVC-specific handler which suppresses popup messages at run-time
+ *
  * Revision 6.5  2002/03/22 19:49:55  lavr
  * Undef NDEBUG; include <assert.h>; must go last in the list of include files
  *
@@ -54,9 +57,53 @@
  * ===========================================================================
  */
 
+#include "../ncbi_config.h"
+
+#ifdef NCBI_OS_MSWIN
+#  include <crtdbg.h>
+#  include <windows.h>
+
+/* Suppress popup messages on execution errors.
+ * NOTE: Windows-specific, suppresses all error message boxes in both runtime
+ * and in debug libraries, as well as all General Protection Fault messages.
+ * Environment variable DIAG_SILENT_ABORT must be set to "Y" or "y".
+ */
+static void _SuppressDiagPopupMessages(void)
+{
+    /* Check environment variable for silent abort app at error */
+    const char* value = getenv("DIAG_SILENT_ABORT");
+    if (value  &&  (*value == 'Y'  ||  *value == 'y')) {
+        /* Windows GPF errors */
+        SetErrorMode(SEM_NOGPFAULTERRORBOX);
+
+        /* Runtime library */
+        _set_error_mode(_OUT_TO_STDERR);
+
+        /* Debug library */
+        _CrtSetReportFile(_CRT_WARN,   stderr);
+        _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
+        _CrtSetReportFile(_CRT_ERROR,  stderr);
+        _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
+        _CrtSetReportFile(_CRT_ASSERT, stderr);
+        _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    }
+}
+
+/* Put this function at startup init level 'V', far enough not to mess up with
+ * base initializaion, which happens at preceding levels in alphabetical order.
+ */
+#  pragma data_seg(".CRT$XIV")
+
+static PFV _SDPM = _SuppressDiagPopupMessages;
+
+#  pragma data_seg()
+#endif
+
+
 #if defined(NDEBUG)
 #  undef  NDEBUG
 #endif
 #include <assert.h>
+
 
 #endif  /* TEST_ASSERT__H */
