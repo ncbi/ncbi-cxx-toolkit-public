@@ -603,7 +603,8 @@ CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope)
 
 
 CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
-                                       CScope& scope)
+                                       CScope& scope,
+                                       TBestFeatOpts opts)
 {
     _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
     CConstRef<CSeq_feat> mrna_feat;
@@ -641,7 +642,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
         }
     }
 
-    if (cds_feat.IsSetProduct()) {
+    if (cds_feat.IsSetProduct()  &&  !(opts & fBestFeat_NoExpensive) ) {
         try {
             // this may throw, if the product spans multiple sequences
             // this would be extremely unlikely, but we catch anyway
@@ -708,7 +709,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
     // try to find the best by overlaps alone
     //
 
-    if ( !mrna_feat ) {
+    if ( !mrna_feat  &&  !(opts & fBestFeat_StrictMatch) ) {
         mrna_feat =
             sequence::GetBestOverlappingFeat(cds_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_mRNA,
@@ -721,14 +722,13 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
 
 
 CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
-                                       CScope& scope)
+                                       CScope& scope,
+                                       TBestFeatOpts opts)
 {
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> cds_feat;
 
     // search for a best overlapping mRNA
-    // we start with a scan through the product accessions because we need
-    // to insure that the chosen transcript does indeed match what we want
 
     SAnnotSelector sel;
     sel.SetOverlapIntervals()
@@ -736,7 +736,33 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
         .SetResolveAll()
         .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
 
-    if (mrna_feat.IsSetProduct()) {
+    //
+    // check for transcript_id; this is fast
+    //
+    string transcript_id = mrna_feat.GetNamedQual("transcript_id");
+    if ( !transcript_id.empty() ) {
+        CFeat_CI feat_iter(scope, mrna_feat.GetLocation(), sel);
+        for ( ;  feat_iter;  ++feat_iter) {
+            // make sure the feature contains our feature of interest
+            sequence::ECompare comp =
+                sequence::Compare(feat_iter->GetLocation(),
+                                  mrna_feat.GetLocation(), &scope);
+            if (comp != sequence::eContained  &&
+                comp != sequence::eSame) {
+                continue;
+            }
+            string other_transcript_id =
+                feat_iter->GetOriginalFeature().GetNamedQual("transcript_id");
+            if (transcript_id == other_transcript_id) {
+                cds_feat.Reset(&feat_iter->GetOriginalFeature());
+                return cds_feat;
+            }
+        }
+    }
+
+    // scan through the product accessions because we need to insure that the
+    // chosen transcript does indeed match what we want
+    if (mrna_feat.IsSetProduct()  &&  !(opts & fBestFeat_NoExpensive) ) {
         do {
             try {
                 // this may throw, if the product spans multiple sequences
@@ -804,35 +830,10 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
     }
 
     //
-    // check for transcript_id
-    //
-    string transcript_id = mrna_feat.GetNamedQual("transcript_id");
-    if ( !transcript_id.empty() ) {
-        CFeat_CI feat_iter(scope, mrna_feat.GetLocation(), sel);
-        for ( ;  feat_iter;  ++feat_iter) {
-            // make sure the feature contains our feature of interest
-            sequence::ECompare comp =
-                sequence::Compare(feat_iter->GetLocation(),
-                                  mrna_feat.GetLocation(),
-                                  &scope);
-            if (comp != sequence::eContained  &&
-                comp != sequence::eSame) {
-                continue;
-            }
-            string other_transcript_id =
-                feat_iter->GetOriginalFeature().GetNamedQual("transcript_id");
-            if (transcript_id == other_transcript_id) {
-                cds_feat.Reset(&feat_iter->GetOriginalFeature());
-                return cds_feat;
-            }
-        }
-    }
-
-    //
     // try to find the best by overlaps alone
     //
 
-    if ( !cds_feat ) {
+    if ( !cds_feat  &&  !(opts & fBestFeat_StrictMatch) ) {
         cds_feat =
             sequence::GetBestOverlappingFeat(mrna_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_cdregion,
@@ -845,7 +846,8 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
 
 
 CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
-                                        CScope& scope)
+                                        CScope& scope,
+                                        TBestFeatOpts opts)
 {
     _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
     CConstRef<CSeq_feat> gene_feat;
@@ -920,7 +922,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
         }
     }
 
-    if ( !gene_feat ) {
+    if ( !gene_feat  &&  !(opts & fBestFeat_StrictMatch) ) {
         gene_feat =
             sequence::GetBestOverlappingFeat(mrna_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_gene,
@@ -933,13 +935,54 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
 
 
 CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
-                                       CScope& scope)
+                                       CScope& scope,
+                                       TBestFeatOpts opts)
 {
     _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
-    CConstRef<CSeq_feat> feat = GetBestMrnaForCds(cds_feat, scope);
+    CConstRef<CSeq_feat> feat =
+        GetBestMrnaForCds(cds_feat, scope,
+                          opts | fBestFeat_StrictMatch);
     if (feat) {
-        feat = GetBestGeneForMrna(*feat, scope);
-    } else {
+        feat = GetBestGeneForMrna(*feat, scope, opts);
+        if (feat) {
+            return feat;
+        }
+    }
+
+    const CGene_ref* ref = cds_feat.GetGeneXref();
+    if (ref) {
+        string ref_str;
+        ref->GetLabel(&ref_str);
+        CFeat_CI feat_it(scope, cds_feat.GetLocation(),
+                         SAnnotSelector()
+                         .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                         .SetOverlapIntervals()
+                         .SetResolveTSE());
+        for ( ;  feat_it;  ++feat_it) {
+            // make sure the feature contains our feature of interest
+            sequence::ECompare comp =
+                sequence::Compare(cds_feat.GetLocation(),
+                                  feat_it->GetLocation(),
+                                  &scope);
+            if (comp != sequence::eContained  &&
+                comp != sequence::eSame) {
+                continue;
+            }
+
+            string ref_str;
+            ref->GetLabel(&ref_str);
+
+            const CGene_ref& other_ref = feat_it->GetData().GetGene();
+            string other_ref_str;
+            other_ref.GetLabel(&other_ref_str);
+            if (ref_str == other_ref_str) {
+                feat = &feat_it->GetOriginalFeature();
+                break;
+            }
+        }
+    }
+
+    if ( !feat  &&  !(opts & fBestFeat_StrictMatch) ) {
         feat =
             sequence::GetBestOverlappingFeat(cds_feat.GetLocation(),
                                              CSeqFeatData::eSubtype_gene,
@@ -951,7 +994,8 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
 
 
 void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
-                     list< CConstRef<CSeq_feat> >& mrna_feats)
+                     list< CConstRef<CSeq_feat> >& mrna_feats,
+                     TBestFeatOpts opts)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     int gene_id = 0;
@@ -1052,7 +1096,8 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
 
 void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
-                    list< CConstRef<CSeq_feat> >& cds_feats)
+                    list< CConstRef<CSeq_feat> >& cds_feats,
+                    TBestFeatOpts opts)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     list< CConstRef<CSeq_feat> > mrna_feats;
@@ -1080,7 +1125,8 @@ void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
                                             CSeqFeatData::E_Choice feat_type,
                                             sequence::EOverlapType overlap_type,
-                                            CScope& scope)
+                                            CScope& scope,
+                                            TBestFeatOpts opts)
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat_type) {
@@ -1118,7 +1164,8 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
                                             CSeqFeatData::ESubtype subtype,
                                             sequence::EOverlapType overlap_type,
-                                            CScope& scope)
+                                            CScope& scope,
+                                            TBestFeatOpts opts)
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat.GetData().GetSubtype()) {
@@ -2556,6 +2603,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.114  2005/01/13 15:24:16  dicuccio
+* Added optional flags to GetBestXxxForXxx() functions to control the types of
+* checks performed
+*
 * Revision 1.113  2005/01/10 15:10:11  shomrat
 * Changed GetAccessionForGi
 *

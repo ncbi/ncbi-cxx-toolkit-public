@@ -224,43 +224,70 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope);
 
-NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
-                                        CScope& scope);
+enum EBestFeatOpts {
+    /// requires explicit association, rather than analysis based on overlaps
+    fBestFeat_StrictMatch = 0x01,
+
+    /// don't perform any expensive tests, such as ones that require fetching
+    /// additional sequences
+    fBestFeat_NoExpensive = 0x02,
+
+    /// default options: do everything
+    fBestFeat_Defaults = 0
+};
+typedef int TBestFeatOpts;
 
 NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& mrna_feat,
-                                       CScope& scope);
+CConstRef<CSeq_feat>
+GetBestGeneForMrna(const CSeq_feat& mrna_feat,
+                   CScope& scope,
+                   TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
-                                       CScope& scope);
+CConstRef<CSeq_feat>
+GetBestGeneForCds(const CSeq_feat& mrna_feat,
+                  CScope& scope,
+                  TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
-                                       CScope& scope);
+CConstRef<CSeq_feat>
+GetBestMrnaForCds(const CSeq_feat& cds_feat,
+                  CScope& scope,
+                  TBestFeatOpts opts = fBestFeat_Defaults);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat>
+GetBestCdsForMrna(const CSeq_feat& mrna_feat,
+                  CScope& scope,
+                  TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
 void GetMrnasForGene(const CSeq_feat& gene_feat,
                      CScope& scope,
-                     list< CConstRef<CSeq_feat> >& mrna_feats);
+                     list< CConstRef<CSeq_feat> >& mrna_feats,
+                     TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
 void GetCdssForGene(const CSeq_feat& gene_feat,
                     CScope& scope,
-                    list< CConstRef<CSeq_feat> >& cds_feats);
+                    list< CConstRef<CSeq_feat> >& cds_feats,
+                    TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
-                                            CSeqFeatData::E_Choice feat_type,
-                                            sequence::EOverlapType overlap_type,
-                                            CScope& scope);
+CConstRef<CSeq_feat>
+GetBestOverlappingFeat(const CSeq_feat& feat,
+                       CSeqFeatData::E_Choice feat_type,
+                       sequence::EOverlapType overlap_type,
+                       CScope& scope,
+                       TBestFeatOpts opts = fBestFeat_Defaults);
 
 NCBI_XOBJUTIL_EXPORT
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
-                                            CSeqFeatData::ESubtype feat_type,
-                                            sequence::EOverlapType overlap_type,
-                                            CScope& scope);
+CConstRef<CSeq_feat>
+GetBestOverlappingFeat(const CSeq_feat& feat,
+                       CSeqFeatData::ESubtype feat_type,
+                       sequence::EOverlapType overlap_type,
+                       CScope& scope,
+                       TBestFeatOpts opts = fBestFeat_Defaults);
 
 
 /// Get the best overlapping feature for a SNP (variation) feature
@@ -664,6 +691,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.59  2005/01/13 15:24:15  dicuccio
+* Added optional flags to GetBestXxxForXxx() functions to control the types of
+* checks performed
+*
 * Revision 1.58  2005/01/10 15:09:53  shomrat
 * Changed GetAccessionForGi
 *
