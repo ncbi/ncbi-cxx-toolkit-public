@@ -169,7 +169,7 @@ $(RELEVANT_FILE): $(PROJECTS)
 # Commands to see whether project directories are relevant.
 RELEVANT = egrep -f $(RELEVANT_FILE) > /dev/null
 RELEVANT_DIR = pwd | $(RELEVANT)
-RELEVANT_SUBS = find "`pwd`" -type d | $(RELEVANT)
+RELEVANT_SUBS = find "`pwd`"/* -type d | $(RELEVANT)
 
 SUB_BRA_P = \
 if test ! -z "$(SUB_PROJ)" \
