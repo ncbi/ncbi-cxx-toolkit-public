@@ -74,7 +74,9 @@ typedef struct {
     FHttpAdjustCleanup   adjust_cleanup;  /* supplemental user data...       */
     void*                adjust_data;     /* ...and cleanup routine          */
 
-    TBHCC_Flags          flags:12;        /* as passed to constructor        */
+    TBHCC_Flags          flags:10;        /* as passed to constructor        */
+    unsigned             reserved:1;
+    unsigned             error_header:1;  /* only err.HTTP header on SOME dbg*/
     EBCanConnect         can_connect:2;   /* whether more conns permitted    */
     unsigned             read_header:1;   /* whether reading header          */
     unsigned             shut_down:1;     /* whether shut down for write     */
@@ -199,8 +201,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
              uuu->net_info->http_user_header,
              (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs),
              uuu->net_info->debug_printout == eDebugPrintout_Data
-             ? eOn  : (uuu->net_info->debug_printout == eDebugPrintout_None
-                       ? eOff : eDefault));
+             ? eOn : (uuu->net_info->debug_printout == eDebugPrintout_None
+                      ? eOff : eDefault));
         if (reset_user_header) {
             ConnNetInfo_SetUserHeader(uuu->net_info, 0);
             uuu->net_info->http_user_header = http_user_header;
@@ -217,13 +219,13 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
             break;
     }
 
-    return eIO_Unknown;
+    return eIO_Closed;
 }
 
 
 /* Connect to the server specified by uuu->net_info, then compose and form
  * relevant HTTP header, and flush the accumulated output data(uuu->w_buf)
- * after the HTTP header. If connection/write unsiccessful, retry to reconnect
+ * after the HTTP header. If connection/write unsuccessful, retry to reconnect
  * and send the data again until permitted by s_Adjust().
  */
 static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
@@ -271,7 +273,6 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
 
         if (status == eIO_Timeout &&  uuu->w_timeout  &&
             !uuu->w_timeout->sec  &&  !uuu->w_timeout->usec) {
-            status = eIO_Success;
             break;
         }
 
@@ -283,8 +284,10 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
         /* write failed; close and try to use another server */
         SOCK_Abort(uuu->sock);
         s_DropConnection(uuu, 0/*no wait*/);
-        if (!s_Adjust(uuu, &null, drop_unread))
+        if (!s_Adjust(uuu, &null, drop_unread)) {
+            status = eIO_Closed;
             break;
+        }
     }
 
     return status;
@@ -345,8 +348,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         else if (http_status == 403  ||  http_status == 404)
             uuu->net_info->max_try = 0;
     }
-
-    if (uuu->net_info->debug_printout) {
+    
+    if (uuu->net_info->debug_printout == eDebugPrintout_Data ||
+        (uuu->net_info->debug_printout == eDebugPrintout_Some &&
+         (server_error || !uuu->error_header))) {
         const char* header_header;
 
         if (!server_error) 
@@ -442,8 +447,16 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
     EIO_Status status;
 
     for (;;) {
-        if ((status = s_ConnectAndSend(uuu, drop_unread)) != eIO_Success)
+        status = s_ConnectAndSend(uuu, drop_unread);
+        if (!uuu->sock) {
+            assert(status != eIO_Success);
             break;
+        }
+        if (status != eIO_Success) {
+            if (status != eIO_Timeout ||
+                status == SOCK_Status(uuu->sock, eIO_Read)/*pending*/)
+                break;
+        }
 
         /* set timeout */
         SOCK_SetTimeout(uuu->sock, eIO_Read, timeout);
@@ -925,6 +938,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
     if (flags & fHCC_UrlDecodeInput)
         uuu->flags      &= ~fHCC_KeepHeader;
     uuu->can_connect     = eCC_Once;         /* will be properly set at open */
+    uuu->error_header    = getenv("HTTP_ERROR_HEADER_ONLY") ? 1 : 0;
 
     uuu->sock            = 0;
     uuu->o_timeout       = CONN_DEFAULT_TIMEOUT;/* deliberately bad values --*/
@@ -948,6 +962,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2003/06/09 19:52:42  lavr
+ * New env.var. HTTP_ERROR_HEADER_ONLY to control header output on SOME tracing
+ *
  * Revision 6.53  2003/06/04 20:58:13  lavr
  * s_Adjust() to return failure if no adjustment callback specified
  * s_VT_Status() to return eIO_Closed if connector failed/closed
