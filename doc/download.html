@@ -1,0 +1,141 @@
+<!-- $Id$ -->
+<!--#set var="TITLE" value="NCBI C++ Toolkit:  Downloads & CVS Retrieval" -->
+<!--#set var="HEADING" value="Retrieve the Source Code" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
+
+<!--  Page Contents -->
+
+<ul>
+    <li><h4><a href="cvs.html">CVS Retrieval</a> <font size=-1>(NCBI-only link)</font></h4> </li>
+    <li><h4><a href="#ref_FTP">FTP Retrieval</a></h4> </li>
+        <ul>
+            <li><a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/">FTP Download Now</a></li>
+            <li><a href="#ref_FTPArchives">Available FTP Archives</a></li>
+            <li><a href="#ref_FTPUnpack">Unpacking Instructions</a></li>
+                <ul>
+                    <li> <a href="#ref_UnpackUnix"> Unix </a></li>
+                    <li> <a href="#ref_UnpackWin"> Windows </a></li>
+                    <li> <a href="#ref_UnpackMac"> Mac </a></li>
+                </ul>
+        </ul><br>
+    <li><h4><a href="#ref_TreeStruct">Source Tree Structure Summary</a></h4> </li>
+</ul>
+<p></p>
+
+<hr>
+<p></p>
+
+<a name="ref_FTP"></a>
+<h3> FTP Retrieval </h3>
+<ul>
+	<li>
+    <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/"><b>FTP Download Now</b></a></li><p></p>
+
+
+    <a name="ref_FTPArchives"></a>
+	<li>
+        <b>Available FTP Archives</b>:  Select the archive for your system.  When the dialog box appears, choose the
+        destination in your filesystem for the downloaded archive. <br> <font size=-1> <i>Note:</i>  With some browsers, you may
+        need to right-click-and-hold with your mouse and use the 'Save Link As...', 'Copy to Folder...', or similar options from the drop-down
+        menu to properly save the archive.</font> <br>
+            <ul>
+                <li> <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_unix.tar.gz"> ncbi_cxx_unix.tar.gz </a> -- GZIP'ed tarball for UNIX'es </li>
+                <li> <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_win.exe"> ncbi_cxx_win.exe </a> -- self-extracting archive for MS-Windows/MSVC++</li>
+                <li> <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_mac.sit.bin"> ncbi_cxx_mac.sit.bin </a> -- Stuff-It archive for MAC/Metrowerks CodeWarrior</li><p></p>
+
+                <li> <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_all.gtar.gz"> ncbi_cxx_all.gtar.gz </a> -- all (UNIX'es, MS-Windows/MSVC++ and MAC) sources</li>
+                <li> <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/ncbi_cxx_all.exe"> ncbi_cxx_all.exe </a> -- all (UNIX'es, MS-Windows/MSVC++ and MAC) sources as a self-extracting archive for MS-Windows</li>
+            </ul>
+	</li>
+	<p></p>
+
+    <a name="ref_FTPUnpack"></a>
+    <a name="ref_Unpack"></a>
+    <li>
+        <b> Unpack the Source Archive </b>
+        <a name="ref_UnpackUnix"></a>
+        <h4> Unix Systems </h4>
+
+        The Unix distributions have been archived using the standard <tt>tar</tt> command and
+        compressed using <tt>gzip</tt>.  When unpacked, all files will be under the directory <tt>ncbi_cxx</tt>,
+        which will be created in the current directory.<p>
+
+        <font size=-1>
+        (<b> Caution:</b>  If <tt>ncbi_cxx</tt> already exists, <tt>tar</tt> extraction will overwrite
+        existing files.)</font>
+        <br>
+
+        <dl>
+            <dt>To unpack the the archive:</dt>
+            <dd><p><tt> gunzip -c ncbi_cxx_*.tar.gz | tar xvf -</tt></dd>
+        </dl>
+
+        <a name="ref_UnpackWin"></a>
+        <h4> Windows Systems </h4>
+
+        The Microsoft Windows versions of the source distribution have been prepared as self-extracting executables.
+        By default a sub-folder <tt>ncbi_cxx</tt> will be created in the current folder to contain the extracted source.
+        If  <tt>ncbi_cxx</tt> already exists in the folder where the executable is launched, user confirmation is
+        required before files are overwritten.
+
+        <p></p>
+        To actually perform the extraction, do one of the following:
+        <ol type="i">
+            <li> Double-click on the archive's icon to create <tt> ncbi_cxx</tt> in the current folder.</li>
+            <li> Right-click on the archive's icon, and select 'Extract to...' to unpack the archive to a user-specified location in the filesystem.</li>
+        </ol>
+
+        <a name="ref_UnpackMac"></a>
+        <h4> Macintosh Systems </h4>
+
+        The Macintosh version of the source distribution has been prepared as a 'Stuff-It' archive, and
+        is usable from within Metrowerks CodeWarrior.
+        The sources will be deployed to a directory <tt>ncbi_cxx</tt> created in the current folder.
+
+        <p></p>
+        Further Mac-specific details are forthcoming.
+    </li>
+
+</ul>
+<p></p>
+
+<hr>
+<p></p>
+<a name="ref_TreeStruct"></a>
+<h3>Source Tree Structure Summary</h3>
+
+To summarize the <a href="get_started.html#ref_Source">Getting Started</a> page, the <a href="src_tree.gif"><i>source tree</i></a> is organized as follows:
+
+<ul>
+	<li>  The top-level has configuration files and the directories <tt>include/, src/, scripts/, compilers/</tt> and <tt>doc/</tt></li>
+	<li>  The <tt>src</tt> and <tt>include</tt> directories contain "projects" as subdirectories.
+	Projects may contain sub-projects in a hierarchical fashion.</li>
+	<li>  <tt>src/</tt> additionally contains <i>makefile</i> and <i>meta-makefile</i> templates.
+	<li>  Projects contain "<a href="new_mod.html">modules</a>" and various customized
+        <a href="get_started.html#ref_MakefileTemplates"><i>makefiles</i>
+        and <i>meta-makefiles</i></a> to control their compilation.</li>
+</ul>
+
+<hr>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
+
+<!-- Begin footer content -->
+
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<script>
+<!--
+print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('vasilche', 'Eugene Vasilchenko');
+print_author('lavr', 'Anton Lavrentiev');
+print_author('zimmerma', 'Diane Zimmerman');
+print_author('lewisg', 'Lewis Geer');
+print_author('lanczyck', 'Chris Lanczycki');
+// -->
+</script>
+</table>
+
+<!--#include virtual="./ssi/footer.shtml" -->

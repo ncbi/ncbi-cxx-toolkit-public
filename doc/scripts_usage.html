@@ -1,0 +1,142 @@
+<!-- $Id$ -->
+<!--#set var="TITLE" value="NCBI C++ Toolkit:  Script Usage Messages" -->
+<!--#set var="HEADING" value="Shell Script Usage" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
+
+<!--  Page Contents -->
+
+<hr>
+
+<a name="ref_CVS_CoreUsage"></a>
+<h2><tt>cvs_core.sh</tt> Usage</h2>
+
+<pre>
+
+
+Usage:  cvs_core.sh &lt;dir&gt; [--without-cvs] [--with-objects] .... [--&lt;platform&gt;]
+Synopsis:
+   Checkout a portable part of the NCBI C++ tree.
+Arguments:
+   &lt;dir&gt;             -- path to checkout the tree to
+   --without-cvs     -- do not put CVS-related stuff to the resultant tree
+   --with-objects    -- generate ASN.1 serialization code in the "objects/" dir
+   --without-objects -- do not even checkout "objects/" dirs
+   --without-ctools  -- do not checkout projects that depend on the C Toolkit
+   --without-gui     -- do not checkout projects that depend on the wxWindows
+   --with-vc-cfgs[={all|inhouse|none}] -- multi-config MSVC project files
+   --without-dizzy   -- remove paths to \\DIZZY\ from MSVC project files
+   --&lt;platform&gt;      -- "--unix", "--msvc", "--cygwin", "--mac", "--all"
+Default:
+   cvs_core.sh &lt;dir&gt; --with-cvs --with-ctools --with-gui --all
+
+Note:  Must specify target directory (name cannot start with '-')
+
+</pre>
+
+<hr>
+
+<a name="ref_Import_ProjectUsage"></a>
+<h2><tt>import_project.sh</tt> Usage</h2>
+
+<pre>
+
+USAGE:  import_project.sh &lt;cvs_tree_path&gt; [builddir]
+SYNOPSIS:
+   Retrieve project (and all sub-projects) located in the NCBI C++ Toolkit
+   CVS tree at:
+      internal/c++/src/&lt;cvs_tree_path&gt;
+      internal/c++/include/&lt;cvs_tree_path&gt;
+   Create makefiles "Makefile.*_{lib,app}" (based on the original project
+   makefiles "Makefile.*.{lib,app}") to build libs/apps using pre-built NCBI
+   C++ Toolkit from [builddir]  (default: /netopt/ncbi_tools/c++/Debug/build).
+
+
+</pre>
+
+<hr>
+
+<a name="ref_New_ProjectUsage"></a>
+<h2><tt>new_project.sh</tt> Usage</h2>
+
+<pre>
+
+USAGE:  new_project.sh &lt;name&gt; &lt;type&gt; [builddir]
+SYNOPSIS:
+   Create a model makefile "Makefile.&lt;name&gt;_&lt;type&gt;" to build
+   a library or an application that uses pre-built NCBI C++ toolkit.
+   Also include sample code when creating applications.
+ARGUMENTS:
+   &lt;name&gt;      -- name of the project (will be subst. to the makefile name)
+   &lt;type&gt;      -- one of the following:
+                  lib         to build a library
+                  app[/basic] to build a simple application
+                  app/cgi     to build a CGI or FastCGI application
+                  app/objects to build an application using ASN.1 objects
+   [builddir]  -- path to the pre-built NCBI C++ toolkit
+                  (default = /netopt/ncbi_tools/c++/Debug/build)
+
+
+</pre>
+
+<hr>
+
+<a name="ref_Update_CoreUsage"></a>
+<h2><tt>update_core.sh</tt> Usage</h2>
+
+<pre>
+
+Usage: update_core.sh [--no-projects] [&lt;dirs&gt;]
+
+  --no-projects: Do not update Windows/MacOS project files.
+
+  &lt;dirs&gt;: The list of subdirectories to update; "." updates the files in the
+  top-level directory.  If no directories are specified, the default list is
+
+    . compilers doc include scripts src
+
+</pre>
+
+<hr>
+
+<a name="ref_Update_ProjectsUsage"></a>
+<h2><tt>update_projects.sh</tt> Usage</h2>
+
+<pre>
+
+Usage: update_projects.sh &lt;project-list&gt;
+
+This script supports two modes of operation:
+
+  * If you run it from the top level of an existing checkout of the
+    C++ source tree, it will update the sources and headers for the
+    specified projects.
+
+  * If you run it from a newly created root (determined by the absence
+    of CVS directories), it will check out the specified portion of
+    the C++ tree, along with any additional infrastructure needed for
+    the build system to work.
+
+The syntax for project lists is documented at
+http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/config.html#ref_ProjectList
+
+</pre>
+
+<hr>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
+
+<!-- Begin footer content -->
+
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<script>
+<!--
+print_author('lanczyck', 'Chris Lanczycki', '$Date$', 'ncbi.nlm.nih.gov');
+// -->
+</script>
+</table>
+
+
+<!--#include virtual="./ssi/footer.shtml" -->
