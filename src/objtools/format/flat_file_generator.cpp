@@ -45,6 +45,7 @@
 #include <objtools/format/format_item_ostream.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/context.hpp>
+#include <objtools/format/flat_expt.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -64,9 +65,11 @@ CFlatFileGenerator::CFlatFileGenerator
  TStyle  style,
  TFilter filter,
  TFlags  flags) :
-    m_Scope(scope), m_Format(format), m_Mode(mode), m_Style(style),
-    m_Filter(filter), m_Flags(flags)
+    m_Ctx(new CFFContext(scope, format, mode, style, filter, flags))
 {
+    if ( !m_Ctx ) {
+       NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
+    }
 }
 
 
@@ -77,24 +80,28 @@ CFlatFileGenerator::~CFlatFileGenerator(void)
 }
 
 
-
 // Generate a flat-file report for a Seq-entry
 
 void CFlatFileGenerator::Generate
 (const CSeq_entry& entry,
  CFlatItemOStream& item_os)
 {
-    CRef<CFFContext> ctx(new CFFContext(m_Scope, m_Format, 
-        m_Mode, m_Style, m_Filter, m_Flags));
-    ctx->SetTSE(entry);
+    _ASSERT(entry.Which() != CSeq_entry::e_not_set);
 
-    CRef<CFlatItemFormatter>  formatter(CFlatItemFormatter::New(m_Format));
+    m_Ctx->SetTSE(entry);
+
+    CRef<CFlatItemFormatter>  formatter(CFlatItemFormatter::New(m_Ctx->GetFormat()));
+    if ( !formatter ) {
+        NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
+    }
+    formatter->SetContext(*m_Ctx);
     item_os.SetFormatter(formatter);
 
-    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(m_Format));
-    if ( gatherer ) {
-        gatherer->Gather(*ctx, item_os);
+    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(m_Ctx->GetFormat()));
+    if ( !gatherer ) {
+        NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
     }
+    gatherer->Gather(*m_Ctx, item_os);
 }
 
 
@@ -112,12 +119,32 @@ void CFlatFileGenerator::Generate
     // Seq-entry
     const CSeq_entry& entry = *(submit.GetData().GetEntrys().front());
 
-    CRef<CFFContext> ctx(new CFFContext(m_Scope, m_Format, 
-        m_Mode, m_Style, m_Filter, m_Flags));
-    ctx->SetSubmit(submit.GetSub());
+    m_Ctx->SetSubmit(submit.GetSub());
     Generate(entry, item_os);
 }
 
+
+void CFlatFileGenerator::Generate
+(const CSeq_loc& loc,
+ CFlatItemOStream& item_os)
+{
+    if ( !loc.IsWhole()  ||  !loc.IsInt() ) {
+        NCBI_THROW(CFlatException, eInvalidParam, 
+            "locations must be an interval on a bioseq (or whole)");
+    }
+
+    const CSeq_entry* entry = 0;
+    CBioseq_Handle bsh = m_Ctx->GetScope().GetBioseqHandle(loc);
+    if ( bsh ) {
+        const CSeq_entry* entry = bsh.GetBioseq().GetParentEntry();
+    }
+    if ( entry == 0 ) {
+        NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
+    }
+    m_Ctx->SetLocation(&loc);
+
+    Generate(*entry, item_os);
+}
 
 
 void CFlatFileGenerator::Generate(const CSeq_entry& entry, CNcbiOstream& os)
@@ -151,6 +178,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:13:11  shomrat
+* Added GFF foramt; changed internal representation
+*
 * Revision 1.2  2003/12/18 17:43:33  shomrat
 * context.hpp moved
 *
