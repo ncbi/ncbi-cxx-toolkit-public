@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/06/01 18:35:12  vakatov
+ * Dont log with level "eLOG_Fatal" (it exits/coredumps now)
+ *
  * Revision 6.2  2000/04/07 20:00:51  vakatov
  * + <errno.h>
  *
@@ -273,7 +276,7 @@ static void TEST_CORE_Log(void)
   LOG_WRITE(x_log, eLOG_Trace, 0);
   LOG_Write(x_log, eLOG_Trace, 0, 0, 0, 0);
   LOG_WRITE(x_log, eLOG_Warning, "");
-  LOG_WRITE(x_log, eLOG_Fatal, "Something fatal");
+  /* LOG_WRITE(x_log, eLOG_Fatal, "Something fatal"); */
 #undef  THIS_MODULE
 #define THIS_MODULE "FooModuleName"
   LOG_WRITE(x_log, eLOG_Error, "With changed module name");
@@ -316,7 +319,7 @@ static void TEST_UTIL_Log(void)
   LOG_WRITE(x_log, eLOG_Trace, 0);
   LOG_Write(x_log, eLOG_Trace, 0, 0, 0, 0);
   LOG_WRITE(x_log, eLOG_Warning, "");
-  LOG_WRITE(x_log, eLOG_Fatal, "Something fatal");
+  /* LOG_WRITE(x_log, eLOG_Fatal, "Something fatal"); */
 #undef  THIS_MODULE
 #define THIS_MODULE "FooModuleName"
   LOG_WRITE(x_log, eLOG_Error, "With changed module name");
