@@ -23,54 +23,10 @@
 *
 * ===========================================================================
 *
-* File Name:  $Id$
-*
 * Author:  Michael Kholodov
 *   
-* File Description:  DataSource implementation
-*
-*
-* $Log$
-* Revision 1.11  2002/11/27 17:09:52  kholodov
-* Fixed: Resolved version conflict.
-*
-* Revision 1.10  2002/11/27 16:59:38  ucko
-* Drop definitions of CToMultiExHandler methods now found in err_handler.cpp.
-*
-* Revision 1.9  2002/10/03 18:50:00  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.8  2002/09/30 19:16:27  kholodov
-* Added: public GetHandler() method
-*
-* Revision 1.7  2002/09/23 18:35:24  kholodov
-* Added: GetErrorInfo() and GetErrorAsEx() methods.
-*
-* Revision 1.6  2002/09/18 18:49:27  kholodov
-* Modified: class declaration and Action method to reflect
-* direct inheritance of CActiveObject from IEventListener
-*
-* Revision 1.5  2002/09/09 20:48:57  kholodov
-* Added: Additional trace output about object life cycle
-* Added: CStatement::Failed() method to check command status
-*
-* Revision 1.4  2002/04/15 19:11:42  kholodov
-* Changed GetContext() -> GetDriverContext
-*
-* Revision 1.3  2002/02/08 17:38:26  kholodov
-* Moved listener registration to parent objects
-*
-* Revision 1.2  2002/02/06 22:21:57  kholodov
-* Reformatted the source code
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
+* File Description:
+*   DataSource implementation
 *
 */
 
@@ -78,7 +34,9 @@
 #include "conn_impl.hpp"
 #include "err_handler.hpp"
 
+
 BEGIN_NCBI_SCOPE
+
 
 CDataSource::CDataSource(I_DriverContext *ctx)
     : m_loginTimeout(30), m_context(ctx), m_poolUsed(false),
@@ -182,3 +140,49 @@ void CDataSource::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 
 
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.12  2003/11/04 21:36:02  vakatov
+ * Minor style fixes
+ *
+ * Revision 1.11  2002/11/27 17:09:52  kholodov
+ * Fixed: Resolved version conflict.
+ *
+ * Revision 1.10  2002/11/27 16:59:38  ucko
+ * Drop definitions of CToMultiExHandler methods now found in err_handler.cpp.
+ *
+ * Revision 1.9  2002/10/03 18:50:00  kholodov
+ * Added: additional TRACE diagnostics about object deletion
+ * Fixed: setting parameters in IStatement object is fully supported
+ * Added: IStatement::ExecuteLast() to execute the last statement with
+ * different parameters if any
+ *
+ * Revision 1.8  2002/09/30 19:16:27  kholodov
+ * Added: public GetHandler() method
+ *
+ * Revision 1.7  2002/09/23 18:35:24  kholodov
+ * Added: GetErrorInfo() and GetErrorAsEx() methods.
+ *
+ * Revision 1.6  2002/09/18 18:49:27  kholodov
+ * Modified: class declaration and Action method to reflect
+ * direct inheritance of CActiveObject from IEventListener
+ *
+ * Revision 1.5  2002/09/09 20:48:57  kholodov
+ * Added: Additional trace output about object life cycle
+ * Added: CStatement::Failed() method to check command status
+ *
+ * Revision 1.4  2002/04/15 19:11:42  kholodov
+ * Changed GetContext() -> GetDriverContext
+ *
+ * Revision 1.3  2002/02/08 17:38:26  kholodov
+ * Moved listener registration to parent objects
+ *
+ * Revision 1.2  2002/02/06 22:21:57  kholodov
+ * Reformatted the source code
+ *
+ * Revision 1.1  2002/01/30 14:51:21  kholodov
+ * User DBAPI implementation, first commit
+ * ===========================================================================
+ */
