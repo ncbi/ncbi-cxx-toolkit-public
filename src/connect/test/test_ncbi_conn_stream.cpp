@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/25 17:12:01  lavr
+ * Added: buffers and LOG freed upon program exit
+ *
  * Revision 6.4  2001/01/23 23:21:03  lavr
  * Added proper logging
  *
@@ -140,6 +143,10 @@ int main(void)
         LOG_POST(Info << "Reply received okay!");
 
     CORE_SetREG(0);
+    CORE_SetLOG(0);
+
+    delete[] buf1;
+    delete[] buf2;
 
     return 0/*okay*/;
 }
