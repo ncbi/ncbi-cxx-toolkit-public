@@ -39,7 +39,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
+// super set of feature qualifiers defined by the consortium and genbank
+// specific qualifiers.
 enum EFeatureQualifier {
     eFQ_none,
     eFQ_allele,
@@ -132,7 +133,6 @@ enum EFeatureQualifier {
     eFQ_usedin,
     eFQ_xtra_prod_quals
 };
-
 
 enum ESourceQualifier {
     eSQ_none,
@@ -229,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/19 14:43:27  shomrat
+* added comment
+*
 * Revision 1.2  2004/03/05 18:49:55  shomrat
 * added feature qualifiers
 *
