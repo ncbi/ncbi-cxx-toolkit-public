@@ -239,47 +239,40 @@ public:
       m_Buffer(0),
       m_BytesInBuffer(0),
       m_OverflowFile(0),
-      m_StampSubKey(stamp_subkey)
+      m_StampSubKey(stamp_subkey),
+	  m_AttrUpdFlag(false)
     {
         m_Buffer = new unsigned char[s_WriterBufferSize];
     }
 
     virtual ~CBDB_CacheIWriter()
     {
-        // Dumping the buffer
-        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+		if (!m_AttrUpdFlag || m_Buffer != 0) { 
+			// Dumping the buffer
+			CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-        CBDB_Transaction trans(*m_AttrDB.GetEnv());
-        m_AttrDB.SetTransaction(&trans);
-        m_BlobDB.SetTransaction(&trans);
+			CBDB_Transaction trans(*m_AttrDB.GetEnv());
+			m_AttrDB.SetTransaction(&trans);
+			m_BlobDB.SetTransaction(&trans);
 
-        if (m_Buffer) {
-            _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
-            m_BlobStream->SetTransaction(&trans);
-            m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
-            m_BlobDB.Sync();
-            delete[] m_Buffer;
-        }
+			if (m_Buffer) {
+				_TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+				m_BlobStream->SetTransaction(&trans);
+				m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
+				m_BlobDB.Sync();
+				delete[] m_Buffer;
+			}
+
+			if (!m_AttrUpdFlag) {
+				x_UpdateAttributes();
+			}
+
+			trans.Commit();
+			m_AttrDB.GetEnv()->TransactionCheckpoint();
+		}
+
         delete m_BlobStream;
 
-
-        m_AttrDB.key = m_BlobKey.c_str();
-        m_AttrDB.version = m_Version;
-        m_AttrDB.subkey = m_StampSubKey ? m_SubKey : "";
-        m_AttrDB.overflow = 0;
-
-        CTime time_stamp(CTime::eCurrent);
-        m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
-
-        if (m_OverflowFile) {
-            m_AttrDB.overflow = 1;
-            delete m_OverflowFile;
-        }
-        m_AttrDB.UpdateInsert();
-        m_AttrDB.Sync();
-
-        trans.Commit();
-        m_AttrDB.GetEnv()->TransactionCheckpoint();
     }
 
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -288,6 +281,7 @@ public:
         *bytes_written = 0;
         if (count == 0)
             return eRW_Success;
+		m_AttrUpdFlag = false;
 
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -351,6 +345,8 @@ public:
                 return eRW_Error;
             }
         }
+		
+		x_UpdateAttributes();
 
         trans.Commit();
         m_AttrDB.GetEnv()->TransactionCheckpoint();
@@ -375,6 +371,38 @@ private:
         }
     }
 
+	void x_UpdateAttributes()
+	{
+        m_AttrDB.key = m_BlobKey.c_str();
+        m_AttrDB.version = m_Version;
+        //m_AttrDB.subkey = m_StampSubKey ? m_SubKey : "";
+		m_AttrDB.subkey = m_SubKey;
+        m_AttrDB.overflow = 0;
+
+        CTime time_stamp(CTime::eCurrent);
+        m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+
+        if (m_OverflowFile) {
+            m_AttrDB.overflow = 1;
+            delete m_OverflowFile;
+        }
+        m_AttrDB.UpdateInsert();
+
+		// Time stamp the key with empty subkey
+		if (!m_StampSubKey) {
+			m_AttrDB.key = m_BlobKey.c_str();
+			m_AttrDB.version = m_Version;
+			m_AttrDB.subkey = "";
+			m_AttrDB.overflow = 0;
+
+			CTime time_stamp(CTime::eCurrent);
+			m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+	        m_AttrDB.UpdateInsert();
+		}
+        m_AttrDB.Sync();
+		m_AttrUpdFlag = true;
+	}
+
 private:
     CBDB_CacheIWriter(const CBDB_CacheIWriter&);
     CBDB_CacheIWriter& operator=(const CBDB_CacheIWriter&);
@@ -394,6 +422,7 @@ private:
     CNcbiOfstream*        m_OverflowFile;
 
     int                   m_StampSubKey;
+	bool                  m_AttrUpdFlag; ///< Falgs attributes are up to date
 };
 
 
@@ -597,11 +626,16 @@ void CBDB_Cache::Store(const string&  key,
 
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
+    //m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
+	m_CacheAttrDB->subkey = subkey;
     m_CacheAttrDB->time_stamp = (unsigned)time_stamp.GetTimeT();
     m_CacheAttrDB->overflow = overflow;
 
     m_CacheAttrDB->UpdateInsert();
+
+	if (!(m_TimeStampFlag & fTrackSubKey)) {
+		x_UpdateAccessTime_NonTrans(key, version, subkey);
+	}
 
     trans.Commit();
     m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
@@ -612,16 +646,15 @@ size_t CBDB_Cache::GetSize(const string&  key,
                            int            version,
                            const string&  subkey)
 {
+	EBDB_ErrCode ret;
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    m_CacheAttrDB->key = key;
-    m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
-
-    EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
-    if (ret != eBDB_Ok) {
-        return 0;
-    }
+	int overflow;
+	bool rec_exists = x_RetrieveBlobAttributes(key, version, subkey, &overflow);
+	if (!rec_exists) {
+		return 0;
+	}
 
     // check expiration here
     if (m_TimeStampFlag & fCheckExpirationAlways) {
@@ -629,8 +662,6 @@ size_t CBDB_Cache::GetSize(const string&  key,
             return 0;
         }
     }
-
-    int overflow = m_CacheAttrDB->overflow;
 
     if (overflow) {
         string path;
@@ -663,16 +694,15 @@ bool CBDB_Cache::Read(const string& key,
                       void*         buf, 
                       size_t        buf_size)
 {
+	EBDB_ErrCode ret;
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    m_CacheAttrDB->key = key;
-    m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
-
-    EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
-    if (ret != eBDB_Ok) {
-        return false;
-    }
+	int overflow;
+	bool rec_exists = x_RetrieveBlobAttributes(key, version, subkey, &overflow);
+	if (!rec_exists) {
+		return false;
+	}
 
     // check expiration
     if (m_TimeStampFlag & fCheckExpirationAlways) {
@@ -681,7 +711,6 @@ bool CBDB_Cache::Read(const string& key,
         }
     }
 
-    int overflow = m_CacheAttrDB->overflow;
 
     if (overflow) {
         string path;
@@ -725,16 +754,15 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
                                    int            version,
                                    const string&  subkey)
 {
+	EBDB_ErrCode ret;
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    m_CacheAttrDB->key = key;
-    m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
-
-    EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
-    if (ret != eBDB_Ok) {
-        return 0;
-    }
+	int overflow;
+	bool rec_exists = x_RetrieveBlobAttributes(key, version, subkey, &overflow);
+	if (!rec_exists) {
+		return 0;
+	}
 
     // check expiration
     if (m_TimeStampFlag & fCheckExpirationAlways) {
@@ -742,8 +770,6 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
             return 0;
         }
     }
-
-    int overflow = m_CacheAttrDB->overflow;
 
     // Check if it's an overflow BLOB (external file)
 
@@ -787,12 +813,6 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
         x_UpdateAccessTime(key, version, subkey);
     }
     return new CBDB_CacheIReader(buf, bsize);
-
-/*
-    CBDB_BLobStream* bstream = m_BlobDB.CreateStream();
-    return new CBDB_BLOB_CacheIReader(bstream);
-*/
-
 }
 
 
@@ -1074,6 +1094,16 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
     m_CacheDB->SetTransaction(&trans);
     m_CacheAttrDB->SetTransaction(&trans);
 
+	x_UpdateAccessTime_NonTrans(key, version, subkey);
+
+    trans.Commit();
+}
+
+
+void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
+                                             int            version,
+                                             const string&  subkey)
+{
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
     m_CacheAttrDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
@@ -1087,8 +1117,6 @@ void CBDB_Cache::x_UpdateAccessTime(const string&  key,
     m_CacheAttrDB->time_stamp = (unsigned)time_stamp.GetTimeT();
 
     m_CacheAttrDB->UpdateInsert();
-
-    trans.Commit();
 }
 
 
@@ -1115,6 +1143,34 @@ void CBDB_Cache::x_TruncateDB()
             }
         }
     }
+}
+
+
+bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
+                                          int            version,
+                                          const string&  subkey,
+										  int*           overflow)
+{
+    m_CacheAttrDB->key = key;
+    m_CacheAttrDB->version = version;
+    m_CacheAttrDB->subkey = subkey;
+
+    EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
+    if (ret != eBDB_Ok) {
+        return false;
+    }
+
+	*overflow = m_CacheAttrDB->overflow;
+
+	if (!(m_TimeStampFlag & fTrackSubKey)) {
+	    m_CacheAttrDB->subkey = "";
+
+		EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
+		if (ret != eBDB_Ok) {
+			return false;
+		}
+	}
+	return true;
 }
 
 
@@ -1197,6 +1253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/06/10 17:14:41  kuznets
+ * Fixed work with overflow files
+ *
  * Revision 1.54  2004/05/25 18:43:51  kuznets
  * Fixed bug in setting cache RAM size, added additional protection when joining
  * existing environment.

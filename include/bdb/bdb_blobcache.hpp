@@ -166,9 +166,27 @@ public:
 private:
     /// Return TRUE if cache item expired according to the current timestamp
     bool x_CheckTimestampExpired();
+
+	/// Transactional update of access time attributes
     void x_UpdateAccessTime(const string&  key,
                             int            version,
                             const string&  subkey);
+
+	/// Non transactional update of access time
+    void x_UpdateAccessTime_NonTrans(const string&  key,
+                                     int            version,
+                                     const string&  subkey);
+
+	/// 1. Retrive overflow attributes for the BLOB (using subkey)
+	/// 2. If required retrive empty subkey attribute record 
+	///    (for timestamp check)
+	///
+	/// @return TRUE if the attribute record found
+	bool x_RetrieveBlobAttributes(const string&  key,
+                                 int            version,
+                                 const string&  subkey,
+								 int*           overflow);
+
     void x_DropBlob(const char*    key,
                     int            version,
                     const char*    subkey,
@@ -240,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/06/10 17:14:57  kuznets
+ * Fixed work with overflow files
+ *
  * Revision 1.17  2004/05/24 18:02:49  kuznets
  * CBDB_Cache::Open added parameter to specify RAM cache size
  *
