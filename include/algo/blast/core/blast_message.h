@@ -47,11 +47,19 @@ Detailed Contents:
 extern "C" {
 #endif
 
+/** Blast error message severities */
+typedef enum {
+   BLAST_SEV_INFO = 0,
+   BLAST_SEV_WARNING,
+   BLAST_SEV_ERROR,
+   BLAST_SEV_FATAL
+} BlastSeverity;
+
 /** Structure to hold the a message from the BLAST code. */
 typedef struct Blast_Message {
-	Int4 severity;		/**< severity code (0, 1, 2, 3) */
+	BlastSeverity severity; /**< severity code (0, 1, 2, 3) */
 	Int4 code;		/**< major code for error. */
-	Int4 subcode;		/**< minor code for this error. */
+	Int4 subcode;	/**< minor code for this error. */
 	char* message;	/**< User message to be saved. */
 } Blast_Message;
 
@@ -70,8 +78,8 @@ Blast_Message* Blast_MessageFree(Blast_Message* blast_msg);
  * @param message User message to be saved [in]
 */
 
-Int2 Blast_MessageWrite(Blast_Message* *blast_msg, Int4 severity, Int4 code,
-        Int4 subcode, const char *message);
+Int2 Blast_MessageWrite(Blast_Message* *blast_msg, BlastSeverity severity, 
+                        Int4 code, Int4 subcode, const char *message);
 
 
 /** Print a message with ErrPostEx
