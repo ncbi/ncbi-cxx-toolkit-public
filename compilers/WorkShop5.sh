@@ -42,7 +42,7 @@ fi
 CC="$WS_BIN/cc"
 CXX="$WS_BIN/CC"
 
-THREAD_LIBS="-lthread -lpthread"
+THREAD_LIBS="-mt -lthread -lpthread"
 
 
 ## Configure
