@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/12/07 18:52:02  grichenk
+* Updated "#include"-s and forward declarations to work with the
+* new datatool version.
+*
 * Revision 1.5  2001/11/02 20:54:50  ucko
 * Make gbqual.hpp private; clean up cruft from genbank.hpp.
 *
@@ -72,6 +76,7 @@ class COrg_ref;
 class CSeq_entry;
 class CSeq_feat;
 class CSeq_loc;
+class CSeq_interval;
 
 class CGenbankWriter
 {

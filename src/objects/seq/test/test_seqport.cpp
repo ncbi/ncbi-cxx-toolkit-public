@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/12/07 18:52:05  grichenk
+ * Updated "#include"-s and forward declarations to work with the
+ * new datatool version.
+ *
  * Revision 1.2  2001/11/13 12:14:29  clausen
  * Changed call to CGencode::Translate to reflect new type for code breaks
  *
@@ -57,6 +61,7 @@
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
+#include <objects/seq/Seq_inst.hpp>
 
 #include <objects/seq/gencode.hpp>
 #include <objects/seq/seqport_util.hpp>

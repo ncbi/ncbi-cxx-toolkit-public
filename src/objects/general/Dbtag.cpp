@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/12/07 18:52:04  grichenk
+ * Updated "#include"-s and forward declarations to work with the
+ * new datatool version.
+ *
  * Revision 6.2  2000/12/15 19:22:10  ostell
  * made AsString do Upcase, and switched to using PNocase().Equals()
  *
@@ -49,6 +53,7 @@
 
 // generated includes
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
 
 // generated classes
