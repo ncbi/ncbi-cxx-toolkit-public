@@ -93,9 +93,6 @@ public:
     CSeqVector(const CSeqMap& seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
-    CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
-               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
-               ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeq_loc& loc, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);
@@ -352,6 +349,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/12/06 17:10:50  grichenk
+* Removed constructor accepting CConstRef<CSeqMap>
+*
 * Revision 1.54  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *

@@ -148,19 +148,6 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 }
 
 
-CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
-                       EVectorCoding coding, ENa_strand strand)
-    : m_SeqMap(seqMap),
-      m_Scope(&scope),
-      m_Size(seqMap->GetLength(&scope)),
-      m_Mol(seqMap->GetMol()),
-      m_Strand(strand),
-      m_Coding(CSeq_data::e_not_set)
-{
-    m_Iterator.x_SetVector(*this);
-    SetCoding(coding);
-}
-
 CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
     : m_SeqMap(&seqMap),
@@ -412,6 +399,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/12/06 17:10:50  grichenk
+* Removed constructor accepting CConstRef<CSeqMap>
+*
 * Revision 1.70  2004/10/27 16:41:39  vasilche
 * Use 0xff to represent gaps in CSeqVector with NCBI2na encoding.
 *
