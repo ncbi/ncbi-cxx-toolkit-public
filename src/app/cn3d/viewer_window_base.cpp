@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/07/23 20:24:23  thiessen
+* need redraw if no matches found
+*
 * Revision 1.17  2001/07/23 20:09:23  thiessen
 * add regex pattern search
 *
@@ -375,7 +378,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
     wxString pattern = wxGetTextFromUser(messageWithHelp, "Input pattern", "", this);
     if (pattern.size() == 0) return;
 
-    GlobalMessenger()->RemoveAllHighlights(false);
+    GlobalMessenger()->RemoveAllHighlights(true);
 
     // highlight pattern from each (unique) sequence in the display
     std::map < const Sequence * , bool > usedSequences;
