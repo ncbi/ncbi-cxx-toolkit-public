@@ -150,7 +150,30 @@ private:
     CConstRef<CObject>  m_Info;
 };
 
-typedef CTSE_Lock TTSE_Lock;
+
+class CTSE_LockSet
+{
+public:
+
+    bool IsEmpty(void) const;
+
+    void Clear(void);
+
+    CTSE_Lock FindLock(const CTSE_Info* info) const;
+
+    bool AddLock(const CTSE_Lock& lock);
+    bool RemoveLock(const CTSE_Lock& lock);
+    bool RemoveLock(const CTSE_Info* info);
+
+    set<CTSE_Lock> GetBestTSEs(void) const;
+    static bool IsBetter(const CTSE_Info& tse1, const CTSE_Info& tse2);
+
+private:
+    typedef map<const CTSE_Info*, CTSE_Lock>  TTSE_LockSet;
+
+    TTSE_LockSet m_TSE_LockSet;
+};
+
 
 /////////////////////////////////////////////////////////////////////
 //
