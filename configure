@@ -3381,7 +3381,7 @@ else
    esac
 fi
 
-ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%; s%^\([0-9][0-9]\)$%\10%; s%^\([0-9]\)$%\100%'`"
+ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9]\)\.\([0-9]\).*%\1\2\3%; s%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%; s%^\([0-9][0-9]\)$%\10%; s%^\([0-9]\)$%\100%'`"
 compiler_version=$ncbi_compiler_ver
 
 # Possible values of NCBI_COMPILER_$ncbi_compiler, since acconfig.h is obsolete
