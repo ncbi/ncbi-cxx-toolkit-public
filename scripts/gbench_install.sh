@@ -255,7 +255,7 @@ if test "`uname`" = Darwin -a -x "$MAC_BINCOPY"; then
 fi
 
 
-src_dir=`cd "$src_dir" && pwd`
+src_dir=`cd "$src_dir" && /bin/pwd`
 target_dir=`echo $target_dir | sed -e 's|/\$||'`
 
 if [ -z "$src_dir" ]; then
@@ -289,7 +289,7 @@ source_dir="${source_dir}/src/gui/gbench"
 x_common_rb="rm -rf $target_dir"
 
 MakeDirs $target_dir
-target_dir=`cd "$target_dir" && pwd`
+target_dir=`cd "$target_dir" && /bin/pwd`
 
 CopyFiles
 
