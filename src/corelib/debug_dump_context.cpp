@@ -33,7 +33,7 @@
  *
  */
 
-#include <corelib/ncbiobj.hpp>
+#include <corelib/dumpable.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -136,12 +136,12 @@ void CDebugDumpContext::Log(const string& name, const void* value,
 }
 
 
-void CDebugDumpContext::Log(const string& name, const CObject* value,
+void CDebugDumpContext::Log(const string& name, const CDumpable* value,
     unsigned int depth)
 {
     if ((depth != 0) && value) {
         CDebugDumpContext ddc(*this,name);
-        CObject::DebugDump(*value, ddc, depth-1);
+        CDumpable::DebugDump(*value, ddc, depth-1);
     } else {
         Log(name, dynamic_cast<const void*>(value));
     }
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
+ *  Revision 1.4  2002/05/14 21:12:11  gouriano
+ *  DebugDump() moved into a separate class
+ *
  *  Revision 1.3  2002/05/14 16:24:55  gouriano
  *  *** empty log message ***
  *

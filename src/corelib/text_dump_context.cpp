@@ -30,7 +30,6 @@
  *
  */
 
-#include <corelib/ncbiobj.hpp>
 #include <corelib/text_dump_context.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -137,6 +136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
+ *  Revision 1.3  2002/05/14 21:12:11  gouriano
+ *  DebugDump() moved into a separate class
+ *
  *  Revision 1.2  2002/05/14 16:58:58  gouriano
  *  removed stringstream usage - replaced by plain string
  *
