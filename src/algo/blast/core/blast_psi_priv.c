@@ -380,10 +380,10 @@ _PSISequenceWeightsNew(const PSIMsaDimensions* dimensions,
     }
 
     retval->match_weights = (double**) 
-        _PSIAllocateMatrix(dimensions->query_length + 1, 
+        _PSIAllocateMatrix(dimensions->query_length, 
                            sbp->alphabet_size, 
                            sizeof(double));
-    retval->match_weights_size = dimensions->query_length + 1;
+    retval->match_weights_size = dimensions->query_length;
     if ( !retval->match_weights ) {
         return _PSISequenceWeightsFree(retval);
     }
@@ -1212,8 +1212,7 @@ _PSICalculateMatchWeights(
         seq_weights->match_weights[position][residue] += 
             seq_weights->norm_seq_weights[seq_idx];
 
-        /* FIXME: this field is populated but never used, should be moved to
-         * diagnostics structure */
+        /* Collected for diagnostics information, not used elsewhere */
         if (residue != GAP) {
             seq_weights->gapless_column_weights[position] +=
              seq_weights->norm_seq_weights[seq_idx];
@@ -1343,8 +1342,10 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
 
 /****************************************************************************/
 /******* Compute residue frequencies stage of PSSM creation *****************/
-/* port of posComputePseudoFreqs, but this function does not calculate the
- * information content as its predecessor did */
+
+/* Implements formula 2 in Nucleic Acids Research, 2001, Vol 29, No 14.
+   Subscripts are indicated as follows: N_i, where i is a subscript of N.
+ */
 int
 _PSIComputeResidueFrequencies(const _PSIMsa* msa,     /* [in] */
                               const _PSISequenceWeights* seq_weights, /* [in] */
@@ -1375,35 +1376,36 @@ _PSIComputeResidueFrequencies(const _PSIMsa* msa,     /* [in] */
                 internal_pssm->res_freqs[p][r] = 0.0;
             } else {
 
-                Uint4 interval_size = 0; /* length of a block */
                 Uint4 i = 0;             /* loop index */
-                double sigma = 0.0;      /* number of chars in an interval */
 
-                double pseudo = 0.0;            /* intermediate term */
+                /* beta( Sum_j(f_j r_ij) ) in formula 2 */
+                double pseudo = 0.0;            
+                /* Effective number of independent observations for column p */
+                double alpha = 0.0;
+                /* Renamed to match the formula in the paper */
+                double beta = pseudo_count;
                 double numerator = 0.0;         /* intermediate term */
                 double denominator = 0.0;       /* intermediate term */
                 double qOverPEstimate = 0.0;    /* intermediate term */
 
-                /* changed to matrix specific ratios here May 2000 */
+                /* As specified in 2001 paper, underlying matrix frequency 
+                   ratios are used here */
                 for (i = 0; i < (Uint4) sbp->alphabet_size; i++) {
                     if (sbp->matrix[r][i] != BLAST_SCORE_MIN) {
                         pseudo += (seq_weights->match_weights[p][i] *
                                    freq_ratios->data[r][i]);
                     }
                 }
-                pseudo *= pseudo_count;
+                pseudo *= beta;
 
-                /* FIXME: document where this formula is coming from
-                 * (probably 2001 paper, p 2996) */
-                sigma = seq_weights->sigma[p];
-                interval_size = aligned_blocks->size[p];
+                alpha = seq_weights->sigma[p]/aligned_blocks->size[p]-1;
 
-                numerator = pseudo + 
-                    ((sigma/interval_size-1) * 
-                     seq_weights->match_weights[p][r] / 
-                     seq_weights->std_prob[r]);
+                numerator =
+                    (alpha * seq_weights->match_weights[p][r] / 
+                     seq_weights->std_prob[r]) 
+                    + pseudo;
 
-                denominator = (sigma/interval_size-1) + pseudo_count;
+                denominator = alpha + beta;
 
                 qOverPEstimate = numerator/denominator;
 
@@ -2059,6 +2061,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/08/31 16:13:28  camacho
+ * Documentation changes
+ *
  * Revision 1.22  2004/08/13 22:32:16  camacho
  * Refactoring of _PSIPurgeSimilarAlignments to use finite state machine
  *

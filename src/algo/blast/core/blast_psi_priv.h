@@ -180,12 +180,14 @@ _PSIAlignedBlockNew(Uint4 num_positions);
 _PSIAlignedBlock*
 _PSIAlignedBlockFree(_PSIAlignedBlock* aligned_blocks);
 
-/** FIXME: Where are the formulas for these? Need better names */
+/** Internal data structure to keep computed sequence weights */
 typedef struct _PSISequenceWeights {
-    double** match_weights; /* observed residue frequencies (fi in paper) 
-                               dimensions are query_length+1 by BLASTAA_SIZE
+    double** match_weights; /**< weighted observed residue frequencies (f_i
+                               in 2001 paper). Dimensions are query_length 
+                               by BLASTAA_SIZE
                              */
-    Uint4 match_weights_size;    /* kept for deallocation purposes */
+    Uint4 match_weights_size;    /**< kept for help deallocate the field above
+                                   */
 
     double* norm_seq_weights;   /**< Stores the normalized sequence weights
                                   (size num_seqs + 1) */
@@ -410,6 +412,9 @@ _PSICalculateInformationContentFromResidueFreqs(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/08/31 16:13:28  camacho
+ * Documentation changes
+ *
  * Revision 1.12  2004/08/04 20:18:26  camacho
  * 1. Renaming of structures and functions that pertain to the internals of PSSM
  *    engine.
