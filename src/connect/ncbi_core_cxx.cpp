@@ -61,9 +61,6 @@ static void s_REG_Get(void* user_data,
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_REG_Get() failed", e);
     }
-    catch (exception& e) {
-        ERR_POST("s_REG_Get() failed" << ": " << e.what());
-    }
     STD_CATCH_ALL("s_REG_Get() failed");
 }
 
@@ -81,9 +78,6 @@ static void s_REG_Set(void* user_data,
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_REG_Set() failed", e);
     }
-    catch (exception& e) {
-        ERR_POST("s_REG_Set() failed" << ": " << e.what());
-    }
     STD_CATCH_ALL("s_REG_Set() failed");
 }
 
@@ -95,9 +89,6 @@ static void s_REG_Cleanup(void* user_data) THROWS_NONE
     }
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_REG_Cleanup() failed", e);
-    }
-    catch (exception& e) {
-        ERR_POST("s_REG_Cleanup() failed" << ": " << e.what());
     }
     STD_CATCH_ALL("s_REG_Cleanup() failed");
 }
@@ -168,9 +159,6 @@ static void s_LOG_Handler(void*         /*user_data*/,
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_LOG_Handler() failed", e);
     }
-    catch (exception& e) {
-        ERR_POST("s_LOG_Handler() failed" << ": " << e.what());
-    }
     STD_CATCH_ALL("s_LOG_Handler() failed");
 }
 
@@ -212,9 +200,6 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_LOCK_Handler() failed", e);
     }
-    catch (exception& e) {
-        ERR_POST("s_LOCK_Handler() failed" << ": " << e.what());
-    }
     STD_CATCH_ALL("s_LOCK_Handler() failed");
     return 0/*false*/;
 }
@@ -227,9 +212,6 @@ static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
     }
     catch (CException& e) {
         NCBI_REPORT_EXCEPTION("s_LOCK_Cleanup() failed", e);
-    }
-    catch (exception& e) {
-        ERR_POST("s_LOCK_Cleanup() failed" << ": " << e.what());
     }
     STD_CATCH_ALL("s_LOCK_Cleanup() failed");
 }
@@ -263,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/12/19 20:48:33  lavr
+ * Fix double exception handling in both catch() and STD_CATCH_ALL()
+ *
  * Revision 6.14  2002/12/19 17:33:47  lavr
  * More complete (and consistent with corelib) exception handling
  *
