@@ -171,7 +171,8 @@ CDB_Connection* CConnection::CloneCDB_Conn()
                                GetCDB_Connection()->Password(),
                                m_modeMask,
                                true);
-    _TRACE("CDB_Connection cloned");
+    _TRACE("CDB_Connection " << (void*)GetCDB_Connection() 
+        << " cloned, new CDB_Connection: " << (void*)temp);
     SetDbName(m_database, temp);
     return temp;
 }
@@ -338,7 +339,7 @@ IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
 void CConnection::Action(const CDbapiEvent& e)
 {
     _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName()
-           << "' received from " << e.GetSource()->GetIdent());
+        << "' received from " << e.GetSource()->GetIdent() << " " << (void*)e.GetSource());
 
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
 
@@ -423,9 +424,15 @@ void CConnection::MsgToEx(bool v)
     if( !v ) {
         // Clear the previous handlers if present
         GetCDB_Connection()->PopMsgHandler(GetHandler());
+        _TRACE("MsqToEx(): connection " << (void*)this
+            << ": message handler " << (void*)GetHandler() 
+            << " removed from CDB_Connection " << (void*)GetCDB_Connection());
     }
     else {
         GetCDB_Connection()->PushMsgHandler(GetHandler());
+        _TRACE("MsqToEx(): connection " << (void*)this
+            << ": message handler " << (void*)GetHandler()
+            << " installed on CDB_Connection " << (void*)GetCDB_Connection());
     }
 }
 
@@ -466,6 +473,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.31  2004/10/06 14:49:20  kholodov
+* Added: additional TRACE messages
+*
 * Revision 1.30  2004/07/28 18:36:13  kholodov
 * Added: setting ownership for connection objects
 *
