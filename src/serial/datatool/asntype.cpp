@@ -312,8 +312,46 @@ ASNSetType::ASNSetType()
 bool ASNSetType::CheckValue(const ASNModule& module,
                             const ASNValue& value)
 {
-    value.Warning("not checked");
-    return false;
+    const ASNBlockValue* block = dynamic_cast<const ASNBlockValue*>(&value);
+    if ( !block ) {
+        value.Warning("block of values expected");
+        return false;
+    }
+
+    map<string, const ASNMember*> mms;
+    for ( TMembers::const_iterator m = members.begin();
+          m != members.end(); ++m ) {
+        mms[m->get()->name] = m->get();
+    }
+
+    for ( ASNBlockValue::TValues::const_iterator v = block->values.begin();
+          v != block->values.end(); ++v ) {
+        const ASNNamedValue* currvalue =
+            dynamic_cast<const ASNNamedValue*>(v->get());
+        if ( !currvalue ) {
+            v->get()->Warning("named value expected");
+            return false;
+        }
+        map<string, const ASNMember*>::iterator member =
+            mms.find(currvalue->name);
+        if ( member == mms.end() ) {
+            currvalue->Warning("unexpected member");
+            return false;
+        }
+        if ( !member->second->type->CheckValue(module, *currvalue->value) ) {
+            return false;
+        }
+        mms.erase(member);
+    }
+    
+    for ( map<string, const ASNMember*>::const_iterator member = mms.begin();
+          member != mms.end(); ++member ) {
+        if ( !member->second->Optional() ) {
+            value.Warning(member->first + " member expected");
+            return false;
+        }
+    }
+    return true;
 }
 
 ASNSequenceType::ASNSequenceType()
