@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/30 20:28:15  gouriano
+* Corrected stream iterators to handle implicit containers
+*
 * Revision 1.9  2004/02/02 15:46:30  gouriano
 * corrected CIstreamContainerIterator constructor to handle empty containers
 *
@@ -325,8 +328,21 @@ CIStreamContainerIterator::CIStreamContainerIterator(CObjectIStream& in,
                                      const CObjectTypeInfo& containerType)
     : CParent(in), m_ContainerType(containerType), m_State(eElementEnd)
 {
-    const CContainerTypeInfo* containerTypeInfo =
-        GetContainerType().GetContainerTypeInfo();
+    const CContainerTypeInfo* containerTypeInfo;
+    if (m_ContainerType.GetTypeFamily() == eTypeFamilyClass) {
+        const CClassTypeInfo* classType =
+            CTypeConverter<CClassTypeInfo>::SafeCast(m_ContainerType.GetTypeInfo());
+        const CItemInfo* itemInfo =
+            classType->GetItems().GetItemInfo(classType->GetItems().FirstIndex());
+        _ASSERT(itemInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer);
+        containerTypeInfo =
+            CTypeConverter<CContainerTypeInfo>::SafeCast(itemInfo->GetTypeInfo());
+        in.PushFrame(CObjectStackFrame::eFrameNamed, m_ContainerType.GetTypeInfo());
+        in.BeginNamedType(m_ContainerType.GetTypeInfo());
+    } else {
+        containerTypeInfo = GetContainerType().GetContainerTypeInfo();
+    }
+
     in.PushFrame(CObjectStackFrame::eFrameArray, containerTypeInfo);
     in.BeginContainer(containerTypeInfo);
     
@@ -338,6 +354,10 @@ CIStreamContainerIterator::CIStreamContainerIterator(CObjectIStream& in,
         in.PopFrame();
         in.EndContainer();
         in.PopFrame();
+        if (m_ContainerType.GetTypeFamily() == eTypeFamilyClass) {
+            in.EndNamedType();
+            in.PopFrame();
+        }
     }
 }
 
@@ -383,6 +403,10 @@ void CIStreamContainerIterator::NextElement(void)
         GetStream().PopFrame();
         GetStream().EndContainer();
         GetStream().PopFrame();
+        if (m_ContainerType.GetTypeFamily() == eTypeFamilyClass) {
+            GetStream().EndNamedType();
+            GetStream().PopFrame();
+        }
     }
 }
 
@@ -450,8 +474,20 @@ COStreamContainer::COStreamContainer(CObjectOStream& out,
                                      const CObjectTypeInfo& containerType)
     : CParent(out), m_ContainerType(containerType)
 {
-    const CContainerTypeInfo* containerTypeInfo = 
-        GetContainerType().GetContainerTypeInfo();
+    const CContainerTypeInfo* containerTypeInfo;
+    if (m_ContainerType.GetTypeFamily() == eTypeFamilyClass) {
+        const CClassTypeInfo* classType =
+            CTypeConverter<CClassTypeInfo>::SafeCast(m_ContainerType.GetTypeInfo());
+        const CItemInfo* itemInfo =
+            classType->GetItems().GetItemInfo(classType->GetItems().FirstIndex());
+        _ASSERT(itemInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyContainer);
+        containerTypeInfo =
+            CTypeConverter<CContainerTypeInfo>::SafeCast(itemInfo->GetTypeInfo());
+        out.PushFrame(CObjectStackFrame::eFrameNamed, m_ContainerType.GetTypeInfo());
+        out.BeginNamedType(m_ContainerType.GetTypeInfo());
+    } else {
+        containerTypeInfo = GetContainerType().GetContainerTypeInfo();
+    }
     out.PushFrame(CObjectStackFrame::eFrameArray, containerTypeInfo);
     out.BeginContainer(containerTypeInfo);
 
@@ -467,6 +503,10 @@ COStreamContainer::~COStreamContainer(void)
             GetStream().PopFrame();
             GetStream().EndContainer();
             GetStream().PopFrame();
+            if (m_ContainerType.GetTypeFamily() == eTypeFamilyClass) {
+                GetStream().EndNamedType();
+                GetStream().PopFrame();
+            }
         }
         catch (...) {
             GetStream().SetFailFlags(CObjectOStream::fIllegalCall,
