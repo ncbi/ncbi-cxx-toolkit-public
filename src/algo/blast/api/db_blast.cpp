@@ -174,7 +174,7 @@ CPrelimBlastThread::~CPrelimBlastThread()
 /// method.
 void* CPrelimBlastThread::Main(void) 
 {
-    int status = m_iBlaster->Run();
+    intptr_t status = m_iBlaster->Run();
     return (void*) status;
 }
 
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2005/01/28 14:32:38  coulouri
+ * use intptr_t when casting to void pointer
+ *
  * Revision 1.53  2005/01/21 15:38:44  papadopo
  * changed x_Blast_FillRPSInfo to x_Blast_RPSInfo{Init|Free}
  *
