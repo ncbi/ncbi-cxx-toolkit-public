@@ -31,20 +31,27 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/impl/tse_chunk_info.hpp>
+#include <util/range.hpp>
+#include <vector>
+#include <utility>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CID2S_Chunk;
+class CID2S_Split_Info;
 class CID2S_Chunk_Info;
+class CID2S_Chunk;
 class CID2S_Seq_annot_Info;
 class CID2S_Seq_annot_place_Info;
 class CID2_Seq_loc;
 
+class CTSE_Info;
+class CTSE_Chunk_Info;
+
 class NCBI_XREADER_EXPORT CSplitParser
 {
 public:
+    static void Attach(CTSE_Info& tse, const CID2S_Split_Info& split);
 
     static CRef<CTSE_Chunk_Info> Parse(const CID2S_Chunk_Info& info);
 
@@ -55,10 +62,10 @@ public:
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Seq_annot_place_Info& place);
 
-    typedef CTSE_Chunk_Info::TLocationId TLocationId;
-    typedef CTSE_Chunk_Info::TLocationRange TLocationRange;
-    typedef CTSE_Chunk_Info::TLocation TLocation;
-    typedef CTSE_Chunk_Info::TLocationSet TLocationSet;
+    typedef int TLocationId;
+    typedef CRange<TSeqPos> TLocationRange;
+    typedef pair<TLocationId, TLocationRange> TLocation;
+    typedef vector<TLocation> TLocationSet;
 
     static void x_ParseLocation(TLocationSet& vec, const CID2_Seq_loc& loc);
 
@@ -74,6 +81,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2004/01/28 20:53:42  vasilche
+* Added CSplitParser::Attach().
+*
 * Revision 1.2  2004/01/22 22:28:31  vasilche
 * Added export specifier.
 *

@@ -32,6 +32,7 @@
 
 #include <objmgr/objmgr_exception.hpp>
 
+#include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 
@@ -39,6 +40,14 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
+{
+    ITERATE ( CID2S_Split_Info::TChunks, it, split.GetChunks() ) {
+        Parse(**it)->x_TSEAttach(tse);
+    }
+}
 
 
 CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
@@ -234,6 +243,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2004/01/28 20:53:42  vasilche
+ * Added CSplitParser::Attach().
+ *
  * Revision 1.2  2004/01/22 20:36:43  ucko
  * Correct path to seqsplit__.hpp.
  *

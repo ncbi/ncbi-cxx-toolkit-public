@@ -548,9 +548,7 @@ CRef<CTSE_Info> CId1Reader::GetTSEBlob(const CSeqref& seqref,
     }
     CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry, dead));
     if ( split_info ) {
-        ITERATE ( CID2S_Split_Info::TChunks, it, split_info->GetChunks() ) {
-            CSplitParser::Parse(**it)->x_TSEAttach(*ret);
-        } 
+        CSplitParser::Attach(*ret, *split_info);
     }
     return ret;
 }
@@ -798,6 +796,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.72  2004/01/28 20:53:43  vasilche
+ * Added CSplitParser::Attach().
+ *
  * Revision 1.71  2004/01/22 20:53:30  vasilche
  * Fixed include path.
  *
