@@ -120,9 +120,9 @@ public:
     }
     /// Sets SeedExtensionMethod
     /// Note that the scan step (or stride) is changed as a side effect of
-    /// calling this method because. This is because the scan step is best
-    /// calculated for the eRightAndLeft seed extension method and a fixed value
-    /// is used for the eRight seed extension method.
+    /// calling this method. This is because the scan step is best
+    /// calculated for the eRightAndLeft seed extension method, and a fixed
+    /// value is used for the eRight seed extension method.
     /// @param sem SeedExtensionMethod [in]
     void SetSeedExtensionMethod(SeedExtensionMethod sem) {
         switch (sem) {
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/14 15:42:08  dondosha
+ * Typo fix in comment
+ *
  * Revision 1.12  2004/06/08 22:27:36  camacho
  * Add missing doxygen comments
  *
