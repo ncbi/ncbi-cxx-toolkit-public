@@ -15,19 +15,19 @@ include $(builddir)/Makefile.rules
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %.d: ./%.cpp
-	$(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	$(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
 	test -s $@.tmp  &&  mv -f $@.tmp $@
 %.d: $(srcdir)/%.cpp
-	$(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	$(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
 	test -s $@.tmp  &&  mv -f $@.tmp $@
 %.d: ./%.c
-	$(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	$(CC_WRAPPER) $(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
 	test -s $@.tmp  &&  mv -f $@.tmp $@
 %.d: $(srcdir)/%.c
-	$(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
+	$(CC_WRAPPER) $(CC)  $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	  | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@.tmp
 	test -s $@.tmp  &&  mv -f $@.tmp $@
 

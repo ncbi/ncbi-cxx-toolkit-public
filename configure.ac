@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.207 2003/08/05 16:08:00 vakatov Exp $
+#  $Id: configure.ac,v 1.208 2003/08/13 18:06:55 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -627,6 +627,8 @@ case "$host_os:$compiler" in
    fi
    RANLIB=":"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
+   LINK_FILTER="$CXX_FILTER"
+   AR_FILTER="$CXX_FILTER"
    serial_ws50_rtti_kludge="rtti"
    ncbicntr="ncbicntr_workshop"
    ;;
@@ -1110,9 +1112,9 @@ if test "$compiler" = "KCC" ; then
    # Often hangs for no good reason :-/; limit time to ~17 minutes per instance
    if test -x compilers/wrapper.KCC.sh; then
       wrap="compilers/wrapper.KCC.sh"
-      CC="$wrap $CC"
-      CXX="$wrap $CXX"
-      AR="$wrap $AR"
+      CC_WRAPPER="$CC_WRAPPER $wrap"
+      CXX_WRAPPER="$CXX_WRAPPER $wrap"
+      AR_WRAPPER="$AR_WRAPPER $wrap"
       CXXCPP="$CXX -E" # Don't double-wrap...
    fi
    if test -n "$kcc_license" ; then
@@ -1172,6 +1174,12 @@ case "$host_os" in
      fi
      ;;
 esac
+
+AC_CHECK_PROG(CCACHE, ccache, ccache, [])
+if test -n "$CCACHE" ; then
+   CC_WRAPPER="$CC_WRAPPER $CCACHE"
+   CXX_WRAPPER="$CXX_WRAPPER $CCACHE"
+fi
 
 
 #### Check if "${build_root}" is defined;  provide a default one
@@ -3557,6 +3565,12 @@ AC_SUBST(IF_REBUILDING_LIBS)
 AC_SUBST(IF_REBUILDING_CONDITIONALLY)
 AC_SUBST(CC_FILTER)
 AC_SUBST(CXX_FILTER)
+AC_SUBST(AR_FILTER)
+AC_SUBST(LINK_FILTER)
+AC_SUBST(CC_WRAPPER)
+AC_SUBST(CXX_WRAPPER)
+AC_SUBST(AR_WRAPPER)
+AC_SUBST(LINK_WRAPPER)
 
 AC_SUBST(KeepStateTarget)
 AC_SUBST(Rules)

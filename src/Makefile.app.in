@@ -64,7 +64,7 @@ rebuild-libs:
 	done
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
-	$(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
+	$(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
 	$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)

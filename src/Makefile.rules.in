@@ -13,12 +13,12 @@ requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 
 ###  C++ compilation
 %@obj_ext@: ./%.cpp
-	$(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 %@obj_ext@: $(srcdir)/%.cpp
-	$(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
+	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 
 ###  C compilation
 %@obj_ext@: ./%.c
-	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
-	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
