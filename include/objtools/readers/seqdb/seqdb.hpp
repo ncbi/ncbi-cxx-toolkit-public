@@ -312,19 +312,28 @@ public:
     
     /// Returns any resources associated with the sequence.
     /// 
-    /// Note that if memory mapping was successful, the sequence data
-    /// is in read only memory; also, this method has no effect.  If
-    /// memory mapping failed, the sequence is probably in dynamically
-    /// allocated memory and this method frees that memory.
+    /// Calls to GetSequence and GetAmbigSeq (but not GetBioseq())
+    /// either increment a counter corresponding to a section of the
+    /// database where the sequence data lives, or allocate a buffer
+    /// to return to the user.  This method decrements that counter or
+    /// frees the allocated buffer, so that the memory can be used by
+    /// other processes.  Each allocating call should be paired with a
+    /// returning call.  Note that this does not apply to GetBioseq(),
+    /// or GetHdr(), for example.
     ///
     /// @param buffer
-    ///   The buffer to return to SeqDB.
+    ///   A pointer to the sequence data to release.
     void RetSequence(const char ** buffer) const;
     
     /// Gets a list of sequence identifiers.
     /// 
     /// This returns the list of CSeq_id identifiers associated with
     /// the sequence specified by the given OID.
+    ///
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @return
+    ///   A list of Seq-id objects for this sequence.
     list< CRef<CSeq_id> > GetSeqIDs(TOID oid) const;
     
     /// Returns the type of database opened - protein or nucleotide.
@@ -386,6 +395,7 @@ public:
     /// mask), the input parameter is incremented until one is found
     /// that is.  The user will probably want to increment between
     /// calls, if iterating over the db.
+    ///
     /// @return
     ///   True if a valid OID was found, false otherwise.
     bool CheckOrFindOID(TOID & next_oid) const;
