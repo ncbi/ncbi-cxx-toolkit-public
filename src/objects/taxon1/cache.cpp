@@ -359,7 +359,7 @@ s_NofTokens( const string& s )
 	    for(; pos < s.size(); ++pos) {
 		c = s[pos];
 		if( !isalnum(c) ) {
-		    if( last == 0 ) {
+		    if( last != 0 ) {
 			if( first == c ) {
 			    ++bracket_level;
 			}
@@ -460,15 +460,12 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
 	int rank = pNode->GetRank();
 	if( rank == GetSubspeciesRank() ) {
             if( s_NofTokens( pNode->GetName() ) == 3 ) {
-		// Assign only "Name1 ssp. Name2" or "Name1 subsp. Name2"  
 		pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
 	    }
 	} else if( rank == GetVarietyRank() ) {
 	    pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
 	} else if( rank == GetFormaRank() ) {
 	    pMod->SetSubtype( COrgMod_Base::eSubtype_forma );
-	} else if( pParent && pParent->GetRank() == GetSubspeciesRank() ) {
-	    pMod->SetSubtype( COrgMod_Base::eSubtype_strain );
 	} else { // Do not insert invalid modifier
 	    return false;
 	}
@@ -1380,6 +1377,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.23  2004/10/06 18:52:06  domrach
+ * Bug fix in the s_NofTokens. Some weird modifier assigning rule removed
+ *
  * Revision 6.22  2004/07/16 15:12:39  domrach
  * Forgotten destructor added. Memory leak fixed.
  *
