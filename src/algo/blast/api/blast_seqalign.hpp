@@ -61,7 +61,8 @@ BEGIN_SCOPE(blast)
  * @param prog type of BLAST program [in]
  * @param query All query sequences [in]
  * @param seq_src handle to BLAST Sequence Source ADT [in]
- * @param score_options contains scoring options [in]
+ * @param is_gapped Is this a gapped search? [in]
+ * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
 TSeqAlignVector
@@ -69,7 +70,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
                           EProgram prog,
                           TSeqLocVector &query, 
                           const BlastSeqSrc* seq_src, 
-                          const BlastScoringOptions* score_options);
+                          bool is_gapped=true, bool is_ooframe=false);
 
 /** Extracts from the BlastHSPResults structure results for only one subject 
  * sequence, identified by its index, and converts them into a vector of 
@@ -81,7 +82,8 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
  * @param query All query sequences [in]
  * @param seq_src handle to BLAST Sequence Source ADT [in]
  * @param index Index of the desired subject in the sequence source [in]
- * @param score_options contains scoring options [in]
+ * @param is_gapped Is this a gapped search? [in]
+ * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
 TSeqAlignVector
@@ -89,7 +91,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                           EProgram prog,
                           TSeqLocVector &query, 
                           const BlastSeqSrc* seq_src, Int4 index,
-                          const BlastScoringOptions* score_options);
+                          bool is_gapped=true, bool is_ooframe=false);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -100,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/06/07 21:34:55  dondosha
+* Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
+*
 * Revision 1.21  2004/06/07 18:26:29  dondosha
 * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
 *

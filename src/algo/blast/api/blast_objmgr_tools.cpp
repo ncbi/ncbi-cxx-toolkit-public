@@ -65,14 +65,12 @@ x_CreateEmptySeq_align_set(CSeq_align_set* sas);
 CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, Int4 query_length, Int4 subject_length,
-    const BlastScoringOptions* score_options);
+    const CSeq_id *subject_id, Int4 query_length, Int4 subject_length);
 
 CRef<CSeq_align>
 BLASTHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id,
-    const BlastScoringOptions* score_options);
+    const CSeq_id *subject_id, bool is_ooframe);
 
 
 /// Now allows query concatenation
@@ -780,11 +778,9 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
 CSeq_align_set*
 BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
     EProgram prog, SSeqLoc &query,
-    const BlastSeqSrc* seq_src,
-    const BlastScoringOptions* score_options)
+    const BlastSeqSrc* seq_src, bool is_gapped, bool is_ooframe)
 {
     CSeq_align_set* seq_aligns = new CSeq_align_set();
-    bool is_gapped = score_options->gapped_calculation ? true : false;
 
     ASSERT(seq_src);
 
@@ -816,11 +812,11 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
         if (is_gapped) {
             hit_align =
                 BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                       subject_id, score_options);
+                                       subject_id, is_ooframe);
         } else {
             hit_align =
                 BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
-                    subject_id, query_length, subj_length, score_options);
+                    subject_id, query_length, subj_length);
         }
         ListNode* subject_loc_wrap =
             BLASTSeqSrcGetSeqLoc(seq_src, (void*)&hsp_list->oid);
@@ -839,7 +835,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
         EProgram prog,
         TSeqLocVector &query,
         const BlastSeqSrc* seq_src,
-        const BlastScoringOptions* score_options)
+        bool is_gapped, bool is_ooframe)
 {
     ASSERT(results->num_queries == (int)query.size());
     ASSERT(seq_src);
@@ -853,7 +849,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
 
        CRef<CSeq_align_set> seq_aligns(BLAST_HitList2CSeqAlign(hit_list, prog,
                                            query[index], seq_src,
-                                           score_options));
+                                           is_gapped, is_ooframe));
 
        retval.push_back(seq_aligns);
        _TRACE("Query " << index << ": " << seq_aligns->Get().size()
@@ -870,7 +866,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
         TSeqLocVector &query,
         const BlastSeqSrc* seq_src,
         Int4 subject_index,
-        const BlastScoringOptions* score_options)
+        bool is_gapped, bool is_ooframe)
 {
     ASSERT(results->num_queries == (int)query.size());
     ASSERT(seq_src);
@@ -880,7 +876,6 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     CConstRef<CSeq_id> query_id;
     CSeq_id* sid = NULL;
     CSeq_id* qid = NULL;
-    bool is_gapped = score_options->gapped_calculation ? true : false;
     TSeqPos subj_length = 0;
     TSeqPos query_length = 0;
 
@@ -913,12 +908,11 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             if (is_gapped) {
                 hit_align =
                     BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                           subject_id, score_options);
+                                           subject_id, is_ooframe);
             } else {
                 hit_align =
                     BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
-                        subject_id, query_length, subj_length,
-                        score_options);
+                        subject_id, query_length, subj_length);
             }
             ListNode* subject_loc_wrap =
                 BLASTSeqSrcGetSeqLoc(seq_src, (void*)&hsp_list->oid);
@@ -949,6 +943,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/06/07 21:34:55  dondosha
+* Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
+*
 * Revision 1.2  2004/06/07 18:26:29  dondosha
 * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
 *

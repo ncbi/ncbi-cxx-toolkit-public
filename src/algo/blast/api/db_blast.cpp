@@ -314,10 +314,13 @@ CDbBlast::x_Results2SeqAlign()
 {
     TSeqAlignVector retval;
 
+    bool gappedMode = m_OptsHandle->GetOptions().GetGappedMode();
+    bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
+
     retval = BLAST_Results2CSeqAlign(m_ipResults, 
                  m_OptsHandle->GetOptions().GetProgram(),
                  m_tQueries, m_pSeqSrc, 
-                 m_OptsHandle->GetOptions().GetScoringOpts());
+                 gappedMode, outOfFrameMode);
 
     return retval;
 }
@@ -329,6 +332,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2004/06/07 21:34:55  dondosha
+ * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
+ *
  * Revision 1.30  2004/06/07 18:26:29  dondosha
  * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
  *

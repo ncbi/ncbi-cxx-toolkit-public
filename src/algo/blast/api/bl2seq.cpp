@@ -273,13 +273,16 @@ CBl2Seq::x_Results2SeqAlign()
 
     ASSERT(mi_pResults->num_queries == (int)m_tQueries.size());
 
+    bool gappedMode = m_OptsHandle->GetOptions().GetGappedMode();
+    bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
+
     for (unsigned int index = 0; index < m_tSubjects.size(); ++index)
     {
         TSeqAlignVector seqalign =
             BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
                  m_OptsHandle->GetOptions().GetProgram(),
                  m_tQueries, mi_pSeqSrc, index,
-                 m_OptsHandle->GetOptions().GetScoringOpts());
+                 gappedMode, outOfFrameMode);
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
@@ -319,6 +322,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.55  2004/06/07 21:34:55  dondosha
+ * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
+ *
  * Revision 1.54  2004/06/07 18:26:29  dondosha
  * Bit scores are now filled in HSP lists, so BlastScoreBlk is no longer needed when results are converted to seqalign
  *

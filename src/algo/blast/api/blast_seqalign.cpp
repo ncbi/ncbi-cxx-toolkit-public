@@ -899,7 +899,6 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
-    const BlastScoringOptions* score_options, EProgram program, 
     Int4 query_length, Int4 subject_length)
 {
     CRef<CDense_diag> retval(new CDense_diag());
@@ -942,7 +941,6 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
 CRef<CStd_seg>
 x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id, 
     const CSeq_id *subject_id,
-    const BlastScoringOptions* score_options, EProgram program, 
     Int4 query_length, Int4 subject_length)
 {
     CRef<CStd_seg> retval(new CStd_seg());
@@ -1014,8 +1012,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
 CRef<CSeq_align>
 BLASTUngappedHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, Int4 query_length, Int4 subject_length,
-    const BlastScoringOptions* score_options)
+    const CSeq_id *subject_id, Int4 query_length, Int4 subject_length)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
     BlastHSP** hsp_array;
@@ -1035,14 +1032,14 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
             BlastHSP* hsp = hsp_array[index];
             retval->SetSegs().SetDendiag().push_back(
                 x_UngappedHSPToDenseDiag(hsp, query_id, subject_id, 
-                    score_options, program, query_length, subject_length));
+					 query_length, subject_length));
         }
     } else { // Translated search
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             retval->SetSegs().SetStd().push_back(
                 x_UngappedHSPToStdSeg(hsp, query_id, subject_id, 
-                    score_options, program, query_length, subject_length));
+				      query_length, subject_length));
         }
     }
 
@@ -1055,8 +1052,7 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
 CRef<CSeq_align>
 BLASTHspListToSeqAlign(EProgram program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id,
-    const BlastScoringOptions* score_options)
+    const CSeq_id *subject_id, bool is_ooframe)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
     retval->SetType(CSeq_align::eType_disc);
@@ -1071,7 +1067,7 @@ BLASTHspListToSeqAlign(EProgram program,
         BlastHSP* hsp = hsp_array[index];
         CRef<CSeq_align> seqalign;
 
-        if (score_options->is_ooframe) {
+        if (is_ooframe) {
             seqalign = 
                 x_OOFEditBlock2SeqAlign(program, hsp->gap_info, 
                     query_id, subject_id);
@@ -1119,6 +1115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/06/07 21:34:55  dondosha
+* Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
+*
 * Revision 1.46  2004/06/07 20:11:02  dondosha
 * Removed no longer used arguments in x_AddScoresToSeqAlign
 *
