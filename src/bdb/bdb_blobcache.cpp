@@ -1987,8 +1987,9 @@ void CBDB_IntCache::Purge(time_t           time_point,
 
 */
 
-const string kBDBCacheDriverName("bdbcache");
+//const string kBDBCacheDriverName("bdbcache");
 
+const char* kBDBCacheDriverName = "bdbcache";
 
 /// Class factory for BDB implementation of ICache
 ///
@@ -2034,6 +2035,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/04/28 12:11:22  kuznets
+ * Replaced static string with char* (fix crash on Linux)
+ *
  * Revision 1.48  2004/04/27 19:12:01  kuznets
  * Commented old cache implementation
  *

@@ -346,7 +346,8 @@ private:
 };
 */
 
-extern NCBI_BDB_EXPORT const string kBDBCacheDriverName;
+//extern NCBI_BDB_EXPORT const string kBDBCacheDriverName;
+extern NCBI_BDB_EXPORT const char* kBDBCacheDriverName;
 
 extern "C" 
 {
@@ -391,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/04/28 12:11:08  kuznets
+ * Replaced static string with char* (fix crash on Linux)
+ *
  * Revision 1.14  2004/04/27 19:11:49  kuznets
  * Commented old cache implementation
  *
