@@ -113,27 +113,6 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
 }
 
 
-CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
-                                         CScope*               scope)
-    : m_Src_id_Handle(master_id),
-      m_Src_from(0),
-      m_Src_to(kInvalidSeqPos - 1),
-      m_Shift(0),
-      m_Reverse(false),
-      m_Dst_id_Handle(master_id),
-      m_Dst_loc_Empty(0),
-      m_Partial(false),
-      m_PartialFlag(0),
-      m_LastType(eMappedObjType_not_set),
-      m_LastStrand(eNa_strand_unknown),
-      m_Scope(scope)
-{
-    m_Dst_loc_Empty.Reset(new CSeq_loc);
-    m_Dst_loc_Empty->SetEmpty().Assign(*master_id.GetSeqId());
-    Reset();
-}
-
-
 CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 {
     _ASSERT(!IsSpecialLoc());
@@ -1119,9 +1098,13 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
                                       CSeq_loc_Conversion::ELocationType
                                       loctype)
 {
-    _ASSERT(m_SingleConv);
-    if (m_CvtByIndex.size() == 0  &&
-        !ref.IsAlign()) {
+    if ( !m_SingleConv ) {
+        _ASSERT(m_CvtByIndex.empty());
+        // Special case - empty set for filtering duplicates only,
+        // no mapping required
+        return;
+    }
+    if ( m_CvtByIndex.empty()  &&  !ref.IsAlign() ) {
         // No multiple mappings
         m_SingleConv->Convert(ref, loctype);
         return;
@@ -1594,6 +1577,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/03/31 18:06:19  grichenk
+* Fixed filtering of duplicate annotations
+*
 * Revision 1.52  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *

@@ -1325,17 +1325,17 @@ bool CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
                                           CSeq_loc_Conversion* cvt,
                                           unsigned int         loc_index)
 {
-    _ASSERT(object_ref.GetAnnotObject_Info().GetMultiIdFlags()
-            || cvt->IsPartial()
-            || object_ref.IsAlign() );
     object_ref.ResetLocation();
     CRef<CSeq_loc_Conversion_Set>& mapping_set =
         m_MappingCollector->m_AnnotMappingSet[object_ref];
     if ( !mapping_set ) {
         mapping_set.Reset(new CSeq_loc_Conversion_Set(m_Scope));
     }
-    CRef<CSeq_loc_Conversion> cvt_copy(new CSeq_loc_Conversion(*cvt));
-    mapping_set->Add(*cvt_copy, loc_index);
+    if ( cvt ) {
+        _ASSERT(cvt->IsPartial() || object_ref.IsAlign());
+        CRef<CSeq_loc_Conversion> cvt_copy(new CSeq_loc_Conversion(*cvt));
+        mapping_set->Add(*cvt_copy, loc_index);
+    }
     return x_GetAnnotCount() >= m_Selector.m_MaxSize;
 }
 
@@ -1465,6 +1465,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
         ITERATE(CHandleRange, rg_it, hr) {
             CHandleRange::TRange range = rg_it->first;
+            
+            bool enough = false;
 
             for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
                 aoit; ++aoit ) {
@@ -1601,11 +1603,10 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                 CAnnotObject_Ref annot_ref(annot_info);
                 if (!cvt  &&  annot_info.GetMultiIdFlags()) {
                     // Create self-conversion, add to conversion set
-                    CRef<CSeq_loc_Conversion> cvt_ref
-                        (new CSeq_loc_Conversion(id, m_Scope));
                     if (x_AddObjectMapping(annot_ref,
-                        &*cvt_ref, aoit->second.m_AnnotLocationIndex)) {
-                        return;
+                        0, aoit->second.m_AnnotLocationIndex)) {
+                        enough = true;
+                        break;
                     }
                 }
                 else {
@@ -1630,9 +1631,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     }
                     if ( x_AddObject(annot_ref, cvt,
                         aoit->second.m_AnnotLocationIndex) ) {
-                        return;
+                        enough = true;
+                        break;
                     }
                 }
+            }
+            if ( enough ) {
+                break;
             }
         }
         if ( need_unique  ||  hr.end() - hr.begin() > 1 ) {
@@ -1875,6 +1880,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/03/31 18:06:19  grichenk
+* Fixed filtering of duplicate annotations
+*
 * Revision 1.53  2005/03/17 17:52:27  grichenk
 * Added flag to SAnnotSelector for skipping multiple SNPs from the same
 * seq-annot. Optimized CAnnotCollector::GetAnnot().

@@ -90,9 +90,6 @@ public:
                         TSeqPos               src_start,
                         bool                  reverse,
                         CScope*               scope);
-    // Create conversion, mapping an ID to itself
-    CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
-                        CScope*               scope);
 
     ~CSeq_loc_Conversion(void);
 
@@ -380,6 +377,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/03/31 18:06:19  grichenk
+* Fixed filtering of duplicate annotations
+*
 * Revision 1.29  2005/03/28 16:57:19  jcherry
 * Added export specifiers for CSeq_loc_Conversion and CSeq_loc_Conversion_Set
 *
