@@ -630,7 +630,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         info->classification == Residue::ePartialBackboneAtom ||
         info->classification == Residue::eCompleteBackboneAtom) { // is backbone of some sort
 
-        // control presence of non CA/C1* sidechain atoms
+        // control presence of non CA/C1* backbone atoms
         if ((residue->IsAminoAcid() && info->classification != Residue::eAlphaBackboneAtom) ||
             (residue->IsNucleotide() && info->code != " C1*")) {
 
@@ -893,9 +893,39 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         !GetAtomStyle(info2->residue, atom2, coord2, &atomStyle2, &backboneStyle2, &generalStyle2))
         return false;
 
-    // if either atom is hidden, don't display bond
-    if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed)
-        BOND_NOT_DISPLAYED;
+    bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
+
+    // if either atom is hidden, don't display bond, except special case of PRO CD-N bond
+    if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed) {
+        // is residue PRO?
+        if (info1->residue->IsAminoAcid() && info1->residue->nameGraph == "PRO" &&
+                atom1.mID == atom2.mID && atom1.rID == atom2.rID) {
+            const Molecule *molecule;
+            if (!info1->residue->GetParentOfType(&molecule))
+                return false;
+            // atom1 is CD and is visible, switch N (atom2) to side chain style
+            if (info1->code == " CD " && info2->code == " N  " && atomStyle1.style != eNotDisplayed && coord2)
+            {
+                generalStyle2 = generalStyle1;
+                backboneStyle2 = NULL;
+                atomStyle2.isHighlighted = GlobalMessenger()->IsHighlighted(molecule, info1->residue->id);
+                bondStyle->end2.atomCap = true;
+            }
+            // atom2 is CD and is visible
+            else if (info2->code == " CD " && info1->code == " N  " && atomStyle2.style != eNotDisplayed && coord1)
+            {
+                generalStyle1 = generalStyle2;
+                backboneStyle1 = NULL;
+                atomStyle1.isHighlighted = GlobalMessenger()->IsHighlighted(molecule, info1->residue->id);
+                bondStyle->end1.atomCap = true;
+            }
+            else {
+                BOND_NOT_DISPLAYED;
+            }
+        } else {
+            BOND_NOT_DISPLAYED;
+        }
+    }
 
     bondStyle->end1.name = info1->glName;
     bondStyle->end2.name = info2->glName;
@@ -937,7 +967,6 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             bondStyle->end1.color = atomStyle1.color;
             bondStyle->end2.color = atomStyle2.color;
         }
-        bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
 
         const StyleSettings&
             settings1 = GetStyleForResidue(object, atom1.mID, atom1.rID),
@@ -1605,6 +1634,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2004/01/19 17:27:14  thiessen
+* add Proline CD-N bond for sidechain display
+*
 * Revision 1.77  2004/01/19 16:17:37  thiessen
 * fix worm display problem when coords of prev/next alpha are missing
 *
