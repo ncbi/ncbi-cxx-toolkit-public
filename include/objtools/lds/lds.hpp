@@ -117,6 +117,13 @@ public:
     /// Find LDS database by the alias
     CLDS_Database* GetDatabase(const string& alias);
 
+    /// Get LDS database by its index
+    CLDS_Database* GetDatabase(int idx) { return m_DataBases[idx]; }
+
+
+    // Get aliases of all registered databases
+    void EnumerateAliases(vector<string>* aliases);
+
 private:
     CLDS_DatabaseHolder(const CLDS_DatabaseHolder&);
     CLDS_DatabaseHolder& operator=(const CLDS_DatabaseHolder&);
@@ -133,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/10/29 16:22:49  kuznets
+ * +CLDS_DatabaseHolder::EnumerateAliases
+ *
  * Revision 1.19  2003/10/27 20:16:45  kuznets
  * +CLDS_DatabaseHolder::GetDatabase
  *
