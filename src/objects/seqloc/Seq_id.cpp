@@ -315,6 +315,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'R':                               return eAcc_ddbj_tpa_nuc;
             case 'S':                               return eAcc_ddbj_genome;
                 // BS is actually chimp genomes.
+            case 'V':                               return eAcc_gb_sts;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -815,6 +816,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.30  2002/08/19 16:54:30  ucko
+ * IdentifyAccession: add BV (eAcc_gb_sts).
+ *
  * Revision 6.29  2002/08/19 15:42:14  ucko
  * IdentifyAccession: add BU (eAcc_gb_est).
  *
