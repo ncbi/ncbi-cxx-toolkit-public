@@ -55,6 +55,10 @@
 
 BEGIN_NCBI_SCOPE
 
+#if (_MSC_VER >= 1200)
+#undef NCBI_USE_THROW_SPEC
+#endif
+
 /// Define THROWS macros for C++ exception specification.
 ///
 /// Define use of C++ exception specification mechanism:
@@ -999,6 +1003,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/04/30 11:26:06  kuznets
+ * THROW spec macro disabled for MSVC (fixed some compiler warnings)
+ *
  * Revision 1.52  2004/04/26 19:17:06  ucko
  * Some compilers specifically preferred wrapping strerror with a class,
  * so conditionalize use of a simple function on NCBI_COMPILER_GCC.
