@@ -77,7 +77,7 @@ AC_ARG_WITH(autodep,
 AC_ARG_WITH(foobar,
    [ --exec-prefix=          specify a non-default build directory name])
 AC_ARG_WITH(suffix,
-   [ --without-suffix        no Release/Debug and MT suffixes in the build dir name])
+   [ --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name])
 AC_ARG_WITH(hostspec,
    [ --with-hostspec         add full host specs to the build dir name])
 AC_ARG_WITH(execopy,
@@ -104,6 +104,8 @@ AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
 
 ## Optional projects
+AC_ARG_WITH(local-lbsm,
+   [ --without-local-lbsm    turn off support for IPC with locally running LBSMD])
 AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
@@ -126,7 +128,8 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization dll runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy \
-ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects app ctools gui internal"
+ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase \
+local-lbsm serial objects app ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1448,6 +1451,28 @@ CPPFLAGS="$orig_CPPFLAGS"
 ### --------------------------------------------
 
 
+## `local_lbsm' support
+
+local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
+
+for fff in $local_lbsm ; do
+   if test ! -f src/connect/${fff}.c ; then
+      if test "$with_local_lbsm" = "yes" ; then
+         AC_MSG_ERROR(["--with-local-lbsm:  src/connect/${fff}.c is  missing"])
+      fi
+      with_local_lbsm="no"
+      break
+   fi
+done
+
+if test "$with_local_lbsm" = "no" ; then
+   WithoutProjects="$WithoutProjects local_lbsm"
+   local_lbsm="ncbi_service_lbsmd_stub"
+else
+   WithProjects="$WithProjects local_lbsm"
+fi
+
+
 ## `serial' projects
 
 if test ! -f src/serial/Makefile.in  -o  ! -d include/serial ; then
@@ -1675,6 +1700,7 @@ AC_SUBST(CFLAGS_DLL)
 AC_SUBST(CXXFLAGS_DLL)
 
 AC_SUBST(OPT_GROUPS)
+AC_SUBST(local_lbsm)
 AC_SUBST(serial)
 AC_SUBST(objects)
 AC_SUBST(app)
