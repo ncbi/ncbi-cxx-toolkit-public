@@ -1,11 +1,8 @@
-#################################
 # $Id$
-# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-#################################
 
 # Master(top-level) makefile
 #################################
 
 PROJECT = 
-SUBPROJ = corelib html
+SUBPROJ = corelib html history
 include @builddir@/Makefile.meta
