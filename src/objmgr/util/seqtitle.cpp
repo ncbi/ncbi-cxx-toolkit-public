@@ -36,15 +36,9 @@
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seg_ext.hpp>
-#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_literal.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/PDB_block.hpp>
@@ -95,7 +89,6 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 {
     string                    prefix, title, suffix;
     string                    organism;
-    CBioseq_Handle::TBioseqCore core        = hnd.GetBioseqCore();
     CConstRef<CTextseq_id>    tsid(NULL);
     CConstRef<CPDB_seq_id>    pdb_id(NULL);
     CConstRef<CPatent_seq_id> pat_id(NULL);
@@ -110,18 +103,20 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
     bool                      use_biosrc  = false;
+    CScope&                   scope = hnd.GetScope();
 
-    ITERATE (CBioseq::TId, id, core->GetId()) {
+    ITERATE (CBioseq_Handle::TId, idh, hnd.GetId()) {
+        CConstRef<CSeq_id> id = idh->GetSeqId();
         if ( !tsid ) {
-            tsid = (*id)->GetTextseq_Id();
+            tsid = id->GetTextseq_Id();
         }
-        switch ((*id)->Which()) {
+        switch (id->Which()) {
         case CSeq_id::e_Other:
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
         case CSeq_id::e_Ddbj:
         {
-            const CTextseq_id& t = *(*id)->GetTextseq_Id();
+            const CTextseq_id& t = *id->GetTextseq_Id();
             if (t.IsSetAccession()) {
                 const string& acc = t.GetAccession();
                 CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
@@ -139,7 +134,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             break;
         }
         case CSeq_id::e_General:
-            general_id = &(*id)->GetGeneral();
+            general_id = &id->GetGeneral();
             break;
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
@@ -147,10 +142,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             third_party = true;
             break;
         case CSeq_id::e_Pdb:
-            pdb_id = &(*id)->GetPdb();
+            pdb_id = &id->GetPdb();
             break;
         case CSeq_id::e_Patent:
-            pat_id = &(*id)->GetPatent();
+            pat_id = &id->GetPatent();
             break;
         default:
             break;
@@ -190,26 +185,14 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     }
 
     if (!(flags & fGetTitle_Reconstruct)) {
+        size_t search_depth = 0;
         // Ignore parents' titles for non-PDB proteins.
-        if (core->GetInst().GetMol() == CSeq_inst::eMol_aa
-            &&  pdb_id.IsNull()) {
-            // Sun Workshop compiler does not call destructors of objects
-            // created in for-loop initializers in case we use break to exit the loop
-            // (08-apr-2002)
-            CTypeConstIterator<CSeqdesc> it = ConstBegin(*core);
-            for (; it;  ++it) {
-                if (it->IsTitle()) {
-                    title = it->GetTitle();
-                    BREAK(it);
-                }
-            }
-        } else {
-            {
-                CSeqdesc_CI it(hnd, CSeqdesc::e_Title);
-                if (it) {
-                    title = it->GetTitle();
-                }
-            }
+        if (hnd.GetInst_Mol() == CSeq_inst::eMol_aa  &&  pdb_id.IsNull()) {
+            search_depth = 1;
+        }
+        CSeqdesc_CI it(hnd, CSeqdesc::e_Title, search_depth);
+        if (it) {
+            title = it->GetTitle();
         }
     }
 
@@ -259,10 +242,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             &&  source->GetOrg().IsSetTaxname()) {
             title = source->GetOrg().GetTaxname() + ' ';
             feature::GetLabel(*cdregion, &title, feature::eContent,
-                              &hnd.GetScope());
+                              &scope);
             title += " (";
             feature::GetLabel(*gene, &title, feature::eContent,
-                              &hnd.GetScope());
+                              &scope);
             title += "), mRNA";
         }
     } else if (title.empty()  &&  is_nr  &&  source.NotEmpty()
@@ -313,16 +296,16 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             + ' ' + pat_id->GetCit().GetId().GetNumber();
     }
 
-    if (title.empty()  &&  core->GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        title = s_TitleFromProtein(hnd, hnd.GetScope(), organism);
+    if (title.empty()  &&  hnd.GetInst_Mol() == CSeq_inst::eMol_aa) {
+        title = s_TitleFromProtein(hnd, scope, organism);
         if ( !title.empty() ) {
             flags |= fGetTitle_Organism;
         }
     }
 
     if (title.empty()  &&  !htg_tech
-        &&  core->GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-        title = s_TitleFromSegment(hnd, hnd.GetScope());
+        &&  hnd.GetInst_Repr() == CSeq_inst::eRepr_seg) {
+        title = s_TitleFromSegment(hnd, scope);
     }
 
     if (title.empty()  &&  !htg_tech  &&  source.NotEmpty()) {
@@ -386,10 +369,10 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         if (tech == CMolInfo::eTech_htgs_1) {
             un = "un";
         }
-        if (core->GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+        if (hnd.GetInst_Repr() == CSeq_inst::eRepr_delta) {
             unsigned int pieces = 1;
             for (CSeqMap_CI it = hnd.GetSeqMap().BeginResolved
-                     (&hnd.GetScope(), 0, CSeqMap::fFindGap);
+                     (&scope, 0, CSeqMap::fFindGap);
                  it;  ++it) {
                 ++pieces;
             }
@@ -677,11 +660,10 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
     CConstRef<CProt_ref> prot;
     CConstRef<CSeq_loc>  cds_loc;
     CConstRef<CGene_ref> gene;
-    CBioseq_Handle::TBioseqCore  core = handle.GetBioseqCore();
     string               result;
 
     CSeq_loc everywhere;
-    everywhere.SetWhole().Assign(*core->GetId().front());
+    everywhere.SetWhole().Assign(*handle.GetSeqId());
 
     {{
         CConstRef<CSeq_feat> prot_feat
@@ -743,16 +725,11 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
         result = "unnamed protein product";
     }
 
-    {{ // Find organism name 
+    {{ // Find organism name (must be specifically associated with this Bioseq)
         CConstRef<COrg_ref> org;
-        if (core->CanGetDescr()) {
-            // Don't go up(!)
-            ITERATE(CSeq_descr::Tdata, it, core->GetDescr().Get()) {
-                if ((*it)->IsSource()) {
-                    org = &(*it)->GetSource().GetOrg();
-                    break;
-                }
-            }
+        for (CSeqdesc_CI it(handle, CSeqdesc::e_Source, 1);  it;  ++it) {
+            org = &it->GetSource().GetOrg();
+            BREAK(it);
         }
         if (org.Empty()  &&  cds_loc.NotEmpty()) {
             for (CFeat_CI it(scope, *cds_loc, CSeqFeatData::e_Biosrc);
@@ -772,13 +749,9 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
 static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 {
-    string              organism, product, locus, strain, clone, isolate;
-    string              completeness = "complete";
-    bool                cds_found = false;
-    CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
-
-    CSeq_loc everywhere;
-    everywhere.SetMix().Set() = core->GetInst().GetExt().GetSeg();
+    string   organism, product, locus, strain, clone, isolate;
+    string   completeness = "complete";
+    bool     cds_found    = false;
 
     {
         CSeqdesc_CI it(handle, CSeqdesc::e_Source);
@@ -820,6 +793,9 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
     if (organism.empty()) {
         organism = "Unknown";
     }
+
+    CSeq_loc everywhere;
+    everywhere.SetMix().Set() = handle.GetInst_Ext().GetSeg();
 
     CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
     for (; it;  ++it) {
@@ -884,6 +860,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.41  2004/10/07 15:12:08  ucko
+* Also eliminate use of GetBioseqCore in favor of appropriate objmgr APIs.
+*
 * Revision 1.40  2004/10/07 14:18:46  ucko
 * Rework piece-counting code to use CSeqMap_CI, eliminating the use of
 * the deprecated method CBioseq_Handle::GetBioseq().
