@@ -1625,8 +1625,10 @@ int test1(int argc, char ** argv)
                 
                 //cout << "[" << i << "]" << endl;
                 
-                Int4 seqlen = dbi.GetSequence(i, & buffer1[ii]);
-                const char * bufdata = buffer1[ii];
+                //Int4 seqlen = dbi.GetSequence(i, & buffer1[ii]);
+		const char * seqbuf = 0;
+                Int4 seqlen = dbi.GetSequence(i, & seqbuf);
+                const char * bufdata = seqbuf;
                 
                 if (look_seq) {
                     int qstride = 100;
@@ -1634,7 +1636,8 @@ int test1(int argc, char ** argv)
                         qsum += Int8(bufdata[q]) & 0xFF;
                     }
                 }
-                
+                dbi.RetSequence(& seqbuf);
+		
                 if (show_progress) {
                     if (i >= report_at) {
                         double t = dbl_time() - cstart;
