@@ -261,7 +261,7 @@ void s_TestRegConvert()
     reg.Set("XXX", "s1A",  "duh");
     reg.Set("XXX", "s1B",  "777");
 
-    TPluginManagerParamTree* tr = ParamTree_ConvertRegToTree(reg);
+    TPluginManagerParamTree* tr = CConfig::ConvertRegToTree(reg);
     TPluginManagerParamTree::TParent* ptr = tr;
 
 
@@ -338,6 +338,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/23 16:44:44  kuznets
+ * Reflecting changes in ncbi_config.hpp
+ *
  * Revision 1.8  2004/09/22 13:58:16  kuznets
  * Reflecting changes in the PM API
  *
