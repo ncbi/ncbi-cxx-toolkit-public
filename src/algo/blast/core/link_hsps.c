@@ -777,11 +777,11 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             
             prob[0] = BLAST_SmallGapSumE(kbp[query_context], 
                          gap_size, gap_prob, gap_decay_rate, 
-                         best[0]->hsp_link.num[0], best[0]->hsp_link.sum[0], 
+                         best[0]->hsp_link.num[0], best[0]->hsp_link.xsum[0], 
                          query_length, subject_length);
             prob[1] = BLAST_LargeGapSumE(kbp[query_context], 
                          gap_prob, gap_decay_rate, best[1]->hsp_link.num[1],
-                         best[1]->hsp_link.sum[1], 
+                         best[1]->hsp_link.xsum[1], 
                          query_length, subject_length);
 
             ordering_method = prob[0]<=prob[1] ? 0:1;
@@ -795,7 +795,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             
             prob[1] = BLAST_LargeGapSumE(kbp[query_context], 0.0, 
                          gap_decay_rate, best[1]->hsp_link.num[1],
-                         best[1]->hsp_link.sum[1], 
+                         best[1]->hsp_link.xsum[1], 
                          query_length, subject_length);
 
             ordering_method = 1;
