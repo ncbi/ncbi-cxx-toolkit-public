@@ -266,7 +266,8 @@ streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                    streamsize    /*buf_size*/)
 {
     NCBI_THROW(CConnException, eConn, "CConn_Streambuf::setbuf() not allowed");
-    return this; /*NOTREACHED*/
+    /*NOTREACHED*/
+    return this; /*dummy for compiler*/
 }
 
 
@@ -287,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2003/05/31 05:24:43  lavr
+ * NOTREACHED added after exception throw
+ *
  * Revision 6.32  2003/05/20 19:07:57  lavr
  * Constructor changed (assert -> _ASSERT);  better destructor
  *
