@@ -37,13 +37,10 @@
 #include <algo/align/splign/splign.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
-BEGIN_SCOPE(objects)
-    class CSeq_entry;
-END_SCOPE(objects)
 
 
 //////////
@@ -115,6 +112,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/10 20:52:27  ucko
+ * #include <.../Seq_entry.hpp>, since use of CRef<CSeq_entry> requires
+ * more than just a forward declaration on some compilers.
+ *
  * Revision 1.8  2004/05/10 16:39:56  kapustin
  * Add a pairwise mode sequence loader
  *
