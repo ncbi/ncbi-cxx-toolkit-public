@@ -198,7 +198,7 @@ private:
         return m_Quals.HasQual(slot);
     }
     pair<TQCI, TQCI> x_GetQual(EFeatureQualifier slot) const {
-        return m_Quals.GetQuals(slot);
+        return const_cast<const TQuals&>(m_Quals).GetQuals(slot);
     }
     
     // format
@@ -283,6 +283,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/31 15:59:54  ucko
+* CFeatureItem::x_GetQual: make sure to call the const version of
+* GetQuals to fix WorkShop build errors.
+*
 * Revision 1.9  2004/03/30 20:26:32  shomrat
 * Separated quals container from feature class
 *
