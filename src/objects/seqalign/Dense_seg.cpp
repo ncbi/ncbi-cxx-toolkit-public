@@ -775,7 +775,7 @@ CRef<CDense_seg> CDense_seg::FillUnaligned()
 
 
 //-----------------------------------------------------------------------------
-// PRE : RLE alignment transcript and start coordinates
+// PRE : alignment transcript (RLE or not) and start coordinates
 // POST: Starts, lens and strands. Ids and scores not affected.
 
 // initialize from pairwise alignment transcript
@@ -838,10 +838,14 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
         if(isalpha(c)) {
 
             if(seg_type == 0 && (c == 'M' || c == 'R')) {
-
                 ++pos1;
                 ++pos2;
-                ++ii;
+            }
+            else if(seg_type == 1 && c == 'I') {
+                ++pos2;
+            }
+            else if(seg_type == 2 && c == 'D') {
+                ++pos1;
             }
             else {
                 
@@ -886,9 +890,8 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
                     NCBI_THROW(CSeqalignException, eInvalidInputData,
                                badsymerr);
                 }
-                
-                ++ii;
             }
+            ++ii;
         }
         else {
 
@@ -942,6 +945,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/02/22 16:59:07  kapustin
+* FromTranscript(): allow non-RLE input
+*
 * Revision 1.18  2004/11/08 22:44:46  kapustin
 * Fix subj_strand condition in FromTranscript()
 *
