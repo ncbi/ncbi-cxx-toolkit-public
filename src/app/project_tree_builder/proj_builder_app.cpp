@@ -38,6 +38,7 @@
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
 #include <app/project_tree_builder/proj_projects.hpp>
+#include <corelib/ncbitime.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -114,6 +115,24 @@ void CProjBulderApp::Init(void)
 }
 
 
+static 
+void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles)
+{
+   if ( cycles.empty() ) {
+        LOG_POST(Info << "Ok. No dependencies cycles found.");
+    } else {
+        ITERATE(CCyclicDepends::TDependsCycles, p, cycles) {
+            const CCyclicDepends::TDependsChain& cycle = *p;
+            LOG_POST(Error << "Dependencies cycle found :");
+            ITERATE(CCyclicDepends::TDependsChain, n, cycle) {
+                const CProjKey& proj_id = *n;
+                LOG_POST(Error << "Cycle with project :" + proj_id.Id());
+            }
+        }
+    }
+}
+
+
 int CProjBulderApp::Run(void)
 {
     // Get and check arguments
@@ -125,7 +144,7 @@ int CProjBulderApp::Run(void)
 	SetDiagPostLevel(eDiag_Info);
 
     // Start 
-    LOG_POST(Info << "Started.");
+    LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
 
     // Configure 
     CMsvcConfigure configure;
@@ -138,6 +157,14 @@ int CProjBulderApp::Run(void)
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
+    
+    // Analyze tree for dependencies cycles
+    LOG_POST(Info << "Checking projects inter-dependencies... .");
+    CCyclicDepends::TDependsCycles cycles;
+    CCyclicDepends::FindCycles(projects_tree.m_Projects, &cycles);
+    s_ReportDependenciesStatus(cycles);
+
+
     // MSVC specific part:
     
     // Exclude some projects from build:
@@ -214,7 +241,7 @@ int CProjBulderApp::Run(void)
     sln_gen.SaveSolution(m_Solution);
 
     //
-    LOG_POST(Info << "Finished.");
+    LOG_POST(Info << "Finished at "+ CTime(CTime::eCurrent).AsString());
     return 0;
 }
 
@@ -499,6 +526,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/03/01 18:01:19  gorelenk
+ * Added processing times reporting to log. Added project tree checking
+ * for projects inter-dependencies.
+ *
  * Revision 1.24  2004/02/26 21:31:51  gorelenk
  * Re-designed CProjBulderApp::GetProjectTreeInfo - use creation of
  * IProjectFilter-derived classes instead of string.
