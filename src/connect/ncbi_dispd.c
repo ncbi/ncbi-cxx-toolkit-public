@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2001/09/10 21:23:53  lavr
+ * "Relay-Mode:" tag eliminated from the dispatcher protocol
+ *
  * Revision 6.27  2001/07/24 18:02:02  lavr
  * Seed random generator at Open()
  *
@@ -178,7 +181,7 @@ static void s_FreeData(SDISPD_Data* data)
 
     if (data->s_node) {
         size_t i;
-        
+
         for (i = 0; i < data->n_node; i++)
             free(data->s_node[i].info);
         free(data->s_node);
@@ -215,7 +218,7 @@ static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
             temp = (SDISPD_Node*) malloc(sizeof(*temp) * n);
         if (!temp)
             return 0;
-        
+
         data->s_node = temp;
         data->n_max_node = n;
     }
@@ -245,19 +248,17 @@ static int/*bool*/ s_ParseHeader(const char* header, void *data,
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
     static const char service[] = "service=";
-    static const char direct[] = "Relay-Mode: DIRECT\r\n";
-    static const char firewall[] = "Relay-Mode: FIREWALL\r\n";
     static const char stateless[] = "Client-Mode: STATELESS_ONLY\r\n";
     static const char dispatch_mode[] = "Dispatch-Mode: INFORMATION_ONLY\r\n";
     static const char stateful_capable[] = "Client-Mode: STATEFUL_CAPABLE\r\n";
     SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
-    const char *tag1, *tag2;
+    const char *tag;
     size_t buflen;
     CONNECTOR c;
     BUF buf = 0;
     CONN conn;
     char *s;
-    
+
     /* Form service name argument (as CGI argument) */
     if (strlen(iter->service) + sizeof(service) > sizeof(net_info->args))
         return 0/*failed*/;
@@ -266,8 +267,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* Reset request method to be GET (as no HTTP body will follow) */
     net_info->req_method = eReqMethod_Get;
     /* Obtain additional header information */
-    s = SERV_Print(iter);
-    if (s) {
+    if ((s = SERV_Print(iter)) != 0) {
         int status = BUF_Write(&buf, s, strlen(s));
         free(s);
         if (!status) {
@@ -275,10 +275,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
             return 0/*failure*/;
         }
     }
-    tag1 = net_info->stateless ? stateless : stateful_capable;
-    tag2 = net_info->firewall ? firewall : direct;
-    if (!BUF_Write(&buf, tag1, strlen(tag1)) ||
-        !BUF_Write(&buf, tag2, strlen(tag2)) ||
+    tag = net_info->stateless ? stateless : stateful_capable;
+    if (!BUF_Write(&buf, tag, strlen(tag)) ||
         !BUF_Write(&buf, dispatch_mode, sizeof(dispatch_mode)-1)) {
         BUF_Destroy(buf);
         return 0/*failure*/;
@@ -359,7 +357,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
         }
     }
     free(buf);
-    
+
     return 1/*success*/;
 }
 
@@ -394,14 +392,14 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
     SSERV_Info* info;
     size_t i;
-    
+
     if (!data)
         return 0;
-    
+
     if (s_IsUpdateNeeded(data) && !s_Resolve(iter))
         return 0;
     assert(data->n_node != 0);
-    
+
     for (i = 0; i < data->n_node; i++) {
         info = data->s_node[i].info;
         status = info->rate;
@@ -432,7 +430,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
             break;
     }
     assert(i < data->n_node);
-    
+
     info = data->s_node[i].info;
     info->rate = data->s_node[i].status - (i ? data->s_node[i-1].status : 0.0);
     if (i < --data->n_node) {
@@ -473,6 +471,8 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     data->net_info = ConnNetInfo_Clone(net_info);
     if (iter->type & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
+    if (iter->type & fSERV_Firewall)
+        data->net_info->firewall = 1/*true*/;
     data->n_node = data->n_max_node = 0;
     data->s_node = 0;
     iter->data = data;
@@ -482,6 +482,6 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         s_FreeData(data);
         return 0;
     }
-    
+
     return &s_op;
 }
