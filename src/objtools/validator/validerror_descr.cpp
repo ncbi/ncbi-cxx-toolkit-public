@@ -57,32 +57,94 @@ CValidError_descr::~CValidError_descr(void)
 
 void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr)
 {
-    int num_sources = 0;
-    int num_titles = 0;
-    const CSeqdesc* lastsource = 0;
-    const CSeqdesc* lasttitle = 0;
+    size_t  num_sources = 0,
+            num_titles = 0;
+    CConstRef<CSeqdesc> last_source,
+                        last_title;
 
-    for (CTypeConstIterator <CSeqdesc> dt (descr); dt; ++dt) {
-        switch (dt->Which ()) {
-            case CSeqdesc::e_Title:
-                num_titles++;
-                lasttitle = &(*dt);
-                break;
-            case CSeqdesc::e_Source:
-                num_sources++;
-                lastsource = &(*dt);
-                break;
-            default:
-                break;
+    iterate ( CSeq_descr::Tdata, dt, descr.Get() ) {
+        const CSeqdesc& desc = **dt;
+
+        switch ( desc.Which() ) {
+        case CSeqdesc::e_Mol_type:
+        case CSeqdesc::e_Modif:
+        case CSeqdesc::e_Method:
+            // obsolete
+            break;
+
+        case CSeqdesc::e_Name:
+            break;
+        case CSeqdesc::e_Title:
+            num_titles++;
+            last_title = &desc;
+            break;
+        
+
+        case CSeqdesc::e_Comment:
+            break;
+
+        case CSeqdesc::e_Num:
+            break;
+        case CSeqdesc::e_Maploc:
+            break;
+
+        case CSeqdesc::e_Pir:
+            break;
+
+        case CSeqdesc::e_Genbank:
+            break;
+
+        case CSeqdesc::e_Pub:
+            break;
+
+        case CSeqdesc::e_Region:
+            break;
+        case CSeqdesc::e_User:
+            break;
+
+        case CSeqdesc::e_Sp:
+            break;
+
+        case CSeqdesc::e_Dbxref:
+            break;
+
+        case CSeqdesc::e_Embl:
+            break;
+
+        case CSeqdesc::e_Create_date:
+            break;
+        case CSeqdesc::e_Update_date:
+            break;
+
+        case CSeqdesc::e_Prf:
+            break;
+
+        case CSeqdesc::e_Pdb:
+            break;
+
+        case CSeqdesc::e_Het:
+            break;
+        case CSeqdesc::e_Source:
+            num_sources++;
+            last_source = &desc;
+            break;
+        case CSeqdesc::e_Org:
+            break;
+        case CSeqdesc::e_Molinfo:
+            break;
+
+        default:
+            break;
         }
     }
+
     if ( num_sources > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleBioSources,
-            "Multiple BioSource blocks", *lastsource);
+            "Multiple BioSource blocks", *last_source);
     }
     if ( num_titles > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTitles,
-            "Multiple Title blocks", *lasttitle);
+            "Multiple Title blocks", *last_title);
     }
 }
 
@@ -96,6 +158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/02/12 17:58:05  shomrat
+* Addition of descriptor types in switch statement for future use
+*
 * Revision 1.2  2002/12/24 16:53:43  shomrat
 * Changes to include directives
 *
