@@ -44,6 +44,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/interfaces.hpp>
 #include "gbload_util.hpp"
+#include <objmgr/objmgr_exception.hpp>
 #include <bitset>
 #include <set>
 #include <vector>
@@ -159,9 +160,8 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
                 break;
         }
         if(!m_Driver) {
-            THROW1_TRACE(runtime_error,
-                         "CGBDataLoader::CGBDataLoader: "
-                         "Could not create driver: " + string(env));
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Could not create driver: " + string(env));
         }
     }
   
@@ -230,8 +230,8 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap,
                 unreleased_mutex_run=false;
         }
         if ( ++count > 10 ) { // actually I would expect it to be 2 at most
-            THROW1_TRACE(runtime_error,
-                         "CGBDataLoader::GetRecords: exceded attempt count");
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CGBDataLoader::GetRecords: exceded attempt count");
         }
     } while (unreleased_mutex_run!=true);
 
@@ -725,9 +725,8 @@ bool CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                 g.Lock(&*tse);
                 tse->locked--;
                 x_UpdateDropList(tse); // move up as just checked
-                THROW1_TRACE(runtime_error,
-                             "CGBLoader:GetData: "
-                             "Multiple attempts to retrieve data failed");
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Multiple attempts to retrieve data failed");
             }
         }
         g.Lock();
@@ -807,9 +806,8 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     if ( !got ) {
         ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve request failed: "
                  "exceeded maximum attempts count");
-        THROW1_TRACE(runtime_error,
-                     "CGBLoader:x_ResolveHandle: "
-                     "Multiple attempts to resolve Seq-id failed");
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Multiple attempts to resolve Seq-id failed");
     }
 
     swap(sr->m_Sr, osr);
@@ -964,6 +962,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.83  2003/08/27 14:25:22  vasilche
 * Simplified CCmpTSE class.
 *

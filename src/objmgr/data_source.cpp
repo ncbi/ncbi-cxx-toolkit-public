@@ -42,6 +42,7 @@
 #include <objmgr/seqmatch_info.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -221,9 +222,8 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
             }
         }
         // No live TSEs -- try to select the best dead TSE
-        THROW1_TRACE(runtime_error,
-                     "CDataSource::x_FindBestTSE() -- "
-                     "Multiple seq-id matches found");
+        NCBI_THROW(CObjMgrException, eFindConflict,
+                   "Multiple seq-id matches found");
     }
     if ( m_Loader ) {
         // Multiple live TSEs - try to resolve the conflict (the status of some
@@ -234,9 +234,8 @@ TTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle) const
             return best;
         }
     }
-    THROW1_TRACE(runtime_error,
-                 "CDataSource::x_FindBestTSE() -- "
-                 "Multiple live entries found");
+        NCBI_THROW(CObjMgrException, eFindConflict,
+                   "Multiple live entries found");
 }
 
 
@@ -364,9 +363,8 @@ const CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Info& info)
                 }
             }
             if ( !info.m_SeqMap ) {
-                THROW1_TRACE(runtime_error,
-                             "CDataSource::x_GetSeqMap: "
-                             "sequence doesn't have CSeqMap object");
+                NCBI_THROW(CObjMgrException, eOtherError,
+                             "Sequence doesn't have CSeqMap object");
             }
             _ASSERT(info.m_SeqMap);
         }
@@ -382,13 +380,13 @@ CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse, bool dead,
 
     CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(tse);
     if ( entry_info ) {
-        THROW1_TRACE(runtime_error,
-                     "CDataSource::AddTSE(): tse already added");
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "TSE already added");
     }
 
     if ( tse.GetParentEntry() ) {
-        THROW1_TRACE(runtime_error,
-                     "CDataSource::AddTSE(): tse is child of another entry");
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "TSE is child of another entry");
     }
 
     tse.Parentize();
@@ -748,10 +746,10 @@ void CDataSource::x_IndexBioseq(CBioseq_Info& seq_info)
                 os << (*id)->DumpAsFasta();
                 si = CNcbiOstrstreamToString(os);
             }}
-            THROW1_TRACE(runtime_error,
-                         " duplicate Bioseq id '" + si + "' present in" +
-                         "\n  seq1: " + sid1 +
-                         "\n  seq2: " + sid2);
+            NCBI_THROW(CObjMgrException, eAddDataError,
+                       " duplicate Bioseq id '" + si + "' present in" +
+                       "\n  seq1: " + sid1 +
+                       "\n  seq2: " + sid2);
         }
         else {
             // Add new seq-id synonym
@@ -870,8 +868,8 @@ bool CDataSource::x_RemoveSeq_annot(TAnnots& annot_set,
 bool CDataSource::RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot)
 {
     if ( m_Loader ) {
-        THROW1_TRACE(runtime_error,
-            "CDataSource::RemoveAnnot() -- can not modify a loaded entry");
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+            "Can not modify a loaded entry");
     }
     CRef<CSeq_entry_Info> entry_info = x_FindSeq_entry_Info(entry);
     if ( !entry_info ) {
@@ -1454,6 +1452,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.119  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.118  2003/09/03 20:00:02  grichenk
 * Added sequence filtering by level (mains/parts/all)
 *

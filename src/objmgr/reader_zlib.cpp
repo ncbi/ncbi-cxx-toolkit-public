@@ -28,6 +28,7 @@
 */
 
 #include <objmgr/impl/reader_zlib.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <util/compress/zlib.hpp>
 
@@ -102,9 +103,8 @@ size_t CResultZBtSrcRdr::Read(char* buffer, size_t buffer_length)
     if ( type == eType_unknown ) {
         const size_t kHeaderSize = 4;
         if ( buffer_length < kHeaderSize) {
-            THROW1_TRACE(runtime_error,
-                         "CResultZBtSrcRdr: "
-                         "too small buffer to determine compression type");
+            NCBI_THROW(CLoaderException, eCompressionError,
+                       "Too small buffer to determine compression type");
         }
         const char* header = buffer;
         size_t got_already = 0;
@@ -182,9 +182,8 @@ void CResultZBtSrcX::ReadLength(void)
 {
     char header[8];
     if ( x_Read(header, 8) != 8 ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "too few header bytes");
+        NCBI_THROW(CLoaderException, eCompressionError,
+                   "Too few header bytes");
     }
     unsigned int compr_size = 0;
     for ( size_t i = 0; i < 4; ++i ) {
@@ -196,29 +195,25 @@ void CResultZBtSrcX::ReadLength(void)
     }
 
     if ( compr_size > kMax_ComprSize ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "compressed size is too large");
+        NCBI_THROW(CLoaderException, eCompressionError,
+                   "Compressed size is too large");
     }
     if ( uncompr_size > kMax_UncomprSize ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "uncompressed size is too large");
+        NCBI_THROW(CLoaderException, eCompressionError,
+                   "Uncompressed size is too large");
     }
     m_Compressed.reserve(compr_size);
     if ( x_Read(&m_Compressed[0], compr_size) != compr_size ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "compressed data is not complete");
+        NCBI_THROW(CLoaderException, eCompressionError,
+                   "Compressed data is not complete");
     }
     m_BufferPos = m_BufferEnd;
     m_Buffer.reserve(uncompr_size);
     if ( !m_Decompressor.DecompressBuffer(&m_Compressed[0], compr_size,
                                           &m_Buffer[0], uncompr_size,
                                           &uncompr_size) ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "decompression failed");
+        NCBI_THROW(CLoaderException, eCompressionError,
+                   "Decompression failed");
     }
     m_BufferEnd = uncompr_size;
     m_BufferPos = 0;
@@ -242,6 +237,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.2  2003/07/24 20:35:42  vasilche
 * Added private constructor to make MSVC-DLL happy.
 *

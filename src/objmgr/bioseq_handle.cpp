@@ -87,9 +87,8 @@ CDataSource& CBioseq_Handle::x_GetDataSource(void) const
 {
     // m_TSE_Info and its m_DataSource should never be null
     if ( !m_Bioseq_Info ) {
-        THROW1_TRACE(runtime_error,
-            "CBioseq_Handle::x_GetDataSource() -- "
-            "Can not resolve data source for bioseq handle.");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "Can not resolve data source for bioseq handle.");
     }
     return m_Bioseq_Info->GetDataSource();
 }
@@ -353,6 +352,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.44  2003/08/27 14:27:19  vasilche
 * Use Reverse(ENa_strand) function.
 *

@@ -38,6 +38,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <algorithm>
 #include <map>
 
@@ -143,9 +144,8 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding) const
     case CSeq_data::e_Ncbipaa: //### Not sure about this
     case CSeq_data::e_Ncbipna: //### Not sure about this
     default:
-        THROW1_TRACE(runtime_error,
-                     "CSeqVector::GetGapChar() -- "
-                     "Can not indicate gap using the selected coding");
+        NCBI_THROW(CSeqVectorException, eCodingError,
+                   "Can not indicate gap using the selected coding");
     }
 }
 
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.61  2003/08/29 13:34:47  vasilche
 * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
 * CSeqVector::operator[] made significantly faster.

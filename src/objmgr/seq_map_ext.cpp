@@ -56,8 +56,8 @@ CSeqMap_Delta_seqs::CSeqMap_Delta_seqs(TObject& obj, CDataSource* source)
       m_List(&obj.Set())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store CDelta_seq iterator: too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store CDelta_seq iterator: too big");
     }
     x_IndexAll(obj.Set());
 }
@@ -110,8 +110,8 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
     // check segment type
     CSegment& segment = x_SetSegment(index);
     if ( segment.m_SegType != eSeqData ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSeq_data: invalid segment type");
+        NCBI_THROW(CSeqMapException, eSegmentTypeError,
+                   "Invalid segment type");
     }
 
     // lock for object modification
@@ -119,8 +119,8 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
 
     // check for object
     if ( segment.m_RefObject ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSeq_data: CSeq_data already set");
+        NCBI_THROW(CSeqMapException, eDataError,
+                     "CSeq_data already set");
     }
 
     // do insertion
@@ -137,8 +137,8 @@ void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
     // check segment type
     CSegment& segment = x_SetSegment(index);
     if ( segment.m_SegType != eSeqSubMap ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSubSeqMap: invalid segment type");
+        NCBI_THROW(CSeqMapException, eSegmentTypeError,
+                   "Invalid segment type");
     }
 
     // lock for object modification
@@ -146,8 +146,8 @@ void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
 
     // check for object
     if ( segment.m_RefObject ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSubSeqMap: submap already set");
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "Submap already set");
     }
 
     // do insertion
@@ -170,8 +170,8 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeg_ext& obj, TList& seq,
       m_List(&seq)
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store CSeq_loc list iterator: too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store CSeq_loc list iterator: too big");
     }
     x_IndexAll();
 }
@@ -184,8 +184,8 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_mix& obj, TList& seq,
       m_List(&seq)
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store CSeq_loc list iterator: too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store CSeq_loc list iterator: too big");
     }
     x_IndexAll();
 }
@@ -198,8 +198,8 @@ CSeqMap_Seq_locs::CSeqMap_Seq_locs(CSeq_loc_equiv& obj, TList& seq,
       m_List(&seq)
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store CSeq_loc list iterator: too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store CSeq_loc list iterator: too big");
     }
     x_IndexAll();
 }
@@ -227,9 +227,8 @@ CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj, CDataSource* source)
       m_List(&obj.Set())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store CSeq_interval list iterator: "
-                     "too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store CSeq_interval list iterator: too big");
     }
     x_IndexAll();
 }
@@ -242,9 +241,8 @@ CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(TObject& obj,
       m_List(&obj.Set())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store CSeq_interval list iterator: "
-                     "too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store CSeq_interval list iterator: too big");
     }
     x_IndexAll();
 }
@@ -272,9 +270,8 @@ CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj, CDataSource* source)
       m_List(&obj.SetPoints())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store TSeqPos list iterator: "
-                     "too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store TSeqPos list iterator: too big");
     }
     x_IndexAll();
 }
@@ -286,9 +283,8 @@ CSeqMap_SeqPoss::CSeqMap_SeqPoss(TObject& obj, CSeqMap* parent, size_t index)
       m_List(&obj.SetPoints())
 {
     if ( sizeof(TList_I) > sizeof(CSegment::TList0_I) ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap: cannot store TSeqPos list iterator: "
-                     "too big");
+        NCBI_THROW(CSeqMapException, eIteratorTooBig,
+                   "Cannot store TSeqPos list iterator: too big");
     }
     x_IndexAll();
 }
@@ -326,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.7  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

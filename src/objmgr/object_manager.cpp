@@ -38,6 +38,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/impl/data_source.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -146,8 +147,7 @@ bool CObjectManager::RevokeDataLoader(CDataLoader& loader)
     // make sure it is registered
     CDataLoader* my_loader = x_GetLoaderByName(loader_name);
     if ( my_loader != &loader ) {
-        THROW1_TRACE(runtime_error,
-            "CObjectManager::RevokeDataLoader() -- "
+        NCBI_THROW(CObjMgrException, eRegisterError,
             "Data loader " + loader_name + " not registered");
     }
     TDataSourceLock lock = x_RevokeDataLoader(&loader);
@@ -162,8 +162,7 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
     CDataLoader* loader = x_GetLoaderByName(loader_name);
     // if not registered
     if ( !loader ) {
-        THROW1_TRACE(runtime_error,
-            "CObjectManager::RevokeDataLoader() -- "
+        NCBI_THROW(CObjMgrException, eRegisterError,
             "Data loader " + loader_name + " not registered");
     }
     TDataSourceLock lock = x_RevokeDataLoader(loader);
@@ -247,8 +246,7 @@ CObjectManager::AcquireDataLoader(const string& loader_name)
     TReadLockGuard guard(m_OM_Lock);
     CDataLoader* loader = x_GetLoaderByName(loader_name);
     if ( !loader ) {
-        THROW1_TRACE(runtime_error,
-            "CObjectManager::AcquireDataLoader() -- "
+        NCBI_THROW(CObjMgrException, eRegisterError,
             "Data loader " + loader_name + " not found");
     }
     TDataSourceLock lock = x_FindDataSource(loader);
@@ -303,10 +301,9 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
         m_mapNameToLoader.insert(TMapNameToLoader::value_type(loader_name,0));
     if ( !ins.second ) {
         if ( ins.first->second != &loader ) {
-            THROW1_TRACE(runtime_error,
-                         "CObjectManager::RegisterDataLoader() -- "
-                         "Attempt to register different data loaders "
-                         "with the same name");
+            NCBI_THROW(CObjMgrException, eRegisterError,
+                "Attempt to register different data loaders "
+                "with the same name");
         }
         if ( !no_warning ) {
             ERR_POST(Warning <<
@@ -438,6 +435,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.27  2003/08/04 17:04:31  grichenk
 * Added default data-source priority assignment.
 * Added support for iterating all annotations from a

@@ -36,6 +36,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -152,8 +153,8 @@ inline
 void CSeq_loc_Conversion::CheckDstInterval(void)
 {
     if ( m_LastType != CSeq_loc::e_Int ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeq_loc_Conversion::CheckDstInterval: wrong last location type");
+        NCBI_THROW(CAnnotException, eBadLocation,
+                   "Wrong last location type");
     }
     m_LastType = CSeq_loc::e_not_set;
 }
@@ -163,8 +164,8 @@ inline
 void CSeq_loc_Conversion::CheckDstPoint(void)
 {
     if ( m_LastType != CSeq_loc::e_Pnt ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeq_loc_Conversion::CheckDstPoint: wrong last location type");
+        NCBI_THROW(CAnnotException, eBadLocation,
+                   "Wrong last location type");
     }
     m_LastType = CSeq_loc::e_not_set;
 }
@@ -350,9 +351,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         break;
     }
     default:
-        THROW1_TRACE(runtime_error,
-                     "CSeq_loc_Conversion::Convert: "
-                     "Unsupported location type");
+        NCBI_THROW(CAnnotException, eBadLocation,
+                   "Unsupported location type");
     }
     if ( always && IsSpecialLoc() ) {
         SetDstLoc(dst);
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.3  2003/08/27 14:29:52  vasilche
 * Reduce object allocations in feature iterator.
 *

@@ -32,6 +32,7 @@
 
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/impl/seq_id_tree.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -129,9 +130,8 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                            TSeq_id_HandleSet& h_set)
 {
     if (sid.find('|') != string::npos) {
-        THROW1_TRACE(runtime_error,
-            "CSeq_id_Mapper::GetMatchingHandlesStr() -- "
-            "Symbol \'|\' is not supported here");
+        NCBI_THROW(CObjMgrException, eIdMapperError,
+                   "Symbol \'|\' is not supported here");
     }
 
     CSeq_id_Which_Tree::TSeq_id_MatchList match_list;
@@ -174,6 +174,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.37  2003/06/10 19:06:35  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *

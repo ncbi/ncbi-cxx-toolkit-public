@@ -39,6 +39,7 @@
 */
 
 #include <objmgr/seq_id_handle.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -273,8 +274,16 @@ private:
 private:
     // Prohibit copy operator and constructor
 #ifdef NCBI_OS_MSWIN
-    CSeqMap(const CSeqMap&) { THROW1_TRACE(runtime_error, "unimplemented"); }
-    CSeqMap& operator= (const CSeqMap&) { THROW1_TRACE(runtime_error, "unimplemented"); }
+    CSeqMap(const CSeqMap&)
+        {
+            NCBI_THROW(CSeqMapException, eUnimplemented,
+                       "copy constructor not implemented");
+        }
+    CSeqMap& operator= (const CSeqMap&)
+        {
+            NCBI_THROW(CSeqMapException, eUnimplemented,
+                       "operator=() not implemented");
+        }
 #else
     CSeqMap(const CSeqMap&);
     CSeqMap& operator= (const CSeqMap&);
@@ -354,6 +363,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/09/05 17:29:39  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.40  2003/07/17 19:10:27  grichenk
 * Added methods for seq-map and seq-vector validation,
 * updated demo.

@@ -31,6 +31,7 @@
 */
 
 #include <objmgr/impl/seq_id_tree.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -588,8 +589,8 @@ const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
     case CSeq_id::e_Ddbj:
         return id.GetDdbj();
     default:
-        THROW1_TRACE(runtime_error,
-            "CSeq_id_GB_Tree::x_Get() -- Invalid seq-id type");
+        NCBI_THROW(CObjMgrException, eIdMapperError,
+                   "Invalid seq-id type");
     }
 }
 
@@ -786,9 +787,8 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
                                                     info)).second);
         }
         else {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_id_Local_Tree::FindOrCreate() -- "
-                         "Can not create index for an empty local seq-id");
+            NCBI_THROW(CObjMgrException, eIdMapperError,
+                       "Can not create index for an empty local seq-id");
         }
     }
     return info;
@@ -916,9 +916,8 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                                                                 info)).second);
         }
         else {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_id_General_Tree::FindOrCreate() -- "
-                         "Can not create index for an empty db-tag");
+            NCBI_THROW(CObjMgrException, eIdMapperError,
+                       "Can not create index for an empty db-tag");
         }
     }
     return info;
@@ -1182,9 +1181,8 @@ CSeq_id_Handle CSeq_id_Patent_Tree::FindOrCreate(const CSeq_id& id)
         }
         else {
             // Can not index empty patent number
-            THROW1_TRACE(runtime_error,
-                         "CSeq_id_Patent_Tree: "
-                         "cannot index empty patent number");
+            NCBI_THROW(CObjMgrException, eIdMapperError,
+                       "Cannot index empty patent number");
         }
     }
     return info;
@@ -1401,6 +1399,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.2  2003/06/30 18:40:04  vasilche
 * Fixed warning (unused argument).
 *

@@ -143,16 +143,16 @@ CSeqMap::~CSeqMap(void)
 
 void CSeqMap::x_GetSegmentException(size_t /*index*/) const
 {
-    THROW1_TRACE(runtime_error,
-                 "CSeqMap::x_GetSegment: invalid segment index");
+    NCBI_THROW(CSeqMapException, eInvalidIndex,
+               "Invalid segment index");
 }
 
 
 CSeqMap::CSegment& CSeqMap::x_SetSegment(size_t index)
 {
     if ( index >= x_GetSegmentsCount() ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSegment: invalid segment index");
+        NCBI_THROW(CSeqMapException, eInvalidIndex,
+                   "Invalid segment index");
     }
     return m_Segments[index];
 }
@@ -161,15 +161,13 @@ CSeqMap::CSegment& CSeqMap::x_SetSegment(size_t index)
 CBioseq_Handle CSeqMap::x_GetBioseqHandle(const CSegment& seg, CScope* scope) const
 {
     if ( !scope ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_GetBioseqHandle: "
-                     "scope is null");
+        NCBI_THROW(CSeqMapException, eNullPointer,
+                   "Null scope pointer");
     }
     CBioseq_Handle bh = scope->GetBioseqHandle(x_GetRefSeqid(seg));
     if ( !bh ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_GetBioseqHandle: "
-                     "cannot resolve reference");
+        NCBI_THROW(CSeqMapException, eFail,
+                   "Cannot resolve reference");
     }
     return bh;
 }
@@ -187,9 +185,8 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
             CBioseq_Handle bh = x_GetBioseqHandle(seg, scope);
             CBioseq_Handle::TBioseqCore seq = bh.GetBioseqCore();
             if ( !seq->GetInst().IsSetLength() ) {
-                THROW1_TRACE(runtime_error,
-                             "CSeqMap::x_ResolveSegmentLength: "
-                             "length of sequence is not set");
+                NCBI_THROW(CSeqMapException, eDataError,
+                           "Length of sequence is not set");
             }
             length = seq->GetInst().GetLength();
         }
@@ -203,8 +200,8 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
 TSeqPos CSeqMap::x_ResolveSegmentPosition(size_t index, CScope* scope) const
 {
     if ( index > x_GetSegmentsCount() ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_GetSegmentPosition: invalid segment index");
+        NCBI_THROW(CSeqMapException, eInvalidIndex,
+                   "Invalid segment index");
     }
     size_t resolved = m_Resolved;
     if ( index <= resolved )
@@ -262,8 +259,7 @@ void CSeqMap::x_LoadObject(const CSegment& seg) const
     _ASSERT(seg.m_Position != kInvalidSeqPos);
     _ASSERT(m_Source);
     if ( !seg.m_RefObject ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_LoadObject: cannot load part of seqmap");
+        NCBI_THROW(CSeqMapException, eFail, "Cannot load part of seqmap");
     }
 }
 
@@ -295,8 +291,7 @@ CConstRef<CSeqMap> CSeqMap::x_GetSubSeqMap(const CSegment& seg, CScope* scope,
             x_LoadObject(seg);
         }
         if ( !seg.m_RefObject ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeqMap::x_GetSubSeqMap: null CSeqMap pointer");
+        NCBI_THROW(CSeqMapException, eNullPointer, "Null CSeqMap pointer");
         }
         ret.Reset(static_cast<const CSeqMap*>(seg.m_RefObject.GetPointer()));
     }
@@ -318,8 +313,7 @@ CSeqMap* CSeqMap::x_GetSubSeqMap(CSegment& seg)
 void CSeqMap::x_SetSubSeqMap(size_t /*index*/, CSeqMap_Delta_seqs* /*subMap*/)
 {
     // not valid in generic seq map -> incompatible objects
-    THROW1_TRACE(runtime_error,
-                 "CSeqMap::x_SetSeq_data: invalid parent map");
+    NCBI_THROW(CSeqMapException, eDataError, "Invalid parent map");
 }
 
 
@@ -330,13 +324,13 @@ const CSeq_data& CSeqMap::x_GetSeq_data(const CSegment& seg) const
             x_LoadObject(seg);
         }
         if ( !seg.m_RefObject ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeqMap::x_GetSeq_data: null CSeq_data pointer");
+            NCBI_THROW(CSeqMapException, eNullPointer,
+                       "Null CSeq_data pointer");
         }
         return *static_cast<const CSeq_data*>(seg.m_RefObject.GetPointer());
     }
-    THROW1_TRACE(runtime_error,
-                 "CSeqMap::x_GetSeq_data: invalid segment type");
+    NCBI_THROW(CSeqMapException, eSegmentTypeError,
+               "Invalid segment type");
 }
 
 
@@ -345,15 +339,14 @@ void CSeqMap::x_SetSeq_data(size_t index, CSeq_data& data)
     // check segment type
     CSegment& seg = x_SetSegment(index);
     if ( seg.m_SegType != eSeqData ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSeq_data: invalid segment type");
+        NCBI_THROW(CSeqMapException, eSegmentTypeError,
+                   "Invalid segment type");
     }
     // lock for object modification
     CFastMutexGuard guard(m_SeqMap_Mtx);
     // check for object
     if ( seg.m_RefObject ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_SetSeq_data: CSeq_data already set");
+        NCBI_THROW(CSeqMapException, eDataError, "CSeq_data already set");
     }
     // set object
     seg.m_RefObject.Reset(&data);
@@ -364,13 +357,12 @@ const CSeq_id& CSeqMap::x_GetRefSeqid(const CSegment& seg) const
 {
     if ( seg.m_SegType == eSeqRef ) {
         if ( !seg.m_RefObject ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeqMap::x_GetRefSeqid: null CSeq_id pointer");
+            NCBI_THROW(CSeqMapException, eNullPointer, "Null CSeq_id pointer");
         }
         return static_cast<const CSeq_id&>(*seg.m_RefObject);
     }
-    THROW1_TRACE(runtime_error,
-                 "CSeqMap::x_GetRefSeqid: invalid segment type");
+    NCBI_THROW(CSeqMapException, eSegmentTypeError,
+               "Invalid segment type");
 }
 
 
@@ -596,12 +588,12 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
             break;
         case CSeq_ext::e_Map:
             //### Not implemented
-            THROW1_TRACE(runtime_error,
-                         "CSeq_ext::e_Map -- not implemented");
+            NCBI_THROW(CSeqMapException, eUnimplemented,
+                       "CSeq_ext::e_Map -- not implemented");
         default:
             //### Not implemented
-            THROW1_TRACE(runtime_error,
-                         "CSeq_ext::??? -- not implemented");
+            NCBI_THROW(CSeqMapException, eUnimplemented,
+                       "CSeq_ext::??? -- not implemented");
         }
     }
     else if ( inst.GetRepr() == CSeq_inst::eRepr_virtual ) {
@@ -611,12 +603,14 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
     }
     else {
         if ( inst.GetRepr() != CSeq_inst::eRepr_not_set ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_inst.repr of sequence without data should be not_set");
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "CSeq_inst.repr of sequence without data "
+                       "should be not_set");
         }
         if ( inst.IsSetLength() && inst.GetLength() != 0 ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeq_inst.length of sequence without data should be 0");
+            NCBI_THROW(CSeqMapException, eDataError,
+                       "CSeq_inst.length of sequence without data "
+                       "should be 0");
         }
         ret.Reset(new CSeqMap(TSeqPos(0)));
     }
@@ -825,17 +819,14 @@ CSeqMap::CSegment& CSeqMap::x_Add(CSeq_loc& loc)
     case CSeq_loc::e_Equiv:
         return x_Add(loc.SetEquiv());
     case CSeq_loc::e_Bond:
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_Add() -- "
-                     "e_Bond is not allowed as a reference type");
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "e_Bond is not allowed as a reference type");
     case CSeq_loc::e_Feat:
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_Add() -- "
-                     "e_Feat is not allowed as a reference type");
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "e_Feat is not allowed as a reference type");
     default:
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap::x_Add() -- "
-                     "invalid reference type");
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "invalid reference type");
     }
 }
 
@@ -848,7 +839,8 @@ CSeqMap::CSegment& CSeqMap::x_Add(CDelta_seq& seq)
     case CDelta_seq::e_Literal:
         return x_Add(seq.SetLiteral());
     default:
-        THROW1_TRACE(runtime_error, "CSeqMap::x_Add: empty Delta-seq");
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "Can not add empty Delta-seq");
     }
 }
 
@@ -859,6 +851,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.46  2003/08/27 14:27:19  vasilche
 * Use Reverse(ENa_strand) function.
 *

@@ -41,6 +41,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -587,9 +588,8 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
                 if ( !bh ) {
                     if (m_IdResolving == eFailUnresolved) {
                         // resolve by Seq-id only
-                        THROW1_TRACE(runtime_error,
-                                     "CAnnotTypes_CI::x_Initialize -- "
-                                     "Cannot resolve master id");
+                        NCBI_THROW(CAnnotException, eFindFailed,
+                                   "Cannot resolve master id");
                     }
                     continue; // Do not crash - just skip unresolvable IDs
                 }
@@ -934,9 +934,8 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
 
         CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idit->first);
         if ( !syns  &&  m_IdResolving == eFailUnresolved ) {
-            THROW1_TRACE(runtime_error,
-                         "CAnnotTypes_CI::x_Search -- "
-                         "Cannot find id synonyms");
+            NCBI_THROW(CAnnotException, eFindFailed,
+                       "Cannot find id synonyms");
         }
         if ( !syns  ||  syns->find(idit->first) == syns->end() ) {
             x_Search(idit->first, idit->second, cvt);
@@ -1014,9 +1013,8 @@ void CAnnotTypes_CI::x_Search(const CObject& limit_info)
     }
     default:
         // eLimit_None
-        THROW1_TRACE(runtime_error,
-                     "CAnnotTypes_CI::x_Search: "
-                     "search must be limited to an object");
+        NCBI_THROW(CAnnotException, eLimitError,
+                   "Search must be limited to an object");
     }
 }
 
@@ -1078,6 +1076,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.84  2003/09/03 19:59:01  grichenk
 * Initialize m_MappedIndex to 0
 *

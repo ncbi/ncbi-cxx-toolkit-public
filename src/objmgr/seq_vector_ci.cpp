@@ -45,6 +45,7 @@
 #include <objects/seq/IUPACna.hpp>
 #include <algorithm>
 #include <objmgr/impl/seq_vector_cvt.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -363,9 +364,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
                                                  cacheCoding,
                                                  reverse);
             if ( !table && cacheCoding != dataCoding ) {
-                THROW1_TRACE(runtime_error,
-                             "CSeqVector_CI::x_FillCache: "
-                             "incompatible codings");
+                NCBI_THROW(CSeqVectorException, eCodingError,
+                           "Incompatible sequence codings");
             }
         }
 
@@ -402,9 +402,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
                           table, reverse);
             break;
         case CSeq_data::e_Ncbipna:
-            THROW1_TRACE(runtime_error,
-                         "CSeqVector_CI::x_FillCache: "
-                         "Ncbipna conversion not implemented");
+            NCBI_THROW(CSeqVectorException, eCodingError,
+                       "Ncbipna conversion not implemented");
         case CSeq_data::e_Ncbi8aa:
             copy_8bit_any(m_Cache, count, data.GetNcbi8aa().Get(), dataPos,
                           table, reverse);
@@ -414,17 +413,15 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
                           table, reverse);
             break;
         case CSeq_data::e_Ncbipaa:
-            THROW1_TRACE(runtime_error,
-                         "CSeqVector_CI::x_FillCache: "
-                         "Ncbipaa conversion not implemented");
+            NCBI_THROW(CSeqVectorException, eCodingError,
+                       "Ncbipaa conversion not implemented");
         case CSeq_data::e_Ncbistdaa:
             copy_8bit_any(m_Cache, count, data.GetNcbistdaa().Get(), dataPos,
                           table, reverse);
             break;
         default:
-            THROW1_TRACE(runtime_error,
-                         "CSeqVector_CI::x_FillCache: "
-                         "invalid data type");
+            NCBI_THROW(CSeqVectorException, eCodingError,
+                       "Invalid data coding");
         }
         break;
     }
@@ -433,8 +430,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         fill(m_Cache, m_Cache + count, m_Vector->x_GetGapChar(m_Coding));
         break;
     default:
-        THROW1_TRACE(runtime_error,
-                     "CSeqVector_CI::x_FillCache: invalid segment type");
+        NCBI_THROW(CSeqVectorException, eDataError,
+                   "Invalid segment type");
     }
     m_CachePos = start;
 }
@@ -590,8 +587,8 @@ void CSeqVector_CI::x_PrevCacheSeg()
     TSeqPos pos = x_CachePos();
     if ( pos-- == 0 ) {
         // Can not go further
-        THROW1_TRACE(runtime_error,
-                     "CSeqVector_CI::x_PrevCacheSeg: no more data");
+        NCBI_THROW(CSeqVectorException, eOutOfRange,
+                   "Can not update cache: iterator out of range");
     }
     // save current cache in backup
     x_SwapCache();
@@ -627,6 +624,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.25  2003/08/29 13:34:47  vasilche
 * Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
 * CSeqVector::operator[] made significantly faster.

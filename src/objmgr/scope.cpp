@@ -41,6 +41,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seqmatch_info.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -395,8 +396,8 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 
     string label;
     loc.GetLabel(&label);
-    NCBI_THROW(CException, eUnknown, "GetBioseqHandle by location failed: "
-        "seq-loc = " + label);
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "GetBioseqHandle by location failed: seq-loc = " + label);
 }
 
 
@@ -409,7 +410,8 @@ CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
         }
     }
 
-    NCBI_THROW(CException, eUnknown, "GetBioseqHandle from bioseq failed");
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "GetBioseqHandle from bioseq failed");
 }
 
 
@@ -664,7 +666,7 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
         info2.GetDataSource().GetName() << "::" <<
         info2.GetIdHandle().AsString();
     string msg = CNcbiOstrstreamToString(s);
-    THROW1_TRACE(runtime_error, msg);
+    NCBI_THROW(CObjMgrException, eFindConflict, msg);
 }
 
 
@@ -802,6 +804,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.79  2003/09/03 20:00:02  grichenk
 * Added sequence filtering by level (mains/parts/all)
 *

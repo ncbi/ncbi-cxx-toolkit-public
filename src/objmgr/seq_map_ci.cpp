@@ -197,13 +197,13 @@ CSeqMap_CI::~CSeqMap_CI(void)
 const CSeq_data& CSeqMap_CI::GetData(void) const
 {
     if ( !*this ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap_CI::GetData: out of range");
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "Iterator out of range");
     }
     if ( GetRefPosition() != 0 || GetRefMinusStrand() ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap_CI::GetData: non standard Seq_data: "
-                     "use methods GetRefData/GetRefPosition/GetRefMinusStrand");
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "Non standard Seq_data: use methods "
+                   "GetRefData/GetRefPosition/GetRefMinusStrand");
     }
     return GetRefData();
 }
@@ -212,8 +212,8 @@ const CSeq_data& CSeqMap_CI::GetData(void) const
 const CSeq_data& CSeqMap_CI::GetRefData(void) const
 {
     if ( !*this ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap_CI::GetRefData: out of range");
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "Iterator out of range");
     }
     return x_GetSeqMap().x_GetSeq_data(x_GetSegment());
 }
@@ -222,8 +222,8 @@ const CSeq_data& CSeqMap_CI::GetRefData(void) const
 CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
 {
     if ( !*this ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap_CI::GetRefSeqid: out of range");
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "Iterator out of range");
     }
     _ASSERT(x_GetSeqMap().m_Source);
     return CSeq_id_Mapper::GetSeq_id_Mapper().
@@ -234,8 +234,8 @@ CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
 TSeqPos CSeqMap_CI_SegmentInfo::GetRefPosition(void) const
 {
     if ( !InRange() ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMap_CI::GetRefPosition: out of range");
+        NCBI_THROW(CSeqMapException, eOutOfRange,
+                   "Iterator out of range");
     }
     const CSeqMap::CSegment& seg = x_GetSegment();
     TSignedSeqPos skip;
@@ -480,6 +480,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/09/05 17:29:40  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.17  2003/08/27 14:27:19  vasilche
 * Use Reverse(ENa_strand) function.
 *

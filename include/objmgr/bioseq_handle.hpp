@@ -39,6 +39,7 @@
 #include <objects/seq/Seq_inst.hpp>
 
 #include <objmgr/seq_id_handle.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
@@ -234,9 +235,8 @@ inline
 bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
 {
     if ( &GetScope() != &h.GetScope() ) {
-        THROW1_TRACE(runtime_error,
-            "CBioseq_Handle::operator==() -- "
-            "Unable to compare handles from different scopes");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "Unable to compare handles from different scopes");
     }
     if ( *this && h )
         return &x_GetBioseq_Info() == &h.x_GetBioseq_Info();
@@ -256,9 +256,8 @@ inline
 bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 {
     if ( &GetScope() != &h.GetScope() ) {
-        THROW1_TRACE(runtime_error,
-            "CBioseq_Handle::operator<() -- "
-            "Unable to compare CBioseq_Handles from different scopes");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "Unable to compare handles from different scopes");
     }
     if ( *this && h )
         return &x_GetBioseq_Info() < &h.x_GetBioseq_Info();
@@ -280,6 +279,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/09/05 17:29:39  grichenk
+* Structurized Object Manager exceptions
+*
 * Revision 1.42  2003/08/27 14:28:50  vasilche
 * Reduce amount of object allocations in feature iteration.
 *
