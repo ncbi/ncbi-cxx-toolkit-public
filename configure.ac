@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.105 2002/07/10 15:37:19 ucko Exp $
+#  $Id: configure.ac,v 1.106 2002/07/12 21:03:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -719,10 +719,10 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
       WorkShop* )
         # Include ARCH_CFLAGS here because -fast implies -xtarget=native.
         DEF_FAST_FLAGS="-fast"
-        if test -z "$bit64_sfx"; then
-            # Work around a WorkShop standard library bug.
-            DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET"
-        fi
+        case "$host_cpu" in
+           # Work around a WorkShop standard library bug.
+           i?86) DEF_FAST_FLAGS="$DEF_FAST_FLAGS -D_RWSTD_NO_TEST_AND_SET" ;;
+        esac
         ;;
       KCC )
         DEF_FAST_FLAGS="+K3"
