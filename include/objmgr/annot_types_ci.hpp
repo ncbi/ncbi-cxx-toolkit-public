@@ -150,9 +150,16 @@ private:
                              TSignedSeqPos shift);      // shift to master
     // Convert an annotation to the master location coordinates
     CAnnotObject* x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const;
-    // Convert seq-loc to the master location coordinates, return true
-    // if any location was adjusted (used as Partial flag for features)
-    bool x_ConvertLocToMaster(CSeq_loc& loc) const;
+    // Convert seq-loc to the master location coordinates, return ePartial
+    // if any location was adjusted (used as Partial flag for features),
+    // eMapped if a location was recalculated but not truncated, eNone
+    // if no convertions were necessary.
+    enum EConverted {
+        eNone,
+        eMapped,
+        ePartial
+    };
+    EConverted x_ConvertLocToMaster(const CSeq_loc& src, CSeq_loc& dest) const;
 
     SAnnotSelector               m_Selector;
     // Map of all convertions from references to the master location
@@ -163,8 +170,6 @@ private:
     TTSESet                      m_TSESet;
     // Current annotation
     TAnnotSet::const_iterator    m_CurAnnot;
-    // Copy of the annot object (feature etc.) converted to the master seq
-    mutable CRef<CAnnotObject>   m_AnnotCopy;
     mutable CRef<CScope>         m_Scope;
     // If non-zero, search annotations in the "native" TSE only
     CRef<CTSE_Info>              m_NativeTSE;
@@ -192,6 +197,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/02/04 21:44:10  grichenk
+* Convert seq-loc instead of seq-annot to the master coordinates
+*
 * Revision 1.25  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *
