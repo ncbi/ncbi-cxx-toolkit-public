@@ -53,9 +53,7 @@ class NCBI_XOBJREAD_EXPORT CFeature_table_reader
 {
 public:
     // read 5-column feature table and return Seq-annot
-    static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIfstream& ifs,
-                                                    const string& seqid,
-                                                    const string& annotname);
+    static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIfstream& ifs);
 
 private:
     // this class uses a singleton internally to manage the specifics

@@ -1061,7 +1061,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstream& ifs, const string& seqid, const string& annotname)
 
 {
-    string str;
+    string line;
     string feat, qual, val;
     Int4 start, stop;
     bool partial5, partial3, ispoint;
@@ -1072,20 +1072,26 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     CRef<CSeq_feat> sfp;
     CSeq_loc_mix *mix = 0;
+    int pos;
 
     while (ifs.good ()) {
-        NcbiGetlineEOL (ifs, str);
 
-        if (! str.empty ()) {
-            if (str [0] == '>') {
+        pos = ifs.tellg ();
+        NcbiGetlineEOL (ifs, line);
 
-                // skip for now
+        if (! line.empty ()) {
+            if (line [0] == '>') {
 
-            } else if (str [0] == '[') {
+                // if next feature table, reposition and return current sap
 
-                // set offset
+                ifs.seekg (pos);
+                return sap;
 
-            } else if (x_ParseFeatureTableLine (str, &start, &stop, &partial5, &partial3, &ispoint, feat, qual, val, offset)) {
+            } else if (line [0] == '[') {
+
+                // set offset !!!!!!!!
+
+            } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3, &ispoint, feat, qual, val, offset)) {
 
                 // process line in feature table
 
@@ -1106,7 +1112,6 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
                             sfp->SetData ().Select (typ);
                             CSeqFeatData& sfdata = sfp->SetData ();
                             if (typ == CSeqFeatData::e_Rna) {
-                                /* CRef<CRNA_ref> rrp (new CRNA_ref); */
                                 CRNA_ref& rrp = sfdata.SetRna ();
                                 CRNA_ref::EType rnatyp = CRNA_ref::eType_unknown;
                                 switch (sbtyp) {
@@ -1182,11 +1187,41 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
 
 // public access functions
 
-CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& ifs, const string& seqid, const string& annotname)
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& ifs)
 {
+    string line, seqid, annotname;
+    int pos;
+
+    // first look for >Feature line, extract seqid and optional annotname
+
+    while (seqid.empty () && ifs.good ()) {
+
+        pos = ifs.tellg ();
+        NcbiGetlineEOL (ifs, line);
+
+        if (! line.empty ()) {
+            if (line [0] == '>') {
+                if (NStr::StartsWith (line, ">Feature")) {
+                    vector<string> tkns;
+                    tkns.clear ();
+                    NStr::Tokenize (line, " ", tkns, NStr::eMergeDelims);
+                    SIZE_TYPE numtkns = tkns.size ();
+                    if (numtkns > 1) {
+                        seqid = tkns [1];
+                        if (numtkns > 2) {
+                            annotname = tkns [2];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // then read features from 5-column table
+
     CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname);
 
-    // now go through all features and demote single interval seqlocmix to seqlocint
+    // go through all features and demote single interval seqlocmix to seqlocint
 
     for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
         CSeq_feat& feat = *fi;
