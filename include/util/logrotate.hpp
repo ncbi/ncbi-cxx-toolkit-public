@@ -65,7 +65,10 @@ public:
     // worth of characters.
     CRotatingLogStream(const string& filename, CT_POS_TYPE limit,
                        openmode mode = app | ate | out)
-        { init(new CRotatingLogStreamBuf(this, filename, limit, mode)); }
+        : CNcbiOstream(new CRotatingLogStreamBuf(this, filename, limit, mode))
+        { }
+    virtual ~CRotatingLogStream(void)
+        { delete rdbuf(); }
 
     // Users may call this explicitly to rotate on some basis other
     // than size (such as time since last rotation or a signal from
@@ -95,6 +98,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/11/25 19:19:13  ucko
+* Adjust CRotatingLogStream's constructor to compile under GCC 3, and
+* generally be slightly more efficient.
+* Remember to clean up the buffer in its destructor.
+*
 * Revision 1.1  2002/11/25 17:20:59  ucko
 * Add support for automatic log rotation (CRotatingLogStream)
 *
