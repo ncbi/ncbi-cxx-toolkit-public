@@ -3071,7 +3071,7 @@ extern EIO_Status POLLABLE_Poll(size_t          n,
                                 const STimeout* timeout,
                                 size_t*         n_ready)
 {
-    return SOCK_Poll(n, (SSOCK_Poll *const) polls, timeout, n_ready);
+    return SOCK_Poll(n, (SSOCK_Poll*) polls, timeout, n_ready);
 }
 
 
@@ -4379,6 +4379,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.167  2005/03/08 16:17:26  lavr
+ * Remove an extra const qualifier
+ *
  * Revision 6.166  2005/02/11 18:46:47  lavr
  * Fix some network/host byte order issues with port numbers
  *
