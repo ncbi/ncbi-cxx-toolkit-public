@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/07/10 15:08:35  lavr
+ * Edit for style
+ *
  * Revision 6.15  2001/06/29 21:06:46  lavr
  * BUGFIX: CONN_LOG now checks for non-NULL get_type virtual function
  *
@@ -112,7 +115,7 @@
             descr,                                           \
             conn->meta.get_type                              \
              ? (*conn->meta.get_type)(conn->meta.c_get_type) \
-             : "<unknown>",                                  \
+             : "Unknown",                                  \
             IO_StatusStr(status)))
 
 
@@ -129,25 +132,24 @@ typedef enum eCONN_StateTag {
 /* Connection internal data
  */
 typedef struct SConnectionTag {
-    SMetaConnector         meta;       /* VTable of operations and list     */
-    BUF                    buf;        /* storage for the Peek'd data       */
+    SMetaConnector         meta;       /* VTable of operations and list      */
+    BUF                    buf;        /* storage for the Peek'd data        */
 #ifdef IMPLEMENTED__CONN_WaitAsync
-    SConnectorAsyncHandler async_data; /* info of curr. async event handler */
+    SConnectorAsyncHandler async_data; /* info of curr. async event handler  */
 #endif
-    eCONN_State            state;      /* connection state                  */
+    eCONN_State            state;      /* connection state                   */
     /* "[c|r|w|l]_timeout" is either 0 (means infinite), CONN_DEFAULT_TIMEOUT
        (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
-    const STimeout* c_timeout;         /* timeout on connect                */
-    const STimeout* r_timeout;         /* timeout on reading                */
-    const STimeout* w_timeout;         /* timeout on writing                */
-    const STimeout* l_timeout;         /* timeout on close                  */
-    STimeout        cc_timeout;        /* storage for "c_timeout"           */
-    STimeout        rr_timeout;        /* storage for "r_timeout"           */
-    STimeout        ww_timeout;        /* storage for "w_timeout"           */
-    STimeout        ll_timeout;        /* storage for "l_timeout"           */
+    const STimeout* c_timeout;         /* timeout on connect                 */
+    const STimeout* r_timeout;         /* timeout on reading                 */
+    const STimeout* w_timeout;         /* timeout on writing                 */
+    const STimeout* l_timeout;         /* timeout on close                   */
+    STimeout        cc_timeout;        /* storage for "c_timeout"            */
+    STimeout        rr_timeout;        /* storage for "r_timeout"            */
+    STimeout        ww_timeout;        /* storage for "w_timeout"            */
+    STimeout        ll_timeout;        /* storage for "l_timeout"            */
 
-    SCONN_Callback   callback[CONN_N_CALLBACKS];
-
+    SCONN_Callback  callback[CONN_N_CALLBACKS];
 } SConnection;
 
 
