@@ -85,11 +85,18 @@ void CreateDllsList(const CProjectItemsTree& tree_src,
                     list<string>*            dll_ids);
 
 
+void CollectDllsDepends(const list<string>& dll_ids,
+                        list<string>*       dll_depends_ids);
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/15 21:22:44  gorelenk
+ * Added declaration of function CollectDllsDepends.
+ *
  * Revision 1.4  2004/03/10 16:36:03  gorelenk
  * Added definition of functions FilterOutDllHostedProjects,
  * CreateDllBuildTree and CreateDllsList.
