@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.130  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.129  2002/04/09 14:38:26  thiessen
 * add cdd splash screen
 *
@@ -780,6 +783,9 @@ void Cn3DApp::InitRegistry(void)
         RegistrySetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, GetProgramDir() + "cache");
     RegistrySetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, 25);
 
+    // default advanced options
+    RegistrySetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, true);
+
     // load program registry - overriding defaults if present
     if (GetPrefsDir().size() > 0)
         registryFile = GetPrefsDir() + "Preferences";
@@ -1094,7 +1100,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
     EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  Cn3DMainFrame::OnSelectFavorite)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
-    EVT_MENU_RANGE(MID_EDIT_CDD_NAME, MID_CDD_REJECT_SEQ,   Cn3DMainFrame::OnCDD)
+    EVT_MENU_RANGE(MID_CDD_OVERVIEW, MID_CDD_REJECT_SEQ,    Cn3DMainFrame::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
@@ -1107,7 +1113,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), structureLimit(1000),
     cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL), cddRefDialog(NULL),
-    helpController(NULL), helpConfig(NULL)
+    helpController(NULL), helpConfig(NULL), cddOverview(NULL)
 {
     topWindow = this;
     GlobalMessenger()->AddStructureWindow(this);
@@ -1242,14 +1248,24 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menuBar->Append(menu, "&Window");
 
     // CDD menu
+    bool readOnly;
+    RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
     menu = new wxMenu;
+    menu->Append(MID_CDD_OVERVIEW, "CDD &Overview");
+    menu->AppendSeparator();
     menu->Append(MID_EDIT_CDD_NAME, "Edit &Name");
+    menu->Enable(MID_EDIT_CDD_NAME, !readOnly);
     menu->Append(MID_EDIT_CDD_DESCR, "Edit &Description");
+    menu->Enable(MID_EDIT_CDD_DESCR, !readOnly);
     menu->Append(MID_EDIT_CDD_NOTES, "Edit N&otes");
+    menu->Enable(MID_EDIT_CDD_NOTES, !readOnly);
     menu->Append(MID_EDIT_CDD_REFERENCES, "Edit &References");
-    menu->Append(MID_ANNOT_CDD, "&Annotate");
+    menu->Enable(MID_EDIT_CDD_REFERENCES, !readOnly);
+    menu->Append(MID_ANNOT_CDD, "Edit &Annotations");
+    menu->Enable(MID_ANNOT_CDD, !readOnly);
     menu->AppendSeparator();
     menu->Append(MID_CDD_REJECT_SEQ, "Re&ject Sequence");
+    menu->Enable(MID_CDD_REJECT_SEQ, !readOnly);
     menuBar->Append(menu, "&CDD");
 
     // Help menu
@@ -1393,7 +1409,7 @@ void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
 
     // spin
     if (event.GetId() == MID_SPIN) {
-        timer.Start(20, false);
+        timer.Start(40, false);
         animationMode = ANIM_SPIN;
         menuBar->Check(MID_SPIN, true);
         menuBar->Check(MID_STOP, false);
@@ -1631,6 +1647,7 @@ void Cn3DMainFrame::DestroyNonModalDialogs(void)
     if (cddNotesDialog) cddNotesDialog->Destroy();
     if (cddDescriptionDialog) cddDescriptionDialog->Destroy();
     if (cddRefDialog) cddRefDialog->Destroy();
+    if (cddOverview) cddOverview->Destroy();
 }
 
 void Cn3DMainFrame::OnPreferences(wxCommandEvent& event)
@@ -1670,10 +1687,41 @@ static bool CompareSequencesByIdentifier(const SeqAndDescr& a, const SeqAndDescr
         a.first->identifier, b.first->identifier);
 }
 
+void Cn3DMainFrame::ShowCDDOverview(void)
+{
+    if (!cddOverview)
+        cddOverview = new CDDSplashDialog(
+            this, glCanvas->structureSet, &cddOverview,
+            this, -1, "CDD Descriptive Items", wxPoint(200,50));
+    cddOverview->Raise();
+    cddOverview->Show(true);
+}
+
+void Cn3DMainFrame::ShowCDDAnnotations(void)
+{
+    if (!cddAnnotateDialog)
+        cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
+    cddAnnotateDialog->Raise();
+    cddAnnotateDialog->Show(true);
+}
+
+void Cn3DMainFrame::ShowCDDReferences(void)
+{
+    if (!cddRefDialog)
+        cddRefDialog = new CDDRefDialog(
+            glCanvas->structureSet, &cddRefDialog, this, -1, "CDD References");
+    cddRefDialog->Raise();
+    cddRefDialog->Show(true);
+}
+
 void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet || !glCanvas->structureSet->IsCDD()) return;
     switch (event.GetId()) {
+
+        case MID_CDD_OVERVIEW:
+            ShowCDDOverview();
+            break;
 
         case MID_EDIT_CDD_NAME: {
             wxString newName = wxGetTextFromUser("Enter or edit the CDD name:",
@@ -1703,20 +1751,13 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             cddNotesDialog->Show(true);
             break;
 
-        case MID_EDIT_CDD_REFERENCES: {
-            if (!cddRefDialog)
-                cddRefDialog = new CDDRefDialog(
-                    glCanvas->structureSet, &cddRefDialog, this, -1, "CDD References");
-            cddRefDialog->Show(true);
+        case MID_EDIT_CDD_REFERENCES:
+            ShowCDDReferences();
             break;
-        }
 
-        case MID_ANNOT_CDD: {
-            if (!cddAnnotateDialog)
-                cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
-            cddAnnotateDialog->Show(true);
+        case MID_ANNOT_CDD:
+            ShowCDDAnnotations();
             break;
-        }
 
         case MID_CDD_REJECT_SEQ: {
             // make a list of slave sequences
@@ -1952,11 +1993,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         if (readOK) {
             glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
             // if CDD is contained in a mime, then show CDD splash screen
-            if (glCanvas->structureSet->IsCDD()) {
-                CDDSplashDialog *splash = new CDDSplashDialog(
-                    this, glCanvas->structureSet, this, -1, "CDD Descriptive Items", wxPoint(200,50));
-                splash->Show(true);
-            }
+            if (glCanvas->structureSet->IsCDD()) ShowCDDOverview();
         } else {
             ERR_POST(Warning << "error: " << err);
             delete mime;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.4  2002/04/09 14:38:23  thiessen
 * add cdd splash screen
 *
@@ -119,6 +122,15 @@ CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
 
     // fill in list box with available references
     ResetListBox();
+
+    bool readOnly;
+    RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bAdd, ID_B_ADD, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEdit, ID_B_EDIT, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
+    bAdd->Enable(!readOnly);
+    bEdit->Enable(!readOnly);
+    bDelete->Enable(!readOnly);
 
     // call sizer stuff
     topSizer->Fit(this);

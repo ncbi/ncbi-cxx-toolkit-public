@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/09 23:59:10  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.8  2002/03/04 15:52:14  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -85,13 +88,14 @@
 #include <wx/listctrl.h>
 #include <wx/treectrl.h>
 #include <wx/notebook.h>
+#include <wx/grid.h>
 
 // Declare window functions
 
 #define ID_NOTEBOOK 10000
 #define ID_B_DONE 10001
 #define ID_B_CANCEL 10002
-wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupPreferencesNotebook( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_TEXT 10003
 #define ID_TEXTCTRL 10004
@@ -101,7 +105,7 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit = TRUE, bool s
 #define ID_B_Q_LOW 10008
 #define ID_B_Q_MED 10009
 #define ID_B_Q_HIGH 10010
-wxSizer *SetupQualityPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupQualityPage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_C_CACHE_ON 10011
 #define ID_LINE 10012
@@ -110,7 +114,10 @@ wxSizer *SetupQualityPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer
 #define ID_T_CACHE_FOLDER 10015
 #define ID_T_CACHE_2 10016
 #define ID_B_CACHE_CLEAR 10017
-wxSizer *SetupCachePage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupCachePage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+
+#define ID_C_ANNOT_RO 10018
+wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -169,8 +176,7 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
         wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
     // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupPreferencesNotebook(panel, false);
+    wxSizer *topSizer = SetupPreferencesNotebook(this, false);
 
     // get IntegerSpinCtrl pointers
     iWormSegments = giWormSegments;
@@ -200,9 +206,10 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     wxCommandEvent fakeCheck(wxEVT_COMMAND_CHECKBOX_CLICKED, ID_C_CACHE_ON);
     OnCheckbox(fakeCheck);  // set initial GUI enabled state
 
+    SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, ID_C_ANNOT_RO);
+
     // call sizer stuff
     topSizer->Fit(this);
-    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 }
 
@@ -285,6 +292,8 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
         SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_FOLDER, tCache);
         SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize, NULL);
+
+        SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, ID_C_ANNOT_RO, NULL);
 
         // Limit cache size to current value now
         int size;
@@ -396,7 +405,7 @@ USING_SCOPE(Cn3D);
 // The following is taken *unmodified* from wxDesigner's C++ code from preferences_dialog.wdr
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupPreferencesNotebook( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
@@ -411,20 +420,51 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit, bool set_size
     SetupCachePage( item4, FALSE );
     item2->AddPage( item4, "Cache" );
 
+    wxPanel *item5 = new wxPanel( item2, -1 );
+    SetupAdvancedPage( item5, FALSE );
+    item2->AddPage( item5, "Advanced" );
+
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxBoxSizer *item5 = new wxBoxSizer( wxHORIZONTAL );
+    wxBoxSizer *item6 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item6 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
-    item6->SetDefault();
-    item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item7 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
+    item7->SetDefault();
+    item6->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item5->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item6->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item7 = new wxButton( parent, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item8 = new wxButton( parent, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item8, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    if (set_sizer)
+    {
+        parent->SetAutoLayout( TRUE );
+        parent->SetSizer( item0 );
+        if (call_fit)
+        {
+            item0->Fit( parent );
+            item0->SetSizeHints( parent );
+        }
+    }
+
+    return item0;
+}
+
+wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
+{
+    wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
+
+    wxStaticBox *item2 = new wxStaticBox( parent, -1, "Advanced" );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
+
+    wxCheckBox *item3 = new wxCheckBox( parent, ID_C_ANNOT_RO, "CDD annotations are read-only", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->SetValue( TRUE );
+    item1->Add( item3, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -444,7 +484,7 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit, bool set_size
 // The following is modified from wxDesigner's C++ code from preferences_dialog.wdr
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-wxSizer *SetupQualityPage(wxPanel *parent, bool call_fit, bool set_sizer)
+wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
 {
     wxFlexGridSizer *item0 = new wxFlexGridSizer( 2, 0, 0 );
 
@@ -569,7 +609,7 @@ wxSizer *SetupQualityPage(wxPanel *parent, bool call_fit, bool set_sizer)
     return item0;
 }
 
-wxSizer *SetupCachePage( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupCachePage( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 

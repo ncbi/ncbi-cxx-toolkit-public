@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.1  2002/04/09 14:38:24  thiessen
 * add cdd splash screen
 *
@@ -59,10 +62,13 @@ class CDDSplashDialog : public wxDialog
 {
 public:
     CDDSplashDialog(Cn3DMainFrame *cn3dFrame, StructureSet *structureSet,
+        CDDSplashDialog **parentHandle,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos = wxDefaultPosition);
+    ~CDDSplashDialog(void);
 
 private:
+    CDDSplashDialog **handle;
     Cn3DMainFrame *structureWindow;
     StructureSet *sSet;
 

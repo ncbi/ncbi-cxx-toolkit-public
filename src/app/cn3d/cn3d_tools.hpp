@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/04/09 23:59:10  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.15  2002/03/04 15:52:13  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -160,7 +163,10 @@ static const std::string
     REG_CACHE_SECTION = "Cn3D-4-Cache",
     REG_CACHE_ENABLED = "CacheEnabled",
     REG_CACHE_FOLDER = "CacheFolder",
-    REG_CACHE_MAX_SIZE = "CacheSizeMax";
+    REG_CACHE_MAX_SIZE = "CacheSizeMax",
+    // advanced options
+    REG_ADVANCED_SECTION = "Cn3D-4-Advanced",
+    REG_CDD_ANNOT_READONLY = "CDDAnnotationsReadOnly";
 
 END_SCOPE(Cn3D)
 

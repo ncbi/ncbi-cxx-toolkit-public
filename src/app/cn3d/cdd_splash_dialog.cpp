@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/04/09 23:59:09  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.1  2002/04/09 14:38:24  thiessen
 * add cdd splash screen
 *
@@ -95,10 +98,11 @@ BEGIN_EVENT_TABLE(CDDSplashDialog, wxDialog)
     EVT_BUTTON      (-1,    CDDSplashDialog::OnButton)
 END_EVENT_TABLE()
 
-CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame, StructureSet *structureSet,
+CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
+    StructureSet *structureSet, CDDSplashDialog **parentHandle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
-        sSet(structureSet), structureWindow(cn3dFrame)
+        sSet(structureSet), structureWindow(cn3dFrame), handle(parentHandle)
 {
     if (!structureSet) {
         Destroy();
@@ -150,6 +154,11 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame, StructureSet *structu
     topSizer->SetSizeHints(this);
 }
 
+CDDSplashDialog::~CDDSplashDialog(void)
+{
+    if (handle && *handle) *handle = NULL;
+}
+
 // same as hitting done
 void CDDSplashDialog::OnCloseWindow(wxCloseEvent& event)
 {
@@ -159,11 +168,11 @@ void CDDSplashDialog::OnCloseWindow(wxCloseEvent& event)
 void CDDSplashDialog::OnButton(wxCommandEvent& event)
 {
     if (event.GetId() == ID_B_ANNOT) {
-        structureWindow->Command(Cn3DMainFrame::MID_ANNOT_CDD);
+        structureWindow->ShowCDDAnnotations();
     }
 
     else if (event.GetId() == ID_B_REF) {
-        structureWindow->Command(Cn3DMainFrame::MID_EDIT_CDD_REFERENCES);
+        structureWindow->ShowCDDReferences();
     }
 
     else if (event.GetId() == ID_B_DONE) {

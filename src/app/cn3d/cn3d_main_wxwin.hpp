@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/04/09 23:59:10  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.59  2002/04/09 14:38:27  thiessen
 * add cdd splash screen
 *
@@ -310,6 +313,7 @@ class Cn3DGLCanvas;
 class CDDAnnotateDialog;
 class MultiTextDialog;
 class CDDRefDialog;
+class CDDSplashDialog;
 
 class Cn3DMainFrame: public wxFrame, public MultiTextDialogOwner
 {
@@ -402,6 +406,7 @@ public:
             MID_SHOW_LOG_START,
             MID_SHOW_SEQ_V,
         // CDD menu
+            MID_CDD_OVERVIEW,
             MID_EDIT_CDD_NAME,
             MID_EDIT_CDD_DESCR,
             MID_EDIT_CDD_NOTES,
@@ -416,12 +421,17 @@ public:
             MID_FAVORITES_END   = 149
     };
 
+    void ShowCDDOverview(void);
+    void ShowCDDAnnotations(void);
+    void ShowCDDReferences(void);
+
 private:
 
     // non-modal dialogs owned by this object
     CDDAnnotateDialog *cddAnnotateDialog;
     MultiTextDialog *cddDescriptionDialog, *cddNotesDialog;
     CDDRefDialog *cddRefDialog;
+    CDDSplashDialog *cddOverview;
     void DestroyNonModalDialogs(void);
 
     void OnExit(wxCommandEvent& event);

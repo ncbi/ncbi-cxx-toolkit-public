@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/04/09 23:59:08  thiessen
+* add cdd annotations read-only option
+*
 * Revision 1.24  2002/04/09 14:38:22  thiessen
 * add cdd splash screen
 *
@@ -372,6 +375,9 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEvidUp, ID_B_EVID_UP, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEvidDown, ID_B_EVID_DOWN, wxButton)
 
+    bool readOnly;
+    RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
+
     // fill out annots listbox
     annots->Clear();
     CAlign_annot *selectedAnnot = NULL;
@@ -417,19 +423,20 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     }
 
     // set button states
-    bDelAnnot->Enable(selectedAnnot != NULL);
-    bEditAnnot->Enable(selectedAnnot != NULL);
+    bNewAnnot->Enable(!readOnly);
+    bDelAnnot->Enable(selectedAnnot != NULL && !readOnly);
+    bEditAnnot->Enable(selectedAnnot != NULL && !readOnly);
     bHighlight->Enable(selectedAnnot != NULL);
-    bAnnotUp->Enable(annots->GetSelection() > 0);
-    bAnnotDown->Enable(annots->GetSelection() < annots->GetCount() - 1);
-    bNewEvid->Enable(selectedAnnot != NULL);
-    bDelEvid->Enable(selectedEvid != NULL);
-    bEditEvid->Enable(selectedEvid != NULL);
+    bAnnotUp->Enable(annots->GetSelection() > 0 && !readOnly);
+    bAnnotDown->Enable(annots->GetSelection() < annots->GetCount() - 1 && !readOnly);
+    bNewEvid->Enable(selectedAnnot != NULL && !readOnly);
+    bDelEvid->Enable(selectedEvid != NULL && !readOnly);
+    bEditEvid->Enable(selectedEvid != NULL && !readOnly);
     bShow->Enable(selectedEvid != NULL &&
         ((selectedEvid->IsReference() && selectedEvid->GetReference().IsPmid()) ||
          IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvid) || selectedEvid->IsComment()));
-    bEvidUp->Enable(evids->GetSelection() > 0);
-    bEvidDown->Enable(evids->GetSelection() < evids->GetCount() - 1);
+    bEvidUp->Enable(evids->GetSelection() > 0 && !readOnly);
+    bEvidDown->Enable(evids->GetSelection() < evids->GetCount() - 1 && !readOnly);
 }
 
 void CDDAnnotateDialog::NewAnnotation(void)
