@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --**********************************************************************
 --
 --  MEDLINE data definitions
@@ -28,8 +28,13 @@ Medline-entry ::= SEQUENCE {
     xref SET OF Medline-si OPTIONAL ,
     idnum SET OF VisibleString OPTIONAL ,  -- ID Number (grants, contracts)
     gene SET OF VisibleString OPTIONAL ,
-	pmid PubMedId OPTIONAL ,               -- MEDLINE records may include the PubMedId
-	pub-type SET OF VisibleString OPTIONAL } -- may show publication types (review, etc)
+    pmid PubMedId OPTIONAL ,               -- MEDLINE records may include the PubMedId
+    pub-type SET OF VisibleString OPTIONAL, -- may show publication types (review, etc)
+    mlfield SET OF Medline-field OPTIONAL ,  -- additional Medline field types
+    status INTEGER {
+	publisher (1) ,      -- record as supplied by publisher
+        premedline (2) ,     -- premedline record
+        medline (3) } DEFAULT medline }  -- regular medline record
 
 Medline-mesh ::= SEQUENCE {
     mp BOOLEAN DEFAULT FALSE ,       -- TRUE if main point (*)
@@ -62,8 +67,24 @@ Medline-si ::= SEQUENCE {       -- medline cross reference records
         pir (10) ,              -- Protein Identification Resource
         prfseqdb (11) ,         -- Protein Research Foundation (Japan)
         psd (12) ,              -- Protein Sequence Database (Japan)
-        swissprot (13) } ,      -- SwissProt
+        swissprot (13) ,        -- SwissProt
+        gdb (14) } ,            -- Genome Data Base
     cit VisibleString OPTIONAL }    -- the citation/accession number
+
+Medline-field ::= SEQUENCE {
+    type INTEGER {              -- Keyed type
+	other (0) ,             -- look in line code
+	comment (1) ,           -- comment line
+        erratum (2) } ,         -- retracted, corrected, etc
+    str VisibleString ,         -- the text
+    ids SEQUENCE OF DocRef OPTIONAL }  -- pointers relevant to this text
+
+DocRef ::= SEQUENCE {           -- reference to a document
+    type INTEGER {
+        medline (1) ,
+        pubmed (2) ,
+        ncbigi (3) } ,
+    uid INTEGER }
 
 END
 

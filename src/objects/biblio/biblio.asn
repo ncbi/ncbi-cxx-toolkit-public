@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -45,14 +45,19 @@ Cit-book ::= SEQUENCE {              -- Book citation
 Cit-proc ::= SEQUENCE {             -- Meeting proceedings
     book Cit-book ,                 -- citation to meeting
     meet Meeting }                  -- time and location of meeting
-    
+
+    -- Patent number and date-issue were made optional in 1997 to
+    --   support patent applications being issued from the USPTO
+    --   Semantically a Cit-pat must have either a patent number or
+    --   an application number (or both) to be valid
+
 Cit-pat ::= SEQUENCE {                  -- patent citation
     title VisibleString ,
     authors Auth-list,                  -- author/inventor
     country VisibleString ,             -- Patent Document Country
     doc-type VisibleString ,            -- Patent Document Type
-    number VisibleString ,              -- Patent Document Number
-    date-issue Date ,                   -- Patent Issue/Pub Date
+    number VisibleString OPTIONAL,      -- Patent Document Number
+    date-issue Date OPTIONAL,           -- Patent Issue/Pub Date
     class SEQUENCE OF VisibleString OPTIONAL ,      -- Patent Doc Class Code 
     app-number VisibleString OPTIONAL , -- Patent Doc Appl Number
     app-date Date OPTIONAL ,            -- Patent Appl File Date
@@ -176,7 +181,7 @@ Imprint ::= SEQUENCE {                  -- Imprint group
         in-press (2) ,                      -- accepted, not published
         other (255)  } OPTIONAL ,
     part-supi VisibleString OPTIONAL ,      -- part/sup on issue
-    retract CitRetract OPTIONAL }           -- retraction info
+    retract CitRetract OPTIONAL }  -- retraction info
 
 CitRetract ::= SEQUENCE {
     type ENUMERATED {                    -- retraction of an entry

@@ -1,4 +1,4 @@
---$Revision: 5.1 $
+--$Revision: 5.2 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -114,6 +114,9 @@ MolInfo ::= SEQUENCE {
         seq-pept-overlap (11) , -- sequenced peptide, ordered by overlap
         seq-pept-homol (12) ,   -- sequenced peptide, ordered by homology
         concept-trans-a (13) ,  -- conceptual transl. supplied by author
+        htgs-1 (14) ,           -- unordered High Throughput sequence contig
+        htgs-2 (15) ,           -- ordered High Throughput sequence contig
+        htgs-3 (16) ,           -- finished High Throughput sequence
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
@@ -361,7 +364,8 @@ Annotdesc ::= CHOICE {
     create-date Date ,           -- date entry first created/released
     update-date Date ,           -- date of last update
     src Seq-id ,                 -- source sequence from which annot came
-    align Align-def }            -- definition of the SeqAligns
+    align Align-def,             -- definition of the SeqAligns
+    region Seq-loc }             -- all contents cover this region
 
 Align-def ::= SEQUENCE {
     align-type INTEGER {         -- class of align Seq-annot

@@ -1,4 +1,4 @@
---$Revision: 5.1 $
+--$Revision: 5.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -52,7 +52,9 @@ Seq-feat ::= SEQUENCE {
         experimental (1) ,        -- any reasonable experimental check
         not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
     xref SET OF SeqFeatXref OPTIONAL ,   -- cite other relevant features
-	dbxref SET OF Dbtag OPTIONAL }  -- support for xref to other databases
+	dbxref SET OF Dbtag OPTIONAL ,  -- support for xref to other databases
+    pseudo BOOLEAN OPTIONAL ,     -- annotated on pseudogene?
+    except-text VisibleString OPTIONAL } -- explain if except=TRUE
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
@@ -349,6 +351,8 @@ OrgMod ::= SEQUENCE {
         dosage (20) ,		-- chromosome dosage of hybrid
         nat-host (21) ,		-- natural host of this specimen
 	sub-species (22) ,
+        specimen-voucher (23) ,
+        old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
     subname VisibleString ,
     attrib VisibleString OPTIONAL }  -- attribution/source of name
@@ -422,7 +426,8 @@ BioSource ::= SEQUENCE {
       synthetic (5) ,                  -- purely synthetic
       other (255) } DEFAULT unknown , 
     org Org-ref ,
-    subtype SEQUENCE OF SubSource OPTIONAL }
+    subtype SEQUENCE OF SubSource OPTIONAL ,
+    is-focus NULL OPTIONAL }   -- to distinguish biological focus
 
 SubSource ::= SEQUENCE {
     subtype INTEGER {
