@@ -327,9 +327,11 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             else if (pfx == "NM_") { return eAcc_refseq_mrna;            }
             else if (pfx == "NP_") { return eAcc_refseq_prot;            }
             else if (pfx == "NT_") { return eAcc_refseq_contig;          }
+            // else if (pfx == "NZ_") { return eAcc_refseq_wgs_nuc;         }
             else if (pfx == "XM_") { return eAcc_refseq_mrna_predicted;  }
             else if (pfx == "XP_") { return eAcc_refseq_prot_predicted;  }
             else if (pfx == "XR_") { return eAcc_refseq_ncrna_predicted; }
+            else if (pfx == "ZP_") { return eAcc_refseq_wgs_prot;        }
             else                   { return eAcc_refseq_unreserved;      }
         } else { // protein
             switch (pfx[0]) {
@@ -351,6 +353,13 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'B': return eAcc_ddbj_wgs_nuc;
         case 'C': return eAcc_embl_wgs_nuc;
         default:  return eAcc_unknown;
+        }
+
+    case 7:
+        if (NStr::StartsWith(acc, "NZ_")) {
+            return eAcc_refseq_wgs_nuc;
+        } else {
+            return eAcc_unknown;
         }
 
     default:
@@ -805,6 +814,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.28  2002/08/16 19:27:01  ucko
+ * Recognize new WGS RefSeq accessions.
+ *
  * Revision 6.27  2002/08/14 15:52:27  ucko
  * Add BT and XR_.
  *
