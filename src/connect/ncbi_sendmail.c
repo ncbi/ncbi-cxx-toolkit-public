@@ -51,8 +51,8 @@
 
 #define SMTP_READERR    -1      /* Error reading from socket         */
 #define SMTP_REPLYERR   -2      /* Error reading reply prefix        */
-#define SMTP_BADREPLY   -4      /* Malformed reply text              */
 #define SMTP_BADCODE    -3      /* Reply code doesn't match in lines */
+#define SMTP_BADREPLY   -4      /* Malformed reply text              */
 #define SMTP_NOCODE     -5      /* No reply code detected (letters?) */
 #define SMTP_WRITERR    -6      /* Error writing to socket           */
 
@@ -128,11 +128,11 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
         case SMTP_REPLYERR:
             message = "Error reading reply prefix";
             break;
-        case SMTP_BADREPLY:
-            message = "Malformed reply text";
-            break;
         case SMTP_BADCODE:
             message = "Reply code doesn't match in lines";
+            break;
+        case SMTP_BADREPLY:
+            message = "Malformed reply text";
             break;
         case SMTP_NOCODE:
             message = "No reply code detected";
@@ -439,6 +439,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/04/18 20:59:51  lavr
+ * Mixed up SMTP_BADCODE and SMTP_BADREPLY rearranged in order
+ *
  * Revision 6.18  2003/03/24 19:46:17  lavr
  * Few minor changes; do not init SSendMailInfo passed as NULL
  *
