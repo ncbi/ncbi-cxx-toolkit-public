@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  NCBI General Data elements
@@ -37,6 +37,13 @@ EXPORTS Date, Person-id, Object-id, Dbtag, Int-fuzz, User-object;
 --   is here just for completness
 -- 
 --  StringStore ::= [APPLICATION 1] IMPLICIT OCTET STRING
+--
+
+-- BigInt is really an INTEGER. It is used to warn the recieving code to expect
+--   a value bigger than Int4 (actually Int8). It will be stored in DataVal.bigintvalue
+--
+--   Like StringStore, AsnTool incorporates it as a primitive. The definition would be:
+--   BigInt ::= [APPLICATION 2] IMPLICIT INTEGER
 --
 
 -- Date is used to replace the (overly complex) UTCTtime, GeneralizedTime
