@@ -33,6 +33,8 @@
  *
  */
 
+#include <util/thread_nonstop.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /// Thread class, peridically calls ICache::Purge to remove obsolete
@@ -73,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/12 14:28:13  kuznets
+ * include thread_nonstop.hpp
+ *
  * Revision 1.1  2004/10/07 18:09:43  kuznets
  * Initial revision
  *
