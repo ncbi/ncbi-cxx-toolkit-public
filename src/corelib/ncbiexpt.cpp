@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/13 00:17:13  vakatov
+* [UNIX] Added handler for the unexpected exceptions
+*
 * Revision 1.2  1998/11/10 17:58:42  vakatov
 * [UNIX] Removed extra #define's (POSIX... and EXTENTIONS...)
 * Allow adding strings in CNcbiErrnoException(must have used "CC -xar"
@@ -44,13 +47,11 @@
 
 #include <ncbiexpt.hpp>
 
-#if defined(UNIX)
+#if defined(NCBI_OS_UNIX)
 #  include <signal.h>
 #  include <siginfo.h>
-#elif defined(WIN32)
+#elif defined(NCBI_OS_MSWIN)
 #  include <windows.h>
-#else
-#  error "Unknown platform!!!"
 #endif
 
 #include <errno.h>
@@ -74,14 +75,18 @@ CNcbiErrnoException::CNcbiErrnoException(const string& what) throw()
 /////////////////////////////////
 // CNcbiOSException
 
-#if defined(UNIX)
+#if defined(NCBI_OS_UNIX)
+
+static void s_UnexpectedHandler(void) THROWS((bad_exception)) {
+    throw bad_exception();
+}
 
 extern "C" void s_DefSignalHandler(int sig, siginfo_t*, void*)
     THROWS((CNcbiOSException))
 {
   char msg[64];
   sprintf(msg, "Caught UNIX signal, code %d", sig);
-  
+
   switch ( sig ) {
   case SIGBUS:
   case SIGSEGV:
@@ -97,45 +102,47 @@ extern "C" void s_DefSignalHandler(int sig, siginfo_t*, void*)
 void CNcbiOSException::Initialize(void)
     THROWS((runtime_error))
 {
-  // set DefSignalHandler() as signal handler for sync signals
-  // set sigmask to allow delivery only sync signals for current thread
-  //   (the signal mask of the thread is inherited)
-  // signal handlers are not restored if an error occured
-  
-  // signals considered to be sync and to be caught
-  // For SIGTTIN, SIGTTOU default action is to stop the process,
-  // for others - to terminate
-  
-  sigset_t sigset;
-  sigfillset(&sigset);
-  if (sigprocmask(SIG_BLOCK, &sigset, 0) != 0)
-    throw CNcbiErrnoException("CNcbiOSException:: set block-all signal mask");
-  sigemptyset(&sigset);
+    // set DefSignalHandler() as signal handler for sync signals
+    // set sigmask to allow delivery only sync signals for current thread
+    //   (the signal mask of the thread is inherited)
+    // signal handlers are not restored if an error occured
 
-  struct sigaction sa; 
-  sa.sa_sigaction = s_DefSignalHandler;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = SA_NODEFER;  // do not block signal when it's caught
+    // signals considered to be sync and to be caught
+    // For SIGTTIN, SIGTTOU default action is to stop the process,
+    // for others - to terminate
 
-  const static int s_Sig[] = {
-      SIGILL, SIGFPE, SIGABRT, SIGBUS, SIGSEGV, SIGSYS, SIGPIPE, 
-      SIGTTIN, SIGTTOU, SIGXFSZ, 0
-  };
-  for (const int* sig = s_Sig;  *sig;  sig++) {
-    if (sigaction(*sig, &sa, 0) != 0)
-        throw CNcbiErrnoException("CNcbiOSException:: set def. sig.-handler");
-    if (sigaddset(&sigset, *sig) != 0)
-        throw CNcbiErrnoException("CNcbiOSException:: ");
-  }
+    sigset_t sigset;
+    sigfillset(&sigset);
+    if (sigprocmask(SIG_BLOCK, &sigset, 0) != 0)
+        throw CNcbiErrnoException("CNcbiOSException:: block-all signal mask");
+    sigemptyset(&sigset);
 
-  if (sigprocmask(SIG_UNBLOCK, &sigset, 0) != 0)
-    throw CNcbiErrnoException("CNcbiOSException:: set unblocking sig.-mask");
+    struct sigaction sa; 
+    sa.sa_sigaction = s_DefSignalHandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_NODEFER;  // do not block signal when it's caught
+
+    const static int s_Sig[] = {
+        SIGILL, SIGFPE, SIGABRT, SIGBUS, SIGSYS, SIGPIPE, 
+        SIGTTIN, SIGTTOU, SIGXFSZ, 0
+    };
+    for (const int* sig = s_Sig;  *sig;  sig++) {
+        if (sigaction(*sig, &sa, 0) != 0)
+            throw CNcbiErrnoException("CNcbiOSException:: def. sig.-handler");
+        if (sigaddset(&sigset, *sig) != 0)
+            throw CNcbiErrnoException("CNcbiOSException:: ");
+    }
+
+    if (sigprocmask(SIG_UNBLOCK, &sigset, 0) != 0)
+        throw CNcbiErrnoException("CNcbiOSException:: unblocking sig.-mask");
+
+    set_unexpected(s_UnexpectedHandler);
 }
 
-#elif defined(WIN32)
+#elif defined(NCBI_OS_MSWIN)
 
 static void s_DefSEHandler(unsigned int sig, struct _EXCEPTION_POINTERS*)
-	THROWS(CNcbiOSException)
+	THROWS((CNcbiOSException))
 {
     char msg[64];
     sprintf(msg, "Win32 exception code %X", sig);
