@@ -45,11 +45,13 @@ Contents: High level BLAST functions
 extern Uint1Ptr
 GetPrivatTranslationTable PROTO((CharPtr genetic_code,
                                  Boolean reverse_complement));
+extern OIDListPtr LIBCALL 
+BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr db, BLAST_SequenceBlkPtr subject_blk, Int4 numseqs, 
+        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject_blk, Int4 numseqs, 
         BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
         BlastScoringOptionsPtr score_options, 
         BlastInitialWordParametersPtr word_params, 
@@ -58,7 +60,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastResultsPtr PNTR results_ptr,
         BlastReturnStatPtr return_stats)
 {
-   Int4 oid;
+   Int4 oid, index;
    BLAST_SequenceBlkPtr subject = NULL;
    Int4 num_chunks, chunk, total_subject_length, offset;
    BlastInitHitListPtr init_hitlist;
@@ -102,6 +104,10 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    Int4 num_init_hsps = 0;
    Int4 num_hsps = 0;
    Int4 num_good_hsps = 0;
+   BlastThrInfoPtr thr_info;
+   Int4Ptr oid_list = NULL;
+   Int4 start = 0, stop = 0, oid_list_length = 0;
+   Boolean done = FALSE, use_oid_list;
    
    /* search prologue */
 
@@ -151,7 +157,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       GeneticCodePtr gcp;
       /* Preallocate buffer for the translated sequences */
       translation_buffer = (Uint1Ptr) 
-         Malloc(3 + readdb_get_maxlen(db)/CODON_LENGTH);
+         Malloc(3 + readdb_get_maxlen(rdfp)/CODON_LENGTH);
 
       gcp = GeneticCodeFind(1, NULL);
       for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
@@ -169,17 +175,36 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    /* Allocate subject sequence block once for the entire run */
    subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
 
-   /* iterate over all subject sequences */
-   for (oid = 0; oid < numseqs; oid++) {
+   if (rdfp) {
+      thr_info = BLAST_ThrInfoNew(rdfp);
+      if (BlastGetVirtualOIDList(rdfp))
+         oid_list = MemNew((thr_info->db_chunk_size+33)*sizeof(Int4));
+   }
 
-#ifdef _DEBUG
-      if ( (oid % 10000) == 0 ) printf("oid=%d\n",oid);
-#endif
+   while (!done) {
+      /* Get the next chunk of the database */
+      if (rdfp) {
+         done = BLAST_GetDbChunk(rdfp, &start, &stop, oid_list, 
+                                &oid_list_length, thr_info);
+         use_oid_list = (oid_list && (oid_list_length > 0));
+         if (use_oid_list) {
+            start = 0;
+            stop = oid_list_length;
+         }
+      } else {
+         done = TRUE;
+         start = 0; 
+         stop = 1;
+      }
 
-      if (db) {
+      /* iterate over all subject sequences */
+      for (index = start; index < stop; index++) {
+         oid = (use_oid_list ? oid_list[index] : index);
+
+      if (rdfp) {
          /* Retrieve subject sequence in ncbistdaa for proteins or ncbi2na 
             for nucleotides */
-         MakeBlastSequenceBlk(db, &subject, oid, BLASTP_ENCODING);
+         MakeBlastSequenceBlk(rdfp, &subject, oid, BLASTP_ENCODING);
       } else {
          MemCpy(subject, subject_blk, sizeof(BLAST_SequenceBlk));
       }
@@ -314,16 +339,21 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, query, subject, results, 
          full_hsp_list, hit_params, query_info, gap_align->sbp, 
-         score_options, db, NULL);
+         score_options, rdfp, NULL);
 
-      if (db) {
+      if (rdfp) {
          /* Restore the original contents of the subject block */
          subject->length = orig_length;
          subject->sequence = orig_sequence;
          BlastSequenceBlkClean(subject);
       }
    }
+   }
 
+   if (rdfp) {
+      BLAST_ThrInfoFree(thr_info);
+      oid_list = MemFree(oid_list);
+   }
    subject = MemFree(subject);
    BLAST_InitHitListDestruct(init_hitlist);
    BlastHSPListFree(hsp_list);
@@ -628,3 +658,4 @@ Int2 BLAST_SearchEngine(CharPtr blast_program, BLAST_SequenceBlkPtr query,
    
    return 0;
 }
+

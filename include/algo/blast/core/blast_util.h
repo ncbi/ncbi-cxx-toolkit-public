@@ -187,6 +187,27 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
 Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
                             Uint1Ptr PNTR rev_sequence_ptr);
 
+/** Initialize the thread information structure */
+BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp);
+
+/** Deallocate the thread information structure */
+void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info);
+
+/** Gets the next set of sequences from the database to search.
+ * @param rdfp The BLAST database(s) being searched [in]
+ * @param start The first ordinal id in the chunk [out]
+ * @param stop The last ordinal id in the chunk, plus 1 [out]
+ * @param id_list List of ordinal ids to search in case of masked 
+ *                database(s) [out]
+ * @param id_list_number Number of sequences in id_list [out]
+ * @param thr_info Keeps track of what sequences of the databases have already
+ *                 been searched [in] [out]
+ * @return Is this the last chunk of the database? 
+*/
+Boolean 
+BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
+                Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info);
+
 #ifdef __cplusplus
 }
 #endif

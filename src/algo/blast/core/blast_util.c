@@ -38,6 +38,9 @@ Contents: Various BLAST utilities
 #include <blast_def.h>
 #include <blast_util.h>
 
+extern OIDListPtr LIBCALL 
+BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
+
 Int2
 BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 	const Int4Ptr frame, BLAST_SequenceBlkPtr *seq_blk, 
@@ -642,3 +645,130 @@ Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length,
    *rev_sequence_ptr = rev_sequence + 1;
    return 0;
 }
+
+Boolean 
+BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
+   Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info)
+{
+    Boolean done=FALSE;
+    Int4 ordinal_id;
+    OIDListPtr virtual_oidlist = NULL;
+    *id_list_number = 0;
+    
+    NlmMutexLockEx(&thr_info->db_mutex);
+    if (thr_info->realdb_done) {
+        if (virtual_oidlist = BlastGetVirtualOIDList(rdfp)) {
+	    /* Virtual database.   Create id_list using mask file */
+	    Int4 gi_end       = 0;
+	    
+	    thr_info->final_db_seq = MIN(thr_info->final_db_seq, virtual_oidlist->total);
+	    
+	    gi_end = thr_info->final_db_seq;
+
+	    if (thr_info->oid_current < gi_end) {
+		Int4 oidindex  = 0;
+		Int4 gi_start  = thr_info->oid_current;
+		Int4 bit_start = gi_start % MASK_WORD_SIZE;
+		Int4 gi;
+		
+		for(gi = gi_start; (gi < gi_end) && (oidindex < thr_info->db_chunk_size);) {
+		    Int4 bit_end = ((gi_end - gi) < MASK_WORD_SIZE) ? (gi_end - gi) : MASK_WORD_SIZE;
+		    Int4 bit;
+		    
+		    Uint4 mask_index = gi / MASK_WORD_SIZE;
+		    Uint4 mask_word  = Nlm_SwapUint4(virtual_oidlist->list[mask_index]);
+		    
+		    if ( mask_word ) {
+			for(bit = bit_start; bit<bit_end; bit++) {
+			    Uint4 bitshift = (MASK_WORD_SIZE-1)-bit;
+			    
+			    if ((mask_word >> bitshift) & 1) {
+				id_list[ oidindex++ ] = (gi - bit_start) + bit;
+			    }
+			}
+		    }
+		    
+		    gi += bit_end - bit_start;
+		    bit_start = 0;
+		}
+		
+		thr_info->oid_current = gi;
+		*id_list_number = oidindex;
+	    } else {
+		done = TRUE;
+	    }
+	    
+	} else {
+	    done = TRUE;
+        }
+    } else {
+	int real_readdb_entries;
+	int total_readdb_entries;
+	int final_real_seq;
+
+	real_readdb_entries  = readdb_get_num_entries_total_real(rdfp);
+	total_readdb_entries = readdb_get_num_entries_total(rdfp);
+	final_real_seq       = MIN( real_readdb_entries, thr_info->final_db_seq );
+	
+	/* we have real database with start/stop specified */
+        if (thr_info->db_mutex) {
+            *start = thr_info->db_chunk_last;
+            if (thr_info->db_chunk_last < final_real_seq) {
+                *stop = MIN((thr_info->db_chunk_last + 
+                    thr_info->db_chunk_size), final_real_seq);
+            } else {/* Already finished. */
+                *stop = thr_info->db_chunk_last;
+
+		/* Change parameters for oidlist processing. */
+                thr_info->realdb_done  = TRUE;
+            }
+            thr_info->db_chunk_last = *stop;
+        } else {
+            if (*stop != final_real_seq) {
+                done = FALSE;
+                *start = thr_info->last_db_seq;
+                *stop  = final_real_seq;
+            } else {
+                thr_info->realdb_done = TRUE;
+		
+		if (total_readdb_entries == real_readdb_entries) {
+		    done = TRUE;
+		} else {
+		    thr_info->oid_current = final_real_seq;
+		}
+            }
+        }
+    }
+    
+    NlmMutexUnlock(thr_info->db_mutex);
+    return done;
+}
+
+#define BLAST_DB_CHUNK_SIZE 1024
+BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
+{
+   BlastThrInfoPtr thr_info;
+   
+   thr_info = MemNew(sizeof(BlastThrInfo));
+   thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
+   thr_info->final_db_seq = readdb_get_num_entries_total(rdfp);
+   
+   return thr_info;
+}
+
+void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
+{
+    VoidPtr status=NULL;
+
+    if (thr_info == NULL)
+	return;
+
+    NlmMutexDestroy(thr_info->db_mutex);
+    NlmMutexDestroy(thr_info->results_mutex);
+    NlmMutexDestroy(thr_info->callback_mutex);
+
+    MemFree(thr_info);
+    
+    return;
+}
+
