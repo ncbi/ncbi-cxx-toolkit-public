@@ -306,7 +306,6 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
     int/*bool*/ moved = 0/*false*/;
     int         server_error = 0;
     int         http_status = 0;
-    EIO_Status  status;
     char*       header;
     size_t      size;
 
@@ -319,6 +318,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
     /* line by line HTTP header input */
     for (;;) {
+        EIO_Status status;
+
         /* do we have full header yet? */
         size = BUF_Size(uuu->http);
         if (!(header = (char*) malloc(size + 1))) {
@@ -358,8 +359,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
             uuu->net_info->max_try = 0;
     }
 
-    if (uuu->net_info->debug_printout == eDebugPrintout_Some &&
-        (server_error || !uuu->error_header)) {
+    if ((server_error || !uuu->error_header) &&
+        uuu->net_info->debug_printout == eDebugPrintout_Some) {
         /* HTTP header gets printed as part of data logging when
            uuu->net_info->debug_printout == eDebugPrintout_Data. */
         const char* header_header;
@@ -412,9 +413,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         free(header);
 
     /* skip & printout the content, if server error was flagged */
-    if (uuu->net_info->debug_printout == eDebugPrintout_Some && server_error) {
-        BUF    buf = 0;
-        char*  body;
+    if (server_error && uuu->net_info->debug_printout == eDebugPrintout_Some) {
+        BUF        buf = 0;
+        EIO_Status status;
+        char*      body;
 
         SOCK_SetTimeout(uuu->sock, eIO_Read, 0);
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
@@ -438,9 +440,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         BUF_Destroy(buf);
     }
 
-    if (server_error)
-        return eIO_Unknown;
-    return status;
+    return server_error ? eIO_Unknown : eIO_Success;
 }
 
 
@@ -976,6 +976,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.63  2004/02/12 16:50:02  lavr
+ * Heed warning about uninited variable use
+ *
  * Revision 6.62  2003/11/26 12:57:11  lavr
  * s_ReadHeader(): check header size first before looking for end-of-header
  *
