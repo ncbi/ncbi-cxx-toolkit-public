@@ -51,7 +51,7 @@ Contents: C++ driver for running BLAST
 #include <blast_setup.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <blast_input.hpp>
-#include <seqsrc_readdb.h>
+#include <algo/blast/api/seqsrc_readdb.h>
 #include <blast_seqalign.hpp>
 #include <objtools/alnmgr/util/blast_format.hpp>
 
@@ -88,7 +88,6 @@ private:
     void FormatResults(CDbBlast& blaster, TSeqAlignVector& seqalignv);
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
-    CBlastOptions*       m_pOptions;
 };
 
 void CBlastApplication::Init(void)
@@ -433,7 +432,7 @@ BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
     TSeqLocInfoVector retval;
     int frame, num_frames;
     bool translated_query;
-    unsigned int index;
+    int index;
 
     translated_query = (program == eBlastx ||
                         program == eTblastx);
@@ -442,7 +441,7 @@ BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
 
     TSeqLocInfo mask_info_list;
 
-    for (index = 0; index < slp.size(); ++index) {
+    for (index = 0; index < (int)slp.size(); ++index) {
         mask_info_list.clear();
 
         if (!mask) {
@@ -522,7 +521,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
                               blaster.GetQueries(), program);
         
         if (BLAST_FormatResults(seqalignv, program, blaster.GetQueries(), 
-                maskv, format_options, m_pOptions->GetOutOfFrameMode())) {
+                maskv, format_options, blaster.GetOptions().GetOutOfFrameMode())) {
             NCBI_THROW(CBlastException, eInternal, 
                        "Error in formatting results");
         }
