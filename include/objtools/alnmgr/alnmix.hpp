@@ -132,6 +132,7 @@ private:
     TSeqs                       m_Rows;
     list<CRef<CAlnMixSeq> >     m_ExtraRows;
     bool                        m_SingleRefseq;
+    bool                        m_IndependentDSs;
     TBioseqHandleMap            m_BioseqHandles;
 
 };
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/03/26 16:38:31  todorov
+* mix independent densegs
+*
 * Revision 1.19  2003/03/10 22:12:10  todorov
 * fixed x_CompareAlnMatchScores callback
 *
