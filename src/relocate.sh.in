@@ -63,6 +63,7 @@ for f in $files ; do
       s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
       s%^ *APP_OR_NULL *=.*%APP_OR_NULL = app%;
       /WRAPPER *=/s%ccache%%;
+      /LDFLAGS *=/s% *-dylib_file *[^ ]*%%g;
       '"$extra_sed"'
    ' "$fff" > "$fff.tmp"
    if test $? -ne 0 ; then
