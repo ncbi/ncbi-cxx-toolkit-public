@@ -8,7 +8,6 @@
 <h1>Installation and configuration</h1>
 
 
-
 <ul>
   <li> <a href="#ref_Source">
        NCBI C++ source code repository</a> 
@@ -49,7 +48,7 @@
 		<li> <a href="#ref_MsvcProj">
 		  MS Visual C++ workspace</a>
 	 </ul>
-  </ul>
+</ul>
 
 <p>
 This page describes how to get the NCBI C++ sources, and how to
@@ -172,7 +171,8 @@ while each
 <a href="bld_tree.gif"><i>build tree</i></a>
 can contain its own (platform/compilator-specific)
 <i>ncbiconf.h</i> header, and/or different set of compilation/linking/etc.
-flags and tools ("frozen" in the makefiles, especially in <i>Makefile.mk</i>).
+flags and tools ("frozen" in the makefiles, especially in
+<a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>).
 This is to allow one to build
 libraries and executables using different compilers and/or flags, yet from
 the same sources, and in a uniform way.
@@ -201,8 +201,9 @@ The structure of the tree is as follows (see also in
        The resultant scripts and makefile will keep referencies
        to the original NCBI C++ source directories.
        <br>
-       There is a "very special" file <i>Makefile.mk</i> that contains all
-       configured
+       There is a "very special" file
+       <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
+       that contains all configured
        <a href="#ref_ToolsAndFlags">tools, flags</a>
        and
        <a href="#ref_Localization">local paths</a>.
@@ -393,6 +394,7 @@ environment variables for the <b><i>configure</i></b> script.
 </table>
 
 <p>
+<a name="ref_StdBuildRules"></a>
 E.g. these tools and flags are used in the following contexts:
 <ul>
   <li> To compile C sources:
