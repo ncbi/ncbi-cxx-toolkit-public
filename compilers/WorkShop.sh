@@ -1,7 +1,7 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:    WorkShop 5.0, 5.1, 5.2
+#   Compiler:    WorkShop 5.0, 5.1, 5.2, 5.3
 #   OS:          Solaris 2.6 (or higher)
 #   Processors:  Sparc,  Intel
 #
@@ -37,12 +37,12 @@ case "$CC_version" in
  "CC: Sun WorkShop 6 update 1 C\+\+ 5.2"* )
     NCBI_COMPILER="WorkShop52"
     ;;
- "CC: Sun WorkShop 6 update 1 C\+\+ 5.3"* )
+ "CC: Sun WorkShop 6 update 2 C\+\+ 5.3"* )
     NCBI_COMPILER="WorkShop53"
     ;;
  "CC: Sun WorkShop 6"* )
     # must appear after previous cases to avoid masking them
-    NCBI_COMPILER="WorkShop6"
+    NCBI_COMPILER="WorkShop51"
     ;;
  * )
     echo "ERROR:  unknown version of WorkShop C++ compiler:"
