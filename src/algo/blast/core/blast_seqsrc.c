@@ -136,11 +136,17 @@ BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* bssp)
     return (BlastSeqSrc*) (*copy_fnptr)(retval);
 }
 
+/** How many database sequences to process in one database chunk. */
+const unsigned int kBlastSeqSrcDefaultChunkSize = 1024;
+
 /******************** BlastSeqSrcIterator API *******************************/
 
 BlastSeqSrcIterator* BlastSeqSrcIteratorNew(unsigned int chunk_sz)
 {
     BlastSeqSrcIterator* itr = NULL;
+
+    if (chunk_sz == 0)
+       chunk_sz = kBlastSeqSrcDefaultChunkSize;
 
     itr = (BlastSeqSrcIterator*) calloc(1, sizeof(BlastSeqSrcIterator));
     if (!itr) {
