@@ -31,6 +31,7 @@
  *
  */
 
+#include <typeinfo>
 #include <util/ddump_viewer.hpp>
 
 #ifdef NCBI_OS_MSWIN
@@ -177,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/06/03 20:37:52  gouriano
+ * added include <typeinfo>
+ *
  * Revision 1.1  2002/06/03 20:25:32  gouriano
  * added debug dump viewer class
  *
