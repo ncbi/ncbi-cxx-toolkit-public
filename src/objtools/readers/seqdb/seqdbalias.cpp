@@ -50,9 +50,11 @@ BEGIN_NCBI_SCOPE
 // user-input database list as if it were an alias file containing
 // only the DBLIST specification.
 
-CSeqDBAliasNode::CSeqDBAliasNode(const string & dbname_list,
+CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas  & atlas,
+                                 const string & dbname_list,
                                  char           prot_nucl,
                                  bool           use_mmap)
+    : m_Atlas(atlas)
 {
     string new_names(dbname_list);
     x_ResolveNames(new_names, m_DBPath, prot_nucl);
@@ -84,12 +86,14 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbname_list,
 // for allowing this kind of sharing might be to pass by reference,
 // removing the current node path from the set after construction.
 
-CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
+CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas  & atlas,
+                                 const string & dbpath,
                                  const string & dbname,
                                  char           prot_nucl,
                                  bool           use_mmap,
                                  set<string>    recurse)
-    : m_DBPath(dbpath)
+    : m_Atlas(atlas),
+      m_DBPath(dbpath)
 {
     if (seqdb_debug_class & debug_alias) {
         bool comma = false;
@@ -225,18 +229,17 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     m_Values[name] = value;
 }
 
-void CSeqDBAliasNode::x_ReadValues(const string  & fn,
+void CSeqDBAliasNode::x_ReadValues(const string  & fname,
                                    bool            use_mmap)
 {
-    CSeqDBMemPool mempool;
-    CSeqDBRawFile af(mempool, use_mmap);
-    af.Open(fn);
+    Uint8 file_length = 0;
     
-    Uint4 file_length = (Uint4) af.GetFileLength();
-    
-    const char * bp = af.GetRegion(0, file_length);
+    const char * bp = m_Atlas.GetFile(fname, file_length);
     const char * ep = bp + file_length;
     const char * p  = bp;
+    
+    // Existence should already be verified.
+    _ASSERT(bp);
     
     while(p < ep) {
         // Skip spaces
@@ -257,6 +260,8 @@ void CSeqDBAliasNode::x_ReadValues(const string  & fn,
         
         p = eolp + 1;
     }
+    
+    m_Atlas.RetRegion(bp);
 }
 
 void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
@@ -298,7 +303,8 @@ void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
             string newfile = SeqDB_GetBaseName(new_db_loc);
             
             CRef<CSeqDBAliasNode>
-                subnode( new CSeqDBAliasNode(newpath,
+                subnode( new CSeqDBAliasNode(m_Atlas,
+                                             newpath,
                                              newfile,
                                              prot_nucl,
                                              use_mmap,
@@ -414,7 +420,8 @@ public:
     
     virtual void AddString(const string & value)
     {
-        m_Value = NStr::StringToUInt(value);
+        //m_Value = NStr::StringToUInt(value);
+        m_Value = atol(value.c_str());
     }
     
     Uint4 GetMaxLength(void)
@@ -446,7 +453,8 @@ public:
     
     virtual void AddString(const string & value)
     {
-        m_Value += NStr::StringToUInt(value);
+        //m_Value += NStr::StringToUInt(value);
+        m_Value += atol(value.c_str());
     }
     
     Uint4 GetNumSeqs(void) const
@@ -478,7 +486,8 @@ public:
     
     virtual void AddString(const string & value)
     {
-        m_Value += NStr::StringToUInt8(value);
+        //m_Value += NStr::StringToUInt8(value);
+        m_Value += atoll(value.c_str());
     }
     
     Uint8 GetTotalLength(void) const

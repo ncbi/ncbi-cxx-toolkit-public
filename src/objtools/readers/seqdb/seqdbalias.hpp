@@ -59,7 +59,8 @@ public:
 
 class CSeqDBAliasNode : public CObject {
 public:
-    CSeqDBAliasNode(const string & name_list,
+    CSeqDBAliasNode(CSeqDBAtlas  & atlas,
+                    const string & name_list,
                     char           prot_nucl,
                     bool           use_mmap);
     
@@ -86,7 +87,8 @@ public:
 private:
     // To be called only from this class.  Note that the recursion
     // prevention list is passed by value.
-    CSeqDBAliasNode(const string & dbpath,
+    CSeqDBAliasNode(CSeqDBAtlas  & atlas,
+                    const string & dbpath,
                     const string & dbname,
                     char           prot_nucl,
                     bool           use_mmap,
@@ -123,17 +125,21 @@ private:
     typedef vector<string>                  TVolNames;
     typedef vector< CRef<CSeqDBAliasNode> > TSubNodeList;
     
-    string       m_DBPath;
-    TVarList     m_Values;
-    TVolNames    m_VolNames;
-    TSubNodeList m_SubNodes;
+    CSeqDBAtlas & m_Atlas;
+    string        m_DBPath;
+    TVarList      m_Values;
+    TVolNames     m_VolNames;
+    TSubNodeList  m_SubNodes;
 };
 
 
 class CSeqDBAliasFile {
 public:
-    CSeqDBAliasFile(const string & name_list, char prot_nucl, bool use_mmap)
-        : m_Node (name_list, prot_nucl, use_mmap)
+    CSeqDBAliasFile(CSeqDBAtlas  & atlas,
+                    const string & name_list,
+                    char           prot_nucl,
+                    bool           use_mmap)
+        : m_Node (atlas, name_list, prot_nucl, use_mmap)
     {
         m_Node.GetVolumeNames(m_VolumeNames);
     }
