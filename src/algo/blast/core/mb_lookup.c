@@ -133,7 +133,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
       So we use a helper_array to keep track of this, but compress it by k_compression_factor so it stays 
       in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
       not seem to affect the overall performance of the rest of the program. */
-   Int4 longest_chain=0;
+   Uint4 longest_chain=0;
    Uint4* helper_array;     /* Helps to estimate longest chain. */
    const Int4 k_compression_factor=2048; /* compress helper_array by factor of 2048. */
 
@@ -355,7 +355,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
       }
    }
    sfree(helper_array);
-   mb_lt->longest_chain = longest_chain+2;
+   mb_lt->longest_chain = (Int4) (longest_chain+2);
 
    return 0;
 }
