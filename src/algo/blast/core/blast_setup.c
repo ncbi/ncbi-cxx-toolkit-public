@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.14  2003/05/01 17:08:45  dondosha
+* BLAST_SetUpAuxStructures moved from blast_setup to blast_engine module
+*
 * Revision 1.13  2003/05/01 16:56:30  dondosha
 * Fixed strict compiler warnings
 *
@@ -1583,121 +1586,6 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
    return 0;
 }
 
-/** Function to calculate effective query length and db length as well as
- * effective search space. 
- * @param program blastn, blastp, blastx, etc. [in]
- * @param scoring_options options for scoring. [in]
- * @param eff_len_options used to calc. effective lengths [in]
- * @param sbp Karlin-Altschul parameters [out]
- * @param query_info The query information block, which stores the effective
- *                   search spaces for all queries [in] [out]
- * @param query_slp List of query SeqLoc's [in]
-*/
-static Int2 BlastSetUp_CalcEffLengths (const Char *program, 
-   const BlastScoringOptionsPtr scoring_options,
-   const BlastEffectiveLengthsOptionsPtr eff_len_options, 
-   const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info)
-{
-   Nlm_FloatHi alpha, beta; /*alpha and beta for new scoring system */
-   Int4 min_query_length;   /* lower bound on query length. */
-   Int4 length_adjustment;  /* length adjustment for current iteration. */
-   Int4 last_length_adjustment;/* length adjustment in previous iteration.*/
-   Int4 index;		/* loop index. */
-   Int4	db_num_seqs;	/* number of sequences in database. */
-   Int8	db_length;	/* total length of database. */
-   BLAST_KarlinBlkPtr *kbp_ptr; /* Array of Karlin block pointers */
-   BLAST_KarlinBlkPtr kbp; /* Karlin-Blk pointer from ScoreBlk. */
-   Int4 query_length;   /* length of an individual query sequence */
-   Int8 effective_length, effective_db_length; /* effective lengths of 
-                                                  query and database */
-   Int8 effective_search_space; /* Effective search space for a given 
-                                   sequence/strand/frame */
-   Int2 i; /* Iteration index for calculating length adjustment */
-   Uint1 num_strands;
-   Uint1 program_number;
-
-   if (sbp == NULL || eff_len_options == NULL)
-      return 1;
-   
-   BlastProgram2Number(program, &program_number);
-
-   /* use values in BlastEffectiveLengthsOptionsPtr */
-   db_length = eff_len_options->db_length;
-   if (program_number == blast_type_tblastn || 
-       program_number == blast_type_tblastx)
-      db_length = db_length/3;	
-   
-   db_num_seqs = eff_len_options->dbseq_num;
-   
-   if (program_number != blast_type_blastn) {
-      if (scoring_options->gapped_calculation) {
-         getAlphaBeta(sbp->name,&alpha,&beta,TRUE, 
-            scoring_options->gap_open, scoring_options->gap_extend);
-      }
-   }
-   
-   if (scoring_options->gapped_calculation && 
-       program_number != blast_type_blastn) 
-      kbp_ptr = sbp->kbp_gap_std;
-   else
-      kbp_ptr = sbp->kbp_std; 
-   
-   if (program_number == blast_type_blastn)
-      num_strands = 2;
-   else
-      num_strands = 1;
-
-   for (index = query_info->first_context; 
-        index <= query_info->last_context; ) {
-      if (eff_len_options->searchsp_eff) {
-         effective_search_space = eff_len_options->searchsp_eff;
-      } else {
-         query_length = query_info->context_offsets[index+1] - 
-            query_info->context_offsets[index] - 1;
-         /* Use the correct Karlin block. For blastn, two identical Karlin
-            blocks are allocated for each sequence (one per strand), but we
-            only need one of them.
-         */
-         kbp = kbp_ptr[index];
-         length_adjustment = 0;
-         last_length_adjustment = 0;
-         
-         min_query_length = (Int4) 1/(kbp->K);
-
-         for (i=0; i<5; i++) {
-            if (StringCmp(program, "blastn") != 0 && 
-                scoring_options->gapped_calculation) {
-               length_adjustment = Nlm_Nint((((kbp->logK)+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
-            } else {
-               length_adjustment = (Int4) (kbp->logK+log((Nlm_FloatHi)(query_length-last_length_adjustment)*(Nlm_FloatHi)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H);
-            }
-
-            if (length_adjustment >= query_length-min_query_length) {
-               length_adjustment = query_length-min_query_length;
-               break;
-            }
-            
-            if (ABS(last_length_adjustment-length_adjustment) <= 1)
-               break;
-            last_length_adjustment = length_adjustment;
-         }
-         
-         effective_length = 
-            MAX(query_length - length_adjustment, min_query_length);
-         effective_db_length = MAX(1, db_length - db_num_seqs*length_adjustment);
-         
-         effective_search_space = effective_length * effective_db_length;
-      }
-      for (i = 0; i < num_strands; ++i) {
-         query_info->eff_searchsp_array[index] = effective_search_space;
-         ++index;
-      }
-   }
-
-   return 0;
-}
-
-
 Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
@@ -1948,90 +1836,6 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, Char *program,
       return status;
    
    return 0;
-}
-
-Int2 BLAST_SetUpAuxStructures(Char *program,
-        const BlastScoringOptionsPtr scoring_options,
-        const BlastEffectiveLengthsOptionsPtr eff_len_options,
-        const LookupTableOptionsPtr lookup_options,	
-        const BlastInitialWordOptionsPtr word_options,
-        const BlastExtensionOptionsPtr ext_options,
-        const BlastHitSavingOptionsPtr hit_options,
-        BLAST_SequenceBlkPtr query, ValNodePtr lookup_segments,
-        BlastQueryInfoPtr query_info, BLAST_ScoreBlkPtr sbp, 
-        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject,
-        LookupTableWrapPtr PNTR lookup_wrap, BLAST_ExtendWordPtr PNTR ewp,
-        BlastGapAlignStructPtr PNTR gap_align, 
-        BlastInitialWordParametersPtr PNTR word_params,
-        BlastExtensionParametersPtr PNTR ext_params,
-        BlastHitSavingParametersPtr PNTR hit_params)
-{
-   Int2 status = 0;
-
-   /* Construct the lookup table. */
-   *lookup_wrap = MemNew(sizeof(LookupTableWrap));
-
-   switch ( lookup_options->lut_type ) {
-   case AA_LOOKUP_TABLE:
-      (*lookup_wrap)->lut_type = AA_LOOKUP_TABLE;
-      BlastAaLookupNew(lookup_options, (LookupTablePtr *)
-                       &((*lookup_wrap)->lut));
-      BlastAaLookupIndexQueries( (LookupTablePtr) (*lookup_wrap)->lut,
-	 sbp->matrix, query, lookup_segments, 1);
-      _BlastAaLookupFinalize((LookupTablePtr) (*lookup_wrap)->lut);
-      break;
-   case MB_LOOKUP_TABLE:
-      (*lookup_wrap)->lut_type = MB_LOOKUP_TABLE;
-	    
-      MB_LookupTableNew(query, lookup_segments, 
-         (MBLookupTablePtr *) &((*lookup_wrap)->lut), lookup_options);
-      break;
-   case NA_LOOKUP_TABLE:
-      (*lookup_wrap)->lut_type = NA_LOOKUP_TABLE;
-	    
-      LookupTableNew(lookup_options, 
-         (LookupTablePtr *) &((*lookup_wrap)->lut), FALSE);
-	    
-      BlastNaLookupIndexQuery((LookupTablePtr) (*lookup_wrap)->lut, query,
-                              lookup_segments);
-      _BlastAaLookupFinalize((LookupTablePtr) (*lookup_wrap)->lut);
-      break;
-   default:
-      {
-         /* FIXME - emit error condition here */
-      }
-   } /* end switch */
-
-   if (ewp && (status = BLAST_ExtendWordInit(query, word_options, 
-                           eff_len_options->db_length, 
-                           eff_len_options->dbseq_num, ewp)) != 0)
-      return status;
-
-   if ((status = BlastSetUp_CalcEffLengths(program, scoring_options,
-                    eff_len_options, sbp, query_info)) != 0)
-      return status;
-
-   BlastExtensionParametersNew(program, ext_options, sbp, query_info, 
-                               ext_params);
-
-   BlastHitSavingParametersNew(hit_options, NULL, sbp, query_info,
-                               hit_params);
-
-   if ((status = BlastSetUp_CalcEffLengths(program, scoring_options, 
-                    eff_len_options, sbp, query_info)) != 0)
-      return status;
-
-   BlastInitialWordParametersNew(word_options, *hit_params, *ext_params,
-      sbp, query_info, eff_len_options, word_params);
-
-   if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 1, 
-                    rdfp, subject, query->length, program, sbp,
-                    gap_align))) {
-      ErrPostEx(SEV_ERROR, 0, 0, 
-                "Cannot allocate memory for gapped extension");
-      return status;
-   }
-   return status;
 }
 
 #define MAX_NUM_QUERIES 16383 /* == 1/2 INT2_MAX */
