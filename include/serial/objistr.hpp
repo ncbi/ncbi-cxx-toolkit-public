@@ -122,14 +122,14 @@ public:
 
     // constructors
 protected:
-    CObjectIStream(void);
+    CObjectIStream(ESerialDataFormat format);
     CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
 
 public:
     virtual ~CObjectIStream(void);
 
     // get data format
-    virtual ESerialDataFormat GetDataFormat(void) const = 0;
+    ESerialDataFormat GetDataFormat(void) const;
 
     // USER INTERFACE
     // root reader
@@ -336,7 +336,7 @@ public:
     TFailFlags ClearFailFlags(TFailFlags flags);
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
-    virtual string GetPosition(void) const = 0;
+    virtual string GetPosition(void) const;
     size_t GetStreamOffset(void) const;
 
     void ThrowError1(const char* file, int line,
@@ -563,6 +563,8 @@ private:
 
 protected:
     CIStreamBuffer m_Input;
+    bool m_DiscardCurrObject;
+    ESerialDataFormat   m_DataFormat;
     ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
     
@@ -573,7 +575,6 @@ private:
 
     TFailFlags m_Fail;
     TFlags m_Flags;
-    bool m_DiscardCurrObject;
 
 public:
     // hook support
@@ -643,6 +644,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2003/11/26 19:59:37  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.95  2003/11/19 15:42:09  vasilche
 * Added CObjectIStream::HaveMoreData().
 *

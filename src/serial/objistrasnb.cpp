@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/11/26 19:59:40  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.66  2003/10/15 18:00:32  vasilche
 * Fixed integer overflow in asn binary input stream after 2GB.
 * Added constructor of CObjectIStreamAsnBinary() from CByteSourceReader.
@@ -315,7 +320,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -326,7 +331,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -339,7 +344,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  bool deleteIn,
                                                  EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -351,7 +356,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
                                                  EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
@@ -359,16 +364,6 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
 #endif
     m_CurrentTagLength = 0;
     Open(reader);
-}
-
-ESerialDataFormat CObjectIStreamAsnBinary::GetDataFormat(void) const
-{
-    return eSerial_AsnBinary;
-}
-
-string CObjectIStreamAsnBinary::GetPosition(void) const
-{
-    return "byte "+NStr::UIntToString(m_Input.GetStreamOffset());
 }
 
 #if CHECK_STREAM_INTEGRITY

@@ -32,6 +32,14 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
+
+inline
+ESerialDataFormat CObjectIStream::GetDataFormat(void) const
+{
+    return m_DataFormat;
+}
+
+
 inline
 CObjectIStream* CObjectIStream::Open(const string& fileName,
                                      ESerialDataFormat format)
@@ -506,6 +514,11 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/11/26 19:59:37  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.26  2003/11/19 15:42:10  vasilche
 * Added CObjectIStream::HaveMoreData().
 *

@@ -53,8 +53,6 @@ public:
     CObjectIStreamXml(void);
     ~CObjectIStreamXml(void);
 
-    ESerialDataFormat GetDataFormat(void) const;
-
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
@@ -252,6 +250,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/11/26 19:59:38  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.30  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/11/26 19:59:41  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.81  2003/10/24 15:54:28  grichenk
 * Removed or blocked exceptions in destructors
 *
@@ -368,7 +373,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
 
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
-    : CObjectOStream(out), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnBinary, out), m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -380,7 +385,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut,
                                                  EFixNonPrint how)
-    : CObjectOStream(out, deleteOut), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnBinary, out, deleteOut), m_FixMethod(how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -395,16 +400,6 @@ CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
         ERR_POST("CObjectOStreamAsnBinary not finished");
 #endif
-}
-
-ESerialDataFormat CObjectOStreamAsnBinary::GetDataFormat(void) const
-{
-    return eSerial_AsnBinary;
-}
-
-string CObjectOStreamAsnBinary::GetPosition(void) const
-{
-    return "byte "+NStr::UIntToString(m_Output.GetStreamOffset());
 }
 
 #if CHECK_STREAM_INTEGRITY

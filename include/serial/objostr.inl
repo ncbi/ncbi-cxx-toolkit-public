@@ -32,6 +32,14 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
+
+inline
+ESerialDataFormat CObjectOStream::GetDataFormat(void) const
+{
+    return m_DataFormat;
+}
+
+
 inline
 CObjectOStream* CObjectOStream::Open(const string& fileName,
                                      ESerialDataFormat format)
@@ -378,6 +386,11 @@ ESerialVerifyData CObjectOStream::GetVerifyData(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/11/26 19:59:38  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.22  2003/11/13 14:06:45  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *

@@ -201,9 +201,11 @@ ESerialVerifyData CObjectOStream::x_GetVerifyDataDefault(void)
 
 /////////////////////////////////////////////////////////////////////////////
 
-CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
+CObjectOStream::CObjectOStream(ESerialDataFormat format,
+                               CNcbiOstream& out, bool deleteOut)
     : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
       m_Separator(""), m_AutoSeparator(false),
+      m_DataFormat(format),
       m_VerifyData(x_GetVerifyDataDefault())
 {
 }
@@ -301,6 +303,16 @@ string CObjectOStream::GetStackTrace(void) const
 size_t CObjectOStream::GetStreamOffset(void) const
 {
     return m_Output.GetStreamOffset();
+}
+
+string CObjectOStream::GetPosition(void) const
+{
+    return "byte "+NStr::UIntToString(GetStreamOffset());
+}
+
+string CObjectIStream::GetPosition(void) const
+{
+    return "byte "+NStr::UIntToString(GetStreamOffset());
 }
 
 void CObjectOStream::ThrowError1(const char* file, int line, 
@@ -936,6 +948,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2003/11/26 19:59:40  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.90  2003/11/24 14:10:05  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *

@@ -51,8 +51,6 @@ public:
     CObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
     virtual ~CObjectOStreamXml(void);
 
-    ESerialDataFormat GetDataFormat(void) const;
-
     virtual string GetPosition(void) const;
 
     enum EEncoding {
@@ -304,6 +302,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/11/26 19:59:39  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.36  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

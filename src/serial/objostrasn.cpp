@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/11/26 19:59:41  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.81  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.
@@ -380,7 +385,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      EFixNonPrint how)
-    : CObjectOStream(out), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnText, out), m_FixMethod(how)
 {
     m_Output.SetBackLimit(80);
     SetSeparator("\n");
@@ -390,7 +395,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
                                      bool deleteOut,
                                      EFixNonPrint how)
-    : CObjectOStream(out, deleteOut), m_FixMethod(how)
+    : CObjectOStream(eSerial_AsnText, out, deleteOut), m_FixMethod(how)
 {
     m_Output.SetBackLimit(80);
     SetSeparator("\n");
@@ -399,11 +404,6 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 
 CObjectOStreamAsn::~CObjectOStreamAsn(void)
 {
-}
-
-ESerialDataFormat CObjectOStreamAsn::GetDataFormat(void) const
-{
-    return eSerial_AsnText;
 }
 
 string CObjectOStreamAsn::GetPosition(void) const

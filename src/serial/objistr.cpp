@@ -246,9 +246,12 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
 
 /////////////////////////////////////////////////////////////////////////////
 
-CObjectIStream::CObjectIStream(void)
-    : m_VerifyData(x_GetVerifyDataDefault()),
-      m_Fail(fNotOpen), m_Flags(fFlagNone), m_DiscardCurrObject(false)
+CObjectIStream::CObjectIStream(ESerialDataFormat format)
+    : m_DiscardCurrObject(false),
+      m_DataFormat(format),
+      m_VerifyData(x_GetVerifyDataDefault()),
+      m_Fail(fNotOpen),
+      m_Flags(fFlagNone)
 {
 }
 
@@ -1332,6 +1335,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.120  2003/11/26 19:59:39  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.119  2003/11/24 14:10:05  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *

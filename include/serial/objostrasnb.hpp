@@ -62,10 +62,6 @@ public:
                             EFixNonPrint how = eFNP_Default);
     virtual ~CObjectOStreamAsnBinary(void);
 
-    ESerialDataFormat GetDataFormat(void) const;
-
-    virtual string GetPosition(void) const;
-
     virtual void WriteEnum(const CEnumeratedTypeValues& values, 
                            TEnumValueType value);
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
@@ -212,6 +208,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/11/26 19:59:39  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.42  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

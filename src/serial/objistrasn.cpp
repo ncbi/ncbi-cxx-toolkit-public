@@ -53,13 +53,13 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsn(void)
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
 {
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
 {
     Open(in);
 }
@@ -67,14 +67,9 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in,
                                      bool deleteIn,
                                      EFixNonPrint how)
-    : m_FixMethod(how)
+    : CObjectIStream(eSerial_AsnText), m_FixMethod(how)
 {
     Open(in, deleteIn);
-}
-
-ESerialDataFormat CObjectIStreamAsn::GetDataFormat(void) const
-{
-    return eSerial_AsnText;
 }
 
 string CObjectIStreamAsn::GetPosition(void) const
@@ -1272,6 +1267,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/11/26 19:59:40  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.86  2003/08/25 15:59:09  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

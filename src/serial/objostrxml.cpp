@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/11/26 19:59:41  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.66  2003/11/21 16:16:48  vasilche
 * More efficient writing of hex numbers.
 *
@@ -302,7 +307,7 @@ string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
 string CObjectOStreamXml::sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
-    : CObjectOStream(out, deleteOut),
+    : CObjectOStream(eSerial_Xml, out, deleteOut),
       m_LastTagAction(eTagClose), m_EndTag(true),
       m_UseDefaultDTDFilePrefix( true),
       m_UsePublicId( true),
@@ -315,11 +320,6 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
 
 CObjectOStreamXml::~CObjectOStreamXml(void)
 {
-}
-
-ESerialDataFormat CObjectOStreamXml::GetDataFormat(void) const
-{
-    return eSerial_Xml;
 }
 
 void CObjectOStreamXml::SetEncoding(EEncoding enc)

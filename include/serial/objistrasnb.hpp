@@ -64,10 +64,6 @@ public:
     CObjectIStreamAsnBinary(CByteSourceReader& reader,
                             EFixNonPrint how = eFNP_Default);
 
-    ESerialDataFormat GetDataFormat(void) const;
-
-    virtual string GetPosition(void) const;
-
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
@@ -247,6 +243,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/11/26 19:59:38  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.42  2003/10/15 18:00:32  vasilche
 * Fixed integer overflow in asn binary input stream after 2GB.
 * Added constructor of CObjectIStreamAsnBinary() from CByteSourceReader.

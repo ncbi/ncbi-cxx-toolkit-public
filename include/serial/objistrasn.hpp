@@ -55,8 +55,6 @@ public:
                       bool deleteIn,
                       EFixNonPrint how = eFNP_Default);
 
-    ESerialDataFormat GetDataFormat(void) const;
-
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
@@ -220,6 +218,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/11/26 19:59:38  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.58  2003/08/19 18:32:37  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

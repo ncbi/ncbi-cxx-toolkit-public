@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/11/26 19:59:40  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.49  2003/09/25 19:44:08  gouriano
 * Corrected serialization of AnyContent object's attributes
 *
@@ -233,7 +238,8 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 }
 
 CObjectIStreamXml::CObjectIStreamXml(void)
-    : m_TagState(eTagOutside), m_Attlist(false),
+    : CObjectIStream(eSerial_Xml),
+      m_TagState(eTagOutside), m_Attlist(false),
       m_StdXml(false), m_EnforcedStdXml(false),
       m_Encoding( eEncoding_Unknown )
 {
@@ -241,11 +247,6 @@ CObjectIStreamXml::CObjectIStreamXml(void)
 
 CObjectIStreamXml::~CObjectIStreamXml(void)
 {
-}
-
-ESerialDataFormat CObjectIStreamXml::GetDataFormat(void) const
-{
-    return eSerial_Xml;
 }
 
 CObjectIStreamXml::EEncoding CObjectIStreamXml::GetEncoding(void) const

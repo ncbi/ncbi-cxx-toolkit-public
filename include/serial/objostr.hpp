@@ -108,13 +108,14 @@ public:
 
     // constructors
 protected:
-    CObjectOStream(CNcbiOstream& out, bool deleteOut = false);
+    CObjectOStream(ESerialDataFormat format,
+                   CNcbiOstream& out, bool deleteOut = false);
 
 public:
     virtual ~CObjectOStream(void);
 
     // get data format
-    virtual ESerialDataFormat GetDataFormat(void) const = 0;
+    ESerialDataFormat GetDataFormat(void) const;
 
     // USER INTERFACE
     // flush buffer
@@ -269,7 +270,7 @@ public:
     TFailFlags ClearFailFlags(TFailFlags flags);
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
-    virtual string GetPosition(void) const = 0;
+    virtual string GetPosition(void) const;
     size_t GetStreamOffset(void) const;
 
     enum EFlags {
@@ -486,6 +487,7 @@ protected:
     virtual void WriteSeparator(void);
     string m_Separator;
     bool   m_AutoSeparator;
+    ESerialDataFormat   m_DataFormat;
     ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
 
@@ -513,6 +515,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/11/26 19:59:38  vasilche
+* GetPosition() and GetDataFormat() methods now are implemented
+* in parent classes CObjectIStream and CObjectOStream to avoid
+* pure virtual method call in destructors.
+*
 * Revision 1.80  2003/11/13 14:06:45  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *
