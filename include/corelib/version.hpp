@@ -28,10 +28,12 @@
  *
  * Authors:  Denis Vakatov, Vladimir Ivanov
  *
- * File Description:
- *   CVersionInfo -- a version info storage class
  *
  */
+
+/// @file version.hpp
+/// Define CVersionInfo, a version info storage class.
+
 
 #include <corelib/ncbistd.hpp>
 
@@ -49,30 +51,39 @@ BEGIN_NCBI_SCOPE
 // CVersionInfo
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CVersionInfo --
+///
+/// Define class for storing version information.
+
 class NCBI_XNCBI_EXPORT CVersionInfo
 {
 public:
-    // Consructors
+    /// Constructor.
     CVersionInfo(unsigned int  ver_major,
                  unsigned int  ver_minor,
                  unsigned int  patch_level = 0,
                  const string& name        = kEmptyStr);
 
+    /// Constructor.
     CVersionInfo(const CVersionInfo& version);
 
-    // virtual dtor
+    /// Destructor.
     virtual ~CVersionInfo() {}
 
-    // Print version info
-    //    <ver_major>.<ver_minor>.<patch_level>
-    //    <ver_major>.<ver_minor>.<patch_level> (<name>)
+    /// Print version information.
+    ///
+    /// Version information is printed in the following forms:
+    /// - <ver_major>.<ver_minor>.<patch_level>
+    /// - <ver_major>.<ver_minor>.<patch_level> (<name>)
     virtual string Print(void) const;
 
 protected:
-    unsigned     int m_Major;
-    unsigned     int m_Minor;
-    unsigned     int m_PatchLevel;
-    const string m_Name;
+    unsigned     int m_Major;       ///< Major number
+    unsigned     int m_Minor;       ///< Minor number
+    unsigned     int m_PatchLevel;  ///< Patch level
+    const string m_Name;            ///< Name
 };
 
 
@@ -86,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/08 12:17:42  siyan
+ * Documentation changes.
+ *
  * Revision 1.3  2003/04/01 19:19:52  siyan
  * Added doxygen support
  *
