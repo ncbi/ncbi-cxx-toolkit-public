@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_socket.h>
 
 
@@ -45,6 +46,25 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Exceptions thrown by CThreadedServer::Run
+class NCBI_XCONNECT_EXPORT CThreadedServerException
+    : EXCEPTION_VIRTUAL_BASE public CConnException
+{
+public:
+    enum EErrCode {
+        eBadParameters, ///< Out-of-range parameters given
+        eCouldntListen  ///< Unable to bind listening port
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eBadParameters: return "eBadParameters";
+        case eCouldntListen: return "eCouldntListen";
+        default:             return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CThreadedServerException, CConnException);
+};
 
 // CThreadedServer - abstract class for network servers using thread pools.
 //   This code maintains a pool of threads (initially m_InitThreads, but
@@ -102,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/08/12 19:27:52  ucko
+ * +CThreadedServerException
+ *
  * Revision 6.7  2003/04/09 19:06:05  siyan
  * Added doxygen support
  *
