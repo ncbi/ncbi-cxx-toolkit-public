@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/12/12 17:57:06  vasilche
+* Avoid using of new C++ keywords ('or' in this case).
+*
 * Revision 1.47  2000/12/12 14:28:17  vasilche
 * Changed the way arguments are processed.
 *
@@ -477,8 +480,8 @@ bool CDataTool::GenerateCode(void)
         generator.SetCPPDir(opc.AsString());
     
     // set file names prefixes
-    if ( const CArgValue& or = args["or"] )
-        generator.SetFileNamePrefix(or.AsString());
+    if ( const CArgValue& orF = args["or"] )
+        generator.SetFileNamePrefix(orF.AsString());
     if ( args["ors"] )
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
     if ( args["orm"] )
