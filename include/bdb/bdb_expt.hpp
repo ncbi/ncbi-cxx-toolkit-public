@@ -127,7 +127,7 @@ public:
         eTransInProgress,
         eNull,
         eQueryError,
-        eQuerySyntaxError,
+        eQuerySyntaxError
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/24 19:24:48  kuznets
+ * Syntax error fix
+ *
  * Revision 1.11  2004/02/24 16:29:59  kuznets
  * Add error codes associated with queries (syntax, execution, etc.)
  *
