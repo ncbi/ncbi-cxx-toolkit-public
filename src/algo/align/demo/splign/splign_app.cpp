@@ -144,9 +144,9 @@ bool CSplignApp::x_GetNextPair(ifstream* ifs, vector<CHit>* hits)
   }
   char buf [1024];
   while(ifs) {
-    size_t pos0 = ifs->tellg();
+    CT_POS_TYPE pos0 = ifs->tellg();
     ifs->getline(buf, sizeof buf, '\n');
-    size_t pos1 = ifs->tellg();
+    CT_POS_TYPE pos1 = ifs->tellg();
     if(pos1 == pos0) break; // GCC hack
     if(buf[0] == '#') continue; // skip comments
     const char* p = buf; // skip leading spaces
@@ -572,6 +572,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/19 22:57:55  ucko
+ * Accommodate stricter implementations of CT_POS_TYPE.
+ *
  * Revision 1.14  2004/02/18 16:04:53  kapustin
  * Do not print PolyA and gap contents
  *

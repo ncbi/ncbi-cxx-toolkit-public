@@ -203,7 +203,7 @@ void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr )
   while(inp->good()) {
     c = inp->get();
     if(c0 == '\n' && c == '>') {
-      size_t pos = size_t(inp->tellg()) - 1;
+      CT_OFF_TYPE pos = inp->tellg() - CT_POS_TYPE(1);
       string s;
       *inp >> s;
       *out << s << '\t' << file_index << '\t' << pos << endl;
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/19 22:57:55  ucko
+ * Accommodate stricter implementations of CT_POS_TYPE.
+ *
  * Revision 1.9  2003/12/23 16:50:25  kapustin
  * Reorder includes to activate msvc pragmas
  *

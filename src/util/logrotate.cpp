@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 CRotatingLogStreamBuf::CRotatingLogStreamBuf(CRotatingLogStream* stream,
                                              const string&       filename,
-                                             CT_POS_TYPE         limit,
+                                             CT_OFF_TYPE         limit,
                                              IOS_BASE::openmode  mode)
     : m_Stream(stream),
       m_FileName(filename),
@@ -87,7 +87,7 @@ CT_INT_TYPE CRotatingLogStreamBuf::overflow(CT_INT_TYPE c)
     // it to disk. :-/
     new_size -= pptr() - pbase();
     m_Size = new_size;
-    if (m_Size >= m_Limit) {
+    if (m_Size - CT_POS_TYPE(0) >= m_Limit) {
         Rotate();
     }
     return result;
@@ -103,7 +103,7 @@ int CRotatingLogStreamBuf::sync(void)
     // pptr() ought to equal pbase() now, but just in case...
     new_size -= pptr() - pbase();
     m_Size = new_size;
-    if (m_Size >= m_Limit) {
+    if (m_Size - CT_POS_TYPE(0) >= m_Limit) {
         Rotate();
     }
     return result;
@@ -129,6 +129,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/02/19 22:57:56  ucko
+* Accommodate stricter implementations of CT_POS_TYPE.
+*
 * Revision 1.6  2003/03/27 23:17:41  vakatov
 * Ident
 *

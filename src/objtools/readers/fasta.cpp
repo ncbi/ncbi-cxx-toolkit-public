@@ -314,7 +314,7 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
         NCBI_THROW2(CObjReaderParseException, eFormat,
                     "ReadFasta: unable to deduce molecule type"
                     " from IDs, flags, or sequence",
-                    in.tellg());
+                    in.tellg() - CT_POS_TYPE(0));
     }
 }
 
@@ -325,14 +325,14 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     if ( !in ) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                     "ReadFasta: Input stream no longer valid",
-                    in.tellg());
+                    in.tellg() - CT_POS_TYPE(0));
     } else {
         CT_INT_TYPE c = in.peek();
         if ( !strchr(">#!\n\r", CT_TO_CHAR_TYPE(c)) ) {
             NCBI_THROW2
                 (CObjReaderParseException, eFormat,
                  "ReadFasta: Input doesn't start with a defline or comment",
-                 in.tellg());
+                 in.tellg() - CT_POS_TYPE(0));
         }
     }
 
@@ -414,7 +414,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
         } else if ( !seq ) {
             NCBI_THROW2
                 (CObjReaderParseException, eFormat,
-                 "ReadFasta: No defline preceding data", in.tellg());
+                 "ReadFasta: No defline preceding data",
+                 in.tellg() - CT_POS_TYPE(0));
         } else if ( !(flags & fReadFasta_NoSeqData) ) {
             // These don't change, but the calls may be relatively expensive,
             // esp. with ref-counted implementations.
@@ -504,7 +505,7 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
 
     while (!input.eof()) {
         SFastaFileMap::SFastaEntry  fasta_entry;
-        fasta_entry.stream_offset = input.tellg();
+        fasta_entry.stream_offset = input.tellg() - CT_POS_TYPE(0);
 
         CRef<CSeq_entry> se;
         se = ReadFasta(input, fReadFasta_AssumeNuc | fReadFasta_OneSeq);
@@ -544,6 +545,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/02/19 22:57:52  ucko
+* Accommodate stricter implementations of CT_POS_TYPE.
+*
 * Revision 1.10  2003/12/05 03:00:36  ucko
 * Validate input better.
 *

@@ -102,7 +102,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
                         NStr::IntToString(line_num) + ": found " +
                         NStr::IntToString(fields.size()) +
                         " columns; there should be 9",
-                        is.tellg());
+                        is.tellg() - CT_POS_TYPE(0));
         }
 
         if (fields[0] != current_object || !bioseq) {
@@ -136,7 +136,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
                         string("error at line ") + 
                         NStr::IntToString(line_num) +
                         ": part number out of order",
-                        is.tellg());
+                        is.tellg() - CT_POS_TYPE(0));
         }
         last_part_num = part_num;
         if (NStr::StringToInt(fields[1]) != last_to + 1) {
@@ -144,7 +144,7 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
                         string("error at line ") + 
                          NStr::IntToString(line_num) +
                          ": begining not equal to previous end + 1",
-                         is.tellg());
+                         is.tellg() - CT_POS_TYPE(0));
         }
         last_to = NStr::StringToInt(fields[2]);
 
@@ -179,14 +179,14 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
                             string("error at line ") + 
                             NStr::IntToString(line_num) + ": invalid "
                             "orientation " + fields[8],
-                            is.tellg());
+                            is.tellg() - CT_POS_TYPE(0));
             }
         } else {
             NCBI_THROW2(CObjReaderParseException, eFormat,
                         string("error at line ") + 
                         NStr::IntToString(line_num) + ": invalid "
                         "component type " + fields[4],
-                        is.tellg());
+                        is.tellg() - CT_POS_TYPE(0));
         }
         seq_inst->SetExt().SetDelta().Set().push_back(delta_seq);
     }
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.4  2004/02/19 22:57:52  ucko
+ * Accommodate stricter implementations of CT_POS_TYPE.
+ *
  * Revision 1.3  2004/01/05 23:01:37  jcherry
  * Support unknown ("0") or irrelevant ("na") strand designation
  *

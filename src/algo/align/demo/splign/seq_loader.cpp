@@ -175,14 +175,14 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
   if(from == 0 && to == kMax_UInt) {
     // read entire sequence until the next one or eof
     while(*input) {
-      size_t i0 = input->tellg();
+      CT_POS_TYPE i0 = input->tellg();
       input->getline(buf, sizeof buf, '\n');
       if(!*input) {
 	break;
       }
-      size_t i1 = input->tellg();
+      CT_POS_TYPE i1 = input->tellg();
       if(i1 - i0 > 1) {
-	size_t line_size = i1 - i0 - 1;
+	CT_OFF_TYPE line_size = i1 - i0 - 1;
 	if(buf[0] == '>') break;
 	size_t size_old = seq->size();
 	seq->resize(size_old + line_size);
@@ -197,8 +197,8 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     // read only a portion of a sequence
     const size_t dst_seq_len = to - from + 1;
     seq->resize(dst_seq_len + sizeof buf);
-    size_t i0 = input->tellg(), i1;
-    size_t dst_read = 0, src_read = 0;
+    CT_POS_TYPE i0 = input->tellg(), i1;
+    CT_OFF_TYPE dst_read = 0, src_read = 0;
     while(*input) {
       input->getline(buf, sizeof buf, '\n');
       if(buf[0] == '>' || !*input) {
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/19 22:57:54  ucko
+ * Accommodate stricter implementations of CT_POS_TYPE.
+ *
  * Revision 1.10  2004/02/18 16:04:16  kapustin
  * Support lower case input sequences
  *

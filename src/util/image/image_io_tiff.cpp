@@ -132,7 +132,7 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
             break;
         }
 
-        return istr->tellg();
+        return istr->tellg() - CT_POS_TYPE(0);
     }
     return (toff_t)-1;
 }
@@ -154,10 +154,10 @@ static toff_t s_TIFFSizeHandler(thandle_t handle)
     toff_t offs = 0;
     CNcbiIfstream* istr = reinterpret_cast<CNcbiIfstream*>(handle);
     if (istr) {
-        size_t curr_pos = istr->tellg();
+        CT_POS_TYPE curr_pos = istr->tellg();
         istr->seekg(0, ios::end);
-        offs = istr->tellg();
-        istr->seekg(curr_pos, ios::beg);
+        offs = istr->tellg() - CT_POS_TYPE(0);
+        istr->seekg(curr_pos);
     }
     return offs;
 }
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/19 22:57:57  ucko
+ * Accommodate stricter implementations of CT_POS_TYPE.
+ *
  * Revision 1.7  2003/12/19 20:58:29  dicuccio
  * Added special case: single-channel TIFF images -> interpret as RGB
  *

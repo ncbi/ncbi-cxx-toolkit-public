@@ -49,7 +49,7 @@ class CRotatingLogStream;
 class NCBI_XUTIL_EXPORT CRotatingLogStreamBuf : public CNcbiFilebuf {
 public:
     CRotatingLogStreamBuf(CRotatingLogStream* stream, const string& filename,
-                          CT_POS_TYPE limit, IOS_BASE::openmode mode);
+                          CT_OFF_TYPE limit, IOS_BASE::openmode mode);
     void Rotate(void);
 
 protected:
@@ -59,7 +59,8 @@ protected:
 private:
     CRotatingLogStream* m_Stream;
     string              m_FileName;
-    CT_POS_TYPE         m_Size, m_Limit; // in bytes
+    CT_POS_TYPE         m_Size;
+    CT_OFF_TYPE         m_Limit; // in bytes
     IOS_BASE::openmode  m_Mode;
 };
 
@@ -68,7 +69,7 @@ class NCBI_XUTIL_EXPORT CRotatingLogStream : public CNcbiOstream {
 public:
     // limit is approximate; the actual length may exceed it by a buffer's
     // worth of characters.
-    CRotatingLogStream(const string& filename, CT_POS_TYPE limit,
+    CRotatingLogStream(const string& filename, CT_OFF_TYPE limit,
                        openmode mode = app | ate | out)
         : CNcbiOstream(new CRotatingLogStreamBuf(this, filename, limit, mode))
         { }
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 22:57:53  ucko
+* Accommodate stricter implementations of CT_POS_TYPE.
+*
 * Revision 1.5  2003/04/17 17:50:21  siyan
 * Added doxygen support
 *
