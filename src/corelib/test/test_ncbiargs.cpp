@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/09/22 21:26:28  butanaev
+ * Added example with default arg values.
+ *
  * Revision 6.2  2000/09/12 15:01:30  butanaev
  * Examples now switching by environment variable EXAMPLE_NUM.
  *
@@ -39,10 +42,27 @@
  * ===========================================================================
  */
 
+#include <stdio.h>
 #include <corelib/ncbiargs.hpp>
 
 
 USING_NCBI_SCOPE;
+
+
+// Argument with default walue
+void Example8(CArgDescriptions& m, int argc, const char* argv[])
+{
+  m.AddOptionalKey("k",
+                   "alphaNumericKey",
+                   "This is an optional argument",
+                   CArgDescriptions::eAlnum,
+                   0,
+                   "CORELIB");
+
+  CArgs* a = m.CreateArgs(argc, argv);
+
+  cout << "k=" << (*a)["k"].AsString()  << endl;
+}
 
 
 // Position arguments - advanced
@@ -186,7 +206,7 @@ static FTest s_Test[] =
   Example5,
   Example6,
   Example7,
-  0
+  Example8
 };
 
 // Main
@@ -194,16 +214,20 @@ int main(int argc, const char* argv[])
 {
   char *errorMsg =
     "To run example number N environment variable EXAMPLE_NUM "
-    "must be set to N, where N in 1 .. 7 interval";
+    "must be set to N, where N in 1 .. %d interval";
+
+  unsigned size = sizeof(s_Test)/sizeof(s_Test[0]);
+  char tmp[1000];
+  sprintf(tmp, errorMsg, size);
 
   char *exampleNum = getenv("EXAMPLE_NUM");
   if(! exampleNum)
   {
-    cerr << errorMsg << endl;
+    cerr << tmp << endl;
     return 0;
   }
 
-  int i;
+  unsigned i;
   try
   {
     i = NStr::StringToInt(exampleNum);
@@ -213,9 +237,9 @@ int main(int argc, const char* argv[])
     i = 0;
   }
 
-  if(i < 1 || i > 7)
+  if(i < 1 || i > size)
   {
-    cerr << errorMsg << endl;
+    cerr << tmp << endl;
     return 0;
   }
 
