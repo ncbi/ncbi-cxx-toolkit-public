@@ -9,3 +9,5 @@
 APP = coretest
 OBJ = coretest
 LIB = xncbi
+
+CHECK_CMD =

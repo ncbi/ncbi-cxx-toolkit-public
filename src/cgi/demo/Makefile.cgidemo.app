@@ -6,3 +6,5 @@
 APP = cgidemo
 OBJ = cgidemo
 LIB = xcgi xncbi
+
+CHECK_CMD =

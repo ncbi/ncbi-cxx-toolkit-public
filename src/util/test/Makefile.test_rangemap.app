@@ -9,3 +9,5 @@
 APP = testrangemap
 OBJ = testrangemap
 LIB = xutil xncbi
+
+CHECK_CMD =
