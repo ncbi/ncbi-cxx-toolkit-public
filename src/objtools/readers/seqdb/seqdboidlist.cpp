@@ -124,7 +124,7 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet   & volset,
                 // For each file, copy bits into array.
                 
                 ITERATE(list<string>, mask_iter, mask_files) {
-                    x_OrMaskBits(*mask_iter, oid_start, oid_end, locked);
+                    x_OrMaskBits(*mask_iter, oid_start, locked);
                 }
                 
                 ITERATE(list<string>, gilist_iter, gilist_files) {
@@ -178,19 +178,8 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet   & volset,
     }
 }
 
-// oid_end is not used - it could be.  One use would be to trim the
-// "incoming bits" to that length; specifically, to assume that the
-// file may contain nonzero "junk data" after the official end point.
-//
-// This implies that two oid sets share the oid mask file, but one
-// used a smaller subset of that file.  That really should never
-// happen; it would be so unlikely for that optimization to "buy
-// anything" that the code would almost certainly never be written
-// that way.  For this reason, I have not yet implemented trimming.
-
 void CSeqDBOIDList::x_OrMaskBits(const string   & mask_fname,
                                  Uint4            oid_start,
-                                 Uint4            /*oid_end*/,
                                  CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
@@ -401,7 +390,7 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
     
         if (is_binary) {
             gis.reserve(num_gis);
-            x_ReadBinaryGiList(gilist, lease, 8, num_gis, gis, locked);
+            x_ReadBinaryGiList(gilist, lease, num_gis, gis, locked);
         } else {
             // Assume average gi is at least 6 digits plus newline.
             gis.reserve(file_length / 7);
@@ -519,12 +508,12 @@ bool CSeqDBOIDList::x_FindNext(TOID & oid) const
 
 void CSeqDBOIDList::x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
                                        CSeqDBMemLease & lease,
-                                       Uint4            start, // 8
                                        Uint4            num_gis,
                                        vector<Uint4>  & gis,
                                        CSeqDBLockHold & locked)
 {
     Uint4 gisize = sizeof(Uint4);
+    Uint4 start = 8;
     Uint4 end = num_gis * gisize + start;
     
     for(Uint4 offset = start; offset < end; offset += gisize) {

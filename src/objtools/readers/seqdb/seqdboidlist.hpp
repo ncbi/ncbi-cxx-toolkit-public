@@ -184,8 +184,7 @@ private:
     /// and more efficient storage methods are possible in cases where
     /// very sparse GI lists are used.  More efficient storage is
     /// possible in cases where small masked databases are mixed with
-    /// large, "fully-in" volumes.  This is a compromise solution
-    /// which may need to be revisited.
+    /// large, "fully-in" volumes.
     /// 
     /// @param filename
     ///   The name of the mask file to use.
@@ -194,40 +193,115 @@ private:
     void x_Setup(CSeqDBVolSet   & volset,
                  CSeqDBLockHold & locked);
     
+    /// Copy data from an OID mask into the bit array.
+    /// 
+    /// This method maps an oid mask file which spans one volume, and
+    /// combines the data from that file with the large bit array that
+    /// spans the total oid range.  The combination is done as an "OR"
+    /// operation.
+    /// 
+    /// @param mask_fname
+    ///   The name of the mask file to use.
+    /// @param oid_start
+    ///   The volume's starting oid.
+    /// @param locked
+    ///   The lock hold object for this thread.
     void x_OrMaskBits(const string   & mask_fname,
                       Uint4            oid_start,
-                      Uint4            oid_end,
                       CSeqDBLockHold & locked);
     
+    /// Add bits corresponding to a GI list.
+    /// 
+    /// This method reads a file containing a list of GIs.  The GIs
+    /// which are found in this volume are converted to OIDs, and the
+    /// corresponding bits are turned on.
+    /// 
+    /// @param gilist_fname
+    ///   The name of the gi list file to use.
+    /// @param volp
+    ///   The volume this list is to be applied to.
+    /// @param oid_start
+    ///   The volume's starting oid.
+    /// @param oid_end
+    ///   The volume's ending oid.
+    /// @param locked
+    ///   The lock hold object for this thread.
     void x_OrGiFileBits(const string    & gilist_fname,
                         const CSeqDBVol * volp,
                         Uint4             oid_start,
                         Uint4             oid_end,
                         CSeqDBLockHold  & locked);
     
+    /// Read a binary GI list.
+    /// 
+    /// This method reads a binary GI list file.  This is a binary
+    /// array of GI numbers in network byte order.  It may need to
+    /// swap the entries.
+    /// 
+    /// @param gilist
+    ///   A file object for this gi list file.
+    /// @param lease
+    ///   A memory lease holder for the gi list file.
+    /// @param num_gis
+    ///   The number of entries in the file.
+    /// @param gis
+    ///   A vector to return the gis in.
+    /// @param locked
+    ///   The lock hold object for this thread.
     void x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
                             CSeqDBMemLease & lease,
-                            Uint4            start, // 8
                             Uint4            num_gis,
                             vector<Uint4>  & gis,
                             CSeqDBLockHold & locked);
     
+    /// Read a binary GI list.
+    /// 
+    /// This method reads a text GI list file.  This is a list of
+    /// integer GI numbers in ASCII text, seperated by newlines.
+    /// 
+    /// @param gilist
+    ///   A file object for this gi list file.
+    /// @param lease
+    ///   A memory lease holder for the gi list file.
+    /// @param gis
+    ///   A vector to return the gis in.
+    /// @param locked
+    ///   The lock hold object for this thread.
     void x_ReadTextGiList(CSeqDBRawFile  & gilist,
                           CSeqDBMemLease & lease,
                           vector<Uint4>  & gis,
                           CSeqDBLockHold & locked);
     
+    /// Set all bits in a range.
+    /// 
+    /// This method turns on all bits in the specified oid range.  It
+    /// is used to turn on bit ranges for volumes where all OIDs are
+    /// included.
+    /// 
+    /// @param oid_start
+    ///   The volume's starting oid.
+    /// @param oid_end
+    ///   The volume's ending oid.
     void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);
     
     // Data
     
+    /// The memory management layer object.
     CSeqDBAtlas    & m_Atlas;
+    
+    /// A memory lease which holds the mask file (if only one is used).
     CSeqDBMemLease   m_Lease;
+    
+    /// The total number of OIDs represented in the bit array.
     Uint4            m_NumOIDs;
     
+    /// A pointer to the top of the bit array.
     TUC            * m_Bits;
+    
+    /// A pointer to the end of the bit array.
     TUC            * m_BitEnd;
     
+    /// Set to true if the bit array was allocated.
     bool             m_BitOwner;
 };
 
