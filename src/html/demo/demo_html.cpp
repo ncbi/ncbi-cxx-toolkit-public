@@ -30,18 +30,19 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/05/11 02:53:59  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
 * Revision 1.2  1999/03/15 16:14:27  vasilche
 * Fixed new CHTML_form constructor.
 *
 * Revision 1.1  1999/01/14 21:37:43  lewisg
 * added html demo
-*
-*
 * ===========================================================================
 */
 
 // toolkit public headers
-#include <corelib/ncbicgir.hpp>
+#include <cgi/ncbicgir.hpp>
 #include <html/html.hpp>
 // project private headers
 

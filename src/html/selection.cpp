@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/11 02:53:57  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
 * Revision 1.3  1999/03/26 22:00:01  sandomir
 * checked option in Radio button fixed; minor fixes in Selection
 *
@@ -42,9 +45,9 @@
 * ===========================================================================
 */
 
-#include <html/selection.hpp>
+#include <cgi/ncbicgi.hpp>
 #include <html/html.hpp>
-#include <corelib/ncbicgi.hpp>
+#include <html/selection.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  1999/05/11 02:53:52  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
 * Revision 1.43  1999/05/10 14:26:13  vakatov
 * Fixes to compile and link with the "egcs" C++ compiler under Linux
 *
@@ -181,12 +184,6 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbires.hpp>
-#include <corelib/ncbicgir.hpp>
-#include <algorithm>
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
@@ -495,6 +492,8 @@ static void TestException(void)
     TestException_Aux();
 }
 
+
+
 /////////////////////////////////
 // Utilities
 //
@@ -521,14 +520,16 @@ static void TestUtilities(void)
         NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
         try {
             int value = NStr::StringToInt(str);
-            NcbiCout << "int value: " << value << ", toString: '" << NStr::IntToString(value) << "'" << NcbiEndl;
+            NcbiCout << "int value: " << value << ", toString: '"
+                     << NStr::IntToString(value) << "'" << NcbiEndl;
         }
         catch ( runtime_error& error ) {
             NcbiCout << "Error: " << error.what() << NcbiEndl;
         }
         try {
             unsigned int value = NStr::StringToInt(str);
-            NcbiCout << "unsigned int value: " << value << ", toString: '" << NStr::IntToString(value) << "'" << NcbiEndl;
+            NcbiCout << "unsigned int value: " << value << ", toString: '"
+                     << NStr::IntToString(value) << "'" << NcbiEndl;
         }
         catch ( runtime_error& error ) {
             NcbiCout << "Error: " << error.what() << NcbiEndl;
@@ -538,350 +539,9 @@ static void TestUtilities(void)
 }
 
 
-/////////////////////////////////
-// CGI
-//
-
-static void TestCgi_Cookies(void)
-{
-    CCgiCookies cookies("coo1=kie1BAD1;coo2=kie2_ValidPath; ");
-    cookies.Add("  coo1=kie1BAD2;CooT=KieT_ExpTime  ");
-
-    string str = "  Coo11=Kie11_OK; Coo2=Kie2BAD;  coo1=Kie1_OK; Coo5=kie5";
-    cookies.Add(str);
-    cookies.Add("RemoveThisCookie", "BAD");
-    cookies.Add(str);
-
-    cookies.Find("Coo2")->SetValue("Kie2_OK");
-
-    CCgiCookie c1("Coo5", "Kie5BAD");
-    CCgiCookie c2(c1);
-    c2.SetValue("Kie5_Dom_Sec");
-    c2.SetDomain("aaa.bbb.ccc");
-    c2.SetSecure(true);
-
-    cookies.Add(c1);
-    cookies.Add(c2);
-
-    CCgiCookie* c3 = cookies.Find("coo2");
-    c3->SetValidPath("coo2_ValidPath");
-
-    _ASSERT( !cookies.Remove("NoSuchCookie") );
-    _ASSERT( cookies.Remove("RemoveThisCookie") );
-    _ASSERT( !cookies.Remove("RemoveThisCookie") );
-    _ASSERT( !cookies.Find("RemoveThisCookie") );
-
-    string dom5;
-    _ASSERT( cookies.Find("Coo5")->GetDomain(&dom5) );
-    _ASSERT( dom5 == "aaa.bbb.ccc" );
-    _ASSERT( !cookies.Find("coo2")->GetDomain(&dom5) );
-    _ASSERT( dom5 == "aaa.bbb.ccc" );
-
-    time_t timer = time(0);
-    tm *date = gmtime(&timer);
-    CCgiCookie *ct = cookies.Find("CooT");
-    ct->SetExpDate(*date);
-    
-    NcbiCerr << "\n\nCookies:\n\n" << cookies << NcbiEndl;
-}
-
-
-static void PrintEntries(TCgiEntries& entries)
-{
-    for (TCgiEntries::iterator iter = entries.begin();
-         iter != entries.end();  ++iter) {
-        NcbiCout << "  (\"" << iter->first.c_str() << "\", \""
-                  << iter->second.c_str() << "\")" << NcbiEndl;
-    }
-}
-
-static bool TestEntries(TCgiEntries& entries, const string& str)
-{
-    NcbiCout << "\n Entries: `" << str.c_str() << "'\n";
-    SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
-    PrintEntries(entries);
-
-    if ( err_pos ) {
-        NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
-        return false;
-    }
-    return true;
-}
-
-static void PrintIndexes(TCgiIndexes& indexes)
-{
-    for (TCgiIndexes::iterator iter = indexes.begin();
-         iter != indexes.end();  ++iter) {
-        NcbiCout << "  \"" << iter->c_str() << "\"    ";
-    }
-    NcbiCout << NcbiEndl;
-}
-
-static bool TestIndexes(TCgiIndexes& indexes, const string& str)
-{
-    NcbiCout << "\n Indexes: `" << str.c_str() << "'\n";
-    SIZE_TYPE err_pos = CCgiRequest::ParseIndexes(str, indexes);
-    PrintIndexes(indexes);
-
-    if ( err_pos ) {
-        NcbiCout << "-- Error at position #" << err_pos << NcbiEndl;
-        return false;
-    }
-    return true;
-}
-
-static void TestCgi_Request_Static(void)
-{
-    // Test CCgiRequest::ParseEntries()
-    TCgiEntries entries;
-    _ASSERT(  TestEntries(entries, "aa=bb&cc=dd") );
-    _ASSERT(  TestEntries(entries, "e%20e=f%26f&g%2Ag=h+h%2e") );
-    entries.clear();
-    _ASSERT( !TestEntries(entries, " xx=yy") );
-    _ASSERT(  TestEntries(entries, "xx=&yy=zz") );
-    _ASSERT(  TestEntries(entries, "rr=") );
-    _ASSERT( !TestEntries(entries, "xx&") );
-    entries.clear();
-    _ASSERT( !TestEntries(entries, "&zz=qq") );
-    _ASSERT( !TestEntries(entries, "tt=qq=pp") );
-    _ASSERT( !TestEntries(entries, "=ggg&ppp=PPP") );
-    _ASSERT(  TestEntries(entries, "a=d&eee") );
-    _ASSERT(  TestEntries(entries, "xxx&eee") );
-    _ASSERT(  TestEntries(entries, "xxx+eee") );
-    _ASSERT(  TestEntries(entries, "UUU") );
-    _ASSERT( !TestEntries(entries, "a=d&&eee") );
-    _ASSERT(  TestEntries(entries, "a%21%2f%25aa=%2Fd%2c&eee=%3f") );
-
-    // Test CCgiRequest::ParseIndexes()
-    TCgiIndexes indexes;
-    _ASSERT(  TestIndexes(indexes, "a+bb+ccc+d") );
-    _ASSERT(  TestIndexes(indexes, "e%20e+f%26f+g%2Ag+hh%2e") );
-    indexes.clear();
-    _ASSERT( !TestIndexes(indexes, " jhg") );
-    _ASSERT( !TestIndexes(indexes, "e%h%2e+3") );
-    _ASSERT(  TestIndexes(indexes, "aa+%20+bb") );
-    _ASSERT( !TestIndexes(indexes, "aa++bb") );
-    indexes.clear();
-    _ASSERT( !TestIndexes(indexes, "+1") );
-    _ASSERT( !TestIndexes(indexes, "aa+") );
-    _ASSERT( !TestIndexes(indexes, "aa+bb  ") );
-    _ASSERT( !TestIndexes(indexes, "c++b") );
-    _ASSERT( !TestIndexes(indexes, "ff++ ") );
-    _ASSERT( !TestIndexes(indexes, "++") );
-}
-
-static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0,
-                                 bool indexes_as_entries=true)
-{
-    CCgiRequest CCR(argc, argv, 0, istr, indexes_as_entries);
-
-    NcbiCout << "\n\nCCgiRequest::\n";
-
-    try {
-        NcbiCout << "GetServerPort(): " << CCR.GetServerPort() << NcbiEndl;
-    } STD_CATCH ("TestCgi_Request_Full");
-    // try {
-    //     NcbiCout << "GetRemoteAddr(): " << CCR.GetRemoteAddr() << NcbiEndl;
-    // } STD_CATCH ("TestCgi_Request_Full");
-    try {
-        NcbiCout << "GetContentLength(): "
-                 << CCR.GetContentLength() << NcbiEndl;
-    } STD_CATCH ("TestCgi_Request_Full");
-    NcbiCout << "GetRandomProperty(\"USER_AGENT\"): "
-             << CCR.GetRandomProperty("USER_AGENT").c_str() << NcbiEndl;
-    NcbiCout << "GetRandomProperty(\"MY_RANDOM_PROP\"): "
-             << CCR.GetRandomProperty("MY_RANDOM_PROP").c_str() << NcbiEndl;
-
-    NcbiCout << "\nCCgiRequest::  All properties:\n";
-    for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
-        NcbiCout << NcbiSetw(24)
-            << CCgiRequest::GetPropertyName((ECgiProp)prop).c_str() << " = \""
-            << CCR.GetProperty((ECgiProp)prop).c_str() << "\"\n";
-    }
-
-    CCgiCookies cookies;
-    {{  // Just an example of copying the cookies from a request data
-        // Of course, we could use the original request's cookie set
-        // ("x_cookies") if we performed only "const" operations on it
-        const CCgiCookies& x_cookies = CCR.GetCookies();
-        cookies.Add(x_cookies);
-    }}
-    NcbiCout << "\nCCgiRequest::  All cookies:\n";
-    if ( cookies.Empty() )
-        NcbiCout << "No cookies specified" << NcbiEndl;
-    else
-        NcbiCout << cookies << NcbiEndl;
-
-    TCgiEntries entries = CCR.GetEntries();
-    NcbiCout << "\nCCgiRequest::  All entries:\n";
-    if ( entries.empty() )
-        NcbiCout << "No entries specified" << NcbiEndl;
-    else
-        PrintEntries(entries);
-
-    TCgiIndexes indexes = CCR.GetIndexes();
-    NcbiCout << "\nCCgiRequest::  ISINDEX values:\n";
-    if ( indexes.empty() )
-        NcbiCout << "No ISINDEX values specified" << NcbiEndl;
-    else
-        PrintIndexes(indexes);
-}
-
-static void TestCgiMisc(void)
-{
-    const string str("_ _%_;_\n_:_\\_\"_");
-    string url = "qwerty";
-    url = URL_EncodeString(str);
-    NcbiCout << str << NcbiEndl << url << NcbiEndl;
-    _ASSERT( url.compare("_+_%25_%3B_%0A_%3A_%5C_%22_") == 0 );
-
-    string str1 = URL_DecodeString(url);
-    _ASSERT( str1 == str );
-
-    string url1 = URL_EncodeString(str1);
-    _ASSERT( url1 == url );
-
-    const string bad_url("%ax");
-    try {
-        URL_DecodeString(bad_url);
-    } STD_CATCH("%ax");
-}
-
-
-static void TestCgi(int argc, char* argv[])
-{
-    TestCgi_Cookies();
-    TestCgi_Request_Static();
-
-    try { // POST only
-        char inp_str[] = "post11=val11&post12void=&post13=val13";
-        CNcbiIstrstream istr(inp_str);
-        char len[32];
-        _ASSERT(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
-        _ASSERT( !::putenv(len) );
-
-        _ASSERT( !::putenv("SERVER_PORT=") );
-        _ASSERT( !::putenv("REMOTE_ADDRESS=") );
-        _ASSERT( !::putenv("REQUEST_METHOD=POST") );
-        _ASSERT( !::putenv("QUERY_STRING=") );
-        _ASSERT( !::putenv("HTTP_COOKIE=") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(POST only)");
-
-    try { // POST + aux. functions
-        char inp_str[] = "post22void=&post23void=";
-        CNcbiIstrstream istr(inp_str);
-        char len[32];
-        _ASSERT(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
-        _ASSERT( !::putenv(len) );
-
-        _ASSERT( !::putenv("SERVER_PORT=9999") );
-        _ASSERT( !::putenv("HTTP_USER_AGENT=MyUserAgent") );
-        _ASSERT( !::putenv("HTTP_MY_RANDOM_PROP=MyRandomPropValue") );
-        _ASSERT( !::putenv("REMOTE_ADDRESS=130.14.25.129") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(POST + aux. functions)");
-
-    // this is for all following tests...
-    char inp_str[] = "postXXX=valXXX";
-    char len[32];
-    _ASSERT( ::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)) );
-    _ASSERT( !::putenv(len) );
-
-    try { // POST + ISINDEX(action)
-        CNcbiIstrstream istr(inp_str);
-        _ASSERT( !::putenv("QUERY_STRING=isidx1+isidx2+isidx3") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(POST + ISINDEX(action))");
-
-    try { // POST + QUERY(action)
-        CNcbiIstrstream istr(inp_str);
-        _ASSERT( !::putenv("QUERY_STRING=query1=vv1&query2=") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(POST + QUERY(action))");
-
-    try { // GET ISINDEX + COOKIES
-        CNcbiIstrstream istr(inp_str);
-        _ASSERT( !::putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
-        _ASSERT( !::putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
-        TestCgi_Request_Full(&istr, 0, 0, false);
-    } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
-
-    try { // GET REGULAR, NO '='
-        CNcbiIstrstream istr(inp_str);
-        _ASSERT( !::putenv("QUERY_STRING=get_query1_empty&get_query2_empty") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(GET REGULAR, NO '=' )");
-
-    try { // GET REGULAR + COOKIES
-        CNcbiIstrstream istr(inp_str);
-        _ASSERT( !::putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
-        _ASSERT( !::putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(GET REGULAR + COOKIES)");
-
-    try { // ERRONEOUS STDIN
-        CNcbiIstrstream istr("123");
-        _ASSERT( !::putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
-        _ASSERT( !::putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
-        TestCgi_Request_Full(&istr);
-    } STD_CATCH("TestCgi(ERRONEOUS STDIN)");
-
-    try { // USER INPUT(real STDIN)
-        _ASSERT( !::putenv("QUERY_STRING=u_query1=uq1") );
-        _ASSERT( !::putenv("HTTP_COOKIE=u_cook1=u_val1; u_cook2=u_val2") );
-        _ASSERT( !::putenv("REQUEST_METHOD=POST") );
-        NcbiCout << "Enter the length of CGI posted data now: " << NcbiFlush;
-        long l = 0;
-        if (!(NcbiCin >> l)  ||  len < 0) {
-            NcbiCin.clear();
-            runtime_error("Invalid length of CGI posted data");
-        }
-        char cs[32];
-        _ASSERT( ::sprintf(cs, "CONTENT_LENGTH=%ld", (long)l) );
-        _ASSERT( !::putenv(cs) );
-        NcbiCout << "Enter the CGI posted data now(no spaces): " << NcbiFlush;
-        NcbiCin >> NcbiWs;
-        TestCgi_Request_Full(0);
-        NcbiCin.clear();
-    } STD_CATCH("TestCgi(USER STDIN)");
-
-    try { // CMD.-LINE ARGS
-        _ASSERT( !::putenv("REQUEST_METHOD=") );
-        _ASSERT( !::putenv("QUERY_STRING=MUST NOT BE USED HERE!!!") );
-        TestCgi_Request_Full(&NcbiCin/* dummy */, argc, argv);
-    } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
-
-    TestCgiMisc();
-}
-
-
-void TestCgiResponse(int argc, char** argv)
-{
-    NcbiCout << "Starting CCgiResponse test" << NcbiEndl;
-
-    CCgiResponse response;
-    
-    response.SetOutput(&NcbiCout);
-
-    if (argc > 2)
-        response.AddCookies(CCgiCookies(argv[2]));
-
-    response.RemoveCookie("to-Remove");
-
-    NcbiCout << "Cookies: " << response.Cookies();
-
-    NcbiCout << "Now generated HTTP response:" << NcbiEndl;
-
-    response.WriteHeader() << "Data1" << NcbiEndl << NcbiFlush;
-    //    sleep(2);
-    response.out() << "Data2" << NcbiEndl << NcbiFlush;
-
-    NcbiCout << "End of HTTP response" << NcbiEndl;
-}
 
 /////////////////////////////////
-// Test CGI application
+// Test application
 //
 
 class CTestApplication : public CNcbiApplication
@@ -895,17 +555,11 @@ public:
 int CTestApplication::Run(void)
 {
     TestDiag();
-
     TestException();
     TestException_AuxTrace();
     TestIostream();
     TestRegistry();
-
     TestUtilities();
-
-    TestCgi(m_Argc, m_Argv);
-
-    TestCgiResponse(m_Argc, m_Argv);
 
     return 0;
 }

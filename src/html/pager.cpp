@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/11 02:53:56  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
 * Revision 1.11  1999/04/16 17:45:36  vakatov
 * [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
 *
@@ -70,9 +73,9 @@
 * ===========================================================================
 */
 
-#include <html/pager.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbicgi.hpp>
+#include <cgi/ncbicgi.hpp>
+#include <html/pager.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -8,4 +8,4 @@
 
 APP = htmldemo
 OBJ = htmldemo
-LIB = xhtml xncbi
+LIB = xhtml xcgi xncbi

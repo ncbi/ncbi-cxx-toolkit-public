@@ -36,7 +36,7 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbicgi.hpp>
+#include <cgi/ncbicgi.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE

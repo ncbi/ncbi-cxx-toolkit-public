@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/05/11 02:54:01  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
 * Revision 1.10  1999/04/27 14:50:16  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -67,9 +70,9 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbicgi.hpp>
-#include <corelib/cgiapp.hpp>
-#include <corelib/cgictx.hpp>
+#include <cgi/ncbicgi.hpp>
+#include <cgi/cgiapp.hpp>
+#include <cgi/cgictx.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
 #include <html/factory.hpp>
