@@ -111,10 +111,16 @@ void CDemoApp::Init(void)
                              "ASN.1 of Seq-id of the Seq-Entry to fetch",
                              CArgDescriptions::eString);
     arg_desc->AddOptionalKey("file", "SeqEntryFile",
-                             "file with Seq-Entry to load (text ASN.1)",
+                             "file with Seq-entry to load (text ASN.1)",
                              CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("bfile", "SeqEntryFile",
-                             "file with Seq-Entry to load (binary ASN.1)",
+                             "file with Seq-entry to load (binary ASN.1)",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("annot_file", "SeqAnnotFile",
+                             "file with Seq-annot to load (text ASN.1)",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("annot_bfile", "SeqAnnotFile",
+                             "file with Seq-annot to load (binary ASN.1)",
                              CArgDescriptions::eInputFile);
     arg_desc->AddDefaultKey("count", "RepeatCount",
                             "repeat test work RepeatCount times",
@@ -381,6 +387,7 @@ int CDemoApp::Run(void)
     scope.AddDefaults();
 
     CSeq_entry_Handle added_entry;
+    CSeq_annot_Handle added_annot;
     if ( args["file"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["file"].AsInputFile() >> MSerial_AsnText >> *entry;
@@ -393,6 +400,16 @@ int CDemoApp::Run(void)
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["bfile"].AsInputFile() >> MSerial_AsnBinary >> *entry;
         added_entry = scope.AddTopLevelSeqEntry(*entry);
+    }
+    if ( args["annot_file"] ) {
+        CRef<CSeq_annot> annot(new CSeq_annot);
+        args["annot_file"].AsInputFile() >> MSerial_AsnText >> *annot;
+        added_annot = scope.AddSeq_annot(*annot);
+    }
+    if ( args["annot_bfile"] ) {
+        CRef<CSeq_annot> annot(new CSeq_annot);
+        args["annot_bfile"].AsInputFile() >> MSerial_AsnBinary >> *annot;
+        added_annot = scope.AddSeq_annot(*annot);
     }
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
@@ -615,8 +632,15 @@ int CDemoApp::Run(void)
             base_sel.SetSearchExternal(handle);
         }
         if ( limit_tse ) {
-            base_sel.SetLimitTSE(added_entry?
-                                 added_entry: handle.GetTopLevelEntry());
+            if ( added_annot ) {
+                base_sel.SetLimitSeqAnnot(added_annot);
+            }
+            else if ( added_entry ) {
+                base_sel.SetLimitSeqEntry(added_entry);
+            }
+            else {
+                base_sel.SetLimitTSE(handle.GetTopLevelEntry());
+            }
         }
         if ( include_allnamed ) {
             base_sel.SetAllNamedAnnots();
@@ -982,6 +1006,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2005/03/14 18:12:44  vasilche
+* Allow loading Seq-annot from file.
+*
 * Revision 1.100  2005/03/10 20:57:28  vasilche
 * New way of CGBLoader instantiation.
 *
