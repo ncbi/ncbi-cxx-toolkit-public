@@ -202,6 +202,13 @@ SP_LIBS    = @SP_LIBS@
 # Path to the root of PubMed tree -- sources, headers and precompiled libs
 NCBI_PM_PATH = @NCBI_PM_PATH@
 
+# ORBacus CORBA headers, library path, libraries
+ORBACUS_INCLUDE = @ORBACUS_INCLUDE@
+ORBACUS_LIBPATH = @ORBACUS_LIBPATH@
+LIBOB           = @LIBOB@
+# LIBIMR should be empty for single-threaded builds
+LIBIMR          = @LIBIMR@
+
 #################################
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.

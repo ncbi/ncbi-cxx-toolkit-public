@@ -817,6 +817,13 @@ to the "generic" ones
 	 <td><i>$NCBI/pubmed[64]</i></td>
 	 <td>Path to the NCBI PubMed package</td>
   </tr>
+
+  <tr>
+	 <td><b>ORBACUS_PATH</b></td>
+	 <td><i>$NCBI/corba/OB-4.0.1</i></td>
+	 <td>Path to the ORBacus CORBA package</td>
+  </tr>
+
 </table>
 
 <p>
@@ -826,7 +833,10 @@ If you specify a directory, it will override <b>SYBASE_PATH</b>;
 otherwise, the default will change to
 <i>/export/home/sybase/clients/current</i>, but <b>SYBASE_PATH</b>
 will still take priority.
-
+<p>
+It is also possible to override <b>WXWIN_PATH</b> by
+<b><i>--with-wxwin=DIR</i></b>, and <b>ORBACUS_PATH</b> by
+<b><i>--with-orbacus=DIR</i></b>.
 <p>
 Based on the above, <b><i>configure</i></b> will derive the following variables
 to use in the generated makefiles: 
@@ -995,6 +1005,21 @@ to use in the generated makefiles:
 	 <td>$NCBI_PM_PATH</td>
 	 <td>path to the PubMed package</td>
   </tr>
+
+  <tr>
+	 <td><i><b>ORBACUS_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$ORBACUS_PATH<i>/include</i><br>
+         <i><b>-I</b></i>$ORBACUS_PATH<i>/{Release|Debug}[MT][64]/inc</i></td>
+	 <td><i>#include</i> ORBacus CORBA headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>ORBACUS_LIBPATH</b></i></td>
+	 <td><i><b>-L</b></i>$ORBACUS_PATH<i>/{Release|Debug}[MT][64]/lib</i>
+    </td>
+	 <td>link with ORBacus CORBA libs</td>
+  </tr>
+
 </table>
 
 <p>
@@ -1019,6 +1044,7 @@ flags:
   <li> <i><b>--without-geo</b></i> (NCBI GEO) </li>
   <li> <i><b>--without-sp</b></i> (NCBI SP) </li>
   <li> <i><b>--without-pubmed</b></i> (NCBI PubMed) </li>
+  <li> <i><b>--without-orbacus</b></i> (ORBacus CORBA) </li>
 </ul>
 
 

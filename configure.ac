@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.8 2001/10/09 17:36:18 vakatov Exp $
+#  $Id: configure.ac,v 1.9 2001/10/10 15:03:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -131,10 +131,16 @@ AC_ARG_WITH(sybase-local,
    [ --with-sybase-local=DIR use local SYBASE install (DIR is optional)])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
+AC_ARG_WITH(wxwin2,
+   [ --with-wxwin=DIR        use wxWindows installation in DIR])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
 AC_ARG_WITH(sp,
    [ --without-sp            do not use SP libraries])
+AC_ARG_WITH(orbacus,
+   [ --without-orbacus       do not use ORBacus CORBA libraries])
+AC_ARG_WITH(orbacus2,
+   [ --with-orbacus=DIR      use ORBacus installation in DIR])
 
 ## Optional projects
 AC_ARG_WITH(local-lbsm,
@@ -162,7 +168,7 @@ x_with_list="\
 debug optimization dll static runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-local-lbsm serial objects app ctools gui internal"
+orbacus local-lbsm serial objects app ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -193,7 +199,7 @@ for x_arg in "$@" ; do
 
       --with-extra-action=* | --exec-prefix=* | --with-projects=* \
       | --cache-file=* | --build=* | --host=* | [[A-Z]*=*] \
-      | --with-sybase-local=* | --with-wxwin=* \
+      | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -1752,7 +1758,12 @@ with_sp=${with_sp:="yes"}
 
 if test "$with_sp" != "no" ; then
    SP_PATH=${SP_PATH:="$NCBI/SP"}
-   SP_INCLUDE=${SP_INCLUDE:="$SP_PATH/include"}
+   if test -n "$SP_INCLUDE"; then
+      SP_GENERIC="$SP_INCLUDE/../generic"
+   else
+      SP_INCLUDE="$SP_PATH/include"
+      SP_GENERIC="$SP_PATH/generic"
+   fi
    if test -z "$SP_LIBPATH" ; then
       SP_LIBPATH="${SP_PATH}/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
    fi
@@ -1765,7 +1776,11 @@ fi
 
 if test "$with_sp" != "no" ; then
    AC_MSG_CHECKING(if NCBI SP library is available)
-   SP_INCLUDE="-I${SP_INCLUDE}"
+   if test -d "$SP_GENERIC"; then
+      SP_INCLUDE="-I${SP_INCLUDE} -I${SP_GENERIC}"
+   else
+      SP_INCLUDE="-I${SP_INCLUDE}"
+   fi
    SP_LIBS="-L$SP_LIBPATH -lsp"
    CPPFLAGS="$SP_INCLUDE $orig_CPPFLAGS"
    LIBS="$SP_LIBS $orig_LIBS"
@@ -1819,6 +1834,57 @@ fi
 
 AC_MSG_RESULT([$NCBI_PM_PATH])
 
+
+## ORBacus CORBA
+if test "${with_orbacus:-yes}" = yes; then
+    : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
+elif test "$with_orbacus" != no; then
+    ORBACUS_PATH=$with_orbacus
+fi
+AC_MSG_CHECKING([for ORBacus])
+if test "$with_orbacus" != no; then
+    fullpath=${ORBACUS_PATH}/${release_debug}${mt_sfx}${bit64_sfx}
+    LIBOB="-lOB"
+    if test "$with_mt" = yes; then
+	LIBOB="$LIBOB -lJTC"
+	LIBIMR="-lIMR"
+    else
+	LIBIMR=
+    fi
+    if test -f ${fullpath}/inc/OB/Config.h; then
+	: ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
+	: ${ORBACUS_LIBPATH="-L$fullpath/lib ${CONF_f_runpath}${fullpath}/lib"}
+    elif test -f ${ORBACUS_PATH}/include/OB/Config.h; then
+	: ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
+	: ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
+    fi
+    CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
+    LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
+    AC_TRY_LINK(
+       [#include <OB/CORBA.h>
+], [
+  int c = 0;
+  char* v[] = { NULL };
+  CORBA::ORB_var orb = CORBA::ORB_init(c, v);
+  if (!CORBA::is_nil(orb)) orb->destroy();
+],
+       [AC_DEFINE(HAVE_ORBACUS)],
+       [with_orbacus="no"])
+fi
+if test "$with_orbacus" = no; then
+    WithoutPackages="$WithoutPackages ORBacus"
+    ORBACUS_PATH=No_ORBacus
+    ORBACUS_INCLUDE=
+    ORBACUS_LIBPATH=
+    LIBOB=
+    LIBIMR=
+else
+    WithPackages="$WithPackages ORBacus"
+fi
+AC_MSG_RESULT([$ORBACUS_PATH])
+# Sigh... without this, the linker pulls in the contents of the cache
+# and then gripes about missing JTC stuff.
+test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
 ### Restore original compiler/linker flags
@@ -2193,6 +2259,10 @@ AC_SUBST(LIBGEODB)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(NCBI_PM_PATH)
+AC_SUBST(ORBACUS_INCLUDE)
+AC_SUBST(ORBACUS_LIBPATH)
+AC_SUBST(LIBOB)
+AC_SUBST(LIBIMR)
 
 AC_SUBST(NCBI_C_ncbi)
 

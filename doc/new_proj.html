@@ -435,6 +435,18 @@ during the configuration process:
 	 <td><i>$NCBI_PM_PATH</i></td>
 	 <td>Path to the PubMed package</td>
   </tr>
+
+  <tr>
+	 <td><b>ORBACUS_LIBPATH</b></td>
+	 <td><i>$ORBACUS_LIBPATH</i></td>
+	 <td>Path to the ORBacus CORBA libraries</td>
+  </tr>
+
+  <tr>
+	 <td><b>ORBACUS_INCLUDE</b></td>
+	 <td><i>$ORBACUS_LIBPATH</i></td>
+	 <td>Path to the ORBacus CORBA headers</td>
+  </tr>
 </table>
 
 
@@ -868,7 +880,7 @@ application or library makefile, along with the corresponding
  <tr>
   <td><b>wxWindows</b></td>
   <td>wxWindows</td>
-  <td><i>--without-wxwin</i></td>
+  <td><i>--without-wxwin, --with-wxwin=DIR</i></td>
  </tr>
 
  <tr>
@@ -907,6 +919,12 @@ application or library makefile, along with the corresponding
   <td>NCBI PubMed library</td>
   <td><i>--without-pubmed</i></td>
  <tr>
+
+ <tr>
+  <td><b>ORBacus</b></td>
+  <td>ORBacus CORBA</td>
+  <td><i>--without-orbacus, --with-orbacus=DIR</i></td>
+ </tr>
 </table>
 
 <br>
