@@ -39,7 +39,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <corelib/ncbitime.hpp>
@@ -530,6 +530,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/01/05 18:50:27  vasilche
+ * Fixed path to include files.
+ *
  * Revision 1.34  2003/12/31 20:05:58  dondosha
  * For discontiguous megablast, set extension method and scanning stride correctly
  *
