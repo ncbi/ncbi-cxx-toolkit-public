@@ -227,6 +227,29 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     } // for
 
+    {{
+    TestDBF1  dbf11;
+    dbf11.Attach(dbf1);
+
+    for (i = 1; i < s_RecsInTable; ++i) {
+        dbf11.IdKey = i;
+        EBDB_ErrCode err = dbf11.Fetch();
+        assert (err == eBDB_Ok);
+
+        ValidateRecord(dbf11, i);
+
+        // Checking that attached buffer doesn't change status of the main one
+        dbf1.IdKey = 1;
+        err = dbf1.Fetch();
+        assert (err == eBDB_Ok);
+        ValidateRecord(dbf1, 1);
+
+        ValidateRecord(dbf11, i);
+
+    } // for
+
+    }}
+
     cout << "======== Id table filling test ok." << endl;
 
 
@@ -1056,6 +1079,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/07/22 19:21:56  kuznets
+ * Added test case for CBDB_File::Attach function
+ *
  * Revision 1.11  2003/07/22 16:38:30  kuznets
  * Polishing test
  *
