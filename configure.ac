@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.36 2002/03/11 15:30:08 ucko Exp $
+#  $Id: configure.ac,v 1.37 2002/03/11 19:47:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -361,8 +361,8 @@ AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
 
 
 #### Additional check for pre-defined compilers
-case "$compiler" in
-  MSVC )
+case "$compiler:$compiler_version" in
+  MSVC:* )
     if test -z "$NCBI_COMPILER" ; then
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
@@ -377,6 +377,11 @@ changequote([, ])dnl
        esac
        echo
     fi ;;
+  GCC:3* )
+    # Need to specify runpath for compiler-provided libraries
+    libgcc_s=`$CXX -print-file-name=libgcc_s.so`
+    LDFLAGS="-Xlinker -R`dirname $libgcc_s` $LDFLAGS"
+    ;;
 esac
 
 
