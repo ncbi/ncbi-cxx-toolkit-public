@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2000/11/29 00:18:13  vakatov
+ * s_ProcessArgument() -- avoid nested quotes in the exception message
+ *
  * Revision 1.25  2000/11/29 00:07:28  vakatov
  * Flag and key args not to be sorted in alphabetical order by default; see
  * "usage_sort_args" in SetUsageContext().
@@ -150,6 +153,7 @@ CArgException::CArgException(const string& what, const string& arg_value)
 
 // ARG_THROW("What", "Value")
 #define ARG_THROW(what, value)  THROW_TRACE(CArgException, (what, value))
+#define ARG_THROW1(what)        THROW1_TRACE(CArgException, what)
 
 
 
@@ -1264,7 +1268,7 @@ static CArgValue* s_ProcessArgument
     } else {
         msg = "Argument \"" + name + "\"";
     }
-    ARG_THROW(msg, arg_msg);
+    ARG_THROW1(msg + " -- " + arg_msg);
 }
 
 
@@ -1326,16 +1330,15 @@ void CArgDescriptions::x_PreCheck(void) const
         static const char* s_PolicyStr[] = {
             "eAny", "eLessOrEqual",  "eEqual", "eMoreOrEqual" };
 
-        THROW1_TRACE(CArgException,
-                     string("CArgDescriptions::CreateArgs() inconsistency:  "
-                            "policy=") +  s_PolicyStr[(int) m_Constraint]
-                     + ", policy_args="
-                     + (m_ConstrArgs ?
-                        NStr::UIntToString(m_ConstrArgs) :
-                        string("0<plain_args>"))
-                     + ", plain_args=" + NStr::UIntToString(m_PlainArgs.size())
-                     + ", extra_args=" + NStr::BoolToString(has_extra) + " -- "
-                     + err_msg + "!");
+        ARG_THROW1(string("CArgDescriptions::CreateArgs() inconsistency:  "
+                          "policy=") +  s_PolicyStr[(int) m_Constraint]
+                   + ", policy_args="
+                   + (m_ConstrArgs ?
+                      NStr::UIntToString(m_ConstrArgs) :
+                      string("0<plain_args>"))
+                   + ", plain_args=" + NStr::UIntToString(m_PlainArgs.size())
+                   + ", extra_args=" + NStr::BoolToString(has_extra) + " -- "
+                   + err_msg + "!");
     }
 
     // Check for the validity of default values of optional key args
