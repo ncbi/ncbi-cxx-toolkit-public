@@ -183,7 +183,6 @@ void CBioseq_Handle::x_ResolveTo(
     m_Scope = &scope;
     m_DataSource = &datasource;
     m_Entry = &entry;
-    //### CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
     if ( m_TSE )
         m_TSE->Add(-1);
     m_TSE = &tse;
@@ -204,6 +203,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/07/10 16:49:29  grichenk
+* Removed commented reference to old CDataSource mutex
+*
 * Revision 1.20  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
