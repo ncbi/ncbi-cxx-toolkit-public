@@ -238,6 +238,9 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding)
         return 0;     // It's not good to throw an exception here
 
     case CSeq_data::e_Ncbi2na: // Codings without gap symbols
+        // Exception is not good here because it conflicts with CSeqVector_CI.
+        return 0xff;
+
     case CSeq_data::e_Ncbipaa: //### Not sure about this
     case CSeq_data::e_Ncbipna: //### Not sure about this
     default:
@@ -409,6 +412,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/10/27 16:41:39  vasilche
+* Use 0xff to represent gaps in CSeqVector with NCBI2na encoding.
+*
 * Revision 1.69  2004/06/14 18:30:08  grichenk
 * Added ncbi2na randomizer to CSeqVector
 *
