@@ -84,8 +84,7 @@ private:
 
     bool x_ReadFastaFile(const string& filename,
                          string*       seqname,
-                         vector<char>* sequence,
-                         int*          offset) const;
+                         vector<char>* sequence) const;
 };
 
 
@@ -96,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/08 15:58:33  kapustin
+ * Read offset parameter from fasta reading routine
+ *
  * Revision 1.3  2002/12/12 17:59:30  kapustin
  * Enable spliced alignments
  *

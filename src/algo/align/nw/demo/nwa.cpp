@@ -39,8 +39,8 @@ void CAppNWA::Init()
 {
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Needleman-Wunsch alignment test application.\n"
-                              "Build 1.00.05 - 12/12/02");
+                              "Needleman-Wunsch alignment demo application.\n"
+                              "Build 1.00.06 - 01/08/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -122,14 +122,13 @@ void CAppNWA::x_RunOnPair() const
     // read input sequences
     vector<char> v1, v2;
     string seqname1, seqname2;
-    int offset1 = 0, offset2 = 0;
 
-    if ( !x_ReadFastaFile(args["seq1"].AsString(), &seqname1, &v1, &offset1)) {
+    if ( !x_ReadFastaFile(args["seq1"].AsString(), &seqname1, &v1)) {
         NCBI_THROW(CAppNWAException,
                    eCannotReadFile,
                    "Cannot read file " + args["seq1"].AsString());
     }
-    if ( !x_ReadFastaFile(args["seq2"].AsString(), &seqname2, &v2, &offset2)) {
+    if ( !x_ReadFastaFile(args["seq2"].AsString(), &seqname2, &v2)) {
         NCBI_THROW(CAppNWAException,
                    eCannotReadFile,
                    "Cannot read file" + args["seq2"].AsString());
@@ -175,8 +174,7 @@ void CAppNWA::Exit()
 bool CAppNWA::x_ReadFastaFile
 (const string& filename,
  string*       seqname,
- vector<char>* sequence,
- int*          offset)
+ vector<char>* sequence)
     const
 {
     vector<char>& vOut = *sequence;
@@ -184,14 +182,20 @@ bool CAppNWA::x_ReadFastaFile
 
     ifstream ifs(filename.c_str());
 
-    // read sequence's name and offset
+    // read sequence's name
+    string str;
+    getline(ifs, str);
+    if(!ifs)
+        return false;
+    istrstream iss (str.c_str());
+
     char c;
-    ifs >> c >> *seqname >> *offset;
-    if ( !ifs )
+    iss >> c >> *seqname;
+    if(!iss)
         return false;
 
     // read the sequence
-    while ( ifs ) { 
+    while ( ifs ) {
         string s;
         ifs >> s;
         NStr::ToLower(s);
@@ -206,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/08 15:58:32  kapustin
+ * Read offset parameter from fasta reading routine
+ *
  * Revision 1.3  2002/12/17 21:50:24  kapustin
  * Remove unnecesary seq type parameter from the mrna2dna constructor
  *
