@@ -1,5 +1,5 @@
-#ifndef ALGO_ALIGN__SPLIGN__HPP
-#define ALGO_ALIGN__SPLIGN__HPP
+#ifndef ALGO_ALIGN_DEMO_SPLIGN_APP_HPP
+#define ALGO_ALIGN_DEMO_SPLIGN_APP_HPP
 
 /* $Id$
 * ===========================================================================
@@ -33,13 +33,12 @@
 * ===========================================================================
 */
 
-#include "hf_hit.hpp"
-#include "seq_loader.hpp"
+
+#include <algo/align/splign.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -53,36 +52,30 @@ public:
 
 protected:
 
-  string x_RunOnPair(vector<CHit>* hits);
-  void   x_Filter(vector<CHit>* hits);
-  bool   x_GetNextPair(ifstream* ifs, vector<CHit>* hits);
-  size_t x_TestPolyA(const vector<char>& mrna);
+    string x_RunOnPair(vector<CHit>* hits, int model_id,
+                       size_t range_left, size_t range_right);
+    bool   x_GetNextPair(ifstream* ifs, vector<CHit>* hits);
 
-  // sequence loader
-  CSeqLoader m_seqloader;
+    // status log
+    ofstream m_logstream;
+    void   x_LogStatus(size_t model_id, const string& query,
+                       const string& subj, bool error, const string& msg);
 
-  // seq quality
-  unsigned char m_SeqQuality; // 0 == low, 1 == high
+private:
 
-  // RLE flag
-  bool m_rle;
+    string       m_firstline;
+    vector<CHit> m_pending; 
 
-  // min exon identity for Splign
-  double m_minidty;
+#ifdef GENOME_PIPELINE
 
-  // min query hit coverage
-  double m_min_query_coverage;
+    CNWAligner::TScore m_Wm;
+    CNWAligner::TScore m_Wms;
+    CNWAligner::TScore m_Wg;
+    CNWAligner::TScore m_Ws;
+    CNWAligner::TScore m_Wi [4];
+    size_t m_IntronMinSize;
 
-  // mandatory end gaps detection flag
-  bool m_endgaps;
-
-  // presume no Poly(A) tail when true
-  bool m_nopolya;
-
-  // status log
-  ofstream m_logstream;
-  void   x_LogStatus(const string& query, const string& subj,
-		     bool error, const string& msg);
+#endif
 
 };
 
@@ -92,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/23 14:09:40  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.5  2003/12/23 16:50:25  kapustin
  * Reorder includes to activate msvc pragmas
  *

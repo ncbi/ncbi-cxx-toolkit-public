@@ -29,189 +29,239 @@
  *                   
 */
 
-#include "splign.hpp"
 #include "splign_app.hpp"
 #include "splign_app_exception.hpp"
 #include "seq_loader.hpp"
-#include "subjmixer.hpp"
-#include "hf_hitparser.hpp"
-#include "util.hpp"
 
 #include <corelib/ncbistd.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
+#include <algo/align/splign.hpp>
+#include <algo/align/splign_formatter.hpp>
 
-#include <algorithm>
-#include <iterator>
 #include <iostream>
-
 #include <memory>
 
+
 BEGIN_NCBI_SCOPE
-
-
-const size_t g_max_intron = 15000;
-const double g_min_hit_idty = 0.95;
-
 
 void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
-  argdescr->SetUsageContext(GetArguments().GetProgramName(),
-			    "Splign v.0.0.1");
-  
-  argdescr->AddOptionalKey
-    ("query", "query",
-     "Spliced sequence FastA file.",
-     CArgDescriptions::eString);
-  
-  argdescr->AddOptionalKey
-    ("subj", "subj",
-     "Genomic sequence FastA file",
-     CArgDescriptions::eString);
-  
-  argdescr->AddDefaultKey
-    ("quality", "quality", "Genomic sequence quality.",
-     CArgDescriptions::eString, "high");
 
-  argdescr->AddDefaultKey
-    ("min_idty", "identity",
-     "Minimal exon identity. Lower identity segments "
-     "will be marked as gaps.",
-     CArgDescriptions::eDouble,
-     "0.9");
-  
-  argdescr->AddDefaultKey
-    ("min_query_cov", "min_query_cov",
-     "Minimal query hit coverage. "
-     "Query sequence with lowerhit coverage will not be aligned.",
-     CArgDescriptions::eDouble,
-     "0.5");
-  
-  argdescr->AddFlag ("norle",
-		     "Do not encode alignment transcripts and Poly(A)s",
-		     true);
+  string program_name ("Splign v.1.2");
+#ifdef GENOME_PIPELINE
+  program_name += 'p';
+#endif
+  argdescr->SetUsageContext(GetArguments().GetProgramName(), program_name);
 
-  argdescr->AddFlag ("nopolya", "Do not detect Poly(A) end gaps.", true);
-
-  argdescr->AddOptionalKey
+  argdescr->AddKey
     ("index", "index",
      "Batch mode index file (use -mkidx to generate).",
      CArgDescriptions::eString);
+
+  argdescr->AddFlag ("mkidx", "Generate batch mode index and quit.", true);
   
-  argdescr->AddOptionalKey
+  argdescr->AddKey
     ("hits", "hits",
      "Batch mode hit file. "
      "This file defines the set of sequences to align and "
      "is also used to guide alignments.",
      CArgDescriptions::eString);
-  
-  argdescr->AddFlag ("mkidx", "Generate batch mode index and quit.", true);
 
   argdescr->AddDefaultKey
     ("log", "log", "Splign log file",
      CArgDescriptions::eString, "splign.log");
+
+  argdescr->AddDefaultKey
+    ("quality", "quality", "Genomic sequence quality.", CArgDescriptions::eString, "high");
   
+  argdescr->AddDefaultKey
+    ("strand", "strand", "Spliced sequence's strand.", CArgDescriptions::eString, "plus");
+
+  argdescr->AddFlag ("noendgaps",
+		     "Skip detection of unaligning regions at the ends.",
+                      true);
+
+  argdescr->AddFlag ("nopolya", "Assume no Poly(A) tail.",  true);
+
+  argdescr->AddDefaultKey
+    ("compartment_penalty", "compartment_penalty",
+     "Penalty to open a new compartment.",
+     CArgDescriptions::eDouble,
+     "0.75");
+ 
+ argdescr->AddDefaultKey
+    ("min_query_cov", "min_query_cov",
+     "Min query coverage by initial Blast hits. "
+     "Queries with less coverage will not be aligned.",
+     CArgDescriptions::eDouble, "0.25");
+
+  argdescr->AddDefaultKey
+    ("min_idty", "identity",
+     "Minimal exon identity. Lower identity segments "
+     "will be marked as gaps.",
+     CArgDescriptions::eDouble, "0.75");
+
+#ifdef GENOME_PIPELINE
+
+  argdescr->AddDefaultKey
+    ("Wm", "match", "match score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CNWAligner::GetDefaultWm()).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Wms", "mismatch", "mismatch score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CNWAligner::GetDefaultWms()).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Wg", "gap", "gap opening score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CNWAligner::GetDefaultWg()).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Ws", "space", "gap extension (space) score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CNWAligner::GetDefaultWs()).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Wi0", "Wi0", "Conventional intron (GT/AG) score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CSplicedAligner16::GetDefaultWi(0)).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Wi1", "Wi1", "Conventional intron (GC/AG) score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CSplicedAligner16::GetDefaultWi(1)).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Wi2", "Wi2", "Conventional intron (AT/AC) score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CSplicedAligner16::GetDefaultWi(2)).c_str());
+  
+  argdescr->AddDefaultKey
+    ("Wi3", "Wi3", "Arbitrary intron score",
+     CArgDescriptions::eInteger,
+     NStr::IntToString(CSplicedAligner16::GetDefaultWi(3)).c_str());
+  
+#endif
+    
   // restrictions
+
   CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
   constrain_errlevel->Allow("low")->Allow("high");
   argdescr->SetConstraint("quality", constrain_errlevel);
 
+  CArgAllow_Strings* constrain_strand = new CArgAllow_Strings;
+  constrain_strand->Allow("plus")->Allow("minus");
+  argdescr->SetConstraint("strand", constrain_strand);
+
   CArgAllow* constrain01 = new CArgAllow_Doubles(0,1);
   argdescr->SetConstraint("min_idty", constrain01);
+  argdescr->SetConstraint("compartment_penalty", constrain01);
   argdescr->SetConstraint("min_query_cov", constrain01);
     
   SetupArgDescriptions(argdescr.release());
 }
 
 
-
 bool CSplignApp::x_GetNextPair(ifstream* ifs, vector<CHit>* hits)
 {
   hits->clear();
-  if(!ifs || !*ifs) {
+  if(!m_pending.size() && (!ifs || !*ifs) ) {
     return false;
   }
 
-  static string first_line;
-  string query;
-  if(first_line.size()) {
-    CHit hit (first_line.c_str());
-    query = hit.m_Query;
-    hits->push_back(hit);
-  }
-  char buf [1024];
-  while(ifs) {
-    CT_POS_TYPE pos0 = ifs->tellg();
-    ifs->getline(buf, sizeof buf, '\n');
-    CT_POS_TYPE pos1 = ifs->tellg();
-    if(pos1 == pos0) break; // GCC hack
-    if(buf[0] == '#') continue; // skip comments
-    const char* p = buf; // skip leading spaces
-    while(*p == ' ' || *p == '\t') ++p;
-    if(*p == 0) continue; // skip empty lines
-    CHit hit (p);
-    if(query.size() == 0) {
+  if(!m_pending.size()) {
+
+    string query, subj;
+    if(m_firstline.size()) {
+      CHit hit (m_firstline.c_str());
       query = hit.m_Query;
+      subj  = hit.m_Subj;
+      m_pending.push_back(hit);
     }
-    if(hit.m_Query != query) {
-      first_line = p;
-      break;
+
+    char buf [1024];
+    while(ifs) {
+      buf[0] = 0;
+      CT_POS_TYPE pos0 = ifs->tellg();
+      ifs->getline(buf, sizeof buf, '\n');
+      CT_POS_TYPE pos1 = ifs->tellg();
+      if(pos1 == pos0) break; // GCC hack
+      if(buf[0] == '#') continue; // skip comments
+      const char* p = buf; // skip leading spaces
+      while(*p == ' ' || *p == '\t') ++p;
+      if(*p == 0) continue; // skip empty lines
+
+      CHit hit (p);
+      if(query.size() == 0) {
+	query = hit.m_Query;
+      }
+      if(subj.size() == 0) {
+	subj = hit.m_Subj;
+      }
+      if(hit.m_ai[0] > hit.m_ai[1]) {
+        NCBI_THROW(CSplignAppException,
+                   eBadData,
+                   "Hit with reversed query coordinates detected." );
+      }
+      if(hit.m_ai[2] == hit.m_ai[3]) { // skip single bases
+        continue;
+      }
+
+      if(hit.m_Query != query || hit.m_Subj != subj) {
+	m_firstline = p;
+	break;
+      }
+
+      m_pending.push_back(hit);
     }
-    hits->push_back(hit);
   }
-  
-  return hits->size()? true: false;
+
+  const size_t pending_size = m_pending.size();
+  if(pending_size) {
+    const string& query = m_pending[0].m_Query;
+    const string& subj  = m_pending[0].m_Subj;
+    size_t i = 1;
+    for(; i < pending_size; ++i) {
+      const CHit& h = m_pending[i];
+      if(h.m_Query != query || h.m_Subj != subj) {
+        break;
+      }
+    }
+    hits->resize(i);
+    copy(m_pending.begin(), m_pending.begin() + i, hits->begin());
+    m_pending.erase(m_pending.begin(), m_pending.begin() + i);
+  }
+
+  return hits->size() > 0;
 }
 
 
-void CSplignApp::x_LogStatus(const string& query, const string& subj,
+void CSplignApp::x_LogStatus(size_t model_id, const string& query,
+                             const string& subj,
 			     bool error, const string& msg)
 {
-  string error_tag (error? "Error:\t": "");
-  m_logstream << query << '\t' << subj << '\t' << error_tag << msg << endl;
-}
+  string error_tag (error? "Error: ": "");
+  if(model_id == 0) {
+    m_logstream << '-';
+  }
+  else {
+    m_logstream << model_id;
+  }
 
+  m_logstream << '\t' << query << '\t' << subj 
+              << '\t' << error_tag << msg << endl;
+}
 
 
 int CSplignApp::Run()
 { 
-  const CArgs& args = GetArgs();
-
-  // verify consistency of arguments
-  
-  const bool is_query = args["query"];
-  const bool is_subj = args["subj"];
-  const bool is_index = args["index"];
-
-  bool err = (is_index && (is_query || is_subj))
-             || (is_query && !is_subj)
-             || (is_subj && !is_query);
-
-  if(err) {
-    NCBI_THROW(CSplignAppException,
-	       eBadParameter,
-	       "Either index or query and subj must be specified.");
-  }
-
-  const bool is_hits = args["hits"];
-  if(is_hits && (is_query || is_subj)) {
-    NCBI_THROW(CSplignAppException,
-	       eBadParameter,
-	       "When -query or -subj are used, "
-	       "hits are generated internally. Do not use -hits.");
-  }
-
-  // read configuration and formatting options
-
-  m_SeqQuality = args["quality"].AsString() == "high";
-  m_rle = ! args["norle"];
-  m_minidty = args["min_idty"].AsDouble();
-  m_endgaps = false;
-  m_min_query_coverage = args["min_query_cov"].AsDouble();
-  m_nopolya = args["nopolya"];
+  const CArgs& args = GetArgs();    
 
   // open log stream
 
@@ -220,60 +270,72 @@ int CSplignApp::Run()
   // prepare input hit stream
 
   auto_ptr<fstream> hit_stream;
-  if(args["hits"]) {
-    const string filename (args["hits"].AsString());
-    hit_stream.reset((fstream*)new ifstream (filename.c_str()));
-  }
-  else {
-    hit_stream.reset(CFile::CreateTmpFile(kEmptyStr,
-					  CFile::eText, CFile::eAllowRead ));
-  }
-
-  if(!args["hits"]) {
-
-    vector<CHit> hits_new;
-    // x_BlastAll(loader_mrna, loader_ctg, &hits_new);
-    // sort(hits_new.begin(), hits_new.end(), CHit::PQuerySubj);
-    // copy(hits_new.begin(), hits_new.end(),
-    // ostream_iterator<CHit>(*hit_stream));
-    NCBI_THROW(
-	       CSplignAppException,
-	       eInternal,
-	       "Internal hit calculation not yet supported. "
-	       "Please specify external hit file.");
-  }
-
-  // initialize sequence loaders
-
-  m_seqloader.Open( args["index"].AsString() );
-
-  // parse input stream by query
+  const string filename (args["hits"].AsString());
+  hit_stream.reset((fstream*)new ifstream (filename.c_str()));
 
   vector<CHit> hits;
   ifstream* ifs_hits = (ifstream*) (hit_stream.get());
-  while(x_GetNextPair(ifs_hits, &hits)) {
 
-    string query (hits[0].m_Query);
+  // setup splign and formatter objects
 
-    // select the best groups among all subjects
-    CSubjMixer mixer (&hits); // mix subjects
-    DoFilter(&hits);          // filter and select the best group
-    mixer.UnMix(&hits);
-    string subj;
-    if(hits.size()) {
-      subj = hits[0].m_Subj;
+  CSplign splign;
+
+  CRef<CSplicedAligner> aligner ( args["quality"].AsString() == "high" ?
+    static_cast<CSplicedAligner*> (new CSplicedAligner16):
+    static_cast<CSplicedAligner*> (new CSplicedAligner32) );
+
+  splign.SetPolyaDetection(!args["nopolya"]);
+  splign.SetMinExonIdentity(args["min_idty"].AsDouble());
+  splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
+  splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
+  splign.SetStrand(args["strand"].AsString() == "plus");
+  splign.SetEndGapDetection(!(args["noendgaps"]));
+
+#if GENOME_PIPELINE
+
+  aligner->SetWm(args["Wm"].AsInteger());
+  aligner->SetWms(args["Wms"].AsInteger());
+  aligner->SetWg(args["Wg"].AsInteger());
+  aligner->SetWs(args["Ws"].AsInteger());
+
+  for(size_t i = 0, n = aligner->GetSpliceTypeCount(); i < n; ++i) {
+      string arg_name ("Wi");
+      arg_name += NStr::IntToString(i);
+      aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
+  }
+
+#endif
+
+  splign.SetAligner(aligner);
+
+  CSeqLoader* pseqloader = new CSeqLoader;
+  pseqloader->Open(args["index"].AsString());
+  CRef<CSplignSeqAccessor> seq_loader (pseqloader);
+  pseqloader = 0;
+  splign.SetSeqAccessor(seq_loader);
+
+  CSplignFormatter formatter (splign);
+
+  size_t model_id = 0;
+
+  while(x_GetNextPair(ifs_hits, &hits) ) {
+
+    if(hits.size() == 0) {
+      continue;
     }
 
-    bool error = false;
-    try {
-      cout << x_RunOnPair(&hits) << flush;
+    const string query (hits[0].m_Query);
+    const string subj (hits[0].m_Subj);
+
+    splign.Run(&model_id, &hits);
+
+    cout << formatter.AsText();
+
+    ITERATE(vector<CSplign::SAlignedCompartment>, ii, splign.GetResult()) {
+      x_LogStatus(ii->m_id, query, subj, ii->m_error, ii->m_msg);
     }
-    catch(CException& e) {
-      x_LogStatus(query, subj, true, e.GetMsg());
-      error = true;
-    }
-    if(!error) {
-      x_LogStatus(query, subj, false, "Ok");
+    if(splign.GetResult().size() == 0) {
+      x_LogStatus(0, query, subj, true, "No feasible compartment found");
     }
   }
 
@@ -281,242 +343,32 @@ int CSplignApp::Run()
 }
 
 
-string CSplignApp::x_RunOnPair( vector<CHit>* hits )
-{
-  if(hits->size() == 0) {
-    NCBI_THROW( CSplignAppException, eGeneral,
-		"No hits left after filtering");
-  }
-
-  const string query ((*hits)[0].m_Query);
-
-  vector<char> mrna;
-  m_seqloader.Load(query, &mrna, 0, kMax_UInt);
-  const size_t mrna_size = mrna.size();
-  
-  size_t polya_start = m_nopolya? kMax_UInt: TestPolyA(mrna);
-  if(polya_start < kMax_UInt) {
-    CleaveOffByTail(hits, polya_start + 1); // cleave off hits beyond cds
-    if(hits->size() == 0) {
-      NCBI_THROW( CSplignAppException, eGeneral, "All hits behind CDS");
-    }
-  }  
-
-  // find regions of interest on mRna (query)
-  // and contig (subj)
-  size_t qmin, qmax, smin, smax;
-  GetHitsMinMax(*hits, &qmin, &qmax, &smin, &smax);
-  --qmin; --qmax; --smin; --smax;
-
-  qmin = 0;
-  qmax = polya_start < kMax_UInt? polya_start - 1: mrna_size - 1;
-  smin = max(0, int(smin - g_max_intron));
-  smax += g_max_intron;
-  
-  bool minus_strand = ! (*hits)[0].IsStraight();
-
-  const string subj ((*hits)[0].m_Subj);
-  vector<char> contig;
-  m_seqloader.Load(subj, &contig, smin, smax);
-
-  const size_t ctg_end = smin + contig.size();
-  if(ctg_end - 1 < smax) { // perhabs adjust smax
-    smax = ctg_end - 1;
-  }
-
-  if(minus_strand) {
-    // make reverse complementary
-    // for the contig's area of interest
-    reverse (contig.begin(), contig.end());
-    transform(contig.begin(), contig.end(), contig.begin(),
-	      SCompliment());
-    // flip the hits
-    for(size_t i = 0, n = hits->size(); i < n; ++i) {
-      CHit& h = (*hits)[i];
-      size_t a2 = smax - (h.m_ai[3] - smin) + 2;
-      size_t a3 = smax - (h.m_ai[2] - smin) + 2;
-      h.m_an[2] = h.m_ai[2] = a2;
-      h.m_an[3] = h.m_ai[3] = a3;
-    }
-  }
-
-  // shift hits so that they originate from qmin, smin;
-  // also make them zero-based
-  for(size_t i = 0, n = hits->size(); i < n; ++i) {
-    CHit& h = (*hits)[i];
-    h.m_an[0] = h.m_ai[0] -= qmin + 1;
-    h.m_an[1] = h.m_ai[1] -= qmin + 1;
-    h.m_an[2] = h.m_ai[2] -= smin + 1;
-    h.m_an[3] = h.m_ai[3] -= smin + 1;
-  }  
-  
-  // skip low-coverage sequences
-  {{
-  CHitParser hp;
-  int hit_coverage = hp.CalcCoverage(hits->begin(), hits->end(), 'q');
-  size_t max_right = qmax + 1;
-  if(double(hit_coverage)/max_right < m_min_query_coverage) {
-    
-    CNcbiOstrstream oss;
-    oss << "Query not covered at least " <<  m_min_query_coverage*100 << '%';
-    string msg = CNcbiOstrstreamToString(oss);
-    NCBI_THROW( CSplignAppException, eGeneral, msg.c_str());
-  }
-  }}
-  
-  // delete low-identity hits
-  {{
-  size_t hit_dim = hits->size(), j = 0;
-  for(size_t k = 0; k < hit_dim; ++k) {
-    if((*hits)[k].m_Idnty >= g_min_hit_idty) {
-      if(j < k) (*hits)[j] = (*hits)[k];
-      ++j;
-    }                }
-  hits->resize(hit_dim = j);
-  }}
-  
-  if(hits->size() == 0) {
-    NCBI_THROW(CSplignAppException, eGeneral, "Hits are too weak");
-  }
-
-  // select aligner based on sequence quality
-  auto_ptr<CSplicedAligner> aligner ( m_SeqQuality > 0?
-    static_cast<CSplicedAligner*> (new CSplicedAligner16):
-    static_cast<CSplicedAligner*> (new CSplicedAligner32) );
-
-  // setup splign
-  CSplign splign (aligner.get());
-  splign.SetMinExonIdentity(m_minidty);
-  splign.EnforceEndGapsDetection(m_endgaps);
-  splign.SetSequences(&mrna[qmin], qmax - qmin + 1, &contig[0], contig.size());
-  SetPatternFromHits(splign, hits);
-
-  // run and parse
-  const vector<CSplign::SSegment>* segments = splign.Run();
-  const size_t seg_dim = segments->size();
-
-  if(seg_dim == 0) {
-    NCBI_THROW( CSplignAppException, eGeneral,
-		"No alignment found.");
-  }
-
-  // try to extend the last segment into PolyA area  
-  if(polya_start < kMax_UInt && seg_dim && (*segments)[seg_dim-1].m_exon) {
-    CSplign::SSegment& s = const_cast<CSplign::SSegment&>(
-				       (*segments)[seg_dim-1]);
-    const char* p0 = &mrna[0] + s.m_box[1] + 1;
-    const char* q = &contig[0] + s.m_box[3] + 1;
-    const char* p = p0;
-    for(const char* pe = &mrna[0] + mrna_size; p < pe; ++p, ++q) {
-      if(*p != 'A') break;
-      if(*p != *q) break;
-    }
-    const size_t sh = p - p0;
-    if(sh) {
-      // resize
-      s.m_box[1] += sh;
-      s.m_box[3] += sh;
-      s.m_details.append(sh, 'M');
-      s.RestoreIdentity();
-
-      // correct annotation
-      const size_t ann_dim = s.m_annot.size();
-      if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
-          s.m_annot[ann_dim - 2] = *q++;
-          s.m_annot[ann_dim - 1] = *q;
-      }
-
-      polya_start += sh;
-    }
-  }
-
-    int j = seg_dim - 1;
-    if(!m_nopolya) {
-    // look for PolyA in trailing segments:
-    // if a segment is mostly 'A's then
-    // we add it to Poly(A)
-    for(; j >= 0; --j) {
-      const char* p0 = &mrna[qmin] + (*segments)[j].m_box[0];
-      const char* p1 = &mrna[qmin] + (*segments)[j].m_box[1] + 1;
-      size_t count = 0;
-      for(const char* pc = p0; pc != p1; ++pc) {
-        if(*pc == 'A') ++count;
-      }
-      double ac = double(count) / double(p1 - p0);
-      if(ac < 0.9) break;
-    }
-    if(j >= 0 && j < int(seg_dim - 1)) {
-      polya_start = (*segments)[j].m_box[1] + 1;
-    }
-  }
-
-  CNcbiOstrstream oss;
-  oss.precision(3);
-  for(size_t i = 0, n = j + 1; i < n; ++i ) {
-    const CSplign::SSegment seg = (*segments)[i];
-    oss << query << '\t' << subj << '\t';
-    if(seg.m_exon) {
-      oss << seg.m_idty << '\t';
-    }
-    else {
-      oss << "-\t";
-    }
-    
-    oss << seg.m_len << '\t';
-
-    // the box
-    oss << qmin + seg.m_box[0] + 1 << '\t'
-	<< qmin + seg.m_box[1] + 1 << '\t';
-
-    if(seg.m_exon) {
-      if(minus_strand) {
-	oss << smax - seg.m_box[2] + 1 << '\t' 
-	    << smax - seg.m_box[3] + 1 << '\t';
-      }
-      else {
-	oss << smin + seg.m_box[2] + 1 << '\t' 
-	    << smin + seg.m_box[3] + 1 << '\t';
-      }
-    } else {
-      oss << "-\t-\t";
-    }
-
-    if(seg.m_exon) {
-      oss << seg.m_annot << '\t';
-      oss << (m_rle? RLE(seg.m_details): seg.m_details);
-    }
-    else {
-      if(i == 0) {
-	oss << "<L-Gap>\t";
-      }
-      else if(i == n - 1) {
-	oss << "<R-Gap>\t";
-      }
-      else {
-	oss << "<M-Gap>\t";
-      }
-      oss << '-';
-    }
-    oss << endl;
-  }
-
-  // report Poly(A)
-  if(polya_start < kMax_UInt && polya_start < mrna_size) {
-    oss << query << '\t' << subj << "\t-\t"
-  	<< mrna_size - polya_start << '\t'
-  	<< polya_start + 1 << '\t' << mrna_size << "\t-\t-\t<Poly(A)-Gap>\t";
-    oss << '-' ;
-    oss << endl;
-  }
-
-  return CNcbiOstrstreamToString(oss);
-}
-
-
 END_NCBI_SCOPE
                      
 
 USING_NCBI_SCOPE;
+
+
+// make Splign index file
+void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr )
+{
+  istream * inp = inp_istr? inp_istr: &cin;
+  ostream * out = out_ostr? out_ostr: &cout;
+  inp->unsetf(IOS_BASE::skipws);
+  char c0 = '\n', c;
+  while(inp->good()) {
+    c = inp->get();
+    if(c0 == '\n' && c == '>') {
+      CT_OFF_TYPE pos = inp->tellg() - CT_POS_TYPE(1);
+      string s;
+      *inp >> s;
+      *out << s << '\t' << file_index << '\t' << pos << endl;
+    }
+    c0 = c;
+  }
+}
+
+
 
 int main(int argc, const char* argv[]) 
 {
@@ -548,7 +400,7 @@ int main(int argc, const char* argv[])
 
       // write the list of files
       const size_t files_count = fasta_filenames.size();
-      cout << "# This file was generated by Splign. Do not edit it." << endl;
+      cout << "# This file was generated by Splign. Edit with care." << endl;
       cout << "$$$FI" << endl;
       for(size_t k = 0; k < files_count; ++k) {
 	cout << fasta_filenames[k] << '\t' << k << endl;
@@ -568,10 +420,12 @@ int main(int argc, const char* argv[])
 }
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/04/23 14:09:40  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.15  2004/02/19 22:57:55  ucko
  * Accommodate stricter implementations of CT_POS_TYPE.
  *

@@ -1,5 +1,5 @@
-#ifndef ALGO_DEMO_SPLIGN_SEQ_LOADER__HPP
-#define ALGO_DEMO_SPLIGN_SEQ_LOADER__HPP
+#ifndef ALGO_ALIGN_DEMO_SPLIGN_SEQ_LOADER__HPP
+#define ALGO_ALIGN_DEMO_SPLIGN_SEQ_LOADER__HPP
 
 /* $Id$
 * ===========================================================================
@@ -34,19 +34,20 @@
 */
 
 
+#include <algo/align/splign.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 
 BEGIN_NCBI_SCOPE
 
 // Multi-FastA sequence loader
-class CSeqLoader
+class CSeqLoader: public CSplignSeqAccessor
 {
 public:
 
-  void Open (const string& filename_index);
-  
-  void Load(const string& id, vector<char>* seq, size_t from, size_t to);
+  void Open (const string& filename_index);  
+  virtual void Load( const string& id, vector<char> *seq,
+                     size_t start, size_t finish);
   
 private:
   
@@ -68,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/23 14:09:40  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.4  2003/12/03 19:45:33  kapustin
  * Keep min index value to support non-zero based index
  *

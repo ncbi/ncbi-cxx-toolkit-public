@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 void CSeqLoader::Open(const string& filename_index)
 {
   CNcbiIfstream idxstream (filename_index.c_str());
@@ -121,7 +122,7 @@ void CSeqLoader::Open(const string& filename_index)
       }
       m_idx[id] = s;
     }
-    
+
     return;
   }
   else {      
@@ -187,7 +188,8 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 	if(buf[0] == '>') break;
 	size_t size_old = seq->size();
 	seq->resize(size_old + line_size);
-	transform(buf, buf + line_size, seq->begin() + size_old, (int(*)(int))toupper);
+	transform(buf, buf + line_size, seq->begin() + size_old,
+                  (int(*)(int))toupper);
       }
       else if (i0 == i1) {
 	break; // GCC hack
@@ -219,16 +221,17 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 	break; // GCC hack
       }
 
-      if(src_read > from) {
+      if(src_read > CT_OFF_TYPE(from)) {
 	CT_OFF_TYPE line_size = i1 - i0;
 	line_size = line_size - 1;
 	size_t start  = dst_read? 0: (line_size - (src_read - from));
-	size_t finish = (src_read > to)?
+	size_t finish = (src_read > CT_OFF_TYPE(to))?
 	                (line_size - (src_read - to) + 1):
 	                (size_t)line_size;
-	transform(buf + start, buf + finish, seq->begin() + dst_read, (int(*)(int))toupper);
+	transform(buf + start, buf + finish, seq->begin() + dst_read,
+                  (int(*)(int))toupper);
 	dst_read += finish - start;
-	if(dst_read >= dst_seq_len) {
+	if(dst_read >= CT_OFF_TYPE(dst_seq_len)) {
 	  seq->resize(dst_seq_len);
 	  return;
 	}
@@ -237,7 +240,6 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     }
     seq->resize(dst_read);
   }
-
 }
 
 
@@ -246,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/04/23 14:09:40  kapustin
+ * *** empty log message ***
+ *
  * Revision 1.12  2004/02/20 00:26:18  ucko
  * Tweak previous fix for portability.
  *
