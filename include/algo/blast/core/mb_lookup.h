@@ -45,11 +45,6 @@
 extern "C" {
 #endif
 
-/** The fraction of sites that must have at least one hit to not use 
- * PV_ARRAY. 
- */
-#define PV_ARRAY_FACTOR 0.5
-
 /** Mask to determine whether a residue is an ambiguity. */
 #define NUC_MASK 0xfc
 
