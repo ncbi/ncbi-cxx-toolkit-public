@@ -252,7 +252,7 @@ int CNcbiApplication::AppMain
     x_SetupStdio();
 
     // Get program executable's name & path.
-    string exepath = FindProgramExecutablePath(argc, argv);
+    string exepath = FindProgramExecutablePath(argc, argv, &m_RealExePath);
     m_ExePath = exepath;
 
     // Get program display name
@@ -347,7 +347,7 @@ int CNcbiApplication::AppMain
     }
 
     // Reset command-line args and application name
-    m_Arguments->Reset(argc, argv, exepath);
+    m_Arguments->Reset(argc, argv, exepath, m_RealExePath);
 
     // Reset application environment
     m_Environ->Reset(envp);
@@ -730,8 +730,9 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 
 
 string CNcbiApplication::FindProgramExecutablePath
-(int              /*argc*/, 
- const char* const* argv)
+(int                argc, 
+ const char* const* argv,
+ string* real_path)
 {
     string ret_val;
 #if defined (NCBI_OS_DARWIN)  &&  defined (NCBI_COMPILER_METROWERKS)
@@ -754,10 +755,9 @@ string CNcbiApplication::FindProgramExecutablePath
 
 #elif defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
-    string app_path = argv[0];
-
 #  if defined (NCBI_OS_MSWIN)
     // MS Windows: Try more accurate method of detection
+    // XXX - use this only for real_path?
     try {
         // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
         CDll dll_psapi("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
@@ -788,9 +788,13 @@ string CNcbiApplication::FindProgramExecutablePath
             if ( needed  &&  module ) {
                 char buf[MAX_PATH + 1];
                 DWORD ncount = GetModuleFileName(module, buf, MAX_PATH);
-                if ( ncount ) {
-                    buf[ncount] = 0;
-                    return buf;
+                if (ncount > 0) {
+                    ret_val.assign(buf, ncount);
+                    if (real_path) {
+                        *real_path = CDirEntry::NormalizePath(ret_val,
+                                                              eFollowLinks);
+                    }
+                    return ret_val;
                 }
             }
         }
@@ -801,19 +805,21 @@ string CNcbiApplication::FindProgramExecutablePath
     // This method didn't work -- use standard method
 #  endif
 
-#  if defined(NCBI_OS_LINUX) && 0
-    // Linux OS: Try more accurate method of detection
-    {{
+#  if defined(NCBI_OS_LINUX)
+    // Linux OS: Try more accurate method of detection for real_path
+    if (real_path) {
         char   buf[FILENAME_MAX + 1];
         string procfile = "/proc/" + NStr::IntToString(getpid()) + "/exe";
         int    ncount   = readlink((procfile).c_str(), buf, FILENAME_MAX);
-        if ( ncount != -1 ) {
-            buf[ncount] = 0;
-            return buf;
+        if (ncount > 0) {
+            real_path->assign(buf, ncount);
+            real_path = 0;
         }
-    }}
-    // This method didn't work -- use standard method
+    }
 #  endif
+
+    _ASSERT(argc  &&  argv);
+    string app_path = argv[0];
 
     if ( !CDirEntry::IsAbsolutePath(app_path) ) {
 #  if defined(NCBI_OS_MSWIN)
@@ -857,6 +863,9 @@ string CNcbiApplication::FindProgramExecutablePath
 
 #  error "Platform unrecognized"
 #endif
+    if (real_path) {
+        *real_path = CDirEntry::NormalizePath(ret_val, eFollowLinks);
+    }
     return ret_val;
 }
 
@@ -948,6 +957,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2004/08/09 19:12:19  ucko
+ * {Find,Get}ProgramExecutablePath: make fully resolved paths available too,
+ * using the /proc method on Linux.
+ * AppMain: cache them here and in CNcbiArguments.
+ *
  * Revision 1.92  2004/08/06 11:19:47  ivanov
  * + CNcbiApplication::GetProgramExecutablePath()
  *
