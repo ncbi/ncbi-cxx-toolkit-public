@@ -31,8 +31,10 @@
  * Queueing and Polling code for remote_blast.
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif
 
 #include <ncbi_pch.hpp>
 
@@ -71,10 +73,13 @@ static char const rcsid[] =
 #include <unistd.h>
 #endif
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
+#endif
 
+/// A list of CBlast4_errors.
 typedef list< CRef<CBlast4_error> > TErrorList;
 
 
@@ -82,9 +87,7 @@ typedef list< CRef<CBlast4_error> > TErrorList;
 //  Helper Functions
 //--------------------------------------------------------------------
 
-#define BLAST4_POLL_DELAY_SEC 15
-#define BLAST4_IGNORE_ERRS    5
-
+/// Is the query protein?
 static inline bool
 s_QueryIsAmino(const string & program)
 {
@@ -93,6 +96,7 @@ s_QueryIsAmino(const string & program)
     return (program == "blastp")  ||  (program == "tblastn");
 }
 
+/// Push a key-cutoff pair onto a list of parameters.
 void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, CRef<CBlast4_cutoff> x)
 {
@@ -106,6 +110,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, CRef<CBlast4_cutoff> x)
     l.push_back(p);
 }
 
+/// Push a key-string pair onto a list of parameters.
 void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const string x)
 {
@@ -119,6 +124,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const string x)
     l.push_back(p);
 }
 
+/// Push a key-integer pair onto a list of parameters.
 void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const int & x)
 {
@@ -132,6 +138,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const int & x)
     l.push_back(p);
 }
 
+/// Push a key-boolean pair onto a list of parameters.
 void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const bool & x)
 {
@@ -145,6 +152,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const bool & x)
     l.push_back(p);
 }
 
+/// Push a key-double pair onto a list of parameters.
 void
 s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const double & x)
 {
@@ -158,6 +166,7 @@ s_Setp(list<CRef<CBlast4_parameter> >& l, string n, const double & x)
     l.push_back(p);
 }
 
+/// Push the name-object pair onto params.
 template <class T1, class T2, class T3>
 void
 s_SetpOpt(T1 & params, T2 & name, T3 & object)
@@ -167,6 +176,7 @@ s_SetpOpt(T1 & params, T2 & name, T3 & object)
     }
 }
 
+/// Dump t to os as text ASN.1.
 template <class T>
 void
 s_Output(CNcbiOstream & os, CRef<T> t)
@@ -182,6 +192,7 @@ s_Output(CNcbiOstream & os, CRef<T> t)
 //--------------------------------------------------------------------
 
 
+/// Read a fasta query from a CNcbiIstream and return a CBioseq_set.
 static CRef<CBioseq_set>
 s_SetupQuery(CNcbiIstream    & query_in,
              CRef<CScope>      scope,
@@ -197,11 +208,13 @@ s_SetupQuery(CNcbiIstream    & query_in,
     return seqset;
 }
 
-
+/// Set options appropriately for local and remote searches.
+#ifndef SKIP_DOXYGEN_PROCESSING
 class CSearchParamBuilder : public COptionWalker
 {
 public:
     template <class T>
+
     void Local(T &,
                CUserOpt,
                CArgKey,
@@ -233,18 +246,26 @@ public:
     
     bool NeedRemote(void) { return true; }
 };
+#endif
 
+/// enumerates classes of defaults
 enum EDefaultsFlag {
     eNone = 0,
     eMegablastDefaults,
     eBlastnDefaults
 };
 
+/**
+ * catch-all no-op method.
+ * @todo dead code?
+ */
+
 template<class T>
 void SetAdditionalDefaults(T &, EDefaultsFlag)
 {
 }
 
+/// Apply appropriate default nucleotide options.
 template<>
 void SetAdditionalDefaults<CBlastNucleotideOptionsHandle>
     (CBlastNucleotideOptionsHandle & obj, EDefaultsFlag flag)
@@ -263,6 +284,7 @@ void SetAdditionalDefaults<CBlastNucleotideOptionsHandle>
     }
 }
 
+/// Apply the supplied options to the CRemoteBlast object. 
 template<class T> void
 s_SetSearchParams(CRef<CRemoteBlast>  & cb4o,
                   CNetblastSearchOpts & opts,
@@ -283,7 +305,7 @@ s_SetSearchParams(CRef<CRemoteBlast>  & cb4o,
     opts.Apply(spb, cboh, cb4o);
 }
 
-
+/// Instantiate appropriate options handle based on program and service.
 static CRef<CRemoteBlast>
 s_SetBlast4Params(string              & program,
                   string              & service,
@@ -357,6 +379,7 @@ s_SetBlast4Params(string              & program,
     return cb4o;
 }
 
+/// Enqueue a search request and return a CRemoteBlast object.
 static CRef<CRemoteBlast>
 s_QueueSearch(string              & program,
               string              & service,
@@ -384,6 +407,7 @@ s_QueueSearch(string              & program,
     return cb4o;
 }
 
+/// Display an alignment with CDisplaySeqalign.
 static void
 s_ShowAlign(CNcbiOstream         & os,
             CRef<CRemoteBlast>   cb4o,
@@ -426,6 +450,7 @@ s_ShowAlign(CNcbiOstream         & os,
     dsa_ptr->DisplaySeqalign(os);
 }
 
+/// Show search status or display results.
 void ShowResults(CRef<CRemoteBlast>  cb4o,
                  CRef<CScope>          scope,
                  CAlignParms         & alparms,
@@ -474,34 +499,18 @@ void ShowResults(CRef<CRemoteBlast>  cb4o,
     }
 }
 
-// Int4
-// QueueAndPoll(string                program,
-//              string                service,
-//              string                database,
-//              CNetblastSearchOpts & opts,
-//              CNcbiIstream        & query_in,
-//              bool                  verbose,
-//              bool                  trust_defline,
-//              bool                  raw_asn,
-//              CAlignParms         & alparms,
-//              bool                  async_mode,
-//              string                get_RID)
-// {
-//     // no dice
-//     return 123;
-// }
-
+/// Submit a search and poll for results.
 Int4
-QueueAndPoll(string                program,
-             string                service,
-             string                database,
-             CNetblastSearchOpts & opts,
-             CNcbiIstream        & query_in,
-             bool                  verbose,
-             bool                  trust_defline,
-             bool                  raw_asn,
-             CAlignParms         & alparms,
-             bool                  async_mode,
+QueueAndPoll(string                program,       ///< program name
+             string                service,       ///< service name
+             string                database,      ///< database name
+             CNetblastSearchOpts & opts,          ///< search options
+             CNcbiIstream        & query_in,      ///< where to read query from
+             bool                  verbose,       ///< verbose mode?
+             bool                  trust_defline, ///< believe the query defline?
+             bool                  raw_asn,       ///< emit raw asn when formatting?
+             CAlignParms         & alparms,       ///< parameters for CDisplaySeqalign
+             bool                  async_mode,    ///< asynchronous submission?
              string                get_RID)
 {
     Int4 err_ret = 0;
@@ -580,6 +589,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/11/01 18:25:15  coulouri
+ * doxygen fixes
+ *
  * Revision 1.12  2004/08/25 17:13:49  bealer
  * - Fix solaris warnings.
  *

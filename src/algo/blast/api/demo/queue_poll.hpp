@@ -39,7 +39,9 @@
 #include "search_opts.hpp"
 #include "align_parms.hpp"
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
+#endif
 
 /// Queue the request with the given parameters; poll and display the results.
 ///
@@ -50,10 +52,13 @@ USING_NCBI_SCOPE;
 /// @param service       Service to run (e.g. plain, rpsblast, megablast...).
 /// @param database      Database to search (nr, nt, pdb, etc).
 /// @param opts          Optional netblast parameters.
+/// @param query_in      Read query fasta from supplied istream.
 /// @param verbose       Debugging output - displays netblast socket traffic.
 /// @param trust_defline Assume sequence and defline are consistent with db.
 /// @param raw_asn       Display text ASN.1, not formatted output.
 /// @param alparms       Parameters to control output formatting.
+/// @param async_mode    Asynchronous mode?
+/// @param get_RID       Which RID to fetch?
 
 Int4 QueueAndPoll(string                program,
                   string                service,
@@ -71,6 +76,9 @@ Int4 QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/11/01 18:25:15  coulouri
+ * doxygen fixes
+ *
  * Revision 1.1  2004/02/18 17:04:42  bealer
  * - Adapt blast_client code for Remote Blast API, merging code into the
  *   remote_blast demo application.
