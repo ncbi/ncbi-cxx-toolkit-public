@@ -375,8 +375,7 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if (mode == ePlainText  ||  NoEncode()) {
         out << GetText();
-    }
-    else {
+    } else {
         out << CHTMLHelper::HTMLEncode(GetText());
     }
     CHECK_STREAM_WRITE(out);
@@ -386,16 +385,16 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 
 // text node
 
-CHTMLText::CHTMLText(const string& text)
+CHTMLText::CHTMLText(const string& text, TFlags flags)
     : CParent(s_GenerateNodeInternalName("htmltext", text)),
-      m_Text(text)
+      m_Text(text), m_Flags(flags)
 {
     return;
 }
 
-CHTMLText::CHTMLText(const char* text)
+CHTMLText::CHTMLText(const char* text, TFlags flags)
     : CParent(s_GenerateNodeInternalName("htmltext", text)),
-      m_Text(text)
+      m_Text(text), m_Flags(flags)
 {
     return;
 }
@@ -424,10 +423,30 @@ static SIZE_TYPE s_Find(const string& s, const char* target,
 CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
                                       const string& s) const
 {
+    TFlags flags = 0;
     if ( mode == ePlainText ) {
-        out << CHTMLHelper::StripHTML(s);
+        if ( m_Flags & fStripTextMode )
+            flags |= fStrip;
+        if ( m_Flags & fEncodeTextMode )
+            flags |= fEncode;
     } else {
-        out << s;
+        if ( m_Flags & fStripHtmlMode ) 
+            flags |= fStrip;
+        if ( m_Flags & fEncodeHtmlMode )
+            flags |= fEncode;
+    }
+    switch (flags) {
+        case fStrip:
+            out << CHTMLHelper::StripHTML(s);
+            break;
+        case fEncode:
+            out << CHTMLHelper::HTMLEncode(s);
+            break;
+        case fStrip | fEncode:
+            out << CHTMLHelper::HTMLEncode(CHTMLHelper::StripHTML(s));
+            break;
+        default:
+            out << s;
     }
     CHECK_STREAM_WRITE(out);
     return out;
@@ -445,7 +464,10 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     SIZE_TYPE tag_start_size = strlen(kTagStart);
     SIZE_TYPE tag_end_size   = strlen(kTagEnd);
 
-    x_PrintBegin(out, mode, text.substr(0, tagStart));
+    // Output string to save data after mapping
+    CNcbiOstrstream strout;
+
+    strout << text.substr(0, tagStart);
     SIZE_TYPE last = tagStart;
     do {
         SIZE_TYPE tagNameStart = tagStart + tag_start_size;
@@ -457,15 +479,14 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         else {
             // tag found
             if ( last != tagStart ) {
-                x_PrintBegin(out, mode, text.substr(last, tagStart - last));
+                strout << text.substr(last, tagStart - last);
             }
-
             string name = text.substr(tagNameStart,tagNameEnd-tagNameStart);
             // Resolve and repeat tag
             for (;;) {
                 CNodeRef tag = MapTagAll(name, mode);
                 if ( tag ) {
-                    tag->Print(out, mode);
+                    tag->Print(strout, mode);
                     if ( tag->NeedRepeatTag() ) {
                         RepeatTag(false);
                         continue;
@@ -479,8 +500,10 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     } while ( tagStart != NPOS );
 
     if ( last != text.size() ) {
-        x_PrintBegin(out, mode, text.substr(last));
+        strout << text.substr(last);
     }
+    strout << '\0';
+    x_PrintBegin(out, mode, strout.str());
     return out;
 }
 
@@ -2231,6 +2254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2004/10/21 17:44:04  ivanov
+ * CHTMLText: added EFlag type and flag parameter to constructors
+ *
  * Revision 1.106  2004/08/13 16:47:53  ivanov
  * Added class CHTML_password (HTML tag <input type=password>)
  *

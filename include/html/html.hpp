@@ -217,9 +217,9 @@ public:
     CHTMLNode* SetAccessKey(char key);
 
     // Convenient way to add CHTMLPlainText or CHTMLText.
-    void AppendPlainText(const char* text, bool noEncode = false);
+    void AppendPlainText(const char*   text, bool noEncode = false);
     void AppendPlainText(const string& text, bool noEncode = false);
-    void AppendHTMLText (const char* text);
+    void AppendHTMLText (const char*   text);
     void AppendHTMLText (const string& text);
 
     // Get event handler name.
@@ -300,9 +300,27 @@ private:
 class NCBI_XHTML_EXPORT CHTMLText : public CNCBINode
 {
     typedef CNCBINode CParent;
+
 public:
-    CHTMLText(const char* text);
-    CHTMLText(const string& text);
+    /// Which conversions make before printout a stored text
+    enum EFlags {
+        fStripHtmlMode  = 1 << 1,   //< Strip text in html mode
+        fStripTextMode  = 1 << 2,   //< Strip text in text mode
+        fStrip          = fStripHtmlMode  | fStripTextMode,
+        fNoStrip        = 0,
+        fEncodeHtmlMode = 1 << 3,   //< Encode text in html mode
+        fEncodeTextMode = 1 << 4,   //< Encode text in text mode
+        fEncode         = fEncodeHtmlMode | fEncodeTextMode,
+        fNoEncode       = 0,
+        // Presets
+        fCode           = fStripTextMode  | fNoEncode,
+        fExample        = fNoStrip        | fEncodeHtmlMode,
+        fDefault        = fCode     //< Default value
+    };
+    typedef int TFlags;             //<  Bitwise OR of "EFlags"
+
+    CHTMLText(const char*   text, TFlags flags = fDefault);
+    CHTMLText(const string& text, TFlags flags = fDefault);
     ~CHTMLText(void);
     
     const string& GetText(void) const;
@@ -314,7 +332,8 @@ private:
     CNcbiOstream& x_PrintBegin(CNcbiOstream& out, TMode mode,
                                const string& s) const;
 private:
-    string m_Text;
+    string  m_Text;
+    TFlags  m_Flags;
 };
 
 
@@ -1500,6 +1519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2004/10/21 17:43:32  ivanov
+ * CHTMLText: added EFlag type and flag parameter to constructors
+ *
  * Revision 1.78  2004/08/13 16:48:27  ivanov
  * Added class CHTML_password (HTML tag <input type=password>)
  *
