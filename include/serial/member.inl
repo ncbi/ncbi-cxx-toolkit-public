@@ -182,16 +182,18 @@ void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
     m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
 }
 
+
 inline
 CMemberInfo::ESetFlag CMemberInfo::GetSetFlag(TConstObjectPtr object) const
 {
+    _ASSERT(HaveSetFlag());
     if (m_BitSetFlag) {
-        const Uint4* bits =
+        const Uint4* bitsPtr =
             CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
         TMemberIndex pos = (GetIndex()-1) << 1;
         size_t index =  pos >> 5;
         size_t offset = pos & 31;
-        size_t res = (*(bits+index) >> offset) & 0x03;
+        size_t res = (bitsPtr[index] >> offset) & 0x03;
         return ESetFlag(res);
     } else {
         return CTypeConverter<bool>::Get(Add(object,
@@ -199,21 +201,41 @@ CMemberInfo::ESetFlag CMemberInfo::GetSetFlag(TConstObjectPtr object) const
     }
 }
 
+
 inline
 bool CMemberInfo::GetSetFlagNo(TConstObjectPtr object) const
 {
+    _ASSERT(HaveSetFlag());
     if (m_BitSetFlag) {
-        const Uint4* bits =
+        const Uint4* bitsPtr =
             CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
         TMemberIndex pos = (GetIndex()-1) << 1;
         size_t index =  pos >> 5;
         size_t offset = pos & 31;
         Uint4 mask = 0x03 << offset;
-        return (*(bits+index) & mask) == 0;
+        return (bitsPtr[index] & mask) == 0;
     } else {
         return !CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
     }
 }
+
+inline
+bool CMemberInfo::GetSetFlagYes(TConstObjectPtr object) const
+{
+    _ASSERT(HaveSetFlag());
+    if (m_BitSetFlag) {
+        const Uint4* bitsPtr =
+            CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+        TMemberIndex pos = (GetIndex()-1) << 1;
+        size_t index =  pos >> 5;
+        size_t offset = pos & 31;
+        Uint4 mask = 0x03 << offset;
+        return (bitsPtr[index] & mask) != 0;
+    } else {
+        return CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
+    }
+}
+
 
 inline
 void CMemberInfo::UpdateSetFlag(TObjectPtr object, ESetFlag value) const
@@ -221,18 +243,21 @@ void CMemberInfo::UpdateSetFlag(TObjectPtr object, ESetFlag value) const
     TPointerOffsetType setFlagOffset = m_SetFlagOffset;
     if ( setFlagOffset != eNoOffset ) {
         if (m_BitSetFlag) {
-            Uint4* bits =
+            Uint4* bitsPtr =
                 CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
             TMemberIndex pos = (GetIndex()-1) << 1;
             size_t index =  pos >> 5;
             size_t offset = pos & 31;
             Uint4 mask = 0x03 << offset;
-            *(bits+index) = (*(bits+index) & ~mask) | (value << offset);
+            Uint4& bits = bitsPtr[index];
+            bits = (bits & ~mask) | (value << offset);
         } else {
-            CTypeConverter<bool>::Get(Add(object, setFlagOffset)) = value != eSetNo;
+            CTypeConverter<bool>::Get(Add(object, setFlagOffset)) = 
+                (value != eSetNo);
         }
     }
 }
+
 
 inline
 void CMemberInfo::UpdateSetFlagYes(TObjectPtr object) const
@@ -240,13 +265,32 @@ void CMemberInfo::UpdateSetFlagYes(TObjectPtr object) const
     TPointerOffsetType setFlagOffset = m_SetFlagOffset;
     if ( setFlagOffset != eNoOffset ) {
         if (m_BitSetFlag) {
-            Uint4* bits =
+            Uint4* bitsPtr =
                 CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
             TMemberIndex pos = (GetIndex()-1) << 1;
             size_t index =  pos >> 5;
             size_t offset = pos & 31;
-            Uint4 mask = 0x03 << offset;
-            *(bits+index) |= mask;
+            Uint4 setBits = eSetYes << offset;
+            bitsPtr[index] |= setBits;
+        } else {
+            CTypeConverter<bool>::Get(Add(object, setFlagOffset))= true;
+        }
+    }
+}
+
+inline
+void CMemberInfo::UpdateSetFlagMaybe(TObjectPtr object) const
+{
+    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != eNoOffset ) {
+        if (m_BitSetFlag) {
+            Uint4* bitsPtr =
+                CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+            TMemberIndex pos = (GetIndex()-1) << 1;
+            size_t index =  pos >> 5;
+            size_t offset = pos & 31;
+            Uint4 setBits = eSetMaybe << offset;
+            bitsPtr[index] |= setBits;
         } else {
             CTypeConverter<bool>::Get(Add(object, setFlagOffset))= true;
         }
@@ -259,14 +303,15 @@ bool CMemberInfo::UpdateSetFlagNo(TObjectPtr object) const
     TPointerOffsetType setFlagOffset = m_SetFlagOffset;
     if ( setFlagOffset != eNoOffset ) {
         if (m_BitSetFlag) {
-            Uint4* bits =
+            Uint4* bitsPtr =
                 CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
             TMemberIndex pos = (GetIndex()-1) << 1;
             size_t index =  pos >> 5;
             size_t offset = pos & 31;
             Uint4 mask = 0x03 << offset;
-            if ( *(bits+index) & mask ) {
-                *(bits+index) &= ~mask;
+            Uint4& bits = bitsPtr[index];
+            if ( bits & mask ) {
+                bits &= ~mask;
                 return true;
             }
         } else {
@@ -286,6 +331,9 @@ bool CMemberInfo::UpdateSetFlagNo(TObjectPtr object) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/10/01 14:40:12  vasilche
+* Fixed CanGet() for members wihout 'set' flag.
+*
 * Revision 1.21  2003/09/11 20:47:26  vasilche
 * Fixed type %31 -> &31.
 *

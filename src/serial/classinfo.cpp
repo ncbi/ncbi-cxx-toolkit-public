@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/10/01 14:40:12  vasilche
+* Fixed CanGet() for members wihout 'set' flag.
+*
 * Revision 1.71  2003/09/16 14:48:35  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *
@@ -484,7 +487,7 @@ void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
 {
     // check 'set' flag
     bool haveSetFlag = info->HaveSetFlag();
-    if ( haveSetFlag && (info->GetSetFlag(object)==CMemberInfo::eSetNo) )
+    if ( haveSetFlag && info->GetSetFlagNo(object) )
         return; // member not set
     
     TObjectPtr member = GetMember(info, object);
@@ -500,7 +503,7 @@ void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
     }
     // update 'set' flag
     if ( haveSetFlag )
-        info->UpdateSetFlag(object,CMemberInfo::eSetNo);
+        info->UpdateSetFlagNo(object);
 }
 
 void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
@@ -569,7 +572,7 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
 
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
     if( memberInfo->HaveSetFlag()) {
-        memberInfo->UpdateSetFlag(objectPtr,CMemberInfo::eSetYes);
+        memberInfo->UpdateSetFlagYes(objectPtr);
     }
     in.ReadNamedType(classType,
                      memberInfo->GetTypeInfo(),
@@ -604,8 +607,7 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
         CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
 
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
-    if (memberInfo->HaveSetFlag() &&
-        memberInfo->GetSetFlag(objectPtr) == CMemberInfo::eSetNo ) {
+    if (memberInfo->HaveSetFlag() && memberInfo->GetSetFlagNo(objectPtr)) {
         if (memberInfo->Optional()) {
             return;
         }

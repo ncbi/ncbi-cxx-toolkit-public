@@ -106,12 +106,25 @@ public:
         eSetMaybe = 1,
         eSetYes   = 3
     };
+
+    /// return current value of 'setFlag'
     ESetFlag GetSetFlag(TConstObjectPtr object) const;
+
+    /// true if 'setFlag' is not eSetNo
+    bool GetSetFlagYes(TConstObjectPtr object) const;
+    /// true if 'setFlag' is eSetNo
     bool GetSetFlagNo(TConstObjectPtr object) const;
+
+    /// set value of 'setFlag'
     void UpdateSetFlag(TObjectPtr object, ESetFlag value) const;
+    /// set 'setFlag' to eSetYes
     void UpdateSetFlagYes(TObjectPtr object) const;
+    /// set 'setFlag' to eSetMaybe
+    void UpdateSetFlagMaybe(TObjectPtr object) const;
+    /// set 'setFlag' to eSetNo and return true if previous value wasn't eSetNo
     bool UpdateSetFlagNo(TObjectPtr object) const;
-    bool CompareSetFlags(TConstObjectPtr object1, TConstObjectPtr object2) const;
+    bool CompareSetFlags(TConstObjectPtr object1,
+                         TConstObjectPtr object2) const;
 
     bool CanBeDelayed(void) const;
     CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer);
@@ -221,6 +234,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/10/01 14:40:12  vasilche
+* Fixed CanGet() for members wihout 'set' flag.
+*
 * Revision 1.31  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

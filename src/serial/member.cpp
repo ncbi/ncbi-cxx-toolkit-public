@@ -333,11 +333,10 @@ CMemberInfo* CMemberInfo::SetSetFlag(const Uint4* setFlag)
     return this;
 }
 
-bool CMemberInfo::CompareSetFlags(TConstObjectPtr object1, TConstObjectPtr object2) const
+bool CMemberInfo::CompareSetFlags(TConstObjectPtr object1,
+                                  TConstObjectPtr object2) const
 {
-    ESetFlag set1 = GetSetFlag(object1);
-    ESetFlag set2 = GetSetFlag(object2);
-    return (set1 == set2) || ((set1 != eSetNo) && (set2 != eSetNo));
+    return GetSetFlagNo(object1) == GetSetFlagNo(object2);
 }
 
 CMemberInfo* CMemberInfo::SetOptional(const bool* setFlag)
@@ -1027,6 +1026,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.34  2003/10/01 14:40:12  vasilche
+* Fixed CanGet() for members wihout 'set' flag.
+*
 * Revision 1.33  2003/09/16 14:48:35  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

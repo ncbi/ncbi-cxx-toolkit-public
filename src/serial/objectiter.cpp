@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/10/01 14:40:12  vasilche
+* Fixed CanGet() for members wihout 'set' flag.
+*
 * Revision 1.10  2003/09/30 17:11:57  gouriano
 * Modified TypeIterators to skip unset optional members
 *
@@ -127,7 +130,7 @@ bool CObjectTypeInfoMI::IsSet(const CConstObjectInfo& object) const
 {
     const CMemberInfo* memberInfo = GetMemberInfo();
     if ( memberInfo->HaveSetFlag() )
-        return memberInfo->GetSetFlag(object.GetObjectPtr()) != CMemberInfo::eSetNo;
+        return memberInfo->GetSetFlagYes(object.GetObjectPtr());
     
     if ( memberInfo->CanBeDelayed() &&
          memberInfo->GetDelayBuffer(object.GetObjectPtr()).Delayed() )
@@ -236,7 +239,9 @@ void CObjectTypeInfoMI::ResetGlobalCopyHook(void) const
 
 bool CConstObjectInfoMI::CanGet(void) const
 {
-    return (GetMemberInfo()->GetSetFlag(m_Object.GetObjectPtr()) != CMemberInfo::eSetNo);
+    const CMemberInfo* memberInfo = GetMemberInfo();
+    return !memberInfo->HaveSetFlag() ||
+        memberInfo->GetSetFlagYes(m_Object.GetObjectPtr());
 }
 
 pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
@@ -248,14 +253,16 @@ pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
 
 bool CObjectInfoMI::CanGet(void) const
 {
-    return (GetMemberInfo()->GetSetFlag(m_Object.GetObjectPtr()) != CMemberInfo::eSetNo);
+    const CMemberInfo* memberInfo = GetMemberInfo();
+    return !memberInfo->HaveSetFlag() ||
+        memberInfo->GetSetFlagYes(m_Object.GetObjectPtr());
 }
 
 pair<TObjectPtr, TTypeInfo> CObjectInfoMI::GetMemberPair(void) const
 {
     TObjectPtr objectPtr = m_Object.GetObjectPtr();
     const CMemberInfo* memberInfo = GetMemberInfo();
-    memberInfo->UpdateSetFlag(objectPtr, CMemberInfo::eSetMaybe);
+    memberInfo->UpdateSetFlagMaybe(objectPtr);
     return make_pair(memberInfo->GetMemberPtr(objectPtr),
                      memberInfo->GetTypeInfo());
 }
@@ -270,7 +277,7 @@ void CObjectInfoMI::Erase(EEraseFlag flag)
     TObjectPtr objectPtr = m_Object.GetObjectPtr();
     // check 'set' flag
     bool haveSetFlag = mInfo->HaveSetFlag();
-    if ( haveSetFlag && mInfo->GetSetFlag(objectPtr) == CMemberInfo::eSetNo ) {
+    if ( haveSetFlag && mInfo->GetSetFlagNo(objectPtr) ) {
         // member not set
         return;
     }
@@ -280,7 +287,7 @@ void CObjectInfoMI::Erase(EEraseFlag flag)
 
     // update 'set' flag
     if ( haveSetFlag )
-        mInfo->UpdateSetFlag(objectPtr,CMemberInfo::eSetNo);
+        mInfo->UpdateSetFlagNo(objectPtr);
 }
 
 // choice iterators
