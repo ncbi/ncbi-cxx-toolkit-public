@@ -38,6 +38,7 @@
 #include <objmgr/impl/annot_object.hpp>
 
 #include <objects/id2/ID2_Seq_loc.hpp>
+#include <objects/id2/ID2_Id_Range.hpp>
 #include <objects/id2/ID2_Interval.hpp>
 #include <objects/id2/ID2_Packed_Seq_ints.hpp>
 #include <objects/id2/ID2_Seq_range.hpp>
@@ -172,9 +173,11 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexThis(void)
             case CID2_Seq_loc::e_Whole_set:
                 key.m_Range = CRange<TSeqPos>::GetWhole();
                 ITERATE ( CID2_Seq_loc::TWhole_set, wit, loc.GetWhole_set() ) {
-                    gi_id.SetGi(*wit);
-                    key.m_Handle = CSeq_id_Handle::GetHandle(gi_id);
-                    tse_info.x_MapAnnotObject(key, annotRef);
+                    for (int n = 0;  n < (*wit)->GetCount();  ++n) {
+                        gi_id.SetGi((*wit)->GetStart() + n);
+                        key.m_Handle = CSeq_id_Handle::GetHandle(gi_id);
+                        tse_info.x_MapAnnotObject(key, annotRef);
+                    }
                 }
                 break;
             case CID2_Seq_loc::e_Int:
@@ -234,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/10/01 00:24:34  ucko
+* x_UpdateAnnotIndexThis: fix handling of whole-set (caught by MIPSpro)
+*
 * Revision 1.1  2003/09/30 16:22:04  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
