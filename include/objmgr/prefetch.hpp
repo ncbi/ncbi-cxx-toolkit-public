@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJMGR_EXPORT CPrefetchToken
+class CPrefetchToken
 {
 public:
     typedef CPrefetchToken_Impl::TIds TIds;
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/21 15:34:28  gorelenk
+* Removed export prefix from inline class CPrefetchToken.
+*
 * Revision 1.2  2004/04/19 14:52:29  grichenk
 * Added prefetch depth limit, redesigned prefetch queue.
 *
