@@ -59,7 +59,9 @@ static char const rcsid[] =
 /** range of scores in a matrix */
 #define kScoreMatrixScoreRange 10000
 
-/** @todo document me */
+/** For translated subject sequences, the number of amino acids to
+    include before and after the existing aligned segment when
+    generating a composition-based scoring system. */
 #define KAPPA_WINDOW_BORDER 200
 
 /**positions of true characters in protein alphabet*/
@@ -1824,8 +1826,11 @@ typedef struct Kappa_WindowInfo
  * to be simultaneously sorted in the WindowsFromHSPs routine.
  */
 typedef struct Kappa_WindowIndexPair {
-  Kappa_WindowInfo * window;    /**< @todo document me */
-  Int4 index;                   /**< @todo document me */
+  Kappa_WindowInfo * window;    /**< a window */
+  Int4 index;                   /**< an index associated with
+                                     "window," typically the index of
+                                     the window in a list, before the
+                                     list is sorted. */
 } Kappa_WindowIndexPair;
 
 /**
