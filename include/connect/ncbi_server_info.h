@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/04/24 21:24:05  lavr
+ * New server attributes added: locality and bonus coefficient
+ *
  * Revision 6.17  2001/03/06 23:52:57  lavr
  * SERV_ReadInfo can now consume either hostname or IP address
  *
@@ -171,14 +174,16 @@ typedef union {
 } USERV_Info;
 
 typedef struct {
-    ESERV_Type     type;        /* type of server                            */
-    unsigned int   host;        /* host the server running on, network b.o.  */
-    unsigned short port;        /* port the server running on, host b.o.     */
-    unsigned short sful;        /* true if this is a stateful server (def=no)*/
-    ESERV_Flags    flag;        /* algorithm flag for the server             */
-    time_t         time;        /* relaxation/expiration time/period         */
-    double         rate;        /* rate of the server                        */
-    USERV_Info     u;           /* server type-specific data/params          */
+    ESERV_Type            type; /* type of server                            */
+    unsigned int          host; /* host the server running on, network b.o.  */
+    unsigned short        port; /* port the server running on, host b.o.     */
+    unsigned char/*bool*/ sful; /* true for stateful-only server (default=no)*/
+    unsigned char/*bool*/ locl; /* true for local (LBSMD-only) server(def=no)*/
+    ESERV_Flags           flag; /* algorithm flag for the server             */
+    time_t                time; /* relaxation/expiration time/period         */
+    double                coef; /* bonus coefficient for server run locally  */
+    double                rate; /* rate of the server                        */
+    USERV_Info            u;    /* server type-specific data/params          */
 } SSERV_Info;
 
 
@@ -230,7 +235,8 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *                   Empty additional arguments denoted as '' (double quotes).
  *                   Note that arguments must not contain space characters.
  *
- *    HTTP* servers: Path (required) and args in the form path[?args].
+ *    HTTP* servers: Path (required) and args (optional) in the form
+ *                   path[?args] (here brackets denote the optional part).
  *                   Note that no spaces allowed within this parameter.
  *
  * Tags may follow in no specific order but no more than one instance
@@ -240,6 +246,18 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *       Regular (default)
  *       Blast
  *
+ *    Local server:
+ *       L=no    (default)
+ *       L=yes
+ *           Local servers are accessible only by direct clients of LBSMD,
+ *           that is such servers cannot be accessed by means of DISPD.
+ *
+ *    Stateful server:
+ *       S=no    (default)
+ *       S=yes
+ *           Indication of stateful server, which allows only dedicated socket
+ *           (stateful) connections (HTTP mode - aka stateless - not allowed).
+ *
  *    Validity period:
  *       T=integer    [0 = default]
  *           specifies the time in seconds this server entry is valid
@@ -247,7 +265,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           the LBSM Daemon to some reasonable value.)
  *
  *    Reachability coefficient:
- *       R=double     [0 = default]
+ *       R=double     [0.0 = default]
  *           specifies availability ratio for the server, expressed as
  *           a floating point number with 0.0 meaning the server is down
  *           (unavailable) and 1000.0 meaning the server is up and running.
@@ -255,9 +273,22 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           favorable for choosing by LBSM Daemon, as this coefficient is
  *           directly used as a multiplier in the load-average calculation
  *           for the entire family of servers for the same service.
- *           (If equal to 0 then defaulted by the LBSM Daemon to 1000.0
- *           if the server is running and to 0, if not.)
+ *           (If equal to 0.0 then defaulted by the LBSM Daemon to 1000.0.)
+ *           Normally, LBSMD keeps track of server reachability, and
+ *           dynamically switches this rate to be maximal specified when
+ *           the server is up, and to be zero when the server is down.
  *           Note that negative values are reserved for LBSMD private use.
+ *
+ *    Bonus coefficient:
+ *       B=double     [0.0 = default]
+ *           specifies a multiplicative bonus given to a server run locally,
+ *           when calculating reachability rate.
+ *           Special rules apply to negitive/zero values:
+ *           0.0 means not to use the rate increase at all (default
+ *           rate calculation is used, which slightly increases rates
+ *           of locally run servers).
+ *           Negative value (any) denotes that locally run server should
+ *           be taken in first place, regardless of its rate.
  *
  * Note that optional arguments can be omitted along with all preceding
  * optional arguments, that is the following 2 server specifications are
