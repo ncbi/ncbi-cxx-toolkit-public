@@ -32,6 +32,7 @@
 */
 
 #include <dbapi/dbapi.hpp>
+#include <set>
 
 #include "pythonpp/pythonpp_ext.hpp"
 #include "pythonpp/pythonpp_dict.hpp"
@@ -66,12 +67,152 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////////
-class CConnection;
+enum EStatementType {
+    estNone,
+    estSelect,
+    estInsert,
+    estDelete,
+    estUpdate,
+    estCreate,
+    estDrop,
+    estAlter,
+    estFunction
+    };
 
-class CCursor : public pythonpp::CExtObject<CCursor>
+EStatementType
+RetrieveStatementType(const string& stmt, EStatementType default_type = estNone);
+
+pythonpp::CTuple MakeTupleFromResult(IResultSet& rs);
+
+//////////////////////////////////////////////////////////////////////////////
+class CStmtStr
 {
 public:
-    CCursor(CConnection* conn);
+    CStmtStr(void)
+    : m_StmType(estNone)
+    {
+    }
+    CStmtStr(const string& str)
+    : m_StmtStr(str)
+    , m_StmType(RetrieveStatementType(str))
+    {
+    }
+
+    CStmtStr& operator=(const CStmtStr& other)
+    {
+        if ( this != &other ) {
+            m_StmtStr = other.m_StmtStr;
+            m_StmType = other.m_StmType;
+        }
+        return *this;
+    }
+    // We will accume that SQL has type estFunction if it is
+    // hard to get an actual type.
+    void SetStr(const string& str, EStatementType default_type = estFunction)
+    {
+        m_StmtStr = str;
+        m_StmType = RetrieveStatementType(str, default_type);
+    }
+
+public:
+    string GetStr(void) const
+    {
+        return m_StmtStr;
+    }
+    EStatementType GetType(void) const
+    {
+        return m_StmType;
+    }
+
+private:
+    string          m_StmtStr;
+    EStatementType  m_StmType;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Forward declaration ...
+class CConnection;
+class CTransaction;
+
+//////////////////////////////////////////////////////////////////////////////
+// IStatement plus additinal informaion ...
+class CStmtHelper
+{
+public:
+    CStmtHelper(CTransaction* trans);
+    CStmtHelper(CTransaction* trans, const string& stmt, EStatementType default_type = estFunction);
+    ~CStmtHelper(void);
+
+public:
+    void SetStr(const string& stmt, EStatementType default_type = estFunction);
+    void SetParam(const string& name, const CVariant& value);
+
+    void Execute(void);
+    void Close(void);
+
+    bool NextRS(void);
+    IResultSet& GetRS(void);
+    const IResultSet& GetRS(void) const;
+
+private:
+    void DumpResult(void);
+    void ReleaseStmt(void);
+    void CreateStmt(EStatementType type);
+
+private:
+    CTransaction* const     m_ParentTransaction; //< A transaction to which belongs this cursor object
+    auto_ptr<IStatement>    m_Stmt;     //< DBAPI SQL statement interface
+    auto_ptr<IResultSet>    m_RS;
+    string                  m_StmtStr;
+    EStatementType          m_StmtType;
+    bool                    m_Executed;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// ICallableStatement plus additinal informaion ...
+class CCallableStmtHelper
+{
+public:
+    CCallableStmtHelper(CTransaction* trans);
+    CCallableStmtHelper(CTransaction* trans, const string& stmt, int num_arg, EStatementType default_type = estFunction);
+    ~CCallableStmtHelper(void);
+
+public:
+    void SetStr(const string& stmt, int num_arg, EStatementType default_type = estFunction);
+    void SetParam(const string& name, const CVariant& value);
+
+    void Execute(void);
+    void Close(void);
+
+    bool NextRS(void);
+    IResultSet& GetRS(void);
+    const IResultSet& GetRS(void) const;
+
+private:
+    void DumpResult(void);
+    void ReleaseStmt(void);
+    void CreateStmt(const string& proc_name, int num_arg, EStatementType type = estFunction);
+
+private:
+    CTransaction* const             m_ParentTransaction; //< A transaction to which belongs this cursor object
+    int                             m_NumOfArgs;         //< Number of arguments in a callable statement
+    auto_ptr<ICallableStatement>    m_Stmt;     //< DBAPI SQL statement interface
+    auto_ptr<IResultSet>            m_RS;
+    string                          m_StmtStr;
+    EStatementType                  m_StmtType;
+    bool                            m_Executed;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// Cursor borrows connections from a parent transaction.
+class CCursor : public pythonpp::CExtObject<CCursor>
+{
+    friend class CTransaction;
+
+protected:
+    CCursor(CTransaction* trans);
+
+public:
     ~CCursor(void);
 
 public:
@@ -171,26 +312,20 @@ public:
     pythonpp::CObject setoutputsize(const pythonpp::CTuple& args);
 
 private:
-    enum EStatementType {
-        estNone,
-        estSelect,
-        estInsert,
-        estDelete,
-        estUpdate,
-        estCreate,
-        estDrop,
-        estAlter,
-        estFunction
-        };
+    CTransaction& GetTransaction(void)
+    {
+        return *m_ParentTransaction;
+    }
 
 private:
-    IConnection* GetDBConnection(void) const;
-    IStatement& GetStmt(void);
-    ICallableStatement& GetCallableStmt(void);
-    static EStatementType RetrieveStatementType(const string& stmt);
-    const pythonpp::CTuple MakeResultTuple(const IResultSet& rs) const;
+    void CloseInternal(void);
+
+private:
     CVariant GetCVariant(const pythonpp::CObject& obj) const;
-    void SetUpParameters(const pythonpp::CDict& dict);
+
+    void SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt);
+    void SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt);
+
     void ExecuteCurrStatement(void);
 
     static bool isDML(EStatementType stmtType)
@@ -201,36 +336,98 @@ private:
     {
         return stmtType == estCreate || stmtType == estDrop || stmtType == estAlter;
     }
-    string GetStmtStr(void) const
-    {
-        return m_StmtStr;
-    }
 
 private:
-    pythonpp::CObject               m_PythonConnection; //< For reference counting purposes only
-    CConnection*                    m_ParentConnection; //< A connection to which belongs this cursor object
-    auto_ptr<IStatement>            m_Stmt;             //< DBAPI SQL statement interface
-    auto_ptr<ICallableStatement>    m_CallableStmt;     //< DBAPI stored procedure interface
-    string                          m_StmtStr;
+    pythonpp::CObject               m_PythonConnection;  //< For reference counting purposes only
+    pythonpp::CObject               m_PythonTransaction; //< For reference counting purposes only
+    CTransaction*                   m_ParentTransaction; //< A transaction to which belongs this cursor object
+    int                             m_NumOfArgs;         //< Number of arguments in a callable statement
     int                             m_RowsNum;
     auto_ptr<IResultSet>            m_RS;
-    EStatementType                  m_StatementType;
     size_t                          m_ArraySize;
+    CStmtStr                        m_StmtStr;
+    CStmtHelper                     m_StmtHelper;
+    CCallableStmtHelper             m_CallableStmtHelper;
 };
 
 //////////////////////////////////////////////////////////////////////////////
-class CConnection : public pythonpp::CExtObject<CConnection>
+typedef set<CCursor*>           TCursorList;
+typedef set<IConnection*>       TConnectionList;
+
+//////////////////////////////////////////////////////////////////////////////
+class CSelectConnPool
 {
 public:
-    CConnection(
-        const string& driver_name,
-        const string& db_type,
-        const string& server_name,
-        const string& db_name,
-        const string& user_name,
-        const string& user_pswd
-        );
-    ~CConnection(void);
+    CSelectConnPool(CTransaction* trans, size_t size = 3);
+
+public:
+    IConnection* Create(void);
+    void Destroy(IConnection* db_conn);
+    void Clear(void);
+    // Means that nobody uses connections from the pool.
+    bool Empty(void) const
+    {
+        return ((m_ConnList.size() - m_ConnPool.size()) == 0);
+    }
+
+private:
+    const CConnection& GetConnection(void) const;
+    CConnection& GetConnection(void);
+
+private:
+    CTransaction*   m_Transaction;
+    const size_t    m_PoolSize;
+    TConnectionList m_ConnPool; //< A pool of connection for SELECT statements
+    TConnectionList m_ConnList; //< A list of all allocated connection for SELECT statements
+};
+
+//////////////////////////////////////////////////////////////////////////////
+// A pool with one connection only ...
+// Strange but useful ...
+class CDMLConnPool
+{
+public:
+    CDMLConnPool(CTransaction* trans);
+
+public:
+    IConnection* Create(void);
+    void Destroy(IConnection* db_conn);
+    void Clear(void);
+    bool Empty(void) const
+    {
+        return (m_NumOfActive == 0);
+    }
+
+public:
+    void commit(void) const;
+    void rollback(void) const;
+
+private:
+    const CConnection& GetConnection(void) const;
+    CConnection& GetConnection(void);
+
+    IStatement& GetLocalStmt(void) const;
+
+private:
+    CTransaction*           m_Transaction;
+    auto_ptr<IConnection>   m_DMLConnection;  //< Transaction has only one DML connection
+    size_t                  m_NumOfActive;
+    auto_ptr<IStatement>    m_LocalStmt;      //< DBAPI SQL statement interface
+    bool                    m_Started;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class CTransaction : public pythonpp::CExtObject<CTransaction>
+{
+    friend class CConnection;
+    friend class CSelectConnPool;
+    friend class CDMLConnPool;
+
+protected:
+    CTransaction(CConnection* conn, pythonpp::EOwnershipFuture ownnership = pythonpp::eOwned);
+
+public:
+    ~CTransaction(void);
 
 public:
     pythonpp::CObject close(const pythonpp::CTuple& args);
@@ -239,9 +436,78 @@ public:
     pythonpp::CObject rollback(const pythonpp::CTuple& args);
 
 public:
-    IConnection* GetDBConnection(void) const;
+    // CCursor factory interface ...
+    CCursor* CreateCursor(void);
+    void DestroyCursor(CCursor* cursor);
+
+public:
+    // Factory for DML connections (actualy, only one connection)
+    IConnection* CreateDMLConnection(void)
+    {
+        return m_DMLConnPool.Create();
+    }
+    void DestroyDMLConnection(IConnection* db_conn)
+    {
+        m_DMLConnPool.Destroy(db_conn);
+    }
+
+public:
+    // Factory for "data-retrieval" connections
+    IConnection* CreateSelectConnection(void)
+    {
+        return m_SelectConnPool.Create();
+    }
+    void DestroySelectConnection(IConnection* db_conn)
+    {
+        m_SelectConnPool.Destroy(db_conn);
+    }
+
+public:
+    const CConnection& GetParentConnection(void) const
+    {
+        return *m_ParentConnection;
+    }
+    CConnection& GetParentConnection(void)
+    {
+        return *m_ParentConnection;
+    }
 
 protected:
+    void close_internal(void);
+    void commit_internal(void) const
+    {
+        m_DMLConnPool.commit();
+    }
+    void rollback_internal(void) const
+    {
+        m_DMLConnPool.rollback();
+    }
+    void CloseOpenCursors(void);
+
+private:
+    pythonpp::CObject               m_PythonConnection; //< For reference counting purposes only
+    CConnection*                    m_ParentConnection; //< A connection to which belongs this transaction object
+    TCursorList                     m_CursorList;
+
+    CDMLConnPool                    m_DMLConnPool;    //< A pool of connections for DML statements
+    CSelectConnPool                 m_SelectConnPool; //< A pool of connections for SELECT statements
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class CConnParam
+{
+public:
+    CConnParam(
+        const string& driver_name,
+        const string& db_type,
+        const string& server_name,
+        const string& db_name,
+        const string& user_name,
+        const string& user_pswd
+        );
+    ~CConnParam(void);
+
+public:
     enum EServerType {
         eSybase,    //< Sybase server
         eMsSql,     //< Microsoft SQL server
@@ -250,9 +516,8 @@ protected:
         eMySql,     //< MySQL server
         eUnknown    //< Server type is not known
     };
-    typedef map<string, string> TDatabaseParameters;
 
-protected:
+public:
     /// Return current driver name
     const string& GetDriverName(void) const
     {
@@ -263,13 +528,26 @@ protected:
     {
         return m_ServerType;
     }
-    IStatement& GetStmt(void)
+    const string& GetDBType(void) const
     {
-        return *m_Stmt;
+        return m_db_type;
     }
-
-protected:
-    void CreateConnection(void);
+    const string& GetServerName(void) const
+    {
+        return m_server_name;
+    }
+    const string& GetDBName(void) const
+    {
+        return m_db_name;
+    }
+    const string& GetUserName(void) const
+    {
+        return m_user_name;
+    }
+    const string& GetUserPswd(void) const
+    {
+        return m_user_pswd;
+    }
 
 private:
     const string m_driver_name;
@@ -279,18 +557,82 @@ private:
     const string m_user_name;
     const string m_user_pswd;
 
-    EServerType             m_ServerType;
-    CDriverManager&         m_DM;
-    IDataSource*            m_DS;
-    auto_ptr<IConnection>   m_Conn;
-    auto_ptr<IStatement>    m_Stmt;
+    EServerType  m_ServerType;
 };
 
-inline
-IConnection*
-CCursor::GetDBConnection(void) const
+//////////////////////////////////////////////////////////////////////////////
+// CConnection does not represent an "physical" connection to a database.
+// In current implementation CConnection is a factory of CTransaction.
+// CTransaction owns and manages "physical" connections to a database.
+class CConnection : public pythonpp::CExtObject<CConnection>
 {
-    return m_ParentConnection->GetDBConnection();
+public:
+    CConnection(
+        const CConnParam& conn_param
+        );
+    ~CConnection(void);
+
+public:
+    // Python Interface ...
+    pythonpp::CObject close(const pythonpp::CTuple& args);
+    pythonpp::CObject cursor(const pythonpp::CTuple& args);
+    pythonpp::CObject commit(const pythonpp::CTuple& args);
+    pythonpp::CObject rollback(const pythonpp::CTuple& args);
+    pythonpp::CObject transaction(const pythonpp::CTuple& args);
+
+public:
+    // Connection factory interface ...
+    IConnection* MakeDBConnection(void) const;
+
+public:
+    // CTransaction factory interface ...
+    CTransaction* CreateTransaction(void);
+    void DestroyTransaction(CTransaction* trans);
+
+protected:
+    CTransaction& GetDefaultTransaction(void)
+    {
+        return *m_DefTransaction;
+    }
+
+private:
+    typedef set<CTransaction*> TTransList;
+
+    CConnParam      m_ConnParam;
+    CDriverManager& m_DM;
+    IDataSource*    m_DS;
+    CTransaction*   m_DefTransaction;   //< The lifetime of the default transaction will be managed by Python
+    TTransList      m_TransList;        //< List of user-defined transactions
+};
+
+//////////////////////////////////////////////////////////////////////////////
+inline
+const CConnection&
+CSelectConnPool::GetConnection(void) const
+{
+    return m_Transaction->GetParentConnection();
+}
+
+inline
+CConnection&
+CSelectConnPool::GetConnection(void)
+{
+    return m_Transaction->GetParentConnection();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+inline
+const CConnection&
+CDMLConnPool::GetConnection(void) const
+{
+    return m_Transaction->GetParentConnection();
+}
+
+inline
+CConnection&
+CDMLConnPool::GetConnection(void)
+{
+    return m_Transaction->GetParentConnection();
 }
 
 }
@@ -300,6 +642,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
 *

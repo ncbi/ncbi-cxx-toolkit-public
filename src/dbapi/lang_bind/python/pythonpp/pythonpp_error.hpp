@@ -52,12 +52,6 @@
 
 #include <Python.h>
 
-#ifndef _MSC_VER
-#ifdef HAVE_GETHOSTBYNAME_R
-#undef HAVE_GETHOSTBYNAME_R
-#endif
-#endif
-
 BEGIN_NCBI_SCOPE
 
 namespace pythonpp
@@ -618,6 +612,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
 *

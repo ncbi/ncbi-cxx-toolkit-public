@@ -35,7 +35,7 @@
 #ifndef PYTHONPP_EXT_H
 #define PYTHONPP_EXT_H
 
-#include "pythonpp/pythonpp_seq.hpp"
+#include "pythonpp_seq.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -530,6 +530,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.5  2005/01/21 15:50:18  ssikorsk
 * Fixed: build errors with GCC 2.95.
 *

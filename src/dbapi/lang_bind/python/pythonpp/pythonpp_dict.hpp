@@ -35,7 +35,7 @@
 #ifndef PYTHONPP_DICT_H
 #define PYTHONPP_DICT_H
 
-#include "pythonpp/pythonpp_object.hpp"
+#include "pythonpp_object.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -186,7 +186,7 @@ public:
         return CDictProxy<T>(*this, key);
     }
 
-    int Length (void) const
+    int GetLength (void) const
     {
         return PyMapping_Length (Get());
     }
@@ -429,6 +429,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
 *

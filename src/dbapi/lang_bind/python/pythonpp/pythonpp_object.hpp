@@ -35,7 +35,7 @@
 #ifndef PYTHONPP_OBJECT_H
 #define PYTHONPP_OBJECT_H
 
-#include "pythonpp/pythonpp_error.hpp"
+#include "pythonpp_error.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -52,6 +52,11 @@ class CString;
 inline PyObject* IncRefCount(PyObject* obj)
 {
     Py_INCREF(obj);
+    return obj;
+}
+inline PyObject* DecRefCount(PyObject* obj)
+{
+    Py_DECREF(obj);
     return obj;
 }
 
@@ -159,7 +164,7 @@ public:
     {
         // PyAPI_FUNC(void) IncRefCount(PyObject *);
         // PyAPI_FUNC(void) Py_DecRef(PyObject *);
-        Py_XDECREF(Get());
+        Py_XDECREF(m_PyObject);
         m_PyObject = NULL;
     }
 
@@ -541,6 +546,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.2  2005/01/21 15:50:18  ssikorsk
 * Fixed: build errors with GCC 2.95.
 *

@@ -35,7 +35,7 @@
 #ifndef PYTHONPP_PDT_H
 #define PYTHONPP_PDT_H
 
-#include "pythonpp/pythonpp_object.hpp"
+#include "pythonpp_object.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -970,6 +970,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.2  2005/01/18 21:56:21  ssikorsk
 * Fixed: warning with gcc295
 *

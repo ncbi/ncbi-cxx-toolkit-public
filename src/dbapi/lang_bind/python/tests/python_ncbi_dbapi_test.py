@@ -59,7 +59,7 @@ print cursor.fetchmany(5)
 cursor.nextset()
 cursor.setinputsizes()
 cursor.setoutputsize()
-cursor.callproc('host_name()')
+# cursor.callproc('host_name()')
 #
 print "testing second cursor object"
 cursor2.execute('select qq = 57 + 33')
@@ -76,7 +76,7 @@ cursor2.fetchall()
 cursor2.nextset()
 cursor2.setinputsizes()
 cursor2.setoutputsize()
-cursor2.callproc('host_name()')
+# cursor2.callproc('host_name()')
 #
 cursor.close()
 cursor2.close()
@@ -87,6 +87,10 @@ connection2.close()
 # ===========================================================================
 #
 # $Log$
+# Revision 1.2  2005/01/27 18:50:03  ssikorsk
+# Fixed: a bug with transactions
+# Added: python 'transaction' object
+#
 # Revision 1.1  2005/01/18 19:26:08  ssikorsk
 # Initial version of a Python DBAPI module
 #

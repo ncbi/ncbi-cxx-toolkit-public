@@ -30,36 +30,14 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-// disable warning C4005: macro redefinition.
-#pragma warning(disable: 4005)
-#endif
-
 #include <ncbi_pch.hpp>
 
-#include <Python.h>
-
-void execute(char* cmd)
-{
-    if (PyRun_SimpleString(cmd) == -1) {
-	    throw 0;
-    }
-}
+#include "../pythonpp/pythonpp_emb.hpp"
 
 int
 main(int argc, char *argv[])
 {
-	/* Pass argv[0] to the Python interpreter */
-	Py_SetProgramName(argv[0]);
-
-	/* Initialize the Python interpreter.  Required. */
-	Py_Initialize();
-
-	/* Define sys.argv.  It is up to the application if you
-	   want this; you can also let it undefined (since the Python
-	   code is generally not a main program it has no business
-	   touching sys.argv...) */
-	PySys_SetArgv(argc, argv);
+    ncbi::pythonpp::CEngine engine(argc, argv);
 
     // load python module manualy ...
     /*
@@ -81,75 +59,93 @@ main(int argc, char *argv[])
     */
 
     try {
-        // Execute some Python statements (in module __main__) 
-        execute("import python_ncbi_dbapi\n");
+        // Execute some Python statements (in module __main__)
 
-        execute("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')\n");
-        execute("connection2 = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV2', '', 'anyone', 'allowed')\n");
+        /*
+        engine.ExecuteStr("import python_ncbi_dbapi\n");
 
-        execute("connection.commit()\n");
-        execute("connection.rollback()\n");
+        engine.ExecuteStr("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')\n");
+        engine.ExecuteStr("connection2 = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV2', '', 'anyone', 'allowed')\n");
 
-        execute("connection2.commit()\n");
-        execute("connection2.rollback()\n");
+        engine.ExecuteStr("connection.commit()\n");
+        engine.ExecuteStr("connection.rollback()\n");
 
-        execute("cursor = connection.cursor()\n");
-        execute("cursor2 = connection2.cursor()\n");
+        engine.ExecuteStr("connection2.commit()\n");
+        engine.ExecuteStr("connection2.rollback()\n");
 
-        execute("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
-        execute("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
-        execute("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
-        execute("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
+        engine.ExecuteStr("cursor = connection.cursor()\n");
+        engine.ExecuteStr("cursor2 = connection2.cursor()\n");
 
-        execute("cursor.execute('select qq = 57 + 33')\n");
-        execute("cursor.fetchone()\n");
-        execute("cursor.execute('select qq = 57.55 + 0.0033')\n");
-        execute("cursor.fetchone()\n");
-        execute("cursor.execute('select qq = GETDATE()')\n");
-        execute("cursor.fetchone()\n");
-        execute("cursor.execute('select name, type from sysobjects')\n");
-        execute("cursor.fetchone()\n");
-        execute("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
-        execute("cursor.fetchone()\n");
-        execute("cursor.executemany('select name, type from sysobjects where type = @type_par', [{'type_par':'S'}, {'type_par':'D'}])\n");
-        execute("cursor.fetchmany()\n");
-        execute("cursor.fetchall()\n");
-        execute("cursor.nextset()\n");
-        execute("cursor.setinputsizes()\n");
-        execute("cursor.setoutputsize()\n");
-        execute("cursor.callproc('host_name()')\n");
+        engine.ExecuteStr("date_val = python_ncbi_dbapi.Date(1, 1, 1)\n");
+        engine.ExecuteStr("time_val = python_ncbi_dbapi.Time(1, 1, 1)\n");
+        engine.ExecuteStr("timestamp_val = python_ncbi_dbapi.Timestamp(1, 1, 1, 1, 1, 1)\n");
+        engine.ExecuteStr("binary_val = python_ncbi_dbapi.Binary('Binary test')\n");
 
-        execute("cursor2.execute('select qq = 57 + 33')\n");
-        execute("print cursor2.fetchone()\n");
-        execute("cursor2.executemany('select qq = 57 + 33', [])\n");
-        execute("cursor2.fetchmany()\n");
-        execute("cursor2.fetchall()\n");
-        execute("cursor2.nextset()\n");
-        execute("cursor2.setinputsizes()\n");
-        execute("cursor2.setoutputsize()\n");
-        execute("cursor2.callproc('host_name()')\n");
+        engine.ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        engine.ExecuteStr("cursor.execute('select qq = 57.55 + 0.0033')\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        engine.ExecuteStr("cursor.execute('select qq = GETDATE()')\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        engine.ExecuteStr("cursor.execute('select name, type from sysobjects')\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        engine.ExecuteStr("cursor.execute('select name, type from sysobjects where type = @type_par', {'type_par':'S'})\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        engine.ExecuteStr("cursor.executemany('select name, type from sysobjects where type = @type_par', [{'type_par':'S'}, {'type_par':'D'}])\n");
+        engine.ExecuteStr("cursor.fetchmany()\n");
+        engine.ExecuteStr("cursor.fetchall()\n");
+        engine.ExecuteStr("cursor.nextset()\n");
+        engine.ExecuteStr("cursor.setinputsizes()\n");
+        engine.ExecuteStr("cursor.setoutputsize()\n");
+        // engine.ExecuteStr("cursor.callproc('host_name')\n");
 
-        execute("cursor.close()\n");
-        execute("cursor2.close()\n");
+        engine.ExecuteStr("cursor2.execute('select qq = 57 + 33')\n");
+        engine.ExecuteStr("print cursor2.fetchone()\n");
+        // engine.ExecuteStr("cursor2.executemany('select qq = 57 + 33', [])\n");
+        // engine.ExecuteStr("cursor2.fetchmany()\n");
+        // engine.ExecuteStr("cursor2.callproc('host_name()')\n");
 
-        execute("connection.close()\n");
-        execute("connection2.close()\n");
+        engine.ExecuteStr("cursor.close()\n");
+        engine.ExecuteStr("cursor2.close()\n");
+
+        engine.ExecuteStr("connection.close()\n");
+        engine.ExecuteStr("connection2.close()\n");
+        */
+
+        /**/
+        engine.ExecuteStr("import python_ncbi_dbapi\n");
+        engine.ExecuteStr("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')\n");
+        engine.ExecuteStr("cursor = connection.cursor()\n");
+        engine.ExecuteStr("cursor.execute('select qq = 57 + 33')\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        /**/
+
+        /*
+        engine.ExecuteStr("import python_ncbi_dbapi\n");
+        engine.ExecuteStr("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')\n");
+        engine.ExecuteStr("cursor = connection.cursor()\n");
+        engine.ExecuteStr("cursor.executemany('select qq = 57 + 33', [])\n");
+        engine.ExecuteStr("cursor.fetchone()\n");
+        */
+
+        // engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample5.py");
+        // engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\tests\\python_ncbi_dbapi_test.py");
 
     } catch(...)
     {
-	    // Exit, cleaning up the interpreter
-        Py_Finalize();
 	    return 1;
     }
 
-	// Exit, cleaning up the interpreter
-    Py_Finalize();
 	return 0;
 }
 
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.1  2005/01/18 19:26:08  ssikorsk
 * Initial version of a Python DBAPI module
 *

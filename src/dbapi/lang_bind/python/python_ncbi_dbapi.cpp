@@ -43,10 +43,8 @@
 // has changed. These macros keep the code compatible to both ways.
 //
 #if PY_VERSION_HEX >= 0x02030000
-// #  define PYDBAPI_DECLARE_MODINIT_FUNC(name) PyMODINIT_FUNC name(void)
 #  define PYDBAPI_MODINIT_FUNC(name)         PyMODINIT_FUNC name(void)
 #else
-// #  define PYDBAPI_DECLARE_MODINIT_FUNC(name) void name(void)
 #  define PYDBAPI_MODINIT_FUNC(name)         DL_EXPORT(void) name(void)
 #endif
 
@@ -90,7 +88,7 @@ CRowID::~CRowID(void)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-CConnection::CConnection(
+CConnParam::CConnParam(
     const string& driver_name,
     const string& db_type,
     const string& server_name,
@@ -105,8 +103,6 @@ CConnection::CConnection(
 , m_user_name(user_name)
 , m_user_pswd(user_pswd)
 , m_ServerType(eUnknown)
-, m_DM(CDriverManager::GetInstance())
-, m_DS(NULL)
 {
     // Setup a server type ...
     string db_type_uc = db_type;
@@ -125,224 +121,233 @@ CConnection::CConnection(
             db_type_uc == "MS SQL") {
         m_ServerType = eMsSql;
     }
+}
 
-    CreateConnection();
+CConnParam::~CConnParam(void)
+{
+}
+
+//////////////////////////////////////////////////////////////////////////////
+CConnection::CConnection(
+    const CConnParam& conn_param
+    )
+: m_ConnParam(conn_param)
+, m_DM(CDriverManager::GetInstance())
+, m_DS(NULL)
+, m_DefTransaction(NULL)
+{
+    try {
+        m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName() );
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
 
     PrepareForPython(this);
+
+    try {
+        // Create a default transaction ...
+        m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed);
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
 }
 
 CConnection::~CConnection(void)
 {
+    DecRefCount(m_DefTransaction);
+
+    _ASSERT(m_TransList.empty());
+
+    m_DM.DestroyDs( m_ConnParam.GetDriverName() );
+    m_DS = NULL;                        // ;-)
+}
+
+IConnection*
+CConnection::MakeDBConnection(void) const
+{
+    IConnection* connection = m_DS->CreateConnection(eTakeOwnership);
+    connection->Connect(
+        m_ConnParam.GetUserName(),
+        m_ConnParam.GetUserPswd(),
+        m_ConnParam.GetServerName(),
+        m_ConnParam.GetDBName()
+        );
+    return connection;
+}
+
+CTransaction*
+CConnection::CreateTransaction(void)
+{
+    CTransaction* trans = new CTransaction(this);
+
+    m_TransList.insert(trans);
+    return trans;
 }
 
 void
-CConnection::CreateConnection(void)
+CConnection::DestroyTransaction(CTransaction* trans)
 {
-    try {
-        m_DS = m_DM.CreateDs( GetDriverName() );
-        m_Conn.reset( m_DS->CreateConnection() );
-        m_Conn->Connect( m_user_name, m_user_pswd, m_server_name, m_db_name );
-        m_Stmt.reset( m_Conn->CreateStatement() );
+    // Python will take care about object deallocation ...
+    TTransList::iterator iter = m_TransList.find(trans);
 
-        GetStmt().ExecuteUpdate("BEGIN TRANSACTION");
-    }
-    catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+    if ( iter != m_TransList.end() ) {
+        m_TransList.erase(iter);
     }
 }
 
 pythonpp::CObject
 CConnection::close(const pythonpp::CTuple& args)
 {
-    m_Stmt.release();
-    m_Conn.release();
+    TTransList::const_iterator citer;
+    TTransList::const_iterator cend = m_TransList.end();
 
-    return pythonpp::CNone();
+    for ( citer = m_TransList.begin(); citer != cend; ++citer) {
+        (*citer)->close(args);
+    }
+    return GetDefaultTransaction().close(args);
 }
 
 pythonpp::CObject
 CConnection::cursor(const pythonpp::CTuple& args)
 {
-    return pythonpp::CObject(new CCursor(this), pythonpp::eTakeOwnership);
+    return GetDefaultTransaction().cursor(args);
 }
 
 pythonpp::CObject
 CConnection::commit(const pythonpp::CTuple& args)
 {
-    try {
-        GetStmt().ExecuteUpdate("COMMIT TRANSACTION");
-        GetStmt().ExecuteUpdate("BEGIN TRANSACTION");
-    }
-    catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
-    }
-
-    return pythonpp::CNone();
+    return GetDefaultTransaction().commit(args);
 }
 
 pythonpp::CObject
 CConnection::rollback(const pythonpp::CTuple& args)
 {
-    try {
-        GetStmt().ExecuteUpdate("ROLLBACK TRANSACTION");
-        GetStmt().ExecuteUpdate("BEGIN TRANSACTION");
-    }
-    catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
-    }
-
-    return pythonpp::CNone();
+    return GetDefaultTransaction().rollback(args);
 }
 
-IConnection*
-CConnection::GetDBConnection(void) const
+pythonpp::CObject
+CConnection::transaction(const pythonpp::CTuple& args)
 {
-    if ( m_Conn.get() == NULL ) {
-        throw pythonpp::CError("Connection to a database is closed");
-    }
-    return m_Conn.get();
+    return pythonpp::CObject(CreateTransaction(), pythonpp::eTakeOwnership);
 }
 
 //////////////////////////////////////////////////////////////////////////////
-CCursor::CCursor(CConnection* conn)
-: m_PythonConnection(conn)
-, m_ParentConnection(conn)
-, m_RowsNum(0)
-, m_StatementType(estNone)
-, m_ArraySize(1)
-{
-    if ( conn == NULL ) {
-        throw pythonpp::CError("Invalid CConnection object");
-    }
-    m_Stmt.reset(GetDBConnection()->CreateStatement());
-    PrepareForPython(this);
-}
-
-CCursor::~CCursor(void)
+CSelectConnPool::CSelectConnPool(CTransaction* trans, size_t size)
+: m_Transaction(trans)
+, m_PoolSize(size)
 {
 }
 
-IStatement&
-CCursor::GetStmt(void)
+IConnection*
+CSelectConnPool::Create(void)
 {
-    if ( m_Stmt.get() == NULL ) {
-        throw pythonpp::CError("Cursor is closed");
-    }
-    return *m_Stmt;
-}
+    IConnection* db_conn = NULL;
 
-ICallableStatement&
-CCursor::GetCallableStmt(void)
-{
-    if ( m_CallableStmt.get() == NULL ) {
-        throw pythonpp::CError("Cursor is closed");
-    }
-    return *m_CallableStmt;
-}
-
-pythonpp::CObject
-CCursor::callproc(const pythonpp::CTuple& args)
-{
-    int num_of_arguments = 0;
-
-    try {
-        m_StmtStr = pythonpp::CString(args[0]);
-
-    } catch (const pythonpp::CError&) {
-        throw pythonpp::CError("Invalid parameters within 'CCursor::callproc' function");
+    if ( m_ConnPool.empty() ) {
+        db_conn = GetConnection().MakeDBConnection();
+        m_ConnList.insert(db_conn);
+    } else {
+        db_conn = *m_ConnPool.begin();
+        m_ConnPool.erase(m_ConnPool.begin());
     }
 
-    try {
-        m_CallableStmt.reset(GetDBConnection()->PrepareCall( m_StmtStr, num_of_arguments ));
-        GetCallableStmt().Execute();
-    }
-    catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
-    }
-
-    return pythonpp::CNone();
-}
-
-pythonpp::CObject
-CCursor::close(const pythonpp::CTuple& args)
-{
-    try {
-        m_RS.release();
-        m_Stmt.release();
-        m_CallableStmt.release();
-    }
-    catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
-    }
-
-    return pythonpp::CNone();
-}
-
-pythonpp::CObject
-CCursor::execute(const pythonpp::CTuple& args)
-{
-    size_t args_size = args.size();
-
-    // Prepare to execute ...
-    m_CallableStmt.release();
-    GetStmt().ClearParamList();
-
-    // Process function's arguments ...
-    if ( args_size == 0 ) {
-        throw pythonpp::CError("A SQL statement string is expected as a parameter");
-    } else if ( args_size > 0 ) {
-        pythonpp::CObject obj(args[0]);
-
-        if ( pythonpp::CString::HasSameType(obj) ) {
-            m_StmtStr = pythonpp::CString(args[0]);
-        } else {
-            throw pythonpp::CError("A SQL statement string is expected as a parameter");
-        }
-        if ( args_size > 1 ) {
-            pythonpp::CObject obj(args[1]);
-
-            if ( pythonpp::CDict::HasSameType(obj) ) {
-                SetUpParameters(obj);
-            } else  {
-                // Curently, NCBI DBAPI supports pameter binding by name only ...
-//            pythonpp::CSequence sequence;
-//            if ( pythonpp::CList::HasSameType(obj) ) {
-//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
-//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
-//            }
-                throw pythonpp::CError("NCBI DBAPI supports pameter binding by name only");
-            }
-        }
-    }
-
-    // Execute ...
-    ExecuteCurrStatement();
-
-    return pythonpp::CNone();
+    return db_conn;
 }
 
 void
-CCursor::SetUpParameters(const pythonpp::CDict& dict)
+CSelectConnPool::Destroy(IConnection* db_conn)
 {
-    // Iterate over a dict.
-    int i = 0;
-    PyObject* key;
-    PyObject* value;
-    while ( PyDict_Next(dict, &i, &key, &value) ) {
-        // Refer to borrowed references in key and value.
-        const pythonpp::CObject key_obj(key);
-        const pythonpp::CObject value_obj(value);
-        string param_name = pythonpp::CString(key_obj);
-
-        if ( param_name.size() > 0) {
-            if ( param_name[0] != '@') {
-                param_name = "@" + param_name;
-            }
-        } else {
-            throw pythonpp::CError("Invalid SQL parameter name");
+    if ( m_ConnPool.size() < m_PoolSize ) {
+        m_ConnPool.insert(db_conn);
+    } else {
+        if ( m_ConnList.erase(db_conn) == 0) {
+            _ASSERT(false);
         }
+        delete db_conn;
+    }
+}
+
+void
+CSelectConnPool::Clear(void)
+{
+    if ( !Empty() ) {
+        throw pythonpp::CError("Unable to close a transaction. There are open cursors in use.");
+    }
+
+    if ( !m_ConnList.empty() )
+    {
+        // Close all open connections ...
+        TConnectionList::const_iterator citer;
+        TConnectionList::const_iterator cend = m_ConnList.end();
+
+        // Delete all allocated "SELECT" database connections ...
+        for ( citer = m_ConnList.begin(); citer != cend; ++citer) {
+            delete *citer;
+        }
+        m_ConnList.clear();
+        m_ConnPool.clear();
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+CDMLConnPool::CDMLConnPool(CTransaction* trans)
+: m_Transaction(trans)
+, m_NumOfActive(0)
+, m_Started(false)
+{
+}
+
+IConnection*
+CDMLConnPool::Create(void)
+{
+    // Delayed connection creation ...
+    if ( m_DMLConnection.get() == NULL ) {
+        m_DMLConnection.reset( GetConnection().MakeDBConnection() );
+        _ASSERT( m_LocalStmt.get() == NULL );
+        m_LocalStmt.reset( m_DMLConnection->GetStatement() );
+        // Begin transaction ...
+        GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
+        m_Started = true;
+    }
+
+    ++m_NumOfActive;
+    return m_DMLConnection.get();
+}
+
+void
+CDMLConnPool::Destroy(IConnection* db_conn)
+{
+    --m_NumOfActive;
+}
+
+void
+CDMLConnPool::Clear(void)
+{
+    if ( !Empty() ) {
+        throw pythonpp::CError("Unable to close a transaction. There are open cursors in use.");
+    }
+
+    // Close the DML connection ...
+    m_LocalStmt.release();
+    m_DMLConnection.release();
+}
+
+IStatement&
+CDMLConnPool::GetLocalStmt(void) const
+{
+    _ASSERT(m_LocalStmt.get() != NULL);
+    return *m_LocalStmt;
+}
+
+void
+CDMLConnPool::commit(void) const
+{
+    if ( m_Started ) {
         try {
-            GetStmt().SetParam( GetCVariant(value_obj), param_name );
+            GetLocalStmt().ExecuteUpdate( "COMMIT TRANSACTION" );
+            GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
         catch(const CDB_Exception& e) {
             throw pythonpp::CError(e.Message());
@@ -350,104 +355,571 @@ CCursor::SetUpParameters(const pythonpp::CDict& dict)
     }
 }
 
-CVariant
-CCursor::GetCVariant(const pythonpp::CObject& obj) const
+void
+CDMLConnPool::rollback(void) const
 {
-    if ( pythonpp::CNone::HasSameType(obj) ) {
-        return CVariant(eDB_UnsupportedType);
-    } else if ( pythonpp::CBool::HasSameType(obj) ) {
-        return CVariant( pythonpp::CBool(obj) );
-    } else if ( pythonpp::CInt::HasSameType(obj) ) {
-        return CVariant( static_cast<int>(pythonpp::CInt(obj)) );
-    } else if ( pythonpp::CLong::HasSameType(obj) ) {
-        return CVariant( static_cast<Int8>(pythonpp::CLong(obj)) );
-    } else if ( pythonpp::CFloat::HasSameType(obj) ) {
-        return CVariant( pythonpp::CFloat(obj) );
-    } else if ( pythonpp::CString::HasSameType(obj) ) {
-        return CVariant( static_cast<string>(pythonpp::CString(obj)) );
+    if ( m_Started ) {
+        try {
+            GetLocalStmt().ExecuteUpdate( "ROLLBACK TRANSACTION" );
+            GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
+        }
+        catch(const CDB_Exception& e) {
+            throw pythonpp::CError(e.Message());
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+CTransaction::CTransaction(
+    CConnection* conn,
+    pythonpp::EOwnershipFuture ownnership
+    )
+: m_ParentConnection(conn)
+, m_DMLConnPool(this)
+, m_SelectConnPool(this)
+{
+    if ( conn == NULL ) {
+        throw pythonpp::CError("Invalid CConnection object");
     }
 
-    return CVariant(eDB_UnsupportedType);
+    if ( ownnership != pythonpp::eBorrowed ) {
+        m_PythonConnection = conn;
+    }
+    PrepareForPython(this);
+}
+
+CTransaction::~CTransaction(void)
+{
+    close_internal();
+
+    // Unregister this transaction with the parent connection ...
+    GetParentConnection().DestroyTransaction(this);
 }
 
 pythonpp::CObject
-CCursor::executemany(const pythonpp::CTuple& args)
+CTransaction::close(const pythonpp::CTuple& args)
 {
-    size_t args_size = args.size();
+    close_internal();
 
-    // Prepare to execute ...
-    m_CallableStmt.release();
-    GetStmt().ClearParamList();
+    // Unregister this transaction with the parent connection ...
+    // I'm not absolutely shure about this ... 1/24/2005 5:31PM
+    // GetConnection().DestroyTransaction(this);
 
-    // Process function's arguments ...
-    if ( args_size == 0 ) {
-        throw pythonpp::CError("A SQL statement string is expected as a parameter");
-    } else if ( args_size > 0 ) {
-        pythonpp::CObject obj(args[0]);
+    return pythonpp::CNone();
+}
 
-        if ( pythonpp::CString::HasSameType(obj) ) {
-            m_StmtStr = pythonpp::CString(args[0]);
-        } else {
-            throw pythonpp::CError("A SQL statement string is expected as a parameter");
-        }
+pythonpp::CObject
+CTransaction::cursor(const pythonpp::CTuple& args)
+{
+    return pythonpp::CObject(CreateCursor(), pythonpp::eTakeOwnership);
+}
 
-        if ( args_size > 1 ) {
-            pythonpp::CObject obj(args[1]);
+pythonpp::CObject
+CTransaction::commit(const pythonpp::CTuple& args)
+{
+    commit_internal();
 
-            if ( pythonpp::CList::HasSameType(obj) || pythonpp::CTuple::HasSameType(obj) ) {
-                const pythonpp::CSequence params(obj);
-                pythonpp::CList::const_iterator citer;
-                pythonpp::CList::const_iterator cend = params.end();
+    return pythonpp::CNone();
+}
 
-                for ( citer = params.begin(); citer != cend; ++citer ) {
-                    SetUpParameters(*citer);
-                    ExecuteCurrStatement();
-                }
-            } else {
-                throw pythonpp::CError("Sequence of parameters should be provided either as a list or as a tuple data type");
-            }
-        } else {
-            throw pythonpp::CError("A sequence of parameters is expected with the 'executemany' function");
-        }
-    }
+pythonpp::CObject
+CTransaction::rollback(const pythonpp::CTuple& args)
+{
+    rollback_internal();
 
     return pythonpp::CNone();
 }
 
 void
-CCursor::ExecuteCurrStatement(void)
+CTransaction::close_internal(void)
 {
-    try {
-        // Execute ...
-        if ( RetrieveStatementType( GetStmtStr() ) == estSelect ) {
-            m_RS.reset(GetStmt().ExecuteQuery ( GetStmtStr() ) );
-        } else {
-            m_RS.release();
-            GetStmt().ExecuteUpdate ( GetStmtStr() );
+    // Close all cursors ...
+    CloseOpenCursors();
+
+    // Double check ...
+    // Check for the DML connection also ...
+    if ( !m_SelectConnPool.Empty() || !m_DMLConnPool.Empty() ) {
+        throw pythonpp::CError("Unable to close a transaction. There are open cursors in use.");
+    }
+
+    // Rollback transaction ...
+    rollback_internal();
+
+    // Close all open connections ...
+    m_SelectConnPool.Clear();
+    // Close the DML connection ...
+    m_DMLConnPool.Clear();
+}
+
+void
+CTransaction::CloseOpenCursors(void)
+{
+    if ( !m_CursorList.empty() ) {
+        // Make a copy of m_CursorList because it will be modified ...
+        TCursorList tmp_CursorList = m_CursorList;
+        TCursorList::const_iterator citer;
+        TCursorList::const_iterator cend = tmp_CursorList.end();
+
+        for ( citer = tmp_CursorList.begin(); citer != cend; ++citer ) {
+            (*citer)->CloseInternal();
         }
     }
+}
+
+CCursor*
+CTransaction::CreateCursor(void)
+{
+    CCursor* cursor = new CCursor(this);
+
+    m_CursorList.insert(cursor);
+    return cursor;
+}
+
+void
+CTransaction::DestroyCursor(CCursor* cursor)
+{
+    // Python will take care about object deallocation ...
+    m_CursorList.erase(cursor);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+EStatementType
+RetrieveStatementType(const string& stmt, EStatementType default_type)
+{
+    string::size_type pos;
+    EStatementType stmtType = default_type;
+
+    string stmt_uc = stmt;
+    NStr::ToUpper(stmt_uc);
+    pos = stmt_uc.find_first_not_of(" \t\n");
+    if (pos != string::npos)
+    {
+        // "CREATE" should be before DML ...
+        if (stmt_uc.substr(pos, sizeof("CREATE") - 1) == "CREATE")
+        {
+            stmtType = estCreate;
+        } else if (stmt_uc.substr(pos, sizeof("SELECT") - 1) == "SELECT")
+        {
+            stmtType = estSelect;
+        } else if (stmt_uc.substr(pos, sizeof("UPDATE") - 1) == "UPDATE")
+        {
+            stmtType = estUpdate;
+        } else if (stmt_uc.substr(pos, sizeof("DELETE") - 1) == "DELETE")
+        {
+            stmtType = estDelete;
+        } else if (stmt_uc.substr(pos, sizeof("INSERT") - 1) == "INSERT")
+        {
+            stmtType = estInsert;
+        } else if (stmt_uc.substr(pos, sizeof("DROP") - 1) == "DROP")
+        {
+            stmtType = estDrop;
+        } else if (stmt_uc.substr(pos, sizeof("ALTER") - 1) == "ALTER")
+        {
+            stmtType = estAlter;
+        }
+    }
+
+    return stmtType;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+CStmtHelper::CStmtHelper(CTransaction* trans)
+: m_ParentTransaction( trans )
+, m_StmtType( estNone )
+, m_Executed(false)
+{
+    if ( m_ParentTransaction == NULL ) {
+        throw pythonpp::CError("Invalid CTransaction object");
+    }
+}
+
+CStmtHelper::CStmtHelper(CTransaction* trans, const string& stmt, EStatementType default_type)
+: m_ParentTransaction( trans )
+, m_StmtStr( stmt )
+, m_StmtType( estNone )
+, m_Executed(false)
+{
+    if ( m_ParentTransaction == NULL ) {
+        throw pythonpp::CError("Invalid CTransaction object");
+    }
+
+    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
+    CreateStmt(currStmtType);
+}
+
+CStmtHelper::~CStmtHelper(void)
+{
+    Close();
+}
+
+void
+CStmtHelper::Close(void)
+{
+    DumpResult();
+    ReleaseStmt();
+    m_Executed = false;
+}
+
+void
+CStmtHelper::DumpResult(void)
+{
+    if ( m_Stmt.get() && m_Executed ) {
+        while ( m_Stmt->HasMoreResults() ) {
+            if ( m_Stmt->HasRows() ) {
+                m_RS.reset( m_Stmt->GetResultSet() );
+            }
+        }
+    }
+    m_RS.release();
+}
+
+void
+CStmtHelper::ReleaseStmt(void)
+{
+    if ( m_Stmt.get() ) {
+        IConnection* conn = m_Stmt->GetParentConn();
+
+        // Release the statement before a connection release because it is a child object for a connection.
+        m_Stmt.release();
+
+        _ASSERT( m_StmtType != estNone );
+
+        if ( m_StmtType == estSelect ) {
+            // Release SELECT Connection ...
+            m_ParentTransaction->DestroySelectConnection( conn );
+        } else {
+            // Release DML Connection ...
+            m_ParentTransaction->DestroyDMLConnection( conn );
+        }
+        m_Executed = false;
+    }
+}
+
+void
+CStmtHelper::CreateStmt(EStatementType type)
+{
+    m_StmtType = type;
+    m_Executed = false;
+
+    if ( type == estSelect ) {
+        // Get a SELECT connection ...
+        m_Stmt.reset( m_ParentTransaction->CreateSelectConnection()->GetStatement() );
+    } else {
+        // Get a DML connection ...
+        m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetStatement() );
+    }
+}
+
+void
+CStmtHelper::SetStr(const string& stmt, EStatementType default_type)
+{
+    m_StmtStr = stmt;
+    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
+
+    if ( m_Stmt.get() ) {
+        // If a new statement type needs a different connection type then release an old one.
+        if (
+            (m_StmtType == estSelect && currStmtType != estSelect) ||
+            (m_StmtType != estSelect && currStmtType == estSelect)
+        ) {
+            DumpResult();
+            ReleaseStmt();
+            CreateStmt(currStmtType);
+        } else {
+            DumpResult();
+            m_Stmt->ClearParamList();
+        }
+    } else {
+        CreateStmt(currStmtType);
+    }
+    m_Executed = false;
+}
+
+void
+CStmtHelper::SetParam(const string& name, const CVariant& value)
+{
+    _ASSERT( m_Stmt.get() );
+
+    string param_name = name;
+
+    if ( param_name.size() > 0) {
+        if ( param_name[0] != '@') {
+            param_name = "@" + param_name;
+        }
+    } else {
+        throw pythonpp::CError("Invalid SQL parameter name");
+    }
+
+    try {
+        m_Stmt->SetParam( value, param_name );
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError( e.Message() );
+    }
+}
+
+void
+CStmtHelper::Execute(void)
+{
+    _ASSERT( m_Stmt.get() );
+
+    try {
+        switch ( m_StmtType ) {
+        case estSelect :
+            m_RS.reset( m_Stmt->ExecuteQuery ( m_StmtStr ) );
+            break;
+        default:
+            m_RS.release();
+            m_Stmt->ExecuteUpdate ( m_StmtStr );
+        }
+        m_Executed = true;
+    }
     catch(const bad_cast&) {
-        throw pythonpp::CError("std::bad_cast exception within 'CCursor::ExecuteCurrStatement'");
+        throw pythonpp::CError("std::bad_cast exception within 'CStmtHelper::Execute'");
     }
     catch(const CDB_Exception& e) {
         throw pythonpp::CError(e.Message());
-    }    
-    catch(const exception&) {
-        throw pythonpp::CError("std::exception exception within 'CCursor::ExecuteCurrStatement'");
     }
-
+    catch(const exception&) {
+        throw pythonpp::CError("std::exception exception within 'CStmtHelper::Execute'");
+    }
 }
 
-const pythonpp::CTuple
-CCursor::MakeResultTuple(const IResultSet& rs) const
+IResultSet&
+CStmtHelper::GetRS(void)
+{
+    if ( m_RS.get() == NULL ) {
+        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+    }
+
+    return *m_RS;
+}
+
+const IResultSet&
+CStmtHelper::GetRS(void) const
+{
+    if ( m_RS.get() == NULL ) {
+        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+    }
+
+    return *m_RS;
+}
+
+bool
+CStmtHelper::NextRS(void)
+{
+    _ASSERT( m_Stmt.get() );
+
+    try {
+        while ( m_Stmt->HasMoreResults() ) {
+            if ( m_Stmt->HasRows() ) {
+                m_RS.reset( m_Stmt->GetResultSet() );
+                return true;
+            }
+        }
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
+
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans)
+: m_ParentTransaction( trans )
+, m_NumOfArgs( 0 )
+, m_StmtType( estNone )
+, m_Executed( false )
+{
+    if ( m_ParentTransaction == NULL ) {
+        throw pythonpp::CError("Invalid CTransaction object");
+    }
+}
+
+CCallableStmtHelper::CCallableStmtHelper(CTransaction* trans, const string& stmt, int num_arg, EStatementType default_type)
+: m_ParentTransaction( trans )
+, m_NumOfArgs( num_arg )
+, m_StmtStr( stmt )
+, m_StmtType( estNone )
+, m_Executed( false )
+{
+    if ( m_ParentTransaction == NULL ) {
+        throw pythonpp::CError("Invalid CTransaction object");
+    }
+
+    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
+    CreateStmt(stmt, num_arg, currStmtType);
+}
+
+CCallableStmtHelper::~CCallableStmtHelper(void)
+{
+    Close();
+}
+
+void
+CCallableStmtHelper::Close(void)
+{
+    DumpResult();
+    ReleaseStmt();
+    m_Executed = false;
+}
+
+void
+CCallableStmtHelper::DumpResult(void)
+{
+    if ( m_Stmt.get() && m_Executed ) {
+        while ( m_Stmt->HasMoreResults() ) {
+            if ( m_Stmt->HasRows() ) {
+                m_RS.reset( m_Stmt->GetResultSet() );
+            }
+        }
+    }
+    m_RS.release();
+}
+
+void
+CCallableStmtHelper::ReleaseStmt(void)
+{
+    if ( m_Stmt.get() ) {
+        IConnection* conn = m_Stmt->GetParentConn();
+
+        // Release the statement before a connection release because it is a child object for a connection.
+        m_Stmt.release();
+
+        _ASSERT( m_StmtType != estNone );
+
+        // Release DML Connection ...
+        m_ParentTransaction->DestroyDMLConnection( conn );
+        m_Executed = false;
+    }
+}
+
+void
+CCallableStmtHelper::CreateStmt(const string& proc_name, int num_arg, EStatementType type)
+{
+    _ASSERT( type == estFunction );
+    m_Executed = false;
+
+    if ( m_Stmt.get() == NULL ) {
+        m_StmtType = type;
+
+        // Get a DML connection ...
+        m_Stmt.reset( m_ParentTransaction->CreateDMLConnection()->GetCallableStatement(proc_name, num_arg) );
+    } else {
+        m_Stmt->ClearParamList();
+    }
+}
+
+void
+CCallableStmtHelper::SetStr(const string& stmt, int num_arg, EStatementType default_type)
+{
+    m_NumOfArgs = num_arg;
+    m_StmtStr = stmt;
+    EStatementType currStmtType = RetrieveStatementType(stmt, default_type);
+
+    DumpResult();
+    CreateStmt(stmt, num_arg, currStmtType);
+    m_Executed = false;
+}
+
+void
+CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
+{
+    _ASSERT( m_Stmt.get() );
+
+    string param_name = name;
+
+    if ( param_name.size() > 0) {
+        if ( param_name[0] != '@') {
+            param_name = "@" + param_name;
+        }
+    } else {
+        throw pythonpp::CError("Invalid SQL parameter name");
+    }
+
+    try {
+        m_Stmt->SetParam( value, param_name );
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError( e.Message() );
+    }
+}
+
+void
+CCallableStmtHelper::Execute(void)
+{
+    _ASSERT( m_Stmt.get() );
+
+    try {
+        m_Stmt->Execute();
+        // Retrieve a resut if there is any ...
+        m_RS.release();                 // Insurance policy :-)
+        NextRS();
+        m_Executed = true;
+    }
+    catch(const bad_cast&) {
+        throw pythonpp::CError("std::bad_cast exception within 'CCallableStmtHelper::Execute'");
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
+    catch(const exception&) {
+        throw pythonpp::CError("std::exception exception within 'CCallableStmtHelper::Execute'");
+    }
+}
+
+IResultSet&
+CCallableStmtHelper::GetRS(void)
+{
+    if ( m_RS.get() == NULL ) {
+        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+    }
+
+    return *m_RS;
+}
+
+const IResultSet&
+CCallableStmtHelper::GetRS(void) const
+{
+    if ( m_RS.get() == NULL ) {
+        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
+    }
+
+    return *m_RS;
+}
+
+bool
+CCallableStmtHelper::NextRS(void)
+{
+    _ASSERT( m_Stmt.get() );
+
+    try {
+        while ( m_Stmt->HasMoreResults() ) {
+            if ( m_Stmt->HasRows() ) {
+                m_RS.reset( m_Stmt->GetResultSet() );
+                return true;
+            }
+        }
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
+
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+pythonpp::CTuple
+MakeTupleFromResult(IResultSet& rs)
 {
     // Set data. Make a sequence (tuple) ...
-    int col_num = m_RS->GetColumnNo();
+    int col_num = rs.GetColumnNo();
     col_num = (col_num > 0 ? col_num - 1 : col_num);
     pythonpp::CTuple tuple(col_num);
 
     for ( int i = 0; i < col_num; ++i) {
-        const CVariant& value = m_RS->GetVariant (i + 1);
+        const CVariant& value = rs.GetVariant (i + 1);
 
         if ( value.IsNull() ) {
             continue;
@@ -517,16 +989,253 @@ CCursor::MakeResultTuple(const IResultSet& rs) const
     return tuple;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+CCursor::CCursor(CTransaction* trans)
+: m_PythonConnection( &trans->GetParentConnection() )
+, m_PythonTransaction(trans)
+, m_ParentTransaction(trans)
+, m_NumOfArgs(0)
+, m_RowsNum(0)
+, m_ArraySize(1)
+, m_StmtHelper(trans)
+, m_CallableStmtHelper(trans)
+{
+    if ( trans == NULL ) {
+        throw pythonpp::CError("Invalid CTransaction object");
+    }
+
+    PrepareForPython(this);
+}
+
+CCursor::~CCursor(void)
+{
+    CloseInternal();
+
+    // Unregister this cursor with the parent transaction ...
+    GetTransaction().DestroyCursor(this);
+}
+
+void
+CCursor::CloseInternal(void)
+{
+    m_StmtHelper.Close();
+    m_CallableStmtHelper.Close();
+}
+
+pythonpp::CObject
+CCursor::callproc(const pythonpp::CTuple& args)
+{
+    int num_of_arguments = 0;
+    size_t args_size = args.size();
+
+    if ( args_size == 0 ) {
+        throw pythonpp::CError("A stored procedure name is expected as a parameter");
+    } else if ( args_size > 0 ) {
+        pythonpp::CObject obj(args[0]);
+
+        if ( pythonpp::CString::HasSameType(obj) ) {
+            m_StmtStr.SetStr(pythonpp::CString(args[0]), estFunction);
+        } else {
+            throw pythonpp::CError("A stored procedure name is expected as a parameter");
+        }
+
+        m_StmtHelper.Close();
+
+        // Setup parameters ...
+        if ( args_size > 1 ) {
+            pythonpp::CObject obj( args[1] );
+
+            if ( pythonpp::CDict::HasSameType(obj) ) {
+                const pythonpp::CDict dict = obj;
+
+                num_of_arguments = dict.size();
+                m_CallableStmtHelper.SetStr(m_StmtStr.GetStr(), num_of_arguments);
+                SetupParameters(dict, m_CallableStmtHelper);
+            } else  {
+                // Curently, NCBI DBAPI supports pameter binding by name only ...
+//            pythonpp::CSequence sequence;
+//            if ( pythonpp::CList::HasSameType(obj) ) {
+//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+//            }
+                throw pythonpp::CError("NCBI DBAPI supports pameter binding by name only");
+            }
+        } else {
+            m_CallableStmtHelper.SetStr(m_StmtStr.GetStr(), num_of_arguments);
+        }
+    }
+
+    m_CallableStmtHelper.Execute();
+
+    return pythonpp::CNone();
+}
+
+pythonpp::CObject
+CCursor::close(const pythonpp::CTuple& args)
+{
+    try {
+        CloseInternal();
+
+        // Unregister this cursor with the parent transaction ...
+        GetTransaction().DestroyCursor(this);
+    }
+    catch(const CDB_Exception& e) {
+        throw pythonpp::CError(e.Message());
+    }
+
+    return pythonpp::CNone();
+}
+
+pythonpp::CObject
+CCursor::execute(const pythonpp::CTuple& args)
+{
+    size_t args_size = args.size();
+
+    // Process function's arguments ...
+    if ( args_size == 0 ) {
+        throw pythonpp::CError("A SQL statement string is expected as a parameter");
+    } else if ( args_size > 0 ) {
+        pythonpp::CObject obj(args[0]);
+
+        if ( pythonpp::CString::HasSameType(obj) ) {
+            m_StmtStr.SetStr(pythonpp::CString(args[0]));
+        } else {
+            throw pythonpp::CError("A SQL statement string is expected as a parameter");
+        }
+
+        m_CallableStmtHelper.Close();
+        m_StmtHelper.SetStr(m_StmtStr.GetStr());
+
+        // Setup parameters ...
+        if ( args_size > 1 ) {
+            pythonpp::CObject obj(args[1]);
+
+            if ( pythonpp::CDict::HasSameType(obj) ) {
+                SetupParameters(obj, m_StmtHelper);
+            } else  {
+                // Curently, NCBI DBAPI supports pameter binding by name only ...
+//            pythonpp::CSequence sequence;
+//            if ( pythonpp::CList::HasSameType(obj) ) {
+//            } else if ( pythonpp::CTuple::HasSameType(obj) ) {
+//            } else if ( pythonpp::CSet::HasSameType(obj) ) {
+//            }
+                throw pythonpp::CError("NCBI DBAPI supports pameter binding by name only");
+            }
+        }
+    }
+
+    m_StmtHelper.Execute();
+
+    return pythonpp::CNone();
+}
+
+void
+CCursor::SetupParameters(const pythonpp::CDict& dict, CStmtHelper& stmt)
+{
+    // Iterate over a dict.
+    int i = 0;
+    PyObject* key;
+    PyObject* value;
+    while ( PyDict_Next(dict, &i, &key, &value) ) {
+        // Refer to borrowed references in key and value.
+        const pythonpp::CObject key_obj(key);
+        const pythonpp::CObject value_obj(value);
+        string param_name = pythonpp::CString(key_obj);
+
+        stmt.SetParam(param_name, GetCVariant(value_obj));
+    }
+}
+
+void
+CCursor::SetupParameters(const pythonpp::CDict& dict, CCallableStmtHelper& stmt)
+{
+    // Iterate over a dict.
+    int i = 0;
+    PyObject* key;
+    PyObject* value;
+    while ( PyDict_Next(dict, &i, &key, &value) ) {
+        // Refer to borrowed references in key and value.
+        const pythonpp::CObject key_obj(key);
+        const pythonpp::CObject value_obj(value);
+        string param_name = pythonpp::CString(key_obj);
+
+        stmt.SetParam(param_name, GetCVariant(value_obj));
+    }
+}
+
+CVariant
+CCursor::GetCVariant(const pythonpp::CObject& obj) const
+{
+    if ( pythonpp::CNone::HasSameType(obj) ) {
+        return CVariant(eDB_UnsupportedType);
+    } else if ( pythonpp::CBool::HasSameType(obj) ) {
+        return CVariant( pythonpp::CBool(obj) );
+    } else if ( pythonpp::CInt::HasSameType(obj) ) {
+        return CVariant( static_cast<int>(pythonpp::CInt(obj)) );
+    } else if ( pythonpp::CLong::HasSameType(obj) ) {
+        return CVariant( static_cast<Int8>(pythonpp::CLong(obj)) );
+    } else if ( pythonpp::CFloat::HasSameType(obj) ) {
+        return CVariant( pythonpp::CFloat(obj) );
+    } else if ( pythonpp::CString::HasSameType(obj) ) {
+        return CVariant( static_cast<string>(pythonpp::CString(obj)) );
+    }
+
+    return CVariant(eDB_UnsupportedType);
+}
+
+pythonpp::CObject
+CCursor::executemany(const pythonpp::CTuple& args)
+{
+    size_t args_size = args.size();
+
+    // Process function's arguments ...
+    if ( args_size == 0 ) {
+        throw pythonpp::CError("A SQL statement string is expected as a parameter");
+    } else if ( args_size > 0 ) {
+        pythonpp::CObject obj(args[0]);
+
+        if ( pythonpp::CString::HasSameType(obj) ) {
+            m_StmtStr.SetStr(pythonpp::CString(args[0]));
+        } else {
+            throw pythonpp::CError("A SQL statement string is expected as a parameter");
+        }
+
+        // Setup parameters ...
+        if ( args_size > 1 ) {
+            pythonpp::CObject obj(args[1]);
+
+            if ( pythonpp::CList::HasSameType(obj) || pythonpp::CTuple::HasSameType(obj) ) {
+                const pythonpp::CSequence params(obj);
+                pythonpp::CList::const_iterator citer;
+                pythonpp::CList::const_iterator cend = params.end();
+
+                //
+                m_CallableStmtHelper.Close();
+                m_StmtHelper.SetStr( m_StmtStr.GetStr() );
+
+                for ( citer = params.begin(); citer != cend; ++citer ) {
+                    SetupParameters(*citer, m_StmtHelper);
+                    m_StmtHelper.Execute();
+                }
+            } else {
+                throw pythonpp::CError("Sequence of parameters should be provided either as a list or as a tuple data type");
+            }
+        } else {
+            throw pythonpp::CError("A sequence of parameters is expected with the 'executemany' function");
+        }
+    }
+
+    return pythonpp::CNone();
+}
+
 pythonpp::CObject
 CCursor::fetchone(const pythonpp::CTuple& args)
 {
-    if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
-    }
+    IResultSet& rs = (m_StmtStr.GetType() == estFunction ? m_CallableStmtHelper.GetRS() : m_StmtHelper.GetRS() );
 
     try {
-        if ( m_RS->Next() ) {
-            return MakeResultTuple(*m_RS);
+        if ( rs.Next() ) {
+            return MakeTupleFromResult(rs);
         }
     }
     catch(const CDB_Exception& e) {
@@ -539,11 +1248,8 @@ CCursor::fetchone(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::fetchmany(const pythonpp::CTuple& args)
 {
+    IResultSet& rs = (m_StmtStr.GetType() == estFunction ? m_CallableStmtHelper.GetRS() : m_StmtHelper.GetRS() );
     size_t array_size = m_ArraySize;
-
-    if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
-    }
 
     try {
         if ( args.size() > 0 ) {
@@ -554,8 +1260,8 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
     }
 
     pythonpp::CList py_list;
-    for ( size_t i = 0; i < array_size && m_RS->Next(); ++i ) {
-        py_list.Append(MakeResultTuple(*m_RS));
+    for ( size_t i = 0; i < array_size && rs.Next(); ++i ) {
+        py_list.Append(MakeTupleFromResult(rs));
     }
 
     return py_list;
@@ -564,14 +1270,12 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::fetchall(const pythonpp::CTuple& args)
 {
-    if ( m_RS.get() == NULL ) {
-        throw pythonpp::CError("The previous call to executeXXX() did not produce any result set or no call was issued yet");
-    }
+    IResultSet& rs = (m_StmtStr.GetType() == estFunction ? m_CallableStmtHelper.GetRS() : m_StmtHelper.GetRS() );
 
     pythonpp::CList py_list;
     try {
-        while ( m_RS->Next() ) {
-            py_list.Append(MakeResultTuple(*m_RS));
+        while ( rs.Next() ) {
+            py_list.Append(MakeTupleFromResult(rs));
         }
     }
     catch(const CDB_Exception& e) {
@@ -584,16 +1288,14 @@ CCursor::fetchall(const pythonpp::CTuple& args)
 pythonpp::CObject
 CCursor::nextset(const pythonpp::CTuple& args)
 {
-    try {
-        while ( GetStmt().HasMoreResults() ) {
-            if ( GetStmt().HasRows() ) {
-                m_RS.reset(GetStmt().GetResultSet() );
-                return pythonpp::CBool(true);
-            }
+    if ( m_StmtStr.GetType() == estFunction ) {
+        if ( m_CallableStmtHelper.NextRS() ) {
+            return pythonpp::CBool(true);
         }
-    }
-    catch(const CDB_Exception& e) {
-        throw pythonpp::CError(e.Message());
+    } else {
+        if ( m_StmtHelper.NextRS() ) {
+            return pythonpp::CBool(true);
+        }
     }
 
     return pythonpp::CNone();
@@ -609,45 +1311,6 @@ pythonpp::CObject
 CCursor::setoutputsize(const pythonpp::CTuple& args)
 {
     return pythonpp::CNone();
-}
-
-CCursor::EStatementType
-CCursor::RetrieveStatementType(const string& stmt)
-{
-    string::size_type pos;
-    EStatementType stmtType = estNone;
-
-    string stmt_uc = stmt;
-    NStr::ToUpper(stmt_uc);
-    pos = stmt_uc.find_first_not_of(" \t\n");
-    if (pos != string::npos)
-    {
-        // "CREATE" should be before DML ...
-        if (stmt_uc.substr(pos, sizeof("CREATE") - 1) == "CREATE")
-        {
-            stmtType = estCreate;
-        } else if (stmt_uc.substr(pos, sizeof("SELECT") - 1) == "SELECT")
-        {
-            stmtType = estSelect;
-        } else if (stmt_uc.substr(pos, sizeof("UPDATE") - 1) == "UPDATE")
-        {
-            stmtType = estUpdate;
-        } else if (stmt_uc.substr(pos, sizeof("DELETE") - 1) == "DELETE")
-        {
-            stmtType = estDelete;
-        } else if (stmt_uc.substr(pos, sizeof("INSERT") - 1) == "INSERT")
-        {
-            stmtType = estInsert;
-        } else if (stmt_uc.substr(pos, sizeof("DROP") - 1) == "DROP")
-        {
-            stmtType = estDrop;
-        } else if (stmt_uc.substr(pos, sizeof("ALTER") - 1) == "ALTER")
-        {
-            stmtType = estAlter;
-        }
-    }
-
-    return stmtType;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -697,14 +1360,14 @@ Connect(PyObject *self, PyObject *args)
             throw pythonpp::CError("Invalid parameters within 'connect' function");
         }
 
-        conn = new CConnection(
+        conn = new CConnection( CConnParam(
             driver_name,
             db_type,
             server_name,
             db_name,
             user_name,
             user_pswd
-            );
+            ));
     }
     catch (const CDB_Exception& e) {
         pythonpp::CError::SetString(e.Message());
@@ -995,11 +1658,20 @@ PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
 
     // Declare CConnection
     python::CConnection::
-        Def("close",    &python::CConnection::close,    "close").
-        Def("commit",   &python::CConnection::commit,   "commit").
-        Def("rollback", &python::CConnection::rollback, "rollback").
-        Def("cursor",   &python::CConnection::cursor,   "cursor");
+        Def("close",        &python::CConnection::close,        "close").
+        Def("commit",       &python::CConnection::commit,       "commit").
+        Def("rollback",     &python::CConnection::rollback,     "rollback").
+        Def("cursor",       &python::CConnection::cursor,       "cursor").
+        Def("transaction",  &python::CConnection::transaction,  "transaction");
     python::CConnection::Declare("Connection");
+
+    // Declare CTransaction
+    python::CTransaction::
+        Def("close",        &python::CTransaction::close,        "close").
+        Def("cursor",       &python::CTransaction::cursor,       "cursor").
+        Def("commit",       &python::CTransaction::commit,       "commit").
+        Def("rollback",     &python::CTransaction::rollback,     "rollback");
+    python::CTransaction::Declare("Transaction");
 
     // Declare CCursor
     python::CCursor::
@@ -1088,6 +1760,10 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/01/27 18:50:03  ssikorsk
+* Fixed: a bug with transactions
+* Added: python 'transaction' object
+*
 * Revision 1.2  2005/01/21 15:50:18  ssikorsk
 * Fixed: build errors with GCC 2.95.
 *
