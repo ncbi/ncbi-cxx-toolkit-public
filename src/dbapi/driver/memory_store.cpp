@@ -314,8 +314,8 @@ size_t CMemStore::Truncate(size_t size)
             delete m_Last->body;
             delete m_Last;
         }
-        m_First = 0;
-        m_BlockPos = m_Pos = m_Size = 0;
+	m_First = m_Last = m_Current = 0;        
+	m_BlockPos = m_Pos = m_Size = 0;
         return 0;
     }
 
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/03/20 22:23:12  soussov
+ * fixes bug in Truncate method
+ *
  * Revision 1.3  2002/01/24 16:14:28  soussov
  * makes purify happy
  *
