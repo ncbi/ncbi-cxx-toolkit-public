@@ -158,7 +158,8 @@ CHTMLPage::CHTMLPage(CCgiApplication* application, int style,
 
 void CHTMLPage::Init(void)
 {
-    m_Name = "htmlpage";
+    // Generate internal page name
+    GeneratePageInternalName();
 
     // Template sources
     m_TemplateFile   = kEmptyStr;
@@ -411,6 +412,7 @@ void CHTMLPage::SetTemplateFile(const string& template_file)
     m_TemplateFile   = template_file;
     m_TemplateStream = 0;
     m_TemplateBuffer = 0;
+    GeneratePageInternalName(template_file);
     {{
         Int8 size = CFile(template_file).GetLength();
         if (size <= 0) {
@@ -558,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/02/04 17:15:22  ivanov
+ * Added debug function GeneratePageInternalName()
+ *
  * Revision 1.42  2004/02/03 19:45:14  ivanov
  * Binded dummy names for the unnamed nodes
  *

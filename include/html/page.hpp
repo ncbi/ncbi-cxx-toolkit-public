@@ -101,8 +101,8 @@ public:
 
 protected:
     CCgiApplication* m_CgiApplication;  ///< Pointer to runtime information
-    int     m_Style;
-    TMode   m_PrintMode;                ///< Current print mode
+    int              m_Style;
+    TMode            m_PrintMode;       ///< Current print mode
                                         ///< (used by RepeatHook).
 
     /// Tag resolvers (as registered by AddTagMap).
@@ -229,6 +229,11 @@ private:
     void x_LoadTemplateLib(CNcbiIstream& is, size_t size = 0);
 
 private:
+    /// Generate page internal name on the base of template source.
+    /// Debug function used at output tag trace on exception.
+    void GeneratePageInternalName(const string& template_src);
+
+private:
     string      m_Title;          ///< Page title
 
     /// Template sources.
@@ -306,6 +311,7 @@ inline void CHTMLPage::SetTemplateString(const char* template_string)
     m_TemplateStream = 0;
     m_TemplateBuffer = template_string;
     m_TemplateSize   = strlen(template_string);
+    GeneratePageInternalName("str");
 }
 
 
@@ -316,6 +322,7 @@ inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer,
     m_TemplateStream = 0;
     m_TemplateBuffer = template_buffer;
     m_TemplateSize   = size;
+    GeneratePageInternalName("buf");
 }
 
 
@@ -325,6 +332,7 @@ inline void CHTMLPage::SetTemplateStream(istream& template_stream)
     m_TemplateStream = &template_stream;
     m_TemplateBuffer = 0;
     m_TemplateSize   = 0;
+    GeneratePageInternalName("stream");
 }
 
 
@@ -350,12 +358,24 @@ inline void CHTMLPage::LoadTemplateLibStream(istream& template_stream)
 }
 
 
+inline void CHTMLPage::GeneratePageInternalName(const string& template_src = kEmptyStr)
+{
+    m_Name = "htmlpage";
+    if ( !template_src.empty() ) {
+        m_Name += "(" + template_src + ")";
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/02/04 17:15:10  ivanov
+ * Added debug function GeneratePageInternalName()
+ *
  * Revision 1.34  2004/02/02 14:27:05  ivanov
  * Added HTML template support
  *
