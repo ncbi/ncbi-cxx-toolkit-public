@@ -259,7 +259,13 @@ private:
     bool ReadStr(CSocket& sock, string* str);
 
     /// Read buffer from the socket.
-    bool ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length);
+    // bool ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length);
+
+    /// TRUE return means we have EOF in the socket (no more data is coming)
+    bool ReadBuffer(CSocket& sock, 
+                    char*    buf, 
+                    size_t   buf_size,
+                    size_t*  read_length);
 
     void ParseRequest(const string& reqstr, Request* req);
 
@@ -640,10 +646,13 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
     WriteMsg(sock, "ID:", rid);
     //LOG_POST(Info << "PUT request. Generated key=" << rid);
-    auto_ptr<IWriter> 
-        iwrt(m_Cache->GetWriteStream(rid, 0, kEmptyStr, req.timeout));
+
+
+
+    auto_ptr<IWriter> iwrt;
 
     // Reconfigure socket for no-timeout operation
+
     STimeout to;
     to.sec = to.usec = 0;
     sock.SetTimeout(eIO_Read, &to);
@@ -651,25 +660,38 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     ThreadData* tdata = s_tls->GetValue();
     _ASSERT(tdata);
     char* buf = tdata->buffer.get();
+    size_t buf_size = GetTLS_Size();
 
-    size_t buffer_length = 0;
+    bool not_eof;
 
-    while (ReadBuffer(sock, buf, &buffer_length)) {
-        if (buffer_length) {
-            stat.blob_size += buffer_length;
+    do {
+        size_t nn_read;
+        not_eof = ReadBuffer(sock, buf, buf_size, &nn_read);
+        if (nn_read) {
+            if (iwrt.get() == 0) { // first read
+
+                if (not_eof == false) { // complete read
+                    m_Cache->Store(rid, 0, kEmptyStr, 
+                                   buf, nn_read, req.timeout);
+                    return;
+                }
+
+                iwrt.reset(
+                    m_Cache->GetWriteStream(rid, 0, kEmptyStr, req.timeout));
+            }
             size_t bytes_written;
             ERW_Result res = 
-                iwrt->Write(buf, buffer_length, &bytes_written);
+                iwrt->Write(buf, nn_read, &bytes_written);
             if (res != eRW_Success) {
                 WriteMsg(sock, "Err:", "Server I/O error");
                 return;
             }
-        }
-    } // while
+        } // if (nn_read)
+
+    } while (not_eof);
 
     iwrt->Flush();
     iwrt.reset(0);
-
 }
 
 void CNetCacheServer::WriteMsg(CSocket&       sock, 
@@ -755,27 +777,51 @@ parse_blob_id:
     req->err_msg = "Unknown request";
 }
 
-bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length)
+bool CNetCacheServer::ReadBuffer(CSocket& sock, 
+                                 char*    buf, 
+                                 size_t   buf_size,
+                                 size_t*  read_length)
 {
-    if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
-        *buffer_length = 0;
-        return true;
+    *read_length = 0;
+    size_t nn_read = 0;
+
+    bool ret_flag = true;
+
+    while (ret_flag) {
+        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
+            break;
+        }
+
+        EIO_Status io_st = sock.Read(buf, buf_size, &nn_read);
+        *read_length += nn_read;
+        switch (io_st) 
+        {
+        case eIO_Success:
+            break;
+        case eIO_Timeout:
+            if (*read_length == 0) {
+                NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
+            }
+            break;
+        case eIO_Closed:
+            ret_flag = false;
+            break;
+        default: // invalid socket or request
+            NCBI_THROW(CNetCacheException, eCommunicationError, kEmptyStr);
+        };
+        buf_size -= nn_read;
+
+        if (buf_size <= 10) {  // buffer too small to read again
+            break;
+        }
+        buf += nn_read;
     }
 
-    EIO_Status io_st = sock.Read(buf, GetTLS_Size(), buffer_length);
-    switch (io_st) 
-    {
-    case eIO_Success:
-        break;
-    case eIO_Timeout:
-        *buffer_length = 0;
-        NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
-        break;
-    default: // invalid socket or request
-        return false;
-    };
-    return true;
+    return ret_flag;  // false means we hit "eIO_Closed"
+
 }
+
+
 
 bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
 {
@@ -1087,6 +1133,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/12/28 17:00:12  kuznets
+ * Performance tuning (PUT)
+ *
  * Revision 1.29  2004/12/27 19:14:07  kuznets
  * Use NStr::strcasecmp instead of stricmp
  *
