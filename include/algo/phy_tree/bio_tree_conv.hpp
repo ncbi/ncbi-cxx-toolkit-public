@@ -172,7 +172,8 @@ public:
         CRef<TCNode> cnode(new TCNode);
         cnode->SetId(uid);
 
-        const TDynamicNodeType* node_parent = node.GetParent();
+        const TDynamicNodeType* node_parent = 
+                        (TDynamicNodeType*) node.GetParent();
         if (node_parent) {
             cnode->SetParent(node_parent->GetValue().GetId());
         }
@@ -563,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/18 12:14:35  kuznets
+ * Type castings for compatibility with new CBioTree node
+ *
  * Revision 1.5  2004/06/28 17:01:20  ckenny
  * + conv from part tax tree to CBioTreeContainer
  *
