@@ -59,7 +59,7 @@ BEGIN_SCOPE(blast)
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
                    EProgram p)
-    : m_pOptions(new CBlastOptions(p)), mi_bQuerySetUpDone(false), m_pSeqSrc(bssp)
+    : mi_bQuerySetUpDone(false), m_pSeqSrc(bssp)
 {
     m_tQueries = queries;
     mi_pScoreBlock = NULL;
@@ -68,17 +68,12 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
     mi_pFilteredRegions = NULL;
     mi_pResults = NULL;
     mi_pReturnStats = NULL;
+    m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
 CDbBlast::~CDbBlast()
 { 
     x_ResetQueryDs();
-    delete m_pOptions;
-}
-
-inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
-{
-    return m_pSeqSrc;
 }
 
 
@@ -94,7 +89,7 @@ CDbBlast::x_ResetQueryDs()
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
     mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
 
-    mi_pFilteredRegions = BlastMaskFree(mi_pFilteredRegions);
+    mi_pFilteredRegions = BlastMaskLocFree(mi_pFilteredRegions);
     mi_pResults = BLAST_ResultsFree(mi_pResults);
     
     sfree(mi_pReturnStats);
@@ -107,28 +102,33 @@ int CDbBlast::SetupSearch()
 {
     Blast_Message* blast_message = NULL;
     int status = 0;
+    EProgram x_eProgram = m_OptsHandle->GetOptions().GetProgram();
 
     if ( !mi_bQuerySetUpDone ) {
         x_ResetQueryDs();
-        m_eProgram = m_pOptions->GetProgram();
-        bool translated_query = (m_eProgram == eBlastx || 
-                                 m_eProgram == eTblastx);
+        bool translated_query = (x_eProgram == eBlastx || 
+                                 x_eProgram == eTblastx);
 
-        SetupQueryInfo(m_tQueries, *m_pOptions, &mi_clsQueryInfo);
-        SetupQueries(m_tQueries, *m_pOptions, mi_clsQueryInfo, &mi_clsQueries);
+        SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), 
+                       &mi_clsQueryInfo);
+        SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), 
+                     mi_clsQueryInfo, &mi_clsQueries);
+
         mi_pScoreBlock = 0;
 
-        status = 
-            BLAST_MainSetUp(m_eProgram, m_pOptions->GetQueryOpts(),
-               m_pOptions->GetScoringOpts(), m_pOptions->GetLookupTableOpts(), 
-               m_pOptions->GetHitSavingOpts(), mi_clsQueries, mi_clsQueryInfo, 
-               &mi_pLookupSegments, &mi_pFilteredRegions, &mi_pScoreBlock, 
-               &blast_message);
+        status = BLAST_MainSetUp(x_eProgram, 
+                    m_OptsHandle->GetOptions().m_QueryOpts,
+                    m_OptsHandle->GetOptions().m_ScoringOpts, 
+                    m_OptsHandle->GetOptions().m_LutOpts, 
+                    m_OptsHandle->GetOptions().m_HitSaveOpts, 
+                    mi_clsQueries, mi_clsQueryInfo, 
+                    &mi_pLookupSegments, &mi_pFilteredRegions, 
+                    &mi_pScoreBlock, &blast_message);
 
         if (translated_query) {
             /* Filter locations were returned in protein coordinates; 
                convert them back to nucleotide here */
-            BlastMaskProteinToDNA(&mi_pFilteredRegions, m_tQueries);
+            BlastMaskLocProteinToDNA(&mi_pFilteredRegions, m_tQueries);
         }
 
         if (status) {
@@ -137,7 +137,8 @@ int CDbBlast::SetupSearch()
         }
         
         BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
-        LookupTableWrapInit(mi_clsQueries, m_pOptions->GetLookupTableOpts(), 
+        LookupTableWrapInit(mi_clsQueries, 
+            m_OptsHandle->GetOptions().m_LutOpts, 
             mi_pLookupSegments, mi_pScoreBlock, &mi_pLookupTable);
         
         mi_bQuerySetUpDone = true;
@@ -146,12 +147,19 @@ int CDbBlast::SetupSearch()
     return status;
 }
 
+void CDbBlast::PartialRun()
+{
+    SetupSearch();
+    m_OptsHandle->GetOptions().Validate();
+    RunSearchEngine();
+}
+
 TSeqAlignVector
 CDbBlast::Run()
 {
     SetupSearch();
-    //m_pOptions->DebugDumpText(cerr, "m_pOptions", 1);
-    m_pOptions->Validate();  // throws an exception on failure
+    //m_OptsHandle->GetOptions()->DebugDumpText(cerr, "m_pOptions", 1);
+    m_OptsHandle->GetOptions().Validate();// throws an exception on failure
     RunSearchEngine();
     return x_Results2SeqAlign();
 }
@@ -160,11 +168,15 @@ CDbBlast::Run()
 void 
 CDbBlast::RunSearchEngine()
 {
-    BLAST_DatabaseSearchEngine(m_eProgram, mi_clsQueries, mi_clsQueryInfo, 
-         m_pSeqSrc, mi_pScoreBlock, m_pOptions->GetScoringOpts(), 
-         mi_pLookupTable, m_pOptions->GetInitWordOpts(), 
-         m_pOptions->GetExtensionOpts(), m_pOptions->GetHitSavingOpts(), 
-         m_pOptions->GetEffLenOpts(), NULL, m_pOptions->GetDbOpts(),
+    BLAST_DatabaseSearchEngine(m_OptsHandle->GetOptions().GetProgram(),
+         mi_clsQueries, mi_clsQueryInfo, 
+         m_pSeqSrc, mi_pScoreBlock, 
+         m_OptsHandle->GetOptions().m_ScoringOpts, 
+         mi_pLookupTable, m_OptsHandle->GetOptions().m_InitWordOpts, 
+         m_OptsHandle->GetOptions().m_ExtnOpts, 
+         m_OptsHandle->GetOptions().m_HitSaveOpts, 
+         m_OptsHandle->GetOptions().m_EffLenOpts.get(), NULL, 
+         m_OptsHandle->GetOptions().m_DbOpts,
          mi_pResults, mi_pReturnStats);
 
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
@@ -181,8 +193,10 @@ CDbBlast::x_Results2SeqAlign()
 {
     TSeqAlignVector retval;
 
-    retval = BLAST_Results2CSeqAlign(mi_pResults, m_eProgram,
-                 m_tQueries, m_pSeqSrc, 0, m_pOptions->GetScoringOpts(), 
+    retval = BLAST_Results2CSeqAlign(mi_pResults, 
+                 m_OptsHandle->GetOptions().GetProgram(),
+                 m_tQueries, m_pSeqSrc, 0, 
+                 m_OptsHandle->GetOptions().m_ScoringOpts, 
                  mi_pScoreBlock);
 
     return retval;
@@ -195,6 +209,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2003/12/03 16:45:03  dondosha
+ * Use CBlastOptionsHandle class
+ *
  * Revision 1.3  2003/11/26 18:36:45  camacho
  * Renaming blast_option*pp -> blast_options*pp
  *
@@ -267,7 +284,7 @@ END_NCBI_SCOPE
  * Compiles, but still needs work.
  *
  * Revision 1.13  2003/08/11 15:23:59  dondosha
- * Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
+ * Renamed conversion functions between BlastMaskLoc and CSeqLoc; added algo/blast/core to headers from core BLAST library
  *
  * Revision 1.12  2003/08/11 14:00:41  dicuccio
  * Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
