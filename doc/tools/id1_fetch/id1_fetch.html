@@ -16,12 +16,14 @@
     <li><a href="#ref_flat">Flattened sequence ID format</a></li>
     <li><a href="#ref_fasta">FASTA sequence ID format</a></li>
   </ul></li>
+  <li><a href="#ref_Examples">Example usage</a></li>
 </ul>
 
 <a name="ref_Synopsis"></a>
 <table border="1">
   <tr><td><b>Location:</b></td>
-      <td><i>c++/src/app/id1_fetch</i></td></tr>
+      <td><i>c++/src/app/id1_fetch</i> (compiled executable is
+      <i>$NCBI/c++/Release/bin/id1_fetch</i> on NCBI systems)</td></tr>
   <tr valign="top">
      <td><b>Synopsis:</b></td>
      <td><ol>
@@ -237,6 +239,160 @@ typed):</p>
   <tr> <td>third-party <a href="http://www.ddbj.nig.ac.jp">DDBJ</a></td>
        <td>tpd | <i>accession</i> | <i>name</i></td> </tr>
 </table>
+
+<a name="ref_Examples">
+<h1>Example Usage</h1></a>
+
+<b>id1_fetch -query '5-delta4 isomerase' -lt none -db Nucleotide</b>
+<pre>
+34
+</pre>
+<b>id1_fetch -fmt genbank -gi 34</b>
+<pre>
+LOCUS       BT3BHSD      1632 bp    mRNA            MAM       12-SEP-1993
+DEFINITION  Bovine mRNA for 3 beta hydroxy-5-ene steroid dehydrogenase/delta
+            5-delta4 isomerase (EC 1.1.1.145, EC 5.3.3.1).
+ACCESSION   X17614
+VERSION     X17614.1  GI:34
+KEYWORDS    3 beta-hydroxy-delta5-steroid dehydrogenase;
+            steroid delta-isomerase.
+...
+FEATURES             Location/Qualifiers
+...
+     CDS             105..1226
+                     /codon_start=1
+                     /transl_table=1
+                     /function="3 beta-HSD (AA 1-373)"
+                     /protein_id="CAA35615.1"
+                     /db_xref="GI:35"
+                     /translation="MAGWSCLVTGGGGFLGQRIICLLVEEKDLQEIRVLDKVFRPEVR
+                     EEFSKLQSKIKLTLLEGDILDEQCLKGACQGTSVVIHTASVIDVRNAVPRETIMNVNV
+                     KGTQLLLEACVQASVPVFIHTSTIEVAGPNSYREIIQDGREEEHHESAWSSPYPYSKK
+                     LAEKAVLGANGWALKNGGTLYTCALRPMYIYGEGSPFLSAYMHGALNNNGILTNHCKF
+                     SRVNPVYVGNVAWAHILALRALRDPKKVPNIQGQFYYISDDTPHQSYDDLNYTLSKEW
+                     GFCLDSRMSLPISLQYWLAFLLEIVSFLLSPIYKYNPCFNRHLVTLSNSVFTFSYKKA
+                     QRDLGYEPLYTWEEAKQKTKEWIGSLVKQHKETLKTKIH"
+                     /db_xref="SWISS-PROT:P14893"
+...
+     1441 ggacagacaa ggtgatttgc tgcagctgct ggcaccaaaa tctcagtggc agattctgag
+     1501 ttatttgggc ttcttgtaac ttcgagtttt gcctcttagt cccactttct ttgttaaatg
+     1561 tggaagcatt tcttttaaaa gttcatattc cttcatgtag ctcaataaaa atgatcaaca
+     1621 ttttcatgac tc
+//
+
+</pre>
+<b>id1_fetch -fmt genpept -gi 35</b>
+<pre>
+LOCUS       CAA35615      373 aa                    MAM       12-SEP-1993
+DEFINITION  Bovine mRNA for 3 beta hydroxy-5-ene steroid dehydrogenase/delta
+            5-delta4 isomerase (EC 1.1.1.145, EC 5.3.3.1), and translated
+            products.
+ACCESSION   CAA35615
+VERSION     CAA35615.1  GI:35
+PID         g35
+SOURCE      cow.
+  ORGANISM  Bos taurus
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Cetartiodactyla; Ruminantia; Pecora; Bovoidea;
+            Bovidae; Bovinae; Bos.
+...
+ORIGIN      
+        1 magwsclvtg gggflgqrii cllveekdlq eirvldkvfr pevreefskl qskikltlle
+       61 gdildeqclk gacqgtsvvi htasvidvrn avpretimnv nvkgtqllle acvqasvpvf
+      121 ihtstievag pnsyreiiqd greeehhesa wsspypyskk laekavlgan gwalknggtl
+      181 ytcalrpmyi ygegspflsa ymhgalnnng iltnhckfsr vnpvyvgnva wahilalral
+      241 rdpkkvpniq gqfyyisddt phqsyddlny tlskewgfcl dsrmslpisl qywlafllei
+      301 vsfllspiyk ynpcfnrhlv tlsnsvftfs ykkaqrdlgy eplytweeak qktkewigsl
+      361 vkqhketlkt kih
+//
+
+</pre>
+<b>id1_fetch -fmt fasta -gi 35 -maxplex bioseq</b>
+<pre>
+>emb|CAA35615.1||gi|35 Bovine mRNA for 3 beta hydroxy-5-ene steroid dehydrogenase/delta 5-delta4 isomerase (EC 1.1.1.145, EC 5.3.3.1), and translated products
+MAGWSCLVTGGGGFLGQRIICLLVEEKDLQEIRVLDKVFRPEVREEFSKLQSKIKLTLLEGDILDEQCLK
+GACQGTSVVIHTASVIDVRNAVPRETIMNVNVKGTQLLLEACVQASVPVFIHTSTIEVAGPNSYREIIQD
+GREEEHHESAWSSPYPYSKKLAEKAVLGANGWALKNGGTLYTCALRPMYIYGEGSPFLSAYMHGALNNNG
+ILTNHCKFSRVNPVYVGNVAWAHILALRALRDPKKVPNIQGQFYYISDDTPHQSYDDLNYTLSKEWGFCL
+DSRMSLPISLQYWLAFLLEIVSFLLSPIYKYNPCFNRHLVTLSNSVFTFSYKKAQRDLGYEPLYTWEEAK
+QKTKEWIGSLVKQHKETLKTKIH
+
+</pre>
+<b>id1_fetch -lt ids -gi 35</b>
+<pre>
+ID1server-back ::= ids {
+  embl {
+    accession "CAA35615",
+    version 1
+  },
+  general {
+    db "NCBI_EXT_ACC",
+    tag str "FPAA037960"
+  },
+  gi 35
+}
+</pre>
+<b>id1_fetch -lt state -fasta 'emb|CAA35615' -fmt xml</b>
+<pre>
+&lt;?xml version="1.0"?>
+&lt;!DOCTYPE ID1server-back PUBLIC "-//NCBI//NCBI ID1Access/EN" "NCBI_ID1Access.dtd">
+&lt;ID1server-back>
+  &lt;ID1server-back_gistate>40&lt;/ID1server-back_gistate>
+&lt;/ID1server-back>
+
+</pre>
+<b>id1_fetch -lt state -flat '5=CAA35615.1' -fmt asnb | od -t u1</b>
+<pre>
+0000000 166 128 002 001 040 000 000
+0000007
+</pre>
+<b>id1_fetch -lt state -flat '5(,CAA35615)' -fmt fasta</b>
+<pre>
+gi = 35, states: LIVE
+</pre>
+<b>id1_fetch -lt history -flat '12:35' -fmt fasta</b>
+<pre>
+GI  Loaded      DB    Retrieval No.
+--  ------      --    -------------
+35  03/08/1999  EMBL  274319       
+
+</pre>
+<b>id1_fetch -lt revisions -gi 35 -fmt fasta</b>
+<pre>
+GI  Loaded      DB     Retrieval No.
+--  ------      --     -------------
+35  03/08/1999  EMBL   274319       
+35  06/06/1996  OLD02  84966        
+35  05/27/1995  OLDID  1524022      
+35  11/29/1994  OLDID  966346       
+35  08/31/1993  OLDID  426053       
+35  04/20/1993  OLDID  27           
+
+</pre>
+<b>id1_fetch -fmt quality -gi 13508865</b>
+<pre>
+>AL590146.2 Phrap Quality (Length: 121086, Min: 31, Max: 99)
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+...
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 54 54 56 56 54 54 54 56 56 56 56 65 65 57 60 56 56 59 59
+ 56 56 56 49 99 31 31 49 49 54 63 63 54 51 53 55 51 51 49 58
+ 58 58 58 53 52 49 51 51 51 52 55 51 51 51 49 49 49 63 63 60
+ 65 65 59 54 54 54 54 54 56 60 60 65 65 65 65 70 70 65 65 65
+ 65 65 65 65 60 59 59 66 66 66 67 65 65 63 46 65 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+...
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99 99
+ 99 99 99 99 99 99
+</pre>
 
 <hr>
 <table border="0" cellspacing="0" width="100%">
