@@ -49,7 +49,7 @@
 /* #undef NCBI_OBSOLETE_STR_COMPARE */
 
 /* "auto_ptr" template class is not implemented in <memory> */
-#define HAVE_NO_AUTO_PTR 1
+/* #undef HAVE_NO_AUTO_PTR */
 
 /* Fast-CGI library is available */
 /* #undef HAVE_LIBFASTCGI */
