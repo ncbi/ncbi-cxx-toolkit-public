@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
 * Revision 1.29  2001/08/21 01:10:45  thiessen
 * add labeling
 *
@@ -205,7 +208,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
     // has multiple ensembles, then use multiple altConf ensemble
     int nAlts = 0;
-    if (!parentSet->isMultipleStructure && object->coordSets.size() == 1 &&
+    if (!parentSet->IsMultiStructure() && object->coordSets.size() == 1 &&
         object->coordSets.front()->atomSet->ensembles.size() > 1) {
 
         AtomSet *atomSet = object->coordSets.front()->atomSet;
@@ -223,7 +226,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             atomSetList.push_back(std::make_pair((*c)->atomSet,
                 reinterpret_cast<const std::string *>(NULL)));   // VC++ requires this cast for some reason...
             nAlts++;
-            if (parentSet->isMultipleStructure) break;
+            if (parentSet->IsMultiStructure()) break;
         }
     }
     TESTMSG("nAlts = " << nAlts);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
 * Revision 1.25  2001/10/08 00:00:09  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -148,8 +151,9 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
         wxPoint(0,50), wxSize(1000,300)),
     updateViewer(thisUpdateViewer)
 {
-    // View menu
-    viewMenu->Append(MID_IMPORT, "&Import Sequence");
+    // Edit menu
+    editMenu->AppendSeparator();
+    editMenu->Append(MID_IMPORT, "&Import Sequence");
 
     // Mouse mode menu
     menuBar->Enable(MID_SELECT_COLS, false);

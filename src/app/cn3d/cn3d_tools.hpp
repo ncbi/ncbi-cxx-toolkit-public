@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
 * Revision 1.12  2001/10/30 02:54:12  thiessen
 * add Biostruc cache
 *
@@ -104,10 +107,6 @@ extern wxFrame * GlobalTopWindow(void);
 // diagnostic output (mainly for debugging)
 #define TESTMSG(stream) ERR_POST(Info << stream)
 //#define TESTMSG(stream)
-
-// test for match between Sequence and Seq-id (implemented in alignment_set.cpp)
-class Sequence;
-extern bool IsAMatch(const Sequence *seq, const ncbi::objects::CSeq_id& sid);
 
 // global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
 extern bool RegistryIsValidInteger(const std::string& section, const std::string& name);

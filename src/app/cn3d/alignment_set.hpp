@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
 * Revision 1.12  2001/05/02 13:46:14  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -86,8 +89,6 @@
 
 BEGIN_SCOPE(Cn3D)
 
-typedef std::list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
-
 class MasterSlaveAlignment;
 class Sequence;
 class BlockMultipleAlignment;
@@ -95,7 +96,8 @@ class BlockMultipleAlignment;
 class AlignmentSet : public StructureBase
 {
 public:
-    AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
+    typedef std::list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
+    AlignmentSet(StructureBase *parent, const Sequence *masterSequence, const SeqAnnotList& seqAnnots);
     ~AlignmentSet(void);
 
     // constructs a new AlignmentSet from a multiple alignment
@@ -117,9 +119,8 @@ public:
 class MasterSlaveAlignment : public StructureBase
 {
 public:
-    typedef std::map < const Sequence *, bool > UsedSequenceList;
     MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
-        const ncbi::objects::CSeq_align& seqAlign, UsedSequenceList *usedStructuredSequences);
+        const ncbi::objects::CSeq_align& seqAlign);
 
     // pointers to the sequences in this pairwise alignment
     const Sequence *master, *slave;

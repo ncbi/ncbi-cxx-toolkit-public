@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
 * Revision 1.17  2001/10/01 16:04:25  thiessen
 * make CDD annotation window non-modal; add SetWindowTitle to viewers
 *
@@ -117,6 +120,7 @@
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/cn3d_blast.hpp"
 #include "cn3d/asn_reader.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -312,8 +316,8 @@ void UpdateViewer::SaveAlignments(void)
     }
 
     // save these changes to the ASN data
-    alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->parentSet->
-        ReplaceUpdates(updates);
+    if (alignmentStack.back().size() > 0)
+        alignmentStack.back().front()->GetMaster()->parentSet->ReplaceUpdates(updates);
 }
 
 void UpdateViewer::ImportSequence(void)
@@ -327,6 +331,21 @@ void UpdateViewer::ImportSequence(void)
     } else {
         // otherwise, this must be a single structure, so we need to pick one of its
         // chains as the new master
+        std::vector < const Sequence * > chains;
+        if (alignmentManager->GetStructureProteins(&chains)) {
+            if (chains.size() == 1) {
+                master = chains[0];
+            } else {
+                wxString *titles = new wxString[chains.size()];
+                int choice;
+                for (choice=0; choice<chains.size(); choice++)
+                    titles[choice] = chains[choice]->identifier->ToString().c_str();
+                choice = wxGetSingleChoiceIndex("Align to which protein chain?",
+                    "Select Chain", chains.size(), titles);
+                if (choice >= 0)
+                    master = chains[choice];
+            }
+        }
     }
     if (!master) {
         ERR_POST(Error << "UpdateViewer::ImportSequence() - no master sequence defined");
@@ -334,8 +353,8 @@ void UpdateViewer::ImportSequence(void)
     }
 
     // choose import type
-    static const wxString choiceStrings[] = { "Network via GI/Accession", "From a FASTA File" };
-    enum choiceValues { FROM_GI=0, FROM_FASTA, N_CHOICES };
+    static const wxString choiceStrings[] = { "From a FASTA File", "Network via GI/Accession" };
+    enum choiceValues { FROM_FASTA=0, FROM_GI, N_CHOICES };
     int importFrom = wxGetSingleChoiceIndex(
         "From what source would you like to import a sequence?", "Select Import Source",
         N_CHOICES, choiceStrings, *viewerWindow);

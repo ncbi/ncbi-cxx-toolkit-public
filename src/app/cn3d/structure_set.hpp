@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
 * Revision 1.59  2001/10/17 17:46:27  thiessen
 * save camera setup and rotation center in files
 *
@@ -233,6 +236,7 @@
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
+#include "cn3d/data_manager.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -254,18 +258,19 @@ class Colors;
 class Molecule;
 class BlockMultipleAlignment;
 class Sequence;
+class SequenceSet;
+class ChemicalGraph;
+class CoordSet;
 
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime, OpenGLRenderer *r);
-    // to load in a CDD, need "dataDir" to be pathname to dir. that contains MMDB Biostrucs,
-    // must end with trailing path separator; load at most structureLimit # Biostrucs
-    StructureSet(ncbi::objects::CCdd *cdd, const char *dataDir, int structureLimit, OpenGLRenderer *r);
+    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r);
+    StructureSet(ncbi::objects::CCdd *cdd, int structureLimit, OpenGLRenderer *r);
     ~StructureSet(void);
 
     // public data
-    const bool isMultipleStructure;
+
     bool isAlphaOnly;   // assume if one Object is alpha-only, then they all are
     int nDomains;       // total number of domains over all objects
 
@@ -302,12 +307,6 @@ public:
 
     // public methods
 
-    // put in new AlignmentSet - e.g. when alignment has been edited
-    void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
-
-    // replace the ASN update list with the current updates
-    void ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates);
-
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
@@ -322,11 +321,25 @@ public:
     // the atom's location is used as the global rotation center
     void SelectedAtom(unsigned int name, bool setCenter);
 
+    // updates sequences in the asn, to remove any sequences
+    // that are not used by the current alignmentSet or updates
+    void RemoveUnusedSequences(void);
+
+    // put in new AlignmentSet - e.g. when alignment has been edited
+    void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
+
+    // replace the ASN update list with the current updates
+    void ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates);
+
     // writes data to a file; returns true on success
     bool SaveASNData(const char *filename, bool doBinary);
 
     // adds a new Sequence to the SequenceSet
     const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
+
+    // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
+    Bioseq * GetOrCreateBioseq(const Sequence *sequence);
+    void CreateAllBioseqs(const BlockMultipleAlignment *multiple);
 
     // for manipulating structure alignment features
     void InitStructureAlignments(int masterMMDBID);
@@ -335,14 +348,19 @@ public:
     void RemoveStructureAlignments(void);
 
 private:
-    // pointers to the asn data
-    ncbi::objects::CNcbi_mime_asn1 *mimeData;
-    ncbi::objects::CCdd *cddData;
-    ncbi::objects::CBiostruc_annot_set *structureAlignments;
+    ASNDataManager dataManager;
 
-    void Init(void);
-    void MatchSequencesToMolecules(void);
+    // data preparation methods
+    void Load(int structureLimit);
+    void LoadSequencesForSingleStructure(void);             // for single structures
+    void LoadAlignmentsAndStructures(int structureLimit);   // for alignments
+    std::map < const ncbi::objects::CBiostruc * , bool > usedStructures;
+    bool MatchSequenceToMoleculeInObject(const Sequence *seq,
+        const StructureObject *obj, const Sequence **seqHandle = NULL);
+    bool LoadMaster(int masterMMDBID);
     void VerifyFrameMap(void) const;
+
+    // to keep track of gl "name" -> atom correspondence (for structure picking)
     typedef std::pair < const Residue*, int > NamePair;
     typedef std::map < unsigned int, NamePair > NameMap;
     NameMap nameMap;
@@ -352,52 +370,34 @@ private:
     typedef std::map < const Sequence *, Bioseq * > BioseqMap;
     BioseqMap bioseqs;
 
-    // updates sequences in the asn (but not in the SequenceSet), to remove any sequences
-    // that are not used by the current alignmentSet or updates
-    void RemoveUnusedSequences(void);
-
-    // flags to tell whether various parts of the data have been changed
-    enum eDataChanged {
-        eAlignmentData              = 0x01,
-        eStructureAlignmentData     = 0x02,
-        eSequenceData               = 0x04,
-        eUpdateData                 = 0x08,
-        eStyleData                  = 0x100,
-        eUserAnnotationData         = 0x200,
-        eCDDData                    = 0x400,
-        eOtherData                  = 0x800
-    };
-    mutable unsigned int dataChanged;
-
 public:
-    bool HasDataChanged(void) const { return (dataChanged > 0); }
-    void StyleDataChanged(void) const { dataChanged |= eStyleData; }
-    void UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
-    void CDDDataChanged(void) const { dataChanged |= eCDDData; }
+    bool IsMultiStructure(void) const { return !dataManager.IsSingleStructure(); }
+    bool HasDataChanged(void) const { return dataManager.HasDataChanged(); }
+    void SetDataChanged(ASNDataManager::eDataChanged what) const { dataManager.SetDataChanged(what); }
 
-    // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
-    Bioseq * GetOrCreateBioseq(const Sequence *sequence);
-    void CreateAllBioseqs(const BlockMultipleAlignment *multiple);
-
-    // CDD-specific stuff
-    bool IsCDD(void) const { return (cddData != NULL); }
-    const std::string& GetCDDName(void) const;
-    bool SetCDDName(const std::string& name);
-    const std::string& GetCDDDescription(void) const;
-    bool SetCDDDescription(const std::string& descr);
+    // CDD-specific data accessors
+    bool IsCDD(void) const { return dataManager.IsCDD(); }
+    const std::string& GetCDDName(void) const { return dataManager.GetCDDName(); }
+    bool SetCDDName(const std::string& name) { return dataManager.SetCDDName(name); }
+    const std::string& GetCDDDescription(void) const { return dataManager.GetCDDDescription(); }
+    bool SetCDDDescription(const std::string& descr) { return dataManager.SetCDDDescription(descr); }
     typedef std::vector < std::string > TextLines;
-    bool GetCDDNotes(TextLines *lines) const;
-    bool SetCDDNotes(const TextLines& lines);
-    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
-    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
+    bool GetCDDNotes(TextLines *lines) const { return dataManager.GetCDDNotes(lines); }
+    bool SetCDDNotes(const TextLines& lines) { return dataManager.SetCDDNotes(lines); }
+    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void) { return dataManager.GetCDDDescrSet(); }
+    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void) { return dataManager.GetCDDAnnotSet(); }
 };
-
-class ChemicalGraph;
-class CoordSet;
 
 class StructureObject : public StructureBase
 {
+private:
+    const bool isMaster;
+
 public:
+    // biostruc must not be "raw" mmdb data - will get confused by presence of different models
+    StructureObject(StructureBase *parent, const ncbi::objects::CBiostruc& biostruc, bool isMaster);
+    ~StructureObject(void) { if (transformToMaster) delete transformToMaster; }
+
     // public data
 
     static const int NO_MMDB_ID;
@@ -430,15 +430,6 @@ public:
     void RealignStructure(int nCoords,
         const Vector * const *masterCoords, const Vector * const *slaveCoords,
         const double *weights, int slaveRow);
-
-private:
-    const bool isMaster;
-
-public:
-    // isRawBiostrucFromMMDB says whether this is "raw" MMDB data - with all its various models
-    StructureObject(StructureBase *parent,
-        const ncbi::objects::CBiostruc& biostruc, bool isMaster, bool isRawBiostrucFromMMDB);
-    ~StructureObject(void) { if (transformToMaster) delete transformToMaster; }
 
     bool IsMaster(void) const { return isMaster; }
     bool IsSlave(void) const { return !isMaster; }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
 * Revision 1.7  2001/09/24 14:37:52  thiessen
 * more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
 *
@@ -389,7 +392,7 @@ void AnnotateDialog::EditAnnotation(void)
         annotation->name = tName->GetValue().c_str();
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tDescr, ID_T_DESCR, wxTextCtrl)
         annotation->description = tDescr->GetValue().c_str();
-        structureSet->StyleDataChanged();
+        structureSet->SetDataChanged(ASNDataManager::eStyleData);
     } else {    // wxCANCEL
         // restore original settings
         *style = copy;
@@ -419,7 +422,7 @@ void AnnotateDialog::MoveAnnotation(void)
         annotation->residues = highlightedResidues;
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
-        structureSet->StyleDataChanged();
+        structureSet->SetDataChanged(ASNDataManager::eStyleData);
     }
 }
 

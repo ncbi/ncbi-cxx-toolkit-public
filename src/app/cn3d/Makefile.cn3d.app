@@ -26,6 +26,7 @@ OBJ = \
 	cn3d_threader \
 	conservation_colorer \
 	coord_set \
+	data_manager \
 	messenger \
 	molecule \
 	molecule_identifier \

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
 * Revision 1.4  2001/10/18 19:57:32  thiessen
 * fix redundant creation of C bioseqs
 *
@@ -68,6 +71,7 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/asn_converter.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -126,8 +130,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
             // make sure the structure of this SeqAlign is what we expect
             if (!sa.IsSetDim() || sa.GetDim() != 2 ||
                 !sa.GetSegs().IsDenseg() || sa.GetSegs().GetDenseg().GetDim() != 2 ||
-                !IsAMatch(master, *(sa.GetSegs().GetDenseg().GetIds().front())) ||
-                !IsAMatch(*s, *(sa.GetSegs().GetDenseg().GetIds().back()))) {
+                !master->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().front())) ||
+                !(*s)->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().back()))) {
                 ERR_POST(Error << "Confused by BlastTwoSequences() result format");
                 continue;
             }

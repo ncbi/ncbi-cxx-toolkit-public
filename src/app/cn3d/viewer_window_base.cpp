@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
 * Revision 1.24  2001/10/16 21:49:07  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -277,6 +280,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                     break;
                 }
                 TESTMSG("turning on editor");
+                EnableBaseEditorMenuItems(true);
                 viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
                 viewer->PushAlignment();    // keep copy of original at bottom of the stack
                 Command(MID_DRAG_HORIZ);    // switch to drag mode
@@ -286,11 +290,11 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                     break;
                 }
                 TESTMSG("turning off editor");
+                EnableBaseEditorMenuItems(false);
                 viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
                 if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
                     Command(MID_SELECT_RECT);
             }
-            EnableBaseEditorMenuItems(turnEditorOn);
             break;
 
         case MID_UNDO:
@@ -357,7 +361,8 @@ void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
 {
     const wxMenuItemList& items = mouseModeMenu->GetMenuItems();
     for (int i=0; i<items.GetCount(); i++)
-        items.Item(i)->GetData()->Check((items.Item(i)->GetData()->GetId() == event.GetId()) ? true : false);
+        items.Item(i)->GetData()->Check(
+            (items.Item(i)->GetData()->GetId() == event.GetId()) ? true : false);
 
     switch (event.GetId()) {
         case MID_SELECT_RECT:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
 * Revision 1.13  2001/11/15 18:12:46  thiessen
 * add text+forefround color to user color buttons
 *
@@ -559,7 +562,7 @@ void StyleDialog::OnCloseWindow(wxCloseEvent& event)
             *editedSettings = dummy;
             GlobalMessenger()->PostRedrawAllStructures();
             GlobalMessenger()->PostRedrawAllSequenceViewers();
-            structureSet->StyleDataChanged();
+            structureSet->SetDataChanged(ASNDataManager::eStyleData);
         }
     } else
         wxBell();
@@ -578,7 +581,7 @@ void StyleDialog::OnButton(wxCommandEvent& event)
                     GlobalMessenger()->PostRedrawAllSequenceViewers();
                 }
                 if (changedEver)
-                    structureSet->StyleDataChanged();
+					structureSet->SetDataChanged(ASNDataManager::eStyleData);
                 EndModal(wxOK);
             } else
                 wxBell();
@@ -591,7 +594,7 @@ void StyleDialog::OnButton(wxCommandEvent& event)
                 GlobalMessenger()->PostRedrawAllStructures();
                 GlobalMessenger()->PostRedrawAllSequenceViewers();
                 changedSinceApply = false;
-                structureSet->StyleDataChanged();
+				structureSet->SetDataChanged(ASNDataManager::eStyleData);
             } else
                 wxBell();
             break;

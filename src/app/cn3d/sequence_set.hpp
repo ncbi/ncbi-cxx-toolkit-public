@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/11/27 16:26:09  thiessen
+* major update to data management system
+*
 * Revision 1.25  2001/09/27 15:36:48  thiessen
 * decouple sequence import and BLAST
 *
@@ -128,8 +131,6 @@
 
 BEGIN_SCOPE(Cn3D)
 
-typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
-
 class Sequence;
 class Molecule;
 class MasterSlaveAlignment;
@@ -138,15 +139,11 @@ class MoleculeIdentifier;
 class SequenceSet : public StructureBase
 {
 public:
-    SequenceSet(StructureBase *parent, ncbi::objects::CSeq_entry& seqEntry);
+    typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
     SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries);
 
     typedef std::list < const Sequence * > SequenceList;
     SequenceList sequences;
-
-    // there is one and only one sequence in this set that will be the master
-    // for all alignments of sequences from this set
-    const Sequence *master;
 
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
 * Revision 1.30  2001/10/02 23:26:47  thiessen
 * fix bug in highlight columns in master range
 *
@@ -409,7 +412,9 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 
         // check for unmergeable alignment
         const BlockMultipleAlignment *referenceAlignment = alignmentManager->GetCurrentMultipleAlignment();
-        if (referenceAlignment != this && seqIndex >= 0 && GetMaster() == referenceAlignment->GetMaster()) {
+        if (referenceAlignment && referenceAlignment != this && 
+			seqIndex >= 0 && GetMaster() == referenceAlignment->GetMaster()) {
+
             bool unmergeable = false;
             const Block *block = blockMap[alignmentColumn].block;
 

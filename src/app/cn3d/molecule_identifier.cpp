@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/11/27 16:26:08  thiessen
+* major update to data management system
+*
 * Revision 1.3  2001/08/08 02:25:27  thiessen
 * add <memory>
 *
@@ -45,6 +48,10 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
+
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 #include <memory>
 
@@ -129,9 +136,13 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
         }
     }
 
-    identifier->nResidues = molecule->NResidues();
+    if (identifier->nResidues == 0)
+        identifier->nResidues = molecule->NResidues();
+    else if (identifier->nResidues != molecule->NResidues())
+        ERR_POST(Error << "Length mismatch in molecule identifier " << identifier->ToString());
 
-//    TESTMSG("molecule: identifier " << identifier << " (" << identifier->ToString() << ')');
+    if (molecule->IsProtein() || molecule->IsNucleotide())
+        TESTMSG("biopolymer molecule: identifier " << identifier << " (" << identifier->ToString() << ')');
     return identifier;
 }
 
@@ -192,7 +203,10 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
         }
     }
 
-    identifier->nResidues = sequence->Length();
+    if (identifier->nResidues == 0)
+        identifier->nResidues = sequence->Length();
+    else if (identifier->nResidues != sequence->Length())
+        ERR_POST(Error << "Length mismatch in sequence identifier " << identifier->ToString());
 
 //    TESTMSG("sequence: identifier " << identifier << " (" << identifier->ToString() << ')');
     return identifier;
@@ -235,6 +249,34 @@ const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int mo
 void MoleculeIdentifier::ClearIdentifiers(void)
 {
     knownIdentifiers.clear();
+}
+
+bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
+{
+    if (sid.IsGi())
+        return (sid.GetGi() == gi);
+
+    if (sid.IsPdb()) {
+        if (sid.GetPdb().GetMol().Get() == pdbID) {
+            if (sid.GetPdb().IsSetChain() && sid.GetPdb().GetChain() != pdbChain)
+                return false;
+            else
+                return true;
+        } else
+            return false;
+    }
+
+    if (sid.IsLocal() && sid.GetLocal().IsStr())
+        return (sid.GetLocal().GetStr() == accession);
+
+    if (sid.IsGenbank() && sid.GetGenbank().IsSetAccession())
+        return (sid.GetGenbank().GetAccession() == accession);
+
+    if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession())
+        return (sid.GetSwissprot().GetAccession() == accession);
+
+    ERR_POST(Error << "MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
+    return false;
 }
 
 END_SCOPE(Cn3D)

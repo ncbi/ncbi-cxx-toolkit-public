@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/11/27 16:26:08  thiessen
+* major update to data management system
+*
 * Revision 1.34  2001/10/08 00:00:09  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -893,6 +896,16 @@ void SequenceDisplay::RemoveBlockBoundaryRows(void)
     VectorRemoveElements(rows, toRemove, nToRemove);
     UpdateMaxRowWidth();
     if (*viewerWindow) (*viewerWindow)->UpdateDisplay(this);
+}
+
+void SequenceDisplay::GetProteinSequences(SequenceList *seqs) const
+{
+    seqs->clear();
+    for (int row=0; row<rows.size(); row++) {
+        const Sequence *seq = rows[row]->GetSequence();
+        if (seq && seq->isProtein)
+            seqs->push_back(seq);
+    }
 }
 
 void SequenceDisplay::GetSequences(const BlockMultipleAlignment *forAlignment, SequenceList *seqs) const

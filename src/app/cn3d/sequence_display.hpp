@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/11/27 16:26:09  thiessen
+* major update to data management system
+*
 * Revision 1.18  2001/07/23 20:08:38  thiessen
 * add regex pattern search
 *
@@ -255,6 +258,9 @@ public:
     // returns a list of all sequences in the display (in order) for the given alignment
     typedef std::vector < const Sequence * > SequenceList;
     void GetSequences(const BlockMultipleAlignment *forAlignment, SequenceList *seqs) const;
+
+    // returns a list of all protein sequences in the display (in order)
+    void GetProteinSequences(SequenceList *seqs) const;
 
     // fills the vector with the current row ordering for the given alignment
     void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < int > *slaveRowOrder) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2001/11/27 16:26:09  thiessen
+* major update to data management system
+*
 * Revision 1.85  2001/10/30 02:54:13  thiessen
 * add Biostruc cache
 *
@@ -301,7 +304,6 @@
 #include <objects/mmdb1/Biostruc_descr.hpp>
 #include <objects/mmdb2/Biostruc_model.hpp>
 #include <objects/mmdb2/Model_type.hpp>
-#include <objects/mmdb3/Biostruc_feature_set.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/mmdb3/Biostruc_feature_id.hpp>
 #include <objects/mmdb3/Chem_graph_alignment.hpp>
@@ -315,8 +317,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
-#include <objects/cdd/Cdd_descr_set.hpp>
-#include <objects/cdd/Cdd_descr.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
@@ -329,7 +331,6 @@
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
-#include "cn3d/asn_reader.hpp"
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
@@ -344,322 +345,394 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static bool VerifyMatch(const Sequence *sequence, const StructureObject *object, const Molecule *molecule)
+StructureSet::StructureSet(CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r) :
+    StructureBase(NULL), dataManager(mime), renderer(r)
 {
-    if (molecule->residues.size() == sequence->Length()) {
-        if (molecule->sequence) {
-            ERR_POST(Error << "VerifyMatch() - confused by multiple sequences matching object "
-                << object->pdbID << " moleculeID " << molecule->id);
-            return false;
-        }
-        TESTMSG("matched sequence " << " gi " << sequence->identifier->gi << " with object "
-            << object->pdbID << " moleculeID " << molecule->id);
-        return true;
-    } else {
-        ERR_POST(Error << "VerifyMatch() - length mismatch between sequence gi "
-            << sequence->identifier->gi << " and matching molecule");
-    }
-    return false;
+    Load(structureLimit);
 }
 
-void StructureSet::MatchSequencesToMolecules(void)
+StructureSet::StructureSet(CCdd *cdd, int structureLimit, OpenGLRenderer *r) :
+    StructureBase(NULL), dataManager(cdd), renderer(r)
 {
-    // crossmatch sequences with molecules - at most one molecule per sequence.
-    // Match algorithm: for each molecule, check the sequence list for a matching
-    // sequence that hasn't already been matched to a previous molecule.
-    if (sequenceSet && objects.size() > 0) {
+    Load(structureLimit);
+}
 
-		SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
-        ObjectList::iterator o, oe = objects.end();
-        int nBiopolymers, nSequenceMatches;
+void StructureSet::LoadSequencesForSingleStructure(void)
+{
+    sequenceSet = new SequenceSet(this, *(dataManager.GetSequences()));
 
-        for (o=objects.begin(); o!=oe; o++) {
-            nSequenceMatches = nBiopolymers = 0;
+    if (objects.size() > 1)
+        ERR_POST(Error << "LoadSequencesForSingleStructure() called, but there is > 1 structure");
+    if (objects.size() != 1) return;
 
-            // count biopolymers
-            ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-            for (m=(*o)->graph->molecules.begin(); m!=me; m++)
-                if (m->second->IsProtein() || m->second->IsNucleotide()) nBiopolymers++;
+    // look for biopolymer molecules
+    ChemicalGraph::MoleculeMap::const_iterator m, me = objects.front()->graph->molecules.end();
+    SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
+    for (m=objects.front()->graph->molecules.begin(); m!=me; m++) {
+        if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
 
-            for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-                if ((*s)->molecule != NULL) continue; // skip already-matched sequences
+        // find matching sequence for each biopolymer
+        for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+            if ((*s)->molecule != NULL) continue; // skip already-matched sequences
 
-                for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
-                    if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
+            if (m->second->identifier == (*s)->identifier) {
 
-                    if (m->second->identifier == (*s)->identifier) {
+                // verify length
+                if (m->second->residues.size() != (*s)->Length()) {
+                    ERR_POST(Error
+                        << "LoadSequencesForSingleStructure() - length mismatch between sequence gi "
+                        << "and matching molecule " << m->second->identifier->ToString());
+                    continue;
+                }
+                TESTMSG("matched sequence " << " gi " << (*s)->identifier->gi << " with object "
+                    << objects.front()->pdbID << " moleculeID " << m->second->id);
 
-                        if (VerifyMatch(*s, *o, m->second)) {
-                            (const_cast<Molecule*>(m->second))->sequence = *s;
-                            (const_cast<Sequence*>(*s))->molecule = m->second;
-                            nSequenceMatches++;
+                (const_cast<Molecule*>(m->second))->sequence = *s;
+                (const_cast<Sequence*>(*s))->molecule = m->second;
+                break;
+            }
+        }
+        if (s == se)
+            ERR_POST(Error << "LoadSequencesForSingleStructure() - can't find sequence for molecule "
+                << m->second->identifier->ToString());
+    }
+}
 
-                            // if this is the master structure, then assume that the first sequence
-                            // found for this structure is master sequence for all sequence alignments
-                            if (objects.size() > 1 && (*o)->IsMaster() && !sequenceSet->master)
-                                (const_cast<SequenceSet*>(sequenceSet))->master = *s;
+bool StructureSet::LoadMaster(int masterMMDBID)
+{
+    if (objects.size() > 0) return false;
+    if (dataManager.GetMasterStructure()) {
+        objects.push_back(new StructureObject(this, *(dataManager.GetMasterStructure()), true));
+        if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && objects.front()->mmdbID != masterMMDBID)
+            ERR_POST(Error << "StructureSet::LoadMaster() - mismatched master MMDB ID");
+    } else if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && dataManager.GetStructureList()) {
+        ASNDataManager::BiostrucList::const_iterator b, be = dataManager.GetStructureList()->end();
+        for (b=dataManager.GetStructureList()->begin(); b!=be; b++) {
+            if ((*b)->GetId().front()->IsMmdb_id() &&
+                (*b)->GetId().front()->GetMmdb_id().Get() == masterMMDBID) {
+                objects.push_back(new StructureObject(this, **b, true));
+                usedStructures[b->GetPointer()] = true;
+                break;
+            }
+        }
+    }
+    if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && objects.size() == 0) {
+        CBiostruc biostruc;
+        if (LoadBiostrucViaCache(masterMMDBID, eModel_type_ncbi_all_atom, &biostruc))
+            objects.push_back(new StructureObject(this, biostruc, true));
+    }
+    return (objects.size() > 0);
+}
 
-                            break; // can only match one molecule per sequence, of course...
-                        }
+bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
+    const StructureObject *obj, const Sequence **seqHandle)
+{
+    ChemicalGraph::MoleculeMap::const_iterator m, me = obj->graph->molecules.end();
+    for (m=obj->graph->molecules.begin(); m!=me; m++) {
+        if (!(m->second->IsProtein() || m->second->IsNucleotide())) continue;
+
+        if (m->second->identifier == seq->identifier) {
+
+            // verify length
+            if (m->second->residues.size() != seq->Length()) {
+                ERR_POST(Error
+                    << "MatchSequenceToMoleculeInObject() - length mismatch between sequence gi "
+                    << "and matching molecule " << m->second->identifier->ToString());
+                continue;
+            }
+            TESTMSG("matched sequence " << " gi " << seq->identifier->gi << " with object "
+                << obj->pdbID << " moleculeID " << m->second->id);
+
+            // sanity check
+            if (m->second->sequence) {
+                ERR_POST(Error << "Molecule " << m->second->identifier->ToString()
+                    << " already has an associated sequence");
+                continue;
+            }
+
+            // automatically duplicate Sequence if it's already associated with a molecule
+            if (seq->molecule) {
+                TESTMSG("duplicating sequence " << seq->identifier->ToString());
+				SequenceSet *seqSetMod = const_cast<SequenceSet*>(sequenceSet);
+                seq = new Sequence(seqSetMod, *(seq->bioseqASN));
+                seqSetMod->sequences.push_back(seq);
+                // update Sequence handle, which should be a handle to a MasterSlaveAlignment slave,
+                // so that this new Sequence* is correctly loaded into the BlockMultipleAlignment
+                if (seqHandle) *seqHandle = seq;
+            }
+
+            // do the cross-match
+            (const_cast<Molecule*>(m->second))->sequence = seq;
+            (const_cast<Sequence*>(seq))->molecule = m->second;
+            break;
+        }
+    }
+    return (m != me);
+}
+
+typedef std::list < CRef < CSeq_id > > SeqIdList;
+
+void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
+{
+    // assume data manager has already screened the alignment list
+    ASNDataManager::SeqAnnotList *alignments = dataManager.GetSequenceAlignments();
+    typedef std::list < CRef < CSeq_align > > SeqAlignList;
+    const SeqAlignList& seqAligns = alignments->front()->GetData().GetAlign();
+
+    // we need to determine the identity of the master sequence; most rigorous way is to look
+    // for a Seq-id that is present in all pairwise alignments
+    const Sequence *seq1 = NULL, *seq2 = NULL, *master = NULL;
+    bool seq1PresentInAll = true, seq2PresentInAll = true;
+
+    // first, find sequences for first pairwise alignment
+    const SeqIdList& firstSids = seqAligns.front()->GetSegs().IsDendiag() ?
+        seqAligns.front()->GetSegs().GetDendiag().front()->GetIds() :
+        seqAligns.front()->GetSegs().GetDenseg().GetIds();
+    SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
+    for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+        if ((*s)->identifier->MatchesSeqId(firstSids.front().GetObject())) seq1 = *s;
+        if ((*s)->identifier->MatchesSeqId(firstSids.back().GetObject())) seq2 = *s;
+        if (seq1 && seq2) break;
+    }
+    if (!(seq1 && seq2)) {
+        ERR_POST(Error << "Can't match first pair of Seq-ids to Sequences");
+        return;
+    }
+
+    // now, make sure one of these sequences is present in all the other pairwise alignments
+    SeqAlignList::const_iterator a = seqAligns.begin(), ae = seqAligns.end();
+    for (a++; a!=ae; a++) {
+        const SeqIdList& sids = (*a)->GetSegs().IsDendiag() ?
+            (*a)->GetSegs().GetDendiag().front()->GetIds() : (*a)->GetSegs().GetDenseg().GetIds();
+        if (!seq1->identifier->MatchesSeqId(*(sids.front())) && !seq1->identifier->MatchesSeqId(*(sids.back())))
+            seq1PresentInAll = false;
+        if (!seq2->identifier->MatchesSeqId(*(sids.front())) && !seq2->identifier->MatchesSeqId(*(sids.back())))
+            seq2PresentInAll = false;
+    }
+    if (!seq1PresentInAll && !seq2PresentInAll) {
+        ERR_POST(Error << "All pairwise sequence alignments must have common master sequence");
+        return;
+    } else if (seq1PresentInAll && !seq2PresentInAll)
+        master = seq1;
+    else if (seq2PresentInAll && !seq1PresentInAll)
+        master = seq2;
+    else if (seq1PresentInAll && seq2PresentInAll && seq1 == seq2)
+        master = seq1;
+
+    // if still ambiguous, see if master3d is set in CDD data
+    if (!master && dataManager.GetCDDMaster3d()) {
+        if (seq1->identifier->MatchesSeqId(*(dataManager.GetCDDMaster3d())))
+            master = seq1;
+        else if (seq2->identifier->MatchesSeqId(*(dataManager.GetCDDMaster3d())))
+            master = seq2;
+        else
+            ERR_POST(Error << "Unable to match CDD's master3d with either sequence in first pairwise alignment");
+    }
+
+    // if still ambiguous, try to use master structure info to find master sequence
+    if (!master) {
+        int masterMMDBID = 0;
+
+        // master structure
+        if (dataManager.GetMasterStructure() &&
+            dataManager.GetMasterStructure()->GetId().front()->IsMmdb_id())
+            masterMMDBID = dataManager.GetMasterStructure()->GetId().front()->GetMmdb_id().Get();
+
+        // master of structure alignments
+        else if (dataManager.GetStructureAlignments() &&
+                 dataManager.GetStructureAlignments()->IsSetId() &&
+                 dataManager.GetStructureAlignments()->GetId().front()->IsMmdb_id())
+            masterMMDBID = dataManager.GetStructureAlignments()->GetId().front()->GetMmdb_id().Get();
+
+        if (masterMMDBID) {
+            // load master - has side affect of matching gi's with PDB/molecule ID during graph evaluation
+            if (structureLimit > 0)
+                LoadMaster(masterMMDBID);
+
+            // see if there's a sequence in the master structure that matches
+            if (seq1->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
+                seq1->identifier->mmdbID != seq2->identifier->mmdbID) {
+                if (masterMMDBID == seq1->identifier->mmdbID)
+                    master = seq1;
+                else if (masterMMDBID == seq2->identifier->mmdbID)
+                    master = seq2;
+                else {
+                    ERR_POST(Error << "Structure master does not contain either sequence in first pairwise alignment");
+                    return;
+                }
+            }
+        }
+    }
+
+    // if still ambiguous, just use the first one
+    if (!master) {
+        ERR_POST(Error << "Ambiguous master; using " << seq1->identifier->ToString());
+        master = seq1;
+    }
+
+    TESTMSG("determined that master sequence is " << master->identifier->ToString());
+
+    // load alignments now that we know the identity of the master
+    alignmentSet = new AlignmentSet(this, master, *(dataManager.GetSequenceAlignments()));
+
+    // load master if not already present (and if master has structure)
+    if (objects.size() == 0 && structureLimit > 0)
+        LoadMaster(master->identifier->mmdbID);
+
+    // cross-match master sequence and structure
+    if (objects.size() == 1 && !MatchSequenceToMoleculeInObject(master, objects.front())) {
+        ERR_POST(Error << "MatchSequenceToMoleculeInObject() - can't find molecule in object "
+            << objects.front()->pdbID << " to match master sequence "
+            << master->identifier->ToString());
+        return;
+    }
+
+    // IFF there's a master structure, then also load slave structures and cross-match sequences
+    if (objects.size() == 1 && structureLimit > 1) {
+        ASNDataManager::BiostrucList::const_iterator b, be;
+        if (dataManager.GetStructureList()) be = dataManager.GetStructureList()->end();
+        int row;
+        std::vector < bool > loadedStructureForSlaveRow(alignmentSet->alignments.size(), false);
+
+        // first, load each remaining slave structure, and for each one, find the first slave
+        // sequence that matches it (and that doesn't already have structure)
+        AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
+        if (dataManager.GetStructureList()) {
+            for (b=dataManager.GetStructureList()->begin(); b!=be && objects.size()<structureLimit; b++) {
+
+                // load structure
+                if (usedStructures.find(b->GetPointer()) != usedStructures.end()) continue;
+                StructureObject *object = new StructureObject(this, **b, false);
+                objects.push_back(object);
+                if (dataManager.GetStructureAlignments())
+                    object->SetTransformToMaster(
+                        *(dataManager.GetStructureAlignments()), master->identifier->mmdbID);
+                usedStructures[b->GetPointer()] = true;
+
+                // find matching unstructured slave sequence
+                for (l=alignmentSet->alignments.begin(), row=0; l!=le; l++, row++) {
+                    if (loadedStructureForSlaveRow[row]) continue;
+                    if (MatchSequenceToMoleculeInObject((*l)->slave, object,
+                            &((const_cast<MasterSlaveAlignment*>(*l))->slave))) {
+                        loadedStructureForSlaveRow[row] = true;
+                        break;
                     }
                 }
-
-                // allow only one Sequence per StructureObject if there are multiple objects
-                if (objects.size() > 1 && nSequenceMatches == 1) break;
+                if (l == le)
+                    ERR_POST(Error << "Structure " << object->pdbID << " doesn't have matching slave sequence");
             }
+        }
 
-            // sanity check - must match all biopolymer molecules if single molecule (& no alignments)
-            if (mimeData && !mimeData->IsStrucseqs() && objects.size() == 1) {
-                if (nSequenceMatches != nBiopolymers) {
-                    ERR_POST(Error << "MatchSequencesToMolecules() - couldn't find sequence for "
-                        "all biopolymers in " << (*o)->pdbID);
-                    return;
-                }
-            } else { // multiple objects
-                if (nSequenceMatches != 1) { // must match at exactly one biopolymer per object
-                    ERR_POST(Error << "MatchSequencesToMolecules() - currently require exactly one "
-                        "sequence per StructureObject (confused by " << (*o)->pdbID
-                        << ", biopolymers: " << nBiopolymers << ", matches: " << nSequenceMatches << ' ');
-                    return;
+        // now loop through slave rows of the alignment; if the slave
+        // sequence has an MMDB ID but no structure yet, then load it via cache.
+        if (objects.size() < structureLimit && dataManager.IsCDD() || dataManager.IsGeneralMime()) {
+            for (l=alignmentSet->alignments.begin(), row=0; l!=le && objects.size()<structureLimit; l++, row++) {
+
+                if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
+                    !loadedStructureForSlaveRow[row]) {
+
+                    // load Biostruc
+                    CBiostruc biostruc;
+                    if (!LoadBiostrucViaCache((*l)->slave->identifier->mmdbID,
+                            eModel_type_ncbi_all_atom, &biostruc)) {
+                        ERR_POST(Error << "Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
+                        continue;
+                    }
+
+                    // create StructureObject and cross-match
+                    StructureObject *object = new StructureObject(this, biostruc, false);
+                    objects.push_back(object);
+                    if (dataManager.GetStructureAlignments())
+                        object->SetTransformToMaster(
+                            *(dataManager.GetStructureAlignments()), master->identifier->mmdbID);
+                    if (!MatchSequenceToMoleculeInObject((*l)->slave, object,
+                            &((const_cast<MasterSlaveAlignment*>(*l))->slave)))
+                        ERR_POST(Error << "Failed to match any molecule in structure " << object->pdbID
+                            << " with sequence " << (*l)->slave->identifier->ToString());
+                    loadedStructureForSlaveRow[row] = true;
                 }
             }
         }
     }
 }
 
-void StructureSet::Init(void)
+void StructureSet::Load(int structureLimit)
 {
+    // member data initialization
     lastAtomName = OpenGLRenderer::NO_NAME;
     lastDisplayList = OpenGLRenderer::NO_LIST;
     sequenceSet = NULL;
     alignmentSet = NULL;
     alignmentManager = NULL;
-    dataChanged = 0;
     nDomains = 0;
     parentSet = this;
-    mimeData = NULL;
-    cddData = NULL;
     showHideManager = new ShowHideManager();
     styleManager = new StyleManager(this);
-    if (!showHideManager || !styleManager)
-        ERR_POST(Fatal << "StructureSet::StructureSet() - out of memory");
-    GlobalMessenger()->RemoveAllHighlights(false);
-    structureAlignments = NULL;
-}
 
-StructureSet::StructureSet(CNcbi_mime_asn1 *mime, OpenGLRenderer *r) :
-    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc()), renderer(r)
-{
-    Init();
-    mimeData = mime;
-    StructureObject *object;
-    const CCn3d_style_dictionary *styleDictionary = NULL;
-    const CCn3d_user_annotations *userAnnotations = NULL;
+    // if this is a single structure, then there should be one sequence per biopolymer
+    if (dataManager.IsSingleStructure()) {
+        const CBiostruc *masterBiostruc = dataManager.GetMasterStructure();
+        if (!masterBiostruc && dataManager.GetStructureList() && dataManager.GetStructureList()->size() == 1)
+            masterBiostruc = dataManager.GetStructureList()->front().GetPointer();
+        if (masterBiostruc && structureLimit > 0)
+            objects.push_back(new StructureObject(this, *masterBiostruc, true));
+        if (dataManager.GetSequences())
+            LoadSequencesForSingleStructure();
+    }
 
-    // create StructureObjects from (list of) biostruc
-    if (mime->IsStrucseq()) {
-        object = new StructureObject(this, mime->GetStrucseq().GetStructure(), true, false);
-        objects.push_back(object);
-        sequenceSet = new SequenceSet(this, mime->GetStrucseq().GetSequences());
-        MatchSequencesToMolecules();
-        alignmentManager = new AlignmentManager(sequenceSet, NULL);
-        if (mime->GetStrucseq().IsSetStyle_dictionary())
-            styleDictionary = &(mime->GetStrucseq().GetStyle_dictionary());
-        if (mime->GetStrucseq().IsSetUser_annotations())
-            userAnnotations = &(mime->GetStrucseq().GetUser_annotations());
-
-    } else if (mime->IsStrucseqs()) {
-        object = new StructureObject(this, mime->GetStrucseqs().GetStructure(), true, false);
-        objects.push_back(object);
-        sequenceSet = new SequenceSet(this, mime->GetStrucseqs().GetSequences());
-        MatchSequencesToMolecules();
-        alignmentSet = new AlignmentSet(this, mime->GetStrucseqs().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-        styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
-        if (mime->GetStrucseqs().IsSetStyle_dictionary())
-            styleDictionary = &(mime->GetStrucseqs().GetStyle_dictionary());
-        if (mime->GetStrucseqs().IsSetUser_annotations())
-            userAnnotations = &(mime->GetStrucseqs().GetUser_annotations());
-
-    } else if (mime->IsAlignstruc()) {
-        TESTMSG("Master:");
-        object = new StructureObject(this, mime->GetAlignstruc().GetMaster(), true, false);
-        objects.push_back(object);
-        const CBiostruc_align::TSlaves& slaves = mime->GetAlignstruc().GetSlaves();
-		CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
-        for (i=slaves.begin(); i!=e; i++) {
-            TESTMSG("Slave:");
-            object = new StructureObject(this, i->GetObject(), false, false);
-            if (!object->SetTransformToMaster(
-                    mime->GetAlignstruc().GetAlignments(),
-                    objects.front()->mmdbID))
-                ERR_POST(Warning << "Can't get structure alignment for slave " << object->pdbID
-                    << " with master " << objects.front()->pdbID
-                    << ";\nwill likely require manual realignment");
-            objects.push_back(object);
+    // multiple structure: should have exactly one sequence per structure (plus unstructured sequences)
+    else {
+        if (!dataManager.GetSequences() || !dataManager.GetSequenceAlignments()) {
+            ERR_POST(Error << "Data interpreted as multiple alignment, "
+                "but missing sequences and/or sequence alignments");
+            return;
         }
-        sequenceSet = new SequenceSet(this, mime->GetAlignstruc().GetSequences());
-        MatchSequencesToMolecules();
-        alignmentSet = new AlignmentSet(this, mime->GetAlignstruc().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+        sequenceSet = new SequenceSet(this, *(dataManager.GetSequences()));
+        LoadAlignmentsAndStructures(structureLimit);
+    }
+
+    // create alignment manager
+    if (sequenceSet) {
+        if (dataManager.GetUpdates())
+            // if updates present, alignment manager will load those into update viewer
+            alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, *(dataManager.GetUpdates()));
+        else
+            alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+    }
+
+#ifdef _DEBUG
+    VerifyFrameMap();
+#endif
+
+    // setup show/hide items
+    showHideManager->ConstructShowHideArray(this);
+
+    // set default rendering style
+    if (alignmentSet) {
         styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
         styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
-        structureAlignments = &(mime->GetAlignstruc().SetAlignments());
-        if (mime->GetAlignstruc().IsSetStyle_dictionary())
-            styleDictionary = &(mime->GetAlignstruc().GetStyle_dictionary());
-        if (mime->GetAlignstruc().IsSetUser_annotations())
-            userAnnotations = &(mime->GetAlignstruc().GetUser_annotations());
-
-    } else if (mime->IsEntrez() && mime->GetEntrez().GetData().IsStructure()) {
-        object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true, false);
-        objects.push_back(object);
-
     } else {
-        ERR_POST(Fatal << "Can't (yet) handle that Ncbi-mime-asn1 type");
+        styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
+        styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
     }
 
-    VerifyFrameMap();
-    showHideManager->ConstructShowHideArray(this);
-
-    // load styles
-    if (styleDictionary) {
-        if (!styleManager->LoadFromASNStyleDictionary(*styleDictionary) ||
+    // load user styles and annotations
+    const CCn3d_style_dictionary *styles = dataManager.GetStyleDictionary();
+    if (styles) {
+        if (!styleManager->LoadFromASNStyleDictionary(*styles) ||
             !styleManager->CheckGlobalStyleSettings())
-            ERR_POST(Error << "Error loading style dictionary from mime");
-        // remove now; recreated with current settings upon save
-        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetStyle_dictionary();
-        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetStyle_dictionary();
-        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetStyle_dictionary();
+            ERR_POST(Error << "Error loading style dictionary");
+        dataManager.RemoveStyleDictionary();   // remove now; recreated with current settings upon save
+    }
+    const CCn3d_user_annotations *annots = dataManager.GetUserAnnotations();
+    if (annots) {
+        if (!styleManager->LoadFromASNUserAnnotations(*annots) ||
+            !renderer->LoadFromASNViewSettings(*annots))
+            ERR_POST(Error << "Error loading user annotations or camera settings");
+        dataManager.RemoveUserAnnotations();   // remove now; recreated with current settings upon save
     }
 
-    // load user annotations
-    if (userAnnotations) {
-        if (!styleManager->LoadFromASNUserAnnotations(*userAnnotations) ||
-            !renderer->LoadFromASNViewSettings(*userAnnotations))
-            ERR_POST(Error << "Error loading user annotations and camera settings from mime");
-        // remove now; recreated with current settings upon save
-        if (mimeData->IsAlignstruc()) mimeData->SetAlignstruc().ResetUser_annotations();
-        else if (mimeData->IsStrucseq()) mimeData->SetStrucseq().ResetUser_annotations();
-        else if (mimeData->IsStrucseqs()) mimeData->SetStrucseqs().ResetUser_annotations();
-    }
-    dataChanged = 0;
-}
-
-StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit, OpenGLRenderer *r) :
-    StructureBase(NULL), isMultipleStructure(true), renderer(r)
-{
-    Init();
-    cddData = cdd;
-
-    // read sequences first; these contain links to MMDB id's
-    sequenceSet = new SequenceSet(this, cdd->SetSequences());
-
-    // create a list of MMDB ids to try to load
-    vector < int > mmdbIDs;
-    SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
-    for (s=sequenceSet->sequences.begin(); s!=se; s++)
-        if ((*s)->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
-                (structureLimit < 0 || mmdbIDs.size() < structureLimit))
-            mmdbIDs.push_back((*s)->identifier->mmdbID);
-
-    // if more than one structure, the Biostruc-annot-set should contain structure alignments
-    // for slaves->master - and thus also the identity of the master.
-    static const int VALUE_NOT_SET = -1;
-    int masterMMDBID = VALUE_NOT_SET;
-    bool gotMasterObject = false;
-
-    if (mmdbIDs.size() == 1) {
-        masterMMDBID = mmdbIDs[0];
-    } else if (mmdbIDs.size() > 1) {
-
-        // try to get master MMDB ID from structure alignments if present
-        if (cdd->IsSetFeatures()) {
-            structureAlignments = &(cdd->SetFeatures());
-            CBiostruc_annot_set::TId::const_iterator i, ie = cdd->GetFeatures().GetId().end();
-            for (i=cdd->GetFeatures().GetId().begin(); i!=ie; i++) {
-                if (i->GetObject().IsMmdb_id()) {
-                    masterMMDBID = i->GetObject().GetMmdb_id().Get();
-                    break;
-                }
-            }
-        }
-
-        // else assume the first sequence with a PDB and MMDB ID is the master
-        else {
-            SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
-            for (s=sequenceSet->sequences.begin(); s!=se; s++) {
-                if ((*s)->identifier->pdbID.size() > 0 && (*s)->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
-                    ERR_POST(Error << "Warning: no structure alignments, "
-                         << "so the first sequence with MMDB link ("
-                         << (*s)->identifier->ToString() << ") is assumed to be the master structure");
-                    masterMMDBID = (*s)->identifier->mmdbID;
-                    // create a new (empty) "features" area for the structure alignments
-                    InitStructureAlignments(masterMMDBID);
-                    break;
-                }
-            }
-        }
-
-        if (masterMMDBID == VALUE_NOT_SET) {
-            ERR_POST(Error << "StructureSet::StructureSet() - "
-                "can't determine master MMDB id from structure or sequence alignments. "
-                "Structures not loaded.");
-        }
-    }
-
-    // Once the master MMDB id is determined,
-    // then we can load structures and slave structure alignments.
-    if (masterMMDBID != VALUE_NOT_SET) {
-        for (int m=0; m<mmdbIDs.size(); m++) {
-
-            // load Biostrucs from cache (use one-coord-per-atom model)
-            CBiostruc biostruc;
-            bool gotBiostruc = LoadBiostrucViaCache(mmdbIDs[m], eModel_type_ncbi_all_atom, &biostruc);
-
-            if (gotBiostruc) {
-                // create new StructureObject; if the master MMDB entry is also used for slave
-                // structures, make sure only first instance gets flagged as a master object
-                bool isMaster = (!gotMasterObject && mmdbIDs[m] == masterMMDBID);
-                StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
-                if (!isMaster) {
-                    if (!object->SetTransformToMaster(cdd->GetFeatures(), masterMMDBID))
-                        ERR_POST(Warning << "Can't get structure alignment for slave " << object->pdbID
-                            << " with master " << objects.front()->pdbID
-                            << ";\nwill likely require manual realignment");
-                }
-                objects.push_back(object);
-                if (isMaster) gotMasterObject = true;
-            }
-        }
-    }
-
-    MatchSequencesToMolecules();
-    alignmentSet = new AlignmentSet(this, cdd->GetSeqannot());
-    if (cdd->IsSetPending())
-        // if updates present, alignment manager will load those into update viewer
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, cdd->GetPending());
-    else
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-    styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-    styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
-    VerifyFrameMap();
-    showHideManager->ConstructShowHideArray(this);
-
-    if (cdd->IsSetStyle_dictionary()) {
-        if (!styleManager->LoadFromASNStyleDictionary(cdd->GetStyle_dictionary()) ||
-            !styleManager->CheckGlobalStyleSettings())
-            ERR_POST(Error << "Error loading style dictionary from cdd");
-        cdd->ResetStyle_dictionary();   // remove now; recreated with current settings upon save
-    }
-
-    if (cdd->IsSetUser_annotations()) {
-        if (!styleManager->LoadFromASNUserAnnotations(cdd->GetUser_annotations()) ||
-            !renderer->LoadFromASNViewSettings(cdd->GetUser_annotations()))
-            ERR_POST(Error << "Error loading user annotations or camera settings from cdd");
-        cdd->ResetUser_annotations();   // remove now; recreated with current settings upon save
-    }
-    dataChanged = 0;
+    dataManager.SetDataUnchanged();
 }
 
 StructureSet::~StructureSet(void)
@@ -667,9 +740,8 @@ StructureSet::~StructureSet(void)
     delete showHideManager;
     delete styleManager;
     if (alignmentManager) delete alignmentManager;
-    if (cddData) delete cddData;
-    if (mimeData) delete mimeData;
 
+    GlobalMessenger()->RemoveAllHighlights(false);
     MoleculeIdentifier::ClearIdentifiers();
 
     BioseqMap::iterator i, ie = bioseqs.end();
@@ -719,17 +791,14 @@ void StructureSet::InitStructureAlignments(int masterMMDBID)
 {
     // create or empty the Biostruc-annot-set that will contain these alignments
     // in the asn data, erasing any structure alignments currently stored there
+    CBiostruc_annot_set *structureAlignments = dataManager.GetStructureAlignments();
     if (structureAlignments) {
         structureAlignments->SetId().clear();
         structureAlignments->SetDescr().clear();
         structureAlignments->SetFeatures().clear();
     } else {
         structureAlignments = new CBiostruc_annot_set();
-        // this should only happen if this is a Cdd, so plug in this new 'features' set
-        if (cddData) {
-            CRef < CBiostruc_annot_set > featRef(structureAlignments);
-            cddData->SetFeatures(featRef);
-        }
+        dataManager.SetStructureAlignments(structureAlignments);
     }
 
     // set up the skeleton of the new Biostruc-annot-set
@@ -744,12 +813,13 @@ void StructureSet::InitStructureAlignments(int masterMMDBID)
     structureAlignments->SetFeatures().resize(1, featSet);
 
     // flag a change in data
-    dataChanged |= eStructureAlignmentData;
+    dataManager.SetDataChanged(ASNDataManager::eStructureAlignmentData);
 }
 
 void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     int masterDomainID, int slaveDomainID)
 {
+    CBiostruc_annot_set *structureAlignments = dataManager.GetStructureAlignments();
     if (!structureAlignments) {
         ERR_POST(Error << "StructureSet::AddStructureAlignment() - no structure alignment list present");
         return;
@@ -777,33 +847,19 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
         structureAlignments->GetFeatures().front().GetObject().GetFeatures().size() + 1, featureRef);
 
     // flag a change in data
-    dataChanged |= eStructureAlignmentData;
+    dataManager.SetDataChanged(ASNDataManager::eStructureAlignmentData);
 }
 
-// remove feature list from a CDD
 void StructureSet::RemoveStructureAlignments(void)
 {
-    if (cddData) {
-        cddData->ResetFeatures();
-        structureAlignments = NULL;
-
-        // flag a change in data
-        dataChanged |= eStructureAlignmentData;
-    }
+    dataManager.SetStructureAlignments(NULL);
+    // flag a change in data
+    dataManager.SetDataChanged(ASNDataManager::eStructureAlignmentData);
 }
 
 void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
 {
-    // find the slot in the asn data for alignments
-    SeqAnnotList *seqAnnots = NULL;
-    if (mimeData) {
-        if (mimeData->IsStrucseqs())
-            seqAnnots = &(mimeData->GetStrucseqs().SetSeqalign());
-        else if (mimeData->IsAlignstruc())
-            seqAnnots = &(mimeData->GetAlignstruc().SetSeqalign());
-    } else if (cddData) {
-        seqAnnots = &(cddData->SetSeqannot());
-    }
+	ASNDataManager::SeqAnnotList *seqAnnots = dataManager.GetSequenceAlignments();
     if (!seqAnnots) {
         ERR_POST(Error << "StructureSet::ReplaceAlignmentSet() - "
             << "can't figure out where in the asn the alignments are to go");
@@ -817,150 +873,57 @@ void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
 
     // update the asn alignments
     seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
-    SeqAnnotList::iterator o = seqAnnots->begin();
-    SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
+    ASNDataManager::SeqAnnotList::iterator o = seqAnnots->begin();
+    ASNDataManager::SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
     for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
         o->Reset(n->GetPointer());   // copy each Seq-annot CRef
 
-    dataChanged |= eAlignmentData;
+    dataManager.SetDataChanged(ASNDataManager::eAlignmentData);
 }
 
 void StructureSet::ReplaceUpdates(const ncbi::objects::CCdd::TPending& newUpdates)
 {
-    if (!cddData) {
-        ERR_POST(Error << "StructureSet::ReplaceUpdates() - can only save updates in a CDD");
-        return;
-    }
-
-    cddData->SetPending() = newUpdates;
-    dataChanged |= eUpdateData;
+    dataManager.ReplaceUpdates(newUpdates);
 }
 
 void StructureSet::RemoveUnusedSequences(void)
 {
-    // find the asn sequence list
-    SeqEntryList *seqEntries = NULL;
-    if (mimeData) {
-        if (mimeData->IsStrucseqs())
-            seqEntries = &(mimeData->SetStrucseqs().SetSequences());
-        else if (mimeData->IsAlignstruc())
-            seqEntries = &(mimeData->SetAlignstruc().SetSequences());
-    } else if (cddData) {
-        if (cddData->IsSetSequences() && cddData->GetSequences().IsSet())
-            seqEntries = &(cddData->SetSequences().SetSet().SetSeq_set());
-    }
-    if (!seqEntries) {
-        if (!mimeData || !mimeData->IsStrucseq())
-            ERR_POST(Error << "StructureSet::RemoveUnusedSequences() - "
-                << "can't figure out where in the asn the sequences are to go");
-        return;
-    }
-
-    // update the asn sequences, keeping only those used in the multiple alignment and updates
-    seqEntries->clear();
-    std::map < const CBioseq *, bool > usedSeqs;
-    int nStructuredSeqs = 0;
-
-// macro to add the sequence to the list if not already present;
-// if the sequence has structure, always add it, since repeated chains require duplicate Sequences
-#define CONDITIONAL_ADD_SEQENTRY(seq) do { \
-    if ((seq)->molecule || usedSeqs.find((seq)->bioseqASN.GetPointer()) == usedSeqs.end()) { \
-        seqEntries->resize(seqEntries->size() + 1); \
-        seqEntries->back().Reset(new CSeq_entry); \
-        seqEntries->back().GetObject().SetSeq((seq)->bioseqASN); \
-        usedSeqs[(seq)->bioseqASN.GetPointer()] = true; \
-        if (seq->molecule) nStructuredSeqs++; } } while (0)
-
-    // always add master first
-    CONDITIONAL_ADD_SEQENTRY(alignmentSet->master);
-
-    // add from alignmentSet
-    AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
-    for (a=alignmentSet->alignments.begin(); a!=ae; a++)
-        CONDITIONAL_ADD_SEQENTRY((*a)->slave);
-
-    // add from updates
-    typedef std::list < const Sequence * > SequenceList;
-    SequenceList updateSequences;
-    alignmentManager->GetUpdateSequences(&updateSequences);
-    SequenceList::const_iterator s, se = updateSequences.end();
-    for (s=updateSequences.begin(); s!=se; s++)
-        CONDITIONAL_ADD_SEQENTRY((*s));
-
-    dataChanged |= eSequenceData;
-
-    // warn user if # structured seqs != # structure alignments
-    if (cddData) {
-        if ((nStructuredSeqs < 2 && structureAlignments) ||
-            (nStructuredSeqs >= 2 && (!structureAlignments || nStructuredSeqs !=
-                structureAlignments->GetFeatures().front().GetObject().GetFeatures().size() + 1))) {
-            ERR_POST(Error << "Warning: Structure alignment list does not contain one alignment per "
-                "structured sequence!\nYou should recompute structure alignments before saving "
-                "in order to sync the lists.");
-        }
-    }
+	ASNDataManager::SequenceList updateSequences;
+    if (alignmentManager) alignmentManager->GetUpdateSequences(&updateSequences);
+    dataManager.RemoveUnusedSequences(alignmentSet, updateSequences);
 }
 
 bool StructureSet::SaveASNData(const char *filename, bool doBinary)
 {
     // force a save of any edits to alignment and updates first (it's okay if this has already been done)
     GlobalMessenger()->SequenceWindowsSave();
-    if (dataChanged) RemoveUnusedSequences();
+    if (dataManager.HasDataChanged()) RemoveUnusedSequences();
 
     // create and temporarily attach a style dictionary, and annotation set + camera info
     // to the data (and then remove it again, so it's never out of date)
     CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
+    dataManager.SetStyleDictionary(styleDictionary);
     CRef < CCn3d_user_annotations > userAnnotations(new CCn3d_user_annotations());
     if (!styleManager->SaveToASNUserAnnotations(userAnnotations.GetPointer()) ||
-        !renderer->SaveToASNViewSettings(userAnnotations.GetPointer())) {
+        (objects.size() >= 1 && !renderer->SaveToASNViewSettings(userAnnotations.GetPointer()))) {
         ERR_POST(Error << "StructureSet::SaveASNData() - error creating user annotations blob");
         return false;
     }
-    if (mimeData) {
-        if (mimeData->IsAlignstruc()) {
-            mimeData->SetAlignstruc().SetStyle_dictionary(styleDictionary);
-            mimeData->SetAlignstruc().SetUser_annotations(userAnnotations);
-        } else if (mimeData->IsStrucseq()) {
-            mimeData->SetStrucseq().SetStyle_dictionary(styleDictionary);
-            mimeData->SetStrucseq().SetUser_annotations(userAnnotations);
-        } else if (mimeData->IsStrucseqs()) {
-            mimeData->SetStrucseqs().SetStyle_dictionary(styleDictionary);
-            mimeData->SetStrucseqs().SetUser_annotations(userAnnotations);
-        }
-    } else if (cddData) {
-        cddData->SetStyle_dictionary(styleDictionary);
-        cddData->SetUser_annotations(userAnnotations);
-    }
+    if (userAnnotations->IsSetAnnotations() || userAnnotations->IsSetView())
+        dataManager.SetUserAnnotations(userAnnotations);
 
     std::string err;
-    bool writeOK = false;
-    if (mimeData)
-        writeOK = WriteASNToFile(filename, *mimeData, doBinary, &err, eFNP_Replace);
-    else if (cddData)
-        writeOK = WriteASNToFile(filename, *cddData, doBinary, &err, eFNP_Replace);
+    bool writeOK = dataManager.WriteDataToFile(filename, doBinary, &err, eFNP_Replace);
+
+    // remove style dictionary and annotations from asn
+    dataManager.RemoveStyleDictionary();
+    dataManager.RemoveUserAnnotations();
+
     if (writeOK) {
-        dataChanged = 0;
+        dataManager.SetDataUnchanged();
     } else {
         ERR_POST(Error << "Write failed: " << err);
     }
-
-    // remove style dictionary and annotations from asn
-    if (mimeData) {
-        if (mimeData->IsAlignstruc()) {
-            mimeData->SetAlignstruc().ResetStyle_dictionary();
-            mimeData->SetAlignstruc().ResetUser_annotations();
-        } else if (mimeData->IsStrucseq()) {
-            mimeData->SetStrucseq().ResetStyle_dictionary();
-            mimeData->SetStrucseq().ResetUser_annotations();
-        } else if (mimeData->IsStrucseqs()) {
-            mimeData->SetStrucseqs().ResetStyle_dictionary();
-            mimeData->SetStrucseqs().ResetUser_annotations();
-        }
-    } else if (cddData) {
-        cddData->ResetStyle_dictionary();
-        cddData->ResetUser_annotations();
-    }
-
     return writeOK;
 }
 
@@ -1089,160 +1052,12 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     }
 }
 
-const std::string& StructureSet::GetCDDName(void) const
-{
-    static const std::string empty = "";
-    if (cddData)
-        return cddData->GetName();
-    else
-        return empty;
-}
-
-bool StructureSet::SetCDDName(const std::string& name)
-{
-    if (!cddData || name.size() == 0) return false;
-    cddData->SetName(name);
-    dataChanged |= eCDDData;
-    return true;
-}
-
-const std::string& StructureSet::GetCDDDescription(void) const
-{
-    static const std::string empty = "";
-    if (!cddData) return empty;
-
-    // find first 'comment' in Cdd-descr-set, assume this is the "long description"
-    if (!cddData->IsSetDescription() || cddData->GetDescription().Get().size() == 0) return empty;
-    CCdd_descr_set::Tdata::const_iterator d, de = cddData->GetDescription().Get().end();
-    for (d=cddData->GetDescription().Get().begin(); d!=de; d++)
-        if ((*d)->IsComment())
-            return (*d)->GetComment();
-
-    return empty;
-}
-
-bool StructureSet::SetCDDDescription(const std::string& descr)
-{
-    if (!cddData || descr.size() == 0) return false;
-
-    if (cddData->IsSetDescription() && cddData->GetDescription().Get().size() >= 0) {
-        // find first 'comment' in Cdd-descr-set, assume this is the "long description"
-        CCdd_descr_set::Tdata::iterator d, de = cddData->SetDescription().Set().end();
-        for (d=cddData->SetDescription().Set().begin(); d!=de; d++) {
-            if ((*d)->IsComment()) {
-                if ((*d)->GetComment() != descr) {
-                    (*d)->SetComment(descr);
-                    dataChanged |= eCDDData;
-                }
-                return true;
-            }
-        }
-    }
-
-    // add new comment if not yet present
-    CRef < CCdd_descr > comment(new CCdd_descr);
-    comment->SetComment(descr);
-    cddData->SetDescription().Set().push_front(comment);
-    dataChanged |= eCDDData;
-    return true;
-}
-
-bool StructureSet::GetCDDNotes(TextLines *lines) const
-{
-    if (!lines || !cddData) return false;
-    lines->clear();
-
-    if (!cddData->IsSetDescription() || cddData->GetDescription().Get().size() == 0)
-        return true;
-
-    // find scrapbook item
-    CCdd_descr_set::Tdata::const_iterator d, de = cddData->GetDescription().Get().end();
-    for (d=cddData->GetDescription().Get().begin(); d!=de; d++) {
-        if ((*d)->IsScrapbook()) {
-
-            // fill out lines from scrapbook string list
-            lines->resize((*d)->GetScrapbook().size());
-            CCdd_descr::TScrapbook::const_iterator l, le = (*d)->GetScrapbook().end();
-            int i = 0;
-            for (l=(*d)->GetScrapbook().begin(); l!=le; l++)
-                (*lines)[i++] = *l;
-            return true;
-        }
-    }
-    return true;
-}
-
-bool StructureSet::SetCDDNotes(const TextLines& lines)
-{
-    if (!cddData) return false;
-
-    CCdd_descr::TScrapbook *scrapbook = NULL;
-
-    // find an existing scrapbook item
-    if (cddData->IsSetDescription()) {
-        CCdd_descr_set::Tdata::iterator d, de = cddData->SetDescription().Set().end();
-        for (d=cddData->SetDescription().Set().begin(); d!=de; d++) {
-            if ((*d)->IsScrapbook()) {
-                if (lines.size() == 0) {
-                    cddData->SetDescription().Set().erase(d);   // if empty, remove scrapbook item
-                    dataChanged |= eCDDData;
-                    TESTMSG("removed scrapbook");
-                } else
-                    scrapbook = &((*d)->SetScrapbook());
-                break;
-            }
-        }
-    }
-    if (lines.size() == 0) return true;
-
-    // create a scrapbook item if doesn't exist already
-    if (!scrapbook) {
-        CRef < CCdd_descr > descr(new CCdd_descr());
-        scrapbook = &(descr->SetScrapbook());
-        cddData->SetDescription().Set().push_back(descr);
-    }
-
-    // fill out scrapbook lines
-    scrapbook->clear();
-    for (int i=0; i<lines.size(); i++)
-        scrapbook->push_back(lines[i]);
-    dataChanged |= eCDDData;
-
-    return true;
-}
-
-ncbi::objects::CCdd_descr_set * StructureSet::GetCDDDescrSet(void)
-{
-    if (cddData) {
-        // make a new descr set if not present
-        if (!cddData->IsSetDescription()) {
-            CRef < CCdd_descr_set > ref(new CCdd_descr_set());
-            cddData->SetDescription(ref);
-        }
-        return &(cddData->SetDescription());
-    } else
-        return NULL;
-}
-
-ncbi::objects::CAlign_annot_set * StructureSet::GetCDDAnnotSet(void)
-{
-    if (cddData) {
-        // make a new annot set if not present
-        if (!cddData->IsSetAlignannot()) {
-			CRef < CAlign_annot_set > ref(new CAlign_annot_set());
-            cddData->SetAlignannot(ref);
-        }
-        return &(cddData->SetAlignannot());
-    } else
-        return NULL;
-}
-
 const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
 {
     SequenceSet *modifiableSet = const_cast<SequenceSet*>(sequenceSet);
     const Sequence *newSeq = new Sequence(modifiableSet, bioseq);
     modifiableSet->sequences.push_back(newSeq);
-    dataChanged |= eSequenceData;
+    dataManager.SetDataChanged(ASNDataManager::eSequenceData);
     return newSeq;
 }
 
@@ -1252,8 +1067,7 @@ const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
 const int StructureObject::NO_MMDB_ID = -1;
 const double StructureObject::NO_TEMPERATURE = kMin_Double;
 
-StructureObject::StructureObject(StructureBase *parent,
-    const CBiostruc& biostruc, bool master, bool isRawBiostrucFromMMDB) :
+StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master) :
     StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL),
     minTemperature(NO_TEMPERATURE), maxTemperature(NO_TEMPERATURE)
 {
@@ -1292,8 +1106,8 @@ StructureObject::StructureObject(StructureBase *parent,
             if (i->GetObject().GetType() == eModel_type_ncbi_vector ||
                 i->GetObject().GetType() == eModel_type_other) continue;
 
-            // special case, typically for loading CDD's, when we're only interested in a single model type
-            if (isRawBiostrucFromMMDB && i->GetObject().GetType() != eModel_type_ncbi_all_atom) continue;
+//            // special case, typically for loading CDD's, when we're only interested in a single model type
+//            if (isRawBiostrucFromMMDB && i->GetObject().GetType() != eModel_type_ncbi_all_atom) continue;
 
             // otherwise, assume all models in this set are of same type
             if (i->GetObject().GetType() == eModel_type_ncbi_backbone)
@@ -1384,6 +1198,9 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
             }
         }
     }
+
+    ERR_POST(Warning << "Can't get structure alignment for slave " << pdbID
+        << " with master " << masterMMDBID << ";\nwill likely require manual realignment");
     return false;
 }
 

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/11/27 16:26:08  thiessen
+* major update to data management system
+*
 * Revision 1.3  2001/07/04 19:38:55  thiessen
 * finish user annotation system
 *
@@ -47,6 +50,8 @@
 #define CN3D_MOLECULE_IDENTIFIER__HPP
 
 #include <corelib/ncbistl.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
 
 #include <list>
 #include <string>
@@ -80,6 +85,9 @@ public:
 
     // get identifier for MMDB ID + molecule (NULL if not found)
     static const MoleculeIdentifier * FindIdentifier(int mmdbID, int moleculeID);
+
+    // test for Seq-id match
+    bool MatchesSeqId(const ncbi::objects::CSeq_id& sid) const;
 
     // clear identifier store (e.g. when a new file is loaded)
     static void ClearIdentifiers(void);

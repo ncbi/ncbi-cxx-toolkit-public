@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
 * Revision 1.105  2001/11/09 15:19:19  thiessen
 * wxFindFirst file fixed on wxMac; call glViewport() from OnSize()
 *
@@ -821,8 +824,6 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 
 // data and methods for the main program window (a Cn3DMainFrame)
 
-const int Cn3DMainFrame::UNLIMITED_STRUCTURES = -2;
-
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_CLOSE     (                                         Cn3DMainFrame::OnCloseWindow)
     EVT_MENU      (MID_EXIT,                                Cn3DMainFrame::OnExit)
@@ -859,7 +860,7 @@ static void SetupFavoritesMenu(wxMenu *favoritesMenu)
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
-    glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES),
+    glCanvas(NULL), structureLimit(1000),
     cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL)
 {
     topWindow = this;
@@ -1552,7 +1553,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, mime, isBinary, &err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            glCanvas->structureSet = new StructureSet(mime, glCanvas->renderer);
+            glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
         } else {
             ERR_POST(Warning << "error: " << err);
             delete mime;
@@ -1566,8 +1567,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, cdd, isBinary, &err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            glCanvas->structureSet = new StructureSet(cdd,
-                userDir.c_str(), structureLimit, glCanvas->renderer);
+            glCanvas->structureSet = new StructureSet(cdd, structureLimit, glCanvas->renderer);
         } else {
             ERR_POST(Warning << "error: " << err);
             delete cdd;
@@ -1628,13 +1628,10 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
 void Cn3DMainFrame::OnLimit(wxCommandEvent& event)
 {
-    long newLimit = wxGetNumberFromUser(
-        "Enter the maximum number of structures to display (-1 for unlimited)",
-        "Max:", "Structure Limit", 10, -1, 1000, this);
+    long newLimit = wxGetNumberFromUser("Enter the maximum number of structures to display",
+        "Max: ", "Structure Limit", structureLimit, 0, 1000, this);
     if (newLimit >= 0)
         structureLimit = (int) newLimit;
-    else
-        structureLimit = UNLIMITED_STRUCTURES;
 }
 
 
@@ -1777,7 +1774,7 @@ void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
     if (suspended || !GetContext()) return;
     SetCurrent();
-    
+
     // this is necessary to update the context on some platforms
     wxGLCanvas::OnSize(event);
 
@@ -1785,7 +1782,7 @@ void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 	int w, h;
 	GetClientSize(&w, &h);
     glViewport(0, 0, (GLint) w, (GLint) h);
-    
+
     renderer->NewView();
 }
 
@@ -1831,7 +1828,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     if (event.LeftDClick()) {   // double-click = select, +ctrl = set center
         unsigned int name;
         if (structureSet && renderer->GetSelected(event.GetX(), event.GetY(), &name))
-            structureSet->SelectedAtom(name, 
+            structureSet->SelectedAtom(name,
 #ifdef __WXMAC__
                 event.MetaDown()      // control key + mouse doesn't work on Mac?
 #else

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/11/27 16:26:11  thiessen
+* major update to data management system
+*
 * Revision 1.9  2001/10/08 00:00:10  thiessen
 * estimate threader N random starts; edit CDD name
 *
@@ -70,6 +73,12 @@ USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
+
+#if wxVERSION_NUMBER >= 2302
+const int WX_TOOLS_NOTIFY_CHANGED = wxNewEventType();
+#else
+const int WX_TOOLS_NOTIFY_CHANGED = wxEVT_USER_FIRST;
+#endif
 
 #define SEND_CHANGED_EVENT do { \
     wxCommandEvent notify(WX_TOOLS_NOTIFY_CHANGED); \

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
 * Revision 1.1  2001/10/09 18:57:04  thiessen
 * add CDD references editing dialog
 *
@@ -149,7 +152,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             CRef < CCdd_descr > ref(new CCdd_descr());
             ref->SetReference().SetPmid().Set((int) pmidVal);
             descrSet->Set().push_back(ref);
-            sSet->CDDDataChanged();
+            sSet->SetDataChanged(ASNDataManager::eCDDData);
             ResetListBox();
         }
     }
@@ -162,7 +165,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
         unsigned long pmidVal;
         if (pmidStr.size() > 0 && pmidStr.ToULong(&pmidVal)) {
             descr->SetReference().SetPmid().Set((int) pmidVal);
-            sSet->CDDDataChanged();
+            sSet->SetDataChanged(ASNDataManager::eCDDData);
             ResetListBox();
         }
     }
@@ -173,7 +176,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
         for (d=descrSet->Set().begin(); d!=de; d++) {
             if (d->GetPointer() == descr) {
                 descrSet->Set().erase(d);
-                sSet->CDDDataChanged();
+				sSet->SetDataChanged(ASNDataManager::eCDDData);
                 ResetListBox();
                 break;
             }

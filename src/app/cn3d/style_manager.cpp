@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/11/27 16:26:10  thiessen
+* major update to data management system
+*
 * Revision 1.56  2001/10/24 17:13:46  thiessen
 * skip style annotation if structure not loaded
 *
@@ -1424,7 +1427,7 @@ bool StyleManager::AddUserStyle(int *id, StyleSettings **newStyle)
         if (userStyles.find(i) == userStyles.end()) {
             *newStyle = &(userStyles[i]);
             *id = i;
-            structureSet->StyleDataChanged();
+            structureSet->SetDataChanged(ASNDataManager::eStyleData);
             return true;
         }
     }
@@ -1436,14 +1439,14 @@ bool StyleManager::RemoveUserStyle(int id)
     StyleMap::iterator u = userStyles.find(id);
     if (u == userStyles.end()) return false;
     userStyles.erase(u);
-    structureSet->StyleDataChanged();
+    structureSet->SetDataChanged(ASNDataManager::eStyleData);
     return true;
 }
 
 StyleManager::UserAnnotation * StyleManager::AddUserAnnotation(void)
 {
     userAnnotations.resize(userAnnotations.size() + 1);
-    structureSet->StyleDataChanged();
+    structureSet->SetDataChanged(ASNDataManager::eStyleData);
     return &(userAnnotations.back());
 }
 
@@ -1477,7 +1480,7 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
         if (u->styleID == removedStyleID) break;
     if (u == ue) RemoveUserStyle(removedStyleID);
 
-    structureSet->StyleDataChanged();
+    structureSet->SetDataChanged(ASNDataManager::eStyleData);
     return true;
 }
 
@@ -1506,7 +1509,7 @@ bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
     if (changed) {  // need to redraw if displayed annotations list has changed
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
-        structureSet->StyleDataChanged();
+		structureSet->SetDataChanged(ASNDataManager::eStyleData);
     }
 
     return true;
@@ -1533,7 +1536,7 @@ bool StyleManager::ReprioritizeDisplayOrder(UserAnnotation *annotation, bool mov
     if (changed) {  // need to redraw if displayed annotations list has changed
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
-        structureSet->StyleDataChanged();
+		structureSet->SetDataChanged(ASNDataManager::eStyleData);
     }
 
     return true;
@@ -1709,13 +1712,13 @@ bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_an
 void StyleManager::SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme)
 {
     globalStyle.SetColorScheme(scheme);
-    structureSet->StyleDataChanged();
+    structureSet->SetDataChanged(ASNDataManager::eStyleData);
 }
 
 void StyleManager::SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style)
 {
     globalStyle.SetRenderingStyle(style);
-    structureSet->StyleDataChanged();
+    structureSet->SetDataChanged(ASNDataManager::eStyleData);
 }
 
 bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& styleASN)
@@ -1723,7 +1726,7 @@ bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& sty
     bool okay = globalStyle.LoadSettingsFromASN(styleASN);
     if (okay) {
         CheckGlobalStyleSettings();
-        structureSet->StyleDataChanged();
+		structureSet->SetDataChanged(ASNDataManager::eStyleData);
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/11/27 16:26:07  thiessen
+* major update to data management system
+*
 * Revision 1.14  2001/10/30 02:54:11  thiessen
 * add Biostruc cache
 *
@@ -103,6 +106,7 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/chemical_graph.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -417,7 +421,7 @@ void CDDAnnotateDialog::NewAnnotation(void)
 
     // add to annotation list
     annotSet->Set().push_back(annot);
-    structureSet->UserAnnotationDataChanged();
+    structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
 
     // update GUI
     SetupGUIControls(annotSet->Get().size() - 1, 0);
@@ -445,7 +449,7 @@ void CDDAnnotateDialog::DeleteAnnotation(void)
     for (a=annotSet->Set().begin(); a!=ae; a++) {
         if (*a == selectedAnnot) {
             annotSet->Set().erase(a);
-            structureSet->UserAnnotationDataChanged();
+			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
             break;
         }
     }
@@ -485,7 +489,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
                 packed->Set() = intervals;  // copy list
                 selectedAnnot->SetLocation().SetPacked_int(packed);
             }
-            structureSet->UserAnnotationDataChanged();
+		    structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
         }
     }
 
@@ -496,7 +500,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
         "Enter a description for the new annotation:", "Description", initial);
     if (descr.size() > 0 && descr != selectedAnnot->GetDescription().c_str()) {
         selectedAnnot->SetDescription(descr.c_str());
-        structureSet->UserAnnotationDataChanged();
+		structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
     }
 
     // update GUI
@@ -509,7 +513,7 @@ bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& in
     const Sequence *master = alignment->GetMaster();
 
     // make sure annotation sequence matches master sequence
-    if (!IsAMatch(master, interval.GetId())) {
+    if (!master->identifier->MatchesSeqId(interval.GetId())) {
         ERR_POST(Error << "CDDAnnotateDialog::HighlightInterval() - interval Seq-id/master sequence mismatch");
         return false;
     }
@@ -575,7 +579,7 @@ void CDDAnnotateDialog::NewEvidence(void)
         if (dialog.GetData(newEvidence.GetPointer())) {
             selectedAnnot->SetEvidence().push_back(newEvidence);
             SetupGUIControls(annots->GetSelection(), selectedAnnot->GetEvidence().size() - 1);
-            structureSet->UserAnnotationDataChanged();
+			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
         } else
             ERR_POST(Error << "CDDAnnotateDialog::NewEvidence() - error getting dialog data");
     }
@@ -613,7 +617,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
     for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
         if (*e == selectedEvidence) {
             selectedAnnot->SetEvidence().erase(e);
-            structureSet->UserAnnotationDataChanged();
+			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
             break;
         }
     }
@@ -646,7 +650,7 @@ void CDDAnnotateDialog::EditEvidence(void)
     if (result == wxOK && dialog.HasDataChanged()) {
         if (dialog.GetData(selectedEvidence)) {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(annots, ID_L_ANNOT, wxListBox)
-            structureSet->UserAnnotationDataChanged();
+			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
             SetupGUIControls(annots->GetSelection(), evids->GetSelection());
         } else
             ERR_POST(Error << "CDDAnnotateDialog::EditEvidence() - error getting dialog data");
@@ -783,7 +787,7 @@ void CDDAnnotateDialog::MoveEvidence(bool moveUp)
             tmp = *eSwap;
             *eSwap = *e;
             *e = tmp;
-            structureSet->UserAnnotationDataChanged();
+			structureSet->SetDataChanged(ASNDataManager::eUserAnnotationData);
             SetupGUIControls(annots->GetSelection(), evids->GetSelection() + (moveUp ? -1 : 1));
             return;
         }

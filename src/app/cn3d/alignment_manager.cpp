@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2001/11/27 16:26:05  thiessen
+* major update to data management system
+*
 * Revision 1.65  2001/09/27 15:37:57  thiessen
 * decouple sequence import and BLAST
 *
@@ -292,7 +295,7 @@ AlignmentManager::AlignmentManager(const SequenceSet *sSet,
                 s, se = u->GetObject().GetSeqannot().GetData().GetAlign().end();
             for (s=u->GetObject().GetSeqannot().GetData().GetAlign().begin(); s!=se; s++) {
                 const MasterSlaveAlignment *alignment =
-                    new MasterSlaveAlignment(NULL, aSet->master, s->GetObject(), NULL);
+                    new MasterSlaveAlignment(NULL, aSet->master, s->GetObject());
                 pairwise.front() = alignment;
                 BlockMultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(pairwise);
                 multiple->updateOrigin = *u;    // to keep track of which Update-align this came from
@@ -817,6 +820,15 @@ void AlignmentManager::GetUpdateSequences(std::list < const Sequence * > *update
     ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
     for (u=currentUpdates->begin(); u!=ue; u++)
         updateSequences->push_back((*u)->GetSequenceOfRow(1));  // assume update aln has just one slave...
+}
+
+bool AlignmentManager::GetStructureProteins(std::vector < const Sequence * > *chains) const
+{
+    if (!chains || GetCurrentMultipleAlignment() != NULL ||
+        !sequenceViewer || !sequenceViewer->GetCurrentDisplay()) return false;
+
+    sequenceViewer->GetCurrentDisplay()->GetProteinSequences(chains);
+    return (chains->size() > 0);
 }
 
 END_SCOPE(Cn3D)

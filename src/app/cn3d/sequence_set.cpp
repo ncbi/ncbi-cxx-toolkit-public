@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/11/27 16:26:09  thiessen
+* major update to data management system
+*
 * Revision 1.39  2001/09/27 15:37:59  thiessen
 * decouple sequence import and BLAST
 *
@@ -234,15 +237,8 @@ static void UnpackSeqEntry(CSeq_entry& seqEntry, SequenceSet *parent, SequenceSe
     }
 }
 
-SequenceSet::SequenceSet(StructureBase *parent, CSeq_entry& seqEntry) :
-    StructureBase(parent), master(NULL)
-{
-    UnpackSeqEntry(seqEntry, this, sequences);
-    TESTMSG("number of sequences: " << sequences.size());
-}
-
 SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) :
-    StructureBase(parent), master(NULL)
+    StructureBase(parent)
 {
     SeqEntryList::const_iterator s, se = seqEntries.end();
     for (s=seqEntries.begin(); s!=se; s++)
@@ -338,6 +334,11 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
                 pdbChain = ' ';
         } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
             accession = s->GetObject().GetLocal().GetStr();
+            // special case where local accession is actually a PDB chain
+            if (pdbID.size() == 0 && accession.size() >= 6 && accession[4] == ' ' && isalpha(accession[5])) {
+                pdbID = accession.substr(0, 4);
+                pdbChain = accession[5];
+            }
         } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
             accession = s->GetObject().GetGenbank().GetAccession();
         } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
@@ -527,10 +528,12 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
         if (identifier->pdbChain != ' ')
             oss << (char) identifier->pdbChain;
         oss << "%5B" << dbChar << "ACC%5D";
-    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
+    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
         oss << identifier->gi;
-    else if (identifier->accession.size() > 0)
+    } else if (identifier->accession.size() > 0) {
+        if (identifier->accession == "query" || identifier->accession == "consensus") return;
         oss << identifier->accession.c_str();
+    }
     oss << '\0';
     LaunchWebPage(oss.str());
     delete oss.str();

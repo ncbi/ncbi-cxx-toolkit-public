@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/11/27 16:26:06  thiessen
+* major update to data management system
+*
 * Revision 1.36  2001/09/27 15:36:47  thiessen
 * decouple sequence import and BLAST
 *
@@ -157,8 +160,6 @@
 
 BEGIN_SCOPE(Cn3D)
 
-typedef std::list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
-
 class Sequence;
 class SequenceSet;
 class AlignmentSet;
@@ -175,6 +176,7 @@ class AlignmentManager : public ShowHideCallbackObject
 {
 public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
+    typedef std::list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const UpdateAlignList& updates);
     ~AlignmentManager(void);
 
@@ -228,6 +230,9 @@ public:
 
     // get the working alignment
     const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
+
+    // get a list of chain sequences when we're viewing a single structure
+    bool GetStructureProteins(std::vector < const Sequence * > *chains) const;
 
     // get a list of (slave) sequences present in the updates
     void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;

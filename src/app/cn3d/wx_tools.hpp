@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/11/27 16:26:11  thiessen
+* major update to data management system
+*
 * Revision 1.8  2001/09/04 20:05:39  thiessen
 * tweaks for Mac
 *
@@ -83,7 +86,7 @@ static const int SPIN_CTRL_HEIGHT = 20;
 static const int SPIN_CTRL_HEIGHT = 24;
 #endif
 
-static const WXTYPE WX_TOOLS_NOTIFY_CHANGED = wxEVT_USER_FIRST;
+extern const int WX_TOOLS_NOTIFY_CHANGED;
 
 /////////////////////////////////////////////////////////////////////////////////////
 // a wxTextCtrl that only accepts valid floating point values (turns red otherwise)
