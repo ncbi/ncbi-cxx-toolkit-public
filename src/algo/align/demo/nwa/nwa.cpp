@@ -49,7 +49,9 @@ void CAppNWA::Init()
         ("matrix", "matrix", "scoring matrix",
          CArgDescriptions::eString, "nucl");
 
-    argdescr->AddFlag("mrna2dna", "mRna vs. Dna alignment");
+    argdescr->AddFlag("mrna2dna",
+                      "mRna vs. Dna alignment with free end gaps on the "
+                      "first (mRna) sequence" );
 
     argdescr->AddKey
         ("seq1", "seq1",
@@ -60,7 +62,13 @@ void CAppNWA::Init()
          "the second input sequence in fasta file",
          CArgDescriptions::eString);
 
-    argdescr->AddFlag("esf", "End-space free alignment");
+    argdescr->AddDefaultKey
+        ("esf", "esf",
+         "End-space free alignment. Format it lrLR where each character "
+         "can be z (free end) or x (regular end) representing "
+         "left and right ends",
+         CArgDescriptions::eString,
+         "xxxx");
 
     argdescr->AddDefaultKey
         ("Wm", "match", "match bonus (nucleotide sequences)",
@@ -116,6 +124,13 @@ void CAppNWA::Init()
     paa_st->Allow("nucl")->Allow("blosum62");
     argdescr->SetConstraint("matrix", paa_st);
 
+    CArgAllow_Strings* paa_esf = new CArgAllow_Strings;
+    paa_esf->Allow("xxxx")->Allow("xxxz")->Allow("xxzx")->Allow("xxzz");
+    paa_esf->Allow("xzxx")->Allow("xzxz")->Allow("xzzx")->Allow("xzzz");
+    paa_esf->Allow("zxxx")->Allow("zxxz")->Allow("zxzx")->Allow("zxzz");
+    paa_esf->Allow("zzxx")->Allow("zzxz")->Allow("zzzx")->Allow("zzzz");
+    argdescr->SetConstraint("esf", paa_esf);
+
     SetupArgDescriptions(argdescr.release());
 }
 
@@ -150,7 +165,6 @@ void CAppNWA::x_RunOnPair() const
     const bool bMM = args["mm"];
     const bool bMT = args["mt"];
     const bool bMrna2Dna = args["mrna2dna"];
-    const bool bEndSpaceFree = args["esf"];
 
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
         NCBI_THROW(CAppNWAException,
@@ -248,7 +262,15 @@ void CAppNWA::x_RunOnPair() const
     }
 
     aligner->SetSeqIds(seqname1, seqname2);
-    aligner->SetEndSpaceFree(bEndSpaceFree || bMrna2Dna);
+    
+    {{  // setup end penalties
+        string ends = args["esf"].AsString();
+        bool L1 = bMrna2Dna || ends[0] == 'z';
+        bool R1 = bMrna2Dna || ends[1] == 'z';
+        bool L2 = ends[2] == 'z';
+        bool R2 = ends[3] == 'z';
+        aligner->SetEndSpaceFree(L1, R1, L2, R2);
+    }}
 
     int score = aligner->Run();
     cerr << "Score = " << score << endl;
@@ -326,6 +348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/03/18 15:14:54  kapustin
+ * Allow separate free end gap specification
+ *
  * Revision 1.13  2003/03/17 15:32:28  kapustin
  * Enabled end-space free alignments for all currently supported methods
  *
