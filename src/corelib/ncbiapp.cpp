@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/07/07 01:19:28  juran
+* Use "ncbi" for app name on Mac OS (if argv[0] is null).
+*
 * Revision 1.30  2001/03/26 20:07:40  vakatov
 * [NCBI_OS_MAC]  Use argv[0] (if available) as basename for ".args"
 *
@@ -243,27 +246,31 @@ int CNcbiApplication::AppMain
 #  define MAX_ARG_LEN 1024
     if (argc <= 1) {
         string fileName = name;
-        if (fileName.empty()  &&  argc > 0) {
-            fileName = argv[0];
+        if (fileName.empty()) {
+            if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
+                fileName = argv[0];
+            } else {
+                fileName = "ncbi";
+            }
         }
-        fileName += ".args";
+        string argsName = fileName + ".args";
 
-        CNcbiIfstream in(fileName.c_str());
+        CNcbiIfstream in(argsName.c_str());
         if ( in ) {
             int c = 1;
             const char** v = new const char*[MAX_ARGC];
-            v[0] = strdup(name.c_str()); // program name
+            v[0] = strdup(fileName.c_str()); // program name
             char arg[MAX_ARG_LEN];
             while (in.getline(arg, sizeof(arg))  ||  in.gcount()) {
                 if ( in.eof() ) {
-                    ERR_POST(Warning << fileName << ", line " << c << ": " <<
+                    ERR_POST(Warning << argsName << ", line " << c << ": " <<
                              "unfinished last line");
                 } else if ( in.fail() ) {
-                    ERR_POST(Fatal << fileName << ", line " << c << ": " <<
+                    ERR_POST(Fatal << argsName << ", line " << c << ": " <<
                              "too long argument: " << arg);
                 }
                 if (c >= MAX_ARGC) {
-                    ERR_POST(Fatal << fileName << ", line " << c << ": " <<
+                    ERR_POST(Fatal << argsName << ", line " << c << ": " <<
                              "too many arguments");
                 }
                 v[c++] = strdup(arg);
@@ -272,7 +279,7 @@ int CNcbiApplication::AppMain
             argv = v;
         }
         else {
-            ERR_POST(fileName << ": file not found");
+            ERR_POST(argsName << ": file not found");
         }
     }
 #endif
