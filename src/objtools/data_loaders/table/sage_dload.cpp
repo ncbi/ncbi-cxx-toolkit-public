@@ -56,7 +56,7 @@ bool CSageDataLoader::SIdHandleByContent::operator()(const CSeq_id_Handle& h1,
                                                      const CSeq_id_Handle& h2) const
 {
     CConstRef<CSeq_id> id1 = h1.GetSeqId();
-    CConstRef<CSeq_id> id2 = h1.GetSeqId();
+    CConstRef<CSeq_id> id2 = h2.GetSeqId();
     return (*id1 < *id2);
 }
 
@@ -286,6 +286,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/30 21:43:08  jcherry
+ * Fixed typo
+ *
  * Revision 1.1  2003/10/02 17:40:17  dicuccio
  * Initial revision
  *
