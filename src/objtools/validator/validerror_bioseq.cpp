@@ -1691,8 +1691,23 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             "No CDelta_ext data for delta Bioseq", seq);
     }
 
+    EDiagSev sev = eDiag_Error;
+    if ( tech != CMolInfo::eTech_htgs_0  &&
+         tech != CMolInfo::eTech_htgs_1  &&
+         tech != CMolInfo::eTech_htgs_2  &&
+         tech != CMolInfo::eTech_htgs_3  ) {
+        sev = eDiag_Warning;
+    }
+
+   // set severity for first / last gap error
     TSeqPos len = 0;
     TSeqPos seg = 0;
+    bool last_is_gap = false;
+    size_t num_gaps = 0;
+    size_t num_adjacent_gaps = 0;
+    bool non_interspersed_gaps = false;
+    bool first = true;
+
     ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
         ++seg;
         if ( !(*sg) ) {
@@ -1728,6 +1743,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     "No length for Seq-loc (" + loc_str + ") of delta seq-ext",
                     seq);
             }
+            if ( !last_is_gap ) {
+                non_interspersed_gaps = true;
+            }
+            last_is_gap = false;
+            first = false;
             break;
         }
         case CDelta_seq::e_Literal:
@@ -1741,6 +1761,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 
             // Check for invalid residues
             if ( lit.CanGetSeq_data() ) {
+                if ( !last_is_gap ) {
+                    non_interspersed_gaps = true;
+                }
+                last_is_gap = false;
                 const CSeq_data& data = lit.GetSeq_data();
                 vector<TSeqPos> badIdx;
                 CSeqportUtil::Validate(data, &badIdx);
@@ -1791,11 +1815,22 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             seq);
                     }
                 }
-            } else if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
-                    "Gap of length 0 in delta chain", seq);
+            } else {
+                if ( first ) {
+                    PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
+                        "First delta seq component is a gap", seq);
+                }
+                if ( last_is_gap ) {
+                    ++num_adjacent_gaps;
+                }
+                if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
+                        "Gap of length 0 in delta chain", seq);
+                }
+                last_is_gap = true;
+                ++num_gaps;
             }
-            
+            first = false;
             break;
         }
         default:
@@ -1814,7 +1849,23 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             "] than given length [" + NStr::IntToString(inst.GetLength()) +
             "]", seq);
     }
-
+    if ( non_interspersed_gaps  &&  (!m_Imp.IsGI()) &&  mi  &&
+        (tech != CMolInfo::eTech_htgs_0  ||  tech != CMolInfo::eTech_htgs_1  ||
+         tech != CMolInfo::eTech_htgs_2  ||  tech != CMolInfo::eTech_htgs_3) ) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_MissingGaps,
+            "HTGS delta seq should have gaps between all sequence runs", seq);
+    }
+    if ( num_adjacent_gaps >= 1 ) {
+        string msg = (num_adjacent_gaps == 1) ?
+            "There is one adjacent gap in delta seq" :
+            "There are " + NStr::IntToString(num_adjacent_gaps) +
+            " adjacent gaps in delta seq";
+        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
+    }
+    if ( last_is_gap ) {
+        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
+            "Last delta seq component is a gap", seq);
+    }
     
     // Validate technique
     if ( mi  &&  !m_Imp.IsNT()  &&  !m_Imp.IsNC()  &&  !m_Imp.IsGPS() ) {
@@ -1833,50 +1884,6 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         }
     }
 
-    EDiagSev sev = eDiag_Error;
-    if ( tech != CMolInfo::eTech_htgs_0  &&
-         tech != CMolInfo::eTech_htgs_1  &&
-         tech != CMolInfo::eTech_htgs_2  &&
-         tech != CMolInfo::eTech_htgs_3  ) {
-        sev = eDiag_Warning;
-    }
-
-    // Validate positioning of gaps
-    CTypeConstIterator<CDelta_seq> ds(ConstBegin(inst));
-    if (ds  &&  (*ds).IsLiteral()  &&  !(*ds).GetLiteral().IsSetSeq_data()) {
-        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
-            "First delta seq component is a gap", seq);
-    }
-    bool last_is_gap = false;
-    unsigned int num_adjacent_gaps = 0;
-    unsigned int num_gaps = 0;
-    for (++ds; ds; ++ds) {
-        if ((*ds).IsLiteral()) {
-            if (!(*ds).GetLiteral().IsSetSeq_data()) {
-                if (last_is_gap) {
-                    num_adjacent_gaps++;
-                }
-                last_is_gap = true;
-                num_gaps++;
-            } else {
-                last_is_gap = false;
-            }
-        } else {
-            last_is_gap = false;
-        }
-    }
-    if ( num_adjacent_gaps > 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq,
-            "There are " + NStr::IntToString(num_adjacent_gaps) +
-            " adjacent gaps in delta seq", seq);
-    } else if ( num_adjacent_gaps == 1 ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_BadDeltaSeq,
-            "There is one adjacent gap in delta seq", seq);
-    }
-    if (last_is_gap) {
-        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
-            "Last delta seq component is a gap", seq);
-    }
     if (num_gaps == 0  &&  mi) {
         if ( tech == CMolInfo::eTech_htgs_2  &&
              !GraphsOnBioseq(seq)  &&
@@ -3713,6 +3720,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2004/06/25 16:01:46  shomrat
+* Added test for missing gaps in delta sequences
+*
 * Revision 1.80  2004/06/17 17:07:47  shomrat
 * TGA can be used for Selenocysteine without needing modified codon recognition exception; stopped checking for length >350000
 *
