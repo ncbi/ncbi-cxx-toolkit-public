@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.14  2003/06/11 16:14:02  dondosha
+* Added number of queries argument to BLAST_SetUpQuery
+*
 * Revision 1.13  2003/06/06 20:36:12  dondosha
 * Removed unneeded arguments from BLAST_GetTranslatedSeqLoc
 *
@@ -174,19 +177,6 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
 const BlastScoringOptionsPtr scoring_options, const Uint1 program_name);
 
 
-/** BlastSetUp_GetSequence 
- * Purpose:     Get the sequence for the BLAST engine, put in a Uint1 buffer
- * @param slp SeqLoc to extract sequence for [in]
- * @param use_blastna If TRUE use blastna alphabet (ignored for proteins) [in]
- * @param concatenate If TRUE do all SeqLoc's, otherwise only first [in]
- * @param buffer Buffer to hold plus strand or protein [out] 
- * @param buffer_length Length of buffer allocated [out]
- * @param selcys_pos Positions where selenocysteine was replaced by X [out]
- */
-Int2 LIBCALL 
-BlastSetUp_GetSequence(SeqLocPtr slp, Boolean use_blastna, Boolean concatenate,
-   Uint1Ptr *buffer, Int4 *buffer_length, ValNodePtr *selcys_pos);
-
 /** Get the subject sequence from its SeqLoc for the two sequences case 
  * @param subject_slp The subject SeqLoc [in]
  * @param buffer Buffer containing sequence; compressed if nucleotide [out]
@@ -203,20 +193,23 @@ Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
  *                   if NULL [out]
  * @param query_slp List of query SeqLocs [out]
  * @param ctr_start Number from which to start counting local ids [in]
+ * @param num_queries Number of sequences read [out]
  * @return Have all sequences been read?
  */
 Boolean
 BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na, 
-   BlastMaskPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start);
+   BlastMaskPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start,
+   Int4Ptr num_queries);
 
 /** Given a list of nucleotide SeqLoc's, create a list of SeqLocs for their 
  * translations. 
  * @param query_slp List of nucleotide query SeqLocs [in]
+ * @param genetic_code Genetic code to use for translation [in]
  * @param protein_slp_head Pointer to start of the list of translated 
  *                         SeqLocs [out]
  */
 Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp, 
-        SeqLocPtr PNTR protein_slp_head);
+        Int4 genetic_code, SeqLocPtr PNTR protein_slp_head);
 
 /** Set up the subject sequence block in case of two sequences BLAST.
  * @param file_name File with the subject sequence FASTA [in]
@@ -255,12 +248,14 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
 /** Given a list of query SeqLoc's, create the sequence block and the query
  * info structure. This is the last time SeqLoc is needed before formatting.
  * @param query_slp List of query SeqLoc's [in]
+ * @param num_queries Number of query sequences [in]
  * @param program_number Type of BLAST program [in]
  * @param query_blk Query block, containing (concatenated) sequence [out]
  * @param query_info Query information structure, containing offsets into 
  *                   the concatenated sequence [out]
  */
-Int2 BLAST_SetUpQuery(SeqLocPtr query_slp, const Uint1 program_number,
+Int2 BLAST_SetUpQuery(SeqLocPtr query_slp, Int4 num_queries, 
+        const Uint1 program_number,
         BLAST_SequenceBlkPtr *query_blk, BlastQueryInfoPtr *query_info);
 #ifdef __cplusplus
 }
