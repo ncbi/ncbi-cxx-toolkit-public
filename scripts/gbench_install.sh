@@ -157,7 +157,7 @@ CopyFiles()
     done
 
     for x in $LIBS; do
-        echo copying: lib_$x.so
+        echo copying: lib$x.so
         src_file=$src_dir/lib/lib$x.so
         if [ -f $src_file ]; then
             rm -f $target_dir/lib/lib$x.so
@@ -254,9 +254,6 @@ echo "Preparing scripts"
 COMMON_ExecRB cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
 chmod 755 ${target_dir}/bin/run-gbench.sh
 
-rm -f ${src_dir}/bin/gbench
-ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
-
 COMMON_ExecRB cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
 COMMON_ExecRB cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
@@ -271,3 +268,7 @@ fltk_config=`sed -ne 's/^FLTK_CONFIG *= *//p' ${src_dir}/build/Makefile.mk`
 fltk_libdir=`$fltk_config --exec-prefix`/lib
 COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan ${target_dir}/plugins
+
+# Do this last, to be sure the symlink doesn't end up dangling.
+rm -f ${src_dir}/bin/gbench
+ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
