@@ -1289,7 +1289,7 @@ if test "$GCC" = "yes" ; then
    esac
 else
    case "$host" in
-    sparc-sun-solaris2\.[67]  |  i*86-pc-solaris2\.[67] )
+    sparc-sun-solaris2\.[67]  |  i*86-pc-solaris2\.[678] )
       compiler_ver="`$CXX -V 2>&1`"
       case "$compiler_ver" in
         *WorkShop*Compilers*5\.0)
