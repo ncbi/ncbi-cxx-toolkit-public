@@ -47,10 +47,13 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/cdd/Cdd.hpp>
+#include <objects/cdd/Global_id.hpp>
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/mmdb1/Atom.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
 #include <objects/mmdb2/Model_space_points.hpp>
+#include <objects/mmdb3/Region_coordinates.hpp>
+#include <objects/cn3d/Cn3d_color.hpp>
 
 #include "asniotest.hpp"
 
@@ -160,6 +163,12 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
     return okay;
 }
 
+template < class ASNClass >
+bool WriteASNToFilesTxtBin(const ASNClass& ASNobject, string *err)
+{
+    return (WriteASNToFile(ASNobject, false, err) && WriteASNToFile(ASNobject, true, err));
+}
+
 // test function macros
 #define BEGIN_TEST_FUNCTION(func) \
     int func (void) { \
@@ -184,6 +193,16 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
         return nErrors; \
     } while (0)
 
+#define SHOULD_THROW_EXCEPTION(object, accessor) \
+    do { \
+        try { \
+            object.accessor(); \
+            ADD_ERR(#accessor "() should have thrown an exception"); \
+        } catch (exception& e) { \
+            INFOMSG(#accessor "() correctly threw exception " << e.what()); \
+        } \
+    } while (0)
+
 
 // tests reading and writing of asn data files
 BEGIN_TEST_FUNCTION(BasicFileIO)
@@ -194,24 +213,21 @@ BEGIN_TEST_FUNCTION(BasicFileIO)
         ADD_ERR_RETURN("failed to load pdbSeqId.txt: " << err);
 
     // test text and binary output
-    if (!WriteASNToFile(seqId, false, &err) ||
-        !WriteASNToFile(seqId, true, &err))
+    if (!WriteASNToFilesTxtBin(seqId, &err))
         ADD_ERR("failed to write CSeq_id: " << err);
 
     // now try a bigger object (in binary this time)
     CCdd cdd;
     if (!ReadASNFromFile("ADF.bin", &cdd, true, &err))
         ADD_ERR_RETURN("failed to load ADF.bin: " << err);
-    if (!WriteASNToFile(cdd, false, &err) ||
-        !WriteASNToFile(cdd, true, &err))
+    if (!WriteASNToFilesTxtBin(cdd, &err))
         ADD_ERR("failed to write CCdd: " << err);
 
     // structure
     CNcbi_mime_asn1 mime;
     if (!ReadASNFromFile("1doi.bin", &mime, true, &err))
         ADD_ERR_RETURN("failed to load 1doi.bin: " << err);
-    if (!WriteASNToFile(mime, false, &err) ||
-        !WriteASNToFile(mime, true, &err))
+    if (!WriteASNToFilesTxtBin(mime, &err))
         ADD_ERR("failed to write CNcbi_mime_asn1: " << err);
 
 END_TEST_FUNCTION
@@ -226,8 +242,7 @@ BEGIN_TEST_FUNCTION(AssignAndOutput)
         ADD_ERR_RETURN("failed to load pdbSeqId.txt: " << err);
     CSeq_id s2;
     s2.Assign(s1);
-    if (!WriteASNToFile(s2, false, &err) ||
-        !WriteASNToFile(s2, true, &err))
+    if (!WriteASNToFilesTxtBin(s2, &err))
         ADD_ERR("failed to write Assign()'ed Seq-id: " << err);
 
     // try to output a copied complex object
@@ -236,8 +251,7 @@ BEGIN_TEST_FUNCTION(AssignAndOutput)
         ADD_ERR_RETURN("failed to load ADF.bin: " << err);
     CCdd c2;
     c2.Assign(c1);
-    if (!WriteASNToFile(c2, false, &err) ||
-        !WriteASNToFile(c2, true, &err))
+    if (!WriteASNToFilesTxtBin(c2, &err))
         ADD_ERR("failed to write Assign()'ed Cdd: " << err);
 
     // structure
@@ -246,8 +260,7 @@ BEGIN_TEST_FUNCTION(AssignAndOutput)
         ADD_ERR_RETURN("failed to load 1doi.bin: " << err);
     CNcbi_mime_asn1 m2;
     m2.Assign(m1);
-    if (!WriteASNToFile(m2, false, &err) ||
-        !WriteASNToFile(m2, true, &err))
+    if (!WriteASNToFilesTxtBin(m2, &err))
         ADD_ERR("failed to write Assign()'ed Ncbi_mime_asn1: " << err);
 
 END_TEST_FUNCTION
@@ -269,21 +282,22 @@ BEGIN_TEST_FUNCTION(MandatoryField)
 
     // Get/CanGet/Set/IsSet tests on loaded and created objects
     if (!a1.CanGetId() || !a1.IsSetId() || a1.GetId() != 37)
-        ADD_ERR_RETURN("id access failed");
+        ADD_ERR("id access failed");
     CAtom a3;
     if (a3.CanGetElement() || a3.IsSetElement())
-        ADD_ERR_RETURN("new Atom should not have element");
+        ADD_ERR("new Atom should not have element");
+    SHOULD_THROW_EXCEPTION(a3, GetElement);
     a3.SetElement(CAtom::eElement_lr);
     if (!a3.CanGetElement() || !a3.IsSetElement() || a3.GetElement() != CAtom::eElement_lr)
-        ADD_ERR_RETURN("bad element state after SetElement()");
+        ADD_ERR("bad element state after SetElement()");
 
     // shouldn't be able to write without id
     INFOMSG("trying to write incomplete Atom - should fail");
-    if (WriteASNToFile(a3, false, &err))
-        ADD_ERR_RETURN("should not be able to write Atom with no id");
+    if (WriteASNToFilesTxtBin(a3, &err))
+        ADD_ERR("should not be able to write Atom with no id");
     a3.SetId().Set(92);
-    if (!WriteASNToFile(a3, true, &err))
-        ADD_ERR_RETURN("failed to write complete Atom");
+    if (!WriteASNToFilesTxtBin(a3, &err))
+        ADD_ERR("failed to write complete Atom: " << err);
 
 END_TEST_FUNCTION
 
@@ -294,11 +308,11 @@ BEGIN_TEST_FUNCTION(ListField)
     // read in a valid object, with a mandatory but empty list
     CModel_space_points m1;
     if (!ReadASNFromFile("goodMSP.txt", &m1, false, &err))
-        ADD_ERR_RETURN("failed to read goodMSP.txt");
+        ADD_ERR_RETURN("failed to read goodMSP.txt: " << err);
     if (!m1.IsSetX() || !m1.CanGetX() || m1.GetX().size() != 3 || m1.GetX().front() != 167831) 
-        ADD_ERR_RETURN("x access failed");
+        ADD_ERR("x access failed");
     if (!m1.IsSetZ() || !m1.CanGetZ() || m1.GetZ().size() != 0)
-        ADD_ERR_RETURN("z access failed");
+        ADD_ERR("z access failed");
 
     // test created object
     CModel_space_points m2;
@@ -307,19 +321,83 @@ BEGIN_TEST_FUNCTION(ListField)
     m2.SetScale_factor() = 15;
     m2.SetX().push_back(21);
     m2.SetX().push_back(931);
+    if (!m2.IsSetX() || !m2.CanGetX() || m2.GetX().size() != 2)
+        ADD_ERR_RETURN("bad x state after SetX()");
     m2.SetY().push_back(0);
     INFOMSG("trying to write incomplete Model-space-points - should fail");
-    if (WriteASNToFile(m2, false, &err))
-        ADD_ERR_RETURN("shouldn't be able to write incomplete Model-space-points");
+    if (WriteASNToFilesTxtBin(m2, &err))
+        ADD_ERR("shouldn't be able to write incomplete Model-space-points");
     m2.SetZ();  // set but empty!
-    if (!WriteASNToFile(m2, true, &err))
-        ADD_ERR_RETURN("failed to write complete Model-space-points");
+    if (!WriteASNToFilesTxtBin(m2, &err))
+        ADD_ERR("failed to write complete Model-space-points: " << err);
 
-    // missing a list entirely
+    // missing a mandatory list
     CModel_space_points m3;
     INFOMSG("trying to read incomplete Model-space-points - should fail");
     if (ReadASNFromFile("badMSP.txt", &m3, false, &err))
-        ADD_ERR_RETURN("shouldn't be able to read incomplete Model-space-points");
+        ADD_ERR("shouldn't be able to read incomplete Model-space-points: " << err);
+
+    // OPTIONAL list (coordinate-indices from Region-coordinates)
+    CRegion_coordinates r1;
+    if (!ReadASNFromFile("goodRC.txt", &r1, false, &err))
+        ADD_ERR_RETURN("failed to read goodRC.txt: " << err);
+    if (r1.IsSetCoordinate_indices() || !r1.CanGetCoordinate_indices() ||
+            r1.GetCoordinate_indices().size() != 0)
+        ADD_ERR("bad state for missing OPTIONAL list");
+
+END_TEST_FUNCTION
+
+
+// test OPTIONAL fields (using Global-id type)
+BEGIN_TEST_FUNCTION(OptionalField)
+
+    // object read from file
+    CGlobal_id g1;
+    if (!ReadASNFromFile("goodGID.txt", &g1, false, &err))
+        ADD_ERR_RETURN("failed to read goodGID.txt: " << err);
+    if (g1.IsSetRelease() || g1.CanGetRelease())
+        ADD_ERR("bad release state");
+    SHOULD_THROW_EXCEPTION(g1, GetRelease);
+    if (!g1.IsSetVersion() || !g1.CanGetVersion() || g1.GetVersion() != 37)
+        ADD_ERR("bad version state");
+
+    // new object
+    CGlobal_id g2;
+    if (g2.IsSetRelease() || g2.CanGetRelease())
+        ADD_ERR("bad release state in new object");
+    SHOULD_THROW_EXCEPTION(g2, GetRelease);
+    g2.SetAccession("something");
+    g2.SetRelease("something else");
+    if (!g2.IsSetRelease() || !g2.CanGetRelease())
+        ADD_ERR("bad release state after SetRelease()");
+    if (!WriteASNToFilesTxtBin(g2, &err))
+        ADD_ERR("failed to write good Global-id: " << err);
+    
+END_TEST_FUNCTION
+
+
+// check fields with DEFAULT value
+BEGIN_TEST_FUNCTION(DefaultField)
+
+    CCn3d_color c1;
+    if (!ReadASNFromFile("goodColor.txt", &c1, false, &err))
+        ADD_ERR_RETURN("failed to read goodColor.txt: " << err);
+    if (!c1.IsSetScale_factor() || !c1.CanGetScale_factor() || c1.GetScale_factor() != 17)
+        ADD_ERR("bad scale-factor access");
+    if (c1.IsSetAlpha() || !c1.CanGetAlpha() || c1.GetAlpha() != 255)
+        ADD_ERR("bad alpha access");
+
+    CCn3d_color c2;
+    if (c2.IsSetAlpha() || !c2.CanGetAlpha() || c2.GetAlpha() != 255)
+        ADD_ERR("bad alpha state after construction");
+    c2.SetAlpha(37);
+    if (!c2.IsSetAlpha() || !c2.CanGetAlpha() || c2.GetAlpha() != 37)
+        ADD_ERR("bad alpha state after SetAlpha()");
+    c2.SetRed(1);
+    c2.SetGreen(2);
+    c2.SetBlue(3);
+    if (!WriteASNToFilesTxtBin(c2, &err))
+        ADD_ERR("failed to write good Cn3d-color: " << err);
 
 END_TEST_FUNCTION
 
@@ -348,6 +426,8 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(AssignAndOutput);
         RUN_TEST(MandatoryField);
         RUN_TEST(ListField);
+        RUN_TEST(OptionalField);
+        RUN_TEST(DefaultField);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -397,6 +477,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/12/11 17:52:10  thiessen
+* add Optional and Default field tests
+*
 * Revision 1.5  2003/12/11 15:21:02  thiessen
 * add mandatory and list tests
 *
