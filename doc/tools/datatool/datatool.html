@@ -343,7 +343,7 @@ File format is the same as applications *.ini files.
 Prefix of parameter name in section is determined from location of element
 we want to affect in ASN.1 definition.
 <br>For root type itself prefix is empty.
-<br>For element of 'SET OF' or 'SEQUENCE OF' add "_E." to prefix.
+<br>For element of 'SET OF' or 'SEQUENCE OF' add "E." to prefix.
 <br>For element of 'SET', 'SEQUENCE' or 'CHOICE' add <i>element name</i>
 and dot (".") to prefix.
 <br>For example, if we have ASN.1 definitions:
@@ -384,7 +384,7 @@ string</i>
 <br>will affect generation of <i><a href="#refMember_Date_str">str</a></i>
 member in <i><a href="#refType_Date">Date</a></i> structure.
 <p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Dates">Dates</a>]</i>
-<br><i>&nbsp;&nbsp;&nbsp; _E._pointer = true</i>
+<br><i>&nbsp;&nbsp;&nbsp; E._pointer = true</i>
 <br>will affect generation of elements in <i><a href="#refType_Dates">Dates</a></i>
 container.
 <p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Int_fuzz">Int-fuzz</a>]</i>
@@ -395,7 +395,7 @@ member of <i><a href="#refMember_Int_fuzz_range">range</a></i> member of
 <i><a href="#refType_Int_fuzz">Int-fuzz</a></i>
 structure.
 <p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Int_fuzz">Int-fuzz</a>]</i>
-<br><i>&nbsp;&nbsp;&nbsp; <a href="#refMember_Int_fuzz_alt">alt</a>._E._type
+<br><i>&nbsp;&nbsp;&nbsp; <a href="#refMember_Int_fuzz_alt">alt</a>.E._type
 = long</i>
 <br>will affect generation of elements of <i><a href="#refMember_Int_fuzz_alt">alt</a></i>
 member of <i><a href="#refType_Int_fuzz">Int-fuzz</a></i> structure.
