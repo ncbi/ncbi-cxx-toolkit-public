@@ -2,7 +2,7 @@
 
 APP = bdb_cverify
 SRC = bdb_cverify
-LIB = bdb_cache bdb xncbi xutil
+LIB = $(BDB_CACHE_LIB) $(BDB_LIB) xncbi xutil
 LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)

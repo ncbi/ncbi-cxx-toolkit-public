@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = dbapi_cache
+LIB_PROJ = ncbi_xcache_dbapi
 SUB_PROJ = test admintool
 
 srcdir = @srcdir@

@@ -8,7 +8,7 @@
 
 REQUIRES = BerkeleyDB
 
-LIB_PROJ = bdb bdb_cache
+LIB_PROJ = bdb ncbi_xcache_bdb
 EXPENDABLE_SUB_PROJ = test demo dumper cache_verify
 
 srcdir = @srcdir@

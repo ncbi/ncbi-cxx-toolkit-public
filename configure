@@ -19823,8 +19823,8 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BDB 1
 _ACEOF
 
-   bdb_cache="bdb_cache"
-   BDB_CACHE_LIB="bdb_cache"
+   bdb_cache="ncbi_xcache_bdb"
+   BDB_CACHE_LIB="ncbi_xcache_bdb"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_BDB_CACHE 1

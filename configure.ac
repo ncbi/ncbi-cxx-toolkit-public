@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.339 2005/01/18 19:22:58 ssikorsk Exp $
+#  $Id: configure.ac,v 1.340 2005/01/24 17:52:38 grichenk Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3806,8 +3806,8 @@ else
    BDB_LIB="bdb"
    AC_DEFINE(HAVE_BDB, 1,
              [Define to 1 if NCBI C++ API for BerkeleyDB is available.])
-   bdb_cache="bdb_cache"
-   BDB_CACHE_LIB="bdb_cache"
+   bdb_cache="ncbi_xcache_bdb"
+   BDB_CACHE_LIB="ncbi_xcache_bdb"
    AC_DEFINE(HAVE_BDB_CACHE, 1,
              [Define to 1 if NCBI C++ API for BerkeleyDB based data cache is available.])
 fi
