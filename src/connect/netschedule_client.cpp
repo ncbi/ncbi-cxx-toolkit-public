@@ -869,6 +869,8 @@ void CNetScheduleClient::CheckConnect(const string& key)
 
     if (!key.empty()) {
         CNetSchedule_ParseJobKey(&m_JobKey, key);
+        CreateSocket(m_JobKey.hostname, m_JobKey.port);
+        return;        
     }
 
     // not connected
@@ -878,14 +880,9 @@ void CNetScheduleClient::CheckConnect(const string& key)
         return;
     }
 
-    // no primary host information
+    NCBI_THROW(CNetServiceException, eCommunicationError,
+        "Cannot establish connection with a server. Unknown host-port.");
 
-    if (key.empty()) {
-        NCBI_THROW(CNetServiceException, eCommunicationError,
-           "Cannot establish connection with a server. Unknown host name.");
-    }
-
-    CreateSocket(m_JobKey.hostname, m_JobKey.port);
 }
 
 bool CNetScheduleClient::IsError(const char* str)
@@ -900,6 +897,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/16 14:25:46  kuznets
+ * Fixed connection establishment when job key is known
+ *
  * Revision 1.10  2005/03/15 20:13:07  kuznets
  * +SubmitJobAndWait()
  *
