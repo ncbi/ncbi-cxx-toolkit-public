@@ -858,72 +858,71 @@ static void s_StoreResidueTaxid( CTreeIterator* pIt, CTaxon1::TTaxIdList& lTo )
 // Returns: false if some error
 //          true  if Ok
 ///
+typedef vector<CTaxon1Node*> TTaxNodeLineage;
 bool
 CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 {
+    SetLastError(NULL);
     if( ids_in.size() > 0 ) {
-	CTaxon1Node *pParent = 0, *pNode = 0;
+	map< int, CTaxon1Node* > nodeMap;
+	CTaxon1Node *pParent = 0, *pNode = 0, *pNewParent = 0;
 	CTreeCont tPartTree; // Partial tree
 	CTreeIterator* pIt = tPartTree.GetIterator();
+	TTaxNodeLineage vLin;
 	// Build the partial tree
-	CTaxon1_req  req;
-	CTaxon1_resp resp;
-	bool bHasSiblings;
-	int tax_id;
+ 	bool bHasSiblings;
+	vLin.reserve( 256 );
 	for( TTaxIdList::const_iterator ci = ids_in.begin();
 	     ci != ids_in.end();
 	     ++ci ) {
-            req.SetTaxalineage( *ci );
-	    pIt->GoRoot();
-            if( SendRequest( req, resp ) ) {
-                if( resp.IsTaxalineage() ) {
-                    // Correct response, return object
-                    CTaxon1_resp::TTaxalineage& lLin = resp.SetTaxalineage();
-                    CTaxon1_resp::TTaxalineage::reverse_iterator i;
-                    // Fill in storage
-		    if( pIt->GetNode() == NULL ) { // No root set yet
-			tPartTree.SetRoot( new CTaxon1Node( lLin.back() ) );
-			pIt->GoRoot();
+	    map< int, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
+	    if( nmi == nodeMap.end() ) {
+		if( m_plCache->LookupAndAdd( *ci, &pNode ) ) {
+		    if( !tPartTree.GetRoot() ) {
+			pNewParent = new CTaxon1Node
+			    ( *static_cast<const CTaxon1Node*>
+			      (m_plCache->GetTree().GetRoot()) );
+			tPartTree.SetRoot( pNewParent );
+			nodeMap.insert( map< int,CTaxon1Node* >::value_type
+					(pNewParent->GetTaxId(), pNewParent) );
 		    }
-                    for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
-			pNode = static_cast<CTaxon1Node*>( pIt->GetNode() );
-			bHasSiblings = true;
-			tax_id = (*i)->GetTaxid();
-                        while( tax_id != pNode->GetTaxId() ) {
-			    bHasSiblings = pIt->GoSibling();
-			    if( bHasSiblings ) {
-				pNode = static_cast<CTaxon1Node*>
-				    ( pIt->GetNode() );
-			    } else {
-				pIt->GoParent();
-				break;
-			    }
+		    if( pNode ) {
+			vLin.clear();
+			pParent = pNode->GetParent();
+			pNode = new CTaxon1Node( *pNode );
+			pNode->SetTerminal();
+			vLin.push_back( pNode );
+			while( pParent &&
+			       ((nmi=nodeMap.find(pParent->GetTaxId()))
+				 == nodeMap.end()) ) {
+			    pNode = new CTaxon1Node( *pParent );
+			    vLin.push_back( pNode );
+			    pParent = pParent->GetParent();
 			}
-			if( !bHasSiblings ) { // Found first new node
-                            break;
-                        } else {
-                            if( !pIt->GoChild() ) {
-				++i;
-				break;
-			    }
-                        }
-                    }
-                    // Tree iterator points to the parent node
-                    for( ; i != lLin.rend(); ++i ) {
-                        pNode = new CTaxon1Node(*i);
-                        pIt->AddChild( pNode );
-                        pIt->GoNode( pNode );
-                    }
-		    pNode->SetTerminal();
-                } else { // Internal: wrong respond type
-                    SetLastError( "Unable to get node lineage:"
-					 "Response type is not Taxalineage" );
-                    return false;
-                }
-            } else { // Unable to send request
-		return false;
+			if( !pParent ) {
+			    pIt->GoRoot();
+			} else {
+			    pIt->GoNode( nmi->second );
+			}
+			for( TTaxNodeLineage::reverse_iterator i =
+				 vLin.rbegin();
+			     i != vLin.rend();
+			     ++i ) {
+			    pNode = *i;
+			    nodeMap.insert( map< int,CTaxon1Node* >::value_type
+					    ( pNode->GetTaxId(), pNode ) );
+			    pIt->AddChild( pNode );
+			    pIt->GoNode( pNode );
+			}
+		    }
+		} else { // Error while adding - ignore invalid tax_ids
+		    continue;
+		    //return false;
+		}
+	    } else { // Node is already here
+		nmi->second->SetTerminal();
 	    }
-        }
+	}
 	// Partial tree is build, make a residue
 	pIt->GoRoot();
 	bHasSiblings = true;
@@ -951,6 +950,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.11  2003/01/21 19:38:59  domrach
+ * GetPopsetJoin() member function optimized to copy partial tree from cached tree
+ *
  * Revision 6.10  2003/01/10 19:58:46  domrach
  * Function GetPopsetJoin() added to CTaxon1 class
  *
