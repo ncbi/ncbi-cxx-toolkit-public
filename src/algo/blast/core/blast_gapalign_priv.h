@@ -83,6 +83,25 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
                                    const Uint1* subject, 
                                    const BlastScoreBlk* sbp);
 
+/** Are the two HSPs within a given number of diagonals from each other? */
+#define MB_HSP_CLOSE(q1, q2, s1, s2, c) \
+(ABS((q1-s1) - (q2-s2)) < c)
+
+/** Is one HSP contained in a diagonal strip around another? */
+#define MB_HSP_CONTAINED(qo1,qo2,qe2,so1,so2,se2,c) \
+(qo1>=qo2 && qo1<=qe2 && so1>=so2 && so1<=se2 && \
+MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
+
+/** Check the gapped alignments for an overlap of two different alignments.
+ * A sufficient overlap is when two alignments have the same start values
+ * of have the same final values. 
+ * @param hsp_array Pointer to an array of BlastHSP structures [in]
+ * @param hsp_count The size of the hsp_array [in]
+ * @return The number of valid alignments remaining. 
+*/
+Int4
+Blast_CheckHSPsForCommonEndpoints(BlastHSP* *hsp_array, Int4 hsp_count);
+
 /** Modify a BlastScoreBlk structure so that it can be used in RPS-BLAST. This
  * involves allocating a SPsiBlastScoreMatrix structure so that the PSSMs 
  * memory mapped from the RPS-BLAST database files can be assigned to that
@@ -107,6 +126,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/02/15 18:11:28  papadopo
+ * add MB_HSP_* macros and Blast_CheckHSPsForCommonEndpoints, since they're used by other files now
+ *
  * Revision 1.6  2005/02/14 14:07:15  camacho
  * Added RPSPsiMatrixAttach and RPSPsiMatrixDetach
  *
