@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/10/18 18:25:38  ucko
+* Fix off-by-one keyword-formatting error.
+* Remove unnecessary code to force use of GI IDs.
+* Take advantage of SerialAssign<CSeq_id>.
+*
 * Revision 1.8  2001/10/17 21:17:49  ucko
 * Seq_vector now properly starts from zero rather than one; adjust code
 * that uses it accordingly.
@@ -614,7 +619,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseqHandle& handle)
     for (unsigned int n = 0;  n < keywords.size();  ++n) {
         if (n == 0) {
             m_Stream << s_Pad("KEYWORDS", sm_KeywordWidth);
-        } else if (keywords[n].size() >= space_left  &&  !at_start) {
+        } else if (keywords[n].size() + 1 >= space_left  &&  !at_start) {
             // Don't let long keywords cause infinite loops.
             m_Stream << NcbiEndl << s_Pad("", sm_KeywordWidth);
             space_left = sm_DataWidth;
@@ -725,6 +730,8 @@ static int s_FirstLocation(const CSeq_loc& loc)
 {
     // XXX - should honor fuzz.
     switch (loc.Which()) {
+    case CSeq_loc::e_Whole:
+        return 0;
     case CSeq_loc::e_Int:
         return loc.GetInt().GetFrom();
     case CSeq_loc::e_Packed_int:
@@ -754,6 +761,8 @@ static int s_LastLocation(const CSeq_loc& loc)
 {
     // XXX - should honor fuzz.
     switch (loc.Which()) {
+    case CSeq_loc::e_Whole:
+        return loc.GetLength() - 1;
     case CSeq_loc::e_Int:
         return loc.GetInt().GetTo();
     case CSeq_loc::e_Packed_int:
@@ -986,21 +995,13 @@ bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
     {{
         CSeq_loc everywhere;
         CRef<CSeq_id> id = seq.GetId().front();
-        // Try to substitute a GI id, since the object manager seems to care
-        // which ID I use. :-/
-        iterate (CBioseq::TId, it, seq.GetId()) {
-            if ((*it)->IsGi()) {
-                id = *it;
-                break;
-            }
-        }
+        
         // everywhere.SetWhole(id);
         {{
             CSeq_interval& si = everywhere.SetInt();
             si.SetFrom(0);
             si.SetTo(seq.GetInst().GetLength() - 1);
-            // si.SetId() = *id; // Forbidden.  (Why???)
-            si.SetId().SetGi(id->GetGi());
+            SerialAssign<CSeq_id>(si.SetId(), *id);
         }}
 
         for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Pub);
@@ -1511,14 +1512,6 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
     const CBioseq& seq = m_Scope.GetBioseq(handle);
     CSeq_loc everywhere;
     everywhere.SetWhole(seq.GetId().front());
-    // Try to substitute a GI id, since the object manager seems to care
-    // which ID I use. :-/
-    iterate (CBioseq::TId, id, seq.GetId()) {
-        if ((*id)->IsGi()) {
-            everywhere.SetWhole(*id);
-            break;
-        }
-    }
 
     m_Stream << s_Pad("FEATURES", sm_FeatureNameIndent + sm_FeatureNameWidth)
              << "Location/Qualifiers" << NcbiEndl;
