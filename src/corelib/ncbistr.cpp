@@ -1294,8 +1294,8 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
             } else if (ispunct(c)) {
                 if (c == '('  ||  c == '['  ||  c == '{'  ||  c == '<'
                     ||  c == '`') { // opening element
-                    score = ePunct;
-                } else if (score_pos < len - 1) {
+                    // score = ePunct;
+                } else if (c == ','  &&  score_pos < len - 1) {
                     if (column < width) {
                         // Prefer breaking *after* most types of punctuation.
                         score = ((c == ',') ? eComma : ePunct);
@@ -1609,6 +1609,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.120  2004/10/05 16:07:04  shomrat
+ * Changed Wrap
+ *
  * Revision 1.119  2004/10/04 14:27:31  ucko
  * Treat all letters as lowercase for case-insensitive comparisons.
  *
