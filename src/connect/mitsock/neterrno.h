@@ -22,6 +22,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 1.2  2001/11/07 22:35:41  juran
+* Avoid redefinition of EDEADLK and EAGAIN on Mac OS X.
+*
 * Revision 1.1  2001/04/03 20:35:21  juran
 * Phil Churchill's MIT-derived OT sockets library.  No changes prior to initial check-in.
 *
@@ -72,8 +75,10 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #define	ENOEXEC		8		/* Exec format error */
 /*#define	EBADF		9*/		/* Bad file descriptor */
 #define	ECHILD		10		/* No child processes */
+#ifndef EDEADLK
 #define	EDEADLK		11		/* Resource deadlock avoided */
 					/* 11 was EAGAIN */
+#endif /* EDEADLK */
 #endif /* __MWERKS__ */
 
 #ifndef ENOMEM
@@ -121,7 +126,9 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #endif /* NOWAY */
 
 /* non-blocking and interrupt i/o */
+#ifndef EAGAIN
 #define	EAGAIN		35		/* Resource temporarily unavailable */
+#endif /* EAGAIN */
 #ifndef _POSIX_SOURCE
 #define	EWOULDBLOCK	EAGAIN		/* Operation would block */
 #define	EINPROGRESS	36		/* Operation now in progress */
