@@ -93,8 +93,10 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 	if(iErrPos1 < len1) {
 	    ostrstream oss;
 	    oss << "The first sequence is inconsistent with the current "
-		<< "scoring matrix type. Symbol " << seq1[iErrPos1] << " at "
-		<< iErrPos1;
+		<< "scoring matrix type. "
+                << "Position = " << iErrPos1 
+                << " Symbol = '" << seq1[iErrPos1] << "'";
+
 	    string message = CNcbiOstrstreamToString(oss);
 	    NCBI_THROW(CAlgoAlignException, eInvalidCharacter, message);
 	}
@@ -103,8 +105,10 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 	if(iErrPos2 < len2) {
 	    ostrstream oss;
 	    oss << "The second sequence is inconsistent with the current "
-		<< "scoring matrix type. Symbol " << seq2[iErrPos2] << " at "
-		<< iErrPos2;
+		<< "scoring matrix type. "
+                << "Position = " << iErrPos2 
+                << " Symbol = '" << seq2[iErrPos2] << "'";
+
 	    string message = CNcbiOstrstreamToString(oss);
 	    NCBI_THROW(CAlgoAlignException, eInvalidCharacter, message);
 	}
@@ -971,6 +975,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/06/23 19:59:09  kapustin
+ * Report incorrect sym position before the symbol
+ *
  * Revision 1.48  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
