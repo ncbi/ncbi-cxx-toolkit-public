@@ -49,16 +49,22 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 {
     auto_ptr<CConn_Streambuf>
         csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
-    init(csb.get());
-    m_CSb = csb.release();
-    if ( !m_CSb->IsOkay() )
-        setstate(badbit | eofbit);
+    if ( csb->GetCONN() ) {
+        init(csb.get());
+        m_CSb = csb.release();
+    } else {
+        init(0); // according to the standard (27.4.4.1.3), badbit is set here
+#if 1
+        /* the next statement should not be really necessary */
+        clear(badbit | eofbit);
+#endif
+    }
 }
 
 
 CONN CConn_IOStream::GetCONN() const
 {
-    return m_CSb->GetCONN();
+    return m_CSb ? m_CSb->GetCONN() : 0;
 }
 
 
@@ -251,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/05/20 16:47:19  lavr
+ * GetCONN() to check for NULL; contructor to init(0) if connection is bad
+ *
  * Revision 6.20  2003/05/12 18:32:27  lavr
  * Modified not to throw exceptions from stream buffer; few more improvements
  *
