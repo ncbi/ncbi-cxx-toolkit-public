@@ -362,9 +362,9 @@ public:
     /// Shutdown level
     ///
     enum EShutdownLevel {
-        eNoShutdown = 0, ///< No Shutdown was requested
-        eNormal,         ///< Normal shutdown was requested
-        eImmidiate       ///< Urgent shutdown was requested
+        eNoShutdown = 0,   ///< No Shutdown was requested
+        eNormalShutdown,   ///< Normal shutdown was requested
+        eShutdownImmidiate ///< Urgent shutdown was requested
     };
 
 protected:
@@ -641,6 +641,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/23 21:22:54  didenko
+ * Renamed EShutdownLevel values names
+ *
  * Revision 1.18  2005/03/22 21:42:50  didenko
  * Got rid of warnning on Sun WorkShop
  *
