@@ -106,11 +106,16 @@ public:
                     const CSeq_loc&   target,
                     CScope*           scope = 0);
 
-    // Mapping through an alignment. Need to specify target ID,
-    // any other ID is mapped to the target one. If scope is set,
-    // synonyms are resolved for each source ID.
+    // Mapping through an alignment. Need to specify target ID or
+    // target row of the alignment. Any other ID is mapped to the
+    // target one. If scope is set, synonyms are resolved for each source ID.
+    // Only the first row matching target ID is used, all other rows
+    // are considered source.
     CSeq_loc_Mapper(const CSeq_align& map_align,
                     const CSeq_id&    to_id,
+                    CScope*           scope = 0);
+    CSeq_loc_Mapper(const CSeq_align& map_align,
+                    int               to_row,
                     CScope*           scope = 0);
 
 /*
@@ -139,6 +144,8 @@ public:
     CSeq_loc_Mapper& SetMergeAll(void);
 
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
+    // Check if the last mapping resulted in partial location
+    bool             LastIsPartial(void);
 
 private:
     CSeq_loc_Mapper(const CSeq_loc_Mapper&);
@@ -151,7 +158,12 @@ private:
         eMergeAbutting,  // merge only abutting intervals, keep overlapping
         eMergeAll        // merge both abutting and overlapping intervals
     };
- 
+
+    enum EWidthFlags {
+        fWidthProtToNuc = 1,
+        fWidthNucToProt = 2
+    };
+    typedef int TWidthFlags; // binary OR of "EWidthFlags"
     // Conversions
     typedef CRange<TSeqPos>                              TRange;
     typedef CRangeMultimap<CRef<CMappingRange>, TSeqPos> TRangeMap;
@@ -163,9 +175,15 @@ private:
     // 0 = not set, any other index = na_strand + 1
     typedef vector<TMappedRanges>                TRangesByStrand;
     typedef map<CSeq_id_Handle, TRangesByStrand> TRangesById;
+    typedef map<CSeq_id_Handle, TWidthFlags>     TWidthById;
+
+    typedef CSeq_align::C_Segs::TDendiag TDendiag;
+    typedef CSeq_align::C_Segs::TStd     TStd;
 
     // Check molecule type, return character width (3=na, 1=aa, 0=unknown).
-    int x_CheckMolType(const CSeq_loc& loc, TSeqPos* total_length);
+    int x_CheckSeqWidth(const CSeq_id& id, int width);
+    int x_CheckSeqWidth(const CSeq_loc& loc,
+                        TSeqPos* total_length);
     // Get sequence length, try to get the real length for
     // reverse strand, do not use "whole".
     TSeqPos x_GetRangeLength(const CSeq_loc_CI& it);
@@ -176,10 +194,27 @@ private:
                          TSeqPos        dst_start,
                          ENa_strand     dst_strand,
                          TSeqPos        length);
+    void x_NextMappingRange(const CSeq_id&  src_id,
+                            TSeqPos&        src_start,
+                            TSeqPos&        src_len,
+                            ENa_strand      src_strand,
+                            const CSeq_id&  dst_id,
+                            TSeqPos&        dst_start,
+                            TSeqPos&        dst_len,
+                            ENa_strand      dst_strand);
+
     // Optional frame is used for cd-region only
     void x_Initialize(const CSeq_loc& source,
                       const CSeq_loc& target,
                       int             frame = 0);
+    void x_Initialize(const CSeq_align& map_align,
+                      const CSeq_id&    to_id);
+    void x_Initialize(const CSeq_align& map_align,
+                      int               to_row);
+    void x_InitAlign(const CDense_diag& diag, int to_row);
+    void x_InitAlign(const CDense_seg& denseg, int to_row);
+    void x_InitAlign(const CStd_seg& sseg, int to_row);
+    void x_InitAlign(const CPacked_seg& pseg, int to_row);
 
     TRangeIterator x_BeginMappingRanges(CSeq_id_Handle id,
                                         TSeqPos from,
@@ -215,7 +250,8 @@ private:
     CRef<CScope>    m_Scope;
     // CSeq_loc_Conversion_Set m_Cvt;
     EMergeFlags     m_MergeFlag;
-    int             m_Src_width;
+    // Sources may have different widths, e.g. in an alignment
+    TWidthById      m_Widths;
     int             m_Dst_width;
     TIdMap          m_IdMap;
     bool            m_Partial;
@@ -249,12 +285,22 @@ CSeq_loc_Mapper& CSeq_loc_Mapper::SetMergeAll(void)
 }
 
 
+inline
+bool CSeq_loc_Mapper::LastIsPartial(void)
+{
+    return m_Partial;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/19 14:19:08  grichenk
+* Added seq-loc mapping through a seq-align.
+*
 * Revision 1.1  2004/03/10 16:22:29  grichenk
 * Initial revision
 *

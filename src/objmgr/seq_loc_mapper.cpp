@@ -40,6 +40,7 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -143,7 +144,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                                  EFeatMapDirection dir,
                                  CScope*           scope)
     : m_Scope(scope),
-      m_MergeFlag(eMergeNone)
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
 {
     _ASSERT(map_feat.IsSetProduct());
     int frame = 0;
@@ -163,19 +165,32 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
                                  const CSeq_loc& target,
                                  CScope* scope)
     : m_Scope(scope),
-      m_MergeFlag(eMergeNone)
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
 {
     x_Initialize(source, target);
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& /*map_align*/,
-                                 const CSeq_id&    /*to_id*/,
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
+                                 const CSeq_id&    to_id,
                                  CScope*           scope)
     : m_Scope(scope),
-      m_MergeFlag(eMergeNone)
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
 {
-    return;
+    x_Initialize(map_align, to_id);
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
+                                 int               to_row,
+                                 CScope*           scope)
+    : m_Scope(scope),
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
+{
+    x_Initialize(map_align, to_row);
 }
 
 
@@ -185,48 +200,109 @@ CSeq_loc_Mapper::~CSeq_loc_Mapper(void)
 }
 
 
-int CSeq_loc_Mapper::x_CheckMolType(const CSeq_loc& loc,
-                                    TSeqPos* total_length)
+inline
+CSeq_loc_Mapper::TMappedRanges&
+CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
+                                   int strand_idx) const
+{
+    TRangesByStrand& str_vec = m_MappedLocs[id];
+    if ((int)str_vec.size() <= strand_idx) {
+        str_vec.resize(strand_idx + 1);
+    }
+    return str_vec[strand_idx];
+}
+
+
+inline
+void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
+{
+    if (m_MappedLocs.size() == 0) {
+        return;
+    }
+    // Push everything already mapped to the destination mix
+    CRef<CSeq_loc> loc = x_GetMappedSeq_loc();
+    if ( !m_Dst_loc ) {
+        m_Dst_loc = loc;
+        return;
+    }
+    if ( !loc->IsNull() ) {
+        x_PushLocToDstMix(loc);
+    }
+}
+
+
+int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_id& id, int width)
+{
+    if (!m_Scope) {
+        return width;
+    }
+    CBioseq_Handle handle;
+    try {
+        handle = m_Scope->GetBioseqHandle(id);
+    } catch (...) {
+        return width;
+    }
+    if ( !handle ) {
+        return width;
+    }
+    switch ( handle.GetBioseqMolType() ) {
+    case CSeq_inst::eMol_dna:
+    case CSeq_inst::eMol_rna:
+    case CSeq_inst::eMol_na:
+        {
+            if ( width != 3 ) {
+                if ( width ) {
+                    // width already set to a different value
+                    NCBI_THROW(CLocMapperException, eBadLocation,
+                               "Location contains different sequence types");
+                }
+                width = 3;
+            }
+            break;
+        }
+    case CSeq_inst::eMol_aa:
+        {
+            if ( width != 1 ) {
+                if ( width ) {
+                    // width already set to a different value
+                    NCBI_THROW(CLocMapperException, eBadLocation,
+                               "Location contains different sequence types");
+                }
+                width = 1;
+            }
+            break;
+        }
+    }
+    // Destination width should always be checked first
+    if ( !m_Dst_width ) {
+        m_Dst_width = width;
+    }
+    TWidthFlags wid_cvt = 0;
+    if (width == 1) {
+        wid_cvt |= fWidthProtToNuc;
+    }
+    if (m_Dst_width == 1) {
+        wid_cvt |= fWidthNucToProt;
+    }
+    CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(id);
+    ITERATE(CSynonymsSet, syn_it, *syns) {
+        m_Widths[syns->GetSeq_id_Handle(syn_it)] = wid_cvt;
+    }
+    return width;
+}
+
+
+int CSeq_loc_Mapper::x_CheckSeqWidth(const CSeq_loc& loc,
+                                     TSeqPos* total_length)
 {
     int width = 0;
     *total_length = 0;
-    for (CSeq_loc_CI src_it(loc); src_it; ++src_it) {
-        *total_length += src_it.GetRange().GetLength();
+    for (CSeq_loc_CI it(loc); it; ++it) {
+        *total_length += it.GetRange().GetLength();
         if ( !m_Scope ) {
             continue; // don't check sequence type;
         }
-        CBioseq_Handle src_h = m_Scope->GetBioseqHandle(src_it.GetSeq_id());
-        if ( !src_h ) {
-            continue;
-        }
-        switch ( src_h.GetBioseqMolType() ) {
-        case CSeq_inst::eMol_dna:
-        case CSeq_inst::eMol_rna:
-        case CSeq_inst::eMol_na:
-            {
-                if ( width != 3 ) {
-                    if ( width ) {
-                        // width already set to a different value
-                        NCBI_THROW(CLocMapperException, eBadLocation,
-                                   "Location contains different sequence types");
-                    }
-                    width = 3;
-                }
-                break;
-            }
-        case CSeq_inst::eMol_aa:
-            {
-                if ( width != 1 ) {
-                    if ( width ) {
-                        // width already set to a different value
-                        NCBI_THROW(CLocMapperException, eBadLocation,
-                                   "Location contains different sequence types");
-                    }
-                    width = 1;
-                }
-                break;
-            }
-        }
+        width = x_CheckSeqWidth(it.GetSeq_id(), width);
     }
     return width;
 }
@@ -283,37 +359,85 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
 }
 
 
+void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
+                                         TSeqPos&       src_start,
+                                         TSeqPos&       src_len,
+                                         ENa_strand     src_strand,
+                                         const CSeq_id& dst_id,
+                                         TSeqPos&       dst_start,
+                                         TSeqPos&       dst_len,
+                                         ENa_strand     dst_strand)
+{
+    TSeqPos cvt_src_start = src_start;
+    TSeqPos cvt_dst_start = dst_start;
+    TSeqPos cvt_length;
+
+    if (src_len == dst_len) {
+        cvt_length = src_len;
+        src_len = 0;
+        dst_len = 0;
+    }
+    else if (src_len > dst_len) {
+        // reverse interval for minus strand
+        if (IsReverse(src_strand)) {
+            cvt_src_start += src_len - dst_len;
+        }
+        else {
+            src_start += dst_len;
+        }
+        cvt_length = dst_len;
+        src_len -= cvt_length;
+        dst_len = 0;
+    }
+    else { // if (src_len < dst_len)
+        // reverse interval for minus strand
+        if ( IsReverse(dst_strand) ) {
+            cvt_dst_start += dst_len - src_len;
+        }
+        else {
+            dst_start += src_len;
+        }
+        cvt_length = src_len;
+        dst_len -= cvt_length;
+        src_len = 0;
+    }
+    x_AddConversion(
+        src_id, cvt_src_start, src_strand,
+        dst_id, cvt_dst_start, dst_strand,
+        cvt_length);
+}
+
+
 void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
                                    const CSeq_loc& target,
                                    int             frame)
 {
     // Check sequence type or total location length to
     // adjust intervals according to character width.
-    TSeqPos src_total_len;
-    m_Src_width = x_CheckMolType(source, &src_total_len);
     TSeqPos dst_total_len;
-    m_Dst_width = x_CheckMolType(target, &dst_total_len);
+    x_CheckSeqWidth(target, &dst_total_len);
+    TSeqPos src_total_len;
+    int src_width = x_CheckSeqWidth(source, &src_total_len);
 
-    // Convert frame to na-shift
-    if (!m_Src_width  ||  !m_Dst_width) {
+    if (!src_width  ||  !m_Dst_width) {
         // Try to detect types by lengths
-        if (!src_total_len  ||  !dst_total_len) {
+        if (src_total_len == kInvalidSeqPos || dst_total_len== kInvalidSeqPos) {
             NCBI_THROW(CLocMapperException, eBadLocation,
-                       "Zero location length -- "
+                       "Undefined location length -- "
                        "unable to detect sequence type");
         }
         if (src_total_len == dst_total_len) {
-            m_Src_width = 1;
+            src_width = 1;
             m_Dst_width = 1;
             _ASSERT(!frame);
         }
         // truncate incomplete left and right codons
         else if (src_total_len/3 == dst_total_len) {
-            m_Src_width = 3;
+            src_width = 3;
             m_Dst_width = 1;
         }
         else if (dst_total_len/3 == src_total_len) {
-            m_Src_width = 1;
+            src_width = 1;
             m_Dst_width = 3;
         }
         else {
@@ -323,8 +447,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
         }
     }
     else {
-        if (m_Src_width == m_Dst_width) {
-            m_Src_width = 1;
+        if (src_width == m_Dst_width) {
+            src_width = 1;
             m_Dst_width = 1;
             _ASSERT(!frame);
         }
@@ -335,13 +459,11 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
     CSeq_loc_CI dst_it(target);
     TSeqPos src_start = src_it.GetRange().GetFrom()*m_Dst_width;
     TSeqPos src_len = x_GetRangeLength(src_it)*m_Dst_width;
-    TSeqPos dst_start = dst_it.GetRange().GetFrom()*m_Src_width;
-    TSeqPos dst_len = x_GetRangeLength(dst_it)*m_Src_width;
-    TSeqPos src_pos = 0;
-    TSeqPos dst_pos = 0;
+    TSeqPos dst_start = dst_it.GetRange().GetFrom()*m_Dst_width;
+    TSeqPos dst_len = x_GetRangeLength(dst_it)*m_Dst_width;
     if ( frame ) {
         // ignore pre-frame range
-        if (m_Src_width == 3) {
+        if (src_width == 3) {
             src_start += frame - 1;
         }
         if (m_Dst_width == 3) {
@@ -349,56 +471,384 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
         }
     }
     while (src_it  &&  dst_it) {
-        TSeqPos cvt_src_start = src_start;
-        TSeqPos cvt_dst_start = dst_start;
-        TSeqPos cvt_length;
-
-        if (src_len == dst_len) {
-            cvt_length = src_len;
-            src_pos += cvt_length;
-            dst_pos += cvt_length;
-            src_len = 0;
-            dst_len = 0;
-        }
-        else if (src_len > dst_len) {
-            // reverse interval for minus strand
-            if (IsReverse(src_it.GetStrand())) {
-                cvt_src_start += src_len - dst_len;
-            }
-            else {
-                src_start += dst_len;
-            }
-            cvt_length = dst_len;
-            src_len -= cvt_length;
-            src_pos += cvt_length;
-            dst_pos += cvt_length;
-            dst_len = 0;
-        }
-        else { // if (src_len < dst_len)
-            // reverse interval for minus strand
-            if ( IsReverse(dst_it.GetStrand()) ) {
-                cvt_dst_start += dst_len - src_len;
-            }
-            else {
-                dst_start += src_len;
-            }
-            cvt_length = src_len;
-            dst_len -= cvt_length;
-            dst_pos += cvt_length;
-            src_pos += cvt_length;
-            src_len = 0;
-        }
-        x_AddConversion(
-            src_it.GetSeq_id(), cvt_src_start, src_it.GetStrand(),
-            dst_it.GetSeq_id(), cvt_dst_start, dst_it.GetStrand(),
-            cvt_length);
+        x_NextMappingRange(
+            src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
+            dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand());
         if (src_len == 0  &&  ++src_it) {
             src_start = src_it.GetRange().GetFrom()*m_Dst_width;
             src_len = x_GetRangeLength(src_it)*m_Dst_width;
         }
         if (dst_len == 0  &&  ++dst_it) {
-            dst_start = dst_it.GetRange().GetFrom()*m_Src_width;
-            dst_len = x_GetRangeLength(dst_it)*m_Src_width;
+            dst_start = dst_it.GetRange().GetFrom()*src_width;
+            dst_len = x_GetRangeLength(dst_it)*src_width;
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
+                                   const CSeq_id&    to_id)
+{
+    switch ( map_align.GetSegs().Which() ) {
+    case CSeq_align::C_Segs::e_Dendiag:
+        {
+            const TDendiag& diags = map_align.GetSegs().GetDendiag();
+            ITERATE(TDendiag, diag_it, diags) {
+                int to_row = -1;
+                for (int i = 0; i < (*diag_it)->GetIds().size(); ++i) {
+                    // find the first row with required ID
+                    // ??? check if there are multiple rows with the same ID?
+                    if ( (*diag_it)->GetIds()[i]->Equals(to_id) ) {
+                        to_row = i;
+                        break;
+                    }
+                }
+                if (to_row < 0) {
+                    NCBI_THROW(CLocMapperException, eBadAlignment,
+                               "Target ID not found in the alignment");
+                }
+                x_InitAlign(**diag_it, to_row);
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Denseg:
+        {
+            const CDense_seg& dseg = map_align.GetSegs().GetDenseg();
+            int to_row = -1;
+            for (int i = 0; i < dseg.GetIds().size(); ++i) {
+                if (dseg.GetIds()[i]->Equals(to_id)) {
+                    to_row = i;
+                    break;
+                }
+            }
+            if (to_row < 0) {
+                NCBI_THROW(CLocMapperException, eBadAlignment,
+                           "Target ID not found in the alignment");
+            }
+            x_InitAlign(dseg, to_row);
+            break;
+        }
+    case CSeq_align::C_Segs::e_Std:
+        {
+            const TStd& std_segs = map_align.GetSegs().GetStd();
+            ITERATE(TStd, std_seg, std_segs) {
+                int to_row = -1;
+                for (int i = 0; i < (*std_seg)->GetIds().size(); ++i) {
+                    if ((*std_seg)->GetIds()[i]->Equals(to_id)) {
+                        to_row = i;
+                        break;
+                    }
+                }
+                if (to_row < 0) {
+                    NCBI_THROW(CLocMapperException, eBadAlignment,
+                               "Target ID not found in the alignment");
+                }
+                x_InitAlign(**std_seg, to_row);
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Packed:
+        {
+            const CPacked_seg& pseg = map_align.GetSegs().GetPacked();
+            int to_row = -1;
+            for (int i = 0; i < pseg.GetIds().size(); ++i) {
+                if (pseg.GetIds()[i]->Equals(to_id)) {
+                    to_row = i;
+                    break;
+                }
+            }
+            if (to_row < 0) {
+                NCBI_THROW(CLocMapperException, eBadAlignment,
+                           "Target ID not found in the alignment");
+            }
+            x_InitAlign(pseg, to_row);
+            break;
+        }
+    case CSeq_align::C_Segs::e_Disc:
+        {
+            const CSeq_align_set& aln_set = map_align.GetSegs().GetDisc();
+            ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
+                x_Initialize(**aln, to_id);
+            }
+            break;
+        }
+    default:
+        NCBI_THROW(CLocMapperException, eBadAlignment,
+                   "Unsupported alignment type");
+    }
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CSeq_align& map_align,
+                                   int               to_row)
+{
+    switch ( map_align.GetSegs().Which() ) {
+    case CSeq_align::C_Segs::e_Dendiag:
+        {
+            const TDendiag& diags = map_align.GetSegs().GetDendiag();
+            ITERATE(TDendiag, diag_it, diags) {
+                x_InitAlign(**diag_it, to_row);
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Denseg:
+        {
+            const CDense_seg& dseg = map_align.GetSegs().GetDenseg();
+            x_InitAlign(dseg, to_row);
+            break;
+        }
+    case CSeq_align::C_Segs::e_Std:
+        {
+            const TStd& std_segs = map_align.GetSegs().GetStd();
+            ITERATE(TStd, std_seg, std_segs) {
+                x_InitAlign(**std_seg, to_row);
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Packed:
+        {
+            const CPacked_seg& pseg = map_align.GetSegs().GetPacked();
+            x_InitAlign(pseg, to_row);
+            break;
+        }
+    case CSeq_align::C_Segs::e_Disc:
+        {
+            // The same row in each sub-alignment?
+            const CSeq_align_set& aln_set = map_align.GetSegs().GetDisc();
+            ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
+                x_Initialize(**aln, to_row);
+            }
+            break;
+        }
+    default:
+        NCBI_THROW(CLocMapperException, eBadAlignment,
+                   "Unsupported alignment type");
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, int to_row)
+{
+    if (diag.GetStarts()[to_row] < 0) {
+        // Destination ID is not present in this dense-diag
+        return;
+    }
+    int dim = diag.GetDim();
+    _ASSERT(to_row < dim);
+    if (dim != (int)diag.GetIds().size()) {
+        ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+        dim = min(dim, (int)diag.GetIds().size());
+    }
+    if (dim != (int)diag.GetStarts().size()) {
+        ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+        dim = min(dim, (int)diag.GetStarts().size());
+    }
+    bool have_strands = diag.IsSetStrands();
+    if (have_strands && dim != (int)diag.GetStrands().size()) {
+        ERR_POST(Warning << "Invalid 'strands' size in dendiag");
+        dim = min(dim, (int)diag.GetStrands().size());
+    }
+
+    ENa_strand dst_strand = have_strands ?
+        diag.GetStrands()[to_row] : eNa_strand_unknown;
+    const CSeq_id& dst_id = *diag.GetIds()[to_row];
+    if (!m_Dst_width) {
+        m_Dst_width = x_CheckSeqWidth(dst_id, m_Dst_width);
+    }
+
+    for (int row = 0; row < dim; ++row) {
+        if (row == to_row) {
+            continue;
+        }
+        if (diag.GetStarts()[row] < 0) {
+            continue;
+        }
+        // In alignments with multiple sequence types segment length
+        // should be multiplied by character width.
+        int src_width = 0;
+        const CSeq_id& src_id = *diag.GetIds()[row];
+        src_width = x_CheckSeqWidth(src_id, src_width);
+        int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
+        int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
+        TSeqPos src_start = diag.GetStarts()[row]*dst_width_rel;
+        TSeqPos src_len = diag.GetLen()*src_width*dst_width_rel;
+        TSeqPos dst_start = diag.GetStarts()[to_row]*src_width_rel;
+        TSeqPos dst_len = diag.GetLen()*m_Dst_width*src_width_rel;
+        ENa_strand src_strand = have_strands ?
+            diag.GetStrands()[row] : eNa_strand_unknown;
+        x_NextMappingRange(
+            src_id, src_start, src_len, src_strand,
+            dst_id, dst_start, dst_len, dst_strand);
+        _ASSERT(!src_len  &&  !dst_len);
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, int to_row)
+{
+    int dim    = denseg.GetDim();
+    _ASSERT(to_row < dim);
+
+    int numseg = denseg.GetNumseg();
+    // claimed dimension may not be accurate :-/
+    if (numseg != (int)denseg.GetLens().size()) {
+        ERR_POST(Warning << "Invalid 'lens' size in denseg");
+        numseg = min(numseg, (int)denseg.GetLens().size());
+    }
+    if (dim != (int)denseg.GetIds().size()) {
+        ERR_POST(Warning << "Invalid 'ids' size in denseg");
+        dim = min(dim, (int)denseg.GetIds().size());
+    }
+    if (dim*numseg != (int)denseg.GetStarts().size()) {
+        ERR_POST(Warning << "Invalid 'starts' size in denseg");
+        dim = min(dim*numseg, (int)denseg.GetStarts().size()) / numseg;
+    }
+    bool have_strands = denseg.IsSetStrands();
+    if (have_strands && dim*numseg != (int)denseg.GetStrands().size()) {
+        ERR_POST(Warning << "Invalid 'strands' size in denseg");
+        dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
+    }
+
+    const CSeq_id& dst_id = *denseg.GetIds()[to_row];
+
+    if (!m_Dst_width) {
+        if ( denseg.IsSetWidths() ) {
+            m_Dst_width = denseg.GetWidths()[to_row];
+        }
+        else {
+            m_Dst_width = x_CheckSeqWidth(dst_id, m_Dst_width);
+        }
+    }
+    for (int row = 0; row < dim; ++row) {
+        if (row == to_row) {
+            continue;
+        }
+        const CSeq_id& src_id = *denseg.GetIds()[row];
+
+        int src_width = 0;
+        if ( denseg.IsSetWidths() ) {
+            src_width = denseg.GetWidths()[row];
+        }
+        else {
+            src_width = x_CheckSeqWidth(src_id, src_width);
+        }
+        int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
+        int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
+
+        for (int seg = 0; seg < numseg; ++seg) {
+            int i_src_start = denseg.GetStarts()[seg*dim + row];
+            int i_dst_start = denseg.GetStarts()[seg*dim + to_row];
+            if (i_src_start < 0  ||  i_dst_start < 0) {
+                continue;
+            }
+
+            ENa_strand dst_strand = have_strands ?
+                denseg.GetStrands()[seg*dim + to_row] : eNa_strand_unknown;
+            ENa_strand src_strand = have_strands ?
+                denseg.GetStrands()[seg*dim + row] : eNa_strand_unknown;
+
+            // In alignments with multiple sequence types segment length
+            // should be multiplied by character width.
+            TSeqPos src_len = denseg.GetLens()[seg]*src_width*dst_width_rel;
+            TSeqPos dst_len = denseg.GetLens()[seg]*m_Dst_width*src_width_rel;
+            TSeqPos src_start = (TSeqPos)(i_src_start)*dst_width_rel;
+            TSeqPos dst_start = (TSeqPos)(i_dst_start)*src_width_rel;
+            x_NextMappingRange(
+                src_id, src_start, src_len, src_strand,
+                dst_id, dst_start, dst_len, dst_strand);
+            _ASSERT(!src_len  &&  !dst_len);
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitAlign(const CStd_seg& sseg, int to_row)
+{
+    size_t dim = sseg.GetDim();
+    if (dim != sseg.GetLoc().size()) {
+        ERR_POST(Warning << "Invalid 'loc' size in std-seg");
+        dim = min(dim, sseg.GetLoc().size());
+    }
+    if (sseg.IsSetIds()
+        && dim != sseg.GetIds().size()) {
+        ERR_POST(Warning << "Invalid 'ids' size in std-seg");
+        dim = min(dim, sseg.GetIds().size());
+    }
+
+    const CSeq_loc& dst_loc = *sseg.GetLoc()[to_row];
+
+    for (int row = 0; row < dim; ++row ) {
+        if (row == to_row) {
+            continue;
+        }
+        const CSeq_loc& src_loc = *sseg.GetLoc()[row];
+        if ( src_loc.IsEmpty() ) {
+            // skipped row in this segment
+            continue;
+        }
+        x_Initialize(src_loc, dst_loc);
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, int to_row)
+{
+    int dim    = pseg.GetDim();
+    int numseg = pseg.GetNumseg();
+    // claimed dimension may not be accurate :-/
+    if (numseg != (int)pseg.GetLens().size()) {
+        ERR_POST(Warning << "Invalid 'lens' size in packed-seg");
+        numseg = min(numseg, (int)pseg.GetLens().size());
+    }
+    if (dim != (int)pseg.GetIds().size()) {
+        ERR_POST(Warning << "Invalid 'ids' size in packed-seg");
+        dim = min(dim, (int)pseg.GetIds().size());
+    }
+    if (dim*numseg != (int)pseg.GetStarts().size()) {
+        ERR_POST(Warning << "Invalid 'starts' size in packed-seg");
+        dim = min(dim*numseg, (int)pseg.GetStarts().size()) / numseg;
+    }
+    bool have_strands = pseg.IsSetStrands();
+    if (have_strands && dim*numseg != (int)pseg.GetStrands().size()) {
+        ERR_POST(Warning << "Invalid 'strands' size in packed-seg");
+        dim = min(dim*numseg, (int)pseg.GetStrands().size()) / numseg;
+    }
+
+    const CSeq_id& dst_id = *pseg.GetIds()[to_row];
+    if (!m_Dst_width) {
+        m_Dst_width = x_CheckSeqWidth(dst_id, m_Dst_width);
+    }
+    for (int row = 0; row < dim; ++row) {
+        if (row == to_row) {
+            continue;
+        }
+        const CSeq_id& src_id = *pseg.GetIds()[row];
+
+        int src_width = 0;
+        src_width = x_CheckSeqWidth(src_id, src_width);
+        int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
+        int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
+
+        for (int seg = 0; seg < numseg; ++seg) {
+            if (!pseg.GetPresent()[row]  ||  !pseg.GetPresent()[to_row]) {
+                continue;
+            }
+
+            ENa_strand dst_strand = have_strands ?
+                pseg.GetStrands()[seg*dim + to_row] : eNa_strand_unknown;
+            ENa_strand src_strand = have_strands ?
+                pseg.GetStrands()[seg*dim + row] : eNa_strand_unknown;
+
+            // In alignments with multiple sequence types segment length
+            // should be multiplied by character width.
+            TSeqPos src_len = pseg.GetLens()[seg]*src_width*dst_width_rel;
+            TSeqPos dst_len = pseg.GetLens()[seg]*m_Dst_width*src_width_rel;
+            TSeqPos src_start = pseg.GetStarts()[seg*dim + row]*dst_width_rel;
+            TSeqPos dst_start = pseg.GetStarts()[seg*dim + to_row]*src_width_rel;
+            x_NextMappingRange(
+                src_id, src_start, src_len, src_strand,
+                dst_id, dst_start, dst_len, dst_strand);
+            _ASSERT(!src_len  &&  !dst_len);
         }
     }
 }
@@ -423,7 +873,7 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
                                     ENa_strand       src_strand)
 {
     bool res = false;
-    if (m_Dst_width == 3) {
+    if (m_Widths[CSeq_id_Handle::GetHandle(src_id)] & fWidthProtToNuc) {
         src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
     }
 
@@ -478,24 +928,6 @@ void CSeq_loc_Mapper::x_PushLocToDstMix(CRef<CSeq_loc> loc)
         return;
     }
     mix.push_back(loc);
-}
-
-
-inline
-void CSeq_loc_Mapper::x_PushRangesToDstMix(void)
-{
-    if (m_MappedLocs.size() == 0) {
-        return;
-    }
-    // Push everything already mapped to the destination mix
-    CRef<CSeq_loc> loc = x_GetMappedSeq_loc();
-    if ( !m_Dst_loc ) {
-        m_Dst_loc = loc;
-        return;
-    }
-    if ( !loc->IsNull() ) {
-        x_PushLocToDstMix(loc);
-    }
 }
 
 
@@ -595,7 +1027,6 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
     {
         const CPacked_seqpnt& src_pack_pnts = src_loc.GetPacked_pnt();
         const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
-        bool res = false;
         ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
             x_MapInterval(
                 src_pack_pnts.GetId(),
@@ -706,26 +1137,12 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
 }
 
 
-CSeq_loc_Mapper::TMappedRanges&
-CSeq_loc_Mapper::x_GetMappedRanges(const CSeq_id_Handle& id,
-                                   int strand_idx) const
-{
-    TRangesByStrand& str_vec = m_MappedLocs[id];
-    if (str_vec.size() <= strand_idx) {
-        str_vec.resize(strand_idx + 1);
-    }
-    return str_vec[strand_idx];
-}
-
-
 CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                                  TSeqPos from,
                                                  TSeqPos to,
                                                  int strand_idx)
 {
-    if ( m_Src_width == 3 ) {
-        // Do not convert if destination is nuc. and this is
-        // convertion from a protein.
+    if (m_Widths[idh] & fWidthNucToProt) {
         from = from/3;
         to = to/3;
     }
@@ -807,7 +1224,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
             dst_mix.push_back(null_loc);
             continue;
         }
-        for (int str = 0; str < id_it->second.size(); ++str) {
+        for (int str = 0; str < (int)id_it->second.size(); ++str) {
             if (id_it->second[str].size() == 0) {
                 continue;
             }
@@ -860,6 +1277,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/19 14:19:08  grichenk
+* Added seq-loc mapping through a seq-align.
+*
 * Revision 1.4  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

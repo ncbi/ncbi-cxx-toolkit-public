@@ -111,6 +111,7 @@ public:
     enum EErrCode {
         eBadLocation,
         eUnknownLength,
+        eBadAlignment,
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -154,6 +155,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/19 14:19:08  grichenk
+* Added seq-loc mapping through a seq-align.
+*
 * Revision 1.6  2004/03/10 16:24:27  grichenk
 * Added CSeq_loc_Mapper
 *
