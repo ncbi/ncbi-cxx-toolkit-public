@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/15 15:04:47  sandomir
+* minor memory leak in tag mapping
+*
 * Revision 1.18  1999/07/19 21:05:02  pubmed
 * minor change in CHTMLPage::CreateTemplate() - show file name
 *
@@ -147,6 +150,7 @@ CNCBINode* CHTMLBasicPage::MapTag(const string& name)
 
 void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 {
+    delete m_TagMap[name];
     m_TagMap[name] = mapper;
 }
 
