@@ -68,7 +68,7 @@ public:
     //          FALSE - Can't open connection to taxonomy service
     ///
     bool Init(void);  // default:  120 sec timeout, 5 reconnect attempts
-    bool Init(const STimeout* timeout=0, unsigned reconnect_attempts=5);
+    bool Init(const STimeout* timeout, unsigned reconnect_attempts=5);
 
     //---------------------------------------------
     // Taxon1 server fini (closes connection, frees memory)
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.4  2002/02/15 16:17:24  vakatov
+// CTaxon1::Init() -- make "timeout" arg be mandatory
+//
 // Revision 1.3  2002/02/14 22:44:48  vakatov
 // Use STimeout instead of time_t.
 // Get rid of warnings and extraneous #include's, shuffled code a little.
