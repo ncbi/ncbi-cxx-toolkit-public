@@ -387,7 +387,7 @@ CRef<objects::CScore_matrix_parameters> CRemoteBlast::GetPSSM(void)
 
 // Internal CRemoteBlast methods
 
-int CRemoteBlast::x_GetState(void)
+CRemoteBlast::EState CRemoteBlast::x_GetState(void)
 {
     // CBlast4Option states:
     
@@ -396,7 +396,7 @@ int CRemoteBlast::x_GetState(void)
     // 2. wait   (has rid, no errors, still pending)
     // 3. done   (has rid, no errors, not pending)
     
-    int rv = 0;
+    EState rv = eDone;
     
     if (! m_Errs.empty()) {
         rv = eFailed;
@@ -404,8 +404,6 @@ int CRemoteBlast::x_GetState(void)
         rv = eStart;
     } else if (m_Pending) {
         rv = eWait;
-    } else {
-        rv = eDone;
     }
     
     return rv;
@@ -810,6 +808,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/06/09 15:56:06  bealer
+* - Fix return type of x_GetState
+*
 * Revision 1.14  2004/06/08 19:50:18  bealer
 * - Add doxygen comments.
 *
