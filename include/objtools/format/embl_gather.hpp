@@ -47,7 +47,7 @@ class CEmblGatherer : public CFlatGatherer
 public:
     CEmblGatherer(void);
 
-    virtual void x_DoSingleSection(const CBioseq& seq) const;
+    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const;
 };
 
 
@@ -59,6 +59,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/25 20:29:30  shomrat
+* CBioseq -> CBioseq_Handle
+*
 * Revision 1.1  2003/12/17 19:51:23  shomrat
 * Initial revision (adapted from flat lib)
 *
