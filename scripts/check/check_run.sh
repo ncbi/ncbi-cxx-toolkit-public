@@ -150,7 +150,7 @@ chmod a+x ${CHECK_RUN_FILE}
 
 
 cat <<EOF
-The test script was succesfully built.
+The test script was successfully built.
 
 Do you want to run the tests right now? [y/n]
 EOF
