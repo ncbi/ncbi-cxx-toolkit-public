@@ -115,7 +115,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
  *
  * @param program_number Type of the BLAST program [in]
  * @param results Structure containing the single HSPList 
- *                that is the result of a call to RPSUpdateResults.
+ *                that is the result of a call to Blast_HSPResultsRPSUpdate.
  *                Traceback information is added to HSPs in list [in] [out]
  * @param concat_db The concatentation of all RPS DB sequences. 
  *                  The sequence data itself is not needed, 
