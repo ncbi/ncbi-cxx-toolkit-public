@@ -224,19 +224,12 @@ ENa_strand CSeqVector::GetStrand(void) const
     return m_Strand;
 }
 
-inline
-bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
-{
-    return m_SeqMap->CanResolveRange(m_Scope, from, to, m_Strand);
-}
-
 
 inline
 bool CSeqVector::CanGetRange(const const_iterator& from,
                              const const_iterator& to) const
 {
-    return m_SeqMap->CanResolveRange(
-        m_Scope, from.GetPos(), to.GetPos(), m_Strand);
+    return CanGetRange(from.GetPos(), to.GetPos());
 }
 
 
@@ -283,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/04/12 16:49:16  vasilche
+* Allow null scope in CSeqMap_CI and CSeqVector.
+*
 * Revision 1.49  2004/02/25 18:58:17  shomrat
 * Added a new construtor based on Seq-loc in scope
 *

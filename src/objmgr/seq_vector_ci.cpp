@@ -230,14 +230,14 @@ void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
 inline
 TSeqPos CSeqVector_CI::x_GetSize(void) const
 {
-    return m_SeqMap->GetLength(m_Scope);
+    return m_SeqMap->GetLength(m_Scope.GetScopeOrNull());
 }
 
 
 inline
 void CSeqVector_CI::x_InitSeg(TSeqPos pos)
 {
-    m_Seg = m_SeqMap->FindResolved(pos, m_Scope, m_Strand);
+    m_Seg = m_SeqMap->FindResolved(pos, m_Scope.GetScopeOrNull(), m_Strand);
 }
 
 
@@ -642,6 +642,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/04/12 16:49:16  vasilche
+* Allow null scope in CSeqMap_CI and CSeqVector.
+*
 * Revision 1.29  2004/04/09 20:34:50  vasilche
 * Fixed wrong assertion.
 *

@@ -199,7 +199,7 @@ const CSeqMap::CSegment& CSeqMap_CI::x_GetSegment(void) const
 inline
 CScope* CSeqMap_CI::GetScope(void) const
 {
-    return m_Scope;
+    return m_Scope.GetScopeOrNull();
 }
 
 
@@ -353,6 +353,9 @@ CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/12 16:49:16  vasilche
+ * Allow null scope in CSeqMap_CI and CSeqVector.
+ *
  * Revision 1.6  2003/10/28 16:16:05  grichenk
  * Fixed CSeqMap_CI::bool()
  *

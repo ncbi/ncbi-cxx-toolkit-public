@@ -133,6 +133,13 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 }
 
 
+bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
+{
+    return m_SeqMap->CanResolveRange(m_Scope.GetScopeOrNull(),
+                                     from, to, m_Strand);
+}
+
+
 CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding)
 {
     switch (coding) {
@@ -292,6 +299,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/04/12 16:49:16  vasilche
+* Allow null scope in CSeqMap_CI and CSeqVector.
+*
 * Revision 1.66  2004/02/25 18:58:47  shomrat
 * Added a new construtor based on Seq-loc in scope
 *

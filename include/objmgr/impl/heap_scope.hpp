@@ -84,6 +84,7 @@ public:
 
     // scope getters
     CScope& GetScope(void) const;
+    CScope* GetScopeOrNull(void) const;
     operator CScope&(void) const
         {
             return GetScope();
@@ -147,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/12 16:49:16  vasilche
+* Allow null scope in CSeqMap_CI and CSeqVector.
+*
 * Revision 1.1  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

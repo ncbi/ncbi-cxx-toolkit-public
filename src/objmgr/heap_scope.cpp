@@ -70,6 +70,13 @@ CScope& CHeapScope::GetScope(void) const
 }
 
 
+CScope* CHeapScope::GetScopeOrNull(void) const
+{
+    return static_cast<CScope*>
+        (const_cast<CObject*>(m_Scope.GetPointerOrNull()));
+}
+
+
 CScope_Impl* CHeapScope::GetImpl(void) const
 {
     return GetScope().m_Impl.GetPointer();
@@ -82,6 +89,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/12 16:49:16  vasilche
+* Allow null scope in CSeqMap_CI and CSeqVector.
+*
 * Revision 1.1  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

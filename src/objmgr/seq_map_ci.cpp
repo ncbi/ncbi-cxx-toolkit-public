@@ -309,18 +309,19 @@ bool CSeqMap_CI::x_RefTSEMatch(const CSeqMap::CSegment& seg) const
     CSeq_id_Handle id = CSeq_id_Mapper::GetSeq_id_Mapper().
         GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
     CSeq_entry_Handle tse_info;
+    CScope& scope = *m_Scope;
     if ( m_Selector.m_TSE_Info ) {
         tse_info =
-            CSeq_entry_Handle(*m_Scope,
+            CSeq_entry_Handle(scope,
                               static_cast<const CTSE_Info&>
                               (*m_Selector.m_TSE_Info));
     }
     else {
-        tse_info = m_Scope->GetSeq_entryHandle(*m_Selector.m_TSE);
+        tse_info = scope.GetSeq_entryHandle(*m_Selector.m_TSE);
         const_cast<SSeqMapSelector&>(m_Selector).m_TSE_Info =
             tse_info.GetTSE_Info();
     }
-    return m_Scope->GetBioseqHandleFromTSE(id, tse_info);
+    return scope.GetBioseqHandleFromTSE(id, tse_info);
 }
 
 
@@ -541,6 +542,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/04/12 16:49:16  vasilche
+* Allow null scope in CSeqMap_CI and CSeqVector.
+*
 * Revision 1.21  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
