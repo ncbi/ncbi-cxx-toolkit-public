@@ -403,10 +403,11 @@ struct IPreLinkEventTool : public ITool
 struct IResourceCompilerTool : public ITool
 {
     //Name : "VCResourceCompilerTool"
-    //must be implemented for Dll
-    virtual string PreprocessorDefinitions(void)		const = 0;
-    virtual string Culture(void)						const = 0;
-    virtual string AdditionalIncludeDirectories(void)	const = 0;
+    //must be implemented for Dll and Windows apps
+    virtual string AdditionalIncludeDirectories(void)  const = 0;
+    virtual string AdditionalOptions(void)	           const = 0;
+    virtual string Culture(void)                       const = 0;
+    virtual string PreprocessorDefinitions(void)       const = 0;
 };
 
 
@@ -508,6 +509,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/23 20:43:42  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.8  2004/02/20 22:54:45  gorelenk
  * Added analysis of ASN projects depends.
  *

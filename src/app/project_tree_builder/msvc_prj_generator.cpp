@@ -316,18 +316,25 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             //Name
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Name);
              
+            //AdditionalIncludeDirectories
+            BIND_TOOLS(tool, 
+                       msvc_tool.ResourceCompiler(), 
+                       AdditionalIncludeDirectories);
+
+            //AdditionalOptions
+            BIND_TOOLS(tool, 
+                       msvc_tool.ResourceCompiler(), 
+                       AdditionalOptions);
+
+            //Culture
+            BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Culture);
+
             //PreprocessorDefinitions
             BIND_TOOLS(tool, 
                        msvc_tool.ResourceCompiler(), 
                        PreprocessorDefinitions);
             
-            //Culture
-            BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Culture);
 
-            //AdditionalIncludeDirectories
-            BIND_TOOLS(tool, 
-                       msvc_tool.ResourceCompiler(), 
-                       AdditionalIncludeDirectories);
 
             conf->SetTool().push_back(tool);
         }}
@@ -442,6 +449,17 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetName("Resource Files");
         filter->SetAttlist().SetFilter
             ("rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
+        list<string> rel_pathes;
+        CollectResources(prj, project_context, &rel_pathes);
+        ITERATE(list<string>, p, rel_pathes) {
+            //Include collected header files
+            CRef<CFFile> file(new CFFile());
+            file->SetAttlist().SetRelativePath(*p);
+
+            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+            ce->SetFile(*file);
+            filter->SetFF().SetFF().push_back(ce);
+        }
 
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -743,6 +761,35 @@ CMsvcProjectGenerator::CollectInlines(const CProjItem&              project,
 }
 
 
+void 
+CMsvcProjectGenerator::CollectResources
+    (const CProjItem&              project,
+     const CMsvcPrjProjectContext& context,
+     list<string>*                 rel_pathes)
+{
+    rel_pathes->clear();
+
+    list<string> included_sources;
+    context.GetMsvcProjectMakefile().GetResourceFiles
+                                            (SConfigInfo(),&included_sources);
+    list<string> sources;
+    ITERATE(list<string>, p, included_sources) {
+        sources.push_back(CDirEntry::NormalizePath
+                                        (CDirEntry::ConcatPath
+                                              (project.m_SourcesBaseDir, *p)));
+    }
+
+    ITERATE(list<string>, p, sources) {
+
+        const string& abs_path = *p; // whith ext.
+        rel_pathes->push_back(
+            CDirEntry::CreateRelativePath(context.ProjectDir(), 
+                                          abs_path));
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 // Collect all files from specified dirs having specified exts
 static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
@@ -777,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/02/23 20:42:57  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.18  2004/02/20 22:53:26  gorelenk
  * Added analysis of ASN projects depends.
  *

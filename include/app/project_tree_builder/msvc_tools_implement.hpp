@@ -590,27 +590,50 @@ template <class DebugReleaseTrait>
 class CResourceCompilerToolImpl : public IResourceCompilerTool
 {
 public:
-    CResourceCompilerToolImpl()
+    CResourceCompilerToolImpl(const string&               additional_include_dirs,
+                              const CMsvcProjectMakefile& project_makefile,
+                              const CMsvcMetaMakefile&    meta_makefile,
+                              const SConfigInfo&          config)
+      :m_AdditionalIncludeDirectories(additional_include_dirs),
+       m_MsvcProjectMakefile(project_makefile),
+       m_MsvcMetaMakefile   (meta_makefile),
+       m_Config             (config)
     {
     }
     virtual string Name(void) const
     {
 	    return "VCResourceCompilerTool";
     }
+
+    virtual string AdditionalIncludeDirectories(void) const
+    {
+	    return m_AdditionalIncludeDirectories;
+    }
+
+#define SUPPORT_RESOURCE_COMPILER_OPTION(opt) \
+    virtual string opt(void) const \
+    { \
+        return GetResourceCompilerOpt(m_MsvcMetaMakefile, \
+                                      m_MsvcProjectMakefile, \
+                                      #opt, \
+                                      m_Config ); \
+    }
+    
+    SUPPORT_RESOURCE_COMPILER_OPTION(AdditionalOptions)
+    SUPPORT_RESOURCE_COMPILER_OPTION(Culture)
+
+
     virtual string PreprocessorDefinitions(void) const
     {
 	    return DebugReleaseTrait::PreprocessorDefinitions();
     }
-    virtual string Culture(void) const
-    {
-	    return "1033";
-    }
-    virtual string AdditionalIncludeDirectories(void) const
-    {
-	    return "$(IntDir)";
-    }
 
 private:
+    string m_AdditionalIncludeDirectories;
+    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
+    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
+    const SConfigInfo&          m_Config;
+
     CResourceCompilerToolImpl(const CResourceCompilerToolImpl&);
     CResourceCompilerToolImpl& operator= (const CResourceCompilerToolImpl&);
 
@@ -636,9 +659,10 @@ public:
         return "VCResourceCompilerTool";
     }
 
-    SUPPORT_DUMMY_OPTION(PreprocessorDefinitions)
-    SUPPORT_DUMMY_OPTION(Culture)
     SUPPORT_DUMMY_OPTION(AdditionalIncludeDirectories)
+    SUPPORT_DUMMY_OPTION(AdditionalOptions)
+    SUPPORT_DUMMY_OPTION(Culture)
+    SUPPORT_DUMMY_OPTION(PreprocessorDefinitions)
 
 private:
     CResourceCompilerToolDummyImpl
@@ -673,6 +697,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/23 20:43:43  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.7  2004/02/20 22:54:46  gorelenk
  * Added analysis of ASN projects depends.
  *

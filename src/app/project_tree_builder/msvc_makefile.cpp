@@ -76,6 +76,12 @@ string CMsvcMetaMakefile::GetLibrarianOpt(const string& opt,
 }
 
 
+string CMsvcMetaMakefile::GetResourceCompilerOpt
+                          (const string& opt, const SConfigInfo& config) const
+{
+    return GetOpt(m_MakeFile, "ResourceCompiler", opt, config);
+}
+
 //-----------------------------------------------------------------------------
 string CreateMsvcProjectMakefileName(const string&        project_name,
                                      CProjItem::TProjType type)
@@ -263,11 +269,26 @@ string GetLibrarianOpt(const CMsvcMetaMakefile&    meta_file,
    return meta_file.GetLibrarianOpt(opt, config);
 }
 
+string GetResourceCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
+                              const CMsvcProjectMakefile& project_file,
+                              const string&               opt,
+                              const SConfigInfo&          config)
+{
+   string val = project_file.GetResourceCompilerOpt(opt, config);
+   if ( !val.empty() )
+       return val;
+   
+   return meta_file.GetResourceCompilerOpt(opt, config);
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/23 20:42:57  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.7  2004/02/23 18:50:31  gorelenk
  * Added implementation of GetResourceFiles member-function
  * of class CMsvcProjectMakefile.

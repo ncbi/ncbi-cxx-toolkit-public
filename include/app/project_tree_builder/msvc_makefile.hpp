@@ -55,6 +55,8 @@ public:
     string GetCompilerOpt (const string& opt, const SConfigInfo& config) const;
     string GetLinkerOpt   (const string& opt, const SConfigInfo& config) const;
     string GetLibrarianOpt(const string& opt, const SConfigInfo& config) const;
+    string GetResourceCompilerOpt
+                          (const string& opt, const SConfigInfo& config) const;
 
 protected:
     CNcbiRegistry m_MakeFile;
@@ -137,12 +139,20 @@ string GetLibrarianOpt(const CMsvcMetaMakefile&    meta_file,
                        const string&               opt,
                        const SConfigInfo&          config);
 
+/// ResourceCompiler
+string GetResourceCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
+                              const CMsvcProjectMakefile& project_file,
+                              const string&               opt,
+                              const SConfigInfo&          config);
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/23 20:43:42  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.5  2004/02/23 18:49:24  gorelenk
  * Added declaration of GetResourceFiles member-function
  * to class CMsvcProjectMakefile.

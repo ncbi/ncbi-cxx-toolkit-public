@@ -651,11 +651,37 @@ static IResourceCompilerTool* s_CreateResourceCompilerTool
 
     if ( s_IsDll  (general_context, project_context)  &&
          s_IsDebug(general_context, project_context) )
-        return new CResourceCompilerToolImpl<SDebug>();
+        return new CResourceCompilerToolImpl<SDebug>
+       (project_context.AdditionalIncludeDirectories(general_context.m_Config),
+        project_context.GetMsvcProjectMakefile(),
+        general_context.GetMsvcMetaMakefile(),
+        general_context.m_Config);
 
     if ( s_IsDll    (general_context, project_context)  &&
          s_IsRelease(general_context, project_context) )
-        return new CResourceCompilerToolImpl<SRelease>();
+        return new CResourceCompilerToolImpl<SRelease>
+       (project_context.AdditionalIncludeDirectories(general_context.m_Config),
+        project_context.GetMsvcProjectMakefile(),
+        general_context.GetMsvcMetaMakefile(),
+        general_context.m_Config);
+
+    if ( s_IsExe  (general_context, project_context)  &&
+         s_IsDebug(general_context, project_context) )
+        return new CResourceCompilerToolImpl<SDebug>
+       (project_context.AdditionalIncludeDirectories(general_context.m_Config),
+        project_context.GetMsvcProjectMakefile(),
+        general_context.GetMsvcMetaMakefile(),
+        general_context.m_Config);
+
+
+    if ( s_IsExe    (general_context, project_context)  &&
+         s_IsRelease(general_context, project_context) )
+        return new CResourceCompilerToolImpl<SRelease>
+       (project_context.AdditionalIncludeDirectories(general_context.m_Config),
+        project_context.GetMsvcProjectMakefile(),
+        general_context.GetMsvcMetaMakefile(),
+        general_context.m_Config);
+
 
     // dummy tool
     return new CResourceCompilerToolDummyImpl();
@@ -667,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/23 20:42:57  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.12  2004/02/20 22:53:26  gorelenk
  * Added analysis of ASN projects depends.
  *

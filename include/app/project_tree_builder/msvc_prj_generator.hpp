@@ -75,6 +75,10 @@ private:
                                const CMsvcPrjProjectContext& context,
                                list<string>*                 rel_pathes);
 
+    static void CollectResources(const CProjItem&              project,
+                                 const CMsvcPrjProjectContext& context,
+                                 list<string>*                 rel_pathes);
+
     /// Prohibited to.
     CMsvcProjectGenerator(void);
     CMsvcProjectGenerator(const CMsvcProjectGenerator&);
@@ -88,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/23 20:43:42  gorelenk
+ * Added support of MSVC ResourceCompiler tool.
+ *
  * Revision 1.7  2004/02/12 16:22:40  gorelenk
  * Changed generation of command line for custom build info.
  *
