@@ -8,3 +8,5 @@ SRC = flatten_asn
 LIB = xflat xobjutil xalnmgr tables gbseq $(OBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = dbapi
