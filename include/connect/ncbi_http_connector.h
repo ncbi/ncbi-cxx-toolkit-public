@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/09/28 20:46:13  lavr
+ * Comments revised; parameter names adjusted
+ *
  * Revision 6.7  2001/09/10 21:15:48  lavr
  * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
  *
@@ -70,10 +73,10 @@ extern "C" {
 
 /* Create new CONNECTOR structure to hit the specified URL using HTTP
  * with either POST or GET method.
- * Use the configuration values recorded in "info". If "info" is NULL, then
- * use the default info (created by "ConnNetInfo_Create(0)").
+ * Use the configuration values recorded in "net_info". If "net_info" is NULL,
+ * then use the default info (created by "ConnNetInfo_Create(0)").
  *
- * In order to workaround some HTTP communication features, this code will:
+ * In order to workaround some HTTP communication features, this code does:
  *  1) Accumulate all output data in an internal memory buffer until the
  *     first "Read" (or "Peek", or "Close", or "Wait" on read) is attempted.
  *  2) On the first "Read" (or "Peek", or "Close", or "Wait" on read), compose
@@ -84,24 +87,26 @@ extern "C" {
  *        \r\n
  *        <accumulated_data>
  *     NOTE:
- *       if <user->header> is not a NULL or empty string, then:
- *       - it must NOT contain "empty lines":  '\n\r\n';
+ *       if <user->header> is neither a NULL pointer nor an empty string, then:
+ *       - it must NOT contain "empty lines":  '\r\n\r\n';
  *       - it must be terminated by a single '\r\n';
  *       - it gets inserted to the HTTP header "as is", without any
  *         automatic checking or encoding.
- *  3) Now you can "Read" the reply data sent to you by the peer CGI program.
- *  4) Then, if you "Write" again then the connection to the peer CGI program
- *     will be forcibly closed, and you cannot communicate with it anymore
- *     (the peer CGI process will die).
+ *     After the request has been sent, reply data from the peer
+ *     CGI program are then can be actually read out.
+ *  4) On any "Write" operation. which follows data reading, the connection
+ *     to the peer CGI program is forcedly closed (the peer CGI process will
+ *     presumably die if has not done yet so), and data to be written are
+ *     again are stored in the buffer until next "Read" etc, see item 1).
  *
- *  *) But if "fHCC_AutoReconnect" is set in "flags", then the connector will
- *     make an automatic reconnect to the same CGI script with just the
- *     same parameters, and you can repeat the (1,2,3) micro-session with
- *     another instance of your peer CGI program.
+ *  *) If "fHCC_AutoReconnect" is set in "flags", then the connector makes
+ *     an automatic reconnect to the same CGI program with just the
+ *     same parameters, and micro-session steps (1,2,3) are repeated with
+ *     another instance of the CGI program.
  *
  *     If "fHCC_AutoReconnect" is not set then only one
- *     "Write ... Write Read ... Read" micro-session is allowed, and the next
- *     try to "Write" will fail with error status "eIO_Closed".
+ *     "Write ... Write Read ... Read" micro-session is allowed, any
+ *     following "Write" attempt fails with error status "eIO_Closed".
  *
  *  Other flags:
  *
@@ -115,6 +120,16 @@ extern "C" {
  *       strip the HTTP header from the input data;  assume the input
  *       data are single-part, URL-encoded;  perform the URL-decoding on read
  *       NOTE:  this flag disables the "fHCC_KeepHeader" flag
+ *  fHCC_DropUnread --
+ *       do not collect incoming data in "Read" mode before switching into
+ *       "Write" mode for storing output data in buffer; by default all
+ *       data sent by the CGI program are stored even if not all requested
+ *       before "Write" following "Read" was issued (stream emulation)
+ *  fHCC_NoUpread --
+ *       do not do internal reading into temporary buffer while sending
+ *       data to CGI program; by default any send operation tries to
+ *       extract data(if any) coming back from the CGI program in order to
+ *       prevent connection blocking
  *
  * NOTE: the URL encoding/decoding (in the "fHCC_Url_*" cases and "info->args")
  *       is performed by URL_Encode() and URL_Decode() -- "ncbi_connutil.[ch]".
@@ -128,13 +143,13 @@ typedef enum {
     fHCC_UrlEncodeOutput  = 0x10, /* URL-encode all output data              */
     fHCC_UrlCodec         = 0x18, /* fHCC_UrlDecodeInput | ...EncodeOutput   */
     fHCC_UrlEncodeArgs    = 0x20, /* URL-encode "info->args"                 */
-    fHCC_DropUnread       = 0x40, /* Each microsession drops yet unread data */
-    fHCC_NoUpread         = 0x80  /* Do not use SOCK_ReadWhileWrite() at all */
+    fHCC_DropUnread       = 0x40, /* each microsession drops yet unread data */
+    fHCC_NoUpread         = 0x80  /* do not use SOCK_ReadWhileWrite() at all */
 } EHCC_Flags;
 typedef int THCC_Flags;  /* binary OR of "EHttpCreateConnectorFlags"         */
 
 extern CONNECTOR HTTP_CreateConnector
-(const SConnNetInfo* info,
+(const SConnNetInfo* net_info,
  const char*         user_header,
  THCC_Flags          flags
  );
@@ -142,34 +157,38 @@ extern CONNECTOR HTTP_CreateConnector
 
 /* An extended version of URL_CreateConnector() to change the URL of the
  * server CGI "on-the-fly":
- *  -- "adjust_info()" will be invoked each time before starting a
- *      new "HTTP micro-session" making a hit;  it will be passed "info"
- *      stored in the connector, and the # of previous unsuccessful
- *      attempts to start the current HTTP micro-session.
- *  -- "adjust_cleanup()" will be called when the connector is destroyed.
+ *  -- "parse_http_hdr()" is called each time the HTTP header received
+ *      from HTTP server and only if fHCC_KeepHeader is NOT set; false return
+ *      value is equivalent of having an error from the HTTP server itself.
+ *  -- "adjust_net_info()" is invoked each time before starting a
+ *      new "HTTP micro-session" making a hit if the prior hit has failed;
+ *      it is passed "net_info" stored in the connector, and the number of
+ *      previously unsuccessful attempts since the connection was opened;
+ *      false return value terminates retry attempts.
+ *  -- "adjust_cleanup()" is called when the connector is being destroyed.
  */
 
 typedef int/*bool*/ (*FHttpParseHTTPHeader)
-(const char* http_header,
- void*       adjust_data,
- int/*bool*/ server_error
+(const char* http_header,           /* HTTP header to parse, '\0'-terminated */
+ void*       adjust_data,           /* supplemental user data                */
+ int/*bool*/ server_error           /* true if HTTP server reported an error */
  );
 
-typedef int/*bool*/ (*FHttpAdjustInfo)
-(SConnNetInfo* info,
- void*         adjust_data,
- unsigned int  n_failed
+typedef int/*bool*/ (*FHttpAdjustNetInfo)
+(SConnNetInfo* net_info,            /* net_info to adjust (in place)         */
+ void*         adjust_data,         /* supplemental user data                */
+ unsigned int  failure_count        /* how many failures since open          */
  );
 
 typedef void (*FHttpAdjustCleanup)
-(void* adjust_data
+(void* adjust_data                  /* supplemental user data for cleanup    */
  );
 
 extern CONNECTOR HTTP_CreateConnectorEx
-(const SConnNetInfo*  info,
+(const SConnNetInfo*  net_info,
  THCC_Flags           flags,
  FHttpParseHTTPHeader parse_http_hdr, /* may be NULL, then no addtl. parsing */
- FHttpAdjustInfo      adjust_info,    /* may be NULL, then no adjustments    */
+ FHttpAdjustNetInfo   adjust_net_info,/* may be NULL, then no adjustments    */
  void*                adjust_data,    /* for "adjust_info" & "adjust_cleanup"*/
  FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                         */
 );
