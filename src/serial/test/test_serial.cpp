@@ -11,7 +11,7 @@
 
 #if HAVE_NCBI_C
 # include <asn.h>
-# include <twebenv.h>
+# include "twebenv.h"
 #endif
 
 int main(int argc, char** argv)

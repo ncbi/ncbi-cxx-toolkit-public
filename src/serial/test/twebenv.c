@@ -4,11 +4,11 @@
 
 #define NLM_GENERATED_CODE_PROTO
 
-#include <twebenv.h>
+#include "twebenv.h"
 
 static Boolean loaded = FALSE;
 
-#include <twebenvasn.h>
+#include "twebenvasn.h"
 
 #ifndef NLM_EXTERN_LOADS
 #define NLM_EXTERN_LOADS {}

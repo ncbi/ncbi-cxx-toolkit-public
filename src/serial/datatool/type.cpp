@@ -745,7 +745,7 @@ ostream& ASNUserType::Print(ostream& out, int ) const
 
 bool ASNUserType::Check(void)
 {
-    return GetModule().FindType(userTypeName);
+    return GetModule().FindType(userTypeName) != 0;
 }
 
 bool ASNUserType::CheckValue(const ASNValue& value)

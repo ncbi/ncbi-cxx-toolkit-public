@@ -12,8 +12,6 @@ USING_NCBI_SCOPE;
 class ASNType;
 class CModuleSet;
 
-void Warning(const string& message);
-
 class ASNModule {
 public:
     ASNModule(CModuleSet& moduleSet, const string& name);

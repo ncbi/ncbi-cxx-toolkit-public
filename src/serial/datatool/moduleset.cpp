@@ -43,16 +43,20 @@ void CModuleSet::SetMainTypes(void)
 bool CModuleSet::Check(void) const
 {
     bool ok = true;
-    for ( TModules::const_iterator mi = modules.begin();
-          mi != modules.end(); ++mi ) {
-        if ( !mi->second->CheckNames() )
-            ok = false;
-    }
-    for ( TModules::const_iterator mi = modules.begin();
-          mi != modules.end(); ++mi ) {
-        if ( !mi->second->Check() )
-            ok = false;
-    }
+	{
+		for ( TModules::const_iterator mi = modules.begin();
+			  mi != modules.end(); ++mi ) {
+			if ( !mi->second->CheckNames() )
+				ok = false;
+		}
+	}
+	{
+		for ( TModules::const_iterator mi = modules.begin();
+		     mi != modules.end(); ++mi ) {
+			if ( !mi->second->Check() )
+	            ok = false;
+		}
+	}
     return ok;
 }
 

@@ -6,7 +6,7 @@
 #include <serial/classinfo.hpp>
 
 #include <asn.h>
-#include <twebenv.h>
+#include "twebenv.h"
 
 BEGIN_NCBI_SCOPE
 
