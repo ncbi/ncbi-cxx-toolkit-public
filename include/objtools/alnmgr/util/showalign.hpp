@@ -112,8 +112,9 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
                                         // anchored
         eColorDifferentBases = (1 << 14),       // Coloring mismatches for
                                                 // subject seq
-        eTranslateNucToNucAlignment = (1 << 15) //Show nuecleotide to nucleotide
+        eTranslateNucToNucAlignment = (1 << 15), //Show nuecleotide to nucleotide
                                                 //alignment as translated
+        eShowBl2seqLink = (1 << 16)     // Show web link to bl2seq
     };
 
     // Need to set eShowMiddleLine to get this
@@ -355,6 +356,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.20  2004/07/22 15:43:20  jianye
+*Added eShowBl2seqLink
+*
 *Revision 1.19  2004/07/12 15:22:12  jianye
 *Handles use_this_gi in alignment score structure
 *
