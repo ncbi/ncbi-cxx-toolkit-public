@@ -195,10 +195,10 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             code.HPPIncludes().insert(m_Source.m_ReplyChoiceType->FileName());
             code.ClassPublic() << "    typedef "
                                << m_Source.m_ReplyChoiceType->ClassName()
-                               << " TReplyChoice;\n";
+                               << " TReplyChoice;\n\n";
             element = ".Set" + Identifier(m_Source.m_ReplyElement, true) + "()";
         } else {
-            code.ClassPublic() << "    typedef TReply TReplyChoice;\n";
+            code.ClassPublic() << "    typedef TReply TReplyChoice;\n\n";
         }
         code.ClassPrivate()
             << "    TReplyChoice& x_Choice(TReply& reply);\n";
@@ -225,6 +225,19 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.AddInitializer("Tparent", args);
     }}
 
+    // This should just be a simple using-declaration, but that breaks
+    // on GCC 2.9x at least, even with a full parent class name :-/
+    code.ClassPublic()
+        // << "    using Tparent::Ask;\n"
+        << "    virtual void Ask(const TRequest& request, TReply& reply);\n"
+        << "    virtual void Ask(const TRequest& request, TReply& reply,\n"
+        << "                     TReplyChoice::E_Choice wanted);\n\n";
+    // second version defined further down
+    code.MethodStart(true)
+        << "void " << class_base << "::Ask(const " << treq << "& request, "
+        << trep << "& reply)\n"
+        << "{\n    Tparent::Ask(request, reply);\n}\n\n\n";
+
     // Add appropriate infrastructure if TRequest is not itself the choice
     // (m_DefaultRequest declared earlier to reduce ugliness)
     if ( !m_Source.m_RequestElement.empty() ) {
@@ -234,11 +247,9 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "    virtual TRequest&       SetDefaultRequest(void);\n"
             << "    virtual void            SetDefaultRequest(const TRequest& request);\n"
             << "\n"
-            // This should just be a simple using-declaration, but that breaks
-            // on GCC 2.9x at least, even with a full parent class name :-/
-            // << "    using Tparent::Ask;\n"
-            << "    virtual void Ask(const TRequest& req, TReply& reply);\n"
-            << "    virtual void Ask(const TRequestChoice& req, TReply& reply);\n\n";
+            << "    virtual void Ask(const TRequestChoice& req, TReply& reply);\n"
+            << "    virtual void Ask(const TRequestChoice& req, TReply& reply,\n"
+            << "                     TReplyChoice::E_Choice wanted);\n\n";
 
         // inline methods
         code.MethodStart(true)
@@ -252,15 +263,10 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "void " << class_base << "::SetDefaultRequest(const " << treq
             << "& request)\n"
             << "{\n    m_DefaultRequest.Assign(request);\n}\n\n\n";
-        // See comment above about using-declarations vs. GCC 2.9x. :-/
-        code.MethodStart(true)
-            << "void " << class_base << "::Ask(const " << treq << "& request, "
-            << trep << "& reply)\n"
-            << "{\n    Tparent::Ask(request, reply);\n}\n\n\n";
 
         code.MethodStart(false)
             << "void " << class_base << "::Ask(const " << treq
-            << "Choice& req, " << class_base << "::TReply& reply)\n"
+            << "Choice& req, " << trep << "& reply)\n"
             << "{\n"
             << "    TRequest request;\n"
             << "    request.Assign(m_DefaultRequest);\n"
@@ -268,6 +274,18 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "    request.Set" << Identifier(m_Source.m_RequestElement, true)
             << "().Assign(req);\n"
             << "    Ask(request, reply);\n"
+            << "}\n\n\n";
+        code.MethodStart(false)
+            << "void " << class_base << "::Ask(const " << treq
+            << "Choice& req, " << trep << "& reply, " << trep
+            << "Choice::E_Choice wanted)\n"
+            << "{\n"
+            << "    TRequest request;\n"
+            << "    request.Assign(m_DefaultRequest);\n"
+            // We have to copy req because SetXxx() wants a non-const ref.
+            << "    request.Set" << Identifier(m_Source.m_RequestElement, true)
+            << "().Assign(req);\n"
+            << "    Ask(request, reply, wanted);\n"
             << "}\n\n\n";
     }
 
@@ -330,29 +348,28 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "}\n\n";
     }
 
-    // Make sure the reply's choice is correct
-    code.ClassPrivate()
-        << "    TReplyChoice& x_CheckReply(TReply& reply, TReplyChoice::E_Choice wanted);\n";
-    code.MethodStart(true) // inline due to widespread use
-        << trep << "Choice& " << class_base << "::x_CheckReply(" << trep
-        << "& reply, " << trep << "Choice::E_Choice wanted)\n"
+    // Make sure the reply's choice is correct -- rolled into Ask for
+    // maximum flexibility.  (Split out methods for the two error cases?)
+    code.MethodStart(false)
+        << "void " << class_base << "::Ask(const " << treq << "& request, "
+        << trep << "& reply, " << trep << "Choice::E_Choice wanted)\n"
         << "{\n"
+        << "    Ask(request, reply);\n"
         << "    TReplyChoice& rc = x_Choice(reply);\n"
         << "    if (rc.Which() == wanted) {\n"
-        << "        return rc; // ok\n";
+        << "        return; // ok\n";
     if (has_error) {
-        code.Methods(true)
+        code.Methods(false)
             << "    } else if (rc.IsError()) {\n"
             << "        CNcbiOstrstream oss;\n"
             << "        oss << \"" << class_name
             << ": server error: \" << rc.GetError();\n"
             << "        NCBI_THROW(CException, eUnknown, CNcbiOstrstreamToString(oss));\n";
     }
-    code.Methods(true)
+    code.Methods(false)
         << "    } else {\n"
         << "        rc.ThrowInvalidSelection(wanted);\n"
         << "    }\n"
-        << "    return rc; // avoid spurious warnings about returning without a value\n"
         << "}\n\n";
 
     // Finally, generate all the actual Ask* methods....
@@ -409,18 +426,17 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "    if ( !reply ) {\n"
             << "        reply = &reply0;\n"
             << "    }\n"
-            << "    Ask(request, *reply);\n";
+            << "    Ask(request, *reply, TReplyChoice::e_" << Identifier(reply)
+            << ");\n";
         if (use_cref) {
             code.Methods(false)
-                << "    return " << rep_class
-                << "(&x_CheckReply(*reply, TReplyChoice::e_"
-                << Identifier(reply) << ").Set" << Identifier(reply)
-                << "());\n"
+                << "    return " << rep_class << "(&x_Choice(*reply).Set"
+                << Identifier(reply) << "());\n"
                 << "}\n\n";
         } else {
             code.Methods(false)
-                << "    return x_CheckReply(*reply, TReplyChoice::e_"
-                << Identifier(reply) << ").Get" << Identifier(reply) << "();\n"
+                << "    return x_Choice(*reply).Get" << Identifier(reply)
+                << "();\n"
                 << "}\n\n";
         }
     }
@@ -433,6 +449,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/11/14 16:36:54  ucko
+* Rework generated code, rolling x_CheckReply into (an overloaded
+* version of) Ask for increased flexibility.
+*
 * Revision 1.2  2002/11/13 19:55:11  ucko
 * Distinguish between named and anonymous types rather than between
 * heterogeneous containers and everything else -- fixes handling of aliases.
