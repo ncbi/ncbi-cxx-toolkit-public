@@ -38,62 +38,14 @@
  *      CInternalRWLock  -- platform-dependent RW-lock structure (fwd-decl)
  *      CRWLock          -- Read/Write lock related  data and methods
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.14  2001/12/13 19:45:37  gouriano
- * added xxValidateAction functions
- *
- * Revision 1.13  2001/12/12 17:11:23  vakatov
- * [NCBI_POSIX_THREADS] CSemaphore::Post() -- assert(0) just to make sure
- *
- * Revision 1.12  2001/12/11 22:58:16  vakatov
- * [NCBI_POSIX_THREADS] CSemaphore::Post() -- avoid throwing exception
- * without unlocking the embracing mutex first
- *
- * Revision 1.11  2001/12/10 18:07:55  vakatov
- * Added class "CSemaphore" -- application-wide semaphore
- *
- * Revision 1.10  2001/05/17 15:05:00  lavr
- * Typos corrected
- *
- * Revision 1.9  2001/04/03 18:20:45  grichenk
- * CThread::Exit() and CThread::Wrapper() redesigned to use
- * CExitThreadException instead of system functions
- *
- * Revision 1.8  2001/03/30 22:57:34  grichenk
- * + CThread::GetSystemID()
- *
- * Revision 1.7  2001/03/27 18:12:35  grichenk
- * CRWLock destructor releases system resources
- *
- * Revision 1.5  2001/03/26 21:45:29  vakatov
- * Workaround static initialization/destruction traps:  provide better
- * timing control, and allow safe use of the objects which are
- * either not yet initialized or already destructed. (with A.Grichenko)
- *
- * Revision 1.4  2001/03/13 22:43:20  vakatov
- * Full redesign.
- * Implemented all core functionality.
- * Thoroughly tested on different platforms.
- *
- * Revision 1.3  2000/12/11 06:48:49  vakatov
- * Revamped Mutex and RW-lock APIs
- *
- * Revision 1.2  2000/12/09 18:41:59  vakatov
- * Fixed for the extremely smart IRIX MIPSpro73 compiler
- *
- * Revision 1.1  2000/12/09 00:04:21  vakatov
- * First draft:  Fake implementation of Mutex and RW-lock API
- *
- * ===========================================================================
  */
+
 
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_limits.h>
 #include <algorithm>
 #include <memory>
-#include <assert.h>
 
 #include "ncbidbg_p.hpp"
 
@@ -157,13 +109,13 @@ CTlsBase::~CTlsBase(void)
         m_Key = 0;
         return;
     }
-    assert(0);
+    CORE_ASSERT(0);
 #elif defined(NCBI_POSIX_THREADS)
     if (pthread_key_delete(m_Key) == 0) {
         m_Key = 0;
         return;
     }
-    assert(0);
+    CORE_ASSERT(0);
 #else
     m_Key = 0;
     return;
@@ -197,7 +149,7 @@ void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
     xncbi_Validate(pthread_setspecific(key, data) == 0, err_message);
 #else
     key = data;
-    assert(err_message);  // to get rid of the "unused variable" warning
+    CORE_ASSERT(err_message);  // to get rid of the "unused variable" warning
 #endif
 }
 
@@ -330,7 +282,7 @@ CExitThreadException::~CExitThreadException(void)
 
     if ( !tmp_in_wrapper ) {
         // Something is wrong - terminate the thread
-        assert(((void)("CThread::Exit() -- cannot exit thread"), 0));
+        CORE_ASSERT(((void)("CThread::Exit() -- cannot exit thread"), 0));
 #if defined(NCBI_WIN32_THREADS)
         ExitThread(0);
 #elif defined(NCBI_POSIX_THREADS)
@@ -657,7 +609,7 @@ CMutex::~CMutex(void)
     if (m_Owner == CThread::GetSelf()) {
         m_Mtx.Unlock();
     }
-    assert(m_Owner == kThreadID_None  ||  m_Owner == CThread::GetSelf());
+    CORE_ASSERT(m_Owner == kThreadID_None  ||  m_Owner == CThread::GetSelf());
 
     return;
 }
@@ -772,7 +724,7 @@ CRWLock::~CRWLock(void)
 
     }
 
-    assert(m_Count >= 0  ||  m_Owner == self_id);
+    CORE_ASSERT(m_Count >= 0  ||  m_Owner == self_id);
     return;
 }
 
@@ -880,8 +832,8 @@ void CRWLock::WriteLock(void)
         // Unlocked or RW-locked by another thread
 
         // Look in readers - must not be there
-        assert(find(m_Readers.begin(), m_Readers.end(), self_id)
-               == m_Readers.end());
+        CORE_ASSERT(find(m_Readers.begin(), m_Readers.end(), self_id)
+                    == m_Readers.end());
 
 #if defined(NCBI_WIN32_THREADS)
         HANDLE obj[3];
@@ -931,7 +883,7 @@ void CRWLock::WriteLock(void)
     }
 
     // No readers allowed
-    assert(m_Readers.begin() == m_Readers.end());
+    CORE_ASSERT(m_Readers.begin() == m_Readers.end());
 }
 
 
@@ -1021,7 +973,7 @@ bool CRWLock::TryWriteLock(void)
     }
 
     // No readers allowed
-    assert(m_Readers.begin() == m_Readers.end());
+    CORE_ASSERT(m_Readers.begin() == m_Readers.end());
 
     return true;
 }
@@ -1102,7 +1054,7 @@ void CRWLock::Unlock(void)
         // Check if the unlocking thread is in the owners list
         list<CThread::TID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
-        assert(found != m_Readers.end());
+        CORE_ASSERT(found != m_Readers.end());
         m_Readers.erase(found);
 #endif
     }
@@ -1174,7 +1126,7 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 CSemaphore::~CSemaphore(void)
 {
 #if defined(NCBI_POSIX_THREADS)
-    assert(m_Sem->wait_count == 0);
+    CORE_ASSERT(m_Sem->wait_count == 0);
     xncbi_Verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
     xncbi_Verify(pthread_cond_destroy (&m_Sem->cond)  == 0);
 
@@ -1279,7 +1231,7 @@ void CSemaphore::Post(unsigned int count)
                        "CSemaphore::Post() -- would result in counter > MAX_UINT");
         xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
                        "CSemaphore::Post() -- attempt to exceed max_count");
-        assert(0);
+        CORE_ASSERT(0);
     }
 
     // Signal some (or all) of the threads waiting on this semaphore
@@ -1327,3 +1279,57 @@ void CSemaphore::Post(unsigned int count)
 
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.15  2002/04/10 18:39:10  ivanov
+ * Changed assert() to CORE_ASSERT()
+ *
+ * Revision 1.14  2001/12/13 19:45:37  gouriano
+ * added xxValidateAction functions
+ *
+ * Revision 1.13  2001/12/12 17:11:23  vakatov
+ * [NCBI_POSIX_THREADS] CSemaphore::Post() -- assert(0) just to make sure
+ *
+ * Revision 1.12  2001/12/11 22:58:16  vakatov
+ * [NCBI_POSIX_THREADS] CSemaphore::Post() -- avoid throwing exception
+ * without unlocking the embracing mutex first
+ *
+ * Revision 1.11  2001/12/10 18:07:55  vakatov
+ * Added class "CSemaphore" -- application-wide semaphore
+ *
+ * Revision 1.10  2001/05/17 15:05:00  lavr
+ * Typos corrected
+ *
+ * Revision 1.9  2001/04/03 18:20:45  grichenk
+ * CThread::Exit() and CThread::Wrapper() redesigned to use
+ * CExitThreadException instead of system functions
+ *
+ * Revision 1.8  2001/03/30 22:57:34  grichenk
+ * + CThread::GetSystemID()
+ *
+ * Revision 1.7  2001/03/27 18:12:35  grichenk
+ * CRWLock destructor releases system resources
+ *
+ * Revision 1.5  2001/03/26 21:45:29  vakatov
+ * Workaround static initialization/destruction traps:  provide better
+ * timing control, and allow safe use of the objects which are
+ * either not yet initialized or already destructed. (with A.Grichenko)
+ *
+ * Revision 1.4  2001/03/13 22:43:20  vakatov
+ * Full redesign.
+ * Implemented all core functionality.
+ * Thoroughly tested on different platforms.
+ *
+ * Revision 1.3  2000/12/11 06:48:49  vakatov
+ * Revamped Mutex and RW-lock APIs
+ *
+ * Revision 1.2  2000/12/09 18:41:59  vakatov
+ * Fixed for the extremely smart IRIX MIPSpro73 compiler
+ *
+ * Revision 1.1  2000/12/09 00:04:21  vakatov
+ * First draft:  Fake implementation of Mutex and RW-lock API
+ *
+ * ===========================================================================
+ */

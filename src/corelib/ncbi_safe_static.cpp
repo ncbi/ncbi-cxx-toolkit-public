@@ -31,26 +31,14 @@
  *   CSafeStaticGuard::      -- guarantee for CSafePtr<> and CSafeRef<>
  *                              destruction and cleanup
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2001/12/07 18:48:50  grichenk
- * Improved CSafeStaticGuard behaviour.
- *
- * Revision 1.2  2001/03/30 23:10:12  grichenk
- * Protected from double initializations and deadlocks in multithread
- * environment
- *
- * Revision 1.1  2001/03/26 20:38:35  vakatov
- * Initial revision (by A.Grichenko)
- *
- * ===========================================================================
  */
+
 
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
-#include <assert.h>
 #include <memory>
+#include "ncbidbg_p.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -133,7 +121,7 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
     if (--sm_RefCount > 0) {
         return;
     }
-    assert(sm_RefCount == 0);
+    CORE_ASSERT(sm_RefCount == 0);
 
     // Call Cleanup() for all variables registered
     while ( !sm_Stack->empty() ) {
@@ -165,3 +153,23 @@ CSafeStaticGuard* CSafeStaticGuard::Get(void)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2002/04/10 18:39:10  ivanov
+ * Changed assert() to CORE_ASSERT()
+ *
+ * Revision 1.3  2001/12/07 18:48:50  grichenk
+ * Improved CSafeStaticGuard behaviour.
+ *
+ * Revision 1.2  2001/03/30 23:10:12  grichenk
+ * Protected from double initializations and deadlocks in multithread
+ * environment
+ *
+ * Revision 1.1  2001/03/26 20:38:35  vakatov
+ * Initial revision (by A.Grichenko)
+ *
+ * ===========================================================================
+ */
