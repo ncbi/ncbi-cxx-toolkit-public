@@ -1,0 +1,571 @@
+#ifndef DBAPI_DRIVER_CTLIB___INTERFACES__HPP
+#define DBAPI_DRIVER_CTLIB___INTERFACES__HPP
+
+/* $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author:  Vladimir Soussov
+*
+* File Description:  Driver for CTLib server
+*
+*
+*/
+
+#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/util/parameters.hpp>
+#include <dbapi/driver/util/handle_stack.hpp>
+#include <dbapi/driver/util/pointer_pot.hpp>
+
+#include <ctpublic.h>
+#include <bkpublic.h>
+
+
+BEGIN_NCBI_SCOPE
+
+class CTLibContext;
+class CTL_Connection;
+class CTL_LangCmd;
+class CTL_RPCCmd;
+class CTL_CursorCmd;
+class CTL_BCPInCmd;
+class CTL_SendDataCmd;
+class CTL_RowResult;
+class CTL_ParamResult;
+class CTL_ComputeResult;
+class CTL_StatusResult;
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTLibContext::
+//
+
+class CTLibContext : public I_DriverContext
+{
+    friend class CDB_Connection;
+
+public:
+    CTLibContext(bool reuse_context = true, CS_INT version = CS_VERSION_110);
+
+    //
+    // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
+    //
+
+    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
+    virtual bool SetTimeout      (unsigned int nof_secs = 0);
+    virtual bool SetMaxTextImageSize(size_t nof_bytes);
+
+    virtual CDB_Connection* Connect(const string&   srv_name,
+                                    const string&   user_name,
+                                    const string&   passwd,
+                                    TConnectionMode mode,
+                                    bool            reusable  = false,
+                                    const string&   pool_name = 0);
+
+    virtual unsigned int NofConnections(const string& srv_name = 0) const;
+
+    virtual void PushCntxMsgHandler    (CDBUserHandler* h);
+    virtual void PopCntxMsgHandler     (CDBUserHandler* h);
+    virtual void PushDefConnMsgHandler (CDBUserHandler* h);
+    virtual void PopDefConnMsgHandler  (CDBUserHandler* h);
+
+    virtual ~CTLibContext();
+
+
+    //
+    // CTLIB specific functionality
+    //
+
+    // the following methods are optional (driver will use the default values
+    // if not called), the values will affect the new connections only
+
+    void CTLIB_SetApplicationName(const string& a_name) { m_AppName = a_name; }
+    void CTLIB_SetHostName(const string& host_name) { m_HostName = host_name; }
+    void CTLIB_SetPacketSize(CS_INT packet_size) { m_PacketSize = packet_size; }
+    void CTLIB_SetLoginRetryCount(CS_INT n)      { m_LoginRetryCount = n; }
+    void CTLIB_SetLoginLoopDelay(CS_INT nof_sec) { m_LoginLoopDelay = nof_sec; }
+
+    CS_CONTEXT* CTLIB_GetContext() const { return m_Context; }
+
+    static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
+    static bool CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
+                                    CS_CLIENTMSG* msg);
+    static bool CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
+                                     CS_SERVERMSG* msg);
+
+protected:
+    CDBHandlerStack m_CntxHandlers;
+    CDBHandlerStack m_ConHandlers;
+
+private:
+    CS_CONTEXT* m_Context;
+    string      m_AppName;
+    string      m_HostName;
+    CS_INT      m_PacketSize;
+    CS_INT      m_LoginRetryCount;
+    CS_INT      m_LoginLoopDelay;
+
+    CS_CONNECTION* x_ConnectToServer(const string&   srv_name,
+                                     const string&   usr_name,
+                                     const string&   passwd,
+                                     TConnectionMode mode);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_Connection::
+//
+
+class CTL_Connection : public I_Connection
+{
+    friend class CTLibContext;
+    friend class CDB_Connection;
+    friend class CTL_LangCmd;
+    friend class CTL_RPCCmd;
+    friend class CTL_CursorCmd;
+    friend class CTL_BCPInCmd;
+    friend class CTL_SendDataCmd;
+
+protected:
+    CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
+                   bool reusable, const string& pool_name);
+
+    virtual bool IsAlive();
+
+    virtual CDB_LangCmd*     LangCmd     (const string& lang_query,
+                                          unsigned int  nof_params = 0);
+    virtual CDB_RPCCmd*      RPC         (const string& rpc_name,
+                                          unsigned int  nof_args);
+    virtual CDB_BCPInCmd*    BCPIn       (const string& table_name,
+                                          unsigned int  nof_columns);
+    virtual CDB_CursorCmd*   Cursor      (const string& cursor_name,
+                                          const string& query,
+                                          unsigned int  nof_params,
+                                          unsigned int  batch_size = 1);
+    virtual CDB_SendDataCmd* SendDataCmd (ITDescriptor& desc,
+                                          size_t        data_size,
+                                          bool          log_it = true);
+
+    virtual bool SendData(ITDescriptor& desc, CDB_Image& img, bool log_it=true);
+    virtual bool SendData(ITDescriptor& desc, CDB_Text&  txt, bool log_it=true);
+    virtual bool Refresh();
+    virtual const string& ServerName() const;
+    virtual const string& UserName()   const;
+    virtual const string& Password()   const;
+    virtual I_DriverContext::TConnectionMode ConnectMode() const;
+    virtual bool IsReusable() const;
+    virtual const string& PoolName() const;
+    virtual I_DriverContext* Context() const;
+    virtual void PushMsgHandler(CDBUserHandler* h);
+    virtual void PopMsgHandler (CDBUserHandler* h);
+
+    virtual ~CTL_Connection();
+
+    void DropCmd(CDB_BaseEnt& cmd);
+
+private:
+    bool x_SendData(ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+
+    CS_CONNECTION*  m_Link;
+    CTLibContext*   m_Context;
+    CPointerPot     m_CMDs;
+    CDBHandlerStack m_MsgHandlers;
+    string          m_Server;
+    string          m_User;
+    string          m_Passwd;
+    string          m_Pool;
+    bool            m_Reusable;
+    bool            m_BCPable;
+    bool            m_SecureLogin;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_LangCmd::
+//
+
+class CTL_LangCmd : public I_LangCmd
+{
+    friend class CTL_Connection;
+protected:
+    CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
+                const string& lang_query, unsigned int nof_params);
+
+    virtual bool More(const string& query_text);
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
+    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
+    virtual bool Send();
+    virtual bool WasSent() const;
+    virtual bool Cancel();
+    virtual bool WasCanceled() const;
+    virtual CDB_Result* Result();
+    virtual bool HasMoreResults() const;
+    virtual bool HasFailed() const;
+    virtual int  RowCount() const;
+    virtual void Release();
+
+    virtual ~CTL_LangCmd();
+
+private:
+    bool x_AssignParams();
+
+    CTL_Connection* m_Connect;
+    CS_COMMAND*     m_Cmd;
+    string          m_Query;
+    CDB_Params      m_Params;
+    bool            m_WasSent;
+    bool            m_HasFailed;
+    I_Result*       m_Res;
+    int             m_RowCount;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_RPCCmd::
+//
+
+class CTL_RPCCmd : public I_RPCCmd
+{
+    friend class CTL_Connection;
+protected:
+    CTL_RPCCmd(CTL_Connection* con, CS_COMMAND* cmd,
+               const string& proc_name, unsigned int nof_params);
+
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
+                           bool out_param = false);
+    virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
+                          bool out_param = false);
+    virtual bool Send();
+    virtual bool WasSent() const;
+    virtual bool Cancel();
+    virtual bool WasCanceled() const;
+    virtual CDB_Result* Result();
+    virtual bool HasMoreResults() const;
+    virtual bool HasFailed() const;
+    virtual int  RowCount() const;
+    virtual void SetRecompile(bool recompile = true);
+    virtual void Release();
+
+    virtual ~CTL_RPCCmd();
+
+private:
+    bool x_AssignParams();
+
+    CTL_Connection* m_Connect;
+    CS_COMMAND*     m_Cmd;
+    string          m_Query;
+    CDB_Params      m_Params;
+    bool            m_WasSent;
+    bool            m_HasFailed;
+    bool            m_Recompile;
+    I_Result*       m_Res;
+    int             m_RowCount;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_CursorCmd::
+//
+
+class CTL_CursorCmd : public I_CursorCmd
+{
+    friend class CTL_Connection;
+protected:
+    CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
+                  const string& cursor_name, const string& query,
+                  unsigned int nof_params, unsigned int fetch_size);
+
+    virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
+    virtual CDB_Result* Open();
+    virtual bool Update(const string& table_name, const string& upd_query);
+    virtual bool Delete(const string& table_name);
+    virtual int  RowCount() const;
+    virtual bool Close();
+    virtual void Release();
+
+    virtual ~CTL_CursorCmd();
+
+private:
+    bool x_AssignParams(bool just_declare = false);
+
+    CTL_Connection* m_Connect;
+    CS_COMMAND*     m_Cmd;
+    string          m_Name;
+    string          m_Query;
+    CDB_Params      m_Params;
+    unsigned int    m_FetchSize;
+    bool            m_IsOpen;
+    bool            m_HasFailed;
+    bool            m_Used;
+    I_Result*       m_Res;
+    int             m_RowCount;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_BCPInCmd::
+//
+
+class CTL_BCPInCmd : public I_BCPInCmd
+{
+    friend class CTL_Connection;
+protected:
+    CTL_BCPInCmd(CTL_Connection* con, CS_BLKDESC* cmd,
+                 const string& table_name, unsigned int nof_columns);
+
+    virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
+    virtual bool SendRow();
+    virtual bool CompleteBatch();
+    virtual bool Cancel();
+    virtual bool CompleteBCP();
+    virtual void Release();
+
+    virtual ~CTL_BCPInCmd();
+
+private:
+    bool x_AssignParams();
+
+    CTL_Connection* m_Connect;
+    CS_BLKDESC*     m_Cmd;
+    string          m_Query;
+    CDB_Params      m_Params;
+    bool            m_WasSent;
+    bool            m_HasFailed;
+
+    struct SBcpBind {
+        CS_INT      datalen;
+        CS_SMALLINT indicator;
+        char        buffer[sizeof(CS_NUMERIC)];
+    };
+    SBcpBind* m_Bind;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_SendDataCmd::
+//
+
+class CTL_SendDataCmd : public I_SendDataCmd
+{
+    friend class CTL_Connection;
+protected:
+    CTL_SendDataCmd(CTL_Connection* con, CS_COMMAND* cmd, size_t nof_bytes);
+
+    virtual size_t SendChunk(const void* pChunk, size_t nofBytes);
+    virtual void   Release();
+
+    virtual ~CTL_SendDataCmd();
+
+private:
+    CTL_Connection* m_Connect;
+    CS_COMMAND*     m_Cmd;
+    size_t          m_Bytes2go;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_RowResult::
+//
+
+class CTL_RowResult : public I_Result
+{
+    friend class CTL_LangCmd;
+    friend class CTL_RPCCmd;
+protected:
+    CTL_RowResult(CS_COMMAND* cmd);
+
+    virtual EDBResType    ResultType() const;
+    virtual unsigned int  NofItems() const;
+    virtual const char*   ItemName    (unsigned int item_num) const;
+    virtual size_t        ItemMaxSize (unsigned int item_num) const;
+    virtual EDB_Type      ItemDataType(unsigned int item_num) const;
+    virtual bool          Fetch();
+    virtual int           CurrentItemNo() const;
+    virtual CDB_Object*   GetItem(CDB_Object* item_buf = 0);
+    virtual size_t        ReadItem(void* buffer, size_t buffer_size,
+                                   bool* is_null = 0);
+    virtual ITDescriptor* GetImageOrTextDescriptor();
+    virtual bool          SkipItem();
+
+    virtual ~CTL_RowResult();
+
+    // data
+    CS_COMMAND*  m_Cmd;
+    int          m_CurrItem;
+    bool         m_EOR;
+    unsigned int m_NofCols;
+    unsigned int m_CmdNum;
+    CS_DATAFMT*  m_ColFmt;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_ParamResult::
+//
+
+class CTL_ParamResult : public CTL_RowResult
+{
+    friend class CTL_LangCmd;
+    friend class CTL_RPCCmd;
+protected:
+    CTL_ParamResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
+
+    virtual EDBResType ResultType() const {
+        return eParamResult;
+    }
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_ComputeResult::
+//
+
+class CTL_ComputeResult : public CTL_RowResult
+{
+    friend class CTL_LangCmd;
+    friend class CTL_RPCCmd;
+protected:
+    CTL_ComputeResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
+
+    virtual EDBResType ResultType() const {
+        return eComputeResult;
+    }
+};
+
+
+
+class CTL_StatusResult :  public CTL_RowResult
+{
+    friend class CTL_LangCmd;
+    friend class CTL_RPCCmd;
+protected:
+    CTL_StatusResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
+
+    virtual EDBResType ResultType() const {
+        return eStatusResult;
+    }
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_CursorResult::
+//
+
+class CTL_CursorResult :  public CTL_RowResult
+{
+    friend class CTL_CursorCmd;
+protected:
+    CTL_CursorResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
+
+    virtual EDBResType ResultType() const {
+        return eCursorResult;
+    }
+
+    virtual ~CTL_CursorResult();
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_ITDescriptor::
+//
+
+class CTL_ITDescriptor : public ITDescriptor
+{
+    friend class CTL_RowResult;
+    friend class CTL_Connection;
+
+public:
+    virtual ~CTL_ITDescriptor() {}
+
+protected:
+    CTL_ITDescriptor() { return; };
+
+    CS_IODESC m_Desc;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Miscellaneous
+//
+
+extern void g_CTLIB_GetRowCount
+(CS_COMMAND* cmd,
+ int*        cnt
+);
+
+
+extern bool g_CTLIB_AssignCmdParam
+(CS_COMMAND*   cmd,
+ CDB_Object&   param,
+ const string& param_name,
+ CS_DATAFMT&   param_fmt,
+ CS_SMALLINT   indicator,
+ bool          declare_only = false
+ );
+
+
+END_NCBI_SCOPE
+
+
+#endif  /* DBAPI_DRIVER_CTLIB___INTERFACES__HPP */
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2001/09/21 23:39:53  vakatov
+ * -----  Initial (draft) revision.  -----
+ * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
+ * of the DBAPI "driver" libs originally written by Vladimir Soussov.
+ * The revamp involved massive code shuffling and grooming, numerous local
+ * API redesigns, adding comments and incorporating DBAPI to the C++ Toolkit.
+ *
+ * ===========================================================================
+ */

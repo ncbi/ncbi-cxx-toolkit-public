@@ -1,0 +1,7 @@
+# $Id$
+
+LIBOBJ = bcp connection context cursor lang_cmd result rpc
+
+LIB    = dbapi_driver_dblib
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)

@@ -1,0 +1,8 @@
+# $Id$
+
+LIBOBJ = handle_stack numeric_convert parameters interfaces public types \
+         memory_store pointer_pot
+
+LIB    = dbapi_driver
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)

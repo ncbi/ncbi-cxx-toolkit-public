@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = dbapi_driver_dblib
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
