@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *    Non-ANSI, yet widely used functions
+ *   Non-ANSI, yet widely used functions
  *
  */
 
@@ -102,6 +102,9 @@ extern char* strlwr(char* s);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/09/24 15:01:17  lavr
+ * File description indented uniformly
+ *
  * Revision 6.9  2002/09/19 17:59:40  lavr
  * Header file guard macro changed; log moved to the end
  *
