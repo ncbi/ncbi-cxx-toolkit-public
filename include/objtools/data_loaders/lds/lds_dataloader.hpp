@@ -59,10 +59,10 @@ public:
 
     virtual ~CLDS_DataLoader();
 
-    virtual bool GetRecords(const CHandleRangeMap& hrmap,
+    virtual void GetRecords(const CSeq_id_Handle& idh,
                             const EChoice choice);
     
-    virtual bool DropTSE(const CTSE_Info& tse_info);
+    virtual void DropTSE(const CTSE_Info& tse_info);
 
 private:
     CLDS_Database&      m_LDS_db;        // Reference on the LDS database 
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/30 16:36:36  vasilche
+ * Updated CDataLoader interface.
+ *
  * Revision 1.4  2003/07/30 16:35:38  kuznets
  * Fixed export macro NCBI_XLOADER_LDS_EXPORT
  *

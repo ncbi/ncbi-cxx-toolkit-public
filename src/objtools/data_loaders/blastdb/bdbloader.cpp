@@ -66,10 +66,11 @@ CBlastDbDataLoader::~CBlastDbDataLoader(void)
     delete m_mutex;
 }
 
+
 // TODO Note that the ranges are ignored for right now
 // How to handle other choices?
-bool
-CBlastDbDataLoader::GetRecords(const CHandleRangeMap& hrmap, 
+void
+CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, 
         const EChoice choice)
 {
     //LOG_POST("***CBlastDbDataLoader::GetRecords***");
@@ -102,7 +103,7 @@ CBlastDbDataLoader::GetRecords(const CHandleRangeMap& hrmap,
 
     // for each seqid in hrmap, look them up in db and add them to the data
     // source
-    ITERATE(CHandleRangeMap::TLocMap, hrange, hrmap.GetMap()) {
+    {{
 
         DECLARE_ASN_CONVERTER(CSeq_id, SeqId, sic);
         DECLARE_ASN_CONVERTER(CBioseq, Bioseq, bc);
@@ -112,7 +113,8 @@ CBlastDbDataLoader::GetRecords(const CHandleRangeMap& hrmap,
         unsigned int index = 0;
         TOid2Bioseq::iterator found;
 
-        if ( !(sip = sic.ToC(hrange->first.GetSeqId())))
+        CConstRef<CSeq_id> seq_id = idh.GetSeqId();
+        if ( !(sip = sic.ToC(*seq_id)) )
             continue;
 
         if ( (oid = SeqId2OrdinalId(m_rdfp, sip)) < 0)
@@ -155,9 +157,7 @@ CBlastDbDataLoader::GetRecords(const CHandleRangeMap& hrmap,
 
         bsp = BioseqFree(bsp);
         sip = SeqIdFree(sip);
-    }
-
-    return true;
+    }}
 }
 
 void
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.2  2003/09/30 16:36:36  vasilche
+ * Updated CDataLoader interface.
+ *
  * Revision 1.1  2003/08/06 16:15:18  jianye
  * Add BLAST DB loader.
  *

@@ -88,8 +88,8 @@ public:
 
             ITERATE (CHandleRangeMap, it, m_HrMap) {
                 CSeq_id_Handle seq_id_hnd = it->first;
-                const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
-                if (seq_id.Match(seq_id_db)) {
+                CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
+                if (seq_id->Match(seq_id_db)) {
                     m_ids.insert(tse_id ? tse_id : object_id);
                     return;
                 }
@@ -128,9 +128,9 @@ public:
             
             ITERATE (CHandleRangeMap, it2, m_HrMap) {
                 CSeq_id_Handle seq_id_hnd = it2->first;
-                const CSeq_id& seq_id = seq_id_hnd.GetSeqId();
+                CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
 
-                if (seq_id.Match(seq_id_db)) {
+                if (seq_id->Match(seq_id_db)) {
                     m_ids.insert(tse_id ? tse_id : object_id);
                     return;
                 }
@@ -177,9 +177,11 @@ CLDS_DataLoader::~CLDS_DataLoader()
         delete &m_LDS_db;
 }
 
-bool CLDS_DataLoader::GetRecords(const CHandleRangeMap& hrmap,
+void CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
                                  const EChoice choice)
 {
+    CHandleRangeMap hrmap;
+    hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
     CLDS_FindSeqIdFunc search_func(m_LDS_db.GetTables(), hrmap);
     
     SLDS_TablesCollection& db = m_LDS_db.GetTables();
@@ -211,11 +213,9 @@ bool CLDS_DataLoader::GetRecords(const CHandleRangeMap& hrmap,
             m_LoadedObjects.insert(object_id);
         }
     }
-
-    return true;
 }
 
-bool CLDS_DataLoader::DropTSE(const CTSE_Info& tse_info)
+void CLDS_DataLoader::DropTSE(const CTSE_Info& tse_info)
 {
     const CConstRef<CObject>& cobj_ref = tse_info.GetBlobId();
     const CObject* obj_ptr = cobj_ref.GetPointerOrNull();
@@ -227,7 +227,6 @@ bool CLDS_DataLoader::DropTSE(const CTSE_Info& tse_info)
     
     int object_id = blob_id->GetRecId();
     m_LoadedObjects.erase(object_id);
-    return true;
 }
 
 
@@ -237,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/30 16:36:37  vasilche
+ * Updated CDataLoader interface.
+ *
  * Revision 1.6  2003/08/19 14:21:24  kuznets
  * +name("LDS_dataloader") for the dataloader class
  *

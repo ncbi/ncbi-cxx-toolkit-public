@@ -64,10 +64,8 @@ public:
                     
     virtual ~CBlastDbDataLoader(void);
   
-    virtual bool DropTSE(const CSeq_entry* sep) { return true; }
-    virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice);
+    virtual void GetRecords(const CSeq_id_Handle& idh, const EChoice choice);
   
-    virtual inline void GC(void) {} 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
   private:
@@ -87,6 +85,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.2  2003/09/30 16:36:33  vasilche
+ * Updated CDataLoader interface.
+ *
  * Revision 1.1  2003/08/06 16:15:17  jianye
  * Add BLAST DB loader.
  *
