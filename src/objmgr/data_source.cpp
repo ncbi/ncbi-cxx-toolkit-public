@@ -72,6 +72,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+CDataSource::CDataSource(void)
+    : m_Loader(0),
+      m_ObjMgr(0),
+      m_DefaultPriority(9)
+{
+}
+
+
 CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader),
       m_ObjMgr(&objmgr),

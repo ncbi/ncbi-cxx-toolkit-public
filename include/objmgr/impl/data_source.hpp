@@ -106,6 +106,7 @@ class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 {
 public:
     /// 'ctors
+    CDataSource(void);
     CDataSource(CDataLoader& loader, CObjectManager& objmgr);
     CDataSource(CSeq_entry& entry, CObjectManager& objmgr);
     virtual ~CDataSource(void);
