@@ -97,7 +97,7 @@ void CODBC_Reporter::ReportErrors()
 
 
 
-CODBCContext::CODBCContext(SQLINTEGER version) : m_Reporter(0, SQL_HANDLE_ENV, 0)
+CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) : m_Reporter(0, SQL_HANDLE_ENV, 0)
 {
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
@@ -115,6 +115,7 @@ CODBCContext::CODBCContext(SQLINTEGER version) : m_Reporter(0, SQL_HANDLE_ENV, 0
     m_LoginTimeout= 0;
     m_Timeout= 0;
     m_TextImageSize= 0;
+    m_UseDSN= use_dsn;
 }
 
 
@@ -319,30 +320,34 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
     if((mode & fBcpIn) != 0) {
         SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (void*) SQL_BCP_ON, SQL_IS_INTEGER);
     }
- 
-	string connect_str("DRIVER={SQL Server};SERVER=");
-	connect_str+= srv_name;
-	connect_str+= ";UID=";
-	connect_str+= user_name;
-	connect_str+= ";PWD=";
-	connect_str+= passwd;
-#if 0
-    switch(SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
-                  (SQLCHAR*) user_name.c_str(), SQL_NTS,
-                  (SQLCHAR*) passwd.c_str(), SQL_NTS)) {
-#endif
-    switch(SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS, 
-		0, 0, 0, SQL_DRIVER_NOPROMPT)) {
-	case SQL_SUCCESS_WITH_INFO:
-		xReportConError(con);
-	case SQL_SUCCESS: return con;
-	
-	case SQL_ERROR:
-		xReportConError(con);
+
+
+    if(!m_UseDSN) {
+        string connect_str("DRIVER={SQL Server};SERVER=");
+        connect_str+= srv_name;
+        connect_str+= ";UID=";
+        connect_str+= user_name;
+        connect_str+= ";PWD=";
+        connect_str+= passwd;
+        r= SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS, 
+                            0, 0, 0, SQL_DRIVER_NOPROMPT);
+    }
+    else {
+        r= SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
+                   (SQLCHAR*) user_name.c_str(), SQL_NTS,
+                   (SQLCHAR*) passwd.c_str(), SQL_NTS);
+    }
+    switch(r) {
+    case SQL_SUCCESS_WITH_INFO:
+        xReportConError(con);
+    case SQL_SUCCESS: return con;
+        
+    case SQL_ERROR:
+        xReportConError(con);
         SQLFreeHandle(SQL_HANDLE_DBC, con);
-		break;
-	default:
-		m_Reporter.ReportErrors();
+        break;
+    default:
+        m_Reporter.ReportErrors();
         break;
     }
     
@@ -372,17 +377,18 @@ void CODBCContext::xReportConError(SQLHDBC con)
 I_DriverContext* ODBC_CreateContext(map<string,string>* attr = 0)
 {
     SQLINTEGER version= SQL_OV_ODBC3;
+    bool use_dsn= false;
 
     if(attr) {
         string vers= (*attr)["version"];
-	if(vers.find("3") != string::npos)
-	    version= SQL_OV_ODBC3;
-	else if(vers.find("2") != string::npos)
-	    version= SQL_OV_ODBC2;
-
+        if(vers.find("3") != string::npos)
+            version= SQL_OV_ODBC3;
+        else if(vers.find("2") != string::npos)
+            version= SQL_OV_ODBC2;
+        use_dsn= (*attr)["use_dsn"] == "true";
     }
 
-    return new CODBCContext(version);
+    return new CODBCContext(version, use_dsn);
 }
 
 void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
@@ -405,6 +411,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/07/03 21:48:50  soussov
+ * adds DSN support if needed
+ *
  * Revision 1.2  2002/07/02 20:52:54  soussov
  * adds RegisterDriver for ODBC
  *

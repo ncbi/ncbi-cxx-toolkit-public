@@ -94,7 +94,7 @@ class CODBCContext : public I_DriverContext
     friend class CDB_Connection;
 
 public:
-    CODBCContext(SQLINTEGER version = SQL_OV_ODBC3);
+    CODBCContext(SQLINTEGER version = SQL_OV_ODBC3, bool use_dsn= false);
 
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
@@ -138,6 +138,7 @@ private:
     SQLUINTEGER m_Timeout;
     SQLUINTEGER m_TextImageSize;
     CODBC_Reporter m_Reporter;
+    bool m_UseDSN;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
 			       const string&   usr_name,
@@ -554,6 +555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/07/03 21:48:08  soussov
+ * adds DSN support if needed
+ *
  * Revision 1.1  2002/06/18 22:00:53  soussov
  * initial commit
  *
