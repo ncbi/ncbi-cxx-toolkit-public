@@ -37,7 +37,6 @@
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blast_message.h>
 #include <algo/blast/api/blast_types.hpp>
 
 /** @addtogroup AlgoBlast
@@ -147,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/18 16:23:21  camacho
+ * Remove unneeded header
+ *
  * Revision 1.10  2004/11/17 20:20:13  camacho
  * 1. Removed GetErrorMessage function as it is no longer needed
  * 2. Moved SMultiSeqSrcNewArgs to implementation file
