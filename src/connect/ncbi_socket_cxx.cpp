@@ -32,7 +32,7 @@
  */
 
 #include <connect/ncbi_socket.hpp>
-#include <stdlib.h>                     // for PATH_MAX
+#include <limits.h>                     // for PATH_MAX
 
 
 BEGIN_NCBI_SCOPE
@@ -512,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/07/15 18:09:51  lavr
+ * Use <limits.h> instead of <stdlib.h> to fetch PATH_MAX
+ *
  * Revision 6.16  2003/07/15 16:50:57  lavr
  * Implementation of CSocket::GetPeerAddress(void) added
  *
