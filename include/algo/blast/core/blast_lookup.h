@@ -75,7 +75,7 @@ extern "C" {
     Int4 num_used;       /* num valid positions */
 
     union {
-      Int4* overflow;
+      Int4 overflow_cursor;
       Int4 entries[HITS_ON_BACKBONE];
     } payload;
 

@@ -226,7 +226,7 @@ for(i=0;i<lookup->backbone_size;i++)
 	      num_overflows++;
 
 	      lookup->thick_backbone[i].num_used = lookup->thin_backbone[i][1];
-	      lookup->thick_backbone[i].payload.overflow = & (lookup->overflow[overflow_cursor]);
+	      lookup->thick_backbone[i].payload.overflow_cursor = overflow_cursor;
 	      for(j=0;j<lookup->thin_backbone[i][1];j++)
 		{
                 lookup->overflow[overflow_cursor] = lookup->thin_backbone[i][j+2];
@@ -357,7 +357,7 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
 		src = lookup->thick_backbone[index].payload.entries;
 	      else
 		/* hits live in overflow array */
-		src = lookup->thick_backbone[index].payload.overflow;
+		src = & (lookup->overflow [ lookup->thick_backbone[index].payload.overflow_cursor ] );
 	      
 	      /* copy the hits. */
 	      for(i=0;i<numhits;i++)
@@ -788,8 +788,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                lookup_pos = lookup->thick_backbone[index].payload.entries;
             else
                /* hits live in overflow array */
-               lookup_pos = (Int4*)
-                  (lookup->thick_backbone[index].payload.overflow);
+               lookup_pos = & ( lookup->overflow[lookup->thick_backbone[index].payload.overflow_cursor] );
             
             s_off = (s - abs_start)*COMPRESSION_RATIO;
             while (num_hits) {
@@ -831,8 +830,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                lookup_pos = lookup->thick_backbone[adjusted_index].payload.entries;
             else
                /* hits live in overflow array */
-               lookup_pos = (Int4*)
-                 (lookup->thick_backbone[adjusted_index].payload.overflow);
+               lookup_pos = & (lookup->overflow [ lookup->thick_backbone[adjusted_index].payload.overflow_cursor]);
             
             while (num_hits) {
                q_off = *((Uint4 *) lookup_pos); /* get next query offset */
@@ -892,8 +890,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
             lookup_pos = lookup->thick_backbone[index].payload.entries;
          else
             /* hits live in overflow array */
-            lookup_pos = 
-               (Int4*)(lookup->thick_backbone[index].payload.overflow);
+            lookup_pos = & (lookup->overflow[lookup->thick_backbone[index].payload.overflow_cursor]);
          
          /* Save the hits offsets */
          s_off = (s - abs_start)*COMPRESSION_RATIO - reduced_word_length;
