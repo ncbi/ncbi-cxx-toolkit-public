@@ -46,6 +46,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/29 17:43:42  lavr
+ * Pretty printed;
+ * Reconnect renamed to ReInit with ability to close current connector
+ *
  * Revision 6.2  2000/04/07 19:59:47  vakatov
  * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
  * to "ncbi_connector.h"
@@ -69,28 +73,30 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
 
 
 /* Compose all data necessary to establish a new connection
- * (merely bind it to the specified connector).
+ * (merely bind it to the specified connector). Unsuccessful completion
+ * sets conn to 0, and leaves connector intact (can be used again).
  * NOTE:  The real connection will not be established right away. Instead,
  *        it will be established at the moment of the first call to one of
  *        "Wait", "WaitAsync", "Write" or "Read".
  */
 extern EIO_Status CONN_Create
-(CONNECTOR connector,  /* [in]  connector */
+(CONNECTOR connector,  /* [in]  connector                        */
  CONN*     conn        /* [out] handle of the created connection */
  );
 
 
-/* Reconnect, using "connector".
+/* Reinit, using "connector".
  * If "conn" is already opened then close the current connection at first,
  * even if "connector" is just the same as the current connector.
- * If "connector" is NULL then use the current connector to (re)connect.
- * NOTE:  Alhough it closes the previos connection immediately, however it
+ * If "connector" is NULL then close and destroy current connector, and leave
+ * connection empty (effective way to destroy connector(s)).
+ * NOTE:  Although it closes the previous connection immediately, however it
  *        does not establish the new connection right away -- it postpones
  *        until the first call to "Wait", "WaitAsync", "Write" or "Read".
  */
-extern EIO_Status CONN_Reconnect
+extern EIO_Status CONN_ReInit
 (CONN      conn,      /* [in] connection handle */
- CONNECTOR connector  /* [in] new connector */
+ CONNECTOR connector  /* [in] new connector     */
  );
 
 
@@ -101,8 +107,8 @@ extern EIO_Status CONN_Reconnect
  */
 extern void CONN_SetTimeout
 (CONN            conn,        /* [in] connection handle */
- EIO_Event       event,       /* [in] i/o direction */
- const STimeout* new_timeout  /* [in] new timeout */
+ EIO_Event       event,       /* [in] i/o direction     */
+ const STimeout* new_timeout  /* [in] new timeout       */
  );
 
 
@@ -111,49 +117,20 @@ extern void CONN_SetTimeout
  * (or NULL) until the next CONN_SetTimeout or CONN_Close function call.
  */
 extern const STimeout* CONN_GetTimeout
-(CONN      conn,  /* [in]  connection handle */
+(CONN      conn,  /* [in]  connection handle                  */
  EIO_Event event  /* [in]  i/o direction, not "eIO_ReadWrite" */
  );
 
 
 /* Block on the connection until it becomes available for either read or
- * write (dep. on "event"), or until the timeout expires(if "timeout"
+ * write (dep. on "event"), or until the timeout expires (if "timeout"
  * is NULL then assume it infinite), or until any error.
  */
 extern EIO_Status CONN_Wait
-(CONN            conn,    /* [in] connection handle */
+(CONN            conn,    /* [in] connection handle                  */
  EIO_Event       event,   /* [in] can be eIO_Read or eIO_Write only! */
- const STimeout* timeout  /* [in] the maximal wait time */
+ const STimeout* timeout  /* [in] the maximal wait time              */
  );
-
-
-#ifdef IMPLEMENTED__CONN_WaitAsync
-/* Wait for an asynchronous i/o event, then call the specified handler.
- * In the "handler" function:
- *   "event" - is the i/o direction where the async. event happened
- *   "status"    - must be "eIO_Success" if it is ready for i/o
- *   "data"      - callback data(passed as "data" in CONN_WaitAsync)
- * If "handler" is NULL then discard the current handler, if any.
- * The "cleanup" function to be called right after the call to "handler" or
- * by CONN_Close(), or if the handler is reset by calling CONN_WaitAsync()
- * again -- whichever happens first.
- */
-typedef void (*FConnAsyncHandler)
-(CONN       conn,
- EIO_Event  event,
- EIO_Status status,
- void*      data
-);
-typedef void (*FConnAsyncCleanup)(void* data);
-
-extern EIO_Status CONN_WaitAsync
-(CONN              conn,      /* [in] connection handle */
- EIO_Event         event,     /* [in] i/o direction */
- FConnAsyncHandler handler,   /* [in] callback function */
- void*             data,      /* [in] callback data */
- FConnAsyncCleanup cleanup    /* [in] cleanup procedure */
- );
-#endif /* IMPLEMENTED__CONN_WaitAsync */
 
 
 /* Write "size" bytes from the mem.buffer "buf" to the connection.
@@ -162,9 +139,9 @@ extern EIO_Status CONN_WaitAsync
  * then return eIO_Timeout.
  */
 extern EIO_Status CONN_Write
-(CONN        conn,      /* [in]  connection handle */ 
- const void* buf,       /* [in]  pointer to the data buffer to write */ 
- size_t      size,      /* [in]  # of bytes to write */ 
+(CONN        conn,      /* [in]  connection handle                     */ 
+ const void* buf,       /* [in]  pointer to the data buffer to write   */ 
+ size_t      size,      /* [in]  # of bytes to write                   */ 
  size_t*     n_written  /* [out, non-NULL] # of actually written bytes */
  );
 
@@ -189,11 +166,21 @@ extern EIO_Status CONN_Flush
  *                  has expired.
  */
 extern EIO_Status CONN_Read
-(CONN           conn,   /* [in]  connection handle */
- void*          buf,    /* [out] memory buffer to read to */
- size_t         size,   /* [in]  max. # of bytes to read */
+(CONN           conn,   /* [in]  connection handle                  */
+ void*          buf,    /* [out] memory buffer to read to           */
+ size_t         size,   /* [in]  max. # of bytes to read            */
  size_t*        n_read, /* [out, non-NULL] # of actually read bytes */
- EIO_ReadMethod how     /* [in]  read/peek | persist */
+ EIO_ReadMethod how     /* [in]  read/peek | persist                */
+ );
+
+
+/* Obtain status of the last IO operation. This is NOT a completion
+ * code of the last CONN-call, but rather a status from the low-level
+ * connector layer.
+ */
+extern EIO_Status CONN_IOStatus
+(CONN           conn,   /* [in]  connection handle       */
+ EIO_Event      dir     /* [in] = {eIO_Read | eIO_Write} */
  );
 
 
@@ -204,6 +191,35 @@ extern EIO_Status CONN_Read
 extern EIO_Status CONN_Close
 (CONN conn  /* [in] connection handle */
  );
+
+
+#ifdef IMPLEMENTED__CONN_WaitAsync
+/* Wait for an asynchronous i/o event, then call the specified handler.
+ * In the "handler" function:
+ *   "event" - is the i/o direction where the async. event happened
+ *   "status"    - must be "eIO_Success" if it is ready for i/o
+ *   "data"      - callback data(passed as "data" in CONN_WaitAsync)
+ * If "handler" is NULL then discard the current handler, if any.
+ * The "cleanup" function to be called right after the call to "handler" or
+ * by CONN_Close(), or if the handler is reset by calling CONN_WaitAsync()
+ * again -- whichever happens first.
+ */
+typedef void (*FConnAsyncHandler)
+(CONN       conn,
+ EIO_Event  event,
+ EIO_Status status,
+ void*      data
+);
+typedef void (*FConnAsyncCleanup)(void* data);
+
+extern EIO_Status CONN_WaitAsync
+(CONN              conn,      /* [in] connection handle */
+ EIO_Event         event,     /* [in] i/o direction     */
+ FConnAsyncHandler handler,   /* [in] callback function */
+ void*             data,      /* [in] callback data     */
+ FConnAsyncCleanup cleanup    /* [in] cleanup procedure */
+ );
+#endif /* IMPLEMENTED__CONN_WaitAsync */
 
 
 #ifdef __cplusplus
