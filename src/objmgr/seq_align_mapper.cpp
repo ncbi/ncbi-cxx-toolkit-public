@@ -557,7 +557,7 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
             // translate id and coords
             mrow.m_Id = cvt.m_Dst_id_Handle;
             mrow.m_Start = cvt.m_LastRange.GetFrom();
-            mrow.m_IsSetStrand |= cvt.m_LastStrand != eNa_strand_unknown;
+            mrow.m_IsSetStrand |= (cvt.m_LastStrand != eNa_strand_unknown);
             mrow.m_Strand = cvt.m_LastStrand;
             mrow.SetMapped();
             mseg.m_HaveStrands |= mrow.m_IsSetStrand;
@@ -689,7 +689,7 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
                 // translate id and coords
                 mrow.m_Id = cvt.m_Dst_id_Handle;
                 mrow.m_Start = cvt.m_LastRange.GetFrom();
-                mrow.m_IsSetStrand |= cvt.m_LastStrand != eNa_strand_unknown;
+                mrow.m_IsSetStrand |= (cvt.m_LastStrand != eNa_strand_unknown);
                 mrow.m_Strand = cvt.m_LastStrand;
                 mrow.SetMapped();
                 mseg.m_HaveStrands |= mrow.m_IsSetStrand;
@@ -932,7 +932,7 @@ CSeq_align_Mapper::x_ConvertSegment(TSegments::iterator& seg_it,
                     &dst_strand);
                 mrow.m_Id = mapping->m_Dst_id_Handle;
                 mrow.m_Start = mapped_rg.GetFrom()/dst_width;
-                mrow.m_IsSetStrand |= dst_strand != eNa_strand_unknown;
+                mrow.m_IsSetStrand |= (dst_strand != eNa_strand_unknown);
                 mrow.m_Strand = dst_strand;
                 mrow.SetMapped();
                 mseg.m_HaveStrands |= mrow.m_IsSetStrand;
@@ -1188,6 +1188,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/05/27 17:52:11  grichenk
+* Fixed warnings
+*
 * Revision 1.9  2004/05/26 14:57:47  ucko
 * Change some types from unsigned int to size_t for consistency with STL
 * containers' size() methods.
