@@ -361,7 +361,7 @@ CBlastOption::SetTblastn()
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
     m_DbOpts->gen_code_string = (Uint1Ptr) Malloc(sizeof(Uint1)*GENCODE_STRLEN);
-    MemCpy(m_DbOpts->gen_code_string, gc, GENCODE_STRLEN);
+    copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
     delete gc;
 }
 
@@ -417,7 +417,7 @@ CBlastOption::SetTblastx()
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
     m_DbOpts->gen_code_string = (Uint1Ptr)Malloc(sizeof(Uint1)*GENCODE_STRLEN);
-    MemCpy(m_DbOpts->gen_code_string, gc, GENCODE_STRLEN);
+    copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
     delete gc;
 }
 
@@ -472,6 +472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/24 18:24:17  camacho
+* Minor
+*
 * Revision 1.3  2003/07/23 21:29:37  camacho
 * Update BlastDatabaseOptions
 *
