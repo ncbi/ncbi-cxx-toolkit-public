@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/01/28 16:58:58  vasilche
+* Added several constructors for CHTML_hr.
+* Added CHTMLNode::SetSize method.
+*
 * Revision 1.22  1999/01/25 19:34:14  vasilche
 * String arguments which are added as HTML text now treated as plain text.
 *
@@ -134,6 +138,7 @@ public:
     CHTMLNode* SetWidth(const string& width);
     CHTMLNode* SetHeight(int height);
     CHTMLNode* SetHeight(const string& width);
+    CHTMLNode* SetSize(int size);
     CHTMLNode* SetAlign(const string& align);
     CHTMLNode* SetBgColor(const string& color);
     CHTMLNode* SetColor(const string& color);
@@ -345,6 +350,7 @@ extern const string KHTMLAttributeName_maxlength;
 extern const string KHTMLAttributeName_method;
 extern const string KHTMLAttributeName_multiple;
 extern const string KHTMLAttributeName_name;
+extern const string KHTMLAttributeName_noshade;
 extern const string KHTMLAttributeName_rows;
 extern const string KHTMLAttributeName_selected;
 extern const string KHTMLAttributeName_size;
@@ -439,7 +445,7 @@ typedef CHTMLElementTmpl<&KHTMLTagName_h3> CHTML_h3;
 typedef CHTMLElementTmpl<&KHTMLTagName_h4> CHTML_h4;
 typedef CHTMLElementTmpl<&KHTMLTagName_h5> CHTML_h5;
 typedef CHTMLElementTmpl<&KHTMLTagName_h6> CHTML_h6;
-typedef CHTMLElementTmpl<&KHTMLTagName_hr> CHTML_hr;
+typedef CHTMLOpenElementTmpl<&KHTMLTagName_hr> CHTML_hr_Base;
 typedef CHTMLElementTmpl<&KHTMLTagName_p> CHTML_p;
 typedef CHTMLOpenElementTmpl<&KHTMLTagName_p> CHTML_pnop;
 typedef CHTMLElementTmpl<&KHTMLTagName_pre> CHTML_pre;
@@ -767,7 +773,8 @@ public:
     CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size, bool absolute, const string& text);
 
-    void SetRelativeSize(int size);
+    CHTML_font* SetSize(int size, bool absolute);
+    CHTML_font* SetRelativeSize(int size);
 };
 
 class CHTML_basefont : public CHTML_basefont_Base
@@ -789,7 +796,19 @@ public:
     CHTML_color(const string& color, const string& text);
 };
 
-// inline functions
+class CHTML_hr : public CHTML_hr_Base
+{
+    typedef CHTML_hr_Base CParent;
+public:
+    CHTML_hr(bool noShade = false);
+    CHTML_hr(int size, bool noShade = false);
+    CHTML_hr(int size, int width, bool noShade = false);
+    CHTML_hr(int size, const string& width, bool noShade = false);
+
+    CHTML_hr* SetNoShade(void);
+    CHTML_hr* SetNoShade(bool noShade);
+};
+
 #include <html/html.inl>
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/01/28 16:58:59  vasilche
+* Added several constructors for CHTML_hr.
+* Added CHTMLNode::SetSize method.
+*
 * Revision 1.9  1999/01/25 19:34:15  vasilche
 * String arguments which are added as HTML text now treated as plain text.
 *
@@ -104,6 +108,12 @@ inline CHTMLNode* CHTMLNode::SetWidth(const string& width)
 inline CHTMLNode* CHTMLNode::SetHeight(const string& height)
 {
     SetOptionalAttribute(KHTMLAttributeName_height, height);
+    return this;
+}
+
+inline CHTMLNode* CHTMLNode::SetSize(int size)
+{
+    SetAttribute(KHTMLAttributeName_size, size);
     return this;
 }
 
@@ -200,7 +210,7 @@ template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type)
     : CParent(s_GetTagName())
 {
-    SetAttribute(KHTMLAttributeName_type, type);
+    SetAttribute(KHTMLAttributeName_type, name);
 }
 
 template<const string* TagName>
@@ -214,7 +224,7 @@ template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type, bool compact)
     : CParent(s_GetTagName())
 {
-    SetAttribute(KHTMLAttributeName_type, type);
+    SetAttribute(KHTMLAttributeName_type, name);
     SetOptionalAttribute(KHTMLAttributeName_compact, compact);
 }
 
@@ -305,7 +315,7 @@ inline CHTML_select::CHTML_select(const string& name, bool multiple)
 inline CHTML_select::CHTML_select(const string& name, int size, bool multiple)
 {
     SetAttribute(KHTMLAttributeName_name, name);
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetSize(size);
     SetOptionalAttribute(KHTMLAttributeName_multiple, multiple);
 }
 
@@ -333,7 +343,7 @@ inline CHTML_dl::CHTML_dl(bool compact)
 
 inline CHTML_basefont::CHTML_basefont(int size)
 {
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetSize(size);
 }
 
 inline CHTML_basefont::CHTML_basefont(const string& typeface)
@@ -344,7 +354,7 @@ inline CHTML_basefont::CHTML_basefont(const string& typeface)
 inline CHTML_basefont::CHTML_basefont(const string& typeface, int size)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetSize(size);
 }
 
 inline CHTML_font::CHTML_font(void)
@@ -363,22 +373,25 @@ inline CHTML_font::CHTML_font(int size, const string& text)
     SetRelativeSize(size);
 }
 
+inline CHTML_font* CHTML_font::SetSize(int size, bool absolute)
+{
+    if ( absolute )
+        CParent::SetSize(size);
+    else
+        SetRelativeSize(size);
+    return this;
+}
+
 inline CHTML_font::CHTML_font(int size, bool absolute, CNCBINode* node)
     : CParent(node)
 {
-    if ( absolute )
-        SetAttribute(KHTMLAttributeName_size, size);
-    else
-        SetRelativeSize(size);
+    SetSize(size, absolute);
 }
 
 inline CHTML_font::CHTML_font(int size, bool absolute, const string& text)
     : CParent(text)
 {
-    if ( absolute )
-        SetAttribute(KHTMLAttributeName_size, size);
-    else
-        SetRelativeSize(size);
+    SetSize(size, absolute);
 }
 
 inline CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
@@ -411,20 +424,14 @@ inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, C
     : CParent(node)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
-    if ( absolute )
-        SetAttribute(KHTMLAttributeName_size, size);
-    else
-        SetRelativeSize(size);
+    SetSize(size, absolute);
 }
 
 inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, const string& text)
     : CParent(text)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
-    if ( absolute )
-        SetAttribute(KHTMLAttributeName_size, size);
-    else
-        SetRelativeSize(size);
+    SetSize(size, absolute);
 }
 
 inline CHTML_color::CHTML_color(const string& color, const string& text)
@@ -437,6 +444,44 @@ inline CHTML_color::CHTML_color(const string& color, CNCBINode* node)
 {
     SetColor(color);
     AppendChild(node);
+}
+
+inline CHTML_hr* CHTML_hr::SetNoShade(void)
+{
+    SetAttribute(KHTMLAttributeName_noshade);
+    return this;
+}
+
+inline CHTML_hr* CHTML_hr::SetNoShade(bool noShade)
+{
+    if ( noShade )
+        SetNoShade();
+    return this;
+}
+
+inline CHTML_hr::CHTML_hr(bool noShade)
+{
+    SetNoShade(noShade);
+}
+
+inline CHTML_hr::CHTML_hr(int size, bool noShade)
+{
+    SetSize(size);
+    SetNoShade(noShade);
+}
+
+inline CHTML_hr::CHTML_hr(int size, int width, bool noShade)
+{
+    SetSize(size);
+    SetWidth(width);
+    SetNoShade(noShade);
+}
+
+inline CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
+{
+    SetSize(size);
+    SetWidth(width);
+    SetNoShade(noShade);
 }
 
 #endif /* def HTML__HPP  &&  ndef HTML__INL */

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/01/28 16:59:01  vasilche
+* Added several constructors for CHTML_hr.
+* Added CHTMLNode::SetSize method.
+*
 * Revision 1.26  1999/01/25 19:34:18  vasilche
 * String arguments which are added as HTML text now treated as plain text.
 *
@@ -224,6 +228,7 @@ const string KHTMLAttributeName_maxlength = "MAXLENGTH";
 const string KHTMLAttributeName_method = "METHOD";
 const string KHTMLAttributeName_multiple = "MULTIPLE";
 const string KHTMLAttributeName_name = "NAME";
+const string KHTMLAttributeName_noshade = "NOSHADE";
 const string KHTMLAttributeName_rows = "ROWS";
 const string KHTMLAttributeName_rowspan = "ROWSPAN";
 const string KHTMLAttributeName_selected = "SELECTED";
@@ -942,14 +947,14 @@ CHTML_text::CHTML_text(const string& name, const string& value)
 CHTML_text::CHTML_text(const string& name, int size, const string& value)
     : CParent(s_GetInputType(), name)
 {
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetSize(size);
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
     : CParent(s_GetInputType(), name)
 {
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetSize(size);
     SetAttribute(KHTMLAttributeName_maxlength, maxlength);
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
@@ -1008,10 +1013,11 @@ CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
     return this;
 }
 
-void CHTML_font::SetRelativeSize(int size)
+CHTML_font* CHTML_font::SetRelativeSize(int size)
 {
     if ( size != 0 )
         SetAttribute(KHTMLAttributeName_size, NStr::IntToString(size, true));
+    return this;
 }
 
 END_NCBI_SCOPE
