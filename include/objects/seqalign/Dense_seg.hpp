@@ -50,6 +50,9 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// forward declarations
+class CSeq_loc;
+
 class NCBI_SEQALIGN_EXPORT CDense_seg : public CDense_seg_Base
 {
     typedef CDense_seg_Base Tparent;
@@ -84,6 +87,9 @@ public:
 
     /// Swap two rows (changing *order*, not content)
     void SwapRows(TDim row1, TDim row2);
+
+    /// Remap row coords according to a given seq-loc
+    void RemapToLoc(TDim row, const CSeq_loc& loc);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -177,6 +183,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/11/04 14:46:16  todorov
+* +RemapToLoc
+*
 * Revision 1.4  2003/09/16 15:31:59  todorov
 * Added validation methods. Added seq range methods
 *

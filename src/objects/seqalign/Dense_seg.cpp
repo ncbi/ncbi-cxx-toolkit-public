@@ -42,6 +42,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 // generated classes
 
@@ -287,6 +288,178 @@ void CDense_seg::SwapRows(TDim row1, TDim row2)
     }
 }
 
+
+void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
+{
+    TSeqPos row_stop  = GetSeqStop(row);
+
+    size_t  ttl_loc_len = 0;
+    {{
+        CSeq_loc_CI seq_loc_i(loc);
+        do {
+            ttl_loc_len += seq_loc_i.GetRange().GetLength();
+        } while (++seq_loc_i);
+    }}
+
+    // check the validity of the seq-loc
+    if (ttl_loc_len < row_stop + 1) {
+        string errstr = string("CDense_seg::RemapToLoc():")
+            + " Seq-loc is not long enough to"
+            + " cover the alignment!"
+            + " Maximum row seq pos is " + NStr::IntToString(row_stop)
+            + ", while total seq-loc len is only "
+            + NStr::IntToString(ttl_loc_len);
+        NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
+    }
+
+    const CDense_seg::TStarts&  starts  = GetStarts();
+    const CDense_seg::TStrands& strands = GetStrands();
+    const CDense_seg::TLens&    lens    = GetLens();
+
+    const size_t& numrows = CheckNumRows();
+    const size_t& numsegs = CheckNumSegs();
+
+    CSeq_loc_CI seq_loc_i(loc);
+
+    TSeqPos start      = seq_loc_i.GetRange().GetFrom();
+    TSeqPos len        = seq_loc_i.GetRange().GetLength();
+    TSeqPos len_so_far = 0;
+    
+    bool row_plus = !strands.size() || strands[row] != eNa_strand_minus;
+    bool loc_plus = seq_loc_i.GetStrand() != eNa_strand_minus;
+
+    // iterate through segments
+    size_t  idx = loc_plus ? row : (numsegs - 1) * numrows + row;
+    TNumseg seg = loc_plus ? 0 : numsegs - 1;
+    while (loc_plus ? seg < GetNumseg() : seg >= 0) {
+        if (starts[idx] == -1) {
+            // ignore gaps in our sequence
+            continue;
+        }
+
+        // iterate the seq-loc if needed
+        if ((loc_plus == row_plus ?
+             starts[idx] : ttl_loc_len - starts[idx] - lens[seg])
+            > len_so_far + len) {
+
+            ++seq_loc_i;
+
+            // assert the strand is the same
+            if (loc_plus != (seq_loc_i.GetStrand() != eNa_strand_minus)) {
+                NCBI_THROW(CSeqalignException, eInvalidInputData,
+                           "CDense_seg::RemapToLoc():"
+                           " The strand should be the same accross"
+                           " the input seq-loc");
+            }
+
+            if (seq_loc_i) {
+                len_so_far += len;
+                len   = seq_loc_i.GetRange().GetLength();
+                start = seq_loc_i.GetRange().GetFrom();
+            } else {
+                NCBI_THROW(CSeqalignException, eInvalidInputData,
+                           "CDense_seg::RemapToLoc():"
+                           " Internal error");
+            }
+        }
+
+        // offset for the starting position
+        if (loc_plus == row_plus) {
+            SetStarts()[idx] += start - len_so_far;
+        } else {
+            SetStarts()[idx] = 
+                start - len_so_far + ttl_loc_len - starts[idx] - lens[seg];
+        }
+
+        if (lens[seg] > len) {
+            TSignedSeqPos len_diff = lens[seg] - len;
+            while (1) {
+                // move to the next loc part that extends beyond our length
+                ++seq_loc_i;
+                if (seq_loc_i) {
+                    start = seq_loc_i.GetRange().GetFrom();
+                } else {
+                    NCBI_THROW(CSeqalignException, eOutOfRange,
+                               "CDense_seg::RemapToLoc():"
+                               " Internal error");
+                }
+
+                // split our segment
+                SetLens().insert(SetLens().begin() + 
+                                 (loc_plus ? seg : seg + 1),
+                                 len);
+                SetLens()[loc_plus ? seg + 1 : seg] = len_diff;
+
+                // insert new data to account for our split segment
+                TStarts temp_starts(numrows, -1);
+                for (size_t row_i = 0, tmp_idx = seg * numrows;
+                     row_i < numrows;  ++row_i, ++tmp_idx) {
+                    TSignedSeqPos& this_start = SetStarts()[tmp_idx];
+                    if (this_start != -1) {
+                        temp_starts[row_i] = this_start;
+                        if (loc_plus == (strands[row_i] != eNa_strand_minus)) {
+                            if ((size_t) row == row_i) {
+                                temp_starts[row_i] = start;
+                            } else {
+                                temp_starts[row_i] += len;
+                            }
+                        } else {
+                            this_start += len_diff;
+                        }
+                    }
+                }
+
+                len_so_far += len;
+                len   = seq_loc_i.GetRange().GetLength();
+
+                SetStarts().insert(SetStarts().begin() +
+                                   (loc_plus ? seg + 1 : seg) * numrows,
+                                   temp_starts.begin(), temp_starts.end());
+                
+                if (strands.size()) {
+                    SetStrands().insert
+                        (SetStrands().begin(),
+                         strands.begin(), strands.begin() + numrows);
+                }
+
+                SetNumseg()++;
+                
+                if ((len_diff = lens[seg] - len) > 0) {
+                    if (loc_plus) {
+                        idx += numrows; seg++;
+                    } else {
+                        idx -= numrows; seg--;
+                    }
+                } else {
+                    break;
+                }
+            }
+        } else {
+            len -= lens[seg];
+        }
+
+        if (loc_plus) {
+            idx += numrows; seg++;
+        } else {
+            idx -= numrows; seg--;
+        }
+    } // while iterating through segments
+    
+    // finally, modify the strands if different
+    if (loc_plus != row_plus) {
+        if (!strands.size()) {
+            // strands do not exist, create them
+            SetStrands().resize(GetNumseg() * GetDim(), eNa_strand_plus);
+        }
+        for (seg = 0, idx = row;
+             seg < GetNumseg(); seg++, idx += numrows) {
+            SetStrands()[idx] = loc_plus ? eNa_strand_plus : eNa_strand_minus;
+        }
+    }
+
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -296,6 +469,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/11/04 14:44:46  todorov
+* +RemapToLoc
+*
 * Revision 1.5  2003/09/25 17:50:14  dicuccio
 * Changed testing of STL container size to use empty() and avoid warning on MSVC
 *
