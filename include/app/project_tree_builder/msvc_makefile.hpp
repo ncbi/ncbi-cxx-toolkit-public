@@ -52,17 +52,45 @@ public:
     
     bool IsEmpty(void) const;
 
-    string GetCompilerOpt (const string& opt, const SConfigInfo& config) const;
-    string GetLinkerOpt   (const string& opt, const SConfigInfo& config) const;
-    string GetLibrarianOpt(const string& opt, const SConfigInfo& config) const;
-    string GetResourceCompilerOpt
-                          (const string& opt, const SConfigInfo& config) const;
+
+    string GetCompilerOpt         (const string&       opt, 
+                                   const SConfigInfo&  config) const;
+
+    string GetLinkerOpt           (const string&       opt, 
+                                   const SConfigInfo&  config) const;
+
+    string GetLibrarianOpt        (const string&       opt, 
+                                   const SConfigInfo&  config) const;
+    
+    string GetResourceCompilerOpt (const string&       opt, 
+                                   const SConfigInfo&  config) const;
+
+
+    bool   IsPchEnabled           (void) const;
+    string GetUsePchThroughHeader (const string& project_id,
+                                   const string& source_file_full_path,
+                                   const string& tree_src_dir) const;
 
 protected:
     CNcbiRegistry m_MakeFile;
     string        m_MakeFileBaseDir;
 
+    struct SPchInfo
+    {
+        bool m_UsePch;
+
+        typedef map<string, string> TSubdirPchfile;
+        TSubdirPchfile m_PchUsageMap;
+
+        typedef list<string> TDontUsePch;
+        TDontUsePch    m_DontUsePchList;
+    };
+    const SPchInfo& GetPchInfo(void) const;
+
 private:
+    auto_ptr<SPchInfo> m_PchInfo;
+
+    CMsvcMetaMakefile(const CMsvcMetaMakefile&);
     CMsvcMetaMakefile& operator= (const CMsvcMetaMakefile&);
 };
 
@@ -150,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/10 14:24:44  gorelenk
+ * + IsPchEnabled and GetUsePchThroughHeader.
+ *
  * Revision 1.6  2004/02/23 20:43:42  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *
