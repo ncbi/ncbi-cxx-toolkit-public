@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.69  2003/10/30 19:34:01  dondosha
+ * Removed gapped_calculation from BlastHitSavingOptions structure
+ *
  * Revision 1.68  2003/10/24 20:55:10  camacho
  * Rename GetDefaultStride
  *
@@ -473,7 +476,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    const BlastEffectiveLengthsOptions* eff_len_options, 
-   BlastInitialWordParameters* *parameters)
+   Boolean gapped_calculation, BlastInitialWordParameters* *parameters)
 {
    Int4 context = query_info->first_context;
    Int4 cutoff_score = 0, s2 = 0;
@@ -493,8 +496,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    (*parameters)->x_dropoff = (Int4)
       ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
 
-   if (hit_params->options->gapped_calculation && 
-       program_number != blast_type_blastn)
+   if (program_number != blast_type_blastn && gapped_calculation)
       kbp = sbp->kbp_gap[context];
    else
       kbp = sbp->kbp_std[context];
@@ -513,8 +515,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
 
    /* For non-blastn programs, the cutoff score should not be larger than 
       gap trigger */
-   if (hit_params->options->gapped_calculation && 
-       program_number != blast_type_blastn) {
+   if (gapped_calculation && program_number != blast_type_blastn) {
       (*parameters)->cutoff_score = 
          MIN((Int4)ext_params->gap_trigger, cutoff_score);
    } else {
@@ -740,6 +741,16 @@ BlastScoringOptionsValidate(Uint1 program_number,
 {
 	if (options == NULL)
 		return 1;
+
+   if (program_number == blast_type_tblastx && 
+              options->gapped_calculation)
+   {
+		Int4 code=2;
+		Int4 subcode=1;
+      Blast_MessageWrite(blast_msg, 2, code, subcode, 
+         "Gapped search is not allowed for tblastx");
+		return (Int2) code;
+   }
 
 	if (program_number == blast_type_blastn)
 	{
@@ -1070,7 +1081,6 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
    if (!options)
       return 1;
 
-   options->gapped_calculation = is_gapped;
    if (hitlist_size)
       options->hitlist_size = hitlist_size;
    if (evalue)
@@ -1086,14 +1096,6 @@ BlastHitSavingOptionsValidate(Uint1 program_number,
 {
 	if (options == NULL)
 		return 1;
-
-   if (program_number == blast_type_tblastx && options->gapped_calculation) {
-		Int4 code=2;
-		Int4 subcode=1;
-      Blast_MessageWrite(blast_msg, 2, code, subcode, 
-         "Gapped search is not allowed for tblastx");
-		return (Int2) code;
-   }
 
 	if (options->hitlist_size < 1)
 	{
@@ -1135,6 +1137,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
    BlastHitSavingParameters* params;
    BLAST_KarlinBlk* kbp;
    double evalue = options->expect_value;
+   Boolean gapped_calculation = TRUE;
 
    if (!options || !parameters)
       return 1;
@@ -1149,10 +1152,12 @@ BlastHitSavingParametersNew(Uint1 program_number,
 
    params->handle_results = handle_results;
 
-   if (sbp->kbp_gap && sbp->kbp_gap[query_info->first_context])
+   if (sbp->kbp_gap && sbp->kbp_gap[query_info->first_context]) {
       kbp = sbp->kbp_gap[query_info->first_context];
-   else
+   } else {
       kbp = sbp->kbp[query_info->first_context];
+      gapped_calculation = FALSE;
+   }
 
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
@@ -1162,7 +1167,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
          FALSE);
    }
    
-   if (program_number == blast_type_blastn || !options->gapped_calculation) {
+   if (program_number == blast_type_blastn || !gapped_calculation) {
       params->gap_prob = BLAST_GAP_PROB;
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE;
    } else {

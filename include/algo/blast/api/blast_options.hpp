@@ -831,13 +831,13 @@ CBlastOptions::SetLongestIntronLength(int l)
 inline bool
 CBlastOptions::GetGappedMode() const
 {
-    return m_HitSaveOpts->gapped_calculation ? true : false;
+    return m_ScoringOpts->gapped_calculation ? true : false;
 }
 
 inline void
 CBlastOptions::SetGappedMode(bool m)
 {
-    m_HitSaveOpts->gapped_calculation = m_ScoringOpts->gapped_calculation = m;
+    m_ScoringOpts->gapped_calculation = m;
 }
 
 inline bool
@@ -1053,6 +1053,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/10/30 19:37:01  dondosha
+* Removed gapped_calculation from BlastHitSavingOptions structure
+*
 * Revision 1.30  2003/10/21 22:15:33  camacho
 * Rearranging of C options structures, fix seed extension method
 *

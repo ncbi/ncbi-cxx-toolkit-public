@@ -627,7 +627,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             
             if (program_number == blast_type_blastp ||
                 program_number == blast_type_blastn) {
-               if (hit_options->gapped_calculation && 
+               if (score_options->gapped_calculation && 
                    program_number != blast_type_blastn)
                   kbp = sbp->kbp_gap;
                else

@@ -104,11 +104,11 @@ Int2 BLAST_SortResults(BlastResults* results);
  * @param query_info Auxiliary query information - needed only for effective
                      search space calculation if it is not provided [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
- * @param hit_options Options containing the e-value cut-off [in]
+ * @param score_options Needed only to check if gapped calculation is done [in]
  * @param sbp Structure containing statistical information [in]
  */
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, BlastHitSavingOptions* hit_options, 
+        BlastHSPList* hsp_list, BlastScoringOptions* score_options, 
         BlastScoreBlk* sbp);
 
 /** Calculate e-value for an HSP found by PHI BLAST.

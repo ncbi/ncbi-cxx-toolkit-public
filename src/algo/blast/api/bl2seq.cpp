@@ -263,8 +263,7 @@ CBl2Seq::x_Results2SeqAlign()
             BLAST_Results2CSeqAlign(mi_vResults[index], m_eProgram,
                 m_tQueries, NULL, 
                 &m_tSubjects[index],
-                m_pOptions->GetScoringOpts(), mi_pScoreBlock,
-                m_pOptions->GetGappedMode());
+                m_pOptions->GetScoringOpts(), mi_pScoreBlock);
 
         if (seqalign.size() > 0) {
             /* Merge the new vector with the current. Assume that both vectors
@@ -300,6 +299,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2003/10/30 19:34:53  dondosha
+ * Removed gapped_calculation from BlastHitSavingOptions structure
+ *
  * Revision 1.33  2003/09/11 17:45:03  camacho
  * Changed CBlastOption -> CBlastOptions
  *

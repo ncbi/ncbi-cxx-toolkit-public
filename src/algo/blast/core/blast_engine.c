@@ -249,7 +249,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          if (hit_options->do_sum_stats == TRUE) {
             status = BLAST_LinkHsps(program_number, hsp_list, query_info,
                         subject, gap_align->sbp, hit_params, 
-                        hit_options->gapped_calculation);
+                        score_options->gapped_calculation);
          } else if (hit_options->phi_align) {
             /* These e-values will not be accurate yet, since we don't know
                the number of pattern occurrencies in the database. That
@@ -269,7 +269,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
          if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
-             (Uint1) (hsp_list->traceback_done || !hit_options->gapped_calculation), FALSE)) {
+             (Uint1) (hsp_list->traceback_done || !score_options->gapped_calculation), FALSE)) {
             /* HSPs from this list are moved elsewhere, reset count to 0 */
             hsp_list->hspcnt = 0;
          }
@@ -521,7 +521,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
                                query_info, hit_params);
 
    BlastInitialWordParametersNew(program_number, word_options, *hit_params, 
-      *ext_params, sbp, query_info, eff_len_options, word_params);
+      *ext_params, sbp, query_info, eff_len_options, word_params, 
+      scoring_options->gapped_calculation);
 
    if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 
                     max_subject_length, query->length, sbp, gap_align))) {
@@ -798,7 +799,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    /* Now sort the hit lists for all queries */
    BLAST_SortResults(results);
 
-   if (hit_options->gapped_calculation) {
+   if (score_options->gapped_calculation) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
             bssp, gap_align, score_options, ext_params, hit_params,
@@ -867,7 +868,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    BlastCoreAuxStructFree(aux_struct);
    sfree(word_params);
 
-   if (hit_options->gapped_calculation) {
+   if (score_options->gapped_calculation) {
       status = 
          BLAST_TwoSequencesTraceback(program_number, results, query, 
             query_info, subject, gap_align, score_options, ext_params, 

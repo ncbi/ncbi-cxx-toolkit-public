@@ -277,8 +277,6 @@ typedef struct BlastHitSavingOptions {
    Boolean is_neighboring; /**< FIXME: neighboring is specified by a percent 
                              identity and a minimum hit length */
 
-   Boolean gapped_calculation;	/**< gapping is used. */
-
    /* Will be dealt with when needed *
    Uint1 handle_results_method; **< Formatting results on the fly if set to 
                                    non-zero */
@@ -464,6 +462,7 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
  * @param eff_len_options Effective lengths options [in]
+ * @param gapped_calculation Is gapped calculation used for statistics? [in]
  * @param parameters Resulting parameters [out]
 */
 Int2
@@ -473,7 +472,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    const BlastEffectiveLengthsOptions* eff_len_options, 
-   BlastInitialWordParameters* *parameters);
+   Boolean gapped_calculation, BlastInitialWordParameters* *parameters);
 
 /** Deallocate memory for BlastExtensionOptions.
  * @param options Structure to free [in]

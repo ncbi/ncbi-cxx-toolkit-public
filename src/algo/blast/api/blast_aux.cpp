@@ -177,7 +177,6 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) con
     DebugDumpValue(ddc, "do_sum_stats", m_Ptr->do_sum_stats);
     DebugDumpValue(ddc, "longest_intron", m_Ptr->longest_intron);
     DebugDumpValue(ddc, "is_neighboring", m_Ptr->is_neighboring);
-    DebugDumpValue(ddc, "gapped_calculation", m_Ptr->gapped_calculation);
 }
 void
 CBlastHitSavingParameters::DebugDump(CDebugDumpContext ddc, unsigned int depth) const

@@ -142,7 +142,6 @@ CBlastOptions::SetBlastp()
     m_ScoringOpts->gapped_calculation = TRUE;
 
     // Hit saving options
-    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -202,7 +201,6 @@ CBlastOptions::SetBlastn()
     m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
 
     // Hit saving options
-    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -264,7 +262,6 @@ void CBlastOptions::SetMegablast()
     m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
 
     // Hit saving options
-    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -314,7 +311,6 @@ CBlastOptions::SetBlastx()
     m_ScoringOpts->gapped_calculation = TRUE;
 
     // Hit saving options
-    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -364,7 +360,6 @@ CBlastOptions::SetTblastn()
     m_ScoringOpts->gapped_calculation = TRUE;
 
     // Hit saving options
-    m_HitSaveOpts->gapped_calculation = TRUE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -415,7 +410,6 @@ CBlastOptions::SetTblastx()
     m_ScoringOpts->gapped_calculation = FALSE;
 
     // Hit saving options
-    m_HitSaveOpts->gapped_calculation = FALSE;
     m_HitSaveOpts->hitlist_size = 500;
     m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
     m_HitSaveOpts->percent_identity = 0;
@@ -459,6 +453,57 @@ CBlastOptions::Validate() const
     return true;
 }
 
+void CBlastOptions::FillQuerySetUpOptions(Uint1 program, 
+          const char *filter_string, Uint1 strand_option)
+{
+    BLAST_FillQuerySetUpOptions(m_QueryOpts, program, filter_string, 
+                               strand_option);
+}
+
+void CBlastOptions::FillLookupTableOptions(Uint1 program_number, 
+         Boolean is_megablast, Int4 threshold, Int2 word_size, 
+         Boolean ag_blast, Boolean variable_wordsize, Boolean use_pssm)
+{
+    BLAST_FillLookupTableOptions(m_LutOpts, program_number, is_megablast, 
+         threshold, word_size, ag_blast, variable_wordsize, use_pssm);
+}
+
+void CBlastOptions::FillInitialWordOptions(Uint1 program, Boolean greedy, 
+         Int4 window_size, Boolean variable_wordsize, Boolean ag_blast, 
+         Boolean mb_lookup, double xdrop_ungapped)
+{
+    BLAST_FillInitialWordOptions(m_InitWordOpts, program, greedy, window_size, 
+         variable_wordsize, ag_blast, mb_lookup, xdrop_ungapped);
+}
+
+void CBlastOptions::FillExtensionOptions(Uint1 program, Boolean greedy, 
+         double x_dropoff, double x_dropoff_final)
+{
+    BLAST_FillExtensionOptions(m_ExtnOpts, program, greedy, x_dropoff,
+                               x_dropoff_final);
+}
+
+void CBlastOptions::FillScoringOptions(Uint1 program_number, 
+         Boolean greedy_extension, Int4 penalty, Int4 reward, 
+         const char *matrix, Int4 gap_open, Int4 gap_extend)
+{
+    BLAST_FillScoringOptions(m_ScoringOpts, program_number, greedy_extension,
+         penalty, reward, matrix, gap_open, gap_extend);
+}
+
+void CBlastOptions::FillHitSavingOptions(Boolean is_gapped, double evalue,
+                                         Int4 hitlist_size)
+{
+    BLAST_FillHitSavingOptions(m_HitSaveOpts, is_gapped, evalue, hitlist_size);
+}
+
+void CBlastOptions::FillEffectiveLengthsOptions(Int4 dbseq_num, 
+         Int8 db_length, Int8 searchsp_eff)
+{
+    BLAST_FillEffectiveLengthsOptions(m_EffLenOpts, dbseq_num, db_length, 
+                                      searchsp_eff);
+}
+
 void
 CBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
@@ -482,6 +527,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/10/30 19:34:53  dondosha
+* Removed gapped_calculation from BlastHitSavingOptions structure
+*
 * Revision 1.25  2003/10/21 22:15:33  camacho
 * Rearranging of C options structures, fix seed extension method
 *
