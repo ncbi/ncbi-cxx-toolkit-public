@@ -8,92 +8,241 @@
 	 <h1>Starting new C++ project</h1>
 
 	 <ul>
-		<li> <a href="#ref_Checkout">Retrieve NCBI C++ source tree from CVS</a>
-		<li> <a href="#ref_Structure">CVS tree structure of NCBI C++ projects</a>
-		<li> <a href="#ref_Create">Adding CVS directory for a new C++ project</a>
-		<li> <a href="#ref_CVS">Using CVS</a>
-	 </ul>
-
-	 <br></br>
-	 <a name="ref_Checkout"><h2>Retrieve NCBI C++ source tree from CVS</h2></a>
-	 To checkout the whole NCBI C++ source tree from CVS to you local
-	 directory use:
-<pre>
-cvs checkout -d cpp internal/cpp
-</pre>
-
-
-	 <br></br>
-	 <a name="ref_Structure"><h2>CVS tree structure of NCBI C++ projects</h2></a>
-
-	 (For the overall NCBI C++ CVS tree structure see in
-	 <a href="config.html#ref_Source">NCBI C++ source code</a>.)
-
-	 <p>
-	 The standard CVS location for NCBI C++/STL projects is
-	 <i><b>"$CVSROOT/internal/cpp/projects/"</b></i>. It contains:
-
+		<li> <a href="#ref_Checkout">
+		  Retrieve NCBI C++ source tree from CVS</a>
+		<li> <a href="#ref_Structure">
+		  CVS tree structure of NCBI C++ projects</a>
+		<li> <a href="#ref_Create">
+		  Adding CVS directory for a new C++ project</a>
+		<li> <a href="#ref_Makefile">
+		  Project makefiles and sub-projects</a>
 	 <ul>
-		<li> <i><b>"/makefile.*"</b></i> --
-		Platform-specific makefiles that recursively build libs &amp; stuff
-		in the <i>"projects/*/"</i> dirs using the project-related makefiles
-		<i>"/*/makefile.*"</i>
-
-		<li> <i><b>"/*/makefile.*"</b></i> --
-		Platform-specific makefiles to build a particular project.
-
-		<li> <i><b>"/*/include/"</b></i> --
-		Externally used include files(<i>"*.hpp"</i> and <i>"*.inl"</i>)
-		that describe the API provided by the project(included with
-		<i>#include &lt;*.*&gt;</i>).
-
-		<li> <i><b>"/*/src/"</b></i>
-		Source files(<i>"*.cpp"</i>) that implement the API;
-		and, probably, some internally used include files
-		(<i>"*.hpp" </i> and <i>"*.inl"</i>, included with <i>#include "*.*"</i>)
-
-		<li> <i><b>"/*/test/"</b></i> --
-		A "test suite"(set of plain applications to test the project's
-		functionality).
-
-		<li> <i><b>"/*/doc/"</b></i> --
-		Documentation on this project.
-	 </ul>
-
+		<li> <a href="#ref_MakeMeta">
+		  Meta-makefiles (to provide multiple and/or recursive builds)</a>
+		<li> <a href="#ref_MakeProj">
+		  Project makefiles (to build a particular library or application)</a>
+	   <ul>
+		  <li> <a href="#ref_MakeProjMk">
+		    "Configure"-made tools and flags for the whole build tree</a>
+		  <li> <a href="#ref_MakeProjLib">
+		    Customized makefile to build a  library</a>
+		  <li> <a href="#ref_MakeProjApp">
+		    Customized makefile to build an application</a>
+		  <li> <a href="#ref_MakeProjTarget">
+		    Standard build targets(<b>all, clean, purge</b>)
+		    in the customized makefiles</a>
+	 </ul> </ul> </ul>
 
 	 <br></br>
-	 <a name="ref_Create"><h2>Adding CVS directory for a new C++ project</h2></a>
+	 <a name="ref_Checkout">
+	 <h2>Retrieve NCBI C++ source tree from CVS</h2></a>
 
 	 <p>
-	 Create your new project directories in the NCBI CVS tree:
-
-	 <pre>
-cd $CVSROOT/internal/cpp/projects
-mkdir MyNewProject
-cd MyNewProject
-mkdir include
-mkdir src
-mkdir test
-mkdir doc
-	 </pre>
-
-	 Now you can checkout the new directory to some local directory, e.g.:
-	 <pre>
-cd ~/
-cvs checkout -d MyNewProject internal/cpp/projects/MyNewProject
-cd MyNewProject
-	 </pre>
-
-	 and <a href="new_mod.html">add</a> and edit your C++ files in there.
-
-
-	 <br></br> <br></br>
-	 <a name="ref_CVS"><h2>Using CVS</h2></a>
+	 To checkout the whole NCBI C++ source tree from CVS to you local
+	 directory(e.g. <b><i>foo/c++/</i></b>) use:
+<pre>
+cd foo
+cvs checkout -d c++ internal/c++
+</pre>
 
 	 For the detailed info on CVS see
 	 <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
-		CVS online manual</a> or use commands <i>"man cvs"</i> or <i>"cvs -H"</i> on
+		CVS online manual</a> or run commands <i>"man cvs"</i> or <i>"cvs -H"</i> on
 	 your workstation.
+
+
+	 <br></br>
+	 <a name="ref_Structure">
+	 <h2>CVS tree structure of NCBI C++ projects</h2></a>
+
+	 <p>
+	 (For the overall NCBI C++ CVS tree structure see in
+	 <a href="config.html#ref_Source">NCBI C++ source code repository</a>.)
+
+	 <p>
+	 The standard CVS location for NCBI C++/STL projects is
+	 <i><b>"$CVSROOT/internal/c++/"</b></i>. Public header files
+	 (<i>*.hpp, *.inl</i>) of all projects are located below
+	 the <i><b>"$CVSROOT/internal/c++/include/"</b></i> directory.
+	 <i><b>"$CVSROOT/internal/c++/src/"</b></i> directory has just the same
+	 hierarchy of subdirectories as <i><b>".../include/"</b></i>, and its
+	 very top level contains:
+
+	 <ul>
+		<li> Templates of generic makefiles (<b><i>Makefile.*.in</i></b>):
+	 <ul>
+	   <li> <b><i>Makefile.in</i></b> -- makefile to perform a recursive
+		build in all project subdirectories
+	   <li> <b><i>Makefile.meta.in</i></b> -- to be included to all makefiles
+		that provide both local and recursive builds
+	   <li> <b><i>Makefile.lib.in</i></b> -- to be included to all makefiles
+		that perform a "standard" library build
+	   <li> <b><i>Makefile.app.in</i></b> -- to be included to all makefiles
+		that perform a "standard" application build
+		<p>
+	 </ul>
+	 <li> Project directories, each contains:
+	 <ul>
+		<li> <b><i>*.cpp</i></b> -- project source files
+		<li> <b><i>*.hpp, *.inl</i></b> -- project internal header files
+		<li> <b><i>Makefile.*.in</i></b> -- project library and application makefiles
+		<li> <b><i>Makefile.in</i></b> -- a
+		<a href="#ref_MakeMeta">meta-makefile</a>
+      that directs which local projects (described in <i>Makefile.*.in</i>)
+      and sub-projects (located in the project subdirectories) must be built
+		<li> sub-project directories (if any)
+	 </ul> </ul>
+
+
+	 <br></br>
+	 <a name="ref_Create">
+	 <h2>Adding source and include CVS directories for a new C++ project</h2></a>
+
+	 <p>
+	 To create your new project(e.g. "bar_proj") directories to the
+	 NCBI C++ CVS tree(assuming that the whole NCBI C++ has been
+	 <a href="#ref_Checkout">checked out</a>
+	 to directory <b><i>foo/c++/</i></b>):
+
+	 <pre>
+cd foo/c++/include && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
+cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
+	 </pre>
+
+	 Now you can <a href="new_mod.html">add</a> and edit your project C++
+	 files in there.
+
+	 <p>
+	 NOTE: remember to add this new project directory to <i>$(SUBPROJ)</i>
+	 list of the upper level meta-makefile <b><i>"Makefile.in"</i></b> template
+	 (e.g., for this particular case, to <b><i>"foo/c++/src/Makefile.in"</i></b>).
+
+
+	 <br></br> <br></br>
+	 <a name="ref_Makefile">
+	 <h2>Project makefiles and sub-projects</h2></a>
+
+	 <a name="ref_MakeMeta">
+	 <h3><i>Meta-makefiles (to provide multiple and/or recursive builds)</i></h3></a>
+
+	 All projects from the NCBI C++ hierarchy are tied together with a
+	 set of "meta-makefiles" that provide a uniform and easy way to perform
+	 both local and recursive build. 
+
+	 A typical "meta-makefile" template(e.g. "Makefile.in" in the
+	 <b><i>foo/c++/src/bar_proj/</i></b> dir) looks like that:
+<pre>
+PROJECT = bar_proj1 bar_proj2 .....
+SUBPROJ = bar_test bar_sub_proj1 .....
+include @builddir@/Makefile.meta
+</pre> 
+	 The mandatory "include @builddir@/Makefile.meta" provides the rules
+	 for the following standard targets:
+	 <ul>
+		<li> <b>all</b> -- run <i>"make  -f {Makefile.*} all"</i>, for <i>Makefiles</i> with
+		the suffixes enlisted in <i>$(PROJECT)</i>:
+	 <pre>
+make -f Makefile.bar_proj1 all
+make -f Makefile.bar_proj2 all
+......
+	 </pre>
+	 <li> <b>all_r</b> -- first do target <b>"all"</b>, then run <i>"make  all_r"</i>
+	 in all subdirectories enlisted in <i>$(SUBPROJ)</i>:
+	 <pre>
+cd bar_test       &&  make -f Makefile all_r
+cd bar_sub_proj1  &&  make -f Makefile.bar_proj2 all_r
+......
+	 </pre>
+	 <li> <b>clean, clean_r</b> -- just the same, but with targets <b>"clean"</b>
+	 and <b>"clean_r"</b>, respectively
+	 <li> <b>purge, purge_r</b> -- just the same, but with targets <b>"purge"</b>
+	 and <b>"purge_r"</b>, respectively </ul>
+
+
+	 <a name="ref_MakeProj">
+	 <h3><i>Project makefiles (to build a particular library or application)</i></h3></a>
+
+	 Just like <b><i>"Makefile.meta.in"</i></b> template is used to ease and
+	 standatize the writing of meta-makefiles, so there are templates
+	 to help in the creation of "regular" project makefiles to build
+	 a library or an application. These auxiliary template makefiles
+	 are <b><i>"Makefile.mk.in"</i></b>, <b><i>"Makefile.lib.in"</i></b> and
+	 <b><i>"Makefile.app.in"</i></b>. The <b><i>configure</i></b>'d versions of
+    them are located in the very top of a <i>build tree</i>.
+
+	 <a name="ref_MakeProjMk">
+	 <h4><i>"Configure"-made tools and flags for the whole build tree</i></h4></a>
+
+	 Usually, <b><i>"Makefile.mk"</i></b> must be included to the makefiles
+    that build libraries and applications -- as it defines a set of
+	 makefile macros to be used in the standard project build process:
+	 <ul>
+		<li> path to the tools (<b>CC, CXX, AR, RANLIB, LINK</b>, etc.)
+		<li> set of compiler, linker, etc. flags
+		(<b>CFLAGS, CXXFLAGS, LDFLAGS</b>, etc.)
+		<li> path to the input (<b>top_srcdir, includedir</b>) and
+		output (<b>libdir, bindir</b>, etc.) directories
+		<li> command shell (<b>SHELL</b>), suffixes (<b>.SUFFIXES:</b>), etc.
+	 </ul>
+
+	 <a name="ref_MakeProjLib">
+	 <h4><i>Customized makefile to build a library</i></h4></a>
+
+	 Here is an example of customized makefile that uses
+	 <b><i>"Makefile.mk"</i></b> and <b><i>"Makefile.lib"</i></b> templates to build
+	 a library(it also illustrates how to alternate macro <b>CXXFLAGS</b>):
+
+	 <pre>
+srcdir = @srcdir@
+include @builddir@/Makefile.mk
+
+LIB     = p1
+OBJ     = p1_src1 p1_src2
+CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
+
+include @builddir@/Makefile.lib
+	 </pre>
+
+	 <a name="ref_MakeProjApp">
+	 <h4><i>Customized makefile to build an application</i></h4></a>
+
+	 Here is an example of customized makefile that uses
+	 <b><i>"Makefile.mk"</i></b> and <b><i>"Makefile.app"</i></b> templates to build
+	 an application(it also illustrates how to alternate macro <b>CPPFLAGS</b>):
+
+	 <pre>
+srcdir = @srcdir@
+include @builddir@/Makefile.mk
+
+APP = my_app
+OBJ = my_main my_obj1 my_obj2
+LIB = foo bar
+CPPFLAGS = $(ORIG_CPPFLAGS) -DXYZ_MY_APP
+
+include @builddir@/Makefile.app
+	 </pre>
+
+	 <br></br>
+	 <a name="ref_MakeProjTarget">
+	 <h2>Standard build targets(<b>all, clean, purge</b>)
+		in the customized makefiles</h2></a>
+
+	 <ul>
+		<li> <b>all</b> -- compile object modules specified in the
+		<i>"$(OBJ)"</i> macro, and use them to build library <i>"$(LIB)"</i> or
+		application <i>"$(APP)"</i>;  then copy the resultant lib/app to the
+		<b>libdir/ bindir</b> directory, respectively
+		<li> <b>clean</b> -- remove all object modules and lib/app
+		that have been built by <b>all</b>
+		<li> <b>purge</b> -- do <b>clean</b>, and then remove the copy
+		of lib/app from the <b>libdir/ bindir</b> directory, respectively
+	 </ul>
+
+	 The recursive targets <b>all_r, clean_r, purge_r</b> gets processed exactly like
+	 <b>all, clean, purge</b>, with no recursion, etc. -- as the
+    recursion and multiple build is entirely up to the
+	 <a href="#ref_MakeMeta">meta-makefiles</a>.
+
 
 	 <br></br>
 	 <hr>
