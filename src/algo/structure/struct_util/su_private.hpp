@@ -37,15 +37,14 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
 
-
 BEGIN_SCOPE(struct_util)
 
-#define ERROR_MESSAGE(s) ERR_POST(/* Error << */ "struct_util: " << s << '!')
-#define WARNING_MESSAGE(s) ERR_POST(Warning << "struct_util: " << s)
-#define INFO_MESSAGE(s) ERR_POST(Info << "struct_util: " << s)
-#define TRACE_MESSAGE(s) ERR_POST(Trace << "struct_util: " << s)
+#define ERROR_MESSAGE(s) ERR_POST(ncbi::Error << "struct_util: " << s << '!')
+#define WARNING_MESSAGE(s) ERR_POST(ncbi::Warning << "struct_util: " << s)
+#define INFO_MESSAGE(s) ERR_POST(ncbi::Info << "struct_util: " << s)
+#define TRACE_MESSAGE(s) ERR_POST(ncbi::Trace << "struct_util: " << s)
 
-#define THROW_MESSAGE(str) throw CException(__FILE__, __LINE__, NULL, CException::eUnknown, (str))
+#define THROW_MESSAGE(str) throw ncbi::CException(__FILE__, __LINE__, NULL, ncbi::CException::eUnknown, (str))
 
 // utility function to remove some elements from a vector. Actually does this by copying to a new
 // vector, so T should have an efficient copy ctor.
@@ -70,7 +69,7 @@ void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remo
     }
     if (nRemoved != nToRemove) {
 #ifndef _DEBUG
-        ERR_POST(/* Error << */ "VectorRemoveElements() - bad nToRemove");
+        ERR_POST(ncbi::Error << "VectorRemoveElements() - bad nToRemove");
 #endif
         return;
     }
@@ -85,6 +84,10 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/25 17:47:23  ucko
+* Proper fix: make sure to qualify Error (and a few other things for
+* good measure) with ncbi::.
+*
 * Revision 1.5  2004/05/25 17:25:16  ucko
 * Avoid the "Error" diagnostic manipulator, as that severity is already
 * the default and some compilers claim the manipulator is undeclared(!).
