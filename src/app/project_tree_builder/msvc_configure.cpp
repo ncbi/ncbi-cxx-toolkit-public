@@ -122,13 +122,15 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     InitializeFrom(site);
     site.ProcessMacros(configs);
     
+    const CBuildType static_build(false);
+    const CBuildType dll_build(true);
     ITERATE(list<SConfigInfo>, p, configs) {
-        AnalyzeDefines( site, root_dir, *p, CBuildType(false));
+        AnalyzeDefines( site, root_dir, *p, static_build);
     }
     list<SConfigInfo> dlls;
     GetApp().GetDllsInfo().GetBuildConfigs(&dlls);
     ITERATE(list<SConfigInfo>, p, dlls) {
-        AnalyzeDefines( site, root_dir, *p, CBuildType(true));
+        AnalyzeDefines( site, root_dir, *p, dll_build);
     }
     LOG_POST(Info << "Configure finished.");
 
@@ -138,7 +140,6 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     // For static buid
     ITERATE(list<SConfigInfo>, p, configs) {
         const SConfigInfo& config = *p;
-        const CBuildType static_build(false);
         s_CreateThirdPartyLibsInstallMakefile(site, 
                                               third_party_to_install, 
                                               config, 
@@ -149,7 +150,6 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     GetApp().GetDllsInfo().GetBuildConfigs(&dll_configs);
     ITERATE(list<SConfigInfo>, p, dll_configs) {
         const SConfigInfo& config = *p;
-        const CBuildType dll_build(true);
         s_CreateThirdPartyLibsInstallMakefile(site, 
                                               third_party_to_install, 
                                               config, 
@@ -292,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/29 14:18:50  gouriano
+ * Minor fix to make it compile on GCC 3.4.3
+ *
  * Revision 1.18  2004/11/23 20:12:12  gouriano
  * Tune libraries with the choice for each configuration independently
  *
