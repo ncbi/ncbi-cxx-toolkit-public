@@ -1355,6 +1355,16 @@ void CValidError_imp::ReportBioseqsWithNoMolinfo(void)
 }   
 
 
+bool CValidError_imp::IsNucAcc(const string& acc)
+{
+    if ( isupper(acc[0])  &&  acc.find('_') != NPOS ) {
+        return true;
+    }
+
+    return false;
+}
+
+
 bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const 
 {
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
@@ -1856,6 +1866,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/03/21 19:37:30  shomrat
+* Implemented IsNucAcc
+*
 * Revision 1.23  2003/03/20 18:55:55  shomrat
 * Added validation of standalone Seq-annot objects
 *
