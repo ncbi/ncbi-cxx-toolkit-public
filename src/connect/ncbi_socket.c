@@ -221,7 +221,7 @@ typedef int TSOCK_Handle;
 extern int gethostname(char* machname, long buflen);
 #endif
 
-#endif /* NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC */
+#endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
 
 /* Listening socket
@@ -453,14 +453,14 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 
 
 /* Select on the socket i/o (multiple sockets).
- * If eIO_Write event inquired on a socket, and socket is marked for
- * upread, then returned "revent" may include eIO_Read to indicate that
- * an input is available on that socket.
- * Return eIO_Success when at least one socket found ready
+ * If eIO_Write event inquired on a socket, and the socket is marked for
+ * upread, then returned "revent" may also include eIO_Read to indicate
+ * that some input is available on that socket.
+ * Return eIO_Success when at least one socket is found either ready
  * (including eIO_Read event on eIO_Write for upreadable sockets)
  * or failing ("revent" contains eIO_Close).
  * Return eIO_Timeout, if timeout expired before any socket became available.
- * Return other error code to indicate failure.
+ * Any other return code indicates failure.
  */
 static EIO_Status s_Select(size_t                n,
                            SSOCK_Poll            polls[],
@@ -638,12 +638,12 @@ extern EIO_Status LSOCK_Create(unsigned short port,
 
     /* Bind */
     memset(&addr, 0, sizeof(addr));
-#if defined(HAVE_SIN_LEN)
-    addr.sin_len         = sizeof(addr);
-#endif
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port        = htons(port);
+#if defined(HAVE_SIN_LEN)
+    addr.sin_len         = sizeof(addr);
+#endif
     if (bind(x_lsock, (struct sockaddr*)&addr, sizeof(struct sockaddr)) != 0) {
         CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                        "[LSOCK::Create]  Failed bind()");
@@ -717,6 +717,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
                            "[LSOCK::Accept]  Failed accept()");
             return eIO_Unknown;
         }
+        /* man accept(2) notes that non-blocking state is not inherited */
         if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
             CORE_LOG(eLOG_Error, "[LSOCK::Accept]  "
                      "Cannot set accepted socket to non-blocking mode");
@@ -810,9 +811,6 @@ static EIO_Status s_Connect(SOCK            sock,
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
-#if defined(HAVE_SIN_LEN)
-    server.sin_len         = sizeof(server);
-#endif
 
     /* Initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
@@ -834,10 +832,13 @@ static EIO_Status s_Connect(SOCK            sock,
     assert(port  ||  sock->port);
     x_port = (unsigned short) (port ? htons(port) : sock->port);
 
-    /* Fill out the "server" struct */
+    /* Fill in the "server" struct */
     memcpy(&server.sin_addr, &x_host, sizeof(x_host));
     server.sin_family = AF_INET;
     server.sin_port   = x_port;
+#if defined(HAVE_SIN_LEN)
+    server.sin_len    = sizeof(server);
+#endif
 
     /* Create new socket */
     if ((x_sock = socket(AF_INET, SOCK_STREAM, 0)) == SOCK_INVALID) {
@@ -1335,7 +1336,7 @@ static EIO_Status s_Write(SOCK        sock,
     return status;
 #else
     return s_Send(sock, buf, size, n_written);
-#endif /* SOCK_WRITE_SLICE */
+#endif /*SOCK_WRITE_SLICE*/
 }
 
 
@@ -1890,36 +1891,36 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         }
 #else /* Use some variant of gethostbyname */
         struct hostent* he;
-# if defined(HAVE_GETHOSTBYNAME_R)
+#  if defined(HAVE_GETHOSTBYNAME_R)
         struct hostent x_he;
         char           x_buf[1024];
         int            x_err;
-#   if (HAVE_GETHOSTBYNAME_R == 5)
+#    if (HAVE_GETHOSTBYNAME_R == 5)
         he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                              &x_err);
-#   elif (HAVE_GETHOSTBYNAME_R == 6)
+#    elif (HAVE_GETHOSTBYNAME_R == 6)
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                             &he, &x_err) != 0) {
             assert(he == 0);
             he = 0;
         }
-#   else
-#     error "Unknown HAVE_GETHOSTBYNAME_R value"
-#   endif
-# else
+#    else
+#      error "Unknown HAVE_GETHOSTBYNAME_R value"
+#    endif
+#  else
         CORE_LOCK_WRITE;
         he = gethostbyname(hostname);
-# endif
+#  endif
         if ( he ) {
             memcpy(&host, he->h_addr, sizeof(host));
         } else {
             host = 0;
         }
 
-# if !defined(HAVE_GETHOSTBYNAME_R)
+#  if !defined(HAVE_GETHOSTBYNAME_R)
         CORE_UNLOCK;
-# endif
-#endif /* HAVE_GETADDR_INFO */
+#  endif
+#endif /*HAVE_GETADDR_INFO*/
     }
 
     return host;
@@ -1940,11 +1941,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #if defined(HAVE_GETNAMEINFO)
         struct sockaddr_in addr;
         memset(&addr, 0, sizeof(addr));
-# if defined(HAVE_SIN_LEN)
-        addr.sin_len = sizeof(addr);
-# endif
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = host;
+#  if defined(HAVE_SIN_LEN)
+        addr.sin_len = sizeof(addr);
+#  endif
         if (getnameinfo((struct sockaddr *) &addr, sizeof(addr), name, namelen,
                         0, 0, 0) == 0) {
             return name;
@@ -1953,43 +1954,43 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         }
 #else
         struct hostent* he;
-# if defined(HAVE_GETHOSTBYADDR_R)
+#  if defined(HAVE_GETHOSTBYADDR_R)
         struct hostent x_he;
         char           x_buf[1024];
         int            x_errno;
 
-#   if (HAVE_GETHOSTBYADDR_R == 7)
+#    if (HAVE_GETHOSTBYADDR_R == 7)
         he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                              x_buf, sizeof(x_buf), &x_errno);
-#   elif (HAVE_GETHOSTBYADDR_R == 8)
+#    elif (HAVE_GETHOSTBYADDR_R == 8)
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                             x_buf, sizeof(x_buf), &he, &x_errno) != 0) {
             assert(he == 0);
             he = 0;
         }
-#   else
-#    error "Unknown HAVE_GETHOSTBYADDR_R value"
-#   endif
-# else
+#    else
+#      error "Unknown HAVE_GETHOSTBYADDR_R value"
+#    endif
+#  else
         CORE_LOCK_WRITE;
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-# endif
+#  endif
 
         if (!he  ||  strlen(he->h_name) > namelen - 1) {
             if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
                 name = 0;
             }
-# if !defined(HAVE_GETHOSTBYADDR_R)
+#  if !defined(HAVE_GETHOSTBYADDR_R)
             CORE_UNLOCK;
-# endif
+#  endif
             return name;
         }
         strncpy0(name, he->h_name, namelen - 1);
-# if !defined(HAVE_GETHOSTBYADDR_R)
+#  if !defined(HAVE_GETHOSTBYADDR_R)
         CORE_UNLOCK;
-# endif
+#  endif
         return name;
-#endif /* HAVE_GETNAMEINFO */
+#endif /*HAVE_GETNAMEINFO*/
     }
 
     return 0;
@@ -1999,6 +2000,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.67  2002/10/29 22:20:52  lavr
+ * Use proper indentation of preproc. macros; note post-accept() socket state
+ *
  * Revision 6.66  2002/10/28 15:45:58  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
