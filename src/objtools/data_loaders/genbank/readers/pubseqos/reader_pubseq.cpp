@@ -371,6 +371,7 @@ void CPubseqReader::ResolveSeq_id(CReaderRequestResult& /*result*/,
     }
     else {
         // Get gi by seq-id
+        _TRACE("ResolveSeq_id to gi: " << id.AsFastaString());
         auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn", 1));
         cmd->SetParam("@asnin", &asnIn);
         cmd->Send();
@@ -382,8 +383,10 @@ void CPubseqReader::ResolveSeq_id(CReaderRequestResult& /*result*/,
             }
 
             while(result->Fetch()) {
+                _TRACE("next fetch: " << result->NofItems() << " items");
                 for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
                     const string& name = result->ItemName(pos);
+                    _TRACE("next item: " << name);
                     if (name == "gi") {
                         result->GetItem(&gi);
                     }
@@ -395,32 +398,43 @@ void CPubseqReader::ResolveSeq_id(CReaderRequestResult& /*result*/,
         }
     }
 
-    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi", 2));
-    CDB_TinyInt bin = 1;
-    cmd->SetParam("@gi", &gi);
-    cmd->SetParam("@bin", &bin);
-    cmd->Send();
+    if ( gi.Value() != 0 ) {
+        _TRACE("ResolveGi to Seq-ids: " << gi.Value());
+        auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi", 2));
+        CDB_TinyInt bin = 1;
+        cmd->SetParam("@gi", &gi);
+        cmd->SetParam("@bin", &bin);
+        cmd->Send();
 
-    while(cmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> result(cmd->Result());
-        if (result.get() == 0  ||  result->ResultType() != eDB_RowResult) {
-            continue;
-        }
+        while(cmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> result(cmd->Result());
+            if (result.get() == 0  ||  result->ResultType() != eDB_RowResult) {
+                continue;
+            }
 
-        while(result->Fetch()) {
-            _ASSERT(strcmp
-                    (result->ItemName(result->CurrentItemNo()), "seqid") == 0);
-            CResultBtSrcRdr reader(result.get());
-            CObjectIStreamAsnBinary in;
-            in.Open(reader);
-            CSeq_id id;
-            while (true) {
-                try {
-                    in >> id;
-                    ids.AddSeq_id(id);
-                }
-                catch (...) {
-                    break;
+            while(result->Fetch()) {
+                _TRACE("next fetch: " << result->NofItems() << " items");
+                for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
+                    const string& name = result->ItemName(pos);
+                    _TRACE("next item: " << name);
+                    if ( name == "seqid" ) {
+                        CResultBtSrcRdr reader(result.get());
+                        CObjectIStreamAsnBinary in;
+                        in.Open(reader);
+                        CSeq_id id;
+                        while (true) {
+                            try {
+                                in >> id;
+                                ids.AddSeq_id(id);
+                            }
+                            catch (...) {
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        result->SkipItem();
+                    }
                 }
             }
         }
@@ -484,18 +498,14 @@ CDB_RPCCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 
 CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
 {
-    // new row
-    CDB_VarChar descrOut("-");
-    CDB_Int classOut(0);
-    CDB_Int confidential(0),withdrawn(0),state(0);
     enum {
         kState_dead = 125
     };
-    
+
+    // new row
     while( cmd.HasMoreResults() ) {
         _TRACE("next result");
-        if ( cmd.HasFailed() && confidential.Value()>0 ||
-             withdrawn.Value()>0 ) {
+        if ( cmd.HasFailed() ) {
             break;
         }
         
@@ -509,40 +519,73 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
             for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
                 const string& name = result->ItemName(pos);
                 _TRACE("next item: " << name);
-                if ( name == "asn1" ) {
-                    return result.release();
-                }
-                else if ( name == "confidential" ) {
-                    result->GetItem(&confidential);
-                }
-                else if ( name == "state" ) {
-                    result->GetItem(&state);
-                    _TRACE("state="<<state.Value());
-                    if ( state.Value() == kState_dead ) {
-                        tse_info->SetSuppressionLevel(CTSE_Info::eSuppression_dead);
+                if ( name == "confidential" ) {
+                    CDB_Int v;
+                    result->GetItem(&v);
+                    _TRACE("confidential: "<<v.Value());
+                    if ( v.Value() ) {
+                        tse_info->SetBlobState(CTSE_Info::fState_private);
                     }
                 }
                 else if ( name == "override" ) {
-                    result->GetItem(&withdrawn);
+                    CDB_Int v;
+                    result->GetItem(&v);
+                    _TRACE("withdrawn: "<<v.Value());
+                    if ( v.Value() ) {
+                        tse_info->SetBlobState(CTSE_Info::fState_withdrawn);
+                    }
+                }
+                else if ( name == "last_touched_m" ) {
+                    CDB_Int v;
+                    result->GetItem(&v);
+                    _TRACE("version: " << v.Value());
+                    tse_info->SetBlobVersion(v.Value());
+                }
+                else if ( name == "state" ) {
+                    CDB_Int v;
+                    result->GetItem(&v);
+                    _TRACE("state: "<<v.Value());
+                    if ( v.Value() == kState_dead ) {
+                        tse_info->SetBlobState(CTSE_Info::fState_dead);
+                    }
+                }
+                else if ( name == "asn1" ) {
+                    return result.release();
                 }
                 else {
+#ifdef _DEBUG
+                    AutoPtr<CDB_Object> item(result->GetItem(0));
+                    _TRACE("item type: " << item->GetType());
+                    switch ( item->GetType() ) {
+                    case eDB_Int:
+                    case eDB_SmallInt:
+                    case eDB_TinyInt:
+                    {
+                        CDB_Int v;
+                        v.AssignValue(*item);
+                        _TRACE("item value: " << v.Value());
+                        break;
+                    }
+                    case eDB_VarChar:
+                    {
+                        CDB_VarChar v;
+                        v.AssignValue(*item);
+                        _TRACE("item value: " << v.Value());
+                        break;
+                    }
+                    default:
+                        break;
+                    }
+#else
                     result->SkipItem();
+#endif
                 }
             }
         }
     }
-    if ( !tse_info ) {
-        NCBI_THROW(CLoaderException, eNoData,
-                   "unexpected missing data in reply");
-    }
-    if ( confidential.Value()>0 || withdrawn.Value()>0 ) {
-        tse_info->SetSuppressionLevel(CTSE_Info::eSuppression_private);
-        return 0;
-    }
-    else {
-        tse_info->SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
-        return 0;
-    }
+    // no data
+    tse_info->SetBlobState(CTSE_Info::fState_no_data);
+    return 0;
 }
 
 
