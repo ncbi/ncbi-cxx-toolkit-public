@@ -471,7 +471,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
-                             SQL_TYPE_TIMESTAMP, 0, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT), 
+                             SQL_TYPE_TIMESTAMP, 16, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT), 
                              indicator+n);
             break;
         }
@@ -492,7 +492,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
-                             SQL_TYPE_TIMESTAMP, 0, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT), 
+                             SQL_TYPE_TIMESTAMP, 23, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT), 
                              indicator+n);
             break;
         }
@@ -558,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/06 20:33:32  soussov
+ * fixed bug in DateTime bindings
+ *
  * Revision 1.5  2003/06/05 16:02:04  soussov
  * adds code for DumpResults and for the dumped results processing
  *

@@ -319,12 +319,14 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
         const char*   type;
 		char tbuf[64];
 
+		SQLRETURN rc_from_bind;
+
         switch (param.GetType()) {
         case eDB_Int: {
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
             type = "int";
             indicator[n]= 4;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SLONG, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SLONG, 
                              SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator+n);
             break;
         }
@@ -332,7 +334,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
             type = "smallint";
             indicator[n]= 2;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SSHORT, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SSHORT, 
                              SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator+n);
             break;
         }
@@ -340,7 +342,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
             type = "tinyint";
             indicator[n]= 1;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_UTINYINT, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_UTINYINT, 
                              SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator+n);
             break;
         }
@@ -348,7 +350,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
             type = "numeric";
             indicator[n]= 8;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SBIGINT, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SBIGINT, 
                              SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator+n);
             
             break;
@@ -357,7 +359,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
             type= "varchar(255)";
             indicator[n]= SQL_NTS;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
                              SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
             break;
         }
@@ -365,7 +367,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
             type = "varchar(255)";
             indicator[n]= SQL_NTS;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
                              SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
             break;
         }
@@ -374,7 +376,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
 			sprintf(tbuf,"varchar(%d)", val.Size());
             type= tbuf;
             indicator[n]= SQL_NTS;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
                              SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
             break;
         }
@@ -382,7 +384,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             type = "varbinary(255)";
             indicator[n]= val.Size();
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
             break;
         }
@@ -390,7 +392,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
             type = "varbinary(255)";
             indicator[n]= val.Size();
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
             break;
         }
@@ -400,7 +402,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             type= tbuf;
             type = "varbinary(255)";
             indicator[n]= val.DataSize();
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
             break;
         }
@@ -408,7 +410,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
             type = "real";
             indicator[n]= 4;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_FLOAT, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_FLOAT, 
                              SQL_REAL, 4, 0, val.BindVal(), 4, indicator+n);
             break;
         }
@@ -416,7 +418,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
             type = "float";
             indicator[n]= 8;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_DOUBLE, 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_DOUBLE, 
                              SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator+n);
             break;
         }
@@ -436,8 +438,8 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
                 ts->fraction= 0;
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
-                             SQL_TYPE_TIMESTAMP, 0, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT), 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
+                             SQL_TYPE_TIMESTAMP, 16, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT), 
                              indicator+n);
             break;
         }
@@ -457,8 +459,8 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
                 ts->fraction= t.NanoSecond();
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
-                             SQL_TYPE_TIMESTAMP, 0, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT), 
+            rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
+                             SQL_TYPE_TIMESTAMP, 23, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT), 
                              indicator+n);
             break;
         }
@@ -466,6 +468,21 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             return false;
         }
 
+		switch(rc_from_bind) {
+	        case SQL_SUCCESS_WITH_INFO:
+		        m_Reporter.ReportErrors();
+
+			case SQL_SUCCESS:
+				break;
+
+			case SQL_ERROR:
+				m_Reporter.ReportErrors();
+				throw CDB_ClientEx(eDB_Error, 420066, "CODBC_LangCmd::x_AssignParams",
+                               "SQLBindParameter failed");
+			default:
+				throw CDB_ClientEx(eDB_Error, 420067, "CODBC_LangCmd::x_AssignParams",
+                               "SQLBindParameter failed (memory corruption suspected)");
+		}
         cmd += "declare " + name + ' ' + type + ";select " + name + " = ?;";
 
         if(param.IsNULL()) {
@@ -499,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/06 20:33:32  soussov
+ * fixed bug in DateTime bindings
+ *
  * Revision 1.5  2003/06/05 16:02:04  soussov
  * adds code for DumpResults and for the dumped results processing
  *
