@@ -107,7 +107,7 @@ public:
 
 private:
     enum {
-        kTypeUnknown = 1 << 10
+        kTypeUnknown = 1 << 7
     };
 
     friend class CBioseq_Handle;
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/02/27 20:56:03  vasilche
+* kTypeUnknown bit made fitting in 8 bit integer.
+*
 * Revision 1.27  2003/02/25 14:48:06  vasilche
 * Added Win32 export modifier to object manager classes.
 *
