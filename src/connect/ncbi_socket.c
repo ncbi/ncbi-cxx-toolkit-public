@@ -33,6 +33,14 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/01/25 17:10:41  lavr
+ * The following policy applied: on either read or write,
+ * n_read and n_written returned to indicate actual number of passed
+ * bytes, regardless of error status. eIO_Success means that the
+ * operation went through smoothly, while any other status has to
+ * be analysed. Anyway, the number of passed bytes prior the error
+ * occurred is returned in n_read and n_written respectively.
+ *
  * Revision 6.14  2001/01/23 23:19:34  lavr
  * Typo fixed in comment
  *
@@ -927,10 +935,10 @@ static EIO_Status s_Recv(SOCK        sock,
 
     for (;;) {
         /* try to read */
-        int buf_read = s_NCBI_Recv(sock, buf, size, peek);
-        if (buf_read > 0) {
-            assert(buf_read <= (int) size);
-            *n_read = buf_read;
+        int x_read = s_NCBI_Recv(sock, buf, size, peek);
+        if (x_read > 0) {
+            assert(x_read <= (int) size);
+            *n_read = x_read;
             return eIO_Success;  /* success */
         }
 
@@ -982,22 +990,22 @@ static EIO_Status s_WriteWhole(SOCK        sock,
 
     for (;;) {
         /* try to write */
-        int buf_written = send(sock->sock, (char*) x_buf, x_size, 0);
-        if (buf_written >= 0) {
+        int x_written = send(sock->sock, (char*) x_buf, x_size, 0);
+        if (x_written >= 0) {
             /* statistics & logging */
             if (sock->log_data == eOn  ||
                 (sock->log_data == eDefault  &&  s_LogData == eOn)) {
-                s_DoLogData(sock, eIO_Write, x_buf, (size_t) buf_written);
+                s_DoLogData(sock, eIO_Write, x_buf, (size_t) x_written);
             }
-            sock->n_written += buf_written;
+            sock->n_written += x_written;
 
             /* */
             if ( n_written )
-                *n_written += buf_written;
-            if (buf_written == x_size)
+                *n_written += x_written;
+            if (x_written == x_size)
                 return eIO_Success; /* all data has been successfully sent */
-            x_buf  += buf_written;
-            x_size -= buf_written;
+            x_buf  += x_written;
+            x_size -= x_written;
             assert(x_size > 0);
             continue; /* there is unsent data */
         }
@@ -1269,10 +1277,9 @@ extern EIO_Status SOCK_Read(SOCK           sock,
             size_t x_read;
             status = SOCK_Read(sock, (char*) buf + *n_read, size, &x_read,
                                eIO_Plain);
+            *n_read += x_read;
             if (status != eIO_Success)
                 return status;
-
-            *n_read += x_read;
             size    -= x_read;
         } while (size);
         return eIO_Success;
