@@ -25,15 +25,7 @@
  */
 
 /** @file blast_parameters.c
- * These parameters are normally set by:
- *    1.) reading the options in blast_options.[ch] to find user preferences
- *    2.) making intelligent choices based upon the program, user preferences, and other
- *      data such as the sequences length.
- *
- *  NOTE: these parameters should be set by calls in algo/blast/core, prefereably to funcitons in 
- *        this file.  User preferences should be controlled by the structures and functions in 
- *        blast_options.[ch].  The parameters belong to algo/blast/core, the options belong to the user.
- *
+ * Definitions for functions dealing with BLAST CORE parameter structures.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -739,6 +731,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/01/31 21:35:21  camacho
+ * doxygen fix
+ *
  * Revision 1.4  2005/01/18 15:58:21  dondosha
  * Added missing static keyword to s_GetBestExtensionMethod declaration
  *

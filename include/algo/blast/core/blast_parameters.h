@@ -28,15 +28,20 @@
  */
 
 /** @file blast_parameters.h
+ * Structure and function definitions for BLAST parameter structures, which are
+ * internal to the CORE of BLAST.
+ * <pre>
  * These parameters are normally set by:
  *    1.) reading the options in blast_options.[ch] to find user preferences
- *    2.) making intelligent choices based upon the program, user preferences, and other
- *      data such as the sequences length.
+ *    2.) making intelligent choices based upon the program, user preferences, 
+ *        and other data such as the sequence's length.
  *
- *  NOTE: these parameters should be set by calls in algo/blast/core, prefereably to funcitons in 
- *        this file.  User preferences should be controlled by the structures and functions in 
- *        blast_options.[ch].  The parameters belong to algo/blast/core, the options belong to the user.
- *
+ * NOTE: These parameters should be set by calls in algo/blast/core, 
+ *       preferrably to functions in this file. User preferences should be 
+ *       controlled by the structures and functions in blast_options.[ch]. 
+ *       The parameter structures belong to algo/blast/core, the options
+ *       structures belong to the user.
+ * <pre>
  */
 
 #ifndef __BLASTPARAMETERS__
