@@ -786,9 +786,6 @@ void CAnnot_Collector::x_Sort(void)
         // do nothing
         break;
     }
-    ITERATE(TAnnotSet, it, m_AnnotSet) {
-        LOG_POST("    " << it->GetFrom() << " - " << it->GetToOpen());
-    }
 }
 
 
@@ -1871,6 +1868,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/11/09 21:53:09  grichenk
+* Removed debug output
+*
 * Revision 1.39  2004/11/05 19:29:28  grichenk
 * Fixed sorting of circular features
 *
