@@ -288,7 +288,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
 
     // Look for ending gaps in alignments
     i = m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
-    for (unsigned int i = 0; i < msa->dimensions->num_seqs + 1; i++) {
+    for ( ; i < msa->dimensions->num_seqs + 1; i++) {
         // find the last aligned residue
         for (unsigned int j = m_PssmInput->GetQueryLength() - 1; j >= 0; j--) {
             if (msa->data[i][j].is_aligned) {
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/10/14 19:10:48  camacho
+ * Fix compiler warning
+ *
  * Revision 1.17  2004/10/13 20:49:00  camacho
  * + support for requesting diagnostics information and specifying underlying matrix
  *
