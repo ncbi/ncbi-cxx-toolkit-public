@@ -1476,6 +1476,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         x_AddQualifierToFeature (sfp, qual, val);
 
                     }
+                } else if (! feat.empty ()) {
+                
+                    // unrecognized location
+
+                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                        ERR_POST (Warning << "Bad location on feature " << feat <<
+                                 " (start " << start << ", stop " << stop << ")");
+                    }
                 }
             }
         }
