@@ -83,6 +83,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/util/genbank.hpp>
+#include <objects/util/sequence.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -731,31 +732,33 @@ void CId1FetchApp::WriteFastaIDs(const list< CRef< CSeq_id > >& ids)
 
 void CId1FetchApp::WriteFastaEntry(const CBioseq& bioseq)
 {
-        CBioseq_Handle handle = m_Scope->GetBioseqHandle(*(bioseq.GetId().front()));
-        // Print the identifier(s) and description.
-        *m_OutputFile << '>';
-        WriteFastaIDs(bioseq.GetId());
-        if (bioseq.IsSetDescr()) {
-            iterate (CSeq_descr::Tdata, it2, bioseq.GetDescr().Get()) {
-                if ((*it2)->IsName()) {
-                    *m_OutputFile << ' ' << (*it2)->GetName();
-                    break;
-                }
+    CBioseq_Handle handle =
+        m_Scope->GetBioseqHandle(*(bioseq.GetId().front()));
+
+    // Print the identifier(s) and description.
+    *m_OutputFile << '>';
+    WriteFastaIDs(bioseq.GetId());
+    if (bioseq.IsSetDescr()) {
+        iterate (CSeq_descr::Tdata, it2, bioseq.GetDescr().Get()) {
+            if ((*it2)->IsName()) {
+                *m_OutputFile << ' ' << (*it2)->GetName();
+                break;
             }
         }
-        *m_OutputFile << ' ' << handle.GetTitle();
+    }
+    *m_OutputFile << ' ' << GetTitle(handle);
 
-        // Now print the actual sequence in an appropriate ASCII format.
-        {{
-            CSeqVector vec = handle.GetSeqVector();
-            vec.SetIupacCoding();
-            for (TSeqPos pos = 0;  pos < vec.size();  ++pos) {
-                if (pos % 70 == 0)
-                    *m_OutputFile << NcbiEndl;
-                *m_OutputFile << vec[pos];
-            }
-            *m_OutputFile << NcbiEndl;
-        }}
+    // Now print the actual sequence in an appropriate ASCII format.
+    {{
+        CSeqVector vec = handle.GetSeqVector();
+        vec.SetIupacCoding();
+        for (TSeqPos pos = 0;  pos < vec.size();  ++pos) {
+            if (pos % 70 == 0)
+                *m_OutputFile << NcbiEndl;
+            *m_OutputFile << vec[pos];
+        }
+        *m_OutputFile << NcbiEndl;
+    }}
 }
 
 void CId1FetchApp::WriteFastaEntry(const CSeq_entry& seq)
@@ -903,6 +906,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/06/06 23:46:24  vakatov
+* Use GetTitle() from <objects/util/sequence.hpp>
+*
 * Revision 1.31  2002/05/06 16:13:46  ucko
 * Merge in Andrei Gourianov's changes to use the new OM (thanks!)
 * Remove some dead code.
