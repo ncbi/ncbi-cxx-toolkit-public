@@ -664,6 +664,51 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Utility algorithm scans the provided directories using iterators
+/// finds files to match the masks and stores all found files in 
+/// the container object.
+///
+template<class TContainer, class It1>
+void FindFiles(TContainer&           out, 
+               It1                   first_path, 
+               It1                   last_path, 
+               const vector<string>& masks)
+{
+    for (; first_path != last_path; ++first_path) {
+        const string& dir_name = *first_path;
+        CDir dir(dir_name);
+        
+        CDir::TEntries contents = dir.GetEntries(masks);
+
+        ITERATE(CDir::TEntries, it, contents) {
+            out.push_back((*it)->GetPath());
+        }
+
+    } // for
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Utility algorithm scans the provided directories using iterators
+/// finds files to match the masks and stores all found files in 
+/// the container object.
+///
+template<class TContainer, class It1, class It2>
+void FindFiles(TContainer&      out, 
+               It1  first_path, It1 last_path, 
+               It2  first_mask, It2 last_mask)
+{
+    // converting masks to vector as understood by CDir::GetEntries()
+    vector<string> masks;
+    for (; first_mask != last_mask; ++first_mask) {
+        masks.push_back(*first_mask);
+    }
+
+    FindFiles(out, first_path, last_path, masks);
+}
 
 // fwd-decl of struct containing OS-specific mem.-file handle.
 struct SMemoryFileHandle;
@@ -924,6 +969,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/11/05 16:27:18  kuznets
+ * +FindFile template algorithm
+ *
  * Revision 1.31  2003/11/05 15:35:44  kuznets
  * Added CDir::GetEntries() based on set of masks
  *
