@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/04/26 16:29:32  lavr
+ * Add default_timeout member to meta-connector
+ *
  * Revision 6.8  2002/03/22 22:18:48  lavr
  * Cosmetic update
  *
@@ -171,8 +174,8 @@ typedef EIO_Status (*FConnectorRead)
  *         low level transport, if any.
  */
 typedef EIO_Status (*FConnectorStatus)
-(CONNECTOR connector,
- EIO_Event direction
+(CONNECTOR       connector,
+ EIO_Event       direction
  );
           
 
@@ -199,6 +202,8 @@ typedef struct {
     FConnectorRead      read;        CONNECTOR c_read;
     FConnectorStatus    status;      CONNECTOR c_status;
     FConnectorClose     close;       CONNECTOR c_close;
+    const STimeout*     default_timeout;
+    STimeout            default_tmo; /* storage for default_timeout */
     CONNECTOR           list;
 } SMetaConnector;
 
@@ -206,10 +211,20 @@ typedef struct {
 #define CONN_TWO2ONE(a, b)   a##b
 
 #define CONN_SET_METHOD(meta, method, function, connector) \
-  do { \
-    meta->method = function; \
-    meta->CONN_TWO2ONE(c_,method) = connector; \
-  } while (0);
+    do {                                                   \
+        meta->method = function;                           \
+        meta->CONN_TWO2ONE(c_,method) = connector;         \
+    } while (0);
+
+
+#define CONN_SET_DEFAULT_TIMEOUT(meta, timeout)            \
+    do {                                                   \
+        if (timeout) {                                     \
+            meta->default_timeout = &meta->default_tmo;    \
+            meta->default_tmo     = *timeout;              \
+        } else                                             \
+            meta->default_timeout = 0;                     \
+    } while (0);
 
 
 extern EIO_Status METACONN_Add
@@ -242,11 +257,11 @@ typedef void (*FDestroy)
 /* Connector specification.
  */
 typedef struct SConnectorTag {
-    void*                 handle;    /* handle of the connector      */
-    CONNECTOR             next;      /* linked list                  */
-    SMetaConnector*       meta;      /* back link to CONNECTION      */
-    FSetupVTable          setup;     /* used in CONNECTION init      */
-    FDestroy              destroy;   /* destroys handle, can be NULL */
+    void*                handle;    /* handle of the connector      */
+    CONNECTOR            next;      /* linked list                  */
+    SMetaConnector*      meta;      /* back link to CONNECTION      */
+    FSetupVTable         setup;     /* used in CONNECTION init      */
+    FDestroy             destroy;   /* destroys handle, can be NULL */
 } SConnector;
 
 
