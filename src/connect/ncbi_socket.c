@@ -33,6 +33,13 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2001/07/11 00:54:35  vakatov
+ * SOCK_gethostbyname() and SOCK_gethostbyaddr() -- now can work with
+ * gethostbyname_r() with 6 args and gethostbyaddr_r() with 8 args
+ * (in addition to those with 5 and 7 args, repectively).
+ * [NCBI_OS_IRIX] s_Select() -- no final ASSERT() if built on IRIX.
+ * SOCK_gethostbyaddr() -- added missing CORE_UNLOCK.
+ *
  * Revision 6.32  2001/06/20 21:26:18  vakatov
  * As per A.Grichenko/A.Lavrentiev report:
  *   SOCK_Shutdown() -- typo fixed (use "how" rather than "x_how").
@@ -514,13 +521,6 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
                   nonblock ?
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
                   fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1);
-/*	removed 2/22/01 pjc
-#elif defined(NCBI_OS_MAC)
-    return (fcntl(sock, F_SETFL,
-                  nonblock ?
-                  fcntl(sock, F_GETFL, 0) | O_NDELAY :
-                  fcntl(sock, F_GETFL, 0) & (int) ~O_NDELAY) != -1);
- */
 #else
     assert(0);
     return 0/*false*/;
@@ -534,7 +534,7 @@ static EIO_Status s_Select(TSOCK_Handle          sock,
                            EIO_Event             event,
                            const struct timeval* timeout)
 {
-    int n_dfs;
+    int n_fds;
     fd_set fds, *r_fds, *w_fds;
 
     /* just checking */
@@ -556,21 +556,27 @@ static EIO_Status s_Select(TSOCK_Handle          sock,
             tmout = *timeout;
         FD_ZERO(&fds);       FD_ZERO(&e_fds);
         FD_SET(sock, &fds);  FD_SET(sock, &e_fds);
-        n_dfs = select(SOCK_NFDS(sock), r_fds, w_fds, &e_fds,
+        n_fds = select(SOCK_NFDS(sock), r_fds, w_fds, &e_fds,
                        timeout ? &tmout : 0);
-        assert(-1 <= n_dfs  &&  n_dfs <= 2);
-        if ((n_dfs < 0  &&  SOCK_ERRNO != SOCK_EINTR)  ||
+        assert(-1 <= n_fds  &&  n_fds <= 2);
+        if ((n_fds < 0  &&  SOCK_ERRNO != SOCK_EINTR)  ||
             FD_ISSET(sock, &e_fds)) {
             return eIO_Unknown;
         }
-    } while (n_dfs < 0);
+    } while (n_fds < 0);
 
     /* timeout has expired */
-    if (n_dfs == 0)
+    if (n_fds == 0)
         return eIO_Timeout;
 
-    /* success;  can i/o now */
+#if !defined(NCBI_OS_IRIX)
+    /* funny thing -- on IRIX, it may set "n_fds" to e.g. 1, and
+     * forget to set the bit in "fds" and/or "e_fds"!
+     */
     assert(FD_ISSET(sock, &fds));
+#endif
+
+    /* success;  can i/o now */
     return eIO_Success;
 }
 
@@ -1614,7 +1620,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
-    if (!hostname) {
+    if ( !hostname ) {
         if (SOCK_gethostname(buf, sizeof(buf)) != 0)
             return 0;
         hostname = buf;
@@ -1622,27 +1628,37 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 
     host = inet_addr(hostname);
     if (host == htonl(INADDR_NONE)) {
-        struct hostent* hp;
+        struct hostent* he;
 #if defined(HAVE_GETHOSTBYNAME_R)
-        struct hostent x_hp;
-        char x_buf[1024];
-        int  x_err;
-        
-        hp = gethostbyname_r(hostname, &x_hp, x_buf, sizeof(x_buf), &x_err);
-        if ( hp )
-            memcpy(&host, hp->h_addr, sizeof(host));
-        else
-            host = 0;
+        struct hostent x_he;
+        char           x_buf[1024];
+        int            x_err;
+#  if (HAVE_GETHOSTBYNAME_R == 5)
+        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &x_err);
+#  elif (HAVE_GETHOSTBYNAME_R == 6)
+        if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
+                            &he, &x_err) != 0) {
+            assert(he == 0);
+            he = 0;
+        }
+#  else
+#    error "Unknown HAVE_GETHOSTBYNAME_R value"
+#  endif
 #else
         CORE_LOCK_WRITE;
-        hp = gethostbyname(hostname);
-        if ( hp )
-            memcpy(&host, hp->h_addr, sizeof(host));
-        else
+        he = gethostbyname(hostname);
+#endif
+        if ( he ) {
+            memcpy(&host, he->h_addr, sizeof(host));
+        } else {
             host = 0;
+        }
+
+#if !defined(HAVE_GETHOSTBYNAME_R)
         CORE_UNLOCK;
 #endif
     }
+
     return host;
 }
 
@@ -1653,28 +1669,43 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 {
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
-    if (host && name && namelen) {
-        struct hostent* hp;
+    if (host  &&  name  &&  namelen) {
+        struct hostent* he;
 #if defined(HAVE_GETHOSTBYADDR_R)
-        struct hostent x_hp;
-        char x_buf[1024];
-        int x_errno;
+        struct hostent x_he;
+        char           x_buf[1024];
+        int            x_errno;
 
-        hp = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET,
-                             &x_hp, x_buf, sizeof(x_buf), &x_errno);
-        if (!hp || strlen(hp->h_name) > namelen - 1)
-            return 0;
-        strncpy(name, hp->h_name, namelen - 1);
+#  if (HAVE_GETHOSTBYADDR_R == 7)
+        he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET,
+                             &x_he, x_buf, sizeof(x_buf), &x_errno);
+#  elif (HAVE_GETHOSTBYADDR_R == 8)
+        if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
+                            x_buf, sizeof(x_buf), &he, &x_errno) != 0) {
+            assert(he == 0);
+            he = 0;
+        }
+#  else
+#    error "Unknown HAVE_GETHOSTBYADDR_R value"
+#  endif
 #else
         CORE_LOCK_WRITE;
-        hp = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-        if (!hp || strlen(hp->h_name) > namelen - 1)
+        he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
+#endif
+
+        if (!he  ||  strlen(he->h_name) > namelen - 1) {
+#if !defined(HAVE_GETHOSTBYADDR_R)
+            CORE_UNLOCK;
+#endif
             return 0;
-        strncpy(name, hp->h_name, namelen - 1);
+        }
+        strncpy(name, he->h_name, namelen - 1);
+#if !defined(HAVE_GETHOSTBYADDR_R)
         CORE_UNLOCK;
 #endif
-        name[namelen - 1] = 0;
+        name[namelen - 1] = '\0';
         return name;
     }
+
     return 0;
 }
