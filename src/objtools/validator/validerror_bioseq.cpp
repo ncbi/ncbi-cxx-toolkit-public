@@ -657,7 +657,6 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     ValidateGraphsOnBioseq(seq);
 
     CheckTpaHistory(seq);
-
     
     if ( IsMrna(bsh) ) {
         ValidatemRNABioseqContext(bsh);
@@ -2311,15 +2310,13 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
             if ( LocOnSeg(seq, fi->GetOriginalFeature().GetLocation()) ) {
                 if ( !IsDeltaOrFarSeg(fi->GetLocation(), m_Scope) ) {
-                   
- EDiagSev sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
+                    EDiagSev sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
                     PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
                         "Feature location on segmented bioseq, not on parts",
                         feat);
                 }
             }
         }
-
     }  // end of for loop
 
     // if no full length prot feature on a part of a segmented bioseq
@@ -2346,6 +2343,61 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     // validate abutting UTRs for nucleotides
     if ( !is_aa ) {
         x_ValidateAbuttingUTR(bsh);
+    }
+
+    x_ValidateCDSmRNAmatch(bsh);
+}
+
+
+void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
+{
+    // nothing to validate if there aren't any genes
+    if (!CFeat_CI(seq, 0, 0, CSeqFeatData::e_Gene)) {
+        return;
+    }
+
+    // count mRNAs and CDSs for each gene.
+    typedef map<CConstRef<CSeq_feat>, SIZE_TYPE> TFeatCount;
+    TFeatCount cds_count, mrna_count;
+
+    SAnnotSelector as;
+    as.IncludedFeatType(CSeqFeatData::e_Cdregion);
+    as.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+
+    CConstRef<CSeq_feat> gene;
+    for (CFeat_CI it(seq, 0, 0, as); it; ++it) {
+        const CSeq_feat& feat = it->GetOriginalFeature();
+        const CGene_ref* gref = feat.GetGeneXref();
+        if (gref == NULL  ||  gref->IsSuppressed()) {
+            gene = GetOverlappingGene(it->GetLocation(), seq.GetScope());
+        }
+        if (gene) {
+            if (cds_count.find(gene) == cds_count.end()) {
+                cds_count[gene] = mrna_count[gene] = 0;
+            }
+
+            switch (feat.GetData().GetSubtype()) {
+                case CSeqFeatData::eSubtype_cdregion:
+                    cds_count[gene]++;
+                    break;
+                case CSeqFeatData::eSubtype_mRNA:
+                    mrna_count[gene]++;
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    ITERATE (TFeatCount, it, cds_count) {
+        SIZE_TYPE cds_num = it->second,
+                  mrna_num = mrna_count[it->first];
+        if (cds_num != mrna_num) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatch,
+                "mRNA count (" + NStr::IntToString(mrna_num) + 
+                ") does not match CDS (" + NStr::IntToString(cds_num) +
+                ") count for gene", *it->first);
+        }
     }
 }
 
@@ -2927,6 +2979,7 @@ void CValidError_bioseq::ValidateMolInfoContext
         case CMolInfo::eTech_htgs_0:
         case CMolInfo::eTech_htc:
         case CMolInfo::eTech_wgs:
+        case CMolInfo::eTech_barcode:
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                 "Protein with nucleic acid sequence method", seq, desc);
             break;
@@ -3762,6 +3815,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2004/09/21 15:49:41  shomrat
+* Added ValidateCDSmRNAmatch reporting eErr_SEQ_FEAT_CDSmRNAmismatch
+*
 * Revision 1.85  2004/09/01 15:33:44  grichenk
 * Check strand in GetStart and GetEnd. Circular length argument
 * made optional.
