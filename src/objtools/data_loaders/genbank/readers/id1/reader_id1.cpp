@@ -375,10 +375,19 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
         try {
             _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
 
-            CNcbiApplication* app = CNcbiApplication::Instance();
-            _ASSERT(app);
-            const CNcbiEnvironment& env = app->GetEnvironment();
-            string id1_svc = env.Get("NCBI_SERVICE_NAME_ID1");
+            string id1_svc;
+            {{
+                CNcbiApplication* app = CNcbiApplication::Instance();
+                static const char* env_var = "NCBI_SERVICE_NAME_ID1";
+                if (app) { 
+                    id1_svc = app->GetEnvironment().Get(env_var);
+                } else {
+                    char* s = ::getenv(env_var);
+                    if (s) {
+                        id1_svc = s;
+                    }
+                }
+            }}
             if ( id1_svc.empty() ) {
                 id1_svc = "ID1";
             }
@@ -883,6 +892,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.77  2004/03/03 22:59:47  ucko
+ * Gracefully handle CNcbiApplication::Instance returning NULL, as it
+ * *is* possible to use other frameworks.
+ *
  * Revision 1.76  2004/02/19 19:24:09  vasilche
  * Added conditional compilation of statistics collection code.
  *
