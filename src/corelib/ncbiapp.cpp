@@ -607,9 +607,11 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
     if ( !conf ) {
         return false;
     } else if (conf->empty()) {
-        entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini);
+        entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini,
+                                    CMetaRegistry::fDontOwn, 0, &reg);
     } else {
-        entry = CMetaRegistry::Load(*conf);
+        entry = CMetaRegistry::Load(*conf, CMetaRegistry::eName_AsIs,
+                                    CMetaRegistry::fDontOwn, 0, &reg);
     }
     if ( !entry.registry ) {
         // failed; complain as appropriate
@@ -624,7 +626,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
                        "Registry file \"" + *conf + "\" cannot be opened");
         }
         return false;
-    } else {
+    } else if (entry.registry != &reg) {
+        // should be impossible with new CMetaRegistry interface...
         if (&reg == m_Config  &&  reg.Empty()) {
             if (m_OwnsConfig) {
                 delete m_Config;
@@ -638,8 +641,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
             str.seekg(0);
             reg.Read(str);
         }
-        return true;
     }
+    return true;
 }
 
 
@@ -778,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2003/08/06 20:27:17  ucko
+ * LoadConfig: take advantage of the latest changes to CMetaRegistry to reuse reg.
+ *
  * Revision 1.65  2003/08/06 14:31:55  ucko
  * LoadConfig: Only replace m_Config if it was empty, and remember to
  * delete the old object if we owned it.
