@@ -252,7 +252,7 @@ public:
         if (m_Buffer) {
             _ASSERT(m_BlobSize >= m_ReadPos);
 
-            unsigned bytes_left = m_BlobSize - m_ReadPos;
+            size_t bytes_left = m_BlobSize - m_ReadPos;
             if (!bytes_left) {
                 *bytes_read = 0;
                 return eRW_Eof;
@@ -1127,6 +1127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/19 17:06:12  ucko
+ * Don't assume that unsigned is the same as size_t!
+ *
  * Revision 1.2  2004/07/19 16:12:15  kuznets
  * + Remove for key,version,subkey
  *
