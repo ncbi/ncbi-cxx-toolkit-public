@@ -189,8 +189,8 @@ const CConstObjectInfo& CValidErrItem::GetObject(void) const
 CValidError_CI::CValidError_CI(void) :
     m_Validator(0),
     m_ErrCodeFilter(kEmptyStr), // eErr_UNKNOWN
-    m_MinSeverity(eDiag_Info),
-    m_MaxSeverity(eDiag_Critical)
+    m_MinSeverity(eDiagSevMin),
+    m_MaxSeverity(eDiagSevMax)
 {
 }
 
@@ -486,6 +486,8 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_GRAPH_GraphNScore",
     "SEQ_GRAPH_GraphGapScore",
     "SEQ_GRAPH_GraphOverlap",
+
+    "Internal_Exception",
 
     "UNKONWN"
 };
@@ -1077,6 +1079,9 @@ segments.",
 //  SEQ_GRAPH_GraphOverlap
 "Quality graphs overlap - may be due to an old fa2htgs bug.",
 
+//  Internal_Exception
+"Exception was caught while performing validation. Vaidation terminated.",
+
 "UNKNOWN"
 };
 
@@ -1090,6 +1095,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/04/04 18:36:55  shomrat
+* Added Internal_Exception error; Changed limits of min/max severity
+*
 * Revision 1.17  2003/03/31 14:41:07  shomrat
 * $id: -> $id$
 *
