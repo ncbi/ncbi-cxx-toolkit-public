@@ -91,6 +91,8 @@ private:
 
     auto_ptr<SProjectTreeInfo>  m_ProjectTreeInfo;
 
+    auto_ptr<CBuildType>        m_BuildType;
+
 public:
 
     void    GetMetaDataFiles    (list<string>*      files)   const;
@@ -103,6 +105,8 @@ public:
     const CMsvcMetaMakefile& GetMetaMakefile(void);
 
     const SProjectTreeInfo&  GetProjectTreeInfo(void);
+
+    const CBuildType&        GetBuildType(void);
 
     string GetDatatoolId          (void) const;
     string GetDatatoolPathForApp  (void) const;
@@ -168,6 +172,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/02 23:29:56  gorelenk
+ * Added data-member of type auto_ptr<CBuildType> and member-function
+ * GetBuildType.
+ *
  * Revision 1.9  2004/02/05 16:24:57  gorelenk
  * + eConfigureDefinesPath in CProjBulderAppException class.
  *
