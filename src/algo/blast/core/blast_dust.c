@@ -45,6 +45,13 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_filter.h>
 
+
+/** Declared in blast_def.h as extern const. */
+const int kDustLevel = 20;   
+const int kDustWindow = 64;
+const int kDustLinker = 1;
+
+
 /* local, file scope, structures and variables */
 
 typedef struct DREGION { /* endpoints */
@@ -76,9 +83,9 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
    Int4	nreg;
    
    /* defaults are more-or-less in keeping with original dust */
-   if (level < 2 || level > 64) level = 20;
-   if (windowsize < 8 || windowsize > 64) windowsize = 64;
-   if (linker < 1 || linker > 32) linker = 1;
+   if (level < 2 || level > 64) level = kDustLevel;
+   if (windowsize < 8 || windowsize > 64) windowsize = kDustWindow;
+   if (linker < 1 || linker > 32) linker = kDustLinker;
    
    level *= 100; /* Increase precision of score calculation */
    nreg = 0;

@@ -42,6 +42,12 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_seg.h>
 #include <algo/blast/core/blast_filter.h>
 
+
+/** Declared in blast_def.h. */
+const int kSegWindow = 12;
+const double kSegLocut = 2.2;
+const double kSegHicut = 2.5;
+
 /** Natural log of factorials: 0!, 1!, 2!, 3! */
 double lnfact[] = 
   {
@@ -2215,9 +2221,9 @@ SegParameters* SegParametersNewAa (void)
 
    sparamsp = (SegParameters*) calloc(1, sizeof(SegParameters));
 
-   sparamsp->window = 12;
-   sparamsp->locut = 2.2;
-   sparamsp->hicut = 2.5;
+   sparamsp->window = kSegWindow;
+   sparamsp->locut = kSegLocut;
+   sparamsp->hicut = kSegHicut;
    sparamsp->period = 1;
    sparamsp->hilenmin = 0;
    sparamsp->overlaps = FALSE;
