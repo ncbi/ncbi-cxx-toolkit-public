@@ -1,0 +1,1353 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+                                                                        
+                          
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <title>Object Manager - design document</title>
+                                                                        
+                                                                        
+                 
+  <meta name="author" content="Andrei Gourianov">
+                                                                        
+                  
+  <meta name="description" content="design document">
+</head>
+ <body>
+   
+<div align="Center">  
+<h1>Object Manager<br>
+  </h1>
+  </div>
+   
+<div align="Center"><tt><font>  design document</font></tt><br>
+  </div>
+  <br>
+  <br>
+                        this documents should be considered as a very preliminary 
+    draft,  which,    hopefully,   will have a long history of modifications 
+   and improvements.<br>
+  <br>
+   
+<div align="Left"><small>11/15/01 - created by </small><small><a href="mailto:gouriano@ncbi.nlm.nih.gov">
+                        Andrei Gourianov</a>
+ </small><br>
+ <small>11/19/01 - added Bioseq data structure section</small><small><br>
+ </small><small>11/20/01 - added two tables in Classes section</small><small><br>
+ </small><small>11/21/01 - </small><small>added class descriptions in Objects 
+se</small><small>ction</small><br>
+  </div>
+   
+<hr width="100%" size="2" align="Left"><br>
+   
+<h2>Table of contents.</h2>
+   
+<ol>
+       
+  <li><a href="#Preface">Preface</a>
+    </li>
+       
+  <li><a href="#Requirements">Requirement analysis</a>
+    </li>
+       
+  <li><a href="#Bioseq_data">Bioseq data structure</a>
+      <br>
+    </li>
+       
+  <li><a href="#Use_cases">Use cases</a>
+    </li>
+       
+  <li><a href="#Architecture">System architecture</a>
+           
+    <ul>
+               
+      <li><a href="#Classes">Classes</a>
+        </li>
+               
+      <li><a href="#Objects"> Objects</a>
+        </li>
+           
+    </ul>
+    </li>
+   
+</ol>
+   
+<h2><br>
+  </h2>
+   
+<h2><a name="Preface"></a>
+                        Preface.</h2>
+                           Molecular biology is generating a vast multitude 
+ of  data   referring      to our understanding of the processes which underlie
+   all  living things.     This data is being accumulated and analyzed in
+thousands    of  laboratories     all over the world. Its raw volume  is
+growing at an   astonishing rate.<br>
+  <br>
+                     In these circumstances the problem of storing, searching,
+   retrieving      and   exchanging molecular biology data cannot be underestimated.
+   NCBI   maintains     several databases for storing biomedical information,
+   as well   as <a href="http://www.ncbi.nlm.nih.gov/Database/index.html" target="_blank">
+                    Entrez</a>
+                         - a  comprehensive search and retrieval system.
+While    the   amount    of  information stored   in these databases grows
+at an  exponential    rate,    it becomes more and more   important to optimize,
+ improve our data   retrieval     software tools. Object  Manager is one
+of  such tools specifically   designed     to facilitate data retrieval.<br>
+  <br>
+                    The NCBI databases and software tools are designed around 
+  a  particular       model of biological sequence data. The nature of this 
+  data  is not yet   fully    understood, its fundamental properties and relationships
+   are constantly      being  revised. So, the data model must be very flexible.
+   NCBI accepted      <a href="http://asn1.elibel.tm.fr/" target="_blank">
+           Abstract Syntax    Notation One</a>
+                         (ASN.1) as a formal language to describe <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/INDEX.HTML">
+                     biological sequence data and its associated information</a>
+                     .<br>
+   
+<h2><a name="Requirements"></a>
+                        Requirements analysis</h2>
+  <small><strong>Topics to cover here</strong></small><small><br>
+  </small><small>           Anything one may think of. What is expected from
+    the system? What   problems    should it be able to resolve?</small><small><br>
+  </small><br>
+  <br>
+                       A biological sequence (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/DATAMODL.HTML">
+      Bioseq</a>
+                     ) is a single, continuous molecule of nucleic acid or
+ protein.     It  can   be   anything from a band on a gel to a complete
+chromosome.   It   can  be a  genetic   or physical map. It can contain plenty
+of information,      or  very small amount  of it.  It can contain references
+to other sequences.       Finally, it can change  when  our knowledge about
+it changes.<br>
+  <br>
+                     A number of scientists from all over the world contribute
+   information       about  biological sequences, but much greater is the
+number   of information       retrieval  requests. At present, when one queries
+a  database for a specific         <i>Bioseq</i>   , the reply contains all
+ the data stored. It could  be   small,  but as our  knowledge expands, it
+ becomes larger and larger.  The  reply could  sometimes  contain megabytes
+ of data, or even hundreds of megabytes.   Taking  into account  the large
+ number of scientists (hence a huge number   of data  queries) and limited
+ telecommunication and computer  resources, it  definitely  becomes a problem.
+ Improved data retrieval system  should provide  for partial  data acquisition.
+  In such case only small part  of actual data  would be transmitted.  In
+other  words, the system should  only transmit data  that is really needed,
+ not all  of it at once. At the  same time this technology   should not impose
+  additional  (or too much) restrictions on a client system.   The process,
+ from  a client  point of view, should be as transparent as possible.  When
+ and if  client needs  more information,  it should be transmitted "automatically".<br>
+  <br>
+                     Another requirement is the possibility to work with
+different      data   providers.   The data may come from different databases
+- both  remote    and   local, from  files, from... you name it. The purpose
+of biologist    could  be  to investigate  different combinations of data
+pieces.The system    should  provide  for transparent  merge of differents
+pieces of data, as   well as various combinations  of it.<br>
+  <br>
+                     Different biological sequences can refer to each other.
+  One   example     of  such  reference may be in the form "the sequence
+of   genes   here is the    same  as sequence  of genes there" (what is the
+meaning   of   <i>here</i>   and     <i> there</i>   is a  separate question).
+The  data  retrieval system  should   be able to resolve  such  references
+automatically    answering <strong><em>        what</em></strong>  genes
+ are  actually <i>      here</i> .<br>
+  <br>
+                     Biological sequences can have different <i>revision
+numbers</i>           .  The   system   should be smart enough to understand
+it. If client    asks   for  a sequence   with   a specific revision number,
+only correct   revision   should  be retrieved.   If   there are several
+revisions available   and client   does  not specify which   one  is needed,
+the latest one should   be retrieved.<br>
+   
+<h2><a name="Bioseq_data"></a>
+       Bioseq data structure</h2>
+       The formal description of <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/SDKDOCS/DATAMODL.HTML">
+       Bioseq</a>
+        data structure can be fond on NCBI web site as a series of ASN.1
+specification    files. These ASN.1 specifications are used to generate corresponding
+C++   classes to use them later in client programs. Here is a diagram of
+class  associations.<br>
+  <small>At present it is a table - it should be replaced by diagram later</small><small>
+        on.</small><br>
+  <br>
+   
+<table cellpadding="2" cellspacing="2" border="1" width="100%">
+    <tbody>
+      <tr>
+        <td valign="Top">Bioseq (seq)<br>
+        </td>
+        <td valign="Top">Seq-id (seqloc)<br>
+        </td>
+        <td valign="Top">Object-id (general)<br>
+       Giimport-id (seqloc)<br>
+       Textseq_id (seqloc)<br>
+       Patent-seq-id (seqloc)<br>
+       Dbtag (general)<br>
+       PDB-seq-id (seqloc)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+       Id-pat (biblio)<br>
+       Object-id (general)<br>
+       PDB-mol-id (seqloc)<br>
+       Date (general)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Date-std (general)<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"><br>
+        </td>
+        <td valign="Top">Seq-descr (seq)<br>
+        </td>
+        <td valign="Top">Seqdesc (seq)<br>
+        </td>
+        <td valign="Top">GIBB-mol (seq)<br>
+       GIBB-mod (seq)<br>
+       GIBB-method (seq)<br>
+       Org-ref (seqfeat)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Numbering (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Dbtag (general)<br>
+       PIR-block (seqblock)<br>
+       GB-block (seqblock)<br>
+       Pubdesc (seq)<br>
+        <br>
+        <br>
+       User-object (general)<br>
+        <br>
+        <br>
+        <br>
+       SP-block (seqblock)<br>
+        <br>
+        <br>
+       EMBL-block (seqblock)<br>
+        <br>
+        <br>
+       Date (general)<br>
+       PRF-block (seqblock)<br>
+       PDB-block (seqblock)<br>
+        <br>
+       Heterogen (seq)<br>
+       BioSource (seqfeat)<br>
+        <br>
+       MolInfo (seq)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+       Dbtag (general)<br>
+       OrgName (seqfeat)<br>
+        <br>
+        <br>
+        <br>
+       Num-cont (seq)<br>
+       Num-enum (seq)<br>
+       Num-ref (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Num-real (seq)<br>
+       Object-id (general)<br>
+       Seq-id (seqloc)...<br>
+        <br>
+       Pub-equiv (pub)<br>
+       Numbering (seq)...<br>
+       StringStore (general)<br>
+       Object-id (general)<br>
+       User-field (general)<br>
+        <br>
+        <br>
+       Seq-id (seqloc)...<br>
+       Dbtag (general)<br>
+       Date (general)<br>
+       Date (general)<br>
+       EMBL-xref (seqblock)<br>
+        <br>
+       Date-std (general)<br>
+       PRF-ExtraSrc (seqblock)<br>
+       Date (general)<br>
+       PDB-replace<br>
+        <br>
+       Org-ref (seqfeat)...<br>
+       SubSource (seqfeat)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+       Object-id (general)<br>
+       BinomialOrgName (seqfeat)<br>
+       MultiOrgName (seqfeat)<br>
+       PartialOrgName (seqfeat)<br>
+       OrgMod (seqfeat)<br>
+        <br>
+        <br>
+       Seq-align (seqalign)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Pub (pub)...<br>
+        <br>
+        <br>
+        <br>
+       Object-id (general)<br>
+       User-object (general)<br>
+       User-field (general)<br>
+        <br>
+       Object-id (general)<br>
+       Date-std (general)<br>
+       Date-std (general)<br>
+       EMBL-dbname (seqblock)<br>
+       Object-id (general)<br>
+        <br>
+        <br>
+       Date-std (general)<br>
+       Date (general)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+        <br>
+        <br>
+       OrgName (&lt;=)<br>
+       TaxElem(seqfeat)<br>
+        <br>
+        <br>
+        <br>
+       Score...<br>
+       Dense-diag...<br>
+       Dense-seg...<br>
+       Std-seg...<br>
+       Packed-seg...<br>
+       Seq-align-set...<br>
+       Seq-loc...<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Date-std (general)<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"><br>
+        </td>
+        <td valign="Top">Seq-inst (seq)<br>
+        </td>
+        <td valign="Top">Int-fuzz (general)<br>
+       Seq-data (seq)<br>
+       Seq-ext (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Seq-hist (seq)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+       Seg-ext (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Ref-ext (seq)<br>
+       Map-ext (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Delta-ext (seq)<br>
+        <br>
+        <br>
+       Seq-align (seqalign)<br>
+       Seq-hist-rec (seq)<br>
+        <br>
+       Date (general)...<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+       Seq-loc (seqloc)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Seq-loc (seqloc)...<br>
+       Seq-feat (seqfeat)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Delta-seq (seq)<br>
+        <br>
+        <br>
+        <br>
+       Seq-id (seqloc)...<br>
+       Date (general)...<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+       Seq-id (seqloc)<br>
+       Seq-interval (seqloc)<br>
+        <br>
+        <br>
+       Packed-seqint (seqloc)<br>
+       Seq-point (seqlock)<br>
+        <br>
+        <br>
+       Packed-seqpnt (seqlock)...<br>
+       Seq-loc-mix (seqloc)<br>
+       Seq-bond (seqloc)<br>
+       Feat-id (seqfeat)<br>
+        <br>
+       <br>
+        <br>
+       Feat-id (seqfeat) ...<br>
+       SeqFeatData (seqfeat)...<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+       Seq-loc (seqloc)...<br>
+       Gb-qual (seqfeat)<br>
+       User-object (general)...<br>
+       Pub-set (pub)...<br>
+       SeqFeatXref (seqfeat)<br>
+        <br>
+       Dbtag (general)...<br>
+       Seq-loc (seqloc)...<br>
+       Seq-literal (seq)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+      Na-strand (seqloc)<br>
+      Seq-id (seqloc)<br>
+      Int-fuzz (general)<br>
+       Seq-interval (seqloc)...<br>
+      Na-strand (seqloc)<br>
+      Seq-id (seqloc)<br>
+      Int-fuzz (general)<br>
+        <br>
+      Seq-loc(seqloc)<br>
+      Seq-point (seqloc)...<br>
+      Giimport-id (seqloc)<br>
+      Object-id (general)<br>
+      Dbtag (general)...<br>
+        <br>
+       <br>
+      Gene-ref<br>
+      Org-ref<br>
+      Cdregion<br>
+      Prot-ref<br>
+      RNA-ref<br>
+      Pubdesc<br>
+      Seq-loc<br>
+      Imp-feat<br>
+      Rsite-ref<br>
+      User-object<br>
+      Txinit<br>
+      Numbering<br>
+      Heterogen<br>
+      BioSource<br>
+        <br>
+        <br>
+        <br>
+        <br>
+      Feat-id (seqfeat)...<br>
+      SeqFeatData (seqfeat)...<br>
+        <br>
+        <br>
+      Int-fuzz (general)<br>
+       Seq-data (seq)<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"><br>
+        </td>
+        <td valign="Top">Seq-annot (seq)<br>
+        </td>
+        <td valign="Top">Annot-id (seq)<br>
+        <br>
+      Annot-descr (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+      Seq-feat (seqfeat)...<br>
+      Seq-align (seqalign)<br>
+      Seq-graph (seqres)<br>
+        <br>
+        <br>
+        <br>
+      Seq-id (seqloc)...<br>
+      Seq-loc (seqloc)...<br>
+        <br>
+        </td>
+        <td valign="Top">Object-id (general)<br>
+      Dbtag (general)<br>
+      Annotdesc (seq)<br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+      Seq-loc (seqloc)...<br>
+      Real-graph (seqres)<br>
+      Int-graph (seqres)<br>
+      Byte-graph (seqres)<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+      Pubdesc (seq)<br>
+        <br>
+      User-object (general)...<br>
+      Date (general)...<br>
+      Seq-id (seqloc)...<br>
+      Align-def (seq)<br>
+      Seq-loc (seqloc)...<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+      Pub-equiv (pub)<br>
+      Numbering (seq)...<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+      Pub(pub)...<br>
+        </td>
+      </tr>
+       
+  </tbody>  
+</table>
+   
+<h3>Seq-entry data structure</h3>
+     Bioseq data entries are usually considered as a part of more general 
+structure   - Seq-entry. Seq-entry is either one or a set of Bioseq. This 
+set usually   forms a tree of sequences referring each other. This data structure, 
+and  corresponding C++ class object, is a usual root element of every Bioseq 
+investigation.<br>
+   
+<table cellpadding="2" cellspacing="2" border="1" width="100%">
+    <tbody>
+      <tr>
+        <td valign="Top">Seq-entry (seqset)<br>
+        </td>
+        <td valign="Top">Bioseq (seq)...<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"><br>
+        </td>
+        <td valign="Top">Bioseq-set (seqset)<br>
+        </td>
+        <td valign="Top">Object-id(general)<br>
+     Dbtag(general)...<br>
+     Date(general)...<br>
+     Seq-descr(seq)<br>
+     Seq-entry(seqset) (&lt;=)<br>
+     Seq-annot(seq)...<br>
+        </td>
+      </tr>
+       
+  </tbody>  
+</table>
+  <br>
+  <br>
+  <br>
+   
+<h2><a name="Use_cases"></a>
+                        Use cases</h2>
+  <small><strong>Topics to cover here</strong></small><small><br>
+  </small><small>          Use cases define the way in which a client interacts
+    with the system,    specify  what information is to be exchanged and
+what     is the expected result.</small><small><br>
+  </small><small>           There is only </small><small><b>one</b></small><small>
+         actor per use case!</small><small><br>
+  </small>  
+<ul>
+       
+  <li><small>what are the tasks of the actor?</small></li>
+       
+  <li><small>what information must be created, saved, modified, deleted,
+or simply      read by the actor?</small></li>
+       
+  <li><small>will the actor have to notify the system of any external modifications?</small></li>
+       
+  <li><small>will the system have to notify the actor of internal conditions?</small></li>
+   
+</ul>
+   
+<h3>Define a scope</h3>
+Client creates a Scope, which is to be populated with sequence data later
+on. Being instantiated, Object Manager also creates a <i>global</i> scope
+object - a kind of default one.<br>
+scenario<br>
+Client requests <i>scope</i> creation, <i>object manager</i> creates it and
+stores in its list of <i>scopes</i>.<br>
+<h3>Put existing sequence entries into a scope</h3>
+Having created Seq_entry objects, a client supplies them to the object manager.
+ It is possible to add several entries to the same scope.<br>
+scenario<br>
+Client supplies <i>seq.entry</i> object and possibly a <i>scope</i> to add
+it to. <i>Object manager</i> creates a <i>data source</i> object and puts
+the <i>entry</i> there, it then adds the created <i>data source</i> to the
+current (or specified) <i>scope</i>. <i>Data source</i> indexes <i>entry</i>
+ (thus changing it!) and adds its data to annotation map (?).<br>
+<h3>Load sequence data from an external source</h3>
+Client instructs object manager to load sequence information from an external
+source - local or remote database or file. It is possible to add several
+data loaders to the scope.<br>
+scenario<br>
+Client supplies <i>data loader</i> object and possibly <i>scope</i> to add
+it to. <i>Object manager</i> creates a <i>data source</i> object and attaches
+<i>loader</i> to it, it then adds the created <i>data source</i> to the current
+(or specified) <i>scope</i>.<br>
+<h3>Add annotation to sequence entry</h3>
+Client creates an annotation and attaches it to a sequence entry.<br>
+scenario<br>
+<i>Object manager</i> iterates through the list of <i>scopes</i> asking each
+of them to fulfil the task. As soon as there is one who does it, the iteration
+stops. <i>Scope</i> object iterates through the list of <i>data sources</i>
+ asking each of them to fulfil the task. As soon as there is one who does
+it, the iteration stops. <i>Data source</i> looks for proper <i>entry</i>
+ - to which annotation should be attached. The <i>entry</i> is not touched
+then!(?), instead <i>data source</i> adds information to its internal data
+structures (?)<br>
+<h3>Construct biological sequence (<i>Bioseq</i>) based on sequence location
+(<i>Seq_loc</i>) information</h3>
+Client supplies a Seq_loc object to the <i>object manager</i>. The latter
+creates new Bioseq ...<br>
+scenario<br>
+???<br>
+<h3>Drop top-level sequence entry</h3>
+Delete top-level sequence entry.<br>
+scenario<br>
+<i>Object manager</i> iterates through the list of <i>scopes</i> asking each
+of them to fulfil the task. As soon as there is one who does it, the iteration
+stops.. <i>Scope</i> object iterates through the list of <i>data sources</i>
+ asking each of them to fulfil the task. As soon as there is one who does
+it, the iteration stops. If the corresponding <i>data source</i> becomes
+empty, it is removed from the list maintained by the <i>scope</i>. <i>Data
+source</i> removes <i>seq_entry</i> information and data.<br>
+<i>Data source</i> may contain more than one top-level sequence entry. This
+drops one of them. This also may cause deletion of the <i>data source</i>
+ itself - in case it becomes empty.<br>
+<h3>Retrieve Bioseq top-level sequence entry</h3>
+Client asks <i>scope</i> for top-level seq. entry.<br>
+scenario<br>
+Scope redirects the call to data source.<br>
+<h3>Obtain&nbsp; general description of sequence data</h3>
+location and type only, without providing real data (SeqMap). <br>
+scenario<br>
+The data description is implemented as a CSeqMap object.<br>
+Scope redirects the call to data source. Data source creates or finds proper
+seq.map<br>
+<br>
+<h3>Acquire sequence data</h3>
+real data, in a given coding (seq_vector)<br>
+scenario<br>
+The data description is implemented as CSeq_vector object.<br>
+Scope redirects the call to CSeq_vector constructor.<br>
+<h3>Enumerate Bioseq sequence ids</h3>
+As we know, bioseq contains a set of seq_id.<br>
+scenario<br>
+Just accesses list of seq_id directly.<br>
+<h3>Enumerate bioseq descriptions</h3>
+as CSeq_descr<br>
+scenario<br>
+Scope redirects the call to data source. Data source redirects the call to
+proper iterator constructor.<br>
+<h3>Enumerate bioseq features</h3>
+based on seq location (CSeq_loc) obtain CSeq_feat<br>
+scenario<br>
+Scope redirects the call to proper iterator constructor.<br>
+<h3>Enumerate bioseq alignments</h3>
+based on seq location (CSeq_loc) obtain CSeq_align<br>
+scenario<br>
+Scope redirects the call to proper iterator constructor.<br>
+<br>
+   
+<h2><a name="Architecture"></a>
+                  System architecture</h2>
+  <small><strong>Topics to cover here</strong></small><small><br>
+  </small><small>          Let us restrict ourselves by creating the logical
+    view only, at least    at  this time.</small><small><br>
+  </small>  
+<ul>
+       
+  <li><small>Objects</small></li>
+       
+  <li><small>Classes</small></li>
+       
+  <li><small>Collaborations</small></li>
+       
+  <li><small>Interactions</small></li>
+   
+</ul>
+   
+<h3><a name="Classes"></a>
+      Classes</h3>
+    class diagram (the table is to be replaced by a diagram later on). Classes
+  on the left <b>are derived from</b> class(es) on the right.<br>
+   
+<table cellpadding="2" cellspacing="2" border="1" width="100%">
+    <tbody>
+      <tr>
+        <td>class<br>
+        </td>
+        <td valign="Top">base class<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CObjectManager (objmng.hpp)<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CScope (scopes.hpp)<br>
+        </td>
+        <td valign="Top">CObject<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CDataSource (datasrc.hpp)<br>
+    CSeqMap<br>
+        </td>
+        <td valign="Top">CObject<br>
+    CObject<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CSeq_vector (seqvector.hpp)<br>
+        </td>
+        <td valign="Top">CObject<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CBioseqHandle (om_iter.hpp)<br>
+    CDesc_CI<br>
+    CSeqdesc_CI<br>
+    CAnnot_CI<br>
+    CAnnotTypes_CI<br>
+    CFeat_CI<br>
+    CGraph_CI<br>
+    CAlign_CI<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+        <br>
+        <br>
+        <br>
+    CAnnotTypes_CI<br>
+    CAnnotTypes_CI<br>
+    CAnnotTypes_CI<br>
+        </td>
+      </tr>
+      <tr>
+       <td valign="Top">CSeqIdMapper (annotobj.hpp)<br>
+ CHandleRange<br>
+ CHandleRangeMap<br>
+ CAnnotObject<br>
+       </td>
+       <td valign="Top"><br>
+       <br>
+       <br>
+ CObject<br>
+       </td>
+     </tr>
+     <tr>
+        <td valign="Top">CBlob (loader.hpp)<br>
+    CLoader_I<br>
+    CBlob_I<br>
+    CSeqref<br>
+    CLoader_Base<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+    CLoader_I, CBlob, CObject<br>
+    CObject<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CDataLoader_Base (loader_base.hpp)<br>
+        </td>
+        <td valign="Top">CObject<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CSeq_entry (Seq_entry.hpp)<br>
+        </td>
+        <td valign="Top">CSeq_entry_Base (Seq_entry_.hpp, gen)<br>
+    CSerialUserOp (serialbase.hpp)<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CSeq_loc ( Seq_loc.hpp)<br>
+        </td>
+        <td valign="Top">CSeq_loc_Base (Seq_loc_.hpp, gen)<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CSeq_id (Seq_id.hpp)<br>
+        </td>
+        <td valign="Top">CSeq_id_Base<br>
+    CSerializable<br>
+    CSerialUserOp (serialbase.hpp)<br>
+        </td>
+      </tr>
+       
+  </tbody>  
+</table>
+  <br>
+    Object diagram. Objects on the left <b>use</b> object(s) on the right.<br>
+   
+<table cellpadding="2" cellspacing="2" border="1" width="100%">
+    <tbody>
+      <tr>
+        <td valign="Top">CObjectManager (objmng.hpp)<br>
+        </td>
+        <td valign="Top">CScope<br>
+    CDataLoader_Base<br>
+    CSeqMap<br>
+    ------------------<br>
+    CBioseq<br>
+    CSeq_entry<br>
+    CSeq_loc<br>
+    CSeq_data<br>
+    CInt_fuzz<br>
+    CSeq_annot<br>
+    CDelta_ext<br>
+        </td>
+        <td valign="Top">...<br>
+    ...<br>
+    ...<br>
+    ------------------<br>
+        <br>
+    CSerialUserOp<br>
+    CScope<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CScope (scopes.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    CBioseqHandle<br>
+    CSeqMap<br>
+    CSeq_vector<br>
+    CDesc_CI<br>
+    CFeat_CI<br>
+    CGraph_CI<br>
+     CAlign_CI<br>
+    ------------------<br>
+    CSeq_id (Seq_id.hpp)<br>
+     CSeq_entry (Seq_entry.hpp)<br>
+    CSeq_loc ( Seq_loc.hpp)<br>
+    CSeqFeatData (SeqFeatData.hpp, gen)</td>
+        <td valign="Top"><br>
+        <br>
+    ...<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CSeqMap (datasrc.hpp)<br>
+        </td>
+        <td valign="Top">CSegmentInfo<br>
+    CBioseqHandle<br>
+    CScope<br>
+        </td>
+        <td valign="Top"><br>
+        <br>
+    ...<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CDataLoader_Base (loader_base.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    ------------------<br>
+    CSeq_loc<br>
+    CHandleRangeMap<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CDataSource (datasrc.hpp)<br>
+        </td>
+        <td valign="Top">CSeqMap<br>
+    CBioseqHandle<br>
+    CDesc_CI<br>
+    CAnnot_CI<br>
+    CDataLoader_Base<br>
+    ------------------<br>
+    CHandleRangeMap<br>
+    CBioseq<br>
+    CSeq_entry<br>
+    CSeq_data<br>
+    CInt_fuzz<br>
+    CSeq_annot<br>
+    CSeq_id<br>
+    CSeq_loc<br>
+    CSeq_feat<br>
+    CSeq_graph<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CSeq_vector (seqvector.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    CBioseqHandle<br>
+    CScope<br>
+    ------------------<br>
+    CSeq_data<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CBioseqHandle (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    ------------------<br>
+    CSeq_entry<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top">CDesc_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CBioseqHandle<br>
+    ------------------<br>
+    CSeq_entry<br>
+    CSeq_descr<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"> CSeqdesc_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CDesc_CI<br>
+    ------------------<br>
+    CSeqdesc<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"> CAnnot_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CBioseqHandle<br>
+    CDataSource<br>
+ CAnnotObject<br>
+    CHandleRangeMap<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"> CAnnotTypes_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    CAnnot_CI<br>
+    ------------------<br>
+    CHandleRangeMap<br>
+    CSeq_loc<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"> CFeat_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    ------------------<br>
+    CSeq_loc<br>
+    CSeq_feat<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"> CGraph_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+        <br>
+    CSeq_loc<br>
+    CSeq_graph<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="Top"> CAlign_CI (om_iter.hpp)<br>
+        </td>
+        <td valign="Top">CDataSource<br>
+    ------------------<br>
+     CSeq_loc<br>
+    CSeq_align<br>
+        </td>
+        <td valign="Top"><br>
+        </td>
+      </tr>
+       
+  </tbody>  
+</table>
+  <br>
+   
+<h3><a name="Objects"></a>
+                    Objects </h3>
+  <b>Object  = Identity + State + Behavior</b>.<br>
+  <b>State</b> groups the values of all the attributes of an object at a
+given       time, where an attribute is a piece of information that qualifies
+the   containing    object.<br>
+  <b>Behavior</b> groups all the abilities of an object and describes the 
+actions   and reactions of that object.<br>
+   
+<h4>Object manager</h4>
+   Implemented in <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CObjectManager">
+            CObjectManager</a>
+    .<br>
+         Functionality:<br>
+  1. maintains list of <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CScope">
+        CScope</a>
+         objects, paying special attention to <i>current</i> (default) and
+ <i>global</i> scopes.<br>
+  Object manager, when created, also creates a <i>global</i> scope. Client
+ then may create other scopes making any one of them <i>current</i>, etc.<br>
+   
+<blockquote><code>CScope&amp; CreateScope(void);</code><code></code><br>
+    <code></code><code>  CScope&amp; GetGlobalScope(void);</code><code></code><br>
+    <code></code><code>  CScope&amp; GetDefaultScope(void);</code><code></code><br>
+    <code></code><code>  CScope&amp; SetDefaultScope(CScope&amp; scope);</code><br>
+    </blockquote>
+  2. provides for populating scope with a data.<br>
+  Scope may contain one or a set of somehow related to each other biological
+ sequences. This data may come from already created <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_entry">
+  CSeq_entry</a>
+   objects, or from various data loaders. Data is usually loaded to the current
+ (default) scope, unless  specified otherwise. The following two functions
+ add data to initially unpopulated(?) scope:<br>
+       
+  <blockquote><code>CScope&amp; AddEntry(CSeq_entry&amp; entry, CScope* scope
+ = 0);</code><code></code><br>
+      <code></code><code>CScope&amp; AddLoader(CDataLoader_Base&amp; loader,
+ CScope* scope = 0);</code><code></code></blockquote>
+  Adding information to the scope causes data to be indexed and modified
+somehow  - for the purpose of object manager. This, in particular, means
+that CSeq_entry  provided by the client in AddEntry() function call cannot
+be modified (by  the client) any more. The safe solution would be to create
+a copy of this  data object in object manager. This is not the case <b>only</b>
+ because data  could be huge and it may be too expensive to copy all of them.<br>
+      <br>
+  After some data is added to the scope (and indexed somehow), there is a 
+special procedure to add more. In fact, internal index should be re-created, 
+what else? The following functions are used to add data to non-empty scopes:<br>
+           
+    <blockquote><code>void AttachEntry(const CSeq_entry&amp; parent, CSeq_entry&amp;
+ entry);</code><code></code><br>
+        <code></code><code>void AttachMap(const CSeq_entry&amp; bioseq, CSeqMap&amp;
+ seqmap);</code><code></code><br>
+        <code></code><code>void AttachSeqData(const CSeq_entry&amp; bioseq,
+ CSeq_data&amp; seq, const CInt_fuzz&amp; fuzz);</code><code></code><br>
+        <code></code><code>void AttachAnnot(const CSeq_entry&amp; entry,
+CSeq_annot&amp;  annot);</code><br>
+        </blockquote>
+  There is no reference of scope here: the new CSeq_entry object cannot be
+ top-level one. That is the proper <i>parent</i> object should be found in
+ known scopes automatically.<br>
+  3. Constructs biological sequence (<a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBioseq">
+        CBioseq</a>
+         ) from <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_loc">
+        CSeq_loc</a>
+          object (scopes are not involved here?).<br>
+               
+      <blockquote><code>CBioseq* ConstructBioseq(CSeq_loc&amp; loc);</code><br>
+          </blockquote>
+  States:<br>
+        Behavior:                  
+        <h4>Data scope</h4>
+            Implemented in <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CScope">
+            CScope</a>
+            .<br>
+ Functionality:<br>
+ 1. Translates <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeq_id">
+ CSeq_id</a>
+  into <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBioseqHandle">
+ CBioseqHandle</a>
+ . The latter is used in all other functions.<br>
+         
+        <blockquote><code>virtual CBioseqHandle GetBioseqHandle(const CSeq_id&amp; 
+id);</code><br>
+           </blockquote>
+ 2. Provides all kinds of access functions to stored seq-entry data:<br>
+           
+          <blockquote><i><code>// Get the complete bioseq (as loaded by now)</code></i><br>
+             <code></code><code>virtual const CBioseq&amp; GetBioseq(const 
+CBioseqHandle&amp; handle);</code><code></code><br>
+             <i><code>// Get top level seq-entry for a bioseq</code></i><br>
+             <code></code><code>virtual const CSeq_entry&amp; GetTSE(const 
+CBioseqHandle&amp; handle);</code><code></code><br>
+             <i><code>// Get bioseq core structure</code></i><br>
+             <code></code><code>virtual TBioseqCore GetBioseqCore(const CBioseqHandle&amp; 
+handle);</code><code></code><br>
+             <i><code></code></i><i><code>// Get sequence map. References 
+to the whole bioseqs may have</code></i><i><code></code></i><i><br>
+             </i><i><code>// length of 0 unless GetSequence() has been called 
+for the handle.</code></i><br>
+             <code></code><code>virtual const CSeqMap&amp; GetSeqMap(const 
+CBioseqHandle&amp; handle);</code><code></code><br>
+             <i><code>// Get sequence's title</code></i><br>
+             <code>virtual string GetTitle(const CBioseqHandle&amp; handle,TGetTitleFlags 
+flags=0);</code><br>
+             <i><code>// Get sequence: Iupacna or Iupacaa</code></i><i><code><br>
+             </code></i><code>virtual CSeq_vector GetSequence(const CBioseqHandle&amp; 
+handle,bool plus_strand=true);</code><br>
+             <br>
+             </blockquote>
+ also creates (initializes) the following iterators<br>
+             
+            <blockquote><i><code>// Get iterator to traverse through descriptor 
+sets</code></i><br>
+               <code></code><code>virtual CDesc_CI BeginDescr(const CBioseqHandle&amp; 
+handle);</code><code></code><br>
+               <code></code><code>virtual CFeat_CI BeginFeat(const CSeq_loc&amp; 
+loc,CSeqFeatData::E_Choice feat_choice);</code><code></code><br>
+               <code></code><code>virtual CGraph_CI BeginGraph(const CSeq_loc&amp; 
+loc);</code><code></code><br>
+               <code></code><code>virtual CAlign_CI BeginAlign(const CSeq_loc&amp; 
+loc);</code><br>
+               </blockquote>
+ States:<br>
+        Behavior:<br>
+                             
+              <h4>Data source</h4>
+            Implemented in <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CDataSource">
+            CDataSource</a>
+            .<br>
+ Functionality:<br>
+ 1. Stores indexed data<br>
+               
+              <blockquote><i><code>// Register new Top Level Seq-entry</code></i><br>
+                 <code></code><code>void AddTSE(CSeq_entry&amp; se);</code><code></code><br>
+                 <i><code>// Add new sub-entry to parent</code></i><br>
+                 <code></code><code>bool AttachEntry(const CSeq_entry&amp; 
+parent, CSeq_entry&amp; entry);</code><code></code><br>
+                 <i><code>// Add sequence map to the Bioseq</code></i><br>
+                 <code></code><code>bool AttachMap(const CSeq_entry&amp;
+bioseq, CSeqMap&amp; seqmap);</code><code></code><br>
+                 <i><code>// Add seq-data to a Bioseq</code></i><br>
+                 <code></code><code>bool AttachSeqData(const CSeq_entry&amp; 
+bioseq, CSeq_data&amp; seq,const CInt_fuzz&amp; fuzz);</code><code></code><br>
+                 <i><code>// Add annotations to a Seq-entry</code></i><code></code><br>
+                 <code></code><code>bool AttachAnnot(const CSeq_entry&amp; 
+entry, CSeq_annot&amp; annot);</code><code></code><br>
+                 <i><code>// Get Bioseq handle by Seq-Id</code></i><code></code><br>
+                 <code></code><code>CBioseqHandle GetBioseqHandle(const CSeq_id&amp; 
+id);</code><code></code><br>
+                 <i><code>// Remove TSE from the datasource, update indexes</code></i><br>
+                 <code></code><code>bool DropTSE(const CSeq_entry&amp; tse);</code><br>
+                 </blockquote>
+ 2. Provides data to the scope object, talks  to a data loader when new data 
+is needed. This is a result of "private" interactions between CDataSource 
+and CScope objects. CDataSource itself does not provide any public interface 
+to do this.<br>
+ States:<br>
+         Behavior:<br>
+                 
+                <h4>Sequence map</h4>
+ Implemented in <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CSeqMap">
+ CSeqMap</a>
+ .<br>
+ Functionality<br>
+ 1. describes sequence parts in general - location and type only, without 
+providing any real data<br>
+                               
+                <h4>Data loader</h4>
+            Implemented in <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CDataLoader_Base">
+            CDataLoader_Base</a>
+            .<br>
+ Functionality<br>
+ 1. Loads data from data provider, stores it locally and supplies    to a 
+data source.<br>
+                 
+                <blockquote><i><code>// Specify datasource to send loaded 
+data to.</code></i><br>
+                   <code></code><code>void SetTargetDataSource(CDataSource&amp; 
+data_source);</code><code></code><br>
+                   <i><code></code></i><i><code>// Datasource calls this
+function to request a new piece of data</code></i><i><code></code></i><i><br>
+                   </i><i><code></code></i><i><code>// The data loaded will 
+be sent back to the datasource through</code></i><i><code></code></i><i><br>
+                   </i><i><code>// CDataSource::AppendXXX() methods.</code></i><br>
+                   <code></code><code>virtual bool GetRecords(const CSeq_loc&amp; 
+loc, EChoice choice) = 0;</code><code></code><br>
+                   <i><code>// Request from a datasource using handles and 
+ranges instead of seq-loc</code></i><br>
+                   <code></code><code>virtual bool GetRecords(const CHandleRangeMap&amp; 
+hrmap, EChoice choice)=0;</code><code></code><br>
+                   </blockquote>
+                   <code></code>States:<br>
+         Behavior:<br>
+              <br>
+              <br>
+              <br>
+              <br>
+                                 
+                  </body>
+                  </html>
