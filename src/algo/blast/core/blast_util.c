@@ -182,6 +182,8 @@ Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
 		*number = eBlastTypeRpsBlast;
 	else if (strcasecmp("rpstblastn", program) == 0)
 		*number = eBlastTypeRpsTblastn;
+    else if (strcasecmp("psiblast", program) == 0)
+        *number = eBlastTypePsiBlast;
 
 	return 0;
 }
@@ -214,6 +216,9 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 		case eBlastTypeRpsTblastn:
 			*program = strdup("rpstblastn");
 			break;
+        case eBlastTypePsiBlast:
+            *program = strdup("psiblast");
+            break;
 		default:
 			*program = strdup("unknown");
 			break;
@@ -643,6 +648,7 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
          frame = -1;
    } else if (prog_number == eBlastTypeBlastp   ||
               prog_number == eBlastTypeRpsBlast ||
+              prog_number == eBlastTypePsiBlast ||
               prog_number == eBlastTypeTblastn) {
       /* Query and subject are protein, no frame. */
       frame = 0;
@@ -657,7 +663,7 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
 	  case 3: frame = -1; break;
 	  case 4: frame = -2; break;
 	  case 5: frame = -3; break;
-	  default: abort(); /* should never happen */  break;
+	  default: abort(); break; /* should never happen */
 	  }
    }
    
@@ -670,12 +676,19 @@ Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program)
    Int4 index = 0;
    switch (program) {
    case eBlastTypeBlastn:
-      index = context/NUM_STRANDS; break;
-   case eBlastTypeBlastp: case eBlastTypeTblastn: 
-   case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn:
-      index = context; break;
-   case eBlastTypeBlastx: case eBlastTypeTblastx:
-      index = context/NUM_FRAMES; break;
+      index = context/NUM_STRANDS; 
+      break;
+   case eBlastTypeBlastp: 
+   case eBlastTypeTblastn: 
+   case eBlastTypeRpsBlast: 
+   case eBlastTypePsiBlast:
+   case eBlastTypeRpsTblastn:
+      index = context; 
+      break;
+   case eBlastTypeBlastx: 
+   case eBlastTypeTblastx:
+      index = context/NUM_FRAMES; 
+      break;
    default:
       break;
    }
