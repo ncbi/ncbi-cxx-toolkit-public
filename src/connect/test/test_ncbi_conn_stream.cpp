@@ -111,6 +111,7 @@ int main(void)
         ERR_POST("Error sending data");
         return 1;
     }
+    assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(kBufferSize)));
 
     ios.read(buf2, kBufferSize + 1);
     streamsize buflen = ios.gcount();
@@ -146,6 +147,7 @@ int main(void)
         ERR_POST("Error sending data");
         return 1;
     }
+    assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(2*kBufferSize)));
 
     j = 0;
     buflen = 0;
@@ -199,6 +201,7 @@ int main(void)
         ERR_POST("Error sending data");
         return 1;
     }
+    assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(3*kBufferSize)));
 
     ios.read(buf2, kBufferSize + 1);
     buflen = ios.gcount();
@@ -235,6 +238,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2004/01/14 20:25:36  lavr
+ * Added test of isstream::tellp()
+ *
  * Revision 6.29  2003/11/04 03:28:23  lavr
  * Use explicit streamsize->size_t casts in comparisons
  *
