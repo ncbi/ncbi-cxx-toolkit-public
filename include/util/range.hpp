@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/24 14:56:14  grichenk
+* Fixed Empty() for unsigned intervals
+*
 * Revision 1.5  2002/04/22 20:02:33  grichenk
 * Fixed CombineFrom(), CombineTo(), operator+=()
 *
@@ -95,7 +98,7 @@ public:
         }
     bool Empty(void) const
         {
-            return HaveEmptyBound() || GetTo() < GetFrom();
+            return /*HaveEmptyBound() || */GetTo() < GetFrom();
         }
     bool Regular(void) const
         {
@@ -221,11 +224,11 @@ public:
     // empty range
     static position_type GetEmptyFrom(void)
         {
-            return GetPositionMax();
+            return GetPositionMin();
         }
     static position_type GetEmptyTo(void)
         {
-            return GetPositionMin();
+            return GetPositionMax();
         }
     static position_type GetEmptyLength(void)
         {
