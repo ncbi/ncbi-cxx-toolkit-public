@@ -209,6 +209,13 @@ void CFileCode::UseQuotedForm(bool use)
     m_UseQuotedForm = use;
 }
 
+void CFileCode::CreateFileFolder(const string& fileName) const
+{
+    CDirEntry entry(fileName);
+    CDir  dir(entry.GetDir());
+    dir.CreatePath();
+}
+
 void CFileCode::GenerateCode(void)
 {
     if ( !m_Classes.empty() ) {
@@ -320,6 +327,7 @@ CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out) const
 void CFileCode::GenerateHPP(const string& path, string& fileName) const
 {
     fileName = Path(path, GetBaseHPPName());
+    CreateFileFolder(fileName);
     CDelayedOfstream header(fileName);
     if ( !header ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
@@ -430,6 +438,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
 void CFileCode::GenerateCPP(const string& path, string& fileName) const
 {
     fileName = Path(path, GetBaseCPPName());
+    CreateFileFolder(fileName);
     CDelayedOfstream code(fileName);
     if ( !code ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
@@ -633,6 +642,7 @@ bool CFileCode::WriteUserFile(const string& path, const string& name,
     LoadLines(method, newLines);
 
     fileName = Path(path, name);
+    CreateFileFolder(fileName);
     if ( ModifiedByUser(fileName, newLines) ) {
         // do nothing on user modified files
         return false;
@@ -742,6 +752,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.41  2003/05/29 17:25:34  gouriano
+* added possibility of generation .cvsignore file
+*
 * Revision 1.40  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *

@@ -179,6 +179,8 @@ void CDataTool::Init(void)
                "add module name to generated file names");
     d->AddFlag("orA",
                "combine all -or* prefixes");
+    d->AddFlag("ocvs",
+               "create \".cvsignore\" files");
     d->AddOptionalKey("oR", "rootDirectory",
                       "set \"-o*\" arguments for NCBI directory tree",
                       CArgDescriptions::eString);
@@ -438,6 +440,8 @@ bool CDataTool::GenerateCode(void)
         generator.SetFileNamePrefix(orF.AsString());
     if ( args["orq"] )
         generator.UseQuotedForm(true);
+    if ( args["ocvs"] )
+        generator.CreateCvsignore(true);
     if ( args["ors"] )
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
     if ( args["orm"] )
@@ -523,6 +527,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2003/05/29 17:26:49  gouriano
+* added possibility of generation .cvsignore file
+*
 * Revision 1.65  2003/05/23 19:18:39  gouriano
 * modules of unknown type are assumed to be ASN
 * all modules must have the same type

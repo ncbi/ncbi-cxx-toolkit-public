@@ -102,6 +102,7 @@ public:
     void AddCPPCode(const CNcbiOstrstream& code);
 
     void UseQuotedForm(bool use);
+    void CreateFileFolder(const string& fileName) const;
     void GenerateCode(void);
     void GenerateHPP(const string& path, string& fileName) const;
     void GenerateCPP(const string& path, string& fileName) const;
@@ -150,6 +151,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2003/05/29 17:22:59  gouriano
+* added possibility of generation .cvsignore file
+*
 * Revision 1.14  2002/12/17 16:21:20  gouriano
 * separated class name from the name of the file in which it will be written
 *

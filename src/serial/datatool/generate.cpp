@@ -56,6 +56,7 @@ CCodeGenerator::CCodeGenerator(void)
 	m_MainFiles.SetModuleContainer(this);
 	m_ImportFiles.SetModuleContainer(this); 
     m_UseQuotedForm = false;
+    m_CreateCvsignore = false;
 }
 
 CCodeGenerator::~CCodeGenerator(void)
@@ -75,6 +76,11 @@ string CCodeGenerator::GetFileNamePrefix(void) const
 void CCodeGenerator::UseQuotedForm(bool use)
 {
     m_UseQuotedForm = use;
+}
+
+void CCodeGenerator::CreateCvsignore(bool create)
+{
+    m_CreateCvsignore = create;
 }
 
 void CCodeGenerator::SetFileNamePrefix(const string& prefix)
@@ -288,9 +294,10 @@ void CCodeGenerator::GenerateCode(void)
             }
             names.insert(fname);
         }
-    }    
+    }
 
     // generate output files
+    string outdir_cpp, outdir_hpp;
     list<string> listGenerated, listUntouched;
     ITERATE ( TOutputFiles, filei, m_Files ) {
         CFileCode* code = filei->second.get();
@@ -298,7 +305,15 @@ void CCodeGenerator::GenerateCode(void)
         code->GenerateCode();
         string fileName;
         code->GenerateHPP(m_HPPDir, fileName);
+        if (outdir_hpp.empty()) {
+            CDirEntry entry(fileName);
+            outdir_hpp = entry.GetDir();
+        }
         code->GenerateCPP(m_CPPDir, fileName);
+        if (outdir_cpp.empty()) {
+            CDirEntry entry(fileName);
+            outdir_cpp = entry.GetDir();
+        }
         if (code->GenerateUserHPP(m_HPPDir, fileName)) {
             listGenerated.push_back( fileName);
         } else {
@@ -417,6 +432,76 @@ void CCodeGenerator::GenerateCode(void)
         out.close();
         if ( !out )
             ERR_POST(Fatal << "Error writing file " << fileName);
+    }
+
+    if (m_CreateCvsignore) {
+        string ignoreName(".cvsignore");
+        string extraName(".cvsignore.extra");
+
+        for (int i=0; i<2; ++i) {
+            bool is_cpp = (i==0);
+            bool different_dirs = (outdir_cpp != outdir_hpp);
+            string out_dir(is_cpp ? outdir_cpp : outdir_hpp);
+
+            string ignorePath(Path(out_dir,ignoreName));
+            CNcbiOfstream ignoreFile(ignorePath.c_str(),
+                (different_dirs || is_cpp) ? ios::trunc : ios::app);
+
+            if (ignoreFile.is_open()) {
+
+                if (different_dirs || is_cpp) {
+                    ignoreFile << ignoreName << endl;
+                }
+
+// .cvsignore.extra
+                if (different_dirs || is_cpp) {
+                    string extraPath(Path(out_dir,extraName));
+                    CNcbiIfstream extraFile(extraPath.c_str());
+                    if (extraFile.is_open()) {
+                        char buf[256];
+                        while (extraFile.good()) {
+                            extraFile.getline(buf, sizeof(buf));
+                            string sbuf(NStr::TruncateSpaces(buf));
+                            if (!sbuf.empty()) {
+                                ignoreFile << sbuf << endl;
+                            }
+                        }
+                    }
+                }
+
+// base classes (always generated)
+                ITERATE ( TOutputFiles, filei, m_Files ) {
+                    ignoreFile
+                        << BaseName(filei->second->GetFileBaseName())
+                        << "_." << (is_cpp ? "cpp" : "hpp") << endl;
+                }
+
+// user classes
+                for (list<string>::iterator it = listGenerated.begin();
+                    it != listGenerated.end(); ++it) {
+                    CDirEntry entry(*it);
+                    if (is_cpp == (NStr::CompareNocase(entry.GetExt(),".cpp")==0)) {
+                        ignoreFile << entry.GetName() << endl;
+                    }
+                }
+
+// combining files
+                if ( !m_CombiningFileName.empty() ) {
+                    if (is_cpp) {
+                        ignoreFile << m_CombiningFileName << "__" << "_.cpp" << endl;
+                        ignoreFile << m_CombiningFileName << "__" << ".cpp" << endl;
+                    } else {
+                        ignoreFile << m_CombiningFileName << "__" << ".hpp" << endl;
+                    }
+                }
+
+// file list
+                if ( is_cpp && !m_FileListFileName.empty() ) {
+                    CDirEntry entry(Path(m_FileNamePrefix,m_FileListFileName));
+                    ignoreFile << entry.GetName() << endl;
+                }
+            }
+        }
     }
 
     GenerateClientCode();
@@ -661,6 +746,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2003/05/29 17:25:34  gouriano
+* added possibility of generation .cvsignore file
+*
 * Revision 1.51  2003/04/18 20:40:17  ucko
 * Oops, s/iterate/ITERATE/ in my latest change.
 *

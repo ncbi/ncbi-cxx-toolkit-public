@@ -112,6 +112,7 @@ public:
     const CNcbiRegistry& GetConfig(void) const;
     string GetFileNamePrefix(void) const;
     void UseQuotedForm(bool use);
+    void CreateCvsignore(bool create);
     void SetFileNamePrefix(const string& prefix);
     EFileNamePrefixSource GetFileNamePrefixSource(void) const;
     void SetFileNamePrefixSource(EFileNamePrefixSource source);
@@ -158,6 +159,7 @@ private:
     EFileNamePrefixSource m_FileNamePrefixSource;
     CNamespace m_DefaultNamespace;
     bool m_UseQuotedForm;
+    bool m_CreateCvsignore;
 
     TOutputFiles m_Files;
 };
@@ -168,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/05/29 17:22:59  gouriano
+* added possibility of generation .cvsignore file
+*
 * Revision 1.10  2003/04/08 20:40:08  ucko
 * Get client name(s) from [-]clients rather than hardcoding "client"
 *
