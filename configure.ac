@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.95 2002/06/18 18:38:25 ucko Exp $
+#  $Id: configure.ac,v 1.96 2002/06/19 15:42:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -497,6 +497,12 @@ case "$host_os:$compiler" in
 
  linux*:GCC )
    LDFLAGS="-Wl,-E"
+   ;;
+
+ linux*:ICC )
+   # "incomplete type is not allowed" should be an error, not a warning!
+   CFLAGS="-we70 $CFLAGS"
+   CXXFLAGS="-we70 $CXXFLAGS"
    ;;
 
  linux* | osf*:GCC )

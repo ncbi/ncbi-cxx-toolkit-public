@@ -3148,6 +3148,12 @@ case "$host_os:$compiler" in
    LDFLAGS="-Wl,-E"
    ;;
 
+ linux*:ICC )
+   # "incomplete type is not allowed" should be an error, not a warning!
+   CFLAGS="-we70 $CFLAGS"
+   CXXFLAGS="-we70 $CXXFLAGS"
+   ;;
+
  linux* | osf*:GCC )
    ;;
 
