@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-
+#if 0
 struct PIsExcludedByProjectMakefile
 {
     typedef CProjectItemsTree::TProjects::value_type TValueType;
@@ -152,20 +152,6 @@ private:
 };
 
 
-struct PIsExcludedByRequires
-{
-    typedef CProjectItemsTree::TProjects::value_type TValueType;
-    bool operator() (const TValueType& item) const
-    {
-        const CProjItem& project = item.second;
-        if ( CMsvcPrjProjectContext::IsRequiresOk(project) )
-            return false;
-
-        return true;
-    }
-};
-
-
 template <class T1, class T2, class V> class CCombine
 {
 public:
@@ -181,6 +167,22 @@ private:
     const T1 m_T1;
     const T2 m_T2;
 };
+#endif
+
+struct PIsExcludedByRequires
+{
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
+    {
+        const CProjItem& project = item.second;
+        if ( CMsvcPrjProjectContext::IsRequiresOk(project) )
+            return false;
+
+        return true;
+    }
+};
+
+
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
@@ -273,6 +275,7 @@ int CProjBulderApp::Run(void)
     // MSVC specific part:
     
     // Exclude some projects from build:
+#if 0
     {{
         // Implicit/Exclicit exclude by msvc Makefiles.in.msvc
         // and project .msvc makefiles.
@@ -284,6 +287,7 @@ int CProjBulderApp::Run(void)
                                   logical_combine(p_make_in, p_project_makefile);
         EraseIf(projects_tree.m_Projects, logical_combine);
     }}
+#endif
     {{
         // Project requires are not provided
 
@@ -657,6 +661,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/03/05 18:08:26  gorelenk
+ * Excluded filtering of projects by .msvc makefiles.
+ *
  * Revision 1.29  2004/03/03 22:20:02  gorelenk
  * Added predicate PIsExcludedMakefileIn, class template CCombine,  redesigned
  * projects exclusion inside CProjBulderApp::Run - to support local
