@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/02/15 01:02:17  thiessen
+* ctrl+click keeps edit modes
+*
 * Revision 1.38  2002/02/05 18:53:25  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -529,7 +532,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         // operations for any viewer window
         if ((*viewerWindow)->DoSplitBlock()) {
             if (alignment->SplitBlock(column)) {
-                (*viewerWindow)->SplitBlockOff();
+                if (!controlDown) (*viewerWindow)->SplitBlockOff();
                 UpdateAfterEdit(alignment);
             }
             return false;
@@ -537,7 +540,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 
         if ((*viewerWindow)->DoDeleteBlock()) {
             if (alignment->DeleteBlock(column)) {
-                (*viewerWindow)->DeleteBlockOff();
+                if (!controlDown) (*viewerWindow)->DeleteBlockOff();
                 UpdateAfterEdit(alignment);
             }
             return false;
@@ -549,7 +552,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 
             if (sequenceWindow->DoMarkBlock()) {
                 if (alignment->MarkBlock(column)) {
-                    sequenceWindow->MarkBlockOff();
+                    if (!controlDown) sequenceWindow->MarkBlockOff();
                     GlobalMessenger()->PostRedrawSequenceViewer(sequenceWindow->sequenceViewer);
                 }
                 return false;
@@ -575,6 +578,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                     selectedSlaves[0] = selectedRow->row;
                     sequenceWindow->sequenceViewer->alignmentManager->
                         RealignSlaveSequences(alignment, selectedSlaves);
+                    if (!controlDown) sequenceWindow->RealignRowOff();
                     return false;
                 }
 
@@ -605,7 +609,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                         delete *toDelete;
                         rows.erase(toDelete);
 
-                        sequenceWindow->DeleteRowOff();
+                        if (!controlDown) sequenceWindow->DeleteRowOff();
                         UpdateAfterEdit(alignment);
                         if (molecule && sequenceWindow->AlwaysSyncStructures())
                             GlobalMessenger()->PostRedrawMolecule(molecule);
@@ -644,7 +648,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             // BLAST single
             if (updateWindow->DoBlastSingle()) {
                 updateWindow->updateViewer->BlastUpdate(alignment);
-                updateWindow->BlastSingleOff();
+                if (!controlDown) updateWindow->BlastSingleOff();
                 return false;
             }
 
@@ -653,14 +657,14 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 AlignmentManager::UpdateMap single;
                 single[alignment] = true;
                 updateWindow->updateViewer->alignmentManager->MergeUpdates(single);
-                updateWindow->MergeSingleOff();
+                if (!controlDown) updateWindow->MergeSingleOff();
                 return false;
             }
 
             // delete single
             if (updateWindow->DoDeleteSingle()) {
                 updateWindow->updateViewer->DeleteAlignment(alignment);
-                updateWindow->DeleteSingleOff();
+                if (!controlDown) updateWindow->DeleteSingleOff();
                 return false;
             }
         }
@@ -682,14 +686,14 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
     if (alignment && alignment == GetAlignmentForRow(rowBottom)) {
         if ((*viewerWindow)->DoMergeBlocks()) {
             if (alignment->MergeBlocks(columnLeft, columnRight)) {
-                (*viewerWindow)->MergeBlocksOff();
+                if (!controlDown) (*viewerWindow)->MergeBlocksOff();
                 UpdateAfterEdit(alignment);
             }
             return;
         }
         if ((*viewerWindow)->DoCreateBlock()) {
             if (alignment->CreateBlock(columnLeft, columnRight, justification)) {
-                (*viewerWindow)->CreateBlockOff();
+                if (!controlDown) (*viewerWindow)->CreateBlockOff();
                 UpdateAfterEdit(alignment);
             }
             return;
