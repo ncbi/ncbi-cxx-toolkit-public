@@ -115,7 +115,8 @@ void ValidateRecord(const T& dbf1, unsigned int id)
 
     int idata1 = dbf1.idata;
     unsigned int id_key = dbf1.IdKey;
-    string s = dbf1.str;
+    string s;
+    s = dbf1.str;
     int i21 = dbf1.i2;
 
     assert(s == string(buf));
@@ -1565,6 +1566,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/02/04 19:16:50  kuznets
+ * Fixed compilation bug (Workshop)
+ *
  * Revision 1.35  2004/02/04 17:05:47  kuznets
  * Minor fix (compilation).
  *
