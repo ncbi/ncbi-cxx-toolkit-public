@@ -192,16 +192,16 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
     for (s=bioseq.GetId().begin(); s!=se; s++) {
-        if (s->GetObject().IsGi()) {
-            gi = s->GetObject().GetGi();
-        } else if (s->GetObject().IsPdb()) {
-            pdbID = s->GetObject().GetPdb().GetMol().Get();
-            if (s->GetObject().GetPdb().IsSetChain())
-                pdbChain = s->GetObject().GetPdb().GetChain();
+        if ((*s)->IsGi()) {
+            gi = (*s)->GetGi();
+        } else if ((*s)->IsPdb()) {
+            pdbID = (*s)->GetPdb().GetMol().Get();
+            if ((*s)->GetPdb().IsSetChain())
+                pdbChain = (*s)->GetPdb().GetChain();
             else
                 pdbChain = ' ';
-        } else if (s->GetObject().IsLocal() && s->GetObject().GetLocal().IsStr()) {
-            accession = s->GetObject().GetLocal().GetStr();
+        } else if ((*s)->IsLocal() && (*s)->GetLocal().IsStr()) {
+            accession = (*s)->GetLocal().GetStr();
             // special case where local accession is actually a PDB chain + extra stuff
             if (pdbID.size() == 0 && accession.size() >= 7 &&
                     accession[4] == ' ' && accession[6] == ' ' && isalpha(accession[5])) {
@@ -209,10 +209,16 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
                 pdbChain = accession[5];
                 accession.erase();
             }
-        } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
-            accession = s->GetObject().GetGenbank().GetAccession();
-        } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
-            accession = s->GetObject().GetSwissprot().GetAccession();
+        } else if ((*s)->IsGenbank() && (*s)->GetGenbank().IsSetAccession()) {
+            accession = (*s)->GetGenbank().GetAccession();
+        } else if ((*s)->IsSwissprot() && (*s)->GetSwissprot().IsSetAccession()) {
+            accession = (*s)->GetSwissprot().GetAccession();
+        } else if ((*s)->IsOther() && (*s)->GetOther().IsSetAccession()) {
+            accession = (*s)->GetOther().GetAccession();
+        } else if ((*s)->IsEmbl() && (*s)->GetEmbl().IsSetAccession()) {
+            accession = (*s)->GetEmbl().GetAccession();
+        } else if ((*s)->IsDdbj() && (*s)->GetDdbj().IsSetAccession()) {
+            accession = (*s)->GetDdbj().GetAccession();
         }
     }
     if (gi == MoleculeIdentifier::VALUE_NOT_SET && pdbID.size() == 0 && accession.size() == 0) {
@@ -335,10 +341,30 @@ CSeq_id * Sequence::CreateSeqId(void) const
 
 void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
 {
-    // copy first id from asn data, if present
     sid->Reset();
+    CBioseq::TId::const_iterator i, ie = bioseqASN->GetId().end();
+
+    // use pdb id if present
+    for (i=bioseqASN->GetId().begin(); i!=ie; i++) {
+        if ((*i)->IsPdb()) {
+            sid->Assign(**i);
+            return;
+        }
+    }
+
+    // use gi if present
+    for (i=bioseqASN->GetId().begin(); i!=ie; i++) {
+        if ((*i)->IsGi()) {
+            sid->Assign(**i);
+            return;
+        }
+    }
+
+    // otherwise, just use the first one
     if (bioseqASN->GetId().size() > 0)
         sid->Assign(bioseqASN->GetId().front().GetObject());
+    else
+        ERRORMSG("Sequence::FillOutSeqId() - can't do Seq-id on sequence " << identifier->ToString());
 
     // dangerous to create new Seq-id's...
 //    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
@@ -350,9 +376,6 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
 //        CObject_id *oid = new CObject_id();
 //        oid->SetStr(identifier->accession);
 //        sid->SetLocal(*oid);
-
-    else
-        ERRORMSG("Sequence::FillOutSeqId() - can't do Seq-id on sequence " << identifier->ToString());
 }
 
 void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
@@ -592,6 +615,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/09/03 18:14:01  thiessen
+* hopefully fix Seq-id issues
+*
 * Revision 1.59  2003/08/30 14:01:15  thiessen
 * use existing CSeq_id instead of creating new one
 *

@@ -266,6 +266,15 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
     if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession())
         return (sid.GetSwissprot().GetAccession() == accession);
 
+    if (sid.IsOther() && sid.GetOther().IsSetAccession())
+        return (sid.GetOther().GetAccession() == accession);
+
+    if (sid.IsEmbl() && sid.GetEmbl().IsSetAccession())
+        return (sid.GetEmbl().GetAccession() == accession);
+
+    if (sid.IsDdbj() && sid.GetDdbj().IsSetAccession())
+        return (sid.GetDdbj().GetAccession() == accession);
+
     ERRORMSG("MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
     return false;
 }
@@ -310,6 +319,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/09/03 18:14:01  thiessen
+* hopefully fix Seq-id issues
+*
 * Revision 1.8  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
