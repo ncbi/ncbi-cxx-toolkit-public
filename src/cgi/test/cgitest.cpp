@@ -31,6 +31,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/06/26 16:35:25  vakatov
+* Test for CCgiCookies::Add(const string&), which is now maimed to
+* workaround MS IE bug
+* (it sent empty cookies w/o "=" in versions prior to 5.5)
+*
 * Revision 1.7  2000/02/01 22:19:58  vakatov
 * CCgiRequest::GetRandomProperty() -- allow to retrieve value of
 * properties whose names are not prefixed by "HTTP_" (optional).
@@ -92,7 +97,7 @@ static void TestCgi_Cookies(void)
     CCgiCookies cookies("coo1=kie1BAD1;coo2=kie2_ValidPath; ");
     cookies.Add("  coo1=kie1BAD2;CooT=KieT_ExpTime  ");
 
-    string str = "  Coo11=Kie11_OK; Coo2=Kie2BAD;  coo1=Kie1_OK; Coo6=kie6";
+    string str = "eee;  Coo11=Kie11_OK; Coo2=Kie2BAD;  uuu; coo1=Kie1_OK; Coo6=kie6; iii";
     cookies.Add(str);
     cookies.Add("RemoveThisCookie", "BAD");
     cookies.Add(str);
