@@ -173,6 +173,10 @@ int CTestNetScheduleClient::Run(void)
                 break;
             } else 
             if (status != CNetScheduleClient::ePending) {
+                if (status == CNetScheduleClient::eJobNotFound) {
+                    NcbiCerr << "Job lost:" << jk << NcbiEndl;
+                }
+cerr << jk << endl;
                 jobs.erase(it);
                 ++cnt;
                 break;                
@@ -225,6 +229,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/28 12:22:58  kuznets
+ * Cosmetics
+ *
  * Revision 1.4  2005/02/14 17:31:08  kuznets
  * Test data integrity checks
  *

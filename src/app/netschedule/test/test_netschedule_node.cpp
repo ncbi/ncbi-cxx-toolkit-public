@@ -105,6 +105,10 @@ int CTestNetScheduleNode::Run(void)
     int       no_jobs_counter = 0;
     unsigned  jobs_done = 0;
 
+    int       node_status; 
+    bool      first_try = true;
+
+
     set<string> jobs_processed;
 
     // The main job processing loop, polls the 
@@ -119,10 +123,19 @@ int CTestNetScheduleNode::Run(void)
     // jobs if queue reports there are no more jobs: worker node
     // should take a brake and do not poll for a while
     //
+
     while (1) {
         job_exists = cl.GetJob(&job_key, &input);
-
         if (job_exists) {
+            if (first_try) {
+                NcbiCout << "\nProcessing." << NcbiEndl;
+                node_status = 0; first_try = false;
+            } else 
+            if (node_status != 0) {
+                NcbiCout << "\nProcessing." << NcbiEndl;
+                node_status = 0;
+            }
+//            NcbiCout << job_key << NcbiEndl;
             string expected_input = "Hello " + queue_name;
             if (expected_input != input) {
                 ERR_POST("Unexpected input: " + input);
@@ -143,11 +156,20 @@ int CTestNetScheduleNode::Run(void)
             no_jobs_counter = 0;
             ++jobs_done;
 
-            if (jobs_done % 1000 == 0) {
-                NcbiCout << "." << flush;
+            if (jobs_done % 50 == 0) {
+                NcbiCout << "*" << flush;
             }
 
         } else {
+            if (first_try) {
+                NcbiCout << "\nWaiting." << NcbiEndl;
+                node_status = 1; first_try = false;
+            } else 
+            if (node_status != 1) {
+                NcbiCout << "\nWaiting." << NcbiEndl;
+                node_status = 1;
+            }
+
             // when there are no more jobs just wait a bit
             // sleep increases progressively if queue reports
             // that it got no more jobs for the node
@@ -160,6 +182,7 @@ int CTestNetScheduleNode::Run(void)
             SleepMilliSec(delay);
 
             if (++no_jobs_counter > 100) { // no new jobs coming
+                NcbiCout << "\nNo new jobs arriving. Processing closed." << NcbiEndl;
                 break;
             }
         }
@@ -181,6 +204,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/28 12:22:40  kuznets
+ * Cosmetics
+ *
  * Revision 1.4  2005/02/14 17:31:08  kuznets
  * Test data integrity checks
  *
