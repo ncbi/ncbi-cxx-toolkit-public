@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2002/03/19 22:13:58  lavr
+ * Do not use home-made ANSI-extensions if the platform provides
+ *
  * Revision 6.35  2002/03/11 21:59:00  lavr
  * Support for changes in ncbi_server_info.h: DNS server type added as
  * well as support for MIME encoding in server specifications
@@ -146,8 +149,11 @@
  * ==========================================================================
  */
 
+#include "ncbi_config.h"
 #include "ncbi_server_infop.h"
-#include <connect/ncbi_ansi_ext.h>
+#if !defined(HAVE_STRCASECMP) || !defined(HAVE_STRDUP)
+#  include <connect/ncbi_ansi_ext.h>
+#endif
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_socket.h>
 #include <assert.h>
@@ -388,6 +394,8 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                 }
                 break;
             case 'P':
+                if ((type & fSERV_Dns) != 0)
+                    break;
                 if (!priv && sscanf(str, "=%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->locl |=  0x10;/*true in high nibble*/
