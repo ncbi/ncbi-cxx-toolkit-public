@@ -757,6 +757,7 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject, BlastHSPPtr hsp,
 
 /** Compute gapped alignment with traceback for all HSPs from a single
  * query/subject sequence pair.
+ * @param program_number Type of BLAST program [in]
  * @param hsp_list List of HSPs [in]
  * @param query_blk The query sequence [in]
  * @param subject_blk The subject sequence [in]
@@ -768,7 +769,7 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject, BlastHSPPtr hsp,
  * @param hit_params Hit saving parameters [in]
  */
 static Int2
-BlastHSPListGetTraceback(BlastHSPListPtr hsp_list, 
+BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list, 
    BLAST_SequenceBlkPtr query_blk, BLAST_SequenceBlkPtr subject_blk, 
    BlastQueryInfoPtr query_info,
    BlastGapAlignStructPtr gap_align, BLAST_ScoreBlkPtr sbp, 
@@ -792,11 +793,10 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
    FloatHi scalingFactor = 1.0;
    Int4 new_hspcnt = 0;
    Boolean is_ooframe = score_options->is_ooframe;
-   Uint1 program = gap_align->program;
    Int4 context_offset;
    Boolean translate_subject = 
-      (gap_align->program == blast_type_tblastn ||
-       gap_align->program == blast_type_psitblastn);   
+      (program_number == blast_type_tblastn ||
+       program_number == blast_type_psitblastn);   
    Uint1Ptr PNTR translated_sequence = NULL, PNTR translated_sequence_orig;
    Int4Ptr translated_length = 0, translated_length_orig;
    Uint1Ptr nucl_sequence = NULL, nucl_sequence_rev = NULL;
@@ -984,16 +984,17 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                   hsp->gap_info->original_length1 = query_length;
                   hsp->gap_info->original_length2 = subject_blk->length;
                }
-               if (program == blast_type_blastx)
+               if (program_number == blast_type_blastx)
                   hsp->gap_info->translate1 = TRUE;
-               if (program == blast_type_tblastn)
+               if (program_number == blast_type_tblastn)
                   hsp->gap_info->translate2 = TRUE;
             }
 
             keep = TRUE;
-            if (program == blast_type_blastp ||
-                program == blast_type_blastn) {
-               if (hit_options->is_gapped && program != blast_type_blastn)
+            if (program_number == blast_type_blastp ||
+                program_number == blast_type_blastn) {
+               if (hit_options->is_gapped && 
+                   program_number != blast_type_blastn)
                   kbp = sbp->kbp_gap;
                else
                   kbp = sbp->kbp;
@@ -1022,8 +1023,8 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             /* only one alignment considered for blast[np]. */
             /* This may be changed by LinkHsps for blastx or tblastn. */
             hsp->num = 1;
-            if ((program == blast_type_tblastn ||
-                 program == blast_type_psitblastn) && 
+            if ((program_number == blast_type_tblastn ||
+                 program_number == blast_type_psitblastn) && 
                 hit_options->longest_intron > 0) {
                hsp->evalue = 
                   BlastKarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
@@ -1075,16 +1076,16 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
     
     /* Make up fake hitlist, relink and rereap. */
 
-    if (program == blast_type_blastx ||
-        program == blast_type_tblastn ||
-        program == blast_type_psitblastn) {
+    if (program_number == blast_type_blastx ||
+        program_number == blast_type_tblastn ||
+        program_number == blast_type_psitblastn) {
         hsp_list->hspcnt = HspArrayPurge(hsp_array, hsp_list->hspcnt, FALSE);
         
         if (hit_options->do_sum_stats == TRUE) {
-           BlastLinkHsps(program, hsp_list, query_info, subject_blk, sbp, 
-                         hit_params);
+           BlastLinkHsps(program_number, hsp_list, query_info, subject_blk,
+                         sbp, hit_params);
         } else {
-           BLAST_GetNonSumStatsEvalue(program, query_info, hsp_list, 
+           BLAST_GetNonSumStatsEvalue(program_number, query_info, hsp_list, 
                                       hit_options, sbp);
         }
         
@@ -1109,39 +1110,11 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
     return 0;
 }
 
-Int2 BLAST_ComputeTraceback(BlastResultsPtr results, 
-        BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-        ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
-        BlastGapAlignStructPtr gap_align,
-        BlastScoringOptionsPtr score_options,
-        BlastExtensionParametersPtr ext_params,
-        BlastHitSavingParametersPtr hit_params)
+static Uint1 GetTracebackEncoding(Uint1 program_number) 
 {
-   Int2 status = 0;
-   Int4 query_index, subject_index;
-   BlastHitListPtr hit_list;
-   BlastHSPListPtr hsp_list;
-   BLAST_ScoreBlkPtr sbp;
-   Uint1 encoding=ERROR_ENCODING;
-   Boolean db_is_na;
-   
-   if (!results || !query_info || (!rdfp && !subject)) {
-      return 0;
-   }
-   
-   db_is_na = (gap_align->program != blast_type_blastp && 
-               gap_align->program != blast_type_blastx);
+   Uint1 encoding;
 
-   /* Set the raw X-dropoff value for the final gapped extension with 
-      traceback */
-   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
-   /* For traceback, dynamic programming structure will be allocated on
-      the fly, proportionally to the subject length */
-   gap_align->dyn_prog = MemFree(gap_align->dyn_prog);
-
-   sbp = gap_align->sbp;
-
-   switch (gap_align->program) {
+   switch (program_number) {
    case blast_type_blastn:
       encoding = BLASTNA_ENCODING;
       break;
@@ -1158,18 +1131,44 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
       encoding = NCBI4NA_ENCODING;
       break;
    default:
+      encoding = ERROR_ENCODING;
       break;
    }
+   return encoding;
+}
 
-   if (rdfp) {
-      /* Allocate subject sequence block once */
-      subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
-   } else if (db_is_na) {
-      /* Two sequences case: free the compressed sequence */
-      MemFree(subject->sequence);
-      subject->sequence = subject->sequence_start + 1;
-      subject->sequence_allocated = FALSE;
+Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results, 
+        BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
+        ReadDBFILEPtr rdfp, BlastGapAlignStructPtr gap_align,
+        BlastScoringOptionsPtr score_options,
+        BlastExtensionParametersPtr ext_params,
+        BlastHitSavingParametersPtr hit_params)
+{
+   Int2 status = 0;
+   Int4 query_index, subject_index;
+   BlastHitListPtr hit_list;
+   BlastHSPListPtr hsp_list;
+   BLAST_ScoreBlkPtr sbp;
+   Uint1 encoding;
+   BLAST_SequenceBlkPtr subject;
+   
+   if (!results || !query_info || !rdfp) {
+      return 0;
    }
+   
+   /* Set the raw X-dropoff value for the final gapped extension with 
+      traceback */
+   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+   /* For traceback, dynamic programming structure will be allocated on
+      the fly, proportionally to the subject length */
+   gap_align->dyn_prog = MemFree(gap_align->dyn_prog);
+
+   sbp = gap_align->sbp;
+   
+   encoding = GetTracebackEncoding(program_number);
+
+   /* Allocate subject sequence block once */
+   subject = (BLAST_SequenceBlkPtr) MemNew(sizeof(BLAST_SequenceBlk));
 
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
       hit_list = results->hitlist_array[query_index];
@@ -1183,27 +1182,84 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
             continue;
 
          if (!hsp_list->traceback_done) {
-            if (rdfp) {
-               MakeBlastSequenceBlk(rdfp, &subject, hsp_list->oid, 
-                                    encoding);
-            }
+            MakeBlastSequenceBlk(rdfp, &subject, hsp_list->oid, 
+                                 encoding);
 
-            BlastHSPListGetTraceback(hsp_list, query, subject, query_info, 
-               gap_align, sbp, score_options, hit_params);
+            BlastHSPListGetTraceback(program_number, hsp_list, query, 
+               subject, query_info, gap_align, sbp, score_options, 
+               hit_params);
 
-            if (rdfp)
-               BlastSequenceBlkClean(subject);
+            BlastSequenceBlkClean(subject);
          }
       }
    }
 
-   if (rdfp) {
-      subject = MemFree(subject);
-   }
+   subject = MemFree(subject);
 
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed */
    BLAST_SortResults(results);
+
+   return status;
+}
+
+Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
+        BlastResultsPtr results, 
+        BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
+        BLAST_SequenceBlkPtr subject, 
+        BlastGapAlignStructPtr gap_align,
+        BlastScoringOptionsPtr score_options,
+        BlastExtensionParametersPtr ext_params,
+        BlastHitSavingParametersPtr hit_params)
+{
+   Int2 status = 0;
+   Int4 query_index;
+   BlastHitListPtr hit_list;
+   BlastHSPListPtr hsp_list;
+   BLAST_ScoreBlkPtr sbp;
+   Uint1 encoding=ERROR_ENCODING;
+   Boolean db_is_na;
+   
+   if (!results || !query_info || !subject) {
+      return 0;
+   }
+   
+   db_is_na = (program_number != blast_type_blastp && 
+               program_number != blast_type_blastx);
+
+   /* Set the raw X-dropoff value for the final gapped extension with 
+      traceback */
+   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+   /* For traceback, dynamic programming structure will be allocated on
+      the fly, proportionally to the subject length */
+   gap_align->dyn_prog = MemFree(gap_align->dyn_prog);
+
+   sbp = gap_align->sbp;
+
+   encoding = GetTracebackEncoding(program_number);
+
+   if (db_is_na) {
+      /* Two sequences case: free the compressed sequence */
+      MemFree(subject->sequence);
+      subject->sequence = subject->sequence_start + 1;
+      subject->sequence_allocated = FALSE;
+   }
+
+   for (query_index = 0; query_index < results->num_queries; ++query_index) {
+      hit_list = results->hitlist_array[query_index];
+
+      if (!hit_list)
+         continue;
+      hsp_list = *hit_list->hsplist_array;
+      if (!hsp_list)
+         continue;
+
+      if (!hsp_list->traceback_done) {
+         BlastHSPListGetTraceback(program_number, hsp_list, query, subject, 
+            query_info, gap_align, sbp, score_options, hit_params);
+
+      }
+   }
 
    return status;
 }
