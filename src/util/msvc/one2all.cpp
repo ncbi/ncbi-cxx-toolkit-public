@@ -565,11 +565,11 @@ void CMainApplication::ProcessFile(const string& file_name)
         LOG_POST(file_name << ":  " << cfgs);
 
         // Replace original project file (backup kept in .bak).
-        string file_backup =  file_name + ".bak";
         CTime ftime;
         CFile(file_name).GetTime(&ftime);
-        CFile(file_backup).Remove();
         if ( m_CreateBackup ) {
+            string file_backup =  file_name + ".bak";
+            CFile(file_backup).Remove();
             CFile(file_name).Rename(file_backup);
         } else {
             CFile(file_name).Remove();
@@ -949,6 +949,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/02 17:59:13  ivanov
+ * one2all.cpp
+ *
  * Revision 1.7  2003/11/28 16:53:23  ivanov
  * Keep modification time for conveted file
  *
