@@ -376,7 +376,7 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
 
 
 Int2 
-BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, BlastScoreBlk* *sbpp, Blast_Message* *blast_message)
+BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, BlastScoreBlk* *sbpp, double scale_factor, Blast_Message* *blast_message)
 {
     BlastScoreBlk* sbp;
     Int2 status=0;      /* return value. */
@@ -394,6 +394,7 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
        return 1;
 
     *sbpp = sbp;
+    sbp->scale_factor = scale_factor;
 
     status = BlastScoreBlkMatrixInit(program_number, scoring_options, sbp);
     if (status != 0)
@@ -470,8 +471,11 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                      const BlastHitSavingOptions * hit_options,
                      BLAST_SequenceBlk * query_blk,
                      BlastQueryInfo * query_info,
-                     BlastSeqLoc ** lookup_segments, BlastMaskLoc * *filter_out,
-                     BlastScoreBlk * *sbpp, Blast_Message * *blast_message)
+                     double scale_factor,
+                     BlastSeqLoc ** lookup_segments, 
+                     BlastMaskLoc * *filter_out,
+                     BlastScoreBlk * *sbpp, 
+                     Blast_Message * *blast_message)
 {
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Int2 status = 0;            /* return value */
@@ -508,7 +512,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
 
 
     if ((status=BlastSetup_GetScoreBlock(query_blk, query_info, scoring_options, program_number, 
-           hit_options->phi_align, sbpp, blast_message)) > 0)
+           hit_options->phi_align, sbpp, scale_factor, blast_message)) > 0)
         return status;
 
     return 0;
@@ -624,6 +628,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
                     const BlastHitSavingOptions* hit_options,
                     BlastQueryInfo* query_info, 
                     BlastScoreBlk* sbp, 
+                    BlastScoringParameters** score_params,
                     BlastExtensionParameters** ext_params,
                     BlastHitSavingParameters** hit_params,
                     BlastEffectiveLengthsParameters** eff_len_params,
@@ -652,6 +657,8 @@ BLAST_GapAlignSetUp(Uint1 program_number,
                     *eff_len_params, sbp, query_info)) != 0)
       return status;
 
+   BlastScoringParametersNew(scoring_options, sbp, score_params);
+
    BlastExtensionParametersNew(program_number, ext_options, sbp, 
                                query_info, ext_params);
 
@@ -662,7 +669,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
       maximal subject sequence length */
    max_subject_length = BLASTSeqSrcGetMaxSeqLen(seq_src);
 
-   if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 
+   if ((status = BLAST_GapAlignStructNew(*score_params, *ext_params, 
                     max_subject_length, query_info->max_length, sbp, 
                     gap_align)) != 0) {
       return status;
@@ -688,7 +695,8 @@ Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
       return status;
    /* Update cutoff scores in hit saving parameters */
    BlastHitSavingParametersUpdate(program_number, ext_params,
-                                  sbp, query_info, hit_params);
+                                  sbp, query_info, 
+                                  hit_params);
    
    if (word_params) {
       /* Update cutoff scores in initial word parameters */
