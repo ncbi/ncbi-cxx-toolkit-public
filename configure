@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS SQLITE_INCLUDE SQLITE_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS SQLITE_INCLUDE SQLITE_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -964,14 +964,6 @@ if test "$ac_init_help" = "recursive"; then
   for ac_dir in : $ac_subdirs_all; do test "x$ac_dir" = x: && continue
     test -d $ac_dir || continue
     #ac_builddir=. # Useless!
-PATH=$PATH:/usr/sbin:/sbin
-export PATH
-if amq -w >/dev/null 2>&1; then
-   smart_pwd='amq -w'
-else
-   smart_pwd='pwd'
-fi
-
 if test -n "$ac_file_in"; then
    ac_dir_in=`(dirname "$ac_file_in") 2>/dev/null ||
 $as_expr X"$ac_file_in" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
@@ -4650,13 +4642,68 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
 #### Try to find a version of pwd that yields /net paths.
-PATH=$PATH:/usr/sbin:/sbin
-export PATH
-if amq -w >/dev/null 2>&1; then
-   smart_pwd='amq -w'
+# Extract the first word of "amq", so it can be a program name with args.
+set dummy amq; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_AMQ+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-   smart_pwd='pwd'
+  case $AMQ in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_AMQ="$AMQ" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PATH:/usr/sbin:/sbin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_AMQ="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
 fi
+AMQ=$ac_cv_path_AMQ
+
+if test -n "$AMQ"; then
+  echo "$as_me:$LINENO: result: $AMQ" >&5
+echo "${ECHO_T}$AMQ" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+case "$AMQ" in
+   */amq)
+      echo "$as_me:$LINENO: checking whether $AMQ -w works" >&5
+echo $ECHO_N "checking whether $AMQ -w works... $ECHO_C" >&6
+if test "${ncbi_cv_prog_amq_w+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if $AMQ -w >/dev/null 2>&1; then
+          ncbi_cv_prog_amq_w=yes
+       else
+          ncbi_cv_prog_amq_w=no
+       fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_amq_w" >&5
+echo "${ECHO_T}$ncbi_cv_prog_amq_w" >&6
+      if test "$ncbi_cv_prog_amq_w" = yes; then
+         smart_pwd="$AMQ -w"
+      else
+         smart_pwd=pwd
+      fi
+   ;;
+esac
 
 #### Make "build_root" absolute
 case "${build_root}" in
@@ -19652,24 +19699,25 @@ cat >>$CONFIG_STATUS <<_ACEOF
 #
 
 
-SAVE_status_dir='$status_dir'
-SAVE_builddir='$builddir'
-SAVE_build_root='$build_root'
-SAVE_x_configurables='$x_configurables'
-SAVE_ncbiconf='$ncbiconf'
-SAVE_CFLAGS='$CFLAGS'
-SAVE_CXXFLAGS='$CXXFLAGS'
-SAVE_CPPFLAGS='$CPPFLAGS'
-SAVE_LDFLAGS='$LDFLAGS'
-SAVE_LIB_OR_DLL='$LIB_OR_DLL'
-SAVE_with_dll='$with_dll'
-SAVE_WithFeatures='$WithFeatures'
-SAVE_WithPackages='$WithPackages'
-SAVE_WithoutPackages='$WithoutPackages'
-SAVE_WithProjects='$WithProjects $OPT_GROUPS'
-SAVE_WithoutProjects='$WithoutProjects'
-SAVE_with_extra_action='$with_extra_action'
-SAVE_with_projects='$with_projects'
+status_dir='$status_dir'
+builddir='$builddir'
+build_root='$build_root'
+x_configurables='$x_configurables'
+ncbiconf='$ncbiconf'
+CFLAGS='$CFLAGS'
+CXXFLAGS='$CXXFLAGS'
+CPPFLAGS='$CPPFLAGS'
+LDFLAGS='$LDFLAGS'
+LIB_OR_DLL='$LIB_OR_DLL'
+with_dll='$with_dll'
+WithFeatures='$WithFeatures'
+WithPackages='$WithPackages'
+WithoutPackages='$WithoutPackages'
+WithProjects='$WithProjects $OPT_GROUPS'
+WithoutProjects='$WithoutProjects'
+with_extra_action='$with_extra_action'
+with_projects='$with_projects'
+smart_pwd='$smart_pwd'
 
 
 _ACEOF
@@ -19802,6 +19850,7 @@ s,@LORDER@,$LORDER,;t t
 s,@TSORT@,$TSORT,;t t
 s,@CCACHE@,$CCACHE,;t t
 s,@TAIL@,$TAIL,;t t
+s,@AMQ@,$AMQ,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@FTDS8_INCLUDE@,$FTDS8_INCLUDE,;t t
@@ -20071,14 +20120,6 @@ echo "$as_me: error: cannot create directory \"$ac_dir\"" >&2;}
    { (exit 1); exit 1; }; }; }
 
   #ac_builddir=. # Useless!
-PATH=$PATH:/usr/sbin:/sbin
-export PATH
-if amq -w >/dev/null 2>&1; then
-   smart_pwd='amq -w'
-else
-   smart_pwd='pwd'
-fi
-
 if test -n "$ac_file_in"; then
    ac_dir_in=`(dirname "$ac_file_in") 2>/dev/null ||
 $as_expr X"$ac_file_in" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
@@ -20448,14 +20489,6 @@ echo X"$ac_dest" |
   	  /^X\(\/\).*/{ s//\1/; q; }
   	  s/.*/./; q'`
   #ac_builddir=. # Useless!
-PATH=$PATH:/usr/sbin:/sbin
-export PATH
-if amq -w >/dev/null 2>&1; then
-   smart_pwd='amq -w'
-else
-   smart_pwd='pwd'
-fi
-
 if test -n "$ac_file_in"; then
    ac_dir_in=`(dirname "$ac_file_in") 2>/dev/null ||
 $as_expr X"$ac_file_in" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
@@ -20509,25 +20542,6 @@ ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 echo "$as_me: executing $ac_dest commands" >&6;}
   case $ac_dest in
     default )
-status_dir="$SAVE_status_dir"
-builddir="$SAVE_builddir"
-build_root="$SAVE_build_root"
-x_configurables="$SAVE_x_configurables"
-ncbiconf="$SAVE_ncbiconf"
-CFLAGS="$SAVE_CFLAGS"
-CXXFLAGS="$SAVE_CXXFLAGS"
-CPPFLAGS="$SAVE_CPPFLAGS"
-LDFLAGS="$SAVE_LDFLAGS"
-LIB_OR_DLL="$SAVE_LIB_OR_DLL"
-with_dll="$SAVE_with_dll"
-WithFeatures="$SAVE_WithFeatures"
-WithPackages="$SAVE_WithPackages"
-WithoutPackages="$SAVE_WithoutPackages"
-WithProjects="$SAVE_WithProjects"
-WithoutProjects="$SAVE_WithoutProjects"
-with_extra_action="$SAVE_with_extra_action"
-with_projects="$SAVE_with_projects"
-
 find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
 done

@@ -4,15 +4,6 @@
 # /net paths.)
 m4_define([_AC_SRCPATHS],
 [#ac_builddir=. # Useless!
-dnl Try to find a version of pwd that yields /net paths.
-PATH=$PATH:/usr/sbin:/sbin
-export PATH
-if amq -w >/dev/null 2>&1; then
-   smart_pwd='amq -w'
-else
-   smart_pwd='pwd'
-fi
-
 dnl Base source directories on path to *input* file.
 if test -n "$ac_file_in"; then
    ac_dir_in=`AS_DIRNAME(["$ac_file_in"])`

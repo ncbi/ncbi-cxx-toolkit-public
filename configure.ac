@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.254 2004/01/20 17:12:46 ucko Exp $
+#  $Id: configure.ac,v 1.255 2004/01/21 16:47:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1260,13 +1260,22 @@ signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
 #### Try to find a version of pwd that yields /net paths.
-PATH=$PATH:/usr/sbin:/sbin
-export PATH
-if amq -w >/dev/null 2>&1; then
-   smart_pwd='amq -w'
-else
-   smart_pwd='pwd'
-fi
+AC_PATH_PROG(AMQ, amq, [], $PATH:/usr/sbin:/sbin)
+case "$AMQ" in
+   */amq)
+      AC_CACHE_CHECK([whether $AMQ -w works], ncbi_cv_prog_amq_w,
+      [if $AMQ -w >/dev/null 2>&1; then
+          ncbi_cv_prog_amq_w=yes
+       else
+          ncbi_cv_prog_amq_w=no
+       fi])
+      if test "$ncbi_cv_prog_amq_w" = yes; then
+         smart_pwd="$AMQ -w"
+      else
+         smart_pwd=pwd
+      fi
+   ;;
+esac
 
 #### Make "build_root" absolute
 case "${build_root}" in
@@ -3800,25 +3809,6 @@ AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
 AC_CONFIG_FILES($configurables $srcdir/./Makefile:Makefile.in)
 
 AC_CONFIG_COMMANDS([default], [
-status_dir="$SAVE_status_dir"
-builddir="$SAVE_builddir"
-build_root="$SAVE_build_root"
-x_configurables="$SAVE_x_configurables"
-ncbiconf="$SAVE_ncbiconf"
-CFLAGS="$SAVE_CFLAGS"
-CXXFLAGS="$SAVE_CXXFLAGS"
-CPPFLAGS="$SAVE_CPPFLAGS"
-LDFLAGS="$SAVE_LDFLAGS"
-LIB_OR_DLL="$SAVE_LIB_OR_DLL"
-with_dll="$SAVE_with_dll"
-WithFeatures="$SAVE_WithFeatures"
-WithPackages="$SAVE_WithPackages"
-WithoutPackages="$SAVE_WithoutPackages"
-WithProjects="$SAVE_WithProjects"
-WithoutProjects="$SAVE_WithoutProjects"
-with_extra_action="$SAVE_with_extra_action"
-with_projects="$SAVE_with_projects"
-
 dnl make all shell scripts *.sh be executable
 find "$build_root/." -name '*.sh' -print | while read x_file ; do
    chmod a+x "$x_file"
@@ -3907,24 +3897,25 @@ $build_proj
 ******* CONFIGURATION SUCCESSFUL *******
 EOCONF
 ], [
-SAVE_status_dir='$status_dir'
-SAVE_builddir='$builddir'
-SAVE_build_root='$build_root'
-SAVE_x_configurables='$x_configurables'
-SAVE_ncbiconf='$ncbiconf'
-SAVE_CFLAGS='$CFLAGS'
-SAVE_CXXFLAGS='$CXXFLAGS'
-SAVE_CPPFLAGS='$CPPFLAGS'
-SAVE_LDFLAGS='$LDFLAGS'
-SAVE_LIB_OR_DLL='$LIB_OR_DLL'
-SAVE_with_dll='$with_dll'
-SAVE_WithFeatures='$WithFeatures'
-SAVE_WithPackages='$WithPackages'
-SAVE_WithoutPackages='$WithoutPackages'
-SAVE_WithProjects='$WithProjects $OPT_GROUPS'
-SAVE_WithoutProjects='$WithoutProjects'
-SAVE_with_extra_action='$with_extra_action'
-SAVE_with_projects='$with_projects'
+status_dir='$status_dir'
+builddir='$builddir'
+build_root='$build_root'
+x_configurables='$x_configurables'
+ncbiconf='$ncbiconf'
+CFLAGS='$CFLAGS'
+CXXFLAGS='$CXXFLAGS'
+CPPFLAGS='$CPPFLAGS'
+LDFLAGS='$LDFLAGS'
+LIB_OR_DLL='$LIB_OR_DLL'
+with_dll='$with_dll'
+WithFeatures='$WithFeatures'
+WithPackages='$WithPackages'
+WithoutPackages='$WithoutPackages'
+WithProjects='$WithProjects $OPT_GROUPS'
+WithoutProjects='$WithoutProjects'
+with_extra_action='$with_extra_action'
+with_projects='$with_projects'
+smart_pwd='$smart_pwd'
 ])
 
 AC_OUTPUT
