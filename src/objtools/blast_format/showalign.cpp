@@ -2108,7 +2108,7 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
                 
                 m_AV->GetSeqId(1).GetLabel(&subj_id_str, CSeq_id::eContent);
              
-                sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d>",
+                sprintf(buffer, "<a name = %s_%d_%d_%d_%d_%d></a>",
                         subj_id_str.c_str(), (*iterAv)->score,
                         min(master_start, master_stop),
                         max(master_start, master_stop),
@@ -2374,6 +2374,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.68  2005/03/16 18:17:17  jianye
+*Added the missing a tag
+*
 *Revision 1.67  2005/03/14 20:10:44  dondosha
 *Moved static function s_ExtractSeqalign to a method in CblastFormatUtil class
 *
