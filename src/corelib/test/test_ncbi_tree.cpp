@@ -34,6 +34,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_tree.hpp>
+#include <util/bitset/bitset_debug.hpp>
 #include <algo/tree/tree_algo.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
 #include <algorithm>
@@ -254,6 +255,12 @@ static void s_TEST_IdTreeOperations()
 
     TreePrint(cout, *tr, s_IdValueToStr);
 
+    bm::bvector<> bv;
+    TreeMakeSubNodesSet(*tr, bv.inserter());
+    assert(bv.count() == 2);
+    assert(bv[10]);
+    assert(bv[11]);
+
     typedef vector<TTree*> TNodeList;
     TNodeList node_list;
     node_list.push_back(tr10);
@@ -266,12 +273,56 @@ static void s_TEST_IdTreeOperations()
     CTreeNonRedundantSet<TTree, bm::bvector<>, TNodeList> nr_func;
     nr_func(node_list, res_node_list);
 
-
+    cout << "Non-redundant set:" << endl;
     ITERATE(TNodeList, it, res_node_list) {
         cout << (*it)->GetValue().GetId() << "; ";
     }
     cout << endl;
     assert(res_node_list.size() == 2);
+
+
+    res_node_list.clear();
+    node_list.clear();
+
+    node_list.push_back(tr110);
+    node_list.push_back(tr1100);
+
+    CTreeMinimalSet<TTree, bm::bvector<>, TNodeList> min_func;
+    min_func(node_list, res_node_list);
+
+    
+    cout << "Minimal set:" << endl;
+    ITERATE(TNodeList, it, res_node_list) {
+        cout << (*it)->GetValue().GetId() << "; ";
+    }
+    cout << endl;
+    cout << "-----" << endl;
+    assert(res_node_list.size() == 1);
+
+
+    res_node_list.clear();
+    node_list.clear();
+
+
+    node_list.push_back(tr110);
+    node_list.push_back(tr1100);
+    node_list.push_back(tr11);
+
+    min_func(node_list, res_node_list);
+
+    
+    cout << "Minimal set:" << endl;
+    ITERATE(TNodeList, it, res_node_list) {
+        cout << (*it)->GetValue().GetId() << "; ";
+    }
+    cout << endl;
+    cout << "-----" << endl;
+    assert(res_node_list.size() == 1);
+
+
+    res_node_list.clear();
+    node_list.clear();
+
 
     
     TNodeList node_list_a;
@@ -434,6 +485,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.15  2004/04/22 13:53:15  kuznets
+ * + test for minimal set
+ *
  * Revision 1.14  2004/04/21 16:43:08  kuznets
  * + test cases for AND, OR (tree node lists)
  *
