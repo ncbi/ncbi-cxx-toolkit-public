@@ -1,4 +1,3 @@
-
 /*  $Id$
 * ===========================================================================
 *
@@ -37,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.9  2002/02/06 21:46:11  gouriano
 * *** empty log message ***
 *
@@ -201,11 +203,12 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 }
 
 
-void CScope::x_CopyDataSources(set<CDataSource*>& sources)
+void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
+                              CAnnotTypes_CI::TTSESet& tse_set)
 {
     CMutexGuard guard(sm_Scope_Mutex);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        sources.insert( *it);
+        (*it)->PopulateTSESet(loc, tse_set);
     }
 }
 

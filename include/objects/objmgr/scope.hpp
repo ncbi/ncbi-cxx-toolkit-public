@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/07 21:27:33  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.7  2002/02/06 21:46:43  gouriano
 * *** empty log message ***
 *
@@ -77,6 +80,7 @@
 #include <objects/seq/Seq_data.hpp>
 
 #include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr1/annot_types_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -133,7 +137,9 @@ public:
 
 private:
 
-    void x_CopyDataSources(set<CDataSource*>& sources);
+    // Get TSEs containing annotations for the given location
+    void x_PopulateTSESet(CHandleRangeMap& loc,
+                          CAnnotTypes_CI::TTSESet& tse_set);
     // Add new sub-entry to the existing tree if it is in this scope
     bool x_AttachEntry(const CSeq_entry& parent, CSeq_entry& entry);
     // Add sequence map for a bioseq if it is in this scope

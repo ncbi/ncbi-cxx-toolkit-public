@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.2  2002/01/16 16:25:56  gouriano
 * restructured objmgr
 *
@@ -53,26 +56,28 @@ BEGIN_SCOPE(objects)
 
 
 CAnnot_CI::CAnnot_CI(void)
-    : m_DataSource(0),
+    : m_TSEInfo(0),
       m_HandleRangeMap(0)
 {
     return;
 }
 
 
-CAnnot_CI::CAnnot_CI(CDataSource& datasource,
+CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                      CHandleRangeMap& loc,
                      SAnnotSelector selector)
-    : m_DataSource(&datasource),
+    : m_TSEInfo(&tse),
       m_Selector(selector),
       m_RangeMap(0),
       m_HandleRangeMap(&loc)
 {
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.GetRanges().empty() ) {
-            m_RangeMap = m_DataSource->x_GetRangeMap(it->first);
-            if ( !m_RangeMap )
+            TAnnotMap::iterator ait =
+                m_TSEInfo->m_AnnotMap.find(it->first.GetKey());
+            if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
+            m_RangeMap = &ait->second;
             m_CurrentHandle = it->first;
             m_CoreRange = it->second.GetOverlappingRange();
             m_Current = m_RangeMap->begin(m_CoreRange);
@@ -86,7 +91,7 @@ CAnnot_CI::CAnnot_CI(CDataSource& datasource,
 
 
 CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
-    : m_DataSource(iter.m_DataSource),
+    : m_TSEInfo(iter.m_TSEInfo),
       m_Selector(iter.m_Selector),
       m_RangeMap(iter.m_RangeMap),
       m_CoreRange(iter.m_CoreRange),
@@ -100,7 +105,7 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
 
 CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
 {
-    m_DataSource = iter.m_DataSource;
+    m_TSEInfo = iter.m_TSEInfo;
     m_Selector = iter.m_Selector;
     m_RangeMap = iter.m_RangeMap;
     m_CoreRange = iter.m_CoreRange;
@@ -133,21 +138,21 @@ CAnnot_CI& CAnnot_CI::operator++(int)
 
 CAnnot_CI::operator bool (void) const
 {
-    _ASSERT(m_DataSource);
+    _ASSERT(m_TSEInfo);
     return m_Current;
 }
 
 
 CAnnotObject& CAnnot_CI::operator* (void) const
 {
-    _ASSERT(bool(m_DataSource)  &&  bool(m_Current));
+    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
     return *m_Current->second;
 }
 
 
 CAnnotObject* CAnnot_CI::operator-> (void) const
 {
-    _ASSERT(bool(m_DataSource)  &&  bool(m_Current));
+    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
     return m_Current->second;
 }
 
@@ -160,7 +165,7 @@ bool CAnnot_CI::x_ValidLocation(const CHandleRangeMap& loc) const
 
 bool CAnnot_CI::x_IsValid(void) const
 {
-    if ( !bool(m_DataSource)  ||  !bool(m_Current))
+    if ( !bool(m_TSEInfo)  ||  !bool(m_Current))
         return true; // Do not need to walk ahead
     if (m_Selector.m_AnnotChoice == CSeq_annot::C_Data::e_not_set)
         return true;
@@ -181,7 +186,7 @@ bool CAnnot_CI::x_IsValid(void) const
 
 void CAnnot_CI::x_Walk(void)
 {
-    _ASSERT(bool(m_DataSource)  &&  bool(m_Current));
+    _ASSERT(bool(m_TSEInfo)  &&  bool(m_Current));
     for (++m_Current; m_Current; ++m_Current) {
         if ( x_IsValid() ) {
             // Valid type and location or end of annotations
@@ -194,9 +199,11 @@ void CAnnot_CI::x_Walk(void)
         m_HandleRangeMap->GetMap().find(m_CurrentHandle);
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
         if ( !h->second.GetRanges().empty() ) {
-            m_RangeMap = m_DataSource->x_GetRangeMap(h->first);
-            if ( !m_RangeMap )
+            TAnnotMap::iterator ait =
+                m_TSEInfo->m_AnnotMap.find(h->first.GetKey());
+            if (ait == m_TSEInfo->m_AnnotMap.end())
                 continue;
+            m_RangeMap = &ait->second;
             m_CurrentHandle = h->first;
             m_CoreRange = h->second.GetOverlappingRange();
             m_Current = m_RangeMap->begin(m_CoreRange);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/02/07 21:27:36  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.11  2002/02/06 21:46:11  gouriano
 * *** empty log message ***
 *
@@ -122,6 +125,8 @@
 
 #include <objects/seq/seqport_util.hpp>
 
+
+#include <objects/general/Date.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;

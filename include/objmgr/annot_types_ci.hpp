@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/07 21:27:33  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.2  2002/01/16 16:26:35  gouriano
 * restructured objmgr
 *
@@ -53,6 +56,8 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 class CAnnot_CI;
+class CTSE_Info;
+
 
 // Base class for specific annotation iterators
 class CAnnotTypes_CI
@@ -67,6 +72,8 @@ public:
 
     CAnnotTypes_CI& operator= (const CAnnotTypes_CI& it);
 
+    typedef set< CRef<CTSE_Info> > TTSESet;
+
 protected:
     // Check if a datasource and an annotation are selected.
     bool IsValid(void) const;
@@ -76,8 +83,8 @@ protected:
     CAnnotObject* Get(void) const;
 
 private:
-    set<CDataSource*>         m_Sources;
-    set<CDataSource*>::const_iterator    m_CurrentSource;
+    TTSESet                   m_Entries;
+    TTSESet::const_iterator   m_CurrentTSE;
     SAnnotSelector            m_Selector;
     auto_ptr<CHandleRangeMap> m_Location;
     CAnnot_CI                 m_CurrentAnnot;

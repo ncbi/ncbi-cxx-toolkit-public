@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/07 21:27:33  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.3  2002/01/23 21:59:28  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -77,6 +80,7 @@ struct SAnnotSelector
 
 
 class CHandleRangeMap;
+class CTSE_Info;
 
 
 // General annotation iterator. Public interfaces should use
@@ -89,7 +93,7 @@ public:
     typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
 
     CAnnot_CI(void);
-    CAnnot_CI(CDataSource& datasource,
+    CAnnot_CI(CTSE_Info& tse,
               CHandleRangeMap& loc,
               SAnnotSelector selector);
     CAnnot_CI(const CAnnot_CI& iter);
@@ -115,7 +119,7 @@ private:
     // Move to the next valid seq-annot
     void x_Walk(void);
 
-    CRef<CDataSource> m_DataSource;
+    CRef<CTSE_Info>   m_TSEInfo;
     SAnnotSelector    m_Selector;
     TRangeMap*        m_RangeMap;
     TRange            m_CoreRange;

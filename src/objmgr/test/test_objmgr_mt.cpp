@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/07 21:27:36  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.4  2002/01/23 21:59:34  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -823,15 +826,15 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
-            switch (seq_map[i].second.GetType()) {
+            switch (seq_map[i].GetType()) {
             case CSeqMap::eSeqData:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqRef:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqGap:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqEnd:
                 break;
@@ -839,13 +842,13 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
                 break;
             }
         }
-        _ASSERT(seq_map[seq_map.size()-1].second.GetType() ==
+        _ASSERT(seq_map[seq_map.size()-1].GetType() ==
                 CSeqMap::eSeqEnd);
         _ASSERT(seq_len_unresolved == 0  ||  len == seq_len_unresolved);
     }}
 
     {{
-        CSeqVector seq_vect = scope.GetSeqVector(handle);
+        CSeqVector seq_vect = handle.GetSeqVector();
         string sout = "";
         for (size_t i = 0; i < seq_vect.size(); i++) {
             sout += seq_vect[i];
@@ -854,7 +857,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
-        CSeqVector seq_vect_rev = scope.GetSeqVector(handle, false);
+        CSeqVector seq_vect_rev = handle.GetSeqVector(false);
         string sout_rev = "";
         for (size_t i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];
@@ -871,15 +874,15 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
-            switch (seq_map[i].second.GetType()) {
+            switch (seq_map[i].GetType()) {
             case CSeqMap::eSeqData:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqRef:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqGap:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqEnd:
                 break;
@@ -887,7 +890,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
                 break;
             }
         }
-        _ASSERT(seq_map[seq_map.size()-1].second.GetType() ==
+        _ASSERT(seq_map[seq_map.size()-1].GetType() ==
                 CSeqMap::eSeqEnd);
         _ASSERT(len == seq_len_resolved);
     }}

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.4  2002/01/23 21:59:31  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -71,16 +74,10 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
       m_Location(new CHandleRangeMap(scope.x_GetIdMapper()))
 {
     m_Location->AddLocation(loc);
-    scope.x_CopyDataSources( m_Sources);
-    m_CurrentSource = m_Sources.begin();
-    // Protect datasources list
-    CMutexGuard guard(CScope::sm_Scope_Mutex);
-    for (set<CDataSource*>::iterator it = m_Sources.begin();
-        it != m_Sources.end(); ++it) {
-        (*it)->x_ResolveLocationHandles(*m_Location);
-    }
-    for ( ; m_CurrentSource != m_Sources.end(); ++m_CurrentSource ) {
-        m_CurrentAnnot = CAnnot_CI( **m_CurrentSource, *m_Location, m_Selector);
+    scope.x_PopulateTSESet(*m_Location, m_Entries);
+    m_CurrentTSE = m_Entries.begin();
+    for ( ; m_CurrentTSE != m_Entries.end(); ++m_CurrentTSE) {
+        m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE, *m_Location, m_Selector);
         if ( m_CurrentAnnot )
             break;
     }
@@ -88,13 +85,14 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
-    : m_CurrentSource(it.m_CurrentSource),
-      m_Selector(it.m_Selector),
+    : m_Selector(it.m_Selector),
       m_Location(new CHandleRangeMap(*it.m_Location)),
       m_CurrentAnnot(it.m_CurrentAnnot)
 {
-    iterate (set<CDataSource*>, itr, it.m_Sources) {
-        m_Sources.insert( *itr);
+    iterate (TTSESet, itr, it.m_Entries) {
+        TTSESet::const_iterator cur = m_Entries.insert(*itr).first;
+        if (*itr == *it.m_CurrentTSE)
+            m_CurrentTSE = cur;
     }
 }
 
@@ -107,9 +105,11 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
-    m_CurrentSource = it.m_CurrentSource;
-    iterate (set<CDataSource*>, itr, it.m_Sources) {
-        m_Sources.insert( *itr);
+    m_Entries.clear();
+    iterate (TTSESet, itr, it.m_Entries) {
+        TTSESet::const_iterator cur = m_Entries.insert(*itr).first;
+        if (*itr == *it.m_CurrentTSE)
+            m_CurrentTSE = cur;
     }
     m_Selector = it.m_Selector;
     m_Location.reset(new CHandleRangeMap(*it.m_Location));
@@ -120,7 +120,7 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 
 bool CAnnotTypes_CI::IsValid(void) const
 {
-    return (m_CurrentSource != m_Sources.end()  &&  m_CurrentAnnot);
+    return (m_CurrentTSE != m_Entries.end()  &&  m_CurrentAnnot);
 }
 
 
@@ -129,15 +129,15 @@ void CAnnotTypes_CI::Walk(void)
     _ASSERT(m_CurrentAnnot);
     CMutexGuard guard(CScope::sm_Scope_Mutex);
     ++m_CurrentAnnot;
-    if ( m_CurrentAnnot  ||  m_CurrentSource == m_Sources.end() )
+    if ( m_CurrentAnnot  ||  m_CurrentTSE == m_Entries.end() )
         // Got the next annot or no more annots and data sources
         return;
     while ( !m_CurrentAnnot ) {
         // Search for the next data source with annots
-        ++m_CurrentSource;
-        if (m_CurrentSource == m_Sources.end())
+        ++m_CurrentTSE;
+        if (m_CurrentTSE == m_Entries.end())
             return;
-        m_CurrentAnnot = CAnnot_CI( **m_CurrentSource, *m_Location, m_Selector);
+        m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE, *m_Location, m_Selector);
     }
 }
 

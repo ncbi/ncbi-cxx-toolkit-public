@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/07 21:27:33  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.6  2002/02/01 21:49:10  gouriano
 * minor changes to make it compilable and run on Solaris Workshop
 *
@@ -84,7 +87,8 @@ public:
     CBioseq_Handle(void)
         : m_Scope(0),
           m_DataSource(0),
-          m_Entry(0) {}
+          m_Entry(0),
+          m_TSE(0) {}
     CBioseq_Handle(const CBioseq_Handle& h);
     CBioseq_Handle& operator= (const CBioseq_Handle& h);
 
@@ -139,26 +143,30 @@ private:
     CDataSource& x_GetDataSource(void) const;
     // Set the handle seq-entry and datasource
     void x_ResolveTo(CScope& scope, CDataSource& datasource,
-                     CSeq_entry& entry);
+                     CSeq_entry& entry, CSeq_entry& tse);
 
     CSeq_id_Handle       m_Value;       // Seq-id equivalent
     CScope*              m_Scope;
     mutable CDataSource* m_DataSource;  // Data source for resolved handles
     mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
+    mutable CSeq_entry*  m_TSE;         // Top level seq-entry
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
     friend class CDataSource;
+    friend class CAnnot_CI;
 };
 
 
 inline
 void CBioseq_Handle::x_ResolveTo(
-    CScope& scope, CDataSource& datasource, CSeq_entry& entry)
+    CScope& scope, CDataSource& datasource,
+    CSeq_entry& entry, CSeq_entry& tse)
 {
     m_Scope = &scope;
     m_DataSource = &datasource;
     m_Entry = &entry;
+    m_TSE = &tse;
 }
 
 inline
@@ -166,7 +174,8 @@ CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
     : m_Value(value),
       m_Scope(0),
       m_DataSource(0),
-      m_Entry(0)
+      m_Entry(0),
+      m_TSE(0)
 {
 }
 
@@ -181,7 +190,8 @@ CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
     : m_Value(h.m_Value),
       m_Scope(h.m_Scope),
       m_DataSource(h.m_DataSource),
-      m_Entry(h.m_Entry)
+      m_Entry(h.m_Entry),
+      m_TSE(h.m_TSE)
 {
 }
 
@@ -192,6 +202,7 @@ CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
     m_Scope = h.m_Scope;
     m_DataSource = h.m_DataSource;
     m_Entry = h.m_Entry;
+    m_TSE = h.m_TSE;
     return *this;
 }
 

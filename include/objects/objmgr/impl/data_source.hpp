@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/02/07 21:27:35  grichenk
+* Redesigned CDataSource indexing: seq-id handle -> TSE -> seq/annot
+*
 * Revision 1.7  2002/02/06 21:46:11  gouriano
 * *** empty log message ***
 *
@@ -73,8 +76,8 @@
 #include <objects/objmgr1/seq_id_handle.hpp>
 #include <objects/objmgr1/data_loader.hpp>
 #include <objects/objmgr1/seq_map.hpp>
-#include <objects/objmgr1/annot_ci.hpp>
 #include <objects/objmgr1/object_manager.hpp>
+#include "tse_info.hpp"
 #include "seq_id_mapper.hpp"
 
 
@@ -160,40 +163,31 @@ public:
     CDataLoader* GetDataLoader(void);
     CSeq_entry* GetTopEntry(void);
 
-private:
-    // Structure to keep bioseq's parent seq-entry along with the list
-    // of seq-id synonyms for the bioseq.
-    struct SBioseqInfo : public CObject
-    {
-        typedef set<CSeq_id_Handle> TSynonyms;
-
-        SBioseqInfo(void);
-        SBioseqInfo(CSeq_entry& entry);
-        SBioseqInfo(const SBioseqInfo& info);
-        virtual ~SBioseqInfo(void);
-
-        SBioseqInfo& operator= (const SBioseqInfo& info);
-
-        bool operator== (const SBioseqInfo& info);
-        bool operator!= (const SBioseqInfo& info);
-        bool operator<  (const SBioseqInfo& info);
-
-        CRef<CSeq_entry> m_Entry;
-        TSynonyms        m_Synonyms;
-    };
-
     // Internal typedefs
-    typedef CAnnot_CI::TRange                       TRange;
-    typedef CAnnot_CI::TRangeMap                    TRangeMap;
-    typedef CAnnot_CI::TAnnotMap                    TAnnotMap;
-    typedef set< CRef<CSeq_entry> >                 TEntries;
+    typedef CTSE_Info::TRange                       TRange;
+    typedef CTSE_Info::TRangeMap                    TRangeMap;
+    typedef CTSE_Info::TAnnotMap                    TAnnotMap;
+    typedef map<CRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
+    typedef CTSE_Info::TBioseqMap                   TBioseqMap;
+    typedef set< CRef<CTSE_Info> >                  TTSESet;
+    typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
     typedef map<const CBioseq*, CRef<CSeqMap> >     TSeqMaps;
-    typedef map<CSeq_id_Handle, CRef<SBioseqInfo> > TBioseqMap;
 
+    // Get TSEs containing annotations for the given location
+    void PopulateTSESet(CHandleRangeMap& loc,
+                        TTSESet& tse_set) const;
+
+private:
     // Process seq-entry recursively
     void x_IndexEntry     (CSeq_entry& entry, CSeq_entry& tse);
     void x_AddToBioseqMap (CSeq_entry& entry);
     void x_AddToAnnotMap  (CSeq_entry& entry);
+
+    // Find the seq-entry with best bioseq for the seq-id handle.
+    // The best bioseq is the bioseq from the live TSE or from the
+    // only one TSE containing the ID (no matter live or dead).
+    // If no matches were found, return 0.
+    CTSE_Info* x_FindBestTSE(CSeq_id_Handle handle) const;
 
     // Create CSeqMap for a bioseq
     void x_CreateSeqMap(const CBioseq& seq);
@@ -205,13 +199,9 @@ private:
     CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
 
     // Process a single data element
-    void x_MapFeature(const CSeq_feat& feat);
-    void x_MapAlign(const CSeq_align& align);
-    void x_MapGraph(const CSeq_graph& graph);
-
-    // Get range map for a given handle or null
-    TRangeMap* x_GetRangeMap(const CBioseq_Handle& handle,
-                             bool create = false);
+    void x_MapFeature(const CSeq_feat& feat, CTSE_Info& tse);
+    void x_MapAlign(const CSeq_align& align, CTSE_Info& tse);
+    void x_MapGraph(const CSeq_graph& graph, CTSE_Info& tse);
 
     // Check if the Seq-entry is handled by this data-source
     CSeq_entry* x_FindEntry(const CSeq_entry& entry);
@@ -226,24 +216,19 @@ private:
 
     // Replace initial handle range map with the new one, containing duplicate
     // range sets for each synonym of each handle
-    void x_ResolveLocationHandles(CHandleRangeMap& loc);
+    void x_ResolveLocationHandles(CHandleRangeMap& loc) const;
 
     CRef<CDataLoader>    m_Loader;
     CRef<CSeq_entry>     m_pTopEntry;
     CRef<CObjectManager> m_ObjMgr;
 
-    TEntries             m_Entries;   // All known seq-entries
-    TBioseqMap           m_BioseqMap; // Bioseq by seq-id key
+    TEntries             m_Entries;   // All known seq-entries and their TSEs
+    TTSEMap              m_TSE_seq;   // id -> TSEs with bioseq
+    TTSEMap              m_TSE_ref;   // id -> TSEs with references to id
     TSeqMaps             m_SeqMaps;   // Sequence maps for bioseqs
-    TAnnotMap            m_AnnotMap;  // Index of annotations
 
-    //friend class CDesc_CI;
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI;
-    //friend class CScope;
-    //friend class CSeqVector;
-    //friend class CBioseq_Handle;
-    //friend class CObjectManager;
 };
 
 
