@@ -181,7 +181,6 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("required_start", m_Ptr->required_start);
     ddc.Log("required_end", m_Ptr->required_end);
     ddc.Log("expect_value", m_Ptr->expect_value);
-    ddc.Log("original_expect_value", m_Ptr->original_expect_value);
     ddc.Log("cutoff_score", m_Ptr->cutoff_score);
     ddc.Log("percent_identity", m_Ptr->percent_identity);
     ddc.Log("do_sum_stats", m_Ptr->do_sum_stats);
@@ -404,6 +403,19 @@ EProgram ProgramNameToEnum(const std::string& program_name)
         return eRPSBlast;
     } else if (lowercase_program_name == "rpstblastn") {
         return eRPSTblastn;
+    } else if (lowercase_program_name == "megablast") {
+        return eMegablast; 
+    } else if (lowercase_program_name == "psiblast") {
+        return ePSIBlast;
+    } else {
+        // Handle discontiguous megablast (no established convention AFAIK)
+        string::size_type idx_mb = lowercase_program_name.find("megablast");
+        string::size_type idx_disco = lowercase_program_name.find("disc");
+        if (idx_mb != string::npos && idx_disco != string::npos) {
+            return eDiscMegablast;
+        }
+        
+        // Handle others ...
     }
     NCBI_THROW(CBlastException, eNotSupported, program_name + " not supported");
 }
@@ -520,6 +532,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.55  2004/11/12 16:42:53  camacho
+ * Add handling of missing EProgram values to ProgramNameToEnum
+ *
  * Revision 1.54  2004/11/04 15:51:02  papadopo
  * prepend 'Blast' to RPSInfo and related structures
  *
