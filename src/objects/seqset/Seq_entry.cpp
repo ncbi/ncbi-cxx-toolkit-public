@@ -91,7 +91,7 @@ void CSeq_entry::Parentize(void)
 void CSeq_entry::UserOp_Assign(const CSerialUserOp& source)
 {
     const CSeq_entry& src = dynamic_cast<const CSeq_entry&>(source);
-    m_ParentEntry = src.m_ParentEntry;
+    m_ParentEntry = 0;
 }
 
 bool CSeq_entry::UserOp_Equals(const CSerialUserOp& object) const
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.15  2003/03/10 21:08:19  grichenk
+ * UserOp_Assign resets m_Parent
+ *
  * Revision 6.14  2003/02/24 20:03:11  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
