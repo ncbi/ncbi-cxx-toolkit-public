@@ -601,7 +601,12 @@ static void s_TEST_BDB_BLOB_File(void)
     blob.i1 = 1;
     blob.i2 = 3;
 
-    ret = blob.Insert(test_data, lob_len);
+
+    const char* test_data2 
+        = "This is a BLOB test data.TEst test test test....BDB. test.";
+    lob_len = ::strlen(test_data2)+1;
+
+    ret = blob.Insert(test_data2, lob_len);
     assert(ret == eBDB_Ok);
 
 
@@ -614,7 +619,7 @@ static void s_TEST_BDB_BLOB_File(void)
     ret = blob.Fetch();
     assert(ret == eBDB_Ok);
     unsigned len1 = blob.LobSize();
-    assert(len1 == lob_len);
+    assert(len1 == strlen(test_data)+1);
 
     char buf[256] = {0,};
     ret = blob.GetData(buf, sizeof(buf));
@@ -635,6 +640,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     cur.From << 1;
 
+    const char* tdata = test_data;
     while (cur.Fetch() == eBDB_Ok) {
         char buf[256] = {0,};
 
@@ -642,11 +648,12 @@ static void s_TEST_BDB_BLOB_File(void)
         unsigned len = blob.LobSize();
         ret = blob.GetData(buf, sizeof(buf));
         assert(ret == eBDB_Ok);
-        if (strcmp(buf, test_data) != 0) {
+        if (strcmp(buf, tdata) != 0) {
             cout << "BLOB content comparison error!" << endl;
             cout << "BLobData:" << buf << endl;
             assert(0);
         }
+        tdata = test_data2;
     }
 
     cout << "======== BLob file test ok." << endl;
@@ -851,6 +858,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/05/08 13:44:04  kuznets
+ * Minor test improvements
+ *
  * Revision 1.6  2003/05/07 14:13:45  kuznets
  * + test case for cursor reading of BLOB storage.
  *
