@@ -193,7 +193,10 @@ public:
 			  const string& name) = 0;
 
     // Set output parameter, which will be returned as resultset
-    virtual void SetOutputParam(EDB_Type type, const string& name) = 0;
+    // NOTE: use CVariant(EDB_Type type) constructor or 
+    // factory method CVariant::<type>(0) to create empty object
+    // of a particular type
+    virtual void SetOutputParam(const CVariant& v, const string& name) = 0;
 
 protected:
     // Mask unused methods
@@ -253,7 +256,7 @@ public:
 			 const string& database = kEmptyStr) = 0;
 
     // Set current database
-    //virtual void SetDataBase(const string& name) = 0;
+    virtual void SetDataBase(const string& name) = 0;
 
     // Get current database
     virtual string GetDataBase() = 0;
@@ -301,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/02/08 21:29:55  kholodov
+ * SetDataBase() restored, connection cloning algorithm changed
+ *
  * Revision 1.2  2002/02/08 17:47:35  kholodov
  * Removed SetDataBase() method
  *

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/02/08 21:29:54  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
 * Revision 1.4  2002/02/08 17:47:34  kholodov
 * Removed SetDataBase() method
 *
@@ -62,135 +65,147 @@ BEGIN_NCBI_SCOPE
 
 // Implementation
 CConnection::CConnection(CDataSource* ds)
-  : m_ds(ds)
+    : m_ds(ds), m_connection(0), m_cmdUsed(false)
 {
 
 }
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
-  : m_ds(ds), m_connection(conn)
+    : m_ds(ds), m_connection(conn), m_cmdUsed(false)
 {
 
 }
 
 
 void CConnection::Connect(const string& user, 
-			  const string& password,
-			  const string& server,
-			  const string& database)
+                          const string& password,
+                          const string& server,
+                          const string& database)
 {
 
-  m_connection = m_ds->
-    GetContext()->Connect(server.c_str(),
-			  user.c_str(),
-			  password.c_str(),
-			  0,
-			  m_ds->IsPoolUsed());
-  SetDbName(database);
+    m_connection = m_ds->
+        GetContext()->Connect(server.c_str(),
+                              user.c_str(),
+                              password.c_str(),
+                              0,
+                              m_ds->IsPoolUsed());
+    SetDbName(database);
 					   
 }
 
 CConnection::~CConnection()
 {
-  Close();
-  Notify(CDbapiDeletedEvent(this));
+    Close();
+    Notify(CDbapiDeletedEvent(this));
 }
 
-/*
+
 void CConnection::SetDataBase(const string& name)
 {
   SetDbName(name);
 }
-*/
+
 string CConnection::GetDataBase()
 {
-  return m_database;
+    return m_database;
 }
 
 void CConnection::SetDbName(const string& name, 
-			    CDB_Connection* conn)
+                            CDB_Connection* conn)
 {
 
-  m_database = name;
+    m_database = name;
 
-  if( m_database.empty() )
-    return;
+    if( m_database.empty() )
+        return;
 
 
-  CDB_Connection* work = (conn == 0 ? m_connection : conn);
-  string sql = "use " + m_database;
-  CDB_LangCmd* cmd = work->LangCmd(sql.c_str());
-  cmd->Send();
-  while( cmd->HasMoreResults() ) {
-    cmd->Result();
-  }
-  delete cmd;
+    CDB_Connection* work = (conn == 0 ? m_connection : conn);
+    string sql = "use " + m_database;
+    CDB_LangCmd* cmd = work->LangCmd(sql.c_str());
+    cmd->Send();
+    while( cmd->HasMoreResults() ) {
+        cmd->Result();
+    }
+    delete cmd;
 }
 
 CDB_Connection* CConnection::GetConnAux()
 {
-  CDB_Connection *temp = m_ds->
-    GetContext()->Connect(GetConnection()->ServerName(),
-			  GetConnection()->UserName(),
-			  GetConnection()->Password(),
-			  0,
-			  true);
-  SetDbName(m_database, temp);
-  return temp;
+    CDB_Connection *temp = m_ds->
+        GetContext()->Connect(GetConnection()->ServerName(),
+                              GetConnection()->UserName(),
+                              GetConnection()->Password(),
+                              0,
+                              true);
+    SetDbName(m_database, temp);
+    return temp;
 }
 
 void CConnection::Close()
 {
-  delete m_connection;
-  m_connection = 0;
+    delete m_connection;
+    m_connection = 0;
 }
   
 CConnection* CConnection::Clone()
 {
-  CConnection *conn = new CConnection(GetConnAux(), m_ds);
-  conn->AddListener(m_ds);
-  m_ds->AddListener(conn);
-  return conn;
+    CConnection *conn = new CConnection(GetConnAux(), m_ds);
+    conn->AddListener(m_ds);
+    m_ds->AddListener(conn);
+    return conn;
 }
 
 IStatement* CConnection::CreateStatement()
 {
-  CStatement *stmt = new CStatement(Clone());
-  AddListener(stmt);
-  stmt->AddListener(this);
-  return stmt;
+
+    CStatement *stmt = new CStatement(GetFreeConn());
+    AddListener(stmt);
+    stmt->AddListener(this);
+    return stmt;
 }
 
 ICallableStatement*
 CConnection::PrepareCall(const string& proc,
-			 int nofArgs)
+                         int nofArgs)
 {
-  CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, Clone());
-  AddListener(cstmt);
-  cstmt->AddListener(this);
-  return cstmt;
+    CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetFreeConn());
+    AddListener(cstmt);
+    cstmt->AddListener(this);
+    return cstmt;
 }
 
 ICursor* CConnection::CreateCursor(const string& name,
-				   const string& sql,
-				   int nofArgs,
-				   int batchSize)
+                                   const string& sql,
+                                   int nofArgs,
+                                   int batchSize)
 {
-  CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, Clone());
-  AddListener(cur);
-  cur->AddListener(this);
-  return cur;
+    CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetFreeConn());
+    AddListener(cur);
+    cur->AddListener(this);
+    return cur;
 }
 
 void CConnection::Action(const CDbapiEvent& e) 
 {
-  if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-    RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
-    if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
-      delete this;
-      //SetValid(false);
+    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+        if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
+            delete this;
+            //SetValid(false);
+        }
     }
-  }
+}
+
+CConnection* CConnection::GetFreeConn()
+{
+    CConnection *conn = this;
+    if( !m_cmdUsed ) 
+        m_cmdUsed = true;
+    else
+        conn = Clone();
+
+    return conn;
 }
 
 END_NCBI_SCOPE

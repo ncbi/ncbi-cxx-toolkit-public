@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/02/08 21:29:55  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
 * Revision 1.2  2002/02/05 17:24:02  kholodov
 * Put into NCBI scope
 *
@@ -65,7 +68,7 @@ public:
   virtual void SetParam(const CVariant& v, 
 		       const string& name);
 
-  virtual void SetOutputParam(EDB_Type type, const string& name);
+  virtual void SetOutputParam(const CVariant& v, const string& name);
 
   virtual void Execute();
 

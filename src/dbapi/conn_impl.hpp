@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/02/08 21:29:55  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
 * Revision 1.2  2002/02/08 17:47:34  kholodov
 * Removed SetDataBase() method
 *
@@ -52,53 +55,57 @@ BEGIN_NCBI_SCOPE
 class CDataSource;
 
 class CConnection : public CActiveObject, 
-		    public IEventListener,
-		    public IConnection
+                    public IEventListener,
+                    public IConnection
 {
 public:
-  CConnection(CDataSource* ds);
-  CConnection(class CDB_Connection *conn, 
-	      CDataSource* ds);
+    CConnection(CDataSource* ds);
+    CConnection(class CDB_Connection *conn, 
+                CDataSource* ds);
 
 public:
-  virtual ~CConnection();
+    virtual ~CConnection();
 
-  virtual void Connect(const string& user,
-		       const string& password,
-		       const string& server,
-		       const string& database = kEmptyStr);
+    virtual void Connect(const string& user,
+                         const string& password,
+                         const string& server,
+                         const string& database = kEmptyStr);
 
-  virtual IStatement* CreateStatement();
-  virtual ICallableStatement* PrepareCall(const string& proc,
-					  int nofArgs);
-  virtual ICursor* CreateCursor(const string& name,
-				const string& sql,
-				int nofArgs,
-				int batchSize);
+    virtual IStatement* CreateStatement();
+    virtual ICallableStatement* PrepareCall(const string& proc,
+                                            int nofArgs);
+    virtual ICursor* CreateCursor(const string& name,
+                                  const string& sql,
+                                  int nofArgs,
+                                  int batchSize);
 
-  virtual void Close();
+    virtual void Close();
 
-  CConnection* Clone();
+    CConnection* Clone();
 
-  CDB_Connection* GetConnection() {
-    return m_connection;
-  }
+    CDB_Connection* GetConnection() {
+        return m_connection;
+    }
 
-  CDB_Connection* GetConnAux();
+    CDB_Connection* GetConnAux();
 
-    //virtual void SetDataBase(const string& name);
-  virtual string GetDataBase();
+    virtual void SetDataBase(const string& name);
+    virtual string GetDataBase();
 
-  void SetDbName(const string& name, CDB_Connection* conn = 0);
+    void SetDbName(const string& name, CDB_Connection* conn = 0);
 
-  // Interface IEventListener implementation
-  virtual void Action(const CDbapiEvent& e);
+    // Interface IEventListener implementation
+    virtual void Action(const CDbapiEvent& e);
 
+protected:
+    // Clone connection, if the original cmd structure is taken
+    CConnection* GetFreeConn();
 
 private:
-  string m_database;
-  class CDataSource* m_ds;
-  CDB_Connection *m_connection;
+    string m_database;
+    class CDataSource* m_ds;
+    CDB_Connection *m_connection;
+    bool m_cmdUsed;
 };
 
 //====================================================================

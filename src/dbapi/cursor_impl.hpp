@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/08 21:29:55  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -50,40 +53,40 @@
 BEGIN_NCBI_SCOPE
 
 class CCursor : public CActiveObject, 
-		public IEventListener,
-		public ICursor
+                public IEventListener,
+                public ICursor
 {
 public:
-  CCursor(const string& name,
-	  const string& sql,
-	  int nofArgs,
-	  int batchSize,
-	  CConnection* conn);
+    CCursor(const string& name,
+            const string& sql,
+            int nofArgs,
+            int batchSize,
+            CConnection* conn);
 
-  virtual ~CCursor();
+    virtual ~CCursor();
 
-  virtual void SetParam(const CVariant& v, 
-			const string& name);
+    virtual void SetParam(const CVariant& v, 
+                          const string& name);
 
-  virtual IResultSet* Open();
-  virtual void Update(const string& table, const string& updateSql);
-  virtual void Delete(const string& table);
-  virtual void Close();
+    virtual IResultSet* Open();
+    virtual void Update(const string& table, const string& updateSql);
+    virtual void Delete(const string& table);
+    virtual void Close();
 
 
-  // Interface IEventListener implementation
-  virtual void Action(const CDbapiEvent& e);
+    // Interface IEventListener implementation
+    virtual void Action(const CDbapiEvent& e);
 
 protected:
 
-  CDB_CursorCmd* GetCursorCmd() { return m_cmd; }
+    CDB_CursorCmd* GetCursorCmd() { return m_cmd; }
 
 private:
-  int m_nofArgs;
-  typedef map<string, CVariant*> Parameters;
-  Parameters m_params;
-  CDB_CursorCmd* m_cmd;
-  CConnection* m_conn;
+    int m_nofArgs;
+    typedef map<string, CVariant*> Parameters;
+    Parameters m_params;
+    CDB_CursorCmd* m_cmd;
+    CConnection* m_conn;
   
 };
 

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/02/08 21:29:54  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
 * Revision 1.2  2002/02/05 17:24:02  kholodov
 * Put into NCBI scope
 *
@@ -100,13 +103,9 @@ void CCallableStatement::SetParam(const CVariant& v,
 			v.GetData(), false);
 }
 		
-void CCallableStatement::SetOutputParam(EDB_Type type, 
+void CCallableStatement::SetOutputParam(const CVariant& v, 
 					const string& name)
 {
-
-  CheckValid();
-
-  CVariant v(type);
   GetRpcCmd()->SetParam(name.c_str(), v.GetData(), true);
 }
 		
