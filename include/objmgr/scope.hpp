@@ -117,10 +117,15 @@ public:
     CScope(CObjectManager& objmgr);
     virtual ~CScope(void);
 
-    typedef CConstRef<CTSE_Info> TTSE_Lock;
-    typedef set<TTSE_Lock>       TTSE_LockSet;
+    typedef CConstRef<CTSE_Info>                     TTSE_Lock;
+    typedef set<TTSE_Lock>                           TTSE_LockSet;
     // History of requests
-    typedef TTSE_LockSet         TRequestHistory;
+    typedef TTSE_LockSet                             TRequestHistory;
+    typedef map<CSeq_id_Handle, CBioseq_Handle>      TCache;
+    typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
+    typedef CObjectFor<TTSE_LockSet>                 TAnnotRefSet;
+    typedef map<CSeq_id_Handle, CRef<TAnnotRefSet> > TAnnotCache;
+
 
     // Add default data loaders from object manager
     void AddDefaults(CPriorityNode::TPriority priority = 99);
@@ -202,9 +207,11 @@ private:
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           const SAnnotTypeSelector& sel,
                           const CSeq_annot& limit_annot);
-    const TTSE_LockSet& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
+    CConstRef<TAnnotRefSet> GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
     void x_DetachFromOM(void);
+    // clean some cache entries when new data source is added
+    void x_ClearCacheOnNewData(void);
     // Add an entry to the requests history, lock the TSE by default
     void x_AddToHistory(const CTSE_Info& tse);
     // Add a bioseq/seq-id to the scope's cache. Optional seq-id may be used
@@ -252,7 +259,7 @@ private:
     };
     typedef map<CDataSource*, SDataSource_Info> TDataSource_Cache;
 
-    CObjectManager      *m_pObjMgr;
+    CObjectManager*     m_pObjMgr;
     CPriorityNode       m_setDataSrc;   // Data sources ordered by priority
     TDataSource_Cache   m_DS_Cache;     // Reverse lookup of priorities and TSEs
 
@@ -260,15 +267,12 @@ private:
 
     TRequestHistory m_History;
 
-    typedef map<CSeq_id_Handle, CBioseq_Handle>      TCache;
-    typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
-    typedef map<CSeq_id_Handle, TTSE_LockSet>        TAnnotCache;
-
     TCache m_Cache;
     TSynCache m_SynCache;
     TAnnotCache m_AnnotCache;
 
-    mutable CMutex m_Scope_Mtx;
+    mutable CRWLock m_Scope_Conf_RWLock;
+    mutable CMutex m_Scope_Cache_Mtx;
 
     friend class CObjectManager;
     friend class CSeqVector;
@@ -286,6 +290,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/05/12 19:18:28  vasilche
+* Fixed locking of object manager classes in multi-threaded application.
+*
 * Revision 1.45  2003/05/06 18:54:06  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

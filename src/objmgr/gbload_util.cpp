@@ -171,8 +171,8 @@ void CGBLGuard::Select(int s)
   _VERIFY(m_select==s);
 }
 
-//#define LOCK_POST(x) GBLOG_POST(x) 
-#define LOCK_POST(x) 
+#define LOCK_POST(x) GBLOG_POST(x) 
+//#define LOCK_POST(x) 
 void CGBLGuard::MLock()
 {
   LOCK_POST(&m_Locks << ":: MainLock tried   @ " << m_Loc);
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/05/12 19:18:29  vasilche
+* Fixed locking of object manager classes in multi-threaded application.
+*
 * Revision 1.14  2003/03/03 21:12:58  vasilche
 * Added missing static memeber definition.
 *

@@ -349,7 +349,7 @@ const CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     if ( !info.m_SeqMap ) {
         // No need to lock anything as TSE should be locked by the handle
         //### Lock seq-maps to prevent duplicate seq-map creation
-        CMutexGuard guard(m_DataSource_Mtx);    
+        //CMutexGuard guard(m_DataSource_Mtx);    
         if ( !info.m_SeqMap ) {
             // Call loader first
             if ( m_Loader ) {
@@ -431,9 +431,11 @@ CRef<CTSE_Info> CDataSource::x_AttachTSE(CSeq_entry& tse, bool dead)
 
 void CDataSource::x_DetachTSE(CTSE_Info& tse_info)
 {
+    /*
     if ( m_Loader ) {
         m_Loader->DropTSE(&tse_info.GetTSE());
     }
+    */
 
     x_DetachSeq_entry_Contents(tse_info);
 
@@ -994,6 +996,7 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
                                    const SAnnotTypeSelector& sel)
 {
     x_GetAnnotData(loc, sel);
+    CMutexGuard ds_guard(m_DataSource_Mtx);
     // Index all annotations if not indexed yet
     if ( m_DirtyAnnotIndex ) {
         NON_CONST_ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
@@ -1011,6 +1014,7 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
                                    const CSeq_entry_Info& entry_info)
 {
     x_GetAnnotData(loc, sel);
+    CMutexGuard ds_guard(m_DataSource_Mtx);
     x_IndexAllAnnots(const_cast<CSeq_entry_Info&>(entry_info));
 }
 
@@ -1019,6 +1023,7 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
                                    const SAnnotTypeSelector& sel,
                                    const CSeq_annot_Info& annot_info)
 {
+    CMutexGuard ds_guard(m_DataSource_Mtx);
     x_IndexSeq_annot(const_cast<CSeq_annot_Info&>(annot_info));
 }
 
@@ -1483,6 +1488,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2003/05/12 19:18:29  vasilche
+* Fixed locking of object manager classes in multi-threaded application.
+*
 * Revision 1.101  2003/05/06 18:54:09  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

@@ -842,6 +842,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
     CHandleRange::TRange range = hr.GetOverlappingRange();
 
+    CConstRef<CScope::TAnnotRefSet> annot_ref_set;
     const TTSE_LockSet* entries;
     switch ( m_LimitObjectType ) {
     case eLimit_TSE:
@@ -860,7 +861,8 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
     case eLimit_Entry:
     case eLimit_Annot:
     default:
-        entries = &m_Scope->GetTSESetWithAnnots(id);
+        annot_ref_set = m_Scope->GetTSESetWithAnnots(id);
+        entries = &annot_ref_set->GetData();
         break;
     }
 
@@ -1021,6 +1023,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/05/12 19:18:29  vasilche
+* Fixed locking of object manager classes in multi-threaded application.
+*
 * Revision 1.66  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.

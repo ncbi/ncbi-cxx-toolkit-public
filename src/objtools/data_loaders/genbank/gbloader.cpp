@@ -440,12 +440,12 @@ CGBDataLoader::GC(void)
         
         GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE() << ")");
         CRef<CSeq_entry> se(sep);
-        g.Unlock();
-        if(GetDataSource()->DropTSE(*se) ) {
+        //g.Unlock();
+        if( DropTSE(se) && GetDataSource()->DropTSE(*se) ) {
             skip--;
             m_InvokeGC=false;
         }
-        g.Lock();
+        //g.Lock();
 #if defined(NCBI_THREADS)
         unsigned i=0;
         for(cur_tse = m_UseListHead;cur_tse && i<skip; ++i) {
@@ -812,6 +812,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/05/12 19:18:29  vasilche
+* Fixed locking of object manager classes in multi-threaded application.
+*
 * Revision 1.63  2003/05/12 18:26:08  vasilche
 * Removed buggy _ASSERT() on reconnection.
 *

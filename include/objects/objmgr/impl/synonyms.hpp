@@ -46,15 +46,15 @@ BEGIN_SCOPE(objects)
 //    Set of seq-id synonyms for CScope cache
 //
 
-class CSynonymsSet : public CObject
+class NCBI_XOBJMGR_EXPORT CSynonymsSet : public CObject
 {
 public:
     typedef set<CSeq_id_Handle>    TIdSet;
     typedef TIdSet::iterator       iterator;
     typedef TIdSet::const_iterator const_iterator;
 
-    CSynonymsSet(void) {}
-    ~CSynonymsSet(void) {}
+    CSynonymsSet(void);
+    ~CSynonymsSet(void);
 
     iterator begin(void);
     const_iterator begin(void) const;
@@ -63,7 +63,7 @@ public:
     iterator find(const CSeq_id_Handle& id);
     const_iterator find(const CSeq_id_Handle& id) const;
     bool empty(void) const;
-    size_t size(void) const;
+    //size_t size(void) const;
 
     void AddSynonym(const CSeq_id_Handle& id);
     void RemoveSynonym(const CSeq_id_Handle& id);
@@ -114,17 +114,18 @@ CSynonymsSet::iterator CSynonymsSet::find(const CSeq_id_Handle& id)
 }
 
 inline
-CSynonymsSet::const_iterator CSynonymsSet::find
-    (const CSeq_id_Handle& id) const
+CSynonymsSet::const_iterator CSynonymsSet::find(const CSeq_id_Handle& id) const
 {
     return m_IdSet.find(id);
 }
 
+/*
 inline
 size_t CSynonymsSet::size(void) const
 {
     return m_IdSet.size();
 }
+*/
 
 inline
 bool CSynonymsSet::empty(void) const
@@ -156,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2003/05/12 19:18:28  vasilche
+ * Fixed locking of object manager classes in multi-threaded application.
+ *
  * Revision 1.2  2003/02/28 21:54:16  grichenk
  * +CSynonymsSet::empty(), removed _ASSERT() in CScope::GetSynonyms()
  *
