@@ -34,8 +34,7 @@
 */
 
 #include <objtools/alnmgr/alnvec.hpp>
-//#include <objects/seqalign/Seq_align.hpp>
-#include <Seq_align.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -313,6 +312,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/08/20 15:06:25  todorov
+* include path fixed
+*
 * Revision 1.29  2003/08/20 14:35:14  todorov
 * Support for NA2AA Densegs
 *
