@@ -1775,9 +1775,9 @@ bool CSeq_id_Mapper::IsBetter(const CSeq_id_Handle& h1,
                               const CSeq_id_Handle& h2) const
 {
     _ASSERT(h1.m_Mapper == this  &&  h2.m_Mapper == this);
-    TIdMap::const_iterator it1 = m_IdMap.find(x_GetSeq_id(h1)->Which());
+    TIdMap::const_iterator it1 = m_IdMap.find(h1.x_GetSeqId()->Which());
     _ASSERT(it1 != m_IdMap.end()  &&  it1->second.GetPointer());
-    TIdMap::const_iterator it2 = m_IdMap.find(x_GetSeq_id(h2)->Which());
+    TIdMap::const_iterator it2 = m_IdMap.find(h2.x_GetSeqId()->Which());
     _ASSERT(it2 != m_IdMap.end()  &&  it2->second.GetPointer());
     if (it1->second != it2->second)
         return false;
@@ -1796,6 +1796,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/04/18 13:45:48  grichenk
+* Fixed bug in CSeq_id_Mapper::IsBetter()
+*
 * Revision 1.31  2003/03/11 16:15:04  kuznets
 * Misprint corrected
 *
