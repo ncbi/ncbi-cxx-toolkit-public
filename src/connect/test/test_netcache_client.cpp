@@ -79,10 +79,18 @@ bool s_CheckExists(const string&  host,
                    unsigned short port, 
                    const string&  key,
                    unsigned char* buf = 0,
-                   size_t         buf_size = 0)
+                   size_t         buf_size = 0,
+                   vector<STransactionInfo>* log = 0)
 {
-    CSocket sock(host, port);
-    CNetCacheClient nc_client(&sock);
+//    CSocket sock(host, port);
+//    CNetCacheClient nc_client(&sock);
+
+    STransactionInfo info;
+    info.blob_size = buf_size;
+    info.connection_time = 0;
+
+    CNetCacheClient nc_client;
+    CStopWatch sw(true);
 
     unsigned char dataBuf[1024] = {0,};
 
@@ -97,9 +105,15 @@ bool s_CheckExists(const string&  host,
 
         if (rres == CNetCacheClient::eNotFound)
             return false;
+
+        info.transaction_time = sw.Elapsed();
+        if (log) {
+            log->push_back(info);
+        }
     } 
-    catch (CNetCacheException&)
+    catch (CNetCacheException& ex)
     {
+        cout << ex.what() << endl;
         throw;
         return false;
     }
@@ -134,6 +148,7 @@ string s_PutBlob(const string&             host,
 static
 void s_ReportStatistics(const vector<STransactionInfo>& log)
 {
+    NcbiCout << "Statistical records=" << log.size() << NcbiEndl;
     double sum, sum_conn, sum_tran;
     sum = sum_conn = sum_tran = 0.0;
     ITERATE(vector<STransactionInfo>, it, log) {
@@ -143,7 +158,11 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     }
     double avg, avg_conn, avg_tran;
     avg = sum / double(log.size());
-    avg_conn = sum_conn / double(log.size());
+    if (avg_conn > 0.0000001) {
+        avg_conn = sum_conn / double(log.size());
+    } else {
+        avg_conn = 0;
+    }
     avg_tran = sum_tran / double(log.size());
 
     NcbiCout << "Sum, Conn, Trans" << endl;
@@ -162,7 +181,9 @@ void s_StressTest(const string&             host,
                   unsigned short            port,
                   size_t                    size, 
                   unsigned int              repeats,
-                  vector<STransactionInfo>* log)
+                  vector<STransactionInfo>* log_write,
+                  vector<STransactionInfo>* log_read
+                  )
 {
     cout << "Stress test. BLOB size = " << size 
          << " Repeats = " << repeats
@@ -172,6 +193,13 @@ void s_StressTest(const string&             host,
     AutoPtr<char, ArrayDeleter<char> > buf2 = new char[size];
     memset(buf.get(),  0, size);
     memset(buf2.get(), 0, size);
+
+    if (log_write) {
+        log_write->clear();
+    }
+    if (log_read) {
+        log_read->clear();
+    }
 
     string key;
     for (unsigned i = 0; i < repeats; ) {
@@ -190,7 +218,7 @@ void s_StressTest(const string&             host,
             ch[i0] = 10;
             ch[i1] = 127;
 
-            key = s_PutBlob(host, port, buf.get(), size, log);
+            key = s_PutBlob(host, port, buf.get(), size, log_write);
 
             keys.push_back(key);
             idx0.push_back(i0);
@@ -213,7 +241,8 @@ void s_StressTest(const string&             host,
             ch[i1] = 127;
 
             bool exists = 
-                s_CheckExists(host, port, key, (unsigned char*)buf2.get(), size);
+                s_CheckExists(host, port, 
+                              key, (unsigned char*)buf2.get(), size, log_read);
             assert(exists);
 
             int cmp = memcmp(buf.get(), buf2.get(), size);
@@ -408,24 +437,37 @@ int CTestNetCacheClient::Run(void)
 */
 
     vector<STransactionInfo> log;
+    vector<STransactionInfo> log_read;
 
     unsigned repeats = 5000;
-    s_StressTest(host, port, 256, repeats, &log);
+    s_StressTest(host, port, 256, repeats, &log, &log_read);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
+    NcbiCout << NcbiEndl << NcbiEndl;
+
+
+    s_StressTest(host, port, 1024 * 5, repeats, &log, &log_read);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
+    NcbiCout << NcbiEndl;
+
+    s_StressTest(host, port, 1024 * 100, repeats/2, &log, &log_read);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
     NcbiCout << NcbiEndl;
 
 
-    s_StressTest(host, port, 1024 * 5, repeats, &log);
+    s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log, &log_read);
+    NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
-    NcbiCout << NcbiEndl;
-
-    s_StressTest(host, port, 1024 * 100, repeats/2, &log);
-    s_ReportStatistics(log);
-    NcbiCout << NcbiEndl;
-
-
-    s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log);
-    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
+    s_ReportStatistics(log_read);
     NcbiCout << NcbiEndl;
 
 
@@ -450,6 +492,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/20 17:59:28  kuznets
+ * Improved statistics collection(added read stats)
+ *
  * Revision 1.15  2004/12/20 13:30:33  kuznets
  * Minor changes
  *
