@@ -305,9 +305,9 @@ extern EIO_Status CONN_SetTimeout
         }
         break;
     default:
+        status = eIO_InvalidArg;
         CONN_LOG(eLOG_Error,
                  "[CONN_SetTimeout]  Unknown event to set timeout for");
-        status = eIO_InvalidArg;
         assert(0);
         break;
     }
@@ -657,8 +657,8 @@ extern EIO_Status CONN_ReadLine
  size_t* n_read
  )
 {
+    EIO_Status status = eIO_Success;
     char       w[1024];
-    EIO_Status status;
     size_t     len;
 
     if (!n_read)
@@ -854,6 +854,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2004/05/26 16:00:06  lavr
+ * Minor status fixes in CONN_SetTimeout() and CONN_ReadLine()
+ *
  * Revision 6.41  2004/05/24 20:19:19  lavr
  * Fix eIO_InvalidArg conditions (size and no buffer)
  *
