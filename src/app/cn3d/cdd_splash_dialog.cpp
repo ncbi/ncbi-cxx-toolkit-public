@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/12/07 01:38:36  thiessen
+* fix header problem
+*
 * Revision 1.4  2002/09/18 14:12:00  thiessen
 * add annotations summary to overview
 *
@@ -52,6 +55,7 @@
 #include <objects/cdd/Align_annot_set.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/cdd/Align_annot.hpp>
+#include <objects/cdd/Feature_evidence.hpp>
 #include <objects/biblio/PubMedId.hpp>
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/mmdb1/Mmdb_id.hpp>
