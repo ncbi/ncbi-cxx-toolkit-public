@@ -175,7 +175,7 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
             int n = m_NotInUse.NofItems();
             while (n--) {
                 t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(n));
-                if (pool_name == t_con->PoolName() == 0) {
+                if (pool_name.compare(t_con->PoolName()) == 0) {
                     m_NotInUse.Remove(n);
                     m_InUse.Add((TPotItem) t_con);
                     t_con->Refresh();
@@ -189,7 +189,7 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
         // try to use server name
         while (n--) {
             t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(n));
-            if (srv_name == t_con->ServerName()) {
+            if (srv_name.compare(t_con->ServerName()) == 0) {
                 m_NotInUse.Remove(n);
                 m_InUse.Add((TPotItem) t_con);
                 t_con->Refresh();
@@ -513,6 +513,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/04/18 20:26:39  soussov
+ * fixes typo in Connect for reusable connection with specified connection pool
+ *
  * Revision 1.21  2003/04/01 21:50:26  soussov
  * new attribute 'packet=XXX' (where XXX is a packet size) added to DBLIB_CreateContext
  *
