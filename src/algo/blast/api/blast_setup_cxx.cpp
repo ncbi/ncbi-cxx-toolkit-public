@@ -54,9 +54,9 @@
 
 #include <algorithm>
 
-USING_SCOPE(objects);
-
 BEGIN_NCBI_SCOPE
+USING_SCOPE(ncbi::objects);
+
 
 #define LAST2BITS 0x03
 
@@ -355,6 +355,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/11 14:00:41  dicuccio
+* Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
+* BEGIN_NCBI_SCOPE block)
+*
 * Revision 1.10  2003/08/08 19:43:07  dicuccio
 * Compilation fixes: #include file rearrangement; fixed use of 'list' and
 * 'vector' as variable names; fixed missing ostrea<< for __int64

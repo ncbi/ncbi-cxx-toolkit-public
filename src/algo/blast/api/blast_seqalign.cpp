@@ -43,6 +43,10 @@
 #define GAP_VALUE -1
 #endif
 
+
+BEGIN_NCBI_SCOPE
+
+
 // Converts a frame into the appropriate strand
 static ENa_strand
 x_Frame2Strand(short frame)
@@ -631,10 +635,17 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
     return retval;
 }
 
+
+END_NCBI_SCOPE
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/11 14:00:41  dicuccio
+* Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
+* BEGIN_NCBI_SCOPE block)
+*
 * Revision 1.8  2003/08/08 19:43:07  dicuccio
 * Compilation fixes: #include file rearrangement; fixed use of 'list' and
 * 'vector' as variable names; fixed missing ostrea<< for __int64

@@ -34,10 +34,9 @@
 
 #include <objects/seqloc/Seq_interval.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-BEGIN_NCBI_SCOPE
 
 #ifdef NCBI_OS_MSWIN
 
@@ -254,8 +253,9 @@ CBlastDatabaseOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
 
 }
 
+
 BlastMask*
-x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
+BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index)
 {
     _ASSERT(sl.IsInt() || sl.IsPacked_int());
 
