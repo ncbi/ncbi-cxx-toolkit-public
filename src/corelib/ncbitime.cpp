@@ -88,6 +88,7 @@ BEGIN_NCBI_SCOPE
 // Protective mutex
 DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
 DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
+DEFINE_STATIC_FAST_MUTEX(s_FastLocalTimeMutex);
 
 // Store global time/timespan formats in TLS
 static CSafeStaticRef< CTls<string> > s_TlsFormatTime;
@@ -1243,7 +1244,8 @@ bool CTime::IsValid(void) const
         return false;
     if (Minute() < 0  ||  Minute() > 59)
         return false;
-    if (Second() < 0  ||  Second() > 59)
+    // leap seconds are supported
+    if (Second() < 0  ||  Second() > 61)
         return false;
     if (NanoSecond() < 0  ||  NanoSecond() >= kNanoSecondsPerSecond)
         return false;
@@ -1882,61 +1884,93 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 
 CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
     : m_SecAfterHour(sec_after_hour),
-      m_LastTuneTime(0), m_LastSysTime(0),
-      m_Timezone(0), m_Daylight(-1)
+      m_LastTuneupTime(0), m_LastSysTime(0),
+      m_Timezone(0), m_Daylight(-1), m_IsTuneup(false)
 {
 #if !defined(TIMEZONE_IS_UNDEFINED)
     m_Timezone = TimeZone();
     m_Daylight = Daylight();
 #endif
     m_LocalTime.SetTimeZonePrecision(CTime::eHour);
+    m_TunedTime.SetTimeZonePrecision(CTime::eHour);
 }
 
 
 void CFastLocalTime::Tuneup(void)
 {
-    // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
-    time_t timer = time(0);
-    x_Tuneup(timer);
+    if ( m_IsTuneup ) {
+        return;
+    }
+    x_Tuneup(time(0));
+
+    // MT-Safe protect: copy current local time to cached time
+    CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+    m_LocalTime   = m_TunedTime;
+    m_LastSysTime = m_LastTuneupTime;
 }
 
 
 void CFastLocalTime::x_Tuneup(time_t timer)
 {
-    m_LocalTime.x_SetTime(&timer);
+    // Tuneup in progress
+    m_IsTuneup = true;
+
+    // MT-Safe protect: use CTime locking mutex
+    CFastMutexGuard LOCK(s_TimeMutex);
+    m_TunedTime.x_SetTime(&timer);
 
 #if !defined(TIMEZONE_IS_UNDEFINED)
     m_Timezone = TimeZone();
     m_Daylight = Daylight();
 #endif
-    m_LastTuneTime = timer;
-    m_LastSysTime  = timer;
+    m_LastTuneupTime = timer;
+
+    // Clear flag
+    m_IsTuneup = false;
 }
 
 
 CTime CFastLocalTime::GetLocalTime(void)
 {
-    // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
-
     // Get system timer
     time_t timer = time(0);
 
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
-    if ( !m_LastTuneTime  ||
-         ((timer / 3600 != m_LastTuneTime / 3600)  &&
-          (timer % 3600 >  (time_t)m_SecAfterHour))
+    if ( !m_IsTuneup ) {
+        if ( !m_LastTuneupTime  ||
+            ((timer / 3600 != m_LastTuneupTime / 3600)  &&
+             (timer % 3600 >  (time_t)m_SecAfterHour))
 #if !defined(TIMEZONE_IS_UNDEFINED)
-         ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
+            ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
 #endif
-    ) {
-        x_Tuneup(timer);
-        return m_LocalTime;
+        ) {
+            x_Tuneup(timer);
+            // MT-Safe protect: copy tuned time to cached local time
+            CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+            m_LocalTime   = m_TunedTime;
+            m_LastSysTime = m_LastTuneupTime;
+            return m_LocalTime;
+        }
     }
-    // Adjust system time to local time without system calls
-    m_LocalTime.AddSecond(timer - m_LastSysTime, CTime::eIgnoreDaylight);
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+
+    if ( !m_LastTuneupTime ) {
+        // MT: other attempt to do first time Tuneup().
+        // So, local time is undefined. We cannot use timezone information,
+        // because it can be undefined also.
+        // Lets make its dirty initialization using UTC time... 
+        m_LocalTime = CTime(1970, 1);
+        m_LocalTime.AddSecond(timer, CTime::eIgnoreDaylight);
+        // Temporary setup a tuneup time to current.
+        // This variable will be changed soon to correct value,
+        // after finishing current Tuneup() process in another thread.
+        m_LastTuneupTime = timer;
+    } else {
+        // Adjust local time on base of system time without any system calls
+        m_LocalTime.AddSecond(timer - m_LastSysTime, CTime::eIgnoreDaylight);
+    }
     m_LastSysTime = timer;
 
     // Return computed local time
@@ -2052,6 +2086,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/02/17 20:16:31  ivanov
+ * CTime::IsValid(): Added leapsecond support.
+ * Improved CFastLocalTime work in MT environment -- do not block all
+ * other threads while one call Tuneup().
+ *
  * Revision 1.60  2005/02/10 22:11:08  ucko
  * CFastLocalTime::GetLocalTime: don't try to use TimeZone and Daylight
  * when TIMEZONE_IS_UNDEFINED is defined.
