@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-APP_PROJ = windowmasker
+APP_PROJ = winmasker
 
 REQUIRES = objects
 
