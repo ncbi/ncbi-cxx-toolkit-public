@@ -50,6 +50,8 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
+#include <objmgr/gbloader.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -62,15 +64,18 @@ class CAlnMrgApp : public CNcbiApplication
 {
     virtual void     Init                (void);
     virtual int      Run                 (void);
+    CScope&          GetScope            (void)             const;
     void             SetOptions          (void);
     void             LoadInputAlignments (void);
     void             PrintMergedAlignment(void);
     void             View4               (int screen_width);
 
 private:
-    CRef<CAlnMix>        m_Mix;
-    CAlnMix::TMergeFlags m_MergeFlags;
-    CAlnMix::TAddFlags   m_AddFlags;
+    CRef<CAlnMix>                m_Mix;
+    CAlnMix::TMergeFlags         m_MergeFlags;
+    CAlnMix::TAddFlags           m_AddFlags;
+    mutable CRef<CObjectManager> m_ObjMgr;
+    mutable CRef<CScope>         m_Scope;
 };
 
 void CAlnMrgApp::Init(void)
@@ -165,6 +170,22 @@ void CAlnMrgApp::Init(void)
 }
 
 
+CScope& CAlnMrgApp::GetScope(void) const
+{
+    if (!m_Scope) {
+        m_ObjMgr = new CObjectManager;
+        
+        m_ObjMgr->RegisterDataLoader
+            (*new CGBDataLoader("ID", NULL, 2),
+             CObjectManager::eDefault);
+        
+        m_Scope = new CScope(*m_ObjMgr);
+        m_Scope->AddDefaults();
+    }
+    return *m_Scope;
+}
+
+
 void CAlnMrgApp::LoadInputAlignments(void)
 {
     CArgs args = GetArgs();
@@ -198,7 +219,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         CRef<CSeq_entry> se(new CSeq_entry);
         *in >> *se;
         *binout << *se;
-        m_Mix->GetScope().AddTopLevelSeqEntry(*se);
+        GetScope().AddTopLevelSeqEntry(*se);
         for (i = Begin(*se); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
@@ -215,7 +236,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             } else if (CType<CSeq_entry>::Match(i)) {
                 if ( !(tse_cnt++) ) {
-                    //m_Mix->GetScope().AddTopLevelSeqEntry
+                    //GetScope().AddTopLevelSeqEntry
                         (*(CType<CSeq_entry>::Get(i)));
                 }
             }
@@ -373,7 +394,7 @@ int CAlnMrgApp::Run(void)
 {
     SetOptions();
 
-    m_Mix = new CAlnMix();
+    m_Mix = new CAlnMix(GetScope());
     LoadInputAlignments();
     m_Mix->Merge(m_MergeFlags);
     PrintMergedAlignment();
@@ -396,6 +417,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/12/19 19:38:34  todorov
+* Demon creation of scope outside alnmix
+*
 * Revision 1.14  2003/12/08 21:28:04  todorov
 * Forced Translation of Nucleotide Sequences
 *
