@@ -111,7 +111,7 @@ inline T SeqDB_GetBrokenUnaligned(const T * stdord_obj)
 // Macro Predicates for binary qualities
 
 #define IS_POWER_OF_TWO(x)    (((x) & ((x)-1)) == 0)
-#define ALIGNED_TO_POW2(x,y)  (! ((x) & (-y)))
+#define ALIGNED_TO_POW2(x,y)  (! ((x) & (0-y)))
 
 #define PTR_ALIGNED_TO_SELF_SIZE(x) \
     (IS_POWER_OF_TWO(sizeof(*x)) && ALIGNED_TO_POW2((size_t)(x), sizeof(*x)))
