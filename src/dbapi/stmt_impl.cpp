@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.14  2004/02/26 16:56:01  kholodov
+* Added: Trace message to HasMoreResults()
+*
 * Revision 1.13  2004/02/19 15:23:21  kholodov
 * Fixed: attempt to delete cached CDB_Result when it was already deleted by the CResultSet object
 *
@@ -137,7 +140,7 @@ IResultSet* CStatement::GetResultSet()
         return 0;
 
     if( m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() != m_rs) ) {
-        _TRACE(GetIdent() << ": CDB_Result " << (void*)m_rs << " requested");
+        _TRACE(GetIdent() << "::GetResultSet(): CDB_Result " << (void*)m_rs << " requested");
         CResultSet *ri = new CResultSet(m_conn, m_rs);
         ri->AddListener(this);
         AddListener(ri);
@@ -159,6 +162,8 @@ bool CStatement::HasMoreResults()
             return false;
         }
         SetCDB_Result(GetBaseCmd()->Result()); 
+        _TRACE(GetIdent() << "::HasMoreResults(): CDB_Result " 
+               << (void*)m_rs << " obtained");
         if( m_rs == 0 )
             m_rowCount = GetBaseCmd()->RowCount();
     }
