@@ -35,6 +35,7 @@
 #include <corelib/metareg.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbidll.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -718,9 +719,52 @@ string CNcbiApplication::FindProgramExecutablePath
     }    
     ret_val = filePath;
     
-#elif defined (NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
     string app_path = argv[0];
+
+#  if defined (NCBI_OS_MSWIN)
+    // MS Windows: Try more accurate method of detection
+    try {
+        // Load PSAPI dynamic library -- it should exists on MS Windows NT/2000/XP
+        CDll dll_psapi("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
+
+        // Get function entry-point from DLL
+        BOOL  (STDMETHODCALLTYPE FAR * dllEnumProcessModules) 
+                (HANDLE  hProcess,     // handle to process
+                 HMODULE *lphModule,   // array of module handles
+                 DWORD   cb,           // size of array
+                 LPDWORD lpcbNeeded    // number of bytes required
+                 ) = NULL;
+
+        dllEnumProcessModules = dll_psapi.GetEntryPoint("EnumProcessModules",
+                                                        &dllEnumProcessModules );
+        if ( !dllEnumProcessModules ) {
+            NCBI_THROW(CException, eUnknown, kEmptyStr);
+        }
+
+        // Find executable file in the midst of all loaded modules
+        HANDLE  process = GetCurrentProcess();
+        HMODULE module  = 0;
+        DWORD   needed  = 0;
+
+        // Get first module of current process (it should be .exe file)
+        if ( dllEnumProcessModules(process, &module, sizeof(HMODULE), &needed) ) {
+            if ( needed  &&  module ) {
+                char buf[MAX_PATH + 1];
+                DWORD ncount = GetModuleFileName(module, buf, MAX_PATH);
+                if ( ncount ) {
+                    buf[ncount] = 0;
+                    return buf;
+                }
+            }
+        }
+    }
+    catch (CException) {
+        ; // Just catch an all exceptions from CDll
+    }
+    // This method don't work -- use standard method
+#  endif
 
 #  if defined(NCBI_OS_LINUX)
     // Linux OS: Try more accurate method of detection
@@ -827,6 +871,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2003/09/17 21:03:58  ivanov
+ * FindProgramExecutablePath:  try more accurate method of detection on MS Windows
+ *
  * Revision 1.68  2003/09/16 20:55:33  ivanov
  * FindProgramExecutablePath:  try more accurate method of detection on Linux.
  *
