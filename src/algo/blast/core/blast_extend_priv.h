@@ -28,8 +28,15 @@
  */
 
 /** @file blast_extend_priv.h
- * Structures used for BLAST extension @todo FIXME: elaborate description
- * rename to nt_ungapped.h?
+ * Prototypes for functions from blast_extend.c and aa_ungapped.c that are considered
+ * low-level so they should not be called outside of the "core" directory except in the
+ * context of a unit test.  
+ * 
+ * Two different types of function prototypes are included:
+ * 1.) functions that perform an extension of an initial hit.
+ * 2.) functions that manipulate BLAST_DiagTable.
+ *
+ * 
  */
 
 #ifndef __BLAST_EXTEND_PRI__
