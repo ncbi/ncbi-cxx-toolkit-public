@@ -594,6 +594,13 @@ void CProjBulderApp::CreateFeaturesAndPackagesFiles(
         ITERATE(set<string>, e, epackages) {
             ofs << *e << endl;
         }
+
+        list<string> std_features;
+        GetSite().GetStandardFeatures(std_features);
+        ITERATE(list<string>, s, std_features) {
+            ofs << *s << endl;
+        }
+
         const set<string>& dpackages =
             CMsvcPrjProjectContext::GetDisabledPackages(c->m_Name);
         ITERATE(set<string>, d, dpackages) {
@@ -940,6 +947,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/02/15 19:04:29  gouriano
+ * Added list of standard features
+ *
  * Revision 1.50  2005/02/14 18:52:29  gouriano
  * Generate a file with all features and packages listed
  *

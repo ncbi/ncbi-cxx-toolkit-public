@@ -378,6 +378,15 @@ string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
     return m_Registry.GetString("Configure", 
                                 "ThirdPartyLibsBinSubDir", "");
 }
+
+void CMsvcSite::GetStandardFeatures(list<string>& features) const
+{
+    features.clear();
+    string features_str = m_Registry.GetString("Configure", 
+                                           "StandardFeatures", "");
+    NStr::Split(features_str, LIST_SEPARATOR, features);
+}
+
 //-----------------------------------------------------------------------------
 bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
@@ -463,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/02/15 19:04:29  gouriano
+ * Added list of standard features
+ *
  * Revision 1.26  2004/12/30 17:48:49  gouriano
  * INCLUDE changed from string to list of strings
  *

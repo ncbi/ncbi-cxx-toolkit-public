@@ -158,6 +158,7 @@ public:
     void   GetThirdPartyLibsToInstall    (list<string>* libs) const;
     string GetThirdPartyLibsBinPathSuffix(void) const;
     string GetThirdPartyLibsBinSubDir    (void) const;
+    void   GetStandardFeatures           (list<string>& features) const;
     
     void ProcessMacros (const list<SConfigInfo>& configs);
     const CSymResolver& GetMacros(void) const
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/02/15 19:03:51  gouriano
+ * Added list of standard features
+ *
  * Revision 1.21  2004/12/30 17:46:46  gouriano
  * Added StdLibs list
  *
