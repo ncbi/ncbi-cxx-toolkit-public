@@ -402,19 +402,30 @@ struct SMemoryFileHandle;
 class NCBI_XNCBI_EXPORT CMemoryFile
 {
 public:
-    // Initializes the memory mapping on file "file_name".
+    // Protect attributes
+    typedef enum {
+        eMMP_Read,	      // Data can be read
+        eMMP_Write,	      // Data can be written
+        eMMP_ReadWrite    // Data can be read and written
+    } EMemMapProtect;
+
+    // Share attributes
+    typedef enum {
+        eMMS_Shared,	  // Changes are shared
+        eMMS_Private	  // Changes are private
+    } EMemMapShare;
+
+    // Initialize the memory mapping on file "file_name".
     // Throws an exception on error.
-    CMemoryFile(const string& file_name);
+    CMemoryFile(const string& file_name,
+                EMemMapProtect protect_attr = eMMP_Read,
+                EMemMapShare   share_attr   = eMMS_Private);
 
     // Call Unmap();  do other cleanup...
     ~CMemoryFile(void);
 
     // Is memory-mapping supported (by the C++ Toolkit) on this platform
     static bool IsSupported(void);
-
-    // Unmap file (if mapped).
-    // Return FALSE on error.
-    bool Unmap(void);
 
     // Get pointer to beginning of data.
     // Return NULL if mapped to a file of zero length, or if unmapped already.
@@ -423,6 +434,14 @@ public:
     // Get size (in bytes) of the mapped area.
     // Return "-1" if unmapped already.
     Int8 GetSize(void) const;
+
+    // Write all modified copies of memory pages to the underlying file.
+    // By default data will be flushed in Unmap() or destructor.
+    bool Flush(void) const;
+
+    // Unmap file (if mapped).
+    // Return FALSE on error.
+    bool Unmap(void);
 
     // Advises the VM system that the a certain region of user mapped memory 
     // will be accessed following a type of pattern. The VM system uses this 
@@ -441,7 +460,9 @@ public:
 
 private:
     // Map file to memory
-    void x_Map(const string& file_name);
+    void x_Map(const string& file_name,
+               EMemMapProtect protect_attr,
+               EMemMapShare   share_attr);
 
 private:
     SMemoryFileHandle*  m_Handle;   // Memory file handle
@@ -563,6 +584,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/02/05 22:07:32  ivanov
+ * Added protect and sharing parameters to the CMemoryFile constructor.
+ * Added CMemoryFile::Flush() method.
+ *
  * Revision 1.18  2003/01/16 13:03:47  dicuccio
  * Added CDir::GetCwd()
  *

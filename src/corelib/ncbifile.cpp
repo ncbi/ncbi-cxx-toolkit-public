@@ -1265,13 +1265,15 @@ bool CMemoryFile::IsSupported(void)
 }
 
 
-CMemoryFile::CMemoryFile(const string& file_name)
+CMemoryFile::CMemoryFile(const string&  file_name,
+                         EMemMapProtect protect,
+                         EMemMapShare   share)
     : m_Handle(0), m_Size(-1), m_DataPtr(0)
 {
-    x_Map(file_name);
+    x_Map(file_name, protect, share);
 
     if (GetSize() < 0) {
-        NCBI_THROW(CFileException,eMemoryMap,
+        NCBI_THROW(CFileException, eMemoryMap,
                    "File memory mapping cannot be created");
     }
 }
@@ -1283,7 +1285,9 @@ CMemoryFile::~CMemoryFile(void)
 }
 
 
-void CMemoryFile::x_Map(const string& file_name)
+void CMemoryFile::x_Map(const string&  file_name,
+                        EMemMapProtect protect_attr,
+                        EMemMapShare   share_attr)
 {
     if ( !IsSupported() )
         return;
@@ -1305,23 +1309,54 @@ void CMemoryFile::x_Map(const string& file_name)
 #if defined(NCBI_OS_MSWIN)
         // Name of a file-mapping object cannot contain '\'
         string x_name = NStr::Replace(file_name, "\\", "/");
-        m_Handle->hMap = OpenFileMapping(FILE_MAP_READ, false, x_name.c_str());
+
+        // Translate attributes 
+        DWORD map_protect,  map_access, file_share, file_access;
+        switch (protect_attr) {
+            case eMMP_Read:
+                map_access  = FILE_MAP_READ;
+                map_protect = PAGE_READONLY;
+                file_access = GENERIC_READ;
+                break;
+            case eMMP_Write:
+            case eMMP_ReadWrite:
+                // On MS Windows platform Write & ReadWrite access
+                // to the mapped memory is equivalent
+                if  (share_attr == eMMS_Shared ) {
+                    map_access = FILE_MAP_ALL_ACCESS;
+                } else {
+                    map_access = FILE_MAP_COPY;
+                }
+                map_protect = PAGE_READWRITE;
+                // So the file also must be open for reading and writing
+                file_access = GENERIC_READ | GENERIC_WRITE;
+                break;
+            default:
+                _TROUBLE;
+        }
+        if (share_attr == eMMS_Shared) {
+            file_share = FILE_SHARE_READ | FILE_SHARE_WRITE;
+        } else {
+            file_share = 0;
+        }
+
+        // If failed to attach to an existing file-mapping object then
+        // create a new one (based on the specified file)
+        m_Handle->hMap = OpenFileMapping(map_access, false, x_name.c_str());
         if ( !m_Handle->hMap ) { 
-            // If failed to attach to an existing file-mapping object then
-            // create a new one (based on the specified file)
-            HANDLE hFile = CreateFile(x_name.c_str(), GENERIC_READ, 
-                                      FILE_SHARE_READ, NULL, OPEN_EXISTING, 
+            HANDLE hFile = CreateFile(x_name.c_str(), file_access, 
+                                      file_share, NULL, OPEN_EXISTING, 
                                       FILE_ATTRIBUTE_NORMAL, NULL);
             if (hFile == INVALID_HANDLE_VALUE)
                 break;
 
-            m_Handle->hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY,
+            m_Handle->hMap = CreateFileMapping(hFile, NULL, map_protect,
                                                0, 0, x_name.c_str());
             CloseHandle(hFile);
             if ( !m_Handle->hMap )
                 break;
         }
-        m_DataPtr = MapViewOfFile(m_Handle->hMap, FILE_MAP_READ,
+        m_DataPtr = MapViewOfFile(m_Handle->hMap, map_access,
                                   0, 0, m_Size);
         if ( !m_DataPtr ) {
             CloseHandle(m_Handle->hMap);
@@ -1329,13 +1364,46 @@ void CMemoryFile::x_Map(const string& file_name)
         }
 
 #elif defined(NCBI_OS_UNIX)
-        int fd = open(file_name.c_str(), O_RDONLY);
-        if (fd < 0)
+        // Translate attributes 
+        int map_protect, map_share, file_access;
+        switch (protect_attr) {
+            case eMMP_Read:
+                map_protect = PROT_READ;
+                file_access = O_RDONLY;
+                break;
+            case eMMP_Write:
+                map_protect = PROT_WRITE;
+                // File access must be read + write
+                file_access = O_RDWR;
+                break;
+            case eMMP_ReadWrite:
+                map_protect = PROT_READ | PROT_WRITE;
+                file_access = O_RDWR;
+                break;
+            default:
+                _TROUBLE;
+        }
+        switch (share_attr) {
+            case eMMS_Shared:
+                map_share = MAP_SHARED;
+                break;
+            case eMMS_Private:
+                map_share = MAP_PRIVATE;
+                break;
+            default:
+                _TROUBLE;
+        }
+        // Open file
+        int fd = open(file_name.c_str(), file_access);
+        if (fd < 0) {
             break;
-        m_DataPtr = mmap(0, (size_t) m_Size, PROT_READ, MAP_SHARED, fd, 0);
+        }
+        // Map file to memory
+        m_DataPtr = mmap(0, (size_t) m_Size, map_protect, map_share, fd, 0);
         close(fd);
-        if (m_DataPtr == MAP_FAILED)
+        if (m_DataPtr == MAP_FAILED) {
             break;
+        }
 #endif
 
         // Success
@@ -1349,22 +1417,36 @@ void CMemoryFile::x_Map(const string& file_name)
 }
 
 
+bool CMemoryFile::Flush(void) const
+{
+    // If file is not mapped do nothing
+    if ( !m_Handle )
+        return false;
+    bool status = false;
+
+#if defined(NCBI_OS_MSWIN)
+    status = (FlushViewOfFile(m_DataPtr, 0) != 0);
+#elif defined(NCBI_OS_UNIX)
+    status = (msync((char*)m_DataPtr, (size_t) m_Size, MS_SYNC) == 0);
+#endif
+    return status;
+}
+
+
 bool CMemoryFile::Unmap(void)
 {
     // If file is not mapped do nothing
     if ( !m_Handle )
         return true;
     bool status = false;
+
 #if defined(NCBI_OS_MSWIN)
     status = (UnmapViewOfFile(m_DataPtr) != 0);
     if ( status  &&  m_Handle->hMap )
         status = (CloseHandle(m_Handle->hMap) != 0);
-
 #elif defined(NCBI_OS_UNIX)
-    status = (munmap((char*) m_DataPtr, (size_t) m_Size) == 0);
-
+    status = (munmap((char*)m_DataPtr, (size_t) m_Size) == 0);
 #endif
-
     delete m_Handle;
 
     // Reinitialize members
@@ -1428,6 +1510,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/02/05 22:07:15  ivanov
+ * Added protect and sharing parameters to the CMemoryFile constructor.
+ * Added CMemoryFile::Flush() method.
+ *
  * Revision 1.37  2003/01/16 13:27:56  dicuccio
  * Added CDir::GetCwd()
  *
