@@ -40,20 +40,21 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CAlnVwr
+
+class NCBI_XALNMGR_EXPORT CAlnVwr
 {
 public:
     // CAlnMap printers:
 
-    static void CsvTable   (const CAlnMap& aln_map,
-                            CNcbiOstream& out = cout);
+    static void CsvTable(const CAlnMap&          aln_map,
+                         CNcbiOstream&           out   = cout);
 
-    static void Segments   (const CAlnMap& aln_map,
-                            CNcbiOstream& out = cout);
+    static void Segments(const CAlnMap&          aln_map,
+                         CNcbiOstream&           out   = cout);
 
-    static void Chunks     (const CAlnMap& aln_map,
-                            CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly,
-                            CNcbiOstream& out = cout);
+    static void Chunks  (const CAlnMap&          aln_map,
+                         CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly,
+                         CNcbiOstream&           out   = cout);
 
 
     // CAlnVec printer:
@@ -66,25 +67,25 @@ public:
     };
 
     static void PopsetStyle(const CAlnVec& aln_vec,
-                            int scrn_width = 70,
-                            EAlgorithm algorithm = eSpeedOptimized,
-                            CNcbiOstream& out = cout);
-
+                            int            scrn_width = 70,
+                            EAlgorithm     algorithm  = eSpeedOptimized,
+                            CNcbiOstream&  out        = cout);
 };
 
 
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
- *
  * $Log$
+ * Revision 1.2  2004/08/28 18:45:38  vakatov
+ * Added MS-Win export;  some code beautification.
+ * BTW, CNcbiOstream&  out = cout looks a bit fishy.
+ *
  * Revision 1.1  2004/08/27 20:53:34  todorov
  * initial revision
- *
  *
  * ===========================================================================
  */
