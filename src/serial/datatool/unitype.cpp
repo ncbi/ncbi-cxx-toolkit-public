@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/01/22 22:01:15  grichenk
+* Fixed generation of list<> from "SET OF"
+*
 * Revision 1.20  2002/01/16 21:30:18  grichenk
 * ANS.1 SET OF is implemented as list<> by default
 *
@@ -263,13 +266,13 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
     CTypeStrings::AdaptForSTL(tData);
     if ( templ.empty() ) {
         if ( tData->CanBeKey() ) {
-            templ = "list"; // "multiset";
+            templ = "list";
         }
         else {
             return AutoPtr<CTypeStrings>(new CListTypeStrings("list", tData, true));
         }
     }
-    return AutoPtr<CTypeStrings>(new CSetTypeStrings(templ, tData));
+    return AutoPtr<CTypeStrings>(new CListTypeStrings(templ, tData, true));
 }
 
 END_NCBI_SCOPE
