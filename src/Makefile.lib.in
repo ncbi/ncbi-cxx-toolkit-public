@@ -44,7 +44,7 @@ $(XLIB): $(XLIBOBJ)
 ### Standard targets
 
 all: $(XLIB) $(XOBJ)
-	$(COPY_IF) $(libdir) $(XLIB) $(XOBJ)
+	@$(COPY_IF) $(libdir) $(XLIB) $(XOBJ)
 
 clean:
 	-$(RMDIR) SunWS_cache
