@@ -509,11 +509,29 @@ CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::ResolvedRangeIterator(CScope* scope,
-                                                    TSeqPos from,
-                                                    TSeqPos length,
-                                                    ENa_strand strand,
-                                                    size_t maxResolveCount) const
+CSeqMap::TSegment_CI
+CSeqMap::ResolvedRangeIterator(CScope* scope,
+                               ENa_strand strand,
+                               TSeqPos from,
+                               TSeqPos length,
+                               size_t maxResolveCount) const
+{
+    if ( strand == eNa_strand_minus ) {
+        from = GetLength(scope) - from - length;
+    }
+    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
+                       from, length, strand,
+                       TSegment_CI::eBegin,
+                       maxResolveCount);
+}
+
+
+CSeqMap::TSegment_CI
+CSeqMap::ResolvedRangeIterator(CScope* scope,
+                               TSeqPos from,
+                               TSeqPos length,
+                               ENa_strand strand,
+                               size_t maxResolveCount) const
 {
     return TSegment_CI(CConstRef<CSeqMap>(this), scope,
                        from, length, strand,
@@ -791,6 +809,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/01/28 17:16:06  vasilche
+* Added CSeqMap::ResolvedRangeIterator with strand coordinate translation.
+*
 * Revision 1.28  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

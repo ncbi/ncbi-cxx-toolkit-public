@@ -171,12 +171,19 @@ public:
                              size_t maxResolveCount = size_t(-1)) const;
     TSegment_CI EndResolved(CScope* scope,
                             size_t maxResolveCount = size_t(-1)) const;
-    
+
+    // iterate range with plus strand coordinates
     TSegment_CI ResolvedRangeIterator(CScope* scope,
                                       TSeqPos from,
                                       TSeqPos length,
                                       ENa_strand strand = eNa_strand_plus,
-                                      size_t maxResolveCount = size_t(-1)) const;
+                                      size_t maxResolve = size_t(-1)) const;
+    // iterate range with specified strand coordinates
+    TSegment_CI ResolvedRangeIterator(CScope* scope,
+                                      ENa_strand strand,
+                                      TSeqPos from,
+                                      TSeqPos length,
+                                      size_t maxResolve = size_t(-1)) const;
     
     // deprecated interface
     //size_t size(void) const;
@@ -307,6 +314,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/01/28 17:16:22  vasilche
+* Added CSeqMap::ResolvedRangeIterator with strand coordinate translation.
+*
 * Revision 1.30  2003/01/22 20:11:53  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
