@@ -7,6 +7,7 @@
 
 CPPFLAGS = ${ORIG_CPPFLAGS} -I$(NCBI)/ver0.0/ncbi/include
 
-LIBOBJ = node html htmlhelper page nodemap pager selection components querypages asnwrite
+LIBOBJ = node html htmlhelper page nodemap pager selection components querypages asnwrite linkbar
 
 LIB    = xhtml
+
