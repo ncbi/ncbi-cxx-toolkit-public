@@ -342,7 +342,7 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
 {
     bool                id_no_good = false;
-    CSeq_id::E_Choice   id_type;
+    CSeq_id::E_Choice   id_type = CSeq_id::e_not_set;
     
     list< CRef<CSeq_entry> >::const_iterator se_list_it =
         seqset.GetSeq_set().begin();
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/02/07 21:18:38  shomrat
+* Initialize variable
+*
 * Revision 1.5  2003/01/30 20:27:20  shomrat
 * Bug fix
 *
