@@ -142,7 +142,7 @@ static void s_TranslateHSPsToDNAPCoord(EBlastProgramType program,
  * query against one subject sequence. Translation of the subject sequence
  * into 6 frames is done inside, if necessary. If subject sequence is 
  * too long, it can be split into several chunks. 
- * @ param program_number BLAST program type [in]
+ * @param program_number BLAST program type [in]
  * @param query Query sequence structure [in]
  * @param query_info_in Query information [in]
  * @param subject Subject sequence structure [in]
@@ -368,7 +368,8 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       if (program_number != eBlastTypeRpsBlast &&
           program_number != eBlastTypeRpsTblastn)
          status = Blast_HSPListGetEvalues(query_info, hsp_list, 
-                     score_options->gapped_calculation, gap_align->sbp, 0);
+                                          score_options->gapped_calculation, 
+                                          gap_align->sbp, 0, 1.0);
    }
    
    /* Free the local query info structure when needed. */
@@ -403,12 +404,19 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    return status;
 }
 
+/** Fills the output information about the cutoffs uses in a BLAST search. 
+ * @param return_cutoffs Structure for saving cutoffs information [in] [out]
+ * @param score_params Scoring parameters, containing the scaling factor [in]
+ * @param word_params Initial word parameters [in]
+ * @param ext_params Gapped extension parameters [in]
+ * @param hit_params Hit saving parameters [in]
+ */
 static Int2 
 s_FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs, 
-   BlastScoringParameters* score_params, 
-   BlastInitialWordParameters* word_params, 
-   BlastExtensionParameters* ext_params,
-   BlastHitSavingParameters* hit_params)
+                        const BlastScoringParameters* score_params, 
+                        const BlastInitialWordParameters* word_params, 
+                        const BlastExtensionParameters* ext_params,
+                        const BlastHitSavingParameters* hit_params)
 {
    /* since the cutoff score here will be used for display
       putposes, strip out any internal scaling of the scores */
@@ -513,7 +521,6 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    const BlastHitSavingOptions* hit_options,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
-   const BlastDatabaseOptions* db_options,
    BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
    BlastHSPResults** results)
 {
@@ -612,10 +619,12 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
                                     query_info, query, index) != 0)
            return -1;
 
+       /* It is OK to pass NULL for the BlastDatabaseOptions argument, because it
+          will not be checked for RPS BLAST program types. */
        status = (Int4)
           s_BlastSearchEngineCore(program_number, &concat_db, one_query_info, 
              one_query, lookup_wrap, gap_align, score_params, 
-             word_params, ext_params, hit_params, db_options, 
+             word_params, ext_params, hit_params, NULL, 
              diagnostics, aux_struct, &hsp_list);
 
        /* Save the resulting list of HSPs. 'query' and 'subject' are
@@ -647,7 +656,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
 
    BLAST_RPSTraceback(program_number, hsp_stream, seq_src, 
             &concat_db_info, query, query_info, gap_align, 
-            score_params, ext_params, hit_params, db_options, 
+            score_params, ext_params, hit_params, 
             rps_info->karlin_k, results);
 
    /* free the internal structures used */
@@ -767,14 +776,20 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                      query_info, sbp, score_params, seq_src, 
                      (db_options ? db_options->gen_code_string : NULL));
                /* Relink HSPs if sum statistics is used, because scores might
-                  have changed after reevaluation with ambiguities, and there
-                  will be no traceback stage where relinking is done normally. */
+                * have changed after reevaluation with ambiguities, and there
+                * will be no traceback stage where relinking is done normally.
+                * If sum statistics is not used, just recalculate the e-values. 
+                */
                if (hit_params->link_hsp_params) {
                    status = 
                        BLAST_LinkHsps(program_number, hsp_list, query_info,
                                       seq_arg.seq->length, sbp, 
                                       hit_params->link_hsp_params, 
                                       gapped_calculation);
+               } else {
+                  Blast_HSPListGetEvalues(query_info, hsp_list, 
+                                          score_options->gapped_calculation, 
+                                          sbp, 0, 1.0);
                }
                status = Blast_HSPListReapByEvalue(hsp_list, hit_params->options);
             }
@@ -843,7 +858,7 @@ BLAST_SearchEngine(EBlastProgramType program_number,
          BLAST_RPSSearchEngine(program_number, query, query_info, 
             seq_src, sbp, score_options, lookup_wrap, 
             word_options, ext_options, hit_options, eff_len_options, 
-            psi_options, db_options, hsp_stream, diagnostics, results);
+            psi_options, hsp_stream, diagnostics, results);
    }
    
    if ((status = 
