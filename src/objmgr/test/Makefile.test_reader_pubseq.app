@@ -17,8 +17,8 @@ CPPFLAGS = \
   $(NCBI_SSSDB_INCLUDE) \
   $(SYBASE_INCLUDE)
 
-LIB = pubseqld id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      dbapi_driver_samples dbapi_driver_ctlib dbapi_driver \
+LIB = id1 seqset $(SEQ_LIBS) pub medline biblio general \
+      dbapi_driver_ctlib dbapi_driver \
       xser xconnect xutil xncbi 
 
 PRE_LIBS =  -L.. -lxobjmgr1
