@@ -64,6 +64,10 @@ int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
 int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
 // Simple and fast comparison function for tables with 
+// non-segmented "short int" keys
+int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
 // non-segmented "float" keys
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
@@ -94,6 +98,11 @@ int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
 // non-segmented "int" keys
 // Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2);
+
+// Simple and fast comparison function for tables with 
+// non-segmented "short int" keys
+// Used when the data file is in a different byte order architecture.
+int BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
 // Simple and fast comparison function for tables with 
 // non-segmented "float" keys
@@ -552,6 +561,72 @@ public:
         Int4 v1, v2;
         v1 = CByteSwap::GetInt4((unsigned char*)p1);
         v2 = CByteSwap::GetInt4((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
+
+};
+
+
+//////////////////////////////////////////////////////////////////
+//
+//  Int2 field type
+//
+
+class NCBI_BDB_EXPORT CBDB_FieldInt2 : public CBDB_FieldSimpleInt<Int2>
+{
+public:
+    const CBDB_FieldInt2& operator= (Int2 val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    const CBDB_FieldInt2& operator= (const CBDB_FieldInt2& val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    virtual CBDB_Field* Construct(size_t /*buf_size*/) const
+    {
+        return new CBDB_FieldInt2();
+    }
+
+    Int2 Get() const
+    {
+        Int2  v;
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetInt2((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(Int4));
+        }
+        return v;
+    }
+
+    operator Int2() const 
+    { 
+        return Get(); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
+    {
+        if (byte_swapped)
+            return BDB_ByteSwap_Int2Compare;
+        return BDB_Int2Compare;
+    } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleInt<Int2>::Compare(p1, p2, byte_swapped);
+
+        Int2 v1, v2;
+        v1 = CByteSwap::GetInt2((unsigned char*)p1);
+        v2 = CByteSwap::GetInt2((unsigned char*)p2);
         if (v1 < v2) return -1;
         if (v2 < v1) return 1;
         return 0;
@@ -1503,6 +1578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/09/16 15:14:48  kuznets
+ * Added Int2 (short int) field type
+ *
  * Revision 1.18  2003/09/15 15:49:25  kuznets
  * Fixed some compilation warnings(SunCC)
  *
