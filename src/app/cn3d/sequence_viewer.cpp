@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/03/01 15:48:05  thiessen
+* revert to single line per sequence
+*
 * Revision 1.45  2002/02/28 19:11:52  thiessen
 * wrap sequences in single-structure mode
 *
@@ -259,7 +262,7 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
-    int from, to, width = 50;
+//    int from, to, width = 50;
 
     SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
 
@@ -274,13 +277,16 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
         if (display->NRows() > 0) display->AddRowFromString("");
 
         // wrap long sequences
-        from = 0;
-        to = width - 1;
-        do {
-            display->AddRowFromSequence(*s, from, ((to >= (*s)->Length()) ? (*s)->Length() - 1 : to));
-            from += width;
-            to += width;
-        } while (from < (*s)->Length());
+//        from = 0;
+//        to = width - 1;
+//        do {
+//            display->AddRowFromSequence(*s, from, ((to >= (*s)->Length()) ? (*s)->Length() - 1 : to));
+//            from += width;
+//            to += width;
+//        } while (from < (*s)->Length());
+
+        // whole sequence on one row
+        display->AddRowFromSequence(*s, 0, (*s)->Length() - 1);
     }
 
     ClearStacks();
