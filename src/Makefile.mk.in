@@ -195,6 +195,11 @@ RT_LIBS      = @RT_LIBS@
 # if he is not using Sybase libs (and maybe even does not have them installed).
 NETWORK_PURE_LIBS = @NETWORK_PURE_LIBS@
 
+# Extra name-resolution libraries; $(NETWORK[_PURE]_LIBS) should normally
+# suffice, but in some specialized cases you may need to prepend
+# $(RESOLVER_LIBS).
+RESOLVER_LIBS = @RESOLVER_LIBS@
+
 
 #################################
 # Optional variables that may be needed to build some projects
