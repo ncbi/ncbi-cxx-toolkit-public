@@ -155,6 +155,7 @@ public:
 
 private:
     CTSEUpload(const CTSEUpload&);
+    const CTSEUpload& operator=(const CTSEUpload&);
 };
 
 class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
@@ -292,6 +293,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.37  2003/05/20 19:53:49  vasilche
+ * Added private assignment operator to make it compilable on MSVC with DLL.
+ *
  * Revision 1.36  2003/05/20 16:18:42  vasilche
  * Fixed compilation errors on GCC.
  *
