@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko......
+ * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko, Mati Shomrat ......
  *
  * File Description:
  *   validation of bioseq 
@@ -105,6 +105,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/annot_selector.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -574,37 +575,41 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     // Get Molinfo
     CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
 
-    if ( mi  &&  mi->IsSetTech()) {
-        switch (mi->GetTech()) {
-        case CMolInfo::eTech_sts:
-        case CMolInfo::eTech_survey:
-        case CMolInfo::eTech_wgs:
-        case CMolInfo::eTech_htgs_0:
-        case CMolInfo::eTech_htgs_1:
-        case CMolInfo::eTech_htgs_2:
-        case CMolInfo::eTech_htgs_3:
-            if (mi->GetTech() == CMolInfo::eTech_sts  &&
-                seq.GetInst().GetMol() == CSeq_inst::eMol_rna  &&
-                mi->IsSetBiomol()  &&
-                mi->GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                // !!!
-                // Ok, there are some STS sequences derived from 
-                // cDNAs, so do not report these
-            } else if (mi->IsSetBiomol()  &&
-                mi->GetBiomol() != CMolInfo::eBiomol_genomic) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
-                    "HTGS/STS/GSS/WGS sequence should be genomic", seq);
-            } else if (seq.GetInst().GetMol() != CSeq_inst::eMol_dna  &&
-                seq.GetInst().GetMol() != CSeq_inst::eMol_na) {
+    if ( mi ) {
+        x_ValidateCompletness(seq, *mi);
+
+        if ( mi->IsSetTech() ) {
+            switch (mi->GetTech()) {
+            case CMolInfo::eTech_sts:
+            case CMolInfo::eTech_survey:
+            case CMolInfo::eTech_wgs:
+            case CMolInfo::eTech_htgs_0:
+            case CMolInfo::eTech_htgs_1:
+            case CMolInfo::eTech_htgs_2:
+            case CMolInfo::eTech_htgs_3:
+                if (mi->GetTech() == CMolInfo::eTech_sts  &&
+                    seq.GetInst().GetMol() == CSeq_inst::eMol_rna  &&
+                    mi->IsSetBiomol()  &&
+                    mi->GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                    // !!!
+                    // Ok, there are some STS sequences derived from 
+                    // cDNAs, so do not report these
+                } else if (mi->IsSetBiomol()  &&
+                    mi->GetBiomol() != CMolInfo::eBiomol_genomic) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
+                        "HTGS/STS/GSS/WGS sequence should be genomic", seq);
+                } else if (seq.GetInst().GetMol() != CSeq_inst::eMol_dna  &&
+                    seq.GetInst().GetMol() != CSeq_inst::eMol_na) {
                     PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
                         "HTGS/STS/GSS/WGS sequence should not be RNA", seq);
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            break;
         }
     }
-    x_ValidateCompletness(seq, *mi);
+    
     
     // Check that proteins in nuc_prot set have a CdRegion
     if ( CdError(bsh) ) {
@@ -1961,29 +1966,6 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
          !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Pub) ) {
         m_Imp.AddBioseqWithNoPub(seq);
     }
-    
-    /*
-    if ( !seq.GetInst().IsSetLength() ) {
-        return;
-    }
-
-    // check for full cover of the bioseq by pub features.
-    TSeqPos len = bsh.GetSeqVector().size();
-    bool covered = false;
-    CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
-
-    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Pub); fi; ++fi ) {
-        range += fi->GetLocation().GetTotalRange();;
-        if ( (fi->GetLocation().IsWhole())  ||
-             ((range.GetFrom() == 0)  &&  (range.GetTo() == len - 1)) ) {
-            covered = true;
-            break;
-        }
-    }
-    if ( !covered ) {
-        m_Imp.AddBioseqWithNoPub(seq);
-    }
-    */
 }
 
 
@@ -2112,17 +2094,12 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     EDiagSev sev = eDiag_Warning;
     bool full_length_prot_ref = false;
-    TSeqPos x5UTR_to = 0, cds_from = 0, cds_to = 0, x3UTR_from = 0;
 
     bool is_mrna = IsMrna(bsh);
     bool is_prerna = IsPrerna(bsh);
     bool is_aa = CSeq_inst::IsAa(bsh.GetInst_Mol());
     bool is_virtual = (bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual);
     TSeqPos len = bsh.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
-
-    auto_ptr<CMappedFeat> utr5;
-    auto_ptr<CMappedFeat> cds;
-    auto_ptr<CMappedFeat> utr3;
 
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
         const CSeq_feat& feat = fi->GetOriginalFeature();
@@ -2176,14 +2153,13 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         if ( is_mrna ) {              // mRNA
             switch ( ftype ) {
             case CSeqFeatData::e_Cdregion:
-                cds.reset(new CMappedFeat(*fi));
-
+            {{
                 // Test for Multi interval CDS feature
-                if ( NumOfIntervals(cds->GetLocation()) > 1 ) {
-                    bool excpet = cds->IsSetExcept()  &&  cds->GetExcept();
+                if ( NumOfIntervals(feat.GetLocation()) > 1 ) {
+                    bool excpet = feat.IsSetExcept()  &&  feat.GetExcept();
                     bool slippage_except = false;
-                    if ( cds->IsSetExcept_text() ) {
-                        const string& text = cds->GetExcept_text();
+                    if ( feat.IsSetExcept_text() ) {
+                        const string& text = feat.GetExcept_text();
                         slippage_except = 
                             (NStr::FindNoCase(text, "ribosomal slippage") != NPOS)  ||
                             (NStr::FindNoCase(text, "ribosome slippage") != NPOS);
@@ -2195,78 +2171,47 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                             feat);
                     }
                 }
-
-                // Test that 5'UTR abut CDS (if exists)
-                if ( utr5.get() != 0 ) {
-                    TSeqPos utr5_to = utr5->GetLocation().GetEnd(kInvalidSeqPos);
-                    TSeqPos cds_from = cds->GetLocation().GetStart(kInvalidSeqPos);
-                    if ( utr5_to + 1 != cds_from ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                            "5'UTR does not abut CDS", feat);
-                    }
-                    utr5.reset();  // only use once
-                }
                 break;
-                
+            }}    
             case CSeqFeatData::e_Rna:
-                {
-                    const CRNA_ref& rref = fi->GetData().GetRna();
-                    if ( rref.GetType() == CRNA_ref::eType_mRNA ) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                            "mRNA feature is invalid on an mRNA (cDNA) Bioseq.",
-                            feat);
-                    }
+            {{
+                const CRNA_ref& rref = fi->GetData().GetRna();
+                if ( rref.GetType() == CRNA_ref::eType_mRNA ) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                        "mRNA feature is invalid on an mRNA (cDNA) Bioseq.",
+                        feat);
                 }
-                break;
                 
+                break;
+            }}    
             case CSeqFeatData::e_Imp:
-                {
-                    const CImp_feat& imp = fi->GetData().GetImp();
-                    if ( imp.GetKey() == "intron"  ||
-                        imp.GetKey() == "CAAT_signal" ) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                            "Invalid feature for an mRNA Bioseq.", feat);
-                    }
-
-                    CSeqFeatData::ESubtype fsubtype = fi->GetData().GetSubtype();
-                    if ( fsubtype == CSeqFeatData::eSubtype_5UTR ) {
-                        utr5.reset(new CMappedFeat(*fi));
-                    }
-                    if ( fsubtype == CSeqFeatData::eSubtype_3UTR ) {
-                        utr3.reset(new CMappedFeat(*fi));
-                        TSeqPos cds_to = (cds.get() != 0) ? 
-                            cds->GetLocation().GetEnd(kInvalidSeqPos) : 0;
-                        TSeqPos utr3_from = 
-                            utr3->GetLocation().GetStart(kInvalidSeqPos);
-                        if ( cds_to + 1 != utr3_from ) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                                "CDS does not abut 3'UTR", feat);
-                        }
-                        cds.reset();
-                        utr3.reset();
-                    }
+            {{
+                const CImp_feat& imp = fi->GetData().GetImp();
+                if ( imp.GetKey() == "intron"  ||
+                    imp.GetKey() == "CAAT_signal" ) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                        "Invalid feature for an mRNA Bioseq.", feat);
                 }
                 break;
-
+            }}
             default:
                 break;
             }
         } else if ( is_prerna ) { // preRNA
             switch ( ftype ) {
             case CSeqFeatData::e_Imp:
-                {
-                    const CImp_feat& imp = fi->GetData().GetImp();
-                    if ( imp.GetKey() == "CAAT_signal" ) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                            "Invalid feature for a pre-RNA Bioseq.", feat);
-                    }
+            {{
+                const CImp_feat& imp = fi->GetData().GetImp();
+                if ( imp.GetKey() == "CAAT_signal" ) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                        "Invalid feature for a pre-RNA Bioseq.", feat);
                 }
                 break;
-
+            }}
 	    default:
 	        break;
             }
-        }
+        }    
 
         if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(feat.GetLocation()) ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
@@ -2306,6 +2251,140 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 
     if ( is_aa  &&  !full_length_prot_ref  &&  !is_virtual  &&  !m_Imp.IsPDB()   ) {
         m_Imp.AddProtWithoutFullRef(bsh);
+    }
+
+    // validate abutting UTRs for nucleotides
+    if ( !is_aa ) {
+        x_ValidateAbuttingUTR(bsh);
+    }
+}
+
+
+void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_5UTR);
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_3UTR);
+
+    TMappedFeatVec cds_group;
+
+    bool saw_cds = false;
+    ENa_strand cds_strand = eNa_strand_unknown;
+    for ( CFeat_CI it(seq, 0, 0, sel); it; ++it ) {
+        CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
+        bool validate_group = false;
+        if ( saw_cds ) {
+            if ( subtype == CSeqFeatData::eSubtype_cdregion ) {
+                validate_group = true;
+                --it;
+            } else if ( cds_strand != eNa_strand_minus  &&
+                subtype == CSeqFeatData::eSubtype_5UTR ) {
+                validate_group = true;
+            } else if ( cds_strand == eNa_strand_minus  &&
+                subtype == CSeqFeatData::eSubtype_3UTR ) {
+                validate_group = true;
+            }
+        }
+        if( validate_group ) {
+            x_ValidateAbuttingCDSGroup(cds_group, cds_strand == eNa_strand_minus);
+            saw_cds = false;
+            cds_strand = eNa_strand_unknown;
+            cds_group.clear();
+        } else {
+            if ( subtype == CSeqFeatData::eSubtype_cdregion ) {
+                saw_cds = true;
+                cds_strand = GetStrand(it->GetLocation(), m_Scope);
+            }
+            cds_group.push_back(*it);
+        }
+    }
+
+    if ( !cds_group.empty() ) {
+        x_ValidateAbuttingCDSGroup(cds_group, cds_strand == eNa_strand_minus);
+    }
+}
+
+
+static const string& s_FeatName(const CMappedFeat& feat)
+{
+    static const string utr5 = "5'UTR";
+    static const string utr3 = "3'UTR";
+    static const string cds  = "CDS";
+
+    switch ( feat.GetData().GetSubtype() ) {
+    case CSeqFeatData::eSubtype_cdregion:
+        return cds;
+    case CSeqFeatData::eSubtype_5UTR:
+        return utr5;
+    case CSeqFeatData::eSubtype_3UTR:
+        return utr3;
+    default:
+        break;
+    }
+    return kEmptyStr;
+}
+
+
+void CValidError_bioseq::x_ValidateAbuttingCDSGroup
+(const TMappedFeatVec& cds_group,
+ bool minus)
+{
+    if ( cds_group.empty() ) {
+        return;
+    }
+
+    // make sure there is a cds in the group
+    const CMappedFeat* cds = 0;
+    ITERATE (TMappedFeatVec, it, cds_group) {
+        if ( it->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion ) {
+            cds = &(*it);
+            break;
+        }
+    }
+
+    // UTR features not connected to any cds
+    if ( cds == 0 ) {
+        ITERATE (TMappedFeatVec, it, cds_group) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                s_FeatName(*it)  + " feature not associated with CDS feature.",
+                it->GetOriginalFeature());
+        }
+        return;
+    }
+
+    if ( cds_group.size() == 1 ) { // only the cds
+        return;
+    }
+
+    TMappedFeatVec::const_iterator first = cds_group.begin();
+    TMappedFeatVec::const_iterator second = first++;
+    TMappedFeatVec::const_iterator end = cds_group.end();
+
+    while ( first != end ) {
+        const CSeq_loc& first_loc = first->GetLocation();
+        const CSeq_loc& second_loc = second->GetLocation();
+
+        if ( minus ) {
+        } else {
+            TSeqPos secend = second_loc.GetEnd(kInvalidSeqPos);
+            TSeqPos firstart = first_loc.GetStart(kInvalidSeqPos);
+            if ( secend + 1 != firstart ) {
+                const string& first_name = s_FeatName(*first);
+                const string& second_name = s_FeatName(*second);
+                if ( first_name == second_name ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                        first_name + " does not abut previous " + first_name,
+                        first->GetOriginalFeature());
+                } else {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                        first_name + " does not abut  " + second_name,
+                        first->GetOriginalFeature());
+                }
+            }
+        }
+        second = first;
+        ++first;
     }
 }
 
@@ -3596,6 +3675,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2004/05/10 13:21:42  shomrat
+* Implemented validation for abutting UTRs on any nucleotide bioseq (not just mRNA)
+*
 * Revision 1.74  2004/04/27 18:41:51  shomrat
 * AddProtWithoutFullRef takes CBioseq_Handle
 *
