@@ -261,6 +261,12 @@ void CMsvcSite::GetLibChoiceIncludes (const string& cpp_flags_define,
 }
 
 
+string CMsvcSite::GetAppDefaultResource(void) const
+{
+    return m_Registry.GetString("DefaultResource", "app", "");
+}
+
+
 //-----------------------------------------------------------------------------
 bool IsLibOk(const SLibInfo& lib_info)
 {
@@ -295,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 14:41:10  gorelenk
+ * Implemented CMsvcSite::GetAppDefaultResource .
+ *
  * Revision 1.12  2004/05/13 14:55:00  gorelenk
  * Implemented CMsvcSite::GetLibChoiceIncludes .
  *
