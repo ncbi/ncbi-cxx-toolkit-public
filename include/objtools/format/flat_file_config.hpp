@@ -196,6 +196,7 @@ public:
     bool HideSNPFeatures     (void) const;
     bool HideExonFeatures    (void) const;
     bool HideIntronFeatures  (void) const;
+    bool HideMiscFeatures    (void) const;
     bool HideRemoteImpFeats  (void) const;
     bool HideGeneRIFs        (void) const;
     bool OnlyGeneRIFs        (void) const;
@@ -206,9 +207,12 @@ public:
     bool ShowContigSources   (void) const;
     bool ShowContigAndSeq    (void) const;
     bool CopyGeneToCDNA      (void) const;
+    bool ShowContigInMaster  (void) const;
     bool CopyCDSFromCDNA     (void) const;
     bool HideSourceFeats     (void) const;
     bool AlwaysTranslateCDS  (void) const;
+    bool OnlyNearFeatures    (void) const;
+    bool FavorFarFeatures    (void) const;
     bool ShowFarTranslations (void) const;
     bool TranslateIfNoProduct(void) const;
     bool ShowTranscript      (void) const;
@@ -245,34 +249,37 @@ public:
     
     // setters
     void SetFlags(const TFlags& flags) { m_Flags = flags; }
-    void SetDoHTML              (bool val);
-    void SetHideImpFeats        (bool val);
-    void SetHideSNPFeatures     (bool val);
-    void SetHideExonFeatures    (bool val);
-    void SetHideIntronFeatures  (bool val);
-    void SetHideRemoteImpFeats  (bool val);
-    void SetHideGeneRIFs        (bool val);
-    void SetOnlyGeneRIFs        (bool val);
-    void SetHideCDSProdFeatures (bool val);
-    void SetHideCDDFeats        (bool val);
-    void SetLatestGeneRIFs      (bool val);
-    void SetShowContigFeatures  (bool val);
-    void SetShowContigSources   (bool val);
-    void SetShowContigAndSeq    (bool val);
-    void SetCopyGeneToCDNA      (bool val);
-    void SetCopyCDSFromCDNA     (bool val);
-    void SetHideSourceFeats     (bool val);
-    void SetAlwaysTranslateCDS  (bool val);
-    void SetShowFarTranslations (bool val);
-    void SetTranslateIfNoProduct(bool val);
-    void SetShowTranscript      (bool val);
-    void SetShowPeptides        (bool val);
-    void SetShowFtableRefs      (bool val);
-    void SetOldFeatsOrder       (bool val);
-    void SetHtml                (bool val);
+    CFlatFileConfig& SetDoHTML              (bool val = true);
+    CFlatFileConfig& SetHideImpFeats        (bool val = true);
+    CFlatFileConfig& SetHideSNPFeatures     (bool val = true);
+    CFlatFileConfig& SetHideExonFeatures    (bool val = true);
+    CFlatFileConfig& SetHideIntronFeatures  (bool val = true);
+    CFlatFileConfig& SetHideMiscFeatures    (bool val = true);
+    CFlatFileConfig& SetHideRemoteImpFeats  (bool val = true);
+    CFlatFileConfig& SetHideGeneRIFs        (bool val = true);
+    CFlatFileConfig& SetOnlyGeneRIFs        (bool val = true);
+    CFlatFileConfig& SetHideCDSProdFeatures (bool val = true);
+    CFlatFileConfig& SetHideCDDFeats        (bool val = true);
+    CFlatFileConfig& SetLatestGeneRIFs      (bool val = true);
+    CFlatFileConfig& SetShowContigFeatures  (bool val = true);
+    CFlatFileConfig& SetShowContigSources   (bool val = true);
+    CFlatFileConfig& SetShowContigAndSeq    (bool val = true);
+    CFlatFileConfig& SetCopyGeneToCDNA      (bool val = true);
+    CFlatFileConfig& SetShowContigInMaster  (bool val = true);
+    CFlatFileConfig& SetCopyCDSFromCDNA     (bool val = true);
+    CFlatFileConfig& SetHideSourceFeats     (bool val = true);
+    CFlatFileConfig& SetAlwaysTranslateCDS  (bool val = true);
+    CFlatFileConfig& SetOnlyNearFeatures    (bool val = true);
+    CFlatFileConfig& SetFavorFarFeatures    (bool val = true);
+    CFlatFileConfig& SetShowFarTranslations (bool val = true);
+    CFlatFileConfig& SetTranslateIfNoProduct(bool val = true);
+    CFlatFileConfig& SetShowTranscript      (bool val = true);
+    CFlatFileConfig& SetShowPeptides        (bool val = true);
+    CFlatFileConfig& SetShowFtableRefs      (bool val = true);
+    CFlatFileConfig& SetOldFeatsOrder       (bool val = true);
 
 private:
-    
+    // mode specific flags
     static const bool sm_ModeFlags[4][26];
 
     // data
@@ -280,7 +287,7 @@ private:
     TMode       m_Mode;
     TStyle      m_Style;
     TView       m_View;
-    TFlags      m_Flags;
+    TFlags      m_Flags;  // custom flags
 };
 
 
@@ -295,13 +302,14 @@ bool CFlatFileConfig::x(void) const \
 }
 
 #define CUSTOM_FLAG_SET(x) inline \
-void CFlatFileConfig::Set##x(bool val) \
+CFlatFileConfig& CFlatFileConfig::Set##x(bool val) \
 { \
     if ( val ) { \
         m_Flags |= f##x; \
     } else { \
         m_Flags &= ~f##x; \
     } \
+    return *this; \
 }
 
 #define CUSTOM_FLAG_IMP(x) \
@@ -313,6 +321,7 @@ CUSTOM_FLAG_IMP(HideImpFeats)
 CUSTOM_FLAG_IMP(HideSNPFeatures)
 CUSTOM_FLAG_IMP(HideExonFeatures)
 CUSTOM_FLAG_IMP(HideIntronFeatures)
+CUSTOM_FLAG_IMP(HideMiscFeatures)
 CUSTOM_FLAG_IMP(HideRemoteImpFeats)
 CUSTOM_FLAG_IMP(HideGeneRIFs)
 CUSTOM_FLAG_IMP(OnlyGeneRIFs)
@@ -323,9 +332,12 @@ CUSTOM_FLAG_IMP(ShowContigFeatures)
 CUSTOM_FLAG_IMP(ShowContigSources)
 CUSTOM_FLAG_IMP(ShowContigAndSeq)
 CUSTOM_FLAG_IMP(CopyGeneToCDNA)
+CUSTOM_FLAG_IMP(ShowContigInMaster)
 CUSTOM_FLAG_IMP(CopyCDSFromCDNA)
 CUSTOM_FLAG_IMP(HideSourceFeats)
 CUSTOM_FLAG_IMP(AlwaysTranslateCDS)
+CUSTOM_FLAG_IMP(OnlyNearFeatures)
+CUSTOM_FLAG_IMP(FavorFarFeatures)
 CUSTOM_FLAG_IMP(ShowFarTranslations)
 CUSTOM_FLAG_IMP(TranslateIfNoProduct)
 CUSTOM_FLAG_IMP(ShowTranscript)
@@ -348,6 +360,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/09/01 20:00:38  shomrat
+* Added missing setter/getter for flags
+*
 * Revision 1.3  2004/06/21 18:51:13  ucko
 * Add a GFF3 format, and fix a typo in the definition of fViewAll.
 *
