@@ -79,8 +79,13 @@ bool CMySQL_LangCmd::Send()
                            "CMySQL_LangCmd::Send",
                            "Failed: mysql_real_query");
     }
-    m_HasResults = true;
-    return false;
+    
+    int nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
+    m_HasResults = nof_Rows == -1 || nof_Rows > 0;
+    
+    if(mysql_errno(&m_Connect->m_MySQL) == 0) 
+      return false;
+    return true;
 }
 
 
@@ -120,25 +125,29 @@ bool CMySQL_LangCmd::HasFailed() const
     return false;
 }
 
-
-int CMySQL_LangCmd::RowCount() const
-{
-    return false;
-}
-
-
 void CMySQL_LangCmd::Release()
 {
 }
 
+int CMySQL_LangCmd::LastInsertId() const
+{
+  return mysql_insert_id(&this->m_Connect->m_MySQL);
+}
+
+int CMySQL_LangCmd::RowCount() const
+{
+  return mysql_affected_rows(&this->m_Connect->m_MySQL);
+}
 
 END_NCBI_SCOPE
-
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/29 21:25:47  butanaev
+ * Added function to return last insert id, fixed RowCount, Send,
+ * added call to RowCount in sample app.
+ *
  * Revision 1.3  2003/01/06 20:30:26  vakatov
  * Get rid of some redundant header(s).
  * Formally reformatted to closer meet C++ Toolkit/DBAPI style.

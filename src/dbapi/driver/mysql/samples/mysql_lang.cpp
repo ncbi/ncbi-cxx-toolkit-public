@@ -80,7 +80,7 @@ int main(int argc, char **argv)
                           "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415)"
                          ));
       lcmd->Send();
-      cout << "Data inserted" << endl;
+      cout << "Data inserted " << lcmd->RowCount() << " row(s) affected" << endl;
     }
 
     // selecting data
@@ -153,6 +153,10 @@ int main(int argc, char **argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/29 21:25:47  butanaev
+ * Added function to return last insert id, fixed RowCount, Send,
+ * added call to RowCount in sample app.
+ *
  * Revision 1.5  2003/02/19 16:16:13  ucko
  * +<memory> for auto_ptr<>
  *
