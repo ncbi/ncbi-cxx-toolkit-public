@@ -35,28 +35,36 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_filedump.hpp>
+#include <bdb/bdb_blob.hpp>
+
+#include <iomanip>
 
 BEGIN_NCBI_SCOPE
 
 CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
 : m_ColumnSeparator(col_separator),
   m_PrintNames(ePrintNames),
-  m_ValueFormatting(eNoQuotes)
+  m_ValueFormatting(eNoQuotes),
+  m_BlobFormat(eBlobSummary | eBlobAsHex)
+  
 {
 }
 
 CBDB_FileDumper::CBDB_FileDumper(const CBDB_FileDumper& fdump)
 : m_ColumnSeparator(fdump.m_ColumnSeparator),
   m_PrintNames(fdump.m_PrintNames),
-  m_ValueFormatting(fdump.m_ValueFormatting)
+  m_ValueFormatting(fdump.m_ValueFormatting),
+  m_BlobFormat(fdump.m_BlobFormat)
 {
 }
 
 CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
 {
     m_ColumnSeparator = fdump.m_ColumnSeparator;
-	m_PrintNames = fdump.m_PrintNames;
-	m_ValueFormatting = fdump.m_ValueFormatting;
+    m_PrintNames = fdump.m_PrintNames;
+    m_ValueFormatting = fdump.m_ValueFormatting;
+    m_BlobFormat = fdump.m_BlobFormat;
+    
     return *this;
 }
 
@@ -81,12 +89,18 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_File& db)
     Dump(out, cur);
 }
 
+static const char* kNullStr = "NULL";
+
 void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
 {
     CBDB_File& db = cur.GetDBFile();
-	
+    CBDB_BLobFile* blob_db = dynamic_cast<CBDB_BLobFile*>(&db);
+
     const CBDB_BufferManager* key  = db.GetKeyBuffer();
     const CBDB_BufferManager* data = db.GetDataBuffer();
+    
+   
+    // Regular data file 	
 	
     vector<unsigned> key_quote_flags;
     vector<unsigned> data_quote_flags;
@@ -103,21 +117,56 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
     if (m_PrintNames == ePrintNames) {
         PrintHeader(out, key, data);
     }
-	
+
+    string blob_sz;
     while (cur.Fetch() == eBDB_Ok) {
         if (key) {
             x_DumpFields(out, *key, key_quote_flags, true/*key*/);
         }
+        
+        // BLOB dump
+        if (blob_db) {
+            unsigned size = blob_db->LobSize();
+            out << m_ColumnSeparator;
+            if (size) {
+                if ((m_BlobFormat & eBlobAll) == 0) { // BLOB summary
+                    out << "[LOB, size= " 
+                        << size 
+                        << " {";
 
+                    auto_ptr<CBDB_BLobStream> blob_stream( 
+                            blob_db->CreateStream());
+                    char buf[256];
+                    size_t bytes_read;
+                    blob_stream->Read(buf, 128, &bytes_read);
+                    for (unsigned int i = 0; i < bytes_read; ++i) {
+                        if (m_BlobFormat & eBlobAsHex) {
+                          out << setfill('0') << hex << setw(2) 
+                              << (int)buf[i] << " ";
+                        } else {
+                           out << (char)buf[0];
+                        }
+                    }
+                    if (bytes_read < size) {
+                        out << " ...";
+                    }
+                    out << "}]";
+                }
+                
+            } else {
+                out << kNullStr;
+            }
+        }
+        
         if (data) {
             x_DumpFields(out, *data, data_quote_flags, false/*not key*/);
         }
+        
         out << NcbiEndl;
     }
 	
 }
 
-static const string kNullStr = "NULL";
 
 void CBDB_FileDumper::x_DumpFields(CNcbiOstream&             out, 
                                    const CBDB_BufferManager& bman, 
@@ -203,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/22 18:27:46  kuznets
+ * Implemented BLOB dumping(summary)
+ *
  * Revision 1.4  2004/06/21 15:08:46  kuznets
  * file dumper changed to work with cursors
  *

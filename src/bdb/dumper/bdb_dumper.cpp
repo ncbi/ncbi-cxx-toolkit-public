@@ -41,6 +41,7 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_filedump.hpp>
+#include <bdb/bdb_blob.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -61,7 +62,7 @@ class CBDB_ConfigStructureParser
 public:
     typedef vector<SBDB_FieldDescription> TFileStructure;
 public:
-    CBDB_ConfigStructureParser() {};
+    CBDB_ConfigStructureParser() : m_BlobStorage(false) {};
 
     void ParseConfigFile(const string& fname);
 
@@ -71,8 +72,11 @@ public:
     const TFileStructure& GetStructure() const { return m_FileStructure; }
     TFileStructure& SetStructure() { return m_FileStructure; }
     
+    bool IsBlobStorage() const { return m_BlobStorage; }
+    
 private:
     TFileStructure   m_FileStructure;
+    bool             m_BlobStorage;
 };
 
 
@@ -170,6 +174,9 @@ void CBDB_ConfigStructureParser::ParseConfigFile(const string& fname)
         if (ft == CBDB_FieldFactory::eUnknown) {
             BDB_THROW(eInvalidType, fdescr.type);            
         }
+        if (ft == CBDB_FieldFactory::eBlob) {  // BLOB file
+            m_BlobStorage = true;
+        }
                 
         if (parsed) {
             m_FileStructure.push_back(fdescr);
@@ -194,6 +201,13 @@ class CBDB_FileDumperApp : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+protected:
+    /// Dump regular BDB file
+    void DumpFile(const CArgs& args, 
+                  CBDB_ConfigStructureParser::TFileStructure& fs);
+
+    void DumpBlob(const CArgs& args, 
+                  CBDB_ConfigStructureParser::TFileStructure& fs);
 };
 
 void CBDB_FileDumperApp::Init(void)
@@ -224,12 +238,153 @@ void CBDB_FileDumperApp::Init(void)
                              "column_separator",
                              "Column separator string (default:TAB)",
                              CArgDescriptions::eString);
-
+    
     arg_desc->AddFlag("nl", "Do NOT print field labels(names)");
+    arg_desc->AddFlag("bt", "Display BLOB as text (default: HEX)");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
     
+}
+
+void 
+CBDB_FileDumperApp::DumpFile(
+        const CArgs& args, 
+        CBDB_ConfigStructureParser::TFileStructure& fs)
+{
+    const string& db_name = args["dbname"].AsString();
+    
+    // ----------------------------------------
+    //
+    // Create description based file structure 
+
+
+    CBDB_FieldFactory ffact;
+    CBDB_File db_file;
+    db_file.SetFieldOwnership(true);
+
+    NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
+        CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
+        if (ft == CBDB_FieldFactory::eString ||
+            ft == CBDB_FieldFactory::eLString) {
+            if (it->length == 0) {
+                it->length = 4096;
+            }
+        }
+        CBDB_Field*    field = ffact.Create(ft);
+        if (it->is_primary_key) {
+            db_file.BindKey(it->field_name.c_str(), 
+                               field, 
+                            it->length);
+        } else {
+            db_file.BindData(it->field_name.c_str(), 
+                               field, 
+                            it->length,
+              it->is_null ? eNullable : eNotNullable);
+        }
+    }
+    
+    // ------------------------------------------
+    //
+    // Dump the content
+
+    db_file.Open(db_name.c_str(), CBDB_File::eReadOnly);
+
+    CBDB_FileDumper fdump;
+    if (args["nl"]) {
+        fdump.SetColumnNames(CBDB_FileDumper::eDropNames);
+    }
+    fdump.SetValueFormatting(CBDB_FileDumper::eQuoteStrings);
+
+    if (args["cs"]) {
+        fdump.SetColumnSeparator(args["cs"].AsString());
+    }
+
+    if (args["k"]) {
+        const string& key_str = args["k"].AsString();
+
+        CBDB_FileCursor cur(db_file);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << key_str;
+
+        fdump.Dump(NcbiCout, cur);
+
+        return;
+    }
+
+    fdump.Dump(NcbiCout, db_file);
+    
+}
+
+void CBDB_FileDumperApp::DumpBlob(
+              const CArgs& args, 
+              CBDB_ConfigStructureParser::TFileStructure& fs)
+{
+    const string& db_name = args["dbname"].AsString();
+    
+    // ----------------------------------------
+    //
+    // Create description based file structure 
+
+    
+    CBDB_FieldFactory ffact;
+    CBDB_BLobFile  db_blob_file;
+    db_blob_file.SetFieldOwnership(true);
+
+    NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
+        CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
+        if (ft == CBDB_FieldFactory::eString ||
+            ft == CBDB_FieldFactory::eLString) {
+            if (it->length == 0) {
+                it->length = 4096;
+            }
+        }
+        if (it->is_primary_key) {
+            CBDB_Field*  field = ffact.Create(ft);
+            db_blob_file.BindKey(it->field_name.c_str(), 
+                                 field, 
+                                 it->length);
+        } else {
+            // All DATA fields are ignored (we have only one BLOB per record)
+            // if operator requests anything but one BLOB it is treated as an 
+            // error (TODO: add a warning here)
+        }
+    }
+    
+    // ------------------------------------------
+    //
+    // Dump the content
+
+    db_blob_file.Open(db_name.c_str(), CBDB_File::eReadOnly);
+
+    CBDB_FileDumper fdump;
+    if (args["nl"]) {
+        fdump.SetColumnNames(CBDB_FileDumper::eDropNames);
+    }
+    fdump.SetValueFormatting(CBDB_FileDumper::eQuoteStrings);
+
+    if (args["cs"]) {
+        fdump.SetColumnSeparator(args["cs"].AsString());
+    }
+    
+    if (args["bt"]) {
+        fdump.SetBlobFormat(CBDB_FileDumper::eBlobSummary |
+                            CBDB_FileDumper::eBlobAsTxt);
+    }
+
+    if (args["k"]) {
+        const string& key_str = args["k"].AsString();
+
+        CBDB_FileCursor cur(db_blob_file);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << key_str;
+
+        fdump.Dump(NcbiCout, cur);
+
+        return;
+    }
+
+    fdump.Dump(NcbiCout, db_blob_file);
 }
 
 int CBDB_FileDumperApp::Run(void)
@@ -237,7 +392,6 @@ int CBDB_FileDumperApp::Run(void)
     try
     {
         CArgs args = GetArgs();
-        const string& db_name = args["dbname"].AsString();
         const string& conf_name = args["confname"].AsString();
         CBDB_ConfigStructureParser parser;
         parser.ParseConfigFile(conf_name);
@@ -245,59 +399,11 @@ int CBDB_FileDumperApp::Run(void)
         CBDB_ConfigStructureParser::TFileStructure& fs = 
                 parser.SetStructure();
         
-        
-        CBDB_FieldFactory ffact;    
-        CBDB_File db_file;
-        db_file.SetFieldOwnership(true);
-        
-        NON_CONST_ITERATE(CBDB_ConfigStructureParser::TFileStructure, it, fs) {
-            CBDB_FieldFactory::EType ft = ffact.GetType(it->type);
-            if (ft == CBDB_FieldFactory::eString ||
-                ft == CBDB_FieldFactory::eLString) {
-                if (it->length == 0) {
-                    it->length = 4096;
-                }
-            }
-            CBDB_Field*    field = ffact.Create(ft);
-            if (it->is_primary_key) {
-                db_file.BindKey(it->field_name.c_str(), 
-                                   field, 
-                                it->length);
-            } else {
-                db_file.BindData(it->field_name.c_str(), 
-                                   field, 
-                                it->length,
-                  it->is_null ? eNullable : eNotNullable);
-            }
+        if (parser.IsBlobStorage()) {
+            DumpBlob(args, fs);
+        } else {
+            DumpFile(args, fs);
         }
-        
-        db_file.Open(db_name.c_str(), CBDB_File::eReadOnly);
-
-        CBDB_FileDumper fdump;
-        if (args["nl"]) {
-            fdump.SetColumnNames(CBDB_FileDumper::eDropNames);
-        }
-        fdump.SetValueFormatting(CBDB_FileDumper::eQuoteStrings);
-        
-        if (args["cs"]) {
-            fdump.SetColumnSeparator(args["cs"].AsString());
-        }
-
-        if (args["k"]) {
-            const string& key_str = args["k"].AsString();
-
-            CBDB_FileCursor cur(db_file);
-            cur.SetCondition(CBDB_FileCursor::eEQ);
-            cur.From << key_str;
-
-            fdump.Dump(NcbiCout, cur);
-
-            return 0;
-        }
-        
-        
-        fdump.Dump(NcbiCout, db_file);
-        
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -322,6 +428,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/22 18:27:31  kuznets
+ * Implemented BLOB dumping(summary)
+ *
  * Revision 1.2  2004/06/21 15:11:38  kuznets
  * Work in progress
  *
