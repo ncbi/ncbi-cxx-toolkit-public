@@ -51,6 +51,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -101,13 +102,16 @@
 #include <objmgr/seq_vector_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
-using namespace sequence;
-using namespace feature;
+USING_SCOPE(sequence);
+USING_SCOPE(feature);
 
 // Maximum number of adjacent Ns in a Seq_lit
 const size_t CValidError_bioseq::scm_AdjacentNsThreshold = 80;
@@ -565,6 +569,8 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
 
 void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
 {
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+
     // Get Molinfo
     CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
 
@@ -601,7 +607,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     x_ValidateCompletness(seq, *mi);
     
     // Check that proteins in nuc_prot set have a CdRegion
-    if ( seq.IsAa()  &&  CdError(seq) ) {
+    if ( CdError(bsh) ) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_NoCdRegionPtr,
             "No CdRegion in nuc-prot set points to this protein", 
             seq);
@@ -639,7 +645,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
 
     CheckTpaHistory(seq);
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    
     if ( IsMrna(bsh) ) {
         ValidatemRNABioseqContext(bsh);
     }
@@ -895,20 +901,14 @@ bool CValidError_bioseq::GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc)
 
 
 // Check if CdRegion required but not found
-bool CValidError_bioseq::CdError(const CBioseq& seq)
+bool CValidError_bioseq::CdError(const CBioseq_Handle& bsh)
 {
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( bsh  &&  seq.IsAa() ) {
-        const CSeq_entry* nps = 
-            m_Imp.GetAncestor(seq, CBioseq_set::eClass_nuc_prot);
+    if ( bsh  &&  CSeq_inst::IsAa(bsh.GetInst_Mol()) ) {
+        CSeq_entry_Handle nps = 
+            bsh.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
         if ( nps ) {
-            CFeat_CI cds(bsh, 
-                         0, 0,
-                         CSeqFeatData::e_Cdregion,
-                         SAnnotSelector::eOverlap_Intervals,
-                         SAnnotSelector::eResolve_TSE,
-                         CFeat_CI::e_Product);
-            if ( !cds ) {
+            const CSeq_feat* cds = GetCDSForProduct(bsh);
+            if ( cds == 0 ) {
                 return true;
             }
         }
@@ -2086,6 +2086,27 @@ static bool s_StandaloneProt(const CBioseq_Handle& bsh)
 }
 
 
+static CBioseq_Handle s_GetParent(const CBioseq_Handle& part)
+{
+    CBioseq_Handle parent;
+
+    if ( part ) {
+        CSeq_entry_Handle segset = 
+            part.GetExactComplexityLevel(CBioseq_set::eClass_segset);
+        if ( segset ) {
+            for ( CSeq_entry_CI it(segset); it; ++it ) {
+                if ( it->IsSeq()  &&  it->GetSeq().IsSetInst_Repr()  &&
+                    it->GetSeq().GetInst_Repr() == CSeq_inst::eRepr_seg ) {
+                    parent = it->GetSeq();
+                    break;
+                }
+            }
+        }
+    }
+    return parent;
+}
+
+
 void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -2095,7 +2116,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 
     bool is_mrna = IsMrna(bsh);
     bool is_prerna = IsPrerna(bsh);
-    bool is_aa = seq.IsAa();
+    bool is_aa = CSeq_inst::IsAa(bsh.GetInst_Mol());
+    bool is_virtual = (bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual);
+    TSeqPos len = bsh.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
 
     auto_ptr<CMappedFeat> utr5;
     auto_ptr<CMappedFeat> cds;
@@ -2110,12 +2133,11 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             switch ( ftype ) {
             case CSeqFeatData::e_Prot:
                 {
-                    TSeqPos len = bsh.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
                     CSeq_loc::TRange range = fi->GetLocation().GetTotalRange();
                     
                     if ( range.IsWhole()  ||
                          (range.GetFrom() == 0  &&  range.GetTo() == len - 1) ) {
-                        full_length_prot_ref = true;
+                         full_length_prot_ref = true;
                     }
                 }
                 break;
@@ -2265,7 +2287,25 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 
     }  // end of for loop
 
-    if ( is_aa  && !full_length_prot_ref  &&  !m_Imp.IsPDB() ) {
+    // if no full length prot feature on a part of a segmented bioseq
+    // search for such feature on the master bioseq
+    if ( is_aa  &&  !full_length_prot_ref  &&
+         bsh.GetInst_Repr() == CSeq_inst::eRepr_seg ) {
+        CBioseq_Handle parent = s_GetParent(bsh);
+        if ( parent ) {
+            TSeqPos parent_len = parent.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
+            for ( CFeat_CI it(parent, 0, 0, CSeqFeatData::e_Prot); it; ++it ) {
+                CSeq_loc::TRange range = it->GetLocation().GetTotalRange();
+                
+                if ( range.IsWhole()  ||
+                    (range.GetFrom() == 0  &&  range.GetTo() == parent_len - 1) ) {
+                    full_length_prot_ref = true;
+                }
+            }
+        }
+    }
+
+    if ( is_aa  &&  !full_length_prot_ref  &&  !is_virtual  &&  !m_Imp.IsPDB()   ) {
         m_Imp.AddProtWithoutFullRef(seq);
     }
 }
@@ -3557,6 +3597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2004/04/27 18:26:04  shomrat
+* do not report NoProtRefFound if virtual, or if a segmented part where the parent has a best protein feature
+*
 * Revision 1.72  2004/04/23 16:27:00  shomrat
 * Stop using CBioseq_Handle deprecated interface
 *
