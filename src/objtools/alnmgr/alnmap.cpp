@@ -69,7 +69,10 @@ void CAlnMap::UnsetAnchor(void)
 
 void CAlnMap::SetAnchor(TNumrow anchor)
 {
-    if (anchor == -1) UnsetAnchor();
+    if (anchor == -1) {
+        UnsetAnchor();
+        return;
+    }
     if (anchor < 0  ||  anchor >= m_DS->GetDim()) {
         NCBI_THROW(CAlnException, eInvalidRow,
                    "CAlnVec::SetAnchor(): "
@@ -547,6 +550,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2002/09/26 18:24:50  todorov
+* fixed a just introduced bug
+*
 * Revision 1.9  2002/09/26 17:43:17  todorov
 * 1) Changed flag fAlignedToSeqOnAnchor to fNotAlignedToSeqOnAnchor. This proved
 * more convenient.
