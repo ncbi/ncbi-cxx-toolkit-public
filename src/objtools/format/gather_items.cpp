@@ -46,6 +46,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -59,6 +60,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <algorithm>
 
@@ -605,13 +607,11 @@ void CFlatGatherer::x_GBBSourceComment(CBioseqContext& ctx) const
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Genbank); it; ++it) {
         const CGB_block& gbb = it->GetGenbank();
         if ( gbb.CanGetSource()  &&  !gbb.GetSource().empty() ) {
-            x_AddComment(new CCommentItem(
-                "Original source text: " + gbb.GetSource(),
-                ctx,
-                &(*it)));
+            string comment = "Original source text: " + gbb.GetSource();
+            ncbi::objects::AddPeriod(comment);
+            x_AddComment(new CCommentItem(comment, ctx, &(*it)));
         }
     }
-
 }
 
 
@@ -723,9 +723,18 @@ void CFlatGatherer::x_CollectSourceDescriptors
 
     TRange print_range(0, GetLength(loc, scope) - 1);
 
-    for ( CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
-        sf.Reset(new CSourceFeatureItem(dit->GetSource(), print_range, ctx));
-        srcs.push_back(sf);
+    // if SWISS-PROT, may have multiple source descriptors
+    bool loop = ctx.IsSP();
+
+    for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
+        const CBioSource& bsrc = dit->GetSource();
+        if (bsrc.IsSetOrg()) {
+            sf.Reset(new CSourceFeatureItem(bsrc, print_range, ctx));
+            srcs.push_back(sf);
+        }
+        if(!loop) {
+            break;
+        }
     }
     
     // if segmented collect descriptors from segments
@@ -745,8 +754,11 @@ void CFlatGatherer::x_CollectSourceDescriptors
             // collect descriptors only from the segment 
             ITERATE(CBioseq_Handle::TDescr::Tdata, it, segh.GetDescr().Get()) {
                 if ( (*it)->IsSource() ) {
-                    sf.Reset(new CSourceFeatureItem((*it)->GetSource(), seg_range, ctx));
-                    srcs.push_back(sf);
+                    const CBioSource& bsrc = (*it)->GetSource();
+                    if (bsrc.IsSetOrg()) {
+                        sf.Reset(new CSourceFeatureItem(bsrc, seg_range, ctx));
+                        srcs.push_back(sf);
+                    }
                 }
             }
         }
@@ -761,10 +773,11 @@ void CFlatGatherer::x_CollectSourceFeatures
  TSourceFeatSet& srcs) const
 {
     SAnnotSelector as;
-    as.SetFeatType(CSeqFeatData::e_Biosrc);
-    as.SetOverlapIntervals();
-    as.SetResolveDepth(1);  // in case segmented
-    as.SetNoMapping(false);
+    as.SetFeatType(CSeqFeatData::e_Biosrc)
+      .SetOverlapIntervals()
+      .SetResolveDepth(1) // in case segmented
+      .SetNoMapping(false)
+      .SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
 
     for ( CFeat_CI fi(bh, range.GetFrom(), range.GetTo(), as); fi; ++fi ) {
         TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
@@ -823,21 +836,10 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     // if no source found create one (only if not FTable format or Dump mode)
     if ( srcs.empty()  &&  !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
         CRef<CBioSource> bsrc(new CBioSource);
+        bsrc->SetOrg();
         CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx));
         srcs.push_back(sf);
     }
-}
-
-
-
-void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
-{
-    if ( srcs.size() < 2 ) {
-        return;
-    }
-    // !!! To Do:
-    // !!! * sort based on biosource
-    // !!! * merge equal biosources (merge locations)
 }
 
 
@@ -851,7 +853,7 @@ void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs) const
 }
 
 
-struct SSortByLoc
+struct SSortSourceByLoc
 {
     bool operator()(const CRef<CSourceFeatureItem>& sfp1,
                     const CRef<CSourceFeatureItem>& sfp2) 
@@ -891,7 +893,7 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
     x_MergeEqualBioSources(srcs);
     
     // sort by type (descriptor / feature) and location
-    sort(srcs.begin(), srcs.end(), SSortByLoc());
+    sort(srcs.begin(), srcs.end(), SSortSourceByLoc());
     
     // if the descriptor has a focus, subtract out all other source locations.
     if ( srcs.front()->GetSource().IsSetIs_focus() ) {
@@ -908,6 +910,18 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
     ITERATE( TSourceFeatSet, it, srcs ) {
         *m_ItemOS << *it;
     }
+}
+
+
+void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
+{
+    if ( srcs.size() < 2 ) {
+        return;
+    }
+
+    // !!! To Do:
+    // !!! * sort based on biosource
+    // !!! * merge equal biosources (merge locations)
 }
 
 
@@ -979,10 +993,10 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, const CBioseq_Handle& seq)
 }
 
 
-static bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
-{
-    return s_SeqLocEndsOnBioseq(feat.GetLocation(), seq);
-}
+//static bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
+//{
+//    return s_SeqLocEndsOnBioseq(feat.GetLocation(), seq);
+//}
 
 
 static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
@@ -996,12 +1010,14 @@ static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
     // 1 .segmented but not doing master style.
     if (ctx.IsSegmented()  &&  !cfg.IsStyleMaster()) {
         return 0;
-    }
-    // 2. delta and not doing remote features
-    if (ctx.IsDelta()  &&  !cfg.ShowContigFeatures()) {
-        return 0;
+    } else if (!ctx.IsSegmented()) {
+        // 2. not delta, or delta and supress contig featuers
+        if (!ctx.IsDelta()  ||  !cfg.ShowContigFeatures()) {
+            return 0;
+        }
     }
 
+    // ... otherwise
     CSeq_loc_Mapper* mapper = new CSeq_loc_Mapper(ctx.GetHandle());
     if (mapper != NULL) {
         mapper->SetMergeAbutting();
@@ -1063,8 +1079,17 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
         }
         prev_feat = it->GetSeq_feat_Handle();
 
-        // if part show only features ending on that part
-        if (ctx.IsPart()  &&  !s_FeatEndsOnBioseq(feat, ctx.GetHandle()) ) {
+        CConstRef<CSeq_loc> feat_loc(&feat.GetLocation());
+        if ( mapper ) {
+            feat_loc.Reset(mapper->Map(*feat_loc));
+            s_FixLocation(feat_loc, ctx);
+        }
+        if (!feat_loc  ||  feat_loc->IsNull()) {
+            continue;
+        }
+
+        // make sure feature location ends on the current bioseq
+        if (!s_SeqLocEndsOnBioseq(*feat_loc, ctx.GetHandle())) {
             // may need to map sig_peptide on a different segment
             if (feat.GetData().IsCdregion()) {
                 if (!ctx.Config().IsFormatFTable()) {
@@ -1072,12 +1097,6 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
                 }
             }
             continue;
-        }
-
-        CConstRef<CSeq_loc> feat_loc(&feat.GetLocation());
-        if ( mapper ) {
-            feat_loc.Reset(mapper->Map(*feat_loc));
-            s_FixLocation(feat_loc, ctx);
         }
                 
         out << new CFeatureItem(feat, ctx, feat_loc);
@@ -1260,17 +1279,17 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     bool first = true;
     CSeq_loc_Mapper prot_to_cds(feat, CSeq_loc_Mapper::eProductToLocation, &scope);
     // explore mat_peptides, sites, etc.
-    for ( CFeat_CI it(prot, 0, 0); it; ++it ) {
+    SAnnotSelector sel;
+    sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry())
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_region)
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_site)
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_bond)
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa)
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
+       .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
+    for ( CFeat_CI it(prot, 0, 0, sel); it; ++it ) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
-        if ( !(subtype == CSeqFeatData::eSubtype_region)              &&
-             !(subtype == CSeqFeatData::eSubtype_site)                &&
-             !(subtype == CSeqFeatData::eSubtype_bond)                &&
-             !(subtype == CSeqFeatData::eSubtype_mat_peptide_aa)      &&
-             !(subtype == CSeqFeatData::eSubtype_sig_peptide_aa)      &&
-             !(subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
-             !(subtype == CSeqFeatData::eSubtype_preprotein) ) {
-            continue;
-        }
 
         if ( cfg.HideCDDFeats()  &&
              subtype == CSeqFeatData::eSubtype_region  &&
@@ -1349,6 +1368,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/10/05 15:43:47  shomrat
+* Changes to feature and comment gathering
+*
 * Revision 1.28  2004/09/02 15:41:16  shomrat
 * Fixed initialization of user defined AnnotSelector
 *
