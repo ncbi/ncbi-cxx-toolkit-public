@@ -390,31 +390,39 @@ is defined as:
 <h4>
 <a NAME="ref_CArgDescriptions_UserValueTypes"></a><i>CArgAllow</i> class:
 user-defined restrictions on the range of allowed values</h4>
-Further restrictions on the range of allowed values can be specified using
-the <i>CArgDescriptions::SetConstraint() </i>method with the <i><a href="../docxx/CArgAllow.html">CArgAllow</a></i>
+Further restrictions on the allowed values can be specified using the <i>CArgDescriptions::SetConstraint()
+</i>method with the <i><a href="../docxx/CArgAllow.html">CArgAllow</a></i>
 class. For example:
-<blockquote><font color="#008080">CArgAllow* constraint = new CArgAllow_Integers(5,
+<blockquote><font color="#008080">CArgDescriptions args;</font>
+<br><font color="#008080">.................................................</font>
+<br><font color="#008080">CArgAllow* constraint = new CArgAllow_Integers(5,
 10);</font>
-<br><font color="#008080">SetConstraint("firstInt", constraint);</font>
-<br><font color="#008080">SetConstraint("nextInt", constraint);</font></blockquote>
-<font color="#000000">This specifies that the arguments named "firstInt"
-and "nextInt" must both be in the range [5, 10].&nbsp; </font>The <a href="../docxx/CArgAllow_Integers.html"><i>CArgAllow_Integers</i>
-</a>class is derived from the <b>virtual</b> <i>CArgAllow</i> class. The
-constructor takes the two integer arguments as lower and upper bounds for
-allowed values. Similarly, the <i><a href="../docxx/CArgAllow_Doubles.html">CArgAllow_Doubles</a>
-</i>class can be used to specify a range of allowed floating point values.&nbsp;
+<br><font color="#008080">args.SetConstraint("firstInt", constraint);</font>
+<br><font color="#008080">args.SetConstraint("nextInt", constraint);</font></blockquote>
+<font color="#000000">This specifies that the arguments named "<i>firstInt</i>"
+and "<i>nextInt</i>" must both be in the range [5, 10].&nbsp; </font>The
+<i><a href="../docxx/CArgAllow_Integers.html">CArgAllow_Integers</a></i>
+class is derived from the <b>abstract</b> <i>CArgAllow</i> class. The constructor
+takes the two integer arguments as lower and upper bounds for allowed values.
+Similarly, the <i><a href="../docxx/CArgAllow_Doubles.html">CArgAllow_Doubles</a></i>
+class can be used to specify a range of allowed floating point values.&nbsp;
 For both classes, the order of the numeric arguments does not matter, as
 the constructors will use <i>min/max </i>comparisions to generate a valid
 range.
 <p>A third class derived from the <i>CArgAllow</i> class is the <i><a href="../docxx/CArgAllow_Strings.html">CArgAllow_Strings</a></i>
-class.&nbsp; In this case, the set of allowed values can not specified
-by a <i>range,</i> but the following construct can be used:
-<blockquote><font color="#008080">CArgAllow* constraint = new CArgAllow_Strings()->Allow("this)->Allow("that");</font></blockquote>
+class.&nbsp; In this case, the set of allowed values can not be specified
+by a <i>range,</i> but the following construct can be used to enlist all
+eligible string values:
+<blockquote><font color="#008080">CArgAllow* constraint = (new CArgAllow_Strings())->Allow("this)->Allow("that")->Allow("etc");</font>
+<br><font color="#008080">args.SetConstraint("someString", constraint);</font></blockquote>
 Here, the constructor takes no arguments, and the <i>Allow() </i>method
 returns <i>this</i>. Thus, a list of allowed strings can be specified by
-daisy-chaining a set of calls to Allow() to the constructor.
-<p>If the value provided on the command line is not within the allowed
-range or set of values thus specified for that argument, then an exception
+daisy-chaining a set of calls to <i>Allow</i>(). A bit unusual yet shorter
+notation can also be used by engaging the comma operator, like this:
+<blockquote><font color="#008080">args.SetConstraint("someString",&nbsp;
+&amp;(*new CArgAllow_Strings, "this", "that", "etc"));</font></blockquote>
+If the value provided on the command line is not within the allowed range
+(or set of string values) specified for that argument, then an exception
 will be thrown.&nbsp; This exception can be caught and handled in the usual
 manner, as&nbsp; described in the discussion of <a href="#ref_CArgDescriptions_Usage">Generating
 a <i>USAGE </i>message.</a>
@@ -594,7 +602,8 @@ and is added to a container managed by the <i>CArgs</i> object.&nbsp; All
 arguments can be accessed&nbsp; using the [] operator, as in: <i>myCArgs["f"]</i>,
 where "f" is the name registered for that argument. There are two ways
 to access the <i>Nth</i> unnamed positional argument: <i>myCArgs["#N"]
-</i>and&nbsp;
+</i>and
+
 <i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
@@ -647,7 +656,6 @@ demonstrates the usage of these classes for argument processing. See also
 and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
 <p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;&nbsp;
-
 <i><a href="diag.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
