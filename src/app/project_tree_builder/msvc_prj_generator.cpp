@@ -35,7 +35,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
     CMsvcPrjProjectContext project_context(prj);
     CVisualStudioProject xmlprj;
 
-    // Chacking configuration availability:
+    // Checking configuration availability:
     list<SConfigInfo> project_configs;
     ITERATE(list<SConfigInfo>, p , m_Configs) {
         const SConfigInfo& cfg_info = *p;
@@ -407,7 +407,18 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetFilter
             ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
 
+        CSourceFileToProjectInserter src_inserter(prj.m_ID,
+                                                  project_configs, 
+                                                  project_context.ProjectDir());
+
         ITERATE(list<string>, p, collector.SourceFiles()) {
+
+            //Include collected source files
+            const string& rel_source_file = *p;
+
+            src_inserter(filter, 
+                         rel_source_file);
+#if 0
             //Include collected source files
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
@@ -415,6 +426,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFile(*file);
             filter->SetFF().SetFF().push_back(ce);
+#endif
         }
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
@@ -597,6 +609,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/05/10 14:28:01  gorelenk
+ * Changed implementation CMsvcProjectGenerator::Generate .
+ *
  * Revision 1.30  2004/04/30 13:57:01  dicuccio
  * Fixed project generation to correct dependency rules for datatool-generated
  * code.
