@@ -349,6 +349,7 @@ for x_row in $x_tests; do
    x_work_dir="$x_compile_dir/$x_work_dir_tail"
 
    # Copy specified files to the build directory
+
    if [ "$x_import_prj" = "no" ]; then
       if [ ! -z "$x_files" ]; then
          for i in $x_files ; do
@@ -356,8 +357,8 @@ for x_row in $x_tests; do
             if [ -f "$x_copy"  -o  -d "$x_copy" ]; then
                cp -prf "$x_copy" "$x_work_dir"
             else
-               echo "Warning:  \"$x_copy\" must be file or directory!"
-               exit 0
+               echo "Warning:  The copied object \"$x_copy\" should be a file or directory!"
+               continue 1
             fi
          done
       fi
