@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/04/09 17:39:45  grichenk
+* CNcbiRegistry::Get() return type reverted to "const string&"
+*
 * Revision 1.14  2001/04/06 15:46:30  grichenk
 * Added thread-safety to CNcbiRegistry:: methods
 *
@@ -369,7 +372,7 @@ void CNcbiRegistry::Clear(void)
 }
 
 
-string CNcbiRegistry::Get(const string& section, const string& name,
+const string& CNcbiRegistry::Get(const string& section, const string& name,
                           TFlags flags)
 const
 {

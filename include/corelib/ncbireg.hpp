@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/09 17:39:20  grichenk
+* CNcbiRegistry::Get() return type reverted to "const string&"
+*
 * Revision 1.10  2001/04/06 15:46:29  grichenk
 * Added thread-safety to CNcbiRegistry:: methods
 *
@@ -148,7 +151,7 @@ public:
     //
     // Valid flags := { ePersistent }
     // If "ePersistent" flag is set then dont search in transients at all.
-    string Get(const string& section, const string& name,
+    const string& Get(const string& section, const string& name,
                       TFlags flags = 0) const;
 
     // Set the configuration parameter value(unset if "value" is empty)
