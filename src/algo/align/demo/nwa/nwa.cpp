@@ -41,7 +41,7 @@ void CAppNWA::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Global alignment algorithms demo application.\n"
-                              "Build 1.00.07 - 01/15/03");
+                              "Build 1.00.08 - 01/22/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
@@ -49,6 +49,8 @@ void CAppNWA::Init()
 
     argdescr->AddFlag("mm",
                       "Limit memory use to linear (Myers and Miller method)");
+
+    argdescr->AddFlag("mt", "Use multiple threads");
 
     argdescr->AddFlag("mrna2dna", "mRna vs. Dna alignment");
 
@@ -114,21 +116,27 @@ void CAppNWA::x_RunOnPair() const
 
     // analyze parameters
     const bool bMM = args["mm"];
+    const bool bMT = args["mt"];
     const bool bMrna2Dna = args["mrna2dna"];
 
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
-
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
                    "Wrong matrix specified");
     }
-
+     
     if(bMrna2Dna && bMM) {
-
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
                    "Linear memory approach is not yet supported by the "
                    "spliced alignment algorithm");
+    }
+     
+    if(bMT && !bMM) {
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "Mutliple thread mode is currently supported "
+                   "for Myers-Miller method only (-mm flag)");
     }
 
     // read input sequences
@@ -172,6 +180,11 @@ void CAppNWA::x_RunOnPair() const
         
         aligner_mrna2dna->SetWi (args["Wi"]. AsInteger());
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
+    }
+
+    if( bMT && bMM) {
+        CMMAligner* pmma = static_cast<CMMAligner*> (aligner.get());
+        pmma -> EnableMultipleThreads();
     }
 
     int score = aligner->Run();
@@ -225,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/01/21 16:34:22  kapustin
+ * mm
+ *
  * Revision 1.5  2003/01/21 12:42:02  kapustin
  * Add mm parameter
  *

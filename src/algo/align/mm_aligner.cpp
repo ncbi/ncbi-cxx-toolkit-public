@@ -32,10 +32,67 @@
  */
 
 #include <algo/mm_aligner.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
 
 
 BEGIN_NCBI_SCOPE
+
+// CMTRunHalf - x_RunTop and x_RunBtm thread incapsulation
+//
+
+class CMTRunHalf: public CThread
+{
+public:
+    
+    CMTRunHalf(const CMMAligner* aligner, bool top_half,
+               const SCoordRect* rect, vector<CNWAligner::TScore>* e,
+               vector<CNWAligner::TScore>* f, vector<CNWAligner::TScore>* g,
+               vector<unsigned char>* trace, bool free_corner_fgap );
+    
+    virtual void* Main();
+
+protected:
+        
+    virtual ~CMTRunHalf() {}
+    
+    const CMMAligner           *m_aligner;
+    const SCoordRect           *m_rect;
+    vector<CNWAligner::TScore> *m_E, *m_F, *m_G;
+    vector<unsigned char>      *m_trace;
+    bool                       m_free_corner_fgap;
+    bool                       m_RunOnTop;
+};
+
+
+CMTRunHalf::CMTRunHalf (
+    const CMMAligner* aligner, bool top_half, const SCoordRect* rect,
+    vector<CNWAligner::TScore>* e,
+    vector<CNWAligner::TScore>* f,
+    vector<CNWAligner::TScore>* g,
+    vector<unsigned char>* trace, bool free_corner_fgap ):
+
+    m_aligner(aligner), m_RunOnTop(top_half), m_rect(rect), m_E(e), m_F(f),
+    m_G(g), m_trace(trace), m_free_corner_fgap(free_corner_fgap)
+{
+}
+
+void* CMTRunHalf::Main()
+{
+    if(m_RunOnTop) {
+        m_aligner->x_RunTop(
+             *m_rect, *m_E, *m_F, *m_G, *m_trace, m_free_corner_fgap);
+    }
+    else {
+        m_aligner->x_RunBtm(
+             *m_rect, *m_E, *m_F, *m_G, *m_trace, m_free_corner_fgap);
+    }
+ 
+    return 0;
+}
+
+//  CMMAligner
+//
 
 
 CMMAligner::CMMAligner( const char* seq1, size_t len1,
@@ -43,7 +100,8 @@ CMMAligner::CMMAligner( const char* seq1, size_t len1,
                         EScoringMatrixType matrix_type )
     throw(CNWAlignerException):
     CNWAligner(seq1, len1, seq2, len2, matrix_type),
-    m_score(kMin_Int)
+    m_score(kMin_Int),
+    m_mt(false)
 {
 }
 
@@ -59,10 +117,11 @@ CNWAligner::TScore CMMAligner::Run()
     
     m_Transcript.clear();
     m_Transcript.resize(m_TransList.size() - 1);
-    list<ETranscriptSymbol>::const_iterator ie = m_TransList.end(),
-        ib = m_TransList.begin();
-    ++ib;
-    reverse_copy(ib, ie, m_Transcript.begin());
+    list<ETranscriptSymbol>::reverse_iterator ib = m_TransList.rbegin(),
+        ie = m_TransList.rend();
+    --ie;
+    copy(ib, ie, m_Transcript.begin());
+
     return m_score;
 }
 
@@ -80,8 +139,8 @@ const unsigned char kMaskE   = 0x0004;
 const unsigned char kMaskD   = 0x0008;
 
 void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
-                                list<ETranscriptSymbol>::iterator translist_pos,
-                                bool left_top, bool right_bottom )
+    list<ETranscriptSymbol>::iterator translist_pos,
+    bool left_top, bool right_bottom )
 {
     const int dimI = submatr.i2 - submatr.i1 + 1;
     const int dimJ = submatr.j2 - submatr.j1 + 1;
@@ -105,12 +164,24 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     SCoordRect rtop (submatr.i1, submatr.j1, I, submatr.j2);
     vector<TScore> vEtop (dim), vFtop (dim), vGtop (dim);
     vector<unsigned char> trace_top (dim);
-    x_RunTop(rtop, vEtop, vFtop, vGtop, trace_top, left_top);
 
     SCoordRect rbtm (I + 1, submatr.j1, submatr.i2 , submatr.j2);
     vector<TScore> vEbtm (dim), vFbtm (dim), vGbtm (dim);
     vector<unsigned char> trace_btm (dim);
-    x_RunBtm(rbtm, vEbtm, vFbtm, vGbtm, trace_btm, right_bottom);
+
+
+    if( /* m_mt */ false) {
+        CMTRunHalf* thr2 = new CMTRunHalf ( this, true, &rtop,
+                                            &vEtop, &vFtop, &vGtop,
+                                            &trace_top, left_top );
+        thr2->Run();
+        x_RunBtm(rbtm, vEbtm, vFbtm, vGbtm, trace_btm, right_bottom);
+        thr2->Join(0);
+    }
+    else {
+        x_RunTop(rtop, vEtop, vFtop, vGtop, trace_top, left_top);
+        x_RunBtm(rbtm, vEbtm, vFbtm, vGbtm, trace_btm, right_bottom);
+    }
 
     // locate the transition point
     size_t trans_pos;
@@ -197,12 +268,17 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     // coalesce the pieces together and insert into the master list
     subpath_left.splice( subpath_left.end(), subpath_right );
 
-    list<ETranscriptSymbol>::iterator ti0 = translist_pos;
-    --ti0;
-    m_TransList.splice( translist_pos, subpath_left );
-    ++ti0;
-    list<ETranscriptSymbol>::iterator ti1 = translist_pos;
-        
+    list<ETranscriptSymbol>::iterator ti0, ti1;
+    DEFINE_STATIC_FAST_MUTEX (masterlist_mutex);
+    {{
+        CFastMutexGuard  guard (masterlist_mutex);
+        ti0 = translist_pos;
+        --ti0;
+        m_TransList.splice( translist_pos, subpath_left );
+        ++ti0;
+        ti1 = translist_pos;
+    }}  
+
     // Recurse submatrices:
     if(!bNoLT) {
         // left top
@@ -306,7 +382,8 @@ size_t CMMAligner::x_ExtendSubpath (
                 NCBI_THROW(
                            CNWAlignerException,
                            eInternal,
-                           "Assertion: incorrect backtrace symbol (right expansion)");
+                           "Assertion: incorrect backtrace symbol "
+                           "(right expansion)");
             }
         }
     }
@@ -336,7 +413,8 @@ size_t CMMAligner::x_ExtendSubpath (
                 NCBI_THROW(
                            CNWAlignerException,
                            eInternal,
-                           "Assertion: incorrect backtrace symbol (left expansion)");
+                           "Assertion: incorrect backtrace symbol "
+                           "(left expansion)");
             }
         }
     }

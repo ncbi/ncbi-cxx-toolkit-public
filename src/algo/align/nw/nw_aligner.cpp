@@ -387,7 +387,14 @@ string CNWAligner::GetTranscript() const
         }
         s += c;
     }
-    reverse(s.begin(), s.end());
+    // reverse() not supported on all platforms
+    string sr (s);
+    size_t n = s.size(), n2 = n/2;
+    for(size_t i = 0; i < n2; ++i) {
+        char c = s[n-i-1];
+        s[n-i-1] = s[i];
+        s[i] = c;
+    }
     return s;
 }
 
@@ -472,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/01/21 16:34:21  kapustin
+ * mm
+ *
  * Revision 1.6  2003/01/21 12:41:37  kapustin
  * Use class neg infinity constant to specify least possible score
  *
