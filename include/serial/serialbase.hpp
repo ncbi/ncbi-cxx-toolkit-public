@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/12 13:30:56  vasilche
+* Typo in function prototype.
+*
 * Revision 1.6  2000/07/11 20:34:51  vasilche
 * File included in all generated headers made lighter.
 * Nonnecessary code moved to serialimpl.hpp.
@@ -71,10 +74,10 @@ class CEnumeratedTypeValues;
 typedef void (*TPostReadFunction)(const CTypeInfo* info, void* object);
 typedef void (*TPreWriteFunction)(const CTypeInfo* info, const void* object);
 
-void SetPostRead(const CClassTypeInfo* info, TPostReadFunction function);
-void SetPostRead(const CChoiceTypeInfo* info, TPostReadFunction function);
-void SetPreWrite(const CClassTypeInfo* info, TPreWriteFunction function);
-void SetPreWrite(const CChoiceTypeInfo* info, TPreWriteFunction function);
+void SetPostRead(CClassTypeInfo* info, TPostReadFunction function);
+void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction function);
+void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction function);
+void SetPreWrite(CChoiceTypeInfo* info, TPreWriteFunction function);
 
 template<class Class>
 class CClassPostReadPreWrite
