@@ -73,7 +73,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 continue;
 
             CDB_Object& param = *m_Params.GetParam(i);
-            
+
             switch ( param.GetType() ) {
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
@@ -100,7 +100,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 DBNUMERIC* v = reinterpret_cast<DBNUMERIC*> (pb);
                 Int8 v8 = val.Value();
-                if (longlong_to_numeric(v8, 18, v->array) == 0)
+                if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                     return false;
                 r = bcp_bind(m_Cmd, (BYTE*) v, 0,
                              val.IsNULL() ? 0 : -1, 0, 0, SYBNUMERIC, i + 1);
@@ -153,8 +153,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
                 DBDATETIME4* dt = (DBDATETIME4*) pb;
-                dt->days        = val.GetDays();
-                dt->minutes     = val.GetMinutes();
+                DBDATETIME4_days(dt)        = val.GetDays();
+                DBDATETIME4_mins(dt)     = val.GetMinutes();
                 r = bcp_bind(m_Cmd, (BYTE*) dt, 0, val.IsNULL() ? 0 : -1,
                              0, 0, SYBDATETIME4,  i + 1);
                 pb = (void*) (dt + 1);
@@ -232,7 +232,7 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
                 DBNUMERIC* v = (DBNUMERIC*) pb;
                 Int8 v8 = val.Value();
-                if (longlong_to_numeric(v8, 18, v->array) == 0)
+                if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                     return false;
                 r = bcp_colptr(m_Cmd, (BYTE*) v, i + 1)
                     == SUCCEED &&
@@ -295,8 +295,8 @@ bool CDBL_BCPInCmd::x_AssignParams(void* pb)
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
                 DBDATETIME4* dt = (DBDATETIME4*) pb;
-                dt->days        = val.GetDays();
-                dt->minutes     = val.GetMinutes();
+                DBDATETIME4_days(dt)        = val.GetDays();
+                DBDATETIME4_mins(dt)     = val.GetMinutes();
                 r = bcp_colptr(m_Cmd, (BYTE*) dt, i + 1)
                     == SUCCEED &&
                     bcp_collen(m_Cmd, val.IsNULL() ? 0 : -1, i + 1)
@@ -441,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/03 15:46:23  sapojnik
+ * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
+ *
  * Revision 1.3  2001/10/24 16:38:53  lavr
  * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
  *

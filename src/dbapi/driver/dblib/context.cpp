@@ -43,12 +43,37 @@ BEGIN_NCBI_SCOPE
 
 
 extern "C" {
+
+#ifdef NCBI_OS_MSWIN
+    static int s_DBLIB_err_callback(
+        DBPROCESS* dblink,   int   severity,
+        int        dberr,    int   oserr,
+        const char*  dberrstr, const char* oserrstr)
+    {
+        return CDBLibContext::DBLIB_dberr_handler
+            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "",
+	     oserrstr? oserrstr : "");
+    }
+
+    static int s_DBLIB_msg_callback(
+        DBPROCESS* dblink,   DBINT msgno,
+        int        msgstate, int   severity,
+        const char*      msgtxt,   const char* srvname,
+        const char*      procname, unsigned short   line)
+    {
+        CDBLibContext::DBLIB_dbmsg_handler
+            (dblink, msgno,   msgstate, severity,
+             msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "",
+	     line);
+        return 0;
+    }
+#else
     static int s_DBLIB_err_callback(DBPROCESS* dblink,   int   severity,
                                     int        dberr,    int   oserr,
                                     char*      dberrstr, char* oserrstr)
     {
         return CDBLibContext::DBLIB_dberr_handler
-            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "", 
+            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "",
 	     oserrstr? oserrstr : "");
     }
 
@@ -59,10 +84,11 @@ extern "C" {
     {
         CDBLibContext::DBLIB_dbmsg_handler
             (dblink, msgno,   msgstate, severity,
-             msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "", 
+             msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "",
 	     line);
         return 0;
     }
+#endif
 }
 
 
@@ -78,7 +104,12 @@ CDBLibContext::CDBLibContext(DBINT /*version*/) :
                            "concurrently");
     }
 
-    if (dbinit() != SUCCEED) {
+#ifdef NCBI_OS_MSWIN
+    if (dbinit() == NULL)
+#else
+    if (dbinit() != SUCCEED)
+#endif
+    {
         throw CDB_ClientEx(eDB_Fatal, 200001, "CDBLibContext::CDBLibContext",
                            "dbinit failed");
     }
@@ -107,8 +138,11 @@ bool CDBLibContext::SetMaxTextImageSize(size_t nof_bytes)
 {
     char s[64];
     sprintf(s, "%lu", (unsigned long) nof_bytes);
-    return dbsetopt(0, DBTEXTLIMIT, s, -1) == SUCCEED
-        /* && dbsetopt(0, DBTEXTSIZE, s, -1) == SUCCEED */;
+#ifdef NCBI_OS_MSWIN
+    return dbsetopt(0, DBTEXTLIMIT, s) == SUCCEED;
+#else
+    return dbsetopt(0, DBTEXTLIMIT, s, -1) == SUCCEED;
+#endif
 }
 
 
@@ -212,7 +246,12 @@ CDBLibContext::~CDBLibContext()
         delete t_con;
     }
 
+#ifdef NCBI_OS_MSWIN
+    dbfreelogin(m_Login);
+#else
     dbloginfree(m_Login);
+#endif
+
     dbexit();
     m_pDBLibContext = 0;
 }
@@ -359,8 +398,11 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 
     if (mode & fBcpIn)
         BCP_SETL(m_Login, TRUE);
+
+#ifndef NCBI_OS_MSWIN
     if (mode & fPasswordEncrypted)
         DBSETLENCRYPT(m_Login, TRUE);
+#endif
 
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
@@ -373,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/03 15:46:23  sapojnik
+ * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
+ *
  * Revision 1.3  2001/10/24 16:40:00  lavr
  * Comment out unused function arguments
  *

@@ -28,7 +28,7 @@
  * File Description:  DBLib RPC command
  *
  */
- 
+
 #include <dbapi/driver/dblib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -245,7 +245,7 @@ CDBL_RPCCmd::~CDBL_RPCCmd()
 bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
 {
     RETCODE r;
-    
+
     for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
         CDB_Object& param = *m_Params.GetParam(i);
         BYTE status =
@@ -279,7 +279,7 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
             CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
             DBNUMERIC* v = (DBNUMERIC*) param_buff;
             Int8 v8 = val.Value();
-            if (longlong_to_numeric(v8, 18, v->array) == 0)
+            if (longlong_to_numeric(v8, 18, DBNUMERIC_val(v)) == 0)
                 return false;
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBNUMERIC, -1,
@@ -335,9 +335,9 @@ bool CDBL_RPCCmd::x_AssignParams(char* param_buff)
         }
         case eDB_SmallDateTime: {
             CDB_SmallDateTime& val = dynamic_cast<CDB_SmallDateTime&> (param);
-            DBDATETIME4* dt = (DBDATETIME4*) param_buff;
-            dt->days        = val.GetDays();
-            dt->minutes     = val.GetMinutes();
+            DBDATETIME4* dt        = (DBDATETIME4*) param_buff;
+            DBDATETIME4_days(dt)   = val.GetDays();
+            DBDATETIME4_mins(dt)   = val.GetMinutes();
             r = dbrpcparam(m_Cmd, (char*) m_Params.GetParamName(i).c_str(),
                            status, SYBDATETIME4, -1,
                            is_null ? 0 : -1, (BYTE*) dt);
@@ -372,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/03 15:46:23  sapojnik
+ * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
+ *
  * Revision 1.3  2001/10/24 16:39:32  lavr
  * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
  *

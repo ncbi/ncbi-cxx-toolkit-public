@@ -32,14 +32,66 @@
  *
  */
 
+#ifdef NCBI_OS_MSWIN ////////////////////////////////////////
+
+#define DBNTWIN32          // must identify operating system environment
+#include "windows.h"
+#include <sqlfront.h>
+#include <sqldb.h>     // DB-LIB header file (should always be included)
+
+#define SYBINT1 SQLINT1
+#define SYBINT2 SQLINT2
+#define SYBINT4 SQLINT4
+#define SYBIMAGE     SQLIMAGE
+#define SYBTEXT      SQLTEXT
+#define SYBBINARY    SQLBINARY
+#define SYBDATETIME  SQLDATETIME
+#define SYBDATETIME4 SQLDATETIM4
+#define SYBNUMERIC   SQLNUMERIC
+#define SYBCHAR      SQLCHAR
+#define SYBBIT       SQLBIT
+#define SYBDECIMAL   SQLDECIMAL
+#define SYBREAL      SQLFLT4
+#define SYBFLT8      SQLFLT8
+
+#define SYBETIME     SQLETIME
+#define SYBEFCON     SQLECONNFB
+#define SYBECONN     SQLECONN
+
+// DBSETLENCRYPT
+#define DBDATETIME4  DBDATETIM4
+#define DBCOLINFO    DBCOL
+#define DBTYPEINFO   DBTYPEDEFS
+
+#define DBVERSION_UNKNOWN DBUNKNOWN
+
+#define CS_SUCCEED 0
+#define INT_TIMEOUT 1
+#define CS_INT Int4
+
+#define DBDATETIME4_days(x) ((x)->numdays)
+#define DBDATETIME4_mins(x) ((x)->nummins)
+#define DBNUMERIC_val(x) ((x)->val)
+
+#else
+
+#define DBDATETIME4_days(x) ((x)->days)
+#define DBDATETIME4_mins(x) ((x)->minutes)
+#define DBNUMERIC_val(x) ((x)->array)
+
+#endif NCBI_OS_MSWIN ////////////////////////////////////////
+
+
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
+#ifndef NCBI_OS_MSWIN ////////////////////////////////////////
 #include <sybfront.h>
 #include <sybdb.h>
 #include <syberror.h>
+#endif NCBI_OS_MSWIN ////////////////////////////////////////
 
 BEGIN_NCBI_SCOPE
 
@@ -164,7 +216,7 @@ protected:
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true);
-    
+
     virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
                           bool log_it = true);
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
@@ -600,8 +652,12 @@ class CDBL_ITDescriptor : public I_ITDescriptor
     friend class CDBL_Connection;
 public:
     virtual ~CDBL_ITDescriptor();
+
+#ifndef NCBI_OS_MSWIN ////////////////////////////////////////
 private:
     bool x_MakeObjName(DBCOLINFO* col_info);
+#endif NCBI_OS_MSWIN ////////////////////////////////////////
+
 protected:
     CDBL_ITDescriptor(DBPROCESS* m_link, int col_num);
 
@@ -624,6 +680,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/01/03 15:46:24  sapojnik
+ * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
+ *
  * Revision 1.2  2001/10/24 16:36:05  lavr
  * Type of CDBL_*Result::m_Offset changed to 'size_t'
  *

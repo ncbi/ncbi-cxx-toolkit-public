@@ -61,12 +61,12 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                                        (size_t) d_len);
                 break;
             default:
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem", 
+                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
                                    "wrong type of CDB_Object");
             }
             return item_buff;
         }
-        
+
         return d_ptr ? new CDB_VarBinary((const void*) d_ptr, (size_t) d_len)
             : new CDB_VarBinary();
     }
@@ -99,7 +99,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
         return v ? new CDB_Bit((int) *v) : new CDB_Bit;
     }
-        
+
     case eDB_VarChar: {
         if (item_buff) {
             switch (b_type) {
@@ -154,11 +154,11 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 switch (b_type) {
                 case eDB_SmallDateTime:
                     ((CDB_SmallDateTime*) item_buff)->Assign
-                        (v->days,             v->minutes);
+                        (DBDATETIME4_days(v),             DBDATETIME4_mins(v));
                     break;
                 case eDB_DateTime:
                     ((CDB_DateTime*)      item_buff)->Assign
-                        ((int) v->days, (int) v->minutes*60*300);
+                        ((int) DBDATETIME4_days(v), (int) DBDATETIME4_mins(v)*60*300);
                     break;
                 default:
                     throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
@@ -170,7 +170,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
         }
 
         return v ?
-            new CDB_SmallDateTime(v->days, v->minutes) : new CDB_SmallDateTime;
+            new CDB_SmallDateTime(DBDATETIME4_days(v), DBDATETIME4_mins(v)) : new CDB_SmallDateTime;
     }
 
     case eDB_TinyInt: {
@@ -301,8 +301,16 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     case SYBIMAGE:     return eDB_Image;
     default:           return eDB_UnsupportedType;
     }
+
+#ifdef NCBI_OS_MSWIN
+    DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
+    RETCODE res = dbcolinfo(cmd, CI_REGULAR, n, 0, &dbcol );
+    return dbcol.Scale == 0 && dbcol.Precision < 20 ? eDB_BigInt : eDB_Numeric;
+#else
     DBTYPEINFO* t = dbcoltypeinfo(cmd, n);
     return t->scale == 0 && t->precision < 20 ? eDB_BigInt : eDB_Numeric;
+#endif
+
 }
 
 
@@ -327,7 +335,7 @@ CDBL_RowResult::CDBL_RowResult(DBPROCESS* cmd,
     for (unsigned int n = 0; n < m_NofCols; n++) {
         m_ColFmt[n].max_length = dbcollen(m_Cmd, n + 1);
         m_ColFmt[n].data_type = s_GetDataType(m_Cmd, n + 1);
-        char* s = dbcolname(m_Cmd, n + 1);
+        const char* s = dbcolname(m_Cmd, n + 1);
         m_ColFmt[n].col_name = s ? s : "";
     }
 }
@@ -368,7 +376,7 @@ bool CDBL_RowResult::Fetch()
 {
     if (!m_EOR) {
         switch (dbnextrow(m_Cmd)) {
-        case REG_ROW: 
+        case REG_ROW:
             m_CurrItem = 0;
             m_Offset = 0;
             return true;
@@ -419,10 +427,10 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                     ((CDB_Numeric*) item_buff)->Assign
                         ((unsigned int)   v->scale,
                          (unsigned int)   v->precision,
-                         (unsigned char*) v->array);
+                         (unsigned char*) DBNUMERIC_val(v));
                 } else if (b_type == eDB_BigInt) {
                     *((CDB_BigInt*) item_buff) = numeric_to_longlong
-                        ((unsigned int) v->precision, v->array);
+                        ((unsigned int) v->precision, DBNUMERIC_val(v));
                 } else {
                     throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
                                        "wrong type of CDB_Object");
@@ -434,7 +442,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
 
         return v ?
             new CDB_BigInt(numeric_to_longlong((unsigned int) v->precision,
-                                               v->array)) : new CDB_BigInt;
+                                               DBNUMERIC_val(v))) : new CDB_BigInt;
     }
 
     case eDB_Numeric: {
@@ -445,7 +453,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                         ((CDB_Numeric*) item_buff)->Assign
                             ((unsigned int)   v->scale,
                              (unsigned int)   v->precision,
-                             (unsigned char*) v->array);
+                             (unsigned char*) DBNUMERIC_val(v));
                     } else {
                         throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
                                            "wrong type of CDB_Object");
@@ -458,7 +466,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
         return v ?
             new CDB_Numeric((unsigned int)   v->scale,
                             (unsigned int)   v->precision,
-                            (unsigned char*) v->array) : new CDB_Numeric;
+                            (unsigned char*) DBNUMERIC_val(v)) : new CDB_Numeric;
     }
 
     case eDB_Text: {
@@ -578,7 +586,7 @@ CDBL_BlobResult::CDBL_BlobResult(DBPROCESS* cmd) :
 
     m_ColFmt.max_length = dbcollen(m_Cmd, 1);
     m_ColFmt.data_type = s_GetDataType(m_Cmd, 1);
-    char* s = dbcolname(m_Cmd, 1);
+    const char* s = dbcolname(m_Cmd, 1);
     m_ColFmt.col_name = s ? s : "";
 }
 
@@ -1334,6 +1342,11 @@ CDBL_CursorResult::~CDBL_CursorResult()
 
 CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
+#ifdef NCBI_OS_MSWIN
+    DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
+    RETCODE res = dbcolinfo(dblink, CI_REGULAR, col_num, 0, &dbcol );
+    m_ObjName = dbcol.Name; // ## to do: prepend "table."
+#else
     DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
 
     if (col_info == 0) {
@@ -1344,6 +1357,7 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
     if (!x_MakeObjName(col_info)) {
         m_ObjName = "";
     }
+#endif
 
     DBBINARY* p = dbtxptr(dblink, col_num);
     if (p) {
@@ -1365,7 +1379,7 @@ CDBL_ITDescriptor::~CDBL_ITDescriptor()
 {
 }
 
-
+#ifndef NCBI_OS_MSWIN
 bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
 {
     if (!col_info || !col_info->coltxobjname)
@@ -1381,6 +1395,7 @@ bool CDBL_ITDescriptor::x_MakeObjName(DBCOLINFO* col_info)
     }
     return true;
 }
+#endif
 
 
 END_NCBI_SCOPE
@@ -1390,6 +1405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/01/03 15:46:23  sapojnik
+ * ported to MS SQL (about 12 'ifdef NCBI_OS_MSWIN' in 6 files)
+ *
  * Revision 1.5  2001/11/06 17:59:58  lavr
  * Formatted uniformly as the rest of the library
  *
