@@ -121,9 +121,7 @@ CBlastOption::SetBlastp()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
-    SetMatrixPath(path);
-    sfree(path);
+    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -181,9 +179,7 @@ CBlastOption::SetBlastn()
 
     // Scoring options
     SetMatrixName(NULL);
-    char* path = BLASTGetMatrixPath(GetMatrixName(), false);
-    SetMatrixPath(path);
-    sfree(path);
+    SetMatrixPath(FindMatrixPath(GetMatrixName(), false).c_str());
     m_ScoringOpts->penalty = BLAST_PENALTY;
     m_ScoringOpts->reward = BLAST_REWARD;
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_NUCL;
@@ -245,9 +241,7 @@ void CBlastOption::SetMegablast()
 
     // Scoring options
     SetMatrixName(NULL);
-    char* path = BLASTGetMatrixPath(GetMatrixName(), false);
-    SetMatrixPath(path);
-    sfree(path);
+    SetMatrixPath(FindMatrixPath(GetMatrixName(), false).c_str());
     m_ScoringOpts->penalty = BLAST_PENALTY;
     m_ScoringOpts->reward = BLAST_REWARD;
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_MEGABLAST;
@@ -298,9 +292,7 @@ CBlastOption::SetBlastx()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
-    SetMatrixPath(path);
-    sfree(path);
+    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -322,6 +314,9 @@ CBlastOption::SetBlastx()
 
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE; // not really needed
+    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
+        FindGeneticCode(BLAST_GENETIC_CODE);
+    SetDbGeneticCodeStr(gc.get());
 }
 
 void 
@@ -350,9 +345,7 @@ CBlastOption::SetTblastn()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
-    SetMatrixPath(path);
-    sfree(path);
+    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -375,12 +368,9 @@ CBlastOption::SetTblastn()
 
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
-
-    // this is needed to avoid using sfree when the BlastDatabaseOptions
-    // structure is deallocated
-    unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    SetDbGeneticCodeStr(gc);
-    delete [] gc;
+    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
+        FindGeneticCode(BLAST_GENETIC_CODE);
+    SetDbGeneticCodeStr(gc.get());
 }
 
 void 
@@ -409,9 +399,7 @@ CBlastOption::SetTblastx()
 
     // Scoring options
     SetMatrixName("BLOSUM62");
-    char* path = BLASTGetMatrixPath(GetMatrixName(), true);
-    SetMatrixPath(path);
-    sfree(path);
+    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -433,12 +421,9 @@ CBlastOption::SetTblastx()
 
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
-
-    // this is needed to avoid using sfree when the BlastDatabaseOptions
-    // structure is deallocated
-    unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    SetDbGeneticCodeStr(gc);
-    delete [] gc;
+    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
+        FindGeneticCode(BLAST_GENETIC_CODE);
+    SetDbGeneticCodeStr(gc.get());
 }
 
 bool
@@ -493,6 +478,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/09/09 12:57:15  camacho
+* + internal setup functions, use smart pointers to handle memory mgmt
+*
 * Revision 1.18  2003/09/03 19:36:27  camacho
 * Fix include path for blast_setup.hpp
 *

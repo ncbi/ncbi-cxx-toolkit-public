@@ -33,6 +33,9 @@
 #ifndef ALGO_BLAST_API___BLAST_SETUP__HPP
 #define ALGO_BLAST_API___BLAST_SETUP__HPP
 
+#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/core/blast_options.h>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
@@ -41,22 +44,36 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
+class CBlastOption;
 
+void
+SetupQueryInfo(const TSeqLocVector& queries, const CBlastOption& options, 
+               BlastQueryInfo** qinfo); // out
+
+void
+SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
+             const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk);
+
+void
+SetupSubjects(const TSeqLocVector& subjects, 
+              CBlastOption* options,
+              vector<BLAST_SequenceBlk*>* seqblk_vec, 
+              unsigned int* max_subjlen);
 
 /** Retrieves a sequence using the object manager
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved [in]
- * @param buflen length of the buffer returned [out]
  * @param scope Scope from which the sequences are retrieved [in]
  * @param strand strand to retrieve [in]
  * @param add_nucl_sentinel true to guard nucleotide sequence with sentinel 
  * bytes (ignored for protein sequences, which always have sentinels) [in]
+ * @return pair containing the buffer and its length. 
  */
-Uint1*
-BLASTGetSequence(const objects::CSeq_loc& sl, Uint1 encoding, int* buflen,
-                 objects::CScope* scope,
-                 objects::ENa_strand strand = objects::eNa_strand_plus, 
-                 bool add_nucl_sentinel = true);
+pair<AutoPtr<Uint1,CDeleter<Uint1> >,int>
+GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
+            objects::CScope* scope, 
+            objects::ENa_strand strand = objects::eNa_strand_plus, 
+            bool add_nucl_sentinel = true);
 
 #if 0
 // not used right now
@@ -73,14 +90,25 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
                     const int nucl_length, const short frame, Uint1* translation);
 #endif
 
-/** Retrieves the requested genetic code in Ncbistdaa format. Caller is
- * responsible for deallocating return value with delete []. No malloc/calloc
- * are used within this function!
+/** Retrieves the requested genetic code in Ncbistdaa format. 
  * @param genetic_code numeric identifier for genetic code requested [in]
  */
-unsigned char* BLASTFindGeneticCode(int genetic_code);
+AutoPtr<Uint1, ArrayDeleter<Uint1> >
+FindGeneticCode(int genetic_code);
 
-char* BLASTGetMatrixPath(const char* matrix_name, bool is_prot);
+/** Returns the path (including a trailing path separator) to the location
+ * where the matrix can be found.
+ * @param matrix_name matrix to search for
+ * @param is_prot true if this is a protein matrix
+ */
+string
+FindMatrixPath(const char* matrix_name, bool is_prot);
+
+/** Returns the number of frames for a given BLAST program
+ * @param p program 
+ */
+unsigned int 
+GetNumberOfFrames(EProgram p);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -89,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/09/09 12:57:15  camacho
+* + internal setup functions, use smart pointers to handle memory mgmt
+*
 * Revision 1.9  2003/08/28 22:43:02  camacho
 * Change BLASTGetSequence signature
 *
