@@ -109,7 +109,7 @@ void TestRunTimeout(const string&  host,
     NcbiCout << "Run timeout test..." << NcbiEndl;
 
     CNetScheduleClient cl(host, port, "client_test", queue);
-    cl.SetRequestRateControl(false);
+    cl.ActivateRequestRateControl(false);
 
     const string input = "Hello " + queue;
     vector<string> jobs;
@@ -166,9 +166,10 @@ int CTestNetScheduleStress::Run(void)
     const string&  host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
     const string&  queue_name = args["queue"].AsString();  
+    string output;
+    int ret_code;
 
-
-    TestRunTimeout(host, port, queue_name);
+//    TestRunTimeout(host, port, queue_name);
 
 
     unsigned jcount = 10000;
@@ -177,14 +178,21 @@ int CTestNetScheduleStress::Run(void)
     }
     CNetScheduleClient::EJobStatus status;
     CNetScheduleClient cl(host, port, "client_test", queue_name);
-    cl.SetRequestRateControl(false);
+    cl.ActivateRequestRateControl(false);
 
     const string input = "Hello " + queue_name;
 
     string job_key = cl.SubmitJob(input);
     NcbiCout << job_key << NcbiEndl;
 
-    
+    cl.DropJob(job_key);
+    status = cl.GetStatus(job_key, &ret_code, &output);
+
+    if (status != CNetScheduleClient::eJobNotFound) {
+        NcbiCerr << "Job " << job_key << " still exists!" << NcbiEndl;
+    } else {
+        NcbiCout << "Job " << job_key << " has been deleted." << NcbiEndl;
+    }
     
     vector<string> jobs;
     jobs.reserve(jcount);
@@ -224,7 +232,6 @@ int CTestNetScheduleStress::Run(void)
 
     CStopWatch sw(true);
 
-    string output;
     unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
         const string& jk = *it;
@@ -365,6 +372,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/15 14:54:02  kuznets
+ * DropJob() test added
+ *
  * Revision 1.5  2005/03/10 14:20:28  kuznets
  * test for run timeout expiration
  *
