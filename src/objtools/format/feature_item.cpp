@@ -573,7 +573,11 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
     default:
         break;
     }
-
+    
+    if ( pseudo ) {
+        x_AddQual(eFQ_pseudo, new CFlatBoolQVal(true));
+    }
+    
     // now go through gbqual list
     if (m_Feat->IsSetQual()) {
         x_ImportQuals(m_Feat->GetQual());
@@ -1957,6 +1961,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/08 15:45:46  shomrat
+* Added pseudo qualifier
+*
 * Revision 1.7  2004/03/05 18:44:48  shomrat
 * fixes to qualifiers collection and formatting
 *
