@@ -1,49 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Aaron Ucko
-*
-* File Description:
-*   sample server using a thread pool
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.4  2004/05/17 20:58:22  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 6.3  2002/01/25 15:39:30  ucko
-* Completely reorganized threaded servers.
-*
-* Revision 6.2  2002/01/15 22:24:43  ucko
-* Take advantage of MT_LOCK_cxx2c
-*
-* Revision 6.1  2001/12/11 19:55:24  ucko
-* Introduce thread-pool-based servers.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Aaron Ucko
+ *
+ * File Description:
+ *   Sample server using a thread pool
+ *
+ */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -54,13 +39,14 @@
 #include <connect/ncbi_util.h>
 #include <connect/threaded_server.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 
 class CTestThreadedServer : public CThreadedServer
 {
 public:
-    CTestThreadedServer(unsigned int port, unsigned int threads,
+    CTestThreadedServer(unsigned short port, unsigned int threads,
                         unsigned int max, unsigned int queue_size)
         : CThreadedServer(port)
         {
@@ -138,10 +124,36 @@ int CThreadedServerApp::Run(void)
     return 0;
 }
 
+
 END_NCBI_SCOPE
+
 
 USING_NCBI_SCOPE;
 
-int main(int argc, const char* argv[]) {
+
+int main(int argc, const char* argv[])
+{
     return CThreadedServerApp().AppMain(argc, argv);
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.5  2004/10/08 12:41:49  lavr
+ * Cosmetics
+ *
+ * Revision 6.4  2004/05/17 20:58:22  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
+ * Revision 6.3  2002/01/25 15:39:30  ucko
+ * Completely reorganized threaded servers.
+ *
+ * Revision 6.2  2002/01/15 22:24:43  ucko
+ * Take advantage of MT_LOCK_cxx2c
+ *
+ * Revision 6.1  2001/12/11 19:55:24  ucko
+ * Introduce thread-pool-based servers.
+ *
+ * ===========================================================================
+ */

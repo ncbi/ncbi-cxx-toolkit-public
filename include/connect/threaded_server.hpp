@@ -46,6 +46,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /// Exceptions thrown by CThreadedServer::Run
 class CThreadedServerException
     : EXCEPTION_VIRTUAL_BASE public CConnException
@@ -66,6 +67,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CThreadedServerException, CConnException);
 };
 
+
 // CThreadedServer - abstract class for network servers using thread pools.
 //   This code maintains a pool of threads (initially m_InitThreads, but
 //   potentially as many as m_MaxThreads) to deal with incoming connections;
@@ -80,7 +82,7 @@ public:
 class NCBI_XCONNECT_EXPORT CThreadedServer
 {
 public:
-    CThreadedServer(unsigned int port) :
+    CThreadedServer(unsigned short port) :
         m_InitThreads(5), m_MaxThreads(10), m_QueueSize(20),
         m_SpawnThreshold(1), m_AcceptTimeout(kInfiniteTimeout),
         m_TemporarilyStopListening(false), m_Port(port)
@@ -92,7 +94,7 @@ public:
     // Implementor must take care of closing socket when done
     virtual void Process(SOCK sock) = 0;
 
-    unsigned int GetPort() const { return m_Port; }
+    unsigned short GetPort() const { return m_Port; }
 
 protected:
     // Runs synchronously when request queue is full
@@ -119,7 +121,7 @@ protected:
     bool            m_TemporarilyStopListening;
 
 private:
-    unsigned int    m_Port; // TCP port to listen on
+    unsigned short  m_Port; // TCP port to listen on
 };
 
 
@@ -132,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2004/10/08 12:41:49  lavr
+ * Cosmetics
+ *
  * Revision 6.11  2004/09/29 15:20:36  kuznets
  * +GetPort()
  *
