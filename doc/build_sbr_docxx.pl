@@ -12,7 +12,7 @@
 # localization
 $NAME_DOCXX  = "docxx";
 $BASE_DOCXX  = ".";
-$BASE_LXR    = "http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http";
+$BASE_LXR    = "http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr";
 $HREF_MANUAL = "../index.html";
 $ENV{'PATH'} = "/usr/bin:/netopt/ncbi_tools/doc++/bin";
 
