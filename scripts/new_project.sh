@@ -46,13 +46,9 @@ EOF
 
 #################################
 
-CreateMakefile_Lib()
+CreateMakefile_Builddir()
 {
-  user_makefile="$1"
-  proj_name="$2"
-  proj_subtype="$3"
-
-  cat > `dirname $user_makefile`/Makefile.builddir <<EOF
+  cat > $1 <<EOF
 #
 # Makefile:  Makefile.builddir
 #
@@ -65,6 +61,13 @@ CreateMakefile_Lib()
 builddir = $builddir
 # builddir = \$(NCBI)/c++/Release/build
 EOF
+}
+
+CreateMakefile_Lib()
+{
+  user_makefile="$1"
+  proj_name="$2"
+  proj_subtype="$3"
 
   if test -n "$proj_subtype"; then
      src="${proj_name}__ ${proj_name}___"
@@ -160,8 +163,7 @@ CreateMakefile_App()
 
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT
-builddir = $builddir
-# builddir = \$(NCBI)/c++/Release/build
+include Makefile.builddir
 
 
 ###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 4 LINES !!!
@@ -288,9 +290,21 @@ fi
 rm -f tmp$$
 test -d $proj_name &&  makefile_name="$proj_name/$makefile_name"
 makefile_name=`pwd`/$makefile_name
+makefile_builddir=`dirname $makefile_name`/Makefile.builddir
+
+if test -f $makefile_builddir ; then
+  echo "\"$makefile_builddir\" already exists.  Do you want to override it?  [y/N]"
+  read answer
+  case "$answer" in
+    [Yy]*) CreateMakefile_Builddir $makefile_builddir ;;
+  esac
+else
+  CreateMakefile_Builddir $makefile_builddir
+fi
+
 
 if test -f $makefile_name ; then
-  echo "\"$makefile_name\" already exists.  Do you want to override it?  [y/n]"
+  echo "\"$makefile_name\" already exists.  Do you want to override it?  [y/N]"
   read answer
   case "$answer" in
     [Yy]*) ;;
@@ -348,12 +362,21 @@ CopySources()
       read answer
       case "$answer" in
         [Yy]*) ;;
-        *    ) exit 3 ;;
+        *    ) continue ;;
       esac
     fi
   
-    sed -e "s/${old_proj_name}/${proj_name}/g" \
-        -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
+    case $input in
+        */Makefile.*_sample.app)
+            this_proj=`basename $input | sed -e 's/Makefile\.\(.*\)_sample\.app$/\1/'`
+            output=`echo $output | sed -e 's/\.app$/_app/'`
+            CreateMakefile_App $output $proj_name $proj_subdir$1 $this_proj
+            ;;
+        *)
+            sed -e "s/${old_proj_name}/${proj_name}/g" \
+                -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
+            ;;
+    esac
     
     echo "Created a model source file \"$output\"."
   done
