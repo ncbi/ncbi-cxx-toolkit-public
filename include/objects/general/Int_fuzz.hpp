@@ -61,6 +61,29 @@ public:
 
     void GetLabel(string* label, TSeqPos pos, bool right = true) const;
 
+    /// n1 and n2 are the targets of the fuzz
+    void AssignTranslated(const CInt_fuzz& f2, TSeqPos n1, TSeqPos n2);
+
+    enum ECombine {
+        /// go for the largest possible range
+        eAmplify,
+        /// go for the smallest range that allows each value
+        /// individually to vary freely as long as the other balances
+        /// it out to the extent possible
+        eReduce
+    };
+
+    // Manipulators; n1 and n2 are the targets of the fuzz.
+    // Adding anything to its negation (subtracting it from itself)
+    // in eReduce mode should always yield zero.
+    void Add     (const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
+                  ECombine mode = eAmplify);
+    void Subtract(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
+                  ECombine mode = eReduce);
+    void Negate  (TSeqPos n);
+
+    CRef<CInt_fuzz> Negative(TSeqPos n) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CInt_fuzz(const CInt_fuzz& value);
@@ -79,6 +102,24 @@ CInt_fuzz::CInt_fuzz(void)
 }
 
 
+inline
+void CInt_fuzz::Subtract(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
+                         ECombine mode)
+{
+    Add(*f2.Negative(n2), n1, n2, mode);
+}
+
+
+inline
+CRef<CInt_fuzz> CInt_fuzz::Negative(TSeqPos n) const
+{
+    CRef<CInt_fuzz> result(new CInt_fuzz);
+    result->Assign(*this);
+    result->Negate(n);
+    return result;
+}
+
+
 /////////////////// end of CInt_fuzz inline methods
 
 
@@ -88,7 +129,11 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
+ *
  * $Log$
+ * Revision 1.4  2003/10/15 15:42:58  ucko
+ * Add more operations: AssignTranslated, Add, Subtract, and Negate/Negative.
+ *
  * Revision 1.3  2002/12/26 12:40:33  dicuccio
  * Added Win32 export specifiers
  *
@@ -97,7 +142,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2002/10/03 16:42:36  clausen
  * First version
- *
  *
  * ===========================================================================
 */

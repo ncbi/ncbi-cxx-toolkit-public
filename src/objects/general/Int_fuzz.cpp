@@ -41,6 +41,9 @@
 // generated includes
 #include <objects/general/Int_fuzz.hpp>
 
+#include <algorithm>
+#include <math.h>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -112,13 +115,251 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
 }
 
 
+void CInt_fuzz::AssignTranslated(const CInt_fuzz& f2, TSeqPos n1, TSeqPos n2)
+{
+    switch (f2.Which()) {
+    case e_Range:
+        SetRange().SetMin(f2.GetRange().GetMin() + n1 - n2);
+        SetRange().SetMax(f2.GetRange().GetMax() + n1 - n2);
+        break;
+    case e_Pct:
+        // use double to avoid overflow
+        SetPct((TSeqPos)((double)f2.GetPct() * n1 / n2));
+        break;
+    case e_Alt:
+        ITERATE (TAlt, it, f2.GetAlt()) {
+            SetAlt().push_back(*it + n1 - n2);
+        }
+    default:
+        Assign(f2);
+        break;
+    }
+}
+
+
+void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
+                    ECombine mode)
+{
+    static const double kInfinity = numeric_limits<double>::max() * 2.0;
+    bool                hit_pct = false, hit_unk = false, hit_circle = false;
+    double              min_delta = 0.0, max_delta = 0.0;
+    set<TSignedSeqPos>  offsets;
+    for (int i = 0;  i < 2;  ++i) {
+        const CInt_fuzz& f = i ? f2 : *this;
+        TSeqPos          n = i ? n2 : n1;
+
+        switch (f.Which()) {
+        case e_P_m:
+            min_delta -= f.GetP_m();
+            max_delta += f.GetP_m();
+            break;
+
+        case e_Range:
+            min_delta -= n - f.GetRange().GetMin();
+            max_delta += f.GetRange().GetMax() - n;
+            break;
+
+        case e_Pct:
+            min_delta -= 0.001 * n * f.GetPct();
+            max_delta += 0.001 * n * f.GetPct();
+            hit_pct = true;
+            break;
+
+        case e_Lim:
+            switch (f.GetLim()) {
+            case eLim_unk:
+                hit_unk   = (!hit_unk  ||  mode != eReduce);
+                min_delta = kInfinity;
+                // fall through
+            case eLim_gt:
+                max_delta = kInfinity;
+                break;
+            case eLim_lt:
+                min_delta = kInfinity;
+                break;
+            case eLim_tr:
+                min_delta += 0.5;
+                max_delta += 0.5;
+                break;
+            case eLim_tl:
+                min_delta -= 0.5;
+                max_delta -= 0.5;
+                break;
+            case eLim_circle:
+                hit_circle = (!hit_circle  ||  mode != eReduce);
+                break;
+            default:
+                break;
+            }
+
+        case e_Alt:
+        {
+            if (f.GetAlt().empty()) {
+                break;
+            }
+            if (offsets.empty()) {
+                ITERATE (TAlt, it, f.GetAlt()) {
+                    offsets.insert(*it - n);
+                }
+            } else if (mode == eReduce) {
+                // possibly too optimistic; endpoints may balance better
+                // than interior points
+                min_delta = max_delta = f.GetAlt().front();
+                ITERATE (TAlt, it, f.GetAlt()) {
+                    if (*it < min_delta) {
+                        min_delta = *it;
+                    } else if (*it > max_delta) {
+                        max_delta = *it;
+                    }
+                }
+                min_delta += *offsets.rbegin();
+                max_delta += *offsets.begin();
+                offsets.clear();
+            } else {
+                set<TSignedSeqPos> offsets0(offsets);
+                offsets.clear();
+                ITERATE (set<TSignedSeqPos>, it, offsets0) {
+                    ITERATE (TAlt, it2, f.GetAlt()) {
+                        offsets.insert(*it + *it2 - n);
+                    }
+                }
+            }
+            break;
+        }
+
+        default:
+            break;
+        }
+
+        if (mode == eReduce) {
+            swap(min_delta, max_delta);
+        }
+    }
+
+    if (min_delta > max_delta) {
+        swap(min_delta, max_delta);
+    }
+
+    TSignedSeqPos min_delta_sp(rint(min_delta)), max_delta_sp(rint(max_delta));
+
+    if ( !finite(min_delta) ) {
+        if ( !finite(max_delta) ) {
+            if (mode == eReduce  &&  !hit_unk ) {
+                // assume cancellation
+                SetP_m(0);
+            } else {
+                SetLim(eLim_unk);
+            }
+        } else {
+            if ( !offsets.empty() ) {
+                n1 += *offsets.rbegin();
+            }
+            n1 += max_delta_sp;
+            SetLim(eLim_lt);
+        }
+    } else if ( !finite(max_delta) ) {
+        if ( !offsets.empty() ) {
+            n1 += *offsets.begin();
+        }
+        n1 += min_delta_sp;
+        SetLim(eLim_gt);
+    } else if ( !offsets.empty() ) {
+        if (max_delta - min_delta < 0.5) {
+            TAlt& alt = SetAlt();
+            alt.clear();
+            ITERATE(set<TSignedSeqPos>, it, offsets) {
+                alt.push_back(n1 + *it + min_delta_sp);
+                }
+        } else if (mode == eReduce) {
+            TRange& r = SetRange();
+            min_delta += *offsets.rbegin();
+            max_delta += *offsets.begin();
+            if (min_delta > max_delta) {
+                swap(min_delta, max_delta);
+            }
+            r.SetMin(n1 + min_delta_sp);
+            r.SetMax(n1 + max_delta_sp);
+        } else {
+            // assume there's enough spread to cover any gaps
+                TRange& r = SetRange();
+                r.SetMin(n1 + min_delta_sp + *offsets.begin());
+                r.SetMax(n1 + max_delta_sp + *offsets.rbegin());
+        }
+    } else if (max_delta - min_delta < 0.5) { // single point identified
+        double delta  = 0.5 * (min_delta + max_delta);
+        double rdelta = rint(delta);
+        n1 += (TSignedSeqPos)rdelta;
+        if (delta - rdelta > 0.25) {
+            SetLim(eLim_tr);
+        } else if (delta - rdelta < -0.25) {
+            SetLim(eLim_tl);
+        } else if (hit_circle) {
+            SetLim(eLim_circle);
+        } else {
+            SetP_m(0);
+        }
+    } else if (hit_pct) {
+        n1 += (TSignedSeqPos)rint(0.5 * (min_delta + max_delta));
+        SetPct((TSeqPos)rint(500.0 * (max_delta - min_delta) / n1);
+    } else if (min_delta + max_delta < 0.5) { // symmetric
+        SetP_m(max_delta_sp);
+    } else {
+        TRange& r = SetRange();
+        r.SetMin(n1 + min_delta_sp);
+        r.SetMax(n1 + max_delta_sp);
+    }
+}
+
+
+void CInt_fuzz::Negate(TSeqPos n)
+{
+    switch (Which()) {
+    case e_P_m:
+    case e_Pct:
+        break; // already symmetric
+
+    case e_Range:
+    {
+        TRange& r       = SetRange();
+        TSeqPos old_max = r.GetMax();
+        r.SetMax(n + n - r.GetMin());
+        r.SetMin(n + n - old_max);
+        break;
+    }
+
+    case e_Lim:
+        switch (GetLim()) {
+        case eLim_gt:  SetLim(eLim_lt);  break;
+        case eLim_lt:  SetLim(eLim_gt);  break;
+        case eLim_tr:  SetLim(eLim_tl);  break;
+        case eLim_tl:  SetLim(eLim_tr);  break;
+        default:       break;
+        }
+        break;
+
+    case e_Alt:
+        NON_CONST_ITERATE(TAlt, it, SetAlt()) {
+            *it = n + n - *it;
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
+ *
  * $Log$
+ * Revision 6.5  2003/10/15 15:43:07  ucko
+ * Add more operations: AssignTranslated, Add, Subtract, and Negate/Negative.
+ *
  * Revision 6.4  2002/12/26 12:46:37  dicuccio
  * Removed spurious dependency on Seq_point.hpp
  *
@@ -130,7 +371,6 @@ END_NCBI_SCOPE
  *
  * Revision 6.1  2002/10/03 16:47:26  clausen
  * Added GetLabel()
- *
  *
  * ===========================================================================
  */
