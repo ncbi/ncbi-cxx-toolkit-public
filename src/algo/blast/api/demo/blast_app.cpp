@@ -685,14 +685,20 @@ int CBlastApplication::Run(void)
 
 #ifndef USE_READDB
     BlastSeqSrc* seq_src = 
-        SeqDbSrcInit(args["db"].AsString().c_str(), db_is_aa,
-                     first_oid, last_oid, NULL);
+        SeqDbBlastSeqSrcInit(args["db"].AsString(), db_is_aa,
+                             first_oid, last_oid);
 #else
     BlastSeqSrc* seq_src =
         ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
                               (db_is_aa ? TRUE : FALSE),
                               first_oid, last_oid, NULL);
 #endif
+    char* error_str = BlastSeqSrcGetInitError(seq_src);
+    if (error_str) {
+        string msg(error_str);
+        sfree(error_str);
+        NCBI_THROW(CBlastException, eSeqSrc, msg);
+    }
 
     /* If megablast lookup table is used, change default program to 
        eMegablast, facilitating use of megablast defaults. */
