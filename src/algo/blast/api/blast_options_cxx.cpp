@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBlastOptions::CBlastOptions(EAPILocality locality = eLocal)
+CBlastOptions::CBlastOptions(EAPILocality locality)
     : m_Local (0),
       m_Remote(0)
 {
@@ -541,6 +541,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2004/01/17 00:52:32  ucko
+* Remove redundant default argument specification.
+*
 * Revision 1.33  2004/01/16 21:49:26  bealer
 * - Add locality flag for Blast4 API
 *
