@@ -112,6 +112,8 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
                          const char* seg2, size_t len2,
                          vector<ETranscriptSymbol>* transcript )
 {
+    TScore V = 0;
+
     const size_t N1 = len1 + 1;
     const size_t N2 = len2 + 1;
 
@@ -122,11 +124,10 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     // index calculation: [i,j] = i*n2 + j
     vector<Uint2> stl_bm (N1*N2);
     Uint2* backtrace_matrix = &stl_bm[0];
-
     TScore* pV = rowV - 1;
 
-    const char* seq1   = seg1 - 1;
-    const char* seq2   = seg2 - 1;
+    const char* seq1 = seg1 - 1;
+    const char* seq2 = seg2 - 1;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
@@ -142,7 +143,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     // recurrences
     TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
     TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
-    TScore V  = 0, V_max, vAcc;
+    TScore V_max, vAcc;
     TScore V0 = 0;
     TScore E, G, n0;
     Uint2 tracer;
@@ -192,7 +193,9 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
         // detect donor candidate
         if(N2 > 2) {
 	  for(unsigned char st = 0; st < g_topidx; ++st) {
-                if( seq2[1] == g_nwspl_donor[st][0] && seq2[2] == g_nwspl_donor[st][1]) {
+                if(seq2[1] == g_nwspl_donor[st][0] &&
+                   seq2[2] == g_nwspl_donor[st][1]) {
+
                     jAllDonors[st][jTail[st]] = j;
                     vAllDonors[st][jTail[st]] = V;
                     ++(jTail[st]);
@@ -270,8 +273,10 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
             Uint2 tracer_dnr = 0xFFFF;
             Uint2 tracer_acc = 0;
 	    for(unsigned char st = 0; st < splice_type_count_16; ++st) {
-                if(seq2[j-1] == g_nwspl_acceptor[st][0] && seq2[j] == g_nwspl_acceptor[st][1]
-                   && vBestDonor[st] > kInfMinus || st == g_topidx) {
+                if(seq2[j-1] == g_nwspl_acceptor[st][0] &&
+                   seq2[j] == g_nwspl_acceptor[st][1] &&
+                   vBestDonor[st] > kInfMinus || st == g_topidx) {
+
                     vAcc = vBestDonor[st] + m_Wi[st];
                     if(vAcc > V) {
                         V = vAcc;
@@ -323,12 +328,12 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     }
 
     try {
-    x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
+        x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
     }
     catch(exception&) { // GCC hack
-      throw;
+        throw;
     }
-
+    
     return V;
 }
 
@@ -422,9 +427,7 @@ CNWAligner::TScore CSplicedAligner16::x_ScoreByTranscript() const
         break;
 
     default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Invalid transcript symbol");
         }
     }
@@ -462,8 +465,9 @@ CNWAligner::TScore CSplicedAligner16::x_ScoreByTranscript() const
 
             if(state1 != 2) {
                 for(unsigned char i = 0; i < splice_type_count_16; ++i) {
-                    if(*p2 == g_nwspl_donor[i][0] && *(p2 + 1) == g_nwspl_donor[i][1]
-                       || i == g_topidx) {
+                    if(*p2 == g_nwspl_donor[i][0] &&
+                       *(p2 + 1) == g_nwspl_donor[i][1] || i == g_topidx) {
+
                         score += m_Wi[i];
                         break;
                     }
@@ -475,9 +479,7 @@ CNWAligner::TScore CSplicedAligner16::x_ScoreByTranscript() const
         break;
 
         default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Invalid transcript symbol");
         }
         }
@@ -534,6 +536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.11  2004/05/17 14:50:56  kapustin
  * Add/remove/rearrange some includes and object declarations
  *
@@ -547,12 +552,13 @@ END_NCBI_SCOPE
  * Get rid of some WS and GCC complains
  *
  * Revision 1.6  2003/10/27 21:00:17  kapustin
- * Set intron penalty defaults differently for 16- and 32-bit versions according
- * to the expected quality of sequences those variants are supposed to be used with.
+ * Set intron penalty defaults differently for 16- and 32-bit versions
+ * according to the expected quality of sequences those variants are
+ * supposed to be used with.
  *
  * Revision 1.5  2003/10/14 19:29:24  kapustin
- * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespaces
- * are not everywhere supported
+ * Dismiss static keyword as a local-to-compilation-unit flag. Use longer
+ * name since unnamed namespaces are not everywhere supported
  *
  * Revision 1.4  2003/09/30 19:50:04  kapustin
  * Make use of standard score matrix interface

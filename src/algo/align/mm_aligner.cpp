@@ -203,9 +203,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool bNoLT = false;
     int nc0 = trans_pos - steps_left;
     if(nc0 < 0) {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Assertion: LT underflow");
     }
     bool bLeft = nc0 == 0;
@@ -225,9 +223,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool bNoRB = false;
     int nc1 = trans_pos + steps_right;
     if(nc1 > dimJ) {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Assertion: RB overflow");
     }
     bool bRight = nc1 == dimJ;
@@ -274,9 +270,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
             rlt.j2 = left_bnd;
         }
         else {
-            NCBI_THROW(
-                       CAlgoAlignException,
-                       eInternal,
+            NCBI_THROW(CAlgoAlignException, eInternal,
                        "Assertion: Left boundary out of range");
         }
     }
@@ -292,9 +286,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
             rrb.j2 = submatr.j2;
         }
         else {
-            NCBI_THROW(
-                       CAlgoAlignException,
-                       eInternal,
+            NCBI_THROW(CAlgoAlignException, eInternal,
                        "Assertion: Right boundary out of range");
         }
     }
@@ -405,9 +397,7 @@ size_t CMMAligner::x_ExtendSubpath (
                 break;
             }
             else {
-                NCBI_THROW(
-                           CAlgoAlignException,
-                           eInternal,
+                NCBI_THROW(CAlgoAlignException, eInternal,
                            "Assertion: incorrect backtrace symbol "
                            "(right expansion)");
             }
@@ -436,9 +426,7 @@ size_t CMMAligner::x_ExtendSubpath (
                 break;
             }
             else {
-                NCBI_THROW(
-                           CAlgoAlignException,
-                           eInternal,
+                NCBI_THROW(CAlgoAlignException, eInternal,
                            "Assertion: incorrect backtrace symbol "
                            "(left expansion)");
             }
@@ -960,6 +948,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.18  2004/05/17 14:50:56  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

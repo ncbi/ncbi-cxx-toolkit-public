@@ -47,8 +47,8 @@ BEGIN_NCBI_SCOPE
 
 CSplign::CSplign( void )
 {
-    m_min_query_coverage = 0.5;
-    m_compartment_penalty = 0.75;
+    m_min_query_coverage = 0.25;
+    m_compartment_penalty = 0.65;
     m_minidty = 0.75;
     m_endgaps = true;
     m_strand = true;
@@ -173,6 +173,7 @@ void CSplign::x_SetPattern(THits* hits)
     const char* Seq2 = &m_genomic.front();
     const size_t SeqLen2 = m_genomic.size();
     
+    // verify some conditions on the input hit pattern
     size_t dim = pattern0.size();
     const char* err = 0;
     if(dim % 4 == 0) {
@@ -208,8 +209,10 @@ void CSplign::x_SetPattern(THits* hits)
         m_pattern.clear();
         
         // copy from pattern0 to pattern so that each hit is not too large
-        const size_t max_len = kMax_UInt; // turn this off: sometimes we really
-                                          // need just the longest perf match
+        const size_t max_len = kMax_UInt;// turn this off: sometimes we really
+                                         // need just the longest perf match
+                                         // and there is no direct relationship
+                                         // btw hits and exons
         vector<size_t> pattern;
         for(size_t i = 0; i < dim; i += 4) {
             size_t lenq = 1 + pattern0[i+1] - pattern0[i];
@@ -255,10 +258,10 @@ void CSplign::x_SetPattern(THits* hits)
             size_t L1, R1, L2, R2;
             const size_t max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
             if(max_seg_size) {
-                
+
                 const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
                 const size_t hlq3 = hitlen_q/3;
-                const size_t sh = hlq3; // hlq3 < 30? hlq3: 30;
+                const size_t sh = hlq3;
                 
                 size_t delta = sh > L1? sh - L1: 0;
                 size_t q0 = pattern[i] + L1 + delta;
@@ -275,7 +278,7 @@ void CSplign::x_SetPattern(THits* hits)
                     q1 = pattern[i] + R1;
                     s1 = pattern[i+2] + R2;
                 }
-                
+
                 m_pattern.push_back(q0); m_pattern.push_back(q1);
                 m_pattern.push_back(s0); m_pattern.push_back(s1);
                 
@@ -430,6 +433,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment( THits* hits,
                                                           size_t range_left,
                                                           size_t range_right )
 {
+
   SAlignedCompartment rv;
   m_segments.clear();
 
@@ -547,10 +551,11 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment( THits* hits,
     h.m_an[2] = h.m_ai[2] -= smin + 1;
     h.m_an[3] = h.m_ai[3] -= smin + 1;
   }  
-  
+
+
   x_SetPattern( hits );
   x_Run(&m_mrna.front(), &m_genomic.front());
-
+ 
   const size_t seg_dim = m_segments.size();
   if(seg_dim == 0) {
     NCBI_THROW( CAlgoAlignException, eNoData, "No alignment found.");
@@ -669,8 +674,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             back_inserter(pattern));
             for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
 
-
-// #define DBG_DUMP_PATTERN
+#define DBG_DUMP_PATTERN
 #ifdef  DBG_DUMP_PATTERN
 	      cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
 		   << pattern[j+2] << '\t' << pattern[j+3] << endl;
@@ -1144,6 +1148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.9  2004/05/04 15:23:45  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *

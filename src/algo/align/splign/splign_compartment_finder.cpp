@@ -179,7 +179,7 @@ size_t CCompartmentFinder::Run()
 
         if(good) {
           int ext_score = li->m_score +
-            int(0.01*h.m_Idnty*(h.m_ai[1] - q0 + 1));
+              int(0.01 * h.m_Idnty * (h.m_ai[1] - q0 + 1));
           if(ext_score > best_ext_score) {
             best_ext_score = ext_score;
             li_best_ext = li;
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.3  2004/04/23 14:37:44  kapustin
  * *** empty log message ***
  *

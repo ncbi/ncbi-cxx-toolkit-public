@@ -270,7 +270,7 @@ public:
 private:
     char m_where;
     int  m_nFinish;
-    char m_i1, m_i2;
+    unsigned char m_i1, m_i2;
 };
 
 
@@ -807,7 +807,7 @@ void CHitParser::x_GroupsIdentifyByCoverage(int iStart, int iStop, int& iGroupId
     // choose the best location
     double dMax = dTotalCoverage;
     int iMax = iStop;
-    char idx1, idx2;
+    unsigned char idx1, idx2;
     if(where == 'q') {
         idx1 = 2;
         idx2 = 3;
@@ -932,7 +932,8 @@ int CHitParser::Run(EMode erm)
         {{
 
         // filter by strand or separate strands, if applicable
-        if(m_Strand == 0 || m_Strand == 1 || m_Strand == 3)
+        if(m_Strand == eStrand_Plus || m_Strand == eStrand_Minus ||
+           m_Strand == eStrand_Auto)
         {
             vector<CHit>::iterator ii;
             for(ii = m_Out.end()-1; ii >= m_Out.begin(); ii--)
@@ -940,13 +941,13 @@ int CHitParser::Run(EMode erm)
                 bool bStraight = ii->IsStraight();
                 switch(m_Strand)
                 {
-                    case 0: // keep only straight strand
+                    case eStrand_Plus:
                         if (bStraight) continue; else m_Out.erase(ii);
                         break;
-                    case 1: // keep only inverse strand
+                    case eStrand_Minus:
                         if (!bStraight) continue; else m_Out.erase(ii);
                         break;
-                    case 3: //  auto: separate strands before processing
+                    case eStrand_Auto: //  separate strands before processing
                         if (bStraight) continue;
                         else
                         {
@@ -1335,6 +1336,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/18 21:43:40  kapustin
+* Code cleanup
+*
 * Revision 1.5  2004/05/03 21:53:57  kapustin
 * Eliminate OM-dependant code
 *

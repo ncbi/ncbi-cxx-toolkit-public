@@ -414,10 +414,8 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 	else {
 	  Uint4 k2 = (Key & mask_jump);
 	  if(k2 >= k) {
-	        NCBI_THROW(
-		    CAlgoAlignException,
-		    eInternal,
-		    "Incorrect backtrace jump detected");
+	        NCBI_THROW(CAlgoAlignException, eInternal,
+                           "Incorrect backtrace jump detected");
 	  }
 
 	  ETranscriptSymbol ts;
@@ -439,10 +437,8 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 	    }
 	    else {
 	      // ts = eTS_DiagSpace;
-	      NCBI_THROW(
-			 CAlgoAlignException,
-			 eInternal,
-			 "Diag spaces not yet supported");
+	      NCBI_THROW(CAlgoAlignException, eInternal,
+                         "Diag spaces not yet supported");
 	    }
 	  }
 
@@ -450,10 +446,8 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
 	    transcript->push_back(ts);
 	  }
 	  if(k != k2) {
-	      NCBI_THROW(
-			 CAlgoAlignException,
-			 eInternal,
-			 "Backtrace jump failed");
+	      NCBI_THROW(CAlgoAlignException, eInternal,
+                         "Backtrace jump failed");
 	  }
 	}
     } // while
@@ -495,9 +489,7 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
         break;
 
     default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Invalid transcript symbol");
         }
     }
@@ -547,9 +539,7 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
         break;
 
         default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Invalid transcript symbol");
         }
         }
@@ -606,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.13  2004/05/17 14:50:57  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

@@ -408,9 +408,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
     break;
 
     default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eBadParameter,
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "Incorrect format specified");
     }
 
@@ -482,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.8  2004/05/17 14:50:56  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

@@ -83,9 +83,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 			      bool verify)
 {
     if(!seq1 || !seq2) {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eBadParameter,
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "NULL sequence pointer(s) passed");
     }
 
@@ -97,10 +95,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 		<< "scoring matrix type. Symbol " << seq1[iErrPos1] << " at "
 		<< iErrPos1;
 	    string message = CNcbiOstrstreamToString(oss);
-	    NCBI_THROW(
-		       CAlgoAlignException,
-		       eInvalidCharacter,
-		       message );
+	    NCBI_THROW(CAlgoAlignException, eInvalidCharacter, message);
 	}
 
 	size_t iErrPos2 = x_CheckSequence(seq2, len2);
@@ -110,10 +105,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 		<< "scoring matrix type. Symbol " << seq2[iErrPos2] << " at "
 		<< iErrPos2;
 	    string message = CNcbiOstrstreamToString(oss);
-	    NCBI_THROW (
-			CAlgoAlignException,
-			eInvalidCharacter,
-			message );
+	    NCBI_THROW(CAlgoAlignException, eInvalidCharacter, message);
 	}
     }
     m_Seq1 = seq1;
@@ -297,13 +289,12 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 CNWAligner::TScore CNWAligner::Run()
 {
     if(!m_Seq1 || !m_Seq2) {
-        NCBI_THROW( CAlgoAlignException,
-		    eNoData,
-		    "Sequence data not available for one or both sequences");
+        NCBI_THROW(CAlgoAlignException, eNoData,
+                   "Sequence data not available for one or both sequences");
     }
 
     if(!x_CheckMemoryLimit()) {
-        NCBI_THROW( CAlgoAlignException, eMemoryLimit, "Out of space");
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit, "Out of space");
     }
 
     m_score = x_Run();
@@ -316,55 +307,56 @@ CNWAligner::TScore CNWAligner::x_Run()
 {
     try {
     
-    if(m_guides.size() == 0) {
-      m_score = x_Align(m_Seq1,m_SeqLen1, m_Seq2,m_SeqLen2, &m_Transcript);
+        if(m_guides.size() == 0) {
+
+            m_score = x_Align(m_Seq1,m_SeqLen1, m_Seq2,m_SeqLen2,
+                              &m_Transcript);
+        }
+        else {
+            
+            // run the algorithm for every segment between hits
+            m_Transcript.clear();
+            size_t guides_dim = m_guides.size() / 4;
+            size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
+            vector<ETranscriptSymbol> trans;
+            
+            // save original esf settings
+            bool esf_L1 = m_esf_L1, esf_R1 = m_esf_R1,
+                 esf_L2 = m_esf_L2, esf_R2 = m_esf_R2;
+            SetEndSpaceFree(false, esf_R1, false, esf_R2); // last region
+            for(size_t istart = 4*guides_dim, i = istart; i != 0; i -= 4) {
+
+                cerr << i << endl;
+                q0 = m_guides[i - 3] + 1;
+                s0 = m_guides[i - 1] + 1;
+                size_t dim_query = q1 - q0, dim_subj = s1 - s0;
+                x_Align(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
+                copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
+                size_t dim_hit = m_guides[i - 3] - m_guides[i - 4] + 1;
+                for(size_t k = 0; k < dim_hit; ++k) {
+                    m_Transcript.push_back(eTS_Match);
+                }
+                q1 = m_guides[i - 4];
+                s1 = m_guides[i - 2];
+                trans.clear();
+                if(i == istart) {  // middle regions
+                    SetEndSpaceFree(false, false, false, false);
+                }
+            }
+            SetEndSpaceFree(esf_L1, false, esf_L2, false); // first region
+            x_Align(m_Seq1, q1, m_Seq2, s1, &trans);
+            SetEndSpaceFree(esf_L1, esf_R1, esf_L2, esf_R2); // restore
+            copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
+            m_score = x_ScoreByTranscript();
+        }
     }
-    else {
-
-      // run the algorithm for every segment between hits
-      m_Transcript.clear();
-      size_t guides_dim = m_guides.size() / 4;
-      size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
-      vector<ETranscriptSymbol> trans;
-      
-      // save original esf settings
-      bool esf_L1 = m_esf_L1, esf_R1 = m_esf_R1, esf_L2 = m_esf_L2, esf_R2 = m_esf_R2;
-      SetEndSpaceFree(false, esf_R1, false, esf_R2); // last region
-      for(size_t istart = 4*guides_dim, i = istart; i != 0; i -= 4) {
-	q0 = m_guides[i - 3] + 1;
-	s0 = m_guides[i - 1] + 1;
-	size_t dim_query = q1 - q0, dim_subj = s1 - s0;
-	x_Align(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
-	copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
-	size_t dim_hit = m_guides[i - 3] - m_guides[i - 4] + 1;
-	for(size_t k = 0; k < dim_hit; ++k) {
-	  m_Transcript.push_back(eTS_Match);
-	}
-	q1 = m_guides[i - 4];
-	s1 = m_guides[i - 2];
-	trans.clear();
-	if(i == istart) {
-	  SetEndSpaceFree(false, false, false, false); // middle regions
-	}
-      }
-      SetEndSpaceFree(esf_L1, false, esf_L2, false); // first region
-      x_Align(m_Seq1, q1, m_Seq2, s1, &trans);
-      SetEndSpaceFree(esf_L1, esf_R1, esf_L2, esf_R2); // restore
-      copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
-      m_score = x_ScoreByTranscript();
+    
+    catch( bad_alloc& ) {
+        
+        NCBI_THROW(CAlgoAlignException, eMemoryLimit, "Memory limit exceeded");
     }
-
-  }
-  
-  catch( bad_alloc& ) {
-      
-    NCBI_THROW(
-	       CAlgoAlignException,
-	       eMemoryLimit,
-	       "Memory limit exceeded");
-  }
-
-  return m_score;
+    
+    return m_score;
 }
 
 
@@ -440,7 +432,7 @@ void  CNWAligner::SetPattern(const vector<size_t>& guides)
     }
 
     if(err) {
-        NCBI_THROW( CAlgoAlignException, eBadParameter, err );
+        NCBI_THROW(CAlgoAlignException, eBadParameter, err);
     }
     else {
         m_guides = guides;
@@ -496,9 +488,8 @@ string CNWAligner::GetTranscriptString(void) const
             break;
 
 	    default: {
-	      NCBI_THROW( CAlgoAlignException,
-			  eInternal,
-			  "Unexpected transcript symbol");
+	      NCBI_THROW(CAlgoAlignException, eInternal,
+                         "Unexpected transcript symbol");
 	    }
 	  
         }
@@ -574,10 +565,8 @@ CNWAligner::TScore CNWAligner::GetScore() const
       return m_score;
   }
   else {
-    NCBI_THROW(
-	       CAlgoAlignException,
-	       eNoData,
-	       "Sequences not aligned yet");
+    NCBI_THROW(CAlgoAlignException, eNoData,
+               "Sequences not aligned yet");
   }
 }
 
@@ -640,9 +629,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
     case eTS_Insert:   state1 = 1; state2 = 0; score += m_Wg; break;
     case eTS_Delete:   state1 = 0; state2 = 1; score += m_Wg; break;
     default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Invalid transcript symbol");
         }
     }
@@ -679,9 +666,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         break;
         
         default: {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eInternal,
+        NCBI_THROW(CAlgoAlignException, eInternal,
                    "Invalid transcript symbol");
         }
         }
@@ -793,9 +778,7 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
             break;
 
             default: {
-                NCBI_THROW(
-                           CAlgoAlignException,
-                           eInternal,
+                NCBI_THROW(CAlgoAlignException, eInternal,
                            "Invalid transcript symbol");
             }
         }
@@ -882,9 +865,7 @@ size_t CNWAligner::GetRightSeg(size_t* q0, size_t* q1,
             break;
 
             default: {
-                NCBI_THROW(
-                           CAlgoAlignException,
-                           eInternal,
+                NCBI_THROW(CAlgoAlignException, eInternal,
                            "Invalid transcript symbol");
             }
         }
@@ -964,9 +945,7 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
             break;
 
             default: {
-                NCBI_THROW(
-                           CAlgoAlignException,
-                           eInternal,
+                NCBI_THROW(CAlgoAlignException, eInternal,
                            "Invalid transcript symbol");
             }
         }
@@ -992,6 +971,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.45  2004/05/17 14:50:56  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

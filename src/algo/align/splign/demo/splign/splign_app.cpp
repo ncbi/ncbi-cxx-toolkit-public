@@ -66,7 +66,7 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.05");
+  string program_name ("Splign v.1.06");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -505,7 +505,7 @@ int CSplignApp::Run()
       x_LogStatus(ii->m_id, query, subj, ii->m_error, ii->m_msg);
     }
     if(splign.GetResult().size() == 0) {
-      x_LogStatus(0, query, subj, true, "No feasible compartment found");
+      x_LogStatus(0, query, subj, true, "No compartment found");
     }
   }
 
@@ -593,6 +593,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/05/18 21:43:40  kapustin
+ * Code cleanup
+ *
  * Revision 1.22  2004/05/10 16:40:12  kapustin
  * Support a pairwise mode
  *
