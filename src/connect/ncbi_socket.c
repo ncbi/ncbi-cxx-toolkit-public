@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2001/05/23 21:03:35  vakatov
+ * s_SelectStallsafe() -- fix for the interpretation of "default" R-on-W mode
+ * (by A.Lavrentiev)
+ *
  * Revision 6.28  2001/05/21 15:10:32  ivanov
  * Added (with Denis Vakatov) automatic read on write data from the socket
  * (stall protection).
@@ -1081,21 +1085,21 @@ static EIO_Status s_SelectStallsafe(SOCK                  sock,
     /* check if to use a "regular" s_Select() */
     if (event == eIO_Read  ||
         sock->r_status == eIO_Closed  ||
-        (sock->r_on_w == eOff  ||
-         (sock->r_on_w == eDefault  &&  s_ReadOnWrite == eOff))) {
+        sock->r_on_w == eOff  ||
+        (sock->r_on_w == eDefault  &&  s_ReadOnWrite != eOn)) {
         /* wait until event (up to timeout) */
         return s_Select(sock->sock, event, timeout);
     }
 
-    /* check if immediately writeable */
+    /* check if immediately writable */
     status = s_Select(sock->sock, event, &s_ZeroTimeout);
     if (status != eIO_Timeout)
         return status;
 
-    /* do wait (and try read data if it is not writeable yet) */
+    /* do wait (and try read data if it is not writable yet) */
     do {
         /* try upread data to the internal buffer */
-        s_NCBI_Recv(sock, 0, 1000000/*read as much as possible*/, 1/*peek*/);
+        s_NCBI_Recv(sock, 0, 100000000/*read as much as possible*/, 1/*peek*/);
 
         /* wait for r/w */
         status = s_Select(sock->sock, eIO_ReadWrite, timeout);
