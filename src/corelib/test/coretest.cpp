@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1998/12/10 22:59:49  vakatov
+* CNcbiRegistry:: API is ready(and by-and-large tested)
+*
 * Revision 1.25  1998/12/10 18:05:40  vakatov
 * CNcbiReg::  Just passed a draft test.
 *
@@ -118,6 +121,7 @@
 #include <cgiapp.hpp>
 #include <ncbireg.hpp>
 #include <ncbires.hpp>
+#include <algorithm>
 #include <time.h>
 
 
@@ -182,36 +186,76 @@ static void TestRegistry(void)
     reg.EnumerateEntries(NcbiEmptyString, &entries);
     _ASSERT( entries.empty() );
 
+    // Compose a test registry
+    _ASSERT( reg.Set("Section0", "Name01", "Val01_BAD!!!") );
     _ASSERT( reg.Set("Section1", "Name11", "Val11_t") );
     _ASSERT( !reg.Empty() );
     _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
     _ASSERT( reg.Get("Section1", "Name11", false).empty() );
     _ASSERT( reg.Set("Section1", "Name11", "Val11_t") );
-    _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!", false) );
+    _ASSERT( !reg.Set("Section1", "Name11", "Val11_BAD!!!", true, false) );
 
     _ASSERT( reg.Set("Section2", "Name21", "Val21", false, false) );
     _ASSERT( reg.Set("Section2", "Name21", "Val21_t") );
     _ASSERT( !reg.Empty() );
+    _ASSERT( reg.Set("Section3", "Name31", "Val31_t") );
+
     _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
     _ASSERT( reg.Get("Section2", "Name21", false) == "Val21" );
     _ASSERT( reg.Get("Section2", "Name21") == "Val21_t" );
     _ASSERT( reg.Get("SectionX", "Name21").empty() );
 
+    // Dump
     CNcbiOstrstream os;
     _ASSERT ( reg.Write(os) );
     os << '\0';
     const char* os_str = os.str();  os.rdbuf()->freeze(false);
     NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
 
+    // "Persistent" load
     CNcbiIstrstream is1(os_str);
     CNcbiRegistry  reg1(is1);
     _ASSERT( reg1.Get("Section2", "Name21", false) == "Val21" );
     _ASSERT( reg1.Get("Section2", "Name21") == "Val21" );
+    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString /*,true,true*/) );
+    _ASSERT( !reg1.Set("Section2", "Name21", NcbiEmptyString, false, false) );
+    _ASSERT( !reg1.Empty() );
+    _ASSERT(  reg1.Set("Section2", "Name21", NcbiEmptyString, false, true) );
+    _ASSERT(  reg1.Empty() );
 
+    // "Transient" load
     CNcbiIstrstream is2(os_str);
     CNcbiRegistry  reg2(is2, true);
     _ASSERT( reg2.Get("Section2", "Name21", false).empty() );
     _ASSERT( reg2.Get("Section2", "Name21") == "Val21" );
+    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString, false, true) );
+    _ASSERT( !reg2.Set("Section2", "Name21", NcbiEmptyString, false, false) );
+    _ASSERT( !reg2.Empty() );
+    _ASSERT(  reg2.Set("Section2", "Name21", NcbiEmptyString /*,true,true*/) );
+    _ASSERT(  reg2.Empty() );
+
+    // Printout of the whole registry content
+    _ASSERT( reg.Set("Section0", "Name01", "") );
+    reg.EnumerateSections(&sections);
+    _ASSERT( find(sections.begin(), sections.end(), "Section0")
+             == sections.end() );
+    _ASSERT( find(sections.begin(), sections.end(), "Section1")
+             != sections.end() );
+    _ASSERT( !sections.empty() );
+    NcbiCout << "\nRegistry Content:\n";
+    for (list<string>::const_iterator itSection = sections.begin();
+         itSection != sections.end();   itSection++) {
+        NcbiCout << "Section: " << *itSection << NcbiEndl;
+        reg.EnumerateEntries(*itSection, &entries);
+        for (list<string>::const_iterator itEntry = entries.begin();
+             itEntry != entries.end();   itEntry++) {
+            NcbiCout << "  Entry: " << *itEntry << NcbiEndl;
+            NcbiCout << "    Default:    "
+                     << reg.Get(*itSection, *itEntry) << NcbiEndl;
+            NcbiCout << "    Persistent: "
+                     << reg.Get(*itSection, *itEntry, false) << NcbiEndl;
+        }
+    }
 
     reg.Clear();
     _ASSERT( reg.Empty() );

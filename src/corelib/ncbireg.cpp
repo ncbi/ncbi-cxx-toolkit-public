@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/10 22:59:47  vakatov
+* CNcbiRegistry:: API is ready(and by-and-large tested)
+*
 * Revision 1.4  1998/12/10 18:05:37  vakatov
 * CNcbiReg::  Just passed a draft test.
 *
@@ -61,7 +64,7 @@ CNcbiRegistry::CNcbiRegistry(void) {}
 CNcbiRegistry::~CNcbiRegistry(void) {}
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, bool transient) {
-    Read(is, true, transient);
+    Read(is, transient, true);
 }
 
 bool CNcbiRegistry::Empty(void) const {
@@ -69,7 +72,7 @@ bool CNcbiRegistry::Empty(void) const {
 }
 
 
-void CNcbiRegistry::Read(CNcbiIstream& is, bool override, bool transient)
+void CNcbiRegistry::Read(CNcbiIstream& is, bool transient, bool override)
 {
     string    str;     // the line being parsed
     SIZE_TYPE line;    // # of the line being parsed
@@ -130,14 +133,14 @@ void CNcbiRegistry::Read(CNcbiIstream& is, bool override, bool transient)
             // value
             if (mid == len) {
                 if ( override )
-                    Set(section, name, NcbiEmptyString, true, transient);
+                    Set(section, name, NcbiEmptyString, transient, true);
                 break;
             }
             SIZE_TYPE end;
             for (end = len-1;  isspace(str[end]);  end--);
             _ASSERT( end >= mid );
             Set(section, name, str.substr(mid, end-mid+1),
-                override, transient);
+                transient, override);
         }
         }
     }
@@ -164,9 +167,9 @@ const
         _ASSERT( !xx_RegSection.empty() );
         for (TRegSection::const_iterator entry = xx_RegSection.begin();
              entry != xx_RegSection.end();  entry++) {
-            if ( entry->second.solid.empty() )
-                continue; // dont dump transient values
-            os << entry->first << '=' << entry->second.solid << NcbiEndl;
+            if ( entry->second.persistent.empty() )
+                continue; // dump only persistent values
+            os << entry->first << '=' << entry->second.persistent << NcbiEndl;
             if ( !os )
                 return false;
         }
@@ -204,14 +207,14 @@ const
 
     // ok -- found the requested entry
     const TRegEntry& entry = find_entry->second;
-    _ASSERT( !entry.solid.empty()  ||  !entry.transient.empty() );
+    _ASSERT( !entry.persistent.empty()  ||  !entry.transient.empty() );
     return (search_transient  &&  !entry.transient.empty()) ?
-        entry.transient : entry.solid;
+        entry.transient : entry.persistent;
 }
 
 
 bool CNcbiRegistry::Set(const string& section, const string& name,
-                        const string& value, bool override, bool transient)
+                        const string& value, bool transient, bool override)
 {
     // find section
     TRegistry::iterator find_section = m_Registry.find(section);
@@ -222,7 +225,7 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         if ( transient )
             entry.transient = value;
         else
-            entry.solid = value;
+            entry.persistent = value;
         return true;
     }
 
@@ -237,7 +240,7 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
         if ( transient )
             entry.transient = value;
         else
-            entry.solid = value;
+            entry.persistent = value;
         return true;
     }
 
@@ -247,14 +250,20 @@ bool CNcbiRegistry::Set(const string& section, const string& name,
 
     TRegEntry& entry = find_entry->second;
 
+    // check if it tries to unset an already unset value
+    if (value.empty()  &&
+        (( transient  &&  entry.transient.empty())  ||
+         (!transient  &&  entry.persistent.empty())))
+        return false;
+
     // modify
     if ( transient )
         entry.transient = value;
     else
-        entry.solid = value;
+        entry.persistent = value;
 
     // unset(remove) the entry, if empty
-    if (entry.solid.empty()  &&  entry.transient.empty()) {
+    if (entry.persistent.empty()  &&  entry.transient.empty()) {
         reg_section.erase(find_entry);
         // remove section, if empty
         if ( reg_section.empty() ) {

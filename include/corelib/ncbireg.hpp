@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/10 22:59:46  vakatov
+* CNcbiRegistry:: API is ready(and by-and-large tested)
+*
 * Revision 1.4  1998/12/10 18:05:35  vakatov
 * CNcbiReg::  Just passed a draft test.
 *
@@ -88,7 +91,7 @@ public:
     // If "transient==true" then store the newly retrieved parameters as
     // transient.
     // Throw CParseException on error.
-    void Read(CNcbiIstream& is, bool override=true, bool transient=false);
+    void Read(CNcbiIstream& is, bool transient=false, bool override=true);
     bool Write(CNcbiOstream& os) const;  // dump to "os"(only non-transient)
     void Clear(void);  // reset the whole registry content
 
@@ -104,7 +107,7 @@ public:
     //   if "override==false"  then do not override old value, return "false"
     // If "transient==true" then store the entry as transient
     bool Set(const string& section, const string& name, const string& value,
-             bool override=true, bool transient=true);
+             bool transient=true, bool override=true);
 
     // These functions first erase the passed list, then fill it out by:
     //    name of sections that comprise the whole registry
@@ -114,8 +117,8 @@ public:
 
 private:
     struct TRegEntry {
-        string solid;     // non-transient
-        string transient; // transient
+        string persistent;  // non-transient
+        string transient;   // transient(thus do not get dumped by Write())
     };
     typedef map<string, TRegEntry>   TRegSection;
     typedef map<string, TRegSection> TRegistry;
