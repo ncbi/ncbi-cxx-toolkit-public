@@ -31,6 +31,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/20 17:55:46  vakatov
+* Fixes to follow the "CNcbiApplication" change.
+*
 * Revision 1.5  1999/12/30 22:06:14  vakatov
 * TestCgi() -- use $CONTENT_TYPE
 *
@@ -51,9 +54,11 @@
 */
 
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/ncbicgir.hpp>
+
 #include <algorithm>
 #include <time.h>
 #include <stdio.h>
@@ -269,10 +274,11 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestIndexes(indexes, "++") );
 }
 
-static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0,
-                                 bool indexes_as_entries=true)
+static void TestCgi_Request_Full(CNcbiIstream* istr,
+                                 const CNcbiArguments* args = 0,
+                                 bool indexes_as_entries = true)
 {
-    CCgiRequest CCR(argc, argv, 0, istr, indexes_as_entries);
+    CCgiRequest CCR(args, 0, istr, indexes_as_entries);
 
     NcbiCout << "\n\nCCgiRequest::\n";
 
@@ -347,7 +353,7 @@ static void TestCgiMisc(void)
 }
 
 
-static void TestCgi(int argc, char* argv[])
+static void TestCgi(const CNcbiArguments& args)
 {
     TestCgi_Cookies();
     TestCgi_Request_Static();
@@ -405,7 +411,7 @@ static void TestCgi(int argc, char* argv[])
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !::putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
         _ASSERT( !::putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
-        TestCgi_Request_Full(&istr, 0, 0, false);
+        TestCgi_Request_Full(&istr, 0, false);
     } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
 
     try { // GET REGULAR, NO '='
@@ -450,14 +456,14 @@ static void TestCgi(int argc, char* argv[])
     try { // CMD.-LINE ARGS
         _ASSERT( !::putenv("REQUEST_METHOD=") );
         _ASSERT( !::putenv("QUERY_STRING=MUST NOT BE USED HERE!!!") );
-        TestCgi_Request_Full(&NcbiCin/* dummy */, argc, argv);
+        TestCgi_Request_Full(&NcbiCin/* dummy */, &args);
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
 
     TestCgiMisc();
 }
 
 
-static void TestCgiResponse(int argc, char** argv)
+static void TestCgiResponse(const CNcbiArguments& args)
 {
     NcbiCout << "Starting CCgiResponse test" << NcbiEndl;
 
@@ -465,8 +471,8 @@ static void TestCgiResponse(int argc, char** argv)
     
     response.SetOutput(&NcbiCout);
 
-    if (argc > 2)
-        response.Cookies().Add(CCgiCookies(argv[2]));
+    if (args.Size() > 2)
+        response.Cookies().Add( CCgiCookies(args[2]) );
 
     response.Cookies().Remove(response.Cookies().Find("to-Remove"));
 
@@ -496,8 +502,8 @@ public:
 
 int CTestApplication::Run(void)
 {
-    TestCgi(m_Argc, m_Argv);
-    TestCgiResponse(m_Argc, m_Argv);
+    TestCgi( GetArguments() );
+    TestCgiResponse( GetArguments() );
 
     return 0;
 }
@@ -507,14 +513,29 @@ CTestApplication::~CTestApplication()
     SetDiagStream(0);
 }
 
-  
+
+
 /////////////////////////////////
+// APPLICATION OBJECT
+//   and
 // MAIN
 //
 
-int main(int argc, char* argv[])
-{
-    SetDiagStream(&NcbiCout);
-    return CTestApplication().AppMain(argc, argv);
-}
 
+// Note that if the application's object ("theTestApplication") was defined
+// inside the scope of function "main()", then its destructor could be
+// called *before* destructors of other statically allocated objects
+// defined in other modules.
+// It would cause a premature closure of diag. stream, and disallow the
+// destructors of other projects to refer to this application object:
+//  - the singleton method CNcbiApplication::Instance() would return NULL, and
+//  - if there is a "raw"(direct) pointer to "theTestApplication" then it
+//    might cause a real trouble.
+static CTestApplication theTestApplication;
+
+
+int main(int argc, const char* argv[])
+{
+    // Execute main application function
+    return theTestApplication.AppMain(argc, argv);
+}

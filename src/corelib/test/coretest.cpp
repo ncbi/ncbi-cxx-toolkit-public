@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/01/20 17:55:48  vakatov
+* Fixes to follow the "CNcbiApplication" change.
+*
 * Revision 1.55  1999/11/29 17:49:12  golikov
 * NStr::Replace tests modified obedience to Denis :)
 *
@@ -218,6 +221,7 @@
 */
 
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
 
@@ -459,6 +463,35 @@ static void TestRegistry(void)
 
 
 /////////////////////////////////
+// Start-up (cmd.-line args, config file)
+//
+
+static void TestStartup(void)
+{
+    // Command-line arguments
+    SIZE_TYPE n_args = CNcbiApplication::Instance()->GetArguments().Size();
+    NcbiCout << NcbiEndl << "Total # of CMD.-LINE ARGS: "
+             << n_args << NcbiEndl;
+    for (SIZE_TYPE i = 0;  i < n_args;  i++) {
+        NcbiCout << " [" << i << "] = \""
+                 << CNcbiApplication::Instance()->GetArguments()[i]
+                 << "\"" << NcbiEndl;
+    }
+    NcbiCout << NcbiEndl;
+
+    // Config.file (registry) content
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    NcbiCout << "REGISTRY (loaded from config file):" <<  NcbiEndl;
+    if ( reg.Empty() ) {
+        NcbiCout << "  <empty>"  << NcbiEndl;
+    } else {
+        reg.Write(NcbiCout);
+    }
+    NcbiCout << NcbiEndl;
+}
+
+
+/////////////////////////////////
 // Diagnostics
 //
 
@@ -478,7 +511,13 @@ static void TestDiag(void)
     double d = 123.45;
 
     diag << "[Unset Diag Stream]  Diagnostics double = " << d << Endm;
+    ERR_POST( "[Unset Diag Stream]  ERR_POST double = " << d );
     _TRACE( "[Unset Diag Stream]  Trace double = " << d );
+
+    NcbiCout << NcbiEndl
+             << "FLUSHing memory-stored diagnostics (if any):" << NcbiEndl;
+    SIZE_TYPE n_flush = CNcbiApplication::Instance()->FlushDiag(&NcbiCout);
+    NcbiCout << "FLUSHed diag: " << n_flush << " bytes" << NcbiEndl <<NcbiEndl;
 
     SetDiagStream(&NcbiCerr);
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
@@ -803,6 +842,7 @@ public:
 
 int CTestApplication::Run(void)
 {
+    TestStartup();
     TestDiag();
     TestException();
     TestException_AuxTrace();
@@ -818,13 +858,29 @@ CTestApplication::~CTestApplication()
     SetDiagStream(0);
 }
 
+
   
 /////////////////////////////////
+// APPLICATION OBJECT
+//   and
 // MAIN
 //
 
-int main(int argc, char* argv[])
-{
-    return CTestApplication().AppMain(argc, argv);
-}
 
+// Note that if the application's object ("theTestApplication") was defined
+// inside the scope of function "main()", then its destructor could be
+// called *before* destructors of other statically allocated objects
+// defined in other modules.
+// It would cause a premature closure of diag. stream, and disallow the
+// destructors of other projects to refer to this application object:
+//  - the singleton method CNcbiApplication::Instance() would return NULL, and
+//  - if there is a "raw"(direct) pointer to "theTestApplication" then it
+//    might cause a real trouble.
+static CTestApplication theTestApplication;
+
+
+int main(int argc, const char* argv[], const char* envp[])
+{
+    // Execute main application function
+    return theTestApplication.AppMain(argc, argv, envp, eDS_ToMemory);
+}
