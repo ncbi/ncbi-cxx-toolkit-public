@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.20 2001/07/11 13:08:05 sherry Exp $
+-- $Id: docsum.asn,v 1.21 2001/08/03 14:29:11 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.21  2001/08/03 14:29:11  sherry
+-- added snp-class 'mnp' for variants with allele length > 1
+--
 -- Revision 1.20  2001/07/11 13:08:05  sherry
 -- typo correction and clarification of fxn-class names to fxn-class-contig and fxn-class-mrna
 --
@@ -231,7 +234,9 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 		microsat    (4),		-- microsatellite variation: allele string contains numbers and '(motif)' pattern
 		named       (5),		-- insertion/deletion of named object (length unknown)
 		no-variation (6),		-- novariation asserted for sequence
-		mixed       (7) },              -- mixed class
+		mixed       (7),                -- mixed class
+		mnp         (8)},               -- Multiple Nucleotide Polymorphism. All alleles of same length > 1
+
 	snp-type ENUMERATED {			
 		notwithdrawn (1),		-- variation is OK, default case
 		artifact     (2),		-- variation determined to be experimental artifact
