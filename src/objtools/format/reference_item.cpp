@@ -34,7 +34,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <serial/iterator.hpp>
-
+#include <util/static_set.hpp>
 #include <objects/biblio/biblio__.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
@@ -159,7 +159,7 @@ static void s_FixPages(string& pages)
 }
 
 
-CReferenceItem::CReferenceItem(const CSeqdesc&  desc, CFFContext& ctx) :
+CReferenceItem::CReferenceItem(const CSeqdesc& desc, CFFContext& ctx) :
     CFlatItem(ctx), m_Category(eUnknown), m_Serial(0)
 {
     _ASSERT(desc.IsPub());
@@ -205,6 +205,11 @@ void CReferenceItem::x_GatherInfo(CFFContext& ctx)
         }
     }
     x_CleanData();
+
+    // gather Genbank format specific field
+    if ( ctx.IsFormatGenBank() ) {
+        x_GatherRemark(ctx);
+    }
     /*
     if (m_Date.NotEmpty()  &&  m_Date->IsStd()) {
         m_StdDate = &m_Date->GetStd();
@@ -410,6 +415,7 @@ void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
     case CPub::e_Muid:
         if ( m_MUID == 0 ) {
             m_MUID = pub.GetMuid();
+            m_Category = ePublished;
         }
         break;
 
@@ -446,6 +452,7 @@ void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
     case CPub::e_Pmid:
         if ( m_PMID == 0 ) {
             m_PMID = pub.GetPmid();
+            m_Category = ePublished;
         }
         break;
 
@@ -457,15 +464,29 @@ void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
 
 void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
 {
+    if ( gen.CanGetSerial_number()  &&  m_Serial == 0 ) {
+        m_Serial = gen.GetSerial_number();
+    }
+
     if ( gen.CanGetCit() ) {
         const CCit_gen::TCit& cit = gen.GetCit();
         if ( NStr::StartsWith(cit, "BackBone id_pub", NStr::eNocase) ) {
             return;
         }
-
-        if ( NStr::CompareNocase(cit, "unpublished") ) {
-            m_Category = eUnpublished;
+        m_Category = eUnpublished;
+        if ( !NStr::StartsWith(cit, "unpublished", NStr::eNocase)  &&
+             !NStr::StartsWith(cit, "submitted", NStr::eNocase)  &&
+             !NStr::StartsWith(cit, "to be published", NStr::eNocase)  &&
+             !NStr::StartsWith(cit, "in press", NStr::eNocase)  &&
+             NStr::Find(cit, "Journal") == NPOS ) {
+            if ( m_Serial == 0 ) {
+                Skip();
+                return;
+            }
         }
+    } else if ( !gen.CanGetJournal()  ||  !gen.CanGetDate() ) {
+        Skip();
+        return;
     }
 
     if ( gen.CanGetAuthors() ) {
@@ -493,10 +514,6 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
         m_Date = &gen.GetDate();
     }
 
-    if ( gen.CanGetSerial_number()  &&  m_Serial == 0 ) {
-        m_Serial = gen.GetSerial_number();
-    }
-
     if ( m_Title.empty() ) {
         if ( gen.CanGetTitle() ) {
             m_Title = gen.GetTitle();
@@ -518,8 +535,6 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
     if ( gen.CanGetPmid()  &&  m_PMID == 0 ) {
         m_PMID = gen.GetPmid();
     }
-
-    
 
     x_SetJournal(gen, ctx);
 }
@@ -951,6 +966,133 @@ void CReferenceItem::x_CleanData(void)
 
 
 /////////////////////////////////////////////////////////////////////////////
+//
+// Genbank Format Specific
+
+static const string s_RemarksText[] = {
+  "full automatic",
+  "full staff_review",
+  "full staff_entry",
+  "simple staff_review",
+  "simple staff_entry",
+  "simple automatic",
+  "unannotated automatic",
+  "unannotated staff_review",
+  "unannotated staff_entry"
+};
+
+
+void CReferenceItem::x_GatherRemark(CFFContext& ctx)
+{
+    list<string> l;
+
+    // comment
+    if ( m_Pubdesc->IsSetComment()  &&  !m_Pubdesc->GetComment().empty() ) {
+        const string& comment = m_Pubdesc->GetComment();
+        
+        
+        CStaticArraySet<string> texts(s_RemarksText,
+            sizeof(s_RemarksText) / sizeof(string));
+        if ( texts.find(comment) == texts.end() ) {
+            l.push_back(comment);
+        }
+    }
+
+    // GIBBSQ
+    CSeq_id::TGibbsq gibbsq = 0;
+    ITERATE (CBioseq::TId, it, ctx.GetActiveBioseq().GetId()) {
+        if ( (*it)->IsGibbsq() ) {
+            gibbsq = (*it)->GetGibbsq();
+        }
+    }
+    if ( gibbsq > 0 ) {
+        static const string str1 = 
+            "GenBank staff at the National Library of Medicine created this entry [NCBI gibbsq ";
+        static const string str2 = "] from the original journal article.";
+        l.push_back(str1 + NStr::IntToString(gibbsq) + str2);
+
+        // Figure
+        if ( m_Pubdesc->IsSetFig()  &&  !m_Pubdesc->GetFig().empty()) {
+            l.push_back("This sequence comes from " + m_Pubdesc->GetFig());
+        }
+
+        // Poly_a
+        if ( m_Pubdesc->IsSetPoly_a()  &&  m_Pubdesc->GetPoly_a() ) {
+        l.push_back("Polyadenylate residues occurring in the figure were \
+            omitted from the sequence.");
+        }
+
+        // Maploc
+        if ( m_Pubdesc->IsSetMaploc()  &&  !m_Pubdesc->GetMaploc().empty()) {
+            l.push_back("Map location: " + m_Pubdesc->GetMaploc());
+        }
+    }
+    
+    if ( m_Pubdesc->CanGetPub() ) {
+        ITERATE (CPubdesc::TPub::Tdata, it, m_Pubdesc->GetPub().Get()) {
+            if ( (*it)->IsArticle() ) {
+                if ( (*it)->GetArticle().GetFrom().IsJournal() ) {
+                    const CCit_jour& jour = 
+                        (*it)->GetArticle().GetFrom().GetJournal();
+                    if ( jour.IsSetImp() ) {
+                        const CCit_jour::TImp& imp = jour.GetImp();
+                        if ( imp.IsSetRetract() ) {
+                            const CCitRetract& ret = imp.GetRetract();
+                            if ( ret.IsSetType()  &&
+                                ret.GetType() == CCitRetract::eType_in_error  &&
+                                ret.IsSetExp()  &&
+                                !ret.GetExp().empty() ) {
+                                l.push_back("Erratum:[" + ret.GetExp() + "]");
+                            }
+                        }
+                    }
+                }
+            } else if ( (*it)->IsSub() ) {
+                const CCit_sub& sub = (*it)->GetSub();
+                if ( sub.IsSetDescr()  &&  !sub.GetDescr().empty() ) {
+                    l.push_back(sub.GetDescr());
+                }
+            }
+        }
+    }
+
+    m_Remark = NStr::Join(l, "\n");
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Reference Sorting
+
+
+static size_t s_CountFields(const CDate& date)
+{
+    _ASSERT(date.IsStd());
+
+    const CDate::TStd& std = date.GetStd();
+    size_t count = 0;
+
+    if ( std.IsSetYear() ) {
+        ++count;
+    }
+    if ( std.IsSetMonth() ) {
+        ++count;
+    }
+    if ( std.IsSetDay() ) {
+        ++count;
+    }
+    if ( std.IsSetHour() ) {
+        ++count;
+    }
+    if ( std.IsSetMinute() ) {
+        ++count;
+    }
+    if ( std.IsSetSecond() ) {
+        ++count;
+    }
+
+    return count;
+}
 
 
 LessEqual::LessEqual(bool serial_first, bool is_refseq) :
@@ -971,24 +1113,42 @@ bool LessEqual::operator()
         return ref1->GetCategory() < ref2->GetCategory();
     }
 
-    // sort by date, older publication comes first (except RefSeq).
-    if ( (ref1->GetDate() != 0)  &&  (ref2->GetDate() != 0) ) {
+    // sort by date:
+    // - publications with date come before those without one.
+    // - more specific dates come before less specific ones.
+    // - older publication comes first (except RefSeq).
+    const CDate* d1 = ref1->GetDate();
+    const CDate* d2 = ref2->GetDate();
+    if ( (d1 != 0)  &&  (d2 == 0) ) {
+        return true;
+    } else if ( (d1 == 0)  &&  (d2 != 0) ) {
+        return false;
+    }
+    if ( (d1 != 0)  &&  (d2 != 0) ) {
         CDate::ECompare status = ref1->GetDate()->Compare(*ref2->GetDate());
-        if ( (status == CDate::eCompare_before)  ||
-             (status == CDate::eCompare_after) ) {
+        if ( status == CDate::eCompare_unknown  &&
+             d1->IsStd()  &&  d2->IsStd() ) {
+            // one object is more specific than the other.
+            size_t s1 = s_CountFields(*d1);
+            size_t s2 = s_CountFields(*d2);
+            return m_IsRefSeq ? s1 > s2 : s1 < s2;
+        } else if ( status != CDate::eCompare_same ) {
             return m_IsRefSeq ? (status == CDate::eCompare_after) :
                                 (status == CDate::eCompare_before);
         }
     }
-
-    // distinguish by uids
+    // dates are the same, or both missing.
+    
+    // distinguish by uids (swap order for RefSeq)
     if ( ref1->GetPMID() != 0  &&  ref2->GetPMID() != 0  &&
-         ref1->GetPMID() != ref2->GetPMID() ) {
-        return ref1->GetPMID() < ref2->GetPMID();
+         !(ref1->GetPMID() == ref2->GetPMID()) ) {
+        return m_IsRefSeq ? (ref1->GetPMID() > ref2->GetPMID()) :
+            (ref1->GetPMID() < ref2->GetPMID());
     }
     if ( ref1->GetMUID() != 0  &&  ref2->GetMUID() != 0  &&
-         ref1->GetMUID() != ref2->GetMUID() ) {
-        return ref1->GetMUID() < ref2->GetMUID();
+         !(ref1->GetMUID() == ref2->GetMUID()) ) {
+        return m_IsRefSeq ? (ref1->GetMUID() > ref2->GetMUID()) :
+            (ref1->GetMUID() < ref2->GetMUID());
     }
 
     // just uids goes last
@@ -1032,6 +1192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/10 16:21:17  shomrat
+* Fixed reference sorting, Added REMARK gathering
+*
 * Revision 1.6  2004/03/05 18:42:59  shomrat
 * Set category to Published if title exist
 *
