@@ -43,6 +43,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/25 15:46:06  ucko
+* Add more methods needed by new threaded-server code.
+* Minor cleanups.
+*
 * Revision 1.3  2002/01/24 20:17:49  ucko
 * Introduce new exception class for full queues
 * Allow waiting for a full queue to have room again
@@ -88,16 +92,17 @@ public:
         : m_MaxSize(max_size), m_GetSem(0,1), m_PutSem(1,1) {}
 
     void     Put(const TRequest& data); // Throws exception if full
-    void     WaitForRoom(void);
+    void     WaitForRoom(void) const;
     TRequest Get(void);                 // Blocks politely if queue is empty
-    bool     IsEmpty(void);
+    bool     IsEmpty(void) const;
+    bool     IsFull(void) const;
 
 private:
     volatile queue<TRequest> m_Queue;
     unsigned int             m_MaxSize;
     CSemaphore               m_GetSem; // Raised iff the queue contains data
-    CSemaphore               m_PutSem; // Raised iff the queue has room
-    CMutex                   m_Mutex;  // Guards access to queue
+    mutable CSemaphore       m_PutSem; // Raised iff the queue has room
+    mutable CMutex           m_Mutex;  // Guards access to queue
 };
 
 
@@ -148,7 +153,8 @@ public:
 
     void Spawn(unsigned int num_threads);
     void AcceptRequest(const TRequest& req);
-    void WaitForRoom(void) { m_Queue.WaitForRoom(); }
+    void WaitForRoom(void)  { m_Queue.WaitForRoom(); }
+    bool IsFull(void) const { return m_Queue.IsFull(); }
 
 protected:
     virtual TThread* NewThread(void) = 0;
@@ -247,7 +253,7 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data)
 
 
 template <typename TRequest>
-void CBlockingQueue<TRequest>::WaitForRoom(void)
+void CBlockingQueue<TRequest>::WaitForRoom(void) const
 {
     // Make sure there's room, but don't actually consume anything
     m_PutSem.Wait();
@@ -276,12 +282,19 @@ TRequest CBlockingQueue<TRequest>::Get(void)
 
 
 template <typename TRequest>
-bool CBlockingQueue<TRequest>::IsEmpty(void)
+bool CBlockingQueue<TRequest>::IsEmpty(void) const
 {
     CMutexGuard guard(m_Mutex);
-    return const_cast<queue<TRequest>&>(m_Queue).empty();
+    return const_cast<const queue<TRequest>&>(m_Queue).empty();
 }
 
+
+template <typename TRequest>
+bool CBlockingQueue<TRequest>::IsFull(void) const
+{
+    CMutexGuard guard(m_Mutex);
+    return const_cast<const queue<TRequest>&>(m_Queue).size() == m_MaxSize;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //   CThreadInPool<>::
