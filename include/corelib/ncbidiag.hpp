@@ -748,7 +748,7 @@ private:
 ///
 /// Structure used to store the errors code and subcode description.
 
-struct SDiagErrCodeDescription {
+struct NCBI_XNCBI_EXPORT SDiagErrCodeDescription {
     /// Constructor.
     SDiagErrCodeDescription(void);
 
@@ -888,6 +888,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.65  2004/01/28 14:49:04  ivanov
+ * Added export specifier to SDiagErrCodeDescription
+ *
  * Revision 1.64  2004/01/27 17:04:10  ucko
  * Don't attempt to declare references as mutable -- the referents are fixed,
  * and one can always change their contents through any non-const reference.
