@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.31 2002/04/11 20:40:41 sherry Exp $
+-- $Id: docsum.asn,v 1.32 2002/04/12 13:53:14 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.32  2002/04/12 13:53:14  kholodov
+-- Fixed wrong type name NSE-date to NSE-Date
+--
 -- Revision 1.31  2002/04/11 20:40:41  sherry
 -- added NSE-ss linkout-url, validation status; NSE-rs create-date, update-date; NSE-popinfo pop-class, and new section NSE-rsStruct with 3D structure data
 --
@@ -273,8 +276,8 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 		ambiguousloc  (6),		-- variation has excessive number of potional locations in genome
 		lowmapquality (7)		-- evidence for calling variation deemed insufficient
 				},
-	create-date NSE-date,       -- date the refsnp cluster was instantiated
-	update-date NSE-date OPTIONAL, -- most recent date the cluster was updated (member added or deleted)
+	create-date NSE-Date,       -- date the refsnp cluster was instantiated
+	update-date NSE-Date OPTIONAL, -- most recent date the cluster was updated (member added or deleted)
 	observed VisibleString,			-- list of all alleles observed in ss-list members, correcting for reverse
 						-- complementation of memebers reported in reverse orientation
 	seq-5 SEQUENCE OF VisibleString,	-- 5' sequence that flanks the variation
