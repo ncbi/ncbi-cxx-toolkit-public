@@ -157,8 +157,8 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf)
     size_t len = strlen(buf);
     size_t n;
 
-    if (SOCK_Write(sock, buf, len, &n, eIO_WritePersist) == eIO_Success
-        &&  n == len) {
+    if (SOCK_Write(sock, buf, len, &n, eIO_WritePersist) == eIO_Success  &&
+        n == len) {
         return 1/*success*/;
     }
     return 0/*failure*/;
@@ -176,7 +176,7 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
     if (!login_name) {
         struct passwd* pwd = getpwuid(getuid());
         if (!pwd) {
-            if (!(login_name = getenv("USER")) &&
+            if (!(login_name = getenv("USER"))  &&
                 !(login_name = getenv("LOGNAME"))) {
                 CORE_UNLOCK;
                 return 0;
@@ -205,14 +205,15 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
 SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
 {
     if (info) {
-        info->magic_number = MX_MAGIC_NUMBER;
-        info->cc  = 0;
-        info->bcc = 0;
+        info->magic_number    = MX_MAGIC_NUMBER;
+        info->cc              = 0;
+        info->bcc             = 0;
         if (!s_ComposeFrom(info->from, sizeof(info->from)))
-            info->from[0] = 0;
-        info->header  = 0;
-        info->mx_host = MX_HOST;
-        info->mx_port = MX_PORT;
+            info->from[0]     = 0;
+        info->header          = 0;
+        info->body_size       = 0;
+        info->mx_host         = MX_HOST;
+        info->mx_port         = MX_PORT;
         info->mx_timeout.sec  = MX_TIMEOUT;
         info->mx_timeout.usec = 0;
         info->mx_no_header    = 0/*false*/;
@@ -292,10 +293,11 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
                                      "recepient %s for %s: \"%c\" expected",
                                      buf, what, quote));
         }
-        if (!s_SockWrite(sock, "RCPT TO: <") ||
-            !s_SockWrite(sock, buf) ||
-            !s_SockWrite(sock, ">" MX_CRLF))
+        if (!s_SockWrite(sock, "RCPT TO: <")  ||
+            !s_SockWrite(sock, buf)           ||
+            !s_SockWrite(sock, ">" MX_CRLF)) {
             SENDMAIL_RETURN(write_error);
+        }
         if (!s_SockReadResponse(sock, 250, 251, buf, buf_size))
             SENDMAIL_RETURN2(proto_error, buf);
         if (!c)
@@ -328,9 +330,9 @@ const char* CORE_SendMailEx(const char*          to,
     if (info->magic_number != MX_MAGIC_NUMBER)
         SENDMAIL_RETURN("Invalid magic number");
 
-    if ((!to || !*to) &&
-        (!info->cc || !*info->cc) &&
-        (!info->bcc || !*info->bcc)) {
+    if ((!to         ||  !*to)        &&
+        (!info->cc   ||  !*info->cc)  &&
+        (!info->bcc  ||  !*info->bcc)) {
         SENDMAIL_RETURN("At least one message recipient must be specified");
     }
 
@@ -347,16 +349,16 @@ const char* CORE_SendMailEx(const char*          to,
 
     if (SOCK_gethostname(buffer, sizeof(buffer)) != 0)
         SENDMAIL_RETURN("Unable to get local host name");
-    if (!s_SockWrite(sock, "HELO ") ||
-        !s_SockWrite(sock, buffer) ||
+    if (!s_SockWrite(sock, "HELO ")         ||
+        !s_SockWrite(sock, buffer)          ||
         !s_SockWrite(sock, MX_CRLF)) {
         SENDMAIL_RETURN("Write error in HELO command");
     }
     if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
         SENDMAIL_RETURN2("Protocol error in HELO command", buffer);
 
-    if (!s_SockWrite(sock, "MAIL FROM: <") ||
-        !s_SockWrite(sock, info->from) ||
+    if (!s_SockWrite(sock, "MAIL FROM: <")  ||
+        !s_SockWrite(sock, info->from)      ||
         !s_SockWrite(sock, ">" MX_CRLF)) {
         SENDMAIL_RETURN("Write error in MAIL command");
     }
@@ -390,21 +392,21 @@ const char* CORE_SendMailEx(const char*          to,
         /* Follow RFC822 to compose message headers. Note that
          * 'Date:'and 'From:' are both added by sendmail automatically.
          */ 
-        if (!s_SockWrite(sock, "Subject: ") ||
-            (subject && !s_SockWrite(sock, subject)) ||
+        if (!s_SockWrite(sock, "Subject: ")           ||
+            (subject && !s_SockWrite(sock, subject))  ||
             !s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error in sending subject");
 
         if (to && *to) {
-            if (!s_SockWrite(sock, "To: ") ||
-                !s_SockWrite(sock, to) ||
+            if (!s_SockWrite(sock, "To: ")            ||
+                !s_SockWrite(sock, to)                ||
                 !s_SockWrite(sock, MX_CRLF))
                 SENDMAIL_RETURN("Write error in sending To");
         }
 
         if (info->cc && *info->cc) {
-            if (!s_SockWrite(sock, "Cc: ") ||
-                !s_SockWrite(sock, info->cc) ||
+            if (!s_SockWrite(sock, "Cc: ")            ||
+                !s_SockWrite(sock, info->cc)          ||
                 !s_SockWrite(sock, MX_CRLF))
                 SENDMAIL_RETURN("Write error in sending Cc");
         }
@@ -418,8 +420,8 @@ const char* CORE_SendMailEx(const char*          to,
     assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
 
     if (info->header && *info->header) {
-        int/*bool*/ newline = 0/*false*/;
         size_t n = 0, m = strlen(info->header);
+        int/*bool*/ newline = 0/*false*/;
         while (n < m) {
             size_t k = 0;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
@@ -443,10 +445,10 @@ const char* CORE_SendMailEx(const char*          to,
             SENDMAIL_RETURN("Write error while finalizing custom header");
     }
 
-    if (body && *body) {
+    if (body) {
+        size_t n = 0, m = info->body_size ? info->body_size : strlen(body);
         int/*bool*/ newline = 0/*false*/;
-        size_t n = 0, m = strlen(body);
-        if (!info->mx_no_header) {
+        if (!info->mx_no_header  &&  m) {
             if (!s_SockWrite(sock, MX_CRLF))
                 SENDMAIL_RETURN("Write error in message body delimiter");
         }
@@ -459,7 +461,7 @@ const char* CORE_SendMailEx(const char*          to,
                     newline = 1/*true*/;
                 } else {
                     if (body[n] != '\r'  ||  !newline) {
-                        if (body[n] == '.' && (newline || !n)) {
+                        if (body[n] == '.'  &&  (newline  ||  !n)) {
                             buffer[k++] = '.';
                             buffer[k++] = '.';
                         } else
@@ -474,8 +476,8 @@ const char* CORE_SendMailEx(const char*          to,
             if (!s_SockWrite(sock, buffer))
                 SENDMAIL_RETURN("Write error while sending message body");
         }
-        if ((!newline && !s_SockWrite(sock, MX_CRLF)) ||
-            !s_SockWrite(sock, "." MX_CRLF)) {
+        if ((!newline  &&  m  &&  !s_SockWrite(sock, MX_CRLF))
+            ||  !s_SockWrite(sock, "." MX_CRLF)) {
             SENDMAIL_RETURN("Write error while finalizing message body");
         }
     } else if (!s_SockWrite(sock, "." MX_CRLF))
@@ -501,6 +503,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/12/09 15:38:39  lavr
+ * Take advantage of SSendMailInfo::body_size;  few little makeup changes
+ *
  * Revision 6.20  2003/12/04 14:55:09  lavr
  * Extend API with no-header and multiple recipient capabilities
  *
