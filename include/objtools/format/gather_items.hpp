@@ -78,7 +78,10 @@ protected:
     virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 
     // references
+    typedef CBioseqContext::TReferences TReferences;
     void x_GatherReferences(void) const;
+    void x_GatherReferences(const CSeq_loc& loc, TReferences& refs) const;
+    void x_GatherCDSReferences(TReferences& refs) const;
 
     // features
     void x_GatherFeatures  (void) const;
@@ -150,6 +153,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/01/12 15:49:21  shomrat
+* Use typedef TReferences
+*
 * Revision 1.13  2004/06/21 18:50:19  ucko
 * +x_GatherAlignments
 *
