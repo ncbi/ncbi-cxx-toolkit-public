@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/11/09 20:04:04  ucko
+* Tweak p_equal_to for portability.  (Tested with GCC, WorkShop,
+* MIPSpro, and MSVC.)
+*
 * Revision 1.16  2001/05/17 14:54:44  lavr
 * Typos corrected
 *
@@ -142,7 +146,15 @@ template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
 {
-    bool operator() (const T*& x, const T*& y) const
+#ifdef NCBI_COMPILER_MIPSPRO
+    // fails to define these
+    typedef const T* first_argument_type;
+    typedef const T* second_argument_type;
+#endif
+    // Sigh.  WorkShop rejects this code without typename (but only in
+    // 64-bit mode!), and GCC rejects typename without a scope.
+    bool operator() (const typename p_equal_to::first_argument_type& x,
+                     const typename p_equal_to::second_argument_type& y) const
     { return *x == *y; }
 };
 
