@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2002/03/11 21:53:18  lavr
+ * Recognize ALL in CONN_DEBUG_PRINTOUT; bugfix for '//' in proxy adjustement
+ *
  * Revision 6.29  2002/02/20 19:12:17  lavr
  * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
  *
@@ -252,9 +255,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    if (*str && strncasecmp(str, "infinite", strlen(str)) == 0)
+    if (*str  &&  strncasecmp(str, "infinite", strlen(str)) == 0) {
         info->timeout = 0;
-    else {
+    } else {
         info->timeout = &info->tmo;
         dbl = atof(str);
         if (dbl <= 0.0)
@@ -288,14 +291,16 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* turn on debug printout? */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
     if (*str  &&
-        (strcmp(str, "1") == 0 ||
-         strcasecmp(str, "true") == 0 ||
-         strcasecmp(str, "yes" ) == 0 ||
-         strcasecmp(str, "some") == 0))
+        (strcmp(str, "1") == 0  ||
+         strcasecmp(str, "true") == 0  ||
+         strcasecmp(str, "yes" ) == 0  ||
+         strcasecmp(str, "some") == 0)) {
         info->debug_printout = eDebugPrintout_Some;
-    else if (*str  &&  strcasecmp(str, "data") == 0)
+    } else if (*str  &&
+               (strcasecmp(str, "data") == 0  ||
+                strcasecmp(str, "all" ) == 0)) {
         info->debug_printout = eDebugPrintout_Data;
-    else 
+    } else
         info->debug_printout = eDebugPrintout_None;
 
     /* stateless client? */
@@ -352,8 +357,8 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 
     {{
         char x_path[sizeof(info->path)];
-        sprintf(x_path, "http://%s:%hu/%s",
-                info->host, info->port, info->path);
+        sprintf(x_path, "http://%s:%hu%s%s", info->host, info->port,
+                *info->path == '/' ? "" : "/", info->path);
         assert(strlen(x_path) < sizeof(x_path));
         strcpy(info->path, x_path);
     }}
@@ -375,8 +380,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if (info->http_proxy_adjusted) {
         /* undo proxy adjustment */
         SConnNetInfo* temp = ConnNetInfo_Create(info->service);
-        int /*bool*/ success = ConnNetInfo_ParseURL(temp, info->path);
-        if (!success) {
+        if (!ConnNetInfo_ParseURL(temp, info->path)) {
             ConnNetInfo_Destroy(temp);
             return 0/*failure*/;
         }
@@ -392,7 +396,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         const char* h = s + 2; /* host starts here */
         const char* p;         /* host ends here   */
 
-        if (strncmp(url, "http://", 7) != 0)
+        if (strncasecmp(url, "http://", 7) != 0)
             return 0/*failure*/;
         if (!(s = strchr(h, '/')))
             s = h + strlen(h);
