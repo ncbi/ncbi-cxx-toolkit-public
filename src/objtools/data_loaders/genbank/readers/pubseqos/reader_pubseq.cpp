@@ -244,23 +244,55 @@ int CPubseqReader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 }
 
 
-void CPubseqReader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
+void CPubseqReader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
 {
-    _TRACE("x_RetrieveSeqrefs: " << gi);
-    CDB_Connection* db_conn = x_GetConnection(conn);
-    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class", 1));
+    _TRACE("ResolveSeq_id: " << id.AsFastaString());
+    // note: this was
+    //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
+    // but MSVC doesn't like this.  This is the only version that
+    // will compile:
+    CDB_VarChar asnIn;
     {{
-        CDB_Int giIn(gi);
-        cmd->SetParam("@gi", &giIn);
-        cmd->Send();
+        CNcbiOstrstream oss;
+        {{
+            CObjectOStreamAsn ooss(oss);
+            ooss << id;
+        }}
+        asnIn = CNcbiOstrstreamToString(oss);
     }}
 
-    while(cmd->HasMoreResults()) {
-        auto_ptr<CDB_Result> result(cmd->Result());
+    CDB_Connection* db_conn = x_GetConnection(conn);
+    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn", 1));
+    cmd->SetParam("@asnin", &asnIn);
+    cmd->Send();
+
+    x_RetrieveSeqrefs(srs, *cmd, 0);
+}
+
+
+void CPubseqReader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
+{
+    _TRACE("RetrieveSeqrefs: " << gi);
+    CDB_Int giIn(gi);
+
+    CDB_Connection* db_conn = x_GetConnection(conn);
+    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class", 1));
+    cmd->SetParam("@gi", &giIn);
+    cmd->Send();
+
+    x_RetrieveSeqrefs(srs, *cmd, gi);
+}
+
+
+void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
+{
+    while(cmd.HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd.Result());
         if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
             continue;
             
         while(result->Fetch()) {
+            CDB_Int giGot(gi);
             CDB_Int sat;
             CDB_Int satKey;
             CDB_Int extFeat(0);
@@ -269,7 +301,11 @@ void CPubseqReader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
             for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
                 const string& name = result->ItemName(pos);
                 _TRACE("next item: " << name);
-                if (name == "sat" ) {
+                if (name == "gi") {
+                    result->GetItem(&giGot);
+                    _TRACE("gi: "<<giGot.Value());
+                }
+                else if (name == "sat" ) {
                     result->GetItem(&sat);
                     _TRACE("sat: "<<sat.Value());
                 }
@@ -292,13 +328,14 @@ void CPubseqReader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
             }
 
             _ASSERT(sat.Value() != kSNP_Sat);
-            srs.push_back(Ref(new CSeqref(gi, sat.Value(), satKey.Value())));
+            srs.push_back(Ref(new CSeqref(giGot.Value(),
+                                          sat.Value(), satKey.Value())));
             if ( TrySNPSplit() ) {
                 if ( extFeat.IsNULL() ) {
-                    AddSNPSeqref(srs, gi, CSeqref::fPossible);
+                    AddSNPSeqref(srs, giGot.Value(), CSeqref::fPossible);
                 }
                 else if ( extFeat.Value() & 1 ) {
-                    AddSNPSeqref(srs, gi);
+                    AddSNPSeqref(srs, giGot.Value());
                 }
             }
         }
@@ -489,6 +526,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.45  2003/12/19 19:47:45  vasilche
+* Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
+*
 * Revision 1.44  2003/12/03 16:15:29  ucko
 * Correct spelling of NCBI_Pubseq_ReaderEntryPoint.
 *

@@ -53,6 +53,7 @@ public:
     ~CId1Reader();
 
     virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
+    virtual void ResolveSeq_id(TSeqrefs& sr, const CSeq_id& id, TConn conn);
     virtual void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
 
     CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
@@ -142,6 +143,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.29  2003/12/19 19:47:44  vasilche
+* Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
+*
 * Revision 1.28  2003/12/03 14:28:22  kuznets
 * Added driver name constant.
 *

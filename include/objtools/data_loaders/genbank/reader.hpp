@@ -202,6 +202,8 @@ public:
 
     enum {
         kSNP_Sat = 15,
+        kTRACE_Sat = 28,
+
         kSNP_EntryId = 0,
         kSNP_ChunkId = 0
     };
@@ -229,6 +231,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.35  2003/12/19 19:47:43  vasilche
+* Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
+*
 * Revision 1.34  2003/12/02 16:17:42  kuznets
 * Added plugin manager support for CReader interface and implementaions
 * (id1 reader, pubseq reader)

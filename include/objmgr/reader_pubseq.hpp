@@ -58,6 +58,7 @@ public:
     ~CPubseqReader();
 
     virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
+    virtual void ResolveSeq_id(TSeqrefs& sr, const CSeq_id& id, TConn conn);
     virtual void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
 
     virtual CRef<CTSE_Info> GetTSEBlob(CRef<CID2S_Split_Info>& split_info,
@@ -76,6 +77,7 @@ private:
     CDB_Connection* x_NewConnection(void);
 
 
+    void x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi);
     CDB_RPCCmd* x_SendRequest(const CSeqref& seqref,
                               CDB_Connection* db_conn,
                               bool is_snp);
@@ -112,6 +114,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.22  2003/12/19 19:47:44  vasilche
+* Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
+*
 * Revision 1.21  2003/12/03 15:10:30  kuznets
 * Minor bug fixed.
 *

@@ -341,6 +341,21 @@ int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 }
 
 
+void CId1Reader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
+{
+    if ( id.IsGeneral() ) {
+        const CDbtag& dbtag = id.GetGeneral();
+        const CObject_id& objid = dbtag.GetTag();
+        if ( dbtag.GetDb() == "ti" && objid.IsId() ) {
+            // "TRACE"
+            srs.push_back(Ref(new CSeqref(0, kTRACE_Sat, objid.GetId())));
+            return;
+        }
+    }
+    CReader::ResolveSeq_id(srs, id, conn);
+}
+
+
 void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
 {
     CID1server_request id1_request;
@@ -743,6 +758,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.66  2003/12/19 19:47:44  vasilche
+ * Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
+ *
  * Revision 1.65  2003/12/03 14:30:02  kuznets
  * Code clean up.
  * Made use of driver name constant instead of immediate in-place string.
