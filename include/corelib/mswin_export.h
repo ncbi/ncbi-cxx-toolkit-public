@@ -76,7 +76,6 @@
 #  define NCBI_PUBMED_EXPORTS
 #endif
 
-
 /*
  * Definitions for NCBI_SEQ.DLL
  */
@@ -109,6 +108,7 @@
 #  define NCBI_XOBJUTIL_EXPORTS
 #  define NCBI_XOBJMANIP_EXPORTS
 #  define NCBI_FORMAT_EXPORTS
+#  define NCBI_XOBJEDIT_EXPORTS
 #endif
 
 
@@ -376,6 +376,15 @@
 #  define NCBI_FORMAT_EXPORT        __declspec(dllexport)
 #else
 #  define NCBI_FORMAT_EXPORT        __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objtools_edit
+ */
+#ifdef NCBI_XOBJEDIT_EXPORTS
+#  define NCBI_XOBJEDIT_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_XOBJEDIT_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -1422,6 +1431,7 @@
 #  define NCBI_FEATDEF_EXPORT
 #  define NCBI_FLAT_EXPORT
 #  define NCBI_FORMAT_EXPORT
+#  define NCBI_XOBJEDIT_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICONFIG_EXPORT
@@ -1534,6 +1544,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.75  2004/06/16 15:20:00  shomrat
+ * Added export for xobjedit library
+ *
  * Revision 1.74  2004/05/24 13:56:42  kuznets
  * Added NCBI_BIOTREE_EXPORT
  *
