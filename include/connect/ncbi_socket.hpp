@@ -129,20 +129,74 @@ public:
     // use CSocketAPI::SetInterruptOnSignal() to set the default value
     void SetInterruptOnSignal(ESwitch interrupt = eOn);
 
+    bool IsClientSide(void) const;
     bool IsServerSide(void) const;
+    bool IsDatagram(void)   const;
 
     // Close the current underlying "SOCK" (if any, and if owned),
     // and from now on use "sock" as the underlying "SOCK" instead.
     // NOTE:  "if_to_own" applies to the (new) "sock".
     void Reset(SOCK sock, EOwnership if_to_own);
 
-private:
+protected:
     SOCK       m_Socket;
     EOwnership m_IsOwned;
 
+private:
     // disable copy constructor and assignment
     CSocket(const CSocket&);
     CSocket& operator= (const CSocket&);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CDatagramSocket::
+//
+//    Datagram socket
+//
+// NOTE:  for documentation see DSOCK_***() functions in "ncbi_socket.h"
+//
+
+class NCBI_XCONNECT_EXPORT CDatagramSocket : public CSocket
+{
+public:
+    CDatagramSocket(void);
+
+    // NOTE: the created underlying "SOCK" will be owned by the object.
+    CDatagramSocket(unsigned short  port   = 0,  // always in host byte order
+                    ESwitch         do_log = eDefault);
+
+    EIO_Status Connect(const string& host, unsigned short port);
+
+    EIO_Status Wait(const STimeout* timeout = 0);
+
+    EIO_Status Send(const string&   host    = kEmptyStr,
+                    unsigned short  port    = 0,
+                    const void*     data    = 0,
+                    size_t          datalen = 0);
+
+    EIO_Status Recv(size_t*         msglen      = 0,
+                    string*         sender_host = 0,
+                    unsigned short* sender_port = 0,
+                    size_t          msgsize     = 0,
+                    void*           buf         = 0,
+                    size_t          buflen      = 0);
+
+    EIO_Status Clear(EIO_Event direction);
+
+    EIO_Status SetBroadcast(bool do_broadcast = true);
+
+protected:
+    // NOTE: these calls are not valid with datagram sockets
+    EIO_Status Shutdown(EIO_Event how);
+    EIO_Status Reconnect(const STimeout* timeout);
+
+private:
+    // disable copy constructor and assignment
+    CDatagramSocket(const CDatagramSocket&);
+    CDatagramSocket& operator= (const CDatagramSocket&);
 };
 
 
@@ -319,9 +373,51 @@ inline void CSocket::SetInterruptOnSignal(ESwitch interrupt)
 }
 
 
+inline bool CSocket::IsClientSide(void) const
+{
+    return m_Socket && SOCK_IsClientSide(m_Socket) ? true : false;
+}
+
+
 inline bool CSocket::IsServerSide(void) const
 {
     return m_Socket && SOCK_IsServerSide(m_Socket) ? true : false;
+}
+
+
+inline bool CSocket::IsDatagram(void) const
+{
+    return m_Socket && SOCK_IsDatagram(m_Socket) ? true : false;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDatagramSocket::
+//
+
+inline EIO_Status CDatagramSocket::Connect(const string&  host,
+                                           unsigned short port)
+{
+    return m_Socket ? DSOCK_Connect(m_Socket, host.c_str(), port) : eIO_Closed;
+}
+
+
+inline EIO_Status CDatagramSocket::Wait(const STimeout* timeout)
+{
+    return m_Socket ? DSOCK_WaitMsg(m_Socket, timeout) : eIO_Closed;
+}
+
+
+inline EIO_Status CDatagramSocket::Clear(EIO_Event direction)
+{
+    return m_Socket ? DSOCK_WipeMsg(m_Socket, direction) : eIO_Closed;
+}
+
+
+inline EIO_Status CDatagramSocket::SetBroadcast(bool do_broadcast)
+{
+    return m_Socket ? DSOCK_SetBroadcast(m_Socket, do_broadcast) : eIO_Closed;
 }
 
 
@@ -432,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/01/24 23:01:32  lavr
+ * Added class CDatagramSocket
+ *
  * Revision 6.15  2003/01/07 22:01:43  lavr
  * ChangeLog message corrected
  *

@@ -172,6 +172,60 @@ void CSocket::GetPeerAddress(unsigned int* host, unsigned short* port,
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CDatagramSocket::
+//
+
+CDatagramSocket::CDatagramSocket(void)
+    : CSocket()
+{
+    return;
+}
+
+
+CDatagramSocket::CDatagramSocket(unsigned short  port,
+                                 ESwitch         log)
+    : CSocket()
+{
+    if (DSOCK_CreateEx(port, &m_Socket, log) != eIO_Success)
+        m_Socket = 0;
+}
+
+
+EIO_Status CDatagramSocket::Send(const string&   host,
+                                 unsigned short  port,
+                                 const void*     data,
+                                 size_t          datalen)
+{
+    return m_Socket
+        ? DSOCK_SendMsg(m_Socket, host.c_str(), port, data, datalen)
+        : eIO_Closed;
+}
+
+
+EIO_Status CDatagramSocket::Recv(size_t*         msglen,
+                                 string*         sender_host,
+                                 unsigned short* sender_port,
+                                 size_t          msgsize,
+                                 void*           buf,
+                                 size_t          buflen)
+{
+    EIO_Status   status;
+    unsigned int addr;
+
+    if ( !m_Socket )
+        return eIO_Closed;
+
+    status = DSOCK_RecvMsg(m_Socket, msgsize, buf, buflen, msglen,
+                           &addr, sender_port);
+    if ( sender_host )
+        *sender_host = CSocketAPI::ntoa(addr);
+
+    return status;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CListeningSocket::
 //
 
@@ -338,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2003/01/24 23:01:19  lavr
+ * Added class CDatagramSocket
+ *
  * Revision 6.9  2002/12/04 16:56:02  lavr
  * Employ SOCK_CreateEx()
  *
