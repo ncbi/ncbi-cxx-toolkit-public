@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.22 2003/07/22 22:00:06 vasilche Exp $
+/* $Id: ncbiconf.ms6,v 1.23 2003/08/21 20:28:34 ivanov Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -48,6 +48,8 @@
 #define HAVE_LIMITS      1
 #define HAVE_STRSTREA_H  1
 #define HAVE_STRSTREAM   1
+#define HAVE_SYS_STAT_H  1
+#define HAVE_SYS_TYPES_H 1
 #define HAVE_WINDOWS_H   1
 #define HAVE_WSTRING     1
 
