@@ -1090,100 +1090,41 @@ void CValidError_imp::ValidateEtAl
 }
 
 
-static const string s_LegalRefSeqDbXrefs[] = {
-  "GenBank",
-  "EMBL",
-  "DDBJ",
-};
-
-
-static const string s_LegalDbXrefs[] = {
-    "PIDe", "PIDd", "PIDg", "PID",
-    "AceView/WormGenes",
-    "ATCC",
-    "ATCC(in host)",
-    "ATCC(dna)",
-    "BDGP_EST",
-    "BDGP_INS",
-    "CDD",
-    "CK",
-    "COG",
-    "dbEST",
-    "dbSNP",
-    "dbSTS",
-    "ENSEMBL",
-    "ESTLIB",
-    "FANTOM_DB",
-    "FLYBASE",
-    "GABI",
-    "GDB",
-    "GeneID",
-    "GI",
-    "GO",
-    "GOA",
-    "IFO",
-    "IMGT/LIGM",
-    "IMGT/HLA",
-    "InterimID",
-    "ISFinder",
-    "JCM",
-    "LocusID",
-    "MaizeDB",
-    "MGD",
-    "MGI",
-    "MIM",
-    "NextDB",
-    "niaEST",
-    "PIR",
-    "PSEUDO",
-    "RATMAP",
-    "RiceGenes",
-    "REMTREMBL",
-    "RGD",
-    "RZPD",
-    "SGD",
-    "SoyBase",
-    "SPTREMBL",
-    "SWISS-PROT",
-    "taxon",
-    "UniGene",
-    "UniSTS",
-    "WorfDB",
-    "WormBase",
-};
-
-
 void CValidError_imp::ValidateDbxref
-(const CDbtag&        xref,
- const CSerialObject& obj)
+(const CDbtag& xref,
+ const CSerialObject& obj,
+ bool biosource)
 {
-    const string& str = xref.GetDb();
-    for ( size_t i = 0;  i < sizeof(s_LegalDbXrefs) / sizeof(string); i++ ) {
-        if (NStr::Compare(str, s_LegalDbXrefs[i]) == 0) {
-            return;
+    const string& db = xref.GetDb();
+    if ( biosource ) {
+        if ( !xref.IsApproved()  ||
+            db == "PIDe"  ||  db == "PIDd"  ||  db == "PIDg"  ||  db == "PID" ) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                "Illegal db_xref type " + db, obj);
         }
-    }
-    if ( m_IsRefSeq ) {
-        for ( size_t i = 0; 
-              i < sizeof(s_LegalRefSeqDbXrefs) / sizeof (string);
-              i++) {
-            if ( NStr::Compare(str, s_LegalRefSeqDbXrefs [i]) == 0 ) {
-                return;
+    } else {  // Seq_feat
+        const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(&obj);
+        if ( feat != 0 ) {
+            bool is_cdregion = 
+                feat->CanGetData()  &&  feat->GetData().IsCdregion();
+            if ( !xref.IsApproved(IsRefSeq())  ||
+                (!is_cdregion  &&  
+                (db == "PIDe"  ||  db == "PIDd"  ||  db == "PIDg"  ||  db == "PID")) ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
+                    "Illegal db_xref type " + db, obj);
             }
         }
     }
-    PostErr(eDiag_Warning, eErr_SEQ_FEAT_IllegalDbXref,
-        "Illegal db_xref type " + str, obj);
 }
 
 
-void CValidError_imp::ValidateDbxref (
-    const list< CRef< CDbtag > > &xref_list,
-    const CSerialObject& obj
-)
+void CValidError_imp::ValidateDbxref
+(TDbtags xref_list,
+ const CSerialObject& obj,
+ bool biosource)
 {
     ITERATE( list< CRef< CDbtag > >, xref, xref_list) {
-        ValidateDbxref(**xref, obj);
+        ValidateDbxref(**xref, obj, biosource);
     }
 }
 
@@ -1329,7 +1270,7 @@ void CValidError_imp::ValidateBioSource
     }
 
     if ( orgref.IsSetDb() ) {
-        ValidateDbxref(orgref.GetDb(), obj);
+        ValidateDbxref(orgref.GetDb(), obj, true);
     }
 
     if ( IsRequireTaxonID() ) {
@@ -2377,6 +2318,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/06/27 18:54:22  shomrat
+* Modified ValidateDbxref to use CDbtag.IsApproved
+*
 * Revision 1.37  2003/06/18 20:58:44  shomrat
 * germline and rearranged are mutually exclusive - proviral and virion are because there is only one biop->genome
 *
