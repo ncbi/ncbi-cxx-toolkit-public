@@ -345,6 +345,7 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
         break;
     case 3: /* Two-step greedy extension after ungapped extension*/
         opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        opt.SetUngappedExtension(true);
         break;
     default: break;
     }
@@ -426,7 +427,7 @@ Context2TranslatedFrame(int context)
 #define NUM_FRAMES 6
 
 static TSeqLocInfoVector
-BlastMask2CSeqLoc(const BlastMask* mask, const TSeqLocVector& slp,
+BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
     EProgram program)
 {
     TSeqLocInfoVector retval;
@@ -517,7 +518,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
         RegisterBlastDbLoader(dbname, db_is_na);
         /* Format the results */
         TSeqLocInfoVector maskv =
-            BlastMask2CSeqLoc(blaster.GetFilteredQueryRegions(), 
+            BlastMaskLoc2CSeqLoc(blaster.GetFilteredQueryRegions(), 
                               blaster.GetQueries(), program);
         
         if (BLAST_FormatResults(seqalignv, program, blaster.GetQueries(), 
