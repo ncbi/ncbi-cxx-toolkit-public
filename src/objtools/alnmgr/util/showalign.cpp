@@ -422,8 +422,11 @@ static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln) {
 static int s_GetStdsegMasterFrame(const CStd_seg& ss, CScope& scope){
   const CRef<CSeq_loc> slc = ss.GetLoc().front();
   ENa_strand strand = GetStrand(*slc);
-  int frame = s_getFrame(strand ==  eNa_strand_plus ? GetStart(*slc) : GetStop(*slc), strand ==  eNa_strand_plus? eNa_strand_plus : eNa_strand_minus, *(ss.GetIds().front()), scope);
-  
+  int frame = s_getFrame(strand ==  eNa_strand_plus ?
+                         GetStart(*slc, &scope) : GetStop(*slc, &scope),
+                         strand ==  eNa_strand_plus ?
+                         eNa_strand_plus : eNa_strand_minus,
+                         *(ss.GetIds().front()), scope);
   return frame;
 }
 
@@ -2204,6 +2207,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.50  2004/11/18 21:27:40  grichenk
+*Removed default value for scope argument in seq-loc related functions.
+*
 *Revision 1.49  2004/11/04 21:06:09  jianye
 *fixed sign warning
 *

@@ -482,7 +482,7 @@ SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& part)
         if ((*it)->IsNull()) {
             continue;
         }
-        const CSeq_id& id = GetId(**it);
+        const CSeq_id& id = GetId(**it, &m_Handle.GetScope());
         CBioseq_Handle bsh = scope.GetBioseqHandleFromTSE(id, m_Handle);
         if (bsh  &&
             bsh.IsSetInst_Repr()  &&
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.27  2004/11/15 20:06:00  shomrat
 * Flag EMBL/DDBJ for EMBL and DDBJ TPAs
 *

@@ -164,21 +164,21 @@ static CSeqVector s_GetCdregionPlusUpstream(CFeat_CI feat_iter,
     const CSeq_loc& first_cds_loc
         = CSeq_loc_CI(feat_iter->GetLocation()).GetSeq_loc();
     CRef<CSeq_loc> upstr(new CSeq_loc);
-    const CSeq_id& id = sequence::GetId(first_cds_loc);
+    const CSeq_id& id = sequence::GetId(first_cds_loc, 0);
     upstr->SetInt().SetId().Assign(id);
     if (sequence::GetStrand(first_cds_loc) == eNa_strand_minus) {
         upstr->SetInt().SetStrand(eNa_strand_minus);
-        upstr->SetInt().SetFrom(sequence::GetStop(first_cds_loc) + 1);
+        upstr->SetInt().SetFrom(sequence::GetStop(first_cds_loc, 0) + 1);
         upstr->SetInt().SetTo(sequence::GetLength(id, &scope) - 1);
     } else {
         upstr->SetInt().SetFrom(0);
-        upstr->SetInt().SetTo(sequence::GetStart(first_cds_loc) - 1);
+        upstr->SetInt().SetTo(sequence::GetStart(first_cds_loc, 0) - 1);
     }
     CSeq_loc loc;
     loc.SetMix().AddSeqLoc(*upstr);
     loc.SetMix().AddSeqLoc(feat_iter->GetLocation());
     CSeqVector vec(loc, scope);
-    upstream_length = sequence::GetLength(*upstr);
+    upstream_length = sequence::GetLength(*upstr, 0);
     return vec;
 }
 
@@ -419,7 +419,7 @@ static void s_CdsLength(const CSeq_id& id, const CSeqTestContext* ctx,
 {
     result.SetOutput_data()
         .AddField("length",
-                  (int)sequence::GetLength(feat_iter->GetLocation()));
+                  (int)sequence::GetLength(feat_iter->GetLocation(), 0));
 }
 
 
@@ -435,8 +435,8 @@ static void s_Utrs(const CSeq_id& id, const CSeqTestContext* ctx,
                    CFeat_CI feat_iter, CSeq_test_result& result)
 {
     const CSeq_loc& loc = feat_iter->GetLocation();
-    TSeqPos cds_from = sequence::GetStart(loc);
-    TSeqPos cds_to   = sequence::GetStop(loc);
+    TSeqPos cds_from = sequence::GetStart(loc, 0);
+    TSeqPos cds_to   = sequence::GetStop(loc, 0);
     int xcript_len = ctx->GetScope().GetBioseqHandle(id).GetInst_Length();
     result.SetOutput_data().AddField("length_5_prime_utr", (int) cds_from);
     result.SetOutput_data().AddField("length_3_prime_utr",
@@ -570,7 +570,7 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                                      CSeq_test_result& result)
 {
     const CSeq_loc& prod_loc = feat_iter->GetOriginalFeature().GetProduct();
-    const CSeq_id& prod_id = sequence::GetId(prod_loc);
+    const CSeq_id& prod_id = sequence::GetId(prod_loc, 0);
     CSeqVector prod_vec(prod_loc, ctx->GetScope());
     prod_vec.SetIupacCoding();
 
@@ -698,7 +698,7 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
     TSeqPos max_orf_length_either = 0;
     TSeqPos largest_forward_orf_end;
     ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
-        TSeqPos orf_length = sequence::GetLength(**orf);
+        TSeqPos orf_length = sequence::GetLength(**orf, 0);
         max_orf_length_either = max(max_orf_length_either, orf_length);
         if ((*orf)->GetInt().GetStrand() != eNa_strand_minus) {
             if (orf_length > max_orf_length_forward) {
@@ -749,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/18 21:27:40  grichenk
+ * Removed default value for scope argument in seq-loc related functions.
+ *
  * Revision 1.11  2004/11/08 17:51:01  dicuccio
  * s_KozakStrengthToString(): all return paths covered...
  *

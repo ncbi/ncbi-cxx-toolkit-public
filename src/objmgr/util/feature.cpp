@@ -192,7 +192,7 @@ static void s_GetCdregionLabel
             break;
         }
 
-        switch (sequence::GetStrand(feat.GetLocation())) {
+        switch (sequence::GetStrand(feat.GetLocation(), scope)) {
         case eNa_strand_plus:
             str += "positive strand";
             break;
@@ -643,6 +643,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.15  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.

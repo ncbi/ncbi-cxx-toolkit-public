@@ -97,8 +97,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos cds_to;
     if (has_cds) {
         const CSeq_loc& loc = it->GetLocation();
-        cds_from = sequence::GetStart(loc);
-        cds_to   = sequence::GetStop(loc);
+        cds_from = sequence::GetStart(loc, 0);
+        cds_to   = sequence::GetStop(loc, 0);
     }
 
 
@@ -433,16 +433,16 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             const CSeq_loc& gene_loc = it->GetLocation();
             if (is_minus) {
                 if (sequence::GetStrand(gene_loc) == eNa_strand_minus) {
-                    if (sequence::GetStart(gene_loc) > genomic_start) {
-                        shortest_dist = sequence::GetStart(gene_loc)
+                    if (sequence::GetStart(gene_loc, 0) > genomic_start) {
+                        shortest_dist = sequence::GetStart(gene_loc, 0)
                             - genomic_start - 1;
                     }
                 }
             } else {
                 if (sequence::GetStrand(gene_loc) != eNa_strand_minus) {
-                    if (sequence::GetStop(gene_loc) < genomic_start) {
+                    if (sequence::GetStop(gene_loc, 0) < genomic_start) {
                         shortest_dist = genomic_start
-                            - sequence::GetStop(gene_loc) - 1;
+                            - sequence::GetStop(gene_loc, 0) - 1;
                     }
                 }
             }
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/18 21:27:40  grichenk
+ * Removed default value for scope argument in seq-loc related functions.
+ *
  * Revision 1.8  2004/11/16 21:41:11  grichenk
  * Removed default value for CScope* argument in CSeqMap methods
  *

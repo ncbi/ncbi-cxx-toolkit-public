@@ -56,44 +56,49 @@ BEGIN_SCOPE(sequence)
  */
 
 
+/** @name Basic information
+ * Basic seq-loc information and verification
+ * @{
+ */
+
 /// Get sequence length if scope not null, else return max possible TSeqPos
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetLength(const CSeq_id& id, CScope* scope = 0);
+TSeqPos GetLength(const CSeq_id& id, CScope* scope);
 
 /// Get length of sequence represented by CSeq_loc, if possible
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetLength(const CSeq_loc& loc, CScope* scope = 0);
+TSeqPos GetLength(const CSeq_loc& loc, CScope* scope);
 
 /// Get length of CSeq_loc_mix == sum (length of embedded CSeq_locs)
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope = 0);
+TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope);
 
 /// Checks that point >= 0 and point < length of Bioseq
 NCBI_XOBJUTIL_EXPORT
-bool IsValid(const CSeq_point& pt, CScope* scope = 0);
+bool IsValid(const CSeq_point& pt, CScope* scope);
 
 /// Checks that all points >=0 and < length of CBioseq. If scope is 0
 /// assumes length of CBioseq is max value of TSeqPos.
 NCBI_XOBJUTIL_EXPORT
-bool IsValid(const CPacked_seqpnt& pts, CScope* scope = 0);
+bool IsValid(const CPacked_seqpnt& pts, CScope* scope);
 
 /// Checks from and to of CSeq_interval. If from < 0, from > to, or
 /// to >= length of CBioseq this is an interval for, returns false, else true.
 NCBI_XOBJUTIL_EXPORT
-bool IsValid(const CSeq_interval& interval, CScope* scope = 0);
+bool IsValid(const CSeq_interval& interval, CScope* scope);
 
 /// Determines if two CSeq_ids represent the same CBioseq
 NCBI_XOBJUTIL_EXPORT
-bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope = 0);
+bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope);
 
 /// Returns true if all embedded CSeq_ids represent the same CBioseq, else false
 NCBI_XOBJUTIL_EXPORT
-bool IsOneBioseq(const CSeq_loc& loc, CScope* scope = 0);
+bool IsOneBioseq(const CSeq_loc& loc, CScope* scope);
 
 /// If all CSeq_ids embedded in CSeq_loc refer to the same CBioseq, returns
 /// the first CSeq_id found, else throws CObjmgrUtilException exception.
 NCBI_XOBJUTIL_EXPORT
-const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0);
+const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope);
 
 
 /// Returns eNa_strand_unknown if multiple Bioseqs in loc
@@ -108,44 +113,17 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope = 0);
 /// CSeq_ids represent the same CBioseq. Throws CObjmgrUtilException if
 /// CSeq_loc does not represent one CBioseq.
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetStart(const CSeq_loc& loc, CScope* scope = 0);
+TSeqPos GetStart(const CSeq_loc& loc, CScope* scope);
 
 /// If only one CBioseq is represented by CSeq_loc, returns the highest residue
 /// position represented. If not null, scope is used to determine if two
 /// CSeq_ids represent the same CBioseq. Throws CObjmgrUtilException exception
 /// if CSeq_loc does not represent one CBioseq.
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetStop(const CSeq_loc& loc, CScope* scope = 0);
+TSeqPos GetStop(const CSeq_loc& loc, CScope* scope);
 
 
-/// Containment relationships between CSeq_locs
-enum ECompare {
-    eNoOverlap = 0, ///< CSeq_locs do not overlap
-    eContained,     ///< First CSeq_loc contained by second
-    eContains,      ///< First CSeq_loc contains second
-    eSame,          ///< CSeq_locs contain each other
-    eOverlap        ///< CSeq_locs overlap
-};
-
-/// Returns the sequence::ECompare containment relationship between CSeq_locs
-NCBI_XOBJUTIL_EXPORT
-sequence::ECompare Compare(const CSeq_loc& loc1,
-                           const CSeq_loc& loc2,
-                           CScope* scope = 0);
-
-
-/// Change a CSeq_id to the one for the CBioseq that it represents
-/// that has the best rank or worst rank according on value of best.
-/// Just returns if scope == 0
-NCBI_XOBJUTIL_EXPORT
-void ChangeSeqId(CSeq_id* id, bool best, CScope* scope = 0);
-
-/// Change each of the CSeq_ids embedded in a CSeq_loc to the best
-/// or worst CSeq_id accoring to the value of best. Just returns if
-/// scope == 0
-NCBI_XOBJUTIL_EXPORT
-void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope = 0);
-
+/// SeqLocCheck results
 enum ESeqLocCheck {
     eSeqLocCheck_ok,
     eSeqLocCheck_warning,
@@ -164,11 +142,59 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope);
 
 /// Returns true if the order of Seq_locs is bad, otherwise, false
 NCBI_XOBJUTIL_EXPORT
-bool BadSeqLocSortOrder
-(const CBioseq&  seq,
- const CSeq_loc& loc,
- CScope*         scope);
+bool BadSeqLocSortOrder(const CBioseq&  seq,
+                        const CSeq_loc& loc,
+                        CScope*         scope);
 
+/* @} */
+
+
+/** @name Compare
+ * Containment relationships between CSeq_locs
+ * @{
+ */
+
+enum ECompare {
+    eNoOverlap = 0, ///< CSeq_locs do not overlap
+    eContained,     ///< First CSeq_loc contained by second
+    eContains,      ///< First CSeq_loc contains second
+    eSame,          ///< CSeq_locs contain each other
+    eOverlap        ///< CSeq_locs overlap
+};
+
+/// Returns the sequence::ECompare containment relationship between CSeq_locs
+NCBI_XOBJUTIL_EXPORT
+sequence::ECompare Compare(const CSeq_loc& loc1,
+                           const CSeq_loc& loc2,
+                           CScope*         scope);
+
+/* @} */
+
+
+/** @name Change id
+ * Replace seq-id with the best or worst rank
+ * @{
+ */
+
+/// Change a CSeq_id to the one for the CBioseq that it represents
+/// that has the best rank or worst rank according on value of best.
+/// Just returns if scope == 0
+NCBI_XOBJUTIL_EXPORT
+void ChangeSeqId(CSeq_id* id, bool best, CScope* scope);
+
+/// Change each of the CSeq_ids embedded in a CSeq_loc to the best
+/// or worst CSeq_id accoring to the value of best. Just returns if
+/// scope == 0
+NCBI_XOBJUTIL_EXPORT
+void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope);
+
+/* @} */
+
+
+/** @name Overlapping
+ * Overlapping of seq-locs
+ * @{
+ */
 
 enum EOffsetType {
     /// For positive-orientation strands, start = left and end = right;
@@ -178,6 +204,7 @@ enum EOffsetType {
     eOffset_FromLeft,  ///< relative to low-numbered end
     eOffset_FromRight  ///< relative to high-numbered end
 };
+
 /// returns (TSeqPos)-1 if the locations don't overlap
 NCBI_XOBJUTIL_EXPORT
 TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
@@ -198,61 +225,77 @@ enum EOverlapType {
 NCBI_XOBJUTIL_EXPORT
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
-                   EOverlapType type,
-                   TSeqPos circular_len = kInvalidSeqPos,
-                   CScope* scope = 0);
+                   EOverlapType    type,
+                   TSeqPos         circular_len = kInvalidSeqPos,
+                   CScope*         scope = 0);
 
+/// 8-bit version of TestForOverlap()
 NCBI_XOBJUTIL_EXPORT
 Int8 x_TestForOverlap(const CSeq_loc& loc1,
                       const CSeq_loc& loc2,
-                      EOverlapType type,
-                      TSeqPos circular_len = kInvalidSeqPos,
-                      CScope* scope = 0);
+                      EOverlapType    type,
+                      TSeqPos         circular_len = kInvalidSeqPos,
+                      CScope*         scope = 0);
+
+/* @} */
+
+
+/** @name PartialCheck
+ * Sets bits for incomplete location and/or errors
+ * @{
+ */
 
 enum ESeqlocPartial {
-    eSeqlocPartial_Complete   =   0,
-    eSeqlocPartial_Start      =   1,
-    eSeqlocPartial_Stop       =   2,
-    eSeqlocPartial_Internal   =   4,
-    eSeqlocPartial_Other      =   8,
-    eSeqlocPartial_Nostart    =  16,
-    eSeqlocPartial_Nostop     =  32,
-    eSeqlocPartial_Nointernal =  64,
-    eSeqlocPartial_Limwrong   = 128,
-    eSeqlocPartial_Haderror   = 256
+    eSeqlocPartial_Complete   = 0,
+    eSeqlocPartial_Start      = 1<<0,
+    eSeqlocPartial_Stop       = 1<<1,
+    eSeqlocPartial_Internal   = 1<<2,
+    eSeqlocPartial_Other      = 1<<3,
+    eSeqlocPartial_Nostart    = 1<<4,
+    eSeqlocPartial_Nostop     = 1<<5,
+    eSeqlocPartial_Nointernal = 1<<6,
+    eSeqlocPartial_Limwrong   = 1<<7,
+    eSeqlocPartial_Haderror   = 1<<8
 };
    
-
-/// Sets bits for incomplete location and/or errors
 NCBI_XOBJUTIL_EXPORT
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 
+/* @} */
+
+
+/** @name SeqLocMerge
+ * Old merging functions
+ * @{
+ */
+
 enum ESeqLocFlags
 {
-    fMergeIntervals  = 1,    ///< merge overlapping intervals
-    fFuseAbutting    = 2,    ///< fuse together abutting intervals
-    fSingleInterval  = 4,    ///< create a single interval
-    fAddNulls        = 8     ///< will add a null Seq-loc between intervals 
+    fMergeIntervals  = 1<<0,    ///< merge overlapping intervals
+    fFuseAbutting    = 1<<1,    ///< fuse together abutting intervals
+    fSingleInterval  = 1<<2,    ///< create a single interval
+    fAddNulls        = 1<<3     ///< will add a null Seq-loc between intervals 
 };
 typedef unsigned int TSeqLocFlags;  // logical OR of ESeqLocFlags
 
 /// Merge two Seq-locs returning the merged location.
 NCBI_XOBJUTIL_EXPORT
 CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
-                      const CSeq_loc& loc1, const CSeq_loc& loc2,
-                      TSeqLocFlags flags = 0);
+                      const CSeq_loc&       loc1,
+                      const CSeq_loc&       loc2,
+                      TSeqLocFlags          flags = 0);
 
 /// Merge a single Seq-loc
 NCBI_XOBJUTIL_EXPORT
 CSeq_loc* SeqLocMergeOne(const CBioseq_Handle& target,
-                        const CSeq_loc& loc,
-                        TSeqLocFlags flags = 0);
+                        const CSeq_loc&        loc,
+                        TSeqLocFlags           flags = 0);
 
 /// Merge a set of locations, returning the result.
 template<typename LocContainer>
 CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
-                      LocContainer& locs,
-                      TSeqLocFlags flags = 0)
+                      LocContainer&         locs,
+                      TSeqLocFlags          flags = 0)
 {
     // create a single Seq-loc holding all the locations
     CSeq_loc temp;
@@ -262,35 +305,41 @@ CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
     return SeqLocMergeOne(target, temp, flags);
 }
 
+/* @} */
 
+
+/// Get reverse complement of the seq-loc (?)
 NCBI_XOBJUTIL_EXPORT
-CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope = 0);
+CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope);
 
 
-/// All operations create and return a new seq-loc object.
-/// Optional scope or synonym mapper may be provided to detect and convert
-/// synonyms of a bioseq.
+/** @name Operations
+ * Seq-loc operations
+ * All operations create and return a new seq-loc object.
+ * Optional scope or synonym mapper may be provided to detect and convert
+ * synonyms of a bioseq.
+ * @{
+ */
 
-/// Merge ranges in a seq-loc
+/// Merge ranges in the seq-loc
 NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Merge(const CSeq_loc& loc,
+CRef<CSeq_loc> Seq_loc_Merge(const CSeq_loc&    loc,
                              CSeq_loc::TOpFlags flags,
-                             CScope* scope);
+                             CScope*            scope);
 
 /// Add two seq-locs
 NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Add(const CSeq_loc& loc1,
-                           const CSeq_loc& loc2,
+CRef<CSeq_loc> Seq_loc_Add(const CSeq_loc&    loc1,
+                           const CSeq_loc&    loc2,
                            CSeq_loc::TOpFlags flags,
-                           CScope* scope);
+                           CScope*            scope);
 
 /// Subtract the second seq-loc from the first one
 NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Subtract(const CSeq_loc& loc1,
-                                const CSeq_loc& loc2,
+CRef<CSeq_loc> Seq_loc_Subtract(const CSeq_loc&    loc1,
+                                const CSeq_loc&    loc2,
                                 CSeq_loc::TOpFlags flags,
-                                CScope* scope);
-
+                                CScope*            scope);
 
 /* @} */
 
@@ -302,6 +351,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.4  2004/11/18 15:56:51  grichenk
 * Added Doxigen comments, removed THROWS.
 *

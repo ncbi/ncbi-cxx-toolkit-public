@@ -115,8 +115,8 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
     m_Blast(new blast::CBl2Seq(blast::SSeqLoc(transcript, scope),
                                blast::SSeqLoc(genomic, scope),
                                blast::eMegablast)),
-    m_TranscriptId(&sequence::GetId(transcript)),
-    m_GenomicId   (&sequence::GetId(genomic))
+    m_TranscriptId(&sequence::GetId(transcript, &scope)),
+    m_GenomicId   (&sequence::GetId(genomic, &scope))
 {    
     CRef<CSplicedAligner> aligner(new CSplicedAligner16);
     m_Splign->SetAligner() = aligner;
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.9  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.8  2004/07/07 21:40:12  kapustin
 * Fix a typo in CSplignObjMgrAccessor::Load
 *

@@ -512,7 +512,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             // if not local bioseq product, lower severity
             EDiagSev sev = eDiag_Warning;
             if ( IsOneBioseq(feat.GetProduct(), m_Scope) ) {
-                const CSeq_id& prod_id = GetId(feat.GetProduct());
+                const CSeq_id& prod_id = GetId(feat.GetProduct(), m_Scope);
                 CBioseq_Handle prod =
                     m_Scope->GetBioseqHandleFromTSE(prod_id, m_Imp.GetTSE());
                 if ( !prod ) {
@@ -765,7 +765,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
                 "Code-break location not in coding region", feat);
         }
         if ( prev_cbr != 0 ) {
-            if ( Compare(cbr_loc, prev_cbr->GetLoc()) == eSame ) {
+            if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope) == eSame ) {
                 string msg = "Multiple code-breaks at same location";
                 string str;
                 cbr_loc.GetLabel(&str);
@@ -1076,7 +1076,9 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             bool bad_anticodon = false;
             for ( CSeq_loc_CI it(anticodon); it; ++it ) {
                 anticodon_len += GetLength(anticodon, m_Scope);
-                ECompare comp = sequence::Compare(anticodon, feat.GetLocation());
+                ECompare comp = sequence::Compare(anticodon,
+                                                  feat.GetLocation(),
+                                                  m_Scope);
                 if ( comp != eContained  &&  comp != eSame ) {
                     bad_anticodon = true;
                 }
@@ -2489,7 +2491,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     const CSeq_id* protid = 0;
     try {
-        protid = &GetId(product);
+        protid = &GetId(product, m_Scope);
     } catch (CException&) {}
     CBioseq_Handle prot_handle;
     if (protid != NULL) {
@@ -3039,6 +3041,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.71  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.

@@ -505,7 +505,8 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
             // make sure the feature contains our feature of interest
             sequence::ECompare comp =
                 sequence::Compare(feat_iter->GetLocation(),
-                                  cds_feat.GetLocation());
+                                  cds_feat.GetLocation(),
+                                  &scope);
             if (comp != sequence::eContains  &&
                 comp != sequence::eSame) {
                 continue;
@@ -524,7 +525,7 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
             // this may throw, if the product spans multiple sequences
             // this would be extremely unlikely, but we catch anyway
             const CSeq_id& product_id =
-                sequence::GetId(cds_feat.GetProduct());
+                sequence::GetId(cds_feat.GetProduct(), &scope);
 
             CFeat_CI feat_iter(scope, cds_feat.GetLocation(), sel);
             for ( ;  feat_iter  &&  !mrna_feat;  ++feat_iter) {
@@ -542,7 +543,8 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
                 // make sure the feature contains our feature of interest
                 sequence::ECompare comp =
                     sequence::Compare(mrna.GetLocation(),
-                                      cds_feat.GetLocation());
+                                      cds_feat.GetLocation(),
+                                      &scope);
                 if (comp != sequence::eContains  &&
                     comp != sequence::eSame) {
                     continue;
@@ -619,7 +621,7 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                 // this may throw, if the product spans multiple sequences
                 // this would be extremely unlikely, but we catch anyway
                 const CSeq_id& mrna_product  =
-                    sequence::GetId(mrna_feat.GetProduct());
+                    sequence::GetId(mrna_feat.GetProduct(), &scope);
                 CBioseq_Handle mrna_handle =
                     scope.GetBioseqHandle(mrna_product);
 
@@ -630,7 +632,8 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
                      for ( ;  iter;  ++iter) {
                          if (iter->IsSetProduct()) {
                              protein_id.Reset
-                                 (&sequence::GetId(iter->GetProduct()));
+                                 (&sequence::GetId(iter->GetProduct(),
+                                 &scope));
                              break;
                          }
                      }
@@ -689,7 +692,8 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
             // make sure the feature contains our feature of interest
             sequence::ECompare comp =
                 sequence::Compare(feat_iter->GetLocation(),
-                                  mrna_feat.GetLocation());
+                                  mrna_feat.GetLocation(),
+                                  &scope);
             if (comp != sequence::eContained  &&
                 comp != sequence::eSame) {
                 continue;
@@ -2303,6 +2307,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.104  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.103  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.

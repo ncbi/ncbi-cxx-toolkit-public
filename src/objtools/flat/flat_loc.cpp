@@ -83,7 +83,8 @@ void CFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         if (accn == ctx.GetAccession()) {
             l = ctx.GetHandle().GetBioseqCore()->GetInst().GetLength();
         } else {
-            l = sequence::GetLength(loc.GetWhole());
+            CScope* scope = &ctx.GetHandle().GetScope();
+            l = sequence::GetLength(loc.GetWhole(), scope);
         }
         oss << "1.." << l;
         x_AddInt(0, l - 1, accn);
@@ -301,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.9  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

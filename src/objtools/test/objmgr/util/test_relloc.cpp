@@ -114,7 +114,8 @@ int CRelLocTester::Run(void)
         SRelLoc rl(*parent, child, &scope);
         if (rl.m_Ranges.empty()) {
             cout << "nothing" << endl;
-            _ASSERT(sequence::Compare(*parent, child) == sequence::eNoOverlap);
+            _ASSERT(sequence::Compare(*parent, child, &scope) ==
+                    sequence::eNoOverlap);
         } else {
             string sep;
             ITERATE (SRelLoc::TRanges, r, rl.m_Ranges) {
@@ -143,6 +144,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.9  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *

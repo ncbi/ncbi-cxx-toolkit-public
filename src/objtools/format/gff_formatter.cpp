@@ -398,7 +398,7 @@ string CGFFFormatter::x_GetTranscriptID
                 // this may throw, if the product spans multiple sequences
                 // this would be extremely unlikely, but we catch anyway
                 const CSeq_id& product_id =
-                    sequence::GetId(seqfeat.GetProduct());
+                    sequence::GetId(seqfeat.GetProduct(), 0);
 
                 SAnnotSelector sel;
                 sel.SetOverlapIntervals()
@@ -419,7 +419,8 @@ string CGFFFormatter::x_GetTranscriptID
                     // make sure the feature contains our feature of interest
                     sequence::ECompare comp =
                         sequence::Compare(mrna.GetLocation(),
-                                          seqfeat.GetLocation());
+                                          seqfeat.GetLocation(),
+                                          0);
                     if (comp != sequence::eContains  &&
                         comp != sequence::eSame) {
                         continue;
@@ -476,7 +477,7 @@ string CGFFFormatter::x_GetTranscriptID
     //
     if (mrna_feat.GetPointer()  &&  mrna_feat->IsSetProduct()) {
         try {
-            const CSeq_id& id = sequence::GetId(mrna_feat->GetProduct());
+            const CSeq_id& id = sequence::GetId(mrna_feat->GetProduct(), 0);
             string transcript_id =
                 ctx.GetPreferredSynonym(id).GetSeqIdString(true);
             return transcript_id;
@@ -612,6 +613,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.10  2004/09/03 16:59:20  dicuccio
 * Altered handling of stop codon: remap original CDS location to original
 * location minus three bases to account for stop codons that span exon

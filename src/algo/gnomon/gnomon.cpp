@@ -368,9 +368,10 @@ void CGnomon::Run(void)
         feat_gene->SetLocation().SetInt().SetStrand
             (strand == Plus ? eNa_strand_plus : eNa_strand_minus);
 
-        const CSeq_id& loc_id = sequence::GetId(feat_mrna->GetLocation());
+        const CSeq_id& loc_id = sequence::GetId(feat_mrna->GetLocation(), 0);
 
-        feat_gene->SetLocation().SetId(sequence::GetId(feat_mrna->GetLocation()));
+        feat_gene->SetLocation().SetId
+            (sequence::GetId(feat_mrna->GetLocation(), 0));
 
         ftable.push_back(feat_gene);
         ftable.push_back(feat_mrna);
@@ -392,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/18 21:27:40  grichenk
+ * Removed default value for scope argument in seq-loc related functions.
+ *
  * Revision 1.8  2004/11/12 17:39:36  dicuccio
  * Temporary fix: don't segfault if no CDS features can be created
  *

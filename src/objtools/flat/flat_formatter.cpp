@@ -161,7 +161,8 @@ void IFlatFormatter::Format(const CSeq_loc& loc, bool adjust_coords,
                             IFlatItemOStream& out, CFlatContext* ctx)
 {
     if ( !adjust_coords ) {
-        _ASSERT(sequence::IsOneBioseq(loc)); // otherwise, should split...
+        // otherwise, should split...
+        _ASSERT(sequence::IsOneBioseq(loc, &ctx->GetHandle().GetScope()));
     }
 
     CBioseq_Handle h = m_Scope->GetBioseqHandle(loc);
@@ -344,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.10  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *

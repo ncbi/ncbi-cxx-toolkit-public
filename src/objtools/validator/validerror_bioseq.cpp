@@ -1645,13 +1645,13 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
            if (!IsOneBioseq(**i1, m_Scope)) {
                 continue;
             }
-            const CSeq_id& id1 = GetId(**i1);
+            const CSeq_id& id1 = GetId(**i1, m_Scope);
             list< CRef<CSeq_loc> >::const_iterator i2 = i1;
             for (++i2; i2 != locs.end(); ++i2) {
                 if (!IsOneBioseq(**i2, m_Scope)) {
                     continue;
                 }
-                const CSeq_id& id2 = GetId(**i2);
+                const CSeq_id& id2 = GetId(**i2, m_Scope);
                 if (IsSameBioseq(id1, id2, m_Scope)) {
                     CNcbiOstrstream os;
                     os << id1.DumpAsFasta();
@@ -2079,7 +2079,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
     
     for ( CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); fi; ++fi ) {
         const CSeq_loc& loc = fi->GetOriginalFeature().GetLocation();
-        if ( !IsOneBioseq(loc) ) {  // skip segmented 
+        if ( !IsOneBioseq(loc, m_Scope) ) {  // skip segmented 
             continue;
         }
         CSeq_loc_CI si(loc);
@@ -2402,8 +2402,8 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         const string& locus_tag = grp->GetLocus_tag();
    
         
-        CBioseq_Handle prod =
-                m_Scope->GetBioseqHandleFromTSE(GetId(feat.GetProduct()), m_Imp.GetTSE());
+        CBioseq_Handle prod = m_Scope->GetBioseqHandleFromTSE
+            (GetId(feat.GetProduct(), m_Scope), m_Imp.GetTSE());
         if (prod == NULL) {
             continue;
         }
@@ -3901,6 +3901,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.91  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.90  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.

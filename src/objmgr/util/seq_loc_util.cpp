@@ -2090,12 +2090,13 @@ Int8 x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
 
 Int8 x_TestForOverlap_MultiStrand(const CSeq_loc& loc1,
                                   const CSeq_loc& loc2,
-                                  EOverlapType type)
+                                  EOverlapType type,
+                                  CScope* scope)
 {
     switch (type) {
     case eOverlap_Interval:
         {
-            if (Compare(loc1, loc2) == eNoOverlap) {
+            if (Compare(loc1, loc2, scope) == eNoOverlap) {
                 return -1;
             }
             // Proceed to eSimple case to calculate diff by strand
@@ -2221,7 +2222,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
         if ( type != eOverlap_Subset ) { // Subset does not use total ranges
             if ( strand1 == eNa_strand_other  ||
                 strand2 == eNa_strand_other ) {
-                return x_TestForOverlap_MultiStrand(loc1, loc2, type);
+                return x_TestForOverlap_MultiStrand(loc1, loc2, type, scope);
             }
             return -1;
         }
@@ -2351,10 +2352,10 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Subset:
         {
             // loc1 should contain loc2
-            if ( Compare(loc1, loc2) != eContains ) {
+            if ( Compare(loc1, loc2, scope) != eContains ) {
                 return -1;
             }
-            return Int8(GetLength(loc1)) - Int8(GetLength(loc2));
+            return Int8(GetLength(loc1, scope)) - Int8(GetLength(loc2, scope));
         }
     case eOverlap_CheckIntervals:
         {
@@ -2378,7 +2379,8 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                 for ( ; it1  &&  it1.GetRange().GetTo() >= loc2start; ++it1) {
                     if (it1.GetRange().GetTo() >= loc2end  &&
                         TestForIntervals(it1, it2, true)) {
-                        return Int8(GetLength(loc1)) - Int8(GetLength(loc2));
+                        return Int8(GetLength(loc1, scope)) -
+                            Int8(GetLength(loc2, scope));
                     }
                 }
             }
@@ -2390,7 +2392,8 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
                     if (it1.GetSeq_id().Equals(it2.GetSeq_id())  &&
                         it1.GetRange().GetFrom() <= loc2start  &&
                         TestForIntervals(it1, it2, false)) {
-                        return Int8(GetLength(loc1)) - Int8(GetLength(loc2));
+                        return Int8(GetLength(loc1, scope)) -
+                            Int8(GetLength(loc2, scope));
                     }
                 }
             }
@@ -2398,7 +2401,7 @@ Int8 x_TestForOverlap(const CSeq_loc& loc1,
         }
     case eOverlap_Interval:
         {
-            return (Compare(loc1, loc2) == eNoOverlap) ? -1
+            return (Compare(loc1, loc2, scope) == eNoOverlap) ? -1
                 : AbsInt8(rg2.GetFrom() - rg1.GetFrom()) +
                 AbsInt8(rg1.GetTo() - rg2.GetTo());
         }
@@ -2801,6 +2804,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.4  2004/11/18 15:56:51  grichenk
 * Added Doxigen comments, removed THROWS.
 *

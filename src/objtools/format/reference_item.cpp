@@ -376,7 +376,7 @@ static void s_MergeDuplicates
                 const CSeq_loc* curr_loc = curr_ref.GetLoc();
                 const CSeq_loc* prev_loc = prev_ref.GetLoc();
                 if (curr_loc != NULL  &&  prev_loc != NULL) {
-                    if (Compare(*curr_loc, *prev_loc) == eSame) {
+                    if (Compare(*curr_loc, *prev_loc, 0) == eSame) {
                         string curr_auth = CReferenceItem::GetAuthString(curr_ref.GetAuthors());
                         string prev_auth = CReferenceItem::GetAuthString(prev_ref.GetAuthors());
                         if (NStr::EqualNocase(curr_auth, prev_auth)) {
@@ -1485,6 +1485,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/11/18 21:27:40  grichenk
+* Removed default value for scope argument in seq-loc related functions.
+*
 * Revision 1.24  2004/11/15 20:11:09  shomrat
 * Handle electronic publications
 *
