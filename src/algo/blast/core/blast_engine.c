@@ -51,7 +51,7 @@ BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
 {
    BlastExtendWordFree(aux_struct->ewp);
    BLAST_InitHitListFree(aux_struct->init_hitlist);
-   BlastHSPListFree(aux_struct->hsp_list);
+   Blast_HSPListFree(aux_struct->hsp_list);
    sfree(aux_struct->query_offsets);
    sfree(aux_struct->subject_offsets);
    
@@ -268,12 +268,12 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          AdjustOffsetsInHSPList(hsp_list, offset);
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
-         MergeHSPLists(hsp_list, &combined_hsp_list, hsp_num_max, offset,
-            (Uint1) (hsp_list->traceback_done || !score_options->gapped_calculation));
+         Blast_HSPListsMerge(hsp_list, &combined_hsp_list, hsp_num_max, offset,
+            (hsp_list->traceback_done || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
       
-      AppendHSPList(combined_hsp_list, hsp_list_out, hsp_num_max);
-      combined_hsp_list = BlastHSPListFree(combined_hsp_list);
+      Blast_HSPListAppend(combined_hsp_list, hsp_list_out, hsp_num_max);
+      combined_hsp_list = Blast_HSPListFree(combined_hsp_list);
    } /* End loop on frames */
 
    hsp_list = *hsp_list_out;
@@ -428,7 +428,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    else
       aux_struct->GetGappedScore = BLAST_MbGetGappedScore;
 
-   aux_struct->hsp_list = BlastHSPListNew();
+   aux_struct->hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
    return status;
 }
 

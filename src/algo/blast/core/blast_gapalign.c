@@ -50,10 +50,6 @@ static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
 static Int4 BLAST_AlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M, 
    Int4* pej, Int4* pei, BlastGapAlignStruct* gap_align,
    const BlastScoringOptions* score_options, Boolean reverse_sequence);
-static Int2 
-BLAST_SaveHsp(BlastGapAlignStruct* gap_align, BlastInitHSP* init_hsp, 
-   BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options, 
-   Int4 query_context, Int2 subject_frame);
 
 static Int2 BLAST_ProtGappedAlignment(Uint1 program, 
    BLAST_SequenceBlk* query_in, BLAST_SequenceBlk* subject_in,
@@ -2255,7 +2251,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
    Int4 context;
 
    if (*hsp_list_ptr == NULL)
-      *hsp_list_ptr = hsp_list = BlastHSPListNew();
+      *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
    else 
       hsp_list = *hsp_list_ptr;
 
@@ -2317,8 +2313,13 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
             /* gap_align contains alignment endpoints; init_hsp contains 
                the offsets to start the alignment from, if traceback is to 
                be performed later */
-            BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, 
-                          context, 1); 
+            BlastHSP* new_hsp;
+            Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
+                           gap_align->subject_start, gap_align->subject_stop, 
+                           init_hsp->q_off, init_hsp->s_off, 
+                           context, 1, gap_align->score,
+                           &(gap_align->edit_block), &new_hsp);
+            Blast_HSPListSaveHSP(hsp_list, new_hsp);
          }
       }
    }
@@ -2792,173 +2793,6 @@ static Int4 BLAST_AlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     return best_score;
 }
 
-static void SavePatternLengthInBlastHSP(BlastInitHSP* init_hsp, 
-                                        BlastHSP* hsp)
-{
-   /* Kludge: reuse the variables in the BlastHSP structure that are 
-      otherwise unused in PHI BLAST, but have a completely different
-      meaning for other program(s). Here we need to save information
-   */
-   hsp->pattern_length = init_hsp->ungapped_data->length;
-   return;
-}
-
-#define BLAST_SAVE_ITER_MAX 20
-
-/** Saves full BLAST HSP information into a BlastHSPList 
- * structure
- * @param gap_align The structure holding gapped alignment information [in]
- * @param init_hsp The initial HSP information [in]
- * @param hsp_list Structure holding all HSPs with full gapped alignment 
- *        information [in] [out]
- * @param hit_options Options related to saving hits [in]
- * @param query_context The index of the query containing this HSP
- * @param subject_frame Subject frame: -3..3 for translated sequence, 
- *        1 for blastn, 0 for blastp [in]
- */
-static Int2 BLAST_SaveHsp(BlastGapAlignStruct* gap_align, 
-   BlastInitHSP* init_hsp, BlastHSPList* hsp_list, 
-   const BlastHitSavingOptions* hit_options, Int4 query_context,
-   Int2 subject_frame)
-{
-   BlastHSP** hsp_array,* new_hsp;
-   Int4 highscore, lowscore, score = 0;
-   Int4 hspcnt, hspmax, index, new_index, high_index, old_index, low_index;
-   Int4 new_hspmax;
-
-   hspcnt = hsp_list->hspcnt;
-   hspmax = hsp_list->allocated;
-   
-   /* Check if list is already full, then reallocate. */
-   if (hspcnt >= hspmax-1 && hsp_list->do_not_reallocate == FALSE)
-   {
-      new_hspmax = 2*hsp_list->allocated;
-      if (hit_options->hsp_num_max)
-         new_hspmax = MIN(new_hspmax, hit_options->hsp_num_max);
-      if (new_hspmax > hsp_list->allocated) {
-         hsp_array = (BlastHSP**)
-            realloc(hsp_list->hsp_array, hsp_list->allocated*2*sizeof(BlastHSP*));
-         if (hsp_array == NULL)
-         {
-#ifdef ERR_POST_EX_DEFINED
-            ErrPostEx(SEV_WARNING, 0, 0, 
-               "UNABLE to reallocate in BLAST_SaveHsp,"
-               " continuing with fixed array of %ld HSP's", 
-                      (long) hspmax);
-#endif
-            hsp_list->do_not_reallocate = TRUE; 
-         } else {
-            hsp_list->hsp_array = hsp_array;
-            hsp_list->allocated = new_hspmax;
-            hspmax = new_hspmax;
-         }
-      } else {
-         hsp_list->do_not_reallocate = TRUE; 
-      }
-   }
-
-   hsp_array = hsp_list->hsp_array;
-
-   new_hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
-
-   if (gap_align) {
-      score = gap_align->score;
-      new_hsp->query.offset = gap_align->query_start;
-      new_hsp->subject.offset = gap_align->subject_start;
-      new_hsp->query.length = 
-         gap_align->query_stop - gap_align->query_start;
-      new_hsp->subject.length = 
-         gap_align->subject_stop - gap_align->subject_start;
-
-      new_hsp->query.end = gap_align->query_stop;
-      new_hsp->subject.end = gap_align->subject_stop;
-      new_hsp->gap_info = gap_align->edit_block;
-      gap_align->edit_block = NULL;
-   } else if (init_hsp->ungapped_data) {
-      score = init_hsp->ungapped_data->score;
-      new_hsp->query.offset = init_hsp->ungapped_data->q_start;
-      new_hsp->query.end = 
-         init_hsp->ungapped_data->q_start + init_hsp->ungapped_data->length;
-      new_hsp->subject.offset = init_hsp->ungapped_data->s_start;
-      new_hsp->subject.end = 
-         init_hsp->ungapped_data->s_start + init_hsp->ungapped_data->length;
-      new_hsp->query.length = init_hsp->ungapped_data->length;
-      new_hsp->subject.length = init_hsp->ungapped_data->length;
-   }
-
-   new_hsp->score = score;
-   new_hsp->context = query_context;
-   new_hsp->subject.frame = subject_frame;
-   new_hsp->query.gapped_start = MIN(init_hsp->q_off, new_hsp->query.end-1);
-   new_hsp->subject.gapped_start = 
-      MIN(init_hsp->s_off, new_hsp->subject.end-1);
-
-   if (hit_options->phi_align) {
-      SavePatternLengthInBlastHSP(init_hsp, new_hsp);
-   }
-
-   /* If we are saving ALL HSP's, simply save and sort later. */
-   if (hsp_list->do_not_reallocate == FALSE)
-   {
-      hsp_array[hsp_list->hspcnt] = new_hsp;
-      (hsp_list->hspcnt)++;
-      return 0;
-   }
-
-   /* Use a binary search to insert the HSP. */
-
-   if (hspcnt != 0) {
-      highscore = hsp_array[0]->score;
-      lowscore = hsp_array[hspcnt-1]->score;
-   } else {
-      highscore = 0;
-      lowscore = 0;
-   }
-
-   if (score >= highscore) {
-      new_index = 0;
-   } else if (score <= lowscore) {
-      new_index = hspcnt;
-   } else {
-      low_index = 0;
-      high_index = hspcnt-1;
-      new_index = (low_index+high_index)/2;
-      old_index = new_index;
-      
-      for (index=0; index<BLAST_SAVE_ITER_MAX; index++)
-      {
-         if (score > hsp_array[new_index]->score)
-            high_index = new_index;
-         else
-            low_index = new_index;
-         new_index = (low_index+high_index)/2;
-         if (new_index == old_index) { 
-            /* Perform this check as new_index get rounded DOWN above.*/
-            if (score < hsp_array[new_index]->score)
-               new_index++;
-            break;
-         }
-         old_index = new_index;
-      }
-   }
-
-   if (hspcnt >= hspmax-1) {
-      if (new_index >= hspcnt) { 
-         /* this HSP is less significant than others on a full list.*/
-         sfree(new_hsp);
-         return 0;
-      } else { /* Delete the last HSP on the list. */
-         hspcnt = hsp_list->hspcnt--;
-         sfree(hsp_array[hspcnt-1]);
-      }
-   }
-   hsp_list->hspcnt++;
-   memmove((hsp_array+new_index+1), (hsp_array+new_index), (hspcnt-new_index)*sizeof(hsp_array[0]));
-   hsp_array[new_index] = new_hsp;
-   
-   return 0;
-}
-
 /** Callback for sorting initial HSPs by score. */
 static int
 score_compare_match(const void* v1, const void* v2)
@@ -3079,7 +2913,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    orig_pssm = gap_align->sbp->posMatrix;
 
    if (*hsp_list_ptr == NULL)
-      *hsp_list_ptr = hsp_list = BlastHSPListNew();
+      *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
    else 
       hsp_list = *hsp_list_ptr;
 
@@ -3219,6 +3053,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
       if (!hsp_start_is_contained || !hsp_end_is_contained || 
           (hsp1 && init_hsp->ungapped_data && 
            init_hsp->ungapped_data->score > hsp1->score)) {
+         BlastHSP* new_hsp;
 #ifdef NEWBLAST_COLLECT_STATS
          real_gap_number_of_hsps++;
 #endif
@@ -3249,8 +3084,12 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
             return status;
          }
 
-         BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, context,
-                       subject->frame);
+         Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
+                       gap_align->subject_start, gap_align->subject_stop, 
+                       init_hsp->q_off, init_hsp->s_off, 
+                       context, subject->frame, gap_align->score,
+                       &(gap_align->edit_block), &new_hsp);
+         Blast_HSPListSaveHSP(hsp_list, new_hsp);
 
          /* Fill in the helper structure. */
          helper[hsp_list->hspcnt - 1].left = gap_align->query_start;
@@ -3477,7 +3316,7 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
  * @param start2 Starting subject offset [in]
  * @param edit_block The constructed edit block [out]
  */
-static Int2 
+Int2 
 BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1, 
                                Int4 start2, GapEditBlock** edit_block)
 {
@@ -3878,6 +3717,8 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    }
 
    for (index = 0; index < init_hitlist->total; ++index) {
+      BlastHSP* new_hsp;
+      BlastUngappedData* ungapped_data=NULL;
       init_hsp = &init_hitlist->init_hsp_array[index];
       if (!init_hsp->ungapped_data) 
          continue;
@@ -3887,11 +3728,16 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
       GetRelativeCoordinates(NULL, query_info, init_hsp, NULL, 
                              NULL, &context);
       if (!hsp_list) {
-         hsp_list = BlastHSPListNew();
+         hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
          *hsp_list_ptr = hsp_list;
       }
-      BLAST_SaveHsp(NULL, init_hsp, hsp_list, hit_options, context,
-                    subject->frame);
+      ungapped_data = init_hsp->ungapped_data;
+      Blast_HSPInit(ungapped_data->q_start, ungapped_data->length+ungapped_data->q_start,
+                    ungapped_data->s_start, ungapped_data->length+ungapped_data->s_start,
+                    init_hsp->q_off, init_hsp->s_off, 
+                    context, subject->frame, ungapped_data->score,
+                    NULL, &new_hsp);
+      Blast_HSPListSaveHSP(hsp_list, new_hsp);
    }
 
    return 0;
@@ -4006,7 +3852,7 @@ Int2 PHIGetGappedScore (Uint1 program_number,
 
 
    if (*hsp_list_ptr == NULL)
-      *hsp_list_ptr = hsp_list = BlastHSPListNew();
+      *hsp_list_ptr = hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
    else 
       hsp_list = *hsp_list_ptr;
 
@@ -4018,6 +3864,7 @@ Int2 PHIGetGappedScore (Uint1 program_number,
 
    for (index=0; index<init_hitlist->total; index++)
    {
+      BlastHSP* new_hsp;
       init_hsp = init_hsp_array[index];
 
       /* Adjust the initial HSP's coordinates to ones relative to an 
@@ -4032,8 +3879,13 @@ Int2 PHIGetGappedScore (Uint1 program_number,
          return status;
       }
 
-      BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, context,
-                    subject->frame);
+      Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
+                    gap_align->subject_start, gap_align->subject_stop, 
+                    init_hsp->q_off, init_hsp->s_off, 
+                    context, subject->frame, gap_align->score,
+                    &(gap_align->edit_block), &new_hsp);
+      new_hsp->pattern_length = init_hsp->ungapped_data->length;
+      Blast_HSPListSaveHSP(hsp_list, new_hsp);
 
       /* Free ungapped data here - it's no longer needed */
       sfree(init_hsp->ungapped_data);
@@ -4044,3 +3896,4 @@ Int2 PHIGetGappedScore (Uint1 program_number,
    *hsp_list_ptr = hsp_list;
    return status;
 }
+
