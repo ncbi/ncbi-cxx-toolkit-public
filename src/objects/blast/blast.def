@@ -1,0 +1,5 @@
+[client]
+class   = CBlastClient
+service = blast4
+request = Blast-request.body
+reply   = Blast-reply.body

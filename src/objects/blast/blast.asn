@@ -1,0 +1,305 @@
+--  ----------------------------------------------------------------------------
+--
+--                            PUBLIC DOMAIN NOTICE
+--                National Center for Biotechnology Information
+--
+--  This software/database is a "United States Government Work" under the terms
+--  of the United States Copyright Act.  It was written as part of the author's
+--  official duties as a United States Government employee and thus cannot be
+--  copyrighted.  This software/database is freely available to the public for
+--  use.  The National Library of Medicine and the U.S. Government have not
+--  placed any restriction on its use or reproduction.
+--
+--  Although all reasonable efforts have been taken to ensure the accuracy and
+--  reliability of the software and data, the NLM and the U.S. Government do not
+--  and cannot warrant the performance or results that may be obtained by using
+--  this software or data.  The NLM and the U.S. Government disclaim all
+--  warranties, express or implied, including warranties of performance,
+--  merchantability or fitness for any particular purpose.
+--
+--  Please cite the authors in any work or product based on this material.
+--
+--  ----------------------------------------------------------------------------
+--
+--  Authors: Tom Madden, Tim Boemker
+--
+--  This file specifies version 1.0 of the ASN.1 interface to BLAST.
+--
+--  Please note that this interface and the BLAST service itself have different
+--  version numbers.  Changes to the interface version number indicate changes
+--  to the messages exchanged by clients and servers.
+--
+--  Changes to the minor number indicate backward compatible changes; e.g., a
+--  1.0 client can communicate with a 1.1 server.  Changes to the major number
+--  indicate changes that are not backward compatible; e.g., a 1.0 client can't
+--  communicate with a 2.0 server.
+--
+--  ----------------------------------------------------------------------------
+
+NCBI-Blast DEFINITIONS ::=
+BEGIN
+
+IMPORTS
+    Bioseq                  FROM NCBI-Sequence
+    Bioseq-set              FROM NCBI-Seqset
+    Seq-id,
+    Seq-loc                 FROM NCBI-Seqloc
+    Seq-align,
+    Seq-align-set           FROM NCBI-Seqalign;
+
+--  --------------------------------------------------------------------
+--
+--  requests
+--
+--  --------------------------------------------------------------------
+
+Blast-request ::= SEQUENCE {
+    ident                   VisibleString OPTIONAL,
+    body                    Blast-request-body
+}
+
+Blast-request-body ::= CHOICE {
+    finish-params           Blast-finish-params-request,
+    get-databases           NULL,
+    get-matrices            NULL,
+    get-search-results      Blast-get-search-results-request,
+    get-sequences           Blast-get-sequences-request,
+    queue-search            Blast-queue-search-request
+}
+
+Blast-finish-params-request ::= SEQUENCE {
+    program                 Blast-program,
+    service                 Blast-service,
+    params                  SEQUENCE OF Blast-parameter
+}
+
+Blast-get-search-results-request ::= SEQUENCE {
+    request-id              VisibleString
+}
+
+Blast-get-sequences-request ::= SEQUENCE {
+    database-name           VisibleString,
+    database-type           Blast-residue-type,
+    seq-ids                 SEQUENCE OF Seq-id
+}
+
+Blast-queue-search-request ::= SEQUENCE {
+    program                 Blast-program,
+    service                 Blast-service,
+    queries                 Bioseq-set,
+    subject                 Blast-subject,
+    params                  SEQUENCE OF Blast-parameter
+}
+
+--  --------------------------------------------------------------------
+--
+--  replies
+--
+--  --------------------------------------------------------------------
+
+Blast-reply ::= SEQUENCE {
+    ident                   VisibleString,
+    errors                  SEQUENCE OF Blast-error OPTIONAL,
+    body                    Blast-reply-body
+}
+
+Blast-reply-body ::= CHOICE {
+    finish-params           Blast-finish-params-reply,
+    get-databases           Blast-get-databases-reply,
+    get-matrices            Blast-get-matrices-reply,
+    get-search-results      Blast-get-search-results-reply,
+    get-sequences           Blast-get-sequences-reply,
+    queue-search            Blast-queue-search-reply
+}
+
+Blast-finish-params-reply ::= SEQUENCE {
+    params                  SEQUENCE OF Blast-parameter OPTIONAL
+}
+
+Blast-get-databases-reply ::= SEQUENCE {
+    databases               SEQUENCE OF Blast-database-info OPTIONAL
+}
+
+Blast-get-matrices-reply ::= SEQUENCE {
+    matrices                SEQUENCE OF Blast-matrix-id OPTIONAL
+}
+
+Blast-get-search-results-reply ::= SEQUENCE {
+    alignments              Seq-align-set OPTIONAL,
+    phi-alignments          Blast-phi-alignments OPTIONAL,
+    mask                    Blast-mask OPTIONAL,
+    ka-blocks               SEQUENCE OF Blast-KABlk OPTIONAL,
+    search-stats            SEQUENCE OF VisibleString OPTIONAL
+}
+
+Blast-get-sequences-reply ::= SEQUENCE {
+    sequences               SEQUENCE OF Bioseq OPTIONAL
+}
+
+Blast-queue-search-reply ::= SEQUENCE {
+    request-id              VisibleString OPTIONAL
+}
+
+Blast-error ::= SEQUENCE {
+    code                    INTEGER,
+    message                 VisibleString OPTIONAL
+}
+
+--  --------------------------------------------------------------------
+--
+--  errors
+--
+--  --------------------------------------------------------------------
+
+Blast-error-flags ::= ENUMERATED {
+    warning                 (1024),
+    error                   (2048)
+}
+
+Blast-error-code ::= INTEGER {
+    internal-error          (2048),
+    not-implemented         (2049),
+    not-allowed             (2050),
+    bad-request             (2051),
+    bad-request-id          (2052),
+    search-pending          (2053)
+}
+
+--  --------------------------------------------------------------------
+--
+--  other types in alphabetical order
+--
+--  --------------------------------------------------------------------
+
+Blast-cutoff ::= CHOICE {
+    e-value                 REAL,
+    raw-score               INTEGER
+}
+
+Blast-database-info ::= SEQUENCE {
+    name                    VisibleString,
+    type                    Blast-residue-type,
+    description             VisibleString,
+    last-updated            VisibleString,
+    total-length            BigInt,
+    num-sequences           INTEGER
+}
+
+Blast-frame-type ::= ENUMERATED {
+    notset                  (0),
+    plus1                   (1),
+    plus2                   (2),
+    plus3                   (3),
+    minus1                  (4),
+    minus2                  (5),
+    minus3                  (6)
+}
+
+Blast-KABlk ::= SEQUENCE {
+    lambda                  REAL,
+    k                       REAL,
+    h                       REAL,
+    gapped                  BOOLEAN
+}
+
+Blast-mask ::= SEQUENCE {
+    locations               SEQUENCE OF Seq-loc,
+    frame                   Blast-frame-type
+}
+
+Blast-matrix ::= SEQUENCE {
+    residue-type            Blast-residue-type,
+    name                    VisibleString,
+    comments                SEQUENCE OF VisibleString OPTIONAL,
+    row-length              INTEGER,
+    column-length           INTEGER,
+    scores                  SEQUENCE OF INTEGER OPTIONAL,
+    karlin-k                REAL,
+    pos-freqs               SEQUENCE OF REAL OPTIONAL
+}
+
+Blast-matrix-id ::= SEQUENCE {
+    residue-type            Blast-residue-type,
+    name                    VisibleString
+}
+
+Blast-parameter ::= SEQUENCE {
+    name                    VisibleString,
+    value                   Blast-value
+}
+
+Blast-program ::= ENUMERATED {
+    blastn                  (0),
+    blastp                  (1),
+    blastx                  (2),
+    tblastn                 (3),
+    tblastx                 (4)
+}
+
+Blast-residue-type ::= ENUMERATED {
+    unknown                 (0),
+    protein                 (1),
+    nucleotide              (2)
+}
+
+Blast-service ::= ENUMERATED {
+    plain                   (0),
+    psiblast                (1),
+    phiblast                (2),
+    rpsblast                (3),
+    megablast               (4),
+    vecscreen               (5)
+}
+
+Blast-strand-type ::= ENUMERATED {
+    forward-strand          (1),
+    reverse-strand          (2),
+    both-strands            (3)
+}
+
+Blast-subject ::= CHOICE {
+    database                VisibleString,
+    sequences               SEQUENCE OF Bioseq
+}
+
+Blast-phi-alignments ::= SEQUENCE {
+    num-alignments          INTEGER,
+    seq-locs                SEQUENCE OF Seq-loc
+}
+
+Blast-value ::= CHOICE {
+
+    -- scalar types
+    big-integer             BigInt,
+    bioseq                  Bioseq,
+    boolean                 BOOLEAN,
+    cutoff                  Blast-cutoff,
+    integer                 INTEGER,
+    matrix                  Blast-matrix,
+    real                    REAL,
+    seq-align               Seq-align,
+    seq-id                  Seq-id,
+    seq-loc                 Seq-loc,
+    strand-type             Blast-strand-type,
+    string                  VisibleString,
+
+    -- lists of scalar types
+    big-integer-list        SEQUENCE OF BigInt,
+    bioseq-list             SEQUENCE OF Bioseq,
+    boolean-list            SEQUENCE OF BOOLEAN,
+    cutoff-list             SEQUENCE OF Blast-cutoff,
+    integer-list            SEQUENCE OF INTEGER,
+    matrix-list             SEQUENCE OF Blast-matrix,
+    real-list               SEQUENCE OF REAL,
+    seq-align-list          SEQUENCE OF Seq-align,
+    seq-id-list             SEQUENCE OF Seq-id,
+    seq-loc-list            SEQUENCE OF Seq-loc,
+    strand-type-list        SEQUENCE OF Blast-strand-type,
+    string-list             SEQUENCE OF VisibleString,
+
+    -- imported collection types
+    bioseq-set              Bioseq-set,
+    seq-align-set           Seq-align-set
+}
+
+END
