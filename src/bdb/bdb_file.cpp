@@ -360,16 +360,38 @@ void CBDB_RawFile::x_Open(const char* filename,
                 m_DB = 0;
                 BDB_CHECK(ret, filename);
             }
-        }
+        } else {
+			// file opened succesfully, check if it needs
+			// a byte swapping (different byteorder)
+
+		    int isswapped;
+		    ret = m_DB->get_byteswapped(m_DB, &isswapped);
+			BDB_CHECK(ret, filename);
+
+		    m_ByteSwapped = (isswapped!=0);
+			if (m_ByteSwapped) {
+				// re-open the file
+                m_DB->close(m_DB, 0);
+                m_DB = 0;
+
+				x_SetByteSwapped(m_ByteSwapped);
+		        x_CreateDB();
+
+				ret = m_DB->open(m_DB,
+								 txn,
+								 filename,
+								 database, // database name
+								 DB_BTREE,
+								 open_flags,
+								 kOpenFileMask);
+				BDB_CHECK(ret, filename);
+
+			}
+
+		}
     } // else open_mode == Create
 
     m_OpenMode = open_mode;
-
-    int isswapped;
-    ret = m_DB->get_byteswapped(m_DB, &isswapped);
-    BDB_CHECK(ret, filename);
-
-    m_ByteSwapped = (isswapped!=0);
 
 }
 
@@ -447,6 +469,10 @@ DBC* CBDB_RawFile::CreateCursor(CBDB_Transaction* trans) const
     return cursor;
 }
 
+void CBDB_RawFile::x_SetByteSwapped(bool bswp)
+{
+	m_ByteSwapped = bswp;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -534,6 +560,7 @@ void CBDB_File::Reopen(EOpenMode open_mode)
     }
 }
 
+
 void CBDB_File::Attach(CBDB_File& db_file)
 {
     CBDB_RawFile::Attach(db_file);
@@ -549,6 +576,15 @@ void CBDB_File::SetLegacyStringsCheck(bool value)
     }
     if (m_DataBuf.get()) {
         m_DataBuf->SetLegacyStringsCheck(value);
+    }
+}
+
+void CBDB_File::x_SetByteSwapped(bool bswp)
+{
+	CBDB_RawFile::x_SetByteSwapped(bswp);
+    m_KeyBuf->SetByteSwapped(bswp);
+    if (m_DataBuf.get()) {
+        m_DataBuf->SetByteSwapped(bswp);
     }
 }
 
@@ -869,7 +905,13 @@ CBDB_IdFile::CBDB_IdFile()
 
 void CBDB_IdFile::SetCmp(DB* db)
 {
-    int ret = db->set_bt_compare(db, BDB_IntCompare);
+    BDB_CompareFunction func = BDB_IntCompare;
+    if (IsByteSwapped()) {
+        func = BDB_ByteSwap_IntCompare;
+    }
+
+    _ASSERT(func);
+    int ret = m_DB->set_bt_compare(m_DB, func);
     BDB_CHECK(ret, 0);
 }
 
@@ -880,6 +922,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/06/03 11:47:07  kuznets
+ * Fixed a bug in setting architecture dependent comparison function
+ *
  * Revision 1.37  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
