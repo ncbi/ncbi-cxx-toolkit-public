@@ -159,6 +159,7 @@
 #ifdef NCBI_WEB_EXPORTS
 #  define NCBI_XHTML_EXPORTS
 #  define NCBI_XCGI_EXPORTS
+#  define NCBI_XCGI_REDIRECT_EXPORTS
 #endif
 
 /*
@@ -289,6 +290,16 @@
 #else
 #  define NCBI_XCGI_EXPORT          __declspec(dllimport)
 #endif
+
+/*
+ * Export specifier for library xcgi_redirect
+ */
+#ifdef NCBI_XCGI_REDIRECT_EXPORTS
+#  define NCBI_XCGI_REDIRECT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XCGI_REDIRECT_EXPORT __declspec(dllimport)
+#endif
+
 
 /*
  * Export specifier for library xalgoalign
@@ -1243,6 +1254,7 @@
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLAST_EXPORT
 #  define NCBI_XCGI_EXPORT
+#  define NCBI_XCGI_REDIRECT_EXPORT
 #  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XHTML_EXPORT
 #  define NCBI_XIMAGE_EXPORT
@@ -1274,6 +1286,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.57  2004/02/09 19:23:58  ivanov
+ * + NCBI_XCGI_REDIRECT_EXPORTS, added it to NCBI_WEB.DLL
+ *
  * Revision 1.56  2004/01/14 16:28:55  tereshko
  * Added NCBI_GUIWIDGETSMISC_EXPORTS for Taxplot viewer
  *
