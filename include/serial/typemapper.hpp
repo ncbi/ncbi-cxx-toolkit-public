@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/09/16 19:21:47  vasilche
+* Added virtual destructor.
+*
 * Revision 1.1  1999/08/13 15:53:45  vasilche
 * C++ analog of asntool: datatool
 *
@@ -47,10 +50,9 @@ BEGIN_NCBI_SCOPE
 class CTypeMapper
 {
 public:
+    virtual ~CTypeMapper(void);
     virtual TTypeInfo MapType(const string& name) = 0;
 };
-
-//#include <serial/typemapper.inl>
 
 END_NCBI_SCOPE
 
