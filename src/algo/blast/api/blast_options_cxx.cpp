@@ -91,6 +91,21 @@ CBlastOption::~CBlastOption()
 {
 }
 
+CBlastOption::EProgram BLASTGetEProgram(Uint1 prog)
+{
+    if (prog == blast_type_blastp)
+        return CBlastOption::eBlastp;
+    if (prog == blast_type_blastn)
+        return CBlastOption::eBlastn;
+    if (prog == blast_type_blastx)
+        return CBlastOption::eBlastx;
+    if (prog == blast_type_tblastn)
+        return CBlastOption::eTblastn;
+    if (prog == blast_type_tblastx)
+        return CBlastOption::eTblastx;
+    return CBlastOption::eBlastUndef;
+}
+
 void
 CBlastOption::SetBlastp()
 {
@@ -484,6 +499,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/14 19:07:32  dondosha
+* Added BLASTGetEProgram function to convert from Uint1 to enum type
+*
 * Revision 1.9  2003/08/11 15:17:39  dondosha
 * Added algo/blast/core to all #included headers
 *

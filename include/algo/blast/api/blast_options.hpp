@@ -308,6 +308,8 @@ CBlastOption::GetProgram() const
     return m_Program;
 }
 
+CBlastOption::EProgram BLASTGetEProgram(Uint1 prog);
+
 inline void
 CBlastOption::SetProgram(CBlastOption::EProgram p)
 {
@@ -885,6 +887,8 @@ inline void
 CBlastOption::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
+    if (p > 0)
+        m_ScoringOpts->is_ooframe = TRUE;
 }
 
 inline int 
@@ -998,6 +1002,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/14 19:06:51  dondosha
+* Added BLASTGetEProgram function to convert from Uint1 to enum type
+*
 * Revision 1.13  2003/08/11 19:55:04  camacho
 * Early commit to support query concatenation and the use of multiple scopes.
 * Compiles, but still needs work.
