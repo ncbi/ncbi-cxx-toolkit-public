@@ -205,11 +205,31 @@ int CTest_validatorApplication::Run(void)
     }
     
     // Display error messages
+    // Display error messages
+    typedef map< string, int> TCodes;
+    typedef map < EDiagSev, int > TSev;
+
+    TCodes codes;
+    TSev sev;
     if ( eval.get() != 0 ) {
-        for (CValidError_CI vit(*eval); vit; ++vit) {
-            cout << "Error code: " << vit->GetErrCode() << endl << endl;
-            cout << "Message: " << vit->GetMsg() << endl << endl;
-            cout << "Verbose: " << vit->GetVerbose() << endl << endl;
+        if ( eval->size() > 0 ) {
+            for (CValidError_CI vit(*eval); vit; ++vit) {
+                codes[vit->GetErrCode()]++;
+                sev[vit->GetSeverity()]++;
+                cout << "Error code: " << vit->GetErrCode() << endl << endl;
+                cout << "Message: " << vit->GetMsg() << endl << endl;
+                cout << "Verbose: " << vit->GetVerbose() << endl << endl;
+            }
+            cout << "Total number of errors: " << eval->size() << endl;
+            iterate ( TCodes, iter, codes ) {
+                cout << "Error code: " << iter->first << " appears " << iter->second << endl;
+            }
+            iterate ( TSev, iter, sev) {
+                cout << "Severity: " << iter->first << " appears " << iter->second << endl;
+            }
+        }
+        else {
+            cout << "All entries are OK!" << endl;
         }
     }
 
@@ -234,6 +254,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2003/02/07 21:26:01  shomrat
+ * More detailed error report
+ *
  * Revision 1.9  2003/02/05 00:28:07  ucko
  * +<serial/objistr.hpp> (formerly pulled in via reader_id1.hpp)
  *
