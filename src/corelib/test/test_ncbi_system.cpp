@@ -34,6 +34,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbiexec.hpp>
+#include <corelib/ncbifile.hpp>
 #include <memory>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -108,6 +110,72 @@ static void Test_CpuLimit(void)
 }
 
 
+// ppid is int rather than TPid in these two functions because we need
+// it to be signed.
+
+static void Test_PIDGuardChild(int ppid, string lockfile)
+{
+    CNcbiOstrstream oss;
+    oss << CNcbiApplication::Instance()->GetArguments().GetProgramName()
+        << " -parent " << ppid << " -lockfile " << lockfile << " pid" << '\0';
+    _ASSERT( !CExec::System(oss.str()) );
+    oss.freeze(false);
+}
+
+static void Test_PIDGuard(int ppid, string lockfile)
+{
+    if (lockfile.empty()) {
+        // Fixed names are usually more appropriate, but here we don't
+        // want independent tests to step on each other....
+        lockfile = CFile::GetTmpName();
+    }
+    TPid my_pid = GetPID();
+    _ASSERT(my_pid > 0);
+    LOG_POST("\nTest_PIDGuard starting:\nmy_pid = " << my_pid
+             << ", ppid = " << ppid << ", lockfile = " << lockfile << '\n');
+    if (ppid == 0) { // parent
+        CPIDGuard guard1(lockfile);
+        try {
+            LOG_POST("Expect an exception now.");
+            CPIDGuard guard2(lockfile);
+            ERR_POST("Should have been locked (by myself)");
+            _TROUBLE;
+        } catch (CPIDGuardException& e) {
+            LOG_POST(e.what());
+            _ASSERT(e.GetErrCode() == CPIDGuardException::eStillRunning);
+            _ASSERT(e.GetPID() == my_pid);
+        }
+        Test_PIDGuardChild(my_pid, lockfile);
+        guard1.Release();
+        Test_PIDGuardChild(-1, lockfile);
+        Test_PIDGuardChild(-2, lockfile);
+    } else if (ppid > 0) { // child run with parent lock open
+        try {
+            LOG_POST("Expect an exception now.");
+            CPIDGuard guard(lockfile);
+            ERR_POST("Should have been locked (by parent)");
+            _TROUBLE;
+        } catch (CPIDGuardException& e) {
+            LOG_POST(e.what());
+            _ASSERT(e.GetErrCode() == CPIDGuardException::eStillRunning);
+            _ASSERT(e.GetPID() == ppid);
+        }
+    } else if (ppid == -1) {
+        new CPIDGuard(lockfile); // deliberate leak
+        LOG_POST("Left stale lock.");
+    } else if (ppid == -2) {
+        CPIDGuard guard(lockfile);
+        TPid old_pid = guard.GetOldPID();
+        _ASSERT(old_pid);
+        LOG_POST("Old PID was " << old_pid);
+    } else {
+        _TROUBLE;
+    }
+
+    CPIDGuard unique_guard(CFile::GetTmpName());
+}
+
+
 /////////////////////////////////
 // Test application
 //
@@ -140,7 +208,13 @@ void CTestApplication::Init(void)
          "Platform-specific feature to test",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("feature", &(*new CArgAllow_Strings, "mem", "cpu"));
+        ("feature", &(*new CArgAllow_Strings, "mem", "cpu", "pid"));
+
+    // Specific to PID guard test
+    arg_desc->AddDefaultKey("parent", "PID", "for internal use only",
+                            CArgDescriptions::eInteger, "0");
+    arg_desc->AddDefaultKey("lockfile", "filename", "parent's lock file",
+                            CArgDescriptions::eString, kEmptyStr);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -149,17 +223,22 @@ void CTestApplication::Init(void)
 
 int CTestApplication::Run(void)
 {
-    // General tests
-    Test_General();
-
-    // Specific tests
     CArgs args = GetArgs();
 
+    // General tests
+    if ( !args["parent"].AsInteger() ) {
+        Test_General();
+    }
+
+    // Specific tests
     if (args["feature"].AsString() == "mem") {
         Test_MemLimit();
     }
     else if (args["feature"].AsString() == "cpu") {
         Test_CpuLimit();
+    }
+    else if (args["feature"].AsString() == "pid") {
+        Test_PIDGuard(args["parent"].AsInteger(), args["lockfile"].AsString());
     }
     else {
         _TROUBLE;
@@ -188,6 +267,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2003/08/12 17:25:14  ucko
+ * Test the new PID-file support.
+ *
  * Revision 6.6  2002/04/16 18:49:07  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
