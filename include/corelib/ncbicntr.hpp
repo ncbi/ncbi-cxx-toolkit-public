@@ -141,7 +141,11 @@ public:
 #endif
 
 private:
-    volatile TValue     m_Value;
+    volatile TValue m_Value;
+
+    // CObject's constructor needs to read m_Value directly when checking
+    // for the magic number left by operator new.
+    friend class CObject;
 };
 
 
@@ -290,6 +294,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/03/06 19:38:48  ucko
+* Make CObject a friend, so that InitCounter can read m_Value directly
+* rather than going through Get(), which would end up spinning forever
+* if it came across NCBI_COUNTER_RESERVED_VALUE.
+*
 * Revision 1.11  2002/12/18 22:53:21  dicuccio
 * Added export specifier for building DLLs in windows.  Added global list of
 * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
