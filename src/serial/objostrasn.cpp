@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/08/23 16:52:37  grichenk
+* Set separator to line-break by default
+*
 * Revision 1.68  2002/03/07 22:02:02  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -341,6 +344,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
     : CObjectOStream(out), m_FixMethod(how)
 {
     m_Output.SetBackLimit(80);
+    SetSeparator("\n");
 }
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
@@ -349,6 +353,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
     : CObjectOStream(out, deleteOut), m_FixMethod(how)
 {
     m_Output.SetBackLimit(80);
+    SetSeparator("\n");
 }
 
 CObjectOStreamAsn::~CObjectOStreamAsn(void)
