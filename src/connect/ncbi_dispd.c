@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2001/07/24 18:02:02  lavr
+ * Seed random generator at Open()
+ *
  * Revision 6.26  2001/07/18 17:41:25  lavr
  * BUGFIX: In code for selecting services by preferred host
  *
@@ -139,7 +142,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
     static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env);
     static int/*bool*/ s_Update(SERV_ITER iter, const char* text);
     static void s_Close(SERV_ITER iter);
@@ -147,10 +149,12 @@ extern "C" {
     static const SSERV_VTable s_op = {
         s_GetNextInfo, s_Update, 0, s_Close, "DISPD"
     };
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+
+static int s_RandomSeed = 0;
 
 
 typedef struct {
@@ -462,6 +466,10 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 
     if (!(data = (SDISPD_Data*) malloc(sizeof(*data))))
         return 0;
+    if (!s_RandomSeed) {
+        s_RandomSeed = (int)time(0) + (int)SOCK_gethostbyname(0);
+        srand(s_RandomSeed);
+    }
     data->net_info = ConnNetInfo_Clone(net_info);
     if (iter->type & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
