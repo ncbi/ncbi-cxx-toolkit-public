@@ -524,16 +524,15 @@ const int CNcbiRegistry::GetInt
     } catch (CStringException& ex) {
         if (err_action == eReturn) 
             return default_value;
-        
+
         string msg = "CNcbiRegistry::GetInt()";
-        msg += " Reg entry:";
-        msg += section; msg += ":"; msg += name;
-          
+        msg += " Reg entry:" + section + ":" + name;
+
         if (err_action == eThrow)
             NCBI_RETHROW_SAME(ex, msg);
         if (err_action == eErrPost)
             ERR_POST(ex.what() << msg);
-            
+
         return default_value;
     }
 }
@@ -556,16 +555,15 @@ const bool CNcbiRegistry::GetBool
     } catch (CStringException& ex) {
         if (err_action == eReturn) 
             return default_value;
-        
+
         string msg = "CNcbiRegistry::GetBool()";
-        msg += " Reg entry:";
-        msg += section;  msg+=":"; msg += name;
-          
+        msg += " Reg entry:" + section + ":" + name;
+
         if (err_action == eThrow)
             NCBI_RETHROW_SAME(ex, msg);
         if (err_action == eErrPost)
             ERR_POST(ex.what() << msg);
-            
+
         return default_value;
     }
 }
@@ -588,11 +586,10 @@ const double CNcbiRegistry::GetDouble
     } catch (CStringException& ex) {
         if (err_action == eReturn) 
             return default_value;
-        
+
         string msg = "CNcbiRegistry::GetDouble()";
-        msg += " Reg entry:";
-        msg += section;  msg+=":"; msg += name;
-          
+        msg += " Reg entry:" + section + ":" + name;
+
         if (err_action == eThrow)
             NCBI_RETHROW_SAME(ex, msg);
         if (err_action == eErrPost)
@@ -877,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/01/17 20:45:39  kuznets
+ * Minor code cleanup~
+ *
  * Revision 1.28  2003/01/17 20:27:30  kuznets
  * CNcbiRegistry added ErrPost error action
  *
