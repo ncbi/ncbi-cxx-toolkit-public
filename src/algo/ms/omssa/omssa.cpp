@@ -212,6 +212,7 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 	    ERR_POST(Error << "omssa: unable to read spectrum into CMSPeak");
 	    return;
 	}
+    Peaks->SetName().clear();
 	if(Spectrum->CanGetIds()) Peaks->SetName() = Spectrum->GetIds();
 	if(Spectrum->CanGetNumber())
 	    Peaks->SetNumber() = Spectrum->GetNumber();
@@ -1242,6 +1243,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.33  2004/12/07 23:38:22  lewisg
+add modification handling code
+
 Revision 1.32  2004/12/06 23:35:16  lewisg
 get rid of file charge
 
