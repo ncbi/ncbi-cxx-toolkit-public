@@ -1,11 +1,18 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <title>Naming conventions, Identation and Bracing</title>
+    <title>Naming conventions, Indentation and Bracing</title>
   </head>
 
   <body>
-	 <h1>Naming conventions, Identation and Bracing</h1>
+	 <h1>Naming conventions, Indentation and Bracing</h1>
+
+<i>
+"In My Egotistical Opinion, most people's C programs should be indented
+ six feet downward and covered with dirt."
+</i>
+-- Blair P. Houghton
+
 
 	 <ul>
 		<li> <a href="#ref_Naming">Naming conventions</a>
@@ -16,7 +23,7 @@
 		<li> <a href="#ref_NamingVar">Class member variables</a>
 		<li> <a href="#ref_NamingFunc">Functions</a>
 	 </ul>
-	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of quasi-namespaces</a>
+	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
 	 <li> <a href="#ref_Scope">Use of the NCBI name scope</a>
 	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
 	 <li> <a href="#ref_Class">Class declaration</a> </ul>
@@ -38,32 +45,51 @@
 
 		<a name="ref_NamingTypes">
       <tr><th>Type Names</th></tr>
-      <tr><td><i><b>C</b>ClassTypeName</i></td><td>class CMyClass { ..... };</td></tr>
-      <tr><td><i><b>S</b>StructTypeName</i></td><td>struct SMyStruct { ..... };</td></tr>
-      <tr><td><i><b>U</b>UnionTypeName</i></td><td>union UMyUnion { ..... };</td></tr>
-      <tr><td><i><b>E</b>EnumTypeName</i></td><td>enum EMyEnum { ..... };</td></tr>
-      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)(void) { ..... };</td></tr>
+      <tr><td><i><b>C</b>ClassTypeName</i></td><td>
+				class CMyClass { ..... };</td></tr>
+      <tr><td><i><b>S</b>StructTypeName</i></td><td>
+				struct SMyStruct { ..... };</td></tr>
+      <tr><td><i><b>U</b>UnionTypeName</i></td><td>
+				union UMyUnion { ..... };</td></tr>
+      <tr><td><i><b>E</b>EnumTypeName</i></td><td>
+				enum EMyEnum { ..... };</td></tr>
+      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>
+				void (*FMyFunc)(void) { ..... };</td></tr>
+      <tr><td><i><b>P</b>PredicateName</i></td><td>
+				struct PMyPred { bool operator() (..... , .....); };</td></tr>
       <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
-      <tr><td><i><b>N</b>QuasiNamespace <a href="#ref_Prefix">(see also)</a></i></td><td>struct NMyNamespace { ..... }; </td></tr>
+      <tr><td><i><b>N</b>Namespace <a href="#ref_Prefix">(see also)</a></i></td><td>
+				namespace NMyNamespace { ..... } </td></tr>
 
 		<a name="ref_NamingConst">
       <tr><th>Constants</th></tr>
-      <tr><td><i><b>k</b>ConstantName</i></td><td>const Int2 kMyConst;</td></tr>
+      <tr><td><i><b>k</b>ConstantName</i></td><td>
+				const int kMyConst = 123;</td></tr>
       <tr><td><i><b>e</b>EnumConstantName</i></td>
-	<td>enum EMyEnum { <br>
-	     &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
-	      &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
-		&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
-		  };</td></tr>
+			 <td>enum EMyEnum { <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
+				};</td></tr>
+
+      <tr><td><i><b>f</b>FlagConstantName</i></td>
+			 <td>enum EMyFlagEnum { <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag1 = 0x1, <br>
+				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag2 = 0x2 <br>
+				};</td></tr>
 
 		<a name="ref_NamingVar">
       <tr><th>Class member variables</th></tr>
-      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>class X { Int1 m_MyClassData; }</td></tr>
-      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>class X { static Int4 sm_MyClassStaticData; }</td></tr>
+      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>
+				class X { short m_MyClassData; }</td></tr>
+      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>
+				class X { static double sm_MyClassStaticData; }</td></tr>
 
 		<a name="ref_NamingFunc">
       <tr><th>Functions</th></tr>
-      <tr><td><i>(starts from capital)</i></td><td>Int2 MyFunc(void);</td></tr>
+      <tr><td><i>Func</i></td><td>bool MyFunc(void);</td></tr>
+      <tr><td><i><b>s_</b>StaticFunc</b></td><td>
+				static char s_MyStaticFunc(void);</td></tr>
 
 	 </table>
 
@@ -78,11 +104,11 @@
 	 <br></br> <br></br>
 
 	 <a name="ref_Prefix">
-    <h2>Name prefixing and/or the use of quasi-namespaces</h2>
+    <h2>Name prefixing and/or the use of namespaces</h2>
 
 	 In addition to the above naming conventions that highlights the
 	 nature and/or the scope of things, one should also consider the use
-	 of prefixes(or quasi-namespaces) in order to:
+	 of prefixes (or namespaces) in order to:
 	 <ul>
 		<li> avoid name conflicts
 		<li> indicate the package which the thing belongs to
@@ -94,14 +120,15 @@
 	 types <i>"T<b>Foo</b>Sometype"</i>, etc.
 
 	 <p>
-	 It is decided that we do not use the C++ namespaces in NCBI.
+	 It is decided that we usually do not use C++ namespaces (other than
+    the NCBI-wide namespace "ncbi::") in NCBI.
 	 <p>
-	 However, one can emulate a namespace by putting the things into a
+	 One can emulate a sort of namespace by putting the things into a
 	 structure or class scope, like
     <i>"struct N<b>Foo</b>Globals { .....;  void SomeFunc(int); ... };"</i>.
 	 Then just use an explicit prefix when referencing these things, e.g. call
     <i>"N<b>Foo</b>Globals::SomeFunc(5)"</i>.
-	 Usually, this approach is useful for global functions.
+	 This approach can be useful to group and prefix a set of global functions.
 	 As for classes, etc. it is still better to use simple prefixes
 	 (as described above) instead.
 
