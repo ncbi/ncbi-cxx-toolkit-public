@@ -86,7 +86,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
 }
 
 
-CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
+CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                SAnnotSelector selector,
                                CAnnot_CI::EOverlapType overlap_type,
@@ -602,6 +602,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/12/24 15:42:45  grichenk
+* CBioseqHandle argument to annotation iterators made const
+*
 * Revision 1.29  2002/12/19 20:15:28  grichenk
 * Fixed code formatting
 *

@@ -51,7 +51,7 @@ CAlign_CI::CAlign_CI(CScope& scope,
 }
 
 
-CAlign_CI::CAlign_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      CAnnot_CI::EOverlapType overlap_type,
                      EResolveMethod resolve, const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/24 15:42:45  grichenk
+* CBioseqHandle argument to annotation iterators made const
+*
 * Revision 1.11  2002/12/06 15:35:59  grichenk
 * Added overlap type for annot-iterators
 *

@@ -49,7 +49,7 @@ CGraph_CI::CGraph_CI(CScope& scope,
 }
 
 
-CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      CAnnot_CI::EOverlapType overlap_type,
                      EResolveMethod resolve,
                      const CSeq_entry* entry)
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/24 15:42:45  grichenk
+* CBioseqHandle argument to annotation iterators made const
+*
 * Revision 1.11  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

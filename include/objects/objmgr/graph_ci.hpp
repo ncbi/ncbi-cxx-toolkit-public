@@ -49,7 +49,7 @@ public:
               CAnnotTypes_CI::EResolveMethod resolve =
               CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq
-    CGraph_CI(CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
               CAnnotTypes_CI::EResolveMethod resolve =
               CAnnotTypes_CI::eResolve_TSE,
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/12/24 15:42:44  grichenk
+* CBioseqHandle argument to annotation iterators made const
+*
 * Revision 1.13  2002/12/06 15:35:57  grichenk
 * Added overlap type for annot-iterators
 *

@@ -85,7 +85,7 @@ public:
     // defined on segments in the same TSE (eResolve_TSE method).
     // If "entry" is set, search only annotations from the seq-entry specified
     // (but no its sub-entries or parent entry).
-    CAnnotTypes_CI(CBioseq_Handle& bioseq,
+    CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector selector,
                    CAnnot_CI::EOverlapType overlap_type,
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/12/24 15:42:44  grichenk
+* CBioseqHandle argument to annotation iterators made const
+*
 * Revision 1.22  2002/12/06 15:35:57  grichenk
 * Added overlap type for annot-iterators
 *

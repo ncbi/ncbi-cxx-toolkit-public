@@ -65,7 +65,7 @@ public:
     // "resolve" flag (see above).
     // If "entry" is set, search only features from the seq-entry specified
     // (but no its sub-entries or parent entry).
-    CFeat_CI(CBioseq_Handle& bioseq,
+    CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              SAnnotSelector::TFeatChoice feat_choice,
              CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
@@ -92,7 +92,7 @@ CFeat_CI::CFeat_CI(void)
 }
 
 inline
-CFeat_CI::CFeat_CI(CBioseq_Handle& bioseq,
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector::TFeatChoice feat_choice,
                    CAnnot_CI::EOverlapType overlap_type,
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/12/24 15:42:44  grichenk
+* CBioseqHandle argument to annotation iterators made const
+*
 * Revision 1.15  2002/12/20 20:54:23  grichenk
 * Added optional location/product switch to CFeat_CI
 *
