@@ -317,6 +317,59 @@ static SSubtypeAbbr s_aSubtypes[] = {
     { NULL,       0,                    COrgMod::eSubtype_other }
 };
 
+static int
+s_NofTokens( const string& s )
+{
+    int nof = 0;
+    char first, last, c;
+    int bracket_level, token;
+
+    if( !s.empty() ) {
+	string::size_type pos = 0;
+	while( pos < s.size() ) {
+	    bracket_level= 0;
+	    token = 0;
+
+	    do { // Skip heading white space
+		first= s[pos++];
+	    } while( (isspace(first) || iscntrl(first)) &&
+		     pos < s.size() );
+	    
+	    switch( first ) {
+	    case '"': last= '"'; break;
+	    case '(': last= ')'; break;
+	    case '{': last= '}'; break;
+	    case '[': last= ']'; break;
+	    default:  last= 0;   break;
+	    }
+
+	    for(; pos < s.size(); ++pos) {
+		c = s[pos];
+		if( !isalnum(c) ) {
+		    if( last == 0 ) {
+			if( first == c ) {
+			    ++bracket_level;
+			}
+			if( last == c && (!bracket_level--) ) {
+			    ++pos;
+			    break;
+			}
+		    } else {
+			if( c == '.' || isspace(c) || iscntrl(c) ) {
+			    ++pos;
+			    break;
+			}
+		    }
+		} else {
+		    token = 1;
+		}
+	    }
+	    nof += token;
+	}
+    }            
+    return nof;
+}
+
 COrgMod::ESubtype
 COrgRefCache::GetSubtypeFromName( string& sName )
 {
@@ -343,6 +396,10 @@ COrgRefCache::GetSubtypeFromName( string& sName )
 		      pSubtypeAbbr->m_nAbbrLen) )) != NPOS ) {
 	    sName.erase( pos, pSubtypeAbbr->m_nAbbrLen );
 	    sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
+	    if( pSubtypeAbbr->m_eSubtype == COrgMod::eSubtype_sub_species
+		&& s_NofTokens( sName ) != 1 ) {
+		break; // Return other
+	    }
 	    return pSubtypeAbbr->m_eSubtype;
 	}
 	++pSubtypeAbbr;
@@ -352,7 +409,7 @@ COrgRefCache::GetSubtypeFromName( string& sName )
 
 bool
 COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
-                                list< CRef<COrgMod> >& lMod,
+                                COrgName& on,
                                 CTaxon1Node* pParent )
 {
     CTaxon1Node* pTmp;
@@ -381,20 +438,30 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
 
     pMod->SetSubtype( GetSubtypeFromName( pMod->SetSubname() ) );
 
+    if( pMod->GetSubtype() == COrgMod_Base::eSubtype_sub_species &&
+	pNode->GetRank() != GetSubspeciesRank() ) {
+        pMod->SetSubtype( COrgMod_Base::eSubtype_other );
+    }
+
     if( pMod->GetSubtype() == COrgMod_Base::eSubtype_other ) {
 	int rank = pNode->GetRank();
 	if( rank == GetSubspeciesRank() ) {
-	    pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
+            if( s_NofTokens( pNode->GetName() ) == 3 ) {
+		// Assign only "Name1 ssp. Name2" or "Name1 subsp. Name2"  
+		pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
+	    }
 	} else if( rank == GetVarietyRank() ) {
 	    pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
 	} else if( rank == GetFormaRank() ) {
 	    pMod->SetSubtype( COrgMod_Base::eSubtype_forma );
-	} else if( pParent && rank == GetSubspeciesRank() ) {
+	} else if( pParent && pParent->GetRank() == GetSubspeciesRank() ) {
 	    pMod->SetSubtype( COrgMod_Base::eSubtype_strain );
+	} else { // Do not insert invalid modifier
+	    return false;
 	}
     }
     // Store it into list
-    lMod.push_back( pMod );
+    on.SetMod().push_back( pMod );
 
     return true;
 }
@@ -447,7 +514,7 @@ COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
                                         pSubspec->GetName().size() - pos );
         }
         if( pNode != pSpec ) {
-            BuildOrgModifier( pNode, on.SetMod() );
+            BuildOrgModifier( pNode, on );
         }
         return true;
     }
@@ -457,14 +524,14 @@ COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
                                     pos=s_AfterPrefix(pSubspec->GetName(),
                                                       pGenus->GetName()),
                                     pSubspec->GetName().size() - pos );
-        BuildOrgModifier( pNode, on.SetMod(),
+        BuildOrgModifier( pNode, on,
                           pNode==pSubspec ? pGenus : pSubspec );
         return true;
     }
   
     // we have no species, no subspecies
     // but we are under species level (varietas or forma)
-    BuildOrgModifier( pNode, on.SetMod(), pGenus );
+    BuildOrgModifier( pNode, on, pGenus );
     return true;
 }
 
@@ -609,7 +676,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                         }
                         on.SetName().SetVirus( pNode->GetName() );
                         // Add modifier to orgname
-                        BuildOrgModifier( &node, on.SetMod() );
+                        BuildOrgModifier( &node, on );
                     } // non species rank
                 } else if( !SetBinomialName( node, on ) ) {
                     // name is not binomial: set partial
@@ -620,7 +687,6 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
             }
 	    // Add some genbank names as organism modifiers
 	    if( org.IsSetOrgname() ) { // OrgName is not empty
-		COrgName::TMod& lMods = on.SetMod();
 		for( i = lLin.begin(); i != lLin.end(); ++i ) {
 		    if( (*i)->CanGetCde() ) {
 			int cde = (*i)->GetCde();
@@ -636,7 +702,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 			    CRef<COrgMod> pMod( new COrgMod );
 			    pMod->SetSubname().swap( (*i)->SetOname() );
 			    pMod->SetSubtype( stype );
-			    lMods.push_back( pMod );
+			    on.SetMod().push_back( pMod );
 			}
 		    }
 		}
@@ -1052,6 +1118,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.18  2003/06/23 20:42:08  domrach
+ * New treatment of subspecies names introduced
+ *
  * Revision 6.17  2003/06/05 20:44:01  domrach
  * Adjusted to the new CanGetXxx verification methods
  *

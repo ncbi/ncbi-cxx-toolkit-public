@@ -261,7 +261,7 @@ public:
 	switch( type ) {
 	case COrgMod::eSubtype_strain:
 	case COrgMod::eSubtype_variety:
-	case COrgMod::eSubtype_sub_species:
+	//case COrgMod::eSubtype_sub_species:
 	    m_bSubSpecType = true;
 	    break;
 	default:
@@ -292,12 +292,12 @@ public:
 	case COrgMod::eSubtype_group:
 	case COrgMod::eSubtype_subgroup:
 	case COrgMod::eSubtype_isolate:
-	case COrgMod::eSubtype_sub_species:
+//	case COrgMod::eSubtype_sub_species:
 	    return m_bSubSpecType;
 
-//	    if( (m_nType >= 2 && m_nType <= 17)) || m_nType == 22 return 1;
-// 	case COrgMod::eSubtype_other:
-// 	    return true;
+//	    if( (m_nType >= 2 && m_nType <= 17) ) return 1;
+ 	case COrgMod::eSubtype_other:
+ 	    return true;
 	default:
 	    break;
 	}
@@ -484,6 +484,10 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
     PRemoveSynAnamorph rsa( inp_orgRef.GetTaxname() );
     remove_if( lDstMod.begin(), lDstMod.end(), rsa );
 
+    // Reset destination modifiers if empty
+    if( lDstMod.size() == 0 ) {
+	on.ResetMod();
+    }
     // Copy lineage
     if( db_orgRef.GetOrgname().IsSetLineage() ) {
 	on.SetLineage() = db_orgRef.GetOrgname().GetLineage();
@@ -649,7 +653,7 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 	pOrf->Assign( inp_orgRef );
 	if( pOrf->IsSetOrgname() && pOrf->GetOrgname().IsSetMod() ) {
 	    // Clean up modifiers
-	    pOrf->SetOrgname().SetMod().clear();
+	    pOrf->SetOrgname().ResetMod();
 	}
 	pNewData->SetOrg( *pOrf );
 		
@@ -1567,6 +1571,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.17  2003/06/23 20:42:08  domrach
+ * New treatment of subspecies names introduced
+ *
  * Revision 6.16  2003/06/05 20:44:02  domrach
  * Adjusted to the new CanGetXxx verification methods
  *

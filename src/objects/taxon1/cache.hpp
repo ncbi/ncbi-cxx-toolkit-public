@@ -127,7 +127,7 @@ private:
     bool             BuildOrgRef( CTaxon1Node& node, COrg_ref& org,
                                   bool& is_species );
     bool             BuildOrgModifier( CTaxon1Node* pNode,
-                                       list< CRef<COrgMod> >& lMod,
+                                       COrgName& on,
                                        CTaxon1Node* pParent = NULL );
     bool             SetBinomialName( CTaxon1Node& node, COrgName& on );
     bool             SetPartialName( CTaxon1Node& node, COrgName& on );
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.12  2003/06/23 20:42:08  domrach
+ * New treatment of subspecies names introduced
+ *
  * Revision 6.11  2003/06/05 20:44:01  domrach
  * Adjusted to the new CanGetXxx verification methods
  *
