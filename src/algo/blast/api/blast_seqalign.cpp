@@ -1080,7 +1080,9 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     return retval;
 }
 
-/// Creates a Seq-align from an HSP list for an ungapped search.
+/// Creates a Seq-align from an HSP list for an ungapped search. Returned
+/// Seq-align has discontinuous segments type, same as for the gapped 
+/// searches.
 /// @param program BLAST program [in]
 /// @param hsp_list HSP list structure [in]
 /// @param query_id Query sequence identifier [in]
@@ -1092,35 +1094,42 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id, Int4 query_length, Int4 subject_length)
 {
-    CRef<CSeq_align> retval(new CSeq_align()); 
+    CRef<CSeq_align> seqalign(new CSeq_align()); 
     BlastHSP** hsp_array;
     int index;
 
-    retval->SetType(CSeq_align::eType_diags);
+    seqalign->SetType(CSeq_align::eType_diags);
 
     hsp_array = hsp_list->hsp_array;
 
     /* All HSPs are put in one seqalign, containing a list of 
      * DenseDiag for same molecule search, or StdSeg for translated searches.
-    */
+     */
     if (program == eBlastn || 
         program == eBlastp ||
         program == eRPSBlast) {
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
-            retval->SetSegs().SetDendiag().push_back(
+            seqalign->SetSegs().SetDendiag().push_back(
                 x_UngappedHSPToDenseDiag(hsp, query_id, subject_id, 
 					 query_length, subject_length));
         }
     } else { // Translated search
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
-            retval->SetSegs().SetStd().push_back(
+            seqalign->SetSegs().SetStd().push_back(
                 x_UngappedHSPToStdSeg(hsp, query_id, subject_id, 
 				      query_length, subject_length));
         }
     }
-
+    // Wrap this Seq-align into a discontinuous Seq-align, so the 
+    // resulting Seq-align has the same form as for other cases, with 
+    // clear separation of results corresponding to different subject 
+    // sequences.
+    CRef<CSeq_align> retval(new CSeq_align());
+    retval->SetType(CSeq_align::eType_disc);
+    retval->SetDim(2);
+    retval->SetSegs().SetDisc().Set().push_back(seqalign);
     return retval;
 }
 
@@ -1202,6 +1211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2005/03/29 14:49:39  papadopo
+* encapsulate, within a discontinuous seqalign, all seqaligns for translated searches
+*
 * Revision 1.52  2005/02/08 18:50:29  bealer
 * - Fix type truncation warnings.
 *
