@@ -170,9 +170,7 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("required_end", m_Ptr->required_end);
     ddc.Log("expect_value", m_Ptr->expect_value);
     ddc.Log("original_expect_value", m_Ptr->original_expect_value);
-    ddc.Log("single_hsp_evalue", m_Ptr->single_hsp_evalue);
     ddc.Log("cutoff_score", m_Ptr->cutoff_score);
-    ddc.Log("single_hsp_score", m_Ptr->single_hsp_score);
     ddc.Log("percent_identity", m_Ptr->percent_identity);
     ddc.Log("do_sum_stats", m_Ptr->do_sum_stats);
     ddc.Log("longest_longron", m_Ptr->longest_intron);
