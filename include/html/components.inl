@@ -1,5 +1,5 @@
-#if defined(COMPONENTS__HPP)  &&  !defined(COMPONENTS__INL)
-#define COMPONENTS__INL
+#if defined(HTML___COMPONENTS__HPP)  &&  !defined(HTML___COMPONENTS__INL)
+#define HTML___COMPONENTS__INL
 
 /*  $Id$
 * ===========================================================================
@@ -30,14 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  1999/01/21 21:12:53  vasilche
-* Added/used descriptions for HTML submit/select/text.
-* Fixed some bugs in paging.
-*
-* ===========================================================================
 */
 
 inline COptionDescription::COptionDescription(const string& value)
@@ -56,4 +48,19 @@ inline void CSelectDescription::Add(int value)
     Add(NStr::IntToString(value));
 }
 
-#endif /* def COMPONENTS__HPP  &&  ndef COMPONENTS__INL */
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2003/11/03 15:08:19  ucko
+* Prepended HTML___ to include guards, per change to components.hpp.
+* Moved CVS log to end.
+*
+* Revision 1.1  1999/01/21 21:12:53  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
+* ===========================================================================
+*/
+
+#endif /* def HTML___COMPONENTS__HPP  &&  ndef HTML___COMPONENTS__INL */
