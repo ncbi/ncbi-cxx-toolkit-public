@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/10/18 13:07:17  ostell
+* added proper program name to usage
+*
 * Revision 1.26  2000/10/17 18:46:25  vasilche
 * Added print usage to asn2asn
 * Remove unnecessary warning about missing config file.
@@ -259,7 +262,7 @@ int CAsn2Asn::Run(void)
         catch (exception & e ) {
             NcbiCerr << e.what() << NcbiEndl;
             argDesc.SetUsageContext(GetArguments().GetProgramName(),
-                                    "Test program");
+                                    "asn2asn");
             string s;
             NcbiCerr << argDesc.PrintUsage(s);
             return -1;
