@@ -217,6 +217,8 @@ int CTestApplication::Run(void)
             long value = NStr::StringToLong(str);
             NcbiCout << "long value: " << value << ", toString: '"
                      << NStr::IntToString(value) << "'" << NcbiEndl;
+            NcbiCout << "      Int8ToString: '"
+                     << NStr::Int8ToString(value) << "'" << NcbiEndl;
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
@@ -226,6 +228,8 @@ int CTestApplication::Run(void)
             unsigned long value = NStr::StringToULong(str);
             NcbiCout << "unsigned long value: " << value << ", toString: '"
                      << NStr::UIntToString(value) << "'" << NcbiEndl;
+            NcbiCout << "      UInt8ToString: '"
+                     << NStr::UInt8ToString(value) << "'" << NcbiEndl;
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
@@ -486,6 +490,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/01/10 00:08:28  vakatov
+ * + Int8ToString(),  UInt8ToString()
+ *
  * Revision 6.8  2002/10/17 16:56:02  ivanov
  * Added tests for 'b' and 'B' time format symbols
  *

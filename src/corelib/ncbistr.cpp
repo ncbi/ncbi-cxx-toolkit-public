@@ -46,9 +46,9 @@ const char *const kEmptyCStr = "";
 
 const string* CNcbiEmptyString::m_Str = 0;
 const string& CNcbiEmptyString::FirstGet(void) {
-    static const string s_str = "";
-    m_Str = &s_str;
-    return s_str;
+    static const string s_Str = "";
+    m_Str = &s_Str;
+    return s_Str;
 }
 
 
@@ -249,8 +249,8 @@ int NStr::StringToInt(const string& str, int base /* = 10 */,
 }
 
 
-unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */, 
-                                ECheckEndPtr check_endptr   /* = eCheck_Need */ )
+unsigned int NStr::StringToUInt(const string& str, int base /* =10 */, 
+                                ECheckEndPtr check_endptr   /* =eCheck_Need */)
 {
     errno = 0;
     char* endptr = 0;
@@ -276,8 +276,8 @@ long NStr::StringToLong(const string& str, int base /* = 10 */,
 }
 
 
-unsigned long NStr::StringToULong(const string& str, int base /* = 10 */, 
-                                  ECheckEndPtr check_endptr   /* = eCheck_Need */ )
+unsigned long NStr::StringToULong(const string& str, int base /*=10 */, 
+                                  ECheckEndPtr check_endptr   /*=eCheck_Need*/)
 {
     errno = 0;
     char* endptr = 0;
@@ -307,7 +307,7 @@ double NStr::StringToDouble(const string& str,
 string NStr::IntToString(long value, bool sign /* = false */ )
 {
     char buffer[64];
-    ::sprintf(buffer, sign ? "%+ld": "%ld", value);
+    ::sprintf(buffer, sign ? "%+ld" : "%ld", value);
     return buffer;
 }
 
@@ -317,6 +317,54 @@ string NStr::UIntToString(unsigned long value)
     char buffer[64];
     ::sprintf(buffer, "%lu", value);
     return buffer;
+}
+
+
+string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
+{
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
+    char buffer[kBufSize];
+    char* pos = buffer + kBufSize;
+    
+    if (value == 0) {
+        *--pos = '0';
+    }
+    else {
+        bool is_negative = value < 0;
+        if ( is_negative )
+            value = -value;
+        
+        do {
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
+        
+        if ( is_negative )
+            *--pos = '-';
+        else if ( sign )
+            *--pos = '+';
+    }
+
+    return string(pos, buffer + kBufSize - pos);
+}
+
+
+string NStr::UInt8ToString(Uint8 value)
+{
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
+    char buffer[kBufSize];
+    char* pos = buffer + kBufSize;
+    if ( value == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        do {
+            *--pos = char('0' + (value % 10));
+            value /= 10;
+        } while ( value );
+    }
+
+    return string(pos, buffer + kBufSize - pos);
 }
 
 
@@ -397,10 +445,10 @@ string& NStr::Replace(const string& src,
                       const string& search, const string& replace,
                       string& dst, SIZE_TYPE start_pos, size_t max_replace)
 {
- // source and destination should not be the same
+    // source and destination should not be the same
     if (&src == &dst) {
         NCBI_THROW(CStringException,eBadArgs,
-            "String method called with inappropriate arguments");
+                   "String method called with inappropriate arguments");
     }
 
     dst = src;
@@ -729,6 +777,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2003/01/10 00:08:17  vakatov
+ * + Int8ToString(),  UInt8ToString()
+ *
  * Revision 1.58  2003/01/06 16:42:45  ivanov
  * + DoubleToString() with 'precision'
  *

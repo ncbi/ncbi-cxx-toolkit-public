@@ -129,8 +129,10 @@ public:
                                          ECheckEndPtr check = eCheck_Need);
 
     /// X-to-String conversion functions
-    static string IntToString(long value, bool sign=false);
+    static string IntToString(long value, bool sign = false);
     static string UIntToString(unsigned long value);
+    static string Int8ToString(Int8 value, bool sign = false);
+    static string UInt8ToString(Uint8 value);
     static string DoubleToString(double value);
     // NOTE: if precission is more that MAX_DOUBLE_PRECISION,
     //       then it will be set to MAX_DOUBLE_PRECISION
@@ -466,7 +468,7 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
         if (!c1  ||  diff)
             break; // return difference
         if (n == 0)
-           return 0;
+            return 0;
     }
     return diff;
 #endif
@@ -700,6 +702,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2003/01/10 00:08:05  vakatov
+ * + Int8ToString(),  UInt8ToString()
+ *
  * Revision 1.28  2003/01/06 16:43:05  ivanov
  * + DoubleToString() with 'precision'
  *
