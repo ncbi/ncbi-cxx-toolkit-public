@@ -157,9 +157,12 @@ CSeqVector_CI& CSeqVector_CI::operator++(void)
 inline
 CSeqVector_CI& CSeqVector_CI::operator--(void)
 {
-    _ASSERT(bool(m_Vector)  &&  m_Cache > m_CacheData.begin());
-    if (--m_Cache < m_CacheData.begin()) {
+    _ASSERT(bool(m_Vector)  &&  m_Cache >= m_CacheData.begin());
+    if (m_Cache == m_CacheData.begin()) {
             x_PrevCacheSeg();
+    }
+    else {
+        --m_Cache;
     }
     return *this;
 }
@@ -202,6 +205,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/05/30 20:43:54  vasilche
+* Fixed CSeqVector_CI::operator--().
+*
 * Revision 1.3  2003/05/30 19:30:08  vasilche
 * Fixed compilation on GCC 3.
 *
