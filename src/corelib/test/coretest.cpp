@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/11/24 23:07:31  vakatov
+* Draft(almost untested) version of CCgiRequest API
+*
 * Revision 1.12  1998/11/24 21:31:34  vakatov
 * Updated with the ISINDEX-related code for CCgiRequest::
 * TCgiEntries, ParseIndexes(), GetIndexes(), etc.
@@ -352,6 +355,10 @@ static void TestCgi_Request(void)
     _ASSERT( !TestIndexes(indexes, "+") );
     _ASSERT( !TestIndexes(indexes, "+ ") );
     _ASSERT( !TestIndexes(indexes, "++") );
+
+
+    // Test CCgiRequest::
+    CCgiRequest CCR(NcbiCin);
 }
 
 static void TestCgi(void)

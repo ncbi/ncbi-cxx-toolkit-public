@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/11/24 23:07:30  vakatov
+* Draft(almost untested) version of CCgiRequest API
+*
 * Revision 1.8  1998/11/24 21:31:32  vakatov
 * Updated with the ISINDEX-related code for CCgiRequest::
 * TCgiEntries, ParseIndexes(), GetIndexes(), etc.
@@ -296,6 +299,7 @@ static const string s_PropName[eCgi_NProperties + 1] = {
     "PATH_INFO",
     "PATH_TRANSLATED",
     "SCRIPT_NAME",
+    "QUERY_STRING",
 
     "AUTH_TYPE",
     "REMOTE_USER",
@@ -321,12 +325,35 @@ CCgiRequest::CCgiRequest(CNcbiIstream& istr)
     // compose cookies
     m_Cookies.Add(GetProperty(eCgi_HttpCookie));
 
-    // determine the request method, parse and compose entries
-    if (GetProperty(eCgi_RequestMethod).compare("GET") == 0) {
-    }
-    else if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
+    // parse entries or indexes, if any
+    const string& query_string = GetProperty(eCgi_QueryString);
+    if (query_string.find_first_of('=') == NPOS) { // ISINDEX
+        SIZE_TYPE err_pos = ParseIndexes(query_string, m_Indexes);
+        if (err_pos != 0)
+            throw CParseException("Init CCgiRequest::ParseIndexes(\"" +
+                                  query_string + "\"", err_pos);
+    } else {  // regular(non-ISINDEX) entries
+        SIZE_TYPE err_pos = ParseEntries(query_string, m_Entries);
+        if (err_pos != 0)
+            throw CParseException("Init(ENV) CCgiRequest::ParseEntries(\"" +
+                                  query_string + "\"", err_pos);
     }
 
+    // POST method?
+    if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
+        size_t len = GetContentLength();
+        string str;
+        str.reserve(len + 1);  // rely on "bad_alloc" here...
+        if (!istr.read(&str[0], len)  ||  istr.gcount() != len)
+            throw CParseException("Init CCgiRequest::CCgiRequest -- error "
+                                  "in reading POST content", istr.gcount());
+        str.resize(len);
+
+        SIZE_TYPE err_pos = ParseEntries(str, m_Entries);
+        if (err_pos != 0)
+            throw CParseException("Init(STDIN) CCgiRequest::ParseEntries(\"" +
+                                  str + "\"", err_pos);
+    }
 }
 
 
@@ -335,9 +362,9 @@ const string& CCgiRequest::x_GetPropertyByName(const string& name)
     TCgiProperties::const_iterator find_iter = m_Properties.find(name);
 
     if (find_iter == m_Properties.end()) {
-        m_Properties.insert(m_Properties.begin(),
-                            TCgiProperties::value_type(name,
-                                      getenv(name.c_str())));
+        const char* env_str = ::getenv(name.c_str());
+        m_Properties.insert(m_Properties.begin(), TCgiProperties::value_type
+                            (name, env_str ? env_str : ""));
         find_iter = m_Properties.begin();
     }
 
@@ -347,7 +374,7 @@ const string& CCgiRequest::x_GetPropertyByName(const string& name)
 
 const string& CCgiRequest::GetProperty(ECgiProp property) const
 {
-    if (property = eCgi_NProperties) {
+    if (property == eCgi_NProperties) {
         _TROUBLE;  static const string str;  return str;
     }
 

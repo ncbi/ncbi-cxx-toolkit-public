@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1998/11/24 23:07:28  vakatov
+* Draft(almost untested) version of CCgiRequest API
+*
 * Revision 1.18  1998/11/24 21:31:30  vakatov
 * Updated with the ISINDEX-related code for CCgiRequest::
 * TCgiEntries, ParseIndexes(), GetIndexes(), etc.
@@ -208,6 +211,7 @@ enum ECgiProp {
     eCgi_PathInfo,
     eCgi_PathTranslated,
     eCgi_ScriptName,
+    eCgi_QueryString,
 
     // authentication info
     eCgi_AuthType,
@@ -254,12 +258,6 @@ public:
 
     // Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;
-
-    // Return "true" if this is ISINDEX query, -- so use "GetIndexes()"
-    // (rather than "GetEntries()") to retrieve the set of index-like entries
-    // Note:  "GetEntries()" and "GetIndexes()" are mutually exclusive -- in
-    //        a sense that these two cannot be non-empty at the same time
-    bool GetISIndex(void) const;
 
     // Get a set of entries(decoded) received from the client
     const TCgiEntries& GetEntries(void) const;
