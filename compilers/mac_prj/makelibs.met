@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.14 2001/06/19 22:32:08 juran Exp $
+	$Id: makelibs.met,v 1.15 2001/07/07 01:28:17 juran Exp $
 	
 	Revision History:
 	----------------
@@ -318,7 +318,7 @@ on DoSetPaths1()
 		-- because certain files like "all.h" and "all" are defined by both Metrowerks and NCBI.
 		-- We want to find the NCBI "all.h" first.
 		Set Preferences of panel "Access Paths" to {System Paths:{}} -- This removes the compiler default folder
-		Set Preferences of panel "Access Paths" to {Convert Paths:true}
+		Set Preferences of panel "Access Paths" to {Convert Paths:true, Always Full Search:true}
 		Set Preferences of panel "Access Paths" to {User Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}}
 		Set Preferences of panel "Access Paths" to {System Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}} -- Added for speed
 		
