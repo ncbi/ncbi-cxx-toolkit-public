@@ -229,12 +229,54 @@ void CDll::x_ThrowException(const string& what)
 }
 
 
+CDllResolver::CDllResolver(const string& entry_point_name)
+ : m_EntryPoinName(entry_point_name)
+{    
+}
+
+CDllResolver::~CDllResolver()
+{
+    NON_CONST_ITERATE(TEntries, it, m_ResolvedEntries) {
+        delete it->dll;
+    }
+}
+
+bool CDllResolver::TryCandidate(const string& file_name)
+{
+    try {
+        CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eAutoUnload);
+        void* p;
+        if (m_EntryPoinName.empty()) {
+            p = 0;
+        } else {
+            p = dll->GetVoidEntryPoint(m_EntryPoinName);
+            if (p == 0)  { // entry point not found
+                delete dll;
+                return false;
+            }
+        }
+
+        m_ResolvedEntries.push_back(SResolvedEntry(dll, p));
+    } 
+    catch (CCoreException& ex)
+    {
+        if (ex.GetErrCode() != CCoreException::eDll)
+            throw;
+        return false;
+    }
+
+    return true;
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/11/06 13:00:12  kuznets
+ * +CDllResolver
+ *
  * Revision 1.11  2002/12/19 20:27:09  ivanov
  * Added DLL name to an exception description in the x_ThrowException()
  *
