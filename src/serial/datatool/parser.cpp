@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/01/10 19:46:45  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.17  1999/12/28 18:55:59  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -196,7 +203,7 @@ AutoPtr<CDataType> ASNParser::x_Type(void)
         return AutoPtr<CDataType>(new CStringDataType());
     case K_StringStore:
         Consume();
-        return AutoPtr<CDataType>(new CStringDataType("StringStore"));
+        return AutoPtr<CDataType>(new CStringStoreDataType());
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
         return AutoPtr<CDataType>(new CReferenceDataType(TypeReference()));

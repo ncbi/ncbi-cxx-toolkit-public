@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/01/10 19:46:41  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.11  1999/12/28 18:55:51  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -75,6 +82,7 @@
 #include <serial/objlist.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -89,6 +97,11 @@ COObjectList::~COObjectList(void)
 
 bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 {
+#if SKIP_NON_CLASS
+    if ( dynamic_cast<const CClassInfoTmpl*>(typeInfo) == 0 )
+        return true;
+#endif
+
     _TRACE("COObjectList::Add(" << NStr::PtrToString(object) << ", " <<
            typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
            ", end: " << NStr::PtrToString(typeInfo->EndOf(object)));
@@ -211,6 +224,16 @@ void COObjectList::SetObject(COObjectInfo& info,
                              TConstObjectPtr member,
                              TTypeInfo memberTypeInfo) const
 {
+#if SKIP_NON_CLASS
+    if ( dynamic_cast<const CClassInfoTmpl*>(memberTypeInfo) == 0 ) {
+        const_cast<TConstObjectPtr&>(info.m_RootObjectBase.first) = member;
+        info.m_RootObjectBase.second.m_Index = TIndex(-1);
+        info.m_RootObjectBase.second.m_TypeInfo = memberTypeInfo;
+        info.m_RootObject = &info.m_RootObjectBase;
+        return;
+    }
+#endif
+
     // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
     typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
@@ -232,8 +255,12 @@ void COObjectList::SetObject(COObjectInfo& info,
             THROW1_TRACE(runtime_error, "object is not collected");
         }
         const CMemberInfo* memberInfo = ownerTypeInfo->GetMemberInfo(index);
-        info.m_Members.push_back(make_pair(ownerTypeInfo->GetMemberId(index),
-                                           memberInfo));
+        if ( !info.IsMember() ) {
+            info.m_Members.reset(new list< pair<const CMemberId*,
+                                 const CMemberInfo*> >);
+        }
+        info.m_Members->push_back(make_pair(ownerTypeInfo->GetMemberId(index),
+                                            memberInfo));
         ownerTypeInfo = memberInfo->GetTypeInfo();
         owner = memberInfo->GetMember(owner);
     }
@@ -241,6 +268,11 @@ void COObjectList::SetObject(COObjectInfo& info,
 
 void COObjectList::RegisterObject(const CORootObjectInfo& info)
 {
+#if SKIP_NON_CLASS
+    if ( dynamic_cast<const CClassInfoTmpl*>(info.GetTypeInfo()) == 0 )
+        return;
+#endif
+
     const_cast<CORootObjectInfo&>(info).m_Index = m_NextObjectIndex++;
 }
 

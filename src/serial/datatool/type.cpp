@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/01/10 19:46:46  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.38  1999/12/29 16:01:51  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -367,10 +374,14 @@ void CDataType::GenerateCode(CClassCode& code) const
     // by default, generate implicit class with one data member
     string memberName = GetVar("_member");
     string idName = Identifier(IdName());
+    string typeDefName;
     if ( memberName.empty() ) {
         memberName = "m_" + idName;
+        typeDefName = 'T' + idName;
     }
-    string typeDefName = 'T' + idName;
+    else {
+        typeDefName = 'T' + Identifier(memberName);
+    }
     code.TypeInfoBody() <<
         "    info->SetImplicit();" << NcbiEndl;
     CTypeStrings tType;
@@ -378,7 +389,6 @@ void CDataType::GenerateCode(CClassCode& code) const
     tType.AddMember(code, memberName);
     code.TypeInfoBody() << ';' << NcbiEndl;
     code.ClassPublic() << NcbiEndl <<
-        "    typedef "<<tType.GetCType()<<' '<<typeDefName<<';'<<NcbiEndl<<
         "    operator "<<typeDefName<<"&(void)"<<NcbiEndl<<
         "    {"<<NcbiEndl<<
         "        return "<<memberName<<';'<<NcbiEndl<<

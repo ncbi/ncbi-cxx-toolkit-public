@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/01/10 19:46:41  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.34  2000/01/05 19:43:56  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -664,15 +671,17 @@ double CObjectIStreamBinary::ReadDouble(void)
     return 0;
 }
 
-string CObjectIStreamBinary::ReadString(void)
+void CObjectIStreamBinary::ReadString(string& s)
 {
+    s.erase();
     switch ( ReadByte() ) {
     default:
         ThrowError(eFormatError, "invalid string code");
     case eNull:
-        return string();
+        break;
     case eStd_string:
-        return ReadStringValue();
+        s = ReadStringValue();
+        break;
     }
 }
 
@@ -745,12 +754,48 @@ bool CObjectIStreamBinary::VNext(const Block& block)
     }
 }
 
-void CObjectIStreamBinary::StartMember(Member& member)
+void CObjectIStreamBinary::StartMember(Member& m, const CMemberId& member)
 {
     if ( ReadByte() != eMember ) {
         ThrowError(eFormatError, "invalid element type");
     }
-    member.Id().SetName(ReadStringValue());
+    string s = ReadStringValue();
+    if ( s != member.GetName() ) {
+        ThrowError(eFormatError,
+                   "expected " + member.ToString() +", found " +
+                   s);
+    }
+    SetIndex(m, 0, member);
+}
+
+void CObjectIStreamBinary::StartMember(Member& m, const CMembers& members)
+{
+    if ( ReadByte() != eMember ) {
+        ThrowError(eFormatError, "invalid element type");
+    }
+    string s = ReadStringValue();
+    TMemberIndex index = members.FindMember(s);
+    if ( index < 0 ) {
+        ThrowError(eFormatError,
+                   "unexpected member: " + s);
+    }
+    SetIndex(m, index, members.GetMemberId(index));
+}
+
+void CObjectIStreamBinary::StartMember(Member& m, LastMember& lastMember)
+{
+    if ( ReadByte() != eMember ) {
+        ThrowError(eFormatError, "invalid element type");
+    }
+    string s = ReadStringValue();
+    TMemberIndex index =
+        lastMember.GetMembers().FindMember(s.c_str(), lastMember.GetIndex());
+    if ( index < 0 ) {
+        ThrowError(eFormatError,
+                   "unexpected member: " + s);
+    }
+    SetIndex(lastMember, index);
+    SetIndex(m, index, lastMember.GetMembers().GetMemberId(index));
 }
 
 void CObjectIStreamBinary::Begin(ByteBlock& block)
@@ -793,9 +838,17 @@ CObjectIStream::EPointerType CObjectIStreamBinary::ReadPointerType(void)
     }
 }
 
-string CObjectIStreamBinary::ReadMemberPointer(void)
+CObjectIStreamBinary::TMemberIndex
+CObjectIStreamBinary::ReadMemberSuffix(const CMembers& members)
 {
-    return ReadStringValue();
+    string member;
+    ReadString(member);
+    TMemberIndex index = members.FindMember(member);
+    if ( index < 0 ) {
+        ThrowError(eFormatError,
+                   "member not found: " + member);
+    }
+    return index;
 }
 
 CObjectIStream::TIndex CObjectIStreamBinary::ReadObjectPointer(void)
@@ -865,7 +918,10 @@ void CObjectIStreamBinary::SkipValue()
         return;
     case eElement:
         for (;;) {
-            Member m(*this);
+            if ( ReadByte() != eMember ) {
+                ThrowError(eFormatError, "invalid element type");
+            }
+            ReadStringValue();
             SkipValue();
             switch ( b = ReadByte() ) {
             case eElement:
@@ -918,7 +974,10 @@ void CObjectIStreamBinary::SkipObjectData(void)
 {
     Block block(*this, eFixed);
     while ( block.Next() ) {
-        Member m(*this);
+        if ( ReadByte() != eMember ) {
+            ThrowError(eFormatError, "invalid element type");
+        }
+        ReadStringValue();
         SkipValue();
     }
 }

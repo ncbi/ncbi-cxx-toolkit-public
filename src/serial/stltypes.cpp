@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/01/10 19:46:42  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.15  2000/01/05 19:43:57  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -205,27 +212,13 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
     if ( !block.Next() )
         THROW1_TRACE(runtime_error, "map key expected");
     {
-        CObjectIStream::Member m(in);
-        if ( GetKeyId() == m ) {
-            m.Id().UpdateName(GetKeyId());
-        }
-        else {
-            THROW1_TRACE(runtime_error,
-                         "map key expected: " + GetKeyId().ToString());
-        }
+        CObjectIStream::Member m(in, GetKeyId());
         GetKeyTypeInfo()->ReadData(in, key);
     }
     if ( !block.Next() )
         THROW1_TRACE(runtime_error, "map value expected");
     {
-        CObjectIStream::Member m(in);
-        if ( GetValueId() == m ) {
-            m.Id().UpdateName(GetValueId());
-        }
-        else {
-            THROW1_TRACE(runtime_error,
-                         "map value expected: " + GetValueId().ToString());
-        }
+        CObjectIStream::Member m(in, GetValueId());
         GetValueTypeInfo()->ReadData(in, value);
     }
     if ( block.Next() )

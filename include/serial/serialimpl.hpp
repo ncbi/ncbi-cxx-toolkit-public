@@ -87,6 +87,14 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_TYPE_STD(Name) Name
 #define SERIAL_REF_STD(Name) &NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
 
+#define SERIAL_TYPE_StringStore() NCBI_NS_STD::string
+#define SERIAL_REF_StringStore() \
+    &NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo
+
+#define SERIAL_TYPE_null() bool
+#define SERIAL_REF_null() \
+    &NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo
+
 #define SERIAL_TYPE_ENUM(Type, Name) Type
 #define SERIAL_REF_ENUM(Type, Name) \
     NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), NCBI_NAME2(GetEnumInfo_,Name)())
@@ -123,6 +131,12 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_list(Type,Args) \
     &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args>::GetTypeInfo,\
+    SERIAL_REF(Type)Args
+
+#define SERIAL_TYPE_STL_list_set(Type,Args) \
+    NCBI_NS_STD::list<SERIAL_TYPE(Type)Args>
+#define SERIAL_REF_STL_list_set(Type,Args) \
+    &NCBI_NS_NCBI::CStlClassInfo_list<SERIAL_TYPE(Type)Args>::GetSetTypeInfo,\
     SERIAL_REF(Type)Args
 
 #define SERIAL_TYPE_STL_vector(Type,Args) \

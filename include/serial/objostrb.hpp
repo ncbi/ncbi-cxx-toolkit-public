@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/01/10 19:46:33  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.13  1999/09/24 18:19:15  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -118,7 +125,8 @@ protected:
 
 protected:
 
-    virtual void WriteMemberPrefix(const CMemberId& id);
+    virtual void WriteMemberPrefix(void);
+    virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
     virtual void WriteThis(TConstObjectPtr object, TTypeInfo typeInfo);

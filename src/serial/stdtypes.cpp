@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/01/10 19:46:42  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.12  2000/01/05 19:43:57  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -167,6 +174,11 @@ CStdTypeInfo<string>::CStdTypeInfo(void)
 {
 }
 
+CStdTypeInfo<string>::CStdTypeInfo(const char* typeName)
+    : CParent(typeName)
+{
+}
+
 CStdTypeInfo<string>::~CStdTypeInfo(void)
 {
 }
@@ -217,6 +229,63 @@ void CStdTypeInfo<string>::ReadData(CObjectIStream& in, TObjectPtr object) const
 void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object) const
 {
 	out.WriteStd(Get(object));
+}
+
+CStringStoreTypeInfo::CStringStoreTypeInfo(void)
+    : CParent("StringStore")
+{
+}
+
+CStringStoreTypeInfo::~CStringStoreTypeInfo(void)
+{
+}
+
+TTypeInfo CStringStoreTypeInfo::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CStringStoreTypeInfo;
+    return typeInfo;
+}
+
+void CStringStoreTypeInfo::ReadData(CObjectIStream& in,
+                                    TObjectPtr object) const
+{
+	in.ReadStringStore(Get(object));
+}
+
+void CStringStoreTypeInfo::WriteData(CObjectOStream& out,
+                                     TConstObjectPtr object) const
+{
+	out.WriteStringStore(Get(object));
+}
+
+CNullBoolTypeInfo::CNullBoolTypeInfo(void)
+    : CParent("NULL")
+{
+}
+
+CNullBoolTypeInfo::~CNullBoolTypeInfo(void)
+{
+}
+
+TTypeInfo CNullBoolTypeInfo::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CNullBoolTypeInfo;
+    return typeInfo;
+}
+
+void CNullBoolTypeInfo::ReadData(CObjectIStream& in,
+                                 TObjectPtr object) const
+{
+	in.ReadNull();
+    Get(object) = true;
+}
+
+void CNullBoolTypeInfo::WriteData(CObjectOStream& out,
+                                  TConstObjectPtr object) const
+{
+    if ( !Get(object) )
+        THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
+	out.WriteNull();
 }
 
 END_NCBI_SCOPE

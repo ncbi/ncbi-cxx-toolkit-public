@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/01/10 19:46:33  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.3  1999/12/17 19:04:54  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -72,6 +79,14 @@ TConstObjectPtr Add(TConstObjectPtr object, int offset);
 // calculate offset of member inside object
 inline
 int Sub(TConstObjectPtr first, TConstObjectPtr second);
+
+struct StrCmp
+{
+    bool operator()(const char* arg1, const char* arg2) const
+        {
+            return strcmp(arg1, arg2) < 0;
+        }
+};
 
 #include <serial/serialdef.inl>
 

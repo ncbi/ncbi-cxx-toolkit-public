@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/01/10 19:46:39  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.28  2000/01/05 19:43:52  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -392,15 +399,13 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
         return;
     }
     CObjectOStream::Block block(out, RandomOrder());
-    CMemberId currentId;
     for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
         const CMemberInfo& info = *m_MembersInfo[i];
         TConstObjectPtr member = info.GetMember(object);
-        currentId.SetNext(m_Members.GetMemberId(i));
         if ( !info.Optional() ||
              !info.GetTypeInfo()->IsDefault(member) ) {
             block.Next();
-            CObjectOStream::Member m(out, currentId);
+            CObjectOStream::Member m(out, m_Members, i);
             info.GetTypeInfo()->WriteData(out, member);
         }
     }
@@ -428,27 +433,17 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
     if ( RandomOrder() ) {
         set<TMemberIndex> read;
         while ( block.Next() ) {
-            CObjectIStream::Member memberId(in);
-            TMemberIndex index = m_Members.FindMember(memberId);
-            if ( index < 0 ) {
-                ERR_POST("unknown member: " +
-                         memberId.Id().ToString() + ", skipping");
-                in.SkipValue();
-                continue;
+            CObjectIStream::Member m(in, m_Members);
+            if ( !read.insert(m.GetIndex()).second ) {
+                THROW1_TRACE(runtime_error, 
+                             "duplicated member: " + m.ToString());
             }
-            memberId.Id().UpdateName(m_Members.GetMemberId(index));
-            if ( !read.insert(index).second ) {
-                ERR_POST("duplicated member: " +
-                         memberId.Id().ToString() + ", skipping");
-                in.SkipValue();
-                continue;
-            }
-            const CMemberInfo& info = *m_MembersInfo[index];
+            const CMemberInfo& info = *m_MembersInfo[m.GetIndex()];
             TObjectPtr member = info.GetMember(object);
             info.GetTypeInfo()->ReadData(in, member);
         }
         // init all absent members
-        for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
+        for ( size_t i = 0; i < m_MembersInfo.size(); ++i ) {
             if ( read.find(i) == read.end() ) {
                 // check if this member have defaults
                 const CMemberInfo& info = *m_MembersInfo[i];
@@ -463,8 +458,8 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                 }
                 else {
                     // error: absent member w/o defult
-                    THROW1_TRACE(runtime_error,
-                                 "member " + m_Members.GetMemberId(i).ToString() +
+                    THROW1_TRACE(runtime_error, "member " +
+                                 m_Members.GetMemberId(i).ToString() +
                                  " is missing and doesn't have default");
                 }
             }
@@ -472,46 +467,38 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
     else {
         // sequential order
-        TMemberIndex currentIndex = 0, size = m_MembersInfo.size();
-        CMemberId currentId;
+        CObjectIStream::LastMember lastMember(m_Members);
         while ( block.Next() ) {
-            CObjectIStream::Member memberId(in);
+            CObjectIStream::Member m(in, lastMember);
             // find desired member
-            const CMemberInfo* info;
-            TObjectPtr member;
-            for ( ;; ++currentIndex ) {
-                if ( currentIndex == size ) {
-                    THROW1_TRACE(runtime_error,
-                                 "unexpected member: " + memberId.Id().ToString());
-                }
-                currentId.SetNext(m_Members.GetMemberId(currentIndex));
-                info = m_MembersInfo[currentIndex];
-                member = info->GetMember(object);
-                if ( currentId == memberId )
-                    break;
-
+            for ( TMemberIndex i = lastMember.GetIndex() + 1;
+                  i < m.GetIndex(); ++i ) {
+                const CMemberInfo* info = m_MembersInfo[i];
                 if ( !info->Optional() ) {
                     THROW1_TRACE(runtime_error, "member " +
-                                 currentId.ToString() + " expected");
+                                 m_Members.GetMemberId(i).ToString() +
+                                 " expected");
                 }
+                TObjectPtr member = info->GetMember(object);
                 TConstObjectPtr def = info->GetDefault();
                 if ( def == 0 )
                     info->GetTypeInfo()->SetDefault(member);
                 else
                     info->GetTypeInfo()->Assign(member, info->GetDefault());
             }
-            ++currentIndex;
-            memberId.Id().UpdateName(currentId);
+            const CMemberInfo* info = m_MembersInfo[m.GetIndex()];
+            TObjectPtr member = info->GetMember(object);
             info->GetTypeInfo()->ReadData(in, member);
         }
-        for ( ; currentIndex != size; ++currentIndex ) {
-            const CMemberInfo* info = m_MembersInfo[currentIndex];
-            TObjectPtr member = info->GetMember(object);
+        for ( size_t i = lastMember.GetIndex() + 1;
+              i < m_MembersInfo.size(); ++i ) {
+            const CMemberInfo* info = m_MembersInfo[i];
             if ( !info->Optional() ) {
                 THROW1_TRACE(runtime_error, "member " +
-                             m_Members.GetMemberId(currentIndex).ToString() +
+                             m_Members.GetMemberId(i).ToString() +
                              " expected");
             }
+            TObjectPtr member = info->GetMember(object);
             TConstObjectPtr def = info->GetDefault();
             if ( def == 0 )
                 info->GetTypeInfo()->SetDefault(member);

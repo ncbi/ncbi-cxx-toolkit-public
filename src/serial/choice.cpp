@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/01/10 19:46:38  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.3  2000/01/05 19:43:51  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -132,7 +139,7 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 {
     TMemberIndex index = GetIndex(object);
     if ( index >= 0 && index < GetVariantsCount() ) {
-        CObjectOStream::Member m(out, m_Variants.GetCompleteMemberId(index));
+        CObjectOStream::Member m(out, m_Variants, index);
         GetVariantTypeInfo(index)->WriteData(out, GetData(object));
     }
 }
@@ -140,15 +147,9 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CObjectIStream::Member m(in);
-    TMemberIndex index = m_Variants.FindMember(m);
-    if ( index < 0 ) {
-        THROW1_TRACE(runtime_error,
-                     "illegal choice variant: " + m.Id().ToString());
-    }
-    m.Id().UpdateName(m_Variants.GetMemberId(index));
-    SetIndex(object, index);
-    GetVariantTypeInfo(index)->ReadData(in, GetData(object));
+    CObjectIStream::Member m(in, m_Variants);
+    SetIndex(object, m.GetIndex());
+    GetVariantTypeInfo(m.GetIndex())->ReadData(in, GetData(object));
 }
 
 END_NCBI_SCOPE

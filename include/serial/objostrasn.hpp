@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/01/10 19:46:32  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.17  1999/09/24 18:19:14  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -110,7 +117,7 @@ public:
     virtual ~CObjectOStreamAsn(void);
 
     virtual void WriteTypeName(const string& name);
-    virtual bool WriteEnumName(const string& name);
+    virtual bool WriteEnum(const CEnumeratedTypeValues& value, long value);
 
 protected:
     virtual void WriteBool(bool data);

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/01/10 19:46:34  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.15  2000/01/05 19:43:47  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -200,6 +207,7 @@ class CStdTypeInfo<string> : public CTypeInfo
     typedef CType<TObjectType> TType;
 public:
     CStdTypeInfo(void);
+    CStdTypeInfo(const char* typeName);
     ~CStdTypeInfo(void);
 
     static TObjectType& Get(TObjectPtr object)
@@ -218,6 +226,34 @@ public:
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+    static TTypeInfo GetTypeInfo(void);
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+};
+
+class CStringStoreTypeInfo : public CStdTypeInfo<string>
+{
+    typedef CStdTypeInfo<string> CParent;
+public:
+    CStringStoreTypeInfo(void);
+    ~CStringStoreTypeInfo(void);
+
+    static TTypeInfo GetTypeInfo(void);
+
+protected:
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+};
+
+class CNullBoolTypeInfo : public CStdTypeInfo<bool>
+{
+    typedef CStdTypeInfo<bool> CParent;
+public:
+    CNullBoolTypeInfo(void);
+    ~CNullBoolTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(void);
 

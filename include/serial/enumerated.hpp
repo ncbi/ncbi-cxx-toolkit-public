@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/01/10 19:46:31  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.4  1999/12/17 19:04:52  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -52,6 +59,8 @@
 */
 
 #include <serial/stdtypes.hpp>
+#include <memory>
+#include <list>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -59,7 +68,8 @@ BEGIN_NCBI_SCOPE
 class CEnumeratedTypeValues
 {
 public:
-    typedef map<string, long> TNameToValue;
+    typedef list< pair<string, long> > TValues;
+    typedef map<const char*, long, StrCmp> TNameToValue;
     typedef map<long, string> TValueToName;
 
     CEnumeratedTypeValues(const string& name, bool isInteger);
@@ -81,26 +91,24 @@ public:
     // returns value of enum element, if found
     // otherwise, throws exception
     long FindValue(const string& name) const;
+    long FindValue(const char* name) const;
 
     // returns name of enum element, if found
     // otherwise, if (allowBadValue == true) returns empty string,
     // otherwise, throws exception
     const string& FindName(long value, bool allowBadValue) const;
 
-    // tries to read enum element. Success flag is in second member,
-    // value is in first member
-    pair<long, bool> ReadEnum(CObjectIStream& in) const;
-
-    // tries to write enum element. Returns success flag
-    bool WriteEnum(CObjectOStream& out, long value) const;
-
     TTypeInfo GetTypeInfoForSize(size_t size, long /* dummy */) const;
+
+    const TNameToValue& NameToValue(void) const;
+    const TValueToName& ValueToName(void) const;
 
 private:
     string m_Name;
     bool m_Integer;
-    TNameToValue m_NameToValue;
-    TValueToName m_ValueToName;
+    TValues m_Values;
+    mutable auto_ptr<TNameToValue> m_NameToValue;
+    mutable auto_ptr<TValueToName> m_ValueToName;
 };
 
 template<typename T>
@@ -123,7 +131,7 @@ public:
 protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            pair<long, bool> value = Values().ReadEnum(in);
+            pair<long, bool> value = in.ReadEnum(Values());
             if ( value.second ) {
                 // value already read
                 Get(object) = T(value.first);
@@ -135,7 +143,7 @@ protected:
         }
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
-            if ( !Values().WriteEnum(out, Get(object)) ) {
+            if ( !out.WriteEnum(Values(), Get(object)) ) {
                 // plain integer
                 CParent::WriteData(out, object);
             }

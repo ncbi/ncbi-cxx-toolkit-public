@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/01/10 19:46:39  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.8  2000/01/05 19:43:51  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -178,7 +185,7 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
 {
     TConstObjectPtr data = GetObjectPointer(object);
     TIndex index = FindVariant(data);
-    CObjectOStream::Member m(out, m_Variants.GetCompleteMemberId(index));
+    CObjectOStream::Member m(out, m_Variants, index);
     TTypeInfo dataType = m_VariantTypes[index].Get();
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
@@ -188,12 +195,8 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
 void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
                                       TObjectPtr object) const
 {
-    CObjectIStream::Member m(in);
-    TIndex index = m_Variants.FindMember(m);
-    if ( index < 0 )
-        THROW1_TRACE(runtime_error, "incompatible type: " + m.Id().ToString());
-    m.Id().UpdateName(m_Variants.GetMemberId(index));
-    TTypeInfo dataType = m_VariantTypes[index].Get();
+    CObjectIStream::Member m(in, m_Variants);
+    TTypeInfo dataType = m_VariantTypes[m.GetIndex()].Get();
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
     TObjectPtr data = dataType->Create();

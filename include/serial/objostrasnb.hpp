@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/01/10 19:46:32  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.14  1999/09/24 18:19:14  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -101,7 +108,7 @@ public:
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamAsnBinary(void);
 
-    virtual void WriteEnumValue(int value);
+    virtual bool WriteEnum(const CEnumeratedTypeValues& value, long value);
 
     void WriteNull(void);
     void WriteByte(TByte byte);
@@ -128,13 +135,14 @@ protected:
     virtual void WriteDouble(double data);
     virtual void WriteString(const string& s);
     virtual void WriteCString(const char* str);
+    virtual void WriteStringStore(const string& s);
 
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
 #endif
 
-    virtual void WriteMemberPrefix(const CMemberId& id);
+    virtual void WriteMemberPrefix(void);
     virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
@@ -143,6 +151,8 @@ protected:
     virtual void VBegin(Block& block);
     virtual void VEnd(const Block& block);
     virtual void StartMember(Member& member, const CMemberId& id);
+    virtual void StartMember(Member& member,
+                             const CMembers& members, TMemberIndex index);
     virtual void EndMember(const Member& member);
 	virtual void Begin(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block, const char* bytes,

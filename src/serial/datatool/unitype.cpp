@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/01/10 19:46:47  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.6  1999/12/17 19:05:19  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -149,8 +156,8 @@ const char* CUniSetDataType::GetASNKeyword(void) const
 CTypeInfo* CUniSetDataType::CreateTypeInfo(void)
 {
     CStlClassInfo_list<AnyType>* l =
-        new CStlClassInfo_list<AnyType>(new CAnyTypeSource(GetElementType()));
-    l->SetRandomOrder();
+        new CStlClassInfo_list<AnyType>(new CAnyTypeSource(GetElementType()),
+                                        true);
     return new CAutoPointerTypeInfo(l);
 }
 
@@ -180,10 +187,21 @@ void CUniSetDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
     GetElementType()->GetFullCType(tData, code);
     if ( !tData.CanBeInSTL() )
         tData.ToPointer();
-    if ( templ.empty() )
-        templ = "multiset";
+
+    string macro;
+    if ( templ.empty() ) {
+        if ( tData.CanBeKey() )
+            templ = "multiset";
+        else {
+            templ = "list";
+            macro = "STL_list_set";
+        }
+    }
+    if ( macro.empty() )
+        macro = GetTemplateMacro(templ);
+    
     tType.AddHPPInclude(GetTemplateHeader(templ));
     tType.SetTemplate(GetTemplateNamespace(templ) + "::" + templ,
-                      GetTemplateMacro(templ), tData);
+                      macro, tData);
 }
 

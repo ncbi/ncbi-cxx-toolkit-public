@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/01/10 19:46:32  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.6  1999/10/04 16:22:09  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -57,9 +64,12 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
+#include <memory>
 #include <map>
 #include <list>
 #include <functional>
+
+#define SKIP_NON_CLASS 1
 
 BEGIN_NCBI_SCOPE
 
@@ -109,29 +119,32 @@ public:
 
     bool IsMember(void) const
         {
-            return !m_Members.empty();
+            return m_Members.get() != 0;
         }
 
     const CMemberId& GetMemberId(void) const
         {
-            return *(m_Members.back().first);
+            return *(m_Members->back().first);
         }
 
     const CMemberInfo& GetMemberInfo(void) const
         {
-            return *(m_Members.back().second);
+            return *(m_Members->back().second);
         }
 
     void ToContainerObject(void)
         {
-            m_Members.pop_back();
+            m_Members->pop_back();
         }
 
 private:
     friend class COObjectList;
 
     const pair<const TConstObjectPtr, CORootObjectInfo>* m_RootObject;
-    list<pair<const CMemberId*, const CMemberInfo*> > m_Members;
+#if SKIP_NON_CLASS
+    pair<const TConstObjectPtr, CORootObjectInfo> m_RootObjectBase;
+#endif
+    auto_ptr< list< pair<const CMemberId*, const CMemberInfo*> > > m_Members;
 };
 
 class COObjectList

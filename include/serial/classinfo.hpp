@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/01/10 19:46:30  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.22  2000/01/05 19:43:43  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -210,6 +217,11 @@ public:
         }
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+
+    const CMembers& GetMembers(void) const
+        {
+            return m_Members;
+        }
 
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;

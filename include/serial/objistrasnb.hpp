@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/01/10 19:46:32  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.13  2000/01/05 19:43:45  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -104,7 +111,7 @@ public:
     CObjectIStreamAsnBinary(CNcbiIstream& in);
     virtual ~CObjectIStreamAsnBinary(void);
 
-    virtual long ReadEnumValue(void);
+    virtual pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
     virtual void SkipValue(void);
@@ -122,8 +129,9 @@ protected:
     virtual long ReadLong(void);
     virtual unsigned long ReadULong(void);
     virtual double ReadDouble(void);
-    virtual string ReadString(void);
+    virtual void ReadString(string& s);
     virtual char* ReadCString(void);
+    virtual void ReadStringStore(string& s);
 
 public:
     void ExpectByte(TByte byte);
@@ -152,7 +160,9 @@ public:
 protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
-    virtual void StartMember(Member& member);
+    virtual void StartMember(Member& member, const CMembers& members);
+    virtual void StartMember(Member& member, const CMemberId& member);
+    virtual void StartMember(Member& member, LastMember& lastMember);
     virtual void EndMember(const Member& member);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
@@ -165,8 +175,7 @@ protected:
 
 private:
     virtual EPointerType ReadPointerType(void);
-    virtual string ReadMemberPointer(void);
-    virtual void ReadMemberPointerEnd(void);
+    virtual TMemberIndex ReadMemberSuffix(const CMembers& members);
     virtual TIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
     virtual void ReadOtherPointerEnd(void);

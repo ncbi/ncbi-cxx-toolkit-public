@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/01/10 19:46:41  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.29  2000/01/05 19:43:56  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -135,6 +142,8 @@
 #include <serial/objlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/enumerated.hpp>
+#include <serial/memberlist.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -207,14 +216,14 @@ void CObjectOStream::WriteTypeName(const string& )
     // do nothing by default
 }
 
-bool CObjectOStream::WriteEnumName(const string& )
+bool CObjectOStream::WriteEnum(const CEnumeratedTypeValues& values, long value)
 {
-    return false;
-}
-
-void CObjectOStream::WriteEnumValue(int value)
-{
-    WriteStd(value);
+    if ( values.IsInteger() ) {
+        return false;
+    }
+    values.FindName(value, false);
+    WriteLong(value);
+    return true;
 }
 
 void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
@@ -237,7 +246,7 @@ void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
     if ( info.IsMember() ) {
         CMemberId memberId = info.GetMemberId();
         info.ToContainerObject();
-        WriteMemberPrefix(memberId);
+        WriteMemberPrefix();
         WritePointer(info, 0);
         WriteMemberSuffix(memberId);
     }
@@ -308,7 +317,12 @@ void CObjectOStream::WriteCString(const char* str)
 	WriteString(str);
 }
 
-void CObjectOStream::WriteMemberPrefix(const CMemberId& )
+void CObjectOStream::WriteStringStore(const string& str)
+{
+	WriteString(str);
+}
+
+void CObjectOStream::WriteMemberPrefix(void)
 {
 }
 
@@ -320,6 +334,12 @@ void CObjectOStream::WriteThis(TConstObjectPtr object,
                                TTypeInfo typeInfo)
 {
     WriteExternalObject(object, typeInfo);
+}
+
+void CObjectOStream::StartMember(Member& m,
+                                 const CMembers& members, TMemberIndex index)
+{
+    StartMember(m, members.GetMemberId(index));
 }
 
 void CObjectOStream::EndMember(const Member& )
@@ -373,7 +393,8 @@ CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder)
     out.VBegin(*this);
 }
 
-CObjectOStream::Block::Block(size_t size, CObjectOStream& out, bool randomOrder)
+CObjectOStream::Block::Block(size_t size, CObjectOStream& out,
+                             bool randomOrder)
     : m_Out(out), m_Fixed(true), m_RandomOrder(randomOrder),
       m_NextIndex(0), m_Size(size)
 {

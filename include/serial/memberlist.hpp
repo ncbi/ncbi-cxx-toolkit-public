@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/10 19:46:31  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.5  1999/09/22 20:11:48  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -54,6 +61,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <serial/memberid.hpp>
 #include <vector>
 #include <map>
@@ -61,6 +69,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CMemberId;
 class CMemberInfo;
 
 // This class supports sets of members with IDs
@@ -69,7 +78,8 @@ public:
     typedef CMemberId::TTag TTag;
     typedef int TIndex;
     typedef vector<CMemberId> TMembers;
-    typedef map<string, TIndex> TMembersByName;
+    typedef map<const char*, TIndex, StrCmp> TMembersByName;
+    typedef vector<TTag> TMemberTags;
     typedef map<TTag, TIndex> TMembersByTag;
 
     CMembers(void);
@@ -94,21 +104,30 @@ public:
         }
     const TMembersByName& GetMembersByName(void) const;
     const TMembersByTag& GetMembersByTag(void) const;
+    const TMemberTags& GetMemberTags(void) const;
 
     void AddMember(const CMemberId& id);
 
     const CMemberId& GetMemberId(TIndex index) const
-        { return m_Members[index]; }
-    CMemberId GetCompleteMemberId(TIndex index) const;
+        {
+            return m_Members[index];
+        }
 
-    TIndex FindMember(const string& name) const;
-    TIndex FindMember(TTag tag) const;
     TIndex FindMember(const CMemberId& id) const;
+    TIndex FindMember(const string& name) const;
+    TIndex FindMember(const char* name) const;
+    TIndex FindMember(TTag tag) const;
+    TIndex FindMember(const char* name, TIndex pos) const;
+    TIndex FindMember(TTag tag, TIndex pos) const;
 
 private:
     TMembers m_Members;
     mutable auto_ptr<TMembersByName> m_MembersByName;
+    mutable auto_ptr<TMemberTags> m_MemberTags;
     mutable auto_ptr<TMembersByTag> m_MembersByTag;
+
+    CMembers(const CMembers&);
+    CMembers& operator=(const CMembers&);
 };
 
 //#include <serial/memberlist.inl>

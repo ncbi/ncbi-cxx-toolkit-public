@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/01/10 19:46:39  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.6  2000/01/05 19:43:53  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -57,6 +64,7 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbiutil.hpp>
 #include <serial/enumerated.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
@@ -81,18 +89,26 @@ CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
 
 long CEnumeratedTypeValues::FindValue(const string& name) const
 {
-    TNameToValue::const_iterator i = m_NameToValue.find(name);
-    if ( i == m_NameToValue.end() )
+    return FindValue(name.c_str());
+}
+
+long CEnumeratedTypeValues::FindValue(const char* name) const
+{
+    const TNameToValue& m = NameToValue();
+    TNameToValue::const_iterator i = m.find(name);
+    if ( i == m.end() ) {
         THROW1_TRACE(runtime_error,
                      "invalid value of enumerated type");
+    }
     return i->second;
 }
 
 const string& CEnumeratedTypeValues::FindName(long value,
                                               bool allowBadValue) const
 {
-    TValueToName::const_iterator i = m_ValueToName.find(value);
-    if ( i == m_ValueToName.end() ) {
+    const TValueToName& m = ValueToName();
+    TValueToName::const_iterator i = m.find(value);
+    if ( i == m.end() ) {
         if ( allowBadValue ) {
             return NcbiEmptyString;
         }
@@ -108,58 +124,46 @@ void CEnumeratedTypeValues::AddValue(const string& name, long value)
 {
     if ( name.empty() )
         THROW1_TRACE(runtime_error, "empty enum value name");
-    pair<TNameToValue::iterator, bool> p1 =
-        m_NameToValue.insert(TNameToValue::value_type(name, value));
-    if ( !p1.second )
-        THROW1_TRACE(runtime_error,
-                     "duplicated enum value name " + name);
-    pair<TValueToName::iterator, bool> p2 =
-        m_ValueToName.insert(TValueToName::value_type(value, name));
-    if ( !p2.second ) {
-        m_NameToValue.erase(p1.first);
-        THROW1_TRACE(runtime_error,
-                     "duplicated enum value " + name);
+    m_Values.push_back(make_pair(name, value));
+    m_ValueToName.reset(0);
+    m_NameToValue.reset(0);
+}
+
+const CEnumeratedTypeValues::TValueToName&
+CEnumeratedTypeValues::ValueToName(void) const
+{
+    TValueToName* m = m_ValueToName.get();
+    if ( !m ) {
+        m_ValueToName.reset(m = new TValueToName);
+        iterate ( TValues, i, m_Values ) {
+            (*m)[i->second] = i->first;
+        }
     }
+    return *m;
+}
+
+const CEnumeratedTypeValues::TNameToValue&
+CEnumeratedTypeValues::NameToValue(void) const
+{
+    TNameToValue* m = m_NameToValue.get();
+    if ( !m ) {
+        m_NameToValue.reset(m = new TNameToValue);
+        iterate ( TValues, i, m_Values ) {
+            pair<TNameToValue::iterator, bool> p =
+                m->insert(TNameToValue::value_type(i->first.c_str(),
+                                                   i->second));
+            if ( !p.second ) {
+                THROW1_TRACE(runtime_error,
+                             "duplicated enum value name " + i->first);
+            }
+        }
+    }
+    return *m;
 }
 
 void CEnumeratedTypeValues::AddValue(const char* name, long value)
 {
     AddValue(string(name), value);
-}
-
-pair<long, bool> CEnumeratedTypeValues::ReadEnum(CObjectIStream& in) const
-{
-    string name = in.ReadEnumName();
-    if ( !name.empty() ) {
-        // enum element by name
-        return make_pair(FindValue(name), true);
-    }
-    else if ( !IsInteger() ) {
-        // enum element by value
-        long value = in.ReadEnumValue();
-        FindName(value, false);
-        return make_pair(value, true);
-    }
-    // plain integer
-    return make_pair(0l, false);
-}
-
-bool CEnumeratedTypeValues::WriteEnum(CObjectOStream& out, long value) const
-{
-    _TRACE(GetName() << ".WriteEnum(" << value << ")");
-    const string& name = FindName(value, IsInteger());
-    _TRACE(GetName() << ".WriteEnum(" << value << ") = " << name);
-    if ( name.empty() ) {
-        // non enum value and (isInteger == true)
-        return false;
-    }
-    if ( out.WriteEnumName(name) )
-        return true;
-    // non text stream
-    if ( IsInteger() )
-        return false;
-    out.WriteEnumValue(value);
-    return true;
 }
 
 TTypeInfo CEnumeratedTypeValues::GetTypeInfoForSize(size_t size,

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/10 19:46:46  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.5  1999/12/03 21:42:13  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -68,6 +75,7 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
 
     const CTypeInfo* GetTypeInfo(void);
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 };
@@ -98,7 +106,7 @@ public:
 class CStringDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
-    CStringDataType(const string& asnKeyword = "VisibleString");
+    CStringDataType(void);
 
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
@@ -108,9 +116,16 @@ public:
     void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
+};
 
-private:
-    string m_ASNKeyword;
+class CStringStoreDataType : public CStringDataType {
+    typedef CStringDataType CParent;
+public:
+    CStringStoreDataType(void);
+
+    const CTypeInfo* GetTypeInfo(void);
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    virtual const char* GetASNKeyword(void) const;
 };
 
 class CBitStringDataType : public CStaticDataType {

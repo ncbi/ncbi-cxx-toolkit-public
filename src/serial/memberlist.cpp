@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/01/10 19:46:39  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.6  1999/10/04 16:22:16  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -70,25 +77,8 @@ void CMembers::AddMember(const CMemberId& id)
     // clear cached maps (byname and bytag)
     m_MembersByName.reset(0);
     m_MembersByTag.reset(0);
+    m_MemberTags.reset(0);
     m_Members.push_back(id);
-}
-
-CMemberId CMembers::GetCompleteMemberId(TIndex index) const
-{
-    const CMemberId& id = GetMemberId(index);
-    if ( id.GetTag() >= 0 )
-        return id;
-    // regenerate tag
-    TTag tag = 0;
-    while ( index-- > 0 ) {
-        TTag baseTag = GetMemberId(index).GetTag();
-        if ( baseTag >= 0 ) {
-            tag += baseTag;
-            break;
-        }
-        ++tag;
-    }
-    return CMemberId(id.GetName(), tag);
 }
 
 const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
@@ -101,9 +91,10 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             const string& name = m_Members[i].GetName();
             if ( !members->insert(TMembersByName::
-                      value_type(name, i)).second ) {
+                      value_type(name.c_str(), i)).second ) {
                 if ( !name.empty() )
-                    THROW1_TRACE(runtime_error, "duplicated member name: " + name);
+                    THROW1_TRACE(runtime_error,
+                                 "duplicated member name: " + name);
             }
         }
     }
@@ -115,22 +106,71 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
     TMembersByTag* members = m_MembersByTag.get();
     if ( !members ) {
         m_MembersByTag.reset(members = new TMembersByTag);
-        CMemberId currentId;
+        TTag currentTag = -1;
         // TMembers is vector so we'll use index access instead iterator
         // because we need index value to inser in map too
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
-            currentId.SetNext(m_Members[i]);
-            if ( !members->insert(TMembersByTag::
-                      value_type(currentId.GetTag(), i)).second ) {
-                THROW1_TRACE(runtime_error,
-                             "duplicated member tag: " + currentId.ToString());
+            TTag t = m_Members[i].GetTag();
+            if ( t < 0 ) {
+                if ( i == 0 && m_Members[i].GetName().empty() ) {
+                    // parent class - skip it
+                    continue;
+                }
+                t = currentTag + 1;
             }
+            if ( !members->insert(TMembersByTag::
+                      value_type(t, i)).second ) {
+                THROW1_TRACE(runtime_error,
+                             "duplicated member tag: " +
+                             m_Members[i].ToString());
+            }
+            currentTag = t;
         }
     }
     return *members;
 }
 
+const CMembers::TMemberTags& CMembers::GetMemberTags(void) const
+{
+    TMemberTags* members = m_MemberTags.get();
+    if ( !members ) {
+        m_MemberTags.reset(members = new TMemberTags(m_Members.size()));
+        TTag currentTag = -1;
+        // TMembers is vector so we'll use index access instead iterator
+        // because we need index value to inser in map too
+        for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
+            TTag t = m_Members[i].GetTag();
+            if ( t < 0 ) {
+                if ( i == 0 && m_Members[i].GetName().empty() ) {
+                    // parent class - skip it
+                    (*members)[i] = -1;
+                    continue;
+                }
+                t = currentTag + 1;
+            }
+            (*members)[i] = t;
+            currentTag = t;
+        }
+    }
+    return *members;
+}
+
+CMembers::TIndex CMembers::FindMember(const CMemberId& id) const
+{
+    if ( id.GetTag() < 0 ) {
+        return FindMember(id.GetName());
+    }
+    else {
+        return FindMember(id.GetTag());
+    }
+}
+
 CMembers::TIndex CMembers::FindMember(const string& name) const
+{
+    return FindMember(name.c_str());
+}
+
+CMembers::TIndex CMembers::FindMember(const char* name) const
 {
     const TMembersByName& members = GetMembersByName();
     TMembersByName::const_iterator i = members.find(name);
@@ -148,14 +188,23 @@ CMembers::TIndex CMembers::FindMember(TTag tag) const
     return i->second;
 }
 
-CMembers::TIndex CMembers::FindMember(const CMemberId& id) const
+CMembers::TIndex CMembers::FindMember(const char* name, TIndex pos) const
 {
-    if ( id.GetTag() < 0 ) {
-        return FindMember(id.GetName());
+    for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
+        if ( strcmp(m_Members[i].GetName().c_str(), name) == 0 )
+            return i;
     }
-    else {
-        return FindMember(id.GetTag());
+    return -1;
+}
+
+CMembers::TIndex CMembers::FindMember(TTag tag, TIndex pos) const
+{
+    const TMemberTags& tags = GetMemberTags();
+    for ( size_t i = pos + 1, size = m_Members.size(); i < size; ++i ) {
+        if ( tags[i] == tag )
+            return i;
     }
+    return -1;
 }
 
 END_NCBI_SCOPE

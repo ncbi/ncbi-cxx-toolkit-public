@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/01/10 19:46:42  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.26  1999/12/28 18:55:51  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -122,6 +129,8 @@
 #include <corelib/ncbistre.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/memberid.hpp>
+#include <serial/enumerated.hpp>
+#include <serial/memberlist.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -511,6 +520,14 @@ void CObjectOStreamAsnBinary::WriteString(const string& str)
     WriteBytes(str.data(), length);
 }
 
+void CObjectOStreamAsnBinary::WriteStringStore(const string& str)
+{
+    WriteShortTag(eApplication, false, eStringStore);
+    size_t length = str.size();
+    WriteLength(length);
+    WriteBytes(str.data(), length);
+}
+
 void CObjectOStreamAsnBinary::WriteCString(const char* str)
 {
 	if ( str == 0 ) {
@@ -525,21 +542,27 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
 	}
 }
 
-void CObjectOStreamAsnBinary::WriteEnumValue(int value)
+bool CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
+                                        long value)
 {
+    if ( values.IsInteger() ) {
+        return false;
+    }
+    values.FindName(value, false); // check value
     WriteSysTag(eEnumerated);
     WriteNumberValue(*this, value);
+    return true;
 }
 
-void CObjectOStreamAsnBinary::WriteMemberPrefix(const CMemberId& id)
+void CObjectOStreamAsnBinary::WriteMemberPrefix(void)
 {
     WriteTag(eApplication, true, eMemberReference);
     WriteIndefiniteLength();
-    WriteString(id.GetName());
 }
 
-void CObjectOStreamAsnBinary::WriteMemberSuffix(const CMemberId& )
+void CObjectOStreamAsnBinary::WriteMemberSuffix(const CMemberId& id)
 {
+    WriteString(id.GetName());
     WriteEndOfContent();
 }
 
@@ -578,6 +601,13 @@ void CObjectOStreamAsnBinary::VEnd(const Block& )
 void CObjectOStreamAsnBinary::StartMember(Member& , const CMemberId& id)
 {
     WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::StartMember(Member& , const CMembers& members,
+                                          TMemberIndex index)
+{
+    WriteTag(eContextSpecific, true, members.GetMemberTags()[index]);
     WriteIndefiniteLength();
 }
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/01/10 19:46:47  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.4  1999/12/01 17:36:28  vasilche
 * Fixed CHOICE processing.
 *
@@ -70,6 +77,7 @@ public:
         ePointerTemplateType
     };
     void SetStd(const string& c, bool stringType = false);
+    void SetStd(const string& c, const string& m, bool stringType = false);
     void SetEnum(const string& c, const string& e);
     void SetClass(const string& c);
     void SetTemplate(const string& c, const string& m);

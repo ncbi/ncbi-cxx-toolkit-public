@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/01/10 19:46:41  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.29  1999/12/17 19:05:04  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -142,6 +149,13 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/memberid.hpp>
+#include <serial/enumerated.hpp>
+#include <serial/memberlist.hpp>
+#include <math.h>
+#if HAVE_WINDOWS_H
+// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
+# include <float.h>
+#endif
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -165,10 +179,15 @@ void CObjectOStreamAsn::WriteTypeName(const string& name)
     }
 }
 
-bool CObjectOStreamAsn::WriteEnumName(const string& name)
+bool CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
+                                  long value)
 {
-    WriteId(name);
-    return true;
+    const string& name = values.FindName(value, values.IsInteger());
+    if ( !name.empty() ) {
+        WriteId(name);
+        return true;
+    }
+    return false;
 }
 
 void CObjectOStreamAsn::WriteEscapedChar(char c)
@@ -217,7 +236,45 @@ void CObjectOStreamAsn::WriteULong(unsigned long data)
 
 void CObjectOStreamAsn::WriteDouble(double data)
 {
-    m_Output << data;
+	if ( data == 0.0 ) {
+        m_Output << "{ 0, 10, 0 }";
+        return;
+	}
+
+    bool minus;
+    if ( data < 0.0 ) {
+        minus = true;
+        data = -data;
+    }
+    else {
+        minus = false;
+    }
+
+    double thelog = log10(data);
+    int characteristic;
+    if ( thelog >= 0.0 )
+        characteristic = 8 - int(thelog);/* give it 9 significant digits */
+    else
+        characteristic = 8 + int(ceil(-thelog));
+    
+    double mantissa = data * pow(10.0, characteristic);
+    int ic = -characteristic; /* reverse direction */
+    
+    long im;
+    if ( mantissa >= LONG_MAX )
+        im = LONG_MAX;
+    else
+        im = long(mantissa);
+    
+    /* strip trailing 0 */
+    while ( im % 10 == 0 ) {
+        im /= 10;
+        ic++;
+    }
+    
+    if (minus)
+        im = -im;
+	m_Output << "{ " << im << ", 10, " << ic << " }";
 }
 
 void CObjectOStreamAsn::WriteNull(void)

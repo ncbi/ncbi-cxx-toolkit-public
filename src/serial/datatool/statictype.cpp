@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/01/10 19:46:46  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.6  1999/12/03 21:42:13  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -92,12 +99,17 @@ bool CNullDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CNullDataType::CreateDefault(const CDataValue& ) const
 {
-    THROW1_TRACE(runtime_error, "NULL type not implemented");
+    THROW1_TRACE(runtime_error, "NULL cannot have DEFAULT");
 }
 
 TTypeInfo CNullDataType::GetTypeInfo(void)
 {
-    THROW1_TRACE(runtime_error, "NULL type not implemented");
+    return new CNullBoolTypeInfo();
+}
+
+void CNullDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
+{
+    tType.SetStd("bool", "null", false);
 }
 
 string CNullDataType::GetDefaultCType(void) const
@@ -176,14 +188,13 @@ string CRealDataType::GetDefaultCType(void) const
     return "double";
 }
 
-CStringDataType::CStringDataType(const string& asnKeyword)
-    : m_ASNKeyword(asnKeyword)
+CStringDataType::CStringDataType(void)
 {
 }
 
 const char* CStringDataType::GetASNKeyword(void) const
 {
-    return m_ASNKeyword.c_str();
+    return "VisibleString";
 }
 
 bool CStringDataType::CheckValue(const CDataValue& value) const
@@ -242,6 +253,33 @@ void CStringDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
 string CStringDataType::GetDefaultCType(void) const
 {
     return "NCBI_NS_STD::string";
+}
+
+CStringStoreDataType::CStringStoreDataType(void)
+{
+}
+
+const char* CStringStoreDataType::GetASNKeyword(void) const
+{
+    return "StringStore";
+}
+
+TTypeInfo CStringStoreDataType::GetTypeInfo(void)
+{
+    return CAutoPointerTypeInfo::GetTypeInfo(
+        CStringStoreTypeInfo::GetTypeInfo());
+}
+
+void CStringStoreDataType::GetFullCType(CTypeStrings& tType,
+                                        CClassCode& ) const
+{
+    string type = GetVar("_type");
+    if ( type.empty() ) {
+        tType.SetStd(GetDefaultCType(), "StringStore", true);
+    }
+    else {
+        tType.SetStd(type);
+    }
 }
 
 const char* CBitStringDataType::GetASNKeyword(void) const

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/01/10 19:46:31  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.31  2000/01/05 19:43:44  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -140,7 +147,6 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/memberid.hpp>
 #include <serial/object.hpp>
 #include <vector>
 
@@ -149,6 +155,8 @@ struct asnio;
 BEGIN_NCBI_SCOPE
 
 class CTypeMapper;
+class CMemberId;
+class CMembers;
 
 class CObjectIStream
 {
@@ -166,8 +174,7 @@ public:
     virtual string ReadTypeName(void);
     
     // try to read enum value name, "" if none
-    virtual string ReadEnumName(void);
-    virtual long ReadEnumValue(void);
+    virtual pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual TTypeInfo MapType(const string& name);
     void SetTypeMapper(CTypeMapper* typeMapper);
@@ -231,8 +238,9 @@ public:
         }
     void ReadStd(string& data)
         {
-            data = ReadString();
+            ReadString(data);
         }
+    virtual void ReadStringStore(string& s);
 
     // object level readers
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
@@ -305,42 +313,119 @@ public:
 #define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
 #define CheckIOError(in) CheckIOError1(FILE_LINE in)
 
-    // member interface
-    class Member {
-    public:
-        Member(CObjectIStream& in);
-        Member(CObjectIStream& in, const CMemberId& id);
-        ~Member(void);
+    string MemberStack(void) const;
 
-        Member* GetPrevous(void) const
+    typedef CTypeInfo::TMemberIndex TMemberIndex;
+    typedef int TTag;
+
+    // member interface
+    class LastMember
+    {
+    public:
+        LastMember(const CMembers& members)
+            : m_Members(members), m_Index(-1)
+            {
+            }
+
+        const CMembers& GetMembers(void) const
+            {
+                return m_Members;
+            }
+
+        TMemberIndex GetIndex(void) const
+            {
+                return m_Index;
+            }
+
+    private:
+        const CMembers& m_Members;
+        TMemberIndex m_Index;
+
+        friend class CObjectIStream;
+    };
+
+    class StackElement
+    {
+    public:
+        StackElement(CObjectIStream& s)
+            : m_Stream(s), m_Previous(s.m_CurrentElement),
+              m_CString(0), m_String(0), m_Id(0)
+            {
+                s.m_CurrentElement = this;
+            }
+        StackElement(CObjectIStream& s, const string& str)
+            : m_Stream(s), m_Previous(s.m_CurrentElement),
+              m_CString(0), m_String(&str), m_Id(0)
+            {
+                s.m_CurrentElement = this;
+            }
+        StackElement(CObjectIStream& s, const char* str)
+            : m_Stream(s), m_Previous(s.m_CurrentElement),
+              m_CString(str), m_String(0), m_Id(0)
+            {
+                s.m_CurrentElement = this;
+            }
+        ~StackElement(void)
+            {
+                m_Stream.m_CurrentElement = m_Previous;
+            }
+
+        CObjectIStream& GetStream(void) const
+            {
+                return m_Stream;
+            }
+
+        const StackElement* GetPrevous(void) const
             {
                 return m_Previous;
             }
 
-        CMemberId& Id(void)
+        string ToString(void) const;
+
+    private:
+        CObjectIStream& m_Stream;
+        friend class CObjectIStream;
+        const StackElement* m_Previous;
+
+    protected:
+        const char* m_CString;
+        const string* m_String;
+        const CMemberId* m_Id;
+
+    private:
+        // to prevent allocation in heap
+        void *operator new(size_t size);
+        void *operator new(size_t size, size_t count);
+        // to prevent copying
+        StackElement(const StackElement&);
+        StackElement& operator=(const StackElement&);
+    };
+
+    class Member : public StackElement
+    {
+    public:
+        Member(CObjectIStream& in, const CMembers& members);
+        Member(CObjectIStream& in, const CMemberId& member);
+        Member(CObjectIStream& in, LastMember& lastMember);
+        ~Member(void);
+
+        TMemberIndex GetIndex(void) const
             {
-                return m_Id;
-            }
-        const CMemberId& Id(void) const
-            {
-                return m_Id;
-            }
-        operator const CMemberId&(void) const
-            {
-                return m_Id;
+                return m_Index;
             }
 
     private:
-        CObjectIStream& m_In;
-        CMemberId m_Id;
-        Member* m_Previous;
+        TMemberIndex m_Index;
+
+        friend class CObjectIStream;
     };
 
     // block interface
     enum EFixed {
         eFixed
     };
-    class Block {
+    class Block : public StackElement
+    {
     public:
         Block(CObjectIStream& in);
         Block(EFixed eFixed, CObjectIStream& in);
@@ -385,18 +470,12 @@ public:
             }
 
     protected:
-        CObjectIStream& m_In;
-
         void IncIndex(void)
             {
                 ++m_NextIndex;
             }
 
     private:
-        // to prevent copying
-        Block(const Block&);
-        Block& operator=(const Block&);
-
         friend class CObjectIStream;
 
         bool m_Fixed;
@@ -405,7 +484,8 @@ public:
         size_t m_Size;
         size_t m_NextIndex;
     };
-	class ByteBlock {
+	class ByteBlock
+    {
 	public:
 		ByteBlock(CObjectIStream& in);
 		~ByteBlock(void);
@@ -433,7 +513,8 @@ public:
 
 #if HAVE_NCBI_C
     // ASN.1 interface
-    class AsnIo {
+    class AsnIo
+    {
     public:
         AsnIo(CObjectIStream& in, const string& rootTypeName);
         ~AsnIo(void);
@@ -471,13 +552,26 @@ protected:
 #endif
 
 protected:
+    friend class StackElement;
     friend class Block;
     friend class Member;
 	friend class ByteBlock;
 
     // member interface
-    virtual void StartMember(Member& member) = 0;
+    virtual void StartMember(Member& member, const CMembers& members) = 0;
+    virtual void StartMember(Member& member, const CMemberId& member) = 0;
+    virtual void StartMember(Member& member, LastMember& lastMember) = 0;
     virtual void EndMember(const Member& member);
+    static void SetIndex(LastMember& lastMember, TMemberIndex index)
+        {
+            lastMember.m_Index = index;
+        }
+    static void SetIndex(Member& member,
+                         TMemberIndex index, const CMemberId& id)
+        {
+            member.m_Index = index;
+            member.m_Id = &id;
+        }
 
     // block interface
     static void SetNonFixed(Block& block, bool finished = false)
@@ -510,14 +604,13 @@ protected:
     // low level readers
     CObject ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
-    virtual string ReadMemberPointer(void);
-    virtual void ReadMemberPointerEnd(void);
     virtual TIndex ReadObjectPointer(void) = 0;
     virtual void ReadThisPointerEnd(void);
     virtual string ReadOtherPointer(void) = 0;
     virtual void ReadOtherPointerEnd(void);
     virtual bool HaveMemberSuffix(void);
-    virtual string ReadMemberSuffix(void);
+    virtual TMemberIndex ReadMemberSuffix(const CMembers& members) = 0;
+    void SelectMember(CObject& object);
 
     virtual bool ReadBool(void) = 0;
     virtual char ReadChar(void) = 0;
@@ -531,7 +624,7 @@ protected:
     virtual unsigned long ReadULong(void) = 0;
     virtual float ReadFloat(void);
     virtual double ReadDouble(void) = 0;
-    virtual string ReadString(void) = 0;
+    virtual void ReadString(string& s) = 0;
     virtual char* ReadCString(void);
 
     const CObject& GetRegisteredObject(TIndex index) const;
@@ -543,12 +636,12 @@ protected:
         {
             typeInfo->ReadData(*this, object);
         }
-    
+
 private:
     vector<CObject> m_Objects;
 
     unsigned m_Fail;
-    Member* m_CurrentMember;
+    const StackElement* m_CurrentElement;
 
     CTypeMapper* m_TypeMapper;
 };

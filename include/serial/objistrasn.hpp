@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/01/10 19:46:31  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.20  2000/01/05 19:43:44  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -137,7 +144,7 @@ public:
     virtual unsigned SetFailFlags(unsigned flags);
 
     virtual string ReadTypeName(void);
-    virtual string ReadEnumName(void);
+    virtual pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
 
@@ -148,7 +155,10 @@ public:
 
 protected:
     TIndex ReadIndex(void);
-    string ReadId(void);
+    void ReadId(void); // read id into local buffer
+    const char* IdBuffer(void) const;
+    void ResetIdBuffer(void);
+    void AddToIdBuffer(char c);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -157,7 +167,7 @@ protected:
     virtual long ReadLong(void);
     virtual unsigned long ReadULong(void);
     virtual double ReadDouble(void);
-    virtual string ReadString(void);
+    virtual void ReadString(string& s);
 
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
@@ -168,7 +178,9 @@ protected:
 protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
-    virtual void StartMember(Member& member);
+    virtual void StartMember(Member& member, const CMembers& members);
+    virtual void StartMember(Member& member, const CMemberId& member);
+    virtual void StartMember(Member& member, LastMember& lastMember);
 	virtual void Begin(ByteBlock& block);
     int GetHexChar(void);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
@@ -179,7 +191,7 @@ private:
     virtual TIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
     virtual bool HaveMemberSuffix(void);
-    virtual string ReadMemberSuffix(void);
+    virtual TMemberIndex ReadMemberSuffix(const CMembers& members);
 
     void SkipObjectData(void);
     void SkipObjectPointer(void);
@@ -212,6 +224,7 @@ private:
     int m_Line;
 	int m_UngetChar;
     int m_UngetChar1;
+    vector<char> m_IdBuffer;
 };
 
 //#include <objistrb.inl>

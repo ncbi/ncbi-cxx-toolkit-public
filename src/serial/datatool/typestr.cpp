@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/01/10 19:46:47  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.7  1999/12/28 18:56:00  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -59,6 +66,7 @@
 
 #include "typestr.hpp"
 #include "code.hpp"
+#include "fileutil.hpp"
 
 inline
 string CTypeStrings::GetRef(void) const
@@ -66,7 +74,10 @@ string CTypeStrings::GetRef(void) const
     switch ( GetType() ) {
     case eStdType:
     case eStringType:
-        return "STD, (" + GetCType() + ')';
+        if ( GetMacro().empty() )
+            return "STD, (" + GetCType() + ')';
+        else
+            return GetMacro() + ", ()";
     case eEnumType:
         return "ENUM, (" + GetCType() + ',' + GetMacro() + ')';
     case eClassType:
@@ -128,6 +139,14 @@ void CTypeStrings::SetStd(const string& c, bool stringType)
 {
     m_Type = stringType? eStringType: eStdType;
     m_CType = c;
+    m_Choice = false;
+}
+
+void CTypeStrings::SetStd(const string& c, const string& m, bool stringType)
+{
+    m_Type = stringType? eStringType: eStdType;
+    m_CType = c;
+    m_Macro = m;
     m_Choice = false;
 }
 
@@ -249,14 +268,31 @@ void CTypeStrings::x_AddMember(CClassCode& code,
     code.AddForwardDeclarations(m_ForwardDeclarations);
     code.AddHPPIncludes(m_HPPIncludes);
     code.AddCPPIncludes(m_CPPIncludes);
+
+    string typedefName;
+    if ( NStr::StartsWith(member, "m_") ) {
+        typedefName = 'T' + member.substr(2);
+    }
+    else {
+        typedefName = 'T' + Identifier(member);
+    }
+    code.ClassPublic() <<
+        "    typedef " << GetCType() << ' ' << typedefName << ';' << NcbiEndl;
     code.ClassPrivate() <<
-        "    " << GetCType() << ' ' << member << ';' << NcbiEndl;
+        "    " << typedefName << ' ' << member << ';' << NcbiEndl;
 
     switch ( GetType() ) {
     case eStdType:
     case eStringType:
-        code.TypeInfoBody() <<
-            "    ADD_N_STD_M(" << name << ", " << member << ')';
+        if ( m_Macro.empty() ) {
+            code.TypeInfoBody() <<
+                "    ADD_N_STD_M(" << name << ", " << member << ')';
+        }
+        else {
+            code.TypeInfoBody() <<
+                "    ADD_N_M(" << name << ", " << member << ", " <<
+                GetRef() << ')';
+        }
         break;
     default:
         code.TypeInfoBody() <<

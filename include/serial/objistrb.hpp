@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/01/10 19:46:32  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.19  2000/01/05 19:43:45  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -133,7 +140,7 @@ protected:
     virtual long ReadLong(void);
     virtual unsigned long ReadULong(void);
     virtual double ReadDouble(void);
-    virtual string ReadString(void);
+    virtual void ReadString(string& s);
 
 	const string& ReadStringValue(void);
 
@@ -146,14 +153,16 @@ protected:
 
 protected:
     virtual EPointerType ReadPointerType(void);
-    virtual string ReadMemberPointer(void);
+    virtual TMemberIndex ReadMemberSuffix(const CMembers& members);
     virtual TIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
     
     virtual void FBegin(Block& block);
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
-    virtual void StartMember(Member& member);
+    virtual void StartMember(Member& member, const CMembers& members);
+    virtual void StartMember(Member& member, const CMemberId& member);
+    virtual void StartMember(Member& member, LastMember& lastMember);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);
     

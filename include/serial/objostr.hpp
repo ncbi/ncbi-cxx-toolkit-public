@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/01/10 19:46:32  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.28  2000/01/05 19:43:46  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -137,12 +144,14 @@ struct asnio;
 
 BEGIN_NCBI_SCOPE
 
+class CMembers;
 class CMemberId;
 
 class CObjectOStream
 {
 public:
     typedef unsigned TIndex;
+    typedef int TMemberIndex;
 
     virtual ~CObjectOStream(void);
 
@@ -157,8 +166,7 @@ public:
     virtual void WriteTypeName(const string& name);
 
     // try to write enum value name, false if none
-    virtual bool WriteEnumName(const string& name);
-    virtual void WriteEnumValue(int value);
+    virtual bool WriteEnum(const CEnumeratedTypeValues& value, long value);
 
     // std C types readers
     void WriteStd(const bool& data)
@@ -221,6 +229,7 @@ public:
         {
             WriteString(data);
         }
+    virtual void WriteStringStore(const string& data);
 
     // object level writers
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
@@ -235,6 +244,12 @@ public:
             : m_Out(out)
             {
                 out.StartMember(*this, member);
+            }
+        Member(CObjectOStream& out,
+               const CMembers& members, TMemberIndex index)
+            : m_Out(out)
+            {
+                out.StartMember(*this, members, index);
             }
         ~Member(void)
             {
@@ -375,6 +390,8 @@ protected:
     virtual void VEnd(const Block& block);
     // write member name
     virtual void StartMember(Member& member, const CMemberId& id) = 0;
+    virtual void StartMember(Member& member,
+                             const CMembers& members, TMemberIndex index);
     virtual void EndMember(const Member& member);
 	// write byte blocks
 	virtual void Begin(const ByteBlock& block);
@@ -384,7 +401,7 @@ protected:
 
     // low level writers
     virtual void WritePointer(COObjectInfo& info, TTypeInfo typeInfo);
-    virtual void WriteMemberPrefix(const CMemberId& id);
+    virtual void WriteMemberPrefix(void);
     virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void) = 0;
     virtual void WriteObjectReference(TIndex index) = 0;

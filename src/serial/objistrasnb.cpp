@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/01/10 19:46:40  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.23  2000/01/05 19:43:54  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -114,6 +121,8 @@
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <serial/memberid.hpp>
+#include <serial/enumerated.hpp>
+#include <serial/memberlist.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -660,16 +669,26 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     return data;
 }
 
-string CObjectIStreamAsnBinary::ReadString(void)
+void CObjectIStreamAsnBinary::ReadString(string& s)
 {
+    s.erase();
     ExpectSysTag(eVisibleString);
     size_t length = ReadLength();
-    string s;
     s.reserve(length);
     for ( size_t i = 0; i < length; ++i ) {
         s += char(ReadByte());
     }
-    return s;
+}
+
+void CObjectIStreamAsnBinary::ReadStringStore(string& s)
+{
+    s.erase();
+    ExpectSysTag(eApplication, false, eStringStore);
+    size_t length = ReadLength();
+    s.reserve(length);
+    for ( size_t i = 0; i < length; ++i ) {
+        s += char(ReadByte());
+    }
 }
 
 char* CObjectIStreamAsnBinary::ReadCString(void)
@@ -701,10 +720,44 @@ bool CObjectIStreamAsnBinary::VNext(const Block& )
     }
 }
 
-void CObjectIStreamAsnBinary::StartMember(Member& member)
+void CObjectIStreamAsnBinary::StartMember(Member& m, const CMemberId& member)
 {
-    member.Id().SetTag(ReadTag(eContextSpecific, true));
+    TTag tag = ReadTag(eContextSpecific, true);
     ExpectIndefiniteLength();
+    if ( member.GetTag() != tag ) {
+        ThrowError(eFormatError,
+                   "expected " + member.ToString() +", found [" +
+                   NStr::IntToString(tag) + "]");
+    }
+    SetIndex(m, 0, member);
+}
+
+void CObjectIStreamAsnBinary::StartMember(Member& m, const CMembers& members)
+{
+    TTag tag = ReadTag(eContextSpecific, true);
+    ExpectIndefiniteLength();
+    TMemberIndex index = members.FindMember(tag);
+    if ( index < 0 ) {
+        ThrowError(eFormatError,
+                   "unexpected member: [" +
+                   NStr::IntToString(tag) + "]");
+    }
+    SetIndex(m, index, members.GetMemberId(index));
+}
+
+void CObjectIStreamAsnBinary::StartMember(Member& m, LastMember& lastMember)
+{
+    TTag tag = ReadTag(eContextSpecific, true);
+    ExpectIndefiniteLength();
+    TMemberIndex index =
+        lastMember.GetMembers().FindMember(tag, lastMember.GetIndex());
+    if ( index < 0 ) {
+        ThrowError(eFormatError,
+                   "unexpected member: [" +
+                   NStr::IntToString(tag) + "]");
+    }
+    SetIndex(lastMember, index);
+    SetIndex(m, index, lastMember.GetMembers().GetMemberId(index));
 }
 
 void CObjectIStreamAsnBinary::EndMember(const Member& )
@@ -746,6 +799,7 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     else if ( LastTagWas(eApplication, true) ) {
         switch ( tag ) {
         case eMemberReference:
+            ExpectIndefiniteLength();
             return eMemberPointer;
         case eLongTag:
             return eOtherPointer;
@@ -766,23 +820,34 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     return eThisPointer;
 }
 
-long CObjectIStreamAsnBinary::ReadEnumValue(void)
+pair<long, bool>
+CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
 {
+    if ( values.IsInteger() ) {
+        // allow any integer
+        return make_pair(0l, false);
+    }
+    
+    // enum element by value
     ExpectSysTag(eEnumerated);
-    long data;
-    ReadStdSigned(*this, data);
-    return data;
+    long value;
+    ReadStdSigned(*this, value);
+    values.FindName(value, false); // check value
+    return make_pair(value, true);
 }
 
-string CObjectIStreamAsnBinary::ReadMemberPointer(void)
+CObjectIStreamAsnBinary::TMemberIndex
+CObjectIStreamAsnBinary::ReadMemberSuffix(const CMembers& members)
 {
-    ExpectIndefiniteLength();
-    return ReadString();
-}
-
-void CObjectIStreamAsnBinary::ReadMemberPointerEnd(void)
-{
+    string member;
+    ReadString(member);
     ExpectEndOfContent();
+    TMemberIndex index = members.FindMember(member);
+    if ( index < 0 ) {
+        ThrowError(eFormatError,
+                   "member not found: " + member);
+    }
+    return index;
 }
 
 CObjectIStream::TIndex CObjectIStreamAsnBinary::ReadObjectPointer(void)

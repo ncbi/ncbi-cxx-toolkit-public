@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/01/10 19:46:34  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.28  2000/01/05 19:43:47  vasilche
 * Fixed error messages when reading from ASN.1 binary file.
 * Fixed storing of integers with enumerated values in ASN.1 binary file.
@@ -291,20 +298,18 @@ public:
     typedef List TObjectType;
     typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlListTemplateImpl(const char* templ, TTypeInfo dataType)
-        : CParent(templ, dataType), m_RandomOrder(false)
+    CStlListTemplateImpl(const char* templ, TTypeInfo dataType,
+                         bool randomOrder = false)
+        : CParent(templ, dataType), m_RandomOrder(randomOrder)
         { }
-    CStlListTemplateImpl(const char* templ, const CTypeRef& dataType)
-        : CParent(templ, dataType), m_RandomOrder(false)
+    CStlListTemplateImpl(const char* templ, const CTypeRef& dataType,
+                         bool randomOrder = false)
+        : CParent(templ, dataType), m_RandomOrder(randomOrder)
         { }
 
     bool RandomOrder(void) const
         {
             return m_RandomOrder;
-        }
-    void SetRandomOrder(bool random = true)
-        {
-            m_RandomOrder = random;
         }
 
     static TObjectType& Get(TObjectPtr object)
@@ -410,16 +415,21 @@ class CStlClassInfo_list : public CStlListTemplateImpl< list<Data> >
 public:
     typedef Data TDataType;
 
-    CStlClassInfo_list(TTypeInfo typeInfo)
-        : CParent("std::list", typeInfo)
+    CStlClassInfo_list(TTypeInfo typeInfo, bool randomOrder = false)
+        : CParent("std::list", typeInfo, randomOrder)
         { }
-    CStlClassInfo_list(const CTypeRef& typeRef)
-        : CParent("std::list", typeRef)
+    CStlClassInfo_list(const CTypeRef& typeRef, bool randomOrder = false)
+        : CParent("std::list", typeRef, randomOrder)
         { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
             return new CStlClassInfo_list<Data>(info);
+        }
+
+    static TTypeInfo GetSetTypeInfo(TTypeInfo info)
+        {
+            return new CStlClassInfo_list<Data>(info, true);
         }
 
 protected:
@@ -478,11 +488,11 @@ public:
     typedef Data TDataType;
 
     CStlClassInfoSetBase(const char* templ, TTypeInfo type)
-        : CParent(templ, type)
+        : CParent(templ, type, true)
         {
         }
     CStlClassInfoSetBase(const char* templ, const CTypeRef& typeRef)
-        : CParent(templ, typeRef)
+        : CParent(templ, typeRef, true)
         {
         }
 
@@ -495,7 +505,8 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(CObjectIStream::eFixed, in);
+            CObjectIStream::Block block(CObjectIStream::eFixed,
+                                        in, RandomOrder());
             while ( block.Next() ) {
                 Data data;
                 GetDataTypeInfo()->ReadData(in, &data);

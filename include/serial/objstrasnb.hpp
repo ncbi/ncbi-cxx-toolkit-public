@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/01/10 19:46:33  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
 * Revision 1.3  1999/07/22 17:33:47  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -96,7 +103,10 @@ namespace CObjectStreamAsnBinaryDefs
         eMemberReference = 29, // non standard use with eApplication class
         eObjectReference = 30, // non standard use with eApplication class
 
-        eLongTag = 31
+        eLongTag = 31,
+
+        // eApplication class
+        eStringStore = 1
     };
 
     enum ERealRadix {
