@@ -450,7 +450,8 @@ BEGIN_TEST_FUNCTION(FullBlobs)
         try {
             CID1server_maxcomplex req;
             req.SetGi(gi);
-            req.SetMaxplex(eEntry_complexities_entry);
+            // set bits in maxplex to exclude external annotations
+            req.SetMaxplex(eEntry_complexities_entry | (0xffff << 4));
             se = id1.AskGetsefromgi(req);
         } catch (exception& e) {
             ADD_ERR("failed to retrieve blob for GI " << gi << ": "
@@ -610,6 +611,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/10 16:44:53  vasilche
+* Exclude external annotations from blobs loaded from ID1.
+*
 * Revision 1.15  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
