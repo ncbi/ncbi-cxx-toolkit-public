@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi language call
 * $Log$
+* Revision 1.2  2002/07/18 19:51:04  starchen
+* fixed some error
+*
 * Revision 1.1  2002/07/18 15:49:39  starchen
 * first entry
 *
@@ -34,9 +37,9 @@
 *============================================================================
 */
 
-// the following function is auxiliary and do not describe any DBAPI usage
+// the following function  do not describe any DBAPI usage
 
- char* getParam(char tag, int argc, char* argv[], bool* flag= 0)
+ char* getParam(char tag, int argc, char* argv[], bool* flag)
 {
     for(int i= 1; i < argc; i++) {
         if(((*argv[i] == '-') || (*argv[i] == '/')) && 

@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.2  2002/07/18 19:51:04  starchen
+* fixed some error
+*
 * Revision 1.1  2002/07/18 15:43:47  starchen
 * first entry
 *
@@ -152,7 +155,7 @@ static void prnCliEx(CDB_ClientEx* ex)
 
 // getParam is reading arguments from the command line
 
- char* getParam(char tag, int argc, char* argv[], bool* flag= 0)
+ char* getParam(char tag, int argc, char* argv[], bool* flag)
 {
     for(int i= 1; i < argc; i++) {
         if(((*argv[i] == '-') || (*argv[i] == '/')) && 
