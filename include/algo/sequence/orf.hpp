@@ -59,6 +59,10 @@ public:
     {
         vector<TSeqPos> begins, ends;
 
+        // This code might be sped up by a factor of two
+        // by use of a state machine that does all sixs frames
+        // in a single pass.
+
         // find ORFs on the forward sequence and report them as-is
         FindForwardOrfs(seq, begins, ends, min_length_bp, genetic_code);
         for (unsigned int i = 0;  i < begins.size();  i++) {
@@ -197,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/08/19 18:56:39  jcherry
+ * Added a comment
+ *
  * Revision 1.10  2003/08/19 18:36:23  jcherry
  * Reimplemented stop codon finding using CTrans_table finite state machine
  *
