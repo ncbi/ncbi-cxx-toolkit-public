@@ -108,9 +108,7 @@ public:
     TResidue GetEndChar()                  const;
 
     // functions for manipulating the consensus sequence
-    void    CreateConsensus     (void);
-    bool    IsSetConsensus      (void) const;
-    TNumrow GetConsensusRow     (void) const;
+    CRef<CDense_seg> CreateConsensus(int& consensus_row) const;
 
     // utilities
     int CalculateScore(TNumrow row1, TNumrow row2);
@@ -134,9 +132,6 @@ protected:
     mutable TBioseqHandleCache      m_BioseqHandlesCache;
     mutable TSeqVectorCache         m_SeqVectorCache;
 
-    // our consensus sequence: a bioseq object and a vector of starts
-    TNumrow                         m_ConsensusSeq;
-
 private:
     // Prohibit copy constructor and assignment operator
     CAlnVec(const CAlnVec&);
@@ -154,26 +149,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
-
-
-inline
-bool CAlnVec::IsSetConsensus(void) const
-{
-    return (m_ConsensusSeq != -1);
-}
-
-
-inline
-CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
-{
-    if ( !IsSetConsensus() ) {
-        NCBI_THROW(CAlnException, eConsensusNotPresent,
-                   "CAlnVec::GetConsensusRow(): "
-                   "consensus sequence not present");
-    }
-
-    return m_ConsensusSeq;
-}
 
 
 inline 
@@ -353,6 +328,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2003/08/29 18:17:50  dicuccio
+ * Changed API for creating consensus - CreateConsensus() now returns the new
+ * dense-seg, rather than altering the existing alignment manager
+ *
  * Revision 1.24  2003/08/25 16:35:06  todorov
  * exposed GetWidth
  *
