@@ -71,9 +71,13 @@ public:
 
     virtual void ResolveSeq_id(CLoadLockBlob_ids& ids, const CSeq_id& id,
                                TConn conn);
+    virtual void ResolveSeq_id(CLoadLockSeq_ids& ids, const CSeq_id& id,
+                               TConn conn);
     virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId,
                                     TConn conn);
     virtual void ResolveGi(CLoadLockBlob_ids& ids, int gi,
+                           TConn conn);
+    virtual void ResolveGi(CLoadLockSeq_ids& ids, int gi,
                            TConn conn);
     virtual TBlobVersion GetVersion(const CBlob_id& blob_id,
                                     TConn conn);

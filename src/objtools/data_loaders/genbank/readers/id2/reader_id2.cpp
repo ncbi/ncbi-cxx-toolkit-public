@@ -459,6 +459,21 @@ void CId2Reader::ResolveSeq_id(CReaderRequestResult& result,
 }
 
 
+void CId2Reader::ResolveSeq_ids(CReaderRequestResult& result,
+                                const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids ) {
+        CID2_Request req;
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req.SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
+        x_ProcessRequest(result, req);
+    }
+}
+
+
 CReader::TBlobVersion CId2Reader::GetBlobVersion(CReaderRequestResult& result,
                                                  const CBlob_id& blob_id)
 {

@@ -1298,6 +1298,33 @@ void CScope_Impl::x_PopulateBioseq_HandleSet(const CSeq_entry_Handle& seh,
 }
 
 
+CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id& id)
+{
+    return GetIds(CSeq_id_Handle::GetHandle(id));
+}
+
+
+CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
+{
+    TReadLockGuard rguard(m_Scope_Conf_RWLock);
+    CRef<CBioseq_ScopeInfo> info = x_FindBioseq_Info(idh,
+        CScope::eGetBioseq_Resolved);
+    if ( bool(info)  &&  info->HasBioseq() ) {
+        return info->GetBioseq_Info().GetId();
+    }
+    // Unknown bioseq, try to find in data sources
+    TIds ret;
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CFastMutexGuard guard(it->GetMutex());
+        it->GetDataSource().GetIds(idh, ret);
+        if ( !ret.empty() ) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+
 CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id& id)
 {
     return GetSynonyms(CSeq_id_Handle::GetHandle(id));
@@ -1426,6 +1453,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/08/31 21:03:49  grichenk
+* Added GetIds()
+*
 * Revision 1.23  2004/08/24 16:42:03  vasilche
 * Removed TAB symbols in sources.
 *

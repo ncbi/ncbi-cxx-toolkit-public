@@ -145,6 +145,12 @@ public:
 
     void ResetHistory(void);
 
+    // Get "native" bioseq ids without filtering and matching.
+    typedef CBioseq_Handle::TId TIds;
+    TIds GetIds(const CSeq_id& id);
+    TIds GetIds(const CSeq_id_Handle& idh);
+
+    // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
@@ -208,6 +214,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2004/08/31 21:03:48  grichenk
+* Added GetIds()
+*
 * Revision 1.79  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

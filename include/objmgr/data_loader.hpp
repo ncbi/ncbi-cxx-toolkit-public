@@ -204,6 +204,9 @@ public:
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     const SRequestDetails& details);
 
+    typedef vector<CSeq_id_Handle> TIds;
+    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+
     // blob operations
     typedef CConstRef<CObject> TBlobId;
     typedef int TBlobVersion;
@@ -273,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/08/31 21:03:48  grichenk
+* Added GetIds()
+*
 * Revision 1.33  2004/08/19 16:54:04  vasilche
 * CDataLoader::GetDataSource() made const.
 *

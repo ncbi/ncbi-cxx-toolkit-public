@@ -185,6 +185,9 @@ public:
     CSeqMatch_Info HistoryResolve(CSeq_id_Handle idh,
                                   const TTSE_LockSet& locks);
 
+    typedef vector<CSeq_id_Handle> TIds;
+    void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+
     // Select the best of the two bioseqs if possible (e.g. dead vs live).
     CSeqMatch_Info* ResolveConflict(const CSeq_id_Handle& id,
                                     CSeqMatch_Info& info1,

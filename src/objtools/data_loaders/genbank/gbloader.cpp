@@ -305,6 +305,25 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 }
 
 
+void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
+{
+    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
+        CGBReaderRequestResult result(this);
+        CLoadLockSeq_ids seq_ids(result, idh);
+        if ( !seq_ids ) {
+            m_Driver->ResolveSeq_ids(result, idh);
+            if ( !seq_ids ) {
+                continue; // retry
+            }
+        }
+        ids = seq_ids->m_Seq_ids;
+        return;
+    }
+    NCBI_THROW(CLoaderException, eOtherError,
+               "cannot get synonyms for "+idh.AsString()+": too many attempts");
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const CBlob_id& blob_id = dynamic_cast<const CBlob_id&>(*id);

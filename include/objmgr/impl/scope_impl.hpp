@@ -223,6 +223,12 @@ public:
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    // Get "native" bioseq ids without filtering and matching.
+    typedef CBioseq_Handle::TId TIds;
+    TIds GetIds(const CSeq_id& id);
+    TIds GetIds(const CSeq_id_Handle& idh);
+
+    // Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
@@ -392,6 +398,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/31 21:03:48  grichenk
+* Added GetIds()
+*
 * Revision 1.11  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

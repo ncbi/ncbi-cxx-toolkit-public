@@ -59,6 +59,8 @@ public:
 
     virtual void ResolveSeq_id(CLoadLockBlob_ids& ids,
                                const CSeq_id& id, TConn conn);
+    virtual void ResolveSeq_id(CLoadLockSeq_ids& ids, const CSeq_id& id,
+                               TConn conn);
     virtual TBlobVersion GetVersion(const CBlob_id& blob_id, TConn conn);
 
     virtual void GetTSEBlob(CTSE_Info& tse_info,

@@ -159,6 +159,8 @@ public:
     virtual ~CGBDataLoader(void);
     
     virtual void DropTSE(CRef<CTSE_Info> tse_info);
+
+    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,

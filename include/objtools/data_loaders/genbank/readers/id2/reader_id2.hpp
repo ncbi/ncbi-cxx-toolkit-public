@@ -82,6 +82,8 @@ public:
                        const string& seq_id);
     void ResolveSeq_id(CReaderRequestResult& result,
                        const CSeq_id_Handle& seq_id);
+    void ResolveSeq_ids(CReaderRequestResult& result,
+                        const CSeq_id_Handle& seq_id);
     TBlobVersion GetBlobVersion(CReaderRequestResult& result,
                                 const TBlob_id& blob_id);
 

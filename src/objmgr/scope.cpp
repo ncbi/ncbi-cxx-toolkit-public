@@ -199,6 +199,18 @@ void CScope::ResetHistory(void)
 }
 
 
+CScope::TIds CScope::GetIds(const CSeq_id& id)
+{
+    return m_Impl->GetIds(id);
+}
+
+
+CScope::TIds CScope::GetIds(const CSeq_id_Handle& idh)
+{
+    return m_Impl->GetIds(idh);
+}
+
+
 CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id& id)
 {
     return m_Impl->GetSynonyms(id);
@@ -319,6 +331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2004/08/31 21:03:49  grichenk
+* Added GetIds()
+*
 * Revision 1.107  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -77,6 +77,8 @@ public:
                                const string& seq_id) = 0;
     virtual void ResolveSeq_id(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id) = 0;
+    virtual void ResolveSeq_ids(CReaderRequestResult& result,
+                                const CSeq_id_Handle& seq_id) = 0;
     virtual void LoadBlobs(CReaderRequestResult& result,
                            const string& seq_id,
                            TContentsMask mask);
@@ -125,6 +127,8 @@ public:
                        const string& seq_id);
     void ResolveSeq_id(CReaderRequestResult& result,
                        const CSeq_id_Handle& seq_id);
+    void ResolveSeq_ids(CReaderRequestResult& result,
+                        const CSeq_id_Handle& seq_id);
     void LoadBlob(CReaderRequestResult& result,
                   CLoadLockBlob_ids& blobs,
                   CLoadInfoBlob_ids::const_iterator blob_iter);
@@ -134,6 +138,9 @@ public:
                    const TBlob_id& blob_id, TChunk_id chunk_id);
 
     virtual void ResolveSeq_id(CLoadLockBlob_ids& ids,
+                               const CSeq_id& id,
+                               TConn conn) = 0;
+    virtual void ResolveSeq_id(CLoadLockSeq_ids& ids,
                                const CSeq_id& id,
                                TConn conn) = 0;
     

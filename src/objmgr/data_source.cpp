@@ -967,6 +967,23 @@ CSeqMatch_Info* CDataSource::ResolveConflict(const CSeq_id_Handle& id,
 }
 
 
+void CDataSource::GetIds(const CSeq_id_Handle& idh, TIds& ids)
+{
+    TTSE_LockSet locks;
+    TTSE_Lock tse = x_FindBestTSE(idh, locks);
+    if ( tse ) {
+        CConstRef<CBioseq_Info> bs_info = tse->FindBioseq(idh);
+        _ASSERT(bs_info);
+        ids = bs_info->GetId();
+        return;
+    }
+    // Bioseq not found - try to request ids from loader if any.
+    if ( m_Loader ) {
+        m_Loader->GetIds(idh, ids);
+    }
+}
+
+
 string CDataSource::GetName(void) const
 {
     if ( m_Loader )

@@ -38,6 +38,7 @@
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -129,6 +130,19 @@ CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
 {
     NCBI_THROW(CObjMgrException, eNotImplemented,
                "CDataLoader::GetRecords()");
+}
+
+
+void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
+{
+    TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+    ITERATE(TTSE_LockSet, it, locks) {
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindBioseq(idh);
+        if ( bs_info ) {
+            ids = bs_info->GetId();
+            return;
+        }
+    }
 }
 
 
@@ -322,6 +336,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/08/31 21:03:49  grichenk
+* Added GetIds()
+*
 * Revision 1.20  2004/08/19 16:54:04  vasilche
 * CDataLoader::GetDataSource() made const.
 *

@@ -489,6 +489,21 @@ void CId1Reader::ResolveSeq_id(CLoadLockBlob_ids& ids,
 }
 
 
+void CId1Reader::ResolveSeq_id(CLoadLockSeq_ids& ids,
+                                const CSeq_id& id,
+                                TConn conn)
+{
+    int gi;
+    if ( id.IsGi() ) {
+        gi = id.GetGi();
+    }
+    else {
+        gi = ResolveSeq_id_to_gi(id, conn);
+    }
+    ResolveGi(ids, gi, conn);
+}
+
+
 int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 {
     CID1server_request id1_request;
@@ -566,6 +581,31 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
         }
         ids.AddBlob_id(blob_id, fBlobHasAllLocal);
     }
+}
+
+
+void CId1Reader::ResolveGi(CLoadLockSeq_ids& ids, int gi, TConn conn)
+{
+    if ( gi == 0 ) {
+        return;
+    }
+    CID1server_request id1_request;
+    {{
+        id1_request.SetGetseqidsfromgi(gi);
+    }}
+    
+    CID1server_back id1_reply;
+    x_ResolveId(id1_reply, id1_request, conn);
+
+    if ( !id1_reply.IsIds() ) {
+        return;
+    }
+
+    const CID1server_back::TIds& seq_ids = id1_reply.GetIds();
+    ITERATE(CID1server_back::TIds, it, seq_ids) {
+        ids.AddSeq_id(**it);
+    }
+    ids.SetLoaded();
 }
 
 

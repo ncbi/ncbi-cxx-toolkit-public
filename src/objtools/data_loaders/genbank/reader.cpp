@@ -274,6 +274,18 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
 }
 
 
+void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids.IsLoaded() ) {
+        CReaderRequestConn conn(result);
+        ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
+        ids.SetLoaded();
+    }
+}
+
+
 void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                               CLoadLockBlob_ids& blobs,
                               CLoadInfoBlob_ids::const_iterator blob_iter)

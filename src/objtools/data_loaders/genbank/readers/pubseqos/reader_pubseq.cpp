@@ -345,6 +345,86 @@ void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
 }
 
 
+void CPubseqReader::ResolveSeq_id(CLoadLockSeq_ids& ids,
+                                  const CSeq_id& id,
+                                  TConn conn)
+{
+    CDB_VarChar asnIn;
+    {{
+        CNcbiOstrstream oss;
+        {{
+            CObjectOStreamAsn ooss(oss);
+            ooss << id;
+        }}
+        asnIn = CNcbiOstrstreamToString(oss);
+    }}
+
+    CDB_Connection* db_conn = x_GetConnection(conn);
+
+    CDB_Int gi;
+    if ( id.IsGi() ) {
+        gi = id.GetGi();
+    }
+    else {
+        // Get gi by seq-id
+        auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn", 1));
+        cmd->SetParam("@asnin", &asnIn);
+        cmd->Send();
+
+        while(cmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> result(cmd->Result());
+            if (result.get() == 0  ||  result->ResultType() != eDB_RowResult) {
+                continue;
+            }
+
+            while(result->Fetch()) {
+                for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
+                    const string& name = result->ItemName(pos);
+                    if (name == "gi") {
+                        result->GetItem(&gi);
+                    }
+                    else {
+                        result->SkipItem();
+                    }
+                }
+            }
+        }
+    }
+
+    auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_seqid4gi", 2));
+    CDB_TinyInt bin = 1;
+    cmd->SetParam("@gi", &gi);
+    cmd->SetParam("@bin", &bin);
+    cmd->Send();
+
+    while(cmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd->Result());
+        if (result.get() == 0  ||  result->ResultType() != eDB_RowResult) {
+            continue;
+        }
+
+        while(result->Fetch()) {
+            _ASSERT(strcmp
+                    (result->ItemName(result->CurrentItemNo()), "seqid") == 0);
+            CResultBtSrcRdr reader(result.get());
+            CObjectIStreamAsnBinary in;
+            in.Open(reader);
+            CSeq_id id;
+            while (true) {
+                try {
+                    in >> id;
+                    ids.AddSeq_id(id);
+                }
+                catch (...) {
+                    break;
+                }
+            }
+        }
+    }
+    ids.SetLoaded();
+}
+
+
 CReader::TBlobVersion
 CPubseqReader::GetVersion(const CBlob_id& blob_id, TConn conn)
 {
