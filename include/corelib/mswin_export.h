@@ -75,6 +75,7 @@
 #  define NCBI_BIBLIO_EXPORTS
 #  define NCBI_MEDLINE_EXPORTS
 #  define NCBI_MEDLARS_EXPORTS
+#  define NCBI_MLA_EXPORTS
 #  define NCBI_PUBMED_EXPORTS
 #endif
 
@@ -191,18 +192,18 @@
  * Export specifier for library xalgo
  */
 #ifdef NCBI_XALGO_EXPORTS
-#  define NCBI_XALGO_EXPORT       __declspec(dllexport)
+#  define NCBI_XALGO_EXPORT         __declspec(dllexport)
 #else
-#  define NCBI_XALGO_EXPORT       __declspec(dllimport)
+#  define NCBI_XALGO_EXPORT         __declspec(dllimport)
 #endif
 
 /*
  * Export specifier for library objects_flat
  */
 #ifdef NCBI_FLAT_EXPORTS
-#  define NCBI_FLAT_EXPORT        __declspec(dllexport)
+#  define NCBI_FLAT_EXPORT          __declspec(dllexport)
 #else
-#  define NCBI_FLAT_EXPORT        __declspec(dllimport)
+#  define NCBI_FLAT_EXPORT          __declspec(dllimport)
 #endif
 
 /*
@@ -218,18 +219,18 @@
  * Export specifier for library objects_blast
  */
 #ifdef NCBI_BLAST_EXPORTS
-#  define NCBI_BLAST_EXPORT        __declspec(dllexport)
+#  define NCBI_BLAST_EXPORT         __declspec(dllexport)
 #else
-#  define NCBI_BLAST_EXPORT        __declspec(dllimport)
+#  define NCBI_BLAST_EXPORT         __declspec(dllimport)
 #endif
 
 /*
- * Export specifier for library objects_blast
+ * Export specifier for library objects_scoremat
  */
 #ifdef NCBI_SCOREMAT_EXPORTS
-#  define NCBI_SCOREMAT_EXPORT        __declspec(dllexport)
+#  define NCBI_SCOREMAT_EXPORT      __declspec(dllexport)
 #else
-#  define NCBI_SCOREMAT_EXPORT        __declspec(dllimport)
+#  define NCBI_SCOREMAT_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -248,6 +249,15 @@
 #  define NCBI_MEDLARS_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_MEDLARS_EXPORT       __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_mla
+ */
+#ifdef NCBI_MLA_EXPORTS
+#  define NCBI_MEA_EXPORT           __declspec(dllexport)
+#else
+#  define NCBI_MLA_EXPORT           __declspec(dllimport)
 #endif
 
 /*
@@ -563,9 +573,9 @@
  * Export specifier for library dbapi_driver_dblib
  */
 #ifdef NCBI_DBAPIDRIVER_DBLIB_EXPORTS
-#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT   __declspec(dllexport)
+#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT     __declspec(dllexport)
 #else
-#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT   __declspec(dllimport)
+#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT     __declspec(dllimport)
 #endif
 
 /*
@@ -581,18 +591,18 @@
  * Export specifier for library dbapi_driver_odbc
  */
 #ifdef NCBI_DBAPIDRIVER_ODBC_EXPORTS
-#  define NCBI_DBAPIDRIVER_ODBC_EXPORT   __declspec(dllexport)
+#  define NCBI_DBAPIDRIVER_ODBC_EXPORT      __declspec(dllexport)
 #else
-#  define NCBI_DBAPIDRIVER_ODBC_EXPORT   __declspec(dllimport)
+#  define NCBI_DBAPIDRIVER_ODBC_EXPORT      __declspec(dllimport)
 #endif
 
 /*
  * Export specifier for library dbapi_driver_mysql
  */
 #ifdef NCBI_DBAPIDRIVER_MYSQL_EXPORTS
-#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT   __declspec(dllexport)
+#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT     __declspec(dllexport)
 #else
-#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT   __declspec(dllimport)
+#  define NCBI_DBAPIDRIVER_MYSQL_EXPORT     __declspec(dllimport)
 #endif
 
 
@@ -693,6 +703,7 @@
 #  define NCBI_MEDLARS_EXPORT
 #  define NCBI_MEDLINE_EXPORT
 #  define NCBI_MIM_EXPORT
+#  define NCBI_MLA_EXPORT
 #  define NCBI_MMDB1_EXPORT
 #  define NCBI_MMDB2_EXPORT
 #  define NCBI_MMDB3_EXPORT
@@ -732,6 +743,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.22  2003/05/23 15:22:40  ivanov
+ * Added export specifier NCBI_MLA_EXPORT
+ *
  * Revision 1.21  2003/04/25 21:05:02  ucko
  * +SCOREMAT (under SEQEXT)
  *
