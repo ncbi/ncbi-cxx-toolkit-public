@@ -93,6 +93,16 @@ unsigned char* CImage::SetData(void)
 
 
 //
+// GetAspectRatio()
+// This computes the aspect ratio for the image (width / height)
+//
+float CImage::GetAspectRatio(void) const
+{
+    return float (m_Width) / float (m_Height);
+}
+
+
+//
 // set the alpha channel to a given value.  The red channel is channel 3.
 // This will optionnally add the channel if it doesn't exist.
 //
@@ -257,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/09 19:27:53  dicuccio
+ * Added GetAspectRatio()
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *
