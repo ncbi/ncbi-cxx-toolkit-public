@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/06/07 17:53:47  lavr
+ * Persistent reading from test connection
+ *
  * Revision 6.12  2001/06/01 16:19:10  lavr
  * Added (ifdef'ed out) an internal test connection to service ID1
  *
@@ -103,37 +106,37 @@ int main(int argc, const char* argv[])
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = 0;
     }
-    
+
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info);
     ConnNetInfo_Destroy(info);
-    
+
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Failed to create service connector");
-    
+
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
-    
+
     timeout.sec  = 5;
     timeout.usec = 123456;
 
     CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
-    
+
     if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success ||
         n != strlen(obuf)) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error writing to connection");
     }
-    
+
     if (CONN_Wait(conn, eIO_Read, 0) != eIO_Success) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error waiting for reading");
     }
 
-    if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_Plain) != eIO_Success) {
+    if (CONN_Read(conn, ibuf, n, &n, eIO_Persist) != eIO_Success) {
         CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error reading from connection");
+        CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Error reading from connection");
     }
-    
+
     CORE_LOGF(eLOG_Note,
               ("%d bytes read from service (%s):\n%.*s",
                (int)n, CONN_GetType(conn), (int)n, ibuf));
