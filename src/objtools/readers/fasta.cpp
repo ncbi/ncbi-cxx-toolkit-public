@@ -151,7 +151,9 @@ static void s_FixSeqData(CBioseq* seq)
                     lit.SetLength(data.GetIupacna().Get().size());
                     CSeqportUtil::Pack(&data);
                 } else {
-                    lit.SetLength(data.GetIupacaa().Get().size());
+                    string& s = data.SetIupacaa().Set();
+                    lit.SetLength(s.size());
+                    s.reserve(s.size()); // free extra allocation
                 }
                 length += lit.GetLength();
             }
@@ -165,7 +167,9 @@ static void s_FixSeqData(CBioseq* seq)
             inst.SetLength(data.GetIupacna().Get().size());
             CSeqportUtil::Pack(&data);
         } else {
-            inst.SetLength(data.GetIupacaa().Get().size());
+            string& s = data.SetIupacaa().Set();
+            inst.SetLength(s.size());
+            s.reserve(s.size()); // free extra allocation
         }        
         break;
     }
@@ -175,19 +179,44 @@ static void s_FixSeqData(CBioseq* seq)
 }
 
 
-static CSeq_data& s_LastData(CSeq_inst& inst)
+void s_AddData(CSeq_inst& inst, const string& residues)
 {
+    CRef<CSeq_data> data;
     if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
         CDelta_ext::Tdata& delta_data = inst.SetExt().SetDelta().Set();
         if (delta_data.empty()  ||  !delta_data.back()->IsLiteral()) {
             CRef<CDelta_seq> delta_seq(new CDelta_seq);
             delta_data.push_back(delta_seq);
-            return delta_seq->SetLiteral().SetSeq_data();
+            data = &delta_seq->SetLiteral().SetSeq_data();
         } else {
-            return delta_data.back()->SetLiteral().SetSeq_data();
+            data = &delta_data.back()->SetLiteral().SetSeq_data();
         }
     } else {
-        return inst.SetSeq_data();
+        data = &inst.SetSeq_data();
+    }
+
+    string* s = 0;
+    if (inst.GetMol() == CSeq_inst::eMol_aa) {
+        if (data->IsIupacaa()) {
+            s = &data->SetIupacaa().Set();
+        } else {
+            data->SetIupacaa().Set(residues);
+        }
+    } else {
+        if (data->IsIupacna()) {
+            s = &data->SetIupacna().Set();
+        } else {
+            data->SetIupacna().Set(residues);
+        }
+    }
+
+    if (s) {
+        // grow exponentially to avoid O(n^2) behavior
+        if (s->capacity() < s->size() + residues.size()) {
+            s->reserve(s->capacity()
+                       + max(residues.size(), s->capacity() / 2));
+        }
+        *s += residues;
     }
 }
 
@@ -407,20 +436,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                         if (inst.GetMol() == CSeq_inst::eMol_not_set) {
                             s_GuessMol(inst.SetMol(), residues, flags, in);
                         }
-                        CSeq_data& data = s_LastData(inst);
-                        if (inst.GetMol() == CSeq_inst::eMol_aa) {
-                            if (data.IsIupacaa()) {
-                                data.SetIupacaa().Set() += residues;
-                            } else {
-                                data.SetIupacaa().Set(residues);
-                            }
-                        } else {
-                            if (data.IsIupacna()) {
-                                data.SetIupacna().Set() += residues;
-                            } else {
-                                data.SetIupacna().Set(residues);
-                            }
-                        }
+                        s_AddData(inst, residues);
                     }
                     {{
                         CRef<CDelta_seq> gap(new CDelta_seq);
@@ -439,22 +455,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             
             // Add the accumulated data...
             residues.resize(res_count);
-            {{
-                CSeq_data& data = s_LastData(inst);
-                if (inst.GetMol() == CSeq_inst::eMol_aa) {
-                    if (data.IsIupacaa()) {
-                        data.SetIupacaa().Set() += residues;
-                    } else {
-                        data.SetIupacaa().Set(residues);
-                    }
-                } else {
-                    if (data.IsIupacna()) {
-                        data.SetIupacna().Set() += residues;
-                    } else {
-                        data.SetIupacna().Set(residues);
-                    }
-                }
-            }}
+            s_AddData(inst, residues);
         }
     }
 
@@ -523,6 +524,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/10/03 15:09:18  ucko
+* Tweak sequence string allocation to avoid O(n^2) performance from
+* linear resizing.
+*
 * Revision 1.8  2003/08/25 21:30:09  ucko
 * ReadFasta: tweak a bit to improve performance, and fix some bugs in
 * parsing gaps.
