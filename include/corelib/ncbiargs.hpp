@@ -36,6 +36,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2000/09/28 21:01:58  butanaev
+ * fPreOpen with opposite meaning took over fDelayOpen.
+ * IsDefaultValue() added which returns true if no
+ * value for an optional argument was provided in cmd. line.
+ *
  * Revision 1.5  2000/09/22 21:27:13  butanaev
  * Fixed buf in handling default arg values.
  *
@@ -125,15 +130,17 @@ public:
 
     // These functions throw an exception if you requested the wrong
     // value type (e.g. if called "AsInteger()" for a "boolean" arg).
-    virtual long            AsInteger    (void) const;
-    virtual double          AsDouble     (void) const;
-    virtual bool            AsBoolean    (void) const;
+    virtual long            AsInteger     (void) const;
+    virtual double          AsDouble      (void) const;
+    virtual bool            AsBoolean     (void) const;
+
+    bool IsDefaultValue(void) const;
 
     enum EFlags {
         // for "AsInputFile" and "AsOutputFile"
         fUnchanged = 0x1, // do not change open mode
-        fToText      = 0x2, // change file open mode to text
-        fToBinary    = 0x4  // change file open mode to binary
+        fToText    = 0x2, // change file open mode to text
+        fToBinary  = 0x4  // change file open mode to binary
     };
 
     virtual CNcbiIstream&  AsInputFile  (EFlags changeModeTo = fUnchanged) const;
@@ -141,12 +148,13 @@ public:
 
 protected:
     // Prohibit explicit instantiation of "CArg" objects
-    CArgValue(const string& value);
+    CArgValue(const string& value, bool isDefault);
     virtual ~CArgValue(void);
 
 private:
     // Value of the argument as passed to the constructor ("value")
     string m_String;
+    bool m_IsDefaultValue;
 };
 
 
@@ -213,7 +221,7 @@ public:
                                        bool optional=false) const = 0;
     virtual string GetUsageCommentAttr(bool optional=false) const = 0;
     virtual string GetUsageCommentBody(void)                const = 0;
-    virtual CArgValue* ProcessArgument(const string& value) const = 0;
+    virtual CArgValue* ProcessArgument(const string& value, bool isDefault = false) const = 0;
 };
 
 
@@ -250,10 +258,10 @@ public:
     // Flags (must match the arg.type, or an exception will be thrown)
     enum EFlags {
         // for "eInputFile" and "eOutputFile"
-        fDelayOpen = 0x1,   // do not open until first "CArgs::As*File()" call
-        fBinary    = 0x2,   // open as binary file
+        fPreOpen = 0x1,   // open file right away
+        fBinary  = 0x2,   // open as binary file
         // for "eOutputFile" only
-        fAppend    = 0x10   // write at the end-of-file, do not truncate
+        fAppend  = 0x10   // write at the end-of-file, do not truncate
     };
     typedef unsigned int TFlags;  // binary OR of "EFlags"
 

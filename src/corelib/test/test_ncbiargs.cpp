@@ -30,6 +30,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/09/28 21:00:21  butanaev
+ * fPreOpen with opposite meaning took over fDelayOpen.
+ * IsDefaultValue() added which returns true if no
+ * value for an optional argument was provided in cmd. line.
+ *
  * Revision 6.3  2000/09/22 21:26:28  butanaev
  * Added example with default arg values.
  *
@@ -62,6 +67,9 @@ void Example8(CArgDescriptions& m, int argc, const char* argv[])
   CArgs* a = m.CreateArgs(argc, argv);
 
   cout << "k=" << (*a)["k"].AsString()  << endl;
+
+  if((*a)["k"].IsDefaultValue())
+    cout << "default value was printed" << endl;
 }
 
 
@@ -99,11 +107,11 @@ void Example6(CArgDescriptions& m, int argc, const char* argv[])
 void Example5(CArgDescriptions& m, int argc, const char* argv[])
 {
   m.AddKey("if", "inputFile", "This is an input file argument",
-           CArgDescriptions::eInputFile, CArgDescriptions::fDelayOpen);
+           CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
   m.AddKey("of", "outputFile", "This is an output file argument",
            CArgDescriptions::eOutputFile,
-           CArgDescriptions::fAppend | CArgDescriptions::fDelayOpen);
+           CArgDescriptions::fAppend);
 
   CArgs* a = m.CreateArgs(argc, argv);
 

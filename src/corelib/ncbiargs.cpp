@@ -33,8 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.8  2000/09/28 20:37:16  butanaev
- * *** empty log message ***
+ * Revision 1.9  2000/09/28 21:00:14  butanaev
+ * fPreOpen with opposite meaning took over fDelayOpen.
+ * IsDefaultValue() added which returns true if no
+ * value for an optional argument was provided in cmd. line.
+ *
  *
  * Revision 1.7  2000/09/28 19:38:00  butanaev
  * stdin and stdout now referenced as '-' Example: ./test_ncbiargs -if - -of -
@@ -118,12 +121,12 @@ bool CArgValue::AsBoolean(void) const
     ARG_THROW("Not implemented", AsString());
 }
 
-CNcbiIstream &CArgValue::AsInputFile(EFlags changeModeTo) const
+CNcbiIstream &CArgValue::AsInputFile(EFlags) const
 {
     ARG_THROW("Not implemented", AsString());
 }
 
-CNcbiOstream &CArgValue::AsOutputFile(EFlags changeModeTo) const
+CNcbiOstream &CArgValue::AsOutputFile(EFlags) const
 {
     ARG_THROW("Not implemented", AsString());
 }
@@ -533,7 +536,7 @@ CArgDesc_Plain::CArgDesc_Plain
         return;
     case CArgDescriptions::eInputFile:
         if((flags &
-            ~(CArgDescriptions::fDelayOpen | CArgDescriptions::fBinary)) == 0)
+            ~(CArgDescriptions::fPreOpen | CArgDescriptions::fBinary)) == 0)
             return;
     default:
         if (flags == 0)
@@ -584,14 +587,14 @@ CArgValue* CArgDesc_Plain::ProcessArgument(const string& value, bool isDefault) 
     case CArgDescriptions::eDouble:
         return new CArg_Double(value, isDefault);
     case CArgDescriptions::eInputFile: {
-        bool delay_open = (GetFlags() & CArgDescriptions::fDelayOpen) != 0;
+        bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
         IOS_BASE::openmode openmode = 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
         return new CArg_InputFile(value, openmode, delay_open, isDefault);
     }
     case CArgDescriptions::eOutputFile: {
-        bool delay_open = (GetFlags() & CArgDescriptions::fDelayOpen) != 0;
+        bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
         IOS_BASE::openmode openmode = 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
