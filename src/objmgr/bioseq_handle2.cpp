@@ -28,56 +28,6 @@
 * File Description:
 *   Obtains or constructs a sequence's title.  (Corresponds to
 *   CreateDefLine in the C toolkit.)
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2002/04/10 20:59:41  gouriano
-* moved construction of iterators out of "for" loop initialization:
-* Sun Workshop compiler does not call destructors of such objects
-* in case we use break to exit the loop
-*
-* Revision 1.7  2002/03/21 22:22:46  ucko
-* Adjust today's fixes for new objmgr API
-*
-* Revision 1.6  2002/03/21 20:37:16  ucko
-* Pull in full bioseq when counting HTG pieces [also in objmgr]
-*
-* Revision 1.5  2002/03/21 20:09:06  ucko
-* Look at parents' title descriptors in some cases.
-* Incorporate recent changes from the C version (CreateDefLineEx):
-*  * honor wgs (whole genome shotgun) technology.
-*  * don't add strain if already present in organism name.
-* [Also fixed in old objmgr.]
-*
-* Revision 1.4  2002/03/21 17:01:20  ucko
-* Fix stupid bug in s_FindLongestFeature (also fixed in old objmgr).
-*
-* Revision 1.3  2002/03/19 19:16:28  gouriano
-* added const qualifier to GetTitle and GetSeqVector
-*
-* Revision 1.2  2002/02/21 19:27:05  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/01/28 19:44:49  gouriano
-* changed the interface of BioseqHandle: two functions moved from Scope
-*
-*
-* Revision 1.4  2002/01/23 21:59:32  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.3  2002/01/16 18:56:28  grichenk
-* Removed CRef<> argument from choice variant setter, updated sources to
-* use references instead of CRef<>s
-*
-* Revision 1.2  2002/01/16 16:25:56  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:22  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
 
 #include <objects/objmgr1/seqdesc_ci.hpp>
@@ -217,7 +167,9 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         } else {
             {
                 CSeqdesc_CI it(*this, CSeqdesc::e_Title);
-                title = it->GetTitle();
+                if (it) {
+                    title = it->GetTitle();
+                }
             }
         }
     }
@@ -754,3 +706,58 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.9  2002/04/22 19:16:13  ucko
+* Fixed problem that could occur when no title descriptors were present.
+*
+* Revision 1.8  2002/04/10 20:59:41  gouriano
+* moved construction of iterators out of "for" loop initialization:
+* Sun Workshop compiler does not call destructors of such objects
+* in case we use break to exit the loop
+*
+* Revision 1.7  2002/03/21 22:22:46  ucko
+* Adjust today's fixes for new objmgr API
+*
+* Revision 1.6  2002/03/21 20:37:16  ucko
+* Pull in full bioseq when counting HTG pieces [also in objmgr]
+*
+* Revision 1.5  2002/03/21 20:09:06  ucko
+* Look at parents' title descriptors in some cases.
+* Incorporate recent changes from the C version (CreateDefLineEx):
+*  * honor wgs (whole genome shotgun) technology.
+*  * don't add strain if already present in organism name.
+* [Also fixed in old objmgr.]
+*
+* Revision 1.4  2002/03/21 17:01:20  ucko
+* Fix stupid bug in s_FindLongestFeature (also fixed in old objmgr).
+*
+* Revision 1.3  2002/03/19 19:16:28  gouriano
+* added const qualifier to GetTitle and GetSeqVector
+*
+* Revision 1.2  2002/02/21 19:27:05  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/01/28 19:44:49  gouriano
+* changed the interface of BioseqHandle: two functions moved from Scope
+*
+*
+* Revision 1.4  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
+* Revision 1.3  2002/01/16 18:56:28  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
+* Revision 1.1  2002/01/11 19:06:22  gouriano
+* restructured objmgr
+*
+*
+* ===========================================================================
+*/
