@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/01/29 16:01:21  grichenk
+* COStreamBuffer destructor fixed - no exceptions thrown
+*
 * Revision 1.29  2001/08/08 18:35:55  grichenk
 * CIStreamBuffer::FindChar() -- fixed bug with buffer pointers
 *
@@ -633,9 +636,13 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
 }
 
 COStreamBuffer::~COStreamBuffer(void)
-    THROWS1((CIOException))
 {
-    Close();
+    try {
+        Close();
+    }
+    catch (CIOException& e) {
+        ERR_POST(Warning << e.what());
+    }
     delete[] m_Buffer;
 }
 
