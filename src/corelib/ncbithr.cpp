@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2001/12/12 17:11:23  vakatov
+ * [NCBI_POSIX_THREADS] CSemaphore::Post() -- assert(0) just to make sure
+ *
  * Revision 1.12  2001/12/11 22:58:16  vakatov
  * [NCBI_POSIX_THREADS] CSemaphore::Post() -- avoid throwing exception
  * without unlocking the embracing mutex first
@@ -1280,6 +1283,7 @@ void CSemaphore::Post(unsigned int count)
                  "CSemaphore::Post() -- would result in counter > MAX_UINT");
         s_Verify(m_Sem->count + count <= m_Sem->max_count,
                  "CSemaphore::Post() -- attempt to exceed max_count");
+        assert(0);
     }
 
     // Signal some (or all) of the threads waiting on this semaphore
