@@ -57,22 +57,20 @@ extern "C" {
  *        start of this query within the concatenated sequence [in]
  * @param gap_align Auxiliary structure used for gapped alignment [in]
  * @param sbp Statistical parameters [in]
- * @param score_options Scoring parameters [in]
+ * @param score_params Scoring parameters (esp. scale factor) [in]
  * @param ext_options Gapped extension options [in]
  * @param hit_params Hit saving parameters [in]
  * @param gen_code_string specifies genetic code [in]
- * @param psi_options Options specific to PSI BLAST [in]
  */
 Int2
 Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk,
    BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp,
-   const BlastScoringOptions* score_options,
+   const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingParameters* hit_params,
-   const Uint1* gen_code_string, 
-   const PSIBlastOptions* psi_options);
+   const Uint1* gen_code_string);
 
 /** Given the preliminary alignment results from a database search, redo 
  * the gapped alignment with traceback, if it has not yet been done.
@@ -82,25 +80,23 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
  * @param query_info Information about the query [in]
  * @param bssp BLAST database structure [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_options The scoring related options [in]
+ * @param score_params Scoring parameters (esp. scale factor) [in]
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits. Can change if not a 
                      database search [in]
  * @param eff_len_params Parameters for recalculating effective search 
  *                       space. Can change if not a database search. [in]
  * @param db_options Options containing database genetic code string [in]
- * @param psi_options Options specific to PSI BLAST [in]
  * @return nonzero indicates failure, otherwise zero
  */
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
-        const BlastScoringOptions* score_options,
+        const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         BlastEffectiveLengthsParameters* eff_len_params,
-        const BlastDatabaseOptions* db_options,
-        const PSIBlastOptions* psi_options);
+        const BlastDatabaseOptions* db_options);
 
 /** Compute traceback information for alignments found by an
  *  RPS blast search. This function performs two major tasks:
@@ -126,13 +122,11 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
  * @param query_info Information associated with the original query. 
  *                   Only used for the search space [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_options The scoring related options [in]
+ * @param score_params Scoring parameters (esp. scale factor) [in]
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits. Can change if not a 
                      database search [in]
  * @param db_options Options containing database genetic code string [in]
- * @param psi_options Options specific to PSI BLAST. Only used for
- *                    the scaling factor at present [in]
  * @param karlin_k Array of Karlin values, one for each database 
  *                 sequence. Used for E-value calculation [in]
  * @return nonzero indicates failure, otherwise zero
@@ -144,11 +138,10 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
         BLAST_SequenceBlk* query,
         BlastQueryInfo* query_info,
         BlastGapAlignStruct* gap_align, 
-        const BlastScoringOptions* score_options,
+        const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options,
-        const PSIBlastOptions* psi_options,
         const double* karlin_k);
 
 #ifdef __cplusplus
