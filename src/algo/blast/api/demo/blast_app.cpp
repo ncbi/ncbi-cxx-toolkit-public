@@ -64,7 +64,7 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 
 #include "blast_input.hpp" // From working directory
-#include <objtools/alnmgr/util/blast_format.hpp>
+#include <objtools/blast_format/blast_format.hpp>
 
 // C include files
 
