@@ -106,6 +106,10 @@ public:
     void ClearCache(void);
 
 private:
+    enum {
+        kTypeUnknown = 1 << 30
+    };
+
     friend class CBioseq_Handle;
     //typedef CSeqMap::resolved_const_iterator TSeqMap_CI;
     typedef vector<char> TCacheData;
@@ -119,6 +123,8 @@ private:
     void x_ConvertCache(TCache_I pos, size_t count, TCoding from, TCoding to) const;
     void x_ReverseCache(TCache_I pos, size_t count, TCoding coding) const;
 
+    TCoding x_GetCoding(TCoding dataCoding) const;
+    TCoding x_UpdateCoding(void) const;
     bool x_UpdateSequenceType(TCoding coding) const;
     void x_InitSequenceType(void);
 
@@ -156,7 +162,8 @@ void CSeqVector::ClearCache(void)
 inline
 CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
-    return m_Coding;
+    TCoding coding = m_Coding;
+    return coding & kTypeUnknown? x_UpdateCoding(): coding;
 }
 
 
@@ -174,6 +181,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/02/06 19:05:39  vasilche
+* Fixed old cache data copying.
+* Delayed sequence type (protein/dna) resolution.
+*
 * Revision 1.24  2003/01/23 19:33:57  vasilche
 * Commented out obsolete methods.
 * Use strand argument of CSeqVector instead of creation reversed seqmap.

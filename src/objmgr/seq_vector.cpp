@@ -162,6 +162,7 @@ static const TSeqPos kCacheSize = 16384;
 static const TSeqPos kCacheKeep = kCacheSize / 16;
 
 
+inline
 void CSeqVector::x_ResizeCache(size_t size) const
 {
     m_CacheData.resize(size);
@@ -171,6 +172,7 @@ void CSeqVector::x_ResizeCache(size_t size) const
 
 CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos) const
 {
+    TSeqPos totalSize = size();
     TSeqPos oldCachePos = m_CachePos;
     TSeqPos oldCacheLen = m_CacheLen;
     TSeqPos oldCacheEnd = oldCachePos + oldCacheLen;
@@ -185,8 +187,20 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos) const
     else {
         start = pos - (kCacheSize - kCacheKeep);
     }
-    TSeqPos newCachePos = max(TSignedSeqPos(0), start);
-    TSeqPos newCacheEnd = min(size(), newCachePos + kCacheSize);
+    TSeqPos newCachePos;
+    TSeqPos newCacheEnd;
+    if ( start < 0 ) {
+        newCachePos = 0;
+        newCacheEnd = min(totalSize, kCacheSize);
+    }
+    else if ( start + kCacheSize > totalSize ) {
+        newCachePos = max(kCacheSize, totalSize) - kCacheSize;
+        newCacheEnd = totalSize;
+    }
+    else {
+        newCachePos = start;
+        newCacheEnd = start + kCacheSize;
+    }
     TSeqPos newCacheLen = newCacheEnd - newCachePos;
 
     TSeqPos copyCachePos = max(oldCachePos, newCachePos);
@@ -197,8 +211,23 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos) const
         TSeqPos newCopyPos = copyCachePos - newCachePos;
         if ( newCopyPos != oldCopyPos ) {
             TSeqPos oldCopyEnd = copyCacheEnd - oldCachePos;
-            x_ResizeCache(max(oldCacheLen, newCacheLen));
-            copy(m_Cache+oldCopyPos, m_Cache+oldCopyEnd, m_Cache+newCopyPos);
+            if ( newCacheLen != oldCacheLen ) {
+                TCacheData newCacheData(newCacheLen);
+                copy(m_Cache+oldCopyPos, m_Cache+oldCopyEnd,
+                     &newCacheData[0]+newCopyPos);
+                swap(m_CacheData, newCacheData);
+            }
+            else {
+                if ( newCopyPos > oldCopyPos ) {
+                    TSeqPos newCopyEnd = copyCacheEnd - newCachePos;
+                    copy_backward(m_Cache+oldCopyPos, m_Cache+oldCopyEnd,
+                         m_Cache+newCopyEnd);
+                }
+                else {
+                    copy(m_Cache+oldCopyPos, m_Cache+oldCopyEnd,
+                         m_Cache+newCopyPos);
+                }
+            }
         }
         x_ResizeCache(newCacheLen);
         m_CachePos = newCachePos;
@@ -310,7 +339,6 @@ void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
     _ASSERT(pos < end);
     _ASSERT(end <= m_CachePos+m_CacheLen);
 
-    TCoding needCoding = GetCoding();
     TCache_I dst = m_Cache + (pos - m_CachePos);
     for ( CSeqMap::const_iterator seg =
               m_SeqMap->ResolvedRangeIterator(m_Scope, m_Strand, pos, end-pos);
@@ -329,12 +357,7 @@ void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
             TSeqPos dataPos = seg.GetRefPosition();
             TCoding dataCoding = data.Which();
 
-            if ( m_SequenceType == eType_not_set ) {
-                x_UpdateSequenceType(dataCoding);
-            }
-
-            TCoding cacheCoding =
-                needCoding == CSeq_data::e_not_set? dataCoding: needCoding;
+            TCoding cacheCoding = x_GetCoding(dataCoding);
 
             switch ( dataCoding ) {
             case CSeq_data::e_Iupacna:
@@ -356,7 +379,6 @@ void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
                 THROW1_TRACE(runtime_error,
                              "CSeqVector::x_FillCache: "
                              "Ncbipna conversion not implemented");
-                break;
             case CSeq_data::e_Ncbi8aa:
                 copy_8bit(dst, count, data.GetNcbi8aa().Get(), dataPos);
                 break;
@@ -367,7 +389,6 @@ void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
                 THROW1_TRACE(runtime_error,
                              "CSeqVector::x_FillCache: "
                              "Ncbipaa conversion not implemented");
-                break;
             case CSeq_data::e_Ncbistdaa:
                 copy_8bit(dst, count, data.GetNcbistdaa().Get(), dataPos);
                 break;
@@ -497,24 +518,51 @@ const char* CSeqVector::sx_GetComplementTable(TCoding key)
 }
 
 
+CSeqVector::TCoding CSeqVector::x_UpdateCoding(void) const
+{
+    TCoding coding = m_Coding;
+    if ( coding & kTypeUnknown ) {
+        GetSequenceType();
+        const_cast<CSeqVector*>(this)->
+            SetCoding(EVectorCoding(coding & ~kTypeUnknown));
+        coding = m_Coding;
+    }
+    return coding;
+}
+
+
+CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding dataCoding) const
+{
+    if ( m_SequenceType == eType_not_set )
+        x_UpdateSequenceType(dataCoding);
+
+    TCoding coding = x_UpdateCoding();
+    if ( (coding & kTypeUnknown) || coding == CSeq_data::e_not_set )
+        coding = dataCoding;
+    return coding;
+}
+
+
 void CSeqVector::SetCoding(TCoding coding)
 {
     if (m_Coding != coding) {
         ClearCache();
         m_Coding = coding;
-        _ASSERT(GetCoding() == coding);
     }
 }
 
 
 void CSeqVector::SetIupacCoding(void)
 {
-    switch ( GetSequenceType() ) {
+    switch ( m_SequenceType ) {
     case eType_aa:
         SetCoding(CSeq_data::e_Iupacaa);
         break;
     case eType_na:
         SetCoding(CSeq_data::e_Iupacna);
+        break;
+    default:
+        SetCoding(TCoding(kTypeUnknown | CBioseq_Handle::eCoding_Iupac));
         break;
     }
 }
@@ -522,12 +570,15 @@ void CSeqVector::SetIupacCoding(void)
 
 void CSeqVector::SetNcbiCoding(void)
 {
-    switch ( GetSequenceType() ) {
+    switch ( m_SequenceType ) {
     case eType_aa:
         SetCoding(CSeq_data::e_Ncbistdaa);
         break;
     case eType_na:
         SetCoding(CSeq_data::e_Ncbi4na);
+        break;
+    default:
+        SetCoding(TCoding(kTypeUnknown | CBioseq_Handle::eCoding_Ncbi));
         break;
     }
 }
@@ -552,10 +603,10 @@ void CSeqVector::SetCoding(EVectorCoding coding)
 CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
 {
     if ( m_SequenceType == eType_not_set ) {
-        for ( CSeqMap::const_iterator i = m_SeqMap->BeginResolved(m_Scope,
-                                                                  size_t(-1),
-                                                                  CSeqMap::fFindData);
-              i; ++i ) {
+        for ( CSeqMap::const_iterator
+                  i(m_SeqMap->BeginResolved(m_Scope,
+                                            size_t(-1),
+                                            CSeqMap::fFindData)); i; ++i ) {
             _ASSERT(i.GetType() == CSeqMap::eSeqData);
             if ( x_UpdateSequenceType(i.GetRefData().Which()) ) {
                 return m_SequenceType;
@@ -614,6 +665,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/02/06 19:05:28  vasilche
+* Fixed old cache data copying.
+* Delayed sequence type (protein/dna) resolution.
+*
 * Revision 1.43  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *
