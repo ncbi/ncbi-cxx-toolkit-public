@@ -65,7 +65,8 @@ int main()
             for ( CRef<CBlobSource> bs(seqRef.GetBlobSource(0, 0, cl));
                   bs->HaveMoreBlobs(); ++count) {
                 CRef<CBlob> blob(bs->RetrieveBlob());
-                CRef<CSeq_entry> se(blob->Seq_entry());
+                blob->ReadSeq_entry();
+                CRef<CSeq_entry> se(blob->GetSeq_entry());
                 if (!se) {
                     cout << "blob is not available\n";
                     continue;
@@ -79,6 +80,10 @@ int main()
 
 /*
 * $Log$
+* Revision 1.14  2003/08/14 20:05:20  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.13  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

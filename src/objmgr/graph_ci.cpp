@@ -39,14 +39,13 @@ BEGIN_SCOPE(objects)
 
 CMappedGraph& CMappedGraph::Set(const CAnnotObject_Ref& annot)
 {
-    _ASSERT(annot.Get().IsGraph());
-    m_Graph = &annot.Get().GetGraph();
+    _ASSERT(annot.IsGraph());
+    m_Graph = &annot.GetGraph();
     m_MappedGraph.Reset();
     m_Partial = annot.IsPartial();
-    if ( annot.IsMappedLoc() )
-        m_MappedLoc = &annot.GetMappedLoc();
-    else
-        m_MappedLoc.Reset();
+
+    _ASSERT(annot.GetMappedIndex() == 0);
+    m_MappedLoc.Reset(annot.GetMappedLocation());
     return *this;
 }
 
@@ -100,6 +99,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/08/14 20:05:19  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.19  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

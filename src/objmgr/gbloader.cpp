@@ -901,14 +901,18 @@ bool CGBDataLoader::x_GetData(CRef<STSEinfo> tse,
             GBLOG_POST("GetBlob(" << srp.print() << ") " <<
                        from << ":"<< to << "  class("<<blob->Class()<<")");
             m_InvokeGC=true;
-            if (blob->Class()==0) {
-                tse_up->m_tse    = blob->Seq_entry();
+            if (blob->GetClass() == 0) {
+                blob->ReadSeq_entry();
+                tse_up->m_tse    = blob->GetSeq_entry();
                 if(tse_up->m_tse) {
                     tse_up->m_mode   = CTSEUpload::eDone;
                     new_tse=true;
                     CRef<CTSE_Info> tseinfo = 
                         GetDataSource()->AddTSE(*(tse_up->m_tse), false, tse);
                     tse->tseinfop = &*tseinfo;
+                    if ( blob->GetSNP_annot_Info() ) {
+                        tseinfo->AddSNP_annot_Info(*blob->GetSNP_annot_Info());
+                    }
                     _TRACE("GetBlob(" << srp.print() << " = " << DUMP(*tse) << ") - whole blob retrieved");
                 }
                 else {
@@ -960,6 +964,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/08/14 20:05:19  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.81  2003/07/24 19:28:09  vasilche
 * Implemented SNP split for ID1 loader.
 *

@@ -58,8 +58,8 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CPackStringClassHook : public CReadClassMemberHook,
-                                                 public CPackStringHook
+class NCBI_XOBJMGR_EXPORT CPackStringClassHook : public CPackStringHook,
+                                                 public CReadClassMemberHook
 {
 public:
     CPackStringClassHook(size_t length_limit = 32, size_t count_limit = 256);
@@ -70,8 +70,8 @@ public:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CPackStringChoiceHook : public CReadChoiceVariantHook,
-                                                  public CPackStringHook
+class NCBI_XOBJMGR_EXPORT CPackStringChoiceHook : public CPackStringHook,
+                                                  public CReadChoiceVariantHook
 {
 public:
     CPackStringChoiceHook(size_t length_limit = 32, size_t count_limit = 256);
@@ -86,6 +86,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2003/08/14 20:05:18  vasilche
+ * Simple SNP features are stored as table internally.
+ * They are recreated when needed using CFeat_CI.
+ *
  * Revision 1.2  2003/07/22 21:55:11  vasilche
  * Allow correct packing with limited reference counter (MSVC - 254 max).
  *

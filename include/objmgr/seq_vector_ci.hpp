@@ -119,7 +119,7 @@ CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
     _ASSERT(m_Cache != m_CacheEnd);
     if (++m_Cache >= m_CacheEnd) {
-            x_NextCacheSeg();
+        x_NextCacheSeg();
     }
     return *this;
 }
@@ -129,7 +129,7 @@ CSeqVector_CI& CSeqVector_CI::operator--(void)
 {
     _ASSERT(m_Cache >= m_CacheData);
     if (m_Cache == m_CacheData) {
-            x_PrevCacheSeg();
+        x_PrevCacheSeg();
     }
     else {
         --m_Cache;
@@ -192,6 +192,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.10  2003/07/18 19:42:42  vasilche
 * Added x_DestroyCache() method.
 *

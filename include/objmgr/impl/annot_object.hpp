@@ -119,13 +119,9 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
-    friend class CDataSource;
-
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot
     // containing the original annotation object.
-    friend class CAnnotTypes_CI;
-    friend class CAnnotObject_Less;
 
     void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
 
@@ -251,6 +247,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.9  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

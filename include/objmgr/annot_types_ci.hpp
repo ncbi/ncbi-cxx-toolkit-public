@@ -37,6 +37,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
 #include <vector>
@@ -50,16 +51,15 @@ class CSeq_loc;
 class CSeqMap_CI;
 class CSeq_id_Handle;
 class CAnnotObject_Info;
-class CFeat_Less;
-class CFeat_Reverse_Less;
-class CAnnotObject_Less;
-class CAnnotObject_Reverse_Less;
 class CSeq_loc_Conversion;
 class CBioseq_Handle;
 class CAnnotTypes_CI;
 class CHandleRangeMap;
 class CHandleRange;
 struct SAnnotObject_Index;
+class CSeq_annot_SNP_Info;
+struct SSNP_Info;
+class CSeq_loc_Conversion;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
@@ -68,38 +68,59 @@ public:
 
     CAnnotObject_Ref(void);
     CAnnotObject_Ref(const CAnnotObject_Info& object);
+    CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_info, TSeqPos index);
     ~CAnnotObject_Ref(void);
 
-    const CAnnotObject_Info& Get(void) const;
-    const CSeq_feat& GetFeatFast(void) const;
+    enum EObjectType {
+        eType_null,
+        eType_AnnotObject_Info,
+        eType_Seq_annot_SNP_Info
+    };
 
+    EObjectType GetObjectType(void) const;
+
+    const CAnnotObject_Info& GetAnnotObject_Info(void) const;
+    const CSeq_annot_SNP_Info& GetSeq_annot_SNP_Info(void) const;
+    const SSNP_Info& GetSNP_Info(void) const;
+
+    TSeqPos GetFrom(void) const;
+    TSeqPos GetToOpen(void) const;
     TRange GetTotalRange(void) const;
 
     bool IsPartial(void) const;
+    int GetMappedIndex(void) const;
+
+    const CSeq_annot& GetSeq_annot(void) const;
+    bool IsFeat(void) const;
+    bool IsSNPFeat(void) const;
+    bool IsGraph(void) const;
+    bool IsAlign(void) const;
+    const CSeq_feat& GetFeat(void) const;
+    const CSeq_graph& GetGraph(void) const;
+    const CSeq_align& GetAlign(void) const;
+
+    const CSeq_loc* GetMappedLocation(void) const;
+    TSeqPos GetSNP_Index(void) const;
+
+    void SetAnnotObjectRange(const TRange& range);
+    void SetAnnotObjectRange(const TRange& range, const CRef<CSeq_loc>& loc);
+    void SetSNP_Point(TSeqPos pos);
+    void SetSNP_Point(CSeq_loc_Conversion& cvt, const SSNP_Info& snp);
+
     void SetPartial(bool value);
-
-    bool IsMappedLoc(void) const;
-    const CSeq_loc& GetMappedLoc(void) const;
-    void SetMappedLoc(CSeq_loc& loc);
-
-    bool IsMappedProd(void) const;
-    const CSeq_loc& GetMappedProd(void) const;
-    void SetMappedProd(CSeq_loc& loc);
+    void SetMappedIndex(int index);
 
 private:
-    friend class CFeat_Less;
-    friend class CFeat_Reverse_Less;
-    friend class CAnnotObject_Less;
-    friend class CAnnotObject_Reverse_Less;
-    friend class CAnnotTypes_CI;
-
-    CConstRef<CAnnotObject_Info> m_Object;
-    TRange                  m_TotalRange; // cached total range of mapped loc
-    CRef<CSeq_loc>          m_MappedLoc;  // master sequence coordinates
-    CRef<CSeq_loc>          m_MappedProd; // master sequence coordinates
-    bool                    m_Partial;    // Partial flag (same as in features)
-
-    friend class CSeq_loc_Conversion;
+    CConstRef<CObject>      m_Object;
+    CRef<CSeq_loc>          m_MappedLocation; // master sequence coordinates
+    Int2                    m_MappedIndex;
+    Int1                    m_ObjectType; // EObjectType
+    Int1                    m_Partial;    // Partial flag (same as in features)
+    TSeqPos                 m_StartPos;
+    union {
+        TSeqPos             m_EndPos;     // for eType_AnnotObject_Info
+        TSeqPos             m_SNP_Index;  // for eType_Seq_annot_SNP_Info
+    };
 };
 
 
@@ -150,8 +171,8 @@ public:
 
     CAnnotTypes_CI& operator= (const CAnnotTypes_CI& it);
 
-    // Rewind annot iterator to point to the very first annot object, the same as
-    // immediately after construction.
+    // Rewind annot iterator to point to the very first annot object,
+    // the same as immediately after construction.
     void Rewind(void);
 
     typedef CConstRef<CTSE_Info> TTSE_Lock;
@@ -192,6 +213,7 @@ private:
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
 
+    bool x_NeedSNPs(void) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
     bool x_MatchType(const CAnnotObject_Info& annot_info) const;
     bool x_MatchRange(const CHandleRange& hr,
@@ -208,10 +230,13 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CAnnotObject_Ref
+/////////////////////////////////////////////////////////////////////////////
+
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
-    : m_TotalRange(TRange::GetEmpty()),
-      m_Partial(false)
+    : m_ObjectType(eType_null)
 {
 }
 
@@ -219,9 +244,18 @@ CAnnotObject_Ref::CAnnotObject_Ref(void)
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object),
-      m_TotalRange(TRange::GetEmpty()),
-      m_Partial(false)
+      m_ObjectType(eType_AnnotObject_Info)
 {
+}
+
+
+inline
+CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
+                                   TSeqPos index)
+    : m_Object(&snp_annot),
+      m_ObjectType(eType_Seq_annot_SNP_Info)
+{
+    m_SNP_Index = index;
 }
 
 
@@ -232,23 +266,63 @@ CAnnotObject_Ref::~CAnnotObject_Ref(void)
 
 
 inline
-CAnnotObject_Ref::TRange CAnnotObject_Ref::GetTotalRange(void) const
+CAnnotObject_Ref::EObjectType CAnnotObject_Ref::GetObjectType(void) const
 {
-    return m_TotalRange;
+    return EObjectType(m_ObjectType);
 }
 
 
 inline
-const CAnnotObject_Info& CAnnotObject_Ref::Get(void) const
+const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
 {
-    return *m_Object;
+    _ASSERT(m_ObjectType == eType_AnnotObject_Info);
+    return static_cast<const CAnnotObject_Info&>(*m_Object);
 }
+
+
+inline
+const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
+}
+
+
+inline
+TSeqPos CAnnotObject_Ref::GetFrom(void) const
+{
+    return m_StartPos;
+}
+
+
+inline
+TSeqPos CAnnotObject_Ref::GetToOpen(void) const
+{
+    return m_ObjectType == eType_Seq_annot_SNP_Info? m_StartPos+1: m_EndPos;
+}
+
+
+inline
+CAnnotObject_Ref::TRange CAnnotObject_Ref::GetTotalRange(void) const
+{
+    return TRange(GetFrom(), GetToOpen());
+}
+
+
+inline
+TSeqPos CAnnotObject_Ref::GetSNP_Index(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    return m_SNP_Index;
+}
+
 
 inline
 bool CAnnotObject_Ref::IsPartial(void) const
 {
-    return m_Partial;
+    return m_Partial != 0;
 }
+
 
 inline
 void CAnnotObject_Ref::SetPartial(bool value)
@@ -256,51 +330,126 @@ void CAnnotObject_Ref::SetPartial(bool value)
     m_Partial = value;
 }
 
-inline
-bool CAnnotObject_Ref::IsMappedLoc(void) const
-{
-    return bool(m_MappedLoc);
-}
 
 inline
-const CSeq_loc& CAnnotObject_Ref::GetMappedLoc(void) const
+const CSeq_loc* CAnnotObject_Ref::GetMappedLocation(void) const
 {
-    return *m_MappedLoc;
+    return m_MappedLocation.GetPointerOrNull();
 }
 
-inline
-void CAnnotObject_Ref::SetMappedLoc(CSeq_loc& loc)
-{
-    m_MappedLoc.Reset(&loc);
-}
 
 inline
-const CSeq_feat& CAnnotObject_Ref::GetFeatFast(void) const
+int CAnnotObject_Ref::GetMappedIndex(void) const
 {
-    const CAnnotObject_Info* info = m_Object.GetPointerOrNull();
-    _ASSERT(info && info->IsFeat());
-    const CSeq_feat* feat = info->GetFeatFast();
-    _ASSERT(feat);
-    return *feat;
+    return m_MappedIndex;
 }
 
-inline
-bool CAnnotObject_Ref::IsMappedProd(void) const
-{
-    return bool(m_MappedProd);
-}
 
 inline
-const CSeq_loc& CAnnotObject_Ref::GetMappedProd(void) const
+const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
 {
-    return *m_MappedProd;
+    if ( m_ObjectType == eType_Seq_annot_SNP_Info ) {
+        return GetSeq_annot_SNP_Info().GetSeq_annot();
+    }
+    else {
+        return GetAnnotObject_Info().GetSeq_annot();
+    }
 }
 
+
 inline
-void CAnnotObject_Ref::SetMappedProd(CSeq_loc& loc)
+bool CAnnotObject_Ref::IsFeat(void) const
 {
-    m_MappedProd.Reset(&loc);
+    return m_ObjectType == eType_Seq_annot_SNP_Info ||
+        m_ObjectType == eType_AnnotObject_Info &&
+        GetAnnotObject_Info().IsFeat();
 }
+
+
+inline
+bool CAnnotObject_Ref::IsSNPFeat(void) const
+{
+    return m_ObjectType == eType_Seq_annot_SNP_Info;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsGraph(void) const
+{
+    return m_ObjectType == eType_AnnotObject_Info &&
+        GetAnnotObject_Info().IsGraph();
+}
+
+
+inline
+bool CAnnotObject_Ref::IsAlign(void) const
+{
+    return m_ObjectType == eType_AnnotObject_Info &&
+        GetAnnotObject_Info().IsAlign();
+}
+
+
+inline
+const CSeq_feat& CAnnotObject_Ref::GetFeat(void) const
+{
+    return GetAnnotObject_Info().GetFeat();
+}
+
+
+inline
+const CSeq_graph& CAnnotObject_Ref::GetGraph(void) const
+{
+    return GetAnnotObject_Info().GetGraph();
+}
+
+
+inline
+const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
+{
+    return GetAnnotObject_Info().GetAlign();
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedIndex(int index)
+{
+    m_MappedIndex = index;
+}
+
+
+inline
+void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range)
+{
+    _ASSERT(m_ObjectType == eType_AnnotObject_Info);
+    m_StartPos = range.GetFrom();
+    m_EndPos = range.GetToOpen();
+}
+
+
+inline
+void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range,
+                                           const CRef<CSeq_loc>& loc)
+{
+    _ASSERT(m_ObjectType == eType_AnnotObject_Info);
+    m_StartPos = range.GetFrom();
+    m_EndPos = range.GetToOpen();
+    m_MappedLocation = loc;
+}
+
+
+inline
+void CAnnotObject_Ref::SetSNP_Point(TSeqPos pos)
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    m_StartPos = pos;
+    m_Partial = false;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CAnnotTypes_CI
+/////////////////////////////////////////////////////////////////////////////
+
 
 inline
 bool CAnnotTypes_CI::IsValid(void) const
@@ -341,8 +490,9 @@ const CAnnotObject_Ref& CAnnotTypes_CI::Get(void) const
 inline
 const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 {
-    return Get().Get().GetSeq_annot();
+    return Get().GetSeq_annot();
 }
+
 
 inline
 size_t CAnnotTypes_CI::GetSize(void) const
@@ -357,6 +507,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.44  2003/08/04 17:02:57  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

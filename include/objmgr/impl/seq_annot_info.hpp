@@ -39,6 +39,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <vector>
 
@@ -52,6 +53,7 @@ class CTSE_Info;
 class CSeq_entry_Info;
 class CAnnotObject_Info;
 struct SAnnotObject_Key;
+class CSeq_annot_SNP_Info;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
 {
@@ -94,6 +96,8 @@ private:
 
     TObjectKeys            m_ObjectKeys;
     TObjectInfos           m_ObjectInfos;
+
+    CRef<CSeq_annot_SNP_Info>   m_SNP_Info;
 
     bool m_Indexed;
 };
@@ -140,6 +144,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.3  2003/08/04 17:02:59  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

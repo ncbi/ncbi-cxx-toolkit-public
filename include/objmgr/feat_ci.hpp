@@ -160,6 +160,12 @@ public:
 private:
     friend class CFeat_CI;
     CMappedFeat& Set(const CAnnotObject_Ref& annot);
+    void Reset(void);
+    bool IsSet(void) const
+        {
+            return m_Feat;
+        }
+
     const CSeq_feat& x_MakeMappedFeature(void) const;
 
     CConstRef<CSeq_feat>         m_Feat;
@@ -383,9 +389,17 @@ CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 
 
 inline
+CFeat_CI::operator bool (void) const
+{
+    return IsValid();
+}
+
+
+inline
 CFeat_CI& CFeat_CI::operator++ (void)
 {
     Next();
+    m_Feat.Reset();
     return *this;
 }
 
@@ -394,14 +408,25 @@ inline
 CFeat_CI& CFeat_CI::operator-- (void)
 {
     Prev();
+    m_Feat.Reset();
     return *this;
 }
 
 
 inline
-CFeat_CI::operator bool (void) const
+const CMappedFeat& CFeat_CI::operator* (void) const
 {
-    return IsValid();
+    if ( !m_Feat.IsSet() ) {
+        m_Feat.Set(Get());
+    }
+    return m_Feat;
+}
+
+
+inline
+const CMappedFeat* CFeat_CI::operator-> (void) const
+{
+    return &**this;
 }
 
 
@@ -418,6 +443,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.29  2003/08/04 17:02:57  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

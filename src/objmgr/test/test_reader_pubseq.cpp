@@ -61,8 +61,11 @@ int main()
             for ( CRef<CBlobSource> bs(seqRef.GetBlobSource(0, 0, cl));
                   bs->HaveMoreBlobs(); ++count) {
                 CRef<CBlob> blob(bs->RetrieveBlob());
-                cout << "Class=" << blob->Class() << " Descr=" << blob->Descr() << endl;
-                CRef<CSeq_entry> se(blob->Seq_entry());
+                cout <<
+                    "Class=" << blob->GetClass() <<
+                    " Descr=" << blob->GetDescr() << endl;
+                blob->ReadSeq_entry();
+                CRef<CSeq_entry> se(blob->GetSeq_entry());
                 if (!se) {
                     cout << "blob is not available\n";
                     continue;
@@ -84,6 +87,10 @@ int main()
 
 /*
 * $Log$
+* Revision 1.8  2003/08/14 20:05:20  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.7  2003/07/17 20:06:02  vasilche
 * Added OBJMGR_LIBS definition.
 *

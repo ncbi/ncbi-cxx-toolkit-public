@@ -35,6 +35,8 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -86,39 +88,64 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
             m_MappedFeat = m_Feat;
         }
     }
+    _ASSERT(!m_MappedFeat->IsSetComment() || m_MappedFeat->GetComment().size() != 0);
     return *m_MappedFeat;
+}
+
+
+void CMappedFeat::Reset(void)
+{
+    m_Feat.Reset();
+    m_MappedFeat.Reset();
+    m_MappedLoc.Reset();
+    m_MappedProd.Reset();
 }
 
 
 CMappedFeat& CMappedFeat::Set(const CAnnotObject_Ref& annot)
 {
-    _ASSERT(annot.Get().IsFeat());
-    m_Feat = &annot.Get().GetFeat();
-    m_MappedFeat.Reset();
-    m_Partial = annot.IsPartial();
-    if ( annot.IsMappedLoc() )
-        m_MappedLoc = &annot.GetMappedLoc();
-    else
-        m_MappedLoc.Reset();
-    if ( annot.IsMappedProd() )
-        m_MappedProd = &annot.GetMappedProd();
-    else
-        m_MappedProd.Reset();
+    _ASSERT(annot.IsFeat());
+    if ( annot.IsSNPFeat() ) {
+        const CSeq_annot_SNP_Info& snp_annot = annot.GetSeq_annot_SNP_Info();
+        const SSNP_Info& snp_info = *(snp_annot.begin()+annot.GetSNP_Index());
+        m_Feat.Reset(snp_info.CreateSeq_feat(snp_annot));
+        _ASSERT(!m_Feat->IsSetComment() || m_Feat->GetComment().size() != 0);
+        m_MappedFeat.Reset();
+        m_Partial = false;
+        m_MappedLoc.Reset(annot.GetMappedLocation());
+        const CSeq_loc* mapped_loc = annot.GetMappedLocation();
+        if ( mapped_loc ) {
+            CSeq_loc* loc;
+            m_MappedLoc.Reset(loc = new CSeq_loc);
+            CSeq_point& point = loc->SetPnt();
+            point.SetId(const_cast<CSeq_id&>(mapped_loc->GetWhole()));
+            point.SetPoint(annot.GetFrom());
+            point.SetStrand(annot.IsPartial()?
+                            eNa_strand_minus: eNa_strand_plus);
+            m_MappedProd.Reset();
+            m_MappedFeat = m_Feat;
+            const_cast<CSeq_feat&>(*m_MappedFeat).SetLocation(*loc);
+        }
+        else {
+            m_MappedFeat = m_Feat;
+        }
+    }
+    else {
+        m_Feat.Reset(&annot.GetFeat());
+        m_MappedFeat.Reset();
+        m_Partial = annot.IsPartial();
+        if ( annot.GetMappedIndex() == 0 ) {
+            m_MappedLoc.Reset(annot.GetMappedLocation());
+            m_MappedProd.Reset();
+        }
+        else {
+            m_MappedLoc.Reset();
+            m_MappedProd.Reset(annot.GetMappedLocation());
+        }
+    }
     return *this;
 }
 
-
-const CMappedFeat& CFeat_CI::operator* (void) const
-{
-    return m_Feat.Set(Get());
-}
-
-
-const CMappedFeat* CFeat_CI::operator-> (void) const
-{
-    m_Feat.Set(Get());
-    return &m_Feat;
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -126,6 +153,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/08/14 20:05:19  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.18  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

@@ -42,6 +42,7 @@ BEGIN_SCOPE(objects)
 
 class CSeq_id;
 class CSeq_entry;
+class CSeq_annot_SNP_Info;
 
 class NCBI_XOBJMGR_EXPORT CBlob : public CObject
 {
@@ -50,17 +51,56 @@ public:
     typedef int TBlobClass;
     typedef unsigned TConn;
 
-    CBlob(void);
+    CBlob(bool is_snp = false);
     virtual ~CBlob(void);
 
-    virtual CSeq_entry *Seq_entry(void) = 0;
+    virtual void ReadSeq_entry(void) = 0;
 
-    string& Descr() { return m_Descr; }
-    int&    Class() { return m_Class; }
+    bool IsSnp(void) const
+        {
+            return m_IsSnp;
+        }
+
+    CSeq_entry* GetSeq_entry(void)
+        {
+            return m_Seq_entry.GetPointer();
+        }
+    CSeq_annot_SNP_Info* GetSNP_annot_Info(void)
+        {
+            return m_SNP_annot_Info.GetPointerOrNull();
+        }
+
+    const string& GetDescr(void) const
+        {
+            return m_Descr;
+        }
+    int GetClass(void) const
+        {
+            return m_Class;
+        }
+
+protected:
+    void SetDescr(const string& s)
+        {
+            m_Descr = s;
+        }
+
+    void SetClass(int cls)
+        {
+            m_Class = cls;
+        }
+
+protected:
+    int              m_Class;
+    string           m_Descr;
+
+    bool             m_IsSnp;
+    CRef<CSeq_entry> m_Seq_entry;
+    CRef<CSeq_annot_SNP_Info> m_SNP_annot_Info;
 
 private:
-    int m_Class;
-    string m_Descr;
+    CBlob(const CBlob&);
+    CBlob&operator=(const CBlob&);
 };
 
 class NCBI_XOBJMGR_EXPORT CBlobSource : public CObject
@@ -162,6 +202,7 @@ public:
     static bool s_GetEnvFlag(const char* env, bool def_val);
 
     static bool TrySNPSplit(void);
+    static bool TrySNPTable(void);
     static bool TryStringPack(void);
 
     static void SetSNPReadHooks(CObjectIStream& in);
@@ -173,6 +214,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.25  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.24  2003/07/24 19:28:08  vasilche
 * Implemented SNP split for ID1 loader.
 *

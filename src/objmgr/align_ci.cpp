@@ -72,16 +72,16 @@ CAlign_CI::~CAlign_CI(void)
 const CSeq_align& CAlign_CI::operator* (void) const
 {
     const CAnnotObject_Ref& annot = Get();
-    _ASSERT(annot.Get().IsAlign());
-    return annot.Get().GetAlign();
+    _ASSERT(annot.IsAlign());
+    return annot.GetAlign();
 }
 
 
 const CSeq_align* CAlign_CI::operator-> (void) const
 {
     const CAnnotObject_Ref& annot = Get();
-    _ASSERT(annot.Get().IsAlign());
-    return &annot.Get().GetAlign();
+    _ASSERT(annot.IsAlign());
+    return &annot.GetAlign();
 }
 
 END_SCOPE(objects)
@@ -90,6 +90,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/08/14 20:05:19  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.17  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

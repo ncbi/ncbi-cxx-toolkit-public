@@ -959,19 +959,54 @@ void CDataSource::x_GetAnnotData(const CHandleRangeMap& loc,
         // Send request to the loader
         switch ( sel.GetAnnotChoice() ) {
         case CSeq_annot::C_Data::e_Ftable:
+        {
+            bool need_snp = true;
+            switch ( sel.GetAnnotChoice() ) {
+            case CSeq_annot::C_Data::e_not_set:
+                need_snp = true;
+                break;
+            case CSeq_annot::C_Data::e_Ftable:
+                switch ( sel.GetFeatSubtype() ) {
+                case CSeqFeatData::eSubtype_variation:
+                    need_snp = true;
+                    break;
+                case CSeqFeatData::eSubtype_any:
+                    switch ( sel.GetFeatChoice() ) {
+                    case CSeqFeatData::e_not_set:
+                    case CSeqFeatData::e_Imp:
+                        need_snp = true;
+                        break;
+                    default:
+                        need_snp = false;
+                        break;
+                    }
+                    break;
+                default:
+                    need_snp = false;
+                    break;
+                }
+                break;
+            default:
+                need_snp = false;
+                break;
+            }
+
             if ( !sel.IsSetDataSources() ) {
                 m_Loader->GetRecords(loc, CDataLoader::eFeatures);
-                m_Loader->GetRecords(loc, CDataLoader::eExternal);
+                if ( need_snp ) {
+                    m_Loader->GetRecords(loc, CDataLoader::eExternal);
+                }
             }
             else {
                 if ( sel.HasDataSource("") ) {
                     m_Loader->GetRecords(loc, CDataLoader::eFeatures);
                 }
-                if ( sel.HasDataSource("SNP") ) {
+                if ( need_snp && sel.HasDataSource("SNP") ) {
                     m_Loader->GetRecords(loc, CDataLoader::eExternal);
                 }
             }
             break;
+        }
         case CSeq_annot::C_Data::e_Align:
             //### Need special flag for alignments
             m_Loader->GetRecords(loc, CDataLoader::eAlign);
@@ -1389,6 +1424,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.117  2003/08/14 20:05:19  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.116  2003/08/04 17:04:31  grichenk
 * Added default data-source priority assignment.
 * Added support for iterating all annotations from a

@@ -465,6 +465,10 @@ private:
 
     // Default priority for the datasource
     CPriorityNode::TPriority m_DefaultPriority;
+
+    // hide copy constructor
+    CDataSource(const CDataSource&);
+    CDataSource& operator=(const CDataSource&);
 };
 
 inline
@@ -516,6 +520,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.62  2003/08/06 20:51:16  grichenk
 * Removed declarations of non-existent methods
 *

@@ -30,12 +30,14 @@
 #include <objmgr/reader.hpp>
 
 #include <objmgr/impl/pack_string.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/objectinfo.hpp>
@@ -46,10 +48,11 @@ BEGIN_SCOPE(objects)
 
 static const char* const STRING_PACK_ENV = "GENBANK_SNP_PACK_STRINGS";
 static const char* const SNP_SPLIT_ENV = "GENBANK_SNP_SPLIT";
+static const char* const SNP_TABLE_ENV = "GENBANK_SNP_TABLE";
 static const char* const ENV_YES = "YES";
 
-CBlob::CBlob(void)
-    : m_Class(0)
+CBlob::CBlob(bool is_snp)
+    : m_Class(0), m_IsSnp(is_snp)
 {
 }
 
@@ -111,6 +114,13 @@ bool CReader::TrySNPSplit(void)
 {
     static bool snp_split = s_GetEnvFlag(SNP_SPLIT_ENV, true);
     return snp_split;
+}
+
+
+bool CReader::TrySNPTable(void)
+{
+    static bool snp_table = s_GetEnvFlag(SNP_TABLE_ENV, true);
+    return snp_table;
 }
 
 
@@ -189,6 +199,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.19  2003/08/14 20:05:19  vasilche
+ * Simple SNP features are stored as table internally.
+ * They are recreated when needed using CFeat_CI.
+ *
  * Revision 1.18  2003/07/24 19:28:09  vasilche
  * Implemented SNP split for ID1 loader.
  *

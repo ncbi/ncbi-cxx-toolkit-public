@@ -111,15 +111,13 @@ class NCBI_XOBJMGR_EXPORT CPubseqBlob : public CBlob
 public:
     CPubseqBlob(CPubseqBlobSource& source,
                 int cls, const string& descr,
-                bool snp);
+                bool is_snp);
     ~CPubseqBlob(void);
 
-    CSeq_entry *Seq_entry();
+    void ReadSeq_entry();
 
 private:
     CPubseqBlobSource& m_Source;
-    CRef<CSeq_entry>   m_Seq_entry;
-    bool               m_SNP;
 };
 
 
@@ -155,6 +153,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.7  2003/07/24 20:36:48  vasilche
 * Fixed includes.
 *

@@ -65,9 +65,10 @@
 #include <objmgr/gbloader.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/impl/synonyms.hpp>
 
 BEGIN_NCBI_SCOPE
-using namespace objects;
+USING_SCOPE(objects);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -93,9 +94,12 @@ void CDemoApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
-    arg_desc->AddKey("gi", "SeqEntryID",
-                     "GI id of the Seq-Entry to fetch",
-                     CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("gi", "SeqEntryID",
+                             "GI id of the Seq-Entry to fetch",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("id", "SeqEntryID",
+                             "Seq-id of the Seq-Entry to fetch",
+                             CArgDescriptions::eString);
     arg_desc->AddOptionalKey("file", "SeqEntryFile",
                              "file with Seq-Entry to load",
                              CArgDescriptions::eInputFile);
@@ -130,6 +134,12 @@ void CDemoApp::Init(void)
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
     arg_desc->AddFlag("nosnp", "exclude snp features");
+    arg_desc->AddDefaultKey("feat_type", "FeatType",
+                            "Type of features to select",
+                            CArgDescriptions::eInteger, "-1");
+    arg_desc->AddDefaultKey("feat_subtype", "FeatSubType",
+                            "Subtype of features to select",
+                            CArgDescriptions::eInteger, "-1");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -610,7 +620,22 @@ int CDemoApp::Run(void)
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
 
-    int gi = args["gi"].AsInteger();
+    // Create seq-id, set it to GI specified on the command line
+    CRef<CSeq_id> id;
+    int gi;
+    if ( args["gi"] ) {
+        gi = args["gi"].AsInteger();
+        id.Reset(new CSeq_id);
+        id->SetGi(gi);
+    }
+    else if ( args["id"] ) {
+        id.Reset(new CSeq_id(args["id"].AsString()));
+        gi = -1;
+    }
+    else {
+        ERR_POST(Fatal << "Either -gi or -id argument is required");
+    }
+
     CFeat_CI::EResolveMethod resolve = CFeat_CI::eResolve_TSE;
     if ( args["resolve"].AsString() == "all" )
         resolve = CFeat_CI::eResolve_All;
@@ -635,6 +660,8 @@ int CDemoApp::Run(void)
         order = SAnnotSelector::eSortOrder_None;
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
+    int feat_type = args["feat_type"].AsInteger();
+    int feat_subtype = args["feat_subtype"].AsInteger();
     bool nosnp = args["nosnp"];
 
     // Create object manager. Use CRef<> to delete the OM on exit.
@@ -652,10 +679,6 @@ int CDemoApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
 
-    // Get bioseq handle for the seq-id. Most of requests will use
-    // this handle.
-    CBioseq_Handle handle;
-
     if ( args["file"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         auto_ptr<CObjectIStream> in
@@ -665,17 +688,21 @@ int CDemoApp::Run(void)
         scope.AddTopLevelSeqEntry(*entry);
     }
 
-    // Create seq-id, set it to GI specified on the command line
-    {
-        CSeq_id id;
-        id.SetGi(gi);
-        handle = scope.GetBioseqHandle(id);
-    }
-
+    // Get bioseq handle for the seq-id. Most of requests will use this handle.
+    CBioseq_Handle handle = scope.GetBioseqHandle(*id);
     // Check if the handle is valid
     if ( !handle ) {
-        NcbiCout << "Bioseq not found" << NcbiEndl;
-        return 0;
+        ERR_POST(Fatal << "Bioseq not found");
+    }
+    if ( gi < 0 ) {
+        CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
+        ITERATE ( CSynonymsSet, it, *syns ) {
+            const CSeq_id& seq_id = it->GetSeqId();
+            if ( seq_id.Which() == CSeq_id::e_Gi ) {
+                gi = seq_id.GetGi();
+                break;
+            }
+        }
     }
 
     for ( int c = 0; c < repeat_count; ++c ) {
@@ -760,68 +787,83 @@ int CDemoApp::Run(void)
         count = 0;
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
+        SAnnotSelector base_sel;
+        base_sel
+            .SetResolveMethod(resolve)
+            .SetSortOrder(order)
+            .SetMaxSize(max_feat)
+            .SetResolveDepth(depth);
+        if ( nosnp ) {
+            base_sel.SetDataSource("");
+        }
+
         {{
-            SAnnotSelector sel;
-            sel.SetResolveMethod(resolve)
-                .SetSortOrder(order)
-                .SetMaxSize(max_feat)
-                .SetResolveDepth(depth);
-            if ( nosnp ) {
-                sel.SetDataSource("");
+            SAnnotSelector sel = base_sel;
+            if ( feat_type >= 0 ) {
+                sel.SetFeatChoice(SAnnotSelector::TFeatChoice(feat_type));
             }
-            CFeat_CI feat_it(scope, loc, sel);
-            for ( ; feat_it;  ++feat_it) {
+            if ( feat_subtype >= 0 ) {
+                sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
+            }
+            CFeat_CI it(scope, loc, sel);
+            for ( ; it;  ++it) {
                 count++;
                 // Get seq-annot containing the feature
                 if ( print_features ) {
                     auto_ptr<CObjectOStream>
                         out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                    *out << feat_it->GetMappedFeature();
-                    *out << feat_it->GetLocation();
+                    *out << it->GetMappedFeature();
+                    *out << it->GetLocation();
                 }
-                CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
+                CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
             }
-            NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
-            _ASSERT(count == (int)feat_it.GetSize());
+            if ( feat_type >= 0 || feat_subtype >= 0 ) {
+                NcbiCout << "Feat count (whole, requested): ";
+            }
+            else {
+                NcbiCout << "Feat count (whole, any):       ";
+            }
+            NcbiCout << count << NcbiEndl;
+            _ASSERT(count == (int)it.GetSize());
         }}
 
         if ( only_features )
             continue;
 
-        count = 0;
-        // The same region (whole sequence), but restricted feature type:
-        // searching for e_Cdregion features only. If the sequence is
-        // segmented (constructed), search for features on the referenced
-        // sequences in the same top level seq-entry, ignore far pointers.
-        for (CFeat_CI feat_it(scope, loc,
-                              SAnnotSelector(CSeqFeatData::e_Cdregion)
-                              .SetResolveMethod(resolve)
-                              .SetSortOrder(order));
-             feat_it;  ++feat_it) {
-            count++;
-            // Get seq vector filtered with the current feature location.
-            // e_ViewMerged flag forces each residue to be shown only once.
-            CSeqVector cds_vect = handle.GetSequenceView
-                (feat_it->GetLocation(), CBioseq_Handle::eViewMerged,
-                 CBioseq_Handle::eCoding_Iupac);
-            // Print first 10 characters of each cd-region
-            NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
-            if ( cds_vect.size() == 0 ) {
-                NcbiCout << "Zero size from: ";
-                auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                *out << feat_it->GetOriginalFeature().GetLocation();
-                out->Flush();
-                NcbiCout << "Zero size to: ";
-                *out << feat_it->GetMappedFeature().GetLocation();
+        {
+            count = 0;
+            // The same region (whole sequence), but restricted feature type:
+            // searching for e_Cdregion features only. If the sequence is
+            // segmented (constructed), search for features on the referenced
+            // sequences in the same top level seq-entry, ignore far pointers.
+            SAnnotSelector sel = base_sel;
+            sel.SetFeatChoice(CSeqFeatData::e_Cdregion);
+            for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+                count++;
+                // Get seq vector filtered with the current feature location.
+                // e_ViewMerged flag forces each residue to be shown only once.
+                CSeqVector cds_vect = handle.GetSequenceView
+                    (it->GetLocation(), CBioseq_Handle::eViewMerged,
+                     CBioseq_Handle::eCoding_Iupac);
+                // Print first 10 characters of each cd-region
+                NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
+                if ( cds_vect.size() == 0 ) {
+                    NcbiCout << "Zero size from: ";
+                    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                    *out << it->GetOriginalFeature().GetLocation();
+                    out->Flush();
+                    NcbiCout << "Zero size to: ";
+                    *out << it->GetMappedFeature().GetLocation();
+                }
+                sout = "";
+                for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
+                    // Convert sequence symbols to printable form
+                    sout += cds_vect[i];
+                }
+                NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
             }
-            sout = "";
-            for (TSeqPos i = 0; (i < cds_vect.size()) && (i < 10); i++) {
-                // Convert sequence symbols to printable form
-                sout += cds_vect[i];
-            }
-            NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+            NcbiCout << "Feat count (whole, cds):      " << count << NcbiEndl;
         }
-        NcbiCout << "Feat count (whole, cds):      " << count << NcbiEndl;
 
         // Region set to interval 0..9 on the bioseq. Any feature
         // intersecting with the region should be selected.
@@ -830,11 +872,7 @@ int CDemoApp::Run(void)
         loc.SetInt().SetTo(9);
         count = 0;
         // Iterate features. No feature type restrictions.
-        for (CFeat_CI feat_it(scope, loc,
-                              SAnnotSelector()
-                              .SetResolveMethod(resolve)
-                              .SetSortOrder(order));
-             feat_it;  ++feat_it) {
+        for (CFeat_CI it(scope, loc, base_sel); it;  ++it) {
             count++;
         }
         NcbiCout << "Feat count (int. 0..9, any):   " << count << NcbiEndl;
@@ -845,20 +883,16 @@ int CDemoApp::Run(void)
         // and start/stop points on the bioseq. If both start and stop are 0 the
         // whole bioseq is used. The last parameter may be used for type filtering.
         count = 0;
-        for (CFeat_CI feat_it(handle, 0, 999,
-                              SAnnotSelector()
-                              .SetResolveMethod(resolve)
-                              .SetSortOrder(order));
-             feat_it;  ++feat_it) {
+        for ( CFeat_CI it(handle, 0, 999, base_sel); it;  ++it ) {
             count++;
             if ( print_features ) {
                 auto_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
-                *out << feat_it->GetMappedFeature();
-                *out << feat_it->GetLocation();
+                *out << it->GetMappedFeature();
+                *out << it->GetLocation();
             }
         }
-        NcbiCout << "Feat count (TSE only, 0..9):   " << count << NcbiEndl;
+        NcbiCout << "Feat count (bh, 0..999, any):  " << count << NcbiEndl;
 
         // The same way may be used to iterate aligns and graphs,
         // except that there is no type filter for both of them.
@@ -888,6 +922,7 @@ int CDemoApp::Run(void)
         }
         NcbiCout << "Annot count (whole, any):       " << count << NcbiEndl;
     }
+
     NcbiCout << "Done" << NcbiEndl;
     return 0;
 }
@@ -911,6 +946,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/08/14 20:05:20  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.34  2003/07/25 21:41:32  grichenk
 * Implemented non-recursive mode for CSeq_annot_CI,
 * fixed friend declaration in CSeq_entry_Info.

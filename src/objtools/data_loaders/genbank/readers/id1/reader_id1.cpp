@@ -32,6 +32,7 @@
 
 #include <objmgr/impl/seqref_id1.hpp>
 #include <objmgr/impl/reader_zlib.hpp>
+#include <objmgr/impl/reader_snp.hpp>
 
 #include <corelib/ncbistre.hpp>
 
@@ -231,7 +232,7 @@ CBlobSource* CId1Seqref::GetBlobSource(TPos , TPos ,
 
 
 CId1Blob::CId1Blob(CId1BlobSource& source, bool is_snp)
-    : m_Source(source), m_IsSnp(is_snp)
+    : CBlob(is_snp), m_Source(source)
 {
 }
 
@@ -241,53 +242,43 @@ CId1Blob::~CId1Blob(void)
 }
 
 
-CSeq_entry* CId1Blob::Seq_entry()
+static void s_SkipBytes(CByteSourceReader& reader, size_t to_skip)
 {
-    if ( m_IsSnp ) {
+    // skip 2 bytes of hacked header
+    const size_t kBufferSize = 128;
+    char buffer[kBufferSize];
+    while ( to_skip ) {
+        size_t cnt = reader.Read(buffer, min(to_skip, sizeof(buffer)));
+        if ( cnt == 0 ) {
+            NCBI_THROW(CEofException, eEof,
+                       "unexpected EOF while skipping ID1 SNP wrapper bytes");
+        }
+        to_skip -= cnt;
+    }
+}
+
+
+void CId1Blob::ReadSeq_entry(void)
+{
+    if ( IsSnp() ) {
+        const size_t kSkipHeader = 2, kSkipFooter = 2;
+
         CStreamByteSourceReader src(0, m_Source.x_GetService());
-        {{
-            // skip 2 bytes of hacked header
-            const size_t kSkipHeader = 2;
-            char buffer[kSkipHeader];
-            size_t to_skip = kSkipHeader;
-            while ( to_skip ) {
-                size_t cnt = src.Read(buffer, to_skip);
-                if ( cnt == 0 ) {
-                    NCBI_THROW(CEofException, eEof,
-                               "unexpected EOF while skipping ID1 SNP header");
-                }
-                to_skip -= cnt;
-            }
-        }}
+
+        s_SkipBytes(src, kSkipHeader);
+
         CResultZBtSrc src2(&src);
         
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Create(eSerial_AsnBinary, src2));
 
-        CReader::SetSNPReadHooks(*in);
-        
-        CRef<CSeq_annot> annot(new CSeq_annot);
+        m_SNP_annot_Info.Reset(new CSeq_annot_SNP_Info);
+        m_Seq_entry = m_SNP_annot_Info->Read(*in);
+        if ( m_SNP_annot_Info->empty() ) {
+            m_SNP_annot_Info.Reset();
+        }
 
-        *in >> *annot;
-
-        {{
-            // skip 2 bytes of hacked footer
-            const size_t kSkipFooter = 2;
-            char buffer[kSkipFooter];
-            size_t to_skip = kSkipFooter;
-            while ( to_skip ) {
-                size_t cnt = src.Read(buffer, to_skip);
-                if ( cnt == 0 ) {
-                    NCBI_THROW(CEofException, eEof,
-                               "unexpected EOF while skipping ID1 SNP footer");
-                }
-                to_skip -= cnt;
-            }
-        }}
-
-        m_Seq_entry.Reset(new CSeq_entry);
-        m_Seq_entry->SetSet().SetSeq_set(); // it's not optional
-        m_Seq_entry->SetSet().SetAnnot().push_back(annot);
+        s_SkipBytes(src, kSkipFooter);
     }
     else {
         CID1server_back id1_reply;
@@ -301,11 +292,10 @@ CSeq_entry* CId1Blob::Seq_entry()
         *in >> id1_reply;
 
         if (id1_reply.IsGotseqentry())
-            m_Seq_entry = &id1_reply.SetGotseqentry();
+            m_Seq_entry.Reset(&id1_reply.SetGotseqentry());
         else if (id1_reply.IsGotdeadseqentry())
-            m_Seq_entry = &id1_reply.SetGotdeadseqentry();
+            m_Seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
     }
-    return m_Seq_entry;
 }
 
 
@@ -427,6 +417,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.41  2003/08/14 20:05:19  vasilche
+ * Simple SNP features are stored as table internally.
+ * They are recreated when needed using CFeat_CI.
+ *
  * Revision 1.40  2003/07/24 19:28:09  vasilche
  * Implemented SNP split for ID1 loader.
  *

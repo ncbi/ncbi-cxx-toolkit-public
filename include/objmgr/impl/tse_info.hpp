@@ -65,6 +65,7 @@ class CBioseq;
 class CDataSource;
 class CAnnotObject_Info;
 class CSeq_annot_Info;
+class CSeq_annot_SNP_Info;
 class CAnnotTypes_CI;
 
 struct NCBI_XOBJMGR_EXPORT SAnnotObject_Key
@@ -115,6 +116,8 @@ public:
     typedef CRange<TSeqPos>                                  TRange;
     typedef CRangeMultimap<SAnnotObject_Index,
                            TRange::position_type>            TRangeMap;
+    typedef vector<TRangeMap>                                TAnnotSet;
+    typedef vector<CRef<CSeq_annot_SNP_Info> >               TSNPSet;
 
     struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
     {
@@ -123,12 +126,15 @@ public:
         SIdAnnotObjs(const SIdAnnotObjs& objs);
         const SIdAnnotObjs& operator=(const SIdAnnotObjs& objs);
 
-        vector<TRangeMap> m_RangeMap;
+        TAnnotSet m_AnnotSet;
+        TSNPSet   m_SNPSet;
     };
 
     typedef map<CSeq_id_Handle, SIdAnnotObjs>                TAnnotObjs;
 
     bool ContainsSeqid(CSeq_id_Handle id) const;
+
+    void AddSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -146,6 +152,11 @@ private:
     static size_t x_GetTypeIndex(const SAnnotObject_Key& key);
 
     // index access methods
+    const SIdAnnotObjs* x_GetIdObjects(const CSeq_id_Handle& id) const;
+    SIdAnnotObjs& x_SetIdObjects(const CSeq_id_Handle& idh);
+
+    const TRangeMap* x_GetRangeMap(const SIdAnnotObjs& objs,
+                                   size_t index) const;
     const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
                                    size_t index) const;
     const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
@@ -269,10 +280,26 @@ bool CTSE_Info::ContainsSeqid(CSeq_id_Handle id) const
 
 inline
 const CTSE_Info::TRangeMap*
+CTSE_Info::x_GetRangeMap(const SIdAnnotObjs& objs, size_t index) const
+{
+    return index >= objs.m_AnnotSet.size()? 0: &objs.m_AnnotSet[index];
+}
+
+
+inline
+const CTSE_Info::TRangeMap*
 CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
                          int annot_type, int feat_type) const
 {
     return x_GetRangeMap(id, x_GetTypeIndex(annot_type, feat_type));
+}
+
+
+inline
+void CTSE_Info::x_MapAnnotObject(const SAnnotObject_Key& key,
+                                 const SAnnotObject_Index& annotRef)
+{
+    x_MapAnnotObject(x_SetIdObjects(key.m_Handle), key, annotRef);
 }
 
 
@@ -282,6 +309,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/08/14 20:05:19  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.36  2003/07/18 16:57:52  rsmith
 * Do not leave redundant class qualifiers
 *

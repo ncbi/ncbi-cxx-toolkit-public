@@ -109,12 +109,10 @@ public:
     CId1Blob(CId1BlobSource& source, bool is_snp);
     ~CId1Blob(void);
 
-    CSeq_entry *Seq_entry(void);
+    void ReadSeq_entry(void);
 
 private:
     CId1BlobSource&  m_Source;
-    bool             m_IsSnp;
-    CRef<CSeq_entry> m_Seq_entry;
 };
 
 
@@ -124,6 +122,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2003/08/14 20:05:18  vasilche
+* Simple SNP features are stored as table internally.
+* They are recreated when needed using CFeat_CI.
+*
 * Revision 1.5  2003/07/24 19:28:08  vasilche
 * Implemented SNP split for ID1 loader.
 *
