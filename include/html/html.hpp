@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/01/07 16:41:53  vasilche
+* CHTMLHelper moved to separate file.
+* TagNames of CHTML classes ara available via s_GetTagName() static
+* method.
+* Input tag types ara available via s_GetInputType() static method.
+* Initial selected database added to CQueryBox.
+* Background colors added to CPagerBax & CSmallPagerBox.
+*
 * Revision 1.16  1999/01/05 21:47:10  vasilche
 * Added 'current page' to CPageList.
 * CPageList doesn't display forward/backward if empty.
@@ -87,58 +95,11 @@
 * ===========================================================================
 */
 
-
-#include <html/node.hpp>
 #include <map>
 #include <vector>
+#include <html/node.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CHTML_form;
-
-// utility functions
-
-class CHTMLHelper
-{
-public:
-    // HTML encodes a string. E.g. &lt;
-    static string HTMLEncode(const string &);
-
-    typedef map<int, bool> TIDList;
-    typedef multimap<string, string> TCgiEntries;
-
-    // load ID list from CGI request
-    // Args:
-    //   ids            - resulting ID list
-    //   values         - CGI values
-    //   hiddenPrefix   - prefix for hidden values names
-    //   checkboxPrefix - prefix for checkboxes names
-    static void LoadIDList(TIDList& ids,
-                           const TCgiEntries& values,
-                           const string& hiddenPrefix,
-                           const string& checkboxPrefix);
-    // store ID list to HTML form
-    // Args:
-    //   form           - HTML form to fill
-    //   ids            - ID list
-    //   hiddenPrefix   - prefix for hidden values names
-    //   checkboxPrefix - prefix for checkboxes names
-    static void StoreIDList(CHTML_form* form,
-                            const TIDList& ids,
-                            const string& hiddenPrefix,
-                            const string& checkboxPrefix);
-
-private:
-    static string sx_EncodeIDList(const TIDList& ids);
-    static void sx_DecodeIDList(TIDList& ids, const string& value);
-    static void sx_AddID(TIDList& ids, const string& value);
-
-    static string sx_ExtractHidden(const TCgiEntries& values, const string& hiddenPrefix);
-    static void sx_InsertHidden(CHTML_form* form, const string& value, const string& hiddenPrefix);
-    static void sx_SetCheckboxes(CNCBINode* root, TIDList& ids, const string& checkboxName);
-    static void sx_GetCheckboxes(TIDList& ids, const TCgiEntries& values, const string& checkboxName);
-};
-
 
 // base class for html node
 class CHTMLNode : public CNCBINode
@@ -382,17 +343,21 @@ class CHTMLElementTmpl : public CHTMLElement
     typedef CHTMLElement CParent;
 
 public:
+    static const string& s_GetTagName(void)
+        { return *TagName; }
+
     /*
     CHTMLElementTmpl(void);
     CHTMLElementTmpl(CNCBINode* node);
     CHTMLElementTmpl(const string& text);
     */
     CHTMLElementTmpl(void)
-        : CParent(*TagName) {}
+        : CParent(s_GetTagName()) {}
     CHTMLElementTmpl(CNCBINode* node)
-        : CParent(*TagName) { AppendChild(node); }
+        : CParent(s_GetTagName()) { AppendChild(node); }
     CHTMLElementTmpl(const string& text)
-        : CParent(*TagName) { AppendHTMLText(text); }
+        : CParent(s_GetTagName()) { AppendHTMLText(text); }
+
 };
 
 // template for open tag
@@ -402,17 +367,20 @@ class CHTMLOpenElementTmpl : public CHTMLOpenElement
     typedef CHTMLOpenElement CParent;
 
 public:
+    static const string& s_GetTagName(void)
+        { return *TagName; }
+
     /*
     CHTMLOpenElementTmpl(void);
     CHTMLOpenElementTmpl(CNCBINode* node);
     CHTMLOpenElementTmpl(const string& text);
     */
     CHTMLOpenElementTmpl(void)
-        : CParent(*TagName) {}
+        : CParent(s_GetTagName()) {}
     CHTMLOpenElementTmpl(CNCBINode* node)
-        : CParent(*TagName) { AppendChild(node); }
+        : CParent(s_GetTagName()) { AppendChild(node); }
     CHTMLOpenElementTmpl(const string& text)
-        : CParent(*TagName) { AppendHTMLText(text); }
+        : CParent(s_GetTagName()) { AppendHTMLText(text); }
 };
 
 // template for lists (OL, UL, DIR, MENU)
@@ -422,6 +390,8 @@ class CHTMLListElementTmpl : public CHTMLElement
     typedef CHTMLElement CParent;
 
 public:
+    static const string& s_GetTagName(void);
+
     CHTMLListElementTmpl(void);
     CHTMLListElementTmpl(bool compact);
     CHTMLListElementTmpl(const string& type);
@@ -611,6 +581,8 @@ public:
     CHTML_checkbox(const string& name, const string& value);
     CHTML_checkbox(const string& name, const string& value, bool checked, const string& description = NcbiEmptyString);
 
+
+    static const string& s_GetInputType(void);
 };
 
 // input type=hidden tag
@@ -621,6 +593,7 @@ class CHTML_hidden : public CHTML_input
 public:
     CHTML_hidden(const string& name, const string& value);
 
+    static const string& s_GetInputType(void);
 };
 
 // input type=radio tag
@@ -632,6 +605,7 @@ public:
     CHTML_radio(const string& name, const string& value);
     CHTML_radio(const string& name, const string& value, bool checked, const string& description = NcbiEmptyString);
 
+    static const string& s_GetInputType(void);
 };
 
 // input type=text tag
@@ -642,6 +616,7 @@ class CHTML_reset : public CHTML_input
 public:
     CHTML_reset(const string& label = NcbiEmptyString);
 
+    static const string& s_GetInputType(void);
 };
 
 // input type=submit tag
@@ -653,6 +628,7 @@ public:
     CHTML_submit(const string& name);
     CHTML_submit(const string& name, const string& label);
 
+    static const string& s_GetInputType(void);
 };
 
 // input type=text tag
@@ -665,6 +641,7 @@ public:
     CHTML_text(const string& name, int size, const string& value = NcbiEmptyString);
     CHTML_text(const string& name, int size, int maxlength, const string& value = NcbiEmptyString);
 
+    static const string& s_GetInputType(void);
 };
 
 // select tag
@@ -678,7 +655,7 @@ public:
 
     // return 'this' to allow chained AppendOption
     CHTML_select* AppendOption(const string& option, bool selected = false);
-    CHTML_select* AppendOption(const string& option, const string & value, bool selected = false);
+    CHTML_select* AppendOption(const string& option, const string& value, bool selected = false);
     
 };
 

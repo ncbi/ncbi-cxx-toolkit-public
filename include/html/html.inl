@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/01/07 16:41:53  vasilche
+* CHTMLHelper moved to separate file.
+* TagNames of CHTML classes ara available via s_GetTagName() static
+* method.
+* Input tag types ara available via s_GetInputType() static method.
+* Initial selected database added to CQueryBox.
+* Background colors added to CPagerBax & CSmallPagerBox.
+*
 * Revision 1.5  1999/01/05 21:47:11  vasilche
 * Added 'current page' to CPageList.
 * CPageList doesn't display forward/backward if empty.
@@ -78,31 +86,31 @@ inline CHTMLNode* CHTMLNode::SetHeight(int height)
 
 inline CHTMLNode* CHTMLNode::SetWidth(const string& width)
 {
-    SetAttribute(KHTMLAttributeName_width, width);
+    SetOptionalAttribute(KHTMLAttributeName_width, width);
     return this;
 }
 
 inline CHTMLNode* CHTMLNode::SetHeight(const string& height)
 {
-    SetAttribute(KHTMLAttributeName_height, height);
+    SetOptionalAttribute(KHTMLAttributeName_height, height);
     return this;
 }
 
 inline CHTMLNode* CHTMLNode::SetAlign(const string& align)
 {
-    SetAttribute(KHTMLAttributeName_align, align);
+    SetOptionalAttribute(KHTMLAttributeName_align, align);
     return this;
 }
 
 inline CHTMLNode* CHTMLNode::SetColor(const string& color)
 {
-    SetAttribute(KHTMLAttributeName_color, color);
+    SetOptionalAttribute(KHTMLAttributeName_color, color);
     return this;
 }
 
 inline CHTMLNode* CHTMLNode::SetBgColor(const string& color)
 {
-    SetAttribute(KHTMLAttributeName_bgcolor, color);
+    SetOptionalAttribute(KHTMLAttributeName_bgcolor, color);
     return this;
 }
 
@@ -117,64 +125,83 @@ inline const string& CHTMLText::GetText(void) const
 }
 /*
 template<const string* TagName>
+inline const string& CHTMLElementTmpl<TagName>::s_GetTagName(void)
+{
+    return *TagName;
+}
+
+template<const string* TagName>
 inline CHTMLElementTmpl<TagName>::CHTMLElementTmpl(void)
-    : CParent(*TagName)
+    : CParent(s_GetTagName())
 {
 }
 
 template<const string* TagName>
 inline CHTMLElementTmpl<TagName>::CHTMLElementTmpl(CNCBINode* node)
-    : CParent(*TagName, node)
+    : CParent(s_GetTagName(), node)
 {
 }
 
 template<const string* TagName>
 inline CHTMLElementTmpl<TagName>::CHTMLElementTmpl(const string& text)
-    : CParent(*TagName, text)
+    : CParent(s_GetTagName(), text)
 {
 }
 
 template<const string* TagName>
+inline const string& CHTMLOpenElementTmpl<TagName>::s_GetTagName(void)
+{
+    return *TagName;
+}
+
+template<const string* TagName>
 inline CHTMLOpenElementTmpl<TagName>::CHTMLOpenElementTmpl(void)
-    : CParent(*TagName)
+    : CParent(s_GetTagName())
 {
 }
 
 template<const string* TagName>
 inline CHTMLOpenElementTmpl<TagName>::CHTMLOpenElementTmpl(CNCBINode* node)
-    : CParent(*TagName, node)
+    : CParent(s_GetTagName(), node)
 {
 }
 
 template<const string* TagName>
 inline CHTMLOpenElementTmpl<TagName>::CHTMLOpenElementTmpl(const string& text)
-    : CParent(*TagName, text)
+    : CParent(s_GetTagName(), text)
 {
 }
 */
+
+template<const string* TagName>
+inline const string& CHTMLListElementTmpl<TagName>::s_GetTagName(void)
+{
+    return *TagName;
+}
+
 template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(void)
-    : CParent(*TagName)
+    : CParent(s_GetTagName())
 {
 }
 
 template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type)
-    : CParent(*TagName)
+    : CParent(s_GetTagName())
 {
     SetAttribute(KHTMLAttributeName_type, type);
 }
 
 template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(bool compact)
-    : CParent(*TagName)
+    : CParent(s_GetTagName())
 {
     SetOptionalAttribute(KHTMLAttributeName_compact, compact);
 }
 
 template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type, bool compact)
-    : CParent(*TagName)
+    : CParent(s_GetTagName())
 {
     SetAttribute(KHTMLAttributeName_type, type);
     SetOptionalAttribute(KHTMLAttributeName_compact, compact);

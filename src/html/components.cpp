@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/01/07 16:41:56  vasilche
+* CHTMLHelper moved to separate file.
+* TagNames of CHTML classes ara available via s_GetTagName() static
+* method.
+* Input tag types ara available via s_GetInputType() static method.
+* Initial selected database added to CQueryBox.
+* Background colors added to CPagerBax & CSmallPagerBox.
+*
 * Revision 1.14  1999/01/07 14:53:57  vasilche
 * CButtonList displays nothing if list is empty.
 *
@@ -110,7 +118,7 @@ void CQueryBox::CreateSubNodes()
         AppendChild(select);
         for ( map<string, string>::iterator i = m_Databases.begin();
               i != m_Databases.end(); ++i ) {
-            select->AppendOption(i->second, i->first, i == m_Databases.begin());
+            select->AppendOption(i->second, i->first, i->first == m_DefaultDatabase);
         }
         AppendHTMLText(" for<p>");
     }
@@ -200,7 +208,7 @@ void CPageList::CreateSubNodes()
 CPagerBox::CPagerBox(void)
     : m_NumResults(0), m_Width(460)
     , m_TopButton(new CButtonList), m_LeftButton(new CButtonList), m_RightButton(new CButtonList)
-    , m_PageList(new CPageList)
+    , m_PageList(new CPageList), m_BgColor("#c0c0c0")
 {
 }
 
@@ -211,13 +219,13 @@ void CPagerBox::CreateSubNodes(void)
     CHTML_table* tableBot;
 
     table = new CHTML_table();
-    table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width)->SetAttribute("border", "0");
+    table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor(m_BgColor)->SetWidth(m_Width)->SetAttribute("border", "0");
     AppendChild(table);
 
     tableTop = new CHTML_table();
-    tableTop->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width);
+    tableTop->SetCellSpacing(0)->SetCellPadding(0)->SetWidth(m_Width);
     tableBot = new CHTML_table();
-    tableBot->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width);
+    tableBot->SetCellSpacing(0)->SetCellPadding(0)->SetWidth(m_Width);
 
     table->InsertAt(0, 0, tableTop);
     table->InsertAt(1, 0, tableBot);
@@ -249,7 +257,7 @@ void CSmallPagerBox::CreateSubNodes()
 
     try {
         Table = new CHTML_table();
-        Table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width)->SetAttribute("border", "0");
+        Table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor(m_BgColor)->SetWidth(m_Width)->SetAttribute("border", 0);
         AppendChild(Table);
         
         Table->InsertAt(0, 0, new CPageList);

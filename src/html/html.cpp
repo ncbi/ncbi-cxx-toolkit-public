@@ -30,6 +30,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/01/07 16:41:56  vasilche
+* CHTMLHelper moved to separate file.
+* TagNames of CHTML classes ara available via s_GetTagName() static
+* method.
+* Input tag types ara available via s_GetInputType() static method.
+* Initial selected database added to CQueryBox.
+* Background colors added to CPagerBax & CSmallPagerBox.
+*
 * Revision 1.19  1999/01/05 20:23:29  vasilche
 * Fixed HTMLEncode.
 *
@@ -94,7 +102,7 @@
 
 
 #include <html/html.hpp>
-#include <corelib/ncbicgi.hpp>
+#include <html/htmlhelper.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -204,216 +212,6 @@ const string KHTMLAttributeName_type = "TYPE";
 const string KHTMLAttributeName_value = "VALUE";
 const string KHTMLAttributeName_width = "WIDTH";
 
-// HTML input type names
-const string KHTMLInputTypeName_text = "TEXT";
-const string KHTMLInputTypeName_radio = "RADIO";
-const string KHTMLInputTypeName_checkbox = "CHECKBOX";
-const string KHTMLInputTypeName_hidden = "HIDDEN";
-const string KHTMLInputTypeName_button = "BUTTON";
-const string KHTMLInputTypeName_submit = "SUBMIT";
-const string KHTMLInputTypeName_reset = "RESET";
-
-
-string CHTMLHelper::HTMLEncode(const string& input)
-{
-    string output;
-    string::size_type last = 0;
-
-    // find first symbol to encode
-    string::size_type ptr = input.find_first_of("\"&<>", last);
-    while ( ptr != string::npos ) {
-        // copy plain part of input
-        if ( ptr != last )
-            output.append(input, last, ptr - last);
-
-        // append encoded symbol
-        switch ( input[ptr] ) {
-        case '"':
-            output.append("&quot;");
-            break;
-        case '&':
-            output.append("&amp;");
-            break;
-        case '<':
-            output.append("&lt;");
-            break;
-        case '>':
-            output.append("&gt;");
-            break;
-        }
-
-        // skip it
-        last = ptr + 1;
-
-        // find next symbol to encode
-        ptr = input.find_first_of("\"&<>", last);
-    }
-
-    // append last part of input
-    if ( last != input.size() )
-        output.append(input, last, input.size() - last);
-
-    return output;
-}
-
-/*
-NcbiOstream& CHTMLHelper::PrintEncoded(NcbiOstream& out, const string& input)
-{
-    SIZE_TYPE last = 0;
-
-    // find first symbol to encode
-    SIZE_TYPE ptr = input.find_first_of("\"&<>", last);
-    while ( ptr != NPOS ) {
-        // copy plain part of input
-        if ( ptr != last )
-            out << input.substr(last, ptr - last);
-
-        // append encoded symbol
-        switch ( input[ptr] ) {
-        case '"':
-            out << "&quot;";
-            break;
-        case '&':
-            out << "&amp;";
-            break;
-        case '<':
-            out << "&lt;";
-            break;
-        case '>':
-            out << "&gt;";
-            break;
-        }
-
-        // skip it
-        last = ptr + 1;
-
-        // find next symbol to encode
-        ptr = input.find_first_of("\"&<>", last);
-    }
-
-    // append last part of input
-    if ( last != input.size() )
-        out << input.substr(last);
-
-    return out;
-}
-*/
-
-void CHTMLHelper::LoadIDList(TIDList& ids,
-                const TCgiEntries& values,
-                const string& hiddenPrefix,
-                const string& checkboxName)
-{
-    ids.clear();
-    
-    string value = sx_ExtractHidden(values, hiddenPrefix);
-    if ( !value.empty() ) {
-        sx_DecodeIDList(ids, value);
-    }
-    sx_GetCheckboxes(ids, values, checkboxName);
-}
-
-void CHTMLHelper::StoreIDList(CHTML_form* form,
-                const TIDList& in_ids,
-                const string& hiddenPrefix,
-                const string& checkboxName)
-{
-    TIDList ids = in_ids;
-    sx_SetCheckboxes(form, ids, checkboxName);
-    string value = sx_EncodeIDList(ids);
-    if ( !value.empty() )
-        sx_InsertHidden(form, value, hiddenPrefix);
-}
-
-string CHTMLHelper::sx_EncodeIDList(const TIDList& ids_)
-{
-    string value;
-    TIDList& ids = const_cast<TIDList&>(ids_); // SW_01
-    for ( TIDList::const_iterator i = ids.begin(); i != ids.end(); ++i ) {
-        if ( i->second )
-            value += ',' + IntToString(i->first);
-    }
-    value.erase(0, 1); // remove first comma
-    return value;
-}
-
-void CHTMLHelper::sx_AddID(TIDList& ids, const string& value)
-{
-    ids.insert(TIDList::value_type(StringToInt(value), true));
-}
-
-void CHTMLHelper::sx_DecodeIDList(TIDList& ids, const string& value)
-{
-    SIZE_TYPE pos = 0;
-    SIZE_TYPE commaPos = value.find(',', pos);
-    while ( commaPos != NPOS ) {
-        sx_AddID(ids, value.substr(pos, commaPos));
-        pos = commaPos + 1;
-        commaPos = value.find(',', pos);
-    }
-    sx_AddID(ids, value.substr(pos));
-}
-
-static const int kMaxHiddenCount = 10;
-static const SIZE_TYPE kMaxHiddenSize = 512;
-
-string CHTMLHelper::sx_ExtractHidden(const TCgiEntries& values_,
-                                     const string& hiddenPrefix)
-{
-    string value;
-    TCgiEntries& values = const_cast<TCgiEntries&>(values_); // SW_01
-    for ( int i = 0; i <= kMaxHiddenCount; ++i ) {
-        TCgiEntries::const_iterator pointer = values.find(hiddenPrefix + IntToString(i));
-        if ( pointer == values.end() ) // no more hidden values
-            return value;
-        value += pointer->second;
-    }
-    // what to do in this case?
-    throw runtime_error("Too many hidden values beginning with "+hiddenPrefix);
-}
-
-void CHTMLHelper::sx_InsertHidden(CHTML_form* form, const string& value,
-                                  const string& hiddenPrefix)
-{
-    SIZE_TYPE pos = 0;
-    for ( int i = 0; pos < value.size() && i < kMaxHiddenCount; ++i ) {
-        int end = min(value.size(), pos + kMaxHiddenSize);
-        form->AddHidden(hiddenPrefix + IntToString(i), value.substr(pos, end));
-        pos = end;
-    }
-    if ( pos != value.size() )
-        throw runtime_error("ID list too long to store in hidden values");
-}
-
-void CHTMLHelper::sx_SetCheckboxes(CNCBINode* root, TIDList& ids,
-                                   const string& checkboxName)
-{
-    if ( root->GetName() == KHTMLTagName_input &&
-         root->GetAttribute(KHTMLAttributeName_type) == KHTMLInputTypeName_checkbox &&
-         root->GetAttribute(KHTMLAttributeName_name) == checkboxName) {
-        // found it
-        int id = StringToInt(root->GetAttribute(KHTMLAttributeName_value));
-        TIDList::iterator pointer = ids.find(id);
-        if ( pointer != ids.end() ) {
-            root->SetOptionalAttribute(KHTMLAttributeName_checked, pointer->second);
-            ids.erase(pointer);  // remove id from the list - already set
-        }
-    }
-    for ( CNCBINode::TChildList::iterator i = root->ChildBegin();
-          i != root->ChildEnd(); ++i ) {
-        sx_SetCheckboxes(*i, ids, checkboxName);
-    }
-}
-
-void CHTMLHelper::sx_GetCheckboxes(TIDList& ids, const TCgiEntries& values_,
-                                   const string& checkboxName)
-{
-    TCgiEntries& values = const_cast<TCgiEntries&>(values_); // SW_01
-    for ( TCgiEntries::const_iterator i = values.lower_bound(checkboxName),
-              end = values.upper_bound(checkboxName); i != end; ++i ) {
-        sx_AddID(ids, i->second);
-    }
-}
 
 // CHTMLNode
 
@@ -775,13 +573,13 @@ CNCBINode* CHTML_table::Cell(int needRow, int needCol)  // todo: exception
 
 bool CHTML_table::sx_IsRow(const CNCBINode* node)
 {
-    return node->GetName() == KHTMLTagName_tr;
+    return node->GetName() == CHTML_tr::s_GetTagName();
 }
 
 bool CHTML_table::sx_IsCell(const CNCBINode* node)
 {
-    return node->GetName() == KHTMLTagName_td ||
-        node->GetName() == KHTMLTagName_th;
+    return node->GetName() == CHTML_td::s_GetTagName() ||
+        node->GetName() == CHTML_th::s_GetTagName();
 }
 
 void CHTML_table::x_CheckTable(CTableInfo *info) const
@@ -976,28 +774,66 @@ CHTML_input::CHTML_input(const string& type, const string& name)
 };
 
 
+// HTML input type names
+const string KHTMLInputTypeName_text = "TEXT";
+const string KHTMLInputTypeName_radio = "RADIO";
+const string KHTMLInputTypeName_checkbox = "CHECKBOX";
+const string KHTMLInputTypeName_hidden = "HIDDEN";
+const string KHTMLInputTypeName_submit = "SUBMIT";
+const string KHTMLInputTypeName_reset = "RESET";
+
+const string& CHTML_text::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_text;
+}
+
+const string& CHTML_radio::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_radio;
+}
+
+const string& CHTML_checkbox::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_checkbox;
+}
+
+const string& CHTML_hidden::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_hidden;
+}
+
+const string& CHTML_submit::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_submit;
+}
+
+const string& CHTML_reset::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_reset;
+}
+
 // checkbox tag 
 
 CHTML_checkbox::CHTML_checkbox(const string& name)
-    : CParent(KHTMLInputTypeName_checkbox, name)
+    : CParent(s_GetInputType(), name)
 {
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value)
-    : CParent(KHTMLInputTypeName_checkbox, name)
+    : CParent(s_GetInputType(), name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, bool checked, const string& description)
-    : CParent(KHTMLInputTypeName_checkbox, name)
+    : CParent(s_GetInputType(), name)
 {
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
     AppendHTMLText(description);  // adds the description at the end
 }
 
 CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool checked, const string& description)
-    : CParent(KHTMLInputTypeName_checkbox, name)
+    : CParent(s_GetInputType(), name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
     SetOptionalAttribute(KHTMLAttributeName_checked, checked);
@@ -1008,13 +844,13 @@ CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool che
 // radio tag 
 
 CHTML_radio::CHTML_radio(const string& name, const string& value)
-    : CParent(KHTMLInputTypeName_radio, name)
+    : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
-    : CParent(KHTMLInputTypeName_radio, name)
+    : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
     SetAttribute(KHTMLAttributeName_checked, checked);
@@ -1024,25 +860,25 @@ CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, 
 // hidden tag 
 
 CHTML_hidden::CHTML_hidden(const string& name, const string& value)
-    : CParent(KHTMLInputTypeName_hidden, name)
+    : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_submit::CHTML_submit(const string& name)
-    : CParent(KHTMLInputTypeName_submit, NcbiEmptyString)
+    : CParent(s_GetInputType(), NcbiEmptyString)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, name);
 }
 
 CHTML_submit::CHTML_submit(const string& name, const string& label)
-    : CParent(KHTMLInputTypeName_submit, name)
+    : CParent(s_GetInputType(), name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, label);
 }
 
 CHTML_reset::CHTML_reset(const string& label)
-    : CParent(KHTMLInputTypeName_reset, NcbiEmptyString)
+    : CParent(s_GetInputType(), NcbiEmptyString)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, label);
 }
@@ -1050,20 +886,20 @@ CHTML_reset::CHTML_reset(const string& label)
 // text tag 
 
 CHTML_text::CHTML_text(const string& name, const string& value)
-    : CParent(KHTMLInputTypeName_text, name)
+    : CParent(s_GetInputType(), name)
 {
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, const string& value)
-    : CParent(KHTMLInputTypeName_text, name)
+    : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_size, size);
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
 CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string& value)
-    : CParent(KHTMLInputTypeName_text, name)
+    : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_size, size);
     SetAttribute(KHTMLAttributeName_maxlength, maxlength);

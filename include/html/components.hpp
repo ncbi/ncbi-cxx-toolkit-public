@@ -33,6 +33,14 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/01/07 16:41:52  vasilche
+* CHTMLHelper moved to separate file.
+* TagNames of CHTML classes ara available via s_GetTagName() static
+* method.
+* Input tag types ara available via s_GetInputType() static method.
+* Initial selected database added to CQueryBox.
+* Background colors added to CPagerBax & CSmallPagerBox.
+*
 * Revision 1.11  1999/01/05 21:47:09  vasilche
 * Added 'current page' to CPageList.
 * CPageList doesn't display forward/backward if empty.
@@ -96,13 +104,18 @@ public:
 
     int m_Width; // in pixels
     string m_BgColor;
+
     string m_DbName;  // name of the database field
     map<string, string> m_Databases;  // the list of databases
+    string m_DefaultDatabase;  // initially selected database
+
     map<string, string> m_HiddenValues;
     string m_TermName;
+
     string m_DispMax;  // name of dispmax field
-    string m_DefaultDispMax;
     list<string> m_Disp;  // the values in dispmax field
+    string m_DefaultDispMax;  // initially selected dispmax field
+
     string m_URL;
 
     //////// subpages
@@ -129,7 +142,7 @@ public:
     string m_Name;
     string m_Select;  // select tag name
     map<string, string> m_List;
-    
+
     virtual void CreateSubNodes(void);
 
 protected:
@@ -176,6 +189,8 @@ public:
     CPageList* m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
+    string m_BgColor;
+    
     virtual void CreateSubNodes(void);
 
 protected:
@@ -196,6 +211,8 @@ public:
     CPageList * m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
+    string m_BgColor;
+    
     virtual void CreateSubNodes(void);
 
 protected:
