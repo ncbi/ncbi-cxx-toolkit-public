@@ -196,7 +196,7 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
         SetTotalRange(TRange(src_from, src_to));
         SetMappedSeq_id(const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().
                                              GetSeq_id()),
-                        true);
+                        src_from == src_to);
         SetMappedStrand(src_strand);
         return;
     }
@@ -1798,6 +1798,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/01/21 20:19:09  vasilche
+* Fixed non-point non-mapped SNPs.
+*
 * Revision 1.45  2005/01/18 15:00:10  grichenk
 * UpdateAnnotIndex before collecting annots.
 *
