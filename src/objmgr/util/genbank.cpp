@@ -1566,6 +1566,17 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         }
         v.push_back(CConstRef<CSeq_feat>(&*feat));
     }
+    for (CFeat_CI feat(m_Scope,everywhere, CSeqFeatData::e_not_set,
+                       CAnnot_CI::eOverlap_Intervals,
+                       CFeat_CI::eResolve_TSE, CFeat_CI::e_Product);
+         feat;  ++feat) {
+        if ((feat->GetData().Which() == CSeqFeatData::e_Prot
+             &&  m_Format != eFormat_Genpept)
+            ||  feat->GetData().Which() == CSeqFeatData::e_Pub) {
+            continue;
+        }
+        v.push_back(CConstRef<CSeq_feat>(&*feat));
+    }
     sort(v.begin(), v.end(), s_CompareFeats);
 
     iterate (TFeatVect, feat, v) {
@@ -2764,6 +2775,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2002/12/20 21:42:28  ucko
+* Iterate twice through features to avoid losing coding regions for GenPept.
+*
 * Revision 1.25  2002/11/18 19:48:44  grichenk
 * Removed "const" from datatool-generated setters
 *
