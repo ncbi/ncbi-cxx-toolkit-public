@@ -50,11 +50,14 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <Bl2Seq.hpp>
-#if 0
-#include <ctools/asn_converter.hpp>
 
-// C includes for C formatter
+#ifdef WRITE_SEQALIGNS
+#include <ctools/asn_converter.hpp>
 #include <objalign.h>
+#endif
+
+#if 0
+// C includes for C formatter
 #include <sqnutils.h>
 #include <txalign.h>
 #include <accid1.h>
@@ -197,9 +200,11 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("frameshift", "frameshift",
                             "Frame shift penalty (blastx only)",
                             CArgDescriptions::eInteger, "0");
+#ifdef WRITE_SEQALIGNS
     arg_desc->AddOptionalKey("asnout", "seqalignasn", 
         "File name for writing the seqalign results in ASN.1 form",
         CArgDescriptions::eOutputFile);
+#endif
 
     // Debug parameters
     arg_desc->AddFlag("trace", "Tracing enabled?", true);
@@ -312,9 +317,8 @@ int CBlast2seqApplication::Run(void)
     if (seqalign->Get().empty()) {
         out << "No hits found" << endl;
     } else {
-	out << "Results found!\n";
 
-#if 0
+#ifdef WRITE_SEQALIGNS
         // Convert CSeq_align_set to linked list of SeqAlign structs
         DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
         SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
@@ -338,7 +342,9 @@ int CBlast2seqApplication::Run(void)
             AsnIoReset(aip);
             AsnIoClose(aip);
         }
+#endif
 
+#if 0
         // Display w/ C formatter
         UseLocalAsnloadDataAndErrMsg();
         if (!SeqEntryLoad()) return 1;
@@ -383,6 +389,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/01 22:38:31  camacho
+ * Added conditional compilation to write seqaligns
+ *
  * Revision 1.5  2003/07/30 16:33:31  madden
  * Remove C toolkit dependencies
  *
