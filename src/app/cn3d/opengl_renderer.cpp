@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2002/01/11 15:48:58  thiessen
+* update for Mac CW7
+*
 * Revision 1.57  2001/12/15 03:15:59  thiessen
 * adjustments for slightly changed object loader Set...() API
 *
@@ -216,6 +219,7 @@
 #include <gdk/gdk.h>    // needed for GdkFont
 
 #elif defined(__WXMAC__)
+#include <Fonts.h>
 #define DONT_USE_GL_DIR
 
 #else

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2002/01/11 15:48:55  thiessen
+* update for Mac CW7
+*
 * Revision 1.55  2002/01/03 16:18:40  thiessen
 * add distance selection
 *
@@ -282,7 +285,7 @@ public:
 private:
     void InitRegistry(void);
 #ifdef __WXMAC__
-	OSErr MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply);
+    short MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply);
 #endif
 
     // used for processing display updates when system is idle

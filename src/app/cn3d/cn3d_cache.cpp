@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/11 15:48:49  thiessen
+* update for Mac CW7
+*
 * Revision 1.3  2001/11/09 15:19:16  thiessen
 * wxFindFirst file fixed on wxMac; call glViewport() from OnSize()
 *
@@ -187,10 +190,11 @@ void TruncateCache(int maxSize)
 
     // empty directory if maxSize <= 0
     if (maxSize <= 0) {
-        wxString file = wxFindFirstFile(cacheFolderFiles, wxFILE);
-        for (; file.size() > 0; file = wxFindNextFile())
-            if (!wxRemoveFile(file))
-                ERR_POST(Warning << "can't remove file " << file);
+        wxString f;
+        while ((f=wxFindFirstFile(cacheFolderFiles, wxFILE)).size() > 0) {
+            if (!wxRemoveFile(f))
+                ERR_POST(Warning << "can't remove file " << f);
+        }
         return;
     }
 

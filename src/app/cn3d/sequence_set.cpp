@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/01/11 15:49:01  thiessen
+* update for Mac CW7
+*
 * Revision 1.42  2001/11/30 14:59:55  thiessen
 * add netscape launch for Mac
 *
@@ -166,6 +169,14 @@
 
 #elif defined(__WXGTK__)
 #include <unistd.h>
+
+#elif defined(__WXMAC__)
+#include <Files.h>      // stuff for sending URL apple event
+#include <Processes.h>
+#include <AppleEvents.h>
+#include <Gestalt.h>
+#include <Navigation.h>
+#include <Folders.h>
 
 #endif
 

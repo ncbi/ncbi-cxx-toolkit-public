@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.116  2002/01/11 15:48:52  thiessen
+* update for Mac CW7
+*
 * Revision 1.115  2002/01/03 16:18:40  thiessen
 * add distance selection
 *
@@ -476,6 +479,10 @@
 
 #include <ncbienv.h>
 
+#ifdef __WXMAC__
+#include "MoreCarbonAccessors.h"
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -866,7 +873,7 @@ static void ConvertFilename ( FSSpec *fss, char *filename )
 }
 
 // special handler for open file apple event
-OSErr Cn3DApp::MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply)
+short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply)
 {
     // borrowed from HandleAEOpenDoc() in vibwndws.c
     register OSErr stat;
@@ -879,10 +886,10 @@ OSErr Cn3DApp::MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply)
     Size size;
     char filename [256];
 
-    stat = AEGetParamDesc (event, keyDirectObject, typeAEList, &list);
+    stat = AEGetParamDesc ((const AEDesc *) event, keyDirectObject, typeAEList, &list);
     if ( stat ) return ( stat );
 
-    stat = AEGetAttributePtr (event, keyMissedKeywordAttr, typeWildCard, &dtype, 0, 0, &size );
+    stat = AEGetAttributePtr ((const AEDesc *) event, keyMissedKeywordAttr, typeWildCard, &dtype, 0, 0, &size );
     if ( stat != errAEDescNotFound ) {
         AEDisposeDesc( &list );
         return ( stat? stat : errAEEventNotHandled );
