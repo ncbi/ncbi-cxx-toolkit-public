@@ -326,7 +326,13 @@ void CDllResolver::AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
     if ((which & fToolkitDllPath) != 0) {
         const char* runpath = NCBI_GetRunpath();
         if (runpath  &&  *runpath) {
+#  if defined(NCBI_OS_MSWIN)
+            NStr::Tokenize(runpath, ";", paths);
+#  elif defined(NCBI_OS_UNIX)
+            NStr::Tokenize(runpath, ":", paths);
+#  else
             paths.push_back(runpath);
+#  endif
         }
     }
 #endif
@@ -377,6 +383,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/02/18 14:29:19  ivanov
+ * CDllResolver::AddExtraDllPath() -- added support of multiply pathes in
+ * the NCBI runpath.
+ *
  * Revision 1.25  2004/10/12 19:59:23  ivanov
  * Do not call NCBI_GetRunpath() when compiling with Codewarrior only --
  * MS Windows have NCBI_GetRunpath().
