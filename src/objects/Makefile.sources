@@ -4,7 +4,7 @@
 
 include $(builddir)/Makefile.mk
 
-all all_r:
+all all_r all_p:
 	$(SHELL) -c ' \
 	    cd "$(srcdir)" || exit 2; \
 	    if test -x "$(bindir)/datatool"; then \
@@ -16,4 +16,4 @@ all all_r:
 	    $(MAKE) all_files; \
 	'
 
-clean clean_r purge purge_r:
+clean clean_r clean_p purge purge_r purge_p:
