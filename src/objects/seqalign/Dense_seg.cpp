@@ -321,9 +321,10 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
 
     CSeq_loc_CI seq_loc_i(loc);
 
-    TSeqPos start      = seq_loc_i.GetRange().GetFrom();
-    TSeqPos len        = seq_loc_i.GetRange().GetLength();
-    TSeqPos len_so_far = 0;
+    TSeqPos start, loc_len, len, len_so_far;
+    start = seq_loc_i.GetRange().GetFrom();
+    len = loc_len = seq_loc_i.GetRange().GetLength();
+    len_so_far = 0;
     
     bool row_plus = !strands.size() || strands[row] != eNa_strand_minus;
     bool loc_plus = seq_loc_i.GetStrand() != eNa_strand_minus;
@@ -334,25 +335,20 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
     while (loc_plus ? seg < GetNumseg() : seg >= 0) {
         if (starts[idx] == -1) {
             // ignore gaps in our sequence
+            if (loc_plus) {
+                idx += numrows; seg++;
+            } else {
+                idx -= numrows; seg--;
+            }
             continue;
         }
 
         // iterate the seq-loc if needed
         if ((loc_plus == row_plus ?
              starts[idx] : ttl_loc_len - starts[idx] - lens[seg])
-            > len_so_far + len) {
+            > len_so_far + loc_len) {
 
-            ++seq_loc_i;
-
-            // assert the strand is the same
-            if (loc_plus != (seq_loc_i.GetStrand() != eNa_strand_minus)) {
-                NCBI_THROW(CSeqalignException, eInvalidInputData,
-                           "CDense_seg::RemapToLoc():"
-                           " The strand should be the same accross"
-                           " the input seq-loc");
-            }
-
-            if (seq_loc_i) {
+            if (++seq_loc_i) {
                 len_so_far += len;
                 len   = seq_loc_i.GetRange().GetLength();
                 start = seq_loc_i.GetRange().GetFrom();
@@ -360,6 +356,14 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
                 NCBI_THROW(CSeqalignException, eInvalidInputData,
                            "CDense_seg::RemapToLoc():"
                            " Internal error");
+            }
+
+            // assert the strand is the same
+            if (loc_plus != (seq_loc_i.GetStrand() != eNa_strand_minus)) {
+                NCBI_THROW(CSeqalignException, eInvalidInputData,
+                           "CDense_seg::RemapToLoc():"
+                           " The strand should be the same accross"
+                           " the input seq-loc");
             }
         }
 
@@ -409,8 +413,8 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
                     }
                 }
 
-                len_so_far += len;
-                len   = seq_loc_i.GetRange().GetLength();
+                len_so_far += loc_len;
+                len = loc_len = seq_loc_i.GetRange().GetLength();
 
                 SetStarts().insert(SetStarts().begin() +
                                    (loc_plus ? seg + 1 : seg) * numrows,
@@ -469,6 +473,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/11/20 21:26:33  todorov
+* RemapToLoc bug fixes: + seg inc; + loc_len vs len
+*
 * Revision 1.6  2003/11/04 14:44:46  todorov
 * +RemapToLoc
 *
