@@ -6,14 +6,289 @@
   <body bgcolor = white>
     <h1> Generating web pages with the HTML classes </h1>
 
- This page has not yet been created.
+Web applications involving interactions with a client via a complex HTML interface can be
+difficult to understand and maintain. The NCBI C++ Toolkit classes decouple
+the complexity of interacting with a CGI client from the complexity of generating HTML
+output by defining separate class hierarchies for these activities.  Indeed, one useful
+application of the HTML classes is to generate web pages "offline". <p>
+
+The section on 
+<a href="cgi.html"> Developing CGI Applications</a> considers only the activities involved in
+processing the client's request and generating a response.  This section introduces the
+C++ Toolkit components that support the creation of HTML pages (see also 
+<a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs/newhtml.html">NCBI C++ HTML Classes</a>
+in the Reference Manual). These two sections are
+brought together in <a href=="webcgi.html"> Developing Web-based Applications</a>.
 
 <ul>
-  <li> <a href="#t1"> TOPIC </a>
-  <li> <a href="#t2"> TOPIC </a>
+  <li> <a href="#node"> The CNCBINode class</a>
+  <li> <a href="#text"> HTML Text nodes: CHTMLText and CHTMLPlainText</a>
+  <li> <a href="#page"> The NCBI Page classes </a>
+  <li> <a href="#tag"> HTML Tag nodes </a>
+  <li> <a href="#htmnode"> <i>CHTMLNode</i>s </a>
+  <li> <a href="#compons"> Other HTML Components </a>
+  <li> <a href="#t2"> TOPIC2 </a>
 </ul>
 
-<a name="t1"> <h3> TOPIC </h3>
+<a name="node"> <h3> The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNCBINode.html">
+CNCBINode</a> class </h3>
+
+All of the HTML classes are derived from the <i>CNCBINode</i> class, which
+in turn, is derived from the <a href="cref.html#object"><i>CObject</i></a> class. 
+Although many different
+classes of nodes are derived from <i>CNCBINode</i>, most of their required functionality
+is implemented by this base class.  The
+<i>CNCBINode</i> class has just three data members:
+<ul>
+ <li> <i>m_Name</i> - a handle for the node
+ <li> <i>m_Attributes</i> - a map&lt;string, string> of properties for this node
+ <li> <i>m_Children</i> - a list of subnodes embedded (at run-time) in this node
+</ul>
+
+The <i>m_Attributes</i> data member provides for the encoding of specific features to be
+associated with the node, such as font color for a text element, or the number of columns for a table.
+A group of <i>Get/SetAttribute</i> member functions are provided for access
+and modification of the node's attributes.<p>
+
+The <i>m_Children</i> data member was implemented to support the representation of
+hierarchically-structured HTML components. For example, an unordered list is 
+represented as a <i>&lt;ul></i> element containing <i>&lt;li></i> subcomponents.  The in
+memory representation of an HTML page is just a graph of <i>CNCBINode</i> objects, where
+each object may contain additional <i>CNCBINode</i> children. <p>
+
+A number of member functions are provided to operate on
+<i>m_Children</i>.  These include methods to access, add, and remove children, along with
+a pair of <i>begin/end</i> iterators
+(<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search?string=ChildBegin"><i>ChildBegin</i>()</a>
+and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search?string=ChildEnd"><i>ChildEnd</i>()</a>),
+and a function to dereference these iterators (<i>Node(i)</i>). The
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Print"> <i>Print()</i></a> method
+recursively generates the HTML text for the node and all of its children, and outputs the
+result to a specified output stream.  <p>
+
+The <i>Print()</i> function takes two arguments: (1) an output stream, and (2) a
+<i>CNCBINode::TMode</i> object, where <i>TMode</i> is an internal class defined inside the
+<i>CNCBINode</i> class.  The <i>TMode</i> object is used by the print function to
+determine what type of encoding takes place on the output. 
+The <i>TMode</i> class has three data members defined:
+<ol>
+<li> <i>EMode m_Mode </i>- an enumeration variable specifying <i>eHTML</i> (0) or <i>ePlainText</i> (1) output encoding
+<li> <i>CNCBINode* m_Node </i> - a pointer to the <i>CNCBINode</i> associated with this <i>TMode</i> object
+<li> <i>TMode* m_Previous </i> - a pointer to the <i>TMode</i> associated with the parent of <i>m_Node</i>
+</ol>
+<i>Print()</i> is implemented
+as a recursive function that allows the child node to dynamically "inherit" its mode of output from the parent node
+which contains it. <i>TMode</i> objects are created dynamically as needed, inside the <i>Print()</i> function.
+The first call to <i>Print()</i> from say, a root <i>Page</i> node, generally specifies the output stream
+only, and uses a default <i>eHTML</i> enumeration value to initialize a <i>TMode</i> object.
+The <i>TMode</i> constructor in this case is:
+
+<center><pre> TMode(EMode M = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre></center><br>
+
+The call to <i>Print()</i> with no <i>TMode</i> argument automatically calls this default
+constructor to create a <i>TMode</i> object which will then be substituted for the formal
+parameter <i>prev</i> in tbe <i>Print()</i> method:
+
+<pre>
+CNcbiOstream& CNCBINode::Print(CNcbiOstream& os, TMode prev)
+{
+    // ...
+
+    TMode mode(&prev, this);
+
+    PrintBegin(os, mode);
+
+    try {
+        PrintChildren(out, mode);
+    }
+    catch (...) {
+        // ...
+    }
+  
+  PrintEnd(os, mode);
+}
+</pre>
+In the first top-level call to <i>Print()</i>, <i>prev</i> is the default <i>TMode</i> object
+described above, with <i>NULL</i> values for <i>m_Previous</i> and <i>m_Node</i>. In the 
+body of the <i>Print()</i> method however, a new <i>TMode</i> is created for subsequent 
+recursion, with the following constructor used to create the new <i>TMode</i> at that level:
+
+<center><pre> TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode), m_Node(N), m_Previous(M) {}</pre></center><br>
+Thus, the output encoding specified at the top level is propagated to the <i>PrintXxx()</i> methods
+of all the child nodes embedded in the parent. The <i>CNCBINode::PrintXxx()</i> methods essentially do nothing;
+<i>PrintBegin()</i> and <i>PrintEnd()</i> simply return 0, and <i>PrintChildren()</i> just
+calls <i>Print()</i> on each child. Thus, the actual printing is implemented by the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=PrintBegin"> 
+<i>PrintBegin()</i></a>  and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=PrintEnd"> 
+<i>PrintEnd()</i></a> methods specialized for the child objects. 
+<p>
+
+As the foregoing discussion implies, a generic <i>CNCBINode</i> which has no children explicitly installed
+will generate no output. For example, a 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTMLPage">
+<i>CHTMLPage</i></a> object which has been initialized by loading a 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CreateTemplate">
+template</a> file has no children until they are explicitly created. In this case, the <i>Print()</i>
+method will first call
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CreateSubNodes">
+<i>CreateSubNodes()</i></a> before executing <i>PrintChildren()</i>. The use of template files, and
+the associated set of <i>TagMap</i> functions are discussed in the section on the
+NCBI <a href="#page"> Page</a> classes. <p>
+
+A slice of the NCBI C++ Toolkit class hierarchy rooted at the
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNCBINode.html"
+<i>CNCBINode</i></a> class includes the following directly derived subclasses:
+<ul> CNCBINode:
+     <ul> <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CSmallPagerBox.html"><i>CSmallPagerBox</i></a> // not used
+          <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CSelection.html">    <i>CSelection</i></a>	
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPagerBox.html">     <i>CPagerBox</i></a>	// not used 
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPager.html">	<i>CPager</i></a>	
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLText.html">	<i>CHTMLText</i></a>
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLTagNode.html">	<i>CHTMLTagNode</i></a>
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPlainText.html"><i>CHTMLPlainText</i></a>
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLNode.html">	<i>CHTMLNode</i></a>
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLBasicPage.html"><i>CHTMLBasicPage</i></a>
+	  <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CButtonList.html">	<i>CButtonList</i></a>	// not used
+     </ul>
+</ul>
+Many of these subclasses make little sense out of context, as they are designed for use as 
+subcomponents of, for example, a <i>CHTMLPage</i>. Exceptions to this are the text nodes,
+which are described next.
+<p>
+<a name="text"> <h3>HTML Text nodes:
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLText.html">CHTMLText </a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPlainText.html">CHTMLPlainText </a></h3>
+
+The <i>CHTMLText</i> class uses the <i>m_Name</i> data member inherited from <i>CNCBINode</i>
+to store a text string of arbitrary length.  No new data members are introduced, but 
+two new member functions are defined. <i>SetText(string& s)</i> resets <i>m_Name</i> to the
+string <i>s</i>, and <i>GetText()</i> returns the value currently stored in <i>m_Name</i>. 
+The <i>PrintBegin()</i> method is also specialized to handle occurrences of <i>tagged</i> sections
+in the text, which are delimited by "&lt;@" and "@>". Further discussion of this feature is deferred
+until the section on the <a href="#page"> NCBI page classes </a>, which contain a <i>TTagMap</i>. <p>
+
+With the exception of the special tag symbols described above, all text occurring in a
+<i>CHTMLText</i> node is sent directly to the output without further encoding. The
+<i>CHTMLPlainText</i> class is provided for text that may not have been encoded. The <i>SetText()</i> and
+<i>GetText()</i> member functions are as described for the <i>CHTMLText</i> class, and one
+new data member is introduced. <i>m_NoEncode</i> is a Boolean variable that designates whether or
+not the text requires encoding. <i>NoEncode()</i> and <i>SetNoEncode()</i> allow for access and
+modification of this private data member.
+
+For example, the following code excerpt:
+<pre>
+      CHTMLText *Text = new CHTMLText("An unencoded CHTMLText node: &lt;br> testing BR &lt;br>");
+      Text->Print(cout);
+</pre>
+will generate the output:
+<pre>
+An unencoded CHTMLText node: <br> testing BR <br>
+</pre>
+
+while:
+<pre>
+      CHTMLPlainText *Text = new CHTMLText("An unencoded CHTMLText node: &lt;br> testing BR &lt;br>");
+      Text->Print(cout);
+</pre>
+will generate the output:
+<pre>
+An unencoded CHTMLText node: &lt;br> testing BR &lt;br>
+</pre>
+<p>
+
+<a name="page"> <h3> The NCBI Page classes </h3>
+
+The page classes can be thought of as generalized containers for heterogeneous collections of 
+other HTML objects. They define the following subtree in the C++ Toolkit class hierarchy: 
+
+<ul><li> <a href="#basicpage"><i>CHTMLBasicPage</i></a>
+    <ul><li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPage.html"><i>CHTMLPage</i></a>
+	<ul><li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPmFrontPage.html"><i>CPmFrontPage</i></a>
+	    <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPmDocSumPage.html"><i>CPmDocSumPage</i></a>
+	</ul>
+   </ul>
+</ul>
+
+In addition to the data members inherited
+from <a href="#node"><i>CNCBINode</i></a>, three new private data members are defined in the
+<a name = "basicpage"><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLBasicPage.html">
+CHTMLBasicPage</a> class.
+
+<ol>
+ <li> <i>m_CgiApplication</i> - a pointer to the <i>CCgiApplication</i>
+ <li> <i>m_Style</i> - an integer flag indicating subcomponents to turn on/off
+ <li> <i>m_TagMap</i> (see discussion)
+</ul>
+
+<i>m_TagMap</i> is a <i>TTagMap</i> variable, which is defined as:
+<pre>
+    typedef map&lt;string, BaseTagMapper*> TTagMap;
+</pre>
+
+The member function <i>MapTag(string& s)</i> returns a pointer to the <i>CNCBINode</i> associated
+with tag string <i>s</i> via <i>m_TagMap</i>.
+
+<p>
+
+ 
+where <i>BaseTagMapper</i> is a functor-like object which implements <i>CNCBINode* MapTag()</i>
+for the page class. In effect, <i>m_TagMap</i> is used to map tagged strings to
+<i>CNCBINode</i> HTML subcomponents.  Two member functions, <i>MapTag()</i> and
+<i>AddTagMap()</i> provide for access and modification of <i>m_TagMap</i>.<p>
+
+<i>AddTagMap(const string& s, CNCBIObject* n)</i> simply sets <i>m_TagMap[s] = n</i>, while
+<i>AddTagMap(const string& s, BaseTagMapper* f)</i> installs <i>f</i> as a callback function
+to be associated with <i>m_TagMap[s]</i>
+
+<i>MapTag(str)</i>
+returns the <i>CNCBINode</i> associated with the string <i>str</i>
+
+CNCBINode* BaseTagMapper::
+
+<pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    virtual CNCBINode* MapTag(const string& tagname);    // finds and replaces text with a node    
+
+    CNodeRef MapTagAll(const string& tagname, const TMode& mode);
+</pre>
+
+
+<a name="tag"> <h3>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLTagNode.html">CHTMLTagNode </a>
+
 <a name="t2"> <h3> TOPIC </h3>
 <p>
 
