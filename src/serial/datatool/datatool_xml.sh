@@ -14,7 +14,7 @@ fi
 d="$base/data"
 r="$base/res"
 
-tool="./datatool"
+tool="datatool"
 
 for i in "idx" "elink" "note"; do
     echo "$tool" -m "$base/$i.dtd" -vx "$d/$i.xml" -px out

@@ -6,8 +6,8 @@
 # Run PCRE tests
 
 cf=diff
-testdata=./testdata
-pcre=./test_regexp
+testdata=testdata
+pcre=test_regexp
 
 # Select which tests to run; if no selection, run all
 

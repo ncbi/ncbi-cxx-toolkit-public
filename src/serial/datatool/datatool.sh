@@ -14,7 +14,7 @@ fi
 d="$base/data"
 r="$base/res"
 
-tool="./datatool"
+tool="datatool"
 
 asn="$base/all.asn"
 

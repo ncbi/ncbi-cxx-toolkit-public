@@ -1,5 +1,5 @@
 #! /bin/sh
 # $Id$
 
-echo "test" | ./cgitest
+echo "test" | cgitest
 exit $?
