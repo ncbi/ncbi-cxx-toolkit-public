@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.90 2002/06/10 21:15:00 ucko Exp $
+#  $Id: configure.ac,v 1.91 2002/06/10 21:20:44 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1417,7 +1417,8 @@ AC_TYPE_SIZE_T
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
               [Define to 1 if struct sockaddr_in has a "sin_len" field])],
-   [], [#include <netinet/in.h>])   
+   [], [#include <sys/types.h>
+        #include <netinet/in.h>])   
 
 AC_MSG_CHECKING(if can use exception specifications throw(...) in func.proto)
 AC_TRY_RUN(

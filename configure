@@ -6403,7 +6403,8 @@ else
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include <netinet/in.h>
+#include <sys/types.h>
+        #include <netinet/in.h>
 
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
