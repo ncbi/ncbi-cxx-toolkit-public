@@ -39,6 +39,8 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <util/static_map.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
@@ -466,6 +468,30 @@ static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
 }
 
 
+typedef pair<const char*, CSeq_id::EAccessionInfo> TRefSeqType;
+// used for binary searching; must be in order.
+static const TRefSeqType sc_RefSeqArray[] = {
+    TRefSeqType("AP_", CSeq_id::eAcc_refseq_prot),
+    TRefSeqType("NC_", CSeq_id::eAcc_refseq_chromosome),
+    TRefSeqType("NG_", CSeq_id::eAcc_refseq_genomic),
+    TRefSeqType("NM_", CSeq_id::eAcc_refseq_mrna),
+    TRefSeqType("NP_", CSeq_id::eAcc_refseq_prot),
+    TRefSeqType("NR_", CSeq_id::eAcc_refseq_ncrna),
+    TRefSeqType("NS_", CSeq_id::eAcc_refseq_genome), /* ? */
+    TRefSeqType("NT_", CSeq_id::eAcc_refseq_contig),
+    TRefSeqType("NW_", CSeq_id::eAcc_refseq_wgs_intermed),
+    // NZ_ accessions have four more letters before any digits.
+    // TRefSeqType("NZ_", CSeq_id::eAcc_refseq_wgs_nuc),
+    TRefSeqType("XM_", CSeq_id::eAcc_refseq_mrna_predicted),
+    TRefSeqType("XP_", CSeq_id::eAcc_refseq_prot_predicted),
+    TRefSeqType("XR_", CSeq_id::eAcc_refseq_ncrna_predicted),
+    TRefSeqType("YP_", CSeq_id::eAcc_refseq_prot_predicted),
+    TRefSeqType("ZP_", CSeq_id::eAcc_refseq_wgs_prot)
+};
+typedef CStaticArrayMap<const char*, CSeq_id::EAccessionInfo> TRefSeqMap;
+static const TRefSeqMap sc_RefSeqMap(sc_RefSeqArray, sizeof(sc_RefSeqArray));
+
+
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 {
     SIZE_TYPE digit_pos = acc.find_first_of("0123456789");
@@ -587,21 +613,13 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
 
     case 3:
-        if (pfx[2] == '_') { // refseq-style
-            if      (pfx == "NC_") { return eAcc_refseq_chromosome;      }
-            else if (pfx == "NG_") { return eAcc_refseq_genomic;         }
-            else if (pfx == "NM_") { return eAcc_refseq_mrna;            }
-            else if (pfx == "NP_") { return eAcc_refseq_prot;            }
-            else if (pfx == "NR_") { return eAcc_refseq_ncrna;           }
-            else if (pfx == "NS_") { return eAcc_refseq_genome; /* ? */  }
-            else if (pfx == "NT_") { return eAcc_refseq_contig;          }
-            else if (pfx == "NW_") { return eAcc_refseq_wgs_intermed;    }
-            // else if (pfx == "NZ_") { return eAcc_refseq_wgs_nuc;         }
-            else if (pfx == "XM_") { return eAcc_refseq_mrna_predicted;  }
-            else if (pfx == "XP_") { return eAcc_refseq_prot_predicted;  }
-            else if (pfx == "XR_") { return eAcc_refseq_ncrna_predicted; }
-            else if (pfx == "ZP_") { return eAcc_refseq_wgs_prot;        }
-            else                   { return eAcc_refseq_unreserved;      }
+        if (pfx[2] == '_') { // refseq
+            TRefSeqMap::const_iterator it = sc_RefSeqMap.find(pfx.c_str());
+            if (it == sc_RefSeqMap.end()) {
+                return eAcc_refseq_unreserved;
+            } else {
+                return it->second;
+            }
         } else { // protein
             switch (pfx[0]) {
             case 'A': return (pfx == "AAE") ? eAcc_gb_patent_prot
@@ -1528,6 +1546,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.96  2005/01/13 15:31:41  ucko
+ * IdentifyAccession: use a CStaticArrayMap for RefSeq prefixes, and
+ * recognize AP_ and YP_.
+ *
  * Revision 6.95  2004/12/08 19:51:52  ucko
  * IdentifyAccession: We have now specifically assigned CZ for our own
  * GSS sequences.
