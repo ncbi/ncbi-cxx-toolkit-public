@@ -29,20 +29,30 @@
  *    CImageIOGif -- interface class for reading/writing CompuServ GIF files
  */
 
+//
+// we include gif_lib.h first because of a conflict with windows.h
+// (DrawText() is both a giflib function and a Win32 GDI function)
+//
+#include <ncbiconf.h>
+#ifdef HAVE_LIBGIF
+// alas, poor giflib... it isn't extern'ed
+extern "C" {
+#  include <gif_lib.h>
+};
+#endif
+
+
 #include "image_io_gif.hpp"
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
 
 #ifdef HAVE_LIBGIF
+
 //
 //
 // LIBGIF support
 //
 //
-
-extern "C" {
-#include <gif_lib.h>
-};
 
 BEGIN_NCBI_SCOPE
 
@@ -446,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/01 12:08:44  dicuccio
+ * Compilation fixes for MSVC
+ *
  * Revision 1.2  2003/06/09 19:28:17  dicuccio
  * Fixed compilation error - conversion from const char* to char* required for
  * gif_lib
