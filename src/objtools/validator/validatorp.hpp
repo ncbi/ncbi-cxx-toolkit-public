@@ -256,6 +256,8 @@ enum EErrType {
     eErr_SEQ_FEAT_OnlyGeneXrefs,
     eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
     eErr_SEQ_FEAT_MultipleCdsOnMrna,
+    eErr_SEQ_FEAT_BadConflictFlag,
+    eErr_SEQ_FEAT_ConflictFlagSet,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -726,6 +728,7 @@ private:
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat);
     void ValidateCdsProductId(const CSeq_feat& feat);
+    void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged);
     void ValidateSplice(const CSeq_feat& feat, bool check_all);
@@ -907,6 +910,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2003/12/16 16:18:40  shomrat
+* Added ValidateCdConflict
+*
 * Revision 1.50  2003/11/14 15:55:48  shomrat
 * added TPA history check
 *
