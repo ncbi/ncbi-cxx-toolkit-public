@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/12/20 15:29:35  vasilche
+* Fixed bug with old ASN structures.
+*
 * Revision 1.26  1999/12/17 19:05:03  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -116,6 +119,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
+#include <serial/typeref.hpp>
 #include <serial/objlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
@@ -154,6 +158,11 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
     WriteTypeName(typeInfo->GetName());
     WriteData(object, typeInfo);
     m_Objects.CheckAllWritten();
+}
+
+void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
+{
+    Write(object, type.Get());
 }
 
 void CObjectOStream::WriteExternalObject(TConstObjectPtr object,

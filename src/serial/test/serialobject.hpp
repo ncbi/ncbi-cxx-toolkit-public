@@ -9,12 +9,6 @@
 
 struct struct_Web_Env;
 
-BEGIN_NCBI_SCOPE
-
-class CTypeInfo;
-
-END_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
 
 class CSerialObject

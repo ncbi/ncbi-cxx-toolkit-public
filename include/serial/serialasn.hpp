@@ -77,7 +77,7 @@ inline
 CTypeRef GetSetTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetTypeRef(p));
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetCTypeRef(p));
 }
 
 template<typename T>
@@ -85,7 +85,7 @@ inline
 CTypeRef GetSequenceTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetTypeRef(p));
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetCTypeRef(p));
 }
 
 template<typename T>
@@ -107,7 +107,7 @@ CTypeRef GetSequenceOfTypeRef(const T* const* p)
 inline
 CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
 {
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, CTypeRef(func));
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, func);
 }
 
 template<typename T>
@@ -116,7 +116,8 @@ CTypeRef GetOldAsnTypeRef(const string& name,
                           T* (ASNCALL*newProc)(void),
 						  T* (ASNCALL*freeProc)(T*),
                           T* (ASNCALL*readProc)(asnio*, asntype*),
-                          unsigned char (ASNCALL*writeProc)(T*, asnio*, asntype*))
+                          unsigned char (ASNCALL*writeProc)(T*, asnio*,
+                                                            asntype*))
 {
     return COldAsnTypeInfoGetTypeInfo(name,
                                       reinterpret_cast<TNewProc>(newProc),
@@ -133,13 +134,13 @@ CTypeRef GetOldAsnTypeRef(const string& name,
 #define ASN_STRUCT_NAME(name) SERIALASN_NAME2(struct_, name)
 
 #define ASN_TYPE_INFO_GETTER_DECL(name) \
-NCBI_NS_NCBI::TTypeInfo ASN_TYPE_INFO_GETTER_NAME(name)(void) \
+NCBI_NS_NCBI::TTypeInfo ASN_TYPE_INFO_GETTER_NAME(name)(void)
 
 #define ASN_TYPE_REF(name) \
 struct ASN_STRUCT_NAME(name); \
 ASN_TYPE_INFO_GETTER_DECL(name); \
-inline NCBI_NS_NCBI::TTypeInfoGetter GetTypeRef(const ASN_STRUCT_NAME(name)* ) \
-{ return &ASN_TYPE_INFO_GETTER_NAME(name); } \
+inline NCBI_NS_NCBI::TTypeInfoGetter GetCTypeRef(const ASN_STRUCT_NAME(name)* ) \
+{ return &ASN_TYPE_INFO_GETTER_NAME(name); }
 
 #define ASN_CHOICE_REF(name) \
 ASN_TYPE_INFO_GETTER_DECL(name);

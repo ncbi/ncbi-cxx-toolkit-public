@@ -33,28 +33,30 @@ int CTestSerial::Run(void)
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found webenv.ent");
                 CObjectIStreamAsn(in).
-                    Read(&env, GetSequenceTypeRef(&env).Get());
+                    Read(&env, GetSequenceTypeRef(&env));
             }
             {
-                CNcbiOfstream out("webenv.bino", IOS_BASE::out | IOS_BASE::binary);
+                CNcbiOfstream out("webenv.bino",
+                                  IOS_BASE::out | IOS_BASE::binary);
                 if ( !out )
                     THROW1_TRACE(runtime_error, "Cannot create webenv.bino");
                 CObjectOStreamAsnBinary(out).
-                    Write(&env, GetSequenceTypeRef(&env).Get());
+                    Write(&env, GetSequenceTypeRef(&env));
             }
             {
-                CNcbiIfstream in("webenv.bin", IOS_BASE::in | IOS_BASE::binary);
+                CNcbiIfstream in("webenv.bin",
+                                 IOS_BASE::in | IOS_BASE::binary);
                 if ( !in )
                     THROW1_TRACE(runtime_error, "File not found webenv.bin");
                 CObjectIStreamAsnBinary(in).
-                    Read(&env, GetSequenceTypeRef(&env).Get());
+                    Read(&env, GetSequenceTypeRef(&env));
             }
             {
                 CNcbiOfstream out("webenv.ento");
                 if ( !out )
                     THROW1_TRACE(runtime_error, "Cannot create webenv.ento");
                 CObjectOStreamAsn(out).
-                    Write(&env, GetSequenceTypeRef(&env).Get());
+                    Write(&env, GetSequenceTypeRef(&env));
             }
         }
 #endif
@@ -64,7 +66,8 @@ int CTestSerial::Run(void)
 
         _TRACE("CSerialObject(object1): " << long(&write));
         _TRACE("CSerialObject2(object2): " << long(&write1));
-        _TRACE("CSerialObject(object2): " << long(static_cast<CSerialObject*>(&write1)));
+        _TRACE("CSerialObject(object2): " <<
+               long(static_cast<CSerialObject*>(&write1)));
 
         write.m_Name = "name";
         write.m_NamePtr = &write1.m_Name;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/12/20 15:29:35  vasilche
+* Fixed bug with old ASN structures.
+*
 * Revision 1.34  1999/12/17 19:05:02  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -142,6 +145,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
+#include <serial/typeref.hpp>
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/typemapper.hpp>
@@ -229,6 +233,11 @@ void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
     _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
            << typeInfo->GetName() << ") @" << index);
     ReadData(object, typeInfo);
+}
+
+void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
+{
+    Read(object, type.Get());
 }
 
 void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)

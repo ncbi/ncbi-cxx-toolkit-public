@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/12/20 15:29:31  vasilche
+* Fixed bug with old ASN structures.
+*
 * Revision 1.29  1999/12/17 19:04:53  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -150,7 +153,8 @@ public:
     virtual ~CObjectIStream(void);
 
     // root reader
-    void Read(TObjectPtr object, TTypeInfo typeInfo);
+    void Read(TObjectPtr object, TTypeInfo type);
+    void Read(TObjectPtr object, const CTypeRef& type);
     CObject ReadObject(void);
 
     virtual string ReadTypeName(void);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/12/20 15:29:31  vasilche
+* Fixed bug with old ASN structures.
+*
 * Revision 1.26  1999/12/17 19:04:53  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -138,7 +141,8 @@ public:
     virtual ~CObjectOStream(void);
 
     // root writer
-    void Write(TConstObjectPtr object, TTypeInfo typeInfo);
+    void Write(TConstObjectPtr object, TTypeInfo type);
+    void Write(TConstObjectPtr object, const CTypeRef& type);
     void WriteObject(const CObject& object)
         {
             Write(object.GetObject(), object.GetTypeInfo());
