@@ -725,7 +725,7 @@ I_ITDescriptor* CDBL_BlobResult::GetImageOrTextDescriptor()
 {
     if (m_CurrItem != 0)
         return 0;
-    STATUS s = dbreadtext(m_Cmd, m_Buff, 0);
+    STATUS s = dbreadtext(m_Cmd, m_Buff, 1);  // TMP: shpould be 0
     if (s == -1) {
         throw CDB_ClientEx(eDB_Error, 280003,
                            "CDBL_BlobResult::GetImageOrTextDescriptor",
@@ -1343,16 +1343,28 @@ CDBL_CursorResult::~CDBL_CursorResult()
 
 CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
-#ifdef NCBI_OS_MSWIN
-    DBCOL dbcol; dbcol.SizeOfStruct = sizeof(DBCOL);
-    RETCODE res = dbcolinfo(dblink, CI_REGULAR, col_num, 0, &dbcol );
-    m_ObjName = dbcol.Name; // ## to do: prepend "table."
+#ifdef NCBI_OS_MSWIN /*Text,Image*/
+    const char* pColName = dbcolname(dblink,col_num);
+    if(pColName == NULL) {
+        throw CDB_ClientEx(eDB_Error, 280000,
+                           "CDBL_ITDescriptor::CDBL_ITDescriptor",
+                           "dbcolname() returns NULL");
+    }
+
+    // We have to use an offset in some undocumented structure
+    // (obtained with the help of a debugger).
+    // It may change in future MS dblib versions...
+    const char* pTabName = *(char**)(pColName+50);
+
+    m_ObjName += pTabName;
+    m_ObjName += ".";
+    m_ObjName += pColName;
 #else
     DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
 
     if (col_info == 0) {
         throw CDB_ClientEx(eDB_Error, 280000,
-                           "CDBL_ITDescriptor::CDBL_ITDescripto",
+                           "CDBL_ITDescriptor::CDBL_ITDescriptor",
                            "Can not get the DBCOLINFO*");
     }
     if (!x_MakeObjName(col_info)) {
@@ -1406,6 +1418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/01/10 22:05:52  sapojnik
+ * MS-specific workarounds needed to use blobs via I_ITDescriptor - see /*Text,Image*/
+ *
  * Revision 1.8  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *

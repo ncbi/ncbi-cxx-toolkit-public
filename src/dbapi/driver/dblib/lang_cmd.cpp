@@ -185,12 +185,16 @@ CDB_Result* CDBL_LangCmd::Result()
         case SUCCEED:
             m_Status |= 0x60;
             if (DBCMDROW(m_Cmd) == SUCCEED) { // we could get rows in result
+
+// This optimization is currently unavailable for MS dblib...
+#ifndef NCBI_OS_MSWIN /*Text,Image*/
                 if (dbnumcols(m_Cmd) == 1) {
                     int ct = dbcoltype(m_Cmd, 1);
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
                         m_Res = new CDBL_BlobResult(m_Cmd);
                     }
                 }
+#endif
                 if (!m_Res)
                     m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
                 return Create_Result(*m_Res);
@@ -299,7 +303,7 @@ bool CDBL_LangCmd::x_AssignParams()
             break;
         case eDB_DateTime:
             type = "datetime";
-            break;            
+            break;
         default:
             return false;
         }
@@ -431,6 +435,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/01/10 22:05:52  sapojnik
+ * MS-specific workarounds needed to use blobs via I_ITDescriptor - see /*Text,Image*/
+ *
  * Revision 1.7  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *
