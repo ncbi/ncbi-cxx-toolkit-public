@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/10/15 16:37:47  vasilche
+* Added namespace specificators.
+*
 * Revision 1.33  1999/10/15 13:58:43  vasilche
 * Added namespace specificators in defenition of all macros.
 *
@@ -770,7 +773,7 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
 #define ADD_SUB_CLASS2(Name, SubClass) \
-    info->AddSubClass(CMemberId(Name), GetTypeRef(CLASS_PTR(SubClass)))
+    info->AddSubClass(NCBI_NS_NCBI::CMemberId(Name), NCBI_NS_NCBI::GetTypeRef(CLASS_PTR(SubClass)))
 #define ADD_SUB_CLASS(Class) \
     ADD_SUB_CLASS2(#Class, Class)
 
