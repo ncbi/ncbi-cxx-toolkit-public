@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.14  2002/08/15 22:13:19  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -79,6 +82,7 @@
 #include <corelib/ncbi_limits.h>
 
 #include "cn3d/wx_tools.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 

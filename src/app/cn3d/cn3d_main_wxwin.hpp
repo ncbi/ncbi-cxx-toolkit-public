@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.66  2002/09/21 12:36:29  thiessen
 * add frozen block position validation; add select-other-by-distance
 *
@@ -302,7 +305,7 @@ public:
 
 private:
     void InitRegistry(void);
-#ifdef __WXMAC__
+#if 0 //def __WXMAC__
     short MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply);
 #endif
 

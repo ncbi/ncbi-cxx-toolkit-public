@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.20  2002/09/13 14:21:45  thiessen
 * finish hooking up browser launch on unix
 *
@@ -106,6 +109,28 @@
 #include <vector>
 
 class wxFrame;
+
+/////
+///// Check platform and wx option compatibility
+/////
+#include <wx/platform.h>
+#include <wx/version.h>
+
+#if wxVERSION_NUMBER < 2302
+#error Cn3D requires at wxWindows version 2.3.2 or higher!
+#endif
+  
+#if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)
+#error Cn3D will only work with wxMSW, wxGTK, or wxMac!
+#endif 
+
+#if defined(__WXMAC__) && !defined(__DARWIN__)
+#error Cn3D compilation is no longer supported for Mac OS 8/9
+#endif
+
+#if !wxUSE_GLCANVAS
+#error Please set wxUSE_GLCANVAS to 1 in <wx/setup.h>
+#endif
 
 
 BEGIN_SCOPE(Cn3D)

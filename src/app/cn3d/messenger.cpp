@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.33  2002/10/07 13:29:31  thiessen
 * add double-click -> show row to taxonomy tree
 *
@@ -147,12 +150,12 @@
 #include <objects/mmdb1/Residue_id.hpp>
 
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/sequence_set.hpp"
-#include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;

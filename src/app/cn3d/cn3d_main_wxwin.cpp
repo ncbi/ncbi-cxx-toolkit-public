@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.163  2002/10/11 17:21:38  thiessen
+* initial Mac OSX build
+*
 * Revision 1.162  2002/09/21 12:36:28  thiessen
 * add frozen block position validation; add select-other-by-distance
 *
@@ -632,7 +635,7 @@
 
 #include <ncbienv.h>
 
-#ifdef __WXMAC__
+#if 0 //def __WXMAC__
 #include <wx/filename.h>
 #include "MoreCarbonAccessors.h"
 wxString wxMacFSSpec2MacFilename(const FSSpec *); // in wxwin/src/common/filefn.cpp
@@ -652,10 +655,6 @@ IMPLEMENT_APP(Cn3D::Cn3DApp)
     #include "cn3d/cn3d.xpm"
 #endif
 
-#ifdef __WXMAC__
-// wxTextCtrl on Mac is just bad... don't even bother using it, causes weird errors
-//#define CN3D_DONT_USE_MESSAGE_LOG
-#endif
 
 BEGIN_SCOPE(Cn3D)
 
@@ -769,7 +768,6 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         dlg.ShowModal();
     }
 
-#ifndef CN3D_DONT_USE_MESSAGE_LOG
     // info messages and less severe errors get added to the log
     else {
         if (logFrame) {
@@ -785,15 +783,13 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
             backLog.push_back(errMsg.c_str());
         }
     }
-#endif
 }
 
 void RaiseLogWindow(void)
 {
-#ifndef CN3D_DONT_USE_MESSAGE_LOG
     if (!logFrame) {
         logFrame = new MsgFrame("Cn3D Message Log", wxPoint(500, 0), wxSize(500, 500));
-#ifdef __WXMAC__
+#if 0 //def __WXMAC__
         // make empty menu for this window
         wxMenuBar *menuBar = new wxMenuBar;
         logFrame->SetMenuBar(menuBar);
@@ -814,7 +810,6 @@ void RaiseLogWindow(void)
     if (logFrame->IsIconized()) logFrame->Maximize(false);
 #endif
     logFrame->Raise();
-#endif
 }
 
 
@@ -963,7 +958,11 @@ bool Cn3DApp::OnInit(void)
         prefsDir += wxFILE_SEP_PATH;
 
     // set data dir, and register the path in C toolkit registry (mainly for BLAST code)
+#ifdef __WXMAC__
+    dataDir = programDir + "../Cn3D/data/";
+#else
     dataDir = programDir + "data" + wxFILE_SEP_PATH;
+#endif
     Nlm_TransientSetAppParam("ncbi", "ncbi", "data", dataDir.c_str());
 
     TESTMSG("working dir: " << workingDir.c_str());
@@ -1033,7 +1032,7 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
     wxApp::OnIdle(event);
 }
 
-#ifdef __WXMAC__
+#if 0 //def __WXMAC__
 // special handler for open file apple event
 short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply)
 {
@@ -1199,7 +1198,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // File menu
     menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
-    menu->Append(MID_OPEN, "&Open");
+    menu->Append(MID_OPEN, "&Open\tCtrl+O");
     menu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
     menu->Append(MID_SAVE_AS, "Save &As...");
     menu->Append(MID_PNG, "&Export PNG");
@@ -1318,13 +1317,11 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Window menu
     menu = new wxMenu;
     menu->Append(MID_SHOW_SEQ_V, "Show &Sequence Viewer");
-#ifndef CN3D_DONT_USE_MESSAGE_LOG
     menu->Append(MID_SHOW_LOG, "Show Message &Log");
     menu->Append(MID_SHOW_LOG_START, "Show Log on Start&up", "", true);
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
     menu->Check(MID_SHOW_LOG_START, showLog);
-#endif
     menuBar->Append(menu, "&Window");
 
     // CDD menu
@@ -1351,7 +1348,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Help menu
     menu = new wxMenu;
     menu->Append(MID_HELP_COMMANDS, "&Commands");
-    menu->Append(MID_ONLINE_HELP, "&Online Help...");
+    menu->Append(MID_ONLINE_HELP, "Online &Help...");
     menu->Append(MID_ABOUT, "&About");
     menuBar->Append(menu, "&Help");
 
@@ -1445,8 +1442,12 @@ void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
             helpConfig = new wxFileConfig("Cn3D", "NCBI", path);
             wxConfig::Set(helpConfig);
             helpController->UseConfig(wxConfig::Get());
-            path = wxString(GetProgramDir().c_str()) + "cn3d_commands.htb";
 #ifdef __WXMAC__
+            path = wxString(GetProgramDir().c_str()) + "../Cn3D/cn3d_commands.htb";
+#else
+            path = wxString(GetProgramDir().c_str()) + "cn3d_commands.htb";
+#endif
+#if 0 //def __WXMAC__
             // convert to UNIX style pathname
             for (size_t i=0; i<path.size(); i++)
                 if (path[i] == ':') path[i] = '/';
@@ -2210,7 +2211,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     if (!outputFilename.IsEmpty()) {
         glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
 
-#ifdef __WXMAC__
+#if 0 //def __WXMAC__
         // set mac file type and creator
         wxFileName wxfn(outputFilename);
         if (wxfn.FileExists())

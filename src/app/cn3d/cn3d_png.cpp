@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.10  2002/08/15 22:13:14  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -63,33 +66,27 @@
 * ===========================================================================
 */
 
-// must go first, because on Mac, some NCBI definitions cause conflicts
-#include <cn3d/png.h>
-
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
+// need GL headers for off-screen rendering
 #if defined(__WXMSW__)
 #include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 #elif defined(__WXGTK__)
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <GL/glx.h>
 #include <gdk/gdkx.h>
 
 #elif defined(__WXMAC__)
-#define DONT_USE_GL_DIR
-
-#else
-#error unsupported platform!
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #endif
 
-#ifdef DONT_USE_GL_DIR
-#include <gl.h>
-#include <glu.h>
-#else
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
+#include "cn3d/png.h"
 
 #include "cn3d/cn3d_png.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"

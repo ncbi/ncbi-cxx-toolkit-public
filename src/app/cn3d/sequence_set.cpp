@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.49  2002/09/13 14:21:45  thiessen
 * finish hooking up browser launch on unix
 *
@@ -188,14 +191,13 @@
 #elif defined(__WXGTK__)
 #include <unistd.h>
 
-#elif defined(__WXMAC__)
+#elif 0 //defined(__WXMAC__)
 #include <Files.h>      // stuff for sending URL apple event
 #include <Processes.h>
 #include <AppleEvents.h>
 #include <Gestalt.h>
 #include <Navigation.h>
 #include <Folders.h>
-
 #endif
 
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
@@ -570,7 +572,7 @@ static bool MSWin_OpenDocument(const char* doc_name)
 }
 #endif
 
-#ifdef __WXMAC__
+#if 0 //def __WXMAC__
 // code borrowed from vibutils.c
 Nlm_Boolean Nlm_LaunchAppEx (Nlm_CharPtr fileName, Nlm_VoidPtr serialNumPtr, Nlm_CharPtr sig)
 {
@@ -743,7 +745,7 @@ void LaunchWebPage(const char *url)
     TESTMSG("launching browser: " << command);
     system(command.c_str());
 
-#elif defined(__WXMAC__)
+#elif 0 //defined(__WXMAC__)
     Nlm_SendURLAppleEvent (url, "MOSS", NULL);
 #endif
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/10/11 17:21:39  thiessen
+* initial Mac OSX build
+*
 * Revision 1.64  2002/10/08 12:35:42  thiessen
 * use delete[] for arrays
 *
@@ -230,26 +233,21 @@
 
 #if defined(__WXMSW__)
 #include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 #elif defined(__WXGTK__)
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include <GL/glx.h>
 #include <gdk/gdk.h>    // needed for GdkFont
 
 #elif defined(__WXMAC__)
-#include <Fonts.h>
-#define DONT_USE_GL_DIR
-
-#else
-#error unsupported platform!
+//#include <Fonts.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #endif
 
-#ifdef DONT_USE_GL_DIR
-#include <gl.h>
-#include <glu.h>
-#else
-#include <GL/gl.h>
-#include <GL/glu.h>
-#endif
 #include <math.h>
 #include <stdlib.h> // for rand, srand
 
