@@ -10,8 +10,8 @@ REQUIRES = dbapi
 
 APP = test_objmgr
 SRC = test_objmgr test_helper
-LIB = $(OBJMGR_LIBS)
+LIB = $(SOBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(ORIG_LIBS)
 
 CHECK_CMD = test_objmgr
