@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objects/seqalign/seqalign__.hpp>
@@ -1188,6 +1188,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.10  2004/05/27 17:52:11  grichenk
 * Fixed warnings
 *

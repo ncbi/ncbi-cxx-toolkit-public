@@ -34,7 +34,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <vector>
 #include <utility>
 
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/07/12 15:05:31  grichenk
+ * Moved seq-id mapper from xobjmgr to seq library
+ *
  * Revision 1.5  2003/09/30 16:22:01  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

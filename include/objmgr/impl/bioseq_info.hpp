@@ -36,8 +36,6 @@
 #include <objmgr/impl/bioseq_base_info.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
-
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
@@ -269,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2004/07/12 15:05:31  grichenk
+ * Moved seq-id mapper from xobjmgr to seq library
+ *
  * Revision 1.19  2004/05/06 17:32:37  grichenk
  * Added CanGetXXXX() methods
  *

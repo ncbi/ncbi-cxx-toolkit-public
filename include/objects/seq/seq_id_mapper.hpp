@@ -40,7 +40,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <set>
 
@@ -67,7 +67,7 @@ typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
 {
 public:
-    static CRef<CSeq_id_Mapper> GetSeq_id_Mapper(void);
+    static CRef<CSeq_id_Mapper> GetInstance(void);
     
     virtual ~CSeq_id_Mapper(void);
     
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.26  2004/06/17 18:28:38  vasilche
 * Fixed null pointer exception in GI CSeq_id_Handle.
 *

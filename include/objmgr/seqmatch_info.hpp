@@ -35,7 +35,7 @@
 
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.14  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

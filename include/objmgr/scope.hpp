@@ -41,7 +41,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.78  2004/04/16 13:31:46  grichenk
 * Added data pre-fetching functions.
 *

@@ -35,7 +35,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 
 #include <ctools/asn_converter.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/data_source.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.5  2004/07/12 15:05:32  grichenk
+ * Moved seq-id mapper from xobjmgr to seq library
+ *
  * Revision 1.4  2004/05/21 21:42:51  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -37,7 +37,7 @@
 
 #include <objmgr/seq_map.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.13  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

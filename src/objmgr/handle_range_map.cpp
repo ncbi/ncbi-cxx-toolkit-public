@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -131,7 +131,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         // extract each point
         const CPacked_seqpnt& pp = loc.GetPacked_pnt();
         CSeq_id_Handle idh =
-            CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(pp.GetId());
+            CSeq_id_Mapper::GetInstance()->GetHandle(pp.GetId());
         CHandleRange& hr = m_LocMap[idh];
         ENa_strand strand = pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
         ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
@@ -193,7 +193,7 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
                                CHandleRange::TRange range,
                                ENa_strand strand)
 {
-    AddRange(CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(id), range, strand);
+    AddRange(CSeq_id_Mapper::GetInstance()->GetHandle(id), range, strand);
 }
 
 
@@ -255,6 +255,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.20  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.

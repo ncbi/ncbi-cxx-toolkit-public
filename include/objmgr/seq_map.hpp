@@ -38,7 +38,7 @@
 *
 */
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.45  2004/06/15 14:06:49  vasilche
 * Added support to load split sequences.
 *

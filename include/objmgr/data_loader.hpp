@@ -35,7 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/data_loader_factory.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.25  2003/11/26 17:55:52  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

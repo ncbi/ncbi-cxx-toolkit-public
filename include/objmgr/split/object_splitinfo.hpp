@@ -44,7 +44,7 @@
 #include <objects/seq/Seq_descr.hpp>
 
 #include <objmgr/annot_selector.hpp> // for CAnnotName
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <memory>
 #include <map>
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.6  2004/07/01 15:42:59  vasilche
 * Put Seq-data of short sequences (proteins) tegether with annotations.
 *

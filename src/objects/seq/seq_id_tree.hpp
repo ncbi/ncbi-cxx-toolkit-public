@@ -51,7 +51,7 @@
 #include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <vector>
 #include <set>
@@ -582,6 +582,20 @@ private:
 };
 
 
+// Seq-id mapper exception
+class NCBI_XOBJMGR_EXPORT CIdMapperException : public CException
+{
+public:
+    enum EErrCode {
+        eTypeError,
+        eSymbolError,
+        eEmptyError,
+        eOtherError
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CIdMapperException,CException);
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -595,6 +609,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.6  2004/06/17 18:28:38  vasilche
 * Fixed null pointer exception in GI CSeq_id_Handle.
 *

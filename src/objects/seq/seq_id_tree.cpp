@@ -31,8 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/impl/seq_id_tree.hpp>
-#include <objmgr/objmgr_exception.hpp>
+#include "seq_id_tree.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -126,7 +125,7 @@ void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 
 CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(int /*gi*/)
 {
-    NCBI_THROW(CObjMgrException, eIdMapperError, "Invalid seq-id type");
+    NCBI_THROW(CIdMapperException, eTypeError, "Invalid seq-id type");
 }
 
 
@@ -805,7 +804,7 @@ const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
     case CSeq_id::e_Ddbj:
         return id.GetDdbj();
     default:
-        NCBI_THROW(CObjMgrException, eIdMapperError, "Invalid seq-id type");
+        NCBI_THROW(CIdMapperException, eTypeError, "Invalid seq-id type");
     }
 }
 
@@ -988,7 +987,7 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
                                                     info)).second);
         }
         else {
-            NCBI_THROW(CObjMgrException, eIdMapperError,
+            NCBI_THROW(CIdMapperException, eEmptyError,
                        "Can not create index for an empty local seq-id");
         }
     }
@@ -1125,7 +1124,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                                                                 info)).second);
         }
         else {
-            NCBI_THROW(CObjMgrException, eIdMapperError,
+            NCBI_THROW(CIdMapperException, eEmptyError,
                        "Can not create index for an empty db-tag");
         }
     }
@@ -1407,7 +1406,7 @@ CSeq_id_Handle CSeq_id_Patent_Tree::FindOrCreate(const CSeq_id& id)
         }
         else {
             // Can not index empty patent number
-            NCBI_THROW(CObjMgrException, eIdMapperError,
+            NCBI_THROW(CIdMapperException, eEmptyError,
                        "Cannot index empty patent number");
         }
     }
@@ -1630,6 +1629,18 @@ void CSeq_id_PDB_Tree::FindMatchStr(string sid,
 }
 
 
+const char* CIdMapperException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eTypeError:   return "eTypeError";
+    case eSymbolError: return "eSymbolError";
+    case eEmptyError:  return "eEmptyError";
+    case eOtherError:  return "eOtherError";
+    default:           return CException::GetErrCodeString();
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1638,6 +1649,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.15  2004/06/17 18:28:38  vasilche
 * Fixed null pointer exception in GI CSeq_id_Handle.
 *

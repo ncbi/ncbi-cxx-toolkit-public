@@ -33,7 +33,7 @@
  */
 
 #include <objmgr/impl/handle_range.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <map>
 
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2004/07/12 15:05:31  grichenk
+ * Moved seq-id mapper from xobjmgr to seq library
+ *
  * Revision 1.15  2003/07/17 20:07:55  vasilche
  * Reduced memory usage by feature indexes.
  * SNP data is loaded separately through PUBSEQ_OS.

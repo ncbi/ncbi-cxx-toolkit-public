@@ -37,8 +37,8 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 
 #include <objmgr/seq_map.hpp>
 
@@ -771,6 +771,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.22  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -38,7 +38,7 @@
 #include <objects/seqset/Bioseq_set.hpp> // for EClass
 #include <objects/seq/Seq_inst.hpp> // for EMol
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -416,6 +416,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.56  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *

@@ -43,12 +43,21 @@
 #include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+CSafeStaticRef<CObjectManager> s_ObjectManager;
+
+CObjectManager& CObjectManager::GetObjectManager(void)
+{
+    return s_ObjectManager.Get();
+}
+
+
 CObjectManager::CObjectManager(void)
-    : m_Seq_id_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+    : m_Seq_id_Mapper(CSeq_id_Mapper::GetInstance())
 {
     //LOG_POST("CObjectManager - new :" << this );
 }
@@ -438,6 +447,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.34  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.

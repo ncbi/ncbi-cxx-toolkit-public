@@ -39,7 +39,7 @@
 #include <util/rangemap.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objects/general/Int_fuzz.hpp>
 
 
@@ -423,6 +423,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.13  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.21  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.
@@ -150,6 +153,9 @@ class CSeq_id_Mapper;
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
+    static CObjectManager& GetObjectManager(void);
+    // Direct usage of the constructor is deprecated,
+    // use GetObjectManager() instead.
     CObjectManager(void);
     virtual ~CObjectManager(void);
 

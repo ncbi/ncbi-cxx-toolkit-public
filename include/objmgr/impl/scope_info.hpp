@@ -36,8 +36,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.9  2004/06/03 18:33:48  grichenk
 * Modified annot collector to better resolve synonyms
 * and matching IDs. Do not add id to scope history when

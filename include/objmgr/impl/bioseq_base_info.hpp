@@ -35,7 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/impl/tse_info_object.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <vector>
 
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/07/12 15:05:31  grichenk
+ * Moved seq-id mapper from xobjmgr to seq library
+ *
  * Revision 1.3  2004/03/31 17:08:06  vasilche
  * Implemented ConvertSeqToSet and ConvertSetToSeq.
  *

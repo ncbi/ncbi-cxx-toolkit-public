@@ -38,7 +38,7 @@
 #include <util/range.hpp>
 #include <util/rangemap.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
@@ -318,6 +318,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.18  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *

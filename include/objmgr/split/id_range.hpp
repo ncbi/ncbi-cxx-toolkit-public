@@ -37,7 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <util/range.hpp>
 
 #include <map>
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.4  2004/06/15 14:05:49  vasilche
 * Added splitting of sequence.
 *

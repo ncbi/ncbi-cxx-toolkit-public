@@ -38,7 +38,7 @@
 #include <objmgr/impl/prefetch_impl.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.4  2004/05/07 13:47:34  grichenk
 * Removed single-id constructors.
 * Added non-locking prefetch mode.

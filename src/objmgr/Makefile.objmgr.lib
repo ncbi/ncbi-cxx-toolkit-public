@@ -16,8 +16,7 @@ SRC = snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       seq_map seq_map_ext seq_map_ci seq_entry_ci seq_annot_ci \
       seq_entry_handle bioseq_set_handle bioseq_handle seq_annot_handle \
       align_ci data_loader handle_range objmgr_exception \
-      handle_range_map object_manager seq_id_tree \
-      seq_vector seq_vector_ci seqdesc_ci seq_id_handle seq_id_mapper \
+      handle_range_map object_manager seq_vector seq_vector_ci seqdesc_ci \
       tse_chunk_info bioseq_ci annot_type_index \
       seq_loc_mapper seq_align_mapper annot_collector \
       prefetch_impl seq_feat_handle seq_graph_handle seq_align_handle

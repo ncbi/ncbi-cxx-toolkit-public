@@ -42,7 +42,7 @@
 
 #include <serial/serialdef.hpp>
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <objmgr/split/blob_splitter_params.hpp>
 
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.12  2004/06/30 21:02:02  vasilche
 * Added loading of external annotations from 26 satellite.
 *

@@ -36,7 +36,7 @@
 
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/annot_selector.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -354,6 +354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.49  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

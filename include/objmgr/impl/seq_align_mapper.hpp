@@ -33,7 +33,7 @@
 *
 */
 
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.8  2004/06/15 14:01:24  vasilche
 * Fixed int <> unsigned conversion warning.
 *

@@ -719,7 +719,7 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
     TTSE_Lock tse_info(x_FindBestTSE(main_idh));
     if ( !tse_info ) {
         // Try to find the best matching id (not exactly equal)
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
+        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
         if ( mapper.HaveMatchingHandles(idh) ) {
             TSeq_id_HandleSet hset;
             mapper.GetMatchingHandles(idh, hset);
@@ -809,7 +809,7 @@ void CDataSource::x_IndexAnnotTSE(const CSeq_id_Handle& id,
     TAnnotWriteLockGuard guard(m_DSAnnotLock);
     if (tse_info) {
         // Filter out TSEs which contain the sequence
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
+        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
         TSeq_id_HandleSet hset;
         if (mapper.HaveMatchingHandles(id)) {
             mapper.GetMatchingHandles(id, hset);
@@ -898,7 +898,7 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
     TTSE_Lock tse(x_FindBestTSE(idh));
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
+        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
         if ( mapper.HaveMatchingHandles(idh) ) {
             TSeq_id_HandleSet hset;
             mapper.GetMatchingHandles(idh, hset);
@@ -1076,6 +1076,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.136  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.135  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.

@@ -31,9 +31,8 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objmgr/seq_id_mapper.hpp>
-#include <objmgr/impl/seq_id_tree.hpp>
-#include <objmgr/objmgr_exception.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
+#include "seq_id_tree.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -46,7 +45,7 @@ BEGIN_SCOPE(objects)
     
 static CSeq_id_Mapper* s_Seq_id_Mapper = 0;
 
-CRef<CSeq_id_Mapper> CSeq_id_Mapper::GetSeq_id_Mapper(void)
+CRef<CSeq_id_Mapper> CSeq_id_Mapper::GetInstance(void)
 {
     if (!s_Seq_id_Mapper) {
         s_Seq_id_Mapper = new CSeq_id_Mapper;
@@ -137,7 +136,7 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                            TSeq_id_HandleSet& h_set)
 {
     if (sid.find('|') != string::npos) {
-        NCBI_THROW(CObjMgrException, eIdMapperError,
+        NCBI_THROW(CIdMapperException, eSymbolError,
                    "Symbol \'|\' is not supported here");
     }
 
@@ -167,6 +166,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.49  2004/06/17 18:28:38  vasilche
 * Fixed null pointer exception in GI CSeq_id_Handle.
 *

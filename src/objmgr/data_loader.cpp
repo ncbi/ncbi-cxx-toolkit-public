@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/data_loader.hpp>
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -124,6 +124,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.13  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -5,4 +5,5 @@ ASN = seq seqalign seqblock seqfeat seqloc seqres
 ASN_DEP = seqcode
 
 LIB = seq
-SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util
+SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util \
+      seq_id_tree seq_id_handle seq_id_mapper

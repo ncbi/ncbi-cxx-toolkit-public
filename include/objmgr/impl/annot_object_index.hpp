@@ -38,7 +38,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <objmgr/seq_id_handle.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/impl/handle_range.hpp>
 
 #include <util/rangemap.hpp>
@@ -168,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.5  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

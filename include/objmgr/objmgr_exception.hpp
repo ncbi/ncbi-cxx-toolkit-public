@@ -51,7 +51,6 @@ public:
         eFindFailed,
         eAddDataError,
         eModifyDataError,
-        eIdMapperError,
         eInvalidHandle,
         eOtherError
     };
@@ -155,6 +154,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.7  2004/03/19 14:19:08  grichenk
 * Added seq-loc mapping through a seq-align.
 *

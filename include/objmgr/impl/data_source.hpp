@@ -35,7 +35,7 @@
 
 #include <objmgr/impl/tse_info.hpp>
 
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/data_loader.hpp>
 
@@ -451,6 +451,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/07/12 15:05:31  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.74  2004/04/16 13:31:46  grichenk
 * Added data pre-fetching functions.
 *

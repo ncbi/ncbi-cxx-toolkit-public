@@ -1267,7 +1267,7 @@ bool CAnnot_Collector::x_Search(const CHandleRangeMap& loc,
                 CScope::eGetBioseq_All);
             TSeq_id_HandleSet idh_set;
             if (bh) {
-                CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
+                CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
                 ITERATE(CBioseq_Handle::TId, syn_it, bh.GetId()) {
                     if (mapper.HaveReverseMatch(*syn_it)) {
                         mapper.GetReverseMatchingHandles(*syn_it, idh_set);
@@ -1443,6 +1443,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.11  2004/06/10 16:21:27  grichenk
 * Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
 * returns CRef<> which is locked by CObjectManager.

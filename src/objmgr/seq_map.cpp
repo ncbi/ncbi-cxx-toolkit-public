@@ -36,7 +36,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_map_ext.hpp>
-#include <objmgr/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
@@ -899,6 +899,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.55  2004/06/15 14:51:27  grichenk
 * Fixed CRef to bool conversion
 *

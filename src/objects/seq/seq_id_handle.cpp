@@ -34,10 +34,10 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiatomic.hpp>
-#include <objmgr/seq_id_handle.hpp>
-#include <objmgr/seq_id_mapper.hpp>
-#include <objmgr/impl/seq_id_tree.hpp>
+#include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/seq_id_mapper.hpp>
 #include <serial/typeinfo.hpp>
+#include "seq_id_tree.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,7 +55,7 @@ DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
 
 CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type)
     : m_Seq_id_Type(type),
-      m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+      m_Mapper(CSeq_id_Mapper::GetInstance())
 {
     m_LockCounter.Set(0);
 }
@@ -64,7 +64,7 @@ CSeq_id_Info::CSeq_id_Info(CSeq_id::E_Choice type)
 CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
     : m_Seq_id_Type(seq_id->Which()),
       m_Seq_id(seq_id),
-      m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+      m_Mapper(CSeq_id_Mapper::GetInstance())
 {
     m_LockCounter.Set(0);
 }
@@ -148,13 +148,13 @@ CConstRef<CSeq_id> CSeq_id_Handle::GetSeqIdOrNull(void) const
 
 CSeq_id_Handle CSeq_id_Handle::GetGiHandle(int gi)
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper()->GetGiHandle(gi);
+    return CSeq_id_Mapper::GetInstance()->GetGiHandle(gi);
 }
 
 
 CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(id);
+    return CSeq_id_Mapper::GetInstance()->GetHandle(id);
 }
 
 
@@ -308,6 +308,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/07/12 15:05:32  grichenk
+* Moved seq-id mapper from xobjmgr to seq library
+*
 * Revision 1.25  2004/06/17 18:28:38  vasilche
 * Fixed null pointer exception in GI CSeq_id_Handle.
 *
