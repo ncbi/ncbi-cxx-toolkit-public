@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/02/18 19:29:14  vasilche
+* Added CCgiServerContext.
+*
 * Revision 1.19  1999/02/05 22:00:36  sandomir
 * Command::GetLink() changes
 *
@@ -100,6 +103,10 @@
 
 BEGIN_NCBI_SCOPE
 
+class CCgiServerContext
+{
+};
+
 //
 // class CNcbiMsgRequest
 //
@@ -118,6 +125,9 @@ public:
   void PutMsg( const string& msg );
   const TMsgList& GetMsgList( void ) const;
   void ClearMsgList( void );
+
+    virtual CCgiServerContext* GetServerContext(void)
+        { return 0; }
 
 protected:
 
