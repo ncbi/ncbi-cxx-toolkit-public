@@ -136,8 +136,12 @@ CPriorityNode::CPriorityNode(const CPriorityTree& tree)
 
 
 CPriorityNode::CPriorityNode(const CPriorityNode& node)
-    : m_SubTree(node.m_SubTree), m_Leaf(node.m_Leaf)
+    : m_SubTree(node.m_SubTree)
 {
+    if ( node.IsLeaf() ) {
+        m_Leaf.Reset(new TLeaf(const_cast<CDataSource&>
+                               (node.GetLeaf().GetDataSource())));
+    }
 }
 
 
@@ -248,6 +252,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/09/30 20:40:32  vasilche
+* Fixed CScope::AddScope() -  create new CDataSource_ScopeInfo objects.
+*
 * Revision 1.5  2003/07/01 17:59:13  vasilche
 * Reordered member initializers.
 *
