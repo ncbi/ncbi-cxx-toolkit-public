@@ -59,7 +59,6 @@ public:
 
     // Validatiors
     TDim CheckNumRows(void)                   const;
-    int  CheckNumSegs(void)                   const;
     void Validate    (bool full_test = false) const;
 
     // GetSeqRange
@@ -116,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/01/15 20:13:27  todorov
+* -CheckNumSegs
+*
 * Revision 1.5  2003/12/16 22:54:14  todorov
 * +CreateTranslatedDensegFromNADenseg
 *
