@@ -185,7 +185,7 @@ CNetCacheClient::CNetCacheClient(CSocket*      sock,
     if (m_Sock) {
         m_Sock->DisableOSSendDelay();
 
-        x_RestoreHostPort();
+        RestoreHostPort();
     }
 }
 
@@ -215,13 +215,17 @@ void CNetCacheClient::SetCommunicationTimeout(const STimeout& to)
 void CNetCacheClient::CreateSocket(const string& hostname,
                                    unsigned      port)
 {
-    if (m_OwnSocket == eTakeOwnership) {
-        delete m_Sock;
+    if (m_Sock == 0) {
+        m_Sock = new CSocket(hostname, port);
+        m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
+    } else {
+        m_Sock->Connect(hostname, port, &m_Timeout);
     }
-    m_Sock = new CSocket(hostname, port);
     m_Sock->DisableOSSendDelay();
-    m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     m_OwnSocket = eTakeOwnership;
+
+    m_Host = hostname;
+    m_Port = port;
 }
 
 void CNetCacheClient::SetSocket(CSocket* sock, EOwnership own)
@@ -232,15 +236,19 @@ void CNetCacheClient::SetSocket(CSocket* sock, EOwnership own)
     if ((m_Sock=sock) != 0) {
         m_Sock->DisableOSSendDelay();
         m_OwnSocket = own;
-        x_RestoreHostPort();
+        RestoreHostPort();
     }
 }
 
-void CNetCacheClient::x_RestoreHostPort()
+void CNetCacheClient::RestoreHostPort()
 {
     unsigned int host;
     m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
-    m_Host = CSocketAPI::ntoa(host);
+    m_Host = CSocketAPI::gethostbyaddr(host);
+    string::size_type pos = m_Host.find_first_of(".");
+    if (pos != string::npos) {
+        m_Host.erase(pos, m_Host.length());
+    }
 	m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
 }
 
@@ -288,7 +296,7 @@ string CNetCacheClient::PutData(const void*  buf,
                                 size_t       size,
                                 unsigned int time_to_live)
 {
-    return PutData(kEmptyStr, buf, size, time_to_live);
+    return CNetCacheClient::PutData(kEmptyStr, buf, size, time_to_live);
 }
 
 string  CNetCacheClient::PutData(const string& key,
@@ -418,6 +426,7 @@ void CNetCacheClient::Remove(const string& key)
 }
 
 
+
 IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
 {
     CheckConnect(key);
@@ -457,7 +466,7 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
         }
     }
 
-    IReader* reader = new CSocketReaderWriter(m_Sock);
+    IReader* reader = new CNetCacheSock_Reader(m_Sock);
     return reader;
 }
 
@@ -598,6 +607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/01/19 12:21:47  kuznets
+ * Fixed bug in restoring host name fron connection
+ *
  * Revision 1.29  2005/01/03 19:11:30  kuznets
  * Code cleanup: polishing resource management
  *
