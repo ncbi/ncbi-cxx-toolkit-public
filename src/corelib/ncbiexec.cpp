@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 
 
 #if defined(NCBI_OS_MSWIN)
+
 // Convert CExec class mode to the real mode
 static int s_GetRealMode(CExec::EMode mode)
 {
@@ -121,8 +122,8 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
         }
         _exit(status);
     }
-    // "pid" contains the childs pid
-    if (mode == CExec::eWait) {
+    // The "pid" contains the childs pid
+    if ( mode == CExec::eWait ) {
         return CExec::Wait(pid);
     }
     return pid;
@@ -161,9 +162,9 @@ int CExec::System(const char *cmdline)
 #elif defined(NCBI_OS_UNIX)
     status = system(cmdline);
 #endif
-    if (status == -1 ) {
+    if (status == -1) {
         NCBI_THROW(CExecException,eSystem,
-            "CExec::System: call to system failed");
+                   "CExec::System: call to system failed");
     }
 #if defined(NCBI_OS_UNIX)
     return cmdline ? WEXITSTATUS(status) : status;
@@ -182,7 +183,7 @@ int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eV, mode, cmdname, args);
 #endif
-    if (status == -1 ) {
+    if (status == -1) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnL");
     }
     return status;
@@ -199,7 +200,7 @@ int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
 #endif
-    if (status == -1 ) {
+    if (status == -1) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLE");
     }
     return status;
@@ -215,7 +216,7 @@ int CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eVP, mode, cmdname, args);
 #endif
-    if (status == -1 ) {
+    if (status == -1) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLP");
     }
     return status;
@@ -321,6 +322,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/10/01 20:22:05  ivanov
+ * Formal code rearrangement
+ *
  * Revision 1.15  2003/09/25 17:02:20  ivanov
  * CExec::Wait():  replaced all code with CProcess::Wait() call
  *
