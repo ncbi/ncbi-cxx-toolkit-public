@@ -896,9 +896,8 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
                             pos_str.append("):\n");
 
                             if (m_ErrBufSize  &&  pos) {
-                                size_t min_pos =
-                                    (m_ErrBufSize < pos) ? m_ErrBufSize : pos;
-                                pos_str.append(str.c_str(), min_pos);
+                                pos_str.append(NStr::PrintableString(str),
+                                               0, min(m_ErrBufSize, pos));
                                 if (m_ErrBufSize < pos) {
                                     pos_str.append("\n[truncated...]");
                                 }
@@ -1179,6 +1178,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.70  2003/06/04 00:22:53  ucko
+* Improve diagnostics in CCgiRequest::x_Init.
+*
 * Revision 1.69  2003/04/16 21:48:19  vakatov
 * Slightly improved logging format, and some minor coding style fixes.
 *
