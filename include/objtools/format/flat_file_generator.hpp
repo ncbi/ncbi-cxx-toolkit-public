@@ -34,12 +34,9 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-//#include <objects/seqset/Seq_entry.hpp>
-//#include <objmgr/scope.hpp>
 
-#include <objtools/format/flat_file_flags.hpp>
+#include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/context.hpp>
-//#include <util/range.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -52,6 +49,7 @@ class CSeq_submit;
 class CSeq_entry;
 class CSeq_loc;
 class CSeq_entry_Handle;
+class CSeq_id;
 
 
 class NCBI_FORMAT_EXPORT CFlatFileGenerator : public CObject
@@ -60,33 +58,36 @@ public:
     // types
     typedef CRange<TSeqPos> TRange;
 
-    // constructor / destructor
-    CFlatFileGenerator(CScope&      scope,
-                       TFormat      format = eFormat_GenBank,
-                       TMode        mode   = eMode_GBench,
-                       TStyle       style  = eStyle_Normal,
-                       TView        view   = fViewNucleotides,
-                       TFlatFileFlags       flags  = 0);
+    // constructors
+    CFlatFileGenerator(const CFlatFileConfig& cfg);
+    CFlatFileGenerator(
+        CFlatFileConfig::TFormat   format = CFlatFileConfig::eFormat_GenBank,
+        CFlatFileConfig::TMode     mode   = CFlatFileConfig::eMode_GBench,
+        CFlatFileConfig::TStyle    style  = CFlatFileConfig::eStyle_Normal,
+        CFlatFileConfig::TFlags    flags  = 0,
+        CFlatFileConfig::TView     view   = CFlatFileConfig::fViewNucleotides);
+    
+    // destructor
     ~CFlatFileGenerator(void);
 
     // Supply an annotation selector to be used in feature gathering.
     SAnnotSelector& SetAnnotSelector(void);
 
-    void Generate(const CSeq_submit& submit, CNcbiOstream& os);
-    void Generate(const CSeq_loc& loc, CNcbiOstream& os);
+    void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
+    void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
+    void Generate(const CSeq_id& id, const TRange& range, 
+        ENa_strand strand, CScope& scope, CNcbiOstream& os);
 
     // NB: the item ostream should be allocated on the heap!
     void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
-    void Generate(const CSeq_submit& submit, CFlatItemOStream& item_os);
-    void Generate(const CSeq_loc& loc, CFlatItemOStream& item_os);
-
-    // deprecated!
-    void Generate(const CSeq_entry& entry, CNcbiOstream& os);
-    void Generate(const CSeq_entry& entry, CFlatItemOStream& item_os);
+    void Generate(const CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
+    void Generate(const CSeq_loc& loc, CScope& scope, CFlatItemOStream& item_os);
+    void Generate(const CSeq_id& id, const TRange& range,
+        ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
 private:
-    CRef<CFFContext>    m_Ctx;
+    CRef<CFlatFileContext>    m_Ctx;
 
     // forbidden
     CFlatFileGenerator(const CFlatFileGenerator&);
@@ -102,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/22 15:47:30  shomrat
+* API changes
+*
 * Revision 1.7  2004/03/31 17:13:38  shomrat
 * name changes
 *
