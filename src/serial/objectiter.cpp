@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/17 20:02:51  vasilche
+* Added update of 'set' flag for non const class member dereference.
+* Added choice switch for non const choice variant dereference.
+*
 * Revision 1.4  2003/04/29 18:30:37  gouriano
 * object data member initialization verification
 *
@@ -199,8 +203,10 @@ pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
 
 pair<TObjectPtr, TTypeInfo> CObjectInfoMI::GetMemberPair(void) const
 {
+    TObjectPtr objectPtr = m_Object.GetObjectPtr();
     const CMemberInfo* memberInfo = GetMemberInfo();
-    return make_pair(memberInfo->GetMemberPtr(m_Object.GetObjectPtr()),
+    memberInfo->UpdateSetFlag(objectPtr, CMemberInfo::eSetYes);
+    return make_pair(memberInfo->GetMemberPtr(objectPtr),
                      memberInfo->GetTypeInfo());
 }
 
@@ -363,8 +369,12 @@ pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoCV::GetVariantPair(void) const
 
 pair<TObjectPtr, TTypeInfo> CObjectInfoCV::GetVariantPair(void) const
 {
-    const CVariantInfo* variantInfo = GetVariantInfo();
-    return make_pair(variantInfo->GetVariantPtr(m_Object.GetObjectPtr()),
+    TObjectPtr choicePtr = m_Object.GetObjectPtr();
+    const CChoiceTypeInfo* choiceTypeInfo = m_Object.GetChoiceTypeInfo();
+    TMemberIndex index = GetVariantIndex();
+    choiceTypeInfo->SetIndex(choicePtr, index);
+    const CVariantInfo* variantInfo = choiceTypeInfo->GetVariantInfo(index);
+    return make_pair(variantInfo->GetVariantPtr(choicePtr),
                      variantInfo->GetTypeInfo());
 }
 
