@@ -245,7 +245,7 @@ void CValidError_imp::PostErr
 {
     // Add feature part of label
     string msg(message + " FEATURE: ");
-    feature::GetLabel(ft, &msg, feature::eBoth, m_Scope.GetPointer());
+    feature::GetLabel(ft, &msg, feature::eBoth, m_Scope);
 
     // Add feature location part of label
     string loc_label;
@@ -268,12 +268,13 @@ void CValidError_imp::PostErr
     // Append label for bioseq of feature location
     if (!m_SuppressContext) {
         try {
-            const CSeq_id& id = GetId(ft.GetLocation(), m_Scope);
-            CBioseq_Handle hnd = m_Scope.GetPointer()->GetBioseqHandle(id);
-            CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
-            msg += "[";
-            bc->GetLabel(&msg, CBioseq::eBoth);
-            msg += "]";
+            CBioseq_Handle hnd = m_Scope->GetBioseqHandle(ft.GetLocation());
+            if( hnd ) {
+                CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
+                msg += "[";
+                bc->GetLabel(&msg, CBioseq::eBoth);
+                msg += "]";
+            }
         } catch (...){
         };
     }
@@ -1645,15 +1646,6 @@ void CValidError_imp::ValidateSeqLoc
 }
 
 
-
-
-
-CValidError_imp::TFeatAnnotMap CValidError_imp::GetFeatAnnotMap(void)
-{
-    return m_FeatAnnotMap;
-}
-
-
 void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
     m_BioseqWithNoPubs.push_back(CConstRef<CBioseq>(&seq));
@@ -2082,15 +2074,6 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
         }
     }
     
-    // Map features to their enclosing Seq_annot
-    for ( CTypeConstIterator<CSeq_annot> ai(se); ai; ++ai ) {
-        if ( ai->GetData().IsFtable() ) {
-            ITERATE( CSeq_annot::C_Data::TFtable, fi, ai->GetData().GetFtable() ) {
-                m_FeatAnnotMap[&(**fi)] = &(*ai);
-            }
-        }
-    }
-
     if ( m_PrgCallback ) {
         m_NumAlign = 0;
         for (CTypeConstIterator<CSeq_align> i(se); i; ++i) {
@@ -2149,13 +2132,6 @@ void CValidError_imp::Setup(const CSeq_annot& sa, CScope* scope)
         m_Scope.Reset(scope);
     } else {
         SetScope(sa);
-    }
-    
-    // Map features to their enclosing Seq_annot
-    if ( sa.GetData().IsFtable() ) {
-        ITERATE( CSeq_annot::C_Data::TFtable, fi, sa.GetData().GetFtable() ) {
-            m_FeatAnnotMap[&(**fi)] = &sa;
-        }
     }
 }
 
@@ -2452,6 +2428,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/05/10 13:56:47  shomrat
+* Use CSeq_feat_Handle instead of FeatAnnotMap
+*
 * Revision 1.49  2004/04/27 18:41:05  shomrat
 * ProtWithoutFullRef report CDS feature instead of protein bioseq
 *

@@ -106,6 +106,8 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -1006,10 +1008,7 @@ bool CValidError_bioseq::IsSameSeqAnnot
 (const CFeat_CI& fi1,
  const CFeat_CI& fi2)
 {
-    CValidError_imp::TFeatAnnotMap fa_map = m_Imp.GetFeatAnnotMap();
-
-    return fa_map[CConstRef<CSeq_feat>(&(fi1->GetOriginalFeature()))] ==
-        fa_map[CConstRef<CSeq_feat>(&(fi2->GetOriginalFeature()))];
+    return fi1->GetAnnot() == fi2->GetAnnot();
 }
 
 
@@ -1017,41 +1016,28 @@ bool CValidError_bioseq::IsSameSeqAnnotDesc
 (const CFeat_CI& fi1,
  const CFeat_CI& fi2)
 {
-    const CSeq_feat* f1 = &(fi1->GetOriginalFeature());
-    const CSeq_feat* f2 = &(fi2->GetOriginalFeature());
-    CValidError_imp::TFeatAnnotMap fa_map = m_Imp.GetFeatAnnotMap();
+    const CSeq_annot& annot1 = fi1->GetSeq_annot();
+    const CSeq_annot& annot2 = fi2->GetSeq_annot();
 
-    const CSeq_annot* annot1 = fa_map[f1];
-    const CSeq_annot* annot2 = fa_map[f2];
-
-    if ( !(annot1->IsSetDesc())  ||  !(annot2->IsSetDesc()) ) {
+    if ( !(annot1.IsSetDesc())  ||  !(annot2.IsSetDesc()) ) {
         return true;
     }
 
-    CAnnot_descr::Tdata descr1 = annot1->GetDesc().Get();
-    CAnnot_descr::Tdata descr2 = annot2->GetDesc().Get();
+    CAnnot_descr::Tdata descr1 = annot1.GetDesc().Get();
+    CAnnot_descr::Tdata descr2 = annot2.GetDesc().Get();
 
-    // !!! Check only on the first? (same as in C toolkit)
-    const CAnnotdesc& desc1 = descr1.begin()->GetObject();
-    const CAnnotdesc& desc2 = descr2.begin()->GetObject();
+    // Check only on the first? (same as in C toolkit)
+    const CAnnotdesc& desc1 = descr1.front().GetObject();
+    const CAnnotdesc& desc2 = descr2.front().GetObject();
 
     if ( desc1.Which() == desc2.Which() ) {
-        if ( desc1.Which() == CAnnotdesc::e_Title   ||
-            desc1.Which() == CAnnotdesc::e_Name ) {
-            string str1, str2;
-            if ( desc1.IsName() ) {
-                str1 = desc1.GetName();
-                str2 = desc2.GetName();
-            }
-            if ( desc1.IsTitle() ) {
-                str1 = desc1.GetTitle();
-                str2 = desc2.GetTitle();
-            }
-
-            return (NStr::CompareNocase(str1, str2) == 0);
+        if ( desc1.IsName() ) {
+            return NStr::EqualNocase(desc1.GetName(), desc2.GetName());
+        } else if ( desc1.IsTitle() ) {
+            return NStr::EqualNocase(desc1.GetTitle(), desc2.GetTitle());
         }
-
     }
+
     return false;
 }
 
@@ -3675,6 +3661,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2004/05/10 13:57:19  shomrat
+* Use CSeq_feat_Handle instead of FeatAnnotMap
+*
 * Revision 1.75  2004/05/10 13:21:42  shomrat
 * Implemented validation for abutting UTRs on any nucleotide bioseq (not just mRNA)
 *

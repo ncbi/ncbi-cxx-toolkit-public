@@ -525,8 +525,6 @@ private:
     vector< CConstRef<CBioseq> >    m_BioseqWithNoSource;
     // Bioseqs without MolInfo
     vector< CConstRef<CBioseq> >    m_BioseqWithNoMolinfo;
-    // Map features to the annotation they are packed in.
-    map < const CSeq_feat*, const CSeq_annot* > m_FeatAnnotMap;
 
     // legal dbxref database strings
     static const string legalDbXrefs[];
@@ -932,6 +930,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2004/05/10 13:56:22  shomrat
+* Use CSeq_feat_Handle instead of FeatAnnotMap
+*
 * Revision 1.63  2004/05/10 13:20:11  shomrat
 * + methods for validation of abutting UTRs
 *
