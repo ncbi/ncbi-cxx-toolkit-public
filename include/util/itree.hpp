@@ -77,35 +77,36 @@ public:
     typedef CConstRef<CObject> mapped_type;
 
     typedef SLinkedSetValue<coordinate_type> TMapValue;
-    struct STreeMapValue : public TMapValue
+    struct STreeMapValue : public CIntervalTreeTraits::TMapValue
     {
         STreeMapValue(coordinate_type key, coordinate_type y,
                       const mapped_type& value)
-            : TMapValue(key), m_Y(y), m_Value(value)
-            {
-            }
+            : CIntervalTreeTraits::TMapValue(key), m_Y(y), m_Value(value)
+        {
+        }
 
-        coordinate_type m_Y;
-        mapped_type m_Value;
+        CIntervalTreeTraits::coordinate_type m_Y;
+        CIntervalTreeTraits::mapped_type m_Value;
 
-        interval_type GetInterval(void) const
-            {
-                return interval_type(GetKey(), m_Y);
-            }
+        CIntervalTreeTraits::interval_type GetInterval(void) const
+        {
+            return CIntervalTreeTraits::interval_type(GetKey(), m_Y);
+        }
     };
     typedef STreeMapValue TTreeMapValue;
     typedef CLinkedMultiset<TTreeMapValue> TTreeMap;
     typedef TTreeMap::iterator TTreeMapI;
     typedef TTreeMap::const_iterator TTreeMapCI;
 
-    struct SNodeMapValue : public TMapValue
+    struct SNodeMapValue : public CIntervalTreeTraits::TMapValue
     {
-        SNodeMapValue(coordinate_type key, TTreeMapI value)
-            : TMapValue(key), m_Value(value)
-            {
-            }
+        SNodeMapValue(CIntervalTreeTraits::coordinate_type key,
+                      CIntervalTreeTraits::TTreeMapI value)
+            : CIntervalTreeTraits::TMapValue(key), m_Value(value)
+        {
+        }
 
-        TTreeMapI m_Value;
+        CIntervalTreeTraits::TTreeMapI m_Value;
     };
     typedef SNodeMapValue TNodeMapValue;
     typedef CLinkedMultiset<TNodeMapValue> TNodeMap;
@@ -427,6 +428,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/30 16:42:28  jcherry
+* Qualified some type names in nested structures for SWIG.
+*
 * Revision 1.6  2003/04/17 17:50:16  siyan
 * Added doxygen support
 *
