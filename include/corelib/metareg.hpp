@@ -135,7 +135,7 @@ private:
 
     /// Members
     static auto_ptr<CMetaRegistry> sm_Instance;
-    static CMutex                  sm_Mutex;
+    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 
     struct SKey {
         string     requested_name;
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/12/08 18:40:13  ucko
+* Use DECLARE_CLASS_STATIC_MUTEX to avoid possible premature locking.
+*
 * Revision 1.7  2003/09/30 21:05:56  ucko
 * Refactored cache to allow flushing of path searches when the search
 * path changes.
