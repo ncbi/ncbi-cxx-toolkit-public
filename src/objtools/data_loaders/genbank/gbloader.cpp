@@ -87,7 +87,7 @@ CGBDataLoader::STSEinfo::~STSEinfo()
 {
 }
 
-
+/*
 CGBDataLoader::CCmpTSE::CCmpTSE(const CRef<CSeqref>& sr)
     : m_sr(sr)
 {
@@ -103,7 +103,7 @@ CGBDataLoader::CCmpTSE::CCmpTSE(CSeqref* sr)
 CGBDataLoader::CCmpTSE::~CCmpTSE(void)
 {
 }
-
+*/
 
 CGBDataLoader::SSeqrefs::SSeqrefs()
 {
@@ -374,7 +374,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
         
         best.Reset();conflict=false;
         ITERATE (SSeqrefs::TSeqrefs, srp, sr->m_Sr) {
-            TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
+            TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(*srp);
             if (tsep == m_Sr2TseInfo.end()) continue;
             ITERATE(TTSE_LockSet, sit, tse_set) {
                 CConstRef<CTSE_Info> ti = *sit;
@@ -450,7 +450,7 @@ void CGBDataLoader::x_AppendToDropList(CRef<STSEinfo> tse)
 {
     _ASSERT(tse);
     _TRACE("x_AppendToDropList("<<DUMP(*tse)<<")");
-    _ASSERT(m_Sr2TseInfo[CCmpTSE(tse->key)] == tse);
+    _ASSERT(m_Sr2TseInfo[tse->key] == tse);
     x_Check();
     _ASSERT(!tse->next && !tse->prev);
     if ( m_UseListTail ) {
@@ -489,7 +489,7 @@ void CGBDataLoader::x_DropTSEinfo(CRef<STSEinfo> tse)
     }
 
     x_ExcludeFromDropList(tse);
-    m_Sr2TseInfo.erase(CCmpTSE(tse->key));
+    m_Sr2TseInfo.erase(tse->key);
 }
 
 void CGBDataLoader::GC(void)
@@ -637,7 +637,7 @@ bool CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
         // GBLOG_POST("x_GetRecords-Seqref_iterate_1" << (*srp)->print() );
       
         // find TSE info for each seqref
-        TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
+        TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(*srp);
         CRef<STSEinfo> tse;
         if (tsep != m_Sr2TseInfo.end()) {
             tse = tsep->second;
@@ -646,7 +646,7 @@ bool CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
         else {
             tse.Reset(new STSEinfo());
             tse->key = *srp;
-            m_Sr2TseInfo[CCmpTSE(*srp)] = tse;
+            m_Sr2TseInfo[*srp] = tse;
             x_AppendToDropList(tse);
             GBLOG_POST( "x_GetRecords-newTSE(" << tse << ") ");
         }
@@ -834,13 +834,13 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
                 //(*srp)->print(); cout);
                 bool found=false;
                 ITERATE(SSeqrefs::TSeqrefs,nsrp,nsr) {
-                    if( CCmpTSE(*srp) == CCmpTSE(*nsrp) ) {
+                    if( (*srp)->SameTSE(**nsrp) ) {
                         found=true;
                         break;
                     }
                 }
                 if(found) continue;
-                TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
+                TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(*srp);
                 if (tsep == m_Sr2TseInfo.end()) continue;
               
                 // update TSE info 
@@ -964,6 +964,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/08/27 14:25:22  vasilche
+* Simplified CCmpTSE class.
+*
 * Revision 1.82  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

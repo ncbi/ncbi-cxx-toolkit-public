@@ -78,8 +78,31 @@ CSeqref::CSeqref(void)
 }
 
 
+CSeqref::CSeqref(int gi, int sat, int satkey)
+    : m_Flags(fHasAllLocal),
+      m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
+{
+}
+
+
 CSeqref::~CSeqref(void)
 {
+}
+
+
+const string CSeqref::print(void) const
+{
+    CNcbiOstrstream ostr;
+    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
+    return CNcbiOstrstreamToString(ostr);
+}
+
+
+const string CSeqref::printTSE(void) const
+{
+    CNcbiOstrstream ostr;
+    ostr << "TSE(" << Sat() << "," << SatKey () << ")";
+    return CNcbiOstrstreamToString(ostr);
 }
 
 
@@ -189,6 +212,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.21  2003/08/27 14:25:22  vasilche
+ * Simplified CCmpTSE class.
+ *
  * Revision 1.20  2003/08/19 18:35:21  vasilche
  * CPackString classes were moved to SERIAL library.
  *

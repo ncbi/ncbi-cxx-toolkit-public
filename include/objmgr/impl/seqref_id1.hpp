@@ -57,18 +57,6 @@ public:
                                        TBlobClass blobClass,
                                        TConn conn = 0) const;
 
-    virtual int Compare(const CSeqref& seqRef, EMatchLevel ml = eSeq) const;
-    virtual const string print(void)    const;
-    virtual const string printTSE(void) const;
-
-    int& Gi()     { return m_Gi; };
-    int& Sat()    { return m_Sat; };
-    int& SatKey() { return m_SatKey; };
-  
-    int Gi()     const { return m_Gi; };
-    int Sat()    const { return m_Sat; };
-    int SatKey() const { return m_SatKey; };
-
 private:
     friend class CId1BlobSource;
 
@@ -76,9 +64,6 @@ private:
     void x_Reconnect(TConn conn) const;
 
     CId1Reader&    m_Reader;
-    int m_Gi;
-    int m_Sat;
-    int m_SatKey;
 };
 
 
@@ -122,6 +107,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2003/08/27 14:24:43  vasilche
+* Simplified CCmpTSE class.
+*
 * Revision 1.6  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

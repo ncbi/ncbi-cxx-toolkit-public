@@ -121,6 +121,7 @@ class NCBI_XOBJMGR_EXPORT CSeqref : public CObject
 {
 public:
     CSeqref(void);
+    CSeqref(int gi, int sat, int satkey);
     virtual ~CSeqref(void);
     
     typedef TSeqPos TPos;
@@ -131,14 +132,8 @@ public:
                                        TBlobClass blobClass,
                                        TConn conn = 0) const = 0;
 
-    virtual const string print(void)    const = 0;
-    virtual const string printTSE(void) const = 0;
-
-    enum EMatchLevel {
-        eContext,
-        eTSE    ,
-        eSeq
-    };
+    const string print(void)    const;
+    const string printTSE(void) const;
 
     enum FFlags {
         fHasCore     = 1 << 0,
@@ -157,14 +152,43 @@ public:
     };
     typedef int TFlags;
 
-    virtual int Compare(const CSeqref& seqRef,
-                        EMatchLevel ml = eSeq) const = 0;
+    int Gi()     const { return m_Gi; }
+    int Sat()    const { return m_Sat; }
+    int SatKey() const { return m_SatKey; }
+
+    bool SameTSE(const CSeqref& seqRef) const
+        {
+            return m_Sat == seqRef.m_Sat && m_SatKey == seqRef.m_SatKey;
+        }
+    bool SameSeq(const CSeqref& seqRef) const
+        {
+            return m_Sat == seqRef.m_Sat && m_SatKey == seqRef.m_SatKey &&
+                m_Gi == seqRef.m_Gi;
+        }
+    bool LessByTSE(const CSeqref& seqRef) const
+        {
+            return
+                m_Sat < seqRef.m_Sat ||
+                m_Sat == seqRef.m_Sat && m_SatKey < seqRef.m_SatKey;
+        }
+    bool LessBySeq(const CSeqref& seqRef) const
+        {
+            return
+                m_Sat < seqRef.m_Sat ||
+                m_Sat == seqRef.m_Sat &&
+                (m_SatKey < seqRef.m_SatKey ||
+                 m_SatKey == seqRef.m_SatKey && m_Gi < seqRef.m_Gi);
+        }
 
     TFlags  GetFlags() const { return m_Flags; }
     void SetFlags(TFlags flags)       { m_Flags = flags; }
 
-private:
+protected:
     TFlags  m_Flags;
+
+    int m_Gi;
+    int m_Sat;
+    int m_SatKey;
 };
 
 class NCBI_XOBJMGR_EXPORT CReader : public CObject
@@ -214,6 +238,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.27  2003/08/27 14:24:43  vasilche
+* Simplified CCmpTSE class.
+*
 * Revision 1.26  2003/08/14 21:34:42  kans
 * fixed inconsistent line endings that stopped Mac compilation
 *

@@ -141,7 +141,7 @@ bool CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
 
 
 CId1Seqref::CId1Seqref(CId1Reader& reader, int gi, int sat, int satkey)
-    : m_Reader(reader), m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
+    : CSeqref(gi, sat, satkey), m_Reader(reader)
 {
 }
 
@@ -174,7 +174,7 @@ CId1BlobSource::CId1BlobSource(const CId1Seqref& seqId, TConn conn)
     };
     EEntry_complexities maxplex = eEntry_complexities_entry;
     if ( skip_extfeat ) {
-        maxplex = EEntry_complexities(maxplex | kNoExtFeat);
+        maxplex = EEntry_complexities(int(maxplex) | kNoExtFeat);
     }
     params->SetMaxplex(maxplex);
     params->SetGi(seqId.Gi());
@@ -301,59 +301,6 @@ void CId1Blob::ReadSeq_entry(void)
 }
 
 
-const string CId1Seqref::print(void) const
-{
-    CNcbiOstrstream ostr;
-    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
-    return CNcbiOstrstreamToString(ostr);
-}
-
-
-const string CId1Seqref::printTSE(void) const
-{
-    CNcbiOstrstream ostr;
-    ostr << "TSE(" << Sat() << "," << SatKey () << ")";
-    return CNcbiOstrstreamToString(ostr);
-}
-
-
-int CId1Seqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
-{
-    const CId1Seqref* p = dynamic_cast<const CId1Seqref*> (&seqRef);
-    if ( !p ) {
-        THROW1_TRACE(runtime_error,
-                     "Attempt to compare seqrefs from different sources");
-    }
-    if ( ml == eContext )
-        return 0;
-    //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
-
-    if (Sat() < p->Sat())
-        return -1;
-    if (Sat() > p->Sat())
-        return 1;
-
-    // Sat() == p->Sat()
-    if (SatKey() < p->SatKey())
-        return -1;
-    if (SatKey() > p->SatKey())
-        return 1;
-
-    // blob == p->blob
-    //cout << "Same TSE" << endl;
-    if (ml == eTSE)
-        return 0;
-
-    if (Gi() < p->Gi())
-        return -1;
-    if (Gi() > p->Gi())
-        return 1;
-
-    //cout << "Same GI" << endl;
-    return 0;
-}
-
-
 CId1Reader::CId1Reader(unsigned noConn)
 {
 #if !defined(NCBI_THREADS)
@@ -419,6 +366,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.43  2003/08/27 14:25:22  vasilche
+ * Simplified CCmpTSE class.
+ *
  * Revision 1.42  2003/08/19 18:34:40  vasilche
  * Fixed warning about enum conversion.
  *

@@ -63,60 +63,6 @@ void CPubseqSeqref::x_Reconnect(TConn conn) const
 }
 
 
-const string CPubseqSeqref::print(void) const
-{
-    CNcbiOstrstream ostr;
-    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
-    return CNcbiOstrstreamToString(ostr);
-}
-
-
-const string CPubseqSeqref::printTSE(void) const
-{
-    CNcbiOstrstream ostr;
-    ostr << "TSE(" << Sat() << "," << SatKey () << ")" ;
-    return CNcbiOstrstreamToString(ostr);
-}
-
-
-int CPubseqSeqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
-{
-    const CPubseqSeqref *p = dynamic_cast<const CPubseqSeqref*>(& seqRef);
-    if( !p ) {
-        THROW1_TRACE(runtime_error,
-                     "Attempt to compare seqrefs from different sources");
-    }
-    if ( ml == eContext )
-        return 0;
-
-    //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
-    
-    if ( Sat() < p->Sat() )
-        return -1;
-    if ( Sat() > p->Sat() )
-        return 1;
-    // Sat() == p->Sat()
-
-    if ( SatKey() < p->SatKey() )
-        return -1;
-    if ( SatKey() > p->SatKey() )
-        return 1;
-    // blob == p->blob
-
-    //cout << "Same TSE" << endl;
-
-    if ( ml==eTSE )
-        return 0;
-    if ( Gi() < p->Gi() )
-        return -1;
-    if ( Gi() > p->Gi() )
-        return 1;
-    //cout << "Same GI" << endl;
-
-    return 0;
-}
-
-
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
 // we have non MT-safe library used in MT application
 static CAtomicCounter s_pubseq_readers;
@@ -352,7 +298,7 @@ bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
 
 CPubseqSeqref::CPubseqSeqref(CPubseqReader& reader,
                              int gi, int sat, int satkey)
-    : m_Reader(reader), m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
+    : CSeqref(gi, sat, satkey), m_Reader(reader)
 {
 }
 
@@ -556,6 +502,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.35  2003/08/27 14:25:22  vasilche
+* Simplified CCmpTSE class.
+*
 * Revision 1.34  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

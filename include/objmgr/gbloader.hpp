@@ -215,35 +215,21 @@ private:
     };
     class CCmpTSE
     {
-    private:
-        CRef<CSeqref> m_sr;
     public:
-        CCmpTSE(const CRef<CSeqref>& sr);
-        CCmpTSE(CSeqref* sr);
-        ~CCmpTSE(void);
-
-        operator bool  (void)       const { return m_sr;};
-
-        bool operator< (const CCmpTSE &b) const
-            { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;}
-        bool operator==(const CCmpTSE &b) const
-            { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;}
-        bool operator<=(const CCmpTSE &b) const
-            { return *this == b && *this < b ;}
-
-        CSeqref& get() { return *m_sr; };
-        const CSeqref& get() const { return *m_sr; }
+        bool operator()(const CRef<CSeqref>& sr1,
+                        const CRef<CSeqref>& sr2) const
+            {
+                return sr1->LessByTSE(*sr2);
+            }
     };
 
     typedef int                              TMask;
   
-    typedef map<CCmpTSE          , CRef<STSEinfo> > TSr2TSEinfo   ;
-    //typedef map<const CSeq_entry*, CRef<STSEinfo> > TTse2TSEinfo  ;
-    typedef map<CSeq_id_Handle   , CRef<SSeqrefs> > TSeqId2Seqrefs;
+    typedef map<CRef<CSeqref>, CRef<STSEinfo>, CCmpTSE> TSr2TSEinfo;
+    typedef map<CSeq_id_Handle, CRef<SSeqrefs> >        TSeqId2Seqrefs;
   
     CRef<CReader>   m_Driver;
     TSr2TSEinfo     m_Sr2TseInfo;
-    //TTse2TSEinfo    m_Tse2TseInfo;
   
     TSeqId2Seqrefs  m_Bs2Sr;
   
@@ -293,6 +279,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.39  2003/08/27 14:24:43  vasilche
+ * Simplified CCmpTSE class.
+ *
  * Revision 1.38  2003/06/02 16:01:36  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr
