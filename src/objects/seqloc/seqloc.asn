@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
@@ -36,7 +36,11 @@ Seq-id ::= CHOICE {
     gi INTEGER ,             -- GenInfo Integrated Database
     ddbj Textseq-id ,        -- DDBJ
     prf Textseq-id ,         -- PRF SEQDB
-    pdb PDB-seq-id }         -- PDB sequence
+    pdb PDB-seq-id ,         -- PDB sequence
+    tpg Textseq-id ,         -- Third Party Annot/Seq Genbank
+    tpe Textseq-id ,         -- Third Party Annot/Seq EMBL
+    tpd Textseq-id }         -- Third Party Annot/Seq DDBJ
+
 
 Patent-seq-id ::= SEQUENCE {
     seqid INTEGER ,         -- number of sequence in patent
