@@ -98,9 +98,11 @@ class CBDB_FC_Condition;
 // BDB Data Field interface definition.
 //
 
-class NCBI_BDB_EXPORT IBDB_Field
+class IBDB_Field
 {
 public:
+    virtual ~IBDB_Field() {}
+
     // Comparison function. p1 and p2 are void pointers on field buffers.
     // Positive if p1>p2, zero if p1==p2, negative if p1<p2.
     // NOTE:  both buffers can be unaligned. 
@@ -125,9 +127,11 @@ public:
 // All interface functions by default throw "bad conversion" exception.
 //
 
-class NCBI_BDB_EXPORT IBDB_FieldConvert
+class IBDB_FieldConvert
 {
 public:
+    virtual ~IBDB_FieldConvert() {}
+
     virtual void SetInt(int)
         { BDB_THROW(eType, "Bad conversion"); }
     virtual void SetUint(unsigned)  // ???
@@ -149,8 +153,8 @@ public:
 // Some interfaces are declared non-public here (IFieldConvert).
 //
 
-class NCBI_BDB_EXPORT CBDB_FieldInterfaces : public    IBDB_Field,
-                                             protected IBDB_FieldConvert
+class CBDB_FieldInterfaces : public    IBDB_Field,
+                             protected IBDB_FieldConvert
 {
     friend class CBDB_FileCursor;
 };
@@ -1274,6 +1278,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/07/31 16:39:32  dicuccio
+ * Minor corrections: remove EXPORT specifier from pure inline classes; added
+ * virtual dtor to abstract classes
+ *
  * Revision 1.14  2003/07/25 15:46:47  kuznets
  * Added support for double field type
  *
