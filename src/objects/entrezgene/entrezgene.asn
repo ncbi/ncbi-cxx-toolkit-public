@@ -1,4 +1,4 @@
---$Revision: 1.25 $ 
+--$Revision: 1.26 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -106,6 +106,7 @@ Gene-commentary ::= SEQUENCE {
 	                 -- other fields are not used.
         reference (17), -- currently not used             
         generif (18), -- to include generif in the main blob             
+        phenotype(19), -- to display phenotype information
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
