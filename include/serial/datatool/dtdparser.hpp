@@ -132,9 +132,13 @@ public:
     void SetData(const string& data);
     const string& GetData(void) const;
 
+    void SetExternal(void);
+    bool IsExternal(void) const;
+
 private:
     string m_Name;
     string m_Data;
+    bool   m_External;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -159,17 +163,6 @@ public:
     DTDParser( DTDLexer& lexer);
     virtual ~DTDParser(void);
 
-/*
-    const ASNLexer& L(void) const
-        {
-            return static_cast<const ASNLexer&>(Lexer());
-        }
-    ASNLexer& L(void)
-        {
-            return static_cast<ASNLexer&>(Lexer());
-        }
-*/
-
     AutoPtr<CFileModules> Modules(const string& fileName);
 
 protected:
@@ -187,7 +180,7 @@ protected:
 
     void BeginEntityContent(void);
     void PushEntityLexer(const string& name);
-    void PopEntityLexer(void);
+    bool PopEntityLexer(void);
 
     void GenerateDataTree(CDataTypeModule& module);
     void ModuleType(CDataTypeModule& module, const DTDElement& node);
@@ -206,29 +199,7 @@ protected:
     map<string,DTDElement> m_MapElement;
     map<string,DTDEntity>  m_MapEntity;
     stack<AbstractLexer*>  m_StackLexer;
-/*
-    void Imports(CDataTypeModule& module);
-    void Exports(CDataTypeModule& module);
-    void ModuleBody(CDataTypeModule& module);
-    void ModuleType(CDataTypeModule& module, const string& name);
-    AutoPtr<CDataType> Type(void);
-    CDataType* x_Type(void);
-    CDataType* TypesBlock(CDataMemberContainerType* containerType,
-                          bool allowDefaults);
-    AutoPtr<CDataMember> NamedDataType(bool allowDefaults);
-    CEnumDataType* EnumeratedBlock(CEnumDataType* enumType);
-    CEnumDataTypeValue& EnumeratedValue(CEnumDataType& enumType);
-    void TypeList(list<string>& ids);
-    AutoPtr<CDataValue> Value(void);
-    AutoPtr<CDataValue> x_Value(void);
-    Int4 Number(void);
-    const string& String(void);
-    const string& Identifier(void);
-    const string& TypeReference(void);
-    const string& ModuleReference(void);
-
-    bool HaveMoreElements(void);
-*/
+    stack<string>          m_StackPath;
 };
 
 END_NCBI_SCOPE
@@ -239,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2002/10/21 16:10:55  gouriano
+ * added parsing of external entities
+ *
  * Revision 1.2  2002/10/18 14:35:42  gouriano
  * added parsing of internal parsed entities
  *

@@ -179,11 +179,13 @@ string DTDElement::CreateEmbeddedName(int depth) const
 
 DTDEntity::DTDEntity(void)
 {
+    m_External = false;
 }
 DTDEntity::DTDEntity(const DTDEntity& other)
 {
     m_Name = other.m_Name;
     m_Data = other.m_Data;
+    m_External = other.m_External;
 }
 DTDEntity::~DTDEntity(void)
 {
@@ -205,6 +207,15 @@ void DTDEntity::SetData(const string& data)
 const string& DTDEntity::GetData(void) const
 {
     return m_Data;
+}
+
+void DTDEntity::SetExternal(void)
+{
+    m_External = true;
+}
+bool DTDEntity::IsExternal(void) const
+{
+    return m_External;
 }
 
 
@@ -243,7 +254,10 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
     AutoPtr<CFileModules> modules(new CFileModules(fileName));
 
     while( Next() != T_EOF ) {
-        modules->AddModule(Module(CDirEntry(fileName).GetBase()));
+        CDirEntry entry(fileName);
+        m_StackPath.push(entry.GetDir());
+        modules->AddModule(Module(entry.GetBase()));
+        m_StackPath.pop();
     }
 /*
     while ( Next() != T_EOF ) {
@@ -305,8 +319,19 @@ void DTDParser::BuildDocumentTree(void)
                 Consume();
                 BeginEntityContent();
                 break;
+            case T_ENTITY:
+                // must be external entity
+                PushEntityLexer(NextToken().GetText());
+                break;
             case T_EOF:
-                return;
+                if (PopEntityLexer()) {
+                    // was external entity
+                    Consume();
+                    break;
+                } else {
+                    // end of doc
+                    return;
+                }
             default:
                 ERR_POST("LINE " << Location() <<
                     " invalid keyword: \"") <<
@@ -504,25 +529,33 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
 void DTDParser::BeginEntityContent(void)
 {
     TToken tok = Next();
-    if (tok == T_SYMBOL) {
-        _ASSERT(NextToken().GetSymbol() == '%');
-        Consume();
+    _ASSERT(tok == T_SYMBOL);
+    _ASSERT(NextToken().GetSymbol() == '%');
 
-        tok = Next();
-        _ASSERT(tok == T_IDENTIFIER);
-        string name = NextToken().GetText();
-        Consume();
+    Consume();
+    tok = Next();
+    _ASSERT(tok == T_IDENTIFIER);
+    string name = NextToken().GetText();
+    Consume();
 
-        tok = Next();
-        _ASSERT(tok == T_STRING);
-        DTDEntity& node = m_MapEntity[name];
-        node.SetName(name);
-        node.SetData(NextToken().GetText());
+    DTDEntity& node = m_MapEntity[name];
+    node.SetName(name);
+
+    tok = Next();
+    if ((tok==K_SYSTEM) || (tok==K_PUBLIC)) {
+        node.SetExternal();
         Consume();
-    } else {
-        // not implemented
-        _ASSERT(0);
+        if (tok==K_PUBLIC) {
+            // skip public id
+            tok = Next();
+            _ASSERT(tok==T_STRING);
+            Consume();
+        }
+        tok = Next();
     }
+    _ASSERT(tok==T_STRING);
+    node.SetData(NextToken().GetText());
+    Consume();
     // entity description is ended
     ConsumeSymbol('>');
 }
@@ -531,18 +564,34 @@ void DTDParser::PushEntityLexer(const string& name)
 {
     map<string,DTDEntity>::iterator i = m_MapEntity.find(name);
     _ASSERT (i != m_MapEntity.end());
-    DTDEntityLexer *lexer = new DTDEntityLexer(
-        *(new CNcbiIstrstream(m_MapEntity[name].GetData().c_str())));
+    CNcbiIstream* in;
+    if (m_MapEntity[name].IsExternal()) {
+        string name(m_MapEntity[name].GetData());
+        string fullname = CDirEntry::MakePath(m_StackPath.top(), name);
+        CFile  file(fullname);
+        _ASSERT(file.Exists());
+        in = new CNcbiIfstream(fullname.c_str());
+        _ASSERT(((CNcbiIfstream*)in)->is_open());
+        m_StackPath.push(file.GetDir());
+    } else {
+        in = new CNcbiIstrstream(m_MapEntity[name].GetData().c_str());
+        m_StackPath.push("");
+    }
+    DTDEntityLexer *lexer = new DTDEntityLexer(*in);
     m_StackLexer.push(lexer);
     SetLexer(lexer);
 }
 
-void DTDParser::PopEntityLexer(void)
+bool DTDParser::PopEntityLexer(void)
 {
-    _ASSERT(m_StackLexer.size() > 1);
-    delete m_StackLexer.top();
-    m_StackLexer.pop();
-    SetLexer(m_StackLexer.top());
+    if (m_StackLexer.size() > 1) {
+        delete m_StackLexer.top();
+        m_StackLexer.pop();
+        SetLexer(m_StackLexer.top());
+        m_StackPath.pop();
+        return true;
+    }
+    return false;
 }
 
 
@@ -751,6 +800,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2002/10/21 16:11:13  gouriano
+ * added parsing of external entities
+ *
  * Revision 1.2  2002/10/18 14:38:56  gouriano
  * added parsing of internal parsed entities
  *
