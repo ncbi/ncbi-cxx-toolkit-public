@@ -574,7 +574,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         }
         if (sizeof(addr.sun_path) <= pipename.length()) {
             status = eIO_InvalidArg;
-            throw string("Pipe name too long");
+            throw "Pipe name too long: \"" + pipename + '"';
         }
         m_PipeSize = pipesize;
 
@@ -628,7 +628,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 if (x_errno == EINTR) {
                     status = eIO_Interrupt;
                 }
-                throw string("UNIX socket connect() failed: ")
+                throw "UNIX socket connect(\"" + pipename + "\") failed: "
                     + strerror(x_errno);
             }
 
@@ -679,7 +679,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 }
                 if (x_errno == ECONNREFUSED) {
                     status = eIO_Closed;
-                    throw string("UNIX socket connection refused");
+                    throw "Connection refused in \"" + pipename + '"';
                 }
             }
         }
@@ -713,7 +713,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         }
         if (sizeof(addr.sun_path) <= pipename.length()) {
             status = eIO_InvalidArg;
-            throw string("Pipe name too long");
+            throw "Pipe name too long: \"" + pipename + '"';
         }
         m_PipeSize = pipesize;
 
@@ -747,7 +747,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 #endif
         // Listen for connections on a socket
         if (listen(m_LSocket, kListenQueueSize) != 0) {
-            throw string("UNIX socket listen() failed: ")
+            throw "UNIX socket listen(\"" + pipename + "\") failed: "
                 + strerror(errno);
         }
         if (fcntl(m_LSocket, F_SETFL,
@@ -1219,14 +1219,17 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/01/23 12:30:42  lavr
+ * More explanatory stuff in posted error messages
+ *
  * Revision 1.21  2003/12/02 19:16:20  ivanov
- * Fixed typo -- use x_errno instead errno
+ * Fixed typo -- use x_errno instead of errno
  *
  * Revision 1.20  2003/12/02 17:50:46  ivanov
  * throw/catch strings exceptions instead char*
  *
  * Revision 1.19  2003/11/03 17:34:31  lavr
- * Print strerror() along with most  syscall-related errors
+ * Print strerror() along with most syscall-related errors
  *
  * Revision 1.18  2003/10/24 16:52:38  lavr
  * Check RW bits before E bits in select()
