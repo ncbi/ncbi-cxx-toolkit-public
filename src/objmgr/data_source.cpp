@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2002/06/12 14:39:53  grichenk
+* Performance improvements
+*
 * Revision 1.50  2002/06/04 17:18:33  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *
@@ -328,14 +331,14 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
     if ( m_Loader ) {
         // Send request to the loader
         CHandleRangeMap hrm(GetIdMapper());
-        CSeq_loc loc;
-        CConstRef<CSeq_id> id = handle.GetSeqId();
-        _VERIFY(id);
-        loc.SetWhole().Assign(*id);
-        hrm.AddLocation(loc);
+        CHandleRange rg(handle.m_Value);
+        rg.AddRange(CHandleRange::TRange(
+            CHandleRange::TRange::GetWholeFrom(),
+            CHandleRange::TRange::GetWholeTo()), eNa_strand_unknown);
+        hrm.AddRanges(handle.m_Value, rg);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     // the handle must be resolved to this data source
     _ASSERT(handle.m_DataSource == this);
     return handle.m_Entry->GetSeq();
@@ -345,7 +348,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
 const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 {
     // Bioseq and TSE must be loaded if there exists a handle
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     _ASSERT(handle.m_DataSource == this);
     return *m_Entries[handle.m_Entry]->m_TSE;
 }
@@ -354,9 +357,9 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     (const CBioseq_Handle& handle)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
     const CBioseq* seq = &GetBioseq(handle);
 
+    CMutexGuard guard(sm_DataSource_Mutex);
     CBioseq* seq_core = new CBioseq();
     // Assign seq members to seq_core:
     CBioseq::TId& id_list = seq_core->SetId();
@@ -419,7 +422,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
 
 const CSeqMap& CDataSource::GetSeqMap(const CBioseq_Handle& handle)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     return x_GetSeqMap(handle);
 }
 
@@ -429,11 +432,12 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     // Call loader first
     if ( m_Loader ) {
         // Send request to the loader
-        CSeq_loc loc;
-        CConstRef<CSeq_id> id = handle.GetSeqId();
-        loc.SetWhole().Assign(*id);
         CHandleRangeMap hrm(GetIdMapper());
-        hrm.AddLocation(loc);
+        CHandleRange rg(handle.m_Value);
+        rg.AddRange(CHandleRange::TRange(
+            CHandleRange::TRange::GetWholeFrom(),
+            CHandleRange::TRange::GetWholeTo()), eNa_strand_unknown);
+        hrm.AddRanges(handle.m_Value, rg);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq); //### or eCore???
     }
 
@@ -442,7 +446,6 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     TSeqMaps::iterator found = m_SeqMaps.find(&seq);
     if (found == m_SeqMaps.end()) {
         // Create sequence map
-//        if ( !m_Loader )
         x_CreateSeqMap(seq);
         found = m_SeqMaps.find(&seq);
         if (found == m_SeqMaps.end()) {
@@ -450,7 +453,6 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
                 "CDataSource::x_GetSeqMap() -- Sequence map not found");
         }
     }
-    //### Obsolete call: (*found->second).x_CalculateSegmentLengths();
     return *found->second;
 }
 
@@ -463,15 +465,16 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
     // Call loader first
     if ( m_Loader ) {
         // Send request to the loader
-        CSeq_loc loc;
-        CConstRef<CSeq_id> id = handle.GetSeqId();
-        //### Whole, or Interval, or Point?
-        loc.SetWhole().Assign(*id);
         CHandleRangeMap hrm(GetIdMapper());
-        hrm.AddLocation(loc);
+        CHandleRange rg(handle.m_Value);
+        //### Should it be Whole or Point?
+        rg.AddRange(CHandleRange::TRange(
+            CHandleRange::TRange::GetWholeFrom(),
+            CHandleRange::TRange::GetWholeTo()), eNa_strand_unknown);
+        hrm.AddRanges(handle.m_Value, rg);
         m_Loader->GetRecords(hrm, CDataLoader::eSequence);
     }
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     if (handle.m_DataSource != this  &&  handle.m_DataSource != 0) {
         // Resolved to a different data source
         return false;
@@ -584,7 +587,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
 
 CTSE_Info* CDataSource::AddTSE(CSeq_entry& se, TTSESet* tse_set, bool dead)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     return x_AddToBioseqMap(se, dead, tse_set);
 }
 
@@ -592,7 +595,7 @@ CTSE_Info* CDataSource::AddTSE(CSeq_entry& se, TTSESet* tse_set, bool dead)
 CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 {
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
@@ -602,15 +605,15 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 
 bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### Write-lock TSE instead!!!
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(parent);
     if ( !found ) {
         return false;
     }
-    CSeq_entry& entry = *found;
-    _ASSERT(found  &&  entry.IsSet());
+    _ASSERT(found  &&  found->IsSet());
 
-    entry.SetSet().SetSeq_set().push_back(&bioseq);
+    found->SetSet().SetSeq_set().push_back(&bioseq);
 
     // Re-parentize, update index
     CSeq_entry* top = found;
@@ -627,7 +630,7 @@ bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
 
 bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(bioseq);
     if ( !found ) {
         return false;
@@ -651,7 +654,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
     cases "whole" reference should be the only segment of a delta-ext.
 */
     // Get non-const reference to the entry
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(bioseq);
     if ( !found ) {
         return false;
@@ -765,13 +768,15 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
 bool CDataSource::AttachAnnot(const CSeq_entry& entry,
                            CSeq_annot& annot)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(entry);
     if ( !found ) {
         return false;
     }
 
     CTSE_Info* tse = m_Entries[found];
+    //### Lock the TSE !!!!!!!!!!!
+
     CBioseq_set::TAnnot* annot_list = 0;
     if ( found->IsSet() ) {
         annot_list = &found->SetSet().SetAnnot();
@@ -910,6 +915,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 {
     // The entry must be already in the m_Entries map
     CTSE_Info* tse = m_Entries[&entry];
+    //### Lock the TSE !!!!!!!!!!!!!!
     tse->SetIndexed(true);
     const CBioseq::TAnnot* annot_list = 0;
     if ( entry.IsSeq() ) {
@@ -1266,7 +1272,7 @@ without the sequence but with references to the id and all dead TSEs
             break;
         }
     }
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     x_ResolveLocationHandles(loc, scope.m_History);
     TTSESet non_history;
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
@@ -1407,7 +1413,6 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
 
 bool CDataSource::DropTSE(const CSeq_entry& tse)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
     // Allow to drop top-level seq-entries only
     _ASSERT(tse.GetParentEntry() == 0);
 
@@ -1415,6 +1420,7 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return false;
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     if ( found->second->Locked() )
         return false; // Not really dropped, although found
     if ( m_Loader )
@@ -1656,7 +1662,7 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
 
 void CDataSource::x_CleanupUnusedEntries(void)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     iterate(TEntries, it, m_Entries) {
         if ( !it->second->Locked() ) {
             DropTSE(*it->first);
@@ -1667,7 +1673,7 @@ void CDataSource::x_CleanupUnusedEntries(void)
 
 void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
 {
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     TEntries::iterator tse_it = m_Entries.find(&tse);
     _ASSERT(tse_it != m_Entries.end());
     tse_it->second->m_Dead = dead;
@@ -1680,18 +1686,20 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     TTSESet loaded_tse_set;
     if ( m_Loader ) {
         // Send request to the loader
-        CSeq_loc loc;
-        loc.SetWhole().Assign(id);
+        CSeq_id_Handle idh = GetIdMapper().GetHandle(id);
         CHandleRangeMap hrm(GetIdMapper());
-        hrm.AddLocation(loc);
+        CHandleRange rg(idh);
+        rg.AddRange(CHandleRange::TRange(
+            CHandleRange::TRange::GetWholeFrom(),
+            CHandleRange::TRange::GetWholeTo()), eNa_strand_unknown);
+        hrm.AddRanges(idh, rg);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
     CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
-    CMutexGuard guard(sm_DataSource_Mutex);
+    //### CMutexGuard guard(sm_DataSource_Mutex);
     CTSE_Info* tse = x_FindBestTSE(idh, scope.m_History);
     CSeqMatch_Info match;
     if (tse) {
-        //### scope.x_AddToHistory(*tse);
         match = CSeqMatch_Info(idh, *tse, *this);
     }
     bool just_loaded = false;
