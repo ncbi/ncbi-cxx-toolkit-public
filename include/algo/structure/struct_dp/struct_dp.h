@@ -189,6 +189,9 @@ DP_MultipleLocalBlockAlignGeneric(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2004/02/19 01:46:04  thiessen
+* move to include/algo/structure/struct_dp
+*
 * Revision 1.12  2003/12/19 14:37:50  thiessen
 * add local generic loop function alignment routines
 *
