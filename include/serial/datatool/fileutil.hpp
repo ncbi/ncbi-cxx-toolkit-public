@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/08/15 19:16:10  juran
+* Add GetStdPath() prototype.
+*
 * Revision 1.10  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -190,6 +193,10 @@ string BaseName(const string& path);
 string DirName(const string& path);
 
 bool IsLocalPath(const string& path);
+
+// Convert system-dependent path to the standard path
+// ('\' ==> '/', ':' ==> '/', etc.)
+string GetStdPath(const string& path);
 
 END_NCBI_SCOPE
 
