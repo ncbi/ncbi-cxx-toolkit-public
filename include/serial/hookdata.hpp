@@ -33,6 +33,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbicntr.hpp>
+
 #include <serial/hookdatakey.hpp>
 
 
@@ -45,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 class CObject;
-class CHookDataData;
+class CLocalHookSetBase;
 
 class NCBI_XSERIAL_EXPORT CHookDataBase
 {
@@ -55,50 +57,44 @@ public:
 
     bool HaveHooks(void) const
         {
-            return m_Data != 0;
+            //return m_Data != 0;
+            return m_HookCount.Get() != 0;
         }
 
 protected:
     bool Empty(void) const
         {
-            return m_Data == 0;
+            //return m_Data == 0;
+            return m_HookCount.Get() == 0;
         }
 
-    typedef CHookDataKeyBase TKey;
+    typedef CLocalHookSetBase TLocalHooks;
     typedef CObject THook;
-    typedef CHookDataData TData;
 
-    bool SetLocalHook(TKey& key, THook* hook);
-    bool SetGlobalHook(THook* hook);
+    void SetLocalHook(TLocalHooks& key, THook* hook);
+    void SetGlobalHook(THook* hook);
 
-    bool ResetLocalHook(TKey& key);
-    bool ResetGlobalHook(void);
+    void ResetLocalHook(TLocalHooks& key);
+    void ResetGlobalHook(void);
 
-    THook* GetGlobalHook(void) const;
-    THook* GetHook(TKey& key) const;
+    void ForgetLocalHook(TLocalHooks& key);
+
+    THook* GetHook(const TLocalHooks& key) const
+        {
+            const THook* hook = key.GetHook(this);
+            if ( !hook ) {
+                hook = m_GlobalHook.GetPointer();
+            }
+            return const_cast<THook*>(hook);
+        }
 
 private:
-    void ResetData(void);
+    friend class CLocalHookSetBase;
 
-    TData& GetDataForSet(void);
-    TData& GetDataForReset(void);
-    const TData* GetDataForGet(void) const
-        {
-            return m_Data;
-        }
-
-    // CHookData can be in two states:
-    // 1. m_Hooks.get() == 0
-    //     This state means that no hooks were installed
-    //     m_CurrentFunction == type specific function
-    //     m_SecondaryFunction == function checking hooks
-    // 2. m_Hooks.get() != 0
-    //     This state means that some hooks were installed
-    //     m_CurrentFunction == function checking hooks
-    //     m_SecondaryFunction == original type specific function
-
-    TData* m_Data;
+    CRef<THook>    m_GlobalHook;
+    CAtomicCounter m_HookCount; // including global hook
 };
+
 
 template<class Hook, typename Function>
 class CHookData : public CHookDataBase
@@ -107,10 +103,12 @@ class CHookData : public CHookDataBase
 public:
     typedef Hook THook;
     typedef Function TFunction;
-    typedef CHookDataKey<THook> TKey;
+    typedef CLocalHookSet<THook> TLocalHooks;
 
     CHookData(TFunction typeFunction, TFunction hookFunction)
-        : m_CurrentFunction(typeFunction), m_SecondaryFunction(hookFunction)
+        : m_CurrentFunction(typeFunction),
+          m_DefaultFunction(typeFunction),
+          m_HookFunction(hookFunction)
         {
         }
 
@@ -121,57 +119,50 @@ public:
 
     TFunction GetDefaultFunction(void) const
         {
-            return HaveHooks()? m_SecondaryFunction: m_CurrentFunction;
-        }
-    TFunction& GetDefaultFunction(void)
-        {
-            return HaveHooks()? m_SecondaryFunction: m_CurrentFunction;
+            return m_DefaultFunction;
         }
 
-private:
-    void SwapFunctions(void)
+    void SetDefaultFunction(const TFunction& func)
         {
-            TFunction temp = m_CurrentFunction;
-            m_CurrentFunction = m_SecondaryFunction;
-            m_SecondaryFunction = temp;
+            m_DefaultFunction = func;
+            if ( !HaveHooks() ) {
+                m_CurrentFunction = func;
+            }
         }
 
-public:
-    void SetLocalHook(TKey& key, THook* hook)
+    void SetLocalHook(TLocalHooks& key, THook* hook)
         {
-            if ( CParent::SetLocalHook(key, hook) )
-                SwapFunctions();
+            CParent::SetLocalHook(key, hook);
+            m_CurrentFunction = m_HookFunction;
         }
     void SetGlobalHook(THook* hook)
         {
-            if ( CParent::SetGlobalHook(hook) )
-                SwapFunctions();
+            CParent::SetGlobalHook(hook);
+            m_CurrentFunction = m_HookFunction;
         }
 
-    void ResetLocalHook(TKey& key)
+    void ResetLocalHook(TLocalHooks& key)
         {
-            if ( CParent::ResetLocalHook(key) )
-                SwapFunctions();
+            CParent::ResetLocalHook(key);
+            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
         }
     void ResetGlobalHook(void)
         {
-            if ( CParent::ResetGlobalHook() )
-                SwapFunctions();
+            CParent::ResetGlobalHook();
+            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
         }
 
-    THook* GetGlobalHook(void) const
-        {
-            return static_cast<THook*>(CParent::GetGlobalHook());
-        }
-    THook* GetHook(TKey& key) const
+    THook* GetHook(const TLocalHooks& key) const
         {
             return static_cast<THook*>(CParent::GetHook(key));
         }
 
 private:
     TFunction m_CurrentFunction;   // current function
-    TFunction m_SecondaryFunction;
+    TFunction m_DefaultFunction;
+    TFunction m_HookFunction;
 };
+
 
 END_NCBI_SCOPE
 
@@ -183,6 +174,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.6  2003/04/15 14:15:13  siyan
 * Added doxygen support
 *

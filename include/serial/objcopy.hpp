@@ -62,9 +62,12 @@ class NCBI_XSERIAL_EXPORT CObjectStreamCopier
 {
 public:
     CObjectStreamCopier(CObjectIStream& in, CObjectOStream& out);
+    ~CObjectStreamCopier(void);
 
     CObjectIStream& In(void) const;
     CObjectOStream& Out(void) const;
+
+    void ResetLocalHooks(void);
 
     // main copy
     void Copy(const CObjectTypeInfo& type);
@@ -114,9 +117,9 @@ private:
 
 public:
     // hook support
-    CHookDataKey<CCopyObjectHook> m_ObjectHookKey;
-    CHookDataKey<CCopyClassMemberHook> m_ClassMemberHookKey;
-    CHookDataKey<CCopyChoiceVariantHook> m_ChoiceVariantHookKey;
+    CLocalHookSet<CCopyObjectHook> m_ObjectHookKey;
+    CLocalHookSet<CCopyClassMemberHook> m_ClassMemberHookKey;
+    CLocalHookSet<CCopyChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
 
@@ -133,6 +136,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.10  2003/04/15 16:18:10  siyan
 * Added doxygen support
 *

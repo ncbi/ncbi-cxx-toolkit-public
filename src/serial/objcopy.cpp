@@ -28,58 +28,12 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2003/05/16 18:02:18  gouriano
-* revised exception error messages
-*
-* Revision 1.9  2002/10/25 14:49:27  vasilche
-* NCBI C Toolkit compatibility code extracted to libxcser library.
-* Serial streams flags names were renamed to fXxx.
-*
-* Names of flags
-*
-* Revision 1.8  2002/08/30 16:22:21  vasilche
-* Removed excessive _TRACEs
-*
-* Revision 1.7  2002/08/27 17:44:14  grichenk
-* Added separator output to object copier
-*
-* Revision 1.6  2001/05/17 15:07:06  lavr
-* Typos corrected
-*
-* Revision 1.5  2000/10/20 15:51:39  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.4  2000/10/17 18:45:33  vasilche
-* Added possibility to turn off object cross reference detection in
-* CObjectIStream and CObjectOStream.
-*
-* Revision 1.3  2000/09/29 16:18:22  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.2  2000/09/18 20:00:22  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.1  2000/09/01 13:16:15  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+
 #include <serial/objcopy.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/objectinfo.hpp>
@@ -90,6 +44,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objistrimpl.hpp>
 #include <serial/objlist.hpp>
+#include <serial/serialimpl.hpp>
 
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
@@ -100,6 +55,19 @@ CObjectStreamCopier::CObjectStreamCopier(CObjectIStream& in,
                                          CObjectOStream& out)
     : m_In(in), m_Out(out)
 {
+}
+
+CObjectStreamCopier::~CObjectStreamCopier(void)
+{
+    ResetLocalHooks();
+}
+
+void CObjectStreamCopier::ResetLocalHooks(void)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_ObjectHookKey.Clear();
+    m_ClassMemberHookKey.Clear();
+    m_ChoiceVariantHookKey.Clear();
 }
 
 void CObjectStreamCopier::Copy(const CObjectTypeInfo& objectType)
@@ -245,3 +213,57 @@ void CObjectStreamCopier::CopyByteBlock(void)
 }
 
 END_NCBI_SCOPE
+
+/*
+* $Log$
+* Revision 1.11  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
+* Revision 1.10  2003/05/16 18:02:18  gouriano
+* revised exception error messages
+*
+* Revision 1.9  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
+* Revision 1.8  2002/08/30 16:22:21  vasilche
+* Removed excessive _TRACEs
+*
+* Revision 1.7  2002/08/27 17:44:14  grichenk
+* Added separator output to object copier
+*
+* Revision 1.6  2001/05/17 15:07:06  lavr
+* Typos corrected
+*
+* Revision 1.5  2000/10/20 15:51:39  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.4  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
+* Revision 1.3  2000/09/29 16:18:22  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.2  2000/09/18 20:00:22  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.1  2000/09/01 13:16:15  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* ===========================================================================
+*/

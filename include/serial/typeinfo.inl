@@ -83,13 +83,7 @@ void CTypeInfo::CopyData(CObjectStreamCopier& copier) const
 inline
 void CTypeInfo::SkipData(CObjectIStream& in) const
 {
-    if ( !m_ReadHookData.HaveHooks() ) {
-        m_SkipFunction(in, this);
-    }
-    else {
-        TObjectPtr object = Create();
-        ReadData(in, object);
-    }
+    m_SkipHookData.GetCurrentFunction()(in, this);
 }
 
 inline
@@ -115,7 +109,7 @@ void CTypeInfo::DefaultCopyData(CObjectStreamCopier& copier) const
 inline
 void CTypeInfo::DefaultSkipData(CObjectIStream& in) const
 {
-    m_SkipFunction(in, this);
+    m_SkipHookData.GetDefaultFunction()(in, this);
 }
 
 inline
@@ -130,6 +124,9 @@ bool CTypeInfo::IsCObject(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.7  2002/12/23 18:38:52  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.6  2003/07/17 22:49:48  vasilche
 * Added missing methods.
 *
@@ -176,6 +179,27 @@ void CObjectTypeInfoMI::ResetGlobalWriteHook(void) const
     GetNCMemberInfo()->ResetGlobalWriteHook();
 }
 
+void CObjectTypeInfoMI::SetLocalSkipHook(CObjectIStream& stream,
+                                         CSkipClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetLocalSkipHook(stream, hook);
+}
+
+void CObjectTypeInfoMI::SetGlobalSkipHook(CSkipClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetGlobalSkipHook(hook);
+}
+
+void CObjectTypeInfoMI::ResetLocalSkipHook(CObjectIStream& stream) const
+{
+    GetNCMemberInfo()->ResetLocalSkipHook(stream);
+}
+
+void CObjectTypeInfoMI::ResetGlobalSkipHook(void) const
+{
+    GetNCMemberInfo()->ResetGlobalSkipHook();
+}
+
 void CObjectTypeInfoMI::SetLocalCopyHook(CObjectStreamCopier& stream,
                                          CCopyClassMemberHook* hook) const
 {
@@ -277,6 +301,27 @@ void CObjectTypeInfoVI::ResetLocalWriteHook(CObjectOStream& stream) const
 void CObjectTypeInfoVI::ResetGlobalWriteHook(void) const
 {
     GetNCVariantInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfoVI::SetLocalSkipHook(CObjectIStream& stream,
+                                         CSkipChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalSkipHook(stream, hook);
+}
+
+void CObjectTypeInfoVI::SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalSkipHook(hook);
+}
+
+void CObjectTypeInfoVI::ResetLocalSkipHook(CObjectIStream& stream) const
+{
+    GetNCVariantInfo()->ResetLocalSkipHook(stream);
+}
+
+void CObjectTypeInfoVI::ResetGlobalSkipHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalSkipHook();
 }
 
 void CObjectTypeInfoVI::SetLocalCopyHook(CObjectStreamCopier& stream,

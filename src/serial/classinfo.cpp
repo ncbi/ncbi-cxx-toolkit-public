@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.69  2003/06/24 20:57:36  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -305,6 +308,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbimtx.hpp>
+
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <serial/objistr.hpp>

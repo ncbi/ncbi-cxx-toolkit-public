@@ -60,6 +60,7 @@ class CObjectInfo;
 
 class CReadObjectHook;
 class CWriteObjectHook;
+class CSkipObjectHook;
 class CCopyObjectHook;
 
 class CTypeInfoFunctions;
@@ -139,6 +140,11 @@ public:
     void ResetGlobalWriteHook(void);
     void ResetLocalWriteHook(CObjectOStream& out);
 
+    void SetGlobalSkipHook(CSkipObjectHook* hook);
+    void SetLocalSkipHook(CObjectIStream& in, CSkipObjectHook* hook);
+    void ResetGlobalSkipHook(void);
+    void ResetLocalSkipHook(CObjectIStream& in);
+
     void SetGlobalCopyHook(CCopyObjectHook* hook);
     void SetLocalCopyHook(CObjectStreamCopier& copier, CCopyObjectHook* hook);
     void ResetGlobalCopyHook(void);
@@ -176,8 +182,8 @@ private:
 
     CHookData<CReadObjectHook, TTypeReadFunction> m_ReadHookData;
     CHookData<CWriteObjectHook, TTypeWriteFunction> m_WriteHookData;
+    CHookData<CSkipObjectHook, TTypeSkipFunction> m_SkipHookData;
     CHookData<CCopyObjectHook, TTypeCopyFunction> m_CopyHookData;
-    TTypeSkipFunction m_SkipFunction;
 
     friend class CTypeInfoFunctions;
 };
@@ -196,6 +202,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.39  2003/04/15 16:19:06  siyan
 * Added doxygen support
 *

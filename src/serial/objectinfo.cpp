@@ -280,6 +280,27 @@ void CObjectTypeInfo::ResetGlobalWriteHook(void) const
     GetNCTypeInfo()->ResetGlobalWriteHook();
 }
 
+void CObjectTypeInfo::SetLocalSkipHook(CObjectIStream& stream,
+                                       CSkipObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetLocalSkipHook(stream, hook);
+}
+
+void CObjectTypeInfo::SetGlobalSkipHook(CSkipObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetGlobalSkipHook(hook);
+}
+
+void CObjectTypeInfo::ResetLocalSkipHook(CObjectIStream& stream) const
+{
+    GetNCTypeInfo()->ResetLocalSkipHook(stream);
+}
+
+void CObjectTypeInfo::ResetGlobalSkipHook(void) const
+{
+    GetNCTypeInfo()->ResetGlobalSkipHook();
+}
+
 void CObjectTypeInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                        CCopyObjectHook* hook) const
 {
@@ -307,6 +328,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.5  2003/04/16 19:58:26  ucko
 * Actually implement CObjectTypeInfo::GetPointedType; move CVS log to end.
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.6  2002/09/19 14:00:38  grichenk
 * Implemented CObjectHookGuard for write and copy hooks
 * Added DefaultRead/Write/Copy methods to base hook classes
@@ -194,5 +197,364 @@ void CCopyChoiceVariantHook::DefaultCopy(CObjectStreamCopier& copier,
     variant.GetVariantInfo()->DefaultCopyVariant(copier);
 }
 
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           CReadObjectHook& hook,
+                                           CObjectIStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Read),
+      m_HookType(eHook_Object)
+{
+    m_Stream.m_IStream = stream;
+    if ( stream ) {
+        info.SetLocalReadHook(*stream, &hook);
+    }
+    else {
+        info.SetGlobalReadHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           CWriteObjectHook& hook,
+                                           CObjectOStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Write),
+      m_HookType(eHook_Object)
+{
+    m_Stream.m_OStream = stream;
+    if ( stream ) {
+        info.SetLocalWriteHook(*stream, &hook);
+    }
+    else {
+        info.SetGlobalWriteHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           CSkipObjectHook& hook,
+                                           CObjectIStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Skip),
+      m_HookType(eHook_Object)
+{
+    m_Stream.m_IStream = stream;
+    if ( stream ) {
+        info.SetLocalSkipHook(*stream, &hook);
+    }
+    else {
+        info.SetGlobalSkipHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           CCopyObjectHook& hook,
+                                           CObjectStreamCopier* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Copy),
+      m_HookType(eHook_Object)
+{
+    m_Stream.m_Copier = stream;
+    if ( stream ) {
+        info.SetLocalCopyHook(*stream, &hook);
+    }
+    else {
+        info.SetGlobalCopyHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CReadClassMemberHook& hook,
+                                           CObjectIStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Read),
+      m_HookType(eHook_Member),
+      m_Id(id)
+{
+    m_Stream.m_IStream = stream;
+    CObjectTypeInfoMI member = info.FindMember(id);
+    if ( stream ) {
+        member.SetLocalReadHook(*stream, &hook);
+    }
+    else {
+        member.SetGlobalReadHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CWriteClassMemberHook& hook,
+                                           CObjectOStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Write),
+      m_HookType(eHook_Member),
+      m_Id(id)
+{
+    m_Stream.m_OStream = stream;
+    CObjectTypeInfoMI member = info.FindMember(id);
+    if ( stream ) {
+        member.SetLocalWriteHook(*stream, &hook);
+    }
+    else {
+        member.SetGlobalWriteHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CSkipClassMemberHook& hook,
+                                           CObjectIStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Skip),
+      m_HookType(eHook_Member),
+      m_Id(id)
+{
+    m_Stream.m_IStream = stream;
+    CObjectTypeInfoMI member = info.FindMember(id);
+    if ( stream ) {
+        member.SetLocalSkipHook(*stream, &hook);
+    }
+    else {
+        member.SetGlobalSkipHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CCopyClassMemberHook& hook,
+                                           CObjectStreamCopier* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Copy),
+      m_HookType(eHook_Member),
+      m_Id(id)
+{
+    m_Stream.m_Copier = stream;
+    CObjectTypeInfoMI member = info.FindMember(id);
+    if ( stream ) {
+        member.SetLocalCopyHook(*stream, &hook);
+    }
+    else {
+        member.SetGlobalCopyHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CReadChoiceVariantHook& hook,
+                                           CObjectIStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Read),
+      m_HookType(eHook_Variant),
+      m_Id(id)
+{
+    m_Stream.m_IStream = stream;
+    CObjectTypeInfoVI variant = info.FindVariant(id);
+    if ( stream ) {
+        variant.SetLocalReadHook(*stream, &hook);
+    }
+    else {
+        variant.SetGlobalReadHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CWriteChoiceVariantHook& hook,
+                                           CObjectOStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Write),
+      m_HookType(eHook_Variant),
+      m_Id(id)
+{
+    m_Stream.m_OStream = stream;
+    CObjectTypeInfoVI variant = info.FindVariant(id);
+    if ( stream ) {
+        variant.SetLocalWriteHook(*stream, &hook);
+    }
+    else {
+        variant.SetGlobalWriteHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CSkipChoiceVariantHook& hook,
+                                           CObjectIStream* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Skip),
+      m_HookType(eHook_Variant),
+      m_Id(id)
+{
+    m_Stream.m_IStream = stream;
+    CObjectTypeInfoVI variant = info.FindVariant(id);
+    if ( stream ) {
+        variant.SetLocalSkipHook(*stream, &hook);
+    }
+    else {
+        variant.SetGlobalSkipHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::CObjectHookGuardBase(const CObjectTypeInfo& info,
+                                           const string& id,
+                                           CCopyChoiceVariantHook& hook,
+                                           CObjectStreamCopier* stream)
+    : m_Hook(&hook),
+      m_HookMode(eHook_Copy),
+      m_HookType(eHook_Variant),
+      m_Id(id)
+{
+    m_Stream.m_Copier = stream;
+    CObjectTypeInfoVI variant = info.FindVariant(id);
+    if ( stream ) {
+        variant.SetLocalCopyHook(*stream, &hook);
+    }
+    else {
+        variant.SetGlobalCopyHook(&hook);
+    }
+}
+
+
+CObjectHookGuardBase::~CObjectHookGuardBase(void)
+{
+    _ASSERT(m_HookMode == eHook_None);
+    _ASSERT(m_HookType == eHook_Null);
+}
+
+
+void CObjectHookGuardBase::ResetHook(const CObjectTypeInfo& info)
+{
+    switch (m_HookType) {
+    case eHook_Object:
+        switch (m_HookMode) {
+        case eHook_Read:
+            if ( m_Stream.m_IStream ) {
+                info.ResetLocalReadHook(*m_Stream.m_IStream);
+            }
+            else {
+                info.ResetGlobalReadHook();
+            }
+            break;
+        case eHook_Write:
+            if ( m_Stream.m_OStream ) {
+                info.ResetLocalWriteHook(*m_Stream.m_OStream);
+            }
+            else {
+                info.ResetGlobalWriteHook();
+            }
+            break;
+        case eHook_Skip:
+            if ( m_Stream.m_IStream ) {
+                info.ResetLocalSkipHook(*m_Stream.m_IStream);
+            }
+            else {
+                info.ResetGlobalSkipHook();
+            }
+            break;
+        case eHook_Copy:
+            if ( m_Stream.m_Copier ) {
+                info.ResetLocalCopyHook(*m_Stream.m_Copier);
+            }
+            else {
+                info.ResetGlobalCopyHook();
+            }
+            break;
+        }
+        break;
+    case eHook_Member:
+    {
+        CObjectTypeInfoMI member = info.FindMember(m_Id);
+        switch (m_HookMode) {
+        case eHook_Read:
+            if ( m_Stream.m_IStream ) {
+                member.ResetLocalReadHook(*m_Stream.m_IStream);
+            }
+            else {
+                member.ResetGlobalReadHook();
+            }
+            break;
+        case eHook_Write:
+            if ( m_Stream.m_OStream ) {
+                member.ResetLocalWriteHook(*m_Stream.m_OStream);
+            }
+            else {
+                member.ResetGlobalWriteHook();
+            }
+            break;
+        case eHook_Skip:
+            if ( m_Stream.m_IStream ) {
+                member.ResetLocalSkipHook(*m_Stream.m_IStream);
+            }
+            else {
+                member.ResetGlobalSkipHook();
+            }
+            break;
+        case eHook_Copy:
+            if ( m_Stream.m_Copier ) {
+                member.ResetLocalCopyHook(*m_Stream.m_Copier);
+            }
+            else {
+                member.ResetGlobalCopyHook();
+            }
+            break;
+        }
+        break;
+    }
+    case eHook_Variant:
+    {
+        CObjectTypeInfoVI variant = info.FindVariant(m_Id);
+        switch (m_HookMode) {
+        case eHook_Read:
+            if ( m_Stream.m_IStream ) {
+                variant.ResetLocalReadHook(*m_Stream.m_IStream);
+            }
+            else {
+                variant.ResetGlobalReadHook();
+            }
+            break;
+        case eHook_Write:
+            if ( m_Stream.m_OStream ) {
+                variant.ResetLocalWriteHook(*m_Stream.m_OStream);
+            }
+            else {
+                variant.ResetGlobalWriteHook();
+            }
+            break;
+        case eHook_Skip:
+            if ( m_Stream.m_IStream ) {
+                variant.ResetLocalSkipHook(*m_Stream.m_IStream);
+            }
+            else {
+                variant.ResetGlobalSkipHook();
+            }
+            break;
+        case eHook_Copy:
+            if ( m_Stream.m_Copier ) {
+                variant.ResetLocalCopyHook(*m_Stream.m_Copier);
+            }
+            else {
+                variant.ResetGlobalCopyHook();
+            }
+            break;
+        }
+        break;
+    }
+    case eHook_Element:
+        break;
+    }
+    m_HookMode = eHook_None;
+    m_HookType = eHook_Null;
+}
 
 END_NCBI_SCOPE

@@ -176,6 +176,11 @@ public:
     void SetGlobalWriteHook(CWriteClassMemberHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetLocalSkipHook(CObjectIStream& stream,
+                          CSkipClassMemberHook* hook) const;
+    void SetGlobalSkipHook(CSkipClassMemberHook* hook) const;
+    void ResetLocalSkipHook(CObjectIStream& stream) const;
+    void ResetGlobalSkipHook(void) const;
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyClassMemberHook* hook) const;
     void SetGlobalCopyHook(CCopyClassMemberHook* hook) const;
@@ -225,6 +230,11 @@ public:
     void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetLocalSkipHook(CObjectIStream& stream,
+                          CSkipChoiceVariantHook* hook) const;
+    void SetGlobalSkipHook(CSkipChoiceVariantHook* hook) const;
+    void ResetLocalSkipHook(CObjectIStream& stream) const;
+    void ResetGlobalSkipHook(void) const;
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyChoiceVariantHook* hook) const;
     void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
@@ -417,6 +427,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.5  2003/07/17 22:49:31  vasilche
 * Added export specifiers.
 * Added missing methods.

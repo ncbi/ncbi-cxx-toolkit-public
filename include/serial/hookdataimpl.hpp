@@ -34,7 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <util/weakmap.hpp>
+
+//#include <util/weakmap.hpp>
 
 
 /** @addtogroup HookSupport
@@ -45,26 +46,30 @@
 
 BEGIN_NCBI_SCOPE
 
+/*
 class NCBI_XSERIAL_EXPORT CHookDataKeyData
 {
 public:
     typedef CRef<CObject> mapped_type;
-    typedef CWeakMapKey<mapped_type> TKey;
+    //typedef CWeakMapKey<mapped_type> TKey;
 
     CHookDataKeyData(void);
     ~CHookDataKeyData(void);
 
+    void Clear(void);
+
     TKey m_Key;
 };
 
-class NCBI_XSERIAL_EXPORT CHookDataData
+
+class NCBI_XSERIAL_EXPORT CHookDataData : public CObject
 {
 public:
     CHookDataData(void);
     ~CHookDataData(void);
 
     typedef CRef<CObject> mapped_type;
-    typedef CWeakMap<mapped_type> TMap;
+    //typedef CWeakMap<mapped_type> TMap;
     
     bool Empty(void) const;
 
@@ -73,13 +78,12 @@ public:
     void SetLocalHook(CHookDataKeyData& key, CObject* hook);
     void ResetLocalHook(CHookDataKeyData& key);
 
-    CObject* GetGlobalHook(void) const;
     CObject* GetHook(CHookDataKeyData& key) const;
 
     mutable mapped_type m_GlobalHook;
     mutable TMap m_LocalHooks;
 };
-
+*/
 
 /* @} */
 
@@ -94,6 +98,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.6  2003/04/15 14:15:15  siyan
 * Added doxygen support
 *

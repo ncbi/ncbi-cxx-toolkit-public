@@ -151,21 +151,15 @@ void CVariantInfo::WriteVariant(CObjectOStream& stream,
 }
 
 inline
-void CVariantInfo::CopyVariant(CObjectStreamCopier& stream) const
+void CVariantInfo::SkipVariant(CObjectIStream& stream) const
 {
-    m_CopyHookData.GetCurrentFunction()(stream, this);
+    m_SkipHookData.GetCurrentFunction()(stream, this);
 }
 
 inline
-void CVariantInfo::SkipVariant(CObjectIStream& stream) const
+void CVariantInfo::CopyVariant(CObjectStreamCopier& stream) const
 {
-    if ( !m_ReadHookData.HaveHooks() ) {
-        m_SkipFunction(stream, this);
-    }
-    else {
-        TObjectPtr object = CreateChoice();
-        ReadVariant(stream, object);
-    }
+    m_CopyHookData.GetCurrentFunction()(stream, this);
 }
 
 inline
@@ -183,15 +177,15 @@ void CVariantInfo::DefaultWriteVariant(CObjectOStream& stream,
 }
 
 inline
-void CVariantInfo::DefaultCopyVariant(CObjectStreamCopier& stream) const
+void CVariantInfo::DefaultSkipVariant(CObjectIStream& stream) const
 {
-    m_CopyHookData.GetDefaultFunction()(stream, this);
+    m_SkipHookData.GetDefaultFunction()(stream, this);
 }
 
 inline
-void CVariantInfo::DefaultSkipVariant(CObjectIStream& stream) const
+void CVariantInfo::DefaultCopyVariant(CObjectStreamCopier& stream) const
 {
-    m_SkipFunction(stream, this);
+    m_CopyHookData.GetDefaultFunction()(stream, this);
 }
 
 #endif /* def VARIANT__HPP  &&  ndef VARIANT__INL */
@@ -200,6 +194,9 @@ void CVariantInfo::DefaultSkipVariant(CObjectIStream& stream) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.10  2002/12/23 18:38:52  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -28,65 +28,12 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.11  2003/03/10 18:54:26  gouriano
-* use new structured exceptions (based on CException)
-*
-* Revision 1.10  2002/09/09 18:14:02  grichenk
-* Added CObjectHookGuard class.
-* Added methods to be used by hooks for data
-* reading and skipping.
-*
-* Revision 1.9  2001/05/17 15:07:09  lavr
-* Typos corrected
-*
-* Revision 1.8  2000/10/20 15:51:44  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.7  2000/10/17 18:45:36  vasilche
-* Added possibility to turn off object cross reference detection in
-* CObjectIStream and CObjectOStream.
-*
-* Revision 1.6  2000/10/13 20:22:57  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.5  2000/10/03 17:22:45  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.4  2000/09/29 16:18:25  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.3  2000/09/26 19:24:58  vasilche
-* Added user interface for setting read/write/copy hooks.
-*
-* Revision 1.2  2000/09/26 17:38:23  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.1  2000/09/18 20:00:26  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+
 #include <serial/variant.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
@@ -96,6 +43,7 @@
 #include <serial/delaybuf.hpp>
 #include <serial/choiceptr.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -160,16 +108,18 @@ public:
     static void WriteHookedVariant(CObjectOStream& out,
                                    const CVariantInfo* variantInfo,
                                    TConstObjectPtr choicePtr);
+    static void SkipNonObjectVariant(CObjectIStream& in,
+                                     const CVariantInfo* variantInfo);
+    static void SkipObjectPointerVariant(CObjectIStream& in,
+                                         const CVariantInfo* variantInfo);
+    static void SkipHookedVariant(CObjectIStream& in,
+                                  const CVariantInfo* variantInfo);
     static void CopyNonObjectVariant(CObjectStreamCopier& copier,
                                      const CVariantInfo* variantInfo);
     static void CopyObjectPointerVariant(CObjectStreamCopier& copier,
                                          const CVariantInfo* variantInfo);
     static void CopyHookedVariant(CObjectStreamCopier& copier,
                                   const CVariantInfo* variantInfo);
-    static void SkipNonObjectVariant(CObjectIStream& in,
-                                     const CVariantInfo* variantInfo);
-    static void SkipObjectPointerVariant(CObjectIStream& in,
-                                         const CVariantInfo* variantInfo);
 };
 
 typedef CVariantInfoFunctions TFunc;
@@ -183,8 +133,8 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
       m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
-      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
-      m_SkipFunction(&TFunc::SkipNonObjectVariant)
+      m_SkipHookData(&TFunc::SkipNonObjectVariant, &TFunc::SkipHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant)
 {
 }
 
@@ -197,8 +147,8 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
       m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
-      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
-      m_SkipFunction(&TFunc::SkipNonObjectVariant)
+      m_SkipHookData(&TFunc::SkipNonObjectVariant, &TFunc::SkipHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant)
 {
 }
 
@@ -211,8 +161,8 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
       m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
-      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
-      m_SkipFunction(&TFunc::SkipNonObjectVariant)
+      m_SkipHookData(&TFunc::SkipNonObjectVariant, &TFunc::SkipHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant)
 {
 }
 
@@ -225,8 +175,8 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
       m_WriteHookData(&TFunc::WriteInlineVariant, &TFunc::WriteHookedVariant),
-      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant),
-      m_SkipFunction(&TFunc::SkipNonObjectVariant)
+      m_SkipHookData(&TFunc::SkipNonObjectVariant, &TFunc::SkipHookedVariant),
+      m_CopyHookData(&TFunc::CopyNonObjectVariant, &TFunc::CopyHookedVariant)
 {
 }
 
@@ -280,39 +230,43 @@ CVariantInfo* CVariantInfo::SetDelayBuffer(CDelayBuffer* buffer)
 
 void CVariantInfo::UpdateFunctions(void)
 {
-    TVariantReadFunction& readFunc = m_ReadHookData.GetDefaultFunction();
-    TVariantWriteFunction& writeFunc = m_WriteHookData.GetDefaultFunction();
-    TVariantCopyFunction& copyFunc = m_CopyHookData.GetDefaultFunction();
+    // determine function pointers
+    TVariantGetConst getConstFunc;
+    TVariantGet getFunc;
+    TVariantReadFunction readFunc;
+    TVariantWriteFunction writeFunc;
+    TVariantSkipFunction skipFunc;
+    TVariantCopyFunction copyFunc;
 
     // read/write/get
     if ( CanBeDelayed() ) {
         _ASSERT(!IsSubClass());
-        m_GetConstFunction = &TFunc::GetConstDelayedVariant;
-        m_GetFunction = &TFunc::GetDelayedVariant;
+        getConstFunc = &TFunc::GetConstDelayedVariant;
+        getFunc = &TFunc::GetDelayedVariant;
         readFunc = &TFunc::ReadDelayedVariant;
         writeFunc = &TFunc::WriteDelayedVariant;
     }
     else if ( IsInline() ) {
-        m_GetConstFunction = &TFunc::GetConstInlineVariant;
-        m_GetFunction = &TFunc::GetInlineVariant;
+        getConstFunc = &TFunc::GetConstInlineVariant;
+        getFunc = &TFunc::GetInlineVariant;
         readFunc = &TFunc::ReadInlineVariant;
         writeFunc = &TFunc::WriteInlineVariant;
     }
     else if ( IsObjectPointer() ) {
-        m_GetConstFunction = &TFunc::GetConstPointerVariant;
-        m_GetFunction = &TFunc::GetPointerVariant;
+        getConstFunc = &TFunc::GetConstPointerVariant;
+        getFunc = &TFunc::GetPointerVariant;
         readFunc = &TFunc::ReadObjectPointerVariant;
         writeFunc = &TFunc::WriteObjectPointerVariant;
     }
     else if ( IsNonObjectPointer() ) {
-        m_GetConstFunction = &TFunc::GetConstPointerVariant;
-        m_GetFunction = &TFunc::GetPointerVariant;
+        getConstFunc = &TFunc::GetConstPointerVariant;
+        getFunc = &TFunc::GetPointerVariant;
         readFunc = &TFunc::ReadPointerVariant;
         writeFunc = &TFunc::WritePointerVariant;
     }
     else { // subclass
-        m_GetConstFunction = &TFunc::GetConstSubclassVariant;
-        m_GetFunction = &TFunc::GetSubclassVariant;
+        getConstFunc = &TFunc::GetConstSubclassVariant;
+        getFunc = &TFunc::GetSubclassVariant;
         readFunc = &TFunc::ReadSubclassVariant;
         writeFunc = &TFunc::WriteSubclassVariant;
     }
@@ -320,12 +274,20 @@ void CVariantInfo::UpdateFunctions(void)
     // copy/skip
     if ( IsObject() ) {
         copyFunc = &TFunc::CopyObjectPointerVariant;
-        m_SkipFunction = &TFunc::SkipObjectPointerVariant;
+        skipFunc = &TFunc::SkipObjectPointerVariant;
     }
     else {
         copyFunc = &TFunc::CopyNonObjectVariant;
-        m_SkipFunction = &TFunc::SkipNonObjectVariant;
+        skipFunc = &TFunc::SkipNonObjectVariant;
     }
+
+    // update function pointers
+    m_GetConstFunction = getConstFunc;
+    m_GetFunction = getFunc;
+    m_ReadHookData.SetDefaultFunction(readFunc);
+    m_WriteHookData.SetDefaultFunction(writeFunc);
+    m_SkipHookData.SetDefaultFunction(skipFunc);
+    m_CopyHookData.SetDefaultFunction(copyFunc);
 }
 
 void CVariantInfo::UpdateDelayedBuffer(CObjectIStream& in,
@@ -351,22 +313,22 @@ void CVariantInfo::UpdateDelayedBuffer(CObjectIStream& in,
 
 void CVariantInfo::SetReadFunction(TVariantReadFunction func)
 {
-    m_ReadHookData.GetDefaultFunction() = func;
+    m_ReadHookData.SetDefaultFunction(func);
 }
 
 void CVariantInfo::SetWriteFunction(TVariantWriteFunction func)
 {
-    m_WriteHookData.GetDefaultFunction() = func;
+    m_WriteHookData.SetDefaultFunction(func);
 }
 
 void CVariantInfo::SetCopyFunction(TVariantCopyFunction func)
 {
-    m_CopyHookData.GetDefaultFunction() = func;
+    m_CopyHookData.SetDefaultFunction(func);
 }
 
 void CVariantInfo::SetSkipFunction(TVariantSkipFunction func)
 {
-    m_SkipFunction = func;
+    m_SkipHookData.SetDefaultFunction(func);
 }
 
 TObjectPtr CVariantInfo::CreateChoice(void) const
@@ -736,6 +698,22 @@ void CVariantInfoFunctions::WriteHookedVariant(CObjectOStream& stream,
         variantInfo->DefaultWriteVariant(stream, choicePtr);
 }
 
+void CVariantInfoFunctions::SkipHookedVariant(CObjectIStream& stream,
+                                              const CVariantInfo* variantInfo)
+{
+    CSkipChoiceVariantHook* hook =
+        variantInfo->m_SkipHookData.GetHook(stream.m_ChoiceVariantSkipHookKey);
+    if ( hook ) {
+        CObjectTypeInfo type(variantInfo->GetChoiceType());
+        TMemberIndex index = variantInfo->GetIndex();
+        CObjectTypeInfo::CChoiceVariant variant(type, index);
+        _ASSERT(variant.Valid());
+        hook->SkipChoiceVariant(stream, variant);
+    }
+    else
+        variantInfo->DefaultSkipVariant(stream);
+}
+
 void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
                                               const CVariantInfo* variantInfo)
 {
@@ -754,65 +732,164 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
 
 void CVariantInfo::SetGlobalReadHook(CReadChoiceVariantHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.SetGlobalHook(hook);
 }
 
 void CVariantInfo::SetLocalReadHook(CObjectIStream& stream,
                                     CReadChoiceVariantHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
 void CVariantInfo::ResetGlobalReadHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
 void CVariantInfo::SetGlobalWriteHook(CWriteChoiceVariantHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.SetGlobalHook(hook);
 }
 
 void CVariantInfo::SetLocalWriteHook(CObjectOStream& stream,
                                      CWriteChoiceVariantHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
 void CVariantInfo::ResetGlobalWriteHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
+}
+
+void CVariantInfo::SetGlobalSkipHook(CSkipChoiceVariantHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetGlobalHook(hook);
+}
+
+void CVariantInfo::SetLocalSkipHook(CObjectIStream& stream,
+                                    CSkipChoiceVariantHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetLocalHook(stream.m_ChoiceVariantSkipHookKey, hook);
+}
+
+void CVariantInfo::ResetGlobalSkipHook(void)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.ResetGlobalHook();
+}
+
+void CVariantInfo::ResetLocalSkipHook(CObjectIStream& stream)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.ResetLocalHook(stream.m_ChoiceVariantSkipHookKey);
 }
 
 void CVariantInfo::SetGlobalCopyHook(CCopyChoiceVariantHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.SetGlobalHook(hook);
 }
 
 void CVariantInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                     CCopyChoiceVariantHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
 void CVariantInfo::ResetGlobalCopyHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.12  2003/07/29 18:47:48  vasilche
+* Fixed thread safeness of object stream hooks.
+*
+* Revision 1.11  2003/03/10 18:54:26  gouriano
+* use new structured exceptions (based on CException)
+*
+* Revision 1.10  2002/09/09 18:14:02  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
+* Revision 1.9  2001/05/17 15:07:09  lavr
+* Typos corrected
+*
+* Revision 1.8  2000/10/20 15:51:44  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.7  2000/10/17 18:45:36  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
+* Revision 1.6  2000/10/13 20:22:57  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.5  2000/10/03 17:22:45  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.4  2000/09/29 16:18:25  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.3  2000/09/26 19:24:58  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
+* Revision 1.2  2000/09/26 17:38:23  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.1  2000/09/18 20:00:26  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* ===========================================================================
+*/

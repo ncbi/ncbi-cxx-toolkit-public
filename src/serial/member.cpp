@@ -28,130 +28,12 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.29  2003/06/24 20:57:36  gouriano
-* corrected code generation and serialization of non-empty unnamed containers (XML)
-*
-* Revision 1.28  2003/05/06 16:23:42  gouriano
-* write unassigned mandatory member when assignment verification is off
-*
-* Revision 1.27  2003/04/29 18:30:36  gouriano
-* object data member initialization verification
-*
-* Revision 1.26  2003/04/10 20:13:39  vakatov
-* Rollback the "uninitialized member" verification -- it still needs to
-* be worked upon...
-*
-* Revision 1.24  2002/11/14 20:57:22  gouriano
-* modified constructor to use CClassTypeInfoBase,
-* added Attlist and Notag flags
-*
-* Revision 1.23  2002/09/25 19:37:36  gouriano
-* added the possibility of having no tag prefix in XML I/O streams
-*
-* Revision 1.22  2002/09/09 18:14:02  grichenk
-* Added CObjectHookGuard class.
-* Added methods to be used by hooks for data
-* reading and skipping.
-*
-* Revision 1.21  2001/07/25 19:14:24  grichenk
-* Implemented functions for reading/writing parent classes
-*
-* Revision 1.20  2001/05/22 13:44:47  grichenk
-* CMemberInfoFunctions::GetWithSetFlagMember() -- do not change SetFlag
-*
-* Revision 1.19  2001/05/17 15:07:06  lavr
-* Typos corrected
-*
-* Revision 1.18  2000/10/20 15:51:38  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.17  2000/10/17 18:45:33  vasilche
-* Added possibility to turn off object cross reference detection in
-* CObjectIStream and CObjectOStream.
-*
-* Revision 1.16  2000/10/13 20:22:55  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.15  2000/10/03 17:22:42  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.14  2000/09/29 16:18:22  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.13  2000/09/26 18:09:48  vasilche
-* Fixed some warnings.
-*
-* Revision 1.12  2000/09/26 17:38:21  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.11  2000/09/22 20:01:19  vasilche
-* Forgot to uncomment some code.
-*
-* Revision 1.10  2000/09/19 14:10:25  vasilche
-* Added files to MSVC project
-* Updated shell scripts to use new datattool path on MSVC
-* Fixed internal compiler error on MSVC
-*
-* Revision 1.9  2000/09/18 20:00:22  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.8  2000/06/07 19:45:58  vasilche
-* Some code cleaning.
-* Macros renaming in more clear way.
-* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
-*
-* Revision 1.7  2000/02/01 21:47:22  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Added buffering to CObjectIStreamAsn.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-*
-* Revision 1.6  1999/09/14 18:54:17  vasilche
-* Fixed bugs detected by gcc & egcs.
-* Removed unneeded includes.
-*
-* Revision 1.5  1999/09/01 17:38:12  vasilche
-* Fixed vector<char> implementation.
-* Added explicit naming of class info.
-* Moved IMPLICIT attribute from member info to class info.
-*
-* Revision 1.4  1999/08/31 17:50:08  vasilche
-* Implemented several macros for specific data types.
-* Added implicit members.
-* Added multimap and set.
-*
-* Revision 1.3  1999/08/13 15:53:50  vasilche
-* C++ analog of asntool: datatool
-*
-* Revision 1.2  1999/07/01 17:55:28  vasilche
-* Implemented ASN.1 binary write.
-*
-* Revision 1.1  1999/06/30 16:04:50  vasilche
-* Added support for old ASN.1 structures.
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+
 #include <serial/member.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
@@ -159,6 +41,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/serialimpl.hpp>
 #ifdef _DEBUG
 #include <serial/serialbase.hpp>
 #endif
@@ -220,6 +103,16 @@ public:
     static void WriteHookedMember(CObjectOStream& out,
                                   const CMemberInfo* memberInfo,
                                   TConstObjectPtr classPtr);
+    static void SkipSimpleMember(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo);
+    static void SkipMissingSimpleMember(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo);
+    static void SkipMissingOptionalMember(CObjectIStream& in,
+                                          const CMemberInfo* memberInfo);
+    static void SkipHookedMember(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo);
+    static void SkipMissingHookedMember(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo);
     static void CopySimpleMember(CObjectStreamCopier& copier,
                                  const CMemberInfo* memberInfo);
     static void CopyHookedMember(CObjectStreamCopier& copier,
@@ -230,12 +123,6 @@ public:
                                             const CMemberInfo* memberInfo);
     static void CopyMissingHookedMember(CObjectStreamCopier& copier,
                                         const CMemberInfo* memberInfo);
-    static void SkipSimpleMember(CObjectIStream& in,
-                                 const CMemberInfo* memberInfo);
-    static void SkipMissingSimpleMember(CObjectIStream& in,
-                                        const CMemberInfo* memberInfo);
-    static void SkipMissingOptionalMember(CObjectIStream& in,
-                                          const CMemberInfo* memberInfo);
 
 
     static void ReadParentClass(CObjectIStream& in,
@@ -273,12 +160,14 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                      SMemberReadFunctions(&TFunc::ReadHookedMember,
                                           &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
+      m_SkipHookData(SMemberSkipFunctions(&TFunc::SkipSimpleMember,
+                                          &TFunc::SkipMissingSimpleMember),
+                     SMemberSkipFunctions(&TFunc::SkipHookedMember,
+                                          &TFunc::SkipMissingHookedMember)),
       m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
                                           &TFunc::CopyMissingSimpleMember),
                      SMemberCopyFunctions(&TFunc::CopyHookedMember,
-                                          &TFunc::CopyMissingHookedMember)),
-      m_SkipFunction(&TFunc::SkipSimpleMember),
-      m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
+                                          &TFunc::CopyMissingHookedMember))
 {
 }
 
@@ -296,12 +185,14 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                      SMemberReadFunctions(&TFunc::ReadHookedMember,
                                           &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
+      m_SkipHookData(SMemberSkipFunctions(&TFunc::SkipSimpleMember,
+                                          &TFunc::SkipMissingSimpleMember),
+                     SMemberSkipFunctions(&TFunc::SkipHookedMember,
+                                          &TFunc::SkipMissingHookedMember)),
       m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
                                           &TFunc::CopyMissingSimpleMember),
                      SMemberCopyFunctions(&TFunc::CopyHookedMember,
-                                          &TFunc::CopyMissingHookedMember)),
-      m_SkipFunction(&TFunc::SkipSimpleMember),
-      m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
+                                          &TFunc::CopyMissingHookedMember))
 {
 }
 
@@ -319,12 +210,14 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                      SMemberReadFunctions(&TFunc::ReadHookedMember,
                                           &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
+      m_SkipHookData(SMemberSkipFunctions(&TFunc::SkipSimpleMember,
+                                          &TFunc::SkipMissingSimpleMember),
+                     SMemberSkipFunctions(&TFunc::SkipHookedMember,
+                                          &TFunc::SkipMissingHookedMember)),
       m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
                                           &TFunc::CopyMissingSimpleMember),
                      SMemberCopyFunctions(&TFunc::CopyHookedMember,
-                                          &TFunc::CopyMissingHookedMember)),
-      m_SkipFunction(&TFunc::SkipSimpleMember),
-      m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
+                                          &TFunc::CopyMissingHookedMember))
 {
 }
 
@@ -342,27 +235,30 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                      SMemberReadFunctions(&TFunc::ReadHookedMember,
                                           &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
+      m_SkipHookData(SMemberSkipFunctions(&TFunc::SkipSimpleMember,
+                                          &TFunc::SkipMissingSimpleMember),
+                     SMemberSkipFunctions(&TFunc::SkipHookedMember,
+                                          &TFunc::SkipMissingHookedMember)),
       m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
                                           &TFunc::CopyMissingSimpleMember),
                      SMemberCopyFunctions(&TFunc::CopyHookedMember,
-                                          &TFunc::CopyMissingHookedMember)),
-      m_SkipFunction(&TFunc::SkipSimpleMember),
-      m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
+                                          &TFunc::CopyMissingHookedMember))
 {
 }
 
 void CMemberInfo::SetParentClass(void)
 {
     GetId().SetParentTag();
-    m_ReadHookData.GetDefaultFunction() =
+    m_ReadHookData.SetDefaultFunction(
         SMemberReadFunctions(&TFunc::ReadParentClass,
-                             &TFunc::ReadMissingParentClass);
-    m_WriteHookData.GetDefaultFunction() = &TFunc::WriteParentClass;
-    m_CopyHookData.GetDefaultFunction() =
+                             &TFunc::ReadMissingParentClass));
+    m_WriteHookData.SetDefaultFunction(&TFunc::WriteParentClass);
+    m_SkipHookData.SetDefaultFunction(
+        SMemberSkipFunctions(&TFunc::SkipParentClass,
+                             &TFunc::SkipMissingParentClass));
+    m_CopyHookData.SetDefaultFunction(
         SMemberCopyFunctions(&TFunc::CopyParentClass,
-                             &TFunc::CopyMissingParentClass);
-    m_SkipFunction = &TFunc::SkipParentClass;
-    m_SkipMissingFunction = &TFunc::SkipMissingParentClass;
+                             &TFunc::CopyMissingParentClass));
 }
 
 CMemberInfo* CMemberInfo::SetDelayBuffer(CDelayBuffer* buffer)
@@ -482,20 +378,24 @@ CMemberInfo* CMemberInfo::SetOptional(const bool* setFlag)
 
 void CMemberInfo::UpdateFunctions(void)
 {
-    SMemberReadFunctions& readFuncs = m_ReadHookData.GetDefaultFunction();
-    TMemberWriteFunction& writeFunc = m_WriteHookData.GetDefaultFunction();
-    SMemberCopyFunctions& copyFuncs = m_CopyHookData.GetDefaultFunction();
+    // determine function pointers
+    TMemberGetConst getConstFunc;
+    TMemberGet getFunc;
+    SMemberReadFunctions readFuncs;
+    TMemberWriteFunction writeFunc;
+    SMemberSkipFunctions skipFuncs;
+    SMemberCopyFunctions copyFuncs;
 
     // get/readmain/write
     if ( CanBeDelayed() ) {
-        m_GetConstFunction = &TFunc::GetConstDelayedMember;
-        m_GetFunction = &TFunc::GetDelayedMember;
+        getConstFunc = &TFunc::GetConstDelayedMember;
+        getFunc = &TFunc::GetDelayedMember;
         readFuncs.m_Main = &TFunc::ReadLongMember;
         writeFunc = &TFunc::WriteLongMember;
     }
     else if ( !HaveSetFlag() ) {
-        m_GetConstFunction = &TFunc::GetConstSimpleMember;
-        m_GetFunction = &TFunc::GetSimpleMember;
+        getConstFunc = &TFunc::GetConstSimpleMember;
+        getFunc = &TFunc::GetSimpleMember;
         readFuncs.m_Main = &TFunc::ReadSimpleMember;
 
         if ( GetDefault() )
@@ -507,28 +407,35 @@ void CMemberInfo::UpdateFunctions(void)
     }
     else {
         // have set flag
-        m_GetConstFunction = &TFunc::GetConstSimpleMember;
-        m_GetFunction = &TFunc::GetWithSetFlagMember;
+        getConstFunc = &TFunc::GetConstSimpleMember;
+        getFunc = &TFunc::GetWithSetFlagMember;
         readFuncs.m_Main = &TFunc::ReadWithSetFlagMember;
         writeFunc = &TFunc::WriteWithSetFlagMember;
     }
 
     // copymain/skipmain
     copyFuncs.m_Main = &TFunc::CopySimpleMember;
-    m_SkipFunction = &TFunc::SkipSimpleMember;
+    skipFuncs.m_Main = &TFunc::SkipSimpleMember;
 
     // readmissing/copymissing/skipmissing
     if ( Optional() ) {
         readFuncs.m_Missing = &TFunc::ReadMissingOptionalMember;
         copyFuncs.m_Missing = &TFunc::CopyMissingOptionalMember;
-        m_SkipMissingFunction = &TFunc::SkipMissingOptionalMember;
+        skipFuncs.m_Missing = &TFunc::SkipMissingOptionalMember;
     }
     else {
         readFuncs.m_Missing = &TFunc::ReadMissingSimpleMember;
         copyFuncs.m_Missing = &TFunc::CopyMissingSimpleMember;
-        m_SkipMissingFunction = &TFunc::SkipMissingSimpleMember;
+        skipFuncs.m_Missing = &TFunc::SkipMissingSimpleMember;
     }
 
+    // update function pointers
+    m_GetConstFunction = getConstFunc;
+    m_GetFunction = getFunc;
+    m_ReadHookData.SetDefaultFunction(readFuncs);
+    m_WriteHookData.SetDefaultFunction(writeFunc);
+    m_SkipHookData.SetDefaultFunction(skipFuncs);
+    m_CopyHookData.SetDefaultFunction(copyFuncs);
 }
 
 void CMemberInfo::UpdateDelayedBuffer(CObjectIStream& in,
@@ -542,99 +449,148 @@ void CMemberInfo::UpdateDelayedBuffer(CObjectIStream& in,
 
 void CMemberInfo::SetReadFunction(TMemberReadFunction func)
 {
-    m_ReadHookData.GetDefaultFunction().m_Main = func;
+    SMemberReadFunctions funcs = m_ReadHookData.GetDefaultFunction();
+    funcs.m_Main = func;
+    m_ReadHookData.SetDefaultFunction(funcs);
 }
 
 void CMemberInfo::SetReadMissingFunction(TMemberReadFunction func)
 {
-    m_ReadHookData.GetDefaultFunction().m_Missing = func;
+    SMemberReadFunctions funcs = m_ReadHookData.GetDefaultFunction();
+    funcs.m_Missing = func;
+    m_ReadHookData.SetDefaultFunction(funcs);
 }
 
 void CMemberInfo::SetWriteFunction(TMemberWriteFunction func)
 {
-    m_WriteHookData.GetDefaultFunction() = func;
-}
-
-void CMemberInfo::SetCopyFunction(TMemberCopyFunction func)
-{
-    m_CopyHookData.GetDefaultFunction().m_Main = func;
-}
-
-void CMemberInfo::SetCopyMissingFunction(TMemberCopyFunction func)
-{
-    m_CopyHookData.GetDefaultFunction().m_Missing = func;
+    m_WriteHookData.SetDefaultFunction(func);
 }
 
 void CMemberInfo::SetSkipFunction(TMemberSkipFunction func)
 {
-    m_SkipFunction = func;
+    SMemberSkipFunctions funcs = m_SkipHookData.GetDefaultFunction();
+    funcs.m_Main = func;
+    m_SkipHookData.SetDefaultFunction(funcs);
 }
 
 void CMemberInfo::SetSkipMissingFunction(TMemberSkipFunction func)
 {
-    m_SkipMissingFunction = func;
+    SMemberSkipFunctions funcs = m_SkipHookData.GetDefaultFunction();
+    funcs.m_Missing = func;
+    m_SkipHookData.SetDefaultFunction(funcs);
+}
+
+void CMemberInfo::SetCopyFunction(TMemberCopyFunction func)
+{
+    SMemberCopyFunctions funcs = m_CopyHookData.GetDefaultFunction();
+    funcs.m_Main = func;
+    m_CopyHookData.SetDefaultFunction(funcs);
+}
+
+void CMemberInfo::SetCopyMissingFunction(TMemberCopyFunction func)
+{
+    SMemberCopyFunctions funcs = m_CopyHookData.GetDefaultFunction();
+    funcs.m_Missing = func;
+    m_CopyHookData.SetDefaultFunction(funcs);
 }
 
 void CMemberInfo::SetGlobalReadHook(CReadClassMemberHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.SetGlobalHook(hook);
 }
 
 void CMemberInfo::SetLocalReadHook(CObjectIStream& stream,
                                    CReadClassMemberHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
 void CMemberInfo::ResetGlobalReadHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
 void CMemberInfo::SetGlobalWriteHook(CWriteClassMemberHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.SetGlobalHook(hook);
 }
 
 void CMemberInfo::SetLocalWriteHook(CObjectOStream& stream,
                                     CWriteClassMemberHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
 void CMemberInfo::ResetGlobalWriteHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
+}
+
+void CMemberInfo::SetGlobalSkipHook(CSkipClassMemberHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetGlobalHook(hook);
+}
+
+void CMemberInfo::SetLocalSkipHook(CObjectIStream& stream,
+                                   CSkipClassMemberHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetLocalHook(stream.m_ClassMemberSkipHookKey, hook);
+}
+
+void CMemberInfo::ResetGlobalSkipHook(void)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.ResetGlobalHook();
+}
+
+void CMemberInfo::ResetLocalSkipHook(CObjectIStream& stream)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.ResetLocalHook(stream.m_ClassMemberSkipHookKey);
 }
 
 void CMemberInfo::SetGlobalCopyHook(CCopyClassMemberHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.SetGlobalHook(hook);
 }
 
 void CMemberInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                    CCopyClassMemberHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
 void CMemberInfo::ResetGlobalCopyHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
@@ -954,6 +910,38 @@ void CMemberInfoFunctions::WriteHookedMember(CObjectOStream& stream,
         memberInfo->DefaultWriteMember(stream, classPtr);
 }
 
+void CMemberInfoFunctions::SkipHookedMember(CObjectIStream& stream,
+                                            const CMemberInfo* memberInfo)
+{
+    CSkipClassMemberHook* hook =
+        memberInfo->m_SkipHookData.GetHook(stream.m_ClassMemberSkipHookKey);
+    if ( hook ) {
+        CObjectTypeInfo type(memberInfo->GetClassType());
+        TMemberIndex index = memberInfo->GetIndex();
+        CObjectTypeInfo::CMemberIterator member(type, index);
+        _ASSERT(member.Valid());
+        hook->SkipClassMember(stream, member);
+    }
+    else
+        memberInfo->DefaultSkipMember(stream);
+}
+
+void CMemberInfoFunctions::SkipMissingHookedMember(CObjectIStream& stream,
+                                                   const CMemberInfo* memberInfo)
+{
+    CSkipClassMemberHook* hook =
+        memberInfo->m_SkipHookData.GetHook(stream.m_ClassMemberSkipHookKey);
+    if ( hook ) {
+        CObjectTypeInfo type(memberInfo->GetClassType());
+        TMemberIndex index = memberInfo->GetIndex();
+        CObjectTypeInfo::CMemberIterator member(type, index);
+        _ASSERT(member.Valid());
+        hook->SkipMissingClassMember(stream, member);
+    }
+    else
+        memberInfo->DefaultSkipMissingMember(stream);
+}
+
 void CMemberInfoFunctions::CopyHookedMember(CObjectStreamCopier& stream,
                                             const CMemberInfo* memberInfo)
 {
@@ -1043,3 +1031,129 @@ void CMemberInfoFunctions::SkipMissingParentClass(CObjectIStream& in,
 
 
 END_NCBI_SCOPE
+
+/*
+* $Log$
+* Revision 1.30  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
+* Revision 1.29  2003/06/24 20:57:36  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
+* Revision 1.28  2003/05/06 16:23:42  gouriano
+* write unassigned mandatory member when assignment verification is off
+*
+* Revision 1.27  2003/04/29 18:30:36  gouriano
+* object data member initialization verification
+*
+* Revision 1.26  2003/04/10 20:13:39  vakatov
+* Rollback the "uninitialized member" verification -- it still needs to
+* be worked upon...
+*
+* Revision 1.24  2002/11/14 20:57:22  gouriano
+* modified constructor to use CClassTypeInfoBase,
+* added Attlist and Notag flags
+*
+* Revision 1.23  2002/09/25 19:37:36  gouriano
+* added the possibility of having no tag prefix in XML I/O streams
+*
+* Revision 1.22  2002/09/09 18:14:02  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
+* Revision 1.21  2001/07/25 19:14:24  grichenk
+* Implemented functions for reading/writing parent classes
+*
+* Revision 1.20  2001/05/22 13:44:47  grichenk
+* CMemberInfoFunctions::GetWithSetFlagMember() -- do not change SetFlag
+*
+* Revision 1.19  2001/05/17 15:07:06  lavr
+* Typos corrected
+*
+* Revision 1.18  2000/10/20 15:51:38  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.17  2000/10/17 18:45:33  vasilche
+* Added possibility to turn off object cross reference detection in
+* CObjectIStream and CObjectOStream.
+*
+* Revision 1.16  2000/10/13 20:22:55  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.15  2000/10/03 17:22:42  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.14  2000/09/29 16:18:22  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.13  2000/09/26 18:09:48  vasilche
+* Fixed some warnings.
+*
+* Revision 1.12  2000/09/26 17:38:21  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.11  2000/09/22 20:01:19  vasilche
+* Forgot to uncomment some code.
+*
+* Revision 1.10  2000/09/19 14:10:25  vasilche
+* Added files to MSVC project
+* Updated shell scripts to use new datattool path on MSVC
+* Fixed internal compiler error on MSVC
+*
+* Revision 1.9  2000/09/18 20:00:22  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.8  2000/06/07 19:45:58  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
+* Revision 1.7  2000/02/01 21:47:22  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
+* Revision 1.6  1999/09/14 18:54:17  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
+* Revision 1.5  1999/09/01 17:38:12  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
+* Revision 1.4  1999/08/31 17:50:08  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
+* Revision 1.3  1999/08/13 15:53:50  vasilche
+* C++ analog of asntool: datatool
+*
+* Revision 1.2  1999/07/01 17:55:28  vasilche
+* Implemented ASN.1 binary write.
+*
+* Revision 1.1  1999/06/30 16:04:50  vasilche
+* Added support for old ASN.1 structures.
+*
+* ===========================================================================
+*/

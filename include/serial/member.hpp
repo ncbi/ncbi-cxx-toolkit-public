@@ -56,6 +56,7 @@ class CObjectStreamCopier;
 
 class CReadClassMemberHook;
 class CWriteClassMemberHook;
+class CSkipClassMemberHook;
 class CCopyClassMemberHook;
 
 class CDelayBuffer;
@@ -138,6 +139,11 @@ public:
     void ResetGlobalWriteHook(void);
     void ResetLocalWriteHook(CObjectOStream& out);
 
+    void SetGlobalSkipHook(CSkipClassMemberHook* hook);
+    void SetLocalSkipHook(CObjectIStream& in, CSkipClassMemberHook* hook);
+    void ResetGlobalSkipHook(void);
+    void ResetLocalSkipHook(CObjectIStream& in);
+
     void SetGlobalCopyHook(CCopyClassMemberHook* hook);
     void SetLocalCopyHook(CObjectStreamCopier& copier,
                           CCopyClassMemberHook* hook);
@@ -181,9 +187,8 @@ private:
 
     CHookData<CReadClassMemberHook, SMemberReadFunctions> m_ReadHookData;
     CHookData<CWriteClassMemberHook, TMemberWriteFunction> m_WriteHookData;
+    CHookData<CSkipClassMemberHook, SMemberSkipFunctions> m_SkipHookData;
     CHookData<CCopyClassMemberHook, SMemberCopyFunctions> m_CopyHookData;
-    TMemberSkipFunction m_SkipFunction;
-    TMemberSkipFunction m_SkipMissingFunction;
 
     void SetReadFunction(TMemberReadFunction func);
     void SetReadMissingFunction(TMemberReadFunction func);
@@ -212,6 +217,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.28  2003/06/24 20:54:13  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *

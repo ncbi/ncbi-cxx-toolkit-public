@@ -75,16 +75,28 @@ typedef void (*TMemberSkipFunction)(CObjectIStream& in,
 
 struct SMemberReadFunctions
 {
-    SMemberReadFunctions(TMemberReadFunction main, TMemberReadFunction missing)
+    SMemberReadFunctions(TMemberReadFunction main = 0,
+                         TMemberReadFunction missing = 0)
         : m_Main(main), m_Missing(missing)
         {
         }
     TMemberReadFunction m_Main, m_Missing;
 };
 
+struct SMemberSkipFunctions
+{
+    SMemberSkipFunctions(TMemberSkipFunction main = 0,
+                         TMemberSkipFunction missing = 0)
+        : m_Main(main), m_Missing(missing)
+        {
+        }
+    TMemberSkipFunction m_Main, m_Missing;
+};
+
 struct SMemberCopyFunctions
 {
-    SMemberCopyFunctions(TMemberCopyFunction main, TMemberCopyFunction missing)
+    SMemberCopyFunctions(TMemberCopyFunction main = 0,
+                         TMemberCopyFunction missing = 0)
         : m_Main(main), m_Missing(missing)
         {
         }
@@ -115,6 +127,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.5  2003/04/15 14:50:09  ucko
 * Add missing close-comment delimiter!
 *

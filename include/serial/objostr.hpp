@@ -93,6 +93,7 @@ public:
                                 bool deleteOutStream = false);
 
     void Close(void);
+    void ResetLocalHooks(void);
 
     bool DetectLoops(void) const;
     void DetectLoops(bool detectLoops);
@@ -485,9 +486,9 @@ private:
 
 public:
     // hook support
-    CHookDataKey<CWriteObjectHook> m_ObjectHookKey;
-    CHookDataKey<CWriteClassMemberHook> m_ClassMemberHookKey;
-    CHookDataKey<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
+    CLocalHookSet<CWriteObjectHook> m_ObjectHookKey;
+    CLocalHookSet<CWriteClassMemberHook> m_ClassMemberHookKey;
+    CLocalHookSet<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
 };
 
 
@@ -504,6 +505,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.75  2003/05/22 20:08:41  gouriano
 * added UTF8 strings
 *

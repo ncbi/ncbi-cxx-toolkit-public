@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/07/29 18:47:48  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.37  2003/06/04 17:02:13  rsmith
 * Move static mutex out of function to work around CW complex initialization bug.
 *
@@ -194,7 +197,9 @@
 
 BEGIN_NCBI_SCOPE
 
-DEFINE_STATIC_MUTEX(s_TypeInfoMutex); /* put back inside GetTypeInfoMutex when Mac CodeWarrior 9 comes out */
+/* put back inside GetTypeInfoMutex when Mac CodeWarrior 9 comes out */
+DEFINE_STATIC_MUTEX(s_TypeInfoMutex);
+
 SSystemMutex& GetTypeInfoMutex(void)
 {
     return s_TypeInfoMutex;
@@ -208,6 +213,8 @@ public:
                              TTypeInfo objectType, TObjectPtr objectPtr);
     static void WriteWithHook(CObjectOStream& out,
                               TTypeInfo objectType, TConstObjectPtr objectPtr);
+    static void SkipWithHook(CObjectIStream& stream,
+                             TTypeInfo objectType);
     static void CopyWithHook(CObjectStreamCopier& copier,
                              TTypeInfo objectType);
 };
@@ -220,8 +227,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip)
+      m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
 {
     return;
 }
@@ -233,8 +240,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip)
+      m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
 {
     return;
 }
@@ -246,8 +253,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
-      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip)
+      m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
 {
     return;
 }
@@ -319,84 +326,121 @@ void CTypeInfo::SetCreateFunction(TTypeCreate func)
 void CTypeInfo::SetLocalReadHook(CObjectIStream& stream,
                                  CReadObjectHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.SetLocalHook(stream.m_ObjectHookKey, hook);
 }
 
 void CTypeInfo::SetGlobalReadHook(CReadObjectHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.SetGlobalHook(hook);
 }
 
 void CTypeInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.ResetLocalHook(stream.m_ObjectHookKey);
 }
 
 void CTypeInfo::ResetGlobalReadHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_ReadHookData.ResetGlobalHook();
 }
 
 void CTypeInfo::SetGlobalWriteHook(CWriteObjectHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.SetGlobalHook(hook);
 }
 
 void CTypeInfo::SetLocalWriteHook(CObjectOStream& stream,
                                  CWriteObjectHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.SetLocalHook(stream.m_ObjectHookKey, hook);
 }
 
 void CTypeInfo::ResetGlobalWriteHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetGlobalHook();
 }
 
 void CTypeInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_WriteHookData.ResetLocalHook(stream.m_ObjectHookKey);
+}
+
+void CTypeInfo::SetGlobalSkipHook(CSkipObjectHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetGlobalHook(hook);
+}
+
+void CTypeInfo::SetLocalSkipHook(CObjectIStream& stream,
+                                 CSkipObjectHook* hook)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.SetLocalHook(stream.m_ObjectSkipHookKey, hook);
+}
+
+void CTypeInfo::ResetGlobalSkipHook(void)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.ResetGlobalHook();
+}
+
+void CTypeInfo::ResetLocalSkipHook(CObjectIStream& stream)
+{
+    CMutexGuard guard(GetTypeInfoMutex());
+    m_SkipHookData.ResetLocalHook(stream.m_ObjectSkipHookKey);
 }
 
 void CTypeInfo::SetGlobalCopyHook(CCopyObjectHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.SetGlobalHook(hook);
 }
 
 void CTypeInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                  CCopyObjectHook* hook)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.SetLocalHook(stream.m_ObjectHookKey, hook);
 }
 
 void CTypeInfo::ResetGlobalCopyHook(void)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetGlobalHook();
 }
 
 void CTypeInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
+    CMutexGuard guard(GetTypeInfoMutex());
     m_CopyHookData.ResetLocalHook(stream.m_ObjectHookKey);
 }
 
 void CTypeInfo::SetReadFunction(TTypeReadFunction func)
 {
-    m_ReadHookData.GetDefaultFunction() = func;
+    m_ReadHookData.SetDefaultFunction(func);
 }
 
 void CTypeInfo::SetWriteFunction(TTypeWriteFunction func)
 {
-    m_WriteHookData.GetDefaultFunction() = func;
+    m_WriteHookData.SetDefaultFunction(func);
 }
 
 void CTypeInfo::SetCopyFunction(TTypeCopyFunction func)
 {
-    m_CopyHookData.GetDefaultFunction() = func;
+    m_CopyHookData.SetDefaultFunction(func);
 }
 
 void CTypeInfo::SetSkipFunction(TTypeSkipFunction func)
 {
-    m_SkipFunction = func;
+    m_SkipHookData.SetDefaultFunction(func);
 }
 
 void CTypeInfoFunctions::ReadWithHook(CObjectIStream& stream,
@@ -421,6 +465,17 @@ void CTypeInfoFunctions::WriteWithHook(CObjectOStream& stream,
         hook->WriteObject(stream, CConstObjectInfo(objectPtr, objectType));
     else
         objectType->DefaultWriteData(stream, objectPtr);
+}
+
+void CTypeInfoFunctions::SkipWithHook(CObjectIStream& stream,
+                                      TTypeInfo objectType)
+{
+    CSkipObjectHook* hook =
+        objectType->m_SkipHookData.GetHook(stream.m_ObjectSkipHookKey);
+    if ( hook )
+        hook->SkipObject(stream, objectType);
+    else
+        objectType->DefaultSkipData(stream);
 }
 
 void CTypeInfoFunctions::CopyWithHook(CObjectStreamCopier& stream,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.4  2002/11/04 21:29:20  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -54,164 +57,157 @@
 */
 
 #include <corelib/ncbistd.hpp>
+
 #include <serial/hookdata.hpp>
-#include <serial/hookdataimpl.hpp>
 #include <serial/hookdatakey.hpp>
-#include <util/weakmap.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
-CHookDataKeyBase::CHookDataKeyBase(void)
-    : m_Key(0)
+
+/////////////////////////////////////////////////////////////////////////////
+// CLocalHookSetBase
+/////////////////////////////////////////////////////////////////////////////
+
+
+CLocalHookSetBase::CLocalHookSetBase(void)
 {
 }
 
-CHookDataKeyBase::~CHookDataKeyBase(void)
+
+CLocalHookSetBase::~CLocalHookSetBase(void)
 {
-    delete m_Key;
+    Clear();
 }
 
-CHookDataKeyBase::TData& CHookDataKeyBase::Get(void)
+
+inline
+CLocalHookSetBase::THooks::iterator
+CLocalHookSetBase::x_Find(const THookData* key)
 {
-    TData* key = m_Key;
-    if ( !key )
-        m_Key = key = new TData;
-    return *key;
+    return lower_bound(m_Hooks.begin(), m_Hooks.end(), key, Compare());
 }
 
-CHookDataBase::TData& CHookDataBase::GetDataForSet(void)
+
+inline
+CLocalHookSetBase::THooks::const_iterator
+CLocalHookSetBase::x_Find(const THookData* key) const
 {
-    TData* hooks = m_Data;
-    if ( !hooks )
-        m_Data = hooks = new TData;
-    return *hooks;
+    return lower_bound(m_Hooks.begin(), m_Hooks.end(), key, Compare());
 }
 
-CHookDataBase::TData& CHookDataBase::GetDataForReset(void)
+
+inline
+bool CLocalHookSetBase::x_Found(THooks::const_iterator it,
+                                const THookData* key) const
 {
-    _ASSERT(m_Data);
-    return *m_Data;
+    return it != m_Hooks.end() && it->first == key;
 }
+
+
+void CLocalHookSetBase::SetHook(THookData* key, THook* hook)
+{
+    THooks::iterator it = x_Find(key);
+    _ASSERT(!x_Found(it, key));
+    m_Hooks.insert(it, TValue(key, CRef<CObject>(hook)));
+}
+
+
+void CLocalHookSetBase::ResetHook(THookData* key)
+{
+    THooks::iterator it = x_Find(key);
+    _ASSERT(x_Found(it, key));
+    m_Hooks.erase(it);
+}
+
+
+const CObject* CLocalHookSetBase::GetHook(const THookData* key) const
+{
+    THooks::const_iterator it = x_Find(key);
+    return x_Found(it, key)? it->second.GetPointer(): 0;
+}
+
+
+void CLocalHookSetBase::Clear(void)
+{
+    ITERATE ( THooks, it, m_Hooks ) {
+        _ASSERT(it->first);
+        it->first->ForgetLocalHook(*this);
+    }
+    m_Hooks.clear();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CHookDataBase
+/////////////////////////////////////////////////////////////////////////////
+
 
 CHookDataBase::CHookDataBase(void)
-    : m_Data(0)
 {
+    m_HookCount.Set(0);
 }
+
 
 CHookDataBase::~CHookDataBase(void)
 {
-    delete m_Data;
+    _ASSERT(m_HookCount.Get() == 0);
 }
 
-void CHookDataBase::ResetData(void)
-{
-    _ASSERT(m_Data);
-    delete m_Data;
-    m_Data = 0;
-}
 
-bool CHookDataBase::SetLocalHook(TKey& key, THook* hook)
+void CHookDataBase::SetLocalHook(TLocalHooks& key, THook* hook)
 {
     _ASSERT(hook);
-    bool wasEmpty = Empty();
-    GetDataForSet().SetLocalHook(key.Get(), hook);
+    _ASSERT(m_HookCount.Get() >= bool(m_GlobalHook));
+    key.SetHook(this, hook);
+    m_HookCount.Add(1);
+    _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
     _ASSERT(!Empty());
-    return wasEmpty;
 }
 
-bool CHookDataBase::SetGlobalHook(THook* hook)
+
+void CHookDataBase::ResetLocalHook(TLocalHooks& key)
+{
+    _ASSERT(!Empty());
+    _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
+    key.ResetHook(this);
+    m_HookCount.Add(-1);
+    _ASSERT(m_HookCount.Get() >= bool(m_GlobalHook));
+}
+
+
+void CHookDataBase::ForgetLocalHook(TLocalHooks& key)
+{
+    _ASSERT(!Empty());
+    _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
+    _ASSERT(key.GetHook(this) != 0);
+    m_HookCount.Add(-1);
+    _ASSERT(m_HookCount.Get() >= bool(m_GlobalHook));
+}
+
+
+void CHookDataBase::SetGlobalHook(THook* hook)
 {
     _ASSERT(hook);
-    bool wasEmpty = Empty();
-    GetDataForSet().SetGlobalHook(hook);
-    _ASSERT(!Empty());
-    return wasEmpty;
-}
-
-bool CHookDataBase::ResetLocalHook(TKey& key)
-{
-    _ASSERT(!Empty());
-    TData& hooks = GetDataForReset();
-    hooks.ResetLocalHook(key.Get());
-    if ( hooks.Empty() ) {
-        ResetData();
-        return true;
-    }
-    return false;
-}
-
-bool CHookDataBase::ResetGlobalHook(void)
-{
-    _ASSERT(!Empty());
-    TData& hooks = GetDataForReset();
-    hooks.ResetGlobalHook();
-    if ( hooks.Empty() ) {
-        ResetData();
-        return true;
-    }
-    return false;
-}
-
-CHookDataBase::THook* CHookDataBase::GetHook(TKey& key) const
-{
-    const TData* hooks = GetDataForGet();
-    if ( hooks )
-        return hooks->GetHook(key.Get());
-    return 0;
-}
-
-CHookDataKeyData::CHookDataKeyData(void)
-{
-}
-
-CHookDataKeyData::~CHookDataKeyData(void)
-{
-}
-
-CHookDataData::CHookDataData(void)
-{
-}
-
-CHookDataData::~CHookDataData(void)
-{
-}
-
-bool CHookDataData::Empty(void) const
-{
-    return !m_GlobalHook && m_LocalHooks.empty();
-}
-
-void CHookDataData::SetGlobalHook(CObject* hook)
-{
+    _ASSERT(!m_GlobalHook);
+    _ASSERT(m_HookCount.Get() >= 0);
     m_GlobalHook.Reset(hook);
+    m_HookCount.Add(1);
+    _ASSERT(m_HookCount.Get() > 0);
+    _ASSERT(!Empty());
 }
 
-void CHookDataData::ResetGlobalHook(void)
+
+void CHookDataBase::ResetGlobalHook(void)
 {
+    _ASSERT(!Empty());
+    _ASSERT(m_GlobalHook);
+    _ASSERT(m_HookCount.Get() > 0);
     m_GlobalHook.Reset();
+    m_HookCount.Add(-1);
+    _ASSERT(m_HookCount.Get() >= 0);
 }
 
-void CHookDataData::SetLocalHook(CHookDataKeyData& key, CObject* hook)
-{
-    m_LocalHooks.insert(key.m_Key, CRef<ncbi::CObject>(hook));
-}
-
-void CHookDataData::ResetLocalHook(CHookDataKeyData& key)
-{
-    m_LocalHooks.erase(key.m_Key);
-}
-
-CObject* CHookDataData::GetGlobalHook(void) const
-{
-    return m_GlobalHook.GetPointer();
-}
-
-CObject* CHookDataData::GetHook(CHookDataKeyData& key) const
-{
-    TMap::iterator i = m_LocalHooks.find(key.m_Key);
-    if ( i != m_LocalHooks.end() )
-        return i->second.GetPointer();
-    return m_GlobalHook.GetPointer();
-}
 
 END_NCBI_SCOPE

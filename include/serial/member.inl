@@ -114,6 +114,18 @@ void CMemberInfo::WriteMember(CObjectOStream& stream,
 }
 
 inline
+void CMemberInfo::SkipMember(CObjectIStream& stream) const
+{
+    m_SkipHookData.GetCurrentFunction().m_Main(stream, this);
+}
+
+inline
+void CMemberInfo::SkipMissingMember(CObjectIStream& stream) const
+{
+    m_SkipHookData.GetCurrentFunction().m_Missing(stream, this);
+}
+
+inline
 void CMemberInfo::CopyMember(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetCurrentFunction().m_Main(stream, this);
@@ -123,30 +135,6 @@ inline
 void CMemberInfo::CopyMissingMember(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetCurrentFunction().m_Missing(stream, this);
-}
-
-inline
-void CMemberInfo::SkipMember(CObjectIStream& stream) const
-{
-    if ( !m_ReadHookData.HaveHooks() ) {
-        m_SkipFunction(stream, this);
-    }
-    else {
-        TObjectPtr object = CreateClass();
-        ReadMember(stream, object);
-    }
-}
-
-inline
-void CMemberInfo::SkipMissingMember(CObjectIStream& stream) const
-{
-    if ( !m_ReadHookData.HaveHooks() ) {
-        m_SkipMissingFunction(stream, this);
-    }
-    else {
-        TObjectPtr object = CreateClass();
-        ReadMissingMember(stream, object);
-    }
 }
 
 inline
@@ -171,6 +159,18 @@ void CMemberInfo::DefaultWriteMember(CObjectOStream& stream,
 }
 
 inline
+void CMemberInfo::DefaultSkipMember(CObjectIStream& stream) const
+{
+    m_SkipHookData.GetDefaultFunction().m_Main(stream, this);
+}
+
+inline
+void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
+{
+    m_SkipHookData.GetDefaultFunction().m_Missing(stream, this);
+}
+
+inline
 void CMemberInfo::DefaultCopyMember(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetDefaultFunction().m_Main(stream, this);
@@ -182,24 +182,15 @@ void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
     m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
 }
 
-inline
-void CMemberInfo::DefaultSkipMember(CObjectIStream& stream) const
-{
-    m_SkipFunction(stream, this);
-}
-
-inline
-void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
-{
-    m_SkipMissingFunction(stream, this);
-}
-
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.18  2003/06/24 20:54:13  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *

@@ -33,7 +33,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
+#include <vector>
 
 /** @addtogroup HookSupport
  *
@@ -43,26 +45,68 @@
 
 BEGIN_NCBI_SCOPE
 
-class CHookDataKeyData;
+class CHookDataBase;
 
-class NCBI_XSERIAL_EXPORT CHookDataKeyBase
+class NCBI_XSERIAL_EXPORT CLocalHookSetBase
 {
 public:
-    typedef CHookDataKeyData TData;
+    typedef CHookDataBase THookData;
+    typedef CObject THook;
 
-    CHookDataKeyBase(void);
-    ~CHookDataKeyBase(void);
+    CLocalHookSetBase(void);
+    ~CLocalHookSetBase(void);
 
-    TData& Get(void);
+    void Clear(void);
+
+protected:
+    void ResetHook(THookData* key);
+    void SetHook(THookData* key, THook* hook);
+    const THook* GetHook(const THookData* key) const;
 
 private:
-    TData* m_Key;
+    CLocalHookSetBase(const CLocalHookSetBase&);
+    CLocalHookSetBase& operator=(const CLocalHookSetBase&);
+
+    friend class CHookDataBase;
+
+    typedef pair<THookData*, CRef<THook> > TValue;
+    typedef vector<TValue> THooks;
+
+    struct Compare
+    {
+        bool operator()(const TValue& value, const THookData* key) const
+            {
+                return value.first < key;
+            }
+    };
+
+
+    THooks::iterator x_Find(const THookData* key);
+    THooks::const_iterator x_Find(const THookData* key) const;
+    bool x_Found(THooks::const_iterator it, const THookData* key) const;
+
+    THooks m_Hooks;
 };
 
 
 template<class Hook>
-class CHookDataKey : public CHookDataKeyBase
+class CLocalHookSet : public CLocalHookSetBase
 {
+    typedef CLocalHookSetBase CParent;
+public:
+    typedef CParent::THookData THookData;
+    typedef Hook THook;
+
+protected:
+    friend class CHookDataBase;
+    void SetHook(THookData* key, THook* hook)
+        {
+            CParent::SetHook(key, hook);
+        }
+    THook* GetHook(THookData* key) const
+        {
+            return static_cast<THook*>(CParent::GetHook(key));
+        }
 };
 
 END_NCBI_SCOPE
@@ -75,6 +119,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.3  2003/04/15 14:15:16  siyan
 * Added doxygen support
 *

@@ -136,6 +136,11 @@ public:
     void SetGlobalWriteHook(CWriteObjectHook* hook) const;
     void ResetLocalWriteHook(CObjectOStream& stream) const;
     void ResetGlobalWriteHook(void) const;
+    void SetLocalSkipHook(CObjectIStream& stream,
+                          CSkipObjectHook* hook) const;
+    void SetGlobalSkipHook(CSkipObjectHook* hook) const;
+    void ResetLocalSkipHook(CObjectIStream& stream) const;
+    void ResetGlobalSkipHook(void) const;
     void SetLocalCopyHook(CObjectStreamCopier& stream,
                           CCopyObjectHook* hook) const;
     void SetGlobalCopyHook(CCopyObjectHook* hook) const;
@@ -339,6 +344,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.6  2003/04/15 16:18:11  siyan
 * Added doxygen support
 *

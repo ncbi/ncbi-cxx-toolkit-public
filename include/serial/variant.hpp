@@ -56,6 +56,7 @@ class CObjectStreamCopier;
 
 class CReadChoiceVariantHook;
 class CWriteChoiceVariantHook;
+class CSkipChoiceVariantHook;
 class CCopyChoiceVariantHook;
 
 class CDelayBuffer;
@@ -137,6 +138,11 @@ public:
     void ResetGlobalWriteHook(void);
     void ResetLocalWriteHook(CObjectOStream& out);
 
+    void SetGlobalSkipHook(CSkipChoiceVariantHook* hook);
+    void SetLocalSkipHook(CObjectIStream& in, CSkipChoiceVariantHook* hook);
+    void ResetGlobalSkipHook(void);
+    void ResetLocalSkipHook(CObjectIStream& in);
+
     void SetGlobalCopyHook(CCopyChoiceVariantHook* hook);
     void SetLocalCopyHook(CObjectStreamCopier& copier,
                           CCopyChoiceVariantHook* hook);
@@ -170,8 +176,8 @@ private:
 
     CHookData<CReadChoiceVariantHook, TVariantReadFunction> m_ReadHookData;
     CHookData<CWriteChoiceVariantHook, TVariantWriteFunction> m_WriteHookData;
+    CHookData<CSkipChoiceVariantHook, TVariantSkipFunction> m_SkipHookData;
     CHookData<CCopyChoiceVariantHook, TVariantCopyFunction> m_CopyHookData;
-    TVariantSkipFunction m_SkipFunction;
 
     void SetReadFunction(TVariantReadFunction func);
     void SetWriteFunction(TVariantWriteFunction func);
@@ -197,6 +203,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/07/29 18:47:47  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.10  2003/04/15 16:19:15  siyan
 * Added doxygen support
 *

@@ -143,6 +143,42 @@ public:
                       const CConstObjectInfoCV& variant);
 };
 
+class NCBI_XSERIAL_EXPORT CSkipObjectHook : public CObject
+{
+public:
+    virtual ~CSkipObjectHook(void);
+    
+    virtual void SkipObject(CObjectIStream& stream,
+                            const CObjectTypeInfo& type) = 0;
+    void DefaultSkip(CObjectIStream& stream,
+                     const CObjectTypeInfo& type);
+};
+
+class NCBI_XSERIAL_EXPORT CSkipClassMemberHook : public CObject
+{
+public:
+    virtual ~CSkipClassMemberHook(void);
+    
+    virtual void SkipClassMember(CObjectIStream& stream,
+                                 const CObjectTypeInfoMI& member) = 0;
+    virtual void SkipMissingClassMember(CObjectIStream& stream,
+                                        const CObjectTypeInfoMI& member);
+    void DefaultSkip(CObjectIStream& stream,
+                     const CObjectTypeInfoMI& member);
+};
+
+class NCBI_XSERIAL_EXPORT CSkipChoiceVariantHook : public CObject
+{
+public:
+    virtual ~CSkipChoiceVariantHook(void);
+
+    virtual void SkipChoiceVariant(CObjectIStream& stream,
+                                   const CObjectTypeInfoCV& variant) = 0;
+    void DefaultSkip(CObjectIStream& stream,
+                     const CObjectTypeInfoCV& variant);
+};
+
+
 class NCBI_XSERIAL_EXPORT CCopyObjectHook : public CObject
 {
 public:
@@ -185,61 +221,96 @@ enum EDefaultHookAction {
 };
 
 
-template <class T>
-class CObjectHookGuard
+class NCBI_XSERIAL_EXPORT CObjectHookGuardBase
 {
-public:
+protected:
     // object read hook
-    CObjectHookGuard(CReadObjectHook& hook, CObjectIStream* in = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         CReadObjectHook& hook,
+                         CObjectIStream* stream = 0);
     // object write hook
-    CObjectHookGuard(CWriteObjectHook& hook, CObjectOStream* out = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         CWriteObjectHook& hook,
+                         CObjectOStream* stream = 0);
+    // object skip hook
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         CSkipObjectHook& hook,
+                         CObjectIStream* stream = 0);
     // object copy hook
-    CObjectHookGuard(CCopyObjectHook& hook, CObjectStreamCopier* copier = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         CCopyObjectHook& hook,
+                         CObjectStreamCopier* stream = 0);
 
     // member read hook
-    CObjectHookGuard(string id,
-                     CReadClassMemberHook& hook,
-                     CObjectIStream* in = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CReadClassMemberHook& hook,
+                         CObjectIStream* stream = 0);
     // member write hook
-    CObjectHookGuard(string id,
-                     CWriteClassMemberHook& hook,
-                     CObjectOStream* out = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CWriteClassMemberHook& hook,
+                         CObjectOStream* stream = 0);
+    // member skip hook
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CSkipClassMemberHook& hook,
+                         CObjectIStream* stream = 0);
     // member copy hook
-    CObjectHookGuard(string id,
-                     CCopyClassMemberHook& hook,
-                     CObjectStreamCopier* copier = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CCopyClassMemberHook& hook,
+                         CObjectStreamCopier* stream = 0);
 
     // choice variant read hook
-    CObjectHookGuard(string id,
-                     CReadChoiceVariantHook& hook,
-                     CObjectIStream* in = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CReadChoiceVariantHook& hook,
+                         CObjectIStream* stream = 0);
     // choice variant write hook
-    CObjectHookGuard(string id,
-                     CWriteChoiceVariantHook& hook,
-                     CObjectOStream* out = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CWriteChoiceVariantHook& hook,
+                         CObjectOStream* stream = 0);
+    // choice variant skip hook
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CSkipChoiceVariantHook& hook,
+                         CObjectIStream* stream = 0);
     // choice variant copy hook
-    CObjectHookGuard(string id,
-                     CCopyChoiceVariantHook& hook,
-                     CObjectStreamCopier* copier = 0);
+    CObjectHookGuardBase(const CObjectTypeInfo& info,
+                         const string& id,
+                         CCopyChoiceVariantHook& hook,
+                         CObjectStreamCopier* stream = 0);
 
-    ~CObjectHookGuard(void);
+    ~CObjectHookGuardBase(void);
+
+    void ResetHook(const CObjectTypeInfo& info);
 
 private:
+    CObjectHookGuardBase(const CObjectHookGuardBase&);
+    const CObjectHookGuardBase& operator=(const CObjectHookGuardBase&);
+
     enum EHookMode {
+        eHook_None,
         eHook_Read,
         eHook_Write,
+        eHook_Skip,
         eHook_Copy
     };
     enum EHookType {
+        eHook_Null,         // object hook
         eHook_Object,       // object hook
         eHook_Member,       // class member hook
         eHook_Variant,      // choice variant hook
         eHook_Element       // container element hook
     };
 
-    CObjectIStream*      m_IStream;
-    CObjectOStream*      m_OStream;
-    CObjectStreamCopier* m_Copier;
+    union {
+        CObjectIStream*      m_IStream;
+        CObjectOStream*      m_OStream;
+        CObjectStreamCopier* m_Copier;
+    } m_Stream;
     CRef<CObject> m_Hook;
     EHookMode m_HookMode;
     EHookType m_HookType;
@@ -248,275 +319,98 @@ private:
 
 
 template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(CReadObjectHook& hook,
-                                      CObjectIStream* in)
-    : m_IStream(in),
-      m_Hook(&hook),
-      m_HookMode(eHook_Read),
-      m_HookType(eHook_Object)
+class CObjectHookGuard : CObjectHookGuardBase
 {
-    CType<T> type;
-    if ( m_IStream ) {
-        CObjectTypeInfo(type).SetLocalReadHook(*m_IStream, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).SetGlobalReadHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(CWriteObjectHook& hook,
-                                      CObjectOStream* out)
-    : m_OStream(out),
-      m_Hook(&hook),
-      m_HookMode(eHook_Write),
-      m_HookType(eHook_Object)
-{
-    CType<T> type;
-    if ( m_OStream ) {
-        CObjectTypeInfo(type).SetLocalWriteHook(*m_OStream, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).SetGlobalWriteHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(CCopyObjectHook& hook,
-                                      CObjectStreamCopier* copier)
-    : m_Copier(copier),
-      m_Hook(&hook),
-      m_HookMode(eHook_Copy),
-      m_HookType(eHook_Object)
-{
-    CType<T> type;
-    if ( m_Copier ) {
-        CObjectTypeInfo(type).SetLocalCopyHook(*m_Copier, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).SetGlobalCopyHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(string id,
-                                      CReadClassMemberHook& hook,
-                                      CObjectIStream* in)
-    : m_IStream(in),
-      m_Hook(&hook),
-      m_HookMode(eHook_Read),
-      m_HookType(eHook_Member),
-      m_Id(id)
-{
-    CType<T> type;
-    if ( m_IStream ) {
-        CObjectTypeInfo(type).FindMember(m_Id).SetLocalReadHook
-            (*m_IStream, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).FindMember(m_Id).SetGlobalReadHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(string id,
-                                      CWriteClassMemberHook& hook,
-                                      CObjectOStream* out)
-    : m_OStream(out),
-      m_Hook(&hook),
-      m_HookMode(eHook_Write),
-      m_HookType(eHook_Member),
-      m_Id(id)
-{
-    CType<T> type;
-    if ( m_OStream ) {
-        CObjectTypeInfo(type).FindMember(m_Id).SetLocalWriteHook
-            (*m_OStream, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).FindMember(m_Id).SetGlobalWriteHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(string id,
-                                      CCopyClassMemberHook& hook,
-                                      CObjectStreamCopier* copier)
-    : m_Copier(copier),
-      m_Hook(&hook),
-      m_HookMode(eHook_Copy),
-      m_HookType(eHook_Member),
-      m_Id(id)
-{
-    CType<T> type;
-    if ( m_Copier ) {
-        CObjectTypeInfo(type).FindMember(m_Id).SetLocalCopyHook
-            (*m_Copier, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).FindMember(m_Id).SetGlobalCopyHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(string id,
-                                      CReadChoiceVariantHook& hook,
-                                      CObjectIStream* in)
-    : m_IStream(in),
-      m_Hook(&hook),
-      m_HookMode(eHook_Read),
-      m_HookType(eHook_Variant),
-      m_Id(id)
-{
-    CType<T> type;
-    if ( m_IStream ) {
-        CObjectTypeInfo(type).FindVariant(m_Id).SetLocalReadHook
-            (*m_IStream, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).FindVariant(m_Id).SetGlobalReadHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(string id,
-                                      CWriteChoiceVariantHook& hook,
-                                      CObjectOStream* out)
-    : m_OStream(out),
-      m_Hook(&hook),
-      m_HookMode(eHook_Write),
-      m_HookType(eHook_Variant),
-      m_Id(id)
-{
-    CType<T> type;
-    if ( m_OStream ) {
-        CObjectTypeInfo(type).FindVariant(m_Id).
-            SetLocalWriteHook(*m_OStream, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).FindVariant(m_Id).SetGlobalWriteHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::CObjectHookGuard(string id,
-                                      CCopyChoiceVariantHook& hook,
-                                      CObjectStreamCopier* copier)
-    : m_Copier(copier),
-      m_Hook(&hook),
-      m_HookMode(eHook_Copy),
-      m_HookType(eHook_Variant),
-      m_Id(id)
-{
-    CType<T> type;
-    if ( m_Copier ) {
-        CObjectTypeInfo(type).FindVariant(m_Id).
-            SetLocalCopyHook(*m_Copier, &hook);
-    }
-    else {
-        CObjectTypeInfo(type).FindVariant(m_Id).SetGlobalCopyHook(&hook);
-    }
-}
-
-template <class T>
-CObjectHookGuard<T>::~CObjectHookGuard(void)
-{
-    CType<T> type;
-    switch (m_HookType) {
-    case eHook_Object:
-        switch (m_HookMode) {
-        case eHook_Read:
-            if ( m_IStream ) {
-                CObjectTypeInfo(type).ResetLocalReadHook(*m_IStream);
-            }
-            else {
-                CObjectTypeInfo(type).ResetGlobalReadHook();
-            }
-            break;
-        case eHook_Write:
-            if ( m_OStream ) {
-                CObjectTypeInfo(type).ResetLocalWriteHook(*m_OStream);
-            }
-            else {
-                CObjectTypeInfo(type).ResetGlobalWriteHook();
-            }
-            break;
-        case eHook_Copy:
-            if ( m_Copier ) {
-                CObjectTypeInfo(type).ResetLocalCopyHook(*m_Copier);
-            }
-            else {
-                CObjectTypeInfo(type).ResetGlobalCopyHook();
-            }
-            break;
+    typedef CObjectHookGuardBase CParent;
+public:
+    // object read hook
+    CObjectHookGuard(CReadObjectHook& hook,
+                     CObjectIStream* stream = 0)
+        : CParent(CType<T>(), hook, stream)
+        {
         }
-        break;
-    case eHook_Member:
-        switch (m_HookMode) {
-        case eHook_Read:
-            if ( m_IStream ) {
-                CObjectTypeInfo(type).FindMember(m_Id).ResetLocalReadHook
-                    (*m_IStream);
-            }
-            else {
-                CObjectTypeInfo(type).FindMember(m_Id).ResetGlobalReadHook();
-            }
-            break;
-        case eHook_Write:
-            if ( m_OStream ) {
-                CObjectTypeInfo(type).FindMember(m_Id).ResetLocalWriteHook
-                    (*m_OStream);
-            }
-            else {
-                CObjectTypeInfo(type).FindMember(m_Id).ResetGlobalWriteHook();
-            }
-            break;
-        case eHook_Copy:
-            if ( m_Copier ) {
-                CObjectTypeInfo(type).FindMember(m_Id).ResetLocalCopyHook
-                    (*m_Copier);
-            }
-            else {
-                CObjectTypeInfo(type).FindMember(m_Id).ResetGlobalCopyHook();
-            }
-            break;
+    // object write hook
+    CObjectHookGuard(CWriteObjectHook& hook,
+                     CObjectOStream* stream = 0)
+        : CParent(CType<T>(), hook, stream)
+        {
         }
-        break;
-    case eHook_Variant:
-        switch (m_HookMode) {
-        case eHook_Read:
-            if ( m_IStream ) {
-                CObjectTypeInfo(type).FindVariant(m_Id).ResetLocalReadHook
-                    (*m_IStream);
-            }
-            else {
-                CObjectTypeInfo(type).FindVariant(m_Id).ResetGlobalReadHook();
-            }
-            break;
-        case eHook_Write:
-            if ( m_OStream ) {
-                CObjectTypeInfo(type).FindVariant(m_Id).ResetLocalWriteHook
-                    (*m_OStream);
-            }
-            else {
-                CObjectTypeInfo(type).FindVariant(m_Id).ResetGlobalWriteHook();
-            }
-            break;
-        case eHook_Copy:
-            if ( m_Copier ) {
-                CObjectTypeInfo(type).FindVariant(m_Id).ResetLocalCopyHook
-                    (*m_Copier);
-            }
-            else {
-                CObjectTypeInfo(type).FindVariant(m_Id).ResetGlobalCopyHook();
-            }
-            break;
+    // object skip hook
+    CObjectHookGuard(CSkipObjectHook& hook,
+                     CObjectIStream* stream = 0)
+        : CParent(CType<T>(), hook, stream)
+        {
         }
-        break;
-    case eHook_Element:
-        break;
-    }
-}
+    // object copy hook
+    CObjectHookGuard(CCopyObjectHook& hook,
+                     CObjectStreamCopier* stream = 0)
+        : CParent(CType<T>(), hook, stream)
+        {
+        }
+
+    // member read hook
+    CObjectHookGuard(const string& id,
+                     CReadClassMemberHook& hook,
+                     CObjectIStream* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+    // member write hook
+    CObjectHookGuard(const string& id,
+                     CWriteClassMemberHook& hook,
+                     CObjectOStream* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+    // member skip hook
+    CObjectHookGuard(const string& id,
+                     CSkipClassMemberHook& hook,
+                     CObjectIStream* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+    // member copy hook
+    CObjectHookGuard(const string& id,
+                     CCopyClassMemberHook& hook,
+                     CObjectStreamCopier* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+
+    // choice variant read hook
+    CObjectHookGuard(const string& id,
+                     CReadChoiceVariantHook& hook,
+                     CObjectIStream* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+    // choice variant write hook
+    CObjectHookGuard(const string& id,
+                     CWriteChoiceVariantHook& hook,
+                     CObjectOStream* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+    // choice variant skip hook
+    CObjectHookGuard(const string& id,
+                     CSkipChoiceVariantHook& hook,
+                     CObjectIStream* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+    // choice variant copy hook
+    CObjectHookGuard(const string& id,
+                     CCopyChoiceVariantHook& hook,
+                     CObjectStreamCopier* stream = 0)
+        : CParent(CType<T>(), id, hook, stream)
+        {
+        }
+
+    ~CObjectHookGuard(void)
+        {
+            CParent::ResetHook(CType<T>());
+        }
+};
 
 
 /* @} */
@@ -532,6 +426,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.12  2003/04/15 16:18:18  siyan
 * Added doxygen support
 *
@@ -547,7 +444,7 @@ END_NCBI_SCOPE
 * Fixed CObjectHookGuard methods for GCC
 *
 * Revision 1.7  2002/09/09 18:20:18  grichenk
-* Fixed includes (to declare Type<>)
+* Fixed streamcludes (to declare Type<>)
 *
 * Revision 1.6  2002/09/09 18:13:59  grichenk
 * Added CObjectHookGuard class.
@@ -561,17 +458,17 @@ END_NCBI_SCOPE
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
 * Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
+* Fixed CObject allocation/deallocation stream streams.
+* Moved streamstantiation of several templates stream separate source file.
 *
 * Revision 1.3  2000/09/26 17:38:07  vasilche
-* Fixed incomplete choiceptr implementation.
+* Fixed streamcomplete choiceptr implementation.
 * Removed temporary comments.
 *
 * Revision 1.2  2000/09/18 20:00:04  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* All hooks now are stored stream CTypeInfo/CMemberInfo/CVariantInfo.
 * Most type specific functions now are implemented via function pointers instead of virtual functions.
 *
 * Revision 1.1  2000/08/15 19:44:39  vasilche

@@ -74,6 +74,9 @@ class CObjectStreamCopier;
 class CReadObjectHook;
 class CReadClassMemberHook;
 class CReadChoiceVariantHook;
+class CSkipObjectHook;
+class CSkipClassMemberHook;
+class CSkipChoiceVariantHook;
 
 class CReadObjectInfo;
 class CReadObjectList;
@@ -93,6 +96,7 @@ public:
     void Open(CByteSource& source);
     void Open(CNcbiIstream& inStream, bool deleteInStream = false);
     void Close(void);
+    void ResetLocalHooks(void);
 
     static CObjectIStream* Open(ESerialDataFormat format,
                                 CNcbiIstream& inStream,
@@ -536,9 +540,12 @@ private:
 
 public:
     // hook support
-    CHookDataKey<CReadObjectHook> m_ObjectHookKey;
-    CHookDataKey<CReadClassMemberHook> m_ClassMemberHookKey;
-    CHookDataKey<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
+    CLocalHookSet<CReadObjectHook> m_ObjectHookKey;
+    CLocalHookSet<CReadClassMemberHook> m_ClassMemberHookKey;
+    CLocalHookSet<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
+    CLocalHookSet<CSkipObjectHook> m_ObjectSkipHookKey;
+    CLocalHookSet<CSkipClassMemberHook> m_ClassMemberSkipHookKey;
+    CLocalHookSet<CSkipChoiceVariantHook> m_ChoiceVariantSkipHookKey;
 };
 
 inline
@@ -564,6 +571,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/07/29 18:47:46  vasilche
+* Fixed thread safeness of object stream hooks.
+*
 * Revision 1.83  2003/05/22 20:08:41  gouriano
 * added UTF8 strings
 *
