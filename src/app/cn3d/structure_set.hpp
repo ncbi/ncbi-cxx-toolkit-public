@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.54  2001/09/18 03:09:38  thiessen
 * add preliminary sequence import pipeline
 *
@@ -198,11 +201,8 @@
 #ifndef CN3D_STRUCTURESET__HPP
 #define CN3D_STRUCTURESET__HPP
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
-
-#include <string>
-#include <map>
-#include <vector>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
@@ -211,6 +211,13 @@
 #include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/cdd/Align_annot_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+
+#include <string>
+#include <map>
+#include <vector>
+
+#include <objseq.h>
+#include <objloc.h>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
@@ -329,6 +336,10 @@ private:
     NameMap nameMap;
     unsigned int lastAtomName;
 
+    // holds C Bioseqs associated with Sequences
+    typedef std::map < const Sequence *, Bioseq * > BioseqMap;
+    BioseqMap bioseqs;
+
     // updates sequences in the asn (but not in the SequenceSet), to remove any sequences
     // that are not used by the current alignmentSet or updates
     void RemoveUnusedSequences(void);
@@ -349,6 +360,10 @@ public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
     void StyleDataChanged(void) const { dataChanged |= eStyleData; }
     void UserAnnotationDataChanged(void) const { dataChanged |= eUserAnnotationData; }
+
+    // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
+    Bioseq * GetOrCreateBioseq(const Sequence *sequence);
+    void CreateAllBioseqs(const BlockMultipleAlignment *multiple);
 
     // CDD-specific stuff
     bool IsCDD(void) const { return (cddData != NULL); }

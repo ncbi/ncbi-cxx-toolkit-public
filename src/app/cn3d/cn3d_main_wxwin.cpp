@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2001/09/27 15:37:58  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.86  2001/09/26 15:27:54  thiessen
 * tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
 *
@@ -358,6 +361,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
+#include <ctools/ctools.h>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
@@ -385,15 +389,10 @@
 #include <gdk/gdk.h>    // needed for GdkFont
 #endif
 
+#include <ncbienv.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
-
-// from C-toolkit ncbienv.h - for setting registry parameter; used here to avoid having to
-// bring in lots of C-toolkit headers
-extern "C" {
-    extern int Nlm_TransientSetAppParam(const char* file, const char* section, const char* type, const char* value);
-}
 
 
 // `Main program' equivalent, creating GUI framework
@@ -598,6 +597,7 @@ Cn3DApp::Cn3DApp() : wxApp()
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
+    SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
 #ifdef TEST_WXGLAPP
     if (InitGLVisual(NULL))
@@ -804,12 +804,14 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_OPEN, "&Open");
     menu->Append(MID_SAVE, "&Save");
     menu->AppendSeparator();
+    menu->Append(MID_REFIT_ALL, "&Realign Structures");
+    menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
+    menu->AppendSeparator();
     menu->Append(MID_PREFERENCES, "&Preferences...");
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_OPENGL_FONT, "S&tructure Window");
     subMenu->Append(MID_SEQUENCE_FONT, "Se&quence Windows");
     menu->Append(MID_FONTS, "Set &Fonts...", subMenu);
-    menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
     menu->AppendSeparator();
     menu->Append(MID_EXIT, "E&xit");
     menuBar->Append(menu, "&File");
@@ -856,11 +858,6 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
     menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
     menuBar->Append(menu, "Show/&Hide");
-
-    // Structure Alignment menu
-    menu = new wxMenu;
-    menu->Append(MID_REFIT_ALL, "Recompute &Alignments");
-    menuBar->Append(menu, "S&tructures");
 
     // Style menu
     menu = new wxMenu;

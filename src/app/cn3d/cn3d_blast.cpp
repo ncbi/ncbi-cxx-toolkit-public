@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/09/27 15:37:58  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.2  2001/09/19 22:55:39  thiessen
 * add preliminary net import and BLAST
 *
@@ -69,7 +72,7 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-void CreateNewPairwiseAlignments(const Sequence *master,
+void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
     const SequenceList& newSequences, AlignmentList *newAlignments)
 {
     // set up BLAST stuff

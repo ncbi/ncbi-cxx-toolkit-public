@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.15  2001/09/18 03:09:39  thiessen
 * add preliminary sequence import pipeline
 *
@@ -115,6 +118,7 @@ private:
     enum {
         MID_THREAD_ONE = START_VIEWER_WINDOW_DERIVED_MID,
         MID_THREAD_ALL,
+        MID_BLAST_ONE,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
@@ -124,6 +128,7 @@ private:
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnRunThreader(wxCommandEvent& event);
+    void OnRunBlast(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
     void OnImport(wxCommandEvent& event);
@@ -131,6 +136,11 @@ private:
     void ThreadSingleOff(void)
     {
         menuBar->Check(MID_THREAD_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+    void BlastSingleOff(void)
+    {
+        menuBar->Check(MID_BLAST_ONE, false);
         SetCursor(wxNullCursor);
     }
     void MergeSingleOff(void)
@@ -153,12 +163,14 @@ private:
 
 public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
+    bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
     void CancelDerivedSpecialModes(void)
     {
         if (DoThreadSingle()) ThreadSingleOff();
+        if (DoBlastSingle()) BlastSingleOff();
         if (DoDeleteSingle()) DeleteSingleOff();
         if (DoMergeSingle()) MergeSingleOff();
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/09/27 15:36:47  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.22  2001/08/29 20:03:27  juran
 * Heed warnings via static_cast.
 *
@@ -328,6 +331,7 @@ public:
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
 
     int NBlocks(void) const { return static_cast<int>(blocks.size()); }
+    int NAlignedBlocks(void) const;
     int NRows(void) const { return static_cast<int>(sequences->size()); }
     int AlignmentWidth(void) const { return totalWidth; }
 

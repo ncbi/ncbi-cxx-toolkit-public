@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/09/27 15:38:00  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.23  2001/09/24 14:37:52  thiessen
 * more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
 *
@@ -133,6 +136,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
     EVT_MENU      (MID_IMPORT,                          UpdateViewerWindow::OnImport)
+    EVT_MENU      (MID_BLAST_ONE,                       UpdateViewerWindow::OnRunBlast)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -141,21 +145,27 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
         wxPoint(0,50), wxSize(1000,300)),
     updateViewer(thisUpdateViewer)
 {
+    // View menu
+    viewMenu->Append(MID_IMPORT, "&Import Sequence");
+
+    // Mouse mode menu
+    menuBar->Enable(MID_SELECT_COLS, false);
+
+    // Algorithms menu
     wxMenu *menu = new wxMenu;
     menu->Append(MID_THREAD_ONE, "Thread &Single", "", true);
     menu->Append(MID_THREAD_ALL, "Thread &All");
-    menuBar->Append(menu, "&Threader");
+    menu->AppendSeparator();
+    menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
+    menuBar->Append(menu, "Al&gorithms");
 
-    menuBar->Enable(MID_SELECT_COLS, false);
-
+    // Alignments menu
     menu = new wxMenu;
     menu->Append(MID_MERGE_ONE, "&Merge Single", "", true);
     menu->Append(MID_MERGE_ALL, "Merge &All");
     menu->AppendSeparator();
     menu->Append(MID_DELETE_ONE, "&Delete Single", "", true);
     menu->Append(MID_DELETE_ALL, "Delete A&ll");
-    menu->AppendSeparator();
-    menu->Append(MID_IMPORT, "&Import...");
     menuBar->Append(menu, "&Alignments");
 
     // editor always on
@@ -194,6 +204,7 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
 {
     switch (event.GetId()) {
         case MID_THREAD_ONE:
+            if (DoBlastSingle()) BlastSingleOff();
             if (DoMergeSingle()) MergeSingleOff();
             if (DoDeleteSingle()) DeleteSingleOff();
             CancelBaseSpecialModes();
@@ -226,6 +237,7 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
     switch (event.GetId()) {
         case MID_MERGE_ONE:
             if (DoThreadSingle()) ThreadSingleOff();
+            if (DoBlastSingle()) BlastSingleOff();
             if (DoDeleteSingle()) DeleteSingleOff();
             CancelBaseSpecialModes();
             if (DoMergeSingle())
@@ -250,12 +262,13 @@ void UpdateViewerWindow::OnDelete(wxCommandEvent& event)
     switch (event.GetId()) {
         case MID_DELETE_ONE:
             if (DoThreadSingle()) ThreadSingleOff();
+            if (DoBlastSingle()) BlastSingleOff();
             if (DoMergeSingle()) MergeSingleOff();
             CancelBaseSpecialModes();
             if (DoDeleteSingle())
                 SetCursor(*wxCROSS_CURSOR);
             else
-            DeleteSingleOff();
+                DeleteSingleOff();
             break;
         case MID_DELETE_ALL: {
             ViewerBase::AlignmentList empty;
@@ -290,7 +303,23 @@ bool UpdateViewerWindow::SaveDialog(bool canCancel)
 
 void UpdateViewerWindow::OnImport(wxCommandEvent& event)
 {
-    if (event.GetId() == MID_IMPORT) updateViewer->ImportAndAlign();
+    if (event.GetId() == MID_IMPORT) updateViewer->ImportSequence();
+}
+
+void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_BLAST_ONE:
+            if (DoThreadSingle()) ThreadSingleOff();
+            if (DoMergeSingle()) MergeSingleOff();
+            if (DoDeleteSingle()) DeleteSingleOff();
+            CancelBaseSpecialModes();
+            if (DoBlastSingle())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                BlastSingleOff();
+            break;
+    }
 }
 
 

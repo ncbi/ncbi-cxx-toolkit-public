@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2001/09/27 15:37:57  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.64  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -245,6 +248,7 @@
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -263,6 +267,7 @@ void AlignmentManager::Init(void)
     GlobalMessenger()->AddSequenceViewer(updateViewer);
 
     threader = new Threader();
+    blaster = new BLASTer();
 }
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
@@ -309,6 +314,7 @@ AlignmentManager::~AlignmentManager(void)
     delete sequenceViewer;
     delete updateViewer;
     delete threader;
+    delete blaster;
 }
 
 void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)

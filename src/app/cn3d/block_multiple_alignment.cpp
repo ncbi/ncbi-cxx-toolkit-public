@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/09/27 15:37:57  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.28  2001/09/04 14:40:19  thiessen
 * add rainbow and charge coloring
 *
@@ -1512,6 +1515,14 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
     }
 
     return true;
+}
+
+int BlockMultipleAlignment::NAlignedBlocks(void) const
+{
+    int n = 0;
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++) if ((*b)->IsAligned()) n++;
+    return n;
 }
 
 

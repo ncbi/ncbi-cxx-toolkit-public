@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/09/27 15:37:59  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.32  2001/09/19 22:55:39  thiessen
 * add preliminary net import and BLAST
 *
@@ -613,6 +616,13 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 }
                 updateWindow->updateViewer->alignmentManager->ThreadUpdate(options, alignment);
                 updateWindow->ThreadSingleOff();
+                return false;
+            }
+
+            // BLAST single
+            if (updateWindow->DoBlastSingle()) {
+                updateWindow->updateViewer->BlastUpdate(alignment);
+                updateWindow->BlastSingleOff();
                 return false;
             }
 

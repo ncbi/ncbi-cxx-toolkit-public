@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/09/27 15:37:59  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.38  2001/08/21 01:10:31  thiessen
 * fix lit. launch for nucleotides
 *
@@ -704,6 +707,27 @@ bool Sequence::HighlightPattern(const std::string& prositePattern) const
     re_set_syntax(oldSyntax);
 
     return retval;
+}
+
+void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
+{
+    if (identifier->pdbID.size() > 0) {
+        PDBSeqIdPtr pdbid = PDBSeqIdNew();
+        pdbid->mol = StrSave(identifier->pdbID.c_str());
+        pdbid->chain = (Uint1) identifier->pdbChain;
+        ValNodeAddPointer(id, SEQID_PDB, pdbid);
+        if (!addAllTypes) return;
+    }
+    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        ValNodeAddInt(id, SEQID_GI, identifier->gi);
+        if (!addAllTypes) return;
+    }
+    if (identifier->accession.size() > 0) {
+        TextSeqIdPtr gbid = TextSeqIdNew();
+        gbid->accession = StrSave(identifier->accession.c_str());
+        ValNodeAddPointer(id, SEQID_GENBANK, gbid);
+        if (!addAllTypes) return;
+    }
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/09/27 15:37:58  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.17  2001/08/24 00:41:35  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -85,7 +88,6 @@
 */
 
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
-#include <ctools/ctools.h>
 #include <blastkar.h>           // for BLAST standard probability routines
 #include <objseq.h>
 #include <math.h>
@@ -149,7 +151,6 @@ ConservationColorer::ConservationColorer(void) : nColumns(0), colorsCurrent(fals
             'X', 'A', 'X', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
             'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'X', 'X', 'X'
         };
-        SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
         // calculate expected residue frequencies (standard probabilities)
         // (code borrowed from SeqAlignInform() in cddutil.c)

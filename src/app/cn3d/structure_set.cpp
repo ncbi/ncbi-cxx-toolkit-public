@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2001/09/27 15:37:59  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.78  2001/09/19 22:55:39  thiessen
 * add preliminary net import and BLAST
 *
@@ -267,6 +270,7 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -312,6 +316,8 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+
+#include <objseq.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -668,12 +674,53 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
 
 StructureSet::~StructureSet(void)
 {
-    MoleculeIdentifier::ClearIdentifiers();
     delete showHideManager;
     delete styleManager;
     if (alignmentManager) delete alignmentManager;
     if (cddData) delete cddData;
     if (mimeData) delete mimeData;
+
+    MoleculeIdentifier::ClearIdentifiers();
+
+    BioseqMap::iterator i, ie = bioseqs.end();
+    for (i=bioseqs.begin(); i!=ie; i++) BioseqFree(i->second);
+}
+
+BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
+{
+    if (!sequence || !sequence->isProtein) {
+        ERR_POST(Error << "StructureSet::GetOrCreateBioseq() - got non-protein or NULL Sequence");
+        return NULL;
+    }
+
+    // if already done
+    BioseqMap::const_iterator b = bioseqs.find(sequence);
+    if (b != bioseqs.end()) return b->second;
+
+    // create new Bioseq and fill it in from Sequence data
+    BioseqPtr bioseq = BioseqNew();
+
+    bioseq->mol = Seq_mol_aa;
+    bioseq->seq_data_type = Seq_code_ncbieaa;
+    bioseq->repr = Seq_repr_raw;
+
+    bioseq->length = sequence->Length();
+    bioseq->seq_data = BSNew(bioseq->length);
+    BSWrite(bioseq->seq_data, const_cast<char*>(sequence->sequenceString.c_str()), bioseq->length);
+
+    // create Seq-id
+    sequence->AddCSeqId(&(bioseq->id), true);
+
+    // store Bioseq
+    bioseqs[sequence] = bioseq;
+
+    return bioseq;
+}
+
+void StructureSet::CreateAllBioseqs(const BlockMultipleAlignment *multiple)
+{
+    for (int row=0; row<multiple->NRows(); row++)
+        GetOrCreateBioseq(multiple->GetSequenceOfRow(row));
 }
 
 static const int NO_DOMAIN = -1, MULTI_DOMAIN = 0;

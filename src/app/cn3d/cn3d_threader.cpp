@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/09/27 15:37:58  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.22  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -102,7 +105,6 @@
 // C-toolkit stuff
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
 #include <corelib/ncbistl.hpp>
-#include <ctools/ctools.h>
 #include <objseq.h>
 #include <objalign.h>
 #include <thrdatd.h>
@@ -170,44 +172,14 @@ static int LookupResidueNumber(char r)
 }
 
 
-// local function prototypes
-static void AddSeqId(const Sequence *sequence, SeqIdPtr *id, bool addAllTypes);
-static SeqAlignPtr CreateSeqAlign(const BlockMultipleAlignment *multiple);
-
-
 Threader::Threader(void)
 {
-    SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 }
 
 Threader::~Threader(void)
 {
-    BioseqMap::iterator i, ie = bioseqs.end();
-    for (i=bioseqs.begin(); i!=ie; i++) BioseqFree(i->second);
-
     ContactMap::iterator c, ce = contacts.end();
     for (c=contacts.begin(); c!=ce; c++) FreeFldMtf(c->second);
-}
-
-static void AddSeqId(const Sequence *sequence, SeqIdPtr *id, bool addAllTypes)
-{
-    if (sequence->identifier->pdbID.size() > 0) {
-        PDBSeqIdPtr pdbid = PDBSeqIdNew();
-        pdbid->mol = StrSave(sequence->identifier->pdbID.c_str());
-        pdbid->chain = (Uint1) sequence->identifier->pdbChain;
-        ValNodeAddPointer(id, SEQID_PDB, pdbid);
-        if (!addAllTypes) return;
-    }
-    if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        ValNodeAddInt(id, SEQID_GI, sequence->identifier->gi);
-        if (!addAllTypes) return;
-    }
-    if (sequence->identifier->accession.size() > 0) {
-        TextSeqIdPtr gbid = TextSeqIdNew();
-        gbid->accession = StrSave(sequence->identifier->accession.c_str());
-        ValNodeAddPointer(id, SEQID_GENBANK, gbid);
-        if (!addAllTypes) return;
-    }
 }
 
 // creates a SeqAlign from a BlockMultipleAlignment
@@ -238,8 +210,8 @@ static SeqAlignPtr CreateSeqAlign(const BlockMultipleAlignment *multiple)
             if (b == blocks.get()->begin()) sap->segs = dd;
 
             dd->dim = 2;
-            AddSeqId(multiple->GetSequenceOfRow(0), &(dd->id), false);      // master
-            AddSeqId(multiple->GetSequenceOfRow(row), &(dd->id), false);    // slave
+            multiple->GetSequenceOfRow(0)->AddCSeqId(&(dd->id), false);      // master
+            multiple->GetSequenceOfRow(row)->AddCSeqId(&(dd->id), false);    // slave
             dd->len = (*b)->width;
 
             dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
@@ -256,7 +228,7 @@ static SeqAlignPtr CreateSeqAlign(const BlockMultipleAlignment *multiple)
 Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM)
 {
     // convert all sequences to Bioseqs
-    CreateBioseqs(multiple);
+    multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
 
     // create SeqAlign from this BlockMultipleAlignment
     SeqAlignPtr seqAlign = CreateSeqAlign(multiple);
@@ -273,7 +245,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
 #endif
 
     Seq_Mtf *seqMtf = CddDenDiagCposComp2(
-        GetBioseq(multiple->GetMaster()),
+        multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster()),
         7,
         seqAlign,
         NULL,
@@ -286,41 +258,6 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
 
     SeqAlignFree(seqAlign);
 	return seqMtf;
-}
-
-void Threader::CreateBioseq(const Sequence *sequence)
-{
-    if (!sequence || !sequence->isProtein) {
-        ERR_POST(Error << "Threader::CreateBioseq() - got non-protein or NULL sequence");
-        return;
-    }
-
-    // skip if already done
-    if (bioseqs.find(sequence) != bioseqs.end()) return;
-
-    // create new Bioseq and fill it in from Sequence data
-    BioseqPtr bioseq = BioseqNew();
-
-    bioseq->mol = Seq_mol_aa;
-    bioseq->seq_data_type = Seq_code_ncbieaa;
-    bioseq->repr = Seq_repr_raw;
-
-    bioseq->length = sequence->Length();
-    bioseq->seq_data = BSNew(bioseq->length);
-    BSWrite(bioseq->seq_data, const_cast<char*>(sequence->sequenceString.c_str()), bioseq->length);
-
-    // create Seq-id
-    AddSeqId(sequence, &(bioseq->id), true);
-
-    // store Bioseq
-    bioseqs[sequence] = bioseq;
-}
-
-void Threader::CreateBioseqs(const BlockMultipleAlignment *multiple)
-{
-    for (int row=0; row<multiple->NRows(); row++)
-        CreateBioseq(multiple->GetSequenceOfRow(row));
-    TESTMSG("created Bioseqs");
 }
 
 Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier)

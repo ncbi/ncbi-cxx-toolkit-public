@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.10  2001/06/01 21:48:02  thiessen
 * add terminal cutoff to threading
 *
@@ -66,29 +69,16 @@
 #ifndef CN3D_THREADER__HPP
 #define CN3D_THREADER__HPP
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 
 #include <map>
 #include <list>
 #include <vector>
 
-#include "cn3d/vector_math.hpp"
+#include <thrdatd.h>
 
-// to avoid having to include many C-toolkit headers here
-struct bioseq;
-typedef struct bioseq Bioseq_fwddecl;
-struct _Seq_Mtf;
-typedef struct _Seq_Mtf Seq_Mtf_fwddecl;
-struct _Cor_Def;
-typedef struct _Cor_Def Cor_Def_fwddecl;
-struct _Qry_Seq;
-typedef struct _Qry_Seq Qry_Seq_fwddecl;
-struct _Rcx_Ptl;
-typedef struct _Rcx_Ptl Rcx_Ptl_fwddecl;
-struct _Gib_Scd;
-typedef struct _Gib_Scd Gib_Scd_fwddecl;
-struct _Fld_Mtf;
-typedef struct _Fld_Mtf Fld_Mtf_fwddecl;
+#include "cn3d/vector_math.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
@@ -153,32 +143,18 @@ public:
     typedef std::list < Contact > ContactList;
 
 private:
-    // holds Bioseqs associated with the current Sequences
-    typedef std::map < const Sequence *, Bioseq_fwddecl * > BioseqMap;
-    BioseqMap bioseqs;
-
     // holds Fld_Mtf structures already calculated for a given object (Molecule or Sequence)
-    typedef std::map < const StructureBase *, Fld_Mtf_fwddecl * > ContactMap;
+    typedef std::map < const StructureBase *, Fld_Mtf * > ContactMap;
     ContactMap contacts;
 
     // threading structure setups
-    Seq_Mtf_fwddecl * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
-    Cor_Def_fwddecl * CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier);
-    Qry_Seq_fwddecl * CreateQrySeq(const BlockMultipleAlignment *multiple,
+    Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
+    Cor_Def * CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier);
+    Qry_Seq * CreateQrySeq(const BlockMultipleAlignment *multiple,
         const BlockMultipleAlignment *pairwise, int terminalCutoff);
-    Rcx_Ptl_fwddecl * CreateRcxPtl(double weightContacts);
-    Gib_Scd_fwddecl * CreateGibScd(bool fast, int nRandomStarts);
-    Fld_Mtf_fwddecl * CreateFldMtf(const Sequence *masterSequence);
-
-    // creates Bioseq from Sequence; registed with SeqMgr and stored locally
-    void CreateBioseq(const Sequence *sequence);
-    void CreateBioseqs(const BlockMultipleAlignment *multiple);
-
-    Bioseq_fwddecl * GetBioseq(const Sequence *sequence)
-    {
-        BioseqMap::const_iterator b = bioseqs.find(sequence);
-        return ((b != bioseqs.end()) ? b->second : NULL);
-    }
+    Rcx_Ptl * CreateRcxPtl(double weightContacts);
+    Gib_Scd * CreateGibScd(bool fast, int nRandomStarts);
+    Fld_Mtf * CreateFldMtf(const Sequence *masterSequence);
 };
 
 END_SCOPE(Cn3D)

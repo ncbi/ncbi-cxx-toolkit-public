@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/09/27 15:36:47  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.1  2001/09/18 03:09:38  thiessen
 * add preliminary sequence import pipeline
 *
@@ -49,14 +52,21 @@ BEGIN_SCOPE(Cn3D)
 class Sequence;
 class BlockMultipleAlignment;
 
-typedef std::list < const Sequence * > SequenceList;
-typedef std::list < BlockMultipleAlignment * > AlignmentList;
+class BLASTer
+{
+public:
+    BLASTer(void) { }
+    ~BLASTer(void) { }
 
-// creates new pairwise alignments (as two-row BlockMultipleAlignments), each of which has
-// the given master and one of the given sequences. If the alignment algorithm fails to
-// align the new sequence, it will include a null-alignment for that sequence.
-void CreateNewPairwiseAlignments(const Sequence *master,
-    const SequenceList& newSequences, AlignmentList *newAlignments);
+    typedef std::list < const Sequence * > SequenceList;
+    typedef std::list < BlockMultipleAlignment * > AlignmentList;
+
+    // creates new pairwise alignments (as two-row BlockMultipleAlignments), each of which has
+    // the given master and one of the given sequences. If the alignment algorithm fails to
+    // align the new sequence, it will include a null-alignment for that sequence.
+    void CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
+        const SequenceList& slaves, AlignmentList *newAlignments);
+};
 
 END_SCOPE(Cn3D)
 

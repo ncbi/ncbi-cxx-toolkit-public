@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.24  2001/08/15 20:53:07  juran
 * Heed warnings.
 *
@@ -108,6 +111,7 @@
 #ifndef CN3D_SEQUENCE_SET__HPP
 #define CN3D_SEQUENCE_SET__HPP
 
+#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
 #include <corelib/ncbistl.hpp>
 
 #include <string>
@@ -116,6 +120,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+
+#include <objloc.h>
 
 #include "cn3d/structure_base.hpp"
 
@@ -163,8 +169,10 @@ public:
     int Length(void) const { return static_cast<int>(sequenceString.size()); }
     int GetOrSetMMDBLink(void) const;
 
+    // Seq-id stuff (C++ and C)
     ncbi::objects::CSeq_id * CreateSeqId(void) const;
     void FillOutSeqId(ncbi::objects::CSeq_id *sid) const;
+    void AddCSeqId(SeqIdPtr *id, bool addAllTypes) const;
 
     // launch web browser with entrez page for this sequence
     void LaunchWebBrowserWithInfo(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/09/27 15:38:00  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.15  2001/09/20 19:31:30  thiessen
 * fixes for SGI and wxWin 2.3.2
 *
@@ -310,7 +313,7 @@ void UpdateViewer::SaveAlignments(void)
         ReplaceUpdates(updates);
 }
 
-void UpdateViewer::ImportAndAlign(void)
+void UpdateViewer::ImportSequence(void)
 {
     // determine the master sequence for new alignments
     const Sequence *master = NULL;
@@ -323,7 +326,7 @@ void UpdateViewer::ImportAndAlign(void)
         // chains as the new master
     }
     if (!master) {
-        ERR_POST(Error << "No master sequence defined");
+        ERR_POST(Error << "UpdateViewer::ImportSequence() - no master sequence defined");
         return;
     }
 
@@ -355,7 +358,7 @@ void UpdateViewer::ImportAndAlign(void)
                 else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
                     bioseq.Reset(&(seqEntry.GetSet().GetSeq_set().front()->GetSeq()));
                 else
-                    ERR_POST(Error << "Confused by SeqEntry format");
+                    ERR_POST(Error << "UpdateViewer::ImportSequence() - confused by SeqEntry format");
                 if (!bioseq.Empty()) {
                     // create Sequence
                     const Sequence *sequence = master->parentSet->CreateNewSequence(*bioseq);
@@ -365,7 +368,7 @@ void UpdateViewer::ImportAndAlign(void)
                         ERR_POST(Error << "The sequence must be a protein");
                 }
             } else {
-                ERR_POST(Error << "HTTP Bioseq retrieval failed");
+                ERR_POST(Error << "UpdateViewer::ImportSequence() - HTTP Bioseq retrieval failed");
             }
         }
     }
@@ -379,12 +382,14 @@ void UpdateViewer::ImportAndAlign(void)
             SeqEntry *sep = FastaToSeqEntry(fp, FALSE); // only reads first sequence... alternative?
             FileClose(fp);
             if (!sep) {
-                ERR_POST(Error << "Error parsing FASTA file " << fastaFile.c_str());
+                ERR_POST(Error << "UpdateViewer::ImportSequence() - error parsing FASTA file "
+                    << fastaFile.c_str());
             } else {
                 // convert C to C++ SeqEntry
                 CSeq_entry se;
                 if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
-                    ERR_POST(Error << "Error converting to C++ object: " << err);
+                    ERR_POST(Error << "UpdateViewer::ImportSequence() - error converting to C++ object: "
+                        << err);
                 } else {
                     // create Sequence - just one for now
                     if (se.IsSeq())
@@ -396,19 +401,71 @@ void UpdateViewer::ImportAndAlign(void)
     }
 
     if (newSequences.size() == 0) {
-        ERR_POST(Error << "No sequences were imported");
+        ERR_POST(Error << "UpdateViewer::ImportSequence() - no sequences were imported");
         return;
     }
 
-    // use BLAST to create new alignments
+    // create null-alignments for each sequence
     AlignmentList newAlignments;
-    CreateNewPairwiseAlignments(master, newSequences, &newAlignments);
+    SequenceSet::SequenceList::const_iterator s, se = newSequences.end();
+    for (s=newSequences.begin(); s!=se; s++) {
+        BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+        (*seqs)[0] = master;
+        (*seqs)[1] = *s;
+        BlockMultipleAlignment *newAlignment =
+            new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
+        if (newAlignment->AddUnalignedBlocks() && newAlignment->UpdateBlockMapAndColors(false)) {
+            newAlignments.push_back(newAlignment);
+        } else {
+            ERR_POST(Error << "UpdateViewer::ImportSequence() - error finalizing alignment");
+            delete newAlignment;
+        }
+    }
 
     // add new alignments to update list
     if (newAlignments.size() > 0)
         AddAlignments(newAlignments);
     else
-        ERR_POST(Warning << "No new alignments were created");
+        ERR_POST(Warning << "UpdateViewer::ImportSequence() - no new alignments were created");
+}
+
+void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment)
+{
+    // find alignment, and replace it with BLAST result
+    AlignmentList::iterator a, ae = alignmentStack.back().end();
+    for (a=alignmentStack.back().begin(); a!=ae; a++) {
+        if (*a != alignment) continue;
+
+        // run BLAST between master and first slave (should be only one slave...)
+        BLASTer::SequenceList seqs;
+        seqs.push_back(alignment->GetSequenceOfRow(1));
+        BLASTer::AlignmentList newAlignments;
+        alignmentManager->blaster->CreateNewPairwiseAlignmentsByBlast(
+            alignment->GetSequenceOfRow(0), seqs, &newAlignments);
+        if (newAlignments.size() != 1) {
+            ERR_POST(Error << "UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
+            return;
+        }
+        if (newAlignments.front()->NAlignedBlocks() == 0) {
+            ERR_POST(Warning << "BLAST failed; alignment unchanged");
+            delete newAlignments.front();
+            return;
+        }
+
+        // replace alignment with BLAST result
+        TESTMSG("BLAST succeeded - replacing alignment");
+        delete alignment;
+        *a = newAlignments.front();
+        break;
+    }
+
+    // recreate alignment display with new alignment
+    AlignmentList copy = alignmentStack.back();
+    alignmentStack.back().clear();
+    delete displayStack.back();
+    displayStack.back() = new SequenceDisplay(true, viewerWindow);
+    AddAlignments(copy);
+    (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
 }
 
 END_SCOPE(Cn3D)

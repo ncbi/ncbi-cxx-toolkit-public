@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.42  2001/09/26 15:27:59  thiessen
 * tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
 *
@@ -267,11 +270,12 @@ public:
         // File menu
             MID_OPEN,
             MID_SAVE,
+            MID_REFIT_ALL,
+            MID_LIMIT_STRUCT,
             MID_PREFERENCES,
             MID_FONTS,
                 MID_OPENGL_FONT,
                 MID_SEQUENCE_FONT,
-            MID_LIMIT_STRUCT,
             MID_EXIT,
         // View menu
             MID_ZOOM_IN,
@@ -296,7 +300,6 @@ public:
                 MID_SHOW_UNALIGNED_ALN_DOMAIN,
             MID_SHOW_SELECTED,
         // Structure Alignments menu
-            MID_REFIT_ALL,
         // Style menu
             MID_EDIT_STYLE,
             MID_RENDER, // rendering shortcuts

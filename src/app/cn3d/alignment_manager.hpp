@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/09/27 15:36:47  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.35  2001/05/31 18:46:25  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -166,6 +169,7 @@ class BlockMultipleAlignment;
 class Threader;
 class ThreaderOptions;
 class UpdateViewer;
+class BLASTer;
 
 class AlignmentManager : public ShowHideCallbackObject
 {
@@ -175,6 +179,7 @@ public:
     ~AlignmentManager(void);
 
     Threader *threader; // made public so viewers have access to it
+    BLASTer *blaster;
 
     void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/09/27 15:36:48  thiessen
+* decouple sequence import and BLAST
+*
 * Revision 1.8  2001/09/18 03:09:38  thiessen
 * add preliminary sequence import pipeline
 *
@@ -97,7 +100,7 @@ public:
     void DeleteAlignment(BlockMultipleAlignment *toDelete);
 
     // import
-    void ImportAndAlign(void);
+    void ImportSequence(void);
 
     // turns the current alignments+display into the "initial state" (the bottom) of the undo stack
     void SetInitialState(void);
@@ -106,9 +109,11 @@ public:
     void SaveDialog(void);
     void SaveAlignments(void);
 
+    // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
+    // replaced with the result, otherwise the alignment is left unchanged
+    void BlastUpdate(BlockMultipleAlignment *alignment);
 
 private:
-
     UpdateViewerWindow *updateWindow;
 };
 
