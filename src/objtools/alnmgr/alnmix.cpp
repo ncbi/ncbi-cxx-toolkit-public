@@ -417,7 +417,7 @@ void CAlnMix::x_Merge()
     // Find the refseq (if such exists)
     {{
         TSeqs::iterator refseq_it;
-        iterate (TSeqs, it, m_Seqs){
+        non_const_iterate (TSeqs, it, m_Seqs){
             CAlnMixSeq * aln_seq = *it;
 
             if (aln_seq->m_DS_Count == m_InputDSs.size()) {
@@ -873,7 +873,7 @@ void CAlnMix::x_CreateRowsVector()
         CAlnMixSeq * seq = *i;
         m_Rows.push_back(seq);
         seq->m_RowIndex = count++;
-        while (seq = seq->m_ExtraRow) {
+        while ( (seq = seq->m_ExtraRow) == NULL ) {
             seq->m_RowIndex = count++;
             m_Rows.push_back(seq);
         }
@@ -1183,6 +1183,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/01/10 15:11:12  dicuccio
+* Small bug fixes: changed 'iterate' -> 'non_const_iterate' in x_Merge(); changed
+* logic of while() in x_CreateRowsVector() to avoid compiler warning.
+*
 * Revision 1.18  2003/01/10 00:42:53  todorov
 * Optional sorting of seqs by score
 *
