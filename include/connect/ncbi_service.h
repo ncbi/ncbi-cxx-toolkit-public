@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/03/02 20:05:56  lavr
+ * SERV_LOCALHOST addad; SERV_OpenSimple() made more documented
+ *
  * Revision 6.12  2001/02/09 17:32:52  lavr
  * Modified: fSERV_StatelessOnly overrides info->stateless
  *
@@ -98,9 +101,21 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * forces 'types' to have 'fSERV_StatelessOnly' set.
  * NB: 'nbo' in comments denotes parameters coming in network byte order.
  */
+
+/* Open iterator and consult either local database (if present),
+ * or network database, using all default communication parameters
+ * found in registry and environment variables (implicit parameter
+ * 'info', found in two subsequent variations of this call, is filled out
+ * by ConnNetInfo_Create(service) and then used automatically).
+ */
 SERV_ITER SERV_OpenSimple
 (const char*         service        /* service name                          */
  );
+
+
+/* Special value for preferred_host parameter */
+#define SERV_LOCALHOST  ((unsigned int)(~0L))
+
 
 SERV_ITER SERV_Open
 (const char*         service,       /* service name                          */
