@@ -983,14 +983,13 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
      }}
 
     // gene doesn't have a gene_id or a gene ref
-    for ( ;  feat_it;  ++feat_it) {
-        CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
-        ECompare comp = sequence::Compare(gene_feat.GetLocation(),
-                                          feat_it->GetLocation(),
-                                          &scope);
-        if (comp == eSame  ||  comp == eContains) {
-            mrna_feats.push_back(ref);
-        }
+    CConstRef<CSeq_feat> feat =
+        sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
+                                         CSeqFeatData::eSubtype_mRNA,
+                                         sequence::eOverlap_CheckIntervals,
+                                         scope);
+    if (feat) {
+        mrna_feats.push_back(feat);
     }
 }
 
@@ -1009,19 +1008,13 @@ void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
             }
         }
     } else {
-        CFeat_CI feat_it(scope, gene_feat.GetLocation(),
-                         SAnnotSelector()
-                         .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion)
-                         .SetOverlapIntervals()
-                         .SetResolveAll());
-        for ( ;  feat_it;  ++feat_it) {
-            CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
-            ECompare comp = sequence::Compare(gene_feat.GetLocation(),
-                                              feat_it->GetLocation(),
-                                              &scope);
-            if (comp == eSame  ||  comp == eContains) {
-                cds_feats.push_back(ref);
-            }
+        CConstRef<CSeq_feat> feat =
+            sequence::GetBestOverlappingFeat(gene_feat.GetLocation(),
+                                             CSeqFeatData::eSubtype_cdregion,
+                                             sequence::eOverlap_CheckIntervals,
+                                             scope);
+        if (feat) {
+            cds_feats.push_back(feat);
         }
     }
 }
@@ -2372,6 +2365,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.106  2004/11/22 16:09:14  dicuccio
+* Revert to standard GetBestOverlappingFeat() in GetMrnasForGene() and
+* GetCdssForGene() if no closely linked feature is found
+*
 * Revision 1.105  2004/11/19 15:10:10  shomrat
 * Added GetBestOverlapForSNP
 *
