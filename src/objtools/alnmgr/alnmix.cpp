@@ -700,7 +700,8 @@ void CAlnMix::x_Merge()
                         }
                     }
                 }
-                if ( !proper_row_found ) {
+                if ( !proper_row_found   &&
+                     !(m_MergeFlags & fTruncateOverlaps)) {
                     NCBI_THROW(CAlnException, eMergeFailure,
                                "CAlnMix::x_Merge(): "
                                "Proper row not found for the match. "
@@ -2220,6 +2221,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.117  2005/02/10 21:29:26  todorov
+* Throwing exeption for proper row not found in case of
+* fQuerySeqMergeOnly only if !fTruncateOverlaps, since full truncation
+* (AKA match ignore) might have occurred for each match at the given
+* point in time.
+*
 * Revision 1.116  2005/02/08 15:58:37  todorov
 * Added handling for best reciprocal hits.
 *
