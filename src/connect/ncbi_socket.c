@@ -99,6 +99,7 @@
 #  include <winsock2.h>
 
 #elif defined(NCBI_OS_MAC)
+#  include <unistd.h>
 #  include <sock_ext.h>
 extern void bzero(char* target, long numbytes);
 #  include <netdb.h>
@@ -1852,6 +1853,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2002/07/18 20:19:58  lebedev
+ * NCBI_OS_MAC: unistd.h added
+ *
  * Revision 6.52  2002/07/15 19:32:03  lavr
  * Do not intercept SIGPIPE in the case of an installed signal handler
  *
