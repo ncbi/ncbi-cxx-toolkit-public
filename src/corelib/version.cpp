@@ -35,9 +35,14 @@
 
 BEGIN_NCBI_SCOPE
 
+const CVersionInfo CVersionInfo::kAny(0, 0, 0);
+const CVersionInfo CVersionInfo::kLatest(-1, -1, -1);
 
-CVersionInfo::CVersionInfo(unsigned int ver_major, unsigned int  ver_minor,
-                           unsigned int  patch_level, const string& name) 
+
+CVersionInfo::CVersionInfo(int ver_major,
+                           int  ver_minor,
+                           int  patch_level, 
+                           const string& name) 
     : m_Major(ver_major),
       m_Minor(ver_minor),
       m_PatchLevel(patch_level),
@@ -67,27 +72,26 @@ string CVersionInfo::Print(void) const
     return CNcbiOstrstreamToString(os);
 }
 
-bool CVersionInfo::Match(const CVersionInfo& version_info, 
-                         EPatchLevelCompare  pl_mode) const
+
+CVersionInfo::EMatch 
+CVersionInfo::Match(const CVersionInfo& version_info) const
 {
     if (GetMajor() != version_info.GetMajor())
-        return false;
+        return eNonCompatible;
 
     if (GetMinor() != version_info.GetMinor())
-        return false;
+        return eNonCompatible;
 
-    switch (pl_mode)
-    {
-    case eAnyLevel:
-        return true;
-    case eNewerLevel:
-        return GetPatchLevel() >= version_info.GetPatchLevel();
-    case eExactLevel:
-        return GetPatchLevel() == version_info.GetPatchLevel();
-    default:
-        _ASSERT(0);
+    if (GetPatchLevel() == version_info.GetPatchLevel()) {
+        return eFullyCompatible;
     }
-    return false;
+
+    if (GetPatchLevel() > version_info.GetPatchLevel()) {
+        return eBackwardCompatible;
+    }
+
+    return eConditionallyCompatible;
+
 }
 
 
@@ -97,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/30 19:25:35  kuznets
+ * Reflecting changes in hpp file.
+ *
  * Revision 1.3  2003/10/30 16:38:50  kuznets
  * Implemented CVersionInfo::Match
  *
