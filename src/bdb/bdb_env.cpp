@@ -227,12 +227,30 @@ void CBDB_Env::CleanLog()
     
 }
 
+void CBDB_Env::SetLockTimeout(unsigned timeout)
+{
+    db_timeout_t to = timeout;
+	int ret = m_Env->set_timeout(m_Env, to, DB_SET_LOCK_TIMEOUT);
+    BDB_CHECK(ret, "DB_ENV::set_timeout");
+}
+
+void CBDB_Env::SetTransactionTimeout(unsigned timeout)
+{
+    db_timeout_t to = timeout;
+	int ret = m_Env->set_timeout(m_Env, to, DB_SET_TXN_TIMEOUT);
+    BDB_CHECK(ret, "DB_ENV::set_timeout");
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/08/10 11:52:54  kuznets
+ * +timeout control functions
+ *
  * Revision 1.22  2004/08/09 16:27:49  kuznets
  * +CBDB_env::CleanLog()
  *

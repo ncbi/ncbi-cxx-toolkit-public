@@ -141,6 +141,12 @@ public:
 
     /// Remove all non-active log files
     void CleanLog();
+
+    /// Set timeout value for locks in microseconds (1 000 000 in sec)
+    void SetLockTimeout(unsigned timeout);
+
+    /// Set timeout value for transactions in microseconds (1 000 000 in sec)
+    void SetTransactionTimeout(unsigned timeout);
     
 private:
     /// Opens BDB environment returns error code
@@ -163,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/10 11:52:48  kuznets
+ * +timeout control functions
+ *
  * Revision 1.14  2004/08/09 16:27:35  kuznets
  * +CBDB_env::CleanLog()
  *
