@@ -2257,15 +2257,15 @@ static EIO_Status s_Read(SOCK        sock,
     *n_read = 0;
 
     if (sock->type == eSOCK_Datagram) {
-        *n_read = peek ?
-            BUF_Peek(sock->r_buf, buf, size) :
-            BUF_Read(sock->r_buf, buf, size);
+        *n_read = peek
+            ? BUF_Peek(sock->r_buf, buf, size)
+            : BUF_Read(sock->r_buf, buf, size);
         sock->r_status = *n_read || !size ? eIO_Success : eIO_Closed;
         return sock->r_status;
     }
 
     status = s_WritePending(sock, sock->r_timeout, 0);
-    if (sock->pending || !size)
+    if (sock->pending  ||  !size)
         return sock->pending ? status : s_Status(sock, eIO_Read);
 
     for (;;) { /* retry if either blocked or interrupted (optional) */
@@ -3172,24 +3172,22 @@ extern EIO_Status SOCK_Read(SOCK           sock,
     if (sock->sock != SOCK_INVALID) {
         switch ( how ) {
         case eIO_ReadPlain:
-            status = s_Read(sock, buf, size, &x_read, 0/*false, read*/);
+            status = s_Read(sock, buf, size, &x_read, 0/*read*/);
             break;
 
         case eIO_ReadPeek:
-            status = s_Read(sock, buf, size, &x_read, 1/*true, peek*/);
+            status = s_Read(sock, buf, size, &x_read, 1/*peek*/);
             break;
 
         case eIO_ReadPersist:
             x_read = 0;
             do {
                 size_t xx_read;
-                status = SOCK_Read(sock, (char*) buf + (buf? x_read : 0), size,
-                                   &xx_read, eIO_ReadPlain);
-                if (status != eIO_Success)
-                    break;
+                status = s_Read(sock, (char*)buf + (buf ? x_read : 0),
+                                size, &xx_read, 0/*read*/);
                 x_read += xx_read;
                 size   -= xx_read;
-            } while ( size );
+            } while (size  &&  status == eIO_Success);
             break;
 
         default:
@@ -3214,57 +3212,70 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 
 
 extern EIO_Status SOCK_ReadLine(SOCK    sock,
-                                char*   buf,
+                                char*   line,
                                 size_t  size,
                                 size_t* n_read)
 {
-    EIO_Status status = eIO_Success;
+    EIO_Status  status = eIO_Success;
     int/*bool*/ cr_seen = 0/*false*/;
-    size_t x_read = 0;
+    int/*bool*/ done = 0/*false*/;
+    size_t      len = 0;
 
-    while (x_read < size) {
+    do {
         size_t i;
-        char   w[1024];
+        char   w[1024], c;
         size_t x_size = BUF_Size(sock->r_buf);
-        char*  x_buf  = size - x_read < sizeof(w) ? w : buf + x_read;
-        if (x_size == 0 || x_size > sizeof(w))
-            x_size = sizeof(w);
-        status = SOCK_Read(sock, x_buf, x_size, &x_size, eIO_ReadPlain);
-        for (i = 0; i < x_size  &&  x_read < size; i++) {
+        char*  x_buf  = size - len < sizeof(w) - cr_seen ? w : line + len;
+        if (x_size == 0  ||  x_size > sizeof(w) - cr_seen)
+            x_size = sizeof(w) - cr_seen;
+        status = s_Read(sock, x_buf + cr_seen,
+                        size ? x_size : size, &x_size, 0/*read*/);
+        if ( !x_size )
+            done = 1/*true*/;
+        else if ( cr_seen )
+            x_size++;
+        for (i = cr_seen; i < x_size; i++) {
             char c = x_buf[i];
             if (c == '\0'  ||  c == '\n') {
+                cr_seen = 0/*false*/;
+                done = 1/*true*/;
                 i++;
                 break;
             }
             if (c == '\r') {
-                if (!cr_seen) {
+                if ( !cr_seen ) {
                     cr_seen = 1/*true*/;
                     continue;
                 }
             }
-            if (cr_seen) {
-                buf[x_read++] = '\r';
-                if (x_read >= size)
-                    break;
-            }
+            if ( cr_seen )
+                line[len++] = '\r';
             if (c != '\r')
                 cr_seen = 0/*false*/;
+            if (len >= size)
+                break;
             if (x_buf == w)
-                buf[x_read] = c;
-            x_read++;
+                line[len] = c;
+            if (++len >= size)
+                break;
         }
-        if (i < x_size) {
-            if (SOCK_PushBack(sock, x_buf + i, size - i) != eIO_Success)
+        if (len >= size)
+            done = 1/*true*/;
+        if (done  &&  cr_seen) {
+            c = '\r';
+            if (SOCK_PushBack(sock, &c, 1) != eIO_Success)
                 status = eIO_Unknown;
-            break;
         }
-        if (status != eIO_Success)
-            break;
-    }
-    if (x_read < size)
-        buf[x_read] = '\0';
+        if (i < x_size
+            &&  SOCK_PushBack(sock, &x_buf[i], x_size - i) != eIO_Success) {
+            status = eIO_Unknown;
+        }
+    } while (!done  &&  status == eIO_Success);
+    if (len < size)
+        line[len] = '\0';
     if ( n_read )
-        *n_read = x_read;
+        *n_read = len;
+
     return status;
 }
 
@@ -3304,13 +3315,11 @@ extern EIO_Status SOCK_Write(SOCK            sock,
             x_written = 0;
             do {
                 size_t xx_written;
-                status = SOCK_Write(sock, (char*) buf + x_written, size,
-                                    &xx_written, eIO_WritePlain);
-                if (status != eIO_Success)
-                    break;
+                status = s_Write(sock, (char*) buf + x_written,
+                                 size, &xx_written);
                 x_written += xx_written;
                 size      -= xx_written;
-            } while ( size );
+            } while (size  &&  status == eIO_Success);
             break;
 
         default:
@@ -4348,6 +4357,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.163  2004/11/15 19:34:23  lavr
+ * Speed-up/fix SOCK_Read(), SOCK_Write() and improve SOCK_ReadLine()
+ *
  * Revision 6.162  2004/11/15 16:11:32  lavr
  * Yet again half-fix in SOCK_ReadLine()
  *
