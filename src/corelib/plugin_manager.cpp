@@ -36,6 +36,8 @@
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -530,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/07/29 20:20:15  ucko
+ * #include <algorithm> for set_difference().
+ *
  * Revision 1.9  2004/07/29 13:23:27  kuznets
  * GCC fixes. Code cleanup.
  *
