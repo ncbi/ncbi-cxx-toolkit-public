@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/15 20:34:53  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.9  2000/11/14 21:41:23  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -82,15 +86,14 @@ void AbstractParser::ParseError(const char* error, const char* expected,
 
 string AbstractParser::Location(void) const
 {
-    const AbstractToken& token = NextToken();
-    return NStr::IntToString(token.GetLine()) + ':';
+    return NStr::IntToString(LastTokenLine()) + ':';
 }
 
 void AbstractParser::CopyLineComment(int line, list<string>& comments,
                                      int flags)
 {
     if ( !(flags & eNoFetchNext) )
-        NextToken();
+        Lexer().FillComments();
     _TRACE("CopyLineComment("<<line<<") current: "<<m_Lexer.CurrentLine());
     _TRACE("  "<<(m_Lexer.HaveComments()?m_Lexer.NextComment().GetLine():-1));
     while ( m_Lexer.HaveComments() ) {

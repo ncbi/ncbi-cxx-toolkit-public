@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/15 20:34:56  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.12  2000/08/25 15:59:25  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -59,17 +63,9 @@
 #include <corelib/ncbidiag.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/module.hpp>
+#include <serial/datatool/fileutil.hpp>
 
 BEGIN_NCBI_SCOPE
-
-inline
-CNcbiOstream& NewLine(CNcbiOstream& out, int indent)
-{
-    out << "\n";
-    for ( int i = 0; i < indent; ++i )
-        out << "  ";
-    return out;
-}
 
 CDataValue::CDataValue(void)
     : m_Module(0), m_SourceLine(0)
@@ -175,7 +171,7 @@ void CNamedDataValue::PrintASN(CNcbiOstream& out, int indent) const
     out << GetName();
     if ( GetValue().IsComplex() ) {
         indent++;
-        NewLine(out, indent);
+        PrintASNNewLine(out, indent);
     }
     else {
         out << ' ';
@@ -200,10 +196,10 @@ void CBlockDataValue::PrintASN(CNcbiOstream& out, int indent) const
           i != GetValues().end(); ++i ) {
         if ( i != GetValues().begin() )
             out << ',';
-        NewLine(out, indent);
+        PrintASNNewLine(out, indent);
         (*i)->PrintASN(out, indent);
     }
-    NewLine(out, indent - 1);
+    PrintASNNewLine(out, indent - 1);
     out << '}';
 }
 

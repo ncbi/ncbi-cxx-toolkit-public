@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/15 20:34:41  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.8  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -95,11 +99,13 @@
 
 BEGIN_NCBI_SCOPE
 
+class CEnumDataTypeValue;
+
 class CEnumTypeStrings : public CTypeStrings
 {
     typedef CTypeStrings CParent;
 public:
-    typedef list< pair<string, long> > TValues;
+    typedef list<CEnumDataTypeValue> TValues;
     CEnumTypeStrings(const string& externalName, const string& enumName,
                      const string& cType, bool isInteger,
                      const TValues& values, const string& valuesPrefix);

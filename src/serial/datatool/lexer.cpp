@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/15 20:34:54  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.9  2000/11/14 21:41:25  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -81,6 +85,52 @@ ASNLexer::~ASNLexer(void)
 
 TToken ASNLexer::LookupToken(void)
 {
+    char c = Char();
+    switch ( c ) {
+    case ':':
+        if ( Char(1) == ':' && Char(2) == '=' ) {
+            StartToken();
+            AddChars(3);
+            return T_DEFINE;
+        }
+        return T_SYMBOL;
+    case '-':
+        return T_SYMBOL;
+    case '\"':
+        StartToken();
+        AddChar();
+        StartString();
+        LookupString();
+        return T_STRING;
+    case '\'':
+        StartToken();
+        AddChar();
+        return LookupBinHexString();
+    default:
+        if ( c >= '0' && c <= '9' ) {
+            StartToken();
+            AddChar();
+            LookupNumber();
+            return T_NUMBER;
+        }
+        else if ( c >= 'a' && c <= 'z' ) {
+            StartToken();
+            AddChar();
+            LookupIdentifier();
+            return T_IDENTIFIER;
+        }
+        else if ( c >= 'A' && c <= 'Z' ) {
+            StartToken();
+            AddChar();
+            LookupIdentifier();
+            return LookupKeyword();
+        }
+        return T_SYMBOL;
+    }
+}
+
+void ASNLexer::LookupComments(void)
+{
     while ( true ) {
         char c = Char();
         switch ( c ) {
@@ -93,13 +143,6 @@ TToken ASNLexer::LookupToken(void)
             SkipChar();
             NextLine();
             break;
-        case ':':
-            if ( Char(1) == ':' && Char(2) == '=' ) {
-                StartToken();
-                AddChars(3);
-                return T_DEFINE;
-            }
-            return T_SYMBOL;
         case '-':
             if ( Char(1) == '-' ) {
                 // comments
@@ -107,37 +150,9 @@ TToken ASNLexer::LookupToken(void)
                 SkipComment();
                 break;
             }
-            return T_SYMBOL;
-        case '\"':
-            StartToken();
-            AddChar();
-            StartString();
-            LookupString();
-            return T_STRING;
-        case '\'':
-            StartToken();
-            AddChar();
-            return LookupBinHexString();
+            return;
         default:
-            if ( c >= '0' && c <= '9' ) {
-                StartToken();
-                AddChar();
-                LookupNumber();
-                return T_NUMBER;
-            }
-            else if ( c >= 'a' && c <= 'z' ) {
-                StartToken();
-                AddChar();
-                LookupIdentifier();
-                return T_IDENTIFIER;
-            }
-            else if ( c >= 'A' && c <= 'Z' ) {
-                StartToken();
-                AddChar();
-                LookupIdentifier();
-                return LookupKeyword();
-            }
-            return T_SYMBOL;
+            return;
         }
     }
 }

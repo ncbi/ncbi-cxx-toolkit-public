@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/15 20:34:43  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.6  2000/11/14 21:41:14  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -90,6 +94,7 @@ class CDataMemberContainerType;
 class CDataValue;
 class CDataMember;
 class CEnumDataType;
+class CEnumDataTypeValue;
 
 class ASNParser : public AbstractParser
 {
@@ -113,13 +118,14 @@ public:
     void Imports(CDataTypeModule& module);
     void Exports(CDataTypeModule& module);
     void ModuleBody(CDataTypeModule& module);
+    void ModuleType(CDataTypeModule& module, const string& name);
     AutoPtr<CDataType> Type(void);
     CDataType* x_Type(void);
     CDataType* TypesBlock(CDataMemberContainerType* containerType,
                           bool allowDefaults);
     AutoPtr<CDataMember> NamedDataType(bool allowDefaults);
     CEnumDataType* EnumeratedBlock(CEnumDataType* enumType);
-    void EnumeratedValue(CEnumDataType& enumType);
+    CEnumDataTypeValue& EnumeratedValue(CEnumDataType& enumType);
     void TypeList(list<string>& ids);
     AutoPtr<CDataValue> Value(void);
     AutoPtr<CDataValue> x_Value(void);

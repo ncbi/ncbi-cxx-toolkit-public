@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/15 20:34:54  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.13  2000/11/14 21:41:24  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -528,21 +532,72 @@ string Tabbed(const string& code, const char* tab)
 
 CNcbiOstream& PrintDTDComments(CNcbiOstream& out,
                                const list<string>& comments,
-                               bool allowOneLine)
+                               int flags)
 {
     if ( comments.empty() ) // no comments
         return out;
-    if ( allowOneLine && comments.size() == 1 ) // one line comment
-        return out <<
-            "<!--" << comments.front() << " -->\n";
-    // multiline comments
-    out <<
-        "<!--\n";
-    iterate ( list<string>, i, comments ) {
-        out << *i << '\n';
+
+    if ( (flags & eCommentsDoNotWriteBlankLine) == 0 ) {
+        // prepend comments by empty line to separate from previous comments
+        out << '\n';
     }
-    return out <<
-        "-->\n";
+
+    // comments start
+    out <<
+        "<!--";
+
+    if ( (flags & eCommentsAlwaysMultiline) == 0 && comments.size() == 1 ) {
+        // one line comment
+        out << comments.front() << ' ';
+    }
+    else {
+        // multiline comments
+        out << '\n';
+        iterate ( list<string>, i, comments ) {
+            out << *i << '\n';
+        }
+    }
+
+    // comments end
+    out << "-->";
+    
+    if ( (flags & eCommentsNoEOL) == 0 )
+        out << '\n';
+
+    return out;
+}
+
+CNcbiOstream& PrintASNComments(CNcbiOstream& out,
+                               const list<string>& comments,
+                               int indent,
+                               int flags)
+{
+    if ( comments.empty() ) // no comments
+        return out;
+
+    bool newLine = (flags & eCommentsDoNotWriteBlankLine) == 0;
+    // prepend comments by empty line to separate from previous comments
+
+    iterate ( list<string>, i, comments ) {
+        if ( newLine )
+            PrintASNNewLine(out, indent);
+        out << "--" << *i;
+        newLine = true;
+    }
+
+    if ( (flags & eCommentsNoEOL) == 0 )
+        PrintASNNewLine(out, indent);
+
+    return out;
+}
+
+CNcbiOstream& PrintASNNewLine(CNcbiOstream& out, int indent)
+{
+    out <<
+        '\n';
+    for ( int i = 0; i < indent; ++i )
+        out << "  ";
+    return out;
 }
 
 END_NCBI_SCOPE

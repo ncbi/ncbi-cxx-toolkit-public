@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/15 20:34:43  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.4  2000/11/14 21:41:13  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -77,6 +81,7 @@ public:
 
 protected:
     TToken LookupToken(void);
+    void LookupComments(void);
 
     void StartString(void);
     void AddStringChar(char c);

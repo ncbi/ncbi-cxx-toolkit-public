@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/15 20:34:42  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.5  2000/11/14 21:41:12  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -69,16 +73,49 @@
 
 BEGIN_NCBI_SCOPE
 
-class CEnumDataType : public CDataType {
+class CEnumDataTypeValue
+{
+public:
+    CEnumDataTypeValue(const string& name, long value)
+        : m_Name(name), m_Value(value)
+        {
+        }
+    
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
+    long GetValue(void) const
+        {
+            return m_Value;
+        }
+
+    list<string>& GetComments(void)
+        {
+            return m_Comments;
+        }
+    const list<string>& GetComments(void) const
+        {
+            return m_Comments;
+        }
+
+private:
+    string m_Name;
+    long m_Value;
+    list<string> m_Comments;
+};
+
+class CEnumDataType : public CDataType
+{
     typedef CDataType CParent;
 public:
-    typedef pair<string, long> TValue;
+    typedef CEnumDataTypeValue TValue;
     typedef list<TValue> TValues;
 
     virtual bool IsInteger(void) const;
     virtual const char* GetASNKeyword(void) const;
 
-    void AddValue(const string& name, long value);
+    TValue& AddValue(const string& name, long value);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/15 20:34:56  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.18  2000/11/14 21:41:27  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -131,8 +135,8 @@ void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
 
 void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
-    CParent::PrintASN(out, indent);
     out << GetASNKeyword() << " OF ";
+    GetElementType()->PrintASNTypeComments(out, indent + 1);
     GetElementType()->PrintASN(out, indent);
 }
 

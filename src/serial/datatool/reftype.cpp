@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/11/15 20:34:55  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.21  2000/11/14 21:41:26  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -128,7 +132,6 @@ CReferenceDataType::CReferenceDataType(const string& n)
 
 void CReferenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
-    CParent::PrintASN(out, indent);
     out << m_UserTypeName;
 }
 

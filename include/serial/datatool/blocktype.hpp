@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/15 20:34:41  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.6  2000/11/14 21:41:12  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -85,7 +89,7 @@ public:
     CDataMember(const string& name, const AutoPtr<CDataType>& type);
     ~CDataMember(void);
 
-    void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASN(CNcbiOstream& out, int indent, bool last) const;
     void PrintDTD(CNcbiOstream& out) const;
 
     bool Check(void) const;

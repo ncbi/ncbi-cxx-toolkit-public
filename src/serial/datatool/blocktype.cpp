@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/11/15 20:34:54  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.29  2000/11/14 21:41:24  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -196,17 +200,19 @@ void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
 
 void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
 {
-    CParent::PrintASN(out, indent);
     out << GetASNKeyword() << " {";
-    indent++;
+    ++indent;
     iterate ( TMembers, i, m_Members ) {
-        if ( i != m_Members.begin() )
-            out << ',';
-        NewLine(out, indent);
+        PrintASNNewLine(out, indent);
         const CDataMember& member = **i;
-        member.PrintASN(out, indent);
+        TMembers::const_iterator next = i;
+        bool last = ++next == m_Members.end();
+        member.PrintASN(out, indent, last);
     }
-    NewLine(out, indent - 1);
+    --indent;
+    PrintASNNewLine(out, indent);
+    PrintASNComments(out, m_LastComments, indent,
+                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
     out << "}";
 }
 
@@ -237,7 +243,8 @@ void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
         const CDataMember& member = **i;
         member.PrintDTD(out);
     }
-    PrintDTDComments(out, m_LastComments);
+    PrintDTDComments(out, m_LastComments,
+                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
 }
 
 void CDataMemberContainerType::FixTypeTree(void) const
@@ -474,8 +481,12 @@ CDataMember::~CDataMember(void)
 {
 }
 
-void CDataMember::PrintASN(CNcbiOstream& out, int indent) const
+void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
 {
+    GetType()->PrintASNTypeComments(out, indent);
+    bool oneLineComment = m_Comments.size() == 1;
+    if ( !oneLineComment )
+        PrintASNComments(out, m_Comments, indent);
     out << GetName() << ' ';
     GetType()->PrintASN(out, indent);
     if ( GetDefault() ) {
@@ -483,6 +494,13 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent) const
     }
     else if ( Optional() ) {
         out << " OPTIONAL";
+    }
+    if ( !last )
+        out << ',';
+    if ( oneLineComment ) {
+        out << ' ';
+        PrintASNComments(out, m_Comments, indent,
+                         eCommentsDoNotWriteBlankLine | eCommentsNoEOL);
     }
 }
 

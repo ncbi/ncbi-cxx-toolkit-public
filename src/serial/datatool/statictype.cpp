@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/15 20:34:55  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.18  2000/11/14 21:41:26  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -118,9 +122,14 @@
 
 BEGIN_NCBI_SCOPE
 
+TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
+{
+    THROW1_TRACE(runtime_error,
+                 GetASNKeyword() + string(" default not implemented"));
+}
+
 void CStaticDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
-    CParent::PrintASN(out, indent);
     out << GetASNKeyword();
 }
 
@@ -136,15 +145,6 @@ AutoPtr<CTypeStrings> CStaticDataType::GetFullCType(void) const
     if ( type.empty() )
         type = GetDefaultCType();
     return AutoPtr<CTypeStrings>(new CStdTypeStrings(type));
-}
-
-string CStaticDataType::GetDefaultCType(void) const
-{
-    CNcbiOstrstream msg;
-    msg << typeid(*this).name() << ": Cannot generate C++ type: ";
-    PrintASN(msg, 0);
-    string message = CNcbiOstrstreamToString(msg);
-    THROW1_TRACE(runtime_error, message);
 }
 
 const char* CNullDataType::GetASNKeyword(void) const
@@ -180,7 +180,7 @@ AutoPtr<CTypeStrings> CNullDataType::GetFullCType(void) const
     return AutoPtr<CTypeStrings>(new CNullTypeStrings());
 }
 
-string CNullDataType::GetDefaultCType(void) const
+const char* CNullDataType::GetDefaultCType(void) const
 {
     return "bool";
 }
@@ -226,7 +226,7 @@ CTypeRef CBoolDataType::GetTypeInfo(void)
     return &CStdTypeInfo<bool>::GetTypeInfo;
 }
 
-string CBoolDataType::GetDefaultCType(void) const
+const char* CBoolDataType::GetDefaultCType(void) const
 {
     return "bool";
 }
@@ -259,11 +259,6 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
     return true;
 }
 
-TObjectPtr CRealDataType::CreateDefault(const CDataValue& ) const
-{
-    THROW1_TRACE(runtime_error, "REAL default not implemented");
-}
-
 TTypeInfo CRealDataType::GetRealTypeInfo(void)
 {
     if ( HaveModuleName() )
@@ -271,7 +266,7 @@ TTypeInfo CRealDataType::GetRealTypeInfo(void)
     return CStdTypeInfo<double>::GetTypeInfo();
 }
 
-string CRealDataType::GetDefaultCType(void) const
+const char* CRealDataType::GetDefaultCType(void) const
 {
     return "double";
 }
@@ -347,7 +342,7 @@ AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
     return AutoPtr<CTypeStrings>(new CStringTypeStrings(type));
 }
 
-string CStringDataType::GetDefaultCType(void) const
+const char* CStringDataType::GetDefaultCType(void) const
 {
     return "NCBI_NS_STD::string";
 }
@@ -374,9 +369,8 @@ bool CStringStoreDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 AutoPtr<CTypeStrings> CStringStoreDataType::GetFullCType(void) const
 {
     string type = GetVar("_type");
-    if ( type.empty() ) {
+    if ( type.empty() )
         type = GetDefaultCType();
-    }
     return AutoPtr<CTypeStrings>(new CStringStoreTypeStrings(type));
 }
 
@@ -396,14 +390,14 @@ const char* CBitStringDataType::GetXMLContents(void) const
     return "( %BITS; )";
 }
 
-TObjectPtr CBitStringDataType::CreateDefault(const CDataValue& ) const
-{
-    THROW1_TRACE(runtime_error, "BIT STRING default not implemented");
-}
-
 const char* COctetStringDataType::GetASNKeyword(void) const
 {
     return "OCTET STRING";
+}
+
+const char* COctetStringDataType::GetDefaultCType(void) const
+{
+    return "NCBI_NS_STD::vector<char>";
 }
 
 const char* COctetStringDataType::GetXMLContents(void) const
@@ -413,13 +407,8 @@ const char* COctetStringDataType::GetXMLContents(void) const
 
 bool COctetStringDataType::CheckValue(const CDataValue& value) const
 {
-    CheckValueType(value, CBitStringDataValue, "OCTET STRING");
+    CheckValueType(value, COctetStringDataType, "OCTET STRING");
     return true;
-}
-
-TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
-{
-    THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
 }
 
 TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
@@ -475,7 +464,7 @@ CTypeRef CIntDataType::GetTypeInfo(void)
     return &CStdTypeInfo<AnyType::TInteger>::GetTypeInfo;
 }
 
-string CIntDataType::GetDefaultCType(void) const
+const char* CIntDataType::GetDefaultCType(void) const
 {
     return "int";
 }

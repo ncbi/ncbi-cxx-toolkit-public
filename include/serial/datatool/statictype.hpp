@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/15 20:34:43  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.6  2000/11/14 21:41:14  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -91,8 +95,11 @@ public:
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
 
+    TObjectPtr CreateDefault(const CDataValue& value) const;
+
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    virtual string GetDefaultCType(void) const;
+    //virtual string GetDefaultCType(void) const;
+    virtual const char* GetDefaultCType(void) const = 0;
     virtual const char* GetASNKeyword(void) const = 0;
     virtual const char* GetXMLContents(void) const = 0;
 };
@@ -105,7 +112,7 @@ public:
 
     CTypeRef GetTypeInfo(void);
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    string GetDefaultCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 };
@@ -118,7 +125,7 @@ public:
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
-    string GetDefaultCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 
@@ -129,10 +136,9 @@ class CRealDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);
-    string GetDefaultCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 };
@@ -149,7 +155,7 @@ public:
     const CTypeInfo* GetRealTypeInfo(void);
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
-    string GetDefaultCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 };
@@ -165,23 +171,22 @@ public:
     virtual const char* GetASNKeyword(void) const;
 };
 
-class CBitStringDataType : public CStaticDataType {
-    typedef CStaticDataType CParent;
-public:
-    bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
-    virtual const char* GetASNKeyword(void) const;
-    virtual const char* GetXMLContents(void) const;
-};
-
 class COctetStringDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
     const CTypeInfo* GetRealTypeInfo(void);
     bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
+    virtual const char* GetASNKeyword(void) const;
+    virtual const char* GetXMLContents(void) const;
+};
+
+class CBitStringDataType : public COctetStringDataType {
+    typedef COctetStringDataType CParent;
+public:
+    bool CheckValue(const CDataValue& value) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 };
@@ -194,7 +199,7 @@ public:
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
-    string GetDefaultCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
 };

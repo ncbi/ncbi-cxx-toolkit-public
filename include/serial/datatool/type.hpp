@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/15 20:34:44  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.8  2000/11/14 21:41:15  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -170,7 +174,8 @@ public:
 
     bool InChoice(void) const;
 
-    virtual void PrintASN(CNcbiOstream& out, int indent) const;
+    void PrintASNTypeComments(CNcbiOstream& out, int indent) const;
+    virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     void PrintDTD(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out, const list<string>& extraComments) const;
     virtual void PrintDTDElement(CNcbiOstream& out) const = 0;

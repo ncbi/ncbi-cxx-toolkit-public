@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/15 20:34:54  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.12  2000/11/07 17:26:25  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -120,6 +124,7 @@
 #include <serial/datatool/enumstr.hpp>
 #include <serial/datatool/classctx.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/enumtype.hpp>
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -172,9 +177,9 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         iterate ( TValues, i, m_Values ) {
             if ( i != m_Values.begin() )
                 hpp << ',';
-            string id = Identifier(i->first, false);
+            string id = Identifier(i->GetName(), false);
             hpp << "\n"
-                "    "<<m_ValuesPrefix<<id<<" = "<<i->second;
+                "    "<<m_ValuesPrefix<<id<<" = "<<i->GetValue();
         }
         hpp << "\n"
             "};\n"
@@ -207,9 +212,9 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
                 "    SET_ENUM_MODULE(\""<<GetModuleName()<<"\");\n";
         }
         iterate ( TValues, i, m_Values ) {
-            string id = Identifier(i->first, false);
+            string id = Identifier(i->GetName(), false);
             cpp <<
-                "    ADD_ENUM_VALUE(\""<<i->first<<"\", "<<m_ValuesPrefix<<id<<");\n";
+                "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";
         }
         cpp <<
             "}\n"

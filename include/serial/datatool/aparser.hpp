@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/15 20:34:40  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.4  2000/11/14 21:41:12  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -97,13 +101,17 @@ public:
         {
             return m_Lexer.NextToken();
         }
+    TToken Next(void) const
+        {
+            return NextToken().GetToken();
+        }
     int NextTokenLine(void) const
         {
             return NextToken().GetLine();
         }
-    TToken Next(void) const
+    int LastTokenLine(void) const
         {
-            return NextToken().token;
+            return m_Lexer.LastTokenLine();
         }
 
     void Consume(void)
@@ -145,9 +153,7 @@ public:
 
     bool CheckSymbol(char symbol)
         {
-            if ( Next() != T_SYMBOL )
-                return false;
-            return NextToken().GetSymbol() == symbol;
+            return m_Lexer.CheckSymbol(symbol);
         }
 
     void ExpectSymbol(char symbol)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/11/15 20:34:54  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.16  2000/11/14 21:41:24  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -113,24 +117,36 @@ bool CEnumDataType::IsInteger(void) const
     return false;
 }
 
-void CEnumDataType::AddValue(const string& valueName, long value)
+CEnumDataType::TValue& CEnumDataType::AddValue(const string& valueName,
+                                               long value)
 {
-    m_Values.push_back(TValues::value_type(valueName, value));
+    m_Values.push_back(TValue(valueName, value));
+    return m_Values.back();
 }
 
 void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
-    CParent::PrintASN(out, indent);
     out << GetASNKeyword() << " {";
-    indent++;
-    for ( TValues::const_iterator i = m_Values.begin();
-          i != m_Values.end(); ++i ) {
-        if ( i != m_Values.begin() )
+    ++indent;
+    iterate ( TValues, i, m_Values ) {
+        PrintASNNewLine(out, indent);
+        TValues::const_iterator next = i;
+        bool last = ++next == m_Values.end();
+
+        bool oneLineComment = i->GetComments().size() == 1;
+        if ( !oneLineComment )
+            PrintASNComments(out, i->GetComments(), indent);
+        out << i->GetName() << " (" << i->GetValue() << ")";
+        if ( !last )
             out << ',';
-        NewLine(out, indent);
-        out << i->first << " (" << i->second << ")";
+        if ( oneLineComment )
+            PrintASNComments(out, i->GetComments(), indent,
+                             eCommentsDoNotWriteBlankLine | eCommentsNoEOL);
     }
-    NewLine(out, indent - 1);
+    --indent;
+    PrintASNNewLine(out, indent);
+    PrintASNComments(out, m_LastComments, indent,
+                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
     out << "}";
 }
 
@@ -148,10 +164,13 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
     out <<
         "<!ATTLIST "<<XmlTagName()<<" value (\n";
+    bool haveComments = false;
     iterate ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )
             out << " |\n";
-        out << "               " << i->first;
+        out << "               " << i->GetName();
+        if ( !i->GetComments().empty() )
+            haveComments = true;
     }
     out << " ) ";
     if ( IsInteger() )
@@ -159,16 +178,30 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
     else
         out << "#REQUIRED";
     out << " >\n";
-    PrintDTDComments(out, m_LastComments);
+    if ( haveComments ) {
+        out << "<--\n";
+        iterate ( TValues, i, m_Values ) {
+            if ( !i->GetComments().empty() ) {
+                out << "    " << i->GetName() << " - ";
+                iterate ( list<string>, j, i->GetComments() ) {
+                    if ( j != i->GetComments().begin() )
+                        out << "        ";
+                    out << *j << '\n';
+                }
+            }
+        }
+        out << "-->\n";
+    }
+    PrintDTDComments(out, m_LastComments,
+                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
 }
 
 bool CEnumDataType::CheckValue(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id ) {
-        for ( TValues::const_iterator i = m_Values.begin();
-              i != m_Values.end(); ++i ) {
-            if ( i->first == id->GetValue() )
+        iterate ( TValues, i, m_Values ) {
+            if ( i->GetName() == id->GetValue() )
                 return true;
         }
         value.Warning("illegal ENUMERATED value: " + id->GetValue());
@@ -183,9 +216,8 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
     }
 
     if ( !IsInteger() ) {
-        for ( TValues::const_iterator i = m_Values.begin();
-              i != m_Values.end(); ++i ) {
-            if ( i->second == intValue->GetValue() )
+        iterate ( TValues, i, m_Values ) {
+            if ( i->GetValue() == intValue->GetValue() )
                 return true;
         }
         value.Warning("illegal INTEGER value: " + intValue->GetValue());
@@ -201,10 +233,9 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
     if ( id == 0 ) {
         return new int(dynamic_cast<const CIntDataValue&>(value).GetValue());
     }
-    for ( TValues::const_iterator i = m_Values.begin();
-          i != m_Values.end(); ++i ) {
-        if ( i->first == id->GetValue() )
-            return new int(i->second);
+    iterate ( TValues, i, m_Values ) {
+        if ( i->GetName() == id->GetValue() )
+            return new int(i->GetValue());
     }
     value.Warning("illegal ENUMERATED value: " + id->GetValue());
     return 0;
@@ -227,9 +258,8 @@ CTypeInfo* CEnumDataType::CreateTypeInfo(void)
 {
     AutoPtr<CEnumeratedTypeValues>
         info(new CEnumeratedTypeValues(GlobalName(), IsInteger()));
-    for ( TValues::const_iterator i = m_Values.begin();
-          i != m_Values.end(); ++i ) {
-        info->AddValue(i->first, i->second);
+    iterate ( TValues, i, m_Values ) {
+        info->AddValue(i->GetName(), i->GetValue());
     }
     if ( HaveModuleName() )
         info->SetModuleName(GetModule()->GetName());

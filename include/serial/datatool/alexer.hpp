@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/15 20:34:40  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.4  2000/11/14 21:41:11  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -81,6 +85,12 @@ public:
             else
                 return FillNextToken();
         }
+    void FillComments(void)
+        {
+            if ( !TokenStarted() )
+                return LookupComments();
+        }
+    bool CheckSymbol(char symbol);
 
     void Consume(void)
         {
@@ -93,6 +103,10 @@ public:
     int CurrentLine(void) const
         {
             return m_Line;
+        }
+    int LastTokenLine(void) const
+        {
+            return m_NextToken.GetLine();
         }
 
     virtual void LexerError(const char* error);
@@ -137,6 +151,7 @@ public:
 
 protected:
     virtual TToken LookupToken(void) = 0;
+    virtual void LookupComments(void) = 0;
 
     void NextLine(void)
         {

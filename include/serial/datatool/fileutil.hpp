@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/15 20:34:43  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.6  2000/11/14 21:41:13  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -187,9 +191,21 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
                           const char* tab = 0);
 string Tabbed(const string& code, const char* tab = 0);
 
+CNcbiOstream& PrintASNNewLine(CNcbiOstream& out, int indent);
+
+enum {
+    eCommentsAlwaysMultiline = 1,
+    eCommentsDoNotWriteBlankLine = 2,
+    eCommentsNoEOL = 4
+};
+
 CNcbiOstream& PrintDTDComments(CNcbiOstream& out,
                                const list<string>& comments,
-                               bool allowOneLine = true);
+                               int flags = 0);
+CNcbiOstream& PrintASNComments(CNcbiOstream& out,
+                               const list<string>& comments,
+                               int indent,
+                               int flags = 0);
 
 END_NCBI_SCOPE
 

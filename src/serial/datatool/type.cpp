@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/11/15 20:34:56  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.54  2000/11/14 21:41:26  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -188,9 +192,9 @@ void CDataType::Warning(const string& mess) const
     CNcbiDiag() << LocationString() << ": " << mess;
 }
 
-void CDataType::PrintASN(CNcbiOstream& /*out*/, int /*indent*/) const
+void CDataType::PrintASNTypeComments(CNcbiOstream& out, int indent) const
 {
-    //PrintASNComments(out, m_Comments);
+    PrintASNComments(out, m_Comments, indent);
 }
 
 void CDataType::PrintDTD(CNcbiOstream& out) const
@@ -209,8 +213,11 @@ void CDataType::PrintDTD(CNcbiOstream& out,
     if ( !oneLineComment )
         PrintDTDComments(out, extraComments);
     PrintDTDElement(out);
-    if ( oneLineComment )
-        out << " <!--" << extraComments.front() << " -->";
+    if ( oneLineComment ) {
+        out << ' ';
+        PrintDTDComments(out, extraComments,
+                         eCommentsDoNotWriteBlankLine | eCommentsNoEOL);
+    }
     out << '\n';
     PrintDTDExtra(out);
 }
@@ -276,15 +283,6 @@ bool CDataType::Check(void)
 bool CDataType::CheckType(void) const
 {
     return true;
-}
-
-CNcbiOstream& CDataType::NewLine(CNcbiOstream& out, int indent)
-{
-    out <<
-        "\n";
-    for ( int i = 0; i < indent; ++i )
-        out << "  ";
-    return out;
 }
 
 const string& CDataType::GetVar(const string& value) const

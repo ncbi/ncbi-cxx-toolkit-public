@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/15 20:34:55  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.26  2000/11/14 21:41:25  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -152,6 +156,9 @@ void CDataTypeModule::AddImports(const string& module, const list<string>& types
 
 void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 {
+    PrintASNComments(out, m_Comments, 0,
+                     eCommentsAlwaysMultiline | eCommentsDoNotWriteBlankLine);
+
     out <<
         GetName() << " DEFINITIONS ::=\n"
         "BEGIN\n"
@@ -191,12 +198,16 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
     }
 
     iterate ( TDefinitions, i, m_Definitions ) {
+        i->second->PrintASNTypeComments(out, 0);
         out << i->first << " ::= ";
         i->second->PrintASN(out, 0);
         out <<
             "\n"
             "\n";
     }
+
+    PrintASNComments(out, m_LastComments, 0,
+                     eCommentsAlwaysMultiline);
 
     out <<
         "END\n"
@@ -210,7 +221,7 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
         "<!-- This section mapped from ASN.1 module "<<GetName()<<" -->\n"
         "\n";
 
-    PrintDTDComments(out, m_Comments);
+    PrintDTDComments(out, m_Comments, eCommentsAlwaysMultiline);
 
     if ( !m_Exports.empty() ) {
         out <<
@@ -260,7 +271,8 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
             "\n";
     }
 
-    PrintDTDComments(out, m_LastComments);
+    PrintDTDComments(out, m_LastComments,
+                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
 
     out <<
         "\n"

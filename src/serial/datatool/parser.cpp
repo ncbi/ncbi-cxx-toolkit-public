@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/15 20:34:55  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.24  2000/11/14 21:41:25  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -166,12 +170,12 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
             case T_IDENTIFIER:
                 name = TypeReference();
                 Consume(T_DEFINE, "::=");
-                module.AddDefinition(name, Type());
+                ModuleType(module, name);
                 break;
             case T_DEFINE:
                 ERR_POST(Location() << "type name omitted");
                 Consume();
-                module.AddDefinition("unnamed type", Type());
+                ModuleType(module, "unnamed type");
                 break;
             case K_END:
                 return;
@@ -186,12 +190,19 @@ void ASNParser::ModuleBody(CDataTypeModule& module)
     }
 }
 
+void ASNParser::ModuleType(CDataTypeModule& module, const string& name)
+{
+    AutoPtr<CDataType> type = Type();
+    CopyLineComment(LastTokenLine(), type->Comments(),
+                    eCombineNext);
+    module.AddDefinition(name, type);
+}
+
 AutoPtr<CDataType> ASNParser::Type(void)
 {
     int line = NextTokenLine();
     AutoPtr<CDataType> type(x_Type());
     type->SetSourceLine(line);
-    CopyLineComment(line, type->Comments());
     return type;
 }
 
@@ -281,7 +292,10 @@ CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
         line = NextTokenLine();
         AutoPtr<CDataMember> member = NamedDataType(allowDefaults);
         more = HaveMoreElements();
-        CopyLineComment(line, member->Comments(), (more? eCombineNext: 0));
+        if ( more )
+            CopyLineComment(line, member->Comments(), eCombineNext);
+        else
+            CopyLineComment(line, member->Comments());
         container->AddMember(member);
     }
     return container.release();
@@ -307,6 +321,7 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
             break;
         }
     }
+    CopyComments(member->Comments());
     return member;
 }
 
@@ -318,20 +333,25 @@ CEnumDataType* ASNParser::EnumeratedBlock(CEnumDataType* enumType)
     CopyLineComment(line, e->Comments(), eCombineNext);
     for ( bool more = true; more; ) {
         line = NextTokenLine();
-        EnumeratedValue(*e);
+        CEnumDataTypeValue& value = EnumeratedValue(*e);
         more = HaveMoreElements();
-        CopyLineComment(line, e->Comments(), (more? eCombineNext: 0));
+        if ( more )
+            CopyLineComment(line, value.GetComments(), eCombineNext);
+        else
+            CopyLineComment(line, value.GetComments());
     }
     return e.release();
 }
 
-void ASNParser::EnumeratedValue(CEnumDataType& t)
+CEnumDataTypeValue& ASNParser::EnumeratedValue(CEnumDataType& t)
 {
     string id = Identifier();
     ConsumeSymbol('(');
     long value = Number();
     ConsumeSymbol(')');
-    t.AddValue(id, value);
+    CEnumDataTypeValue& ret = t.AddValue(id, value);
+    CopyComments(ret.GetComments());
+    return ret;
 }
 
 void ASNParser::TypeList(list<string>& ids)

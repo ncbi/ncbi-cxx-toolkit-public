@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/15 20:34:53  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.11  2000/11/14 21:41:23  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -90,6 +94,24 @@ void AbstractLexer::LexerWarning(const char* error)
     ERR_POST(CurrentLine() << ": lexer error: " << error);
 }
 
+bool AbstractLexer::CheckSymbol(char symbol)
+{
+    if ( TokenStarted() ) {
+        return
+            m_NextToken.GetToken() == T_SYMBOL &&
+            m_NextToken.GetSymbol() == symbol;
+    }
+
+    LookupComments();
+    if ( Char() != symbol )
+        return false;
+    
+    FillNextToken();
+    _ASSERT(m_NextToken.GetToken() == T_SYMBOL &&
+            m_NextToken.GetSymbol() == symbol);
+    return true;
+}
+
 const string& AbstractLexer::ConsumeAndValue(void)
 {
     if ( !TokenStarted() )
@@ -102,6 +124,7 @@ const string& AbstractLexer::ConsumeAndValue(void)
 const AbstractToken& AbstractLexer::FillNextToken(void)
 {
     _ASSERT(!TokenStarted());
+    FillComments();
     if ( (m_NextToken.token = LookupToken()) == T_SYMBOL ) {
         m_TokenStart = m_Position;
         m_NextToken.line = CurrentLine();

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/11/15 20:34:55  vasilche
+* Added user comments to ENUMERATED types.
+* Added storing of user comments to ASN.1 module definition.
+*
 * Revision 1.27  2000/11/14 21:41:25  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -145,9 +149,8 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
     iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintASN(out);
     }
-    iterate ( list<string>, i, m_LastComments ) {
-        out << "--" << *i << '\n';
-    }
+    PrintASNComments(out, m_LastComments, 0,
+                     eCommentsAlwaysMultiline | eCommentsAlwaysMultiline);
 }
 
 void CFileModules::PrintDTD(CNcbiOstream& out) const
@@ -155,7 +158,8 @@ void CFileModules::PrintDTD(CNcbiOstream& out) const
     iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintDTD(out);
     }
-    PrintDTDComments(out, m_LastComments);
+    PrintDTDComments(out, m_LastComments,
+                     eCommentsAlwaysMultiline | eCommentsAlwaysMultiline);
 }
 
 void CFileModules::PrintDTDModular(void) const
