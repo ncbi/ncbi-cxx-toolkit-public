@@ -54,22 +54,6 @@ MBGapEditScript *MBGapEditScriptFree(MBGapEditScript *es);
 MBGapEditScript *MBGapEditScriptNew(void);
 MBGapEditScript *MBGapEditScriptAppend(MBGapEditScript *es, MBGapEditScript *et);
 
-enum {
-    EDIT_OP_MASK = 0x3,
-    EDIT_OP_ERR  = 0x0,
-    EDIT_OP_INS  = 0x1,
-    EDIT_OP_DEL  = 0x2,
-    EDIT_OP_REP  = 0x3
-};
-
-enum {         /* half of the (fixed) match score */
-    ERROR_FRACTION=2,  /* 1/this */
-    MAX_SPACE=1000000,
-    sC = 0, sI = 1, sD = 2, LARGE=100000000
-};
-
-#define ICEIL(x,y) ((((x)-1)/(y))+1)
-
 /* ----- pool allocator ----- */
 typedef struct ThreeVal {
     Int4 I, C, D;
@@ -80,10 +64,6 @@ typedef struct MBSpace {
     Int4 used, size;
     struct MBSpace *next;
 } MBSpace;
-
-#define EDIT_VAL(op) (op >> 2)
-
-#define EDIT_OPC(op) (op & EDIT_OP_MASK)
 
 MBSpace* MBSpaceNew(void);
 void MBSpaceFree(MBSpace* sp);
