@@ -402,18 +402,18 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
              patternSearchItems* *pattern_info,
              Blast_Message* *error_msg)
 {
-    Int4 i; /*index over string describing the pattern*/
-    Int4 j; /*index for position in pattern*/
+    Uint4 i; /*index over string describing the pattern*/
+    Uint4 j; /*index for position in pattern*/
     Int4 charIndex; /*index over characters in alphabet*/
     Int4 secondIndex; /*second index into pattern*/
     Int4 numIdentical; /*number of consec. positions with identical specification*/
-    Int4 charSetMask;  /*index over masks for specific characters*/
+    Uint4 charSetMask;  /*index over masks for specific characters*/
     Int4 currentSetMask, prevSetMask ; /*mask for current and previous character positions*/    
     Int4 thisMask;    /*integer representing a bit pattern for a 
                         set of characters*/
     Int4 minWildcard, maxWildcard; /*used for variable number of wildcard
                                      positions*/
-    Int4  tj; /*temporary copy of j*/
+    Uint4  tj; /*temporary copy of j*/
     Int4 tempInputPatternMasked[MaxP]; /*local copy of parts
             of inputPatternMasked*/
     Uint1 c;  /*character occuring in pattern*/

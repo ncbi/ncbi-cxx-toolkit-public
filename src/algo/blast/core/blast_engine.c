@@ -269,7 +269,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
          if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
-             (hsp_list->traceback_done || !hit_options->is_gapped), FALSE)) {
+             (Uint1) (hsp_list->traceback_done || !hit_options->is_gapped), FALSE)) {
             /* HSPs from this list are moved elsewhere, reset count to 0 */
             hsp_list->hspcnt = 0;
          }

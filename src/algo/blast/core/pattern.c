@@ -114,7 +114,7 @@ static Int4 find_hitsS(Int4 *hitArray, const Uint1* seq, Int4 len1,
   pos indicates the starting position
   len is length of sequence seq
   hitArray stores the results*/
-static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Char pos, Int4 len,
+static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
 	       patternSearchItems *patternSearch)
 {
   /*Some variables and the algorithm are similar to what is

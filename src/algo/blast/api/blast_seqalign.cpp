@@ -137,11 +137,11 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
         case GAPALIGN_DECLINE:
         case GAPALIGN_SUB:
             m_start = x_GetAlignmentStart(start1, esp, m_strand,
-                    edit_block->translate1, edit_block->length1,
+                    edit_block->translate1 != 0, edit_block->length1,
                     edit_block->original_length1, edit_block->frame1);
 
             s_start = x_GetAlignmentStart(start2, esp, s_strand,
-                    edit_block->translate2, edit_block->length2,
+                    edit_block->translate2 != 0, edit_block->length2,
                     edit_block->original_length2, edit_block->frame2);
 
             if (edit_block->reverse) {
@@ -160,7 +160,7 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
         // Insertion on the master sequence (gap on slave)
         case GAPALIGN_INS:
             m_start = x_GetAlignmentStart(start1, esp, m_strand,
-                    edit_block->translate1, edit_block->length1,
+                    edit_block->translate1 != 0, edit_block->length1,
                     edit_block->original_length1, edit_block->frame1);
 
             s_start = GAP_VALUE;
@@ -183,7 +183,7 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
             m_start = GAP_VALUE;
 
             s_start = x_GetAlignmentStart(start2, esp, s_strand,
-                    edit_block->translate2, edit_block->length2,
+                    edit_block->translate2 != 0, edit_block->length2,
                     edit_block->original_length2, edit_block->frame2);
 
             if (edit_block->reverse) {
@@ -439,8 +439,8 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
                         lengths, strands);
 
                 CRef<CSeq_align> sa_tmp = x_CreateSeqAlign(id1, id2, starts,
-                        lengths, strands, edit_block->translate1,
-                        edit_block->translate2, edit_block->reverse);
+                        lengths, strands, edit_block->translate1 !=0,
+                        edit_block->translate2 != 0, edit_block->reverse != 0);
 
                 // Add this seqalign to the list
                 if (sa_tmp)
@@ -457,8 +457,8 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
                 starts, lengths, strands);
 
         return x_CreateSeqAlign(id1, id2, starts, lengths, strands,
-                edit_block->translate1, edit_block->translate2,
-                edit_block->reverse);
+                edit_block->translate1 != 0, edit_block->translate2 != 0,
+                edit_block->reverse != 0);
     }
 }
 
@@ -735,6 +735,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/10/15 16:59:42  coulouri
+* type correctness fixes
+*
 * Revision 1.17  2003/09/09 15:18:02  camacho
 * Fix includes
 *

@@ -38,6 +38,7 @@ Contents: Various BLAST utilities
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_stat.h>
+#include <algo/blast/core/blast_filter.h>
 
 static char const rcsid[] = "$Id$";
 

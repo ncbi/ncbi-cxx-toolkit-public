@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.37  2003/10/15 16:59:43  coulouri
+ * type correctness fixes
+ *
  * Revision 1.36  2003/10/02 22:08:34  dondosha
  * Corrections for one-strand translated searches
  *
@@ -2529,11 +2532,11 @@ BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4*
 		for (index=0; index<max_number_values; index++)
 		{
 			if (open)
-				open_array[index] = values[index][0];
+				open_array[index] = (Int4) values[index][0];
 			if (extension)
-				extension_array[index] = values[index][1];
+				extension_array[index] = (Int4) values[index][1];
 			if (decline_align)
-				decline_align_array[index] = values[index][2];
+				decline_align_array[index] = (Int4) values[index][2];
 			if (lambda)
 				lambda_array[index] = values[index][3];
 			if (K)

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.64  2003/10/15 16:59:43  coulouri
+ * type correctness fixes
+ *
  * Revision 1.63  2003/10/07 17:26:11  dondosha
  * Lower case mask moved from options to the sequence block
  *
@@ -690,7 +693,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
 
    if (program_number != blast_type_blastn) {	/* protein-protein options. */
       if (matrix) {
-         int i;
+         unsigned int i;
          options->matrix = strdup(matrix);
          /* Make it all upper case */
          for (i=0; i<strlen(options->matrix); ++i)

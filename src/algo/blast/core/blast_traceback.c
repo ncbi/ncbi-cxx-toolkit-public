@@ -646,8 +646,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
             if (scalingFactor != 0.0 && scalingFactor != 1.0) {
                /* Scale down score for blastp and tblastn. */
-               hsp->score = (Int4)
-                  (hsp->score+(0.5*scalingFactor))/scalingFactor;
+               hsp->score = (Int4) ((hsp->score+(0.5*scalingFactor))/scalingFactor);
             }
             /* only one alignment considered for blast[np]. */
             /* This may be changed by LinkHsps for blastx or tblastn. */

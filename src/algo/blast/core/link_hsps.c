@@ -48,7 +48,8 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
    BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
 {
    double gap_prob, gap_decay_rate, sum_evalue, score_prime;
-   Int4 gap_size, num;
+   Int4 gap_size;
+   Int2 num;
    Int4 subject_eff_length, query_eff_length, length_adjustment;
    Int4 context = head_hsp->context;
    double eff_searchsp;

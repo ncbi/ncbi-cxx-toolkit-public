@@ -307,8 +307,8 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param linker sets linker for dust. [out]
 */
 static Int2
-parse_dust_options(const char *ptr, Int4* level, Int4* window,
-	Int4* cutoff, Int4* linker)
+parse_dust_options(const char *ptr, Int2* level, Int2* window,
+	Int2* cutoff, Int2* linker)
 
 {
 	char buffer[BLASTOPTIONS_BUFFER_SIZE];
@@ -552,7 +552,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
    const char *ptr;
 	Int2 seqloc_num;
 	Int2 status=0;		/* return value. */
-	Int4 window_dust, level_dust, minwin_dust, linker_dust;
+	Int2 window_dust, level_dust, minwin_dust, linker_dust;
    BlastSeqLoc* dust_loc = NULL,* seg_loc = NULL;
 	SegParameters* sparamsp=NULL;
 #ifdef CC_FILTER_ALLOWED

@@ -790,7 +790,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
    Uint2 extra_bases, left, right;
    Uint1* q;
    Int4 start_offset, last_start, next_start, last_end;
-   Int4 max_bases;
+   Uint1 max_bases;
    Int4 bases_in_last_byte, bases_in_extra_bytes;
 
    word_size = COMPRESSION_RATIO*lookup->wordsize;
@@ -871,10 +871,10 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
  */
 static Boolean 
 BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start, 
-   Int4 max_bases_left, Int4 max_bases_right, Int4 max_length, 
-   Boolean extend_partial_byte, Int4* extended_right)
+   Uint4 max_bases_left, Uint4 max_bases_right, Uint4 max_length, 
+   Boolean extend_partial_byte, Uint4* extended_right)
 {
-   Int4 length = 0, extended_left = 0;
+   Uint4 length = 0, extended_left = 0;
    Uint1* q,* s;
    
    *extended_right = 0;
@@ -895,7 +895,7 @@ BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start,
       return TRUE;
    if (extend_partial_byte && max_bases_left > 0) {
       length += BlastNaMiniExtendLeft(q+COMPRESSION_RATIO, s, 
-                   MIN(max_bases_left, COMPRESSION_RATIO));
+                   (Uint1) MIN(max_bases_left, COMPRESSION_RATIO));
    }
    if (length >= max_length)
       return TRUE;
@@ -917,7 +917,7 @@ BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start,
          return TRUE;
       if (max_bases_right > 0) {
          length += BlastNaMiniExtendRight(q, s, 
-                      MIN(max_bases_right, COMPRESSION_RATIO));
+                      (Uint1) MIN(max_bases_right, COMPRESSION_RATIO));
       }
    }
    *extended_right = length - extended_left;
@@ -948,7 +948,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
    Uint4 max_bases_left, max_bases_right;
    Int4 query_length = query->length;
    Boolean ag_blast, variable_wordsize;
-   Int4 extended_right;
+   Uint4 extended_right;
 
    s_start = subject->sequence;
    q_start = query->sequence;
@@ -996,7 +996,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
                MIN(query_length-q_offsets[i], last_end-s_offsets[i]));
                                                 
             if (BlastNaExactMatchExtend(q, s, max_bases_left, max_bases_right,
-                   word_length, !variable_wordsize, &extended_right)) {
+                   word_length, (Boolean) !variable_wordsize, &extended_right)) {
                /* Check if this diagonal has already been explored and save
                   the hit if needed. */
                BlastnExtendInitialHit(query, subject, lookup,
@@ -1046,7 +1046,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    Uint4 extra_length, reduced_word_length, min_extra_length;
    Uint1* q;
    Int4 start_offset, end_offset, next_start;
-   Uint4 max_bases_left, max_bases_right;
+   Uint1 max_bases_left, max_bases_right;
    Int4 bases_in_last_byte;
    Boolean variable_wordsize = (Boolean) 
       (word_options->extend_word_method & EXTEND_WORD_VARIABLE_SIZE);

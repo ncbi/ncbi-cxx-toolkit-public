@@ -52,7 +52,7 @@ BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPList* hsp_list,
    BlastQueryInfo* query_info, Boolean is_ooframe)
 {
    BlastHSP* hsp;
-   Int4 context;
+   Int2 context;
    Int4 index;
    Int4 offset_shift, extra_length = 0;
 
