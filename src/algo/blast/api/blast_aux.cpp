@@ -249,22 +249,22 @@ CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) 
 }
 
 BlastMaskLoc*
-CSeqLoc2BlastMaskLoc(const CSeq_loc &slp, int index)
+CSeqLoc2BlastMaskLoc(const CSeq_loc* slp, int index)
 {
-    if (slp.IsNull())
+    if (!slp || slp->IsNull())
         return NULL;
 
-    _ASSERT(slp.IsInt() || slp.IsPacked_int() || slp.IsMix());
+    _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
     BlastMaskLoc* mask = NULL;
 
-    if (slp.IsInt()) {
+    if (slp->IsInt()) {
         bsl = 
-            BlastSeqLocNew(slp.GetInt().GetFrom(), slp.GetInt().GetTo());
-    } else if (slp.IsPacked_int()) {
+            BlastSeqLocNew(slp->GetInt().GetFrom(), slp->GetInt().GetTo());
+    } else if (slp->IsPacked_int()) {
         ITERATE(list< CRef<CSeq_interval> >, itr, 
-                slp.GetPacked_int().Get()) {
+                slp->GetPacked_int().Get()) {
             curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
             if (!bsl) {
                 bsl = tail = curr;
@@ -273,8 +273,8 @@ CSeqLoc2BlastMaskLoc(const CSeq_loc &slp, int index)
                 tail = tail->next;
             }
         }
-    } else if (slp.IsMix()) {
-        ITERATE(CSeq_loc_mix::Tdata, itr, slp.GetMix().Get()) {
+    } else if (slp->IsMix()) {
+        ITERATE(CSeq_loc_mix::Tdata, itr, slp->GetMix().Get()) {
             if ((*itr)->IsInt()) {
                 curr = BlastSeqLocNew((*itr)->GetInt().GetFrom(), 
                                       (*itr)->GetInt().GetTo());
@@ -309,6 +309,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2004/06/23 14:05:06  dondosha
+ * Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer
+ *
  * Revision 1.42  2004/06/08 14:58:46  dondosha
  * Removed is_neighboring option; let application set min_hit_length and percent_identity options instead
  *

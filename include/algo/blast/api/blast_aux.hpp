@@ -68,7 +68,7 @@ BEGIN_SCOPE(blast)
  */
 NCBI_XBLAST_EXPORT
 BlastMaskLoc*
-CSeqLoc2BlastMaskLoc(const objects::CSeq_loc &slp, int index);
+CSeqLoc2BlastMaskLoc(const objects::CSeq_loc* slp, int index);
 
 /** Convert coordinates in masking locations for one sequence from DNA to 
  * protein, creating mask locations for each of the 6 translation frames.
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/06/23 14:02:05  dondosha
+* Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer
+*
 * Revision 1.36  2004/06/21 15:23:01  camacho
 * Fix PSIBlastOptions free function
 *

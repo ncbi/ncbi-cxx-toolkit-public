@@ -127,7 +127,7 @@ FillMaskLocFromBlastResults(TSeqLocVector& query, BlastHSPResults* results)
         query_length = sequence::GetLength(*query[query_index].seqloc, 
                                            query[query_index].scope);
         BlastMaskLoc* mask = 
-            CSeqLoc2BlastMaskLoc(*query[query_index].mask, query_index);
+            CSeqLoc2BlastMaskLoc(query[query_index].mask, query_index);
         if (mask) 
             loc_list = mask->loc_list;
         else 
@@ -222,6 +222,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.4  2004/06/23 14:07:19  dondosha
+ *  Changed CSeq_loc argument in CSeqLoc2BlastMaskLoc to pointer
+ *
  *  Revision 1.3  2004/06/15 22:51:54  dondosha
  *  Added const qualifiers to variables assigned returns from strchr and strstr - needed for SunOS compiler
  *
