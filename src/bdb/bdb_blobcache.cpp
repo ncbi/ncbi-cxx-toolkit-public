@@ -251,6 +251,7 @@ public:
 
         if (m_Buffer) {
             LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            m_BlobStream->SetTransaction(&trans);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             m_BlobDB.Sync();
             delete m_Buffer;
@@ -332,6 +333,7 @@ public:
 
         if (m_Buffer) {
             LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            m_BlobStream->SetTransaction(&trans);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             delete m_Buffer;
             m_Buffer = 0;
@@ -1987,6 +1989,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/12/29 17:08:15  kuznets
+ * CBDB_CacheIWriter - using transactions to save BDB data
+ *
  * Revision 1.35  2003/12/29 16:53:25  kuznets
  * Made Flush transactional
  *
