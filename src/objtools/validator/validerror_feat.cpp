@@ -291,7 +291,14 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     if ( grp  ) {
         return grp->GetPseudo();
     }
-    
+
+    // !!! DEBUG {
+    // For testing purposes. Remove when test is done.
+    if ( m_Imp.AvoidPerfBottlenecks() ) {
+        return false;
+    }
+    // }
+
     // check overlapping gene
     CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
         feat.GetLocation(),
@@ -1131,6 +1138,12 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
 {
     const CSeq_loc& loc = feat.GetLocation();
 
+    // !!! DEBUG {
+    if( m_Imp.AvoidPerfBottlenecks() ) {
+        return;
+    } 
+    // } DEBUG
+
     CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
         loc,
         CSeqFeatData::e_Cdregion,
@@ -1263,6 +1276,13 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             }
         }
     } else {
+
+        // !!! DEBUG {
+        if( m_Imp.AvoidPerfBottlenecks() ) {
+            return;
+        } 
+        // } DEBUG
+
         CFeat_CI mrna(
             bsh, 
             0, 0,
@@ -1368,7 +1388,13 @@ void CValidError_feat::ValidateCommonCDSProduct
 void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 {
     const CSeq_loc& loc = feat.GetLocation();
-    
+
+    // !!! DEBUG {
+    if( m_Imp.AvoidPerfBottlenecks() ) {
+        return;
+    } 
+    // } DEBUG
+
     CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
         loc,
         CSeqFeatData::eSubtype_mRNA,
@@ -1428,6 +1454,12 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
         return;
     }
 
+    // !!! DEBUG {
+    if( m_Imp.AvoidPerfBottlenecks() ) {
+        return;
+    } 
+    // } DEBUG
+    
     // look for intersecting gene
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
         feat.GetLocation(),
@@ -1883,6 +1915,12 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         return;
     }
 
+    // !!! DEBUG {
+    if( m_Imp.AvoidPerfBottlenecks() ) {
+        return;
+    } 
+    // } DEBUG
+    
     CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
@@ -2069,6 +2107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/02/03 20:21:41  shomrat
+* Skip use of feature indexing if performance flag is set (testing)
+*
 * Revision 1.12  2003/02/03 18:03:22  shomrat
 * Change in use of GetSequenceView and style improvments
 *
