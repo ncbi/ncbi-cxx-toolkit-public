@@ -300,6 +300,21 @@ LIBOB           = @LIBOB@
 # LIBIMR should be empty for single-threaded builds
 LIBIMR          = @LIBIMR@
 
+# Various image-format libraries
+JPEG_INCLUDE  = @JPEG_INCLUDE@
+JPEG_LIBS     = @JPEG_LIBS@
+PNG_INCLUDE   = @PNG_INCLUDE@
+PNG_LIBS      = @PNG_LIBS@
+TIFF_INCLUDE  = @TIFF_INCLUDE@
+TIFF_LIBS     = @TIFF_LIBS@
+GIF_INCLUDE   = @GIF_INCLUDE@
+GIF_LIBS      = @GIF_LIBS@
+UNGIF_INCLUDE = @UNGIF_INCLUDE@
+UNGIF_LIBS    = @UNGIF_LIBS@
+XPM_INCLUDE   = @XPM_INCLUDE@
+XPM_LIBS      = @XPM_LIBS@
+
+
 #################################
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
