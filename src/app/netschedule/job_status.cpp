@@ -95,6 +95,16 @@ CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id,
     }
 }
 
+void CNetScheduler_JobStatusTracker::ClearAll()
+{
+    CWriteLockGuard guard(m_Lock);
+
+    for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
+        TBVector& bv = *m_StatusStor[i];
+        bv.clear(true);
+    }
+}
+
 void
 CNetScheduler_JobStatusTracker::SetExactStatusNoLock(unsigned int job_id, 
                                    CNetScheduleClient::EJobStatus status,
@@ -117,20 +127,43 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
 
     case CNetScheduleClient::ePending:        
         old_status = GetStatusNoLock(job_id);
-        if (old_status == CNetScheduleClient::eJobNotFound) {  // new job
+        if ((old_status == CNetScheduleClient::eJobNotFound) // new job
+            ||
+            (old_status == CNetScheduleClient::eReturned)
+            ||
+            (old_status == CNetScheduleClient::eRunning)
+            ) {
             SetExactStatusNoLock(job_id, status, true);
-            break;
-        }
-        if ((int)old_status >= 0) {
-            x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
     case CNetScheduleClient::eRunning:
-        old_status = IsStatusNoLock(job_id, CNetScheduleClient::ePending);
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::ePending,
+                                    CNetScheduleClient::eReturned,
+                                    CNetScheduleClient::eCanceled);
         if ((int)old_status >= 0) {
+            if (IsCancelCode(old_status)) {
+                break;
+            }
+            x_SetClearStatusNoLock(job_id, status, old_status);
+            break;
+        }
+
+        ReportInvalidStatus(job_id, status, old_status);
+        break;
+
+    case CNetScheduleClient::eReturned:
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eRunning,
+                                    CNetScheduleClient::eCanceled,
+                                    CNetScheduleClient::eFailed);
+        if ((int)old_status >= 0) {
+            if (IsCancelCode(old_status)) {
+                break;
+            }
             x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
@@ -138,25 +171,45 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
         break;
 
     case CNetScheduleClient::eCanceled:
-        old_status = IsStatusNoLock(job_id, CNetScheduleClient::ePending);
-        if (old_status != CNetScheduleClient::ePending) {
-            old_status = 
-                IsStatusNoLock(job_id, CNetScheduleClient::eRunning);
-        }
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::ePending,
+                                    CNetScheduleClient::eRunning,
+                                    CNetScheduleClient::eReturned);
         if ((int)old_status >= 0) {
             x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
-        // in this case
+        // in this case (failed, done) we just do nothing.
+        old_status = CNetScheduleClient::eCanceled;
         break;
 
     case CNetScheduleClient::eFailed:
-    case CNetScheduleClient::eDone:
-        old_status = IsStatusNoLock(job_id, CNetScheduleClient::eRunning);
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eRunning,
+                                    CNetScheduleClient::eReturned);
         if ((int)old_status >= 0) {
             x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
+
+        old_status = CNetScheduleClient::eCanceled;
+        break;
+
+    case CNetScheduleClient::eDone:
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eRunning,
+                                    CNetScheduleClient::eReturned);
+        if ((int)old_status >= 0) {
+            x_SetClearStatusNoLock(job_id, status, old_status);
+            break;
+        }
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eCanceled,
+                                    CNetScheduleClient::eFailed);
+        if (IsCancelCode(old_status)) {
+            break;
+        }
+
         ReportInvalidStatus(job_id, status, old_status);
         break;    
         
@@ -212,12 +265,39 @@ CNetScheduler_JobStatusTracker::ReportInvalidStatus(unsigned int /*job_id*/,
 
 CNetScheduleClient::EJobStatus 
 CNetScheduler_JobStatusTracker::IsStatusNoLock(unsigned int job_id, 
-                                 CNetScheduleClient::EJobStatus status) const
+        CNetScheduleClient::EJobStatus st1,
+        CNetScheduleClient::EJobStatus st2,
+        CNetScheduleClient::EJobStatus st3
+        ) const
 {
-    const TBVector& bv = *m_StatusStor[(int)status];
-    if (bv[job_id]) {
-        return status;
+    if (st1 == CNetScheduleClient::eJobNotFound) {
+        return CNetScheduleClient::eJobNotFound;;
+    } else {
+        const TBVector& bv = *m_StatusStor[(int)st1];
+        if (bv[job_id]) {
+            return st1;
+        }
     }
+
+    if (st2 == CNetScheduleClient::eJobNotFound) {
+        return CNetScheduleClient::eJobNotFound;;
+    } else {
+        const TBVector& bv = *m_StatusStor[(int)st2];
+        if (bv[job_id]) {
+            return st2;
+        }
+    }
+
+    if (st3 == CNetScheduleClient::eJobNotFound) {
+        return CNetScheduleClient::eJobNotFound;;
+    } else {
+        const TBVector& bv = *m_StatusStor[(int)st3];
+        if (bv[job_id]) {
+            return st3;
+        }
+    }
+
+
     return CNetScheduleClient::eJobNotFound;
 }
 
@@ -227,6 +307,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/28 12:24:17  kuznets
+ * New job status Returned, better error processing and queue management
+ *
  * Revision 1.5  2005/02/23 19:16:38  kuznets
  * Implemented garbage collection thread
  *

@@ -82,6 +82,7 @@ typedef enum {
     eGetJob,
     ePutJobResult,
     eReturnJob,
+    eDropQueue,
 
     eShutdown,
     eVersion,
@@ -180,6 +181,7 @@ public:
     void ProcessStatus(CSocket& sock, SThreadData& tdata);
     void ProcessGet(CSocket& sock, SThreadData& tdata);
     void ProcessPut(CSocket& sock, SThreadData& tdata);
+    void ProcessDropQueue(CSocket& sock, SThreadData& tdata);
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
@@ -298,9 +300,9 @@ void CNetScheduleServer::Process(SOCK sock)
 {
     SThreadData* tdata = 0;
     EIO_Status io_st;
+    CSocket socket;
 
     try {
-        CSocket socket;
         socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
         x_SetSocketParams(&socket);
@@ -354,10 +356,14 @@ void CNetScheduleServer::Process(SOCK sock)
                 break;
             case eReturnJob:
             case eShutdown:
+                LOG_POST("Shutdown request...");
                 SetShutdownFlag();
                 break;
             case eVersion:
-                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.2");
+                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.3");
+                break;
+            case eDropQueue:
+                ProcessDropQueue(socket, *tdata);
                 break;
             case eLogging:
             case eStatistics:
@@ -379,10 +385,13 @@ void CNetScheduleServer::Process(SOCK sock)
     catch (CNetScheduleException &ex)
     {
         ERR_POST("Server error: " << ex.what());
+        string err = NStr::PrintableString(ex.what());
+        WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
     }
     catch (CNetServiceException &ex)
     {
         ERR_POST("Server error: " << ex.what());
+        WriteMsg(socket, "ERR:", ex.what(), false /*no control*/);
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -395,11 +404,19 @@ void CNetScheduleServer::Process(SOCK sock)
         } else {
             ERR_POST(Error << "BDB Error : " 
                            << ex.what());
+            string err = "Internal database error:";
+            err += ex.what();
+            err = NStr::PrintableString(err);
+            WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
         }
     }
     catch (CBDB_Exception &ex)
     {
         ERR_POST("BDB Server error: " << ex.what());
+        string err = "Internal database (BDB) error:";
+        err += ex.what();
+        err = NStr::PrintableString(err);
+        WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
     }
     catch (exception& ex)
     {
@@ -408,6 +425,8 @@ void CNetScheduleServer::Process(SOCK sock)
         msg += " ";
         msg += ex.what();
         ERR_POST(msg);
+        string err = NStr::PrintableString(ex.what());
+        WriteMsg(socket, "ERR:", err.c_str(), false /*no control*/);
     }
 }
 
@@ -497,6 +516,13 @@ void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
+void CNetScheduleServer::ProcessDropQueue(CSocket& sock, SThreadData& tdata)
+{
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    queue.Truncate();
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
+}
+
 
 void CNetScheduleServer::x_WriteBuf(CSocket& sock,
                                     char*    buf,
@@ -548,6 +574,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 9. LOG [ON/OFF]
     // 10.STAT
     // 11.QUIT 
+    // 12.DROPQ
 
     const char* s = reqstr.c_str();
 
@@ -657,6 +684,11 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 
     if (strncmp(s, "VERSION", 7) == 0) {
         req->req_type = eVersion;
+        return;
+    }
+
+    if (strncmp(s, "DROPQ", 4) == 0) {
+        req->req_type = eDropQueue;
         return;
     }
 
@@ -975,6 +1007,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/28 12:24:17  kuznets
+ * New job status Returned, better error processing and queue management
+ *
  * Revision 1.7  2005/02/23 19:16:38  kuznets
  * Implemented garbage collection thread
  *

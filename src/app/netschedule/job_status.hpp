@@ -58,16 +58,20 @@ public:
         GetStatus(unsigned int job_id) const;
 
     /// Set job status. (Controls status change logic)
-    ///  Status switching rules:
-    ///  ePending   <- (eRunning, "no status");
-    ///  eRunning   <- (ePending)
-    ///  eCanceled  <- (ePending, eRunning) (ignored if job is ready)
-    ///  eFailed    <- (eRunning)
-    ///  eCompleted <- (eRunning)
     ///
-    /// @return old status
+    ///  Status switching rules ([] - means request ignored:
+    ///  ePending   <- (eReturned, eRunning, "no status");
+    ///  eRunning   <- (ePending, eReturned, [eCanceled])
+    ///  eReturned  <- (eRunning, [eCanceled, eFailed])
+    ///  eCanceled  <- (ePending, eRunning, eReturned) (ignored if job is ready)
+    ///  eFailed    <- (eRunning, eReturned, [eCanceled])
+    ///  eDone      <- (eRunning, eReturned, [eCanceled, eFailed])
+    ///
+    /// @return old status. Job may be already canceled (or failed)
+    /// in this case status change is ignored (
+    /// 
     CNetScheduleClient::EJobStatus
-    ChangeStatus(unsigned int job_id, 
+    ChangeStatus(unsigned int                   job_id, 
                  CNetScheduleClient::EJobStatus status);
 
     /// Return job id (job is moved from pending to running)
@@ -95,6 +99,16 @@ public:
     unsigned CountStatus(
         CNetScheduleClient::EJobStatus status) const;
 
+    static
+    bool IsCancelCode(CNetScheduleClient::EJobStatus status)
+    {
+        return (status == CNetScheduleClient::eCanceled) ||
+               (status == CNetScheduleClient::eFailed);
+    }
+
+    /// Clear status storage
+    void ClearAll();
+
 private:
 
     typedef bm::bvector<>     TBVector;
@@ -106,10 +120,13 @@ protected:
         GetStatusNoLock(unsigned int job_id) const;
 
     /// Check if job is in specified status
-    /// -1 if no, status value otherwise
+    /// @return -1 if no, status value otherwise
     CNetScheduleClient::EJobStatus 
-        IsStatusNoLock(unsigned int job_id, 
-                    CNetScheduleClient::EJobStatus status) const;
+    IsStatusNoLock(unsigned int job_id, 
+        CNetScheduleClient::EJobStatus st1,
+        CNetScheduleClient::EJobStatus st2 = CNetScheduleClient::eJobNotFound,
+        CNetScheduleClient::EJobStatus st3 = CNetScheduleClient::eJobNotFound
+        ) const;
     
     void ReportInvalidStatus(unsigned int job_id, 
              CNetScheduleClient::EJobStatus  status,
@@ -154,6 +171,11 @@ public:
 
     void Release() { m_OldStatus = -2; }
 
+    CNetScheduleClient::EJobStatus GetOldStatus() const
+    {
+        return (CNetScheduleClient::EJobStatus) m_OldStatus;
+    }
+
 
 private:
     CNetSchedule_JS_Guard(const CNetSchedule_JS_Guard&);
@@ -170,6 +192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/28 12:24:17  kuznets
+ * New job status Returned, better error processing and queue management
+ *
  * Revision 1.2  2005/02/23 19:16:38  kuznets
  * Implemented garbage collection thread
  *

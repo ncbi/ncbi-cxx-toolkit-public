@@ -222,6 +222,9 @@ public:
         /// @return
         ///    Number of deleted jobs
         unsigned CheckDeleteBatch(unsigned batch_size);
+
+        /// Remove all jobs
+        void Truncate();
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
@@ -266,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/28 12:24:17  kuznets
+ * New job status Returned, better error processing and queue management
+ *
  * Revision 1.6  2005/02/23 19:16:38  kuznets
  * Implemented garbage collection thread
  *

@@ -271,7 +271,9 @@ void CQueueDataBase::MountQueue(const string& queue_name, int timeout)
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
 
-    while (cur.Fetch() == eBDB_Ok) {
+    unsigned recs = 0;
+
+    for (;cur.Fetch() == eBDB_Ok; ++recs) {
         unsigned job_id = queue.db.id;
         int status = queue.db.status;
 
@@ -282,6 +284,8 @@ void CQueueDataBase::MountQueue(const string& queue_name, int timeout)
                       (CNetScheduleClient::EJobStatus) status, 
                       true);
     } // while
+
+    LOG_POST(Info << "Records = " << recs);
     
 }
 
@@ -490,6 +494,11 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::eCanceled);
+    CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
+    if (m_LQueue.status_tracker.IsCancelCode(st)) {
+        js_guard.Release();
+        return;
+    }
 
     {{
     SQueueDB& db = m_LQueue.db;
@@ -528,6 +537,11 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::eDone);
+    CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
+    if (m_LQueue.status_tracker.IsCancelCode(st)) {
+        js_guard.Release();
+        return;
+    }
 
     SQueueDB& db = m_LQueue.db;
     CBDB_Transaction trans(*db.GetEnv(), 
@@ -568,6 +582,11 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
+    CNetScheduleClient::EJobStatus st = js_guard.GetOldStatus();
+    if (m_LQueue.status_tracker.IsCancelCode(st)) {
+        js_guard.Release();
+        return;
+    }
     {{
     SQueueDB& db = m_LQueue.db;
 
@@ -634,7 +653,8 @@ get_job_id:
 
         // internal integrity check
         if (status != (int)CNetScheduleClient::ePending) {
-            if (status == (int)CNetScheduleClient::eCanceled) {
+            if (m_LQueue.status_tracker.IsCancelCode(
+                (CNetScheduleClient::EJobStatus) status)) {
                 // this job has been canceled while i'm fetching
                 goto get_job_id;
             }
@@ -805,11 +825,26 @@ unsigned CQueueDataBase::CQueue::CheckDeleteBatch(unsigned batch_size)
     return dcnt;
 }
 
+void CQueueDataBase::CQueue::Truncate()
+{
+    m_LQueue.status_tracker.ClearAll();
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransSync);
+    db.SetTransaction(&trans);
+    db.Truncate();
+    trans.Commit();
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/28 12:24:17  kuznets
+ * New job status Returned, better error processing and queue management
+ *
  * Revision 1.7  2005/02/24 12:35:10  kuznets
  * Cosmetics..
  *

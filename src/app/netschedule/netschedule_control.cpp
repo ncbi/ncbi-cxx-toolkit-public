@@ -50,12 +50,13 @@ class CNetScheduleClient_Control : public CNetScheduleClient
 {
 public:
     CNetScheduleClient_Control(const string&  host,
-                            unsigned short port)
-      : CNetScheduleClient(host, port, 
-                           "netschedule_control", "noname")
+                               unsigned short port,
+                               const string&  queue = "noname")
+      : CNetScheduleClient(host, port, "netschedule_control", queue)
     {}
 
     void ShutdownServer() { CNetScheduleClient::ShutdownServer(); }
+    void DropQueue() { CNetScheduleClient::DropQueue(); }
 //    void Logging(bool on_off) { CNetCacheClient::Logging(on_off); }
 };
 ///////////////////////////////////////////////////////////////////////
@@ -98,6 +99,12 @@ void CNetScheduleControl::Init(void)
                              "Switch server side logging",
                              CArgDescriptions::eBoolean);
 
+    arg_desc->AddOptionalKey("drop",
+                             "drop_queue",
+                             "Drop ALL jobs in the queue (no questions asked!)",
+                             CArgDescriptions::eString);
+
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -119,6 +126,12 @@ int CNetScheduleControl::Run(void)
         NcbiCout << "Logging turned " 
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
 */
+    }
+    if (args["drop"]) {  
+        string queue = args["drop"].AsString(); 
+        CNetScheduleClient_Control drop_client(host, port, queue);
+        drop_client.DropQueue();
+        NcbiCout << "Queue droppped: " << queue << NcbiEndl;
     }
 
     if (args["s"]) {  // shutdown
@@ -148,6 +161,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/28 12:24:17  kuznets
+ * New job status Returned, better error processing and queue management
+ *
  * Revision 1.2  2005/02/22 17:47:02  kuznets
  * commented out unused variable
  *
