@@ -215,6 +215,18 @@ public:
     virtual void GetDriverVersions(TDriverList& driver_list) const = 0;
 
     virtual ~IClassFactory(void) {}
+
+protected:
+
+    /// Utility function to get an element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+
+    const string& GetParam(const string&                  driver_name,
+                           const TPluginManagerParamTree* params,
+                           const string&                  param_name, 
+                           bool                           mandatory,
+                           const string&                  default_value) const;
 };
 
 
@@ -776,6 +788,32 @@ CPluginManager<TClass, TIfVer>::~CPluginManager()
 
 
 
+
+template <class TClass, class TIfVer >
+const string& 
+IClassFactory<TClass, TIfVer>::GetParam(
+                        const string&                  driver_name,
+                        const TPluginManagerParamTree* params,
+                        const string&                  param_name, 
+                        bool                           mandatory,
+                        const string&                  default_value) const
+{
+    const TPluginManagerParamTree* tn = params->FindSubNode(param_name);
+
+    if (tn == 0 || tn->GetValue().empty()) {
+        if (mandatory) {
+            string msg = 
+                "Cannot init " + driver_name 
+                                + ", missing parameter:" + param_name;
+            NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
+        } else {
+            return default_value;
+        }
+    }
+    return tn->GetValue();        
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -783,6 +821,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/07/26 16:09:13  kuznets
+ * GetName implementation moved to IClassFactory
+ *
  * Revision 1.23  2004/07/26 13:44:45  kuznets
  * + parameter missing excpetion type
  *

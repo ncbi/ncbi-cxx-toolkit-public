@@ -112,19 +112,9 @@ protected:
                            bool                           mandatory,
                            const string&                  default_value) const
     {
-        const TPluginManagerParamTree* tn = params->FindSubNode(param_name);
-
-        if (tn == 0 || tn->GetValue().empty()) {
-            if (mandatory) {
-                string msg = 
-                    "Cannot init " + m_DriverName 
-                                   + ", missing parameter:" + param_name;
-                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
-            } else {
-                return default_value;
-            }
-        }
-        return tn->GetValue();        
+        return 
+            TParent::GetParam(m_DriverName, 
+                              params, param_name, mandatory, default_value);
     }
 
 protected:
@@ -221,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/26 16:09:13  kuznets
+ * GetName implementation moved to IClassFactory
+ *
  * Revision 1.4  2004/07/26 14:02:36  kuznets
  * +CSimpleClassFactoryImpl::GetParam
  *
