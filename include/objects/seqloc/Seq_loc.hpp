@@ -112,6 +112,10 @@ public:
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
 
+    // Compare locations if they are defined on the same single sequence
+    // or throw exception.
+    int Compare(const CSeq_loc& loc) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
@@ -260,6 +264,24 @@ void CSeq_loc::SetId(const CSeq_id& id)
 }
 
 
+inline
+int CSeq_loc::Compare(const CSeq_loc& loc) const
+{
+    CSeq_loc::TRange range1 = GetTotalRange();
+    CSeq_loc::TRange range2 = loc.GetTotalRange();
+    // smallest left extreme first
+    if ( range1.GetFrom() != range2.GetFrom() ) {
+        return range1.GetFrom() < range2.GetFrom()? -1: 1;
+    }
+
+    // longest first
+    if ( range1.GetToOpen() != range2.GetToOpen() ) {
+        return range1.GetToOpen() < range2.GetToOpen()? 1: -1;
+    }
+    return 0;
+}
+
+
 /////////////////// end of CSeq_loc inline methods
 
 /////////////////// CSeq_loc_CI inline methods
@@ -375,6 +397,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/12/31 15:36:07  grichenk
+ * Moved CompareLocations() from CSeq_feat to CSeq_loc,
+ * renamed it to Compare().
+ *
  * Revision 1.30  2003/11/21 14:45:00  grichenk
  * Replaced runtime_error with CException
  *

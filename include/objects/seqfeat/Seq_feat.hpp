@@ -78,7 +78,6 @@ public:
 
     // Optional locations are used for features with locations
     // re-mapped to a master sequence
-    static int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2);
     int CompareNonLocation(const CSeq_feat& f2,
                            const CSeq_loc& loc1, const CSeq_loc& loc2) const;
     int GetTypeSortingOrder(void) const;
@@ -105,30 +104,12 @@ CSeq_feat::CSeq_feat(void)
 }
 
 
-inline
-int CSeq_feat::CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2)
-{
-    CSeq_loc::TRange range1 = loc1.GetTotalRange();
-    CSeq_loc::TRange range2 = loc2.GetTotalRange();
-    // smallest left extreme first
-    if ( range1.GetFrom() != range2.GetFrom() ) {
-        return range1.GetFrom() < range2.GetFrom()? -1: 1;
-    }
-
-    // longest feature first
-    if ( range1.GetToOpen() != range2.GetToOpen() ) {
-        return range1.GetToOpen() < range2.GetToOpen()? 1: -1;
-    }
-    return 0;
-}
-
-
 // Corresponds to SortFeatItemListByPos from the C toolkit
 inline
 int CSeq_feat::Compare(const CSeq_feat& f2,
                        const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
-    int diff = CompareLocations(loc1, loc2);
+    int diff = loc1.Compare(loc2);
     return diff != 0? diff: CompareNonLocation(f2, loc1, loc2);
 }
 
@@ -169,6 +150,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2003/12/31 15:36:07  grichenk
+* Moved CompareLocations() from CSeq_feat to CSeq_loc,
+* renamed it to Compare().
+*
 * Revision 1.14  2003/08/07 21:42:03  kans
 * added SetGeneXref and SetProtXref
 *

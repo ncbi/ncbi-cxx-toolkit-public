@@ -105,7 +105,7 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
                 // f2 loc is shorter
                 return 1;
             }
-            int diff = CompareLocations(**it1, **it2);
+            int diff = (*it1)->Compare(**it2);
             if ( diff != 0 )
                 return diff;
         }
@@ -237,6 +237,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.16  2003/12/31 15:36:08  grichenk
+ * Moved CompareLocations() from CSeq_feat to CSeq_loc,
+ * renamed it to Compare().
+ *
  * Revision 6.15  2003/08/07 21:42:31  kans
  * added SetGeneXref and SetProtXref
  *
