@@ -575,7 +575,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
     const char * result = x_GetRegion(fname, begin, end, ident, & start);
     
     if (result) {
-        _ASSERT(ident);
+        _ASSERT(ident != (Uint4) -1);
         _ASSERT(start);
         
         lease.SetRegion(begin, end, ident, start);

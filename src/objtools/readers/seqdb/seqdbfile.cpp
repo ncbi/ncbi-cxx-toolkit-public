@@ -247,6 +247,8 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                        ? kSeqTypeProt
                        : kSeqTypeNucl);
     
+    m_Atlas.RetRegion(lease);
+    
     if (db_seqtype != x_GetSeqType()) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
