@@ -486,7 +486,7 @@ I_DriverContext* MSDBLIB_CreateContext(map<string,string>* attr = 0)
 
 void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
 {
-    mgr.RegisterDriver("msdblib", DBLIB_CreateContext);
+    mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
 }
 
 extern "C" {
@@ -505,6 +505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/07/10 15:47:46  soussov
+ * fixed typo in DBAPI_RegisterDriver_MSDBLIB
+ *
  * Revision 1.17  2002/07/09 17:01:53  soussov
  * the register functions for msdblib was renamed
  *
