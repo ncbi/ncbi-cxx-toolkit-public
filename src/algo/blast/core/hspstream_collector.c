@@ -216,9 +216,10 @@ s_BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args)
 }
 
 BlastHSPStream* 
-Blast_HSPListCollectorInitMT(EBlastProgramType program, BlastHitSavingOptions* hit_options,
-                           Int4 num_queries, Boolean sort_on_read,
-                           MT_LOCK lock)
+Blast_HSPListCollectorInitMT(EBlastProgramType program, 
+                             const BlastHitSavingOptions* hit_options,
+                             Int4 num_queries, Boolean sort_on_read,
+                             MT_LOCK lock)
 {
     BlastHSPListCollectorData* stream_data = 
        (BlastHSPListCollectorData*) malloc(sizeof(BlastHSPListCollectorData));
@@ -241,7 +242,8 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program, BlastHitSavingOptions* h
 }
 
 BlastHSPStream* 
-Blast_HSPListCollectorInit(EBlastProgramType program, BlastHitSavingOptions* hit_options,
+Blast_HSPListCollectorInit(EBlastProgramType program, 
+                           const BlastHitSavingOptions* hit_options,
                            Int4 num_queries, Boolean sort_on_read)
 {
    return Blast_HSPListCollectorInitMT(program, hit_options, num_queries, 
