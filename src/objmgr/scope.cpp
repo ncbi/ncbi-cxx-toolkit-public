@@ -1130,34 +1130,16 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
             if ( info->HasBioseq() ) {
                 ITERATE(CBioseq_Info::TSynonyms, it,
                         info->GetBioseq_Info().m_Synonyms) {
-                    CSeq_id_Handle idh = *it;
-                    x_AddSynonym(idh, *syn_set, *info);
-                    CConstRef<CSeq_id> id = idh.GetSeqId();
-                    const CTextseq_id* text_id = id->GetTextseq_Id();
-                    if ( text_id ) {
-                        if ( text_id->IsSetVersion() ) {
-                            CRef<CSeq_id> id2(new CSeq_id);
-                            id2->Assign(*id);
-                            CTextseq_id* text_id2 =
-                                const_cast<CTextseq_id*>(id2->GetTextseq_Id());
-                            text_id2->ResetVersion();
-                            CSeq_id_Handle idh2 =
-                                CSeq_id_Handle::GetHandle(*id2);
-                            x_AddSynonym(idh2, *syn_set, *info);
+                    CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+                    if ( mapper.HaveReverseMatch(*it) ) {
+                        TSeq_id_HandleSet hset;
+                        mapper.GetReverseMatchingHandles(*it, hset);
+                        ITERATE(TSeq_id_HandleSet, mit, hset) {
+                            x_AddSynonym(*mit, *syn_set, *info);
                         }
-                        if ( text_id->IsSetName() &&
-                             (text_id->IsSetVersion() ||
-                              text_id->IsSetAccession()) ) {
-                            CRef<CSeq_id> id2(new CSeq_id);
-                            id2->Assign(*id);
-                            CTextseq_id* text_id2 =
-                                const_cast<CTextseq_id*>(id2->GetTextseq_Id());
-                            text_id2->ResetAccession();
-                            text_id2->ResetVersion();
-                            CSeq_id_Handle idh2 =
-                                CSeq_id_Handle::GetHandle(*id2);
-                            x_AddSynonym(idh2, *syn_set, *info);
-                        }
+                    }
+                    else {
+                        x_AddSynonym(*it, *syn_set, *info);
                     }
                 }
             }
@@ -1187,6 +1169,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2004/02/10 21:15:16  grichenk
+* Added reverse ID matching.
+*
 * Revision 1.99  2004/02/09 14:42:46  vasilche
 * Temporary fix in GetSynonyms() to get accession without version.
 *

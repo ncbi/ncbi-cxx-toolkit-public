@@ -81,6 +81,9 @@ public:
     bool HaveMatchingHandles(const CSeq_id_Handle& id);
     void GetMatchingHandles(const CSeq_id_Handle& id,
                             TSeq_id_HandleSet& h_set);
+    bool HaveReverseMatch(const CSeq_id_Handle& id);
+    void GetReverseMatchingHandles(const CSeq_id_Handle& id,
+                                   TSeq_id_HandleSet& h_set);
     // Get the list of string-matching handles, do not create new handles
     void GetMatchingHandlesStr(string sid,
                                TSeq_id_HandleSet& h_set);
@@ -153,6 +156,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/02/10 21:15:14  grichenk
+* Added reverse ID matching.
+*
 * Revision 1.21  2004/01/22 20:10:38  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

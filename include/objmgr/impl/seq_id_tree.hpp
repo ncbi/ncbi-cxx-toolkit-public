@@ -105,6 +105,10 @@ public:
     virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
                                  const CSeq_id_Handle& h2) const;
 
+    // Reverse matching
+    virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
+    virtual void FindReverseMatchingHandles(const CSeq_id_Handle& id,
+                                            TSeq_id_MatchList& id_list);
 protected:
     friend class CSeq_id_Mapper;
 
@@ -250,6 +254,10 @@ public:
 
     virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
                                  const CSeq_id_Handle& h2) const;
+
+    virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
+    virtual void FindReverseMatchingHandles(const CSeq_id_Handle& id,
+                                            TSeq_id_MatchList& id_list);
 protected:
     virtual bool x_Check(const CSeq_id& id) const = 0;
     virtual const CTextseq_id& x_Get(const CSeq_id& id) const = 0;
@@ -559,6 +567,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/02/10 21:15:15  grichenk
+* Added reverse ID matching.
+*
 * Revision 1.3  2004/01/08 02:49:11  ucko
 * Make m_TreeLock a recursive mutex, as CSeq_id_Textseq_Tree can no
 * longer safely use a fast mutex.

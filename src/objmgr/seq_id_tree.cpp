@@ -78,6 +78,20 @@ bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& /*h1*/,
 }
 
 
+bool CSeq_id_Which_Tree::HaveReverseMatch(const CSeq_id_Handle& ) const
+{
+    return false; // Assume no reverse matches by default
+}
+
+
+void CSeq_id_Which_Tree::FindReverseMatchingHandles(const CSeq_id_Handle& id,
+                                                    TSeq_id_MatchList& id_list)
+{
+    id_list.push_back(id);
+    return;
+}
+
+
 CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 {
     CRef<CSeq_id> id_ref(new CSeq_id);
@@ -603,6 +617,65 @@ bool CSeq_id_Textseq_Tree::IsBetterVersion(const CSeq_id_Handle& h1,
             return true; // Only h1 has version
     }
     return false; // h1 has no version, so it can not be better than h2
+}
+
+
+bool CSeq_id_Textseq_Tree::HaveReverseMatch(const CSeq_id_Handle&) const
+{
+    return true;
+}
+
+
+void CSeq_id_Textseq_Tree::FindReverseMatchingHandles(const CSeq_id_Handle& id,
+                                                      TSeq_id_MatchList& id_list)
+{
+    id_list.push_back(id);
+
+    CConstRef<CSeq_id> orig_id = id.GetSeqId();
+    const CTextseq_id& orig_tid = x_Get(*orig_id);
+
+    CRef<CSeq_id> tmp(new CSeq_id);
+    tmp->Assign(*orig_id);
+    CTextseq_id& tid = const_cast<CTextseq_id&>(x_Get(*tmp));
+    bool A = orig_tid.IsSetAccession();
+    bool N = orig_tid.IsSetName();
+    bool v = orig_tid.IsSetVersion();
+    bool r = orig_tid.IsSetRelease();
+
+    // Need to add:
+    // A - if v or r is set
+    // N   - if both A and N are set
+    //   N.v - if v is also set
+    // A.r - if both v and r are set
+    //   N.r - if N is also set
+    if ( A  &&  (v  ||  r) ) {
+        // A only
+        tid.Reset();
+        tid.SetAccession(orig_tid.GetAccession());
+        id_list.push_back(FindOrCreate(*tmp));
+        if ( v && r ) {
+            // A.r (without v)
+            tid.SetRelease(orig_tid.GetRelease());
+            id_list.push_back(FindOrCreate(*tmp));
+        }
+    }
+    if ( A && N ) {
+        // N only
+        tid.Reset();
+        tid.SetName(orig_tid.GetName());
+        id_list.push_back(FindOrCreate(*tmp));
+        if ( v ) {
+            // N.v
+            tid.SetVersion(orig_tid.GetVersion());
+            id_list.push_back(FindOrCreate(*tmp));
+            if ( r ) {
+                // N.r (without v)
+                tid.ResetVersion();
+                tid.SetRelease(orig_tid.GetRelease());
+                id_list.push_back(FindOrCreate(*tmp));
+            }
+        }
+    }
 }
 
 
@@ -1471,6 +1544,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/02/10 21:15:16  grichenk
+* Added reverse ID matching.
+*
 * Revision 1.6  2004/02/09 14:41:50  vasilche
 * Fixed processing of version & release in Textseq-id.
 *

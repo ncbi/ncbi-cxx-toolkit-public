@@ -168,6 +168,45 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id_Handle& idh,
 }
 
 
+bool CSeq_id_Mapper::HaveReverseMatch(const CSeq_id_Handle& idh)
+{
+    if ( idh.m_Gi != 0 ) {
+        _ASSERT(idh.m_Info == m_GiInfo);
+        return false;
+    }
+    else if ( !idh ) {
+        LOG_POST(Warning <<
+            "CSeq_id_Mapper::HaveReverseMatch() -- uninitialized seq-id");
+        return false;
+    }
+
+    return x_GetTree(idh).HaveReverseMatch(idh);
+}
+
+
+void CSeq_id_Mapper::GetReverseMatchingHandles(const CSeq_id_Handle& idh,
+                                               TSeq_id_HandleSet& h_set)
+{
+    if ( idh.m_Gi != 0 ) {
+        _ASSERT(idh.m_Info == m_GiInfo);
+        h_set.insert(idh);
+        return;
+    }
+    else if ( !idh ) {
+        LOG_POST(Warning <<
+            "CSeq_id_Mapper::GetReverseMatchingHandles() -- uninitialized seq-id");
+        return;
+    }
+
+    CSeq_id_Which_Tree::TSeq_id_MatchList match_list;
+    x_GetTree(idh).FindReverseMatchingHandles(idh, match_list);
+
+    ITERATE(CSeq_id_Which_Tree::TSeq_id_MatchList, it, match_list) {
+        h_set.insert(*it);
+    }
+}
+
+
 void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                            TSeq_id_HandleSet& h_set)
 {
@@ -216,6 +255,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/02/10 21:15:16  grichenk
+* Added reverse ID matching.
+*
 * Revision 1.41  2004/01/22 20:10:41  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
