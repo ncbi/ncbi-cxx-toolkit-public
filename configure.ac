@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.111 2002/07/26 04:29:29 vakatov Exp $
+#  $Id: configure.ac,v 1.112 2002/07/30 21:29:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1852,9 +1852,9 @@ if test "$with_fltk" != "no"; then
          FLTK_PATH="$NCBI/fltk"
       fi
    fi
-   if test -d "$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}/lib" \
+   if test -d "$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$FLTK_ARCH_PATH"; then
-      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
+      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
    else
       FLTK_ARCH_PATH="$FLTK_PATH"
    fi
@@ -1905,9 +1905,9 @@ if test "$with_wxwin" != "no" ; then
          WXWIN_PATH="$NCBI/wxwin"
       fi
    fi
-   if test -d "$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}/lib" \
+   if test -d "$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$WXWIN_ARCH_PATH"; then
-      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
+      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
    else
       WXWIN_ARCH_PATH="$WXWIN_PATH"
    fi
