@@ -231,21 +231,55 @@ void CPluginManager_DllResolver::SetDllNamePrefix(const string& prefix)
 
 CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
 {
-   vector<string> entry_point_names;
+    vector<string> entry_point_names;
+    string entry_name;
+    
 
     // Generate all variants of entry point names
     // some of them can duplicate, and that's legal. Resolver stops trying
     // after the first success.
 
-    string entry_name1 = GetEntryPointName(m_InterfaceName, m_DriverName);
-    string entry_name2 = GetEntryPointName(kEmptyStr, kEmptyStr);
-    string entry_name3 = GetEntryPointName(m_InterfaceName, kEmptyStr);
-    string entry_name4 = GetEntryPointName(kEmptyStr, m_DriverName);
-
-    entry_point_names.push_back(entry_name1);
-    entry_point_names.push_back(entry_name2);
-    entry_point_names.push_back(entry_name3);
-    entry_point_names.push_back(entry_name4);
+    entry_name = GetEntryPointName(m_InterfaceName, m_DriverName);
+    entry_point_names.push_back(entry_name);
+    
+    entry_name = GetEntryPointName(kEmptyStr, kEmptyStr);
+    entry_point_names.push_back(entry_name);
+    
+    entry_name = GetEntryPointName(m_InterfaceName, kEmptyStr);
+    entry_point_names.push_back(entry_name);
+    
+    entry_name = GetEntryPointName(kEmptyStr, m_DriverName);
+    entry_point_names.push_back(entry_name);
+    
+    // Make the library dependent entry point templates
+    string base_name_templ = "${basename}";
+    string prefix = GetEntryPointPrefix();
+    
+    // Make "NCBI_EntryPoint_libname" EP name
+    entry_name = prefix;
+    entry_name.append("_");
+    entry_name.append(base_name_templ);
+    entry_point_names.push_back(entry_name);
+        
+    // Make "NCBI_EntryPoint_interface_libname" EP name
+    if (!m_InterfaceName.empty()) {
+        entry_name = prefix;
+        entry_name.append("_");
+        entry_name.append(m_InterfaceName);
+        entry_name.append("_");        
+        entry_name.append(base_name_templ);
+        entry_point_names.push_back(entry_name);
+    }
+    
+    // Make "NCBI_EntryPoint_driver_libname" EP name
+    if (!m_DriverName.empty()) {
+        entry_name = prefix;
+        entry_name.append("_");
+        entry_name.append(m_DriverName);
+        entry_name.append("_");        
+        entry_name.append(base_name_templ);
+        entry_point_names.push_back(entry_name);
+    }
 
     CDllResolver* resolver = new CDllResolver(entry_point_names);
 
@@ -266,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/09 13:25:59  kuznets
+ * Added DLL name based entry point names
+ *
  * Revision 1.4  2003/11/18 15:26:48  kuznets
  * Minor cosmetic changes
  *
