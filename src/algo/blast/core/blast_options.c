@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.71  2003/11/12 18:17:46  dondosha
+ * Correction in calculating scanning stride
+ *
  * Revision 1.70  2003/11/04 23:22:47  dondosha
  * Do not calculate hit saving cutoff score for PHI BLAST
  *
@@ -951,7 +954,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;
       } else {
-         options->scan_step = CalculateBestStride(word_size, variable_wordsize,
+         options->scan_step = CalculateBestStride(options->word_size, variable_wordsize,
                                                   options->lut_type);
       }
    }
