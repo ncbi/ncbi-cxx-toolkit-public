@@ -220,6 +220,8 @@ AC_CHECK_PROG(STRIP, strip, strip, :)
 #### Check if "${exec_prefix}" is defined;  provide a default one
 if test -z "${exec_prefix}"  ||  test "${exec_prefix}" = "NONE" ; then
    exec_prefix="${srcdir}/${compiler}${compiler_extra}"
+else
+   with_debug_sfx=${with_debug_sfx:="no"}
 fi
 
 
