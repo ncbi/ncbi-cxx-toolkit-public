@@ -609,6 +609,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'N':                               return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
+            case 'R':                               return eAcc_gb_sts;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1548,6 +1549,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.102  2005/04/05 15:22:46  ucko
+ * IdentifyAccession: DR -> eAcc_gb_sts.
+ *
  * Revision 6.101  2005/03/22 20:12:24  ucko
  * +DP (eAcc_gb_htgs), DQ (eAcc_gb_dirsub)
  *
