@@ -87,6 +87,7 @@ size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength)
 
 bool CIStream::Eof()
 {
+#if 0
     CT_INT_TYPE c = get();
 
     if (eof())
@@ -96,6 +97,9 @@ bool CIStream::Eof()
         putback(c);
 
     return false;
+#else
+    return eof();
+#endif
 }
 
 CIntStreamable::TInt
@@ -109,6 +113,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.10  2003/03/26 20:42:50  lavr
+ * CIStream::Eof() made (temporarily) non-destructive w/o get()
+ *
  * Revision 1.9  2003/02/26 18:02:39  vasilche
  * Added istream error check.
  * Avoid use of string::c_str() method.
