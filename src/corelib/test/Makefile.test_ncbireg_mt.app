@@ -5,3 +5,5 @@ OBJ = test_ncbireg_mt
 LIB = xncbi test_mt
 
 REQUIRES = MT
+
+CHECK_CMD =

@@ -5,3 +5,5 @@ OBJ = test_ncbithr
 LIB = xncbi
 
 REQUIRES = MT
+
+CHECK_CMD =
