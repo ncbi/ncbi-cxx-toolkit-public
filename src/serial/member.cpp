@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/11/14 20:57:22  gouriano
+* modified constructor to use CClassTypeInfoBase,
+* added Attlist and Notag flags
+*
 * Revision 1.23  2002/09/25 19:37:36  gouriano
 * added the possibility of having no tag prefix in XML I/O streams
 *
@@ -239,7 +243,7 @@ public:
 
 typedef CMemberInfoFunctions TFunc;
 
-CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
+CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CMemberId& id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
@@ -261,7 +265,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
 {
 }
 
-CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
+CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CMemberId& id, TPointerOffsetType offset,
                          TTypeInfo type)
     : CParent(id, offset, type),
@@ -283,7 +287,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
 {
 }
 
-CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
+CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const char* id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
@@ -305,7 +309,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
 {
 }
 
-CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
+CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const char* id, TPointerOffsetType offset,
                          TTypeInfo type)
     : CParent(id, offset, type),
@@ -358,6 +362,18 @@ CMemberInfo* CMemberInfo::SetOptional(void)
 CMemberInfo* CMemberInfo::SetNoPrefix(void)
 {
     GetId().SetNoPrefix();
+    return this;
+}
+
+CMemberInfo* CMemberInfo::SetAttlist(void)
+{
+    GetId().SetAttlist();
+    return this;
+}
+
+CMemberInfo* CMemberInfo::SetNotag(void)
+{
+    GetId().SetNotag();
     return this;
 }
 
