@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Eric Slosser, Joshua Juran, Vlad Lebedev
+ * Authors:  Jim Luther, Joshua Juran, Vlad Lebedev
  *
  * File Description:
  *   Mac specifics
@@ -553,8 +553,8 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
- * Revision 1.5  2003/05/23 20:16:47  ucko
- * Correct author list; include Eric Slosser, who wrote the MoreFiles code.
+ * Revision 1.6  2003/05/23 20:22:59  ucko
+ * Correct author list; include Jim Luther, who wrote the MoreFiles code.
  *
  * Revision 1.4  2003/02/27 22:03:59  lebedev
  * COSErrException_Mac changed from runtime_error to exception
