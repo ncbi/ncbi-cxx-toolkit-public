@@ -3457,7 +3457,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
         CORE_UNLOCK;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
-        if (!host  &&  s_LogData == eOn) {
+        if (!host  &&  s_Log == eOn) {
 #  ifdef NETDB_INTERNAL
             if (x_errno == NETDB_INTERNAL + DNS_BASE)
                 x_errno = SOCK_ERRNO;
@@ -3556,7 +3556,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         CORE_UNLOCK;
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
-        if (!name  &&  s_LogData == eOn) {
+        if (!name  &&  s_Log == eOn) {
 #  ifdef NETDB_INTERNAL
             if (x_errno == NETDB_INTERNAL + DNS_BASE)
                 x_errno = SOCK_ERRNO;
@@ -3579,6 +3579,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.100  2003/05/14 04:28:01  lavr
+ * BUGFIX: s_LogData -> s_Log
+ *
  * Revision 6.99  2003/05/14 03:50:25  lavr
  * Revamped to allow pending connect and initial data output
  *
