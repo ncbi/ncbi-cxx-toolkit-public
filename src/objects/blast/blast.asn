@@ -36,7 +36,7 @@ EXPORTS
 IMPORTS
     Bioseq                  FROM NCBI-Sequence
     Bioseq-set              FROM NCBI-Seqset
-    Score-matrix-parameters FROM NCBI-ScoreMat
+    PssmWithParameters      FROM NCBI-ScoreMat
     Seq-id,
     Seq-loc                 FROM NCBI-Seqloc
     Seq-align,
@@ -89,7 +89,7 @@ Blast4-get-sequences-request ::= SEQUENCE {
 -- exactly one query.  (This is limited by the BlastObject.)
 
 Blast4-queries ::= CHOICE {
-    pssm                    Score-matrix-parameters,
+    pssm                    PssmWithParameters,
     seq-loc-list            SEQUENCE OF Seq-loc,
     bioseq-set              Bioseq-set
 }
@@ -151,7 +151,7 @@ Blast4-get-search-results-reply ::= SEQUENCE {
     mask                    Blast4-mask OPTIONAL,
     ka-blocks               SEQUENCE OF Blast4-ka-block OPTIONAL,
     search-stats            SEQUENCE OF VisibleString OPTIONAL,
-    pssm                    Score-matrix-parameters OPTIONAL
+    pssm                    PssmWithParameters OPTIONAL
 }
 
 Blast4-get-sequences-reply ::= SEQUENCE OF Bioseq
@@ -321,7 +321,7 @@ Blast4-value ::= CHOICE {
     boolean                 BOOLEAN,
     cutoff                  Blast4-cutoff,
     integer                 INTEGER,
-    matrix                  Score-matrix-parameters,
+    matrix                  PssmWithParameters,
     real                    REAL,
     seq-align               Seq-align,
     seq-id                  Seq-id,
@@ -335,7 +335,7 @@ Blast4-value ::= CHOICE {
     boolean-list            SEQUENCE OF BOOLEAN,
     cutoff-list             SEQUENCE OF Blast4-cutoff,
     integer-list            SEQUENCE OF INTEGER,
-    matrix-list             SEQUENCE OF Score-matrix-parameters,
+    matrix-list             SEQUENCE OF PssmWithParameters,
     real-list               SEQUENCE OF REAL,
     seq-align-list          SEQUENCE OF Seq-align,
     seq-id-list             SEQUENCE OF Seq-id,

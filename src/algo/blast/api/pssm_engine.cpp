@@ -40,8 +40,12 @@ static char const rcsid[] =
 #include "blast_setup.hpp"
 
 // Object includes
-#include <objects/scoremat/Score_matrix.hpp>
-#include <objects/scoremat/Score_matrix_parameters.hpp>
+#include <objects/scoremat/Pssm.hpp>
+#include <objects/scoremat/PssmParameters.hpp>
+#include <objects/scoremat/PssmFinalData.hpp>
+#include <objects/scoremat/PssmIntermediateData.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/scoremat/FormatRpsDbParameters.hpp>
 
 // Core BLAST includes
 #include <algo/blast/core/blast_options.h>
@@ -75,7 +79,7 @@ CPssmEngine::~CPssmEngine()
 // Creating the PSSM is then delegated to the core PSSM engine.
 // Afterwards the results are packaged in a scoremat (structure defined from
 // the ASN.1 specification).
-CRef<CScore_matrix_parameters>
+CRef<CPssmWithParameters>
 CPssmEngine::Run()
 {
     m_PssmInput->Process();
@@ -102,8 +106,8 @@ CPssmEngine::Run()
     }
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
-    CRef<CScore_matrix_parameters> retval(NULL);
-    retval = x_PSIMatrix2ScoreMatrix(pssm, m_ScoreBlk->name, diagnostics);
+    CRef<CPssmWithParameters> retval(NULL);
+    retval = x_PSIMatrix2Asn1(pssm, m_PssmInput->GetOptions(), diagnostics);
 
     return retval;
 }
@@ -216,75 +220,33 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     return retval;
 }
 
-/// Auxiliary function to map the underlying scoring matrix name to an
-/// enumeration used in the CScore_matrix class
-/// @param matrix_name name of underlying scoring matrix [in]
-static CScore_matrix::EFreq_Ratios
-s_MatrixName2EFreq_Ratios(const string& matrix_name)
-{
-    string mtx(matrix_name);    
-    mtx = NStr::ToUpper(mtx); // save the matrix name in all capital letters
-
-    if (mtx == "BLOSUM62" || mtx == "BLOSUM62_20") {
-        return CScore_matrix::eFreq_Ratios_blosum62;
-    }
-
-    if (mtx == "BLOSUM45") {
-        return CScore_matrix::eFreq_Ratios_blosum45;
-    }
-
-    if (mtx == "BLOSUM80") {
-        return CScore_matrix::eFreq_Ratios_blosum80;
-    }
-
-    if (mtx == "BLOSUM50") {
-        return CScore_matrix::eFreq_Ratios_blosum50;
-    }
-
-    if (mtx == "BLOSUM90") {
-        return CScore_matrix::eFreq_Ratios_blosum90;
-    }
-
-    if (mtx == "PAM30") {
-        return CScore_matrix::eFreq_Ratios_pam30;
-    }
-
-    if (mtx == "PAM70") {
-        return CScore_matrix::eFreq_Ratios_pam70;
-    }
-
-    if (mtx == "PAM250") {
-        return CScore_matrix::eFreq_Ratios_pam250;
-    }
-
-    ostringstream os;
-    os << "No underlying score matrix frequency ratios for " << matrix_name;
-    NCBI_THROW(CBlastException, eNotSupported, os.str());
-}
-
-CRef<CScore_matrix_parameters>
-CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
-                                     const string& matrix_name,
-                                     const PSIDiagnosticsResponse* diagnostics)
+CRef<CPssmWithParameters>
+CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
+                              const PSIBlastOptions* opts,
+                              const PSIDiagnosticsResponse* diagnostics)
 {
     ASSERT(pssm);
 
-    CRef<CScore_matrix_parameters> retval(new CScore_matrix_parameters);
+    CRef<CPssmWithParameters> retval(new CPssmWithParameters);
 
-    retval->SetLambda(pssm->lambda);
-    retval->SetKappa(pssm->kappa);
-    retval->SetH(pssm->h);
+    // Record the parameters
+    retval->SetParams().SetPseudocount(opts->pseudo_count);
+    string mtx("BLOSUM62"); // FIXME
+    mtx = NStr::ToUpper(mtx); // save the matrix name in all capital letters
+    retval->SetParams().SetRpsdbparams().SetMatrixName(mtx);
 
-    CScore_matrix& score_mat = retval->SetMatrix();
-    score_mat.SetIs_protein(true);
-    score_mat.SetNcolumns(pssm->ncols);
-    score_mat.SetNrows(pssm->nrows);
-    score_mat.SetByrow(false);
-    score_mat.SetFreq_Ratios(s_MatrixName2EFreq_Ratios(matrix_name));
+    CPssm& asn1_pssm = retval->SetPssm();
+    asn1_pssm.SetIsProtein(true);
+    asn1_pssm.SetNumRows(pssm->nrows);
+    asn1_pssm.SetNumColumns(pssm->ncols);
+    asn1_pssm.SetByRow(false);
 
+    asn1_pssm.SetFinalData().SetLambda(pssm->lambda);
+    asn1_pssm.SetFinalData().SetKappa(pssm->kappa);
+    asn1_pssm.SetFinalData().SetH(pssm->h);
     for (unsigned int i = 0; i < pssm->ncols; i++) {
         for (unsigned int j = 0; j < pssm->nrows; j++) {
-            score_mat.SetScores().push_back(pssm->pssm[i][j]);
+            asn1_pssm.SetFinalData().SetScores().push_back(pssm->pssm[i][j]);
         }
     }
 
@@ -302,36 +264,31 @@ CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
     }
 
     if (diagnostics->residue_freqs) {
+        CPssmIntermediateData::TResFreqsPerPos& res_freqs =
+            asn1_pssm.SetIntermediateData().SetResFreqsPerPos();
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {
-                // FIXME: this needs to be updated after the scoremat.asn is
-                // updated, field: resFreqsPerPos
-                //score_mat.SetPosFreqs().push_back(
-                //    diagnostics->residue_freqs[i][j]);
-                // will be fixed when scoremat.asn is updated
+                res_freqs.push_back(diagnostics->residue_freqs[i][j]);
             }
         }
     }
  
     if (diagnostics->weighted_residue_freqs) {
+        CPssmIntermediateData::TWeightedResFreqsPerPos& wres_freqs =
+            asn1_pssm.SetIntermediateData().SetWeightedResFreqsPerPos();
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {
-                // FIXME: this needs to be updated after the scoremat.asn is
-                // updated, field weightedResFreqsPerPos
-                //score_mat.SetRawFreqs().push_back(
-                //    diagnostics->weighted_residue_freqs[i][j]);
-                // will be fixed when scoremat.asn is updated
+                wres_freqs.push_back(diagnostics->weighted_residue_freqs[i][j]);
             }
         }
     }
 
     if (diagnostics->frequency_ratios) {
+        CPssmIntermediateData::TFreqRatios freq_ratios = 
+            asn1_pssm.SetIntermediateData().SetFreqRatios();
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {
-                // FIXME: this needs to be updated after the scoremat.asn is
-                // updated, field freqRatios
-                score_mat.SetPosFreqs().push_back(
-                    diagnostics->frequency_ratios[i][j]);
+                freq_ratios.push_back(diagnostics->frequency_ratios[i][j]);
             }
         }
     }
@@ -353,6 +310,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/10/12 14:19:18  camacho
+ * Update for scoremat.asn reorganization
+ *
  * Revision 1.13  2004/10/08 20:20:11  camacho
  * Throw an exception is the query length is 0
  *

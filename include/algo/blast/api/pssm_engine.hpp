@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     /// forward declaration of ASN.1 object containing PSSM (scoremat.asn)
-    class CScore_matrix_parameters;
+    class CPssmWithParameters;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
@@ -66,7 +66,7 @@ BEGIN_SCOPE(blast)
 /// CPsiBlastInputData pssm_strategy(query, query_length, alignment, 
 ///                                  object_manager_scope, psi_blast_options);
 /// CPssmEngine pssm_engine(&pssm_strategy);
-/// CRef<CScore_matrix_parameters> scoremat = pssm_engine.Run();
+/// CRef<CPssmWithParameters> scoremat = pssm_engine.Run();
 /// ...
 /// @endcode
 
@@ -79,7 +79,7 @@ public:
     ~CPssmEngine();
 
     /// Runs the PSSM engine to compute the PSSM
-    CRef<objects::CScore_matrix_parameters> Run();
+    CRef<objects::CPssmWithParameters> Run();
 
 private:
     /// Handle to strategy to process raw PSSM input data
@@ -115,17 +115,17 @@ private:
     x_InitializeScoreBlock(const unsigned char* query,
                            unsigned int query_length);
 
-    /// Converts the PSIMatrix structure into a CScore_matrix_parameters object
+    /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
     /// @param matrix_name underlying scoring matrix name [in]
     /// @param diagnostics contains diagnostics data from PSSM creation process
     /// to save into the return value [in]
-    /// @return CScore_matrix_parameters object with equivalent contents to
+    /// @return CPssmWithParameters object with equivalent contents to
     /// those in pssm argument
-    CRef<objects::CScore_matrix_parameters>
-    x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
-                            const string& matrix_name,
-                            const PSIDiagnosticsResponse* diagnostics = NULL);
+    CRef<objects::CPssmWithParameters>
+    x_PSIMatrix2Asn1(const PSIMatrix* pssm,
+                     const PSIBlastOptions* opts,
+                     const PSIDiagnosticsResponse* diagnostics = NULL);
 
     /// Default constructor available for derived test classes
     CPssmEngine() {}
@@ -147,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/10/12 14:18:31  camacho
+ * Update for scoremat.asn reorganization
+ *
  * Revision 1.11  2004/09/17 13:11:20  camacho
  * Added doxygen comments
  *

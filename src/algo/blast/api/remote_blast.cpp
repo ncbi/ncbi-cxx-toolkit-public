@@ -38,7 +38,8 @@
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objects/scoremat/scoremat__.hpp>
+#include <objects/scoremat/Pssm.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -367,9 +368,9 @@ list< string > CRemoteBlast::GetSearchStats(void)
     return rv;
 }
 
-CRef<CScore_matrix_parameters> CRemoteBlast::GetPSSM(void)
+CRef<CPssmWithParameters> CRemoteBlast::GetPSSM(void)
 {
-    CRef<CScore_matrix_parameters> rv;
+    CRef<CPssmWithParameters> rv;
     
     TGSRR * gsrr = x_GetGSRR();
     
@@ -665,7 +666,7 @@ void CRemoteBlast::x_SetOneParam(const char * name, const char ** x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(const char * name, CScore_matrix_parameters * matrix)
+void CRemoteBlast::x_SetOneParam(const char * name, CPssmWithParameters * matrix)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
     v->SetMatrix(*matrix);
@@ -705,14 +706,14 @@ void CRemoteBlast::SetQueries(list< CRef<CSeq_loc> > & seqlocs)
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
-void CRemoteBlast::SetQueries(CRef<CScore_matrix_parameters> pssm)
+void CRemoteBlast::SetQueries(CRef<CPssmWithParameters> pssm)
 {
     if (pssm.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
                    "Empty reference for query pssm.");
     }
     
-    if (! pssm->GetMatrix().CanGetQuery()) {
+    if (! pssm->GetPssm().CanGetQuery()) {
         NCBI_THROW(CBlastException, eBadParameter,
                    "Empty reference for pssm component pssm.matrix.query.");
     }
@@ -885,7 +886,7 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
     }
 }
 
-void CRemoteBlast::SetMatrixTable(CRef<CScore_matrix_parameters> matrix)
+void CRemoteBlast::SetMatrixTable(CRef<CPssmWithParameters> matrix)
 {
     if (matrix.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
@@ -1066,6 +1067,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/10/12 14:19:18  camacho
+* Update for scoremat.asn reorganization
+*
 * Revision 1.20  2004/09/13 20:12:23  bealer
 * - Add GetSequences() API.
 *

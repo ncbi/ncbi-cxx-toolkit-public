@@ -41,9 +41,7 @@
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 
-#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/blast/blast__.hpp>
-#include <objects/scoremat/Score_matrix_parameters.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -51,7 +49,16 @@
  */
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
+BEGIN_SCOPE(objects)
+    /// forward declaration of ASN.1 object containing PSSM (scoremat.asn)
+    class CPssmWithParameters;
+    class CBioseq_set;
+    class CSeq_loc;
+    class CSeq_id;
+    class CSeq_align_set;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
 
 /// API for Remote Blast Requests
@@ -104,14 +111,14 @@ public:
     void SetEntrezQuery(const char * x);
     
     /// Set the query as a Bioseq_set.
-    void SetQueries(CRef<CBioseq_set> bioseqs);
+    void SetQueries(CRef<objects::CBioseq_set> bioseqs);
     
     /// Set the query as a list of Seq_locs.
     /// @param seqlocs One interval Seq_loc or a list of whole Seq_locs.
-    void SetQueries(list< CRef<CSeq_loc> > & seqlocs);
+    void SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs);
     
     /// Set a PSSM query (as for PSI blast), which must include a bioseq set.
-    void SetQueries(CRef<CScore_matrix_parameters> pssm);
+    void SetQueries(CRef<objects::CPssmWithParameters> pssm);
     
     
     /// Set the PSSM matrix for a PSI-Blast search.
@@ -121,7 +128,7 @@ public:
     /// matrix and using a Bioseq_set with SetQueries().  The former method is
     /// newer and this option may be removed in the future.
     
-    void SetMatrixTable(CRef<CScore_matrix_parameters> matrix);
+    void SetMatrixTable(CRef<objects::CPssmWithParameters> matrix);
     
     /* Getting Results */
     
@@ -191,19 +198,19 @@ public:
     
     /// Get the seqalign set from the results.
     /// @return Reference to a seqalign set.
-    CRef<CSeq_align_set> GetAlignments(void);
+    CRef<objects::CSeq_align_set> GetAlignments(void);
     
     /// Get the results of a PHI-Align request, if PHI pattern was set.
     /// @return Reference to PHI alignment set.
-    CRef<CBlast4_phi_alignments> GetPhiAlignments(void);
+    CRef<objects::CBlast4_phi_alignments> GetPhiAlignments(void);
     
     /// Get the query mask from the results.
     /// @return Reference to a Blast4_mask object.
-    CRef<CBlast4_mask> GetMask(void);
+    CRef<objects::CBlast4_mask> GetMask(void);
     
     /// Get the Karlin/Altschul parameter blocks produced by the search.
     /// @return List of references to KA blocks.
-    list< CRef<CBlast4_ka_block > > GetKABlocks(void);
+    list< CRef<objects::CBlast4_ka_block > > GetKABlocks(void);
     
     /// Get the search statistics block as a list of strings.
     /// 
@@ -216,7 +223,7 @@ public:
     
     /// Get the PSSM produced by the search.
     /// @return Reference to a Score-matrix-parameters object.
-    CRef<CScore_matrix_parameters> GetPSSM(void);
+    CRef<objects::CPssmWithParameters> GetPSSM(void);
     
     /// Debugging support can be turned on with eDebug or off with eSilent.
     enum EDebugMode {
@@ -255,16 +262,16 @@ public:
     /// @param errors   A null-seperated list of errors.
     /// @param warnings A null-seperated list of warnings.
     static void
-    GetSequences(vector< CRef<CSeq_id> > & seqids,    // in
+    GetSequences(vector< CRef<objects::CSeq_id> > & seqids,    // in
                  const string            & database,  // in
                  char                      seqtype,   // 'p' or 'n'
-                 vector< CRef<CBioseq> > & bioseqs,   // out
+                 vector< CRef<objects::CBioseq> > & bioseqs,   // out
                  string                  & errors,    // out
                  string                  & warnings); // out
         
 private:
     /// An alias for the most commonly used part of the Blast4 search results.
-    typedef CBlast4_get_search_results_reply TGSRR;
+    typedef objects::CBlast4_get_search_results_reply TGSRR;
     
     /// Various states the search can be in.
     ///
@@ -329,7 +336,7 @@ private:
     /// @param name Name of option (probably MatrixTable).
     /// @param matrix Pointer to Score-matrix-parameters object.
     void x_SetOneParam(const char * name, 
-                       CScore_matrix_parameters * matrix);
+                       objects::CPssmWithParameters * matrix);
     
     /// Determine what state the search is in.
     EState x_GetState(void);
@@ -340,12 +347,12 @@ private:
     
     /// Send a Blast4 request and get a reply.
     /// @return The blast4 server response.
-    CRef<CBlast4_reply>
-    x_SendRequest(CRef<CBlast4_request_body> body);
+    CRef<objects::CBlast4_reply>
+    x_SendRequest(CRef<objects::CBlast4_request_body> body);
     
     /// Try to get the search results.
     /// @return The blast4 server response.
-    CRef<CBlast4_reply>
+    CRef<objects::CBlast4_reply>
     x_GetSearchResults(void);
     
     /// Verify that search object contains mandatory fields.
@@ -358,20 +365,20 @@ private:
     void x_CheckResults(void);
     
     /// Iterate over error list, splitting into errors and warnings.
-    void x_SearchErrors(CRef<CBlast4_reply> reply);
+    void x_SearchErrors(CRef<objects::CBlast4_reply> reply);
     
     /// Poll until results are found, error occurs, or timeout expires.
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
     
-    static CRef<CBlast4_request>
-    x_BuildGetSeqRequest(vector< CRef<CSeq_id> > & seqids,   // in
+    static CRef<objects::CBlast4_request>
+    x_BuildGetSeqRequest(vector< CRef<objects::CSeq_id> > & seqids,   // in
                          const string            & database, // in
                          char                      seqtype,  // 'p' or 'n'
                          string                  & errors);  // out
     
     static void
-    x_GetSeqsFromReply(CRef<CBlast4_reply>       reply,
-                       vector< CRef<CBioseq> > & bioseqs,   // out
+    x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
+                       vector< CRef<objects::CBioseq> > & bioseqs,   // out
                        string                  & errors,    // out
                        string                  & warnings); // out
     
@@ -382,10 +389,10 @@ private:
     CRef<blast::CBlastOptionsHandle>   m_CBOH;
     
     /// Request object for new search.
-    CRef<CBlast4_queue_search_request> m_QSR;
+    CRef<objects::CBlast4_queue_search_request> m_QSR;
     
     /// Results of BLAST search.
-    CRef<CBlast4_reply>                m_Reply;
+    CRef<objects::CBlast4_reply>                m_Reply;
     
     /// List of errors encountered.
     vector<string> m_Errs;
@@ -419,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/10/12 14:18:31  camacho
+ * Update for scoremat.asn reorganization
+ *
  * Revision 1.13  2004/09/13 20:12:10  bealer
  * - Add GetSequences() API.
  *
