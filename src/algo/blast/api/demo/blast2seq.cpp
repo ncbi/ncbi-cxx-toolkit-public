@@ -55,6 +55,10 @@
 #include <objalign.h>
 #endif
 
+#ifdef CPP_FORMATTING
+#include "blast_format.hpp"
+#endif
+
 #if 0
 // C includes for C formatter
 #include <sqnutils.h>
@@ -378,16 +382,15 @@ int CBlast2seqApplication::Run(void)
 
     CNcbiOstream& out = args["out"].AsOutputFile();
     int counter = 0;
-    BlastMask* lcase_mask;
 
     // Retrieve input sequences
     TSeqLocVector query_loc = 
         BLASTGetSeqLocFromStream(args["query"].AsInputFile(), m_Scope,
-          eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
+          eNa_strand_unknown, 0, 0, &counter, args["lcase"].AsBoolean());
 
     TSeqLocVector subject_loc = 
         BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), m_Scope,
-          eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
+          eNa_strand_unknown, 0, 0, &counter);
 
     // Get program name
     EProgram prog =
@@ -450,6 +453,22 @@ int CBlast2seqApplication::Run(void)
         }
 #endif
 
+#ifdef CPP_FORMATTING
+        // Display with C++ formatter
+        TSeqLocInfoVector maskv;
+        int index;
+        for (index=0; index < query_loc.size(); ++index)
+            maskv.push_back(0);
+
+        CBlastFormatOptions* format_options = 
+            new CBlastFormatOptions(prog, args["out"].AsOutputFile());
+
+        Int2 status = Bl2seq_FormatResults(seqalignv, 
+                 prog, query_loc, subject_loc, maskv, 
+                 format_options, 
+                 args["frameshift"].AsBoolean());
+#endif
+        
 #if 0
         // Display w/ C formatter
         UseLocalAsnloadDataAndErrMsg();
@@ -494,6 +513,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/10/07 17:37:10  dondosha
+ * Lower case mask is now a boolean argument in call to BLASTGetSeqLocFromStream
+ *
  * Revision 1.20  2003/09/26 21:36:29  dondosha
  * Show results for all queries in multi-query case
  *

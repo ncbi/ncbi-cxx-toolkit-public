@@ -360,12 +360,6 @@ int CBlastApplication::BlastSearch()
     bool translated_query = (program == eBlastx || 
                              program == eTblastx);
 
-    if (translated_query) {
-        /* Translated lower case mask must be converted to protein 
-           coordinates here */
-        BlastMaskDNAToProtein(&query_options->lcase_mask, m_query);
-    }
-
     SetupQueryInfo(m_query, *m_pOptions, &m_clsQueryInfo);
     SetupQueries(m_query, *m_pOptions, m_clsQueryInfo, &query_blk);
     m_sbp = 0;
@@ -520,14 +514,9 @@ int CBlastApplication::Run(void)
 
     int id_counter = 0;
     // Read the query(ies) from input file; perform the setup
-    if (args["lcase"]) {
-        m_query = BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
-                      m_Scope, strand, from, to, &id_counter, 
-                      &m_pOptions->GetQueryOpts()->lcase_mask);
-    } else {
-        m_query = BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
-                        m_Scope, strand, from, to, &id_counter);
-    }
+    m_query = BLASTGetSeqLocFromStream(args["query"].AsInputFile(),
+                  m_Scope, strand, from, to, &id_counter, 
+                  args["lcase"].AsBoolean());
 
     status = BlastSearch();
 
