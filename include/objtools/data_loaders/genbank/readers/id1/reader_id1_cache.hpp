@@ -56,6 +56,8 @@ public:
 
 protected:
     
+    void PrintStatistics(void) const;
+
     void x_RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
     int x_GetVersion(const CSeqref& seqref, TConn conn);
 
@@ -119,6 +121,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.8  2003/10/21 16:32:50  vasilche
+* Cleaned ID1 statistics messages.
+* Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.
+* And by setting GENBANK_ID1_STATS=2 CId1Reader logs all activities.
+*
 * Revision 1.7  2003/10/21 14:27:34  vasilche
 * Added caching of gi -> sat,satkey,version resolution.
 * SNP blobs are stored in cache in preprocessed format (platform dependent).

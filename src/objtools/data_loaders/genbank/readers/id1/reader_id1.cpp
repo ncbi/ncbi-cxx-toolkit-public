@@ -79,22 +79,32 @@ static double snp_time = 0;
 static double snp_total_read_time = 0;
 static double snp_decompression_time = 0;
 
-static bool GetConnectionStatistics(void)
+static int s_GetCollectStatistics(void)
 {
     const char* env = getenv("GENBANK_ID1_STATS");
-    return env && *env && *env != '0';
+    if ( !env || !*env ) {
+        return 0;
+    }
+    try {
+        return NStr::StringToInt(env);
+    }
+    catch ( ... ) {
+        return 0;
+    }
 }
 
 
-static bool ConnectionStatistics(void)
+int CId1Reader::CollectStatistics(void)
 {
-    static bool ret = GetConnectionStatistics();
+    static int ret = s_GetCollectStatistics();
     return ret;
 }
+
 
 CId1Reader::CId1Reader(TConn noConn)
     : m_NoMoreConnections(false)
 {
+    
     noConn=1; // limit number of simultaneous connections to one
 #if !defined(NCBI_THREADS)
     noConn=1;
@@ -112,53 +122,59 @@ CId1Reader::CId1Reader(TConn noConn)
 CId1Reader::~CId1Reader()
 {
     SetParallelLevel(0);
-    if ( ConnectionStatistics() ) {
-        if ( resolve_id_count ) {
-            LOG_POST("Resolution: resolved "<<resolve_id_count<<" ids in "<<
-                     (resolve_id_time*1000)<<" ms "<<
-                     (resolve_id_time*1000/resolve_id_count)<<" ms/one");
-        }
-        if ( resolve_gi_count ) {
-            LOG_POST("Resolution: resolved "<<resolve_gi_count<<" gis in "<<
-                     (resolve_gi_time*1000)<<" ms "<<
-                     (resolve_gi_time*1000/resolve_gi_count)<<" ms/one");
-        }
-        if ( resolve_ver_count ) {
-            LOG_POST("Resolution: got "<<resolve_ver_count<<" blob ver in "<<
-                     (resolve_ver_time*1000)<<" ms "<<
-                     (resolve_ver_time*1000/resolve_ver_count)<<" ms/one");
-        }
-        if ( main_blob_count ) {
-            LOG_POST("Non-SNP: loaded "<<main_blob_count<<" blobs "<<
-                     (main_bytes/1024)<<" kB in "<<
-                     (main_time*1000)<<" ms "<<
-                     (main_bytes/main_time/1024)<<" kB/s");
-        }
-        if ( snp_blob_count ) {
-            LOG_POST("SNP: loaded "<<snp_blob_count<<" blobs "<<
-                     (snp_compressed/1024)<<" kB in "<<
-                     (snp_time*1000)<<" ms "<<
-                     (snp_compressed/snp_time/1024)<<" kB/s");
-            LOG_POST("SNP decompression: "<<(snp_compressed/1024)<<" kB -> "<<
-                     (snp_uncompressed/1024)<<" kB, compession ratio: "<<
-                     (snp_uncompressed/snp_compressed));
-            double snp_parse_time = snp_time - snp_total_read_time;
-            LOG_POST("SNP times: decompression : "<<
-                     (snp_decompression_time*1000)<<
-                     " ms, total read time: "<<
-                     (snp_total_read_time*1000)<<
-                     " ms, parse time: "<<
-                     (snp_parse_time*1000)<<" ms");
-        }
-        int total_blob_count = main_blob_count + snp_blob_count;
-        if ( total_blob_count ) {
-            double total_bytes = main_bytes + snp_compressed;
-            double total_time = main_time + snp_time;
-            LOG_POST("Total: loaded "<<total_blob_count<<" blobs "<<
-                     (total_bytes/1024)<<" kB in "<<
-                     (total_time*1000)<<" ms "<<
-                     (total_bytes/total_time/1024)<<" kB/s");
-        }
+    if ( CollectStatistics() ) {
+        PrintStatistics();
+    }
+}
+
+
+void CId1Reader::PrintStatistics(void) const
+{
+    if ( resolve_id_count ) {
+        LOG_POST("ID1 resolution: resolved "<<resolve_id_count<<" ids in "<<
+                 (resolve_id_time*1000)<<" ms "<<
+                 (resolve_id_time*1000/resolve_id_count)<<" ms/one");
+    }
+    if ( resolve_gi_count ) {
+        LOG_POST("ID1 resolution: resolved "<<resolve_gi_count<<" gis in "<<
+                 (resolve_gi_time*1000)<<" ms "<<
+                 (resolve_gi_time*1000/resolve_gi_count)<<" ms/one");
+    }
+    if ( resolve_ver_count ) {
+        LOG_POST("ID1 resolution: got "<<resolve_ver_count<<" blob ver in "<<
+                 (resolve_ver_time*1000)<<" ms "<<
+                 (resolve_ver_time*1000/resolve_ver_count)<<" ms/one");
+    }
+    if ( main_blob_count ) {
+        LOG_POST("ID1 non-SNP: loaded "<<main_blob_count<<" blobs "<<
+                 (main_bytes/1024)<<" kB in "<<
+                 (main_time*1000)<<" ms "<<
+                 (main_bytes/main_time/1024)<<" kB/s");
+    }
+    if ( snp_blob_count ) {
+        LOG_POST("ID1 SNP: loaded "<<snp_blob_count<<" blobs "<<
+                 (snp_compressed/1024)<<" kB in "<<
+                 (snp_time*1000)<<" ms "<<
+                 (snp_compressed/snp_time/1024)<<" kB/s");
+        LOG_POST("ID1 SNP decompression: "<<(snp_compressed/1024)<<" kB -> "<<
+                 (snp_uncompressed/1024)<<" kB, compession ratio: "<<
+                 (snp_uncompressed/snp_compressed));
+        double snp_parse_time = snp_time - snp_total_read_time;
+        LOG_POST("ID1 SNP times: decompression : "<<
+                 (snp_decompression_time*1000)<<
+                 " ms, total read time: "<<
+                 (snp_total_read_time*1000)<<
+                 " ms, parse time: "<<
+                 (snp_parse_time*1000)<<" ms");
+    }
+    int total_blob_count = main_blob_count + snp_blob_count;
+    if ( total_blob_count ) {
+        double total_bytes = main_bytes + snp_compressed;
+        double total_time = main_time + snp_time;
+        LOG_POST("ID1 total: loaded "<<total_blob_count<<" blobs "<<
+                 (total_bytes/1024)<<" kB in "<<
+                 (total_time*1000)<<" ms "<<
+                 (total_bytes/total_time/1024)<<" kB/s");
     }
 }
 
@@ -326,7 +342,7 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
                              TConn conn)
 {
     CStopWatch sw;
-    if ( ConnectionStatistics() ) {
+    if ( CollectStatistics() ) {
         sw.Start();
     }
 
@@ -342,27 +358,33 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
         in >> id1_reply;
     }}
 
-    if ( ConnectionStatistics() ) {
+    if ( CollectStatistics() ) {
         double time = sw.Elapsed();
         if ( id1_request.Which() == CID1server_request::e_Getgi ) {
-            LOG_POST("CId1Reader: resolved id "<<
-                     id1_request.GetGetgi().AsFastaString()<<
-                     " in "<<(time*1000)<<" ms");
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CId1Reader: resolved id "<<
+                         id1_request.GetGetgi().AsFastaString()<<
+                         " in "<<(time*1000)<<" ms");
+            }
             resolve_id_count++;
             resolve_id_time += time;
         }
         else if ( id1_request.Which() == CID1server_request::e_Getblobinfo ) {
             const CID1server_maxcomplex& req = id1_request.GetGetblobinfo();
             if ( req.IsSetSat() ) {
-                LOG_POST("CId1Reader: got blob version TSE("<<
-                         req.GetSat()<<","<<req.GetEnt()<<
-                         ") in "<<(time*1000)<<" ms");
+                if ( CollectStatistics() > 1 ) {
+                    LOG_POST("CId1Reader: got blob version TSE("<<
+                             req.GetSat()<<","<<req.GetEnt()<<
+                             ") in "<<(time*1000)<<" ms");
+                }
                 resolve_ver_count++;
                 resolve_ver_time += time;
             }
             else {
-                LOG_POST("CId1Reader: resolved gi "<<req.GetGi()<<
-                         " in "<<(time*1000)<<" ms");
+                if ( CollectStatistics() > 1 ) {
+                    LOG_POST("CId1Reader: resolved gi "<<req.GetGi()<<
+                             " in "<<(time*1000)<<" ms");
+                }
                 resolve_gi_count++;
                 resolve_gi_time += time;
             }
@@ -425,7 +447,7 @@ void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
                            TConn conn)
 {
     CStopWatch sw;
-    if ( ConnectionStatistics() ) {
+    if ( CollectStatistics() ) {
         sw.Start();
     }
     
@@ -433,10 +455,12 @@ void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
     x_SendRequest(seqref, stream, false);
     x_ReadBlob(id1_reply, seqref, *stream);
 
-    if ( ConnectionStatistics() ) {
+    if ( CollectStatistics() ) {
         double time = sw.Elapsed();
-        LOG_POST("CId1Reader: read blob "<<seqref.printTSE()<<" "<<
-                 (last_object_bytes/1024)<<" kB in "<<(time*1000)<<" ms");
+        if ( CollectStatistics() > 1 ) {
+            LOG_POST("CId1Reader: read blob "<<seqref.printTSE()<<" "<<
+                     (last_object_bytes/1024)<<" kB in "<<(time*1000)<<" ms");
+        }
         main_blob_count++;
         main_bytes += last_object_bytes;
         main_time += time;
@@ -450,7 +474,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 {
     CStopWatch sw;
 
-    if ( ConnectionStatistics() ) {
+    if ( CollectStatistics() ) {
         sw.Start();
     }
 
@@ -478,10 +502,12 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         Id1ReaderSkipBytes(src, kSkipFooter);
     }}
 
-    if ( ConnectionStatistics() ) {
+    if ( CollectStatistics() ) {
         double time = sw.Elapsed();
-        LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
-                 (compressed/1024)<<" kB in "<<(time*1000)<<" ms");
+        if ( CollectStatistics() > 1 ) {
+            LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
+                     (compressed/1024)<<" kB in "<<(time*1000)<<" ms");
+        }
         snp_blob_count++;
         snp_compressed += compressed;
         snp_uncompressed += last_object_bytes;
@@ -578,6 +604,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.52  2003/10/21 16:32:50  vasilche
+ * Cleaned ID1 statistics messages.
+ * Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.
+ * And by setting GENBANK_ID1_STATS=2 CId1Reader logs all activities.
+ *
  * Revision 1.51  2003/10/21 14:27:35  vasilche
  * Added caching of gi -> sat,satkey,version resolution.
  * SNP blobs are stored in cache in preprocessed format (platform dependent).

@@ -52,6 +52,26 @@ BEGIN_SCOPE(objects)
 void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip);
 
 
+static size_t resolve_id_count = 0;
+static double resolve_id_time = 0;
+
+static size_t resolve_gi_count = 0;
+static double resolve_gi_time = 0;
+
+static size_t resolve_ver_count = 0;
+static double resolve_ver_time = 0;
+
+static size_t main_blob_count = 0;
+static double main_bytes = 0;
+static double main_time = 0;
+
+static size_t snp_load_count = 0;
+static double snp_load_bytes = 0;
+static double snp_load_time = 0;
+
+static size_t snp_store_count = 0;
+static double snp_store_bytes = 0;
+static double snp_store_time = 0;
 
 CCachedId1Reader::CCachedId1Reader(TConn noConn, 
                                    IBLOB_Cache* blob_cache,
@@ -65,6 +85,47 @@ CCachedId1Reader::CCachedId1Reader(TConn noConn,
 
 CCachedId1Reader::~CCachedId1Reader()
 {
+    if ( CollectStatistics() ) {
+        PrintStatistics();
+    }
+}
+
+
+void CCachedId1Reader::PrintStatistics(void) const
+{
+    if ( resolve_id_count ) {
+        LOG_POST("Cache resolution: resolved "<<resolve_id_count<<" ids in "<<
+                 (resolve_id_time*1000)<<" ms "<<
+                 (resolve_id_time*1000/resolve_id_count)<<" ms/one");
+    }
+    if ( resolve_gi_count ) {
+        LOG_POST("Cache resolution: resolved "<<resolve_gi_count<<" gis in "<<
+                 (resolve_gi_time*1000)<<" ms "<<
+                 (resolve_gi_time*1000/resolve_gi_count)<<" ms/one");
+    }
+    if ( resolve_ver_count ) {
+        LOG_POST("Cache resolution: got "<<resolve_ver_count<<" blob ver in "<<
+                 (resolve_ver_time*1000)<<" ms "<<
+                 (resolve_ver_time*1000/resolve_ver_count)<<" ms/one");
+    }
+    if ( main_blob_count ) {
+        LOG_POST("Cache non-SNP: loaded "<<main_blob_count<<" blobs "<<
+                 (main_bytes/1024)<<" kB in "<<
+                 (main_time*1000)<<" ms "<<
+                 (main_bytes/main_time/1024)<<" kB/s");
+    }
+    if ( snp_load_count ) {
+        LOG_POST("Cache SNP: loaded "<<snp_load_count<<" blobs "<<
+                 (snp_load_bytes/1024)<<" kB in "<<
+                 (snp_load_time*1000)<<" ms "<<
+                 (snp_load_bytes/snp_load_time/1024)<<" kB/s");
+    }
+    if ( snp_store_count ) {
+        LOG_POST("Cache SNP: stored "<<snp_store_count<<" blobs "<<
+                 (snp_store_bytes/1024)<<" kB in "<<
+                 (snp_store_time*1000)<<" ms "<<
+                 (snp_store_bytes/snp_store_time/1024)<<" kB/s");
+    }
 }
 
 
@@ -121,8 +182,22 @@ bool CCachedId1Reader::GetBlobInfo(int gi, TSeqrefs& srs)
     if (!m_IdCache) 
         return false;
 
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
+        sw.Start();
+    }
+
     vector<int> data;
     if ( !m_IdCache->Read(gi, 0, data) ) {
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: failed to resolve gi "<<gi<<
+                         " in "<<(time*1000)<<" ms");
+            }
+            resolve_gi_count++;
+            resolve_gi_time += time;
+        }
         return false;
     }
     
@@ -139,6 +214,16 @@ bool CCachedId1Reader::GetBlobInfo(int gi, TSeqrefs& srs)
         srs.push_back(sr);
     }
 
+    if ( CollectStatistics() ) {
+        double time = sw.Elapsed();
+        if ( CollectStatistics() > 1 ) {
+            LOG_POST("CCachedId1Reader: resolved gi "<<gi<<
+                     " in "<<(time*1000)<<" ms");
+        }
+        resolve_gi_count++;
+        resolve_gi_time += time;
+    }
+
     return true;
 }
 
@@ -147,6 +232,11 @@ void CCachedId1Reader::StoreBlobInfo(int gi, const TSeqrefs& srs)
 {
     if (!m_IdCache) 
         return;
+
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
+        sw.Start();
+    }
 
     vector<int> data;
 
@@ -161,6 +251,16 @@ void CCachedId1Reader::StoreBlobInfo(int gi, const TSeqrefs& srs)
     _ASSERT(data.size() == 4 || data.size() == 8);
 
     m_IdCache->Store(gi, 0, data);
+
+    if ( CollectStatistics() ) {
+        double time = sw.Elapsed();
+        if ( CollectStatistics() > 1 ) {
+            LOG_POST("CCachedId1Reader: stored gi resolution "<<gi<<
+                     " in "<<(time*1000)<<" ms");
+        }
+        resolve_gi_count++;
+        resolve_gi_time += time;
+    }
 }
 
 
@@ -169,12 +269,36 @@ int CCachedId1Reader::GetSNPBlobVersion(int gi)
     if (!m_IdCache) 
         return 0;
 
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
+        sw.Start();
+    }
+
     vector<int> data;
     if ( !m_IdCache->Read(gi, 1, data) ) {
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: failed to get SNP blob version "<<
+                         gi<< " in "<<(time*1000)<<" ms");
+            }
+            resolve_ver_count++;
+            resolve_ver_time += time;
+        }
         return 0;
     }
     
     _ASSERT(data.size() == 1);
+
+    if ( CollectStatistics() ) {
+        double time = sw.Elapsed();
+        if ( CollectStatistics() > 1 ) {
+            LOG_POST("CCachedId1Reader: got SNP blob version "<<gi<<
+                     " in "<<(time*1000)<<" ms");
+        }
+        resolve_ver_count++;
+        resolve_ver_time += time;
+    }
 
     return data[0];
 }
@@ -185,12 +309,27 @@ void CCachedId1Reader::StoreSNPBlobVersion(int gi, int version)
     if (!m_IdCache) 
         return;
 
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
+        sw.Start();
+    }
+
     vector<int> data;
     data.push_back(version);
 
     _ASSERT(data.size() == 1);
 
     m_IdCache->Store(gi, 1, data);
+
+    if ( CollectStatistics() ) {
+        double time = sw.Elapsed();
+        if ( CollectStatistics() > 1 ) {
+            LOG_POST("CCachedId1Reader: stored SNP blob version "<<gi<<
+                     " in "<<(time*1000)<<" ms");
+        }
+        resolve_ver_count++;
+        resolve_ver_time += time;
+    }
 }
 
 
@@ -329,6 +468,14 @@ void CCachedId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 bool CCachedId1Reader::LoadBlob(CID1server_back& id1_reply,
                                 const CSeqref& seqref)
 {
+    if ( !m_BlobCache ) {
+        return false;
+    }
+
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
+        sw.Start();
+    }
     try {
         auto_ptr<IReader> reader(OpenBlobReader(seqref));
         if ( !reader.get() ) {
@@ -343,11 +490,35 @@ bool CCachedId1Reader::LoadBlob(CID1server_back& id1_reply,
         in >> id1_reply;
         
         // everything is fine
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            size_t size = in.GetStreamOffset();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: loaded blob: "<<
+                         seqref.printTSE()<<
+                         " size: " << size << " in " << (time*1000) << " ms");
+            }
+            main_blob_count++;
+            main_bytes += size;
+            main_time += time;
+        }
+
         return true;
     }
     catch ( exception& exc ) {
         ERR_POST("CCachedId1Reader: Exception while loading cached blob: " <<
                  seqref.printTSE() << ": " << exc.what());
+
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: Failed to load blob: "<<
+                         seqref.printTSE()<<" in " << (time*1000) << " ms");
+            }
+            main_blob_count++;
+            main_time += time;
+        }
+
         return false;
     }
 }
@@ -363,10 +534,11 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
     
     string key = x_GetBlobKey(seqref);
     int version = seqref.GetVersion();
-    try {
-        CStopWatch sw;
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
         sw.Start();
-
+    }
+    try {
         size_t size = m_BlobCache->GetSize(key, version);
         if ( size == 0 ) {
             return false;
@@ -374,23 +546,54 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
         
         AutoPtr<char, ArrayDeleter<char> > buf(new char[size]);
         if ( !m_BlobCache->Read(key, version, buf.get(), size) ) {
+            if ( CollectStatistics() ) {
+                double time = sw.Elapsed();
+                if ( CollectStatistics() > 1 ) {
+                    LOG_POST("CCachedId1Reader: Failed load of SNP table: "<<
+                             seqref.printTSE()<<
+                             " in " << (time*1000) << " ms");
+                }
+                snp_load_count++;
+                snp_load_time += time;
+            }
+
             return false;
         }
-
-        double time = sw.Elapsed();
-        LOG_POST("CCachedId1Reader: Loaded SNP table: "<<seqref.printTSE()<<
-                 " size: " << size << " in " << (time*1000) << " ms");
 
         CNcbiIstrstream stream(buf.get(), size);
 
         // blob type
         char type[4];
         if ( !stream.read(type, 4) || memcmp(type, "STBL", 4) != 0 ) {
+            if ( CollectStatistics() ) {
+                double time = sw.Elapsed();
+                if ( CollectStatistics() > 1 ) {
+                    LOG_POST("CCachedId1Reader: Failed load of SNP table: "<<
+                             seqref.printTSE()<<
+                             " in " << (time*1000) << " ms");
+                }
+                snp_load_count++;
+                snp_load_time += time;
+            }
+
             return false;
         }
 
         // table
         snp_info.LoadFrom(stream);
+
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: loaded SNP table: "<<
+                         seqref.printTSE()<<
+                         " size: " << size << " in " << (time*1000) << " ms");
+            }
+            snp_load_count++;
+            snp_load_bytes += size;
+            snp_load_time += time;
+        }
+
         return true;
     }
     catch ( exception& exc ) {
@@ -398,6 +601,17 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
                  "Exception while loading cached SNP table: "<<
                  seqref.printTSE() << ": " << exc.what());
         snp_info.Reset();
+
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: Failed load of SNP table: "<<
+                         seqref.printTSE()<< " in " << (time*1000) << " ms");
+            }
+            snp_load_count++;
+            snp_load_time += time;
+        }
+
         return false;
     }
 }
@@ -411,6 +625,10 @@ void CCachedId1Reader::StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
     }
     string key = x_GetBlobKey(seqref);
     int version = seqref.GetVersion();
+    CStopWatch sw;
+    if ( CollectStatistics() ) {
+        sw.Start();
+    }
     try {
         CNcbiOstrstream stream;
         stream.write("STBL", 4);
@@ -420,13 +638,19 @@ void CCachedId1Reader::StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
         const char* buf = stream.str();
         stream.freeze(false);
 
-        CStopWatch sw;
-        sw.Start();
         m_BlobCache->Store(key, version, buf, size);
 
-        double time = sw.Elapsed();
-        LOG_POST("CCachedId1Reader: Storing SNP table: "<<seqref.printTSE()<<
-                 " size: " << size << " in " << (time*1000) << " ms");
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: stored SNP table: "<<
+                         seqref.printTSE()<<
+                         " size: " << size << " in " << (time*1000) << " ms");
+            }
+            snp_store_count++;
+            snp_store_bytes += size;
+            snp_store_time += time;
+        }
     }        
     catch ( exception& exc ) {
         ERR_POST("CCachedId1Reader: "
@@ -438,6 +662,16 @@ void CCachedId1Reader::StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
         catch ( exception& /*exc*/ ) {
             // ignored
         }
+
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            if ( CollectStatistics() > 1 ) {
+                LOG_POST("CCachedId1Reader: Failed store of SNP table: "<<
+                         seqref.printTSE()<<" in " << (time*1000) << " ms");
+            }
+            snp_store_count++;
+            snp_store_time += time;
+        }
     }
 }
 
@@ -448,6 +682,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.10  2003/10/21 16:32:50  vasilche
+ * Cleaned ID1 statistics messages.
+ * Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.
+ * And by setting GENBANK_ID1_STATS=2 CId1Reader logs all activities.
+ *
  * Revision 1.9  2003/10/21 14:27:35  vasilche
  * Added caching of gi -> sat,satkey,version resolution.
  * SNP blobs are stored in cache in preprocessed format (platform dependent).
