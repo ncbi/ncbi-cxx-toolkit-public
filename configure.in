@@ -135,8 +135,10 @@ f_outexe="-o "
 changequote(, )dnl
 if test "$GCC" = "yes" ; then
    # GNU compiler
-   CFLAGS="-Wall -ansi $CFLAGS"
-   CXXFLAGS="-Wall -ansi $CXXFLAGS"
+   CFLAGS="-Wall -ansi -D__EXTENSIONS__ $CFLAGS"
+   CXXFLAGS=`echo $CXXFLAGS | sed 's/-O.//g'`
+   CXXFLAGS="-Wall -ansi -D__EXTENSIONS__ $CXXFLAGS"
+   LDFLAGS="-g $LDFLAGS"
 elif test "$CXX" = "cl.exe /TP" ; then
    # MSVC++ compiler
    script_shell=""
@@ -166,10 +168,11 @@ AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
 AC_CHECK_HEADERS(string)
 AC_CHECK_HEADERS(unistd.h windows.h)
+AC_CHECK_HEADERS(limits)
 
 
-dnl Check for typedefs, structures, and compiler characteristics.
-dnl --------------------------------------------------------------
+dnl Check for typedefs, structures, and compiler features.
+dnl ------------------------------------------------------
 AC_CXX_CONST
 AC_TYPE_SIZE_T
 
@@ -199,6 +202,33 @@ AC_TRY_RUN(
       return test_throw_spec(123);
    }],
    AC_DEFINE_UNQUOTED(NCBI_USE_THROW_SPEC, 1)
+)
+AC_MSG_RESULT()
+
+
+AC_MSG_CHECKING(obsolete basic_string::compare())
+AC_TRY_COMPILE(
+   [#include <string>],
+   [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
+   AC_DEFINE_UNQUOTED(NCBI_OBSOLETE_STR_COMPARE, 1)
+)
+AC_MSG_RESULT()
+
+AC_MSG_CHECKING(if the auto_ptr template class is not implemented)
+AC_TRY_COMPILE(
+   [#include <memory>],
+   [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap; ],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_NO_AUTO_PTR, 1)
+)
+AC_MSG_RESULT()
+
+AC_MSG_CHECKING(for snprintf() function)
+AC_TRY_LINK(
+   [#include <stdio.h>],
+   [snprintf(0,0,0); ],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_NO_SNPRINTF, 1)
 )
 AC_MSG_RESULT()
 
