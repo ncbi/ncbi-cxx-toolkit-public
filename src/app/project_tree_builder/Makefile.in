@@ -1,0 +1,4 @@
+ASN_PROJ = msvc71_project
+APP_PROJ = project_tree_builder
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
