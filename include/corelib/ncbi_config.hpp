@@ -29,6 +29,7 @@
  * Authors:  Anatoliy Kuznetsov
  *
  */
+
 /// @file ncbi_config.hpp
 /// Parameters initialization model
 
@@ -41,6 +42,7 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -60,7 +62,7 @@ public:
     {
         switch (GetErrCode()) {
         case eParameterMissing: return "eParameterMissing";
-        default:    return CException::GetErrCodeString();
+        default:                return CException::GetErrCodeString();
         }
     }
 
@@ -95,10 +97,9 @@ public:
     ~CConfig();
 
     /// Defines how to behave when parameter is missing
-    ///
     enum EErrAction {
-        eErr_Throw,   ///< Throw an exception on error
-        eErr_NoThrow  ///< Return default value on error
+        eErr_Throw,    ///< Throw an exception on error
+        eErr_NoThrow   ///< Return default value on error
     };
 
     /// Utility function to get an element of parameter tree
@@ -115,10 +116,10 @@ public:
     ///    Error action
     /// @param default_value
     ///    Default value for missing parameters
-    const string& GetString(const string&         driver_name,
-                            const string&         param_name, 
-                            EErrAction            on_error,
-                            const string&         default_value);
+    const string& GetString(const string&  driver_name,
+                            const string&  param_name, 
+                            EErrAction     on_error,
+                            const string&  default_value);
     
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -134,12 +135,11 @@ public:
     ///    Error action
     /// @param default_value
     ///    Default value for missing parameters
-    ///
     /// @sa ParamTree_GetString
-    int GetInt(const string&         driver_name,
-               const string&         param_name, 
-               EErrAction            on_error,
-               int                   default_value);
+    int GetInt(const string&  driver_name,
+               const string&  param_name, 
+               EErrAction     on_error,
+               int            default_value);
 
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -156,12 +156,11 @@ public:
     ///    Error action
     /// @param default_value
     ///    Default value for missing parameters
-    ///
     /// @sa ParamTree_GetString
-    unsigned int GetDataSize(const string&         driver_name,
-                             const string&         param_name, 
-                             EErrAction            on_error,
-                             unsigned int          default_value);
+    Uint8 GetDataSize(const string&  driver_name,
+                      const string&  param_name, 
+                      EErrAction     on_error,
+                      unsigned int   default_value);
 
     /// Utility function to get an integer element of parameter tree
     /// Throws an exception when mandatory parameter is missing
@@ -177,12 +176,11 @@ public:
     ///    Error action
     /// @param default_value
     ///    Default value for missing parameters
-    ///
     /// @sa ParamTree_GetString
-    bool GetBool(const string&         driver_name,
-                 const string&         param_name, 
-                 EErrAction            on_error,
-                 bool                  default_value);
+    bool GetBool(const string&  driver_name,
+                 const string&  param_name, 
+                 EErrAction     on_error,
+                 bool           default_value);
 
     const TParamTree* GetTree() const { return m_ParamTree; }
 
@@ -191,10 +189,7 @@ public:
     ///     Application registry (loaded from the INI file)
     /// @return 
     ///     Reconstructed tree (caller is responsible for deletion)
-    ///
-    static
-    TParamTree* ConvertRegToTree(const CNcbiRegistry&  reg);
-
+    static TParamTree* ConvertRegToTree(const CNcbiRegistry&  reg);
 
 private:
     CConfig(const CConfig&);
@@ -210,10 +205,15 @@ protected:
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/10/15 12:01:31  ivanov
+ * Changed return type for CConfig::GetDataSize to Uint8.
+ * Some cosmetics.
+ *
  * Revision 1.7  2004/09/23 16:20:24  kuznets
  * All ParamTree_ functions assembled in CConfig class
  *
@@ -235,9 +235,7 @@ END_NCBI_SCOPE
  * Revision 1.1  2004/09/22 13:54:11  kuznets
  * Initial revision
  *
- *
  * ===========================================================================
  */
 
-
-#endif  /* CORELIB___NCBI_PARAMTREE__HPP */
+#endif  /* CORELIB___NCBI_CONFIG__HPP */
