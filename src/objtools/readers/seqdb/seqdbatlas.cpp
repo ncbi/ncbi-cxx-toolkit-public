@@ -630,7 +630,7 @@ void CSeqDBAtlas::RetRegion(const char * datap, CSeqDBLockHold & locked)
     _ASSERT(worked);
     
     if (! worked) {
-        cerr << "Address leak in " << __FUNCTION__ << endl;
+        cerr << "Address leak in CSeqDBAtlas::RetRegion" << endl;
     }
 }
 
