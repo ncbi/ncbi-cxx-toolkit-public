@@ -1,4 +1,4 @@
---$Revision: 2.0 $
+--$Revision: 2.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Collections
@@ -34,6 +34,7 @@ Bioseq-set ::= SEQUENCE {      -- just a collection
         pub-set (9) ,               -- all the seqs from a single publication
         equiv (10) ,                -- a set of equivalent maps or seqs
 		swissprot (11) ,            -- converted SWISSPROT
+		pdb-entry (12) ,            -- a complete PDB entry
         other (255) } DEFAULT not-set ,
     release VisibleString OPTIONAL ,
     date Date OPTIONAL ,
