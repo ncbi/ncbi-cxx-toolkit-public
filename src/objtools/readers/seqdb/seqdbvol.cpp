@@ -1274,11 +1274,21 @@ CSeqDBVol::x_GetHdrMembBit(Uint4            oid,
         for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
             const CBlast_def_line & defline = **iter;
             
-            if ((defline.CanGetMemberships() == false) ||
-                ((defline.GetMemberships().front() & memb_mask)) == 0) {
+            bool have_memb =
+                defline.CanGetMemberships() &&
+                defline.IsSetMemberships() &&
+                (! defline.GetMemberships().empty());
+            
+            if (have_memb) {
+                Uint4 bits = defline.GetMemberships().front();
                 
+                if ((bits & memb_mask) == 0) {
+                    have_memb = false;
+                }
+            }
+            
+            if (! have_memb) {
                 TBDLLIter eraseme = iter++;
-                
                 dl.erase(eraseme);
             } else {
                 iter++;
@@ -1429,7 +1439,7 @@ bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
     
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
     
-    if (BDLS.Empty() || (! BDLS->CanGet())) {
+    if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
     }
     
@@ -1439,7 +1449,7 @@ bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
     TI1 it1 = BDLS->Get().begin();
     
     for(; it1 != BDLS->Get().end();  it1++) {
-        if ((*it1)->CanGetOther_info()) {
+        if ((*it1)->IsSetOther_info()) {
             TI2 it2 = (*it1)->GetOther_info().begin();
             TI2 it2end = (*it1)->GetOther_info().end();
             
@@ -1474,7 +1484,7 @@ bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
     
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
     
-    if (BDLS.Empty() || (! BDLS->CanGet())) {
+    if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
     }
     
