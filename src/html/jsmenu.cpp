@@ -82,8 +82,9 @@ CHTMLPopupMenu::CHTMLPopupMenu(const string& name, EType type)
     m_Name = name;
     m_Type = type;
 
-    // Other menu-specific members
+    // Other menu-specific members (eKurdinConf)
     m_ConfigName = kEmptyStr;
+    m_DisableLocalConfig = false;
 }
 
 
@@ -405,8 +406,11 @@ string CHTMLPopupMenu::HideMenu(void) const
 CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if ( mode == eHTML ) {
-        out << "<script language=\"JavaScript1.2\">\n<!--\n" 
-            << GetCodeItems() << "//-->\n</script>\n";
+        string items = GetCodeItems();
+        if ( !items.empty() ) {
+            out << "<script language=\"JavaScript1.2\">\n<!--\n" 
+                << items << "//-->\n</script>\n";
+        }
     }
     return out;
 }
@@ -430,13 +434,13 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
         {
         code = "<script language=\"JavaScript1.2\">\n<!--\n";
         code += "var PopUpMenu2_GlobalConfig = [\n";
-        code += "[\"UseThisGlobalConfig\",\"yes\"]";
+        code += "  [\"UseThisGlobalConfig\",\"yes\"]";
         // Write properties
         CHTMLPopupMenu::TAttributes* attrs = GetGlobalAttributesPtr();
         ITERATE (TAttributes, i, *attrs) {
             string name  = GetAttributeName(i->first, eKurdinConf);
             string value = i->second;
-            code += ",\n[\"" + name + "\",\"" + value + "\"]";
+            code += ",\n  [\"" + name + "\",\"" + value + "\"]";
         }
         code += "\n]\n//-->\n</script>\n";
         url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinConf :
@@ -528,36 +532,40 @@ string CHTMLPopupMenu::GetCodeItems(void) const
         {
             if ( m_ConfigName == m_Name ) {
                 code += "var PopUpMenu2_LocalConfig_" + m_Name + " = [\n";
+                // If local config is disabled
+                if ( m_DisableLocalConfig ) {
+                    code += "  [\"UseThisLocalConfig\",\"no\"]";
+                }
                 // Write properties
                 ITERATE (TAttributes, i, m_Attrs) {
-                    if ( i != m_Attrs.begin()) {
+                    if ( m_DisableLocalConfig  ||  i != m_Attrs.begin() ) {
                         code += ",\n";
                     }
                     string name  = GetAttributeName(i->first);
                     string value = i->second;
-                    code += "[\"" + name + "\",\"" + value + "\"]";
+                    code += "  [\"" + name + "\",\"" + value + "\"]";
                 }
                 code += "\n]\n";
             }
-            code += "var " + m_Name + " = [\n";
-            if ( !m_ConfigName.empty() ) {
-                code += "[\"UseLocalConfig\",\"" + m_ConfigName + "\",\"\",\"\"]";
-                if ( m_Items.size() ) {
-                    code += ",\n";
+            // Write menu only if it have items
+            if ( m_Items.size() ) {
+                code += "var " + m_Name + " = [\n";
+                if ( !m_ConfigName.empty() ) {
+                    code += "  [\"UseLocalConfig\",\"" + m_ConfigName + "\",\"\",\"\"]";
                 }
-            }
-            // Write menu items
-            ITERATE (TItems, i, m_Items) {
-                if ( i != m_Items.begin()) {
-                    code += ",\n";
+                // Write menu items
+                ITERATE (TItems, i, m_Items) {
+                    if ( !m_ConfigName.empty()  ||  i != m_Items.begin()) {
+                        code += ",\n";
+                    }
+                    code += "  [\"" +
+                        i->title     + "\",\""  +
+                        i->action    + "\",\""  +
+                        i->mouseover + "\",\""  +
+                        i->mouseout  + "\"]";
                 }
-                code += "[\"" +
-                    i->title     + "\",\""  +
-                    i->action    + "\",\""  +
-                    i->mouseover + "\",\""  +
-                    i->mouseout  + "\"]";
+                code += "\n]\n";
             }
-            code += "\n]\n";
         }
         break;
 
@@ -600,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/05/05 13:58:14  ivanov
+ * Added DisableLocalConfig(). Do not print out empty menues.
+ *
  * Revision 1.29  2004/04/22 15:26:34  ivanov
  * GetAttributeName(): improved diagnostic messages
  *
