@@ -188,48 +188,53 @@ streambuf *CPubseqReader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 
 streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
 {
-  CNcbiOstrstream oss;
-  {
-    CObjectOStreamAsn ooss(oss);
-    ooss << seqId;
-  }
-  oss << " " ;
-  oss.freeze(false);
-  oss.str()[oss.pcount()-1]=0;
-  CDB_VarChar asnIn(oss.str());
-
   int gi = 0;
-  {
-    auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
-    cmd->SetParam("@asnin", &asnIn);
-    cmd->Send();
-    CDB_Int giFound;
 
-    while(cmd->HasMoreResults())
+  if(seqId.IsGi())
+    gi = seqId.GetGi();
+  else
     {
-      auto_ptr<CDB_Result> result(cmd->Result());
-      if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
-        continue;
-
-      while(result->Fetch())
+      CNcbiOstrstream oss;
       {
-        for(unsigned pos = 0; pos < result->NofItems(); ++pos)
-        {
-          string name = result->ItemName(pos);
-          if (name == "gi")
-            result->GetItem(&giFound);
-          else
-            result->SkipItem();
-        }
+        CObjectOStreamAsn ooss(oss);
+        ooss << seqId;
       }
+      oss << " " ;
+      oss.freeze(false);
+      oss.str()[oss.pcount()-1]=0;
+      CDB_VarChar asnIn(oss.str());
 
-      gi = giFound.Value();
-      
-      //LOG_POST(setw(3) << CThread::GetSelf() << ":: " << "id_gi_by_seqid_asn => gi("<<gi << ")");
+      auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
+      cmd->SetParam("@asnin", &asnIn);
+      cmd->Send();
+      CDB_Int giFound;
+
+      while(cmd->HasMoreResults())
+        {
+          auto_ptr<CDB_Result> result(cmd->Result());
+          if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
+            continue;
+          
+          while(result->Fetch())
+            {
+              for(unsigned pos = 0; pos < result->NofItems(); ++pos)
+                {
+                  string name = result->ItemName(pos);
+                  if (name == "gi")
+                    result->GetItem(&giFound);
+                  else
+                    result->SkipItem();
+                }
+            }
+          
+          gi = giFound.Value();
+          //LOG_POST(setw(3) << CThread::GetSelf() << ":: " << "id_gi_by_seqid_asn => gi("<<gi << ")");
+        }
     }
-  }
-
+  
   auto_ptr<strstream> ss(new strstream);
+  if(gi == 0)
+    return new CStrStreamBuf(ss.release());
 
   {
     auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_get_gi_history", 2));
@@ -318,15 +323,16 @@ CT_INT_TYPE CPubseqStreamBuf::underflow()
     CDB_SmallInt satIn(m_Seqref.Sat());
     CDB_Int satKeyIn(m_Seqref.SatKey());
     CDB_Int z(0);
+    CDB_Int o(1);
 
     m_Cmd->SetParam("@gi", &giIn);
     m_Cmd->SetParam("@sat_key", &satKeyIn);
     m_Cmd->SetParam("@sat", &satIn);
     m_Cmd->SetParam("@maxplex", &z);
     m_Cmd->SetParam("@outfmt", &z);
-    m_Cmd->SetParam("@ext_feat", &z);
+    m_Cmd->SetParam("@ext_feat", &o);
     m_Cmd->Send();
-
+    
     m_Status = eNewRow;
     return underflow();
   }
@@ -440,6 +446,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.19  2003/01/18 08:42:25  kimelman
+* 1.added SNP retrieval per M.DiCuccio request; 2.avoid gi relookup
+*
 * Revision 1.18  2002/12/30 23:36:22  vakatov
 * CPubseqStreamBuf::underflow() -- strstream::freeze(false) to avoid mem.leak
 *
