@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/10/05 14:08:33  vasilche
+* Fixed class name under GCC and MSVC.
+*
 * Revision 1.23  1999/10/04 16:22:16  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -121,8 +124,27 @@
 
 BEGIN_NCBI_SCOPE
 
+static
+string ClassName(const type_info& id)
+{
+    const char* s = id.name();
+    if ( memcmp(s, "class ", 6) == 0 ) {
+        // MSVC
+        return s + 6;
+    }
+    else if ( isdigit(*s ) ) {
+        // GCC
+        while ( isdigit(*s) )
+            ++s;
+        return s;
+    }
+    else {
+        return s;
+    }
+}
+
 CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
-    : CParent(id.name()), m_Id(id), m_Size(size),
+    : CParent(ClassName(id)), m_Id(id), m_Size(size),
       m_RandomOrder(false), m_Implicit(false)
 {
     Register();

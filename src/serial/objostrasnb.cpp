@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/10/05 14:08:34  vasilche
+* Fixed class name under GCC and MSVC.
+*
 * Revision 1.22  1999/09/24 18:19:19  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -252,8 +255,10 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
         EndTag();
 #endif
-    if ( !m_Output.write(bytes, size) )
+    if ( !m_Output.write(bytes, size) ) {
+        ERR_POST("write error: " << size);
         THROW1_TRACE(runtime_error, "write error");
+    }
 }
 
 template<typename T>
