@@ -44,11 +44,12 @@ IMPORTS
 --
 --  --------------------------------------------------------------------
 
-Blast0-request ::= CHOICE {
-    blast4                  Blast4-request
+Blast4-request ::= SEQUENCE {
+    ident                   VisibleString OPTIONAL,
+    body                    Blast4-request-body
 }
 
-Blast4-request ::= CHOICE {
+Blast4-request-body ::= CHOICE {
     finish-params           Blast4-finish-params-request,
     get-databases           NULL,
     get-matrices            NULL,
@@ -85,10 +86,6 @@ Blast4-queue-search-request ::= SEQUENCE {
 --  Replies
 --
 --  --------------------------------------------------------------------
-
-Blast0-reply ::= CHOICE {
-    blast4                  Blast4-reply
-}
 
 Blast4-reply ::= SEQUENCE {
     errors                  SEQUENCE OF Blast4-error OPTIONAL,
