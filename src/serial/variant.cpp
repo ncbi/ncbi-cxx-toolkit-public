@@ -218,14 +218,18 @@ CVariantInfo* CVariantInfo::SetSubClass(void)
     return this;
 }
 
+bool NCBI_XSERIAL_EXPORT EnabledDelayBuffers(void);
+
 CVariantInfo* CVariantInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
     if ( IsSubClass() ) {
         NCBI_THROW(CSerialException,eIllegalCall,
                    "sub class cannot be delayed");
     }
-    m_DelayOffset = TPointerOffsetType(buffer);
-    UpdateFunctions();
+    if ( EnabledDelayBuffers() ) {
+        m_DelayOffset = TPointerOffsetType(buffer);
+        UpdateFunctions();
+    }
     return this;
 }
 
@@ -876,6 +880,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2004/09/09 15:33:35  vasilche
+* Allow to disable delayed parsing.
+*
 * Revision 1.14  2004/05/17 21:03:04  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

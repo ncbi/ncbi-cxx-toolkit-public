@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiapp.hpp>
 
 #include <serial/member.hpp>
 #include <serial/objectinfo.hpp>
@@ -265,10 +266,44 @@ void CMemberInfo::SetParentClass(void)
                              &TFunc::CopyMissingParentClass));
 }
 
+bool NCBI_XSERIAL_EXPORT EnabledDelayBuffers(void)
+{
+    enum State {
+        eUnset,
+        eEnabled,
+        eDisabled
+    };
+    static State state = eUnset;
+    if ( state == eUnset ) {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        string value;
+        if ( app ) {
+            value = app->GetConfig().Get("SERIAL", "DISABLE_DELAY_BUFFERS");
+        }
+        if ( value.empty() ) {
+            const char* str = getenv("SERIAL_DISABLE_DELAY_BUFFERS");
+            if ( str ) {
+                value = str;
+            }
+        }
+        if ( value == "1" || NStr::CompareNocase(value,"YES") == 0 ) {
+            LOG_POST(Info << "SERIAL: delay buffers are disabled");
+            state = eDisabled;
+        }
+        else {
+            state = eEnabled;
+        }
+    }
+    return state == eEnabled;
+}
+
+
 CMemberInfo* CMemberInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
-    m_DelayOffset = TPointerOffsetType(buffer);
-    UpdateFunctions();
+    if ( EnabledDelayBuffers() ) {
+        m_DelayOffset = TPointerOffsetType(buffer);
+        UpdateFunctions();
+    }
     return this;
 }
 
@@ -1123,6 +1158,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.39  2004/09/09 15:33:35  vasilche
+* Allow to disable delayed parsing.
+*
 * Revision 1.38  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
