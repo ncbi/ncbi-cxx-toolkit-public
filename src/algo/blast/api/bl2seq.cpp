@@ -49,10 +49,6 @@
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
 
-#ifndef NUM_FRAMES
-#define NUM_FRAMES 6
-#endif
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
@@ -319,6 +315,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2004/02/13 19:32:55  camacho
+ * Removed unnecessary #defines
+ *
  * Revision 1.40  2004/01/16 21:52:59  bealer
  * - Changes for Blast4 API
  *
