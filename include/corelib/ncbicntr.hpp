@@ -99,13 +99,13 @@
    typedef int TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
-#  include <libkern/OSAtomic.h>
+#  include <CarbonCore/DriverSynchronization.h> // Is this right?
    typedef SInt32 TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) OSAddAtomic(p, d)
+#  define NCBI_COUNTER_ADD(p, d) AddAtomic(d, p)
 #elif defined(NCBI_OS_MAC)
 #  include <OpenTransport.h> // Is this right?
    typedef SInt32 TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) OTAtomicAdd32(p, d)
+#  define NCBI_COUNTER_ADD(p, d) OTAtomicAdd32(d, p)
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
    typedef LONG TNCBIAtomicValue;
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/05/23 18:16:07  rsmith
+* proper definitions for NCBI_COUNTER_ADD on Mac/Darwin
+*
 * Revision 1.13  2003/03/31 14:07:04  siyan
 * Added doxygen support
 *
