@@ -99,7 +99,11 @@ public:
         eVal_splice_err  = 16,
         eVal_ovl_pep_err = 32,
         eVal_need_taxid  = 64,
-        eVal_need_isojta = 128        
+        eVal_need_isojta = 128, 
+
+        // !!! For test purposes only {
+        eVal_perf_bottlenecks  = 256
+        // }
     };
 
     // constructors
@@ -166,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/02/03 20:16:55  shomrat
+* Added option to supress suspected performance bottlenecks (for testing)
+*
 * Revision 1.2  2003/01/07 19:57:03  shomrat
 * Added Win32 export specifier; Memebr GetMessage() changed to GetMsg() due to conflict
 *
