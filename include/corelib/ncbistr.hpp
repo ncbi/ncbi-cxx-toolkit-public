@@ -182,6 +182,8 @@ public:
     /// Convert string to unsigned int. 
     /// String can contain "software" qulifiers: MB(megabyte), KB (kilobyte)..
     /// Example: 100MB, 1024KB
+    /// Cannot process string if result exceed sizeof(unsigned int) value
+    /// in bytes for current platform.
     ///
     /// @param str
     ///   String to be converted.
@@ -195,10 +197,11 @@ public:
     ///   trailing symbols after the number.
     /// @param on_error
     ///   Whether to throw an exception on error, or just to return zero.
-    static 
-    unsigned int 
+    /// @sa
+    ///   StringToUInt8_DataSize, StringToUInt
+    static unsigned int 
     StringToUInt_DataSize(const string&  str, 
-                          int            base = 10,
+                          int            base     = 10,
                           ECheckEndPtr   check    = eCheck_Need,
                           EConvErrAction on_error = eConvErr_Throw);
 
@@ -2456,6 +2459,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.69  2004/10/13 13:05:38  ivanov
+ * Some cosmetics
+ *
  * Revision 1.68  2004/10/13 01:05:06  vakatov
  * NStr::strncasecmp() -- fixed bug in "hand-made" code
  *
