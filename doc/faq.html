@@ -19,7 +19,7 @@ in something like:
 
 <li><a href="#ref_CannotFindSer">The linker complains about undefined symbols Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a"</a></li>
 
-<li><a href="#ref_CannotFindObjectSymbol">How does one find the libraries to link when the linker complains of undefined symbols</a></li>
+<li><a href="#ref_CannotFindObjectSymbol">How does one find the libraries to link when the linker complains of <i>undefined symbols</i></a></li>
 
 <li>
 <a href="#ref_HowMakeDep">MAKE complains it does not know "<i>how to make
@@ -62,7 +62,7 @@ LIBS = \
 </pre>
 If you are using the make file created by new_project.sh, then just uncomment the applicable lines.<br><br>
 
-<hr><h4><a NAME="ref_CannotFindObjectSymbol"></a>How does one find the libraries to link when the linker complains of undefined symbols</h4>
+<hr><h4><a NAME="ref_CannotFindObjectSymbol"></a>How does one find the libraries to link when the linker complains of <i>undefined symbols</i></h4>
 For example, the linker may complain about the symbol <i>ncbi::objects::CSeq_id::GetTypeInfo(void)</i> being undefined. 
 The cause of this problem is that the applicable objects library has not been linked into the application. You 
 determine the applicable objects library as follows: <br><br>1) Look for the *.hpp file that declares the applicable class
@@ -85,7 +85,35 @@ an identifier search on the class name (e.g., CSeq_id) and looking in the <b>Def
 <tr><td>util<td>xutil
 </table>
 <br><br>Note: The C++ toolkit libraries have dependencies on each other. For example, symbols defined in seqfeat (libseqfeat.a) are referenced in library mmdb1 (libmmdb1.a). In this case you most link seqfeat after mmdb1.
- 
+
+<p>
+Most often, difficulties arise when one is linking an application using
+these numerous <i>"objects/"</i> libraries. To give you some relieve, here are some
+examples involving such libraries. They show the right order of libraries,
+as well as which libraries you may actually need. Using this as a starting
+point, it's <i>much</i> easier to find the right combination of libraries:
+	 <ul>
+		<li>
+		  first, to find and add missing libraries using the generic
+		  technique described above
+		</li>
+		<li>
+		  then, try to throw out libraries which you believe are not
+		  actually needed
+		</li>
+	 </ul>
+
+<pre>
+LIB = id1 \
+      seqset seq seqres seqloc seqalign seqfeat seq seqalign seqres seqblock \
+      pub medline biblio general xser xutil xconnect xncbi		
+
+LIB = cdd ncbimime mmdb1 mmdb2 mmdb3 cn3d \
+      seqset seq seqres seqloc seqalign seqfeat seqalign seqres seqblock \
+      pub medline biblio general xser xutil xconnect xncbi		
+</pre>
+
+
 <hr>
 <h4>
 <a NAME="ref_HowMakeDep"></a>MAKE complains it does not know "<i>how to
