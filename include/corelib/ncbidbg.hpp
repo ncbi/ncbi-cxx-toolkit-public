@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/18 21:00:24  vakatov
+* [_DEBUG]  Fixed a typo in _ASSERT macro
+*
 * Revision 1.6  1998/11/06 22:42:37  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -70,7 +73,7 @@ BEGIN_NCBI_SCOPE
     if ( !expr ) \
         { \
               CNcbiDiag _diag_(eDiag_Fatal); \
-              _trace_diag << _FILE_LINE << "Assertion failed: " << #expr; \
+              _diag_ << _FILE_LINE << "Assertion failed: " << #expr; \
         } \
 }
 
