@@ -93,8 +93,5 @@
 /* Have union semun */
 #undef HAVE_SEMUN
 
-/* This is good for the GNU compiler on Solaris */ 
-#undef __EXTENSIONS__
-
 /* There is no "std::char_traits" type defined */
 #undef HAVE_NO_CHAR_TRAITS
