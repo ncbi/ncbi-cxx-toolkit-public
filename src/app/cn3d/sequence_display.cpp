@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/19 15:50:39  thiessen
+* add sort rows by identifier
+*
 * Revision 1.6  2001/03/13 01:25:05  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -53,6 +56,9 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
+
+#include <algorithm>
 
 #include "cn3d/sequence_display.hpp"
 #include "cn3d/viewer_window_base.hpp"
@@ -702,6 +708,94 @@ void SequenceDisplay::GetSlaveSequences(SequenceList *seqs) const
         if (alnRow && alnRow->row > 0)
             seqs->push_back(alnRow->alignment->GetSequenceOfRow(alnRow->row));
     }
+}
+
+// comparison function: if CompareRows(a, b) == true, then row a moves up
+typedef bool (*CompareRows)(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b);
+
+static bool CompareRowsByIdentifier(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
+{
+    const Sequence
+        *seqA = a->alignment->GetSequenceOfRow(a->row),
+        *seqB = b->alignment->GetSequenceOfRow(b->row);
+
+    // identifier sort - float sequences with PDB id's to the top, then gi's, then accessions
+    if (seqA->pdbID.size() > 0) {
+        if (seqB->pdbID.size() > 0) {
+            if (seqA->pdbID < seqB->pdbID)
+                return true;
+            else if (seqA->pdbID > seqB->pdbID)
+                return false;
+            else
+                return (seqA->pdbChain < seqB->pdbChain);
+        } else
+            return true;
+    }
+
+    else if (seqA->gi != Sequence::VALUE_NOT_SET) {
+        if (seqB->pdbID.size() > 0)
+            return false;
+        else if (seqB->gi != Sequence::VALUE_NOT_SET)
+            return (seqA->gi < seqB->gi);
+        else
+            return true;
+    }
+
+    else if (seqA->accession.size() > 0) {
+        if (seqB->pdbID.size() > 0 || seqB->gi != Sequence::VALUE_NOT_SET)
+            return false;
+        else if (seqB->accession.size() > 0)
+            return (seqA->accession < seqB->accession);
+    }
+
+    ERR_POST(Error << "CompareRowsByIdentifier() - unrecognized identifier");
+    return false;
+}
+
+static CompareRows rowComparisonFunction = NULL;
+
+void SequenceDisplay::SortRowsByIdentifier(void)
+{
+    rowComparisonFunction = CompareRowsByIdentifier;
+    SortRows();
+}
+
+void SequenceDisplay::SortRows(void)
+{
+    if (!rowComparisonFunction) {
+        ERR_POST(Error << "SequenceDisplay::SortRows() - must first set comparison function");
+        return;
+    }
+
+    // to simplify sorting, construct list of slave rows only
+    std::vector < DisplayRowFromAlignment * > slaves;
+    int row;
+    for (row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow && alnRow->row > 0)
+            slaves.push_back(alnRow);
+    }
+
+    // do the sort
+    stable_sort(slaves.begin(), slaves.end(), rowComparisonFunction);
+    rowComparisonFunction = NULL;
+
+    // recreate the row list with new order
+    RowVector newRows(rows.size());
+    int nSlaves = 0;
+    for (row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow && alnRow->row > 0)
+            newRows[row] = slaves[nSlaves++];   // put sorted slaves in place
+        else
+            newRows[row] = rows[row];           // leave other rows in original order
+    }
+    if (nSlaves == slaves.size())   // sanity check
+        rows = newRows;
+    else
+        ERR_POST(Error << "SequenceDisplay::SortRows() - internal inconsistency");
+
+    (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
 }
 
 END_SCOPE(Cn3D)

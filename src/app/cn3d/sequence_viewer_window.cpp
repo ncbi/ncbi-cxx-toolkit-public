@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/19 15:50:40  thiessen
+* add sort rows by identifier
+*
 * Revision 1.7  2001/03/17 14:06:49  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -84,6 +87,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
     EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
+    EVT_MENU      (MID_SORT_IDENT,                      SequenceViewerWindow::OnSort)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -93,7 +97,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
 
     editMenu->AppendSeparator();
-    editMenu->Append(MID_DELETE_ROW, "Delete &Row", "", true);
+    wxMenu *subMenu = new wxMenu;
+    subMenu->Append(MID_SORT_IDENT, "By &Identifier");
+    editMenu->Append(MID_SORT_ROWS, "Sort &Rows", subMenu);
+    editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
 
     mouseModeMenu->Append(MID_MOVE_ROW, "&Move Row", "", true);
 
@@ -134,6 +141,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         else
             menuBar->Enable(MID_SHOW_HIDE_ROWS, false);     // can't show/hide in non-alignment display
         menuBar->Enable(MID_DELETE_ROW, enabled);           // can only delete row when editor is on
+        menuBar->Enable(MID_SORT_ROWS, enabled);
         menuBar->Enable(MID_MOVE_ROW, enabled);             // can only move row when editor is on
         menuBar->Enable(MID_REALIGN_ROW, enabled);          // can only realign rows when editor is on
         menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
@@ -298,6 +306,15 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
 
     sequenceViewer->alignmentManager->
         RealignSlaveSequences(sequenceViewer->GetCurrentAlignments()->front(), selectedSlaves);
+}
+
+void SequenceViewerWindow::OnSort(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_SORT_IDENT:
+            sequenceViewer->GetCurrentDisplay()->SortRowsByIdentifier();
+            break;
+    }
 }
 
 END_SCOPE(Cn3D)

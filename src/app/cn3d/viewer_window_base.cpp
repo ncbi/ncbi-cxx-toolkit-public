@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/19 15:50:40  thiessen
+* add sort rows by identifier
+*
 * Revision 1.6  2001/03/13 01:25:07  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -95,7 +98,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     editMenu->Append(MID_CREATE_BLOCK, "&Create Block", "", true);
     editMenu->Append(MID_DELETE_BLOCK, "&Delete Block", "", true);
     editMenu->AppendSeparator();
-    editMenu->Append(MID_SYNC_STRUCS, "Sync Structure &Colors");
+    editMenu->Append(MID_SYNC_STRUCS, "Sy&nc Structure Colors");
     editMenu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", "", true);
     menuBar->Append(editMenu, "&Edit");
 
