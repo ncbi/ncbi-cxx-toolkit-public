@@ -517,9 +517,9 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 
             list< CRef< CTaxon1_name > >::iterator i;
             // Find preferred common name
-            int pref_cls(GetPreferredCommonNameClass());
+            int pref_cls = GetPreferredCommonNameClass();
             for( i = lLin.begin(); i != lLin.end(); ++i ) {
-                if( (*i)->GetCde() == pref_cls ) {
+                if( (*i)->CanGetCde() && (*i)->GetCde() == pref_cls ) {
                     org.SetCommon().swap( (*i)->SetOname() );
                     lLin.erase( i );
                     break;
@@ -528,10 +528,12 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
             int syn_cls(GetSynonymNameClass());
             int comm_cls(GetCommonNameClass());
             for( i = lLin.begin(); i != lLin.end(); ++i ) {
-                int cls( (*i)->GetCde() );
-                if( cls == syn_cls || cls == comm_cls ) {
-                    org.SetSyn().push_back( (*i)->GetOname() );
-                }
+		if( (*i)->CanGetCde() ) {
+		    int cls = (*i)->GetCde();
+		    if( cls == syn_cls || cls == comm_cls ) {
+			org.SetSyn().push_back( (*i)->GetOname() );
+		    }
+		}
             }
             // Set taxid as db tag
             org.SetTaxId( node.GetTaxId() );
@@ -550,16 +552,19 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
             CTaxon1Node* pNode;
             if( !node.IsRoot() ) {
                 pNode = node.GetParent();
-                s_BuildLineage( on.SetLineage(), pNode, 0, GetSpeciesRank() );
-                if( on.GetLineage().empty() )
+		on.SetLineage(kEmptyStr);
+                s_BuildLineage( on.SetLineage(), pNode, 0,
+				GetSpeciesRank() );
+                if( on.GetLineage().empty() ) {
                     on.ResetLineage();
+		}
             }
             // Set rank
             int rank_id( node.GetRank() );
 
             is_species = (rank_id >= GetSpeciesRank());
             // correct level by lineage if node has no rank
-            if(rank_id < 0 && !node.IsRoot() ) {
+            if( rank_id < 0 && !node.IsRoot() ) {
                 pNode = node.GetParent();
                 while( !pNode->IsRoot() ) {
                     int rank( pNode->GetRank() );
@@ -617,20 +622,22 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 	    if( org.IsSetOrgname() ) { // OrgName is not empty
 		COrgName::TMod& lMods = on.SetMod();
 		for( i = lLin.begin(); i != lLin.end(); ++i ) {
-		    int cde = (*i)->GetCde();
-		    COrgMod::ESubtype stype = (COrgMod::ESubtype)0;
-		    if( cde == GetGBAcronymNameClass() ) {
-			stype = COrgMod::eSubtype_gb_acronym;
-		    } else if( cde == GetGBSynonymNameClass() ) {
-			stype = COrgMod::eSubtype_gb_synonym;
-		    } else if( cde == GetGBAnamorphNameClass() ) {
-			stype = COrgMod::eSubtype_gb_anamorph;
-		    }
-		    if( stype ) {
-			CRef<COrgMod> pMod( new COrgMod );
-			pMod->SetSubname().swap( (*i)->SetOname() );
-			pMod->SetSubtype( stype );
-			lMods.push_back( pMod );
+		    if( (*i)->CanGetCde() ) {
+			int cde = (*i)->GetCde();
+			COrgMod::ESubtype stype = (COrgMod::ESubtype)0;
+			if( cde == GetGBAcronymNameClass() ) {
+			    stype = COrgMod::eSubtype_gb_acronym;
+			} else if( cde == GetGBSynonymNameClass() ) {
+			    stype = COrgMod::eSubtype_gb_synonym;
+			} else if( cde == GetGBAnamorphNameClass() ) {
+			    stype = COrgMod::eSubtype_gb_anamorph;
+			}
+			if( stype ) {
+			    CRef<COrgMod> pMod( new COrgMod );
+			    pMod->SetSubname().swap( (*i)->SetOname() );
+			    pMod->SetSubtype( stype );
+			    lMods.push_back( pMod );
+			}
 		    }
 		}
 	    }
@@ -661,9 +668,10 @@ COrgRefCache::Insert1( CTaxon1Node& node )
         return false;
     }
     // Set division code
-    if( GetDivisionCode(node.GetDivision()) )
+    if( GetDivisionCode(node.GetDivision()) ) {
         pEntry->m_pTax1->SetDiv()
             .assign( GetDivisionCode(node.GetDivision()) );
+    }
     // Set species level
     pEntry->m_pTax1->SetIs_species_level( is_species );
     // Remove last element from list
@@ -691,7 +699,7 @@ COrgRefCache::Insert2( CTaxon1Node& node )
 
     pEntry->m_pTax2->SetIs_uncultured( node.IsUncultured() );
 
-    COrg_ref& org = ( pEntry->m_pTax2->SetOrg() );
+    COrg_ref& org = pEntry->m_pTax2->SetOrg();
 
     if( !BuildOrgRef( node, org, is_species ) ) {
         delete pEntry;
@@ -727,12 +735,14 @@ COrgRefCache::SCacheEntry::GetData1()
 {
     if( ! m_pTax1 ) {
         m_pTax1 = new CTaxon1_data;
-        if( m_pTax2->IsSetOrg() )
+        if( m_pTax2->IsSetOrg() ) {
             m_pTax1->SetOrg( m_pTax2->SetOrg() );
-        if( m_pTax2->GetOrg().GetOrgname().IsSetDiv() )
+	}
+        if( m_pTax2->GetOrg().GetOrgname().CanGetDiv() ) {
             m_pTax1->SetDiv( m_pTax2->GetOrg().GetOrgname().GetDiv() );
-        else
-            m_pTax1->SetDiv();
+        } else {
+            m_pTax1->SetDiv( kEmptyStr );
+	}
         m_pTax1->SetIs_species_level(m_pTax2->GetIs_species_level());
     }
     return m_pTax1;
@@ -743,8 +753,9 @@ COrgRefCache::SCacheEntry::GetData2()
 {
     if( ! m_pTax2 ) {
         m_pTax2 = new CTaxon2_data;
-        if( m_pTax1->IsSetOrg() )
+        if( m_pTax1->IsSetOrg() ) {
             m_pTax2->SetOrg( m_pTax1->SetOrg() );
+	}
         CTaxon1Node* pNode = ( m_pTreeNode );
         while( !pNode->IsRoot() ) {
             if( !pNode->GetBlastName().empty() ) {
@@ -798,10 +809,11 @@ COrgRefCache::InitRanks()
                 // Fill in storage
                 for( list< CRef< CTaxon1_info > >::const_iterator
                          i = lRanks.begin();
-                     i != lRanks.end(); ++i )
+                     i != lRanks.end(); ++i ) {
                     m_rankStorage
                         .insert( TRankMap::value_type((*i)->GetIval1(),
                                                       (*i)->GetSval()) );
+		}
             } else { // Internal: wrong respond type
                 m_host.SetLastError( "Response type is not Getranks" );
                 return false;
@@ -1040,6 +1052,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.17  2003/06/05 20:44:01  domrach
+ * Adjusted to the new CanGetXxx verification methods
+ *
  * Revision 6.16  2003/05/06 19:53:53  domrach
  * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
  *

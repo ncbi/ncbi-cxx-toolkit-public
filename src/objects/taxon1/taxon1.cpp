@@ -387,7 +387,8 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
 		i = lDstMod.erase( i );
 		break;
 	    default: // Check the modifier validity
-		if( !(*i)->GetSubname().empty() && (*i)->GetSubtype() != 0 ) {
+		if( (*i)->CanGetSubname() && (*i)->CanGetSubtype() &&
+		    !(*i)->GetSubname().empty() && (*i)->GetSubtype() != 0 ) {
 		    pModInfo->SetIval1( tax_id );
 		    pModInfo->SetIval2( (*i)->GetSubtype() );
 		    pModInfo->SetSval( (*i)->GetSubname() );
@@ -656,10 +657,15 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 
 	OrgRefAdjust( pNewData->SetOrg(), db_orgRef, tax_id );
 	// Copy all other fields
-	pNewData->SetBlast_name() = pData->GetBlast_name();
-	pNewData->SetIs_uncultured( pData->GetIs_uncultured() );
-	pNewData->SetIs_species_level( pData->GetIs_species_level() );
-
+	if( pData->IsSetBlast_name() ) {
+	    pNewData->SetBlast_name() = pData->GetBlast_name();
+	}
+	if( pData->IsSetIs_uncultured() ) {
+	    pNewData->SetIs_uncultured( pData->GetIs_uncultured() );
+	}
+	if( pData->IsSetIs_species_level() ) {
+	    pNewData->SetIs_species_level( pData->GetIs_species_level() );
+	}
 	// Insert the hitMod if necessary
 	if( hitMod.size() > 0 ) {
 	    PopulateReplaced( pNewData->SetOrg(), hitMod );
@@ -739,7 +745,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
 
     if(id < 1) {
 	
-        int idu(0);
+        int idu = 0;
 
         CTaxon1_req  req;
         CTaxon1_resp resp;
@@ -764,7 +770,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
 int
 CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
 {
-    int count(0);
+    int count = 0;
 
     SetLastError(NULL);
     if( orgname.empty() )
@@ -930,9 +936,10 @@ CTaxon1::GetGCName(short gc_id, string& gc_name_out )
                 // Fill in storage
                 for( list< CRef< CTaxon1_info > >::const_iterator
                          i = lGc.begin();
-                     i != lGc.end(); ++i )
+                     i != lGc.end(); ++i ) {
                     m_gcStorage.insert( TGCMap::value_type((*i)->GetIval1(),
                                                            (*i)->GetSval()) );
+		}
             } else { // Internal: wrong respond type
                 SetLastError( "Response type is not Getgcs" );
                 return false;
@@ -1560,6 +1567,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.16  2003/06/05 20:44:02  domrach
+ * Adjusted to the new CanGetXxx verification methods
+ *
  * Revision 6.15  2003/05/06 19:53:54  domrach
  * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
  *

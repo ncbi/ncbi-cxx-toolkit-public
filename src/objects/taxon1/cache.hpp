@@ -196,7 +196,8 @@ public:
 
     virtual int           GetTaxId() const { return m_ref->GetTaxid(); }
     virtual const string& GetName() const { return m_ref->GetOname(); }
-    virtual const string& GetBlastName() const{ return m_ref->GetUname(); }
+    virtual const string& GetBlastName() const
+    { return m_ref->CanGetUname() ? m_ref->GetUname() : kEmptyStr; }
     virtual short         GetRank() const;
     virtual short         GetDivision() const;
     virtual short         GetGC() const;
@@ -287,6 +288,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.11  2003/06/05 20:44:01  domrach
+ * Adjusted to the new CanGetXxx verification methods
+ *
  * Revision 6.10  2003/05/31 15:55:48  lavr
  * Explicit 'int'->'bool' casts to avoid compiler warnings
  *
