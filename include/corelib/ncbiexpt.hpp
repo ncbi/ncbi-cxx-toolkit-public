@@ -33,10 +33,14 @@
 *   Includes auxiliary ad hoc macros to "catch" and macros
 *   for C++ exception specification
 *   Also specifies a restricted set of portable hardware exceptions
-*   (only synchroneous ones) -- see "CNcbiOSException"-derived classes
+*   (only synchroneous ones) -- see "COSException"-derived classes
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/11/24 17:51:26  vakatov
+* + CParseException
+* Removed "Ncbi" sub-prefix from the NCBI exception class names
+*
 * Revision 1.4  1998/11/10 01:17:36  vakatov
 * Cleaned, adopted to the standard NCBI C++ framework and incorporated
 * the "hardware exceptions" code and tests(originally written by
@@ -92,12 +96,26 @@ STD_CATCH(message) \
 
 
 /////////////////////////////////
-// CNcbiErrnoException
+// Auxiliary exception classes
+//   CErrnoException
+//   CParseException
 //
 
-class CNcbiErrnoException : public runtime_error {
+class CErrnoException : public runtime_error {
+    int m_Errno;
 public:
-    CNcbiErrnoException(const string& what) throw();
+    // Report description of "errno" along with "what"
+    CErrnoException(const string& what) throw();
+    int GetErrno(void) const THROWS_NONE { return m_Errno; }
+};
+
+
+class CParseException : public runtime_error {
+    SIZE_TYPE m_Pos;
+public:
+    // Report "pos" along with "what"
+    CParseException(const string& what, SIZE_TYPE pos) throw();
+    SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
 };
 
 
@@ -106,10 +124,10 @@ public:
 //
 
 // Base hardware exception class
-class CNcbiOSException : public exception {
+class COSException : public exception {
 public:
     // Inherited from "exception"
-    CNcbiOSException(const string& what) throw()
+    COSException(const string& what) throw()
         : m_What(what) {}
     virtual const char *what(void) const throw() {
         return m_What.c_str();
@@ -124,24 +142,24 @@ protected:
 
 
 // Memory-related exception
-class CNcbiMemException : public CNcbiOSException {
+class CMemException : public COSException {
 public:
-    CNcbiMemException(const string& what) throw()
-        : CNcbiOSException(what) {}
+    CMemException(const string& what) throw()
+        : COSException(what) {}
 };
 
 // Portable FPE-related exception
-class CNcbiFPEException : public CNcbiOSException {
+class CFPEException : public COSException {
 public:
-    CNcbiFPEException(const string& what) throw()
-        : CNcbiOSException(what) {}
+    CFPEException(const string& what) throw()
+        : COSException(what) {}
 };
 
 // Portable other exception
-class CNcbiSystemException : public CNcbiOSException {
+class CSystemException : public COSException {
 public:
-    CNcbiSystemException(const string& what) throw()
-        : CNcbiOSException(what) {}
+    CSystemException(const string& what) throw()
+        : COSException(what) {}
 };
 
 
