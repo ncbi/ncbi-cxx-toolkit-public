@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.19  2001/03/22 00:33:17  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -249,11 +252,13 @@ Residue::Residue(StructureBase *parent,
     }
 
     // get atom info
+    nAtomsPresentInAllCoordSets = 0;
     CResidue_graph::TAtoms::const_iterator a, ae = residueGraph->GetAtoms().end();
     for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
+
         const CAtom& atom = a->GetObject();
         int atomID = atom.GetId().Get();
-
+        AtomInfo *info = new AtomInfo;
         AtomPntr ap(moleculeID, id, atomID);
 
         // first see if this atom is present each CoordSet; if not, don't
@@ -264,9 +269,8 @@ Residue::Residue(StructureBase *parent,
         for (c=object->coordSets.begin(); c!=ce; c++) {
             if (!((*c)->atomSet->GetAtom(ap, true, true))) break;
         }
-        if (c != ce) continue;
+        info->isPresentInAllCoordSets = (c == ce);
 
-        AtomInfo *info = new AtomInfo;
         info->residue = this;
         // get name if present
         if (atom.IsSetName()) info->name = atom.GetName();
@@ -293,6 +297,7 @@ Residue::Residue(StructureBase *parent,
         if (atomInfos.find(atom.GetId().Get()) != atomInfos.end())
             ERR_POST(Error << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
         atomInfos[atomID] = info;
+        nAtomsPresentInAllCoordSets++;
     }
 
     // get bonds
@@ -345,6 +350,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
     for (a=atomInfos.begin(); a!=ae; a++) {
 
+        if (!a->second->isPresentInAllCoordSets) continue;
         AtomPntr ap(molecule->id, id, a->first);
 
         // get Style

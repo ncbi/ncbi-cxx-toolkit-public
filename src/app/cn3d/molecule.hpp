@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/03/23 23:31:30  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.20  2001/03/23 04:18:20  thiessen
 * parse and display disulfides
 *
@@ -125,7 +128,7 @@ class Sequence;
 class Molecule : public StructureBase
 {
 public:
-    Molecule(StructureBase *parent,
+    Molecule(ChemicalGraph *parentGraph,
         const ncbi::objects::CMolecule_graph& graph,
         const ResidueGraphList& standardDictionary,
         const ResidueGraphList& localDictionary);
@@ -151,7 +154,7 @@ public:
     typedef LIST_TYPE < const Bond * > BondList;
     BondList interResidueBonds; // includes virtual and disulfide bonds
 
-    // used to track intramolecular disulfides (mainly for fast lookup by threader)
+    // ints are residue IDs; tracks intramolecular disulfides (mainly for fast lookup by threader)
     typedef std::map < int, int > DisulfideMap;
     DisulfideMap disulfideMap;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.28  2001/03/23 15:14:07  thiessen
 * load sidechains in CDD's
 *
@@ -347,7 +350,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
 
     const StyleSettings& settings = GetStyleForResidue(object, atom.mID, atom.rID);
     const Residue::AtomInfo *info = residue->GetAtomInfo(atom.aID);
-    if (info->atomicNumber == 1 && !settings.hydrogensOn)
+    if (!info || !info->isPresentInAllCoordSets || (info->atomicNumber == 1 && !settings.hydrogensOn))
         ATOM_NOT_DISPLAYED;
 
     // set up some pointers for more convenient access to style settings
@@ -584,6 +587,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     const Residue::AtomInfo
         *info1 = object->graph->GetAtomInfo(atom1),
         *info2 = object->graph->GetAtomInfo(atom2);
+    if (!info1 || !info2) BOND_NOT_DISPLAYED;
 
     AtomStyle atomStyle1, atomStyle2;
     const StyleSettings::BackboneStyle *backboneStyle1, *backboneStyle2;
@@ -698,6 +702,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             if (bondStyle->end1.style == StyleManager::eThickWormBond &&
                     (!bond->previousVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
+                    !infoV->isPresentInAllCoordSets ||
                     !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
@@ -707,6 +712,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             if (bondStyle->end2.style == StyleManager::eThickWormBond &&
                     (!bond->nextVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
+                    !infoV->isPresentInAllCoordSets ||
                     !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.3  2001/03/22 00:33:16  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -56,6 +59,7 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
+#include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -545,7 +549,8 @@ Gib_Scd * Threader::CreateGibScd(bool fast, int nRandomStarts)
 Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
 {
     if (!masterSequence) return NULL;
-    if (!masterSequence->molecule) return NewFldMtf(masterSequence->sequenceString.size(), 0, 0);
+    if (!masterSequence->molecule || masterSequence->molecule->parentSet->isAlphaOnly)
+        return NewFldMtf(masterSequence->sequenceString.size(), 0, 0);
 
     const Molecule *mol = masterSequence->molecule;
     Fld_Mtf *fldMtf = NewFldMtf(mol->residues.size(), 0, 0);
@@ -603,7 +608,13 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
 #endif
 
     // create contact lists
+    if (weightPSSM < 1.0 && (!masterMultiple->GetMaster()->molecule ||
+            masterMultiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
+        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        goto cleanup;
+    }
     if (!(fldMtf = CreateFldMtf(masterMultiple->GetMaster()))) goto cleanup;
+
 #ifdef DEBUG_THREADER
     pFile = fopen("Fld_Mtf.debug.txt", "w");
     PrintFldMtf(fldMtf, pFile);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/03/23 23:31:30  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.12  2000/10/04 17:40:46  thiessen
 * rearrange STL #includes
 *
@@ -131,10 +134,11 @@ public:
     typedef struct {
         std::string name, code;
         int atomicNumber;
-        bool isIonizableProton;
         eAtomClassification classification;
         unsigned int glName;
         const Residue *residue;  // convenient way to go from atom->residue
+        bool isIonizableProton;
+        bool isPresentInAllCoordSets;
     } AtomInfo;
 
     typedef LIST_TYPE < const Bond * > BondList;
@@ -151,11 +155,12 @@ private:
     // mapped by Atom-id
     typedef std::map < int , const AtomInfo * > AtomInfoMap;
     AtomInfoMap atomInfos;
+    int nAtomsPresentInAllCoordSets;
 
 public:
-    int NAtoms(void) const { return atomInfos.size(); }
+    int NAtoms(void) const { return nAtomsPresentInAllCoordSets; }
     const AtomInfo * GetAtomInfo(int aID) const
-    { 
+    {
         AtomInfoMap::const_iterator info=atomInfos.find(aID);
         if (info != atomInfos.end()) return (*info).second;
         ERR_POST(ncbi::Warning << "Residue #" << id << ": can't find atom #" << aID);

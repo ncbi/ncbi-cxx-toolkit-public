@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.22  2001/03/23 04:18:52  thiessen
 * parse and display disulfides
 *
@@ -223,7 +226,6 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         if (molecules.find(molecule->id) != molecules.end())
             ERR_POST(Error << "confused by repeated Molecule-graph ID's");
         molecules[molecule->id] = molecule;
-        CheckForDisulfides(molecule);
 
         // set molecules' display list; each protein or nucleotide molecule
         // gets its own display list (one display list for each molecule for
@@ -252,22 +254,24 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     if (graph.IsSetInter_molecule_bonds()) {
         CBiostruc_graph::TInter_molecule_bonds::const_iterator j, je=graph.GetInter_molecule_bonds().end();
         for (j=graph.GetInter_molecule_bonds().begin(); j!=je; j++) {
+
             int order = j->GetObject().IsSetBond_order() ?
                 j->GetObject().GetBond_order() : Bond::eUnknown;
             const Bond *bond = MakeBond(this,
                 j->GetObject().GetAtom_id_1(),
                 j->GetObject().GetAtom_id_2(),
                 order);
+            if (bond) interMoleculeBonds.push_back(bond);
 
-            if (!bond) continue; // can happen bond if bond is to atom not present in coordinates
-
-            interMoleculeBonds.push_back(bond);
-            CheckForDisulfide(const_cast<Bond*>(bond), &interMoleculeBonds, this);
-
-            // set inter-molecule bonds' display list(s)
-            if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
-                displayListOtherStart = parentSet->lastDisplayList + 1;
-                parentSet->lastDisplayList += nAlts;
+            if (CheckForDisulfide(NULL,
+                    j->GetObject().GetAtom_id_1(), j->GetObject().GetAtom_id_2(),
+                    &interMoleculeBonds, const_cast<Bond*>(bond), this) ||
+                (bond && bond->order == Bond::eRealDisulfide)) {
+                // set inter-molecule bonds' display list(s) if real bond or virtual disulfide created
+                if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
+                    displayListOtherStart = parentSet->lastDisplayList + 1;
+                    parentSet->lastDisplayList += nAlts;
+                }
             }
         }
     }
@@ -516,35 +520,32 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     return true;
 }
 
-void ChemicalGraph::CheckForDisulfides(Molecule *molecule)
+bool ChemicalGraph::CheckForDisulfide(const Molecule *molecule,
+    const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2,
+    LIST_TYPE < const Bond * > *bondList, Bond *bond, StructureBase *parent)
 {
-    Molecule::BondList newDisulfides;
-    Molecule::BondList::const_iterator b, be = molecule->interResidueBonds.end();
-    for (b=molecule->interResidueBonds.begin(); b!=be; b++) {
-        if (CheckForDisulfide(const_cast<Bond*>(*b), &newDisulfides, molecule)) {
-            molecule->disulfideMap[(*b)->atom1.rID] = (*b)->atom2.rID;
-            molecule->disulfideMap[(*b)->atom2.rID] = (*b)->atom1.rID;
+    if (atomPtr1.GetMolecule_id().Get() == atomPtr2.GetMolecule_id().Get() &&
+        atomPtr1.GetResidue_id().Get() == atomPtr2.GetResidue_id().Get()) return false;
+
+    const Molecule *mol1, *mol2;
+    if (molecule) { // when called from Molecule::Molecule() on interresidue (intramolecular) bond
+        mol1 = mol2 = molecule;
+    } else {        // when called from ChemicalGraph::ChemicalGraph() on intermolecule bond
+        MoleculeMap::const_iterator
+            m1 = molecules.find(atomPtr1.GetMolecule_id().Get()),
+            m2 = molecules.find(atomPtr2.GetMolecule_id().Get());
+        if (m1 == molecules.end() || m2 == molecules.end()) {
+            ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad molecule ID");
+            return false;
         }
-    }
-    molecule->interResidueBonds.splice(molecule->interResidueBonds.end(), newDisulfides);
-}
-
-bool ChemicalGraph::CheckForDisulfide(Bond *bond, LIST_TYPE < const Bond * > *bondList, StructureBase *parent)
-{
-    if (bond->atom1.mID == bond->atom2.mID && bond->atom1.rID == bond->atom2.rID) return false;
-
-    ChemicalGraph::MoleculeMap::const_iterator
-        mol1 = molecules.find(bond->atom1.mID),
-        mol2 = molecules.find(bond->atom2.mID);
-    if (mol1 == molecules.end() || mol2 == molecules.end()) {
-        ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad molecule ID");
-        return false;
+        mol1 = m1->second;
+        mol2 = m2->second;
     }
 
     Molecule::ResidueMap::const_iterator
-        res1 = mol1->second->residues.find(bond->atom1.rID),
-        res2 = mol2->second->residues.find(bond->atom2.rID);
-    if (res1 == mol1->second->residues.end() || res2 == mol2->second->residues.end()) {
+        res1 = mol1->residues.find(atomPtr1.GetResidue_id().Get()),
+        res2 = mol2->residues.find(atomPtr2.GetResidue_id().Get());
+    if (res1 == mol1->residues.end() || res2 == mol2->residues.end()) {
         ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad residue ID");
         return false;
     }
@@ -554,8 +555,8 @@ bool ChemicalGraph::CheckForDisulfide(Bond *bond, LIST_TYPE < const Bond * > *bo
         res2->second->type != Residue::eAminoAcid || res2->second->code != 'C') return false;
 
     const Residue::AtomInfo
-        *atom1 = res1->second->GetAtomInfo(bond->atom1.aID),
-        *atom2 = res2->second->GetAtomInfo(bond->atom2.aID);
+        *atom1 = res1->second->GetAtomInfo(atomPtr1.GetAtom_id().Get()),
+        *atom2 = res2->second->GetAtomInfo(atomPtr2.GetAtom_id().Get());
     if (!atom1 || !atom2) {
         ERR_POST(Error << "ChemicalGraph::CheckForDisulfide() - bad atom ID");
         return false;
@@ -565,18 +566,22 @@ bool ChemicalGraph::CheckForDisulfide(Bond *bond, LIST_TYPE < const Bond * > *bo
     if (atom1->atomicNumber != 16 || res1->second->alphaID == Residue::NO_ALPHA_ID ||
         atom2->atomicNumber != 16 || res2->second->alphaID == Residue::NO_ALPHA_ID) return false;
 
-    TESTMSG("found disulfide between molecule " << bond->atom1.mID << " residue " << bond->atom1.rID
-        << " and molecule " << bond->atom2.mID << " residue " << bond->atom2.rID);
+    TESTMSG("found disulfide between molecule " << atomPtr1.GetMolecule_id().Get()
+        << " residue " << atomPtr1.GetResidue_id().Get()
+        << " and molecule " << atomPtr2.GetMolecule_id().Get()
+        << " residue " << atomPtr2.GetResidue_id().Get());
 
     // first flag this bond as "real disulfide", so it's not drawn with connection style
-    bond->order = Bond::eRealDisulfide;
+    if (bond) bond->order = Bond::eRealDisulfide;
 
     // then, make a new virtual disulfide bond between the alphas of these residues
     const Bond *virtualDisulfide = MakeBond(parent,
-        bond->atom1.mID, bond->atom1.rID, res1->second->alphaID,
-        bond->atom2.mID, bond->atom2.rID, res2->second->alphaID, Bond::eVirtualDisulfide);
-    if (virtualDisulfide) bondList->push_back(virtualDisulfide);
+        atomPtr1.GetMolecule_id().Get(), atomPtr1.GetResidue_id().Get(), res1->second->alphaID,
+        atomPtr2.GetMolecule_id().Get(), atomPtr2.GetResidue_id().Get(), res2->second->alphaID,
+        Bond::eVirtualDisulfide);
+    if (!virtualDisulfide) return false;
 
+    bondList->push_back(virtualDisulfide);
     return true;
 }
 

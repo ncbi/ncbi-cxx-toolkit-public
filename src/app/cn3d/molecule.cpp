@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/03/23 23:31:56  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.24  2001/03/23 04:18:52  thiessen
 * parse and display disulfides
 *
@@ -127,11 +130,11 @@ BEGIN_SCOPE(Cn3D)
 
 const int Molecule::VALUE_NOT_SET = -1;
 
-Molecule::Molecule(StructureBase *parent,
+Molecule::Molecule(ChemicalGraph *parentGraph,
     const CMolecule_graph& graph,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parent), type(eOther), sequence(NULL),
+    StructureBase(parentGraph), type(eOther), sequence(NULL),
     gi(VALUE_NOT_SET), pdbChain(' '), nDomains(0)
 {
     // get ID, name, and type
@@ -248,6 +251,17 @@ Molecule::Molecule(StructureBase *parent,
                 j->GetObject().GetAtom_id_2(),
                 order);
             if (bond) interResidueBonds.push_back(bond);
+
+            // add to disulfide map if virtual disulfide added or this bond is flagged as disulfide
+            if (parentGraph->CheckForDisulfide(this,
+                    j->GetObject().GetAtom_id_1(), j->GetObject().GetAtom_id_2(),
+                    &interResidueBonds, const_cast<Bond*>(bond), this) ||
+                (bond && bond->order == Bond::eRealDisulfide)) {
+                disulfideMap[j->GetObject().GetAtom_id_1().GetResidue_id().Get()] =
+                    j->GetObject().GetAtom_id_2().GetResidue_id().Get();
+                disulfideMap[j->GetObject().GetAtom_id_2().GetResidue_id().Get()] =
+                    j->GetObject().GetAtom_id_1().GetResidue_id().Get();
+            }
         }
     }
 }

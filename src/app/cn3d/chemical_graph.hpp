@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/03/23 23:31:30  thiessen
+* keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
+*
 * Revision 1.14  2001/03/23 04:18:20  thiessen
 * parse and display disulfides
 *
@@ -85,6 +88,7 @@
 
 #include <objects/mmdb1/Biostruc_graph.hpp>
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
+#include <objects/mmdb1/Atom_pntr.hpp>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/molecule.hpp"
@@ -133,6 +137,15 @@ public:
         return NULL;
     }
 
+    // check if a bond between the given atoms is a disulfide bond; if so, flag Bond as disulfide, and
+    // add new virtual disulfide Bond for these residues to the given bond list. Returns true if
+    // a virtual disulfide was added to the bondList, false otherwise. (*Not* true or false depending
+    // on whether the bond is actually a disulfide!)
+    bool CheckForDisulfide(const Molecule *molecule,
+        const ncbi::objects::CAtom_pntr& atomPtr1,
+        const ncbi::objects::CAtom_pntr& atomPtr2,
+        LIST_TYPE < const Bond * > *bondList, Bond *bond, StructureBase *parent);
+
 private:
     typedef LIST_TYPE < std::pair < AtomSet *, const std::string * > > AtomSetList;
     AtomSetList atomSetList;
@@ -140,10 +153,6 @@ private:
 
     void UnpackDomainFeatures(const ncbi::objects::CBiostruc_feature_set& featureSet);
     void UnpackSecondaryStructureFeatures(const ncbi::objects::CBiostruc_feature_set& featureSet);
-
-    // check if given bond or inter-residue bonds are disulfide bond; if so, add to disulfides list
-    bool CheckForDisulfide(Bond *bond, LIST_TYPE < const Bond * > *bondList, StructureBase *parent);
-    void CheckForDisulfides(Molecule *molecule);
 };
 
 END_SCOPE(Cn3D)
