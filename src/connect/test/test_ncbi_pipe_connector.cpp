@@ -63,13 +63,6 @@ const STimeout kTimeout     = {2, 0};  // I/O timeout
 // Auxiliary functions
 //
 
-// Delay a some time. Needs only for more proper output.
-static void Delay() 
-{
-    //    SleepMilliSec(300);
-}
-
-
 // Reading from file stream
 static string s_ReadFile(FILE* fs) 
 {
@@ -77,7 +70,6 @@ static string s_ReadFile(FILE* fs)
     size_t cnt = read(fileno(fs), buf, kBufferSize-1);
     buf[cnt] = 0;
     string str = buf;
-    Delay();
     cerr << "Read from file stream " << cnt << " bytes:" << endl;
     cerr.write(buf, cnt);
     cerr << endl;
@@ -150,7 +142,6 @@ int CTest::Run(void)
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
-    Delay();
     status = CONN_Write(conn, buf, kBufferSize, &n_written);
     assert(status == eIO_Unknown);
     assert(n_written == 0);
@@ -174,7 +165,6 @@ int CTest::Run(void)
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Write, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
-    Delay();
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
     assert(status == eIO_Unknown);
     assert(n_read == 0);
@@ -193,7 +183,6 @@ int CTest::Run(void)
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_ReadWrite, &kTimeout);
     CONN_SetTimeout(conn, eIO_Close,     &kTimeout);
-    Delay();
     status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPlain);
     assert(status == eIO_Timeout);
     assert(n_read == 0);
@@ -256,6 +245,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/04 16:35:54  ivanov
+ * Removed unused function Delay()
+ *
  * Revision 1.6  2003/11/15 15:35:36  ucko
  * +<stdio.h> (no longer included by ncbi_pipe.hpp)
  *
