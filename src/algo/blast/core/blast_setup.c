@@ -41,7 +41,7 @@ $Revision$
 #include <algo/blast/core/blast_filter.h>
 
 /** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
- *      Should be moved to blastkar.c (or it's successor) in the future.
+ *      Should be moved to blast_stat.c in the future.
  * @param sbp Contains fields to be set, should not be NULL. [out]
  * @param scoring_options Scoring_options [in]
  * @param program_number Used to set fields on sbp [in]

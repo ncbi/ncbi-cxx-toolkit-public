@@ -25,7 +25,7 @@ static char const rcsid[] = "$Id$";
 * ===========================================================================*/
 /*****************************************************************************
 
-File name: blastkar.c
+File name: blast_stat.c
 
 Author: Tom Madden
 
@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.49  2004/03/10 18:00:06  camacho
+ * Remove outdated references to blastkar
+ *
  * Revision 1.48  2004/03/05 17:52:33  papadopo
  * Allow 32-bit context numbers for queries
  *
@@ -352,9 +355,9 @@ The decline-to-align penalty is only supported in a few cases, so it is normally
 set to INT2_MAX.
 
 
-How to add a new matrix to blastkar.c:
+How to add a new matrix to blast_stat.c:
 --------------------------------------
-To add a new matrix to blastkar.c it is necessary to complete 
+To add a new matrix to blast_stat.c it is necessary to complete 
 four steps.  As an example consider adding the matrix
 called TESTMATRIX
 

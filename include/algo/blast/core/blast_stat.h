@@ -23,19 +23,19 @@
 * ===========================================================================*/
 /*****************************************************************************
 
-File name: blastkar.h
+File name: blast_stat.h
 
 Author: Tom Madden
 
-Contents: definitions and prototypes used by blastkar.c to calculate BLAST
+Contents: definitions and prototypes used by blast_stat.c to calculate BLAST
 	statistics.
 
 ******************************************************************************/
 
 /* $Revision$ 
  * */
-#ifndef __BLASTKAR__
-#define __BLASTKAR__
+#ifndef __BLAST_STAT__
+#define __BLAST_STAT__
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
@@ -310,4 +310,4 @@ void RPSFreePSSM(Int4 **posMatrix, Int4 num_rows);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !__BLASTKAR__ */
+#endif /* !__BLAST_STAT__ */

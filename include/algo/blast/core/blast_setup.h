@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.32  2004/03/10 18:00:20  camacho
+* Remove outdated references to blastkar
+*
 * Revision 1.31  2004/03/09 22:37:11  dondosha
 * Added const qualifiers to parameter arguments wherever relevant
 *
@@ -236,7 +239,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
 
 /** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
- *      Should be moved to blastkar.c (or it's successor) in the future.
+ *      Should be moved to blast_stat.c in the future.
  * @param sbp Contains fields to be set, should not be NULL. [out]
  * @param scoring_options Scoring_options [in]
  * @param program_number Used to set fields on sbp [in]
@@ -322,7 +325,7 @@ Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
                     BlastEffectiveLengthsParameters* eff_len_params);
 
 /** BlastScoreBlkMatrixInit, fills score matrix parameters in the ScoreBlkPtr
- *      Should be moved to blastkar.c (or it's successor) in the future.
+ *      Should be moved to blast_stat.c in the future.
  * @param program_number Used to set fields on sbp [in]
  * @param scoring_options Scoring_options [in]
  * @param sbp Contains fields to be set, should not be NULL. [out]
