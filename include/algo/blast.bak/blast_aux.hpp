@@ -70,7 +70,7 @@ BLASTBlastMask2SeqLoc(BlastMask* mask);
  */
 
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
-class NCBI_XBLAST_EXPORT C##struct_name##Ptr : public CDebugDumpable \
+class C##struct_name##Ptr : public CDebugDumpable \
 { \
 public: \
     C##struct_name##Ptr() : m_Ptr(NULL) {} \
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/04 16:13:52  dicuccio
+* Removed unnecessary export specifier
+*
 * Revision 1.2  2003/08/04 15:42:56  dicuccio
 * Added export specifiers
 *
