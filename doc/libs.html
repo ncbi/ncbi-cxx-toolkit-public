@@ -1,29 +1,166 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-  <head>
-    <title>NCBI C++ libraries</title>
-  </head>
+<head>
+<title>NCBI C++ libraries</title>
+</head>
 
-  <body>
-	 <h1>NCBI C++ libraries</h1>
+<body>
+<h1>NCBI C++ libraries</h1>
 
-	 You can find relevant header and source files in the NCBI C++
-	 <b><i>"include/*/"</i></b> and <b><i>"src/*/"</i></b> directories(see the
-	 <a href="config.html#ref_Source">NCBI C++ source code repository</a>).
+In this table, the <i><b>module</b></i>'s header and sources are usually
+located in:
+<i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+c++/include/<b>&lt;project&gt;</b>/module.{hpp,inl,h}
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+c++/src/<b>&lt;project&gt;</b>/module.{cpp,c}
+</i>
+<br>
+where <i><b>&lt;project&gt;</b></i> is one of: { <b><i>corelib,  cgi, html, serial</i></b> }.
 
-	 <ul>
-		<li> <a href="libs/err_msg.html">
-		  Error handling and diagnostics [corelib]</a>
-	<li> <a href="libs/cgi.html">CGI [corelib]</a>
-	<li> <a href="libs/newhtml.html">HTML [html]</a>
-	 </ul>
 
-	 <br></br>
-	 <hr>
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-		  <td align=right>($Revision$)</td></tr>
-	 </table>
-  </body>
+<br></br>
+<a name="ref_TableClasses">
+<table border=1 cellspacing=0>
+  <caption></caption>
+  <tr>
+	 <th><i>module</i></th>
+	 <th>Classes,<br>functions,<br>macro</th>
+	 <th>Synopsis</th>
+  </tr>
+
+  <tr>
+	 <td><i></i></td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+
+  <tr>
+	 <td align=center colspan=3>
+      <i><u>XNCBI</u></i> library ---> <i><b>corelib/</b></i>
+    </td>
+  </tr>
+
+  <tr>
+	 <td><i>ncbidbg</i></td>
+    <td align=center><b>_ASSERT()<br>_VERIFY()</b></td>
+	 <td><a href="err_msg.html#ref_Assert">
+        Debug-mode checks and diagnostics</a></td>
+  </tr>
+
+  <tr>
+	 <td><i>ncbiexpt</i></td>
+    <td align=center><b>CErrnoException<br>CParseException<br>STD_CATCH()</b></td>
+	 <td><a href="err_msg.html#ref_Exception">
+        Auxiliary C++ exceptions, related macros</a></td>
+  </tr>
+
+  <tr>
+	 <td><i>ncbidiag</i></td>
+    <td align=center><b>CNcbiDiag<br>SetDiagStream<br>ERR_POST()</b></td>
+	 <td><a href="err_msg.html#ref_Message">
+		  Standard NCBI C++ message posting</a></td>
+  </tr>
+
+  <tr>
+	 <td><i>ncbireg</i></td>
+    <td align=center><b>CNcbiRegistry</b></td>
+	 <td>To handle application parameters arranged in the
+        <b>{module, [section], name = <i>value</i>}</b> fashion;
+        store them in the configuration files <i>a la</i>
+        MS-Windows <b>*.INI</b></td>
+  </tr>
+
+  <tr>
+	 <td><i>ncbistre</i></td>
+    <td align=center><b>C++ i/o streams</b></td>
+	 <td>Aliases (#define's) to switch between the "old"
+        and the "new" (<b>std::</b>, template-based) C++ i/o stream classes,
+        and to resolve some portability issues;
+        also, auxiliary functions and classes to deal with the
+        C++ i/o streams</td>
+  </tr>
+
+  <tr>
+	 <td><i>ncbiutil</i></td>
+    <td align=center><b>.....</b></td>
+	 <td>Miscellaneous useful classes, functions, predicates,
+        <b>auto_ptr</b>-like template, <b>map</b>-related auxiliary functions,
+        etc.</td>
+  </tr>
+
+  <tr>
+	 <td><i></i></td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+
+  <tr>
+	 <td align=center colspan=3>
+      <i><u>XCGI</u></i> library ---> <i><b>cgi/</b></i>
+    </td>
+  </tr>
+
+  <tr>
+	 <td><i>.....</i></td>
+    <td align=center><b>.....</b></td>
+	 <td>.....</td>
+  </tr>
+
+  <tr>
+	 <td><i></i></td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+
+  <tr>
+	 <td align=center colspan=3>
+      <i><u>XHTML</u></i> library ---> <i><b>html/</b></i>
+    </td>
+  </tr>
+
+  <tr>
+	 <td><i>.....</i></td>
+    <td align=center><b>.....</b></td>
+	 <td>.....</td>
+  </tr>
+
+  <tr>
+	 <td><i></i></td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+
+  <tr>
+	 <td align=center colspan=3>
+      <i><u>XSERIAL</u></i> library ---> <i><b>html/</b></i>
+    </td>
+  </tr>
+
+  <tr>
+	 <td><i>.....</i></td>
+    <td align=center><b>.....</b></td>
+	 <td>.....</td>
+  </tr>
+
+  <tr>
+	 <td><i></i></td>
+    <td align=center><b></b></td>
+	 <td></td>
+  </tr>
+</table>
+
+
+<br></br>
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
 </html>
