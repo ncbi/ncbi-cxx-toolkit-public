@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title>Working within the C++ source tree </title>
+</head>
+<body BGCOLOR=white>
+<h1> Working within the C++ source tree </h1>
+
+<ul>
+  <li> <a href="#overview"> Overview </a> 
+  <li> <a href="#makefiles"> The Project's Makefile </a>
+  <li> <a href="#testing"> Testing your setup </a>
+</ul>
+
+<a name="overview">
+<h3> Overview </h3>
+
+There are two topics relevant to writing an application using the NCBI C++ Toolkit:
+
+<ol>
+  <li> Where to place the source and header files for the project
+  <li> How to create a makefile which can link to the correct C++ libraries
+</ol>
+
+What you put in your makefile will depend on where you define your working directory. In
+this discussion, we assume you will be working <i><b> outside </i></b> the NCBI C++ tree,
+say in a directory called <i>NewProj</i>. This is where you will write both your source
+and header files.  The first step then, is to create the new working directory and use the
+<a href="../new_proj.html#ref_OutsideCreate"> <i> new_project.sh</i></a> script to install
+a makefile there:<p>
+
+<pre>
+birch% mkdir NewProj
+
+birch% $NCBI/c++/scripts/new_project.sh NewProj app $NCBI/c++/GCC-Debug/build
+Created a model makefile "/home/zimmerma/NewProj/Makefile.NewProj_app". </font>
+</pre>
+
+The syntax of the script command is:
+<center> <xmp>
+new_project.sh  project_name  <app | lib>  [builddir] 
+</xmp></center>
+where:
+<dl>
+  <dt> - <i> project_name </i> is the name of the directory you will be working in
+  <dt> - <i> app (lib) </i> is used to indicate that you will be building an application (library)
+  <dt> - <i> builddir </i>  (optional) specifies what version of the pre-built NCBI C++ Toolkit
+		  libraries to link to
+</dl>
+Pre-built C++ Toolkit libraries are available for various platforms and compilers, in both
+<i> debug</i> and <i> release </i> mode. To see a list of the available libraries for
+the platform you are working on, consult <i>$NCBI/c++</i>. On the shell script command line, you should
+follow the library name with the subdirectory <i>/build</i>. For example, on <i>Solaris</i>, 
+the following libraries are currently available:
+
+<ul>
+ <li> <i> Release, Debug </i> - for Sun Workshop
+ <li> <i> GCC-Release, GCC-Debug </i> - for GCC
+</ul>
+So in this example, we specified the GNU compiler debugger version: <i>GCC-Debug/build</i>.<p>
+For a list of currently supported compilers, see the Reference Manual's <a
+href="../config.html#ref_Compilers"> Installation and configuration </a> page.  Running the
+<i>new_project.sh</i> script will generate a ready-to-use makefile in the directory you just
+created.  For a more detailed description of this and other scripts to assist you in the set-up
+of your working environment, see the Reference Manual page <a href="../new_proj.html"> Starting a
+new C++ project</a>.
+
+<a name="makefiles">
+<h3> The Project's Makefile </h3>
+
+This is the file you just created with the above script - take a look
+at it. In addition to other things, you should see definitions for:
+
+<dl>
+  <dt> - <i> builddir </i> - the last argument to the above script 
+  <dt> - <i> srcdir </i> - your current working directory (".")
+  <dt> - <i> the application name </i> (APP) 
+  <dt> - <i> the object name(s) </i> (OBJ)
+  <dt> - <i> specific libraries to link to in the NCBI C++ Toolkit</i> (LIB)
+  <dt> - <i> all other libraries to link to (outside the C++ Toolkit)</i> (LIBS)
+</dl>
+
+The <i> builddir </i> specifies make's library path (-L), which in this case points to the
+debug versions of the NCBI C++ Toolkit libraries containing symbol tables for <i> gdb </i>. LIB
+lists the individual libraries in this path that you will be linking to. Minimally, this should
+include <i>xncbi</i> - the library which implements the foundational classes for the C++
+tools. Additional library names (e.g. <i>xhtml, xcgi, </i> etc.) can be added here. <p>
+
+Since the shell script assumes you will be building a single executable with the same name
+as your working directory, the application is defined simply as <i>NewProj</i>. Additional
+targets to build can be added in the area indicated towards the end of the file. The list
+of objects (OBJ) should include the names (without extensions) of all source files for the
+application (APP). Again, the script makes the simplest assumption, i.e. that there is a
+single source file named <i>NewProj.cpp</i>. Additional source names can be added here.
+
+<a name="testing"> <h3>Testing your setup </h3>
+For a very simple application, this makefile is ready to be run. Try it out now, by creating
+the file <i>NewProj.cpp</i>:
+
+<font color = "#008080"> 
+<pre>
+// File name: NewProj.cpp
+
+#include &lt;iostream&gt;
+
+using namespace std;
+
+int main() {
+    cout << "Hello again, world" << endl;
+}
+</pre>
+<font color = black> 
+
+and running: <i> make -f Makefile.NewProj_app</i>. <p>
+
+Of course, it wasn't necessary to set up the directories and makefiles to accomplish this much,
+as this example does not use any of the C++ classes or resources defined in the NCBI C++
+Toolkit. But having accomplished this, you are now prepared to write an actual application,
+such as described in <a href="applic.html"> 
+Writing a simple application project</a>
+
+<p>
+
+</body>
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="sub_tree.html"> <i> next </i> </a>
+</html>
+
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>
