@@ -67,6 +67,17 @@ CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
 }
 
 
+CSeq_entry_Handle CSeq_annot_Handle::GetTopLevelEntry(void) const
+{
+    CSeq_entry_Handle ret;
+    const CSeq_annot_Info& info = x_GetInfo();
+    if ( info.HasTSE_Info() ) {
+        ret = CSeq_entry_Handle(GetScope(), info.GetTSE_Info());
+    }
+    return ret;
+}
+
+
 CSeq_annot_EditHandle CSeq_annot_Handle::GetEditHandle(void) const
 {
     return m_Scope->GetEditHandle(*this);
@@ -110,6 +121,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/04/29 15:44:30  grichenk
+* Added GetTopLevelEntry()
+*
 * Revision 1.7  2004/03/24 18:30:30  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

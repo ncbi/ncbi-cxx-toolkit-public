@@ -81,6 +81,7 @@ public:
 
     //
     CSeq_entry_Handle GetParentEntry(void) const;
+    CSeq_entry_Handle GetTopLevelEntry(void) const;
 
     // Get 'edit' version of handle
     CSeq_annot_EditHandle GetEditHandle(void) const;
@@ -221,6 +222,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/04/29 15:44:30  grichenk
+* Added GetTopLevelEntry()
+*
 * Revision 1.7  2004/03/31 19:54:07  vasilche
 * Fixed removal of bioseqs and bioseq-sets.
 *

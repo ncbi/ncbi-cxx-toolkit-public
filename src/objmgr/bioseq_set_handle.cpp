@@ -74,6 +74,17 @@ CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
 }
 
 
+CSeq_entry_Handle CBioseq_set_Handle::GetTopLevelEntry(void) const
+{
+    CSeq_entry_Handle ret;
+    const CBioseq_set_Info& info = x_GetInfo();
+    if ( info.HasTSE_Info() ) {
+        ret = CSeq_entry_Handle(GetScope(), info.GetTSE_Info());
+    }
+    return ret;
+}
+
+
 CBioseq_set_EditHandle CBioseq_set_Handle::GetEditHandle(void) const
 {
     return m_Scope->GetEditHandle(*this);
@@ -346,6 +357,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/04/29 15:44:30  grichenk
+* Added GetTopLevelEntry()
+*
 * Revision 1.6  2004/03/31 19:54:08  vasilche
 * Fixed removal of bioseqs and bioseq-sets.
 *

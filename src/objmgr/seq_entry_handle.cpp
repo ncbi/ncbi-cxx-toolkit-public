@@ -92,6 +92,17 @@ CSeq_entry_Handle CSeq_entry_Handle::GetParentEntry(void) const
 }
 
 
+CSeq_entry_Handle CSeq_entry_Handle::GetTopLevelEntry(void) const
+{
+    CSeq_entry_Handle ret;
+    const CSeq_entry_Info& info = x_GetInfo();
+    if ( info.HasTSE_Info() ) {
+        ret = CSeq_entry_Handle(GetScope(), info.GetTSE_Info());
+    }
+    return ret;
+}
+
+
 CSeq_entry_Handle CSeq_entry_Handle::GetSingleSubEntry(void) const
 {
     if ( !IsSet() ) {
@@ -460,6 +471,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/04/29 15:44:30  grichenk
+* Added GetTopLevelEntry()
+*
 * Revision 1.8  2004/03/31 17:08:07  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *
