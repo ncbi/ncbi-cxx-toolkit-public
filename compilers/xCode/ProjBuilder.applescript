@@ -309,6 +309,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		try -- are we building a loadable module?
 			if bundle of lib_info then set libraryStyle to "BUNDLE"
 			set linkerFlags to "" -- do not suppress undefined symbols. Bundles should be fully resolved
+			set linkerFlags to "-framework Carbon -framework AGL -framework OpenGL"
 			set symRoot to TheOUTPath & "/bin/gbench.app/Contents/MacOS/plugins"
 			set isBundle to true
 		end try
@@ -568,6 +569,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/09/03 14:35:21  lebedev
+ * Explicitly link frameworks for bundles (gbench plugins)
+ *
  * Revision 1.11  2004/08/13 11:41:43  lebedev
  * Changes to upgrade to xCode 1.5 and support for G5 CPU specific options
  *
