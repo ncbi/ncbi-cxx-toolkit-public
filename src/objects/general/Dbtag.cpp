@@ -87,7 +87,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("MGD", CDbtag::eDbtagType_MGD),
     TDbxrefPair("MGI", CDbtag::eDbtagType_MGI),
     TDbxrefPair("MIM", CDbtag::eDbtagType_MIM),
-    TDbxrefPair("MaizeDB", CDbtag::eDbtagType_MaizeDB),
+    TDbxrefPair("MaizeGDB", CDbtag::eDbtagType_MaizeGDB),
     TDbxrefPair("NextDB", CDbtag::eDbtagType_NextDB),
     TDbxrefPair("PGN", CDbtag::eDbtagType_PGN),
     TDbxrefPair("PID", CDbtag::eDbtagType_PID),
@@ -107,6 +107,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("UniProt/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt),
     TDbxrefPair("UniProt/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL),
     TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
+    TDbxrefPair("VBASE2", CDbtag::eDbtagType_VBASE2),
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
     TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
     TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
@@ -255,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2004/12/29 19:01:56  shomrat
+ * Added VBASE2; Fixed MaizeGDB typo
+ *
  * Revision 6.18  2004/10/22 15:19:11  shomrat
  * Updated DB list
  *

@@ -91,7 +91,7 @@ public:
         eDbtagType_MGD,
         eDbtagType_MGI,
         eDbtagType_MIM,
-        eDbtagType_MaizeDB,
+        eDbtagType_MaizeGDB,
         eDbtagType_NextDB,
         eDbtagType_PGN,
         eDbtagType_PID,
@@ -111,6 +111,7 @@ public:
         eDbtagType_UniProt_SwissProt,
         eDbtagType_UniProt_TrEMBL,
         eDbtagType_UniSTS,
+        eDbtagType_VBASE2,
         eDbtagType_WorfDB,
         eDbtagType_WormBase,
         eDbtagType_ZFIN,
@@ -188,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/12/29 19:01:30  shomrat
+ * Added VBASE2; Fixed MaizeGDB typo
+ *
  * Revision 1.10  2004/10/22 15:18:26  shomrat
  * Updated DB list
  *
