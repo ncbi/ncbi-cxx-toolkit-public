@@ -16,7 +16,12 @@ if test -z "$builddir" ; then
   builddir=`pwd`
 fi
 
-top_srcdir=`(set -P 2>/dev/null ; cd "${script_dir}/.." ; pwd)`
+if (set -P 2>/dev/null); then
+    set_P='set -P'
+else
+    set_P=:
+fi
+top_srcdir=`($set_P ; cd "${script_dir}/.." ; pwd)`
 status_dir=`(cd "${builddir}/../status" ; pwd)`
 
 ###  What to do (cmd-line arg)

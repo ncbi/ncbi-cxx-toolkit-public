@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.308 2004/07/19 15:07:13 ucko Exp $
+#  $Id: configure.ac,v 1.309 2004/07/19 17:00:30 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3888,7 +3888,12 @@ changequote(<<, >>)dnl
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
 changequote([, ])dnl
-configurables=`set -P 2>/dev/null; cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+if (set -P 2>/dev/null); then
+    set_P='set -P'
+else
+    set_P=:
+fi
+configurables=`$set_P; cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
@@ -3977,6 +3982,7 @@ AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
 AC_SUBST(f_runpath)
 AC_SUBST(f_outexe)
+AC_SUBST(set_P)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)

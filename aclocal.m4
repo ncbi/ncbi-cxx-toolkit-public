@@ -36,12 +36,17 @@ case $srcdir in
 esac
 # Don't blindly perform a `cd $1/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`set -P 2>/dev/null; cd $1 && $smart_pwd`
-ac_abs_top_builddir=`set -P 2>/dev/null; cd $1 && cd ${ac_top_builddir}. && $smart_pwd`
+if (set -P 2>/dev/null); then
+    set_P='set -P'
+else
+    set_P=:
+fi
+ac_abs_builddir=`$set_P; cd $1 && $smart_pwd`
+ac_abs_top_builddir=`$set_P; cd $1 && cd ${ac_top_builddir}. && $smart_pwd`
 #ac_builddir=$ac_top_builddir/build # Much more useful than "."!
 ac_builddir=$builddir
-ac_abs_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+ac_abs_srcdir=`$set_P; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`$set_P; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 ])# _AC_SRCPATHS
 
 
