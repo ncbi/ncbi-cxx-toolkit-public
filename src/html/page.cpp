@@ -50,7 +50,8 @@ extern const char* kTagStartEnd;
 // CHTMLBasicPage
 
 CHTMLBasicPage::CHTMLBasicPage(void)
-    : m_CgiApplication(0),
+    : CParent("basicpage"),
+      m_CgiApplication(0),
       m_Style(0)
 {
     return;
@@ -157,6 +158,8 @@ CHTMLPage::CHTMLPage(CCgiApplication* application, int style,
 
 void CHTMLPage::Init(void)
 {
+    m_Name = "htmlpage";
+
     // Template sources
     m_TemplateFile   = kEmptyStr;
     m_TemplateStream = 0;
@@ -555,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/02/03 19:45:14  ivanov
+ * Binded dummy names for the unnamed nodes
+ *
  * Revision 1.41  2004/02/02 14:27:49  ivanov
  * Added HTML template support
  *

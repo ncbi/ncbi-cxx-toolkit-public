@@ -301,12 +301,14 @@ CNcbiOstream& CHTMLTagNode::PrintChildren(CNcbiOstream& out, TMode mode)
 // Dual text node.
 
 CHTMLDualNode::CHTMLDualNode(const char* html, const char* plain)
+    : CParent("dualnode")
 {
     AppendChild(new CHTMLText(html));
     m_Plain = plain;
 }
 
 CHTMLDualNode::CHTMLDualNode(CNCBINode* child, const char* plain)
+    : CParent("dualnode")
 {
     AppendChild(child);
     m_Plain = plain;
@@ -332,13 +334,13 @@ CNcbiOstream& CHTMLDualNode::PrintChildren(CNcbiOstream& out, TMode mode)
 // plain text node
 
 CHTMLPlainText::CHTMLPlainText(const char* text, bool noEncode)
-    : CNCBINode(text), m_NoEncode(noEncode)
+    : CNCBINode("plaintext"), m_NoEncode(noEncode), m_Text(text)
 {
     return;
 }
 
 CHTMLPlainText::CHTMLPlainText(const string& text, bool noEncode)
-    : CNCBINode(text), m_NoEncode(noEncode)
+    : CNCBINode("plaintext"), m_NoEncode(noEncode), m_Text(text)
 {
     return;
 }
@@ -350,7 +352,7 @@ CHTMLPlainText::~CHTMLPlainText(void)
 
 void CHTMLPlainText::SetText(const string& text)
 {
-    m_Name = text;
+    m_Text = text;
 }
 
 CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
@@ -369,13 +371,13 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 // text node
 
 CHTMLText::CHTMLText(const string& text)
-    : CParent(text)
+    : CParent("htmltext"), m_Text(text)
 {
     return;
 }
 
 CHTMLText::CHTMLText(const char* text)
-    : CParent(text)
+    : CParent("htmltext"), m_Text(text)
 {
     return;
 }
@@ -571,6 +573,8 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
 
 // HTML comment.
 
+const char CHTMLComment::sm_TagName[] = "comment";
+
 CHTMLComment::~CHTMLComment(void)
 {
     return;
@@ -643,7 +647,7 @@ CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain,
                                    int count)
     : CParent("", plain)
 {
-    m_Name  = html;
+    m_Html  = html;
     m_Count = count;
 }
 
@@ -663,7 +667,7 @@ CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
         }
     } else {
         for ( int i = 0; i < m_Count; i++ ) {
-            out << "&" << m_Name << ";";
+            out << "&" << m_Html << ";";
             CHECK_STREAM_WRITE(out);
         }
     }
@@ -2299,6 +2303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2004/02/03 19:45:13  ivanov
+ * Binded dummy names for the unnamed nodes
+ *
  * Revision 1.97  2004/02/02 15:48:16  ivanov
  * CHTMLText::x_PrintBegin: using CHTMLHelper::StripHTML insteed StripTags
  *

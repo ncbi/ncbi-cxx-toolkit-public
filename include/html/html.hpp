@@ -291,7 +291,8 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
 private:
-    bool m_NoEncode;
+    bool   m_NoEncode;
+    string m_Text;
 };
 
 
@@ -312,6 +313,8 @@ public:
 private:
     CNcbiOstream& x_PrintBegin(CNcbiOstream& out, TMode mode,
                                const string& s) const;
+private:
+    string m_Text;
 };
 
 
@@ -469,21 +472,27 @@ public:
 
 
 // HTML comment.
+
 class NCBI_XHTML_EXPORT CHTMLComment : public CHTMLNode
 {
     typedef CHTMLNode CParent;
+    static const char sm_TagName[];
 public:
     CHTMLComment(void)
+        : CParent(sm_TagName)
     { }
     CHTMLComment(const char* text)
+        : CParent(sm_TagName)
     {
         AppendPlainText(text);
     }
     CHTMLComment(const string& text)
+        : CParent(sm_TagName)
     {
         AppendPlainText(text);
     }
     CHTMLComment(CNCBINode* node)
+        : CParent(sm_TagName)
     {
         AppendChild(node);
     }
@@ -550,9 +559,9 @@ public:
     ~CHTMLSpecialChar(void);
 
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
-
 private:
-    int m_Count;
+    string m_Html;
+    int    m_Count;
 };
 
 
@@ -1351,6 +1360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2004/02/03 19:45:41  ivanov
+ * Binded dummy names for the unnamed nodes
+ *
  * Revision 1.72  2004/02/02 14:08:06  ivanov
  * Added export specifier to the macro for declare HTML classes
  *

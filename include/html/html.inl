@@ -34,13 +34,13 @@
 inline
 const string& CHTMLPlainText::GetText(void) const
 {
-    return GetName();
+    return m_Text;
 }
 
 inline
 const string& CHTMLText::GetText(void) const
 {
-    return GetName();
+    return m_Text;
 }
 
 inline
@@ -581,6 +581,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/02/03 19:45:42  ivanov
+ * Binded dummy names for the unnamed nodes
+ *
  * Revision 1.33  2003/12/31 19:00:45  ivanov
  * Added default constructor for CHTML_a
  *
