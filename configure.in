@@ -85,23 +85,29 @@ AC_ARG_WITH(execopy,
 AC_ARG_WITH(bincopy,
    [ --without-bincopy       no check if libs or apps need to be copied to BIN])
 
-## Third-party and system packages
+## NCBI packages
 AC_ARG_WITH(ncbi-c,
    [ --without-ncbi-c        do not use NCBI C Toolkit])
+AC_ARG_WITH(sss,
+   [ --without-sss           do not use NCBI SSS libraries])
+AC_ARG_WITH(sssutils,
+   [ --without-utils         do not use NCBI SSS UTIL library])
+AC_ARG_WITH(sssdb,
+   [ --without-sssdb         do not use NCBI SSS DB library])
+AC_ARG_WITH(geo,
+   [ --without-geo           do not use NCBI GEO libraries])
+AC_ARG_WITH(pubmed,
+   [ --without-pubmed        do not use NCBI PubMed libraries])
+
+## Third-party and system packages
+AC_ARG_WITH(sybase,
+   [ --without-sybase        do not use SYBASE libraries])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
-AC_ARG_WITH(sss,
-   [ --without-sss           do not use NCBI SSS libraries])
-AC_ARG_WITH(sssdb,
-   [ --without-sssdb         do not use NCBI SSS DB library])
-AC_ARG_WITH(sssutils,
-   [ --without-utils         do not use NCBI SSS UTIL library])
-AC_ARG_WITH(pubmed,
-   [ --without-pubmed        do not use NCBI PubMed libraries])
-AC_ARG_WITH(sybase,
-   [ --without-sybase        do not use SYBASE libraries])
+AC_ARG_WITH(sp,
+   [ --without-sp            do not use SP libraries])
 
 ## Optional projects
 AC_ARG_WITH(local-lbsm,
@@ -128,7 +134,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization dll runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy \
-ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase \
+ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase \
 local-lbsm serial objects app ctools gui internal"
 
 changequote(, )dnl
@@ -355,8 +361,10 @@ if test "$with_mt" = "yes" ; then
      *        )  THREAD_LIBS=${THREAD_LIBS:="-lpthread"} ;;
    esac
    LIBS="$LIBS $THREAD_LIBS"
+   mt_sfx="MT"
 else
    THREAD_LIBS=
+   mt_sfx=""
 fi
 
 CFLAGS="$MT_FLAG $CFLAGS"
@@ -464,6 +472,15 @@ changequote([, ])dnl
 fi
 
 
+#### Set compiler prefix for non-native compilers
+case "$host_os:$compiler" in
+   linux*:GCC )
+      ;;
+   *:GCC | *:KCC | *:ICC )
+      compiler_pfx="${compiler}-" ;;
+esac
+
+
 #### 32/64-bit compilation, and extra LIBS
 with_64=${with_64:="no"}
 if test "$with_64" = "yes" ; then
@@ -488,7 +505,7 @@ if test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-64"
       ;;
     * )
-      AC_MSG_ERROR(["Dont know how to compile 64-bit with compiler $CXX $compiler_ver"])
+      AC_MSG_ERROR(["Do not know how to compile 64-bit with compiler $CXX $compiler_ver"])
       ;;
    esac
 else
@@ -583,8 +600,10 @@ changequote([, ])dnl
    esac
    LIB_OR_DLL="dll"
    FORCE_STATIC_LIB=
+   dll_sfx="DLL"
 elif test "$with_dll" = "no" ; then
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
+   dll_sfx=""
 fi
 
 
@@ -601,7 +620,7 @@ case "$compiler" in
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
-      AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
+      AC_MSG_ERROR(["Do not know how to build DLLs with compiler $CXX $compiler_ver"])
    fi
    ;;
 esac
@@ -675,23 +694,17 @@ else
    with_suffix=${with_suffix:="no"}
 fi
 
-
-#### Add "Release"/"Debug" and/or "MT", "DLL" suffixes to "${exec_prefix}"
-if test "$with_suffix" != "no" ; then
+#### Release/Debug
    if test "$with_debug" = "no" ; then
-      exec_prefix="${exec_prefix}-Release"
+      release_debug="Release"
    else
-      exec_prefix="${exec_prefix}-Debug"
+      release_debug="Debug"
    fi
-   if test "$with_mt" = "yes" ; then
-      exec_prefix="${exec_prefix}MT"
-   fi
-   if test "$with_dll" = "yes" ; then
-      exec_prefix="${exec_prefix}DLL"
-   fi
-   if test "$with_64" = "yes" ; then
-      exec_prefix="${exec_prefix}${bit64_sfx}"
-   fi
+
+
+#### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${exec_prefix}"
+if test "$with_suffix" != "no" ; then
+   exec_prefix="${exec_prefix}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}"
 fi
 
 
@@ -1153,7 +1166,7 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
-AC_MSG_CHECKING(if new C++ streams dont have ios_base::)
+AC_MSG_CHECKING(if new C++ streams do not have ios_base::)
 AC_TRY_COMPILE(
    [#include <iostream>],
    [(void)(std::ios_base::out != std::ios_base::beg); ],
@@ -1340,20 +1353,11 @@ if test "$with_wxwin" != "no" ; then
    else
       WXWIN_PATH="$NCBI/wxwin"
       if test -z "$WXWIN_LIBPATH" ; then
-         WXWIN_LIBPATH="$WXWIN_PATH/"
-         case "$compiler" in
-           GCC | KCC | ICC )
-             WXWIN_LIBPATH="${WXWIN_LIBPATH}${compiler}-" ;;
-         esac
+         WXWIN_LIBPATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
          if test "$with_debug" = "no" ; then
-            WXWIN_LIBPATH="${WXWIN_LIBPATH}Release"
             WXWIN_GTK="wx_gtk"
          else
-            WXWIN_LIBPATH="${WXWIN_LIBPATH}Debug"
             WXWIN_GTK="wx_gtkd"
-         fi
-         if test "$with_mt" = "yes" ; then
-            WXWIN_LIBPATH="${WXWIN_LIBPATH}MT"
          fi
       fi
       WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_LIBPATH/bin"}
@@ -1388,7 +1392,7 @@ fi
 AC_MSG_RESULT([$WXWIN_LIBPATH])
 
 
-## Inhouse Fast-CGI library
+## In-house Fast-CGI library
 AC_MSG_CHECKING(if Fast-CGI library is available)
 if test "$with_fastcgi" != "no" ; then
    FASTCGI_PATH=${FASTCGI_PATH:="$NCBI"}
@@ -1422,29 +1426,18 @@ AC_MSG_RESULT([$FASTCGI_PATH])
 
 ## NCBI SSS libraries
 with_sss=${with_sss:="yes"}
-with_sssdb=${with_sssdb:="yes"}
 with_sssutils=${with_sssutils:="yes"}
+with_sssdb=${with_sssdb:="yes"}
 
 if test "$with_sybase" = "no" ; then
    with_sssdb="no"
 fi
 
-if test "$with_sss" = "no" ; then
-   with_sssdb="no"
-   with_sssutils="no"
-   NCBI_SSS_PATH=
-   NCBI_SSS_INCLUDE=
-   NCBI_SSS_LIBPATH=
-else
+if test "$with_sss" != "no" ; then
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
-   NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="-I$NCBI_SSS_PATH/include"}
+   NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
-      NCBI_SSS_LIBPATH="-L${NCBI_SSS_PATH}/lib"
-      if test "$with_debug" = "no" ; then
-         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}/Release"
-      else
-         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}/Debug"
-      fi
+      NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${release_debug}"
       if test "$compiler" = "GCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
       elif test "$compiler" = "KCC" ; then
@@ -1452,47 +1445,164 @@ else
       elif test "$compiler" = "ICC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}ICC"
       fi
-      if test -n "$bit64_sfx" ; then
-         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}64"
-      fi
+      NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}${bit64_sfx}"
       if test "$with_mt" = "yes" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
    fi
+   if test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
+      AC_MSG_CHECKING([for NCBI SSS directories in $NCBI_SSS_PATH])
+      AC_MSG_RESULT([no])
+      with_sss="no"
+   fi
 fi
 
-# SSS DB
-AC_MSG_CHECKING(if NCBI SSS DB library is available)
-if test "$with_sssdb" != "no" ; then
-   CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-   LIBS="$NCBI_SSS_LIBPATH -lsssdb $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <cslink.hpp>],
-      [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBSSSDB, 1)],
-      [with_sssdb="no"]
-   )
-fi
-AC_MSG_RESULT([$with_sssdb])
-
-# SSS UTILS
-AC_MSG_CHECKING(if NCBI SSS UTILS library is available)
-if test "$with_sssutils" != "no" ; then
-   CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-   LIBS="$NCBI_SSS_LIBPATH -lsssutils $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <hashtab.hpp>],
-      [ (new C_HashTab(123))->Clear(); ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBSSSUTILS, 1)],
-      [with_sssutils="no"]
-   )
-fi
-AC_MSG_RESULT([$with_sssutils])
-
-if test "$with_sssdb" != "no"  ||  test "$with_sssutils" != "no" ; then
-   WithPackages="$WithPackages SSS"
-else
+if test "$with_sss" = "no" ; then
+   with_sssutils="no"
+   with_sssdb="no"
+   NCBI_SSS_INCLUDE=
+   NCBI_SSS_LIBPATH=
+   LIBSSSUTILS=
+   LIBSSSDB=
    WithoutPackages="$WithoutPackages SSS"
+else
+   NCBI_SSS_LIBPATH="-L${NCBI_SSS_LIBPATH}"
+   NCBI_SSS_INCLUDE="-I${NCBI_SSS_INCLUDE}"
+
+   # SSS UTILS
+   AC_MSG_CHECKING(if NCBI SSS UTILS library is available)
+   if test "$with_sssutils" != "no" ; then
+      CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+      LIBSSSUTILS="-lsssutils"
+      LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+      AC_TRY_LINK(
+         [#include <hashtab.hpp>],
+         [ (new C_HashTab(123))->Clear(); ],
+         [
+           AC_DEFINE_UNQUOTED(HAVE_LIBSSSUTILS, 1)
+           WithPackages="$WithPackages SSSUTILS"
+         ],
+         [
+           with_sssutils="no"
+           LIBSSSUTILS=""
+           WithoutPackages="$WithoutPackages SSSUTILS"
+         ]
+      )
+   fi
+   AC_MSG_RESULT([$with_sssutils])
+
+   # SSS DB
+   AC_MSG_CHECKING(if NCBI SSS DB library is available)
+   if test "$with_sssdb" != "no" ; then
+      CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+      LIBSSSDB="-lsssdb"
+      LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+      AC_TRY_LINK(
+         [#include <cslink.hpp>],
+         [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
+         [
+           AC_DEFINE_UNQUOTED(HAVE_LIBSSSDB, 1)
+           WithPackages="$WithPackages SSSDB"
+         ],
+         [
+           with_sssdb="no"
+           LIBSSSDB=""
+           WithoutPackages="$WithoutPackages SSSDB"
+         ]
+      )
+   fi
+   AC_MSG_RESULT([$with_sssdb])
+fi
+
+
+# GEO
+with_geo=${with_geo:="yes"}
+
+if test "$with_sssdb" = "no"  -o  "$with_sssutils" = "no" ; then
+   with_geo="no"
+fi
+
+if test "$with_geo" != "no" ; then
+   NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo"}
+   NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
+   if test -z "$NCBI_GEO_LIBPATH" ; then
+      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_pfx}${release_debug}${bit64_sfx}"
+   fi
+   if test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
+      AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
+      AC_MSG_RESULT([no])
+      with_geo="no"
+   fi
+fi
+
+if test "$with_geo" = "no" ; then
+   NCBI_GEO_INCLUDE=
+   NCBI_GEO_LIBPATH=
+   LIBGEODB=
+else
+   NCBI_GEO_LIBPATH="-L${NCBI_GEO_LIBPATH}"
+   NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE}"
+   LIBGEODB="-lgeodb"
+
+   AC_MSG_CHECKING(if NCBI GEO DB library is available)
+   AC_DEFINE_UNQUOTED(HAVE_LIBGEODB, 1)
+#     Cannot check it -- because GEO headers include C++ Toolkit headers!
+#
+#     CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+#     LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
+#     AC_TRY_LINK(
+#        [#include <geo_api.hpp>],
+#        [ (void) GEO_API::Submitter::contributors(); ],
+#        [AC_DEFINE_UNQUOTED(HAVE_LIBGEODB, 1)],
+#        [with_geo="no" ; LIBGEODB="" ]
+#     )
+   AC_MSG_RESULT([$with_geo])
+fi
+
+if test "$with_geo" != "no" ; then
+   WithPackages="$WithPackages GEO"
+else
+   WithoutPackages="$WithoutPackages GEO"
+fi
+
+
+# SP
+with_sp=${with_sp:="yes"}
+
+if test "$with_sp" != "no" ; then
+   SP_PATH=${SP_PATH:="$NCBI/SP"}
+   SP_INCLUDE=${SP_INCLUDE:="$SP_PATH/include"}
+   if test -z "$SP_LIBPATH" ; then
+      SP_LIBPATH="${SP_PATH}/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
+   fi
+   if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
+      AC_MSG_CHECKING([for SP directories in $SP_PATH])
+      AC_MSG_RESULT([no])
+      with_sp="no"
+   fi
+fi
+
+if test "$with_sp" != "no" ; then
+   AC_MSG_CHECKING(if NCBI SP library is available)
+   SP_INCLUDE="-I${SP_INCLUDE}"
+   SP_LIBS="-L$SP_LIBPATH -lsp"
+   CPPFLAGS="$SP_INCLUDE $orig_CPPFLAGS"
+   LIBS="$SP_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <SGMLApplication.h>],
+      [ SP_API::SGMLApplication app; ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBSP, 1)],
+      [with_sp="no"]
+   )
+   AC_MSG_RESULT([$with_sp])
+fi
+
+if test "$with_sp" = "no" ; then
+   SP_INCLUDE=
+   SP_LIBS=
+   WithoutPackages="$WithoutPackages SP"
+else
+   WithPackages="$WithPackages SP"
 fi
 
 
@@ -1500,24 +1610,34 @@ fi
 AC_MSG_CHECKING(if NCBI PubMed libraries are available)
 if test "$with_ncbi_c" = "no" ; then
    with_pubmed="no"
-elif test "$with_pubmed" != "no" ; then
-   NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed"}${bit64_sfx}
-   CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
-   LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <ncbistr.hpp>],
-      [ CNcbiString("abc"); ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBPUBMED, 1)],
-      [with_pubmed="no"]
-   )
 fi
+
+if test "$with_pubmed" != "no" ; then
+   NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed"}${bit64_sfx}
+
+   if test ! -d "${NCBI_PM_PATH}" ; then
+      with_pubmed="no"
+   else
+      CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
+      LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
+      AC_TRY_LINK(
+         [#include <ncbistr.hpp>],
+         [ CNcbiString("abc"); ],
+         [AC_DEFINE_UNQUOTED(HAVE_LIBPUBMED, 1)],
+         [with_pubmed="no"]
+      )
+   fi
+fi
+
 if test "$with_pubmed" = "no" ; then
    NCBI_PM_PATH="No_NCBI_PubMed"
    WithoutPackages="$WithoutPackages PubMed"
 else
    WithPackages="$WithPackages PubMed"
 fi
+
 AC_MSG_RESULT([$NCBI_PM_PATH])
+
 
 
 ### Restore original compiler/linker flags
@@ -1554,6 +1674,10 @@ fi
 
 ## `serial' projects
 
+if test "$with_serial" = "no" ; then
+   NoConfProjects="$NoConfProjects serial"
+fi
+
 if test ! -f src/serial/Makefile.in  -o  ! -d include/serial ; then
    if test "$with_serial" = "yes" ; then
       AC_MSG_ERROR(["--with-serial:  SERIAL sources are missing"])
@@ -1572,6 +1696,11 @@ fi
 
 ## `objects' projects
 
+if test "$with_objects" = "no"  || \
+   test "$with_objects" = ""  -a  "$with_app" != "yes" ; then
+   NoConfProjects="$NoConfProjects objects"
+fi
+
 if test ! -f src/objects/Makefile.in  -o  ! -d include/objects ; then
    if test "$with_objects" = "yes" ; then
       AC_MSG_ERROR(["--with-objects:  OBJECTS sources are missing"])
@@ -1579,11 +1708,11 @@ if test ! -f src/objects/Makefile.in  -o  ! -d include/objects ; then
    with_objects="no"
 fi
 
-if test "$with_objects" != "no"  &&  test "$with_app" = "yes" ; then
+if test "$with_objects" != "no"  -a  "$with_app" = "yes" ; then
    with_objects="yes"
 fi
 
-if test "$with_objects" = "yes"  &&  test -n "$serial" ; then
+if test "$with_objects" = "yes"  -a  -n "$serial" ; then
    WithProjects="$WithProjects objects"
    objects="objects"
 else
@@ -1593,6 +1722,10 @@ fi
 
 
 ## `app' projects
+
+if test "$with_app" != "yes" ; then
+   NoConfProjects="$NoConfProjects app"
+fi
 
 if test ! -f src/app/Makefile.in  -o  ! -d include/app ; then
    if test "$with_app" = "yes" ; then
@@ -1612,7 +1745,13 @@ fi
 
 ## `ctools' project cluster
 
-if test ! -f src/ctools/Makefile.in  -o  ! -d include/ctools  -o  "$with_ncbi_c" = "no" ; then
+if test "$with_ctools" = "no" ; then
+   NoConfProjects="$NoConfProjects ctools"
+fi
+
+if test ! -f src/ctools/Makefile.in  -o  \
+        ! -d include/ctools  -o  "$with_ncbi_c" = "no"
+then
    if test "$with_ctools" = "yes" ; then
       if test "$with_ncbi_c" = "no" ; then
          AC_MSG_ERROR(["--with-ctools:  NCBI C Toolkit is missing"])
@@ -1632,7 +1771,13 @@ fi
 
 ## `gui' project cluster
 
-if test ! -f src/gui/Makefile.in  -o  ! -d include/gui  -o  "$with_wxwin" = "no" ; then
+if test "$with_gui" = "no" ; then
+   NoConfProjects="$NoConfProjects gui"
+fi
+
+if test ! -f src/gui/Makefile.in  -o  \
+        ! -d include/gui  -o  "$with_wxwin" = "no"
+then
    if test "$with_gui" = "yes" ; then
       if test "$with_wxwin" = "no" ; then
          AC_MSG_ERROR(["--with-gui:  wxWindows package is missing"])
@@ -1652,7 +1797,13 @@ fi
 
 ## `gui_ctools' project cluster
 
-if test -f src/gui_ctools/Makefile.in  -a  -d include/gui_ctools  -a  "$with_tools" != "no"  -a  "$with_gui" != "no" ; then
+if test "$with_tools" = "no"  -o  "$with_gui" = "no" ; then
+   NoConfProjects="$NoConfProjects gui_ctools"
+fi
+
+if test -f src/gui_ctools/Makefile.in  -a  \
+        -d include/gui_ctools  -a  \
+        "$with_tools" != "no"  -a  "$with_gui" != "no" ; then
    OPT_GROUPS="$OPT_GROUPS gui_ctools"
 else
    WithoutProjects="$WithoutProjects gui_ctools"
@@ -1661,9 +1812,16 @@ fi
 
 ## `internal' project cluster
 
+if test "$with_internal" = "no" ; then
+   NoConfProjects="$NoConfProjects internal"
+fi
+
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
-   if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" || test "$no_internal" = "yes" ; then
+   if test "$with_sybase" = "no"  -o  "$with_ncbi_c" = "no"  -o  \
+           "$with_sss" = "no"  -o  "$with_pubmed" = "no"  \
+           "$with_sp" = "no"  -o  "$with_geo" = "no"  -o  "$with_sp" = "no"
+   then
       AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects"])
    fi
 else
@@ -1743,7 +1901,14 @@ fi
 ### Compose their target counterparts
 ### Configure
 
-configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | grep -v 'config\.h\.in' | grep -v 'configure\.in' | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+excl_file="`pwd`/config.tmp.$$"
+changequote(<<, >>)dnl
+echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
+^\\./\1/%g' > $excl_file
+changequote([, ])dnl
+configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | egrep -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+rm $excl_file
+
 if test -z "$configurables" ; then
   AC_MSG_ERROR([Cannot find any configurables below \"${srcdir}\"!])
 fi
@@ -1818,6 +1983,13 @@ AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)
 AC_SUBST(NCBI_SSS_INCLUDE)
 AC_SUBST(NCBI_SSS_LIBPATH)
+AC_SUBST(LIBSSSUTILS)
+AC_SUBST(LIBSSSDB)
+AC_SUBST(NCBI_GEO_INCLUDE)
+AC_SUBST(NCBI_GEO_LIBPATH)
+AC_SUBST(LIBGEODB)
+AC_SUBST(SP_INCLUDE)
+AC_SUBST(SP_LIBS)
 AC_SUBST(NCBI_PM_PATH)
 
 AC_SUBST(NCBI_C_ncbi)
