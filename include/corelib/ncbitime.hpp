@@ -30,6 +30,8 @@
  *           Denis    Vakatov   <vakatov@ncbi.nlm.nih.gov>
  *           Vladimir Ivanov    <ivanov@ncbi.nlm.nih.gov>*
  *
+ * DayOfWeek():  Used code has been posted on comp.lang.c on March 10th, 1993
+ *               by Tomohiko Sakamoto (sakamoto@sm.sony.co.jp).
  *
  */
 
@@ -72,6 +74,7 @@ public:
     /// Error types that CTime can generate.
     enum EErrCode {
         eInvalid,       ///< Invalid time value
+        eArgument,      ///< Bad function argument
         eFormat         ///< Incorrect format
     };
 
@@ -194,18 +197,19 @@ public:
     /// after manipulation is greater than this range, then try apply
     /// daylight saving conversion on the result time value.
     enum ETimeZonePrecision {
-        eNone,    ///< Daylight saving not to affect time manipulations
-        eMinute,  ///< Check condition - new minute
-        eHour,    ///< Check condition - new hour
-        eDay,     ///< Check condition - new day
-        eMonth,   ///< Check condition - new month
-        eDefault = eMinute ///< Default time quantum for adjustment
+        eNone,    ///< Daylight saving not to affect time manipulations.
+        eMinute,  ///< Check condition - new minute.
+        eHour,    ///< Check condition - new hour.
+        eDay,     ///< Check condition - new day.
+        eMonth,   ///< Check condition - new month.
+        eTZPrecissionDefault = eNone
     };
 
     /// Whether to adjust for daylight saving time.
     enum EDaylight {
         eIgnoreDaylight,   ///< Ignore daylight savings time.
-        eAdjustDaylight    ///< Adjust for daylight savings time.
+        eAdjustDaylight,   ///< Adjust for daylight savings time.
+        eDaylightDefault = eAdjustDaylight
     };
 
     /// Constructor.
@@ -216,10 +220,10 @@ public:
     /// @param tz
     ///   Whether to use local time (default) or GMT. 
     /// @param tzp
-    ///   What time zone precision to use. Default is to use none (eNone).
+    ///   What time zone precision to use.
     CTime(EInitMode          mode = eEmpty,
           ETimeZone          tz   = eLocal,
-          ETimeZonePrecision tzp  = eNone);
+          ETimeZonePrecision tzp  = eTZPrecissionDefault);
 
     /// Explicit conversion constructor for time_t representation of time.
     ///
@@ -228,8 +232,8 @@ public:
     /// @param t
     ///   Time in the UTC time_t format.
     /// @param tzp
-    ///   What time zone precision to use. Default is to use none (eNone).
-    explicit CTime(time_t t, ETimeZonePrecision tzp = eNone);
+    ///   What time zone precision to use.
+    explicit CTime(time_t t, ETimeZonePrecision tzp = eTZPrecissionDefault);
 
     /// Constructor.
     ///
@@ -249,10 +253,11 @@ public:
     /// @param tz
     ///   Whether to use local time (default) or GMT. 
     /// @param tzp
-    ///   What time zone precision to use. Default is to use none (eNone).
+    ///   What time zone precision to use.
     CTime(int year, int month, int day,
           int hour = 0, int minute = 0, int second = 0, long nanosecond = 0,
-          ETimeZone tz = eLocal, ETimeZonePrecision tzp = eNone);
+          ETimeZone tz  = eLocal,
+          ETimeZonePrecision tzp = eTZPrecissionDefault);
 
     /// Constructor.
     ///
@@ -265,9 +270,10 @@ public:
     /// @param tz
     ///   Whether to use local time (default) or GMT. 
     /// @param tzp
-    ///   What time zone precision to use. Default is to use none (eNone).
+    ///   What time zone precision to use.
     CTime(int year, int yearDayNumber,
-          ETimeZone tz = eLocal, ETimeZonePrecision tzp = eNone);
+          ETimeZone tz = eLocal,
+          ETimeZonePrecision tzp = eTZPrecissionDefault);
 
     /// Explicit conversion constructor for string representation of time.
     ///
@@ -281,9 +287,10 @@ public:
     /// @param tz
     ///   Whether to use local time (default) or GMT. 
     /// @param tzp
-    ///   What time zone precision to use. Default is to use none (eNone).
+    ///   What time zone precision to use.
     explicit CTime(const string& str, const string& fmt = kEmptyStr,
-                   ETimeZone tz = eLocal, ETimeZonePrecision tzp = eNone);
+                   ETimeZone tz = eLocal,
+                   ETimeZonePrecision tzp = eTZPrecissionDefault);
 
     /// Copy constructor.
     CTime(const CTime& t);
@@ -311,6 +318,9 @@ public:
 
     /// Get time (time_t format).
     ///
+    /// The function return the number of seconds elapsed since midnight
+    /// (00:00:00), January 1, 1970. Do not use this function if year is
+    /// less 1970.
     /// @param t
     ///   Time to set in time object. This is always in GMT time format, and
     ///   nanoseconds will be truncated. 
@@ -465,12 +475,9 @@ public:
     /// Return time as string using the format returned by GetFormat().
     operator string(void) const;
 
+    //
     // Get various components of time.
-
-    /// Get Year's day number.
-    ///
-    /// Year day number = 1..366
-    int YearDayNumber(void) const;
+    //
 
     /// Get year.
     ///
@@ -507,6 +514,109 @@ public:
     /// Nanoseconds after the second = 0..999999999
     long NanoSecond(void) const;
 
+   
+    //
+    // Set various components of time.
+    //
+
+    /// Set year.
+    ///
+    /// Beware that this operation is inherently inconsistent.
+    /// In case of different number of days in the months, the day number
+    /// can change, e.g.:
+    ///  - "Feb 29 2000".SetYear(2001) => "Feb 28 2001".
+    /// Because 2001 is not leap year.
+    /// @param year
+    ///   Year to set.
+    /// @sa
+    ///   Year()
+    void SetYear(int year);
+
+    /// Set month.
+    ///
+    /// Beware that this operation is inherently inconsistent.
+    /// In case of different number of days in the months, the day number
+    /// can change, e.g.:
+    ///  - "Dec 31 2000".SetMonth(2) => "Feb 29 2000".
+    /// Therefore e.g. calling SetMonth(1) again that result will be "Jan 28".
+    /// @param month
+    ///   Month number to set. Month number = 1..12.
+    /// @sa
+    ///   Month()
+    void SetMonth(int month);
+
+    /// Set day.
+    ///
+    /// Beware that this operation is inherently inconsistent.
+    /// In case of number of days in the months, the day number
+    /// can change, e.g.:
+    ///  - "Feb 01 2000".SetDay(31) => "Feb 29 2000".
+    /// @param day
+    ///   Day to set. Day of the month = 1..31.
+    /// @sa
+    ///   Day()
+    void SetDay(int day);
+
+    /// Set hour.
+    ///
+    /// @param day
+    ///   Hours since midnight = 0..23.
+    /// @sa
+    ///   Hour()
+    void SetHour(int hour);
+
+    /// Set minute.
+    ///
+    /// @param minute
+    ///   Minutes after the hour = 0..59.
+    /// @sa
+    ///   Minute()
+    void SetMinute(int minute);
+
+    /// Set second.
+    ///
+    /// @param day
+    ///   Seconds after the minute = 0..59.
+    /// @sa
+    ///   Second()
+    void SetSecond(int second);
+
+    /// Set nano seconds.
+    ///
+    /// @param day
+    ///   Nanoseconds after the second = 0..999999999.
+    /// @sa
+    ///   NanoSecond()
+    void SetNanoSecond(long nanosecond);
+
+
+    /// Get year's day number.
+    ///
+    /// Year day number = 1..366
+    int YearDayNumber(void) const;
+
+    /// Get week number in the year.
+    ///
+    /// Calculate the week number in a year of a given date.
+    /// The week can start on any day accordingly given parameter.
+    /// First week always start with 1st January.
+    /// @param week_start
+    ///   What day of week is first.
+    ///   Default is to use Sunday as first day of week. For Monday-based
+    ///   weeks use eMonday as parameter value.
+    /// @return
+    ///   Week number = 1..54.
+    int YearWeekNumber(EDayOfWeek first_day_of_week = eSunday) const;
+
+
+    /// Get week number in current month.
+    ///
+    /// @return
+    ///   Week number in current month = 1..6.
+    /// @sa
+    ///   YearWeekNumber()
+    int MonthWeekNumber(EDayOfWeek first_day_of_week = eSunday) const;
+
     /// Get day of week.
     ///
     /// Days since Sunday = 0..6
@@ -519,17 +629,19 @@ public:
 
     /// Add specified years and adjust for day light savings time.
     ///
-    /// @param years
-    ///   Years to add. Default is 1 year.
-    ///   If negative, it will result in a "subtraction" operation.
-    /// @param adl
-    ///   Whether to adjust for daylight saving time. Default is to adjust
-    ///   for daylight savings time. This parameter is for eLocal time zone
-    ///   and where the time zone precision is not eNone. 
-    CTime& AddYear(int years = 1, EDaylight adl = eAdjustDaylight);
+    /// It is an exact equivalent of calling AddMonth(years * 12).
+    /// @sa
+    ///   AddMonth()
+    CTime& AddYear(int years = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified months and adjust for day light savings time.
     ///
+    /// Beware that this operation is inherently inconsistent.
+    /// In case of different number of days in the months, the day number
+    /// can change, e.g.:
+    ///  - "Dec 31 2000".AddMonth(2) => "Feb 28 2001" ("Feb 29" if leap year).
+    /// Therefore e.g. calling AddMonth(1) 12 times for e.g. "Jul 31" will
+    /// result in "Jul 28" (or "Jul 29") of the next year.
     /// @param months
     ///   Months to add. Default is 1 month.
     ///   If negative, it will result in a "subtraction" operation.
@@ -537,7 +649,7 @@ public:
     ///   Whether to adjust for daylight saving time. Default is to adjust
     ///   for daylight savings time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
-    CTime& AddMonth(int months = 1, EDaylight adl = eAdjustDaylight);
+    CTime& AddMonth(int months = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified days and adjust for day light savings time.
     ///
@@ -548,7 +660,7 @@ public:
     ///   Whether to adjust for daylight saving time. Default is to adjust
     ///   for daylight savings time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
-    CTime& AddDay(int days = 1, EDaylight adl = eAdjustDaylight);
+    CTime& AddDay(int days = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified hours and adjust for day light savings time.
     ///
@@ -559,7 +671,7 @@ public:
     ///   Whether to adjust for daylight saving time. Default is to adjust
     ///   for daylight savings time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
-    CTime& AddHour(int hours = 1, EDaylight adl = eAdjustDaylight);
+    CTime& AddHour(int hours = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified minutes and adjust for day light savings time.
     ///
@@ -570,7 +682,7 @@ public:
     ///   Whether to adjust for daylight saving time. Default is to adjust
     ///   for daylight savings time. This parameter is for eLocal time zone
     ///   and where the time zone precision is not eNone. 
-    CTime& AddMinute(int minutes = 1, EDaylight adl = eAdjustDaylight);
+    CTime& AddMinute(int minutes = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified seconds.
     ///
@@ -727,7 +839,7 @@ private:
     /// Helper method to add hour with/without shift time.
     /// Parameter "shift_time" access or denied use time shift in 
     /// process adjust hours.
-    CTime& x_AddHour(int hours = 1, EDaylight daylight = eAdjustDaylight, 
+    CTime& x_AddHour(int hours = 1, EDaylight daylight = eDaylightDefault, 
                      bool shift_time = true);
 
     // Time
@@ -813,8 +925,10 @@ extern int   operator - (const CTime& t1, const CTime& t2);
 
 // Get current time (in local or GMT format)
 NCBI_XNCBI_EXPORT
-extern CTime CurrentTime(CTime::ETimeZone          tz  = CTime::eLocal, 
-                         CTime::ETimeZonePrecision tzp = CTime::eNone);
+extern CTime CurrentTime(
+    CTime::ETimeZone          tz  = CTime::eLocal, 
+    CTime::ETimeZonePrecision tzp = CTime::eTZPrecissionDefault
+    );
 
 // Truncate the time to days (see CTime::Truncate)
 NCBI_XNCBI_EXPORT 
@@ -851,6 +965,12 @@ int CTime::Second(void) const { return m_Second; }
 
 inline 
 long CTime::NanoSecond(void) const { return (long) m_NanoSecond; }
+
+inline 
+CTime& CTime::AddYear(int years, EDaylight adl)
+{
+    return AddMonth(years * 12, adl);
+}
 
 inline
 CTime& CTime::SetTimeT(const time_t& t) { return x_SetTime(&t); }
@@ -1080,6 +1200,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/11/25 19:53:33  ivanov
+ * Renamed eDefault to eTZPrecissionDefault.
+ * Added setters for various components of time -- Set*().
+ * Added YearWeekNumber(), MonthWeekNumber().
+ * Reimplemented AddYear() as AddMonth(years*12).
+ *
  * Revision 1.27  2003/11/21 20:04:41  ivanov
  * + DaysInMonth()
  *
