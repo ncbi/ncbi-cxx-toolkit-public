@@ -167,7 +167,7 @@ int test1(int argc, char ** argv)
                 }
                 
                 if (1) {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi8NA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbiNA8);
                     
                     int y = (length > 16) ? 16 : length;
                 
@@ -187,7 +187,7 @@ int test1(int argc, char ** argv)
                 }
                 
                 if (1) {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlast8NA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlastNA8);
                 
                     int y = (length > 16) ? 16 : length;
                 
@@ -248,7 +248,7 @@ int test1(int argc, char ** argv)
                 }
                 
                 {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi8NA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbiNA8);
                 
                     int y = (length > 16) ? 16 : length;
                 
@@ -268,7 +268,7 @@ int test1(int argc, char ** argv)
                 }
                 
                 {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlast8NA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlastNA8);
                 
                     int y = (length > 16) ? 16 : length;
                 
