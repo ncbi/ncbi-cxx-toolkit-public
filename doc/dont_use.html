@@ -19,15 +19,16 @@
 		<li> <a href="#ref_CPP_OpAssignment">Assignment and copy constructor overload</a>
 		<li> <a href="#ref_CPP_Namespace">Namespaces</a>
 		<li> <a href="#ref_CPP_NoArg">Omitting <i>"void"</i> in a no-arg function proto</a>
+		<li> <a href="#ref_CPP_Malloc">Do not mix malloc and new</a>
 	 </ul> </ul>
 
-	 <br></br>
+	 <br>
 
-	 <a name="ref_STL">
+	 <a name="ref_STL"></a>
 	 <h2><u>STL and standard C++ library's bad guys</u></h2>
 
-	 <br></br>
-	 <a name="ref_STL_Stream"> <h3>Old vs. new stream classes</h3> <p>
+	 <br>
+	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3> <p>
 	 <p> <i>#include &lt;ncbistre.hpp&gt;</i>
 
 	 <p>
@@ -86,9 +87,9 @@
 	 "<i>NCBI_USE_NEW_IOSTREAM</i>".
 
 
-	 <br></br>
-	 <br></br>
-	 <a name="ref_STL_NonStd"> <h3>Non-standard STL classes</h3> <p>
+	 <br>
+	 <br>
+	 <a name="ref_STL_NonStd"></a> <h3>Non-standard STL classes</h3> <p>
 	 Don't use <i>hash</i> or the <i>rope</i> classes from
 	 some versions of the STL.
 	 These are non-standard additions. If you have questions about what
@@ -96,11 +97,11 @@
 	 <a href="http://www.cygnus.com/misc/wp/dec96pub/">draft standard</a>.</p>
 
 
-	 <br></br>
-	 <a name="ref_CPP">
+	 <br>
+	 <a name="ref_CPP"></a>
 	 <h2><u>C++ bad guys</u></h2>
 
-	 <a name="ref_CPP_OpOverload"> <h3>Operation overload</h3> <p>
+	 <a name="ref_CPP_OpOverload"></a> <h3>Operation overload</h3> <p>
 	 Do not use operator overloading for the objects where
     they have unnatural or ambiguous meaning. E.g. the defining of operation
 	 "==" for your class <i>"CFoo"</i> so that there exist { CFoo a,b,c; } such
@@ -110,7 +111,7 @@
 	 different ideas of what an overloaded operator means, leading to all
 	 sorts of bugs.
 
-	 <a name="ref_CPP_OpAssignment"> <h3>Assignment and copy constructor overload</h3> <p>
+	 <a name="ref_CPP_OpAssignment"></a> <h3>Assignment and copy constructor overload</h3> <p>
 	 Be advised that the default initialization
 	 <i>{CFoo foo = bar;}</i> and assignment<i>{CFoo foo; ...; foo = bar;}</i>
 	 do a member-by-member copying. This is not suitable and can be dangerous
@@ -134,7 +135,7 @@ class CFoo {
 	 </ul>
 
 
-	 <a name="ref_CPP_Namespace"> <h3>Namespaces</h3> <p>
+	 <a name="ref_CPP_Namespace"></a> <h3>Namespaces</h3> <p>
 	 Do not define your own namespaces at all.
 	 Instead, if you want to ensure that you will not get into a name conflict,
 	 see the workaround (<a href="style.html#ref_Prefix">quasi-namespace</a>)
@@ -144,12 +145,15 @@ class CFoo {
 	 For the use of STL namespace see the
 	 <a href="tips.html#STL_tips">NCBI_USING_STL</a> preprocessor macro.
 
-	 <a name="ref_CPP_NoArg"> <h3>Omitting <i>"void"</i> in a no-arg function proto</h3> <p>
+	 <a name="ref_CPP_NoArg"></a> <h3>Omitting <i>"void"</i> in a no-arg function proto</h3> <p>
 	 Do not omit <i>"void"</i> in prototype of a function without arguments
 	 (e.g. always write <i>"int f(<b>void</b>)"</i>
 	 rather than just <i>"int f()"</i>).
 
-	 <br></br>
+	 <a name="ref_CPP_Malloc"></a> <h3>Do not mix malloc and new</h3> <p>
+	 On some platforms, malloc and new may use completely different memory managers, so never free() what you created using "new" and never "delete" what you created using malloc().  Also, when calling C code from C++ <b>always</b> allocate any structs or other items using malloc().  The C routine may use realloc() or free() on the items, which can cause memory corruption if you allocated using "new."
+
+	 <br>
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
@@ -158,5 +162,5 @@ class CFoo {
 		<tr>
 		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
 	 </table>
-  </body>
-</html>
+  
+</body></html>

@@ -7,7 +7,7 @@
   <body>
 	 <h1>Introduction to some of C++ and STL features and techniques</h1>
 
-	 <br></br>
+	 <br>
 	 <h2>C++ Implementation Guide</h2>
 
 	 <h3>Use of STL(Standard Template Library)</h3>
@@ -54,7 +54,7 @@
 	 <a href="http://www.pureatria.com/uml/umlwp.html">Unified Modelling Language</a>
 	 to describe the relationships between objects.</p>
 
-	 <br></br>
+	 <br>
 
 	 <h2>C++ Tips and Tricks</h2>
 
@@ -69,19 +69,18 @@
 	 Use <i>const</i> (or <i>enum</i>) instead of <i>#define</i> when you can.
 	 This is much easier to debug. </p>
 
-	 <p>
-	 Header files should contain what they contain in C along with classes,
-	 const's, and in-line functions (in-line functions are functions defined
-	 within the braces of the class or declared <i>inline</i>.
-	 In-line functions must be in header files as compilers need to see
-	 the source in order to inline properly. </p>
-	 <p>
+	 
+<p> Header files should contain what they contain in C along with classes, const's, 
+  and in-line functions (in-line functions are functions defined within the braces 
+  of the class or declared <i>inline</i>. In-line functions must be in header 
+  files as compilers need to see the source in order to inline properly.</p>
+<p>
 	 See the
 	 <a href="http://www.cerfnet.com/~mpcline/C++-FAQs-Lite/">C++ FAQ</a> </p>
 
-	 <br></br>
+	 <br>
 
-	 <a name="ref_STL">
+	 <a name="ref_STL"></a>
 	 <h2> Standard template library (STL) </h2>
 
 	 <p>
@@ -102,7 +101,7 @@
 	 We haven't detected any non-configuration incompatibilities yet. 
 	 <p>
 
-	 <a name="STL_tips">
+	 <a name="STL_tips"></a>
 	 <h3>STL tips and tricks</h3>
 	 <p>
 	 end() does not return an iterator to the last element of a container,
@@ -125,19 +124,23 @@
 	 destroyed when the container is destroyed, only the pointers are.
 	 Other that maintaining the objects yourself, there are several strategies
 	 detailed in the <a href="books.html">literature</a>.
-	 <p>
-	 If you pass a container to a function, don't add a local object to the
-	 container.
-	 The local variable will be destroyed when you leave the function.
-	 <p>
-	 When declaring a map, use the form
-	 <i>map&lt;string, string, less&lt;string&gt; &gt;</i>.
-	 The third argument isn't necessary on most compilers, but SunPro 4.2 is 
-	 a bit old and needs it because it doesn't do default values for templates.
-	 <p>
-	 SunPro 4.2 uses and older (and less functional) version of
-	 <i>&lt;iostream&gt;</i> called <i>&lt;iostream.h&gt;</i>
-	 <p>
+	 
+<p> If you pass a container to a function, don't add a local object to the container. 
+  The local variable will be destroyed when you leave the function. 
+<p>When using Solaris make, the macro .KEEP_STATE can be used to track hidden 
+  dependencies, but this doesn't work well with Sunpro C++ 5.0 and STL. The reason 
+  is because the STLheaders include files with names of the form *.cc. When make 
+  sees these files, it tries to compile them using the implicit makefile rules.One 
+  workaround is to redefine the implicit rules to ignore *.cc: <br>
+  SUFFIXES = .o .c .h .hpp .cpp <br>
+  .SUFFIXES: $(SUFFIXES) <br>
+  .cpp.o:<br>
+  $(CCC) $(CFLAGS) -c $&lt; <br>
+  and run make with "make -r" 
+<p> When declaring a map, use the form <i>map&lt;string, string, less&lt;string&gt; 
+  &gt;</i>. The third argument isn't necessary on most compilers, but SunPro 4.2 
+  is a bit old and needs it because it doesn't do default values for templates. 
+<p>
 	 SunPro 4.2 doesn't understand <i>&quot;using namespace std;&quot;</i>, and it
 	 was decided to prohibite the explicit use <i>&quot;using namespace XXX;&quot;</i>
 	 in NCBI C++ code. Thus, if you need to use STL just use special
@@ -148,12 +151,12 @@
 	 <a href="http://www.loria.fr/serveurs/CCH/documentation/docSGI/STL_doc/string_discussion.html">pitfalls</a>.
 
 
-	 <br></br>
+	 <br>
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
 		  <td align=right>($Revision$)</td></tr>
 	 </table>
-  </body>
-</html>
+  
+</body></html>
