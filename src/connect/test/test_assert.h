@@ -63,7 +63,8 @@ static int _SuppressDiagPopupMessages(void)
     const char* value = getenv("DIAG_SILENT_ABORT");
     if (value  &&  (*value == 'Y'  ||  *value == 'y')) {
         /* Windows GPF errors */
-        SetErrorMode(SEM_NOGPFAULTERRORBOX);
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
+                     SEM_NOOPENFILEERRORBOX);
 
         /* Runtime library */
         _set_error_mode(_OUT_TO_STDERR);
@@ -130,6 +131,9 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2005/02/22 19:49:55  ivanov
+ * Added more suppress modes for SetErrorMode()
+ *
  * Revision 6.23  2004/12/21 03:44:42  lavr
  * Fix CRT report file destination, _CRTDBG_FILE_STDERR not stderr!
  *
