@@ -38,7 +38,6 @@
 #include <objmgr/impl/data_source.hpp>
 
 #include <objects/seq/seq_id_handle.hpp>
-#include <objects/seq/seq_id_mapper.hpp>
 
 #include <objmgr/seq_map.hpp>
 
@@ -845,7 +844,7 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_inst& inst) const
 TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_id& whole) const
 {
     CConstRef<CBioseq_Info> ref =
-        GetTSE_Info().FindBioseqMatch(CSeq_id_Handle::GetHandle(whole));
+        GetTSE_Info().FindMatchingBioseq(CSeq_id_Handle::GetHandle(whole));
     if ( !ref ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CBioseq_Info::x_CalcBioseqLength: "
@@ -994,6 +993,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/12/22 15:56:29  vasilche
+* Try matching Seq-ids too in x_CalcBioseqLength.
+*
 * Revision 1.27  2004/10/25 16:53:36  vasilche
 * Lookup Bioseq by matching Seq-id.
 *
