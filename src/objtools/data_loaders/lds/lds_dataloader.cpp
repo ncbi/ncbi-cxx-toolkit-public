@@ -101,8 +101,29 @@ private:
 
 
 CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db)
- : m_LDS_db(lds_db)
+ : m_LDS_db(lds_db),
+   m_OwnDatabase(false)
 {}
+
+CLDS_DataLoader::CLDS_DataLoader(const string& db_path)
+ : m_LDS_db(*(new CLDS_Database(db_path))),
+   m_OwnDatabase(true)
+{
+    try {
+        m_LDS_db.Open();
+    } 
+    catch(...)
+    {
+        delete &m_LDS_db;
+        throw;
+    }
+}
+
+CLDS_DataLoader::~CLDS_DataLoader()
+{
+    if (m_OwnDatabase)
+        delete &m_LDS_db;
+}
 
 bool CLDS_DataLoader::GetRecords(const CHandleRangeMap& hrmap,
                                  const EChoice choice)
@@ -164,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/18 18:49:01  kuznets
+ * Implemented new constructor.
+ *
  * Revision 1.1  2003/06/16 15:48:28  kuznets
  * Initial revision.
  *
