@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/06/29 18:54:46  thiessen
+* fix mysterious CRef error in MSVC MT compile mode
+*
 * Revision 1.43  2001/06/29 18:13:58  thiessen
 * initial (incomplete) user annotation system
 *
@@ -1093,12 +1096,12 @@ bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styl
     if (styleDictionary.IsSetStyle_table()) {
         CCn3d_style_dictionary::TStyle_table::const_iterator t, te = styleDictionary.GetStyle_table().end();
         for (t=styleDictionary.GetStyle_table().begin(); t!=te; t++) {
-            int id = t->GetObject().GetId().Get();
+            int id = (*t)->GetId().Get();
             if (userStyles.find(id) != userStyles.end()) {
                 ERR_POST(Error << "repeated style table id in style dictionary");
                 return false;
             } else
-                if (!userStyles[id].LoadSettingsFromASN(t->GetObject().GetStyle())) return false;
+                if (!userStyles[id].LoadSettingsFromASN((*t)->GetStyle())) return false;
         }
     }
     return true;
