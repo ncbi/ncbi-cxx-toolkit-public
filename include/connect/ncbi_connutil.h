@@ -329,8 +329,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
  );
 
 
-/* Delete entries from current user header, if their tags match of those
- * tags passed in "hdr" (regardless of the value, if any, of the latter).
+/* Delete entries from current user header, if their tags match those
+ * passed in "hdr" (regardless of the values, if any, in the latter).
  */
 extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteUserHeader
 (SConnNetInfo* info,
@@ -365,18 +365,23 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *    Content-Length: <content_length>\r\n\r\n
  * If "encode_args" is TRUE then URL-encode the "args".
  * "args" can be NULL/empty -- then the '?' symbol does not get added.
- * The "content_length" is mandatory, and it specifies an exact(!) amount
- * of data that you are planning to sent to the resultant socket.
+ * The "content_length" is mandatory, and it specifies an exact(!) amount of
+ * data that you are planning to send to the resultant socket (0 if none).
  * If string "user_header" is not NULL/empty, then it must be terminated by a
  * single '\r\n'.
- * 
- * On success, return non-NULL handle to a readable & writable NCBI socket.
- * ATTENTION:  due to the very essence of the HTTP connection, you can
+ *
+ * On success, return non-NULL handle of a socket.
+ * ATTENTION:  due to the very essence of the HTTP connection, you may
  *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle.
+ * Returned socket must be closed exipicitly by "ncbi_socket.h:SOCK_Close()"
+ * when no longer needed.
  * On error, return NULL.
  *
- * NOTE: the socket must be closed by "ncbi_sock.h:SOCK_Close()" when not
- *       needed anymore.
+ * NOTE: Returned socket may not be immediately readable/writeable if open
+ *       and/or read/write timeouts were passed as {0,0}, meaning that both
+ *       connection and HTTP header write operation may still be pending in
+ *       the resultant socket. It is responsibility of the application to
+ *       analyze the actual socket state in this case (see "ncbi_socket.h").
  */
 
 extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
@@ -634,6 +639,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2003/05/29 17:56:53  lavr
+ * More (clarified) comments for URL_Connect()
+ *
  * Revision 6.30  2003/05/20 21:24:01  lavr
  * Limit SConnNetInfo::max_try by reasonable "short" value
  *
