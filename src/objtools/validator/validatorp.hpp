@@ -188,6 +188,7 @@ enum EErrType {
     eErr_SEQ_PKG_FeaturePackagingProblem,
     eErr_SEQ_PKG_GenomicProductPackagingProblem,
     eErr_SEQ_PKG_InconsistentMolInfoBiomols,
+    eErr_SEQ_PKG_GraphPackagingProblem,
 
     eErr_SEQ_FEAT_InvalidForType,
     eErr_SEQ_FEAT_PartialProblem,
@@ -870,7 +871,12 @@ public:
 
     void ValidateSeqGraph(const CSeq_graph& graph);
 
+    SIZE_TYPE GetNumMisplacedGraphs(void) const { return m_NumMisplaced; }
+
 private:
+    bool x_IsMisplaced(const CSeq_graph& graph);
+
+    SIZE_TYPE   m_NumMisplaced;
 };
 
 
@@ -911,6 +917,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2003/12/17 19:15:19  shomrat
+* declarations for graph packaging problem test
+*
 * Revision 1.52  2003/12/16 17:34:48  shomrat
 * Added SEQ_INST_SeqLocLength
 *
