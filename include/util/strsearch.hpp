@@ -119,6 +119,24 @@ public:
     ///    word_delimeters are to be used
     void SetWordDelimiters(const string& word_delimeters,
                            bool          invert_delimiters = false);
+
+    /// Add new word delimiters
+    ///
+    /// @param word_delimeters 
+    ///    string of characters used as word delimiters
+    ///
+    void AddDelimiters(const string& word_delimeters);
+
+    /// Add new word delimiter charracter
+    ///
+    /// @param word_delimeters 
+    ///    string of characters used as word delimiters
+    ///
+    void AddDelimiters(char ch);
+
+    /// Init delimiters most common for the English language,
+    /// (whitespaces, punctuations, etc)
+    void InitCommonDelimiters();
     
 
     /// Set word matching mode
@@ -517,6 +535,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/03/04 17:37:38  kuznets
+* CBoyerMooreMatcher added functions to work with different word delimiters
+*
 * Revision 1.14  2004/03/03 17:55:47  kuznets
 * Code cleane up (CBoyerMooreMatcher) to use enums instead of bools,
 * better coverage or different types of whole word matchers

@@ -102,6 +102,59 @@ void CBoyerMooreMatcher::SetWordDelimiters(const string& word_delimeters,
     }
 }
 
+void CBoyerMooreMatcher::AddDelimiters(const string& word_delimeters)
+{
+    if (m_WholeWord == 0) {
+        m_WholeWord = eWholeWordMatch;
+    }
+
+    string word_d = word_delimeters;
+    if (m_CaseSensitive == NStr::eNocase) {
+        NStr::ToUpper(word_d);
+    }
+
+    for (int i = 0; i < sm_AlphabetSize; ++i) {
+        char ch = m_CaseSensitive ? i : toupper(i);
+        string::size_type n = word_d.find_first_of(ch);
+        m_WordDelimiters[i] |= (n != string::npos);
+    }
+}
+
+void CBoyerMooreMatcher::AddDelimiters(char ch)
+{
+    if (m_WholeWord == 0) {
+        m_WholeWord = eWholeWordMatch;
+    }
+    m_WordDelimiters[ch] = true;
+
+    if (m_CaseSensitive == NStr::eNocase) {
+        ch = toupper(ch);
+    }
+    
+    m_WordDelimiters[ch] = true;
+}
+
+void CBoyerMooreMatcher::InitCommonDelimiters()
+{
+    if (m_WholeWord == 0) {
+        m_WholeWord = eWholeWordMatch;
+    }
+
+    string word_d = word_delimeters;
+    if (m_CaseSensitive == NStr::eNocase) {
+        NStr::ToUpper(word_d);
+    }
+
+    for (int i = 0; i < sm_AlphabetSize; ++i) {
+        char ch = m_CaseSensitive ? i : toupper(i);
+        if ((ch >= 'A' && ch <= 'Z') ||
+            (ch >= '0' && ch <= '9') ||
+            (ch == '_')){
+        } else {
+            m_WordDelimiters[i] = true;
+        }
+    }
+}
 
 void CBoyerMooreMatcher::x_InitPattern(void)
 {
@@ -208,6 +261,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/04 17:37:48  kuznets
+* CBoyerMooreMatcher added functions to work with different word delimiters
+*
 * Revision 1.8  2004/03/03 17:56:02  kuznets
 * Code cleane up (CBoyerMooreMatcher) to use enums instead of bools,
 * better coverage or different types of whole word matchers
