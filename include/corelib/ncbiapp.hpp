@@ -260,13 +260,15 @@ public:
     /// Will be the 'name' argument of AppMain if given.
     /// Otherwise will be taken from the actual name of the application file
     /// or argv[0].
-    string GetProgramDisplayName(void) const;
+    const string& GetProgramDisplayName(void) const;
 
     /// Get the application's executable path.
     ///
     /// The path to executable file of this application. 
     /// Return empty string if not possible to determine this path.
-    string GetProgramExecutablePath(void) const;
+    const string& GetProgramExecutablePath(EFollowLinks follow_links
+                                           = eIgnoreLinks)
+        const;
 
 protected:
     /// Disable argument descriptions.
@@ -403,14 +405,17 @@ protected:
     /// Find the application's executable file.
     ///
     /// Find the path and name of the executable file that this application is
-    /// running from. Will be accesible by GetArguments.GetProgramName().
+    /// running from. Will be accessible by GetArguments().GetProgramName().
     /// @param argc	
     ///   Standard argument count "argc".
     /// @param argv
     ///   Standard argument vector "argv".
+    /// @param real_path
+    ///   If non-NULL, will get the fully resolved path to the executable.
     /// @return
-    ///   Name of application's executable file.
-    string FindProgramExecutablePath(int argc, const char* const* argv);
+    ///   Name of application's executable file (may involve symlinks).
+    string FindProgramExecutablePath(int argc, const char* const* argv,
+                                     string* real_path = 0);
 
 private:
     /// Read standard NCBI application configuration settings.
@@ -446,6 +451,7 @@ private:
     char*                      m_CinBuffer;  ///< Cin buffer if changed
     string                     m_ProgramDisplayName;  ///< Display name of app
     string                     m_ExePath;    ///< Program executable path
+    string                     m_RealExePath; ///< Symlink-free executable path
 };
 
 
@@ -486,12 +492,17 @@ inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
     return *m_Config;
 }
 
-inline string  CNcbiApplication::GetProgramDisplayName(void) const {
+inline
+const string& CNcbiApplication::GetProgramDisplayName(void) const {
     return m_ProgramDisplayName;
 }
 
-inline string  CNcbiApplication::GetProgramExecutablePath(void) const {
-    return m_ExePath;
+inline
+const string& CNcbiApplication::GetProgramExecutablePath(EFollowLinks
+                                                         follow_links)
+    const
+{
+    return follow_links == eFollowLinks ? m_RealExePath : m_ExePath;
 }
 
 
@@ -502,6 +513,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/08/09 19:10:17  ucko
+ * GetProgram{DisplayName,ExecutablePath}: return a ref rather than a copy.
+ * {Find,Get}ProgramExecutablePath: make fully resolved paths available too.
+ *
  * Revision 1.42  2004/08/06 11:19:31  ivanov
  * + CNcbiApplication::GetProgramExecutablePath()
  *
