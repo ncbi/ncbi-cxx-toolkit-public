@@ -35,16 +35,40 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CByteSwap --
+///
+/// Class encapsulates byte swapping functions to convert between 
+/// big endian - little endian architectures
+
+class CByteSwap
+{
+public:
+    static Int2 GetInt2(const unsigned char* ptr);
+    static void PutInt2(unsigned char* ptr, Int2 value);
+    static Int4 GetInt4(const unsigned char* ptr);
+    static void PutInt4(unsigned char* ptr, Int4 value);
+    static Int8 GetInt8(const unsigned char* ptr);
+    static void PutInt8(unsigned char* ptr, Int8 value);
+    static float GetFloat(const unsigned char* ptr);
+    static void PutFloat(unsigned char* ptr, float value);
+    static double GetDouble(const unsigned char* ptr);
+    static void PutDouble(unsigned char* ptr, double value);
+};
+
+
+
 
 inline
-Int2 ByteSwapGetInt2(const unsigned char* ptr)
+Int2 CByteSwap::GetInt2(const unsigned char* ptr)
 {
     Int2 ret = (ptr[0] << 8) | (ptr[1]);
     return ret;
 }
 
 inline
-void ByteSwapPutInt2(const unsigned char* ptr, Int2 value)
+void CByteSwap::PutInt2(unsigned char* ptr, Int2 value)
 {
     ptr[0] = (unsigned char)(value >> 8);
     ptr[1] = (unsigned char)(value);
@@ -52,14 +76,14 @@ void ByteSwapPutInt2(const unsigned char* ptr, Int2 value)
 
 
 inline
-Int4 ByteSwapGetInt4(const unsigned char* ptr)
+Int4 CByteSwap::GetInt4(const unsigned char* ptr)
 {
     Int4 ret = (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | (ptr[3]);
     return ret;
 }
 
 inline
-void ByteSwapPutInt4(unsigned char* ptr, Int4 value)
+void CByteSwap::PutInt4(unsigned char* ptr, Int4 value)
 {
     ptr[0] = (unsigned char)(value >> 24);
     ptr[1] = (unsigned char)(value >> 16);
@@ -68,7 +92,7 @@ void ByteSwapPutInt4(unsigned char* ptr, Int4 value)
 }
 
 inline
-Int8 ByteSwapGetInt8(const unsigned char* ptr)
+Int8 CByteSwap::GetInt8(const unsigned char* ptr)
 {
     Int8 ret = (ptr[0] << 56) | 
                (ptr[1] << 48) | 
@@ -82,7 +106,7 @@ Int8 ByteSwapGetInt8(const unsigned char* ptr)
 }
 
 inline
-void ByteSwapPutInt8(unsigned char* ptr, Int8 value)
+void CByteSwap::PutInt8(unsigned char* ptr, Int8 value)
 {
     ptr[0] = (unsigned char)(value >> 56);
     ptr[1] = (unsigned char)(value >> 48);
@@ -96,30 +120,30 @@ void ByteSwapPutInt8(unsigned char* ptr, Int8 value)
 
 
 inline
-float ByteSwapGetFloat(const unsigned char* ptr)
+float CByteSwap::GetFloat(const unsigned char* ptr)
 {
-    Int4 ret = ByteSwapGetInt4(ptr);
+    Int4 ret = CByteSwap::GetInt4(ptr);
     return reinterpret_cast<float>(ret);
 }
 
 inline
-void ByteSwapPutFloat(unsigned char* ptr, float value)
+void CByteSwap::PutFloat(unsigned char* ptr, float value)
 {
-    ByteSwapPutInt4(ptr, reinterpret_cast<Int4>(value));
+    CByteSwap::PutInt4(ptr, reinterpret_cast<Int4>(value));
 }
 
 
 inline
-double ByteSwapGetDouble(const unsigned char* ptr)
+double CByteSwap::GetDouble(const unsigned char* ptr)
 {
-    Int8 ret = ByteSwapGetInt8(ptr);
+    Int8 ret = CByteSwap::GetInt8(ptr);
     return reinterpret_cast<double>(ret);
 }
 
 inline
-void ByteSwapPutDouble(unsigned char* ptr, double value)
+void ByteSwap_PutDouble(unsigned char* ptr, double value)
 {
-    ByteSwapPutInt8(ptr, reinterpret_cast<Int8>(value));
+    ByteSwap_PutInt8(ptr, reinterpret_cast<Int8>(value));
 }
 
 
@@ -129,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/09 14:28:54  kuznets
+ * All functions joined into one CByteSwap class.
+ *
  * Revision 1.1  2003/09/08 20:36:51  kuznets
  * Initial revision
  *
