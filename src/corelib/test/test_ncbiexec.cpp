@@ -86,7 +86,6 @@ int CTest::Run(void)
         NStr::Split(env_path, ":", split);
 #endif
         string pname = GetArguments().GetProgramName();
-        int i = 0;
         ITERATE(list<string>, it, split) {
 #if defined(NCBI_OS_MSWIN)
             pname = CDirEntry(pname).GetBase();
@@ -256,6 +255,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2003/04/08 20:32:40  ivanov
+ * Get rid of an unused variable
+ *
  * Revision 6.14  2003/03/12 16:05:52  ivanov
  * MS Windows: Add extention to the executable file if running without it
  *
