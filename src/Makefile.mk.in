@@ -352,3 +352,7 @@ IMAGE_LIBS    = $(JPEG_LIBS) $(PNG_LIBS) $(TIFF_LIBS) $(GIF_LIBS) $(XPM_LIBS)
 SEQ_LIBS = seq seqcode
 OBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
 	general dbapi_driver xser xcompress z bz2 xconnect xutil xncbi
+# Overlapping with qall is poor, so we have a second macro to make it
+# easier to stay out of trouble.
+QOBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
+	general xcompress z bz2 qall
