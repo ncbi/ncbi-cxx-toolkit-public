@@ -199,10 +199,12 @@
 		</table>
 
 	 <p>
-	 Here, <i>"kM*_*"</i> are constants of relevant fixed-size
-	 integer type. They are guaranteed to be <b>equal</b> to the
+	 Here, the <i>"kM*_*"</i> are constants of relevant fixed-size
+	 integer type. They are <b>guaranteed</b> to be equal to the
 	 appropriate "preprocessor constants" from the old NCBI C
-	 headers(<i>*INT*_M*"</i>).
+	 headers(<i>"INT*_M*"</i>). Please also note that the mentioned
+	 <i>"INT*_M*"</i> are <b>not defined</b> in the C++ headers -- in order
+	 to discourage their use in the C++ code.
 
 
 	 <br></br>
@@ -289,9 +291,9 @@
 	 The only assumption that can be made(and used in your code) is
 	 that <i>"BigScalar"</i> variable has a size which is enough to hold
 	 any integral, floating-point or pointer variable
-	 (like <i>"Int8"</i>, or <i>"double"</i>, or <i>"void*</i>).
+	 like <i>"Int8"</i>, or <i>"double"("long double")</i>, or <i>"void*"</i>.
 	 This type can be useful e.g. to hold a callback data of arbitrary
-	 fundamental type); but, in general, the use of this type is
+	 fundamental type; but, in general, the use of this type is
 	 <b>discouraged</b>.
 
 	 <br></br>
