@@ -36,12 +36,13 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include <fstream>
 #include <string>
 #include <list>
 #include <deque>
-#include <limits>
+//#include <limits>
 
 #include <SpectrumSet.hpp>
 #include <omssa.hpp>
@@ -717,6 +718,9 @@ CSearch::~CSearch()
 
 /*
   $Log$
+  Revision 1.3  2003/10/22 15:03:32  lewisg
+  limits and string compare changed for gcc 2.95 compatibility
+
   Revision 1.2  2003/10/21 21:12:17  lewisg
   reorder headers
 

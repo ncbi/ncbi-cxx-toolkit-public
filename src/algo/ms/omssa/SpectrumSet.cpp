@@ -38,6 +38,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbistr.hpp>
 #include <util/regexp.hpp>
 #include <objects/omssa/MSSpectrum.hpp>
 
@@ -71,7 +72,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA)
 	do {
 	    do {
 		getline(DTA, Line);
-	    } while(Line.compare(0, 4, "<dta") != 0 && DTA && !DTA.eof());
+	    } while(NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
 	    if(!DTA || DTA.eof()) break;
     
 	    MySpectrum = new CMSSpectrum;
@@ -100,7 +101,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA)
 	    getline(DTA, Line);
 	    getline(DTA, Line);
 
-	    while(Line.compare(0, 5, "</dta") != 0) {
+	    while(NStr::Compare(Line, 0, 5, "</dta") != 0) {
 		dummy = 0;
 		CNcbiIstrstream istr(Line.c_str());
 		istr >> dummy;
@@ -166,6 +167,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2003/10/22 15:03:32  lewisg
+ * limits and string compare changed for gcc 2.95 compatibility
+ *
  * Revision 1.3  2003/10/21 21:20:57  lewisg
  * use strstream instead of sstream for gcc 2.95
  *
