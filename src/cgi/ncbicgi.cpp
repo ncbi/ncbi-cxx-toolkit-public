@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/04/28 16:54:42  vasilche
+* Implemented stream input processing for FastCGI applications.
+* Fixed POST request parsing
+*
 * Revision 1.24  1999/04/14 21:01:22  vakatov
 * s_HexChar():  get rid of "::tolower()"
 *
@@ -597,7 +601,7 @@ CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
 }
 
 static void s_ParsePostQuery(const string& contentType, const string& str,
-                         TCgiEntries&  entries)
+                             TCgiEntries&  entries)
 {
     if ( contentType == "application/x-www-form-urlencoded" ) {
         SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
@@ -650,10 +654,19 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
         size_t len = GetContentLength();
         string str;
         str.resize(len);
-        if (!istr->read(&str[0], len)  ||  istr->gcount() != len)
-            throw CParseException("Init CCgiRequest::CCgiRequest -- error "
-                                  "in reading POST content", istr->gcount());
-
+        for ( size_t pos = 0; pos < len; ) {
+            if ( !istr ) {
+                _TRACE_THROW();
+                throw runtime_error("Init CCgiRequest::CCgiRequest -- error in reading POST content: bad stream state");
+            }
+            istr->read(&str[pos], len - pos);
+            size_t count = istr->gcount();
+            if ( count == 0 ) {
+                _TRACE_THROW();
+                throw runtime_error("Init CCgiRequest::CCgiRequest -- error in reading POST content: unexpected EOF");
+            }
+            pos += count;
+        }
         // parse query from the POST content
         s_ParsePostQuery(GetProperty(eCgi_ContentType), str, m_Entries);
     }

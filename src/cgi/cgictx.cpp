@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/04/28 16:54:41  vasilche
+* Implemented stream input processing for FastCGI applications.
+* Fixed POST request parsing
+*
 * Revision 1.1  1999/04/27 14:50:04  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
@@ -49,8 +53,8 @@ BEGIN_NCBI_SCOPE
 // class CCgiContext
 //
 
-CCgiContext::CCgiContext(CCgiApplication& app, int argc, char** argv)
-    : m_app(app), m_request(argc, argv)
+CCgiContext::CCgiContext(CCgiApplication& app, CNcbiIstream* in, CNcbiOstream* out)
+    : m_app(app), m_request(in), m_response(out)
 {
 }
 

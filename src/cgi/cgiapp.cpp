@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/04/28 16:54:40  vasilche
+* Implemented stream input processing for FastCGI applications.
+* Fixed POST request parsing
+*
 * Revision 1.2  1999/04/27 16:11:11  vakatov
 * Moved #define FAST_CGI from inside the "cgiapp.cpp" to "sunpro50.sh"
 *
@@ -87,7 +91,8 @@ int CCgiApplication::Run(void)
         _TRACE("CCgiApplication::Run: FastCGI limited to "
                << iterations << " iterations");
         for ( int iteration = 0; iteration < iterations; ++iteration ) {
-            _TRACE("CCgiApplication::FastCGI: " << iteration << " iteration");
+            _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
+                   << " iteration of " << iterations);
             // obtaining request data
             FCGX_Stream *fin, *fout, *ferr;
             FCGX_ParamArray env;
@@ -111,45 +116,56 @@ int CCgiApplication::Run(void)
                 }
             } 
 
-            // checking for exit request
-            CCgiContext ctx(*this, 1, m_Argv);
-            if ( ctx.GetRequest().GetEntries().find("exitfastcgi") !=
-                 ctx.GetRequest().GetEntries().end() ) {
-                _TRACE("CCgiApplication::Run: aborting by request");
-                FCGX_Finish();
-                break;
-            }
-
-            // preparing output
-            CCgiObuffer buffer(fout);
-            CNcbiOstream out(&buffer);
-            ctx.GetResponse().SetOutput(&out);
-
-            if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
-                ctx.PutMsg("FastCGI: " + NStr::IntToString(iteration) +
-                           " iteration of " + NStr::IntToString(iterations));
-            }
-
-            _TRACE("CCgiApplication::Run: calling ProcessRequest");
             try {
+                CCgiObuffer obuf(fout);
+                CNcbiOstream ostr(&obuf);
+                CCgiIbuffer ibuf(fin);
+                CNcbiIstream istr(&ibuf);
+                CCgiContext ctx(*this, &istr, &ostr);
+
+                // checking for exit request
+                if ( ctx.GetRequest().GetEntries().find("exitfastcgi") !=
+                     ctx.GetRequest().GetEntries().end() ) {
+                    _TRACE("CCgiApplication::Run: aborting by request");
+                    FCGX_Finish();
+                    break;
+                }
+
+                if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
+                    ctx.PutMsg("FastCGI: " +
+                               NStr::IntToString(iteration + 1) +
+                               " iteration of " +
+                               NStr::IntToString(iterations));
+                }
+
+                _TRACE("CCgiApplication::Run: calling ProcessRequest");
                 FCGX_SetExitStatus(ProcessRequest(ctx), fout);
             }
             catch (exception e) {
-                ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());
+                ERR_POST("CCgiApplication::ProcessCGIRequest() failed: "
+                         << e.what());
                 // ignore for next iteration
             }
-            _TRACE("CCgiApplication::Run: flushing");
-            out.flush();
             _TRACE("CCgiApplication::Run: FINISHING");
             FCGX_Finish();
         }
+        _TRACE("CCgiApplication::Run: return");
         return 0;
     }
     else
 #endif
         {
             _TRACE("CCgiApplication::Run: calling ProcessRequest");
-            return ProcessRequest(CCgiContext(*this, m_Argc, m_Argv));
+            if ( m_Argc > 1 && !getenv("QUERY_STRING") ) {
+                string s = string("QUERY_STRING=") + m_Argv[1];
+                putenv(s.c_str());
+            }
+            CCgiContext ctx(*this);
+            int result = ProcessRequest(ctx);
+            _TRACE("CCgiApplication::Run: flushing");
+            ctx.GetResponse().Flush();
+            _TRACE("CCgiApplication::Run: return");
+            return result;
         }
 }
 

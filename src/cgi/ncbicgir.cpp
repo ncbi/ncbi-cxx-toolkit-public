@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/04/28 16:54:43  vasilche
+* Implemented stream input processing for FastCGI applications.
+* Fixed POST request parsing
+*
 * Revision 1.7  1999/02/22 22:45:39  vasilche
 * Fixed map::insert(value_type) usage.
 *
@@ -81,16 +85,14 @@ inline bool s_ZeroTime(const tm& date)
     return ::memcmp(&date, &kZeroTime, sizeof(tm)) == 0;
 }
 
-CCgiResponse::CCgiResponse()
-    : m_RawCgi(false)
-    , m_Output(&NcbiCout)
+CCgiResponse::CCgiResponse(CNcbiOstream* out)
+    : m_RawCgi(false), m_Output(out)
 {
 }
 
 CCgiResponse::CCgiResponse(const CCgiResponse& response)
 {
     *this = response;
-    m_Output = &NcbiCout;
 }
 
 CCgiResponse::~CCgiResponse()
@@ -151,14 +153,15 @@ void CCgiResponse::SetHeaderValue(const string &name, const tm& date)
 
 CNcbiOstream& CCgiResponse::out(void) const
 {
-    if ( !m_Output )
-        throw runtime_error("CCgiResponse: Null output stream");
+    if ( !m_Output ) {
+        return NcbiCout;
+    }
     return *m_Output;
 }
 
 CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
 {
-    if (IsRawCgi() ) {
+    if ( IsRawCgi() ) {
         // Write HTTP status line for raw CGI response
         out << sm_HTTPStatusDefault << NcbiEndl;
     }
