@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.17  2003/06/26 21:30:10  dondosha
+* Removed const from an integral type function parameters
+*
 * Revision 1.16  2003/06/19 18:58:21  dondosha
 * Moved all functions dealing with SeqLocs to blast_seq.h
 *
@@ -173,14 +176,14 @@ extern "C" {
 
 /** BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
  *      Should be moved to blastkar.c (or it's successor) in the future.
- * @param sbp contains fields to be set, should not be NULL. [out]
- * @param scoring_options scoring_options [in]
- * @param program_name used to set fields on sbp [in]
+ * @param sbp Contains fields to be set, should not be NULL. [out]
+ * @param scoring_options Scoring_options [in]
+ * @param program_number Used to set fields on sbp [in]
  *
 */
 Int2
 BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
-const BlastScoringOptionsPtr scoring_options, const Uint1 program_name);
+const BlastScoringOptionsPtr scoring_options, Uint1 program_number);
 
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
@@ -198,7 +201,7 @@ const BlastScoringOptionsPtr scoring_options, const Uint1 program_name);
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
-Int2 BLAST_MainSetUp(const Uint1 program_number,
+Int2 BLAST_MainSetUp(Uint1 program_number,
         const QuerySetUpOptionsPtr qsup_options,
         const BlastScoringOptionsPtr scoring_options,
         const LookupTableOptionsPtr lookup_options,	
