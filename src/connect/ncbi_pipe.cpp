@@ -32,6 +32,21 @@
 #include <memory>
 
 
+#ifdef NCBI_OS_MSWIN
+#   include <windows.h>
+#elif defined NCBI_OS_UNIX
+#   include <unistd.h>
+#   include <errno.h>
+#   if defined (NCBI_OS_DARWIN) && defined (NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS
+#       include <ncbi_mslextras.h>
+#   endif
+#else
+
+#error "Class CPipe is supported only on Windows and Unix"
+
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -47,9 +62,6 @@ BEGIN_NCBI_SCOPE
 // This class is reimplemented in a platform-specific fashion where needed
 //
 #ifdef NCBI_OS_MSWIN
-
-#include <windows.h>
-
 
 class CPipeHandle : public CObject
 {
@@ -292,9 +304,6 @@ size_t CPipeHandle::Write(const void* buf, size_t size) const
 //
 // Unix version of CPipeHandle
 //
-
-#include <unistd.h>
-#include <errno.h>
 
 class CPipeHandle : public CObject
 {
@@ -739,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/04/02 13:29:53  rsmith
+ * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.\
+ *
  * Revision 1.13  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
