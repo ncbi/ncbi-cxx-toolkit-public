@@ -613,7 +613,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         else if (molecule->IsHeterogen())
             generalStyle = &(settings.heterogens);
         else {
-            ERRORMSG("StyleManager::GetAtomStyle() - confused about style settings");
+            ERRORMSG("StyleManager::GetAtomStyle() - confused about molecule/atom classification");
             return false;
         }
     }
@@ -943,9 +943,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         }
 
         // will show half-bonds in trace backbones
-        if (bond->order == Bond::eVirtual) {
+        if (bond->order == Bond::eVirtual)
             isSpecial = true;   // will set up style stuff later
-        }
 
         // otherwise, don't show the bond at all when one atom is hidden
         if (!isSpecial)
@@ -972,20 +971,6 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     // otherwise, need to query atom style to figure bond style parameters
     else {
 
-        // virtual disulfide special rules
-        if (bond->order == Bond::eVirtualDisulfide) {
-
-            if (backboneStyle1->type != StyleSettings::eTrace ||
-                    backboneStyle2->type != StyleSettings::eTrace ||
-                    !globalStyle.virtualDisulfidesOn)
-                BOND_NOT_DISPLAYED;
-
-            bondStyle->end1.color = bondStyle->end2.color = globalStyle.virtualDisulfideColor;
-        } else {
-            bondStyle->end1.color = atomStyle1.color;
-            bondStyle->end2.color = atomStyle2.color;
-        }
-
         const StyleSettings&
             settings1 = GetStyleForResidue(object, atom1.mID, atom1.rID),
             settings2 = GetStyleForResidue(object, atom2.mID, atom2.rID);
@@ -1006,30 +991,41 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         if (!SetBondStyleFromResidueStyle(style2, settings2, &(bondStyle->end2)))
             return false;
 
-        // if this is an alpha virtual bond, turn off each half that's not in trace mode
+        // special handling of alpha virtual bonds
         if (bond->order == Bond::eVirtual) {
-            if (backboneStyle1->type != StyleSettings::eTrace)
+            if (backboneStyle1->type != StyleSettings::eTrace || atomStyle1.style == eNotDisplayed)
                 bondStyle->end1.style = eNotDisplayed;
-            if (backboneStyle2->type != StyleSettings::eTrace)
+            if (backboneStyle2->type != StyleSettings::eTrace || atomStyle1.style == eNotDisplayed)
                 bondStyle->end2.style = eNotDisplayed;
-        }
-
-        // special case: show half-bonds when one of two virtual atoms is hidden
-        if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed) {
-            bondStyle->midCap = true;
-            if (atomStyle1.style == eNotDisplayed)
-                bondStyle->end1.style = eNotDisplayed;
+            if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed)
+                bondStyle->midCap = true;
+            // set worm tension, tighter for smaller protein alpha-helix
+            if (info1->residue->IsAminoAcid())
+                bondStyle->tension = -0.8;
             else
-                bondStyle->end2.style = eNotDisplayed;
+                bondStyle->tension = -0.4;
         }
 
-        // special case for disulfides - no worms
+        // special case coloring and rendering for disulfides
         if (bond->order == Bond::eVirtualDisulfide) {
+            if (backboneStyle1->type != StyleSettings::eTrace || backboneStyle2->type != StyleSettings::eTrace ||
+                !settings1.virtualDisulfidesOn || !settings2.virtualDisulfidesOn)
+                    BOND_NOT_DISPLAYED;
+            // don't use worms for disulfides
             if (bondStyle->end1.style == eLineWormBond) bondStyle->end1.style = eLineBond;
             else if (bondStyle->end1.style == eThickWormBond) bondStyle->end1.style = eCylinderBond;
             if (bondStyle->end2.style == eLineWormBond) bondStyle->end2.style = eLineBond;
             else if (bondStyle->end2.style == eThickWormBond) bondStyle->end2.style = eCylinderBond;
+            bondStyle->end1.color = settings1.virtualDisulfideColor;
+            bondStyle->end2.color = settings2.virtualDisulfideColor;
         }
+
+        // use atom color for all else
+        else {
+            bondStyle->end1.color = atomStyle1.color;
+            bondStyle->end2.color = atomStyle2.color;
+        }
+
 
         // special case for bonds between side chain and residue - make whole bond
         // same style/color as side chain side, and add endCap if atom is of lesser radius
@@ -1096,14 +1092,6 @@ bool StyleManager::GetBondStyle(const Bond *bond,
                 bondStyle->end2.atomCap = true;
 //            if (bondStyle->end2.atomCap)
 //                TRACEMSG("bondStyle->end2.atomCap true at rID " << atom2.rID);
-        }
-
-        // set worm tension, tighter for smaller protein alpha-helix
-        if (bond->order == Bond::eVirtual) {
-            if (info1->residue->IsAminoAcid())
-                bondStyle->tension = -0.8;
-            else
-                bondStyle->tension = -0.4;
         }
     }
 
@@ -1667,6 +1655,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2004/05/27 13:40:50  thiessen
+* more cleanup ; use residue rather than global style for disulfides
+*
 * Revision 1.82  2004/05/26 22:18:42  thiessen
 * fix display of single residues with trace backbone
 *
