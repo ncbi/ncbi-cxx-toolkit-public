@@ -41,6 +41,17 @@
 
 USING_NCBI_SCOPE;
 
+/// Application demonstrating use of CRemoteBlast class.
+///
+/// This application demonstrates use of the Blast4 API to process
+/// searches on the SplitD system.  An options handle and CRemoteBlast
+/// object are created from user specified command line options and
+/// sent to the server.  Data is retrieved when ready, and formatted.
+/// There is considerable framework here to select the type of API and
+/// control available options.  Ordinary usage may in fact be simpler,
+/// particularly if the user is always searching using the same type
+/// of request, for example dicontiguous megablast or blastp.
+
 class CRemote_blastApplication : public CNcbiApplication
 {
 public:
@@ -231,6 +242,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/09 16:07:04  bealer
+ * - Document application class.
+ *
  * Revision 1.2  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
