@@ -89,6 +89,7 @@ int CDbapiTest::Run()
 
     CArgs args = GetArgs();
 
+
     try {
     
         CDriverManager &dm = CDriverManager::GetInstance();
@@ -123,7 +124,7 @@ int CDbapiTest::Run()
 
     
         IStatement *stmt = conn->CreateStatement();
-        
+
         string sql = "select int_val, fl_val, date_val, str_val from SelectSample";
         NcbiCout << "Testing simple select..." << endl
                  << sql << endl;
@@ -146,18 +147,20 @@ int CDbapiTest::Run()
                              << rs->GetVariant(4).GetString()
                              << endl;
                 } 
+				
             }
         }
 
         NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
 
 
-        //stmt->Close();
+        //delete stmt;
+
 
         // create a stored procedure
         sql = "if exists( select * from sysobjects \
 where name = 'SampleProc' \
-AND user_name(uid) = 'dbo' AND type = 'P') \
+AND type = 'P') \
 begin \
 	drop proc SampleProc \
 end";
@@ -179,7 +182,7 @@ end";
         // call stored procedure
         NcbiCout << "Calling stored procedure..." << endl;
         
-        float f = 2.999;
+        float f = 2.999f;
         
         ICallableStatement *cstmt = conn->PrepareCall("SampleProc", 2);
         cstmt->SetParam(CVariant(5), "@id");
@@ -260,7 +263,7 @@ from SelectSample where int_val = 1");
         NcbiCout << "Creating BlobSample table..." << endl;
         sql = "if exists( select * from sysobjects \
 where name = 'BlobSample' \
-AND user_name(uid) = 'dbo' AND type = 'U') \
+AND type = 'U') \
 begin \
 	drop table BlobSample \
 end";
@@ -387,10 +390,12 @@ from BlobSample where id = 1");
         stmt->ExecuteUpdate(sql);
         NcbiCout << "Done." << endl;
 
+
     }
     catch(exception& e) {
         NcbiCout << e.what() << endl;
     }
+
     return 0;
 }
 
@@ -408,6 +413,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/09/19 14:38:49  kholodov
+* Modified: to work with ODBC driver
+*
 * Revision 1.2  2002/09/17 21:17:15  kholodov
 * Filed moved to new location
 *
