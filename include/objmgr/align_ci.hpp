@@ -97,7 +97,7 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Align))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -107,7 +107,7 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Align))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -124,7 +124,7 @@ inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Align))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -141,7 +141,7 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Align))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -177,6 +177,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/02/11 22:19:23  grichenk
+* Fixed annot type initialization in iterators
+*
 * Revision 1.25  2004/02/05 19:53:39  grichenk
 * Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
 *

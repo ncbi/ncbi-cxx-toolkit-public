@@ -104,7 +104,7 @@ CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Ftable))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -114,7 +114,7 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Ftable))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -131,7 +131,7 @@ CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot)
 CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Ftable))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -148,7 +148,7 @@ CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry)
 CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Ftable))
+                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/02/11 22:19:24  grichenk
+* Fixed annot type initialization in iterators
+*
 * Revision 1.26  2004/02/05 19:53:40  grichenk
 * Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
 *

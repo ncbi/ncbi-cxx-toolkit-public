@@ -281,6 +281,9 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& IncludeFeatSubtype(TFeatSubtype subtype);
     SAnnotSelector& ExcludeFeatSubtype(TFeatSubtype subtype);
 
+    // Set type if not set yet, else do nothing.
+    SAnnotSelector& CheckAnnotType(TAnnotType type);
+
     // Return true if at least one subtype of the type is included
     // or selected type is not set (any).
     bool IncludedAnnotType(TAnnotType type) const;
@@ -491,6 +494,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/02/11 22:19:23  grichenk
+* Fixed annot type initialization in iterators
+*
 * Revision 1.25  2004/02/05 19:53:39  grichenk
 * Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
 *

@@ -408,6 +408,16 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
 }
 
 
+SAnnotSelector& SAnnotSelector::CheckAnnotType(TAnnotType type)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set) {
+        SetAnnotType(type);
+    }
+    _ASSERT(GetAnnotType() == type);
+    return *this;
+}
+
+
 bool SAnnotSelector::IncludedAnnotType(TAnnotType type) const
 {
     if (m_AnnotTypesSet.size() > 0) {
@@ -470,6 +480,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/02/11 22:19:24  grichenk
+* Fixed annot type initialization in iterators
+*
 * Revision 1.7  2004/02/05 19:53:40  grichenk
 * Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
 *
