@@ -57,9 +57,11 @@ public:
                       size_t x, size_t y, size_t w, size_t h);
 
     // write images to file in PNG format
-    void WriteImage(const CImage& image, const string& file);
     void WriteImage(const CImage& image, const string& file,
-                    size_t x, size_t y, size_t w, size_t h);
+                    CImageIO::ECompress compress);
+    void WriteImage(const CImage& image, const string& file,
+                    size_t x, size_t y, size_t w, size_t h,
+                    CImageIO::ECompress compress);
 
 };
 
@@ -68,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

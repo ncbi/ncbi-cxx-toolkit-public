@@ -183,14 +183,14 @@ CImage* CImageIO::ReadSubImage(const string& file,
 // write an image to disk
 //
 bool CImageIO::WriteImage(const CImage& image, const string& file,
-                          EType type)
+                          EType type, ECompress compress)
 {
     try {
         if (type == eUnknown) {
             type = GetTypeFromFileName(file);
         }
         CRef<CImageIOHandler> handler(x_GetHandler(type));
-        handler->WriteImage(image, file);
+        handler->WriteImage(image, file, compress);
         return true;
     }
     catch (CImageException& e) {
@@ -206,15 +206,16 @@ bool CImageIO::WriteImage(const CImage& image, const string& file,
 // write part of an image to disk
 //
 bool CImageIO::WriteSubImage(const CImage& image,
-                             const string& file, EType type,
-                             size_t x, size_t y, size_t w, size_t h)
+                             const string& file,
+                             size_t x, size_t y, size_t w, size_t h,
+                             EType type, ECompress compress)
 {
     try {
         if (type == eUnknown) {
             type = GetTypeFromFileName(file);
         }
         CRef<CImageIOHandler> handler(x_GetHandler(type));
-        handler->WriteImage(image, file, x, y, w, h);
+        handler->WriteImage(image, file, x, y, w, h, compress);
         return true;
     }
     catch (CImageException& e) {
@@ -264,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

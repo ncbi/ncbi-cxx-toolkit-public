@@ -110,26 +110,26 @@ CImage* CImageIOGif::ReadImage(const string& file)
 
             if (fp->Image.Interlace) {
                 // interlaced images are a bit more complex
-                 size_t row = fp->Image.Top;
-                 size_t col = fp->Image.Left;
-                 size_t wid = fp->Image.Width;
-                 size_t ht  = fp->Image.Height;
+                size_t row = fp->Image.Top;
+                size_t col = fp->Image.Left;
+                size_t wid = fp->Image.Width;
+                size_t ht  = fp->Image.Height;
 
-                 static int interlaced_offs[4] = { 0, 4, 2, 1 };
-                 static int interlaced_jump[4] = { 8, 8, 4, 2 };
-                 for (size_t i = 0;  i < 4;  ++i) {
-                     for (size_t j = row + interlaced_offs[i];
-                          j < row + ht;  j += interlaced_jump[i]) {
-                         x_ReadLine(fp, row_ptr);
-                         x_UnpackData(fp, row_ptr,
-                                      image->SetData() +
-                                      (j * wid + col) * image->GetDepth());
-                     }
-                 }
+                static int interlaced_offs[4] = { 0, 4, 2, 1 };
+                static int interlaced_jump[4] = { 8, 8, 4, 2 };
+                for (size_t i = 0;  i < 4;  ++i) {
+                    for (size_t j = row + interlaced_offs[i];
+                         j < row + ht;  j += interlaced_jump[i]) {
+                        x_ReadLine(fp, row_ptr);
+                        x_UnpackData(fp, row_ptr,
+                                     image->SetData() +
+                                     (j * wid + col) * image->GetDepth());
+                    }
+                }
             } else {
-                 size_t col = fp->Image.Left;
-                 size_t wid = fp->Image.Width;
-                 size_t ht  = fp->Image.Height;
+                size_t col = fp->Image.Left;
+                size_t wid = fp->Image.Width;
+                size_t ht  = fp->Image.Height;
 
                 for (size_t i = 0;  i < ht;  ++i) {
                     x_ReadLine(fp, row_ptr);
@@ -198,7 +198,8 @@ CImage* CImageIOGif::ReadImage(const string& file,
 // WriteImage()
 // this writes out a GIF image.
 //
-void CImageIOGif::WriteImage(const CImage& image, const string& file)
+void CImageIOGif::WriteImage(const CImage& image, const string& file,
+                             CImageIO::ECompress)
 {
     if ( !image.GetData() ) {
         string msg("CImageIOGif::WriteImage(): "
@@ -364,10 +365,11 @@ void CImageIOGif::WriteImage(const CImage& image, const string& file)
 // simply quantizing just the sub-image's data
 //
 void CImageIOGif::WriteImage(const CImage& image, const string& file,
-                             size_t x, size_t y, size_t w, size_t h)
+                             size_t x, size_t y, size_t w, size_t h,
+                             CImageIO::ECompress compress)
 {
     CRef<CImage> subimage(image.GetSubImage(x, y, w, h));
-    WriteImage(*subimage, file);
+    WriteImage(*subimage, file, compress);
 }
 
 
@@ -433,7 +435,8 @@ CImage* CImageIOGif::ReadImage(const string&,
 }
 
 
-void CImageIOGif::WriteImage(const CImage&, const string&)
+void CImageIOGif::WriteImage(const CImage&, const string&,
+                             CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOGif::WriteImage(): GIF format write unimplemented");
@@ -441,7 +444,8 @@ void CImageIOGif::WriteImage(const CImage&, const string&)
 
 
 void CImageIOGif::WriteImage(const CImage&, const string&,
-                             size_t, size_t, size_t, size_t)
+                             size_t, size_t, size_t, size_t,
+                             CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOGif::WriteImage(): GIF format partial "
@@ -456,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.3  2003/07/01 12:08:44  dicuccio
  * Compilation fixes for MSVC
  *

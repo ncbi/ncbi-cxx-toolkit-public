@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <util/image/image_io.hpp>
 #include <string>
 
 BEGIN_NCBI_SCOPE
@@ -59,9 +60,11 @@ public:
                               size_t x, size_t y, size_t w, size_t h) = 0;
 
     // write images to file in HANDLER format
-    virtual void WriteImage(const CImage& image, const string& file) = 0;
     virtual void WriteImage(const CImage& image, const string& file,
-                            size_t x, size_t y, size_t w, size_t h) = 0;
+                            CImageIO::ECompress compress) = 0;
+    virtual void WriteImage(const CImage& image, const string& file,
+                            size_t x, size_t y, size_t w, size_t h,
+                            CImageIO::ECompress compress) = 0;
 
 };
 
@@ -71,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

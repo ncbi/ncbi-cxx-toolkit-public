@@ -102,7 +102,7 @@ CImage* CImageIOJpeg::ReadImage(const string& file)
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
     fclose(fp);
-    
+
     return image.Release();
 }
 
@@ -207,7 +207,8 @@ CImage* CImageIOJpeg::ReadImage(const string& file,
 // write an image to a file in JPEG format
 // This version writes the entire image
 //
-void CImageIOJpeg::WriteImage(const CImage& image, const string& file)
+void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
+                              CImageIO::ECompress compress)
 {
     // open our file for writing
     FILE* fp = fopen(file.c_str(), "wb");
@@ -231,6 +232,27 @@ void CImageIOJpeg::WriteImage(const CImage& image, const string& file)
     cinfo.input_components = image.GetDepth();
     cinfo.in_color_space   = JCS_RGB;
     jpeg_set_defaults(&cinfo);
+
+    // set our compression quality
+    int quality = 70;
+    switch (compress) {
+    case CImageIO::eCompress_None:
+        quality = 100;
+        break;
+    case CImageIO::eCompress_Low:
+        quality = 90;
+        break;
+    case CImageIO::eCompress_Medium:
+        quality = 70;
+        break;
+    case CImageIO::eCompress_High:
+        quality = 40;
+        break;
+    default:
+        LOG_POST(Error << "unknown compression type: " << (int)compress);
+        break;
+    }
+    jpeg_set_quality(&cinfo, quality, TRUE);
 
     // begin compression
     jpeg_start_compress(&cinfo, true);
@@ -257,7 +279,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, const string& file)
 // This version writes only a subpart of the image
 //
 void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
-                              size_t x, size_t y, size_t w, size_t h)
+                              size_t x, size_t y, size_t w, size_t h,
+                              CImageIO::ECompress compress)
 {
     // validate our image position as inside the image we've been passed
     if (x >= image.GetWidth()  ||  y >= image.GetHeight()) {
@@ -303,6 +326,27 @@ void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
     cinfo.input_components = image.GetDepth();
     cinfo.in_color_space   = JCS_RGB;
     jpeg_set_defaults(&cinfo);
+
+    // set our compression quality
+    int quality = 70;
+    switch (compress) {
+    case CImageIO::eCompress_None:
+        quality = 100;
+        break;
+    case CImageIO::eCompress_Low:
+        quality = 90;
+        break;
+    case CImageIO::eCompress_Medium:
+        quality = 70;
+        break;
+    case CImageIO::eCompress_High:
+        quality = 40;
+        break;
+    default:
+        LOG_POST(Error << "unknown compression type: " << (int)compress);
+        break;
+    }
+    jpeg_set_quality(&cinfo, quality, TRUE);
 
     // begin compression
     jpeg_start_compress(&cinfo, true);
@@ -355,7 +399,8 @@ CImage* CImageIOJpeg::ReadImage(const string& file,
 }
 
 
-void CImageIOJpeg::WriteImage(const CImage& image, const string& file)
+void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
+                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOJpeg::WriteImage(): JPEG format not supported");
@@ -363,7 +408,8 @@ void CImageIOJpeg::WriteImage(const CImage& image, const string& file)
 
 
 void CImageIOJpeg::WriteImage(const CImage& image, const string& file,
-                              size_t, size_t, size_t, size_t)
+                              size_t, size_t, size_t, size_t,
+                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOJpeg::WriteImage(): JPEG format not supported");
@@ -379,6 +425,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.3  2003/10/02 15:37:33  ivanov
  * Get rid of compilation warnings
  *

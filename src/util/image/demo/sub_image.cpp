@@ -111,7 +111,8 @@ int CImageTestApp::Run(void)
              << ", " << y+h << ") in " << read_time << " seconds");
 
     if (args["out"]) {
-        CImageIO::WriteImage(*image, args["out"].AsString(), CImageIO::eJpeg);
+        CImageIO::WriteImage(*image, args["out"].AsString(),
+                             CImageIO::eJpeg);
         double write_time = sw.Elapsed();
         LOG_POST(Info << "wrote image in " << write_time - read_time
                  << " seconds");
@@ -148,6 +149,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:14  dicuccio
  * Initial revision of image library
  *

@@ -299,7 +299,8 @@ CImage* CImageIOPng::ReadImage(const string& file,
 // write an image to a file in PNG format
 // This version writes the entire image
 //
-void CImageIOPng::WriteImage(const CImage& image, const string& file)
+void CImageIOPng::WriteImage(const CImage& image, const string& file,
+                             CImageIO::ECompress compress)
 {
     // make sure we've got an image
     if ( !image.GetData() ) {
@@ -355,6 +356,27 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file)
                  PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_BASE,
                  PNG_FILTER_TYPE_BASE);
+
+    // set our compression quality
+    switch (compress) {
+    case CImageIO::eCompress_None:
+        png_set_compression_level(png_ptr, Z_NO_COMPRESSION);
+        break;
+    case CImageIO::eCompress_Low:
+        png_set_compression_level(png_ptr, Z_BEST_SPEED);
+        break;
+    case CImageIO::eCompress_Medium:
+        png_set_compression_level(png_ptr, Z_DEFAULT_COMPRESSION);
+        break;
+    case CImageIO::eCompress_High:
+        png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
+        break;
+    default:
+        LOG_POST(Error << "unknown compression type: " << (int)compress);
+        break;
+    }
+
+    // now, write!
     png_write_info(png_ptr, info_ptr);
 
     // write our image, line-by-line
@@ -380,7 +402,8 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file)
 // This version writes only a subpart of the image
 //
 void CImageIOPng::WriteImage(const CImage& image, const string& file,
-                              size_t x, size_t y, size_t w, size_t h)
+                             size_t x, size_t y, size_t w, size_t h,
+                             CImageIO::ECompress compress)
 {
     // make sure we've got an image
     if ( !image.GetData() ) {
@@ -447,6 +470,27 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file,
                  PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_BASE,
                  PNG_FILTER_TYPE_BASE);
+
+    // set our compression quality
+    switch (compress) {
+    case CImageIO::eCompress_None:
+        png_set_compression_level(png_ptr, Z_NO_COMPRESSION);
+        break;
+    case CImageIO::eCompress_Low:
+        png_set_compression_level(png_ptr, Z_BEST_SPEED);
+        break;
+    case CImageIO::eCompress_Medium:
+        png_set_compression_level(png_ptr, Z_DEFAULT_COMPRESSION);
+        break;
+    case CImageIO::eCompress_High:
+        png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
+        break;
+    default:
+        LOG_POST(Error << "unknown compression type: " << (int)compress);
+        break;
+    }
+
+    // now, write!
     png_write_info(png_ptr, info_ptr);
 
     // we plan to march through only part of our image
@@ -489,14 +533,15 @@ CImage* CImageIOPng::ReadImage(const string& file)
 
 
 CImage* CImageIOPng::ReadImage(const string& file,
-                                size_t, size_t, size_t, size_t)
+                               size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOPng::ReadImage(): PNG format not supported");
 }
 
 
-void CImageIOPng::WriteImage(const CImage& image, const string& file)
+void CImageIOPng::WriteImage(const CImage& image, const string& file,
+                             CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOPng::WriteImage(): PNG format not supported");
@@ -504,7 +549,8 @@ void CImageIOPng::WriteImage(const CImage& image, const string& file)
 
 
 void CImageIOPng::WriteImage(const CImage& image, const string& file,
-                              size_t, size_t, size_t, size_t)
+                             size_t, size_t, size_t, size_t,
+                             CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOPng::WriteImage(): PNG format not supported");
@@ -519,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

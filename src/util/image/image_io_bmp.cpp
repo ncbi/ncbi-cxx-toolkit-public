@@ -42,21 +42,23 @@ CImage* CImageIOBmp::ReadImage(const string&)
 }
 
 CImage* CImageIOBmp::ReadImage(const string&,
-                                size_t, size_t, size_t, size_t)
+                               size_t, size_t, size_t, size_t)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOBmp::ReadImage(): BMP format partial "
                "read unimplemented");
 }
 
-void CImageIOBmp::WriteImage(const CImage&, const string&)
+void CImageIOBmp::WriteImage(const CImage&, const string&,
+                             CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOBmp::WriteImage(): BMP format write unimplemented");
 }
 
 void CImageIOBmp::WriteImage(const CImage&, const string&,
-                              size_t, size_t, size_t, size_t)
+                             size_t, size_t, size_t, size_t,
+                             CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOBmp::WriteImage(): BMP format partial "
@@ -69,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

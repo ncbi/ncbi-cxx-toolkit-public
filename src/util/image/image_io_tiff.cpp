@@ -119,7 +119,8 @@ CImage* CImageIOTiff::ReadImage(const string& file,
 // WriteImage()
 // write an image to a file in TIFF format
 //
-void CImageIOTiff::WriteImage(const CImage& image, const string& file)
+void CImageIOTiff::WriteImage(const CImage& image, const string& file,
+                              CImageIO::ECompress)
 {
     if ( !image.GetData() ) {
         NCBI_THROW(CImageException, eWriteError,
@@ -164,10 +165,11 @@ void CImageIOTiff::WriteImage(const CImage& image, const string& file)
 // out.
 //
 void CImageIOTiff::WriteImage(const CImage& image, const string& file,
-                              size_t x, size_t y, size_t w, size_t h)
+                              size_t x, size_t y, size_t w, size_t h,
+                              CImageIO::ECompress compress)
 {
     CRef<CImage> subimage(image.GetSubImage(x, y, w, h));
-    WriteImage(*subimage, file);
+    WriteImage(*subimage, file, compress);
 }
 
 
@@ -199,7 +201,8 @@ CImage* CImageIOTiff::ReadImage(const string&,
 }
 
 
-void CImageIOTiff::WriteImage(const CImage&, const string&)
+void CImageIOTiff::WriteImage(const CImage&, const string&,
+                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOTiff::WriteImage(): TIFF format not supported");
@@ -207,7 +210,8 @@ void CImageIOTiff::WriteImage(const CImage&, const string&)
 
 
 void CImageIOTiff::WriteImage(const CImage&, const string&,
-                              size_t, size_t, size_t, size_t)
+                              size_t, size_t, size_t, size_t,
+                              CImageIO::ECompress)
 {
     NCBI_THROW(CImageException, eUnsupported,
                "CImageIOTiff::WriteImage(): TIFF format not supported");
@@ -222,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/03 15:19:57  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *

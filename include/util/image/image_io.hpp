@@ -65,7 +65,20 @@ public:
         ePng,
         eSgi,
         eTiff,
-        eXpm
+        eXpm,
+        eRaw
+    };
+
+    // enumerated list of compression grades
+    enum ECompress {
+        eCompress_None,
+        eCompress_Low,
+        eCompress_Medium,
+        eCompress_High,
+
+        eCompress_Min     = eCompress_None,
+        eCompress_Max     = eCompress_High,
+        eCompress_Default = eCompress_Medium,
     };
 
     // retrieve an image type from its magic number
@@ -86,12 +99,15 @@ public:
     // write an image to a file in a specified format.  If the format type is
     // eUnknown, it will be guessed from the file extension.
     static bool WriteImage(const CImage& image, const string& file,
-                           EType type = eUnknown);
+                           EType type = eUnknown,
+                           ECompress compress = eCompress_Default);
 
     // write only part of an image to a file
     static bool WriteSubImage(const CImage& image,
-                              const string& file, EType type,
-                              size_t x, size_t y, size_t w, size_t h);
+                              const string& file,
+                              size_t x, size_t y, size_t w, size_t h,
+                              EType type = eUnknown,
+                              ECompress compress = eCompress_Default);
 
 private:
 
@@ -105,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/03 15:17:29  dicuccio
+ * Added optional compression parameter
+ *
  * Revision 1.3  2003/08/27 16:44:32  ivanov
  * Changed class export specifier to NCBI_XIMAGE_EXPORT
  *
