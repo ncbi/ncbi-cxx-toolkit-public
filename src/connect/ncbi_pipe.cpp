@@ -54,6 +54,8 @@ BEGIN_NCBI_SCOPE
 
 // Default buffer size for CPipe-based iostream.
 const streamsize CPipeIOStream::kDefaultBufferSize = 4096;
+// Sleep time for timeouts
+const unsigned int kSleepTime = 100;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -87,9 +89,6 @@ static string s_FormatErrorMessage(const string& where, const string& what)
 //
 
 #if defined(NCBI_OS_MSWIN)
-
-const DWORD kSleepTime = 100;  // sleep time for timeouts
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -767,61 +766,62 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     if (m_Pid == -1) {
         return eIO_Closed;
     }
-//?????
-///    if (kill(0, m_Pid);
-/*
-0  running;
--1, errno = ESRCH no process
--1, errno = EPERM running
-other - trouble
 
-     If close() is interrupted by a signal that is to be  caught,
-     it  will  return -1 with errno set to EINTR and the state of
-     fildes is unspecified.
+    unsigned long x_timeout = 1;
+    int           x_options = 0;
+    int           x_exitcode;
+    EIO_Status    status    = eIO_Unknown;
 
-     When all file descriptors associated with  a  pipe  or  FIFO
-     special  file  are closed, any data remaining in the pipe or
-     FIFO will be discarded.
-     If fildes is associated with one end of  a  pipe,  the  last
-     close()  causes  a  hangup  to occur on the other end of the
-     pipe.  In addition, if the other end of the  pipe  has  been
-     named by fattach(3C), then the last close() forces the named
-     end to be detached by fdetach(3C).  If the named end has  no
-    open  file descriptors associated with it and gets detached,
-     the STREAM associated with that end is also dismantled.
-
-RETURN VALUES
-     Upon successful completion, 0 is returned. Otherwise, -1  is
-     returned and errno is set to indicate the error.
-
-ERRORS
-     The close() function will fail if:
-     EINTR The close() function was interrupted by a signal.
-
-
-*/  
-    EIO_Status status = eIO_Unknown;
-
-    int x_exitcode = -1;
-    if ( waitpid(m_Pid, &x_exitcode, 0) == -1 ) {
-        x_exitcode = -1;
-    } else {
-        x_exitcode = WEXITSTATUS(x_exitcode);
+    // If timeout is not infinite
+    if ( timeout ) {
+        x_timeout = (timeout->sec * 1000) + (timeout->usec / 1000);
+        x_options = WNOHANG;
     }
-    if ( m_ChildStdIn  != -1 ) {
-        close(m_ChildStdIn);
-    }
-    if ( m_ChildStdOut != -1 ) {
-        close(m_ChildStdOut);
-    }
-    if ( m_ChildStdErr != -1 ) {
-        close(m_ChildStdErr);
-    }
-    m_Pid = m_ChildStdIn = m_ChildStdOut = m_ChildStdErr = -1;
-    status = eIO_Success;
 
+    // Retry if interrupted by signal
+    for (;;) {
+        pid_t ws = waitpid(m_Pid, &x_exitcode, x_options);
+        if (ws > 0) {
+            // Process is terminated
+            status = eIO_Success;
+            break;
+        } else if (ws == 0) {
+            // Process is still running
+            assert(timeout);
+            if ( !x_timeout ) {
+                status = eIO_Timeout;
+                break;
+            }
+            unsigned long x_sleep = kSleepTime;
+            if (x_timeout < kSleepTime) {
+                x_sleep = x_timeout;
+            }
+            x_timeout -= x_sleep;
+            SleepMilliSec(x_sleep);
+        } else {
+            // Some error
+            if (errno != EINTR) {
+                break;
+            }
+        }
+    }
+
+    // Is still runing? Nothing to do.
+    if (status != eIO_Timeout) {
+        if ( m_ChildStdIn  != -1 ) {
+            close(m_ChildStdIn);
+        }
+        if ( m_ChildStdOut != -1 ) {
+            close(m_ChildStdOut);
+        }
+        if ( m_ChildStdErr != -1 ) {
+            close(m_ChildStdErr);
+        }
+        m_Pid = m_ChildStdIn = m_ChildStdOut = m_ChildStdErr = -1;
+    }
     if ( exitcode ) {
-        *exitcode = x_exitcode;
+        // Get real exit code or -1 on error
+        *exitcode = (status == eIO_Success) ? WEXITSTATUS(x_exitcode) : -1;
     }
     return status;
 }
@@ -894,6 +894,19 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             }
             int x_errno = errno;
 
+            if (x_errno == 0) {
+                status = eIO_Closed;
+                break;      
+            }
+
+#  if defined(NCBI_OS_LINUX)
+            // Linux workaround: 
+            // read() returns ESPIPE if a second pipe end is closed.
+            if (x_errno == ESPIPE) {
+                status = eIO_Closed;
+                break;      
+            }
+#  endif
             // Blocked -- wait for data to come;  exit if timeout/error
             if (x_errno == EAGAIN) {
                 status = Select(fd, eIO_Read, timeout);
@@ -904,6 +917,8 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
             }
 
             if (x_errno != EINTR) {
+                cout << x_errno << endl;
+                cout.flush();
                 throw "Failed to read data from the pipe";
             }
         }
@@ -947,6 +962,10 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
             }
             int x_errno = errno;
 
+            if (x_errno == 0) {
+                status = eIO_Closed;
+                break;      
+            }
             // Blocked -- wait for data to come;  exit if timeout/error
             if (x_errno == EAGAIN) {
                 status = Select(m_ChildStdIn, eIO_Read, timeout);
@@ -1396,6 +1415,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/09/03 20:53:02  ivanov
+ * UNIX CPipeHandle::Read(): Added workaround for Linux -- read() returns ESPIPE
+ * if a second pipe end is closed.
+ * UNIX CPipeHandle::Close(): Implemented close timeout handling.
+ *
  * Revision 1.25  2003/09/03 14:35:59  ivanov
  * Fixed previous accidentally commited log message
  *
