@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 
 static CMutex s_DiagMutex;
 
-#ifdef NCBI_POSIX_THREADS
+#if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
 #include <unistd.h> // for pthread_atfork()
 extern "C" {
     static void s_NcbiDiagPreFork(void)  { s_DiagMutex.Lock();   }
@@ -71,7 +71,7 @@ class CDiagRecycler {
 public:
     CDiagRecycler(void)
     {
-#ifdef NCBI_POSIX_THREADS
+#if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
         pthread_atfork(s_NcbiDiagPreFork,   // before
                        s_NcbiDiagPostFork,  // after in parent
                        s_NcbiDiagPostFork); // after in child
@@ -665,6 +665,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.53  2002/05/14 16:47:27  ucko
+ * Conditionalize usage of pthread_atfork, which doesn't seem to exist at
+ * all on FreeBSD.
+ *
  * Revision 1.52  2002/05/03 14:29:17  ucko
  * #include <unistd.h> for pthread_atfork(); the other headers do not
  * necessarily already include it.
