@@ -293,6 +293,17 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
              CProjKey(CProjKey::eDll, dll->m_ID),
              CProjKey(CProjKey::eLib, lib.m_ID) );
     }
+    // Inline files - also register them
+    ITERATE(list<string>, p, collector.InlineFiles()) {
+        const string& rel_path = *p;
+        string abs_path = 
+            CDirEntry::ConcatPath(lib_context.ProjectDir(), rel_path);
+        abs_path = CDirEntry::NormalizePath(abs_path);
+        GetApp().GetDllFilesDistr().RegisterInline
+            (abs_path,
+             CProjKey(CProjKey::eDll, dll->m_ID),
+             CProjKey(CProjKey::eLib, lib.m_ID) );
+    }
 
     // Depends
     ITERATE(list<CProjKey>, p, lib.m_Depends) {
@@ -522,6 +533,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/05/26 17:58:03  gorelenk
+ * Changed implementation of s_AddProjItemToDll - added registration of
+ * inline source files.
+ *
  * Revision 1.15  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
