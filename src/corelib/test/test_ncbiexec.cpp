@@ -202,7 +202,7 @@ int main(int argc, const char* argv[], const char* envp[])
             if (!ptr || !*ptr) {
                 cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
                 cout.flush();
-                exit(1);
+                exit(88);
             } else {
                 cout << "TEST_NCBI_EXEC=" << ptr << endl;
             }
@@ -217,6 +217,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2002/07/25 15:53:06  ivanov
+ * Changed exit code for failed test
+ *
  * Revision 6.7  2002/07/23 20:34:22  ivanov
  * Added more info to debug output
  *
