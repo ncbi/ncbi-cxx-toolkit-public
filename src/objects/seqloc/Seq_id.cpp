@@ -452,19 +452,13 @@ void CSeq_id::WriteAsFasta(ostream& out)
 //SeqIdFastAConstructors
 CSeq_id::CSeq_id( const string& the_id )
 {
-    // Create an istrstream on string the_id
-    std::istrstream  myin(the_id.c_str() );
-
-    string the_type_in, acc_in, name_in, version_in, release_in;
-
-    // Read the part of the_id up to the vertical bar ( "|" )
     // If no vertical bar, tries to interpret the string as a pure
     // accession, inferring the type from the initial letter(s).
-    if ( !getline(myin, the_type_in, '|') ) {
-        SIZE_TYPE dot = the_id.find('.');
-        acc_in = the_id.substr(0, dot);
-        EAccessionInfo info = IdentifyAccession(acc_in);
-        int ver = 0;
+    if (the_id.find('|') == NPOS) {
+        SIZE_TYPE      dot    = the_id.find('.');
+        string         acc_in = the_id.substr(0, dot);
+        EAccessionInfo info   = IdentifyAccession(acc_in);
+        int            ver    = 0;
         if (dot != NPOS) {
             ver = NStr::StringToNumeric(the_id.substr(dot + 1));
         }
@@ -474,6 +468,13 @@ CSeq_id::CSeq_id( const string& the_id )
         return;
     }
 
+    // Create an istrstream on string the_id
+    std::istrstream  myin(the_id.c_str() );
+
+    string the_type_in, acc_in, name_in, version_in, release_in;
+
+    // Read the part of the_id up to the vertical bar ( "|" )
+    getline(myin, the_type_in, '|');
     // Remove spaces from front and back of the_type_in
     string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
    
@@ -818,6 +819,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.34  2002/09/23 16:43:46  ucko
+ * Change check for absence of '|' to use string::find.
+ *
  * Revision 6.33  2002/09/20 19:55:29  ucko
  * +BY (eAcc_ddbj_est)
  *
