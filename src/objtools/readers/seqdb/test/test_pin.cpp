@@ -447,7 +447,8 @@ int test1(int argc, char ** argv)
         
 #if defined(NCBI_OS_UNIX)
         if ((s == "-bs9") ||
-            (s == "-bs10")) {
+            (s == "-bs10") ||
+            (s == "-bs-gi")) {
             // These require: -lncbitool -lz -lncbiobj -lncbi
             
             //const char * dbname1 = "nr";
@@ -460,6 +461,13 @@ int test1(int argc, char ** argv)
                 //dbname1 = "nr";
                 //gi = 129291;
                 gi = 2501325;
+            }
+            
+            if ((s == "-bs-gi") && (! args.empty())) {
+                is_prot = (seqtype == 'p');
+                
+                gi = atoi(args.front().c_str());
+                args.pop_front();
             }
             
             ostringstream oss_fn;
@@ -597,7 +605,7 @@ int test1(int argc, char ** argv)
             cout << "raw: " << ((tran_s == tran_r) ? "eq" : "not eq") << endl;
             
             return 0;
-        } else desc += " [-bs9] [-bs9]";
+        } else desc += " [-bs9] [-bs9] [-bs-gi]";
 #endif
         
         if (s == "-dyn") {
@@ -856,6 +864,128 @@ int test1(int argc, char ** argv)
             }
             return 0;
         } else desc += " [-xlate3]";
+        
+        if ((s == "-compare-bs") ||
+            (s == "-compare-bs-o")) {
+            
+            bool use_ncbi_fmt = true;
+            
+            bool have_oid = false;
+            
+            int gi = 0;
+            int oid = 0;
+            
+            int id = 0;
+            
+            if (args.empty() || ((*args.begin())[0] == '-')) {
+                return 2;
+            }
+            
+            if (s == "-compare-bs-o") {
+                have_oid = true;
+                oid = id;
+            } else {
+                gi = id;
+            }
+            
+            // SeqDB
+            
+            CSeqDB db(dbname, seqtype);
+            
+            Uint4 s_oid = oid;
+            Uint4 s_leng = 0;
+            const char* s_data = 0;
+            
+            if (! have_oid) {
+                if (! db.GiToOid(gi, s_oid)) {
+                    cout << "Error: gi not found: " << gi << endl;
+                    return 3;
+                }
+            }
+            
+            if (use_ncbi_fmt) {
+                s_leng = db.GetAmbigSeq(s_oid, & s_data, kSeqDBNuclNcbiNA8);
+            } else {
+                s_leng = 2 + db.GetAmbigSeq(s_oid, & s_data, kSeqDBNuclBlastNA8);
+            }
+            
+            // ReadDB
+            
+            ReadDBFILEPtr rdfp =
+                readdb_new_ex2((char*) dbname.c_str(),
+                               seqtype == 'p',
+                               READDB_NEW_DO_TAXDB,
+                               NULL,
+                               NULL);
+            
+            Uint4 r_oid = oid;
+            Int4 r_leng = 0;
+            unsigned char* r_data = 0;
+            
+            if (! have_oid) {
+                r_oid = readdb_gi2seq(rdfp, gi, 0);
+            }
+            
+            readdb_get_sequence_ex(rdfp, r_oid, & r_data, & r_leng, use_ncbi_fmt ? 0 : 1);
+            
+            // Testing
+            
+            if (((Uint4)r_leng) != ((Uint4)s_leng)) {
+                cout << "Failure, lengths differ: R(" << r_leng << "), S(" << s_leng << ")" << endl;
+            }
+            int x = 0;
+            
+            while((x < r_leng) || (x < int(s_leng))) {
+                cout << x << ": ";
+                
+                unsigned rr = 9999;
+                unsigned ss = 9999;
+                
+                bool has_r = false;
+                if (x < r_leng) {
+                    has_r = true;
+                    cout << "R[" << (rr = unsigned(r_data[x])) << "]";
+                }
+                
+                if (x < int(s_leng)) {
+                    if (has_r) {
+                        cout << ", ";
+                    }
+                    cout << "S[" << (ss = unsigned(s_data[x])) << "]";
+                }
+                
+                if (use_ncbi_fmt) {
+                    // test for bitfield format output
+                    // WRONG:
+                    // if (((rr >> 1) & rr) || ((ss >> 1) & ss)) {
+                    
+                    // RIGHT:
+                    if (((rr - 1) & rr) | ((ss - 1) & ss)) {
+                        cout << "  ++  ";
+                    }
+                } else {
+                    // test for enumerated format output
+                    if ((rr | ss) > 3) {
+                        cout << "  ++  ";
+                    }
+                }
+                
+                if (rr != ss) {
+                    cout << " !!!!";
+                }
+
+                cout << "." << endl;
+                x++;
+            }
+            
+            // Cleanup
+            
+            db.RetSequence(& s_data);
+            
+            readdb_destruct(rdfp);
+            
+            return 0;
+        } else desc += " [-compare-bs]";
 #endif
         
         if (s == "-x4mutate") {
