@@ -439,6 +439,67 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
 }
 
 
+CConstRef<CSeq_feat> x_GetBestOverlapForSNP
+(const CSeq_feat& snp_feat,
+ CSeqFeatData::E_Choice type,
+ CSeqFeatData::ESubtype subtype,
+ CScope& scope,
+ bool search_both_strands = true)
+{
+    CConstRef<CSeq_feat> overlap;
+
+    overlap = x_GetBestOverlappingFeat(snp_feat.GetLocation(),
+        type,
+        subtype,
+        eOverlap_Contains,
+        scope);
+
+    if (!overlap)
+    {
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->Assign(snp_feat.GetLocation());
+
+        ENa_strand strand = GetStrand(*loc, &scope);
+        if (strand == eNa_strand_plus  ||  strand == eNa_strand_minus) {
+            loc->FlipStrand();
+        } else if (strand == eNa_strand_unknown) {
+            loc->SetStrand(eNa_strand_minus);
+        }
+
+        overlap = x_GetBestOverlappingFeat(*loc,
+            type,
+            subtype,
+            eOverlap_Contains,
+            scope);
+    }
+
+    return overlap;
+}
+
+
+CConstRef<CSeq_feat> GetBestOverlapForSNP
+(const CSeq_feat& snp_feat,
+ CSeqFeatData::E_Choice type,
+ CScope& scope,
+ bool search_both_strands)
+{
+    return x_GetBestOverlapForSNP(snp_feat, type, CSeqFeatData::eSubtype_any,
+        scope, search_both_strands);
+}
+
+
+CConstRef<CSeq_feat> GetBestOverlapForSNP
+(const CSeq_feat& snp_feat,
+ CSeqFeatData::ESubtype subtype,
+ CScope& scope,
+ bool search_both_strands)
+{
+    return x_GetBestOverlapForSNP(snp_feat,
+        CSeqFeatData::GetTypeFromSubtype(subtype), subtype, scope,
+        search_both_strands);
+}
+
+
 CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene,
@@ -1040,6 +1101,10 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
             break;
         }
         break;
+
+	case CSeqFeatData::eSubtype_variation:
+		feat_ref = GetBestOverlapForSNP(feat, subtype, scope);
+		break;
 
     default:
         break;
@@ -2307,6 +2372,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.105  2004/11/19 15:10:10  shomrat
+* Added GetBestOverlapForSNP
+*
 * Revision 1.104  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *

@@ -189,8 +189,42 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
                                             CScope& scope);
 
 
-/// Convenience functions for popular overlapping types
+/// Get the best overlapping feature for a SNP (variation) feature
+/// @param snp_feat
+///   SNP feature object
+/// @param type
+///   type of overlapping feature
+/// @param scope
+/// @param search_both_strands
+///   search is performed on both strands, starting with the one specified
+///   by the feature's location.
+/// @return
+///   the overlapping fetaure or NULL if not found
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
+                                          CSeqFeatData::E_Choice type,
+                                          CScope& scope,
+                                          bool search_both_strands = true);
 
+/// Get the best overlapping feature for a SNP (variation)
+/// @param snp_feat
+///   SNP feature object
+/// @param subtype
+///   subtype of overlapping feature
+/// @param scope
+/// @param search_both_strands
+///   search is performed on both strands, starting with the one specified
+///   by the feature's location.
+/// @return
+///   the overlapping fetaure or NULL if not found
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestOverlapForSNP(const CSeq_feat& snp_feat,
+                                          CSeqFeatData::ESubtype subtype,
+                                          CScope& scope,
+                                          bool search_both_strands = true);
+
+
+/// Convenience functions for popular overlapping types
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope);
 
@@ -522,6 +556,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.52  2004/11/19 15:09:33  shomrat
+* Added GetBestOverlapForSNP
+*
 * Revision 1.51  2004/11/18 15:56:51  grichenk
 * Added Doxigen comments, removed THROWS.
 *
