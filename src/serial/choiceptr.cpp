@@ -30,14 +30,18 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/09/14 18:54:15  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.1  1999/09/07 20:57:58  vasilche
 * Forgot to add some files.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/choiceptr.hpp>
+#include <serial/typeref.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>

@@ -1,5 +1,5 @@
-#include <value.hpp>
-#include <type.hpp>
+#include "value.hpp"
+#include "type.hpp"
 
 inline
 ostream& NewLine(ostream& out, int indent)

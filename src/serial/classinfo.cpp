@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/14 18:54:16  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.20  1999/09/01 17:38:12  vasilche
 * Fixed vector<char> implementation.
 * Added explicit naming of class info.
@@ -112,14 +116,16 @@
 BEGIN_NCBI_SCOPE
 
 CClassInfoTmpl::CClassInfoTmpl(const type_info& id, size_t size)
-    : CParent(id.name()), m_Id(id), m_Size(size), m_RandomOrder(false)
+    : CParent(id.name()), m_Id(id), m_Size(size),
+      m_RandomOrder(false), m_Implicit(false)
 {
     Register();
 }
 
 CClassInfoTmpl::CClassInfoTmpl(const string& name, const type_info& id,
                                size_t size)
-    : CParent(name), m_Id(id), m_Size(size), m_RandomOrder(false)
+    : CParent(name), m_Id(id), m_Size(size),
+      m_RandomOrder(false), m_Implicit(false)
 {
     Register();
 }
@@ -204,6 +210,19 @@ void CClassInfoTmpl::Deregister(void) const
 {
 }
 
+void CClassInfoTmpl::RegisterSubClasses(void) const
+{
+    const TSubClasses* subclasses = m_SubClasses.get();
+    if ( subclasses ) {
+        for ( TSubClasses::const_iterator i = subclasses->begin();
+              i != subclasses->end();
+              ++i ) {
+            dynamic_cast<const CClassInfoTmpl*>(i->second.Get())->
+                RegisterSubClasses();
+        }
+    }
+}
+
 TTypeInfo CClassInfoTmpl::GetClassInfoById(const type_info& id)
 {
     TClassesById& types = ClassesById();
@@ -222,6 +241,15 @@ TTypeInfo CClassInfoTmpl::GetClassInfoByName(const string& name)
         THROW1_TRACE(runtime_error, "class not found: " + name);
     }
     return i->second;
+}
+
+TTypeInfo CClassInfoTmpl::GetRealTypeInfo(TConstObjectPtr object) const
+{
+    const type_info* ti = GetCPlusPlusTypeInfo(object);
+    if ( ti == 0 )
+        return this;
+    RegisterSubClasses();
+    return GetClassInfoById(*ti);
 }
 
 size_t CClassInfoTmpl::GetSize(void) const
@@ -281,7 +309,7 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
         TConstObjectPtr member = info.GetMember(object);
         currentId.SetNext(m_Members.GetMemberId(i));
         if ( !info.Optional() ||
-             !info.GetTypeInfo()->Equals(member, info.GetDefault()) ) {
+             !info.GetTypeInfo()->IsDefault(member) ) {
             block.Next();
             CObjectOStream::Member m(out, currentId);
             info.GetTypeInfo()->WriteData(out, member);
@@ -328,8 +356,12 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                 const CMemberInfo& info = *m_MembersInfo[i];
                 TObjectPtr member = info.GetMember(object);
                 if ( info.Optional() ) {
-                    // copy defult
-                    info.GetTypeInfo()->Assign(member, info.GetDefault());
+                    // copy default
+                    TConstObjectPtr def = info.GetDefault();
+                    if ( def == 0 )
+                        info.GetTypeInfo()->SetDefault(member);
+                    else
+                        info.GetTypeInfo()->Assign(member, info.GetDefault());
                 }
                 else {
                     // error: absent member w/o defult
@@ -364,7 +396,11 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                     THROW1_TRACE(runtime_error, "member " +
                                  currentId.ToString() + " expected");
                 }
-                info->GetTypeInfo()->Assign(member, info->GetDefault());
+                TConstObjectPtr def = info->GetDefault();
+                if ( def == 0 )
+                    info->GetTypeInfo()->SetDefault(member);
+                else
+                    info->GetTypeInfo()->Assign(member, info->GetDefault());
             }
             ++currentIndex;
             info->GetTypeInfo()->ReadData(in, member);
@@ -377,7 +413,11 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
                              m_Members.GetMemberId(currentIndex).ToString() +
                              " expected");
             }
-            info->GetTypeInfo()->Assign(member, info->GetDefault());
+            TConstObjectPtr def = info->GetDefault();
+            if ( def == 0 )
+                info->GetTypeInfo()->SetDefault(member);
+            else
+                info->GetTypeInfo()->Assign(member, info->GetDefault());
         }
     }
 }
@@ -463,6 +503,16 @@ CTypeInfo::TMemberIndex CClassInfoTmpl::LocateMember(TConstObjectPtr object,
     return before;
 }
 
+bool CClassInfoTmpl::IsDefault(TConstObjectPtr object) const
+{
+    for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
+        const CMemberInfo& member = *m_MembersInfo[i];
+        if ( !member.GetTypeInfo()->IsDefault(member.GetMember(object)) )
+            return false;
+    }
+    return true;
+}
+
 bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
 {
     for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
@@ -472,6 +522,14 @@ bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) co
             return false;
     }
     return true;
+}
+
+void CClassInfoTmpl::SetDefault(TObjectPtr dst) const
+{
+    for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
+        const CMemberInfo& member = *m_MembersInfo[i];
+        member.GetTypeInfo()->SetDefault(member.GetMember(dst));
+    }
 }
 
 void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const

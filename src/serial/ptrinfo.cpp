@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/09/14 18:54:20  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.10  1999/08/31 17:50:09  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -67,11 +71,9 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <serial/asntypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -108,11 +110,9 @@ TObjectPtr CPointerTypeInfo::Create(void) const
     return new void*(0);
 }
 
-static const TConstObjectPtr zeroPointer = 0;
-
-TConstObjectPtr CPointerTypeInfo::GetDefault(void) const
+bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return &zeroPointer;
+    return GetSource(object).first == 0;
 }
 
 bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
@@ -131,13 +131,22 @@ bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
     }
 }
 
+void CPointerTypeInfo::SetDefault(TObjectPtr dst) const
+{
+    SetObjectPointer(dst, 0);
+}
+
 void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
     pair<TConstObjectPtr, TTypeInfo> data = GetSource(src);
-    if ( data.first == 0 )
+    if ( data.first == 0 ) {
         SetObjectPointer(dst, 0);
-    else
-        SetObjectPointer(dst, data.second->Clone(data.first));
+    }
+    else {
+        TObjectPtr object = data.second->Create();
+        data.second->Assign(object, data.first);
+        SetObjectPointer(dst, object);
+    }
 }
 
 void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,

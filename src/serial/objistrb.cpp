@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/14 18:54:18  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.25  1999/08/13 15:53:51  vasilche
 * C++ analog of asntool: datatool
 *
@@ -165,7 +169,7 @@ void CObjectIStreamBinary::SkipBytes(size_t count)
 
 typedef unsigned char TByte;
 
-runtime_error overflow_error(const type_info& type, bool sign, 
+runtime_error OverflowError(const type_info& type, bool sign, 
                              const string& bytes)
 {
     ERR_POST((sign? "": "un") << "signed number too big to fit in " <<
@@ -176,36 +180,36 @@ runtime_error overflow_error(const type_info& type, bool sign,
 }
 
 inline
-runtime_error overflow_error(const type_info& type, bool sign,
+runtime_error OverflowError(const type_info& type, bool sign,
                              TByte c0)
 {
-    return overflow_error(type, sign, NStr::IntToString(c0));
+    return OverflowError(type, sign, NStr::IntToString(c0));
 }
 
 inline
-runtime_error overflow_error(const type_info& type, bool sign,
+runtime_error OverflowError(const type_info& type, bool sign,
                              TByte c0, TByte c1)
 {
-    return overflow_error(type, sign,
+    return OverflowError(type, sign,
                           NStr::IntToString(c0) + ' ' +
                           NStr::IntToString(c1));
 }
 
 inline
-runtime_error overflow_error(const type_info& type, bool sign,
+runtime_error OverflowError(const type_info& type, bool sign,
                              TByte c0, TByte c1, TByte c2)
 {
-    return overflow_error(type, sign,
+    return OverflowError(type, sign,
                           NStr::IntToString(c0) + ' ' +
                           NStr::IntToString(c1) + ' ' +
                           NStr::IntToString(c2));
 }
 
 inline
-runtime_error overflow_error(const type_info& type, bool sign,
+runtime_error OverflowError(const type_info& type, bool sign,
                              TByte c0, TByte c1, TByte c2, TByte c3)
 {
-    return overflow_error(type, sign,
+    return OverflowError(type, sign,
                           NStr::IntToString(c0) + ' ' +
                           NStr::IntToString(c1) + ' ' +
                           NStr::IntToString(c2) + ' ' +
@@ -241,7 +245,7 @@ int checkUnsignedSign(CObjectIStreamBinary& in,
     // check if signed number is returned as unsigned
     if ( sign && (code & highBit) ) {
         in.SetFailFlags(in.eOverflow);
-        throw overflow_error(typeid(unsigned), sign, code);
+        throw OverflowError(typeid(unsigned), sign, code);
     }
     // mask data bits
     code &= (highBit << 1) - 1;
@@ -264,7 +268,7 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for byte fit
             if ( !isSignExpansion(c1, c0) ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c0);
+                throw OverflowError(typeid(T), sign, code, c0);
             }
             data = T(c0);
         }
@@ -281,7 +285,7 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for byte fit
             if ( !isSignExpansion(c2, c0) || !isSignExpansion(c1, c0) ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c1, c0);
             }
             data = T(c0);
         }
@@ -289,7 +293,7 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for two byte fit
             if ( !isSignExpansion(c2, c1) ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c1, c0);
             }
             data = T((c1 << 8) | c0);
         }
@@ -308,7 +312,7 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
             if ( !isSignExpansion(c3, c0) || !isSignExpansion(c2, c0) ||
                  !isSignExpansion(c1, c0) ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c2, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c2, c1, c0);
             }
             data = T(c0);
         }
@@ -316,7 +320,7 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for two byte fit
             if ( !isSignExpansion(c3, c1) || !isSignExpansion(c2, c1) ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c2, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c2, c1, c0);
             }
             data = T((c1 << 8) | c0);
         }
@@ -337,7 +341,7 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data, bool sign)
             TByte c = in.ReadByte();
             if ( c ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign,
+                throw OverflowError(typeid(T), sign,
                                      NStr::IntToString(code) + " ... " +
                                      NStr::IntToString(c));
             }
@@ -368,7 +372,7 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for byte fit
             if ( c1 ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c0);
+                throw OverflowError(typeid(T), sign, code, c0);
             }
             data = T(c0);
         }
@@ -385,7 +389,7 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for byte fit
             if ( c2 || c1 ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c1, c0);
             }
             data = T(c0);
         }
@@ -393,7 +397,7 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for two byte fit
             if ( c2 ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c1, c0);
             }
             data = T((c1 << 8) | c0);
         }
@@ -411,7 +415,7 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for byte fit
             if ( c3 || c2 || c1 ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c2, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c2, c1, c0);
             }
             data = T(c0);
         }
@@ -419,7 +423,7 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
             // check for two byte fit
             if ( c3 || c2 ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign, code, c2, c1, c0);
+                throw OverflowError(typeid(T), sign, code, c2, c1, c0);
             }
             data = T((c1 << 8) | c0);
         }
@@ -440,7 +444,7 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data, bool sign)
             TByte c = in.ReadByte();
             if ( c ) {
                 in.SetFailFlags(in.eOverflow);
-                throw overflow_error(typeid(T), sign,
+                throw OverflowError(typeid(T), sign,
                                      NStr::IntToString(code) + " ... " +
                                      NStr::IntToString(c));
             }

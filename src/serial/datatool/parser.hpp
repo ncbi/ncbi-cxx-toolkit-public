@@ -1,8 +1,8 @@
 #ifndef ASNPARSER_HPP
 #define ASNPARSER_HPP
 
-#include <aparser.hpp>
-#include <autoptr.hpp>
+#include "aparser.hpp"
+#include "autoptr.hpp"
 #include <list>
 
 class CModuleSet;

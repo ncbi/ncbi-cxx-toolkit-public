@@ -1,5 +1,5 @@
-#include <alexer.hpp>
-#include <atoken.hpp>
+#include "alexer.hpp"
+#include "atoken.hpp"
 
 USING_NCBI_SCOPE;
 

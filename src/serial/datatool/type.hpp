@@ -2,11 +2,11 @@
 #define ASNTYPE_HPP
 
 #include <corelib/ncbistd.hpp>
-#include <ostream>
+#include <corelib/ncbistre.hpp>
 #include <list>
 #include <set>
-#include <autoptr.hpp>
-#include <value.hpp>
+#include "autoptr.hpp"
+#include "value.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -19,6 +19,7 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 class ASNModule;
+class CCode;
 
 struct CTypeStrings {
     enum ETypeType {
@@ -77,11 +78,11 @@ public:
 
     void Warning(const string& mess) const;
 
+    virtual void GenerateCode(CCode& code) const;
     virtual void CollectUserTypes(set<string>& types) const;
     virtual void GenerateCode(ostream& header, ostream& code,
                               const string& name,
-                              const CNcbiRegistry& def,
-                              const string& section) const;
+                              const CNcbiRegistry& def) const;
 
     virtual CTypeStrings GetCType(const CNcbiRegistry& def,
                                   const string& section,
@@ -119,8 +120,9 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
-    void GenerateCode(ostream& , ostream& , const string& ,
-                      const CNcbiRegistry& , const string& ) const;
+    void GenerateCode(ostream& , ostream& ,
+                      const string& ,
+                      const CNcbiRegistry& ) const;
 };
 
 class ASNBooleanType : public ASNFixedType {
@@ -176,7 +178,9 @@ public:
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
-    string GetDefaultCType(void) const;
+    CTypeStrings GetCType(const CNcbiRegistry& def,
+                          const string& section,
+                          const string& key) const;
 };
 
 class ASNEnumeratedType : public ASNType {
@@ -337,8 +341,9 @@ public:
     
     CTypeInfo* CreateTypeInfo(void);
     
-    void GenerateCode(ostream& , ostream& , const string& ,
-                      const CNcbiRegistry& , const string& ) const;
+    void GenerateCode(ostream& header, ostream& code,
+                      const string& name,
+                      const CNcbiRegistry& def) const;
 
 protected:
     virtual CClassInfoTmpl* CreateClassInfo(void);
@@ -373,8 +378,7 @@ public:
     CTypeInfo* CreateTypeInfo(void);
     void GenerateCode(ostream& header, ostream& code,
                       const string& name,
-                      const CNcbiRegistry& def,
-                      const string& section) const;
+                      const CNcbiRegistry& def) const;
 };
 
 #endif

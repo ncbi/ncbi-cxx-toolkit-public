@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/09/14 18:54:17  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.5  1999/09/01 17:38:12  vasilche
 * Fixed vector<char> implementation.
 * Added explicit naming of class info.
@@ -82,11 +86,7 @@ CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 
 TConstObjectPtr CMemberInfo::GetDefault(void) const
 {
-    if ( !m_Optional )
-        return 0;
-    if ( m_Default )
-        return m_Default;
-    return GetTypeInfo()->GetDefault();
+    return m_Default;
 }
 
 size_t CRealMemberInfo::GetOffset(void) const

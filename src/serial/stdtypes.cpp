@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/09/14 18:54:20  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.7  1999/07/07 21:56:35  vasilche
 * Fixed problem with static variables in templates on SunPro
 *
@@ -55,12 +59,40 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
+
+#if 0
+#define INIT_TYPE_INFO(T) \
+TTypeInfo const CStdTypeInfo<T>::sm_TypeInfo = new CStdTypeInfo<T>(#T)
+#else
+#define INIT_TYPE_INFO(T) \
+template<> \
+TTypeInfo CStdTypeInfo<T>::GetTypeInfo(void) \
+{ \
+    static const TTypeInfo typeInfo = \
+        new CStdTypeInfo<T>(typeid(T).name()); \
+    return typeInfo; \
+}
+#endif
+
+INIT_TYPE_INFO(bool)
+INIT_TYPE_INFO(char)
+INIT_TYPE_INFO(signed char)
+INIT_TYPE_INFO(unsigned char)
+INIT_TYPE_INFO(char*)
+INIT_TYPE_INFO(const char*)
+INIT_TYPE_INFO(short)
+INIT_TYPE_INFO(unsigned short)
+INIT_TYPE_INFO(int)
+INIT_TYPE_INFO(unsigned)
+INIT_TYPE_INFO(long)
+INIT_TYPE_INFO(unsigned long)
+INIT_TYPE_INFO(float)
+INIT_TYPE_INFO(double)
 
 size_t CStdTypeInfo<void>::GetSize(void) const
 {
@@ -73,9 +105,18 @@ TTypeInfo CStdTypeInfo<void>::GetTypeInfo(void)
     return typeInfo;
 }
 
+bool CStdTypeInfo<void>::IsDefault(TConstObjectPtr ) const
+{
+    return true;
+}
+
 bool CStdTypeInfo<void>::Equals(TConstObjectPtr , TConstObjectPtr ) const
 {
     throw runtime_error("void cannot be compared");
+}
+
+void CStdTypeInfo<void>::SetDefault(TObjectPtr ) const
+{
 }
 
 void CStdTypeInfo<void>::Assign(TObjectPtr , TConstObjectPtr ) const
@@ -93,55 +134,81 @@ void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
     throw runtime_error("void cannot be written");
 }
 
+CStdTypeInfo<string>::CStdTypeInfo(void)
+    : CParent("string")
+{
+}
+
 TObjectPtr CStdTypeInfo<string>::Create(void) const
 {
     return new TObjectType();
 }
 
-TConstObjectPtr CStdTypeInfo<string>::GetDefault(void) const
+bool CStdTypeInfo<string>::IsDefault(TConstObjectPtr object) const
 {
-    return &NcbiEmptyString;
+    return Get(object).empty();
+}
+
+bool CStdTypeInfo<string>::Equals(TConstObjectPtr object1,
+                                  TConstObjectPtr object2) const
+{
+    return Get(object1) == Get(object2);
+}
+
+void CStdTypeInfo<string>::SetDefault(TObjectPtr object) const
+{
+    Get(object).erase();
+}
+
+void CStdTypeInfo<string>::Assign(TObjectPtr dst,
+                                  TConstObjectPtr src) const
+{
+    Get(dst) = Get(src);
 }
 
 TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
 {
-    static TTypeInfo typeInfo = new CStdTypeInfo;
+    static TTypeInfo typeInfo = new CStdTypeInfo<string>;
     return typeInfo;
 }
 
 void CStdTypeInfo<string>::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-	in.ReadStr(Get(object));
+	in.ReadStd(Get(object));
 }
 
 void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object) const
 {
-	out.WriteStr(Get(object));
+	out.WriteStd(Get(object));
 }
 
-static const char* const zeroPointer = 0;
-
+/*
 TTypeInfo CStdTypeInfo<const char*>::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = new CStdTypeInfo;
     return typeInfo;
 }
 
-TConstObjectPtr CStdTypeInfo<const char*>::GetDefault(void) const
+bool CStdTypeInfo<const char*>::IsDefault(TConstObjectPtr object) const
 {
-    return &zeroPointer;
+    return Get(object) == 0;
+}
+
+void CStdTypeInfo<const char*>::SetDefault(TObjectPtr object) const
+{
+    Get(object) = 0;
 }
 
 void CStdTypeInfo<const char*>::ReadData(CObjectIStream& in,
                                          TObjectPtr object) const
 {
-    in.ReadStr(Get(object));
+    in.ReadStd(Get(object));
 }
 
 void CStdTypeInfo<const char*>::WriteData(CObjectOStream& out,
                                           TConstObjectPtr object) const
 {
-    out.WriteStr(Get(object));
+    out.WriteStd(Get(object));
 }
 
 TTypeInfo CStdTypeInfo<char*>::GetTypeInfo(void)
@@ -150,21 +217,26 @@ TTypeInfo CStdTypeInfo<char*>::GetTypeInfo(void)
     return typeInfo;
 }
 
-TConstObjectPtr CStdTypeInfo<char*>::GetDefault(void) const
+bool CStdTypeInfo<char*>::IsDefault(TConstObjectPtr object) const
 {
-    return &zeroPointer;
+    return Get(object) == 0;
+}
+
+void CStdTypeInfo<char*>::SetDefault(TObjectPtr object) const
+{
+    Get(object) = 0;
 }
 
 void CStdTypeInfo<char*>::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    in.ReadStr(Get(object));
+    in.ReadStd(Get(object));
 }
 
 void CStdTypeInfo<char*>::WriteData(CObjectOStream& out,
                                     TConstObjectPtr object) const
 {
-    out.WriteStr(Get(object));
+    out.WriteStd(Get(object));
 }
-
+*/
 END_NCBI_SCOPE

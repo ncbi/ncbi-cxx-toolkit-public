@@ -33,22 +33,27 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/09/14 18:54:02  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.1  1999/09/07 20:57:43  vasilche
 * Forgot to add some files.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/memberlist.hpp>
 #include <vector>
 #include <map>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
 class CChoicePointerTypeInfo : public CPointerTypeInfo
 {
+    typedef CPointerTypeInfo CParent;
 public:
     typedef CMembers::TIndex TIndex;
     typedef vector<CTypeRef> TVariantTypes;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/14 18:54:19  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.18  1999/08/16 16:08:31  vasilche
 * Added ENUMERATED type.
 *
@@ -176,7 +180,9 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         return;
     }
 
-    WritePointer(COObjectInfo(m_Objects, object, typeInfo), typeInfo);
+    COObjectInfo info(m_Objects, object, typeInfo);
+    WritePointer(info, typeInfo);
+    _ASSERT(!info.IsMember());
 }
 
 void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
@@ -213,17 +219,17 @@ void CObjectOStream::WritePointer(COObjectInfo& info, TTypeInfo typeInfo)
     }
 }
 
-void CObjectOStream::WriteStr(const string& data)
+void CObjectOStream::WriteStd(const string& data)
 {
 	WriteString(data);
 }
 
-void CObjectOStream::WriteStr(const char* const& data)
+void CObjectOStream::WriteStd(const char* const& data)
 {
 	WriteCString(data);
 }
 
-void CObjectOStream::WriteStr(char* const& data)
+void CObjectOStream::WriteStd(char* const& data)
 {
 	WriteCString(data);
 }

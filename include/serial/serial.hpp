@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/09/14 18:54:05  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.28  1999/09/08 20:31:18  vasilche
 * Added BEGIN_CLASS_INFO3 macro
 *
@@ -162,38 +166,42 @@ class CMemberInfo;
 #define POINTER_REF(Type,Args) \
     CTypeRef(CPointerTypeInfo::GetTypeInfo,REF(Type)Args)
 
-#define STL_SET_TYPE(Type,Args) set<TYPE(Type)Args>
-#define STL_SET_REF(Type,Args) \
+#define STL_multiset_TYPE(Type,Args) multiset<TYPE(Type)Args>
+#define STL_multiset_REF(Type,Args) \
+    new CStlClassInfoMultiSet<TYPE(Type)Args>(REF(Type)Args)
+
+#define STL_set_TYPE(Type,Args) set<TYPE(Type)Args>
+#define STL_set_REF(Type,Args) \
     new CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args)
 
-#define STL_MULTIMAP_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
+#define STL_multimap_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
     multimap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
-#define STL_MULTIMAP_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
+#define STL_multimap_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
     new CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
 
-#define STL_MAP_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
+#define STL_map_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
     map<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
-#define STL_MAP_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
+#define STL_map_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
     new CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
 
-#define STL_LIST_TYPE(Type,Args) list<TYPE(Type)Args>
-#define STL_LIST_REF(Type,Args) \
+#define STL_list_TYPE(Type,Args) list<TYPE(Type)Args>
+#define STL_list_REF(Type,Args) \
     new CStlClassInfoList<TYPE(Type)Args>(REF(Type)Args)
 
-#define STL_VECTOR_TYPE(Type,Args) vector<TYPE(Type)Args>
-#define STL_VECTOR_REF(Type,Args) \
+#define STL_vector_TYPE(Type,Args) vector<TYPE(Type)Args>
+#define STL_vector_REF(Type,Args) \
     new CStlClassInfoVector<TYPE(Type)Args>(REF(Type)Args)
 
-#define STL_CHAR_VECTOR_TYPE(Type) vector<Type>
-#define STL_CHAR_VECTOR_REF(Type) \
+#define STL_CHAR_vector_TYPE(Type) vector<Type>
+#define STL_CHAR_vector_REF(Type) \
     CStlClassInfoCharVector<Type>::GetTypeInfo
 
-#define STL_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
-#define STL_AUTO_PTR_REF(Type,Args) \
+#define STL_auto_ptr_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
+#define STL_auto_ptr_REF(Type,Args) \
     CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo
 
-#define STL_CHOICE_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
-#define STL_CHOICE_AUTO_PTR_REF(Type,Args) \
+#define STL_CHOICE_auto_ptr_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
+#define STL_CHOICE_auto_ptr_REF(Type,Args) \
     CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo
 
 template<typename T>
@@ -208,7 +216,7 @@ struct Check
 template<typename T>
 CMemberInfo* Member(const T* member)
 {
-    return Check<T>::Member(member, GetTypeRef(member));
+    return new CRealMemberInfo(size_t(member), GetTypeRef(member));
 }
 
 #define BASE_OBJECT(Class) const Class* const kObject = 0
@@ -645,24 +653,21 @@ const CTypeInfo* Method(void) \
     return info; \
 }
  
-#define BEGIN_CLASS_INFO3(Name, Class, RealClass) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<RealClass>, (Name))
+#define BEGIN_CLASS_INFO3(Name, Class, OwnerClass) \
+BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, CClassInfo<CClass>, (Name))
 #define BEGIN_CLASS_INFO2(Name, Class) \
 BEGIN_CLASS_INFO3(Name, Class, Class)
-
-#define END_CLASS_INFO END_TYPE_INFO
-
-#define BEGIN_ABSTRACT_CLASS_INFO2(Name, Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CAbstractClassInfo<CClass>, (Name))
-#define END_CLASS_INFO END_TYPE_INFO
-
 #define BEGIN_CLASS_INFO(Class) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
+
 #define END_CLASS_INFO END_TYPE_INFO
 
+#define BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, OwnerClass) \
+BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, CAbstractClassInfo<CClass>, (Name))
+#define BEGIN_ABSTRACT_CLASS_INFO2(Name, Class) \
+BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, Class)
 #define BEGIN_ABSTRACT_CLASS_INFO(Class) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CAbstractClassInfo<CClass>, ())
-#define END_CLASS_INFO END_TYPE_INFO
 
 #define SET_PARENT_CLASS(BaseClass) \
     info->AddMember(NcbiEmptyString, MemberInfo(CLASS_PTR(BaseClass)))
@@ -743,7 +748,7 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(MEMBER_PTR(data.ptrvalue))))
 
 #define ADD_SUB_CLASS2(Name, SubClass) \
-    AddSubClass(CMemberId(Name), GetTypeRef(CLASS_PTR(SubClass)))
+    info->AddSubClass(CMemberId(Name), GetTypeRef(CLASS_PTR(SubClass)))
 #define ADD_SUB_CLASS(Class) \
     ADD_SUB_CLASS2(#Class, Class)
 

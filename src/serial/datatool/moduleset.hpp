@@ -2,11 +2,11 @@
 #define MODULESET_HPP
 
 #include <corelib/ncbistd.hpp>
+#include <serial/typemapper.hpp>
 #include <list>
 #include <map>
-#include <autoptr.hpp>
-#include <serial/typemapper.hpp>
-#include <module.hpp>
+#include "autoptr.hpp"
+#include "module.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -17,7 +17,7 @@ public:
     typedef map<string, const CTypeInfo*> TTypes;
 
     CModuleSet(void);
-    ~CModuleSet(void);
+    virtual ~CModuleSet(void);
 
     TTypeInfo MapType(const string& name);
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/09/14 18:54:07  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.16  1999/08/31 17:50:05  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -89,9 +93,8 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <map>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 
@@ -134,21 +137,15 @@ public:
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const;
     // gets default object (will call CreateDefault and save returned value )
-    virtual TConstObjectPtr GetDefault(void) const;
+    //virtual TConstObjectPtr GetDefault(void) const;
     // creates default object (by default will call Create)
-    virtual TConstObjectPtr CreateDefault(void) const;
+    //virtual TConstObjectPtr CreateDefault(void) const;
 
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
-    
-    TObjectPtr Clone(TConstObjectPtr src) const
-        {
-            TObjectPtr object = Create();
-            Assign(object, src);
-            return object;
-        }
-
+    virtual bool IsDefault(TConstObjectPtr object) const = 0;
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const = 0;
+    virtual void SetDefault(TObjectPtr dst) const = 0;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const;
 
@@ -187,7 +184,35 @@ public:
 
 private:
     string m_Name;
-    mutable TConstObjectPtr m_Default;
+    //mutable TConstObjectPtr m_Default;
+};
+
+template<typename T>
+class CTypeInfoTmpl : public CTypeInfo
+{
+    typedef CTypeInfo CParent;
+public:
+    typedef T TObjectType;
+
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return sizeof(TObjectType);
+        }
+
+protected:
+    CTypeInfoTmpl<T>(const string& name)
+        : CParent(name)
+        {
+        }
 };
 
 #include <serial/typeinfo.inl>

@@ -33,21 +33,25 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/09/14 18:54:02  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.1  1999/09/07 20:57:42  vasilche
 * Forgot to add some files.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/ptrinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CAutoPointerTypeInfo : public CPointerTypeInfo {
+    typedef CPointerTypeInfo CParent;
 public:
     CAutoPointerTypeInfo(TTypeInfo type)
-        : CPointerTypeInfo(type->GetName(), type)
+        : CParent(type->GetName(), type)
         { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)

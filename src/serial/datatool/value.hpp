@@ -4,7 +4,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <list>
-#include <autoptr.hpp>
+#include "autoptr.hpp"
 
 USING_NCBI_SCOPE;
 

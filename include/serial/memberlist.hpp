@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/09/14 18:54:03  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.3  1999/07/20 18:22:54  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -50,6 +54,7 @@
 #include <serial/memberid.hpp>
 #include <vector>
 #include <map>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,7 +63,7 @@ class CMemberInfo;
 class CMembers {
 public:
     typedef CMemberId::TTag TTag;
-    typedef unsigned TIndex;
+    typedef int TIndex;
     typedef vector<CMemberId> TMembers;
     typedef map<string, TIndex> TMembersByName;
     typedef map<TTag, TIndex> TMembersByTag;

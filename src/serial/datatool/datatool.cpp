@@ -1,13 +1,14 @@
 #include <corelib/ncbistd.hpp>
-#include <parser.hpp>
-#include <lexer.hpp>
-#include <moduleset.hpp>
-#include <module.hpp>
-#include <fstream>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
+#include <memory>
+#include <fstream>
+#include "parser.hpp"
+#include "lexer.hpp"
+#include "moduleset.hpp"
+#include "module.hpp"
 
 USING_NCBI_SCOPE;
 

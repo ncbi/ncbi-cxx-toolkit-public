@@ -1,7 +1,3 @@
-#include <type.hpp>
-#include <value.hpp>
-#include <module.hpp>
-#include <moduleset.hpp>
 #include <corelib/ncbireg.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
@@ -9,6 +5,12 @@
 #include <serial/member.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <algorithm>
+#include "type.hpp"
+#include "value.hpp"
+#include "module.hpp"
+#include "moduleset.hpp"
+#include "code.hpp"
 
 inline
 string replace(string s, char from, char to)
@@ -112,7 +114,7 @@ union dataval {
 };
 
 ASNType::ASNType(ASNModule& module, const string& n)
-    : m_Module(module), line(0), name(n)
+    : line(0), name(n), m_Module(module)
 {
 }
 
@@ -151,23 +153,39 @@ TTypeInfo ASNType::GetTypeInfo(void)
     return m_CreatedTypeInfo.get();
 }
 
+void ASNType::GenerateCode(CCode& code) const
+{
+    // by default, generate implicit class with one data member
+    string memberName = code.GetVar("_member");
+    if ( memberName.empty() ) {
+        memberName = "m_" + Identifier(name);
+    }
+
+    /*
+    code <<
+        "    info->SetImplicit();" << endl;
+    GetCType(def, typeName, "_member").AddMember(code, memberName);
+    code << ';' << endl;
+    */
+}
+
 void ASNType::CollectUserTypes(set<string>& /*types*/) const
 {
 }
 
 void ASNType::GenerateCode(ostream& header, ostream& code,
-                           const string& section,
-                           const CNcbiRegistry& def, const string& ) const
+                           const string& typeName,
+                           const CNcbiRegistry& def) const
 {
     // by default, generate implicit class with one data member
-    string memberName = def.Get(section, "_member");
+    string memberName = def.Get(typeName, "_member");
     if ( memberName.empty() ) {
         memberName = "m_" + Identifier(name);
     }
 
     code <<
         "    info->SetImplicit();" << endl;
-    GetCType(def, section, "").AddMember(header, code, memberName);
+    GetCType(def, typeName, "_member").AddMember(header, code, memberName);
     code << ';' << endl;
 }
 
@@ -242,8 +260,9 @@ TTypeInfo ASNNullType::GetTypeInfo(void)
     THROW1_TRACE(runtime_error, "NULL type not implemented");
 }
 
-void ASNNullType::GenerateCode(ostream& , ostream& , const string& ,
-                           const CNcbiRegistry& , const string& ) const
+void ASNNullType::GenerateCode(ostream& , ostream& ,
+                               const string& ,
+                               const CNcbiRegistry& ) const
 {
 }
 
@@ -340,7 +359,7 @@ TTypeInfo ASNVisibleStringType::GetTypeInfo(void)
 
 string ASNVisibleStringType::GetDefaultCType(void) const
 {
-    return "string";
+    return "std::string";
 }
 
 ASNStringStoreType::ASNStringStoreType(ASNModule& module)
@@ -380,9 +399,15 @@ TObjectPtr ASNOctetStringType::CreateDefault(const ASNValue& )
     THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
 }
 
-string ASNOctetStringType::GetDefaultCType(void) const
+CTypeStrings ASNOctetStringType::GetCType(const CNcbiRegistry& def,
+                                          const string& section,
+                                          const string& key) const
 {
-    return "vector<char>";
+    string charType = def.Get(section, key + "._char");
+    if ( charType.empty() )
+        charType = "char";
+    return CTypeStrings("std::vector<" + charType + '>',
+                        "STL_CHAR_vector, (" + charType + ')');
 }
 
 ASNEnumeratedType::ASNEnumeratedType(ASNModule& module, const string& kw)
@@ -536,11 +561,8 @@ CTypeStrings ASNUserType::GetCType(const CNcbiRegistry& def,
                                    const string& key) const
 {
     string className = def.Get(section, key + "._class");
-    if ( className.empty() ) {
-        className = def.Get(userTypeName, "_class");
-        if ( className.empty() )
-            className = Identifier(userTypeName);
-    }
+    if ( className.empty() )
+        className = ClassName(def, userTypeName);
     return CTypeStrings(CTypeStrings::eClassType, className);
 }
 
@@ -561,7 +583,7 @@ ASNType* ASNUserType::Resolve(void)
 }
 
 ASNOfType::ASNOfType(const string& kw, const AutoPtr<ASNType>& t)
-    : ASNType(t->GetModule(), kw + " OF " + t->name), keyword(kw), type(t)
+    : ASNType(t->GetModule(), kw + " OF " + t->name), type(t), keyword(kw)
 {
 }
 
@@ -616,24 +638,31 @@ CTypeStrings ASNSetOfType::GetCType(const CNcbiRegistry& def,
                                     const string& section,
                                     const string& key) const
 {
+    string templ = def.Get(section, key + "._type");
     const ASNSequenceType* seq =
         dynamic_cast<const ASNSequenceType*>(type.get());
     if ( seq && seq->members.size() == 2 ) {
         CTypeStrings tKey =
             seq->members.front()->type->GetCType(def, section,
-                                                 key + ".key");
+                                                 key + "._key");
         if ( tKey.IsSimple() ) {
             CTypeStrings tValue = 
                 seq->members.back()->type->GetCType(def, section,
-                                                    key + ".value").ToSimple();
+                                                    key + "._value").ToSimple();
+            if ( templ.empty() )
+                templ = "multimap";
             return CTypeStrings(
-                "map< " + tKey.cType + ", " + tValue.cType + " >",
-                "STL_MAP, (" + tKey.GetRef() + ", " + tValue.GetRef() + ")");
+                "std::" + templ + "< " + tKey.cType + ", " +
+                tValue.cType + " >",
+                "STL_" + templ + ", (" + tKey.GetRef() + ", " +
+                tValue.GetRef() + ")");
         }
     }
-    CTypeStrings tData = type->GetCType(def, section, key).ToSimple();
-    return CTypeStrings("set< " + tData.cType + " >",
-                        "STL_SET, (" + tData.GetRef() + ')');
+    CTypeStrings tData = type->GetCType(def, section, key + "._data").ToSimple();
+    if ( templ.empty() )
+        templ = "multiset";
+    return CTypeStrings("std::" + templ + "< " + tData.cType + " >",
+                        "STL_" + templ + ", (" + tData.GetRef() + ')');
 }
 
 ASNSequenceOfType::ASNSequenceOfType(const AutoPtr<ASNType>& type)
@@ -650,9 +679,12 @@ CTypeStrings ASNSequenceOfType::GetCType(const CNcbiRegistry& def,
                                          const string& section,
                                          const string& key) const
 {
-    CTypeStrings tData = type->GetCType(def, section, key + ".data").ToSimple();
-    return CTypeStrings("list< " + tData.cType + " >",
-                        "STL_LIST, (" + tData.GetRef() + ')');
+    string templ = def.Get(section, key + "._type");
+    if ( templ.empty() )
+        templ = "list";
+    CTypeStrings tData = type->GetCType(def, section, key + "._data").ToSimple();
+    return CTypeStrings("std::" + templ + "< " + tData.cType + " >",
+                        "STL_" + templ + ", (" + tData.GetRef() + ')');
 }
 
 ASNMemberContainerType::ASNMemberContainerType(ASNModule& module,
@@ -733,8 +765,7 @@ CClassInfoTmpl* ASNContainerType::CreateClassInfo(void)
 
 void ASNContainerType::GenerateCode(ostream& header, ostream& code,
                                     const string& typeName,
-                                    const CNcbiRegistry& def,
-                                    const string& section) const
+                                    const CNcbiRegistry& def) const
 {
     for ( TMembers::const_iterator i = members.begin();
           i != members.end();
@@ -744,9 +775,8 @@ void ASNContainerType::GenerateCode(ostream& header, ostream& code,
         if ( fieldName.empty() ) {
             continue;
         }
-        m->type->GetCType(def, typeName,
-                          m->name).AddMember(header, code,
-                                             m->name, "m_" + fieldName);
+        m->type->GetCType(def, typeName, m->name)
+            .AddMember(header, code, m->name, "m_" + fieldName);
         if ( m->defaultValue )
             code << "->SetDefault(...)";
         else if ( m->optional )
@@ -891,8 +921,7 @@ CTypeInfo* ASNChoiceType::CreateTypeInfo(void)
 
 void ASNChoiceType::GenerateCode(ostream& header, ostream& code,
                                  const string& typeName,
-                                 const CNcbiRegistry& def,
-                                 const string& section) const
+                                 const CNcbiRegistry& def) const
 {
     for ( TMembers::const_iterator i = members.begin();
           i != members.end();
@@ -927,44 +956,3 @@ bool ASNMember::Check(void)
         return true;
     return type->CheckValue(*defaultValue);
 }
-
-/*
-            if ( dynamic_cast<const ASNContainerType*>(type) ) {
-                // SET, SEQUENCE or CHOICE
-                if ( dynamic_cast<const ASNChoiceType*>(type) ) {
-                    // CHOICE
-                    ERR_POST(Fatal << "Cannot generate class for CHOICE type");
-                }
-                else {
-                    // SET or SEQUENCE
-                    
-                    ->GenerateVariable(out, def, def.Get(sectionName, "_type"));
-                }
-            }
-            else if ( dynamic_cast<const ASNOfType*>(type) ) {
-                // SET OF ot SEQUENCE OF
-                string stlContainer = def.Get(sectionName, "_type");
-                if ( stlContainer.empty() ) {
-                    if ( dynamic_cast<const ASNSetOfType*>(type) ) {
-                        // SET
-                        stlContainer = "set";
-                    }
-                    else {
-                        // SEQUENCE
-                        stlContainer = "list";
-                    }
-                }
-                string memberName = def.Get(sectionName, "_member");
-                if ( memberName.empty() ) {
-                    memberName = "m_" + replace(typeName, '-', '_');
-                }
-                header << "    " << stlContainer << "<";
-                if ( type
-                header << "> " << memberName << ";" << endl;
-            }
-            else {
-                ERR_POST(Fatal << "Cannot generate class for simple type");
-            }
-            }
-
-*/

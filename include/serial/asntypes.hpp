@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/09/14 18:54:01  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.11  1999/08/16 16:07:42  vasilche
 * Added ENUMERATED type.
 *
@@ -71,7 +75,6 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/typeref.hpp>
@@ -88,26 +91,27 @@ struct asntype;
 
 BEGIN_NCBI_SCOPE
 
-class CSequenceOfTypeInfo : public CTypeInfo {
+class CSequenceOfTypeInfo : public CTypeInfoTmpl<void*> {
+    typedef CTypeInfoTmpl<void*> CParent;
 public:
     CSequenceOfTypeInfo(TTypeInfo type);
 	CSequenceOfTypeInfo(const string& name, TTypeInfo type);
 
     static TObjectPtr& First(TObjectPtr object)
         {
-            return *static_cast<TObjectPtr*>(object);
+            return Get(object);
         }
     static const TConstObjectPtr& First(TConstObjectPtr object)
         {
-            return *static_cast<const TConstObjectPtr*>(object);
+            return Get(object);
         }
     TObjectPtr& Next(TObjectPtr object) const
         {
-            return *static_cast<TObjectPtr*>(Add(object, m_NextOffset));
+            return Get(Add(object, m_NextOffset));
         }
     const TConstObjectPtr& Next(TConstObjectPtr object) const
         {
-            return *static_cast<const TConstObjectPtr*>(Add(object, m_NextOffset));
+            return Get(Add(object, m_NextOffset));
         }
     TObjectPtr Data(TObjectPtr object) const
         {
@@ -125,13 +129,10 @@ public:
             return sm_Map.GetTypeInfo(base);
         }
 
-    virtual size_t GetSize(void) const;
-
-    virtual TConstObjectPtr GetDefault(void) const;
-
+    virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const;
-
+    virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst,
                         TConstObjectPtr src) const;
 
@@ -171,6 +172,7 @@ private:
 };
 
 class CSetOfTypeInfo : public CSequenceOfTypeInfo {
+    typedef CSequenceOfTypeInfo CParent;
 public:
     CSetOfTypeInfo(TTypeInfo type);
     CSetOfTypeInfo(const string& name, TTypeInfo type);
@@ -187,23 +189,24 @@ private:
 };
 
 class CChoiceTypeInfo : public CTypeInfo {
+    typedef CTypeInfo CParent;
 public:
     CChoiceTypeInfo(const string& name)
-        : CTypeInfo(name)
+        : CParent(name)
         { }
 
     void AddVariant(const CMemberId& id, const CTypeRef& type);
     void AddVariant(const string& name, const CTypeRef& type);
 
     virtual size_t GetSize(void) const;
-
     virtual TObjectPtr Create(void) const;
 
+    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
+    virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
-
-    size_t GetVariantsCount(void) const
+    TMemberIndex GetVariantsCount(void) const
         { return m_VariantTypes.size(); }
 
     TTypeInfo GetVariantTypeInfo(TMemberIndex index) const
@@ -223,20 +226,10 @@ private:
     vector<CTypeRef> m_VariantTypes;
 };
 
-class COctetStringTypeInfo : public CTypeInfo {
+class COctetStringTypeInfo : public CTypeInfoTmpl<bytestore*> {
+    typedef CTypeInfoTmpl<bytestore*> CParent;
 public:
-	typedef bytestore* TObjectType;
-
     COctetStringTypeInfo(void);
-
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectType*>(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectType*>(object);
-        }
 
     static TTypeInfo GetTypeInfo(void)
         {
@@ -246,13 +239,10 @@ public:
             return typeInfo;
         }
 
-    virtual size_t GetSize(void) const;
-
-    virtual TConstObjectPtr GetDefault(void) const;
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
+    virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
+    virtual void SetDefault(TObjectPtr dst) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
 protected:
     
@@ -264,32 +254,22 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
 
-class COldAsnTypeInfo : public CTypeInfo
+class COldAsnTypeInfo : public CTypeInfoTmpl<void*>
 {
+    typedef CTypeInfoTmpl<void*> CParent;
 public:
     typedef TObjectPtr (*TNewProc)(void);
     typedef TObjectPtr (*TFreeProc)(TObjectPtr);
     typedef TObjectPtr (*TReadProc)(asnio*, asntype*);
     typedef unsigned char (*TWriteProc)(TObjectPtr, asnio*, asntype*);
 
-    static TObjectPtr& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectPtr*>(object);
-        }
-    static const TObjectPtr& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectPtr*>(object);
-        }
-
     static TTypeInfo GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
                                  TReadProc readProc, TWriteProc writeProc);
 
-    virtual size_t GetSize(void) const;
-
-    virtual TConstObjectPtr CreateDefault(void) const;
-
+    virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const;
+    virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
 protected:
@@ -310,9 +290,9 @@ private:
     static map<TNewProc, COldAsnTypeInfo*> m_Types;
 };
 
-class CEnumeratedTypeInfo : public CStdTypeInfoTmpl<int>
+class CEnumeratedTypeInfo : public CStdTypeInfo<int>
 {
-    typedef CStdTypeInfoTmpl<int> CParent;
+    typedef CStdTypeInfo<int> CParent;
 public:
     typedef CParent::TObjectType TValue;
     typedef map<string, TValue> TNameToValue;
@@ -341,8 +321,6 @@ public:
                              "invalid value of enumerated type");
             return i->second;
         }
-
-    virtual TConstObjectPtr GetDefault(void) const;
 
 protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;

@@ -21,6 +21,7 @@ class CSerialObject
 {
 public:
     CSerialObject(void);
+    virtual ~CSerialObject(void);
 
     virtual void Dump(ostream& out) const;
 
@@ -28,12 +29,12 @@ public:
 
     string m_Name;
     bool m_HaveName;
-    const string* m_NamePtr;
+    string* m_NamePtr;
     int m_Size;
     list<string> m_Attributes;
     vector<char> m_Data;
-    vector<int> m_Offsets;
-    map<int, string> m_Names;
+    vector<short> m_Offsets;
+    map<long, string> m_Names;
     
     CSerialObject* m_Next;
     struct_Web_Env* m_WebEnv;

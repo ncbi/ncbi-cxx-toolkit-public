@@ -2,8 +2,8 @@
 #define ABSTRACT_PARSER_HPP
 
 #include <corelib/ncbistd.hpp>
-#include <alexer.hpp>
-#include <atoken.hpp>
+#include "alexer.hpp"
+#include "atoken.hpp"
 
 USING_NCBI_SCOPE;
 

@@ -4,8 +4,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <vector>
-#include <autoptr.hpp>
-#include <atoken.hpp>
+#include "autoptr.hpp"
+#include "atoken.hpp"
 
 USING_NCBI_SCOPE;
 

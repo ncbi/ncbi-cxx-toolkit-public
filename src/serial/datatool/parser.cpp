@@ -1,9 +1,9 @@
-#include <parser.hpp>
-#include <tokens.hpp>
-#include <module.hpp>
-#include <moduleset.hpp>
-#include <type.hpp>
-#include <value.hpp>
+#include "parser.hpp"
+#include "tokens.hpp"
+#include "module.hpp"
+#include "moduleset.hpp"
+#include "type.hpp"
+#include "value.hpp"
 
 void ASNParser::Modules(CModuleSet& modules)
 {

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/09/14 18:54:18  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.12  1999/08/16 16:08:31  vasilche
 * Added ENUMERATED type.
 *
@@ -676,7 +680,7 @@ void CObjectIStreamAsnBinary::ReadStd(float& data)
     char buffer[128];
     ReadBytes(buffer, length);
     buffer[length] = 0;
-    if ( sscanf(buffer, "%hg", &data) != 1 ) {
+    if ( sscanf(buffer, "%g", &data) != 1 ) {
         SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "bad REAL data string");
     }
@@ -696,7 +700,7 @@ void CObjectIStreamAsnBinary::ReadStd(double& data)
     char buffer[128];
     ReadBytes(buffer, length);
     buffer[length] = 0;
-    if ( sscanf(buffer, "%g", &data) != 1 ) {
+    if ( sscanf(buffer, "%lg", &data) != 1 ) {
         SetFailFlags(eFormatError);
         THROW1_TRACE(runtime_error, "bad REAL data string");
     }
@@ -774,6 +778,8 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
         case eNull:
             ExpectShortLength(0);
             return eNullPointer;
+        default:
+            break;
         }
     }
     else if ( LastTagWas(eApplication, true) ) {
@@ -782,12 +788,16 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
             return eMemberPointer;
         case eLongTag:
             return eOtherPointer;
+        default:
+            break;
         }
     }
     else if ( LastTagWas(eApplication, false) ) {
         switch ( tag) {
         case eObjectReference:
             return eObjectPointer;
+        default:
+            break;
         }
     }
     // by default: try this class

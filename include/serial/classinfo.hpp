@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/14 18:54:02  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.18  1999/09/01 17:37:59  vasilche
 * Fixed vector<char> implementation.
 * Added explicit naming of class info.
@@ -103,6 +107,7 @@
 #include <map>
 #include <list>
 #include <vector>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -129,8 +134,9 @@ public:
 
     virtual size_t GetSize(void) const;
 
+    virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
-
+    virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     // returns type info of pointer to this type
@@ -193,13 +199,12 @@ protected:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const;
 
-    TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
-        {
-            const type_info* ti = GetCPlusPlusTypeInfo(object);
-            return ti == 0? this: GetClassInfoById(*ti);
-        }
+    TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+
+    void RegisterSubClasses(void) const;
 
 private:
+    const type_info& m_Id;
     size_t m_Size;
     bool m_RandomOrder;
     bool m_Implicit;
@@ -216,7 +221,6 @@ private:
         CTypeInfoOrder> TClassesById;
     typedef map<string, const CClassInfoTmpl*> TClassesByName;
 
-    const type_info& m_Id;
     static TClasses* sm_Classes;
     static TClassesById* sm_ClassesById;
     static TClassesByName* sm_ClassesByName;
@@ -230,9 +234,10 @@ private:
 
 class CStructInfoTmpl : public CClassInfoTmpl
 {
+    typedef CClassInfoTmpl CParent;
 public:
     CStructInfoTmpl(const string& name, const type_info& id, size_t size)
-        : CClassInfoTmpl(name, id, size)
+        : CParent(name, id, size)
         {
         }
 
@@ -242,10 +247,11 @@ public:
 template<class Class>
 class CStructInfo : public CStructInfoTmpl
 {
+    typedef CStructInfoTmpl CParent;
 public:
     typedef Class TObjectType;
     CStructInfo(const string& name)
-        : CStructInfoTmpl(name, typeid(Class), sizeof(Class))
+        : CParent(name, typeid(Class), sizeof(Class))
         {
         }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/14 18:54:03  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.21  1999/08/16 16:07:43  vasilche
 * Added ENUMERATED type.
 *
@@ -150,9 +154,9 @@ public:
     virtual void ReadStd(float& data) = 0;
     virtual void ReadStd(double& data) = 0;
 
-    virtual void ReadStr(string& data);
-    virtual void ReadStr(char*& data);
-    virtual void ReadStr(const char*& data);
+    virtual void ReadStd(char*& data);
+    virtual void ReadStd(const char*& data);
+    virtual void ReadStd(string& data);
 
     // object level readers
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/09/14 18:54:22  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.2  1999/08/13 15:53:52  vasilche
 * C++ analog of asntool: datatool
 *
@@ -39,7 +43,6 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
 

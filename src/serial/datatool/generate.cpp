@@ -1,9 +1,11 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
-#include <moduleset.hpp>
-#include <module.hpp>
-#include <type.hpp>
 #include <fstream>
+#include <algorithm>
+#include "moduleset.hpp"
+#include "module.hpp"
+#include "type.hpp"
+#include "code.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -40,6 +42,16 @@ string FileName(const CNcbiRegistry& reg, const string& typeName)
         return fileName;
 }
 
+inline
+string MkDir(const string& s)
+{
+    SIZE_TYPE length = s.size();
+    if ( length == 0 || s[length-1] == '/' )
+        return s;
+    else
+        return s + '/';
+}
+
 void GenerateCode(const CModuleSet& types, const string& fileName)
 {
     CNcbiRegistry def;
@@ -58,15 +70,9 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
         def.Read(*in);
     }
 
-    string headersPath = def.Get("-", "headers_path");
-    if ( !headersPath.empty() )
-        headersPath += '/';
-    string sourcesPath = def.Get("-", "sources_path");
-    if ( !sourcesPath.empty() )
-        sourcesPath += '/';
-    string includeAdd = def.Get("-", "include_add");
-    if ( !includeAdd.empty() )
-        includeAdd += '/';
+    string headersPath = MkDir(def.Get("-", "headers_path"));
+    string sourcesPath = MkDir(def.Get("-", "sources_path"));
+    string headersPrefix = MkDir(def.Get("-", "headers_prefix"));
     string ns = def.Get("-", "namespace");
 
     typedef list<const ASNType*> TClasses;
@@ -88,26 +94,22 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
         }
     }
     
+    //    auto_ptr<ofstream> files;
+    //    ofstream files((sourcesPath + fileName + );
     // generate output files
     for ( TOutputFiles::const_iterator filei = outputFiles.begin();
           filei != outputFiles.end();
           ++filei ) {
-        string outFileName = filei->first;
-        ofstream header((headersPath + outFileName + "_Base.hpp").c_str());
-        ofstream code((sourcesPath + outFileName + "_Base.cpp").c_str());
-
-        header <<
-            "// This is generated file, don't modify" << endl <<
-            "#ifndef " << filei->first << "_Base_HPP" << endl <<
-            "#define " << filei->first << "_Base_HPP" << endl <<
-            endl << "// standard includes" << endl <<
-            "#include <corelib/ncbistd.hpp>" << endl;
-
-        code << "// This is generated file, don't modify" << endl <<
-            endl << "// standard includes" << endl <<
-            "#include <serial/serial.hpp>" << endl;
-
-
+        CCode code(filei->first, headersPrefix, ns);
+        for ( TClasses::const_iterator typei = filei->second.begin();
+              typei != filei->second.end();
+              ++typei ) {
+            code.AddType(*typei, def);
+        }
+        code.GenerateHeader(headersPath);
+        code.GenerateCPP(sourcesPath);
+    }
+/*
         TClasses::const_iterator typei;
 
         set<string> includes;
@@ -189,15 +191,15 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
 
             code <<
                 "BEGIN_CLASS_INFO3(\"" << (*typei)->name << "\", " <<
-                className << "_Base" << ", " << className << ')' << endl <<
+                className << ", " << className << "_Base)" << endl <<
                 '{' << endl;
             if ( !baseType.empty() ) {
                 code <<
                     "    SET_PARENT_CLASS(" <<
-                    ClassName(def, baseType) << ");" << endl;
+                    ClassName(def, baseType) << ")->SetOptional();" << endl;
             }
             
-            (*typei)->GenerateCode(header, code, (*typei)->name, def, "");
+            (*typei)->GenerateCode(code, (*typei)->name, def);
 
             header << "};" << endl << endl;
 
@@ -215,4 +217,5 @@ void GenerateCode(const CModuleSet& types, const string& fileName)
         header << endl <<
             "#endif // " << filei->first << "_Base_HPP" << endl;
     }
+*/
 }

@@ -4,29 +4,31 @@
 #include <asn.h>
 #include <webenv.h>
 
-//    GET_PTR_INFO(CSerialObject)->ADD_SUB_CLASS(CSerialObject2);
-
 BEGIN_CLASS_INFO(CSerialObject)
-    ADD_CLASS_MEMBER(m_Name);
-    ADD_CLASS_MEMBER(m_HaveName);
-    ADD_PTR_CLASS_MEMBER(m_NamePtr);
-    ADD_CLASS_MEMBER(m_Size);
-    ADD_STL_CLASS_MEMBER(m_Attributes);
-    ADD_STL_CLASS_MEMBER(m_Data);
-    ADD_STL_CLASS_MEMBER(m_Offsets);
-    ADD_STL_CLASS_MEMBER(m_Names);
-    ADD_PTR_CLASS_MEMBER(m_Next)->SetOptional();
- //   ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, WebEnv)->SetOptional();
+    ADD_STD_M(m_Name);
+    ADD_STD_M(m_HaveName);
+    ADD_M(m_NamePtr, POINTER, (STD, (string)));
+    ADD_STD_M(m_Size);
+    ADD_M(m_Attributes, STL_list, (STD, (string)));
+    ADD_M(m_Data, STL_CHAR_vector, (char));
+    ADD_M(m_Offsets, STL_vector, (STD, (short)));
+    ADD_M(m_Names, STL_map, (STD, (long), STD, (string)));
+    ADD_M(m_Next, POINTER, (CLASS, (CSerialObject)))->SetOptional();
+//ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, WebEnv)->SetOptional();
 
-    info->ADD_SUB_CLASS(CSerialObject2);
+    ADD_SUB_CLASS(CSerialObject2);
 END_CLASS_INFO
 
 BEGIN_DERIVED_CLASS_INFO(CSerialObject2, CSerialObject)
-    ADD_CLASS_MEMBER(m_Name2);
+    ADD_STD_M(m_Name2);
 END_DERIVED_CLASS_INFO
 
 CSerialObject::CSerialObject(void)
     : m_NamePtr(0), m_Size(0), m_Next(0)
+{
+}
+
+CSerialObject::~CSerialObject(void)
 {
 }
 
@@ -58,7 +60,7 @@ void CSerialObject::Dump(ostream& out) const
     out << "}" << endl;
 
     out << "m_Offsets: {" << endl;
-    for ( vector<int>::const_iterator i1 = m_Offsets.begin();
+    for ( vector<short>::const_iterator i1 = m_Offsets.begin();
           i1 != m_Offsets.end();
           ++i1 ) {
         out << "    " << *i1 << endl;
@@ -66,7 +68,7 @@ void CSerialObject::Dump(ostream& out) const
     out << "}" << endl;
     
     out << "m_Names: {" << endl;
-    for ( map<int, string>::const_iterator i2 = m_Names.begin();
+    for ( map<long, string>::const_iterator i2 = m_Names.begin();
           i2 != m_Names.end();
           ++i2 ) {
         out << "    " << i2->first << ": \"" << i2->second << '"' << endl;

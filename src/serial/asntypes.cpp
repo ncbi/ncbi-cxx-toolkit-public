@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/14 18:54:14  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.19  1999/08/31 17:50:08  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -96,10 +100,8 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
-#include <serial/classinfo.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
@@ -160,7 +162,7 @@ T* Alloc(T*& ptr)
 	return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
-#ifndef WINDOWS
+#ifdef WINDOWS
 static inline
 bsunit* BSUnitNew(size_t size)
 {
@@ -252,18 +254,16 @@ void BSWrite(bytestore* bs, char* data, size_t length)
 }
 #endif
 
-static const TConstObjectPtr zeroPointer = 0;
-
 CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type)
-    : CTypeInfo("SEQUENCE OF " + type->GetName()), m_DataType(type)
+    : CParent("SEQUENCE OF " + type->GetName()), m_DataType(type)
 {
 	Init();
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name, TTypeInfo type)
-    : CTypeInfo(name), m_DataType(type)
+    : CParent(name), m_DataType(type)
 {
 	Init();
 }
@@ -325,16 +325,6 @@ bool CSequenceOfTypeInfo::RandomOrder(void) const
     return false;
 }
 
-size_t CSequenceOfTypeInfo::GetSize(void) const
-{
-    return sizeof(void*);
-}
-
-TConstObjectPtr CSequenceOfTypeInfo::GetDefault(void) const
-{
-    return &zeroPointer;
-}
-
 TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 {
 	_ASSERT(m_NextOffset == offsetof(valnode, next));
@@ -345,6 +335,11 @@ TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 		_ASSERT(m_DataOffset == offsetof(valnode, data));
         return Alloc(sizeof(valnode));
 	}
+}
+
+bool CSequenceOfTypeInfo::IsDefault(TConstObjectPtr object) const
+{
+    return First(object) == 0;
 }
 
 bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
@@ -358,6 +353,11 @@ bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
             return false;
     }
     return object2 == 0;
+}
+
+void CSequenceOfTypeInfo::SetDefault(TObjectPtr dst) const
+{
+    First(dst) = 0;
 }
 
 void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
@@ -434,12 +434,12 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
 CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo::sm_Map;
 
 CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
-    : CSequenceOfTypeInfo("SET OF " + type->GetName(), type)
+    : CParent("SET OF " + type->GetName(), type)
 {
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(const string& name, TTypeInfo type)
-    : CSequenceOfTypeInfo(name, type)
+    : CParent(name, type)
 {
 }
 
@@ -456,9 +456,9 @@ size_t CAsnPointerTypeInfo::GetSize(void) const
     return sizeof(void*);
 }
 
-TConstObjectPtr CAsnPointerTypeInfo::GetDefault(void) const
+bool CAsnPointerTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return &zeroPointer;
+    return Get(object) == 0;
 }
 
 bool CAsnPointerTypeInfo::Equals(TConstObjectPtr object1,
@@ -469,6 +469,11 @@ bool CAsnPointerTypeInfo::Equals(TConstObjectPtr object1,
     if ( object1 == 0 || object2 == 0 )
         THROW1_TRACE(runtime_error, "null ASN struct pointer");
     return GetAsnTypeInfo()->Equals(object1, object2);
+}
+
+void CAsnPointerTypeInfo::SetDefault(TObjectPtr dst) const
+{
+    Get(dst) = 0;
 }
 
 void CAsnPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
@@ -549,6 +554,11 @@ TObjectPtr CChoiceTypeInfo::Create(void) const
     return Alloc(sizeof(valnode));
 }
 
+bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
+{
+    return object == 0;
+}
+
 bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
                              TConstObjectPtr object2) const
 {
@@ -562,6 +572,13 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
         return GetVariantTypeInfo(index)->Equals(&val1->data, &val2->data);
     }
     return choice == 0;
+}
+
+void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
+{
+    valnode* node = static_cast<valnode*>(dst);
+    node->choice = 0;
+    node->data.ptrvalue = 0;
 }
 
 void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
@@ -623,18 +640,13 @@ void CChoiceTypeInfo::ReadData(CObjectIStream& in,
 }
 
 COctetStringTypeInfo::COctetStringTypeInfo(void)
-    : CTypeInfo("OCTET STRING")
+    : CParent("OCTET STRING")
 {
 }
 
-size_t COctetStringTypeInfo::GetSize(void) const
+bool COctetStringTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-	return sizeof(void*);
-}
-
-TConstObjectPtr COctetStringTypeInfo::GetDefault(void) const
-{
-	return &zeroPointer;
+    return Get(object)->totlen == 0;
 }
 
 bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
@@ -670,6 +682,12 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
 	return true;
 }
 
+void COctetStringTypeInfo::SetDefault(TObjectPtr dst) const
+{
+    BSFree(Get(dst));
+    Get(dst) = BSNew(0);
+}
+
 void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
 	if ( Get(src) == 0 )
@@ -703,7 +721,7 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
         size_t length = block.GetExpectedLength();
         bytestore* bs = Get(object) = BSNew(length);
         bsunit* unit = bs->chain;
-        _ASSERT(unit != 0 && unit->len_avail >= length);
+        _ASSERT(unit != 0 && size_t(unit->len_avail) >= length);
         if ( block.Read(unit->str, length) != length )
             THROW1_TRACE(runtime_error, "read fault");
         unit->len = length;
@@ -726,7 +744,7 @@ map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
 COldAsnTypeInfo::COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
                                  TReadProc readProc, TWriteProc writeProc)
-    : CTypeInfo("old ASN.1"),
+    : CParent("old ASN.1"),
       m_NewProc(newProc), m_FreeProc(freeProc),
       m_ReadProc(readProc), m_WriteProc(writeProc)
 {
@@ -747,14 +765,9 @@ TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
     return info;
 }
 
-size_t COldAsnTypeInfo::GetSize(void) const
+bool COldAsnTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return sizeof(TObjectPtr);
-}
-
-TConstObjectPtr COldAsnTypeInfo::CreateDefault(void) const
-{
-    return &zeroPointer;
+    return Get(object) == 0;
 }
 
 bool COldAsnTypeInfo::Equals(TConstObjectPtr object1,
@@ -763,11 +776,14 @@ bool COldAsnTypeInfo::Equals(TConstObjectPtr object1,
     return Get(object1) == 0 && Get(object2) == 0;
 }
 
-void COldAsnTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void COldAsnTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    if ( src != GetDefault() )
-        THROW1_TRACE(runtime_error, "cannot assign non default value");
     Get(dst) = m_NewProc();
+}
+
+void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
+{
+    THROW1_TRACE(runtime_error, "cannot assign non default value");
 }
 
 void COldAsnTypeInfo::WriteData(CObjectOStream& out,
@@ -799,13 +815,6 @@ void CEnumeratedTypeInfo::AddValue(const string& name, TValue value)
         THROW1_TRACE(runtime_error,
                      "duplicated enum value " + name);
     }
-}
-
-static CEnumeratedTypeInfo::TValue zeroValue = 0;
-
-TConstObjectPtr CEnumeratedTypeInfo::GetDefault(void) const
-{
-    return &zeroValue;
 }
 
 void CEnumeratedTypeInfo::ReadData(CObjectIStream& in,

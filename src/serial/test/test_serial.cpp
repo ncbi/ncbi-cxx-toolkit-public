@@ -25,28 +25,31 @@ int CTestSerial::Run(void)
     ofstream diag("test.log");
     SetDiagStream(&diag);
     try {
+        /*
         WebEnv* env = 0;
         {
             {
-                CObjectIStreamAsn(ifstream("webenv.ent")).
+                ifstream in("webenv.ent");
+                CObjectIStreamAsn(in).
                     Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CObjectOStreamAsnBinary(ofstream("webenv.bino",
-                                                 ios::out | ios::binary)).
+                ofstream out("webenv.bino", ios::out | ios::binary);
+                CObjectOStreamAsnBinary(out).
                     Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CObjectIStreamAsnBinary(ifstream("webenv.bin",
-                                                 ios::in | ios::binary)).
+                ifstream in("webenv.bin", ios::in | ios::binary);
+                CObjectIStreamAsnBinary(in).
                     Read(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-                CObjectOStreamAsn(ofstream("webenv.ento")).
+                ofstream out("webenv.ento");
+                CObjectOStreamAsn(out).
                     Write(&env, GetSequenceTypeRef(&env).Get());
             }
         }
-        
+        */
 
         CSerialObject write;
         CSerialObject2 write1;
@@ -63,7 +66,7 @@ int CTestSerial::Run(void)
         write.m_Attributes.push_back("m_");
         write.m_Next = &write1;
         const char* s = "data";
-        write.m_Data.assign(s, s + 4);
+        write.m_Data.insert(write.m_Data.begin(), s, s + 4);
         write.m_Offsets.push_back(25);
         write.m_Offsets.push_back(-1024);
         write.m_Names[0] = "zero";
@@ -71,11 +74,11 @@ int CTestSerial::Run(void)
         write.m_Names[2] = "two";
         write.m_Names[3] = "three";
         write.m_Names[10] = "ten";
-        write.m_WebEnv = env;
+        write.m_WebEnv = 0; //env;
 
         write1.m_Name = "write1";
         write1.m_NamePtr = new string("test");
-        write1.m_Size = 0x7fffffff;
+        write1.m_Size = 0x7fff;
         write1.m_Attributes.push_back("write1");
         write1.m_Next = &write1;
         write1.m_WebEnv = 0;
@@ -83,47 +86,62 @@ int CTestSerial::Run(void)
 
         {
             {
-                CObjectOStreamAsn(ofstream("test.asno")) << write;
+                ofstream out("test.asno");
+                CObjectOStreamAsn oout(out);
+                oout << write;
             }
             CSerialObject read;
             {
-                CObjectIStreamAsn(ifstream("test.asno")) >> read;
+                ifstream in("test.asno");
+                CObjectIStreamAsn iin(in);
+                iin >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
-            CObjectIStreamAsn(ifstream("test.asno")).SkipValue();
+            {
+                ifstream in("test.asno");
+                CObjectIStreamAsn(in).SkipValue();
+            }
         }
 
         {
             {
-                CObjectOStreamAsnBinary(ofstream("test.asnb",
-											     ios::binary)) << write;
+                ofstream out("test.asnb", ios::binary);
+                CObjectOStreamAsnBinary oout(out);
+                oout << write;
             }
             CSerialObject read;
             {
-                CObjectIStreamAsnBinary(ifstream("test.asnb",
-                                                 ios::binary)) >> read;
+                ifstream in("test.asnb", ios::binary);
+                CObjectIStreamAsnBinary iin(in);
+                iin >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
-            CObjectIStreamAsnBinary(ifstream("test.asnb",
-                                             ios::binary)).SkipValue();
+            {
+                ifstream in("test.asnb", ios::binary);
+                CObjectIStreamAsnBinary(in).SkipValue();
+            }
         }
 
         {
             {
-                CObjectOStreamBinary(ofstream("test.bin",
-											  ios::binary)) << write;
+                ofstream out("test.bin", ios::binary);
+                CObjectOStreamBinary oout(out);
+                oout << write;
             }
             CSerialObject read;
             {
-                CObjectIStreamBinary(ifstream("test.bin",
-											  ios::binary)) >> read;
+                ifstream in("test.bin", ios::binary);
+                CObjectIStreamBinary iin(in);
+                iin >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
-            CObjectIStreamBinary(ifstream("test.bin",
-                                          ios::binary)).SkipValue();
+            {
+                ifstream in("test.bin", ios::binary);
+                CObjectIStreamBinary(in).SkipValue();
+            }
         }
 
         NcbiCerr << "OK" << endl;

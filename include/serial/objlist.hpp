@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/09/14 18:54:04  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.4  1999/06/30 16:04:30  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -62,7 +66,7 @@ class COObjectList;
 
 class CORootObjectInfo {
 public:
-    typedef unsigned TIndex;
+    typedef int TIndex;
 
     CORootObjectInfo(TTypeInfo typeInfo = 0)
         : m_TypeInfo(typeInfo), m_Index(-1)

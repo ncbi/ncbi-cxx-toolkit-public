@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/14 18:54:04  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.19  1999/08/16 16:07:43  vasilche
 * Added ENUMERATED type.
 *
@@ -142,9 +146,9 @@ public:
     virtual void WriteStd(const float& data) = 0;
     virtual void WriteStd(const double& data) = 0;
 
-    virtual void WriteStr(const string& data);
-    virtual void WriteStr(const char* const& data);
-    virtual void WriteStr(char* const& data);
+    virtual void WriteStd(const char* const& data);
+    virtual void WriteStd(char* const& data);
+    virtual void WriteStd(const string& data);
 
     // object level writers
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);

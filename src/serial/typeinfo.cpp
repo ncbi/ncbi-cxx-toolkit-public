@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/09/14 18:54:21  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.15  1999/08/31 17:50:09  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -83,17 +87,13 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/ptrinfo.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
+#include <serial/objlist.hpp>
 
 BEGIN_NCBI_SCOPE
 
 CTypeInfo::CTypeInfo(const string& name)
-    : m_Name(name), m_Default(0)
+    : m_Name(name)
 {
 }
 
@@ -116,20 +116,6 @@ void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
 TObjectPtr CTypeInfo::Create(void) const
 {
     THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
-}
-
-TConstObjectPtr CTypeInfo::CreateDefault(void) const
-{
-    return Create();
-}
-
-TConstObjectPtr CTypeInfo::GetDefault(void) const
-{
-    TConstObjectPtr def = m_Default;
-    if ( !def ) {
-        def = m_Default = CreateDefault();
-    }
-    return def;
 }
 
 TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const

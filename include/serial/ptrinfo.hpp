@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/09/14 18:54:05  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.9  1999/08/31 17:50:04  vasilche
 * Implemented several macros for specific data types.
 * Added implicit members.
@@ -67,21 +71,20 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
 #include <serial/typemap.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CPointerTypeInfo : public CTypeInfo
+class CPointerTypeInfo : public CTypeInfoTmpl<void*>
 {
+    typedef CTypeInfoTmpl<void*> CParent;
 public:
     CPointerTypeInfo(TTypeInfo type)
-        : CTypeInfo(type->GetName() + '*'), m_DataType(type)
+        : CParent(type->GetName() + '*'), m_DataType(type)
         { }
     CPointerTypeInfo(const string& name, TTypeInfo type)
-        : CTypeInfo(name), m_DataType(type)
+        : CParent(name), m_DataType(type)
         { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)
@@ -103,10 +106,9 @@ public:
 
     virtual TObjectPtr Create(void) const;
 
-    virtual TConstObjectPtr GetDefault(void) const;
-
+    virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
-
+    virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
 protected:

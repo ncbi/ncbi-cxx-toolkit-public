@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/09/14 18:54:06  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.10  1999/08/13 15:53:45  vasilche
 * C++ analog of asntool: datatool
 *
@@ -77,24 +81,26 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 class CObjectOStream;
 
+
+
 template<typename T>
-class CStdTypeInfoTmpl : public CTypeInfo
+class CStdTypeInfo : public CTypeInfoTmpl<T>
 {
+    typedef CTypeInfoTmpl<T> CParent;
 public:
-    typedef T TObjectType;
-
-    static TObjectType& Get(TObjectPtr object)
+    virtual TObjectPtr Create(void) const
         {
-            return *static_cast<TObjectType*>(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectType*>(object);
+            return new TObjectType(0);
         }
 
-    virtual size_t GetSize(void) const
+    virtual bool IsDefault(TConstObjectPtr object) const
         {
-            return sizeof(TObjectType);
+            return Get(object) == 0;
+        }
+
+    virtual void SetDefault(TObjectPtr dst) const
+        {
+            Get(dst) = 0;
         }
 
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
@@ -107,39 +113,14 @@ public:
             Get(dst) = Get(src);
         }
 
-protected:
-    CStdTypeInfoTmpl()
-        : CTypeInfo(typeid(TObjectType).name())
-        {
-        }
-    CStdTypeInfoTmpl(const string& name)
-        : CTypeInfo(name)
-        {
-        }
-};
-
-template<typename T>
-class CStdTypeInfo : public CStdTypeInfoTmpl<T>
-{
-public:
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType(0);
-        }
-
-    virtual TConstObjectPtr GetDefault(void) const
-        {
-            static TObjectType def = 0;
-            return &def;
-        }
-
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStdTypeInfo;
-            return typeInfo;
-        }
+    static TTypeInfo GetTypeInfo(void);
 
 protected:
+    CStdTypeInfo<T>(const string& name)
+        : CParent(name)
+        {
+        }
+
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             in.ReadStd(Get(object));
@@ -153,13 +134,15 @@ protected:
 template<>
 class CStdTypeInfo<void> : public CTypeInfo
 {
+    typedef CTypeInfo CParent;
 public:
     virtual size_t GetSize(void) const;
 
     static TTypeInfo GetTypeInfo(void);
 
+    virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
-
+    virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
 protected:
@@ -168,45 +151,24 @@ protected:
 
 private:
     CStdTypeInfo(void)
-        : CTypeInfo(typeid(void).name())
+        : CParent(typeid(void).name())
         {
         }
 };
 
 template<>
-class CStdTypeInfo<char*> : public CStdTypeInfoTmpl<char*>
+class CStdTypeInfo<string> : public CTypeInfoTmpl<string>
 {
+    typedef CTypeInfoTmpl<string> CParent;
 public:
-    virtual TConstObjectPtr GetDefault(void) const;
+    CStdTypeInfo<string>(void);
 
-    static TTypeInfo GetTypeInfo(void);
-
-protected:
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-};
-
-template<>
-class CStdTypeInfo<const char*> : public CStdTypeInfoTmpl<const char*>
-{
-public:
-public:
-    virtual TConstObjectPtr GetDefault(void) const;
-
-    static TTypeInfo GetTypeInfo(void);
-
-protected:
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-};
-
-template<>
-class CStdTypeInfo<string> : public CStdTypeInfoTmpl<string>
-{
-public:
     virtual TObjectPtr Create(void) const;
     
-    virtual TConstObjectPtr GetDefault(void) const;
+    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
+    virtual void SetDefault(TObjectPtr dst) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     static TTypeInfo GetTypeInfo(void);
 

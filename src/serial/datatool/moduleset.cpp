@@ -1,6 +1,6 @@
-#include <moduleset.hpp>
-#include <module.hpp>
-#include <type.hpp>
+#include "moduleset.hpp"
+#include "module.hpp"
+#include "type.hpp"
 
 CModuleSet::CModuleSet(void)
 {

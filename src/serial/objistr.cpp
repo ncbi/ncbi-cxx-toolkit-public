@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/14 18:54:17  vasilche
+* Fixed bugs detected by gcc & egcs.
+* Removed unneeded includes.
+*
 * Revision 1.20  1999/08/16 16:08:30  vasilche
 * Added ENUMERATED type.
 *
@@ -395,28 +399,28 @@ void CObjectIStream::EndMember(const Member& )
 
 CObjectIStream::Block::Block(CObjectIStream& in)
     : m_In(in), m_Fixed(false), m_RandomOrder(false),
-      m_Finished(false), m_NextIndex(0), m_Size(0)
+      m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.VBegin(*this);
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, EFixed )
     : m_In(in), m_Fixed(true), m_RandomOrder(false),
-      m_Finished(false), m_NextIndex(0), m_Size(0)
+      m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.FBegin(*this);
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder)
     : m_In(in), m_Fixed(false), m_RandomOrder(randomOrder),
-      m_Finished(false), m_NextIndex(0), m_Size(0)
+      m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.VBegin(*this);
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder , EFixed )
     : m_In(in), m_Fixed(true), m_RandomOrder(randomOrder),
-      m_Finished(false), m_NextIndex(0), m_Size(0)
+      m_Finished(false), m_Size(0), m_NextIndex(0)
 {
     in.FBegin(*this);
 }
@@ -468,17 +472,17 @@ void CObjectIStream::End(const ByteBlock& )
 {
 }
 
-void CObjectIStream::ReadStr(string& data)
+void CObjectIStream::ReadStd(string& data)
 {
 	data = ReadString();
 }
 
-void CObjectIStream::ReadStr(const char*& data)
+void CObjectIStream::ReadStd(const char*& data)
 {
 	data = ReadCString();
 }
 
-void CObjectIStream::ReadStr(char*& data)
+void CObjectIStream::ReadStd(char*& data)
 {
 	data = ReadCString();
 }
