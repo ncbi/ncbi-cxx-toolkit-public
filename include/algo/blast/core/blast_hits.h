@@ -464,6 +464,13 @@ Int2 Blast_HSPResultsSortByEvalue(BlastHSPResults* results);
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
 
+/** Reverse order of HSP lists in each hit list in the BLAST results. 
+ * This allows to return HSP lists from the end of the arrays when reading
+ * from a collector HSP stream.
+ */
+NCBI_XBLAST_EXPORT
+Int2 Blast_HSPResultsReverseOrder(BlastHSPResults* results);
+
 /** Blast_HSPResultsSaveRPSHSPList
  *  Save the HSPs from an HSPList obtained on the preliminary stage of 
  * RPS BLAST to appropriate places in the results structure. Input HSPList

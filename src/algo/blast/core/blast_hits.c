@@ -2011,6 +2011,29 @@ Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results)
    return 0;
 }
 
+Int2 Blast_HSPResultsReverseOrder(BlastHSPResults* results)
+{
+   Int4 index;
+   BlastHitList* hit_list;
+
+   for (index = 0; index < results->num_queries; ++index) {
+      hit_list = results->hitlist_array[index];
+      if (hit_list && hit_list->hsplist_count > 1) {
+	 BlastHSPList* hsplist;
+	 Int4 index1;
+	 /* Swap HSP lists: first with last; second with second from the end,
+	    etc. */
+	 for (index1 = 0; index1 < hit_list->hsplist_count/2; ++index1) {
+	    hsplist = hit_list->hsplist_array[index1];
+	    hit_list->hsplist_array[index1] = 
+	       hit_list->hsplist_array[hit_list->hsplist_count-index1-1];
+	    hit_list->hsplist_array[hit_list->hsplist_count-index1-1] =
+	       hsplist;
+	 }
+      }
+   }
+}
+
 Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsplist_in, const BlastHitSavingOptions* hit_options)
 {
