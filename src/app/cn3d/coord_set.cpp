@@ -90,7 +90,6 @@ CoordSet::CoordSet(StructureBase *parent,
                         new Helix3D(this, coords.GetSurface().GetSurface().GetCylinder(),
                             coords.GetSurface().GetContents().GetResidues());
                     if (helix->moleculeID == Object3D::VALUE_NOT_SET) {
-                        this->_RemoveChild(helix);
                         delete helix;
                         WARNINGMSG("bad helix");
                     } else
@@ -102,7 +101,6 @@ CoordSet::CoordSet(StructureBase *parent,
                         new Strand3D(this, coords.GetSurface().GetSurface().GetBrick(),
                             coords.GetSurface().GetContents().GetResidues());
                     if (strand->moleculeID == Object3D::VALUE_NOT_SET) {
-                        this->_RemoveChild(strand);
                         delete strand;
                         WARNINGMSG("bad strand");
                     } else
@@ -119,6 +117,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/28 14:17:47  thiessen
+* make _RemoveChild private
+*
 * Revision 1.15  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

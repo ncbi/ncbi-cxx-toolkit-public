@@ -78,12 +78,10 @@ private:
     typedef std::list < StructureBase * > _ChildList;
     _ChildList _children;
     void _AddChild(StructureBase *child);
+    void _RemoveChild(const StructureBase *child);
 
     // also keep parent so we can move up the tree (see GetParentOfType())
     StructureBase* _parent;
-
-protected:
-    void _RemoveChild(const StructureBase *child);
 
 public:
     // go up the hierarchy to find a parent of the desired type
@@ -123,6 +121,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/09/28 14:17:47  thiessen
+* make _RemoveChild private
+*
 * Revision 1.24  2004/05/28 21:01:45  thiessen
 * namespace/typename fixes for GCC 3.4
 *

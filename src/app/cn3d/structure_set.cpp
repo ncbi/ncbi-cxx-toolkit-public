@@ -732,10 +732,8 @@ void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
     }
 
     // update the AlignmentSet
-    if (alignmentSet) {
-        _RemoveChild(alignmentSet);
+    if (alignmentSet)
         delete alignmentSet;
-    }
     alignmentSet = newAlignmentSet;
 
     // update the asn alignments
@@ -1515,6 +1513,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.143  2004/09/28 14:17:47  thiessen
+* make _RemoveChild private
+*
 * Revision 1.142  2004/07/27 15:23:04  thiessen
 * show # display lists in log
 *
