@@ -478,6 +478,12 @@ during the configuration process:
 	 <td><i>@bindir@</i></td>
 	 <td>Executables built inside the <i>build tree</i></td>
   </tr>
+
+  <tr>
+	 <td><b>status_dir</b></td>
+	 <td><i>@status_dir@</i></td>
+	 <td>Configuration status files</i></td>
+  </tr>
 </table>
 
 
@@ -582,11 +588,14 @@ File Makefile.xmylib.lib:
 LIB      = xmylib
 LIBOBJ   = xmy_src1 xmy_src2
 LOBJ     = some_obj1
+REQUIRES = xrequirement
 CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
 CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
 
 <ul>
+  <li> Skip building this library if xrequirement (an optional package
+       or project) is disabled or unavailable
   <li> Compile <i><b>xmy_src1.cpp</b></i> using the C++ compiler
        <b>$(CXX)</b> with the flags <b>$(CXXFLAGS) $(CPPFLAGS)</b>
        (which are the original C++ and preprocessor flags,
@@ -650,10 +659,13 @@ File Makefile.my_exe.app:
 APP      = my_exe
 OBJ      = my_main my_src1 my_src2
 LIB      = xmylib$(STATIC) xncbi
+REQUIRES = xrequirement
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_SSSDB_INCLUDE)
 LIBS     = $(NCBI_SSSDB_LIBS) $(SYBASE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)</pre>
 
 <ul>
+  <li> Skip building this library if xrequirement (an optional package
+       or project) is disabled or unavailable
   <li> Compile <i><b>my_main.cpp</b></i> and <i><b>my_src1.cpp</b></i>
     using the C++ compiler <b>$(CXX)</b> with the flags <b>$(CPPFLAGS)</b>
     (<a href="#ref_Note1">*</a>)
