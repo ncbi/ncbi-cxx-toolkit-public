@@ -95,13 +95,6 @@ void CGenbankGatherer::x_DoSingleSection
 
     ctx.SetActiveBioseq(seq);
 
-    if ( (ctx.IsNa()  &&  
-          ((ctx.GetFilterFlags() & fSkipNucleotides) != 0))  ||
-         (ctx.IsProt()  &&
-          ((ctx.GetFilterFlags() & fSkipProteins) != 0)) ) {
-        return;
-    }
-
     ItemOS() << new CStartSectionItem(ctx);
 
     ItemOS() << new CLocusItem(ctx);
@@ -207,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/12 16:58:43  shomrat
+* Filtering moved to gather_items
+*
 * Revision 1.6  2004/02/19 18:14:41  shomrat
 * Added Origin item; supress source-features if flag is set
 *
