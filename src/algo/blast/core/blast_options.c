@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.86  2004/03/09 18:46:24  dondosha
+ * Corrected how cutoffs are calculated
+ *
  * Revision 1.85  2004/03/04 21:07:48  papadopo
  * add RPS BLAST functionality
  *
@@ -516,6 +519,22 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
 
 }
 
+static double GetUngappedCutoff(Uint1 program)
+{
+   switch(program) {
+   case blast_type_blastn:
+      return UNGAPPED_CUTOFF_E_BLASTN;
+   case blast_type_blastp: 
+      return UNGAPPED_CUTOFF_E_BLASTP;
+   case blast_type_blastx: 
+      return UNGAPPED_CUTOFF_E_BLASTX;
+   case blast_type_tblastn:
+      return UNGAPPED_CUTOFF_E_TBLASTN;
+   case blast_type_tblastx:
+      return UNGAPPED_CUTOFF_E_TBLASTX;
+   }
+   return 0;
+}
 
 Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
@@ -523,57 +542,79 @@ BlastInitialWordParametersNew(Uint1 program_number,
    BlastHitSavingParameters* hit_params, 
    BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
-   const BlastEffectiveLengthsOptions* eff_len_options, 
-   Boolean gapped_calculation, BlastInitialWordParameters* *parameters)
+   Uint4 subject_length,
+   BlastInitialWordParameters* *parameters)
 {
-   Int4 context = query_info->first_context;
-   Int4 cutoff_score = 0, s2 = 0;
-   double e2;
-   BLAST_KarlinBlk* kbp;
-   double qlen;
-   double avglen;
+   Int2 status = 0;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
       so don't do anything */
    if (!parameters)
       return 0;
 
-   if (!word_options || !hit_params || !sbp || !sbp->kbp_std[context])
-      return 8;
+   ASSERT(sbp);
+   ASSERT(word_options);
 
    *parameters = (BlastInitialWordParameters*) 
       calloc(1, sizeof(BlastInitialWordParameters));
 
    (*parameters)->options = (BlastInitialWordOptions *) word_options;
 
+   ASSERT(sbp->kbp_std[query_info->first_context]);
+
    (*parameters)->x_dropoff = (Int4)
-      ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
+      ceil(word_options->x_dropoff*NCBIMATH_LN2/
+           sbp->kbp_std[query_info->first_context]->Lambda);
 
-   if (gapped_calculation)
-      kbp = sbp->kbp_gap[context];
-   else
-      kbp = sbp->kbp_std[context];
+   status = BlastInitialWordParametersUpdate(program_number,
+               hit_params, ext_params, sbp, query_info,
+               subject_length, *parameters);
 
-   /* Calculate score cutoff corresponding to a fixed e-value (0.05);
-      If it is smaller, then use this one */
-   qlen = query_info->context_offsets[query_info->last_context+1] - 1;
+   return status;
+}
 
-   avglen = ((double) eff_len_options->db_length) / 
-      eff_len_options->dbseq_num;
+Int2
+BlastInitialWordParametersUpdate(Uint1 program_number, 
+   BlastHitSavingParameters* hit_params, 
+   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   BlastQueryInfo* query_info, Uint4 subj_length,
+   BlastInitialWordParameters* parameters)
+{
+   BLAST_KarlinBlk* kbp;
+   Boolean gapped_calculation = TRUE;
 
-   e2 = UNGAPPED_CUTOFF_EVALUE;
-   BLAST_Cutoffs(&s2, &e2, kbp, MIN(avglen, qlen)*avglen, TRUE, 
-                 hit_params->gap_decay_rate);
+   ASSERT(sbp);
+   ASSERT(hit_params);
+   ASSERT(ext_params);
+   ASSERT(query_info);
 
-   cutoff_score = MIN(hit_params->cutoff_score, s2);
-
-   /* For non-blastn programs, the cutoff score should not be larger than 
-      gap trigger */
-   if (gapped_calculation && program_number != blast_type_blastn) {
-      (*parameters)->cutoff_score = 
-         MIN((Int4)ext_params->gap_trigger, cutoff_score);
+   /* kbp_gap is only non-NULL for gapped searches! */
+   if (sbp->kbp_gap) {
+      kbp = sbp->kbp_gap[query_info->first_context];
    } else {
-      (*parameters)->cutoff_score = cutoff_score;
+      kbp = sbp->kbp_std[query_info->first_context];
+      gapped_calculation = FALSE;
+   }
+
+   ASSERT(kbp);
+   /* For non-blastn programs cutoff score should not be larger than 
+      gap trigger. */
+   if (gapped_calculation && program_number != blast_type_blastn) {
+      parameters->cutoff_score = 
+         MIN((Int4)ext_params->gap_trigger, hit_params->cutoff_score);
+   } else {
+      Int4 s2 = 0;
+      double e2;
+      double qlen;
+      /* Calculate score cutoff corresponding to a fixed e-value (0.05);
+         If it is smaller, then use this one */
+      qlen = query_info->context_offsets[query_info->last_context+1] - 1;
+      
+      e2 = GetUngappedCutoff(program_number);
+
+      BLAST_Cutoffs(&s2, &e2, kbp, MIN(subj_length, qlen)*subj_length, TRUE, 
+                    hit_params->gap_decay_rate);
+      parameters->cutoff_score = MIN(hit_params->cutoff_score, s2);
    }
 
    return 0;
@@ -909,6 +950,28 @@ BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options)
    return 0;
 }
 
+BlastEffectiveLengthsParameters*
+BlastEffectiveLengthsParametersFree(BlastEffectiveLengthsParameters* parameters)
+
+{
+	sfree(parameters);
+
+	return NULL;
+}
+
+Int2 
+BlastEffectiveLengthsParametersNew(const BlastEffectiveLengthsOptions* options, 
+                               Int8 db_length, Int4 num_seqs,
+                               BlastEffectiveLengthsParameters* *parameters)
+{
+   *parameters = (BlastEffectiveLengthsParameters*) 
+      calloc(1, sizeof(BlastEffectiveLengthsParameters));
+   (*parameters)->options = (BlastEffectiveLengthsOptions*) options;
+   (*parameters)->real_db_length = db_length;
+   (*parameters)->real_num_seqs = num_seqs;
+   return 0;
+}
+
 Int2 
 BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options, 
    Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff)
@@ -923,8 +986,8 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options,
       return 0;
    }
 
-   options->dbseq_num = MAX(dbseq_num, 1);
-   options->db_length = MAX(db_length, 1);
+   options->dbseq_num = dbseq_num;
+   options->db_length = db_length;
 
    return 0;
 }
@@ -1166,10 +1229,6 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
    (*options)->prelim_hitlist_size = 500;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
 
-   if (program_number != blast_type_blastn && 
-       program_number != blast_type_blastp)
-      (*options)->do_sum_stats = TRUE;
-
    /* other stuff?? */
    
    return 0;
@@ -1233,23 +1292,28 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parmameters)
 Int2
 BlastHitSavingParametersNew(Uint1 program_number, 
    const BlastHitSavingOptions* options, 
+   const BlastExtensionParameters* ext_params, 
    int (*handle_results)(void*, void*, void*, void*, void*, void*, void*), 
    BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
    BlastHitSavingParameters* *parameters)
 {
-   BlastHitSavingParameters* params;
-   BLAST_KarlinBlk* kbp;
-   double evalue = options->expect_value;
    Boolean gapped_calculation = TRUE;
+   Int2 status = 0;
+   BlastHitSavingParameters* params;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
       so don't do anything */
    if (!parameters)
       return 0;
 
-   if (!options)
-      return 1;
+   ASSERT(options);
+   ASSERT(sbp);
+   
+   if (!sbp->kbp_gap)
+      gapped_calculation = FALSE;
 
+   /* If parameters have not yet been created, allocate and fill all
+      parameters that are constant throughout the search */
    *parameters = params = (BlastHitSavingParameters*) 
       calloc(1, sizeof(BlastHitSavingParameters));
 
@@ -1260,23 +1324,15 @@ BlastHitSavingParametersNew(Uint1 program_number,
 
    params->handle_results = handle_results;
 
-   if (sbp->kbp_gap && sbp->kbp_gap[query_info->first_context]) {
-      kbp = sbp->kbp_gap[query_info->first_context];
-   } else {
-      kbp = sbp->kbp[query_info->first_context];
-      gapped_calculation = FALSE;
-   }
-
-   if (options->cutoff_score > 0) {
-      params->cutoff_score = options->cutoff_score;
-   } else if (!options->phi_align) {
-      BLAST_Cutoffs(&(params->cutoff_score), &evalue, kbp, 
-         (double)query_info->eff_searchsp_array[query_info->first_context], 
-         FALSE, 0);
-   } else {
-      params->cutoff_score = 0;
-   }
-   
+   /* If sum statistics use is forced by the options, 
+      set it in the paramters */
+   params->do_sum_stats = options->do_sum_stats;
+   /* Sum statistics is used anyway for all ungapped searches and all 
+      translated gapped searches */
+   if (!gapped_calculation || 
+       (program_number != blast_type_blastn && 
+        program_number != blast_type_blastp))
+      params->do_sum_stats = TRUE;
    if (program_number == blast_type_blastn || !gapped_calculation) {
       params->gap_prob = BLAST_GAP_PROB;
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE;
@@ -1286,6 +1342,59 @@ BlastHitSavingParametersNew(Uint1 program_number,
    }
    params->gap_size = BLAST_GAP_SIZE;
    params->cutoff_big_gap = 0;
+
+   status = BlastHitSavingParametersUpdate(program_number, 
+               ext_params, sbp, query_info, params);
+   return status;
+}
+
+Int2
+BlastHitSavingParametersUpdate(Uint1 program_number, 
+   const BlastExtensionParameters* ext_params, 
+   BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
+   BlastHitSavingParameters* params)
+{
+   BlastHitSavingOptions* options;
+   BLAST_KarlinBlk* kbp;
+   double evalue;
+   Boolean gapped_calculation = TRUE;
+
+   ASSERT(params);
+   ASSERT(query_info);
+   ASSERT(ext_params);
+
+   options = params->options;
+   evalue = options->expect_value;
+
+   /* Scoring options are not available here, but we can determine whether
+      this is a gapped or ungapped search by checking whether gapped
+      Karlin blocks have been set. */
+   if (sbp->kbp_gap) {
+      kbp = sbp->kbp_gap[query_info->first_context];
+   } else {
+      kbp = sbp->kbp[query_info->first_context];
+      gapped_calculation = FALSE;
+   }
+
+   /* Calculate cutoffs based on the current effective lengths information */
+   if (options->cutoff_score > 0) {
+      params->cutoff_score = options->cutoff_score;
+   } else if (!options->phi_align) {
+      BLAST_Cutoffs(&(params->cutoff_score), &evalue, kbp, 
+         (double)query_info->eff_searchsp_array[query_info->first_context], 
+         FALSE, 0);
+      /* When sum statistics is used, all HSPs above the gap trigger 
+         cutoff are saved until the sum statistics is applied to potentially
+         link them with other HSPs and improve their e-values. 
+         However this does not apply to the ungapped search! */
+      if (params->do_sum_stats && gapped_calculation) {
+         params->cutoff_score = 
+            MIN(params->cutoff_score, ext_params->gap_trigger);
+      }
+   } else {
+      params->cutoff_score = 0;
+   }
+   
    params->cutoff_small_gap = params->cutoff_score;
       
    return 0;
@@ -1399,3 +1508,79 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
    return status;
 }
 
+#define MY_EPS 1.0e-9
+void
+CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
+   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
+   Int8 db_length, Int4 subject_length, 
+   const PSIBlastOptions* psi_options)
+{
+	double gap_prob, gap_decay_rate, x_variable, y_variable;
+	BLAST_KarlinBlk* kbp;
+	Int4 expected_length, gap_size, query_length;
+	Int8 search_sp;
+   Boolean translated_subject = (program == blast_type_tblastn || 
+                                 program == blast_type_tblastx);
+
+	/* Do this for the first context, should this be changed?? */
+	kbp = sbp->kbp[query_info->first_context];
+	gap_size = hit_params->gap_size;
+	gap_prob = hit_params->gap_prob;
+	gap_decay_rate = hit_params->gap_decay_rate;
+   /* Use average query length */
+	query_length = query_info->context_offsets[query_info->last_context+1] /
+      (query_info->last_context + 1);
+
+   if (translated_subject) {
+      /* Lengths in subsequent calculations should be on the protein scale */
+      subject_length /= CODON_LENGTH;
+      db_length /= CODON_LENGTH;
+   }
+
+	/* Subtract off the expected score. */
+   expected_length = BLAST_Nint(log(kbp->K*((double) query_length)*
+                                    ((double) subject_length))/(kbp->H));
+   query_length = query_length - expected_length;
+
+   subject_length = subject_length - expected_length;
+   query_length = MAX(query_length, 1);
+   subject_length = MAX(subject_length, 1);
+
+   /* If this is a database search, use database length, else the single 
+      subject sequence length */
+   if (db_length > subject_length) {
+      y_variable = log((double) (db_length)/(double) subject_length)*(kbp->K)/
+         (gap_decay_rate);
+   } else {
+      y_variable = log((double) (subject_length + expected_length)/
+                       (double) subject_length)*(kbp->K)/(gap_decay_rate);
+   }
+   search_sp = ((Int8) query_length)* ((Int8) subject_length);
+   x_variable = 0.25*y_variable*((double) search_sp);
+
+   /* To use "small" gaps the query and subject must be "large" compared to
+      the gap size. If small gaps may be used, then the cutoff values must be
+      adjusted for the "bayesian" possibility that both large and small gaps 
+      are being checked for. */
+
+   if (search_sp > 8*gap_size*gap_size) {
+      x_variable /= (1.0 - gap_prob + MY_EPS);
+      hit_params->cutoff_big_gap = 
+         (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
+      x_variable = y_variable*(gap_size*gap_size);
+      x_variable /= (gap_prob + MY_EPS);
+      hit_params->cutoff_small_gap = 
+         (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
+      hit_params->ignore_small_gaps = FALSE;
+   } else {
+      hit_params->cutoff_big_gap = 
+         (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
+      hit_params->cutoff_small_gap = hit_params->cutoff_big_gap;
+      hit_params->ignore_small_gaps = TRUE;
+   }	
+
+   if (psi_options) {
+      hit_params->cutoff_big_gap *= psi_options->scalingFactor;
+      hit_params->cutoff_small_gap *= psi_options->scalingFactor;
+   }
+}
