@@ -30,22 +30,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/11/03 23:33:04  vakatov
-* Added test for the "Reset" manipulator
-*
-* Revision 1.3  1998/11/03 22:32:04  vakatov
-* + Test for a serializable class
-*
-* Revision 1.2  1998/11/03 20:49:15  vakatov
-* use "NcbiCerr" instead of just "cerr"
-*
-* Revision 1.1  1998/10/30 19:57:54  vakatov
-* Initial revision
+* Revision 1.5  1998/11/04 23:48:15  vakatov
+* Replaced <ncbidiag> by <ncbistd>
 *
 * ==========================================================================
 */
 
-#include <ncbidiag.hpp>
+#include <ncbistd.hpp>
 
 
 /////////////////////////////////
