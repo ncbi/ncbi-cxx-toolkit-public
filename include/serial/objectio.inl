@@ -96,28 +96,15 @@ CIStreamContainerIterator::operator bool(void) const
     return HaveMore();
 }
 
-inline
-CIStreamContainerIterator& CIStreamContainerIterator::operator++(void)
-{
-    if (m_State == eElementBegin) {
-        SkipElement();
-    }
-    if (m_State != eNoMoreElements) {
-        CheckState(eElementEnd);
-        m_State = eElementBegin;
-    }
-    else {
-        m_State = eFinished;
-    }
-    return *this;
-}
-
 #endif /* def OBJECTIO__HPP  &&  ndef OBJECTIO__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/10/24 17:50:27  vasilche
+* CIStreamContainerIterator::operator++() moved to *.cpp file.
+*
 * Revision 1.5  2003/10/24 15:54:27  grichenk
 * Removed or blocked exceptions in destructors
 *

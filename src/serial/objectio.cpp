@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/10/24 17:50:37  vasilche
+* CIStreamContainerIterator::operator++() moved to *.cpp file.
+*
 * Revision 1.7  2003/10/24 15:54:28  grichenk
 * Removed or blocked exceptions in destructors
 *
@@ -361,6 +364,7 @@ void CIStreamContainerIterator::CheckState(EState state)
     }
 }
 
+
 void CIStreamContainerIterator::NextElement(void)
 {
     CheckState(eElementBegin);
@@ -417,6 +421,22 @@ void CIStreamContainerIterator::SkipElement(void)
         m_State = eElementEnd;
     }
 }
+
+CIStreamContainerIterator& CIStreamContainerIterator::operator++(void)
+{
+    if (m_State == eElementBegin) {
+        SkipElement();
+    }
+    if (m_State != eNoMoreElements) {
+        CheckState(eElementEnd);
+        m_State = eElementBegin;
+    }
+    else {
+        m_State = eFinished;
+    }
+    return *this;
+}
+
 
 COStreamContainer::COStreamContainer(CObjectOStream& out,
                                      const CObjectTypeInfo& containerType)
