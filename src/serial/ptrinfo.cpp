@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.24  2000/07/03 18:42:47  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -235,7 +242,7 @@ void CPointerTypeInfo::WriteData(CObjectOStream& out,
 
 void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    SetObjectPointer(object, in.ReadPointer(GetDataTypeInfo()));
+    SetObjectPointer(object, in.ReadPointer(GetDataTypeInfo()).GetObjectPtr());
 }
 
 void CPointerTypeInfo::SkipData(CObjectIStream& in) const

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.27  2000/07/11 20:36:19  vasilche
 * File included in all generated headers made lighter.
 * Nonnecessary code moved to serialimpl.hpp.
@@ -147,13 +154,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CStlOneArgTemplate::CStlOneArgTemplate(TTypeInfo type)
-    : m_DataType(type)
+CStlOneArgTemplate::CStlOneArgTemplate(TTypeInfo type, bool randomOrder)
+    : CParent(randomOrder), m_DataType(type)
 {
 }
 
-CStlOneArgTemplate::CStlOneArgTemplate(const CTypeRef& type)
-    : m_DataType(type)
+CStlOneArgTemplate::CStlOneArgTemplate(const CTypeRef& type, bool randomOrder)
+    : CParent(randomOrder), m_DataType(type)
 {
 }
 
@@ -168,14 +175,16 @@ void CStlOneArgTemplate::SetDataId(const CMemberId& id)
 }
 
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(TTypeInfo keyType,
-                                         TTypeInfo dataType)
-    : m_KeyType(keyType), m_ValueType(dataType)
+                                         TTypeInfo dataType,
+                                         bool randomOrder)
+    : CParent(randomOrder), m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(const CTypeRef& keyType,
-                                         const CTypeRef& dataType)
-    : m_KeyType(keyType), m_ValueType(dataType)
+                                         const CTypeRef& dataType,
+                                         bool randomOrder)
+    : CParent(randomOrder), m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
@@ -193,7 +202,7 @@ CStlClassInfoMapImpl::CStlClassInfoMapImpl(TTypeInfo keyType,
                                            TConstObjectPtr keyOffset,
                                            TTypeInfo valueType,
                                            TConstObjectPtr valueOffset)
-    : CParent(keyType, valueType),
+    : CParent(keyType, valueType, true),
       m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
 {
 }
@@ -202,7 +211,7 @@ CStlClassInfoMapImpl::CStlClassInfoMapImpl(const CTypeRef& keyType,
                                            TConstObjectPtr keyOffset,
                                            const CTypeRef& valueType,
                                            TConstObjectPtr valueOffset)
-    : CParent(keyType, valueType),
+    : CParent(keyType, valueType, true),
       m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
 {
 }
@@ -227,48 +236,51 @@ const CClassTypeInfo* CStlClassInfoMapImpl::GetElementClassType(void) const
     return m_ElementType.get();
 }
 
-void CMapArrayReaderBase::ReadElement(CObjectIStream& in)
+void CReadStlMapContainerHook::ReadContainerElement(CObjectIStream& in,
+                                                    const CObjectInfo& container)
 {
-    CObjectStackClass cls(in, m_MapTypeInfo->GetElementClassType(), false);
-    in.BeginClass(cls);
-    ReadClassElement(in, cls);
+    // get map type info
+    _ASSERT(dynamic_cast<const CStlClassInfoMapImpl*>(container.GetTypeInfo()));
+    const CStlClassInfoMapImpl* mapType =
+        static_cast<const CStlClassInfoMapImpl*>(container.GetTypeInfo());
+    const CClassTypeInfo* elementType = mapType->GetElementClassType();
+
+    CObjectStackClass cls(in, elementType);
+    in.BeginClass(cls, elementType);
+    ReadClassElement(in, container, mapType);
     in.EndClass(cls);
 }
 
 void CStlClassInfoMapImpl::ReadKey(CObjectIStream& in,
-                                   CObjectStackClass& cls,
                                    TObjectPtr keyPtr) const
 {
-    CObjectStackClassMember m(cls);
+    CObjectStackClassMember m(in);
     CObjectIStream::CClassMemberPosition pos;
-    if ( in.BeginClassMember(m, GetElementClassType()->GetMembers(),
-                             pos) != 0 ) {
-        in.EndClass(cls);
+    const CMembersInfo& members = GetElementClassType()->GetMembers();
+    if ( in.BeginClassMember(m, members, pos) != members.FirstMemberIndex() ) {
         in.ThrowError(CObjectIStream::eFormatError, "map key expected");
     }
-    GetKeyTypeInfo()->ReadData(in, keyPtr);
+    in.ReadObject(keyPtr, GetKeyTypeInfo());
     in.EndClassMember(m);
-    _ASSERT(pos.GetLastIndex() == 0);
+    _ASSERT(pos.GetLastIndex() == members.FirstMemberIndex());
 }
 
 void CStlClassInfoMapImpl::ReadValue(CObjectIStream& in,
-                                     CObjectStackClass& cls,
                                      TObjectPtr valuePtr) const
 {
-    CObjectStackClassMember m(cls);
+    CObjectStackClassMember m(in);
     CObjectIStream::CClassMemberPosition pos;
-    pos.SetLastIndex(0);
-    if ( in.BeginClassMember(m, GetElementClassType()->GetMembers(),
-                             pos) != 1 ) {
-        in.EndClass(cls);
+    const CMembersInfo& members = GetElementClassType()->GetMembers();
+    pos.SetLastIndex(members.FirstMemberIndex());
+    if ( in.BeginClassMember(m, members, pos) != members.LastMemberIndex() ) {
         in.ThrowError(CObjectIStream::eFormatError, "map value expected");
     }
-    GetValueTypeInfo()->ReadData(in, valuePtr);
+    in.ReadObject(valuePtr, GetValueTypeInfo());
     in.EndClassMember(m);
-    _ASSERT(pos.GetLastIndex() == 1);
-    if ( in.BeginClassMember(m, GetElementClassType()->GetMembers(),
-                             pos) >=0 ) {
-        in.ThrowError(CObjectIStream::eFormatError, "end of map entry expected");
+    _ASSERT(pos.GetLastIndex() == members.LastMemberIndex());
+    if ( in.BeginClassMember(m, members, pos) != kInvalidMember ) {
+        in.ThrowError(CObjectIStream::eFormatError,
+                      "end of map entry expected");
     }
 }
 

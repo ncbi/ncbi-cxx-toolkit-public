@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.46  2000/07/03 18:42:35  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -203,80 +210,37 @@
 #include <serial/object.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/objstack.hpp>
+#include <serial/objhook.hpp>
 #include <memory>
 #include <vector>
-#include <list>
+#include <map>
 
 struct asnio;
 
 BEGIN_NCBI_SCOPE
 
-class CTypeMapper;
 class CMemberId;
-class CMembers;
 class CMembersInfo;
 class CDelayBuffer;
 class CByteSource;
 class CByteSourceReader;
 
-class CObjectArrayReader
-{
-public:
-    virtual ~CObjectArrayReader(void);
+class CClassTypeInfo;
+class CChoiceTypeInfo;
+class CContainerTypeInfo;
 
-    virtual void ReadElement(CObjectIStream& in) = 0;
-};
-
-class CObjectArraySkipper : public CObjectArrayReader
-{
-public:
-    CObjectArraySkipper(TTypeInfo typeInfo)
-        : m_TypeInfo(typeInfo)
-        {
-        }
-
-    virtual void ReadElement(CObjectIStream& in);
-
-private:
-    TTypeInfo m_TypeInfo;
-};
-
-class CObjectClassReader
-{
-public:
-    virtual ~CObjectClassReader(void);
-
-    virtual void ReadMember(CObjectIStream& in,
-                            const CMembersInfo& members, int index) = 0;
-    virtual void AssignMemberDefault(CObjectIStream& in,
-                                     const CMembersInfo& members, int index);
-};
-
-class CObjectChoiceReader
-{
-public:
-    virtual ~CObjectChoiceReader(void);
-
-    virtual void ReadChoiceVariant(CObjectIStream& in,
-                                   const CMembersInfo& variants,
-                                   int index) = 0;
-};
+class CReadObjectHook;
+class CReadClassMemberHook;
+class CReadChoiceVariantHook;
+class CReadContainerElementHook;
 
 class CObjectIStream : public CObjectStack
 {
 public:
-    typedef int TObjectIndex;
+    // typedefs
+    typedef size_t TObjectIndex;
 
-    static CObjectIStream* Create(ESerialDataFormat format);
-    static CObjectIStream* Create(ESerialDataFormat format,
-                                  const CRef<CByteSource>& source);
-
-    static CRef<CByteSource> GetSource(ESerialDataFormat format,
-                                       const string& fileName,
-                                       unsigned openFlags = 0);
-    static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
-                                       bool deleteInStream = false);
-
+    // open methods
     virtual void Open(const CRef<CByteSourceReader>& reader);
     void Open(const CRef<CByteSource>& source);
     void Open(CNcbiIstream& inStream, bool deleteInStream = false);
@@ -294,6 +258,7 @@ public:
             return Open(format, fileName);
         }
 
+    // constructors
 protected:
     CObjectIStream(void);
     CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
@@ -301,15 +266,96 @@ protected:
 public:
     virtual ~CObjectIStream(void);
 
+    // get data format
     virtual ESerialDataFormat GetDataFormat(void) const = 0;
 
+    // USER INTERFACE
     // root reader
+    void Read(const CObjectInfo& object);
     void Read(TObjectPtr object, TTypeInfo type);
     void Read(TObjectPtr object, const CTypeRef& type);
-
     void Skip(TTypeInfo type);
     void Skip(const CTypeRef& type);
-    virtual CRef<CByteSource> DelayRead(TTypeInfo type);
+
+    // subtree reader
+    void ReadObjectNoHook(const CObjectInfo& object);
+    void ReadObjectNoHook(TObjectPtr object, TTypeInfo typeInfo);
+    void ReadObject(const CObjectInfo& object);
+    void ReadObject(TObjectPtr object, TTypeInfo typeInfo);
+    void SkipObject(TTypeInfo typeInfo);
+
+    void ReadSeparateObject(const CObjectInfo& object);
+
+    // internal reader
+    void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
+    void SkipExternalObject(TTypeInfo typeInfo);
+
+    // container reader
+    virtual void ReadContainer(const CObjectInfo& container,
+                               CReadContainerElementHook& hook) = 0;
+    void SkipContainer(const CContainerTypeInfo* containerType);
+    
+    // class reader
+    void ReadClass(const CObjectInfo& object, CReadClassMemberHook& hook);
+    void ReadClass(TObjectPtr objectPtr, const CClassTypeInfo* objectType);
+    void ReadClass(const CObjectInfo& object);
+    void SkipClass(const CClassTypeInfo* classType);
+
+    // class member reader
+    void ReadClassMemberNoHook(const CObjectInfo& object,
+                               TMemberIndex index);
+    void SetClassMemberDefaultNoHook(const CObjectInfo& object,
+                                     TMemberIndex index);
+    void ReadClassMember(const CObjectInfo& object,
+                         TMemberIndex index);
+    void SetClassMemberDefault(const CObjectInfo& object,
+                               TMemberIndex index);
+    void SkipClassMember(const CClassTypeInfo* classType,
+                         TMemberIndex index);
+    void SkipClassMemberDefault(const CClassTypeInfo* classType,
+                                TMemberIndex index);
+
+    // choice interface
+    void ReadChoice(const CObjectInfo& choice, CReadChoiceVariantHook& hook);
+    void ReadChoice(const CObjectInfo& choice);
+    void SkipChoice(const CChoiceTypeInfo* choiceType);
+
+    // choice variant interface
+    void ReadChoiceVariantNoHook(const CObjectInfo& object,
+                                 TMemberIndex index);
+    void ReadChoiceVariant(const CObjectInfo& object,
+                           TMemberIndex index);
+    void SkipChoiceVariant(const CChoiceTypeInfo* choiceType,
+                           TMemberIndex index);
+
+    // HOOKS
+    // object
+    void SetReadObjectHook(const CTypeInfo* objectType,
+                           CReadObjectHook* hook);
+    void ResetReadObjectHook(const CTypeInfo* objectType);
+    CReadObjectHook* GetReadObjectHook(const CTypeInfo* objectType) const;
+
+    // class member
+    void SetReadClassMemberHook(const CClassTypeInfo* classType,
+                                TMemberIndex memberIndex,
+                                CReadClassMemberHook* hook);
+    void ResetReadClassMemberHook(const CClassTypeInfo* classType,
+                                  TMemberIndex memberIndex);
+    CReadClassMemberHook*
+    GetReadClassMemberHook(const CClassTypeInfo* classType,
+                           TMemberIndex memberIndex) const;
+
+    // choice variant
+    void SetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                                  TMemberIndex variantIndex,
+                                  CReadChoiceVariantHook* hook);
+    void ResetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                                    TMemberIndex variantIndex);
+    CReadChoiceVariantHook*
+    GetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                             TMemberIndex variantIndex) const;
+
+    // END OF USER INTERFACE
 
     CObjectInfo ReadObject(void);
 
@@ -317,9 +363,6 @@ public:
     
     // try to read enum value name, "" if none
     virtual pair<long, bool> ReadEnum(const CEnumeratedTypeValues& values);
-
-    virtual TTypeInfo MapType(const string& name);
-    void SetTypeMapper(CTypeMapper* typeMapper);
 
     // std C types readers
     void ReadStd(bool& data)
@@ -370,11 +413,11 @@ public:
         {
             data = ReadDouble();
         }
-    void ReadStd(char*& data)
+    void ReadStd(char* & data)
         {
             data = ReadCString();
         }
-    void ReadStd(const char*& data)
+    void ReadStd(const char* & data)
         {
             data = ReadCString();
         }
@@ -383,7 +426,7 @@ public:
             ReadString(data);
         }
     virtual void ReadStringStore(string& s);
-
+    
     // std C types readers
     void SkipStd(const bool &)
         {
@@ -445,12 +488,9 @@ public:
     virtual void SkipNull(void) = 0;
     virtual void SkipStringStore(void);
     virtual void SkipByteBlock(void) = 0;
-    void SkipExternalObject(TTypeInfo typeInfo);
 
-    // object level readers
-    void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
     // reads type info
-    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
+    virtual CObjectInfo ReadPointer(TTypeInfo declaredType);
     enum EPointerType {
         eNullPointer,
 #if 0
@@ -527,8 +567,6 @@ public:
 #define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
 #define CheckIOError(in) CheckIOError1(FILE_LINE in)
 
-    typedef CTypeInfo::TMemberIndex TMemberIndex;
-
 	class ByteBlock
     {
 	public:
@@ -546,7 +584,7 @@ public:
 
         void SetLength(size_t length);
         void EndOfBlock(void);
-
+        
 	private:
         CObjectIStream& m_Stream;
 		bool m_KnownLength;
@@ -569,7 +607,7 @@ public:
         CObjectIStream& GetStream(void) const;
 
         size_t Read(char* data, size_t length);
-
+        
         operator asnio*(void);
         asnio* operator->(void);
         const string& GetRootTypeName(void) const;
@@ -579,7 +617,7 @@ public:
         bool m_Ended;
         string m_RootTypeName;
         asnio* m_AsnIo;
-
+        
     public:
         size_t m_Count;
     };
@@ -592,12 +630,12 @@ protected:
     virtual void AsnClose(AsnIo& asn);
 public:
 #endif
-
+    
     class CClassMemberPosition
     {
     public:
         CClassMemberPosition(void)
-            : m_LastIndex(-1)
+            : m_LastIndex(kFirstMemberIndex - 1)
             {
             }
         TMemberIndex GetLastIndex(void) const
@@ -613,53 +651,34 @@ public:
         TMemberIndex m_LastIndex;
     };
 
-    // block interface
-    virtual void ReadArray(CObjectArrayReader& reader,
-                           TTypeInfo arrayType, bool randomOrder,
-                           TTypeInfo elementType) = 0;
-    void SkipArray(TTypeInfo arrayType, bool randomOrder,
-                   TTypeInfo elementType)
-        {
-            CObjectArraySkipper skipper(elementType);
-            ReadArray(skipper, arrayType, randomOrder, elementType);
-        }
-
-    // class interface
+    
+    // named type (alias)
     virtual void ReadNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo, TObjectPtr object);
     virtual void SkipNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo);
 
-    virtual void BeginClass(CObjectStackClass& cls) = 0;
+    // low level class interface
+    virtual void BeginClass(CObjectStackClass& cls,
+                            const CClassTypeInfo* classInfo) = 0;
     virtual void EndClass(CObjectStackClass& cls);
 
     virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembers& members) = 0;
+                                          const CMembersInfo& members) = 0;
     virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembers& members,
+                                          const CMembersInfo& members,
                                           CClassMemberPosition& pos) = 0;
     virtual void EndClassMember(CObjectStackClassMember& m);
 
     void DuplicatedMember(const CMembersInfo& members, int index);
-    virtual void ReadClassRandom(CObjectClassReader& reader,
-                                 const CClassTypeInfo* classType,
-                                 const CMembersInfo& members);
-    virtual void ReadClassSequential(CObjectClassReader& reader,
-                                     const CClassTypeInfo* classType,
-                                     const CMembersInfo& members);
-    void ReadClass(CObjectClassReader& reader, const CClassTypeInfo* classType,
-                   const CMembersInfo& members, bool randomOrder)
-        {
-            if ( randomOrder )
-                ReadClassRandom(reader, classType, members);
-            else
-                ReadClassSequential(reader, classType, members);
-        }
+    virtual void ReadClassRandom(const CObjectInfo& object,
+                                 CReadClassMemberHook& hook);
+    virtual void ReadClassSequential(const CObjectInfo& object,
+                                     CReadClassMemberHook& hook);
 
-    // choice interface
-    virtual void ReadChoice(CObjectChoiceReader& reader,
-                            TTypeInfo classType,
-                            const CMembersInfo& variants) = 0;
+    // low level choice interface
+    virtual void DoReadChoice(const CObjectInfo& choice,
+                              CReadChoiceVariantHook& hook) = 0;
 
     // byte block
 	virtual void BeginBytes(ByteBlock& block) = 0;
@@ -673,7 +692,7 @@ public:
 
 protected:
     // low level readers
-    typedef pair<TObjectPtr,TTypeInfo> TReadObjectInfo;
+    typedef CObjectInfo TReadObjectInfo;
     TReadObjectInfo ReadObjectInfo(void);
     virtual EPointerType ReadPointerType(void) = 0;
     virtual TObjectIndex ReadObjectPointer(void) = 0;
@@ -714,27 +733,50 @@ protected:
     virtual void SkipCString(void);
 
     const TReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
-    void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
+    void RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo);
+    void RegisterAndRead(const CObjectInfo& object);
+    void RegisterAndSkip(TTypeInfo typeInfo);
 
-    void ReadData(TObjectPtr object, TTypeInfo typeInfo)
-        {
-            typeInfo->ReadData(*this, object);
-        }
-
-    void SkipData(TTypeInfo typeInfo)
-        {
-            typeInfo->SkipData(*this);
-        }
+    // open helpers
+public:
+    static CObjectIStream* Create(ESerialDataFormat format);
+    static CObjectIStream* Create(ESerialDataFormat format,
+                                  const CRef<CByteSource>& source);
+private:
+    static CRef<CByteSource> GetSource(ESerialDataFormat format,
+                                       const string& fileName,
+                                       unsigned openFlags = 0);
+    static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
+                                       bool deleteInStream = false);
 
 protected:
     CIStreamBuffer m_Input;
-
+    
 private:
     vector<TReadObjectInfo> m_Objects;
 
     unsigned m_Fail;
 
-    CTypeMapper* m_TypeMapper;
+    // hooks data
+    typedef map<const CTypeInfo*, CRef<CReadObjectHook> > TReadObjectHooks;
+    typedef map<const CMemberInfo*, CRef<CReadClassMemberHook> > TReadClassMemberHooks;
+    typedef map<const CMemberInfo*, CRef<CReadChoiceVariantHook> > TReadChoiceVariantHooks;
+
+    static
+    CReadObjectHook* GetHook(const TReadObjectHooks& hooks,
+                             const CTypeInfo* objectType);
+    static
+    CReadClassMemberHook* GetHook(const TReadClassMemberHooks& hooks,
+                                  const CClassTypeInfo* classType,
+                                  TMemberIndex memberIndex);
+    static
+    CReadChoiceVariantHook* GetHook(const TReadChoiceVariantHooks& hooks,
+                                    const CChoiceTypeInfo* choiceType,
+                                    TMemberIndex variantIndex);
+    
+    AutoPtr<TReadObjectHooks> m_ReadObjectHooks;
+    AutoPtr<TReadClassMemberHooks> m_ReadClassMemberHooks;
+    AutoPtr<TReadChoiceVariantHooks> m_ReadChoiceVariantHooks;
 };
 
 #include <serial/objistr.inl>

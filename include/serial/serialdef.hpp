@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:44:42  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.10  2000/07/03 18:42:37  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -122,6 +129,16 @@ enum ESerialOpenFlags {
     eSerial_StdWhenAny   = eSerial_StdWhenMask,
     eSerial_UseFileForReread = 1 << 4
 };
+
+//type used for indexing class members and choice variants
+typedef size_t TMemberIndex;
+
+// start if member indexing
+const TMemberIndex kFirstMemberIndex = 1;
+// special value returned from FindMember
+const TMemberIndex kInvalidMember = kFirstMemberIndex - 1;
+// special value for marking empty choice
+const TMemberIndex kEmptyChoice = kInvalidMember;
 
 #include <serial/serialdef.inl>
 

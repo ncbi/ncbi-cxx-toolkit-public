@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.16  2000/07/03 18:42:47  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -595,10 +602,20 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
 COStreamBuffer::~COStreamBuffer(void)
     THROWS1((CSerialIOException))
 {
-    FlushBuffer();
+    Close();
     delete[] m_Buffer;
+}
+
+void COStreamBuffer::Close(void)
+{
+    Flush();
     if ( m_DeleteOutput )
         delete &m_Output;
+    m_DeleteOutput = false;
+    m_IndentLevel = 0;
+    m_CurrentPos = m_Buffer;
+    m_Line = 1;
+    m_LineLength = 0;
 }
 
 void COStreamBuffer::FlushBuffer(bool fullBuffer)

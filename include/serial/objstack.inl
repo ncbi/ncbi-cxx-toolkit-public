@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/15 19:44:42  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.3  2000/06/07 19:45:44  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -62,7 +69,8 @@ void CObjectStackFrame::Begin(void)
 }
 
 inline
-void CObjectStackFrame::Push(CObjectStack& stack, EFrameType frameType, bool ended)
+void CObjectStackFrame::Push(CObjectStack& stack,
+                             EFrameType frameType, bool ended)
 {
     m_Previous = stack.m_Top;
     stack.m_Top = this;
@@ -190,16 +198,16 @@ CObjectStackNamedFrame::CObjectStackNamedFrame(CObjectStack& stack,
 
 inline
 CObjectStackBlock::CObjectStackBlock(CObjectStack& stack, EFrameType frameType,
-                                     TTypeInfo typeInfo, bool randomOrder)
+                                     TTypeInfo typeInfo)
     : CObjectStackFrame(stack, frameType, typeInfo),
-      m_Empty(true), m_RandomOrder(randomOrder)
+      m_Empty(true)
 {
 }
 
 inline
 CObjectStackArray::CObjectStackArray(CObjectStack& stack,
-                                     TTypeInfo arrayType, bool randomOrder)
-    : CObjectStackBlock(stack, eFrameArray, arrayType, randomOrder)
+                                     TTypeInfo arrayType)
+    : CObjectStackBlock(stack, eFrameArray, arrayType)
 {
 }
 
@@ -221,8 +229,8 @@ CObjectStackArrayElement::CObjectStackArrayElement(CObjectStackArray& array,
 
 inline
 CObjectStackClass::CObjectStackClass(CObjectStack& stack,
-                                     TTypeInfo classInfo, bool randomOrder)
-    : CObjectStackBlock(stack, eFrameClass, classInfo, randomOrder)
+                                     TTypeInfo classInfo)
+    : CObjectStackBlock(stack, eFrameClass, classInfo)
 {
 }
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.10  2000/07/03 18:42:34  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -77,7 +84,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CMembers;
+class CMembersInfo;
 
 // CMemberId class holds information about logical object member access:
 //     name and/or tag (ASN.1)
@@ -110,13 +117,13 @@ public:
     string ToString(void) const;
 
 private:
-    CMembers* m_MemberList;
+    CMembersInfo* m_MemberList;
 
     // identification
     string m_Name;
     TTag m_ExplicitTag;
 
-    friend class CMembers;
+    friend class CMembersInfo;
 
     mutable AutoPtr<string> m_XmlName;
     mutable TTag m_Tag;

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/15 19:44:50  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.6  2000/07/03 18:42:46  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -60,8 +67,10 @@
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/enumvalues.hpp>
-#include <serial/delaybuf.hpp>
+#include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/continfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -347,56 +356,45 @@ void CObjectOStreamXml::CloseTag(const CObjectStackFrame& e,
 }
 
 void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
-                                   CWriteObjectInfo& info)
+                                   TTypeInfo typeInfo)
 {
-    const string& name = info.GetTypeInfo()->GetName();
+    const string& name = typeInfo->GetName();
     _ASSERT(!name.empty());
     OpenTag(name);
-    WriteObject(object, info);
+    WriteObject(object, typeInfo);
     CloseTag(name);
 }
 
-void CObjectOStreamXml::WriteArray(CObjectArrayWriter& writer,
-                                   TTypeInfo arrayType, bool randomOrder,
-                                   TTypeInfo elementType)
+void CObjectOStreamXml::WriteContainer(const CConstObjectInfo& container,
+                                       CWriteContainerElementsHook& hook)
 {
-    const string& arrayName = arrayType->GetName();
+    const string& arrayName = container.GetTypeInfo()->GetName();
     if ( arrayName.empty() ) {
-        WriteArrayContents(writer, elementType);
+        WriteContainerElements(container, hook);
     }
     else {
-        CObjectStackArray array(*this, arrayType, randomOrder);
+        CObjectStackArray array(*this, container.GetTypeInfo());
         OpenTag(arrayName);
-        WriteArrayContents(writer, elementType);
+        WriteContainerElements(container, hook);
         CloseTag(arrayName, true);
         array.End();
     }
 }
 
-void CObjectOStreamXml::WriteArrayContents(CObjectArrayWriter& writer,
-                                           TTypeInfo elementType)
+void CObjectOStreamXml::WriteContainerElement(const CConstObjectInfo& element)
 {
-    if ( writer.NoMoreElements() )
-        return;
-
-    if ( elementType->GetName().empty() ) {
-        CObjectStackArrayElement element(*this, elementType != 0);
-        element.Begin();
+    const string& elementName = element.GetTypeInfo()->GetName();
+    if ( elementName.empty() ) {
+        CObjectStackArrayElement e(*this, false);
+        OpenTag(e);
         
-        do {
-            OpenTag(element);
-            
-            writer.WriteElement(*this);
-            
-            CloseTag(element);
-        } while ( !writer.NoMoreElements() );
+        WriteObject(element);
         
-        element.End();
+        CloseTag(e);
+        e.End();
     }
     else {
-        do {
-            writer.WriteElement(*this);
-        } while ( !writer.NoMoreElements() );
+        WriteObject(element);
     }
 }
 
@@ -408,14 +406,15 @@ void CObjectOStreamXml::WriteNamedType(TTypeInfo namedTypeInfo,
     const string& typeName = namedTypeInfo->GetName();
     _ASSERT(!typeName.empty());
     OpenTag(typeName);
-    typeInfo->WriteData(*this, object);
+    WriteObject(object, typeInfo);
     CloseTag(typeName);
     name.End();
 }
 
-void CObjectOStreamXml::BeginClass(CObjectStackClass& cls)
+void CObjectOStreamXml::BeginClass(CObjectStackClass& /*cls*/,
+                                   const CClassTypeInfo* classInfo)
 {
-    const string& name = cls.GetTypeInfo()->GetName();
+    const string& name = classInfo->GetName();
     if ( !name.empty() )
         OpenTag(name);
 }
@@ -440,118 +439,122 @@ void CObjectOStreamXml::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
-inline
-void CObjectOStreamXml::WriteClassContents(CObjectClassWriter& writer,
-                                           const CClassTypeInfo* /*classInfo*/,
-                                           const CMembersInfo& members)
+void CObjectOStreamXml::DoWriteClass(const CConstObjectInfo& object,
+                                     CWriteClassMembersHook& hook)
 {
-    writer.WriteMembers(*this, members);
-}
-
-void CObjectOStreamXml::WriteClass(CObjectClassWriter& writer,
-                                   const CClassTypeInfo* classInfo,
-                                   const CMembersInfo& members,
-                                   bool randomOrder)
-{
-    const string& className = classInfo->GetName();
+    const string& className = object.GetTypeInfo()->GetName();
     if ( className.empty() ) {
-        WriteClassContents(writer, classInfo, members);
+        hook.WriteClassMembers(*this, object);
     }
     else {
-        CObjectStackClass cls(*this, classInfo, randomOrder);
+        CObjectStackClass cls(*this, object.GetTypeInfo());
         OpenTag(className);
     
-        WriteClassContents(writer, classInfo, members);
+        hook.WriteClassMembers(*this, object);
 
         CloseTag(className, true);
         cls.End();
     }
 }
 
-void CObjectOStreamXml::WriteClassMember(CObjectClassWriter& ,
-                                         const CMemberId& id,
-                                         TTypeInfo memberTypeInfo,
-                                         TConstObjectPtr memberPtr)
+void CObjectOStreamXml::DoWriteClass(TConstObjectPtr objectPtr,
+                                     const CClassTypeInfo* objectType)
+{
+    const string& className = objectType->GetName();
+    if ( className.empty() ) {
+        WriteClassMembers(objectPtr, objectType);
+    }
+    else {
+        CObjectStackClass cls(*this, objectType);
+        OpenTag(className);
+    
+        WriteClassMembers(objectPtr, objectType);
+
+        CloseTag(className, true);
+        cls.End();
+    }
+}
+
+void CObjectOStreamXml::DoWriteClassMember(const CMemberId& id,
+                                           const CConstObjectInfo& object,
+                                           TMemberIndex index,
+                                           CWriteClassMemberHook& hook)
 {
     CObjectStackClassMember m(*this, id);
     OpenTag(m);
 
-    memberTypeInfo->WriteData(*this, memberPtr);
+    hook.WriteClassMember(*this, object, index);
     
     CloseTag(m);
     m.End();
 }
 
-void CObjectOStreamXml::WriteDelayedClassMember(CObjectClassWriter& ,
-                                                const CMemberId& id,
-                                                const CDelayBuffer& buffer)
+void CObjectOStreamXml::DoWriteClassMember(const CMemberId& id,
+                                           TConstObjectPtr memberPtr,
+                                           TTypeInfo memberType)
 {
     CObjectStackClassMember m(*this, id);
     OpenTag(m);
 
-    if ( !buffer.Write(*this) )
-        THROW1_TRACE(runtime_error, "internal error");
+    WriteObject(memberPtr, memberType);
     
     CloseTag(m);
     m.End();
 }
 
-void CObjectOStreamXml::WriteChoice(TTypeInfo choiceType,
-                                    const CMemberId& id,
-                                    TTypeInfo memberType,
-                                    TConstObjectPtr memberPtr)
+void CObjectOStreamXml::WriteChoice(const CConstObjectInfo& choice,
+                                    CWriteChoiceVariantHook& hook)
 {
-    const string& choiceName = choiceType->GetName();
+    const string& choiceName = choice.GetTypeInfo()->GetName();
     if ( choiceName.empty() ) {
-        WriteChoiceVariant(id, memberType, memberPtr);
+        WriteChoiceContents(choice, hook);
     }
     else {
-        CObjectStackChoice choice(*this, choiceType);
+        CObjectStackChoice c(*this, choice.GetTypeInfo());
         OpenTag(choiceName);
-        WriteChoiceVariant(id, memberType, memberPtr);
+        WriteChoiceContents(choice, hook);
         CloseTag(choiceName);
-        choice.End();
+        c.End();
     }
 }
 
-void CObjectOStreamXml::WriteDelayedChoice(TTypeInfo choiceType,
-                                           const CMemberId& id,
-                                           const CDelayBuffer& buffer)
+void CObjectOStreamXml::WriteChoice(const CConstObjectInfo& choice)
 {
-    const string& choiceName = choiceType->GetName();
+    const string& choiceName = choice.GetTypeInfo()->GetName();
     if ( choiceName.empty() ) {
-        WriteDelayedChoiceVariant(id, buffer);
+        WriteChoiceContents(choice);
     }
     else {
-        CObjectStackChoice choice(*this, choiceType);
+        CObjectStackChoice c(*this, choice.GetTypeInfo());
         OpenTag(choiceName);
-        WriteDelayedChoiceVariant(id, buffer);
+        WriteChoiceContents(choice);
         CloseTag(choiceName);
-        choice.End();
+        c.End();
     }
 }
 
-void CObjectOStreamXml::WriteChoiceVariant(const CMemberId& id,
-                                           TTypeInfo memberType,
-                                           TConstObjectPtr memberPtr)
+void CObjectOStreamXml::WriteChoiceContents(const CConstObjectInfo& choice,
+                                            CWriteChoiceVariantHook& hook)
 {
+    TMemberIndex index = choice.WhichChoice();
+    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
     CObjectStackChoiceVariant v(*this, id);
     OpenTag(v);
     
-    memberType->WriteData(*this, memberPtr);
+    hook.WriteChoiceVariant(*this, choice, index);
     
     CloseTag(v);
     v.End();
 }
 
-void CObjectOStreamXml::WriteDelayedChoiceVariant(const CMemberId& id,
-                                                  const CDelayBuffer& buffer)
+void CObjectOStreamXml::WriteChoiceContents(const CConstObjectInfo& choice)
 {
+    TMemberIndex index = choice.WhichChoice();
+    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
     CObjectStackChoiceVariant v(*this, id);
     OpenTag(v);
     
-    if ( !buffer.Write(*this) )
-        THROW1_TRACE(runtime_error, "internal error");
+    WriteChoiceVariant(choice, index);
     
     CloseTag(v);
     v.End();

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.1  2000/07/03 18:42:33  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -51,23 +58,34 @@ class CContainerTypeInfo : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
-    CContainerTypeInfo(void)
+    CContainerTypeInfo(bool randomOrder)
+        : m_RandomOrder(randomOrder)
         {
         }
-    CContainerTypeInfo(const string& name)
-        : CParent(name)
+    CContainerTypeInfo(const string& name, bool randomOrder)
+        : CParent(name), m_RandomOrder(randomOrder)
         {
         }
-    CContainerTypeInfo(const char* name)
-        : CParent(name)
+    CContainerTypeInfo(const char* name, bool randomOrder)
+        : CParent(name), m_RandomOrder(randomOrder)
         {
         }
     virtual ETypeFamily GetTypeFamily(void) const;
 
     virtual TTypeInfo GetElementType(void) const = 0;
 
-    virtual CConstContainerElementIterator* Elements(TConstObjectPtr object) const = 0;
-    virtual CContainerElementIterator* Elements(TObjectPtr object) const = 0;
+    bool RandomElementsOrder(void) const
+        {
+            return m_RandomOrder;
+        }
+
+    virtual
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const = 0;
+    virtual
+    CContainerElementIterator* Elements(TObjectPtr object) const = 0;
+
+private:
+    bool m_RandomOrder;
 };
 
 class CConstContainerElementIterator

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/08/15 19:44:46  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.43  2000/07/03 18:42:41  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -227,20 +234,22 @@ TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
     return CSequenceOfTypeInfo_map.GetTypeInfo(base);
 }
 
-CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type)
-    : m_DataType(type)
+CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder)
+    : CParent(randomOrder), m_DataType(type)
 {
 	Init();
 }
 
-CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name, TTypeInfo type)
-    : CParent(name), m_DataType(type)
+CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name,
+                                         TTypeInfo type, bool randomOrder)
+    : CParent(name, randomOrder), m_DataType(type)
 {
 	Init();
 }
 
-CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name, TTypeInfo type)
-    : CParent(name), m_DataType(type)
+CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name,
+                                         TTypeInfo type, bool randomOrder)
+    : CParent(name, randomOrder), m_DataType(type)
 {
 	Init();
 }
@@ -327,7 +336,7 @@ class CConstSequenceElementIterator : public CConstContainerElementIterator
 public:
     CConstSequenceElementIterator(const CSequenceOfTypeInfo* seqInfo,
                                   TConstObjectPtr objectPtr)
-        : CConstContainerElementIterator(seqInfo->GetElementType()),
+        : CConstContainerElementIterator(seqInfo->GetDataTypeInfo()),
           m_SequenceInfo(seqInfo),
           m_NodePtr(seqInfo->FirstNode(objectPtr))
         {
@@ -359,7 +368,7 @@ class CSequenceElementIterator : public CContainerElementIterator
 public:
     CSequenceElementIterator(const CSequenceOfTypeInfo* seqInfo,
                              TObjectPtr objectPtr)
-        : CContainerElementIterator(seqInfo->GetElementType()),
+        : CContainerElementIterator(seqInfo->GetDataTypeInfo()),
           m_SequenceInfo(seqInfo),
           m_NodePtrPtr(&seqInfo->FirstNode(objectPtr))
         {
@@ -400,11 +409,6 @@ CContainerElementIterator*
 CSequenceOfTypeInfo::Elements(TObjectPtr object) const
 {
     return new CSequenceElementIterator(this, object);
-}
-
-bool CSequenceOfTypeInfo::RandomOrder(void) const
-{
-    return false;
 }
 
 size_t CSequenceOfTypeInfo::GetSize(void) const
@@ -466,109 +470,95 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
-class CSequenceWriter : public CObjectArrayWriter
+class CWriteSequenceHook : public CWriteContainerElementsHook
 {
 public:
-    CSequenceWriter(const CSequenceOfTypeInfo* sequenceType,
-                    TConstObjectPtr object)
-        : CObjectArrayWriter(CSequenceOfTypeInfo::FirstNode(object) == 0),
-          m_ElementType(sequenceType->GetDataTypeInfo()),
-          m_NextOffset(sequenceType->GetNextOffset()),
-          m_DataOffset(sequenceType->GetDataOffset()),
-          m_Object(CSequenceOfTypeInfo::FirstNode(object))
+    void WriteContainerElements(CObjectOStream& out,
+                                const CConstObjectInfo& container)
         {
-        }
+            // get sequence type info
+            TTypeInfo containerType = container.GetTypeInfo();
+            _ASSERT(dynamic_cast<const CSequenceOfTypeInfo*>(containerType));
+            const CSequenceOfTypeInfo* sequenceType =
+                static_cast<const CSequenceOfTypeInfo*>(containerType);
 
-    TConstObjectPtr NextNode(TConstObjectPtr object) const
-        {
-            return CType<TConstObjectPtr>::Get(Add(object, m_NextOffset));
+            TTypeInfo elementType = sequenceType->GetDataTypeInfo();
+            for ( TConstObjectPtr node =
+                      sequenceType->FirstNode(container.GetObjectPtr());
+                  node; node = sequenceType->NextNode(node) ) {
+                out.WriteContainerElement(CConstObjectInfo(sequenceType->Data(node),
+                                                           elementType,
+                                                           CObjectInfo::eNonCObject));
+            }
         }
-    TConstObjectPtr Data(TConstObjectPtr object) const
-        {
-            return Add(object, m_DataOffset);
-        }
-
-    virtual void WriteElement(CObjectOStream& out)
-        {
-            TConstObjectPtr object = m_Object;
-            m_ElementType->WriteData(out, Data(object));
-            m_NoMoreElements = (m_Object = NextNode(object)) == 0;
-        }
-
-private:
-    TTypeInfo m_ElementType;
-    size_t m_NextOffset;
-    size_t m_DataOffset;
-    TConstObjectPtr m_Object;
 };
 
-class CSequenceReader : public CObjectArrayReader
+class CReadSequenceHook : public CReadContainerElementHook
 {
 public:
-    CSequenceReader(const CSequenceOfTypeInfo* sequenceType,
-                    TObjectPtr object)
-        : m_SequenceType(sequenceType),
-          m_ElementType(sequenceType->GetDataTypeInfo()),
-          m_NextOffset(sequenceType->GetNextOffset()),
-          m_DataOffset(sequenceType->GetDataOffset()),
-          m_Object(object), m_FirstNode(true)
+    CReadSequenceHook(void)
+        : m_LastNode(0)
         {
-            CSequenceOfTypeInfo::FirstNode(object) = 0;
         }
 
-    TObjectPtr& NextNode(TObjectPtr object) const
+    void ReadContainerElement(CObjectIStream& in,
+                              const CObjectInfo& container)
         {
-            return CType<TObjectPtr>::Get(Add(object, m_NextOffset));
-        }
-    TObjectPtr Data(TObjectPtr object) const
-        {
-            return Add(object, m_DataOffset);
-        }
+            // get sequence type info
+            TTypeInfo containerType = container.GetTypeInfo();
+            _ASSERT(dynamic_cast<const CSequenceOfTypeInfo*>(containerType));
+            const CSequenceOfTypeInfo* sequenceType =
+                static_cast<const CSequenceOfTypeInfo*>(containerType);
 
-    virtual void ReadElement(CObjectIStream& in)
-        {
-            TObjectPtr object = m_Object;
-            TObjectPtr* nextPtr;
-            if ( m_FirstNode ) {
-                m_FirstNode = false;
-                nextPtr = &CSequenceOfTypeInfo::FirstNode(object);
+            // get current node pointer
+            TObjectPtr lastNode = m_LastNode;
+            TObjectPtr* nextNodePtr;
+            if ( !lastNode ) {
+                // first node
+                nextNodePtr =
+                    &sequenceType->FirstNode(container.GetObjectPtr());
             }
             else {
-                nextPtr = &NextNode(object);
+                nextNodePtr = &sequenceType->NextNode(lastNode);
             }
-            object = *nextPtr;
-            if ( !object )
-                object = *nextPtr = m_SequenceType->CreateData();
-            m_Object = object;
-            m_ElementType->ReadData(in, Data(object));
+
+            // create node if needed
+            TObjectPtr node = *nextNodePtr;
+            if ( !node )
+                node = *nextNodePtr = sequenceType->CreateData();
+
+            // save last node for next read
+            m_LastNode = node;
+
+            // read node data
+            in.ReadObject(sequenceType->Data(node),
+                          sequenceType->GetDataTypeInfo());
         }
 
 private:
-    const CSequenceOfTypeInfo* m_SequenceType;
-    TTypeInfo m_ElementType;
-    size_t m_NextOffset;
-    size_t m_DataOffset;
-    TObjectPtr m_Object;
-    bool m_FirstNode;
+    TObjectPtr m_LastNode; // last read node pointer (for append)
 };
 
 void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
                                     TConstObjectPtr object) const
 {
-    CSequenceWriter writer(this, object);
-    out.WriteArray(writer, this, RandomOrder(), GetDataTypeInfo());
+    CWriteSequenceHook hook;
+    out.WriteContainer(CConstObjectInfo(object, this,
+                                        CObjectInfo::eNonCObject),
+                       hook);
 }
 
 void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CSequenceReader reader(this, object);
-    in.ReadArray(reader, this, RandomOrder(), GetDataTypeInfo());
+    CReadSequenceHook hook;
+    in.ReadContainer(CObjectInfo(object, this,
+                                 CObjectInfo::eNonCObject), hook);
 }
 
 void CSequenceOfTypeInfo::SkipData(CObjectIStream& in) const
 {
-    in.SkipArray(this, RandomOrder(), GetDataTypeInfo());
+    in.SkipContainer(this);
 }
 
 static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
@@ -579,23 +569,18 @@ TTypeInfo CSetOfTypeInfo::GetTypeInfo(TTypeInfo base)
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
-    : CParent(type)
+    : CParent(type, true)
 {
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(const string& name, TTypeInfo type)
-    : CParent(name, type)
+    : CParent(name, type, true)
 {
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(const char* name, TTypeInfo type)
-    : CParent(name, type)
+    : CParent(name, type, true)
 {
-}
-
-bool CSetOfTypeInfo::RandomOrder(void) const
-{
-    return true;
 }
 
 CPrimitiveTypeInfo::EValueType COctetStringTypeInfo::GetValueType(void) const

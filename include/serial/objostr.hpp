@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/08/15 19:44:41  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.42  2000/07/03 18:42:36  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -195,6 +202,7 @@
 #include <serial/strbuffer.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/objstack.hpp>
+#include <serial/objhook.hpp>
 #include <map>
 
 struct asnio;
@@ -204,47 +212,21 @@ BEGIN_NCBI_SCOPE
 class CMemberId;
 class CDelayBuffer;
 
-class CObjectArrayWriter
-{
-public:
-    CObjectArrayWriter(bool empty = true)
-        : m_NoMoreElements(empty)
-        {
-        }
-    virtual ~CObjectArrayWriter(void);
+class CWriteObjectHook;
+class CWriteContainerElementsHook;
+class CWriteClassMembersHook;
+class CWriteChoiceVariantHook;
 
-    bool NoMoreElements(void) const
-        {
-            return m_NoMoreElements;
-        }
-    virtual void WriteElement(CObjectOStream& out) = 0;
-
-protected:
-    bool m_NoMoreElements;
-};
-
-class CObjectClassWriter
-{
-public:
-    CObjectClassWriter(void)
-        : m_Empty(true)
-        {
-        }
-    virtual ~CObjectClassWriter(void);
-
-    // returns amount of members written
-    virtual void WriteMembers(CObjectOStream& out,
-                              const CMembersInfo& members) = 0;
-
-    bool m_Empty;
-};
+class CContainerTypeInfo;
+class CClassTypeInfo;
+class CChoiceTypeInfo;
 
 class CObjectOStream : public CObjectStack
 {
 public:
     typedef CWriteObjectInfo::TObjectIndex TObjectIndex;
-    typedef CMembers::TMemberIndex TMemberIndex;
 
+    // open methods
     static CObjectOStream* Open(ESerialDataFormat format,
                                 const string& fileName,
                                 unsigned openFlags = 0);
@@ -257,14 +239,20 @@ public:
                                 CNcbiOstream& outStream,
                                 bool deleteOutStream = false);
 
+    void Close(void);
+
+    // constructors
 protected:
     CObjectOStream(CNcbiOstream& out, bool deleteOut = false);
 
 public:
     virtual ~CObjectOStream(void);
 
+    // get data format
     virtual ESerialDataFormat GetDataFormat(void) const = 0;
 
+    // USER INTERFACE
+    // flush
     void FlushBuffer(void)
         {
             m_Output.FlushBuffer();
@@ -275,12 +263,97 @@ public:
         }
 
     // root writer
+    void Write(const CConstObjectInfo& object);
     void Write(TConstObjectPtr object, TTypeInfo type);
     void Write(TConstObjectPtr object, const CTypeRef& type);
-    void WriteObject(const CObjectInfo& object)
-        {
-            Write(object.GetObjectPtr(), object.GetTypeInfo());
-        }
+
+    // subtree writer
+    void WriteObjectNoHook(const CConstObjectInfo& object);
+    void WriteObjectNoHook(TConstObjectPtr object, TTypeInfo typeInfo);
+    void WriteObject(const CConstObjectInfo& object);
+    void WriteObject(TConstObjectPtr object, TTypeInfo typeInfo);
+    
+    void WriteSeparateObject(const CConstObjectInfo& object);
+
+    // internal writer
+    void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
+
+    // container writer
+    virtual void WriteContainer(const CConstObjectInfo& container,
+                                CWriteContainerElementsHook& hook) = 0;
+    virtual void WriteContainerElement(const CConstObjectInfo& element) = 0;
+
+    // class writer
+    void WriteClass(const CConstObjectInfo& object,
+                    CWriteClassMembersHook& hook);
+    void WriteClass(TConstObjectPtr objectPtr,
+                    const CClassTypeInfo* objectType);
+    void WriteClass(const CConstObjectInfo& object);
+    void WriteClassMembers(const CConstObjectInfo& object);
+
+    // class member writer
+    void WriteClassMember(const CConstObjectInfo& object,
+                          TMemberIndex memberIndex,
+                          CWriteClassMemberHook& hook);
+    void WriteClassMemberNoHook(const CConstObjectInfo& object,
+                                TMemberIndex memberIndex);
+    void WriteClassMember(const CConstObjectInfo& object,
+                          TMemberIndex memberIndex);
+
+    // choice writer
+    virtual void WriteChoice(const CConstObjectInfo& choice,
+                             CWriteChoiceVariantHook& hook) = 0;
+    virtual void WriteChoice(const CConstObjectInfo& choice) = 0;
+
+    // choice variant writer
+    void WriteChoiceVariantNoHook(const CConstObjectInfo& choice,
+                                  TMemberIndex index);
+    void WriteChoiceVariant(const CConstObjectInfo& choice,
+                            TMemberIndex index);
+
+    // HOOKS
+    // object
+    void SetWriteObjectHook(const CTypeInfo* objectType,
+                            CWriteObjectHook* hook);
+    void ResetWriteObjectHook(const CTypeInfo* objectType);
+    CWriteObjectHook* GetWriteObjectHook(const CTypeInfo* objectType) const;
+
+    // class member
+    void SetWriteClassMemberHook(const CClassTypeInfo* objectType,
+                                 TMemberIndex memberIndex,
+                                 CWriteClassMemberHook* hook);
+    void ResetWriteClassMemberHook(const CClassTypeInfo* objectType,
+                                   TMemberIndex memberIndex);
+    CWriteClassMemberHook*
+    GetWriteClassMemberHook(const CClassTypeInfo* objectType,
+                            TMemberIndex memberIndex) const;
+
+    // choice variant
+    void SetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                                   TMemberIndex variantIndex,
+                                   CWriteChoiceVariantHook* hook);
+    void ResetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                                     TMemberIndex variantIndex);
+    CWriteChoiceVariantHook*
+    GetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                              TMemberIndex variantIndex) const;
+
+    // END OF USER INTERFACE
+
+    // low level writers
+    virtual void DoWriteClass(const CConstObjectInfo& object,
+                              CWriteClassMembersHook& hook);
+    virtual void DoWriteClass(TConstObjectPtr objectPtr,
+                              const CClassTypeInfo* objectType);
+    void WriteClassMembers(TConstObjectPtr objectPtr,
+                           const CClassTypeInfo* objectType);
+    virtual void DoWriteClassMember(const CMemberId& id,
+                                    const CConstObjectInfo& object,
+                                    TMemberIndex index,
+                                    CWriteClassMemberHook& hook);
+    virtual void DoWriteClassMember(const CMemberId& id,
+                                    TConstObjectPtr memberPtr,
+                                    TTypeInfo memberType);
 
     virtual void WriteTypeName(const string& name);
 
@@ -350,8 +423,6 @@ public:
         }
     virtual void WriteStringStore(const string& data);
 
-    // object level writers
-    void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 
@@ -411,42 +482,22 @@ protected:
 public:
 #endif
 
-    // array interface
-    virtual void WriteArray(CObjectArrayWriter& writer,
-                            TTypeInfo arrayType, bool randomOrder,
-                            TTypeInfo elementType) = 0;
-
     // named type interface
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
                                 TTypeInfo typeInfo, TConstObjectPtr object);
 
+    // container interface
+    void WriteContainerElements(const CConstObjectInfo& container,
+                                CWriteContainerElementsHook& hook);
+
     // class interface
-    virtual void BeginClass(CObjectStackClass& cls) = 0;
+    virtual void BeginClass(CObjectStackClass& cls,
+                            const CClassTypeInfo* classInfo) = 0;
     virtual void EndClass(CObjectStackClass& cls);
 
     virtual void BeginClassMember(CObjectStackClassMember& member,
                                   const CMemberId& id) = 0;
     virtual void EndClassMember(CObjectStackClassMember& member);
-    virtual void WriteClass(CObjectClassWriter& writer,
-                            const CClassTypeInfo* classInfo, 
-                            const CMembersInfo& members,
-                            bool randomOrder);
-    virtual void WriteClassMember(CObjectClassWriter& writer,
-                                  const CMemberId& id,
-                                  TTypeInfo memberInfo,
-                                  TConstObjectPtr memberPtr);
-    virtual void WriteDelayedClassMember(CObjectClassWriter& writer,
-                                         const CMemberId& id,
-                                         const CDelayBuffer& buffer);
-
-    // choice interface
-    virtual void WriteChoice(TTypeInfo choiceType,
-                             const CMemberId& id,
-                             TTypeInfo memberInfo,
-                             TConstObjectPtr memberPtr) = 0;
-    virtual void WriteDelayedChoice(TTypeInfo choiceType,
-                                    const CMemberId& id,
-                                    const CDelayBuffer& buffer) = 0;
 
 	// write byte blocks
 	virtual void BeginBytes(const ByteBlock& block);
@@ -456,15 +507,14 @@ public:
 
 protected:
     // low level writers
-    virtual void WritePointer(TConstObjectPtr object,
-                              CWriteObjectInfo& info,
+    virtual void WritePointer(CWriteObjectInfo& info,
                               TTypeInfo declaredTypeInfo);
     virtual void WriteNullPointer(void) = 0;
     virtual void WriteObjectReference(TObjectIndex index) = 0;
     virtual void WriteThis(TConstObjectPtr object,
-                           CWriteObjectInfo& info);
+                           TTypeInfo typeInfo);
     virtual void WriteOther(TConstObjectPtr object,
-                            CWriteObjectInfo& info) = 0;
+                            TTypeInfo typeInfo) = 0;
 
     virtual void WriteBool(bool data) = 0;
     virtual void WriteChar(char data) = 0;
@@ -481,23 +531,35 @@ protected:
 	virtual void WriteCString(const char* str);
     virtual void WriteString(const string& str) = 0;
 
-    COObjectList m_Objects;
-#ifdef NCBISER_ALLOW_CYCLES
-    void WriteObject(TConstObjectPtr object, CWriteObjectInfo& info)
-        {
-            m_Objects.ObjectWritten(info);
-            _TRACE("CObjectOStream::RegisterObject(x, "<<info.GetTypeInfo()->GetName()<<") = "<<info.GetIndex());
-            info.GetTypeInfo()->WriteData(*this, object);
-        }
-#else
-    void WriteData(TConstObjectPtr object, TTypeInfo typeInfo)
-        {
-            typeInfo->WriteData(*this, object);
-        }
+    void RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo);
+    void RegisterAndWrite(const CConstObjectInfo& object);
+
+#if NCBISER_ALLOW_CYCLES
+    void WriteObject(CWriteObjectInfo& info);
 #endif
 
 protected:
     COStreamBuffer m_Output;
+
+    COObjectList m_Objects;
+
+    // hooks data
+    typedef map<const CTypeInfo*, CRef<CWriteObjectHook> > TWriteObjectHooks;
+    typedef map<const CMemberInfo*, CRef<CWriteClassMemberHook> > TWriteClassMemberHooks;
+    typedef map<const CMemberInfo*, CRef<CWriteChoiceVariantHook> > TWriteChoiceVariantHooks;
+
+    static CWriteObjectHook* GetHook(const TWriteObjectHooks& hooks,
+                                     const CTypeInfo* objectType);
+    static CWriteClassMemberHook* GetHook(const TWriteClassMemberHooks& hooks,
+                                          const CClassTypeInfo* objectType,
+                                          TMemberIndex index);
+    static CWriteChoiceVariantHook* GetHook(const TWriteChoiceVariantHooks& hooks,
+                                            const CChoiceTypeInfo* objectType,
+                                            TMemberIndex index);
+
+    AutoPtr<TWriteObjectHooks> m_WriteObjectHooks;
+    AutoPtr<TWriteClassMemberHooks> m_WriteClassMemberHooks;
+    AutoPtr<TWriteChoiceVariantHooks> m_WriteChoiceVariantHooks;
 };
 
 #include <serial/objostr.inl>

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/08/15 19:45:28  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.22  2000/07/11 20:36:28  vasilche
 * Removed unnecessary generation of namespace references for enum members.
 * Removed obsolete methods.
@@ -315,11 +322,11 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     if ( haveUserClass )
         codeClassName += "_Base";
     CClassCode code(ctx, codeClassName);
-    if ( m_ParentClassName.empty() ) {
-        code.SetParentClass("CObject", CNamespace::KNCBINamespace);
-    }
-    else {
+    if ( !m_ParentClassName.empty() ) {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
+    }
+    else if ( GetKind() == eKindObject ) {
+        code.SetParentClass("CObject", CNamespace::KNCBINamespace);
     }
     string methodPrefix = code.GetMethodPrefix();
 

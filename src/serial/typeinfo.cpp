@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.23  2000/07/03 18:42:48  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -177,6 +184,11 @@ bool CTypeInfo::MayContainType(TTypeInfo /*typeInfo*/) const
 bool CTypeInfo::IsCObject(void) const
 {
     return false;
+}
+
+const CObject* CTypeInfo::GetCObjectPtr(TConstObjectPtr /*objectPtr*/) const
+{
+    return 0;
 }
 
 bool CTypeInfo::IsParentClassOf(const CClassTypeInfo* /*classInfo*/) const

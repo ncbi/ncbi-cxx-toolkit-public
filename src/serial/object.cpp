@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/15 19:44:47  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.5  2000/07/27 14:59:29  thiessen
 * minor fix to avoid Mac compiler error
 *
@@ -62,91 +69,16 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
+#include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE
 
-const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const
-{
-    _ASSERT(dynamic_cast<const CPrimitiveTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CPrimitiveTypeInfo*>(GetTypeInfo());
-}
-
-const CClassTypeInfoBase* CObjectTypeInfo::GetClassTypeInfoBase(void) const
-{
-    _ASSERT(dynamic_cast<const CClassTypeInfoBase*>(GetTypeInfo()));
-    return static_cast<const CClassTypeInfoBase*>(GetTypeInfo());
-}
-
-const CClassTypeInfo* CObjectTypeInfo::GetClassTypeInfo(void) const
-{
-    _ASSERT(dynamic_cast<const CClassTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CClassTypeInfo*>(GetTypeInfo());
-}
-
-const CChoiceTypeInfo* CObjectTypeInfo::GetChoiceTypeInfo(void) const
-{
-    _ASSERT(dynamic_cast<const CChoiceTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CChoiceTypeInfo*>(GetTypeInfo());
-}
-
-const CContainerTypeInfo* CObjectTypeInfo::GetContainerTypeInfo(void) const
-{
-    _ASSERT(dynamic_cast<const CContainerTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CContainerTypeInfo*>(GetTypeInfo());
-}
-
-const CPointerTypeInfo* CObjectTypeInfo::GetPointerTypeInfo(void) const
-{
-    _ASSERT(dynamic_cast<const CPointerTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CPointerTypeInfo*>(GetTypeInfo());
-}
-
-// pointer interface
-CConstObjectInfo CConstObjectInfo::GetPointedObject(void) const
-{
-    return GetPointerTypeInfo()->GetPointedObject(*this);
-}
-
-CObjectInfo CObjectInfo::GetPointedObject(void) const
-{
-    return GetPointerTypeInfo()->GetPointedObject(*this);
-}
-
-// class interface
-CObjectTypeInfo::TMemberIndex CObjectTypeInfo::GetMembersCount(void) const
-{
-    return GetClassTypeInfoBase()->GetMembersCount();
-}
-
-const CMemberId& CObjectTypeInfo::GetMemberId(TMemberIndex index) const
-{
-    return GetClassTypeInfoBase()->GetMemberId(index);
-}
-
-CObjectTypeInfo::TMemberIndex
-CObjectTypeInfo::FindMember(const string& name) const
-{
-    return GetClassTypeInfoBase()->GetMembers().FindMember(name);
-}
-
-CObjectTypeInfo::TMemberIndex
-CObjectTypeInfo::FindMemberByTag(int tag) const
-{
-    return GetClassTypeInfoBase()->GetMembers().FindMember(tag);
-}
-
 void CObjectTypeInfo::CMemberIterator::Init(const CObjectTypeInfo& info)
 {
-    m_MemberIndex = m_MembersCount = 0;
+    m_MemberIndex = CMembersInfo::FirstMemberIndex();
     m_ClassTypeInfo = info.GetClassTypeInfo();
-    m_MembersCount = GetClassTypeInfo()->GetMembersCount();
+    m_LastMemberIndex = GetClassTypeInfo()->GetMembers().LastMemberIndex();
     _DEBUG_ARG(m_LastCall = eNone);
-}
-
-const CMemberId& CObjectTypeInfo::CMemberIterator::GetId(void) const
-{
-    _ASSERT(CheckValid());
-    return GetClassTypeInfo()->GetMemberId(GetMemberIndex());
 }
 
 bool CConstObjectInfo::ClassMemberIsSet(TMemberIndex index) const
@@ -177,24 +109,23 @@ bool CConstObjectInfo::ClassMemberIsSet(TMemberIndex index) const
 
 CConstObjectInfo CConstObjectInfo::GetClassMember(TMemberIndex index) const
 {
-    const CMemberInfo* mInfo = GetClassTypeInfo()->GetMemberInfo(index);
-    if ( mInfo->CanBeDelayed() )
-        const_cast<CDelayBuffer&>
-            (mInfo->GetDelayBuffer(GetObjectPtr())).Update();
+    const CClassTypeInfo* classInfo = GetClassTypeInfo();
+    const CMemberInfo* mInfo = classInfo->GetMemberInfo(index);
     return make_pair(mInfo->GetMember(GetObjectPtr()), mInfo->GetTypeInfo());
 }
 
 CObjectInfo CObjectInfo::GetClassMember(TMemberIndex index) const
 {
-    const CMemberInfo* mInfo = GetClassTypeInfo()->GetMemberInfo(index);
-    if ( mInfo->CanBeDelayed() )
-        mInfo->GetDelayBuffer(GetObjectPtr()).Update();
+    const CClassTypeInfo* classInfo = GetClassTypeInfo();
+    const CMemberInfo* mInfo = classInfo->GetMemberInfo(index);
+    mInfo->UpdateSetFlag(GetObjectPtr(), true);
     return make_pair(mInfo->GetMember(GetObjectPtr()), mInfo->GetTypeInfo());
 }
 
 void CObjectInfo::EraseClassMember(TMemberIndex index)
 {
-    const CMemberInfo* mInfo = GetClassTypeInfo()->GetMemberInfo(index);
+    const CClassTypeInfo* classInfo = GetClassTypeInfo();
+    const CMemberInfo* mInfo = classInfo->GetMemberInfo(index);
     if ( !mInfo->Optional() || mInfo->GetDefault() ) {
         THROW1_TRACE(runtime_error, "cannot erase non OPTIONAL member");
     }
@@ -206,21 +137,12 @@ void CObjectInfo::EraseClassMember(TMemberIndex index)
         return;
     }
 
-    // update delayed buffer
-    if ( mInfo->CanBeDelayed() )
-        mInfo->GetDelayBuffer(GetObjectPtr()).Update();
-
     // reset member
     mInfo->GetTypeInfo()->SetDefault(mInfo->GetMember(GetObjectPtr()));
 
     // update 'set' flag
     if ( haveSetFlag )
         mInfo->GetSetFlag(GetObjectPtr()) = false;
-}
-
-CObjectTypeInfo::TMemberIndex CConstObjectInfo::WhichChoice(void) const
-{
-    return GetChoiceTypeInfo()->GetIndex(GetObjectPtr());
 }
 
 CConstObjectInfo CConstObjectInfo::GetCurrentChoiceVariant(void) const

@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/member.hpp>
+//#include <serial/member.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/ptrinfo.hpp>
@@ -65,10 +65,10 @@ class CClassInfoHelperBase
 protected:
     typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
     typedef TObjectPtr (*TCreateFunction)(TTypeInfo info);
-    typedef int (*TWhichFunction)(TConstObjectPtr object);
+    typedef TMemberIndex (*TWhichFunction)(TConstObjectPtr object);
     typedef void (*TResetFunction)(TObjectPtr object);
-    typedef void (*TSelectFunction)(TObjectPtr object, int index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object, int index);
+    typedef void (*TSelectFunction)(TObjectPtr object, TMemberIndex index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object, TMemberIndex index);
 
     static CChoiceTypeInfo* CreateChoiceInfo(const char* name, size_t size,
                                              const type_info& ti,
@@ -133,24 +133,25 @@ public:
             Get(object).Reset();
         }
 
-    static int Which(const void* object)
+    static TMemberIndex Which(const void* object)
         {
-            return Get(object).Which() - 1;
+            return Get(object).Which() + (kInvalidMember - 0);
         }
     static void ResetChoice(void* object)
         {
-            if ( Which(object) != -1 )
+            if ( Which(object) != kInvalidMember )
                 Reset(object);
         }
-    static void Select(void* object, int index)
+    static void Select(void* object, TMemberIndex index)
         {
             typedef typename CClassType::E_Choice E_Choice;
-            Get(object).Select(E_Choice(index+1));
+            Get(object).Select(E_Choice(index + (0 - kInvalidMember)));
         }
-    static void SelectDelayBuffer(void* object, int index)
+    static void SelectDelayBuffer(void* object, TMemberIndex index)
         {
             typedef typename CClassType::E_Choice E_Choice;
-            Get(object).SelectDelayBuffer(E_Choice(index+1));
+
+            Get(object).SelectDelayBuffer(E_Choice(index+(0-kInvalidMember)));
         }
 
     static void SetReadWriteMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
@@ -311,28 +312,15 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STL_CRef(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CRefTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
-#define SERIAL_REF_CHOICE_POINTER(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo,\
-    SERIAL_REF(TypeMacro)TypeMacroArgs
-
-#define SERIAL_REF_CHOICE_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CChoiceStlClassInfo_auto_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
-
-#define SERIAL_REF_CHOICE_STL_AutoPtr(TypeMacro,TypeMacroArgs) \
-    &NCBI_NS_NCBI::CChoiceAutoPtrTypeInfo<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
-
 #define SERIAL_TYPE_CHOICE(TypeMacro,TypeMacroArgs) \
     SERIAL_TYPE(TypeMacro)TypeMacroArgs
 #define SERIAL_REF_CHOICE(TypeMacro,TypeMacroArgs) \
-    SERIAL_REF(NCBI_NAME2(CHOICE_,Type))Args
+    &NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo, \
+    SERIAL_REF(TypeMacro)TypeMacroArgs
 
 template<typename T>
 struct Check
 {
-    static CMemberInfo* Member(const T* member, const CTypeRef& type)
-        {
-            return new CRealMemberInfo(size_t(member), type);
-        }
     static const void* Ptr(const T* member)
         {
             return member;
@@ -380,7 +368,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
         info = Code;
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
 	BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
-
+    
 #define END_TYPE_INFO \
     } \
     return info; \
@@ -528,42 +516,38 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 // sub class definition
 #define SET_PARENT_CLASS(ParentClassName) \
     info->SetParentClass(ParentClassName::GetTypeInfo())
-#define ADD_NAMED_NULL_SUB_CLASS(ClassAlias) \
-    info->AddSubClassNull(ClassAlias)
 #define ADD_NAMED_SUB_CLASS(SubClassAlias, SubClassName) \
     info->AddSubClass(SubClassAlias, &SubClassName::GetTypeInfo)
 #define ADD_SUB_CLASS(SubClassName) \
     ADD_NAMED_SUB_CLASS(#SubClassName, SubClassName)
+#define ADD_NAMED_NULL_SUB_CLASS(ClassAlias) \
+    info->AddSubClassNull(ClassAlias)
+#define ADD_NULL_SUB_CLASS(ClassAlias) \
+    ADD_NAMED_NULL_SUB_CLASS("NULL")
 
 // enum definition macros
-#define BEGIN_NAMED_ENUM_INFO(EnumAlias, EnumName, IsInteger) \
-const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EnumName)(void) \
+#define BEGIN_ENUM_INFO_METHOD(MethodName, EnumAlias, EnumName, IsInteger) \
+const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 { static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo; if ( !enumInfo ) { \
     enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
     EnumName enumValue;
+#define END_ENUM_INFO_METHOD } return enumInfo; }
+
 #define BEGIN_NAMED_ENUM_IN_INFO(EnumAlias, CppContext, EnumName, IsInteger) \
-const NCBI_NS_NCBI::CEnumeratedTypeValues* CppContext ENUM_METHOD_NAME(EnumName)(void) \
-{ static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo; if ( !enumInfo ) { \
-    enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
-    EnumName enumValue;
-#define BEGIN_ENUM_INFO(EnumName, IsInteger) \
-    BEGIN_NAMED_ENUM_INFO(#EnumName, EnumName, IsInteger)
+    BEGIN_ENUM_INFO_METHOD(CppContext ENUM_METHOD_NAME(EnumName), EnumAlias, EnumName, IsInteger)
+#define BEGIN_NAMED_ENUM_INFO(EnumAlias, EnumName, IsInteger) \
+    BEGIN_ENUM_INFO_METHOD(ENUM_METHOD_NAME(EnumName), EnumAlias, EnumName, IsInteger)
+
 #define BEGIN_ENUM_IN_INFO(CppContext, EnumName, IsInteger) \
     BEGIN_NAMED_ENUM_IN_INFO(#EnumName, CppContext, EnumName, IsInteger)
+#define BEGIN_ENUM_INFO(EnumName, IsInteger) \
+    BEGIN_NAMED_ENUM_INFO(#EnumName, EnumName, IsInteger)
 
 #define ADD_ENUM_VALUE(EnumValueName, EnumValueValue) \
     enumInfo->AddValue(EnumValueName, enumValue = EnumValueValue)
 
-#define END_ENUM_INFO } return enumInfo; }
-#define END_ENUM_IN_INFO } return enumInfo; }
-
-// member types
-template<typename T>
-inline
-CMemberInfo* MemberInfo(const T* member, const CTypeRef typeRef)
-{
-	return new CRealMemberInfo(size_t(member), typeRef);
-}
+#define END_ENUM_IN_INFO END_ENUM_INFO_METHOD
+#define END_ENUM_INFO END_ENUM_INFO_METHOD
 
 // add member methods
 CMemberInfo*

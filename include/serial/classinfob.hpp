@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.3  2000/07/11 20:34:51  vasilche
 * File included in all generated headers made lighter.
 * Nonnecessary code moved to serialimpl.hpp.
@@ -63,7 +70,6 @@ BEGIN_NCBI_SCOPE
 class CClassTypeInfoBase : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    typedef CMembers::TMemberIndex TMemberIndex;
     typedef vector<pair<CMemberId, CTypeRef> > TSubClasses;
     typedef map<TTypeInfo, bool> TContainedTypes;
 
@@ -107,21 +113,9 @@ public:
         {
             return m_Members;
         }
-    TMemberIndex GetMembersCount(void) const
-        {
-            return GetMembers().GetMembersCount();
-        }
-    const CMemberId& GetMemberId(TMemberIndex index) const
-        {
-            return GetMembers().GetMemberId(index);
-        }
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const
         {
             return GetMembers().GetMemberInfo(index);
-        }
-    TTypeInfo GetMemberTypeInfo(TMemberIndex index) const
-        {
-            return GetMemberInfo(index)->GetTypeInfo();
         }
 
 protected:
@@ -148,6 +142,7 @@ public:
                                     void (*creator)(void));
 
     bool IsCObject(void) const;
+    const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
     void SetIsCObject(void);
     void SetIsCObject(const void* /*object*/)
         {

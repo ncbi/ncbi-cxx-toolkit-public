@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/08/15 19:44:49  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.40  2000/07/03 20:47:22  vasilche
 * Removed unused variables/functions.
 *
@@ -187,7 +194,10 @@
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/continfo.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -836,18 +846,9 @@ void CObjectIStreamAsnBinary::ReadStringStore(string& s)
 
 void CObjectIStreamAsnBinary::ReadStringValue(string& s)
 {
-    s.erase();
     size_t length = ReadLength();
-    s.reserve(length);
-    while ( length > 0 ) {
-        char buffer[128];
-        size_t count = length;
-        if ( count > sizeof(buffer) )
-            count = sizeof(buffer);
-        ReadBytes(buffer, count);
-        s.append(buffer, count);
-        length -= count;
-    }
+    s.resize(length);
+    ReadBytes(&s[0], length);
     EndOfTag();
 }
 
@@ -857,8 +858,8 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     size_t length = ReadLength();
 	char* s = static_cast<char*>(malloc(length + 1));
 	ReadBytes(s, length);
-    EndOfTag();
 	s[length] = 0;
+    EndOfTag();
     return s;
 }
 
@@ -868,19 +869,20 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
     return PeekTagByte() != KEndOfContentsByte;
 }
 
-void CObjectIStreamAsnBinary::ReadArray(CObjectArrayReader& reader,
-                                        TTypeInfo /*arrayType*/,
-                                        bool randomOrder,
-                                        TTypeInfo /*elementType*/)
+void CObjectIStreamAsnBinary::ReadContainer(const CObjectInfo& container,
+                                            CReadContainerElementHook& hook)
 {
-    ExpectSysTag(eUniversal, true, randomOrder? eSet: eSequence);
+    if ( container.GetContainerTypeInfo()->RandomElementsOrder() )
+        ExpectSysTag(eUniversal, true, eSet);
+    else
+        ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 
     {
         CObjectStackArrayElement e(*this, false);
         
         while ( HaveMoreElements() ) {
-            reader.ReadElement(*this);
+            hook.ReadContainerElement(*this, container);
         }
         
         e.End();
@@ -889,9 +891,13 @@ void CObjectIStreamAsnBinary::ReadArray(CObjectArrayReader& reader,
     ExpectEndOfContent();
 }
 
-void CObjectIStreamAsnBinary::BeginClass(CObjectStackClass& cls)
+void CObjectIStreamAsnBinary::BeginClass(CObjectStackClass& /*cls*/,
+                                         const CClassTypeInfo* classInfo)
 {
-    ExpectSysTag(eUniversal, true, cls.RandomOrder()? eSet: eSequence);
+    if ( classInfo->RandomOrder() )
+        ExpectSysTag(eUniversal, true, eSet);
+    else
+        ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 }
 
@@ -907,37 +913,37 @@ void CObjectIStreamAsnBinary::UnexpectedMember(TTag tag)
                "unexpected member: ["+NStr::IntToString(tag)+"]");
 }
 
-CObjectIStreamAsnBinary::TMemberIndex
+TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembers& members)
+                                          const CMembersInfo& members)
 {
     if ( !HaveMoreElements() )
-        return -1;
+        return kInvalidMember;
 
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = members.FindMember(tag);
-    if ( index < 0 )
+    if ( index == kInvalidMember )
         UnexpectedMember(tag);
-    m.SetName(members.GetMemberId(index));
+    m.SetName(members.GetMemberInfo(index)->GetId());
     m.Begin();
     return index;
 }
 
-CObjectIStreamAsnBinary::TMemberIndex
+TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembers& members,
+                                          const CMembersInfo& members,
                                           CClassMemberPosition& pos)
 {
     if ( !HaveMoreElements() )
-        return -1;
+        return kInvalidMember;
 
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
     TMemberIndex index = members.FindMember(tag, pos.GetLastIndex());
-    if ( index < 0 )
+    if ( index == kInvalidMember )
         UnexpectedMember(tag);
-    m.SetName(members.GetMemberId(index));
+    m.SetName(members.GetMemberInfo(index)->GetId());
     m.Begin();
     pos.SetLastIndex(index);
     return index;
@@ -949,108 +955,102 @@ void CObjectIStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
-void CObjectIStreamAsnBinary::ReadClassRandom(CObjectClassReader& reader,
-                                              const CClassTypeInfo* /*clsInfo*/,
-                                              const CMembersInfo& members)
+void CObjectIStreamAsnBinary::ReadClassRandom(const CObjectInfo& object,
+                                              CReadClassMemberHook& hook)
 {
     ExpectSysTag(eUniversal, true, eSet);
     ExpectIndefiniteLength();
 
-    size_t memberCount = members.GetMembersCount();
+    const CClassTypeInfo* objectType = object.GetClassTypeInfo();
+    const CMembersInfo& members = objectType->GetMembers();
+    TMemberIndex lastIndex = members.LastMemberIndex();
 
-    if ( HaveMoreElements() ) {
-        vector<bool> read(memberCount);
-        CObjectStackClassMember m(*this, false);
+    vector<bool> read(lastIndex + 1);
+    CObjectStackClassMember m(*this, false);
 
-        do {
-            TTag tag = PeekTag(eContextSpecific, true);
-            ExpectIndefiniteLength();
-            TMemberIndex index = members.FindMember(tag);
-            if ( index < 0 )
-                UnexpectedMember(tag);
-            m.SetName(members.GetMemberId(index));
-            
-            if ( read[index] )
-                DuplicatedMember(members, index);
-            read[index] = true;
-            reader.ReadMember(*this, members, index);
-            
-            ExpectEndOfContent();
-        } while ( HaveMoreElements() );
+    while ( HaveMoreElements() ) {
+        TTag tag = PeekTag(eContextSpecific, true);
+        ExpectIndefiniteLength();
+        TMemberIndex index = members.FindMember(tag);
+        if ( index == kInvalidMember )
+            UnexpectedMember(tag);
+        m.SetName(members.GetMemberInfo(index)->GetId());
         
-        m.End();
-        // init all absent members
-        for ( size_t index = 0; index < memberCount; ++index ) {
-            if ( !read[index] ) {
-                reader.AssignMemberDefault(*this, members, index);
-            }
-        }
+        if ( read[index] )
+            DuplicatedMember(members, index);
+        read[index] = true;
+        hook.ReadClassMember(*this, object, index);
+        
+        ExpectEndOfContent();
     }
-    else {
-        // init all members
-        for ( size_t index = 0; index < memberCount; ++index ) {
-            reader.AssignMemberDefault(*this, members, index);
+    
+    m.End();
+
+    // init all absent members
+    for ( TMemberIndex i = members.FirstMemberIndex();
+          i <= lastIndex; ++i ) {
+        if ( !read[i] ) {
+            hook.SetClassMemberDefault(*this, object, i);
         }
     }
 
     ExpectEndOfContent();
 }
 
-void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
-                                                  const CClassTypeInfo*,
-                                                  const CMembersInfo& members)
+void CObjectIStreamAsnBinary::ReadClassSequential(const CObjectInfo& object,
+                                                  CReadClassMemberHook& hook)
 {
     ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 
-    TMemberIndex pos = -1;
-    if ( HaveMoreElements() ) {
-        CObjectStackClassMember m(*this, false);
+    const CClassTypeInfo* objectType = object.GetClassTypeInfo();
+    const CMembersInfo& members = objectType->GetMembers();
+    TMemberIndex pos = members.FirstMemberIndex() - 1;
+    TMemberIndex lastIndex = members.LastMemberIndex();
 
-        do {
-            TTag tag = PeekTag(eContextSpecific, true);
-            ExpectIndefiniteLength();
-            TMemberIndex index = members.FindMember(tag, pos);
-            if ( index < 0 )
-                UnexpectedMember(tag);
-            m.SetName(members.GetMemberId(index));
-
-            size_t end = index;
-            for ( size_t i = pos + 1; i < end; ++i ) {
-                // init missing member
-                reader.AssignMemberDefault(*this, members, i);
-            }
-            pos = index;
-
-            reader.ReadMember(*this, members, index);
-
-            ExpectEndOfContent();
-        } while ( HaveMoreElements() );
-
-        m.End();
+    CObjectStackClassMember m(*this, false);
+    while ( HaveMoreElements() ) {
+        TTag tag = PeekTag(eContextSpecific, true);
+        ExpectIndefiniteLength();
+        TMemberIndex index = members.FindMember(tag, pos);
+        if ( index == kInvalidMember )
+            UnexpectedMember(tag);
+        m.SetName(members.GetMemberInfo(index)->GetId());
+        
+        for ( TMemberIndex i = pos + 1; i < index; ++i ) {
+            // init missing member
+            hook.SetClassMemberDefault(*this, object, i);
+        }
+        pos = index;
+        
+        hook.ReadClassMember(*this, object, index);
+        
+        ExpectEndOfContent();
     }
+    
+    m.End();
 
     // init all absent members
-    size_t end = members.GetMembersCount();
-    for ( size_t i = pos + 1; i < end; ++i ) {
-        reader.AssignMemberDefault(*this, members, i);
+    for ( TMemberIndex i = pos + 1; i <= lastIndex; ++i ) {
+        hook.SetClassMemberDefault(*this, object, i);
     }
 
     ExpectEndOfContent();
 }
 
-void CObjectIStreamAsnBinary::ReadChoice(CObjectChoiceReader& reader,
-                                         TTypeInfo /*choiceInfo*/,
-                                         const CMembersInfo& variants)
+void CObjectIStreamAsnBinary::DoReadChoice(const CObjectInfo& choice,
+                                     CReadChoiceVariantHook& hook)
 {
     CObjectStackChoiceVariant v(*this);
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
+    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
+    const CMembersInfo& variants = choiceType->GetMembers();
     TMemberIndex index = variants.FindMember(tag);
-    if ( index < 0 )
+    if ( index == kInvalidMember )
         UnexpectedMember(tag);
-    v.SetName(variants.GetMemberId(index));
-    reader.ReadChoiceVariant(*this, variants, index);
+    v.SetName(variants.GetMemberInfo(index)->GetId());
+    hook.ReadChoiceVariant(*this, choice, index);
     ExpectEndOfContent();
     v.End();
 }

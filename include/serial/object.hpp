@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.10  2000/07/18 17:22:58  vasilche
 * GetTypeInfo & constructor of CObjectTypeInfo made public.
 *
@@ -79,6 +86,9 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/continfo.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/ptrinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/memberid.hpp>
 #include <memory>
@@ -95,6 +105,8 @@ class CChoiceTypeInfo;
 class CContainerTypeInfo;
 class CPointerTypeInfo;
 class CMemberId;
+class CMemberInfo;
+class CContainerElementReadHook;
 
 class CObjectGetTypeInfo
 {
@@ -109,8 +121,6 @@ public:
         : m_TypeInfo(typeinfo)
         {
         }
-
-    typedef int TMemberIndex; // index of class member or choice variant
 
     TTypeInfo GetTypeInfo(void) const
         {
@@ -131,17 +141,19 @@ public:
     CPrimitiveTypeInfo::EValueType GetPrimitiveValueType(void) const;
     bool IsPrimitiveValueSigned(void) const;
     // class/choice interface
-    TMemberIndex GetMembersCount(void) const;
-    const CMemberId& GetMemberId(TMemberIndex index) const;
-    TMemberIndex FindMember(const string& name) const; // -1 if not found
-    TMemberIndex FindMemberByTag(int tag) const;      // -1 if not found
+    const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
+    TMemberIndex FindMember(const string& memberName) const; // -1 if not found
+    TMemberIndex FindMemberByTag(int memberTag) const;       // -1 if not found
+    const CMemberInfo* GetMemberInfo(const string& memberName) const;
 
     // class interface
     class CMemberIterator
     {
     public:
         CMemberIterator(void)
-            : m_ClassTypeInfo(0), m_MemberIndex(0), m_MembersCount(0)
+            : m_ClassTypeInfo(0),
+              m_MemberIndex(kFirstMemberIndex),
+              m_LastMemberIndex(kFirstMemberIndex - 1)
             {
                 _DEBUG_ARG(m_LastCall = eNone);
             }
@@ -159,10 +171,6 @@ public:
                 _ASSERT(CheckValid());
                 return m_MemberIndex;
             }
-        TMemberIndex GetMembersCount(void) const
-            {
-                return m_MembersCount;
-            }
 
         operator bool(void) const
             {
@@ -177,8 +185,6 @@ public:
                 ++m_MemberIndex;
             }
 
-        const CMemberId& GetId(void) const;
-
     protected:
         void Init(const CObjectTypeInfo& info);
 
@@ -188,7 +194,7 @@ public:
     private:
         const CClassTypeInfo* m_ClassTypeInfo;
         TMemberIndex m_MemberIndex;
-        TMemberIndex m_MembersCount;
+        TMemberIndex m_LastMemberIndex;
 
     protected:
 #if _DEBUG
@@ -201,7 +207,8 @@ public:
                 if ( m_LastCall != eValid)
                     ERR_POST("CMemberIterator was used without checking its validity");
 #endif
-                return m_MemberIndex >= 0 && m_MemberIndex < m_MembersCount;
+                return m_MemberIndex >= kFirstMemberIndex &&
+                    m_MemberIndex <= m_LastMemberIndex;
             }
     };
 
@@ -229,10 +236,16 @@ public:
     typedef CConstObjectMemberIterator CMemberIterator;
     typedef CConstObjectElementIterator CElementIterator;
     
+    enum ENonCObject {
+        eNonCObject
+    };
+
     // create empty CObjectInfo
     CConstObjectInfo(void);
     // initialize CObjectInfo
     CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo);
+    CConstObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo,
+                     ENonCObject nonCObject);
     CConstObjectInfo(pair<TConstObjectPtr, TTypeInfo> object);
     CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object);
 
@@ -246,6 +259,10 @@ public:
     operator bool(void) const
         {
             return m_ObjectPtr != 0;
+        }
+    void ResetObjectPtr(void)
+        {
+            m_ObjectPtr = 0;
         }
 
     // get pointer to object
@@ -281,10 +298,6 @@ protected:
     void Set(TConstObjectPtr objectPtr, TTypeInfo typeInfo);
     
 private:
-    // set m_Ref field for reference counted CObject
-    static const CObject* GetCObjectPtr(TConstObjectPtr objectPtr,
-                                        TTypeInfo typeInfo);
-
     TConstObjectPtr m_ObjectPtr; // object pointer
     CConstRef<CObject> m_Ref; // hold reference to CObject for correct removal
 };
@@ -304,6 +317,8 @@ public:
     CObjectInfo(TTypeInfo typeInfo);
     // initialize CObjectInfo
     CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo);
+    CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo,
+                ENonCObject nonCObject);
     CObjectInfo(pair<TObjectPtr, TTypeInfo> object);
 
 
@@ -321,6 +336,9 @@ public:
             return make_pair(GetObjectPtr(), GetTypeInfo());
         }
 
+    // read
+    void Read(CObjectIStream& in);
+
     // primitive type interface
     void SetPrimitiveValueBool(bool value);
     void SetPrimitiveValueChar(char value);
@@ -336,6 +354,8 @@ public:
     CObjectInfo GetCurrentChoiceVariant(void) const;
     // pointer interface
     CObjectInfo GetPointedObject(void) const;
+    // container interface
+    void ReadContainer(CObjectIStream& in, CContainerElementReadHook& hook);
 };
 
 class CConstObjectMemberIterator : public CObjectTypeInfo::CMemberIterator

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/08/15 19:44:50  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.42  2000/07/03 18:42:46  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -199,8 +206,10 @@
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
-#include <serial/delaybuf.hpp>
+#include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/continfo.hpp>
 #include <math.h>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
@@ -398,47 +407,54 @@ void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
 }
 
 void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
-                                   CWriteObjectInfo& info)
+                                   TTypeInfo typeInfo)
 {
     m_Output.PutString(": ");
-    WriteId(info.GetTypeInfo()->GetName());
+    WriteId(typeInfo->GetName());
     m_Output.PutChar(' ');
-    WriteObject(object, info);
+    WriteObject(object, typeInfo);
 }
 
-void CObjectOStreamAsn::WriteArray(CObjectArrayWriter& writer,
-                                   TTypeInfo arrayType, bool randomOrder,
-                                   TTypeInfo elementType)
+void CObjectOStreamAsn::WriteContainer(const CConstObjectInfo& container,
+                                       CWriteContainerElementsHook& hook)
 {
-    CObjectStackArray array(*this, arrayType, randomOrder);
+    CObjectStackArray array(*this, container.GetTypeInfo());
+    _ASSERT(array.GetFrameType() == CObjectStackFrame::eFrameArray);
+    array.SetFirstChild();
     m_Output.PutChar('{');
     
-    if ( !writer.NoMoreElements() ) {
-        CObjectStackArrayElement element(array, elementType);
-        element.Begin();
+    CObjectStackArrayElement element(array, container.GetContainerTypeInfo()->GetElementType(), false);
         
-        m_Output.IncIndentLevel();
+    m_Output.IncIndentLevel();
 
-        m_Output.PutEol();
-        writer.WriteElement(*this);
-        
-        while ( !writer.NoMoreElements() ) {
-            m_Output.PutChar(',');
-            m_Output.PutEol();
-            writer.WriteElement(*this);
-        }
-        
-        m_Output.DecIndentLevel();
+    WriteContainerElements(container, hook);
 
-        element.End();
-    }
+    m_Output.DecIndentLevel();
+    
+    element.End();
     m_Output.PutEol();
     m_Output.PutChar('}');
     array.End();
 }
 
-void CObjectOStreamAsn::BeginClass(CObjectStackClass& /*cls*/)
+void CObjectOStreamAsn::WriteContainerElement(const CConstObjectInfo& element)
 {
+    _ASSERT(GetTop());
+    _ASSERT(GetTop()->GetFrameType() == CObjectStackFrame::eFrameArrayElement);
+    _ASSERT(GetTop()->GetPrevous());
+    _ASSERT(GetTop()->GetPrevous()->GetFrameType() == CObjectStackFrame::eFrameArray);
+    if ( !GetTop()->GetPrevous()->FirstChild() )
+        m_Output.PutChar(',');
+
+    m_Output.PutEol();
+    WriteObject(element);
+}
+
+void CObjectOStreamAsn::BeginClass(CObjectStackClass& cls,
+                                   const CClassTypeInfo* /*classInfo*/)
+{
+    _ASSERT(cls.GetFrameType() == CObjectStackFrame::eFrameClass);
+    cls.SetFirstChild();
     m_Output.PutChar('{');
     m_Output.IncIndentLevel();
 }
@@ -454,101 +470,113 @@ void CObjectOStreamAsn::EndClass(CObjectStackClass& cls)
 void CObjectOStreamAsn::BeginClassMember(CObjectStackClassMember& m,
                                          const CMemberId& id)
 {
-    if ( m.GetClassFrame().IsEmpty() )
-        m.GetClassFrame().SetNonEmpty();
-    else
+    _ASSERT(m.GetFrameType() == CObjectStackFrame::eFrameClassMember);
+    _ASSERT(m.GetPrevous());
+    _ASSERT(m.GetPrevous()->GetFrameType() == CObjectStackFrame::eFrameClass);
+    if ( !m.GetPrevous()->FirstChild() )
         m_Output.PutChar(',');
     
     m_Output.PutEol();
-    m_Output.PutString(id.GetName());
-    m_Output.PutChar(' ');
+    if ( !id.GetName().empty() ) {
+        m_Output.PutString(id.GetName());
+        m_Output.PutChar(' ');
+    }
 }
 
-void CObjectOStreamAsn::WriteClass(CObjectClassWriter& writer,
-                                   const CClassTypeInfo* /*classInfo*/,
-                                   const CMembersInfo& members,
-                                   bool /*randomOrder*/)
+void CObjectOStreamAsn::DoWriteClass(const CConstObjectInfo& object,
+                                     CWriteClassMembersHook& hook)
 {
+    _ASSERT(GetTop());
+    GetTop()->SetFirstChild();
     m_Output.PutChar('{');
     m_Output.IncIndentLevel();
     
-    writer.WriteMembers(*this, members);
+    hook.WriteClassMembers(*this, object);
     
     m_Output.DecIndentLevel();
     m_Output.PutEol();
     m_Output.PutChar('}');
 }
 
-void CObjectOStreamAsn::WriteClassMember(CObjectClassWriter& writer,
-                                         const CMemberId& id,
-                                         TTypeInfo memberTypeInfo,
-                                         TConstObjectPtr memberPtr)
+void CObjectOStreamAsn::DoWriteClass(TConstObjectPtr objectPtr,
+                                     const CClassTypeInfo* objectType)
 {
-    if ( writer.m_Empty )
-        writer.m_Empty = false;
-    else
-        m_Output.PutChar(',');
+    _ASSERT(GetTop());
+    GetTop()->SetFirstChild();
+    m_Output.PutChar('{');
+    m_Output.IncIndentLevel();
     
+    WriteClassMembers(objectPtr, objectType);
+    
+    m_Output.DecIndentLevel();
+    m_Output.PutEol();
+    m_Output.PutChar('}');
+}
+
+void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
+                                           const CConstObjectInfo& object,
+                                           TMemberIndex index,
+                                           CWriteClassMemberHook& hook)
+{
+    if ( !GetTop()->FirstChild() )
+        m_Output.PutChar(',');
     CObjectStackClassMember m(*this, id);
+    
     m_Output.PutEol();
     if ( !id.GetName().empty() ) {
         m_Output.PutString(id.GetName());
         m_Output.PutChar(' ');
     }
 
-    memberTypeInfo->WriteData(*this, memberPtr);
+    hook.WriteClassMember(*this, object, index);
     
     m.End();
 }
 
-void CObjectOStreamAsn::WriteDelayedClassMember(CObjectClassWriter& writer,
-                                                const CMemberId& id,
-                                                const CDelayBuffer& buffer)
+void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
+                                           TConstObjectPtr memberPtr,
+                                           TTypeInfo memberType)
 {
-    if ( writer.m_Empty )
-        writer.m_Empty = false;
-    else
+    if ( !GetTop()->FirstChild() )
         m_Output.PutChar(',');
-    
     CObjectStackClassMember m(*this, id);
+    
     m_Output.PutEol();
     if ( !id.GetName().empty() ) {
         m_Output.PutString(id.GetName());
         m_Output.PutChar(' ');
     }
 
-    if ( !buffer.Write(*this) )
-        THROW1_TRACE(runtime_error, "internal error");
-    
+    WriteObject(memberPtr, memberType);
+
     m.End();
 }
 
-void CObjectOStreamAsn::WriteChoice(TTypeInfo /*choiceType*/,
-                                    const CMemberId& id,
-                                    TTypeInfo memberInfo,
-                                    TConstObjectPtr memberPtr)
+void CObjectOStreamAsn::WriteChoice(const CConstObjectInfo& choice,
+                                    CWriteChoiceVariantHook& hook)
 {
+    TMemberIndex index = choice.WhichChoice();
+    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
     CObjectStackChoiceVariant v(*this, id);
 
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
 
-    memberInfo->WriteData(*this, memberPtr);
+    hook.WriteChoiceVariant(*this, choice, index);
 
     v.End();
 }
 
-void CObjectOStreamAsn::WriteDelayedChoice(TTypeInfo /*choiceType*/,
-                                           const CMemberId& id,
-                                           const CDelayBuffer& buffer)
+void CObjectOStreamAsn::WriteChoice(const CConstObjectInfo& choice)
 {
+    TMemberIndex index = choice.WhichChoice();
+    const CMemberId& id = choice.GetMemberInfo(index)->GetId();
     CObjectStackChoiceVariant v(*this, id);
 
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
-    
-    if ( !buffer.Write(*this) )
-        THROW1_TRACE(runtime_error, "internal error");
+
+    WriteChoiceVariant(choice, index);
 
     v.End();
 }

@@ -9,9 +9,9 @@ LIBOBJ = \
   member memberid memberlist classinfo \
   stltypes enumerated choice asntypes \
   serial serialasn delaybuf \
-  exception strbuffer objistr objostr objlist objstack bytesrc \
+  exception strbuffer objistr objostr objhook objlist objstack bytesrc \
   $(serial_ws50_rtti_kludge) \
-  objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml
+  objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml objhook
 
 LIB    = xser
 

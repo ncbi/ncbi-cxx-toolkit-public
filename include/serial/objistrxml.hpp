@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.4  2000/07/03 18:42:36  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -108,30 +115,29 @@ protected:
     void OpenTag(const CObjectStackFrame& e);
     void CloseTag(const CObjectStackFrame& e);
 
-    virtual void ReadArray(CObjectArrayReader& reader,
-                           TTypeInfo arrayType, bool randomOrder,
-                           TTypeInfo elementType);
-    void ReadArrayContents(CObjectArrayReader& reader,
-                           TTypeInfo elementType);
+    virtual void ReadContainer(const CObjectInfo& container,
+                               CReadContainerElementHook& hook);
+    void ReadContainerContents(const CObjectInfo& container,
+                               CReadContainerElementHook& hook);
 
     void ReadNamedType(TTypeInfo namedTypeInfo,
                        TTypeInfo typeInfo,
                        TObjectPtr object);
 
-    void BeginClass(CObjectStackClass& cls);
+    void BeginClass(CObjectStackClass& cls,
+                    const CClassTypeInfo* classInfo);
     void EndClass(CObjectStackClass& cls);
     TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                  const CMembers& members);
+                                  const CMembersInfo& members);
     TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                  const CMembers& members,
+                                  const CMembersInfo& members,
                                   CClassMemberPosition& pos);
     void EndClassMember(CObjectStackClassMember& m);
 
-    void ReadChoice(CObjectChoiceReader& reader,
-                    TTypeInfo classType,
-                    const CMembersInfo& variants);
-    void ReadChoiceVariant(CObjectChoiceReader& reader,
-                           const CMembersInfo& variants);
+    virtual void DoReadChoice(const CObjectInfo& choice,
+                              CReadChoiceVariantHook& hook);
+    void ReadChoiceContents(const CObjectInfo& choice,
+                            CReadChoiceVariantHook& hook);
     
     void BeginBytes(ByteBlock& );
     int GetHexChar(void);
@@ -174,7 +180,7 @@ private:
     char SkipWS(void);
     char SkipWSAndComments(void);
 
-    void UnexpectedMember(const CLightString& id, const CMembers& members);
+    void UnexpectedMember(const CLightString& id, const CMembersInfo& members);
 
     enum ETagState {
         eTagOutside,

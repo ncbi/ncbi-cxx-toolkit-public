@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/08/15 19:44:46  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.49  2000/07/03 20:47:22  vasilche
 * Removed unused variables/functions.
 *
@@ -293,7 +300,7 @@ void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
     _ASSERT(IsCObject() == parentClass->IsCObject());
     _ASSERT(!m_ParentClassInfo);
     m_ParentClassInfo = parentClass;
-    _ASSERT(GetMembersCount() == 0);
+    _ASSERT(GetMembers().Empty());
     GetMembers().AddMember(CMemberId(), 0, parentType);
 }
 
@@ -386,139 +393,9 @@ void AssignMemberDefault(TObjectPtr object,
 inline
 const CMemberInfo* GetImplicitMember(const CMembersInfo& members)
 {
-    _ASSERT(members.GetMembersCount() == 1);
-    return members.GetMemberInfo(0);
+    _ASSERT(members.FirstMemberIndex() == members.LastMemberIndex());
+    return members.GetMemberInfo(members.FirstMemberIndex());
 }
-
-class CClassInfoClassWriter : public CObjectClassWriter
-{
-public:
-    CClassInfoClassWriter(TConstObjectPtr object)
-        : m_Object(object)
-        {
-        }
-
-    virtual void WriteMembers(CObjectOStream& out,
-                              const CMembersInfo& members)
-        {
-            TConstObjectPtr obj = m_Object;
-        
-            size_t memberCount = members.GetMembersCount();
-            for ( size_t index = 0; index < memberCount; ++index ) {
-                const CMemberInfo* info = members.GetMemberInfo(index);
-                bool haveSetFlag = info->HaveSetFlag();
-                if ( haveSetFlag && !info->GetSetFlag(obj) )
-                    // 'not set'
-                    continue;
-                
-                if ( info->CanBeDelayed() ) {
-                     const CDelayBuffer& buffer = info->GetDelayBuffer(obj);
-                     if ( buffer ) {
-                         if ( buffer.HaveFormat(out.GetDataFormat()) ) {
-                             out.WriteDelayedClassMember(*this,
-                                 members.GetMemberId(index), buffer);
-                             continue;
-                         }
-                         // cannot write delayed buffer -> proceed after update
-                         const_cast<CDelayBuffer&>(buffer).Update();
-                     }
-                }
-
-                TConstObjectPtr member = info->GetMember(obj);
-                TTypeInfo typeInfo = info->GetTypeInfo();
-                if ( !haveSetFlag && info->Optional() ) {
-                    TConstObjectPtr def = info->GetDefault();
-                    if ( !def ) {
-                        if ( typeInfo->IsDefault(member) )
-                            continue; // default
-                    }
-                    else {
-                        if ( typeInfo->Equals(member, def) )
-                            continue; // default
-                    }
-                }
-
-                out.WriteClassMember(*this, members.GetMemberId(index),
-                                     typeInfo, member);
-            }
-        }
-
-private:
-    TConstObjectPtr m_Object;
-};
-
-class CClassInfoClassReader : public CObjectClassReader
-{
-public:
-    CClassInfoClassReader(TObjectPtr object)
-        : m_Object(object)
-        {
-        }
-    virtual void ReadMember(CObjectIStream& in,
-                            const CMembersInfo& members, int index)
-        {
-            const CMemberInfo* info = members.GetMemberInfo(index);
-            TObjectPtr obj = m_Object;
-            if ( info->CanBeDelayed() &&
-                 info->GetDelayBuffer(obj).DelayRead(in, obj,
-                                                     CDelayBuffer::eNoMemberIndex,
-                                                     info) ) {
-                // we've got delayed buffer
-            }
-            else {
-                // read member data
-                info->GetTypeInfo()->ReadData(in, info->GetMember(obj));
-            }
-            // update 'set' flag
-            if ( info->HaveSetFlag() )
-                info->GetSetFlag(obj) = true;
-        }
-    virtual void AssignMemberDefault(CObjectIStream& in,
-                                     const CMembersInfo& members, int index)
-        {
-            const CMemberInfo* info = members.GetMemberInfo(index);
-            if ( !info->Optional() )
-                CObjectClassReader::AssignMemberDefault(in, members, index);
-
-            TObjectPtr obj = m_Object;
-            bool haveSetFlag = info->HaveSetFlag();
-            if ( haveSetFlag && !info->GetSetFlag(obj) )
-                return; // member not set
-            
-            TObjectPtr member = GetMember(info, obj);
-            // assign member dafault
-            TTypeInfo memberType = info->GetTypeInfo();
-            TConstObjectPtr def = info->GetDefault();
-            if ( def == 0 ) {
-                if ( !memberType->IsDefault(member) )
-                    memberType->SetDefault(member);
-            }
-            else {
-                memberType->Assign(member, def);
-            }
-            // update 'set' flag
-            if ( haveSetFlag )
-                info->GetSetFlag(obj) = false;
-        }
-private:
-    TObjectPtr m_Object;
-};
-
-class CClassInfoClassSkipper : public CObjectClassReader
-{
-public:
-    virtual void ReadMember(CObjectIStream& in,
-                            const CMembersInfo& members, int index)
-        {
-            members.GetMemberInfo(index)->GetTypeInfo()->SkipData(in);
-        }
-    virtual void AssignMemberDefault(CObjectIStream& in,
-                                     const CMembersInfo& members, int index)
-        {
-            if ( !members.GetMemberInfo(index)->Optional() )
-                CObjectClassReader::AssignMemberDefault(in, members, index);
-        }
-};
 
 void CClassTypeInfo::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
@@ -527,12 +404,13 @@ void CClassTypeInfo::WriteData(CObjectOStream& out,
     if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(GetMembers());
-        out.WriteNamedType(this, info->GetTypeInfo(), GetMember(info, object));
+        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
+        out.WriteNamedType(this,
+                           memberInfo->GetTypeInfo(),
+                           memberInfo->GetMember(object));
     }
     else {
-        CClassInfoClassWriter writer(object);
-        out.WriteClass(writer, this, GetMembers(), RandomOrder());
+        out.WriteClass(object, this);
     }
 }
 
@@ -541,12 +419,11 @@ void CClassTypeInfo::SkipData(CObjectIStream& in) const
     if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(GetMembers());
-        in.SkipNamedType(this, info->GetTypeInfo());
+        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
+        in.SkipNamedType(this, memberInfo->GetTypeInfo());
     }
     else {
-        CClassInfoClassSkipper skipper;
-        in.ReadClass(skipper, this, GetMembers(), RandomOrder());
+        in.SkipClass(this);
     }
 }
 
@@ -555,12 +432,14 @@ void CClassTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     if ( Implicit() ) {
         // special case: class contains only one implicit member
         // we'll behave as this one member
-        const CMemberInfo* info = GetImplicitMember(GetMembers());
-        in.ReadNamedType(this, info->GetTypeInfo(), GetMember(info, object));
+        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
+        in.ReadNamedType(this,
+                         memberInfo->GetTypeInfo(),
+                         memberInfo->GetMember(object));
     }
     else {
-        CClassInfoClassReader reader(object);
-        in.ReadClass(reader, this, GetMembers(), RandomOrder());
+        in.ReadClass(CObjectInfo(object, this,
+                                 CObjectInfo::eNonCObject));
     }
     DoPostRead(object);
 }
@@ -572,14 +451,18 @@ bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const
 
 void CClassTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    for ( TMemberIndex i = 0, size = GetMembersCount(); i < size; ++i ) {
+    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
+              last = GetMembers().LastMemberIndex();
+          i <= last; ++i ) {
         AssignMemberDefault(dst, GetMembers(), i);
     }
 }
 
 bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
 {
-    for ( TMemberIndex i = 0, size = GetMembersCount(); i < size; ++i ) {
+    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
+              last = GetMembers().LastMemberIndex();
+          i <= last; ++i ) {
         const CMemberInfo* info = GetMemberInfo(i);
         if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
                                           GetMember(info, object2)) )
@@ -594,7 +477,9 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2) co
 
 void CClassTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    for ( TMemberIndex i = 0, size = GetMembersCount(); i < size; ++i ) {
+    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
+              last = GetMembers().LastMemberIndex();
+          i <= last; ++i ) {
         const CMemberInfo* info = GetMemberInfo(i);
         info->GetTypeInfo()->Assign(GetMember(info, dst),
                                     GetMember(info, src));

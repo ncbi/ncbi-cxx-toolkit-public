@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.10  2000/06/16 16:31:07  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -79,10 +86,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <memory>
+#include <serial/object.hpp>
 #include <map>
-#include <list>
-#include <functional>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -97,8 +103,12 @@ public:
         eObjectIndexNotWritten = -1
     };
 
-    CWriteObjectInfo(TTypeInfo typeInfo = 0)
-        : m_TypeInfo(typeInfo), m_Index(eObjectIndexNotWritten)
+    CWriteObjectInfo(const CConstObjectInfo& object)
+        : m_Object(object), m_Index(eObjectIndexNotWritten)
+        {
+        }
+    CWriteObjectInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo)
+        : m_Object(objectPtr, typeInfo), m_Index(eObjectIndexNotWritten)
         {
         }
 
@@ -111,15 +121,20 @@ public:
             return m_Index;
         }
 
+    const CConstObjectInfo& GetObject(void) const
+        {
+            return m_Object;
+        }
+
     TTypeInfo GetTypeInfo(void) const
         {
-            return m_TypeInfo;
+            return GetObject().GetTypeInfo();
         }
 
 private:
     friend class COObjectList;
 
-    TTypeInfo m_TypeInfo;
+    CConstObjectInfo m_Object;
     TObjectIndex m_Index;
 };
 
@@ -133,8 +148,9 @@ public:
 
     // check that all objects marked as written
     void CheckAllWritten(void) const;
+    void Clear(void);
 
-    size_t GetObjectCount(void) const;
+    size_t GetWrittenObjectCount(void) const;
 
 protected:
     friend class CObjectOStream;
@@ -143,15 +159,23 @@ protected:
     // may throw an exception if there is error in objects placements
     CWriteObjectInfo& RegisterObject(TConstObjectPtr object,
                                      TTypeInfo typeInfo);
+    CWriteObjectInfo& RegisterObject(const CConstObjectInfo& object)
+        {
+            return RegisterObject(object.GetObjectPtr(), object.GetTypeInfo());
+        }
 
-    void ObjectWritten(CWriteObjectInfo& info);
+    void MarkObjectWritten(CWriteObjectInfo& info);
+
+    // forget pointers of written object (e.g. because we want to delete them)
+    void ForgetObjects(size_t from, size_t to);
 
 private:
     // we need reverse order map due to faster algorithm of lookup
-    typedef map<TConstObjectPtr, CWriteObjectInfo> TObjects;
+    typedef vector< CWriteObjectInfo > TObjects;
+    typedef map<TConstObjectPtr, TObjectIndex > TObjectsByPtr;
 
-    TObjects m_Objects;
-    TObjectIndex m_NextObjectIndex;
+    TObjects m_Objects;           // registered objects
+    TObjectsByPtr m_ObjectsByPtr; // registered objects by pointer
 };
 
 #include <serial/objlist.inl>

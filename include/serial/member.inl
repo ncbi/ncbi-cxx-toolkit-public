@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.6  2000/02/01 21:44:35  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -61,68 +68,4 @@
 * ===========================================================================
 */
 
-#if 0
-inline
-CMemberInfo::CMemberInfo(void)
-    : m_Optional(false), m_Default(0)
-{
-}
-
-inline
-bool CMemberInfo::Optional(void) const
-{
-    return m_Optional;
-}
-
-inline
-TObjectPtr CMemberInfo::GetMember(TObjectPtr object) const
-{
-    return Add(object, GetOffset());
-}
-
-inline
-TConstObjectPtr CMemberInfo::GetMember(TConstObjectPtr object) const
-{
-    return Add(object, GetOffset());
-}
-
-inline
-TObjectPtr CMemberInfo::GetContainer(TObjectPtr object) const
-{
-    return Add(object, -GetOffset());
-}
-
-inline
-TConstObjectPtr CMemberInfo::GetContainer(TConstObjectPtr object) const
-{
-    return Add(object, -GetOffset());
-}
-
-inline
-size_t CMemberInfo::GetEndOffset(void) const
-{
-    return GetOffset() + GetSize();
-}
-
-inline
-CRealMemberInfo::CRealMemberInfo(size_t offset, const CTypeRef& type)
-    : m_Offset(offset), m_Type(type)
-{
-}
-
-inline
-CMemberAliasInfo::CMemberAliasInfo(const CTypeRef& containerType,
-                                   const string& memberName)
-    : m_ContainerType(containerType), m_MemberName(memberName)
-{
-}
-
-inline
-CTypedMemberAliasInfo::CTypedMemberAliasInfo(const CTypeRef& type,
-                                             const CTypeRef& containerType,
-                                             const string& memberName)
-    : CMemberAliasInfo(containerType, memberName), m_Type(type)
-{
-}
-#endif
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */

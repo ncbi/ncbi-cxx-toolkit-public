@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/15 19:44:47  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.2  2000/07/03 18:42:43  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -229,6 +236,14 @@ bool CClassTypeInfoBase::IsCObject(void) const
     return m_IsCObject;
 }
 
+const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) const
+{
+    if ( m_IsCObject )
+        return static_cast<const CObject*>(objectPtr);
+    else
+        return 0;
+}
+
 void CClassTypeInfoBase::SetIsCObject(void)
 {
     m_IsCObject = true;
@@ -255,8 +270,10 @@ bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
 bool CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
 {
     // check members
-    for ( TMemberIndex i = 0; i < GetMembersCount(); ++i ) {
-        if ( GetMemberTypeInfo(i)->IsOrMayContainType(typeInfo) ) {
+    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
+              last = GetMembers().LastMemberIndex();
+          i <= last; ++i ) {
+        if ( GetMemberInfo(i)->GetTypeInfo()->IsOrMayContainType(typeInfo) ) {
             return true;
         }
     }

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:44:47  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.10  2000/07/03 18:42:43  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -247,7 +254,7 @@ void CEnumeratedTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
     else {
         // plain integer
-        m_ValueType->ReadData(in, object);
+        in.ReadObject(object, m_ValueType);
     }
 }
 
@@ -255,7 +262,7 @@ void CEnumeratedTypeInfo::WriteData(CObjectOStream& out, TConstObjectPtr object)
 {
     if ( !out.WriteEnum(Values(), m_ValueType->GetValueLong(object)) ) {
         // plain integer
-        m_ValueType->WriteData(out, object);
+        out.WriteObject(object, m_ValueType);
     }
 }
 

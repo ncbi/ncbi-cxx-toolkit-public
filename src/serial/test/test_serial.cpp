@@ -456,7 +456,8 @@ void PrintAsnClassValue(CNcbiOstream& out, const CConstObjectInfo& object)
             block.NextElement();
 
             // print member id if any
-            const CMemberId& id = i.GetId();
+            const CMemberId& id =
+                object.GetMemberInfo(i.GetMemberIndex())->GetId();
             if ( !id.GetName().empty() )
                 out << id.GetName() << ' ';
 
@@ -470,7 +471,7 @@ void PrintAsnChoiceValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
     int index = object.WhichChoice();
     _ASSERT(index >= 0);
-    out << object.GetMemberId(index).GetName() << ' ';
+    out << object.GetMemberInfo(index)->GetId().GetName() << ' ';
     PrintAsnValue(out, object.GetCurrentChoiceVariant());
 }
 

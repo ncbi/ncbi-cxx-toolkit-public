@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/15 19:44:49  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.6  2000/07/03 20:47:23  vasilche
 * Removed unused variables/functions.
 *
@@ -58,6 +65,10 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrxml.hpp>
 #include <serial/enumvalues.hpp>
+#include <serial/objhook.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/continfo.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
 
@@ -851,46 +862,43 @@ bool CObjectIStreamXml::NextTagIsClosing(void)
     return SkipWSAndComments() == '<' && m_Input.PeekChar(1) == '/';
 }
 
-void CObjectIStreamXml::ReadArray(CObjectArrayReader& reader,
-                                  TTypeInfo arrayType, bool randomOrder,
-                                  TTypeInfo elementType)
+void CObjectIStreamXml::ReadContainer(const CObjectInfo& container,
+                                      CReadContainerElementHook& hook)
 {
-    const string& arrayName = arrayType->GetName();
+    const string& arrayName = container.GetTypeInfo()->GetName();
     if ( arrayName.empty() ) {
-        ReadArrayContents(reader, elementType);
+        ReadContainerContents(container, hook);
     }
     else {
-        CObjectStackArray array(*this, arrayType, randomOrder);
+        CObjectStackArray array(*this, container.GetTypeInfo());
         OpenTag(arrayName);
-        ReadArrayContents(reader, elementType);
+        ReadContainerContents(container, hook);
         CloseTag(arrayName);
         array.End();
     }
 }
 
-void CObjectIStreamXml::ReadArrayContents(CObjectArrayReader& reader,
-                                          TTypeInfo elementType)
+void CObjectIStreamXml::ReadContainerContents(const CObjectInfo& container,
+                                              CReadContainerElementHook& hook)
 {
     if ( NextTagIsClosing() )
         return;
 
+    TTypeInfo elementType = container.GetContainerTypeInfo()->GetElementType();
     if ( elementType->GetName().empty() ) {
-        CObjectStackArrayElement element(*this, elementType != 0);
-        element.Begin();
-            
+        CObjectStackArrayElement element(*this, false);
+
         do {
             OpenTag(element);
-                
-            reader.ReadElement(*this);
-                
+            hook.ReadContainerElement(*this, container);
             CloseTag(element);
         } while ( !NextTagIsClosing() );
-            
+
         element.End();
     }
     else {
         do {
-            reader.ReadElement(*this);
+            hook.ReadContainerElement(*this, container);
         } while ( !NextTagIsClosing() );
     }
 }
@@ -903,14 +911,15 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
     const string& typeName = namedTypeInfo->GetName();
     _ASSERT(!typeName.empty());
     OpenTag(typeName);
-    typeInfo->ReadData(*this, object);
+    ReadObject(object, typeInfo);
     CloseTag(typeName);
     name.End();
 }
 
-void CObjectIStreamXml::BeginClass(CObjectStackClass& cls)
+void CObjectIStreamXml::BeginClass(CObjectStackClass& /*cls*/,
+                                   const CClassTypeInfo* classInfo)
 {
-    const string& name = cls.GetTypeInfo()->GetName();
+    const string& name = classInfo->GetName();
     if ( !name.empty() )
         OpenTag(name);
 }
@@ -924,49 +933,48 @@ void CObjectIStreamXml::EndClass(CObjectStackClass& cls)
 }
 
 void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
-                                         const CMembers& members)
+                                         const CMembersInfo& members)
 {
     string message =
         "\""+string(id)+"\": unexpected member, should be one of: ";
-    iterate ( CMembers::TMembers, i, members.GetMembers() ) {
-        message += '\"' + i->ToString() + "\" ";
+    for ( TMemberIndex i = members.FirstMemberIndex();
+          i <= members.LastMemberIndex(); ++i ) {
+        message += '\"' + members.GetMemberInfo(i)->GetId().ToString() + "\" ";
     }
     ThrowError(eFormatError, message);
 }
 
-CObjectIStreamXml::TMemberIndex
-CObjectIStreamXml::BeginClassMember(CObjectStackClassMember& m,
-                                    const CMembers& members)
+TMemberIndex CObjectIStreamXml::BeginClassMember(CObjectStackClassMember& m,
+                                                 const CMembersInfo& members)
 {
     if ( NextTagIsClosing() )
-        return -1;
+        return kInvalidMember;
 
     CLightString tagName = ReadName(BeginOpeningTag());
     CLightString id =
         SkipTagName(SkipTagName(tagName, m.GetClassFrame()), '_');
     TMemberIndex index = members.FindMember(id);
-    if ( index < 0 )
+    if ( index == kInvalidMember )
         UnexpectedMember(id, members);
-    m.SetName(members.GetMemberId(index));
+    m.SetName(members.GetMemberInfo(index)->GetId());
     m.Begin();
     return index;
 }
 
-CObjectIStreamXml::TMemberIndex
-CObjectIStreamXml::BeginClassMember(CObjectStackClassMember& m,
-                                    const CMembers& members,
-                                    CClassMemberPosition& pos)
+TMemberIndex CObjectIStreamXml::BeginClassMember(CObjectStackClassMember& m,
+                                                 const CMembersInfo& members,
+                                                 CClassMemberPosition& pos)
 {
     if ( NextTagIsClosing() )
-        return -1;
+        return kInvalidMember;
 
     CLightString tagName = ReadName(BeginOpeningTag());
     CLightString id =
         SkipTagName(SkipTagName(tagName, m.GetClassFrame()), '_');
     TMemberIndex index = members.FindMember(id, pos.GetLastIndex());
-    if ( index < 0 )
+    if ( index == kInvalidMember )
         UnexpectedMember(id, members);
-    m.SetName(members.GetMemberId(index));
+    m.SetName(members.GetMemberInfo(index)->GetId());
     m.Begin();
     pos.SetLastIndex(index);
     return index;
@@ -978,34 +986,36 @@ void CObjectIStreamXml::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
-void CObjectIStreamXml::ReadChoice(CObjectChoiceReader& reader,
-                                   TTypeInfo choiceInfo,
-                                   const CMembersInfo& members)
+void CObjectIStreamXml::DoReadChoice(const CObjectInfo& choice,
+                                     CReadChoiceVariantHook& hook)
 {
-    const string& choiceName = choiceInfo->GetName();
+    const string& choiceName = choice.GetTypeInfo()->GetName();
     if ( choiceName.empty() ) {
-        ReadChoiceVariant(reader, members);
+        ReadChoiceContents(choice, hook);
     }
     else {
-        CObjectStackChoice choice(*this, choiceInfo);
+        CObjectStackChoice c(*this, choice.GetTypeInfo());
         OpenTag(choiceName);
-        ReadChoiceVariant(reader, members);
+        ReadChoiceContents(choice, hook);
         CloseTag(choiceName);
-        choice.End();
+        c.End();
     }
 }
 
-void CObjectIStreamXml::ReadChoiceVariant(CObjectChoiceReader& reader,
-                                          const CMembersInfo& members)
+void CObjectIStreamXml::ReadChoiceContents(const CObjectInfo& choice,
+                                           CReadChoiceVariantHook& hook)
 {
     CLightString tagName = ReadName(BeginOpeningTag());
     _ASSERT(GetTop());
     CLightString id = SkipTagName(SkipTagName(tagName, *GetTop()), '_');
-    TMemberIndex index = members.FindMember(id);
-    if ( index < 0 )
-        UnexpectedMember(id, members);
-    CObjectStackChoiceVariant variant(*this, members.GetMemberId(index));
-    reader.ReadChoiceVariant(*this, members, index);
+    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
+    const CMembersInfo& variants = choiceType->GetMembers();
+    TMemberIndex index = variants.FindMember(id);
+    if ( index == kInvalidMember )
+        UnexpectedMember(id, variants);
+    CObjectStackChoiceVariant variant(*this,
+                                      variants.GetMemberInfo(index)->GetId());
+    hook.ReadChoiceVariant(*this, choice, index);
     CloseTag(variant);
     variant.End();
 }

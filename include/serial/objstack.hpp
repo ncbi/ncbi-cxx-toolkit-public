@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/15 19:44:41  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.3  2000/06/07 19:45:44  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -80,6 +87,8 @@ protected:
             return m_Top;
         }
 
+    void Clear(void);
+
 private:
     friend class CObjectStackFrame;
 
@@ -115,6 +124,17 @@ public:
 
     void End(void);
     void Begin(void);
+
+    bool FirstChild(void)
+        {
+            bool firstChild = m_FirstChild;
+            m_FirstChild = false;
+            return firstChild;
+        }
+    void SetFirstChild(void)
+        {
+            m_FirstChild = true;
+        }
     
 public:
     void SetNoName(void);
@@ -213,6 +233,7 @@ private:
     char m_NameType;
     char m_FrameType;
     bool m_Ended;
+    bool m_FirstChild;
     
 private:
     // to prevent allocation in heap
@@ -233,7 +254,7 @@ class CObjectStackBlock : public CObjectStackFrame
 {
 public:
     CObjectStackBlock(CObjectStack& stack, EFrameType frameType,
-                      TTypeInfo typeInfo, bool randomOrder);
+                      TTypeInfo typeInfo);
     
     bool IsEmpty(void) const
         {
@@ -244,11 +265,6 @@ public:
             m_Empty = false;
         }
 
-    bool RandomOrder(void) const
-        {
-            return m_RandomOrder;
-        }
-
     TTypeInfo GetTypeInfo(void) const
         {
             return GetNameTypeInfo();
@@ -256,20 +272,19 @@ public:
 
 private:
     bool m_Empty;
-    bool m_RandomOrder;
 };
 
 class CObjectStackArray : public CObjectStackBlock
 {
 public:
-    CObjectStackArray(CObjectStack& stack,
-                      TTypeInfo arrayType, bool randomOrder);
+    CObjectStackArray(CObjectStack& stack, TTypeInfo arrayType);
 };
 
 class CObjectStackArrayElement : public CObjectStackFrame
 {
 public:
-    CObjectStackArrayElement(CObjectStack& stack, bool ended = true);
+    CObjectStackArrayElement(CObjectStack& stack,
+                             bool ended = true);
     CObjectStackArrayElement(CObjectStackArray& array,
                              TTypeInfo elementType, bool ended = true);
 
@@ -291,7 +306,7 @@ class CObjectStackClass : public CObjectStackBlock
 {
 public:
     CObjectStackClass(CObjectStack& stack,
-                      TTypeInfo classInfo, bool randomOrder);
+                      TTypeInfo classInfo);
 };
 
 class CObjectStackClassMember : public CObjectStackFrame

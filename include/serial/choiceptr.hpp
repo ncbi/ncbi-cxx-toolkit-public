@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.17  2000/07/03 18:42:32  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -103,94 +110,51 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbiutil.hpp>
-#include <serial/typeref.hpp>
-#include <serial/ptrinfo.hpp>
+#include <corelib/ncbistd.hpp>
+#include <serial/choice.hpp>
 #include <serial/stdtypes.hpp>
-#include <serial/memberlist.hpp>
-#include <vector>
 #include <map>
-#include <memory>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 
-// CTypeInfo for pointers which behavelike CHOICE (select one of limited choices)
-class CChoicePointerTypeInfo : public CPointerTypeInfo
+class CPointerTypeInfo;
+
+// CTypeInfo for pointers which behave like CHOICE
+// (select one of limited choices)
+class CChoicePointerTypeInfo : public CChoiceTypeInfo
 {
-    typedef CPointerTypeInfo CParent;
+    typedef CChoiceTypeInfo CParent;
 public:
-    typedef CMembers::TMemberIndex TMemberIndex;
-    typedef vector<CTypeRef> TVariantTypes;
     typedef map<const type_info*, TMemberIndex, CLessTypeInfo> TVariantsByType;
 
-    CChoicePointerTypeInfo(TTypeInfo typeInfo);
+    CChoicePointerTypeInfo(TTypeInfo pointerType);
 #ifdef TYPENAME
-    CChoicePointerTypeInfo(const string& name, TTypeInfo typeInfo);
-    CChoicePointerTypeInfo(const char* name, TTypeInfo typeInfo);
-    CChoicePointerTypeInfo(const char* name, TTypeInfo arg,
-                           TTypeInfo typeInfo);
-    CChoicePointerTypeInfo(const char* name, const char* arg,
-                           TTypeInfo typeInfo);
+    CChoicePointerTypeInfo(const string& name, TTypeInfo pointerType);
+    CChoicePointerTypeInfo(const char* name, TTypeInfo pointerType);
 #endif
     ~CChoicePointerTypeInfo(void);
 
+    const CPointerTypeInfo* GetPointerTypeInfo(void) const
+        {
+            return m_PointerTypeInfo;
+        }
+
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
-    const CMembersInfo& GetVariants(void) const
-        {
-            return m_Variants;
-        }
-    TTypeInfo GetVariantType(TMemberIndex index) const;
+    TMemberIndex GetIndex(TConstObjectPtr object) const;
+    void ResetIndex(TObjectPtr object) const;
+    void SetIndex(TObjectPtr object, TMemberIndex index) const;
 
 protected:
-    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
-
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    void SkipData(CObjectIStream& in) const;
+    TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 
 private:
-    void Init(void);
-    const TVariantsByType& VariantsByType(void) const;
-    TMemberIndex FindVariant(TConstObjectPtr object) const;
+    void SetPointerType(TTypeInfo pointerType);
 
-    CMembersInfo m_Variants;
-    mutable auto_ptr<TVariantsByType> m_VariantsByType;
-};
-
-template<typename Data>
-class CChoiceAutoPtrTypeInfo : public CChoicePointerTypeInfo
-{
-    typedef CChoicePointerTypeInfo CParent;
-public:
-    typedef Data TDataType;
-    typedef AutoPtr<TDataType> TObjectType;
-
-    CChoiceAutoPtrTypeInfo<Data>(TTypeInfo type)
-        : CParent(type)
-        { }
-    
-    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
-        {
-            return static_cast<const TObjectType*>(object)->get();
-        }
-    void SetObjectPointer(TObjectPtr object, TObjectPtr data) const
-        {
-            static_cast<TObjectType*>(object)->
-                reset(static_cast<TDataType*>(data));
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-
-    static TTypeInfo GetTypeInfo(TTypeInfo type)
-        {
-            return new CChoiceAutoPtrTypeInfo<Data>(type);
-        }
+    const CPointerTypeInfo* m_PointerTypeInfo;
+    TVariantsByType m_VariantsByType;
+    TMemberIndex m_NullPointerIndex;
 };
 
 class CNullTypeInfo : public CVoidTypeInfo
@@ -205,11 +169,12 @@ public:
     TObjectPtr Create(void) const;
 
 protected:
-    void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
 
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     void SkipData(CObjectIStream& in) const;
+
 };
 
 //#include <serial/choiceptr.inl>

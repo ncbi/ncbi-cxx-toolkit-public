@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/15 19:44:46  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.8  2000/05/24 20:08:46  vasilche
 * Implemented XML dump.
 *
@@ -100,7 +107,7 @@ void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
     TTypeInfo dataType = GetDataTypeInfo();
     if ( dataType->GetRealTypeInfo(data) != dataType )
         THROW1_TRACE(runtime_error, "auto pointer have different type");
-    dataType->WriteData(out, data);
+    out.WriteObject(data, dataType);
 }
 
 void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
@@ -114,7 +121,7 @@ void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
     else if ( dataType->GetRealTypeInfo(data) != dataType ) {
         THROW1_TRACE(runtime_error, "auto pointer have different type");
     }
-    dataType->ReadData(in, data);
+    in.ReadObject(data, dataType);
 }
 
 void CAutoPointerTypeInfo::SkipData(CObjectIStream& in) const

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/15 19:44:41  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.5  2000/07/03 18:42:36  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -86,53 +93,43 @@ protected:
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TObjectIndex index);
     virtual void WriteOther(TConstObjectPtr object,
-                            CWriteObjectInfo& typeInfo);
+                            TTypeInfo typeInfo);
     void WriteId(const string& str);
 
     void WriteNull(void);
     void WriteEscapedChar(char c);
 
-    virtual void WriteArray(CObjectArrayWriter& writer,
-                            TTypeInfo arrayType, bool randomOrder,
-                            TTypeInfo elementType);
-    void WriteArrayContents(CObjectArrayWriter& writer,
-                            TTypeInfo elementType);
+    virtual void WriteContainer(const CConstObjectInfo& container,
+                                CWriteContainerElementsHook& hook);
+    virtual void WriteContainerElement(const CConstObjectInfo& element);
 
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
                                 TTypeInfo typeInfo, TConstObjectPtr object);
 
-    virtual void BeginClass(CObjectStackClass& cls);
+    virtual void BeginClass(CObjectStackClass& cls,
+                            const CClassTypeInfo* classInfo);
     virtual void EndClass(CObjectStackClass& cls);
     virtual void BeginClassMember(CObjectStackClassMember& m,
                                   const CMemberId& id);
     virtual void EndClassMember(CObjectStackClassMember& m);
-    virtual void WriteClass(CObjectClassWriter& writer,
-                            const CClassTypeInfo* classInfo, 
-                            const CMembersInfo& members,
-                            bool randomOrder);
-    void WriteClassContents(CObjectClassWriter& writer,
-                            const CClassTypeInfo* classInfo,
-                            const CMembersInfo& members);
-    virtual void WriteClassMember(CObjectClassWriter& writer,
-                                         const CMemberId& id,
-                                  TTypeInfo memberInfo,
-                                  TConstObjectPtr memberPtr);
-    virtual void WriteDelayedClassMember(CObjectClassWriter& writer,
-                                         const CMemberId& id,
-                                         const CDelayBuffer& buffer);
+    virtual void DoWriteClass(const CConstObjectInfo& object,
+                              CWriteClassMembersHook& hook);
+    virtual void DoWriteClass(TConstObjectPtr objectPtr,
+                              const CClassTypeInfo* objectType);
+    virtual void DoWriteClassMember(const CMemberId& id,
+                                    const CConstObjectInfo& object,
+                                    TMemberIndex index,
+                                    CWriteClassMemberHook& hook);
+    virtual void DoWriteClassMember(const CMemberId& id,
+                                    TConstObjectPtr memberPtr,
+                                    TTypeInfo memberType);
 
-    virtual void WriteChoice(TTypeInfo choiceType,
-                             const CMemberId& id,
-                             TTypeInfo memberInfo,
-                             TConstObjectPtr memberPtr);
-    virtual void WriteDelayedChoice(TTypeInfo choiceType,
-                                    const CMemberId& id,
-                                    const CDelayBuffer& buffer);
-    void WriteChoiceVariant(const CMemberId& id,
-                            TTypeInfo memberInfo,
-                            TConstObjectPtr memberPtr);
-    void WriteDelayedChoiceVariant(const CMemberId& id,
-                                   const CDelayBuffer& buffer);
+    virtual void WriteChoice(const CConstObjectInfo& choice,
+                             CWriteChoiceVariantHook& hook);
+    void WriteChoiceContents(const CConstObjectInfo& choice,
+                             CWriteChoiceVariantHook& hook);
+    virtual void WriteChoice(const CConstObjectInfo& choice);
+    void WriteChoiceContents(const CConstObjectInfo& choice);
 
 	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/08/15 19:44:50  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.43  2000/07/03 18:42:45  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -201,15 +208,18 @@
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <serial/continfo.hpp>
+#include <serial/objhook.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
 
 BEGIN_NCBI_SCOPE
 
-CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& in, bool deleteOut);
-CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& in, bool deleteOut);
-CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& in, bool deleteOut);
+CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
+CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
+CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      const string& fileName,
@@ -272,33 +282,199 @@ CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
 
 CObjectOStream::~CObjectOStream(void)
 {
-    _TRACE("~CObjectOStream:"<<m_Objects.GetObjectCount()<<" objects written");
+    _TRACE("~CObjectOStream:"<<m_Objects.GetWrittenObjectCount()<<" objects written");
+}
+
+void CObjectOStream::Close(void)
+{
+    m_Output.Close();
+    m_Objects.Clear();
+    CObjectStack::Clear();
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
-           << typeInfo->GetName() << ')');
+    // root writer
+    try {
+        CObjectStackNamedFrame m(*this, typeInfo);
+        _TRACE("CObjectOStream::Write(" << NStr::PtrToString(object) << ", "
+               << typeInfo->GetName() << ')');
+        WriteTypeName(typeInfo->GetName());
+        WriteObject(object, typeInfo);
 #if NCBISER_ALLOW_CYCLES
-    CWriteObjectInfo& info = m_Objects.RegisterObject(object, typeInfo);
-    if ( info.IsWritten() ) {
-        THROW1_TRACE(runtime_error,
-                     "trying to write already written object");
+        m_Objects.CheckAllWritten();
+#endif
+        FlushBuffer();
+        m_Objects.Clear();
+        m.End();
     }
-#endif
-    WriteTypeName(typeInfo->GetName());
-#if NCBISER_ALLOW_CYCLES
-    WriteObject(object, info);
-    m_Objects.CheckAllWritten();
-#else
-    WriteData(object, typeInfo);
-#endif
-    FlushBuffer();
+    catch (...) {
+        m_Objects.Clear();
+        throw;
+    }
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)
 {
     Write(object, type.Get());
+}
+
+CWriteObjectHook*
+CObjectOStream::GetHook(const TWriteObjectHooks& hooks,
+                        TTypeInfo objectType)
+{
+    if ( !objectType )
+        THROW1_TRACE(runtime_error, "invalid argument");
+    TWriteObjectHooks::const_iterator hook = hooks.find(objectType);
+    if ( hook != hooks.end() )
+        return hook->second.GetPointer();
+    return 0;
+}
+
+void CObjectOStream::SetWriteObjectHook(TTypeInfo objectType,
+                                        CWriteObjectHook* hook)
+{
+    if ( !objectType || !hook )
+        THROW1_TRACE(runtime_error, "invalid argument");
+    TWriteObjectHooks* hooks = m_WriteObjectHooks.get();
+    if ( !hooks )
+        m_WriteObjectHooks.reset(hooks = new TWriteObjectHooks);
+    (*hooks)[objectType].Reset(hook);
+}
+
+void CObjectOStream::ResetWriteObjectHook(TTypeInfo objectType)
+{
+    if ( !objectType )
+        THROW1_TRACE(runtime_error, "invalid argument");
+    TWriteObjectHooks* hooks = m_WriteObjectHooks.get();
+    if ( hooks ) {
+        hooks->erase(objectType);
+        if ( hooks->empty() )
+            m_WriteObjectHooks.reset(0);
+    }
+}
+
+CWriteClassMemberHook*
+CObjectOStream::GetHook(const TWriteClassMemberHooks& hooks,
+                        const CClassTypeInfo* classType,
+                        TMemberIndex memberIndex)
+{
+    _ASSERT(classType);
+    const CMemberInfo* memberInfo = classType->GetMemberInfo(memberIndex);
+    _ASSERT(memberInfo);
+    TWriteClassMemberHooks::const_iterator hook = hooks.find(memberInfo);
+    if ( hook != hooks.end() )
+        return hook->second.GetPointer();
+    return 0;
+}
+
+void CObjectOStream::SetWriteClassMemberHook(const CClassTypeInfo* classType,
+                                             TMemberIndex memberIndex,
+                                             CWriteClassMemberHook* hook)
+{
+    if ( !hook )
+        THROW1_TRACE(runtime_error, "invalid argument");
+    _ASSERT(classType);
+    const CMemberInfo* memberInfo = classType->GetMemberInfo(memberIndex);
+    _ASSERT(memberInfo);
+    TWriteClassMemberHooks* hooks = m_WriteClassMemberHooks.get();
+    if ( !hooks )
+        m_WriteClassMemberHooks.reset(hooks = new TWriteClassMemberHooks);
+    (*hooks)[memberInfo].Reset(hook);
+}
+
+void CObjectOStream::ResetWriteClassMemberHook(const CClassTypeInfo* classType,
+                                               TMemberIndex memberIndex)
+{
+    _ASSERT(classType);
+    const CMemberInfo* memberInfo = classType->GetMemberInfo(memberIndex);
+    _ASSERT(memberInfo);
+    TWriteClassMemberHooks* hooks = m_WriteClassMemberHooks.get();
+    if ( hooks ) {
+        hooks->erase(memberInfo);
+        if ( hooks->empty() )
+            m_WriteClassMemberHooks.reset(0);
+    }
+}
+
+CWriteChoiceVariantHook*
+CObjectOStream::GetHook(const TWriteChoiceVariantHooks& hooks,
+                        const CChoiceTypeInfo* choiceType,
+                        TMemberIndex variantIndex)
+{
+    _ASSERT(choiceType);
+    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
+    _ASSERT(memberInfo);
+    TWriteChoiceVariantHooks::const_iterator hook = hooks.find(memberInfo);
+    if ( hook != hooks.end() )
+        return hook->second.GetPointer();
+    return 0;
+}
+
+void
+CObjectOStream::SetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                                          TMemberIndex variantIndex,
+                                          CWriteChoiceVariantHook* hook)
+{
+    if ( !hook )
+        THROW1_TRACE(runtime_error, "invalid argument");
+    _ASSERT(choiceType);
+    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
+    _ASSERT(memberInfo);
+    TWriteChoiceVariantHooks* hooks = m_WriteChoiceVariantHooks.get();
+    if ( !hooks )
+        m_WriteChoiceVariantHooks.reset(hooks = new TWriteChoiceVariantHooks);
+    (*hooks)[memberInfo].Reset(hook);
+}
+
+void
+CObjectOStream::ResetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
+                                            TMemberIndex variantIndex)
+{
+    _ASSERT(choiceType);
+    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
+    _ASSERT(memberInfo);
+    TWriteChoiceVariantHooks* hooks = m_WriteChoiceVariantHooks.get();
+    if ( hooks ) {
+        hooks->erase(memberInfo);
+        if ( hooks->empty() )
+            m_WriteChoiceVariantHooks.reset(0);
+    }
+}
+
+#if NCBISER_ALLOW_CYCLES
+void CObjectOStream::WriteObject(CWriteObjectInfo& info)
+{
+    m_Objects.MarkObjectWritten(info);
+    WriteObject(info.GetObject());
+}
+#endif
+
+void CObjectOStream::RegisterAndWrite(TConstObjectPtr object,
+                                      TTypeInfo typeInfo)
+{
+#if NCBISER_ALLOW_CYCLES
+    WriteObject(m_Objects.RegisterObject(object, typeInfo));
+#else
+    WriteObject(object, typeInfo);
+#endif
+}
+
+void CObjectOStream::RegisterAndWrite(const CConstObjectInfo& object)
+{
+#if NCBISER_ALLOW_CYCLES
+    WriteObject(m_Objects.RegisterObject(object));
+#else
+    WriteObject(object);
+#endif
+}
+
+void CObjectOStream::WriteSeparateObject(const CConstObjectInfo& object)
+{
+    size_t firstObject = m_Objects.GetWrittenObjectCount();
+    WriteObject(object);
+    size_t lastObject = m_Objects.GetWrittenObjectCount();
+    m_Objects.ForgetObjects(firstObject, lastObject);
 }
 
 void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
@@ -307,17 +483,7 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
     _TRACE("CObjectOStream::RegisterAndWrite(" <<
            NStr::PtrToString(object) << ", "
            << typeInfo->GetName() << ')');
-#if NCBISER_ALLOW_CYCLES
-    _ASSERT(object != 0);
-    CWriteObjectInfo& info = m_Objects.RegisterObject(object, typeInfo);
-    if ( info.IsWritten() ) {
-        THROW1_TRACE(runtime_error,
-                     "trying to write already written object");
-    }
-    WriteObject(object, info);
-#else
-    WriteData(object, typeInfo);
-#endif
+    RegisterAndWrite(object, typeInfo);
 }
 
 bool CObjectOStream::Write(const CRef<CByteSource>& source)
@@ -351,10 +517,8 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
         return;
     }
 #if NCBISER_ALLOW_CYCLES
-    CWriteObjectInfo& info = m_Objects.RegisterObject(object, typeInfo);
-    WritePointer(object, info, typeInfo);
+    WritePointer(m_Objects.RegisterObject(object, typeInfo), typeInfo);
 #else
-    ...;
     TTypeInfo realTypeInfo = typeInfo->GetRealTypeInfo(object);
     if ( typeInfo == realTypeInfo ) {
         _TRACE("WritePointer: " <<
@@ -370,29 +534,29 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
 #endif
 }
 
-void CObjectOStream::WritePointer(TConstObjectPtr object,
-                                  CWriteObjectInfo& info,
+void CObjectOStream::WritePointer(CWriteObjectInfo& info,
                                   TTypeInfo declaredTypeInfo)
 {
     if ( info.IsWritten() ) {
         // put reference on it
-        _TRACE("WritePointer: " << NStr::PtrToString(object) <<
+        _TRACE("WritePointer: " << NStr::PtrToString(info.GetObject().GetObjectPtr()) <<
                ": @" << info.GetIndex());
         WriteObjectReference(info.GetIndex());
     }
     else {
         // new object
+        m_Objects.MarkObjectWritten(info);
         TTypeInfo realTypeInfo = info.GetTypeInfo();
         if ( declaredTypeInfo == realTypeInfo ) {
             _TRACE("WritePointer: " <<
-                   NStr::PtrToString(object) << ": new");
-            WriteThis(object, info);
+                   NStr::PtrToString(info.GetObject().GetObjectPtr()) << ": new");
+            WriteThis(info.GetObject().GetObjectPtr(), info.GetTypeInfo());
         }
         else {
             _TRACE("WritePointer: " <<
-                   NStr::PtrToString(object)
+                   NStr::PtrToString(info.GetObject().GetObjectPtr())
                    << ": new " << realTypeInfo->GetName());
-            WriteOther(object, info);
+            WriteOther(info.GetObject().GetObjectPtr(), info.GetTypeInfo());
         }
     }
 }
@@ -442,16 +606,16 @@ void CObjectOStream::WriteStringStore(const string& str)
 	WriteString(str);
 }
 
-void CObjectOStream::WriteThis(TConstObjectPtr object, CWriteObjectInfo& info)
+void CObjectOStream::WriteThis(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    WriteObject(object, info);
+    WriteObject(object, typeInfo);
 }
 
 void CObjectOStream::WriteNamedType(TTypeInfo /*namedTypeInfo*/,
                                     TTypeInfo typeInfo,
                                     TConstObjectPtr object)
 {
-    typeInfo->WriteData(*this, object);
+    WriteObject(object, typeInfo);
 }
 
 void CObjectOStream::EndClass(CObjectStackClass& cls)
@@ -464,43 +628,237 @@ void CObjectOStream::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
-void CObjectOStream::WriteClass(CObjectClassWriter& writer,
-                                const CClassTypeInfo* classInfo,
-                                const CMembersInfo& members,
-                                bool randomOrder)
+class CDelayedBufferWriter : public CVoidTypeInfo
 {
-    CObjectStackClass cls(*this, classInfo, randomOrder);
-    BeginClass(cls);
+protected:
+    void WriteData(CObjectOStream& out, TConstObjectPtr delayBufferPtr) const
+        {
+            out.Write(CType<CDelayBuffer>::Get(delayBufferPtr).GetSource());
+        }
+};
+
+static CDelayedBufferWriter delayedBufferWriter;
+
+void CObjectOStream::WriteClassMembers(TConstObjectPtr objectPtr,
+                                       const CClassTypeInfo* objectType)
+{
+    const CMembersInfo& members = objectType->GetMembers();
+
+    TWriteClassMemberHooks* hooks = m_WriteClassMemberHooks.get();
+
+    TMemberIndex lastIndex = members.LastMemberIndex();
+    for ( TMemberIndex i = members.FirstMemberIndex(); i <= lastIndex; ++i ) {
+        const CMemberInfo* memberInfo = members.GetMemberInfo(i);
+
+        bool haveSetFlag = memberInfo->HaveSetFlag();
+        if ( haveSetFlag && !memberInfo->GetSetFlag(objectPtr) ) {
+            // not set -> skip this member
+            continue;
+        }
+        
+        if ( memberInfo->CanBeDelayed() ) {
+            const CDelayBuffer& buffer = memberInfo->GetDelayBuffer(objectPtr);
+            if ( buffer ) {
+                if ( buffer.HaveFormat(GetDataFormat()) ) {
+                    // try to write delayed buffer
+                    if ( hooks ) {
+                        TWriteClassMemberHooks::iterator hooki =
+                            hooks->find(memberInfo);
+                        if ( hooki != hooks->end() ) {
+                            // have hook
+                            DoWriteClassMember(memberInfo->GetId(),
+                                               CConstObjectInfo(objectPtr,
+                                                                objectType,
+                                                                CConstObjectInfo::eNonCObject),
+                                               i, *hooki->second);
+                            continue;
+                        }
+                    }
+                    // plain write of delayed member
+                    DoWriteClassMember(memberInfo->GetId(),
+                                       &buffer, &delayedBufferWriter);
+                    continue;
+                }
+                // cannot write delayed buffer -> proceed after update
+                const_cast<CDelayBuffer&>(buffer).Update();
+            }
+        }
+
+        TConstObjectPtr memberPtr =
+            memberInfo->GetMember(objectPtr);
+        TTypeInfo memberType = memberInfo->GetTypeInfo();
+
+        if ( !haveSetFlag && memberInfo->Optional() ) {
+            TConstObjectPtr defaultPtr = memberInfo->GetDefault();
+            if ( !defaultPtr ) {
+                if ( memberType->IsDefault(memberPtr) )
+                    continue; // DEFAULT
+            }
+            else {
+                if ( memberType->Equals(memberPtr, defaultPtr) )
+                    continue; // OPTIONAL
+            }
+        }
+
+        if ( hooks ) {
+            TWriteClassMemberHooks::iterator hooki =
+                hooks->find(memberInfo);
+            if ( hooki != hooks->end() ) {
+                // have hook
+                DoWriteClassMember(memberInfo->GetId(),
+                                   CConstObjectInfo(objectPtr,
+                                                    objectType,
+                                                    CConstObjectInfo::eNonCObject),
+                                   i, *hooki->second.GetPointer());
+                continue;
+            }
+        }
+
+        // plain member write
+        DoWriteClassMember(memberInfo->GetId(),
+                           memberPtr, memberType);
+    }
+}
+
+void CObjectOStream::DoWriteClass(TConstObjectPtr objectPtr,
+                                  const CClassTypeInfo* objectType)
+{
+    CObjectStackClass cls(*this, objectType);
+    BeginClass(cls, objectType);
     
-    writer.WriteMembers(*this, members);
+    WriteClassMembers(objectPtr, objectType);
     
     EndClass(cls);
 }
 
-void CObjectOStream::WriteClassMember(CObjectClassWriter& ,
-                                      const CMemberId& id,
-                                      TTypeInfo memberTypeInfo,
-                                      TConstObjectPtr memberPtr)
+void CObjectOStream::DoWriteClass(const CConstObjectInfo& object,
+                                  CWriteClassMembersHook& hook)
+{
+    const CClassTypeInfo* classType = object.GetClassTypeInfo();
+    CObjectStackClass cls(*this, classType);
+    BeginClass(cls, classType);
+    
+    hook.WriteClassMembers(*this, object);
+    
+    EndClass(cls);
+}
+
+void CObjectOStream::WriteClassMember(const CConstObjectInfo& object,
+                                      TMemberIndex index,
+                                      CWriteClassMemberHook& hook)
+{
+    const CClassTypeInfo* classType = object.GetClassTypeInfo();
+    const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
+    DoWriteClassMember(memberInfo->GetId(), object, index, hook);
+}
+
+void CObjectOStream::WriteClassMemberNoHook(const CConstObjectInfo& object,
+                                            TMemberIndex index)
+{
+    const CClassTypeInfo* classType = object.GetClassTypeInfo();
+    const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
+    if ( memberInfo->CanBeDelayed() ) {
+        const CDelayBuffer& buffer =
+            memberInfo->GetDelayBuffer(object.GetObjectPtr());
+        if ( buffer ) {
+            if ( buffer.HaveFormat(GetDataFormat()) ) {
+                // plain write delayed buffer
+                DoWriteClassMember(memberInfo->GetId(),
+                                   &buffer, &delayedBufferWriter);
+                return;
+            }
+            const_cast<CDelayBuffer&>(buffer).Update();
+        }
+    }
+    // plain write member
+    DoWriteClassMember(memberInfo->GetId(),
+                       memberInfo->GetMember(object.GetObjectPtr()),
+                       memberInfo->GetTypeInfo());
+}
+
+void CObjectOStream::WriteClassMember(const CConstObjectInfo& object,
+                                      TMemberIndex index)
+{
+    const CClassTypeInfo* classType = object.GetClassTypeInfo();
+    TWriteClassMemberHooks* hooks = m_WriteClassMemberHooks.get();
+    const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
+    if ( hooks ) {
+        TWriteClassMemberHooks::iterator hooki = hooks->find(memberInfo);
+        if ( hooki != hooks->end() ) {
+            // hooked write member
+            DoWriteClassMember(memberInfo->GetId(),
+                               object, index, *hooki->second);
+            return;
+        }
+    }
+    if ( memberInfo->CanBeDelayed() ) {
+        const CDelayBuffer& buffer =
+            memberInfo->GetDelayBuffer(object.GetObjectPtr());
+        if ( buffer ) {
+            if ( buffer.HaveFormat(GetDataFormat()) ) {
+                // plain write delayed buffer
+                DoWriteClassMember(memberInfo->GetId(),
+                                   &buffer, &delayedBufferWriter);
+                return;
+            }
+            const_cast<CDelayBuffer&>(buffer).Update();
+        }
+    }
+    // plain write member
+    DoWriteClassMember(memberInfo->GetId(),
+                       memberInfo->GetMember(object.GetObjectPtr()),
+                       memberInfo->GetTypeInfo());
+}
+
+void CObjectOStream::DoWriteClassMember(const CMemberId& id,
+                                        const CConstObjectInfo& object,
+                                        TMemberIndex index,
+                                        CWriteClassMemberHook& hook)
 {
     CObjectStackClassMember m(*this, id);
     BeginClassMember(m, id);
 
-    memberTypeInfo->WriteData(*this, memberPtr);
+    hook.WriteClassMember(*this, object, index);
     
     EndClassMember(m);
 }
 
-void CObjectOStream::WriteDelayedClassMember(CObjectClassWriter& ,
-                                             const CMemberId& id,
-                                             const CDelayBuffer& buffer)
+void CObjectOStream::DoWriteClassMember(const CMemberId& id,
+                                        TConstObjectPtr memberPtr,
+                                        TTypeInfo memberType)
 {
     CObjectStackClassMember m(*this, id);
     BeginClassMember(m, id);
 
-    if ( !buffer.Write(*this) )
-        THROW1_TRACE(runtime_error, "internal error");
+    WriteObject(memberPtr, memberType);
     
     EndClassMember(m);
+}
+
+void CObjectOStream::WriteChoiceVariantNoHook(const CConstObjectInfo& choice,
+                                              TMemberIndex index)
+{
+    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
+    const CMembersInfo& variants = choiceType->GetMembers();
+    const CMemberInfo* variantInfo = variants.GetMemberInfo(index);
+    if ( variantInfo->CanBeDelayed() ) {
+        const CDelayBuffer& buffer =
+            variantInfo->GetDelayBuffer(choice.GetObjectPtr());
+        if ( buffer ) {
+            if ( buffer.HaveFormat(GetDataFormat()) ) {
+                Write(buffer.GetSource());
+                return;
+            }
+            const_cast<CDelayBuffer&>(buffer).Update();
+        }
+    }
+    TConstObjectPtr variantPtr =
+        choiceType->GetData(choice.GetObjectPtr(), index);
+    TTypeInfo variantType = variantInfo->GetTypeInfo();
+    if ( variantInfo->IsObjectPointer() )
+        WriteExternalObject(variantPtr, variantType);
+    else
+        WriteObject(variantPtr, variantType);
 }
 
 void CObjectOStream::BeginBytes(const ByteBlock& )
@@ -554,13 +912,5 @@ void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
     THROW1_TRACE(runtime_error, "illegal call");
 }
 #endif
-
-CObjectArrayWriter::~CObjectArrayWriter(void)
-{
-}
-
-CObjectClassWriter::~CObjectClassWriter(void)
-{
-}
 
 END_NCBI_SCOPE

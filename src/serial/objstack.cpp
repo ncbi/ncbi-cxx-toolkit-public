@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.1  2000/05/24 20:08:49  vasilche
 * Implemented XML dump.
 *
@@ -49,6 +56,15 @@ CObjectStack::~CObjectStack(void)
 
 void CObjectStack::UnendedFrame(void)
 {
+}
+
+void CObjectStack::Clear(void)
+{
+    while ( m_Top ) {
+        if ( !m_Top->Ended() )
+            m_Top->End();
+        delete m_Top;
+    }
 }
 
 void CObjectStackFrame::PopUnended(void)

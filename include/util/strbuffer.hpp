@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/08/15 19:44:42  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.15  2000/07/03 20:47:18  vasilche
 * Removed unused variables/functions.
 *
@@ -260,6 +267,8 @@ public:
     COStreamBuffer(CNcbiOstream& out, bool deleteOut = false)
         THROWS1((bad_alloc));
     ~COStreamBuffer(void) THROWS1((CSerialIOException));
+
+    void Close(void);
 
     size_t GetCurrentLineNumber(void) const THROWS1_NONE
         {

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/15 19:44:47  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.9  2000/07/03 18:42:44  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -137,7 +144,7 @@ string CMemberId::ToString(void) const
 CMemberId::TTag CMemberId::GetTag(void) const
 {
     TTag tag = m_Tag;
-    if ( tag >= 0 )
+    if ( tag != eNoExplicitTag )
         return tag;
 
     _ASSERT(m_MemberList != 0);

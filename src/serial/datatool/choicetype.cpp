@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/15 19:45:28  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.13  2000/06/16 16:31:38  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -110,13 +117,13 @@ TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
     return new CAnyTypeChoice();
 }
 
-int GetIndexAnyTypeChoice(TConstObjectPtr object)
+TMemberIndex GetIndexAnyTypeChoice(TConstObjectPtr object)
 {
     const CAnyTypeChoice* choice = static_cast<const CAnyTypeChoice*>(object);
     return choice->index;
 }
 
-void SetIndexAnyTypeChoice(TObjectPtr object, int index)
+void SetIndexAnyTypeChoice(TObjectPtr object, TMemberIndex index)
 {
     CAnyTypeChoice* choice = static_cast<CAnyTypeChoice*>(object);
     choice->index = index;

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.12  2000/06/16 20:01:20  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -87,7 +94,7 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/delaybuf.hpp>
+#include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -100,15 +107,34 @@ public:
 		eNoOffset = -1
 	};
 
-    CMemberInfo(TOffset offset, const CTypeRef& type)
-        : m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
+    CMemberInfo(const CMemberId& id, TOffset offset, const CTypeRef& type)
+        : m_Id(id),
           m_Offset(offset), m_Type(type),
-          m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
+          m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
+          m_SetFlagOffset(TOffset(eNoOffset)),
+          m_DelayOffset(TOffset(eNoOffset)),
           m_Default(0)
         {
         }
     ~CMemberInfo(void)
         {
+        }
+
+    const CMemberId& GetId(void) const
+        {
+            return m_Id;
+        }
+    CMemberId& GetId(void)
+        {
+            return m_Id;
+        }
+    TOffset GetOffset(void) const
+        {
+            return m_Offset;
+        }
+    TTypeInfo GetTypeInfo(void) const
+        {
+            return m_Type.Get();
         }
 
     bool Optional(void) const
@@ -120,24 +146,27 @@ public:
             m_Optional = true;
             return this;
         }
+
     bool IsPointer(void) const
         {
             return m_Pointer;
-        }
-    bool IsObjectPointer(void) const
-        {
-            return m_ObjectPointer;
         }
     CMemberInfo* SetPointer(void)
         {
             m_Pointer = true;
             return this;
         }
+
+    bool IsObjectPointer(void) const
+        {
+            return m_ObjectPointer;
+        }
     CMemberInfo* SetObjectPointer(void)
         {
             m_Pointer = m_ObjectPointer = true;
             return this;
         }
+
     TConstObjectPtr GetDefault(void) const
         {
             return m_Default;
@@ -149,36 +178,9 @@ public:
             return this;
         }
 
-    TOffset GetOffset(void) const
-        {
-            return m_Offset;
-        }
-
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return m_Type.Get();
-        }
-
-    size_t GetSize(void) const
-        {
-            return GetTypeInfo()->GetSize();
-        }
-
     bool HaveSetFlag(void) const
         {
             return m_SetFlagOffset != TOffset(eNoOffset);
-        }
-    TOffset GetSetFlagOffset(void) const
-        {
-            return m_SetFlagOffset;
-        }
-    bool GetSetFlag(TConstObjectPtr object) const
-        {
-            return CType<bool>::Get(Add(object, GetSetFlagOffset()));
-        }
-    bool& GetSetFlag(TObjectPtr object) const
-        {
-            return CType<bool>::Get(Add(object, GetSetFlagOffset()));
         }
     CMemberInfo* SetSetFlag(const bool* setFlag)
         {
@@ -188,8 +190,22 @@ public:
     CMemberInfo* SetOptional(const bool* setFlag)
         {
             SetOptional();
-            SetSetFlag(setFlag);
-            return this;
+            return SetSetFlag(setFlag);
+        }
+
+    bool GetSetFlag(TConstObjectPtr object) const
+        {
+            return CType<bool>::Get(Add(object, m_SetFlagOffset));
+        }
+    bool& GetSetFlag(TObjectPtr object) const
+        {
+            return CType<bool>::Get(Add(object, m_SetFlagOffset));
+        }
+    void UpdateSetFlag(TObjectPtr object, bool value) const
+        {
+            TOffset setFlagOffset = m_SetFlagOffset;
+            if ( setFlagOffset != TOffset(eNoOffset) )
+                CType<bool>::Get(Add(object, setFlagOffset)) = value;
         }
 
     bool CanBeDelayed(void) const
@@ -201,6 +217,7 @@ public:
             m_DelayOffset = size_t(buffer);
             return this;
         }
+
     CDelayBuffer& GetDelayBuffer(TObjectPtr object) const
         {
             return CType<CDelayBuffer>::Get(Add(object, m_DelayOffset));
@@ -212,36 +229,26 @@ public:
 
     TObjectPtr GetMember(TObjectPtr object) const
         {
-            return Add(object, GetOffset());
+            return Add(object, m_Offset);
         }
     TConstObjectPtr GetMember(TConstObjectPtr object) const
         {
-            return Add(object, GetOffset());
-        }
-    TObjectPtr GetContainer(TObjectPtr object) const
-        {
-            return Add(object, -GetOffset());
-        }
-    TConstObjectPtr GetContainer(TConstObjectPtr object) const
-        {
-            return Add(object, -GetOffset());
-        }
-    TOffset GetEndOffset(void) const
-        {
-            return GetOffset() + GetSize();
+            return Add(object, m_Offset);
         }
     
 private:
+    // member ID
+    CMemberId m_Id;
+    // offset of member inside object
+    TOffset m_Offset;
+    // type of member
+    CTypeRef m_Type;
     // is optional
     bool m_Optional;
     // is pointer in choice
     bool m_Pointer;
     // is pointer to CObject descendant
     bool m_ObjectPointer;
-    // offset of member inside object
-    TOffset m_Offset;
-    // type of member
-    CTypeRef m_Type;
     // offset of 'SET' flag inside object
     TOffset m_SetFlagOffset;
     // offset of delay buffer inside object
@@ -250,56 +257,7 @@ private:
     TConstObjectPtr m_Default;
 };
 
-#if 1
-# define CRealMemberInfo CMemberInfo
-#else
-class CRealMemberInfo : public CMemberInfo {
-public:
-    // common member
-    CRealMemberInfo(size_t offset, const CTypeRef& type);
-
-    virtual size_t GetOffset(void) const;
-    virtual TTypeInfo GetTypeInfo(void) const;
-
-private:
-    // physical description
-};
-
-class CMemberAliasInfo : public CMemberInfo {
-public:
-    // common member
-    CMemberAliasInfo(const CTypeRef& containerType,
-                     const string& memberName);
-
-    virtual size_t GetOffset(void) const;
-    virtual TTypeInfo GetTypeInfo(void) const;
-
-protected:
-    const CMemberInfo* GetBaseMember(void) const;
-
-private:
-    // physical description
-    mutable const CMemberInfo* m_BaseMember;
-    CTypeRef m_ContainerType;
-    string m_MemberName;
-};
-
-class CTypedMemberAliasInfo : public CMemberAliasInfo {
-public:
-    // common member
-    CTypedMemberAliasInfo(const CTypeRef& type,
-                          const CTypeRef& containerType,
-                          const string& memberName);
-
-    virtual TTypeInfo GetTypeInfo(void) const;
-
-private:
-    // physical description
-    CTypeRef m_Type;
-};
-#endif
-
-#include <serial/member.inl>
+//#include <serial/member.inl>
 
 END_NCBI_SCOPE
 

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/15 19:44:50  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.16  2000/06/16 16:31:21  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -107,12 +114,17 @@
 BEGIN_NCBI_SCOPE
 
 COObjectList::COObjectList(void)
-    : m_NextObjectIndex(0)
 {
 }
 
 COObjectList::~COObjectList(void)
 {
+}
+
+void COObjectList::Clear(void)
+{
+    m_Objects.clear();
+    m_ObjectsByPtr.clear();
 }
 
 CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
@@ -121,45 +133,108 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
     _TRACE("COObjectList::RegisterObject("<<NStr::PtrToString(object)<<", "<<
            typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
            ", end: " << NStr::PtrToString(typeInfo->EndOf(object)));
-
     typeInfo = typeInfo->GetRealTypeInfo(object);
 
-    // just in case typedef in header file will be redefined:
-    typedef map<TConstObjectPtr, CWriteObjectInfo> TObject;
+    const CObject* cObject = typeInfo->GetCObjectPtr(object);
 
-    pair<TObject::iterator, bool> ins =
-        m_Objects.insert(TObject::value_type(object,
-                                             CWriteObjectInfo(typeInfo)));
+    if ( cObject ) {
+        // special case with cObjects
+        if ( cObject->ReferencedOnlyOnce() ) {
+            // unique reference -> do not remember pointer
+            // in debug mode check for absence of other references
+#if _DEBUG
+            pair<TObjectsByPtr::iterator, bool> ins =
+                m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, eObjectIndexNotWritten));
+            if ( !ins.second ) {
+                // not inserted -> already have the same object pointer
+                // as reference counter is one -> error
+                THROW1_TRACE(runtime_error,
+                             "double write of CObject with counter == 1");
+            }
+#endif
+            // new object
+            _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
+            m_Objects.push_back(CWriteObjectInfo(CConstObjectInfo(object, typeInfo, CConstObjectInfo::eNonCObject)));
+            return m_Objects.back();
+        }
+        else if ( cObject->Referenced() ) {
+            // multiple reference -> normal processing
+        }
+        else {
+            // not refernced -> error
+            THROW1_TRACE(runtime_error,
+                         "registering non referenced CObject");
+        }
+    }
+
+    TObjectIndex newIndex = m_Objects.size();
+    pair<TObjectsByPtr::iterator, bool> ins =
+        m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, newIndex));
 
     if ( !ins.second ) {
         // not inserted -> already have the same object pointer
-        if ( ins.first->second.GetTypeInfo() != typeInfo )
-            THROW1_TRACE(runtime_error, "object type was changed");
-        return ins.first->second;
+        TObjectIndex index = ins.first->second;
+        _ASSERT(index != eObjectIndexNotWritten);
+        CWriteObjectInfo& objectInfo = m_Objects[index];
+        _ASSERT(objectInfo.GetTypeInfo() == typeInfo);
+        _ASSERT(objectInfo.IsWritten());
+        return objectInfo;
     }
 
+    // new object
+    _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
+    m_Objects.push_back(CWriteObjectInfo(object, typeInfo));
+
+#if _DEBUG
     // check for overlapping with previous object
-    TObject::iterator check = ins.first;
-    if ( check != m_Objects.begin() ) {
+    TObjectsByPtr::iterator check = ins.first;
+    if ( check != m_ObjectsByPtr.begin() ) {
         --check;
-        if ( check->second.GetTypeInfo()->EndOf(check->first) > object )
+        if ( m_Objects[check->second].GetTypeInfo()->EndOf(check->first) > object )
             THROW1_TRACE(runtime_error, "overlapping objects");
     }
 
     // check for overlapping with next object
     check = ins.first;
-    if ( ++check != m_Objects.end() ) {
+    if ( ++check != m_ObjectsByPtr.end() ) {
         if ( typeInfo->EndOf(object) > check->first )
             THROW1_TRACE(runtime_error, "overlapping objects");
     }
+#endif
 
-    return ins.first->second;
+    _ASSERT(&m_Objects[ins.first->second] == &m_Objects.back());
+    return m_Objects.back();
+}
+
+void COObjectList::MarkObjectWritten(CWriteObjectInfo& info)
+{
+    _ASSERT(!info.IsWritten());
+    _ASSERT(&info == &m_Objects.back());
+    info.m_Index = m_Objects.size() - 1;
 }
 
 void COObjectList::CheckAllWritten(void) const
 {
-    if ( m_NextObjectIndex != TObjectIndex(m_Objects.size()) )
+    if ( !m_Objects.empty() && !m_Objects.back().IsWritten() )
         THROW1_TRACE(runtime_error, "not all objects written");
+}
+
+void COObjectList::ForgetObjects(size_t from, size_t to)
+{
+    _ASSERT(0 <= from);
+    _ASSERT(from <= to);
+    _ASSERT(to <= GetWrittenObjectCount());
+    _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
+    for ( size_t i = from; i < to; ++i ) {
+        CWriteObjectInfo& info = m_Objects[i];
+        _ASSERT(info.IsWritten());
+        CConstObjectInfo& object = info.m_Object;
+        TConstObjectPtr objectPtr = object.GetObjectPtr();
+        if ( objectPtr ) {
+            m_ObjectsByPtr.erase(objectPtr);
+            object.ResetObjectPtr();
+        }
+    }
 }
 
 END_NCBI_SCOPE

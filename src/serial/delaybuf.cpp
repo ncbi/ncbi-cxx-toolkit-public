@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/15 19:44:47  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.3  2000/06/16 16:31:19  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -50,6 +57,7 @@
 #include <serial/objistr.hpp>
 #include <serial/bytesrc.hpp>
 #include <serial/member.hpp>
+#include <serial/stdtypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -57,22 +65,17 @@ CDelayBuffer::~CDelayBuffer(void)
 {
 }
 
-bool CDelayBuffer::DelayRead(CObjectIStream& in, TObjectPtr object,
-                             TMemberIndex index, const CMemberInfo* memberInfo)
+void CDelayBuffer::SetData(TObjectPtr object,
+                           TMemberIndex index,
+                           const CMemberInfo* memberInfo,
+                           ESerialDataFormat dataFormat,
+                           const CRef<CByteSource>& data)
 {
-    if ( !memberInfo->CanBeDelayed() )
-        return false;
     _ASSERT(memberInfo->CanBeDelayed());
-    _ASSERT(!memberInfo->GetDelayBuffer(object));
+    _ASSERT(this == &memberInfo->GetDelayBuffer(object));
+    _ASSERT(!Delayed());
 
-    CRef<CByteSource> data = in.DelayRead(memberInfo->GetTypeInfo());
-    if ( !data )
-        return false;
-
-    // we've got delayed buffer -> select using delay buffer
-    memberInfo->GetDelayBuffer(object).m_Info.
-        reset(new SInfo(object, index, memberInfo, in.GetDataFormat(), data));
-    return true;
+    m_Info.reset(new SInfo(object, index, memberInfo, dataFormat, data));
 }
 
 void CDelayBuffer::Forget(void)
@@ -102,14 +105,6 @@ void CDelayBuffer::DoUpdate(void)
                                                        info.m_Source));
     typeInfo->ReadData(*in, member);
     Forget();
-}
-
-bool CDelayBuffer::CopyTo(CObjectOStream& out) const
-{
-    _ASSERT(m_Info.get() != 0);
-    if ( m_Info->m_DataFormat != out.GetDataFormat() )
-        return false;
-    return out.Write(m_Info->m_Source);
 }
 
 CDelayBuffer::SInfo::SInfo(TObjectPtr object,

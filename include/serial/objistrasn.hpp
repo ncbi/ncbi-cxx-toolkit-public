@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.36  2000/07/03 18:42:35  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -251,27 +258,24 @@ protected:
 #endif
 
 protected:
-    virtual void ReadArray(CObjectArrayReader& reader,
-                           TTypeInfo arrayType, bool randomOrder,
-                           TTypeInfo elementType);
+    virtual void ReadContainer(const CObjectInfo& container,
+                               CReadContainerElementHook& hook);
 
-    virtual void BeginClass(CObjectStackClass& cls);
+    virtual void BeginClass(CObjectStackClass& cls,
+                            const CClassTypeInfo* classInfo);
     virtual void EndClass(CObjectStackClass& cls);
     virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembers& members);
+                                          const CMembersInfo& members);
     virtual TMemberIndex BeginClassMember(CObjectStackClassMember& m,
-                                          const CMembers& members,
+                                          const CMembersInfo& members,
                                           CClassMemberPosition& pos);
-    virtual void ReadClassRandom(CObjectClassReader& reader,
-                                 const CClassTypeInfo* classType,
-                                 const CMembersInfo& members);
-    virtual void ReadClassSequential(CObjectClassReader& reader,
-                                     const CClassTypeInfo* classType,
-                                     const CMembersInfo& members);
+    virtual void ReadClassRandom(const CObjectInfo& object,
+                                 CReadClassMemberHook& hook);
+    virtual void ReadClassSequential(const CObjectInfo& object,
+                                     CReadClassMemberHook& hook);
 
-    virtual void ReadChoice(CObjectChoiceReader& reader,
-                            TTypeInfo classType,
-                            const CMembersInfo& variants);
+    virtual void DoReadChoice(const CObjectInfo& choice,
+                              CReadChoiceVariantHook& hook);
 
 	virtual void BeginBytes(ByteBlock& block);
     int GetHexChar(void);
@@ -312,7 +316,7 @@ private:
     char SkipWhiteSpace(void);
     char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
-    void UnexpectedMember(const CLightString& id, const CMembers& members);
+    void UnexpectedMember(const CLightString& id, const CMembersInfo& members);
 };
 
 //#include <objistrb.inl>

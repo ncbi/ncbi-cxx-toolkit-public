@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.14  2000/07/03 18:42:34  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -108,68 +115,33 @@ class CConstObjectInfo;
 class CObjectInfo;
 
 // This class supports sets of members with IDs
-class CMembers {
+class CMembersInfo {
 public:
     typedef CMemberId::TTag TTag;
-    typedef int TMemberIndex;
-    typedef vector<CMemberId> TMembers;
+    typedef vector< AutoPtr<CMemberInfo> > TMembers;
     typedef map<CLightString, TMemberIndex> TMembersByName;
     typedef map<TTag, TMemberIndex> TMembersByTag;
+    typedef map<size_t, TMemberIndex> TMembersByOffset;
 
-    CMembers(void);
-    ~CMembers(void);
+    CMembersInfo(void);
+    ~CMembersInfo(void);
 
     bool Empty(void) const
         {
             return m_Members.empty();
         }
 
-    const TMembers& GetMembers(void) const
+    static TMemberIndex FirstMemberIndex(void)
         {
-            return m_Members;
+            return kFirstMemberIndex;
         }
-
-    const TMembersByName& GetMembersByName(void) const;
-    const TMembersByTag& GetMembersByTag(void) const;
-    void UpdateMemberTags(void);
-
-    void AddMember(const CMemberId& id);
-
-    TMemberIndex GetMembersCount(void) const
+    TMemberIndex LastMemberIndex(void) const
         {
-            return GetMembers().size();
+            return m_Members.size();
         }
-    const CMemberId& GetMemberId(TMemberIndex index) const
-        {
-            _ASSERT(index >= 0 && index < GetMembersCount());
-            return m_Members[index];
-        }
-
-    TMemberIndex FindMember(const CLightString& name) const;
-    TMemberIndex FindMember(const CLightString& name, TMemberIndex pos) const;
-    TMemberIndex FindMember(TTag tag) const;
-    TMemberIndex FindMember(TTag tag, TMemberIndex pos) const;
-
-private:
-    TMembers m_Members;
-    mutable auto_ptr<TMembersByName> m_MembersByName;
-    mutable auto_ptr<TMembersByTag> m_MembersByTag;
-
-    CMembers(const CMembers&);
-    CMembers& operator=(const CMembers&);
-};
-
-class CMembersInfo : public CMembers
-{
-public:
-    typedef vector<CMemberInfo*> TMembersInfo;
-    typedef map<size_t, TMemberIndex> TMembersByOffset;
-
-    CMembersInfo(void);
-    ~CMembersInfo(void);
 
     // AddMember will take ownership of member
-    CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
+    CMemberInfo* AddMember(CMemberInfo* member);
     CMemberInfo* AddMember(const CMemberId& id,
                            TConstObjectPtr member, TTypeInfo type);
     CMemberInfo* AddMember(const CMemberId& id,
@@ -180,18 +152,32 @@ public:
     CMemberInfo* AddMember(const char* name,
                            TConstObjectPtr member, const CTypeRef& type);
 
+    const CMemberInfo* GetMemberInfo(TMemberIndex index) const
+        {
+            _ASSERT(index >= FirstMemberIndex() && index <= LastMemberIndex());
+            return m_Members[index - kFirstMemberIndex].get();
+        }
+
+    const TMembersByName& GetMembersByName(void) const;
+    const TMembersByTag& GetMembersByTag(void) const;
+    void UpdateMemberTags(void);
+
     const TMembersByOffset& GetMembersByOffset(void) const;
     size_t GetFirstMemberOffset(void) const;
 
-    const CMemberInfo* GetMemberInfo(TMemberIndex index) const
-        {
-            _ASSERT(index >= 0 && index < GetMembersCount());
-            return m_MembersInfo[index];
-        }
+    TMemberIndex FindMember(const CLightString& name) const;
+    TMemberIndex FindMember(const CLightString& name, TMemberIndex pos) const;
+    TMemberIndex FindMember(TTag tag) const;
+    TMemberIndex FindMember(TTag tag, TMemberIndex pos) const;
 
 private:
-    TMembersInfo m_MembersInfo;
+    TMembers m_Members;
+    mutable auto_ptr<TMembersByName> m_MembersByName;
+    mutable auto_ptr<TMembersByTag> m_MembersByTag;
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
+
+    CMembersInfo(const CMembersInfo&);
+    CMembersInfo& operator=(const CMembersInfo&);
 };
 
 //#include <serial/memberlist.inl>

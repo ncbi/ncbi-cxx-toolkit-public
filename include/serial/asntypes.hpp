@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/08/15 19:44:37  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.30  2000/07/10 17:31:51  vasilche
 * Macro arguments made more clear.
 * All old ASN stuff moved to serialasn.hpp.
@@ -168,9 +175,11 @@ BEGIN_NCBI_SCOPE
 class CSequenceOfTypeInfo : public CContainerTypeInfo {
     typedef CContainerTypeInfo CParent;
 public:
-    CSequenceOfTypeInfo(TTypeInfo type);
-	CSequenceOfTypeInfo(const string& name, TTypeInfo type);
-	CSequenceOfTypeInfo(const char* name, TTypeInfo type);
+    CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder = false);
+	CSequenceOfTypeInfo(const string& name,
+                        TTypeInfo type, bool randomOrder = false);
+	CSequenceOfTypeInfo(const char* name,
+                        TTypeInfo type, bool randomOrder = false);
 
     virtual TTypeInfo GetElementType(void) const;
 
@@ -220,8 +229,6 @@ public:
 
     size_t GetSize(void) const;
 
-    virtual bool RandomOrder(void) const;
-    
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
@@ -264,9 +271,6 @@ public:
     CSetOfTypeInfo(const char* name, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
-
-    virtual bool RandomOrder(void) const;
-
 };
 
 class COctetStringTypeInfo : public CPrimitiveTypeInfo {

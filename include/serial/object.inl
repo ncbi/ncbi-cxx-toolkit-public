@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.4  2000/07/06 16:21:16  vasilche
 * Added interface to primitive types in CObjectInfo & CConstObjectInfo.
 *
@@ -54,6 +61,86 @@
 */
 
 inline
+const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const
+{
+    _ASSERT(dynamic_cast<const CPrimitiveTypeInfo*>(GetTypeInfo()));
+    return static_cast<const CPrimitiveTypeInfo*>(GetTypeInfo());
+}
+
+inline
+const CClassTypeInfoBase* CObjectTypeInfo::GetClassTypeInfoBase(void) const
+{
+    _ASSERT(dynamic_cast<const CClassTypeInfoBase*>(GetTypeInfo()));
+    return static_cast<const CClassTypeInfoBase*>(GetTypeInfo());
+}
+
+inline
+const CClassTypeInfo* CObjectTypeInfo::GetClassTypeInfo(void) const
+{
+    _ASSERT(dynamic_cast<const CClassTypeInfo*>(GetTypeInfo()));
+    return static_cast<const CClassTypeInfo*>(GetTypeInfo());
+}
+
+inline
+const CChoiceTypeInfo* CObjectTypeInfo::GetChoiceTypeInfo(void) const
+{
+    _ASSERT(dynamic_cast<const CChoiceTypeInfo*>(GetTypeInfo()));
+    return static_cast<const CChoiceTypeInfo*>(GetTypeInfo());
+}
+
+inline
+const CContainerTypeInfo* CObjectTypeInfo::GetContainerTypeInfo(void) const
+{
+    _ASSERT(dynamic_cast<const CContainerTypeInfo*>(GetTypeInfo()));
+    return static_cast<const CContainerTypeInfo*>(GetTypeInfo());
+}
+
+inline
+const CPointerTypeInfo* CObjectTypeInfo::GetPointerTypeInfo(void) const
+{
+    _ASSERT(dynamic_cast<const CPointerTypeInfo*>(GetTypeInfo()));
+    return static_cast<const CPointerTypeInfo*>(GetTypeInfo());
+}
+
+// pointer interface
+inline
+CConstObjectInfo CConstObjectInfo::GetPointedObject(void) const
+{
+    return GetPointerTypeInfo()->GetPointedObject(*this);
+}
+
+inline
+CObjectInfo CObjectInfo::GetPointedObject(void) const
+{
+    return GetPointerTypeInfo()->GetPointedObject(*this);
+}
+
+// class interface
+inline
+const CMemberInfo* CObjectTypeInfo::GetMemberInfo(TMemberIndex index) const
+{
+    return GetClassTypeInfoBase()->GetMemberInfo(index);
+}
+
+inline
+TMemberIndex CObjectTypeInfo::FindMember(const string& name) const
+{
+    return GetClassTypeInfoBase()->GetMembers().FindMember(name);
+}
+
+inline
+TMemberIndex CObjectTypeInfo::FindMemberByTag(int tag) const
+{
+    return GetClassTypeInfoBase()->GetMembers().FindMember(tag);
+}
+
+inline
+TMemberIndex CConstObjectInfo::WhichChoice(void) const
+{
+    return GetChoiceTypeInfo()->GetIndex(GetObjectPtr());
+}
+
+inline
 CPrimitiveTypeInfo::EValueType
 CObjectTypeInfo::GetPrimitiveValueType(void) const
 {
@@ -67,12 +154,9 @@ bool CObjectTypeInfo::IsPrimitiveValueSigned(void) const
 }
 
 inline
-const CObject* CConstObjectInfo::GetCObjectPtr(TConstObjectPtr objectPtr,
-                                               TTypeInfo typeInfo)
+const CMemberInfo* CObjectTypeInfo::GetMemberInfo(const string& memberName) const
 {
-    if ( !typeInfo->IsCObject() )
-        return 0;
-    return static_cast<const CObject*>(objectPtr);
+    return GetMemberInfo(FindMember(memberName));
 }
 
 inline
@@ -85,21 +169,32 @@ inline
 CConstObjectInfo::CConstObjectInfo(TConstObjectPtr objectPtr,
                                    TTypeInfo typeInfo)
     : CObjectTypeInfo(typeInfo), m_ObjectPtr(objectPtr),
-      m_Ref(GetCObjectPtr(objectPtr, typeInfo))
+      m_Ref(typeInfo->GetCObjectPtr(objectPtr))
 {
+}
+
+inline
+CConstObjectInfo::CConstObjectInfo(TConstObjectPtr objectPtr,
+                                   TTypeInfo typeInfo,
+                                   ENonCObject)
+    : CObjectTypeInfo(typeInfo), m_ObjectPtr(objectPtr)
+{
+    _ASSERT(!typeInfo->IsCObject() ||
+            static_cast<const CObject*>(objectPtr)->Referenced() ||
+            !static_cast<const CObject*>(objectPtr)->CanBeDeleted());
 }
 
 inline
 CConstObjectInfo::CConstObjectInfo(pair<TConstObjectPtr, TTypeInfo> object)
     : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
-      m_Ref(GetCObjectPtr(object.first, object.second))
+      m_Ref(object.second->GetCObjectPtr(object.first))
 {
 }
 
 inline
 CConstObjectInfo::CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object)
     : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
-      m_Ref(GetCObjectPtr(object.first, object.second))
+      m_Ref(object.second->GetCObjectPtr(object.first))
 {
 }
 
@@ -116,7 +211,7 @@ void CConstObjectInfo::Set(TConstObjectPtr objectPtr, TTypeInfo typeInfo)
 {
     m_ObjectPtr = objectPtr;
     SetTypeInfo(typeInfo);
-    m_Ref.Reset(GetCObjectPtr(objectPtr, typeInfo));
+    m_Ref.Reset(typeInfo->GetCObjectPtr(objectPtr));
 }
 
 inline
@@ -199,6 +294,14 @@ CObjectInfo::CObjectInfo(TTypeInfo typeInfo)
 inline
 CObjectInfo::CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo)
     : CConstObjectInfo(objectPtr, typeInfo)
+{
+}
+
+inline
+CObjectInfo::CObjectInfo(TObjectPtr objectPtr,
+                         TTypeInfo typeInfo,
+                         ENonCObject nonCObject)
+    : CConstObjectInfo(objectPtr, typeInfo, nonCObject)
 {
 }
 

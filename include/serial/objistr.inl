@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.6  2000/06/16 20:01:20  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -49,6 +56,132 @@
 *
 * ===========================================================================
 */
+
+inline
+CReadObjectHook* CObjectIStream::GetReadObjectHook(TTypeInfo typeInfo) const
+{
+    TReadObjectHooks* hooks = m_ReadObjectHooks.get();
+    if ( hooks )
+        return GetHook(*hooks, typeInfo);
+    else
+        return 0;
+}
+
+inline
+void CObjectIStream::ReadObjectNoHook(TObjectPtr object, TTypeInfo typeInfo)
+{
+    typeInfo->ReadData(*this, object);
+}
+
+inline
+void CObjectIStream::ReadObjectNoHook(const CObjectInfo& object)
+{
+    object.GetTypeInfo()->ReadData(*this, object.GetObjectPtr());
+}
+
+inline
+void CObjectIStream::ReadObject(TObjectPtr objectPtr, TTypeInfo objectType)
+{
+    TReadObjectHooks* hooks = m_ReadObjectHooks.get();
+    if ( hooks ) {
+        CReadObjectHook* hook = GetHook(*hooks, objectType);
+        if ( hook ) {
+            hook->ReadObject(*this, CObjectInfo(objectPtr, objectType,
+                                            CObjectInfo::eNonCObject));
+            return;
+        }
+    }
+    ReadObjectNoHook(objectPtr, objectType);
+}
+
+inline
+void CObjectIStream::ReadObject(const CObjectInfo& object)
+{
+    TReadObjectHooks* hooks = m_ReadObjectHooks.get();
+    if ( hooks ) {
+        CReadObjectHook* hook = GetHook(*hooks, object.GetTypeInfo());
+        if ( hook ) {
+            hook->ReadObject(*this, object);
+            return;
+        }
+    }
+    ReadObjectNoHook(object);
+}
+
+inline
+void CObjectIStream::SkipObject(TTypeInfo typeInfo)
+{
+    typeInfo->SkipData(*this);
+}
+
+inline
+void CObjectIStream::ReadClassMember(const CObjectInfo& object,
+                                     TMemberIndex index)
+{
+    TReadClassMemberHooks* hooks = m_ReadClassMemberHooks.get();
+    if ( hooks ) {
+        CReadClassMemberHook* hook =
+            GetHook(*hooks, object.GetClassTypeInfo(), index);
+        if ( hook ) {
+            hook->ReadClassMember(*this, object, index);
+            return;
+        }
+    }
+    ReadClassMemberNoHook(object, index);
+}
+
+inline
+void CObjectIStream::SetClassMemberDefault(const CObjectInfo& object,
+                                           TMemberIndex index)
+{
+    TReadClassMemberHooks* hooks = m_ReadClassMemberHooks.get();
+    if ( hooks ) {
+        CReadClassMemberHook* hook =
+            GetHook(*hooks, object.GetClassTypeInfo(), index);
+        if ( hook ) {
+            hook->SetClassMemberDefault(*this, object, index);
+            return;
+        }
+    }
+    SetClassMemberDefaultNoHook(object, index);
+}
+
+inline
+void CObjectIStream::SkipClassMember(const CClassTypeInfo* classType,
+                                     TMemberIndex index)
+{
+    SkipObject(classType->GetMemberInfo(index)->GetTypeInfo());
+}
+
+inline
+void CObjectIStream::ReadChoice(const CObjectInfo& choice,
+                                CReadChoiceVariantHook& hook)
+{
+    DoReadChoice(choice, hook);
+}
+
+inline
+void CObjectIStream::ReadChoiceVariant(const CObjectInfo& choice,
+                                       TMemberIndex index)
+{
+    TReadChoiceVariantHooks* hooks = m_ReadChoiceVariantHooks.get();
+    if ( hooks ) {
+        CReadChoiceVariantHook* hook =
+            GetHook(*hooks, choice.GetChoiceTypeInfo(), index);
+        if ( hook ) {
+            hook->ReadChoiceVariant(*this, choice, index);
+            return;
+        }
+    }
+    ReadChoiceVariantNoHook(choice, index);
+}
+
+inline
+void CObjectIStream::SkipChoiceVariant(const CChoiceTypeInfo* choiceType,
+                                       TMemberIndex index)
+{
+    SkipObject(choiceType->GetMemberInfo(index)->GetTypeInfo());
+}
 
 inline
 CObjectIStream& CObjectIStream::ByteBlock::GetStream(void) const

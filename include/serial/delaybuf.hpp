@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.3  2000/06/16 16:31:04  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -59,11 +66,6 @@ class CMemberInfo;
 class CDelayBuffer
 {
 public:
-    typedef int TMemberIndex;
-    enum {
-        eNoMemberIndex = -1
-    };
-
     CDelayBuffer(void)
         {
         }
@@ -87,8 +89,6 @@ public:
             return !Delayed();
         }
 
-    bool DelayRead(CObjectIStream& in, TObjectPtr object,
-                   TMemberIndex index, const CMemberInfo* memberInfo);
     void Forget(void);
     
     void Update(void)
@@ -102,32 +102,37 @@ public:
             const SInfo* info = m_Info.get();
             return info && info->m_DataFormat == format;
         }
-    bool Write(CObjectOStream& out) const
+    const CRef<CByteSource>& GetSource(void) const
         {
-            return Delayed() && CopyTo(out);
+            return m_Info->m_Source;
         }
 
-    int GetIndex(void) const
+    TMemberIndex GetIndex(void) const
         {
             const SInfo* info = m_Info.get();
             if ( !info )
-                return eNoMemberIndex;
+                return kInvalidMember;
             else
                 return info->m_Index;
         }
+
+    void SetData(TObjectPtr object,
+                 TMemberIndex index, const CMemberInfo* memberInfo,
+                 ESerialDataFormat dataFormat, const CRef<CByteSource>& data);
 
 private:
     struct SInfo
     {
     public:
-        SInfo(TObjectPtr object, int index, const CMemberInfo* memberInfo,
+        SInfo(TObjectPtr object,
+              TMemberIndex index, const CMemberInfo* memberInfo,
               ESerialDataFormat dataFormat, const CRef<CByteSource>& source);
         ~SInfo(void);
 
         // main object
         TObjectPtr m_Object;
         // index of member (for choice check)
-        int m_Index;
+        TMemberIndex m_Index;
         // member info
         const CMemberInfo* m_MemberInfo;
         // data format
@@ -142,7 +147,6 @@ private:
     static void* operator new(size_t);
 
     void DoUpdate(void);
-    bool CopyTo(CObjectOStream& out) const;
 
     auto_ptr<SInfo> m_Info;
 };

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.13  2000/07/03 18:42:32  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -104,16 +111,10 @@ class CClassInfoHelperBase;
 class CChoiceTypeInfo : public CClassTypeInfoBase {
     typedef CClassTypeInfoBase CParent;
 public:
-    typedef TMemberIndex TChoiceIndex;
-    enum {
-        eEmptyIndex = -1
-    };
-
-    typedef TChoiceIndex (*TWhichFunction)(TConstObjectPtr object);
+    typedef TMemberIndex (*TWhichFunction)(TConstObjectPtr object);
     typedef void (*TResetFunction)(TObjectPtr object);
-    typedef void (*TSelectFunction)(TObjectPtr object, TChoiceIndex index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object,
-                                         TChoiceIndex index);
+    typedef void (*TSelectFunction)(TObjectPtr object, TMemberIndex index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object, TMemberIndex index);
 
     CChoiceTypeInfo(const string& name,
                     size_t size,

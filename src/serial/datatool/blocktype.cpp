@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/08/15 19:45:27  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.20  2000/07/03 18:42:57  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 *
@@ -240,9 +247,9 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
         CDataMember* mem = i->get();
         CDataType* memType = mem->GetType();
         CMemberInfo* memInfo =
-            typeInfo->GetMembers().AddMember(mem->GetName(),
-                                             new CRealMemberInfo(size_t(typeInfo->GetMemberPtr(index)),
-                                                                 memType->GetTypeInfo()));
+            typeInfo->GetMembers().AddMember(new CMemberInfo(mem->GetName(),
+                                                             size_t(typeInfo->GetMemberPtr(index)),
+                                                             memType->GetTypeInfo()));
         if ( mem->GetDefault() ) {
             memInfo->SetDefault(memType->CreateDefault(*mem->GetDefault()));
             memInfo->SetSetFlag(typeInfo->AddIsSetFlag());
@@ -267,6 +274,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
                                                           ClassName()));
 
     bool haveUserClass = isRootClass;
+/*
     bool isObject;
     if ( haveUserClass ) {
         isObject = true;
@@ -274,8 +282,9 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
     else {
         isObject = !GetVar("Object").empty();
     }
+*/
     code->SetHaveUserClass(haveUserClass);
-    code->SetObject(isObject);
+    code->SetObject(true /*isObject*/ );
     iterate ( TMembers, i, GetMembers() ) {
         string defaultCode;
         bool optional = (*i)->Optional();

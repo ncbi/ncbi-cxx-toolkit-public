@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/08/15 19:44:43  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.28  2000/07/03 18:42:38  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -182,9 +189,6 @@ struct CLessTypeInfo
 // classes): members and layout in memory.
 class CTypeInfo
 {
-public:
-    typedef int TMemberIndex;
-
 protected:
     CTypeInfo(void);
     CTypeInfo(const string& name);
@@ -236,6 +240,7 @@ public:
 
     // return true if type is inherited from CObject
     virtual bool IsCObject(void) const;
+    virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
     // return true CTypeInfo of object (redefined in polimorfic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
@@ -281,6 +286,14 @@ public:
     static const TObjectType& Get(TConstObjectPtr object)
         {
             return *static_cast<const TObjectType*>(object);
+        }
+    static TObjectType& Get(const CObjectInfo& object)
+        {
+            return Get(object.GetObjectPtr());
+        }
+    static const TObjectType& Get(const CConstObjectInfo& object)
+        {
+            return Get(object.GetObjectPtr());
         }
 
     static size_t GetSize(void)

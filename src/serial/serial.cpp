@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/15 19:44:51  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
 * Revision 1.10  2000/07/11 20:36:19  vasilche
 * File included in all generated headers made lighter.
 * Nonnecessary code moved to serialimpl.hpp.
@@ -136,12 +143,6 @@ AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfo typeInfo)
 {
     return info.AddMember(name, member, typeInfo);
-}
-
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, CMemberInfo* memberInfo)
-{
-    return info.AddMember(name, memberInfo);
 }
 
 CMemberInfo*
@@ -264,16 +265,16 @@ CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
     return info;
 }
 
-static int WhichAsn(TConstObjectPtr object)
+static TMemberIndex WhichAsn(TConstObjectPtr object)
 {
     const valnode* node = static_cast<const valnode*>(object);
-    return node->choice - 1;
+    return node->choice + (kInvalidMember - 0);
 }
 
-static void SelectAsn(TObjectPtr object, int index)
+static void SelectAsn(TObjectPtr object, TMemberIndex index)
 {
     valnode* node = static_cast<valnode*>(object);
-    node->choice = index + 1;
+    node->choice = index - (kInvalidMember - 0);
 }
 
 CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)

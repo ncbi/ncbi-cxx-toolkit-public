@@ -1,6 +1,3 @@
-#if defined(OBJLIST__HPP)  &&  !defined(OBJLIST__INL)
-#define OBJLIST__INL
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,31 +30,66 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2000/08/15 19:44:41  vasilche
+* Revision 1.1  2000/08/15 19:44:48  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
 * CReadClassMemberHook/CWriteClassMemberHook for specified members.
 * CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
 * CReadContainerElementHook/CWriteContainerElementsHook for containers.
 *
-* Revision 1.3  2000/04/06 16:10:51  vasilche
-* Fixed bug with iterators in choices.
-* Removed unneeded calls to ReadExternalObject/WriteExternalObject.
-* Added output buffering to text ASN.1 data.
-*
-* Revision 1.2  1999/06/07 20:42:58  vasilche
-* Fixed compilation under MS VS
-*
-* Revision 1.1  1999/06/04 20:51:33  vasilche
-* First compilable version of serialization.
-*
 * ===========================================================================
 */
 
-inline
-size_t COObjectList::GetWrittenObjectCount(void) const
+#include <corelib/ncbistd.hpp>
+#include <serial/objhook.hpp>
+#include <serial/object.hpp>
+#include <serial/objistr.hpp>
+#include <serial/member.hpp>
+#include <serial/memberid.hpp>
+
+BEGIN_NCBI_SCOPE
+
+CReadObjectHook::~CReadObjectHook(void)
 {
-    return m_Objects.size();
 }
 
-#endif /* def OBJLIST__HPP  &&  ndef OBJLIST__INL */
+CReadClassMemberHook::~CReadClassMemberHook(void)
+{
+}
+
+void CReadClassMemberHook::SetClassMemberDefault(CObjectIStream& in,
+                                                 const CObjectInfo& object,
+                                                 TMemberIndex index)
+{
+    in.SetClassMemberDefaultNoHook(object, index);
+}
+
+CReadChoiceVariantHook::~CReadChoiceVariantHook(void)
+{
+}
+
+CReadContainerElementHook::~CReadContainerElementHook(void)
+{
+}
+
+CWriteObjectHook::~CWriteObjectHook(void)
+{
+}
+
+CWriteClassMembersHook::~CWriteClassMembersHook(void)
+{
+}
+
+CWriteClassMemberHook::~CWriteClassMemberHook(void)
+{
+}
+
+CWriteChoiceVariantHook::~CWriteChoiceVariantHook(void)
+{
+}
+
+CWriteContainerElementsHook::~CWriteContainerElementsHook(void)
+{
+}
+
+END_NCBI_SCOPE
