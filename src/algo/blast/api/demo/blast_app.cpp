@@ -69,6 +69,7 @@ Contents: C++ driver for running BLAST
 #include <objalign.h>
 
 USING_NCBI_SCOPE;
+USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 class CBlastApplication : public CNcbiApplication
@@ -87,7 +88,7 @@ private:
     CBlastOption*        m_Options;
     BlastSeqSrc *        m_bssp;
     CBlastFormatOptions* m_format_options;
-    TSeqLocVector*       m_query;
+    TSeqLocVector        m_query;
     BlastQueryInfo*      m_query_info;
     BlastScoreBlk*       m_sbp;
     BlastMask*           m_filter_loc;/* Masking/filtering locations */
