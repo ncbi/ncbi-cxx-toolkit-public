@@ -1124,7 +1124,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                                  TChunkId chunk_id,
                                  const CID2_Reply_Data& data,
                                  int split_version,
-                                 CConstRef<CID2_Reply_Data> skel) const
+                                 const CID2_Reply_Data* skel) const
 {
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(blob_id, chunk_id, blob) ) {

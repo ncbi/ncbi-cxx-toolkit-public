@@ -232,7 +232,7 @@ public:
                      TChunkId chunk_id,
                      const CID2_Reply_Data& data,
                      TSplitVersion split_version = 0,
-                     CConstRef<CID2_Reply_Data> skel = null) const;
+                     const CID2_Reply_Data* skel = 0) const;
     
     void SaveData(CReaderRequestResult& result,
                   const TBlobId& blob_id,

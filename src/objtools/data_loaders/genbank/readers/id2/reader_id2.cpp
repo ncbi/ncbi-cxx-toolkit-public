@@ -1110,7 +1110,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     else {
         dynamic_cast<const CProcessor_ID2&>
             (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
-            .ProcessData(result, blob_id, chunk_id, reply.GetData(), 0, null);
+            .ProcessData(result, blob_id, chunk_id, reply.GetData());
     }
     _ASSERT(CProcessor::IsLoaded(blob_id, chunk_id, blob));
 }
