@@ -1,4 +1,4 @@
---$Revision: 3.0 $
+--$Revision: 3.1 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -20,7 +20,6 @@ IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Org-ref FROM NCBI-Organism
         BioSource FROM NCBI-BioSource
         Seq-id, Seq-loc FROM NCBI-Seqloc
-        Link-set FROM NCBI-Access
         GB-block FROM GenBank-General
         PIR-block FROM PIR-General
         EMBL-block FROM EMBL-General
@@ -58,7 +57,7 @@ Seqdesc ::= CHOICE {
     region VisibleString ,       -- overall region (globin locus)
     user User-object ,           -- user defined object
     sp SP-block ,                -- SWISSPROT specific info
-    neighbors Link-set ,         -- neighboring information
+    dbxref Dbtag ,               -- xref to other databases
     embl EMBL-block ,            -- EMBL specific information
     create-date Date ,           -- date entry first created/released
     update-date Date ,           -- date of last update
@@ -217,7 +216,11 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
     maploc VisibleString OPTIONAL , -- map location reported in paper
     seq-raw StringStore OPTIONAL ,  -- original sequence from paper
     align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
-    comment VisibleString OPTIONAL }-- any comment on this pub in context
+    comment VisibleString OPTIONAL, -- any comment on this pub in context
+	reftype INTEGER {               -- type of reference in a GenBank record
+		seq (0) ,                   -- refers to sequence
+		sites (1) ,                 -- refers to unspecified features
+		feats (2) } DEFAULT seq }   -- refers to specified features
 
 Heterogen ::= VisibleString       -- cofactor, prosthetic group, inibitor, etc
 
