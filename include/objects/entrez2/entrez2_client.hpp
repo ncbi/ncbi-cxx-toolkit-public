@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CEntrez2Client : public CEntrez2Client_Base
+class NCBI_ENTREZ2_EXPORT CEntrez2Client : public CEntrez2Client_Base
 {
     typedef CEntrez2Client_Base Tparent;
 public:
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/31 16:43:58  dicuccio
+* Added missing export specifier
+*
 * Revision 1.1  2003/04/09 16:00:12  ucko
 * Give all RPC clients unique basenames.
 *
