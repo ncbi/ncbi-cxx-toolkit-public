@@ -166,6 +166,7 @@ private:
     CSeq_loc_Mapper& operator=(const CSeq_loc_Mapper&);
 
     friend class CSeq_loc_Conversion_Set;
+    friend class CSeq_align_Mapper;
 
     enum EMergeFlags {
         eMergeNone,      // no merging
@@ -286,6 +287,7 @@ private:
     EGapFlags       m_GapFlag;
     // Sources may have different widths, e.g. in an alignment
     TWidthById      m_Widths;
+    bool            m_UseWidth;
     int             m_Dst_width;
     TIdMap          m_IdMap;
     bool            m_Partial;
@@ -363,6 +365,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/04/12 14:35:59  grichenk
+* Fixed mapping of alignments between nucleotides and proteins
+*
 * Revision 1.8  2004/04/06 13:56:33  grichenk
 * Added possibility to remove gaps (NULLs) from mapped location
 *

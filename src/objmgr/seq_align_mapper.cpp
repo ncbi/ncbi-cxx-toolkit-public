@@ -44,7 +44,8 @@ BEGIN_SCOPE(objects)
 CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align)
     : m_OrigAlign(&align),
       m_DstAlign(0),
-      m_HaveStrands(false)
+      m_HaveStrands(false),
+      m_HaveWidths(false)
 {
     switch ( align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
@@ -130,6 +131,7 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
         ERR_POST(Warning << "Invalid 'strands' size in denseg");
         dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
     }
+    m_HaveWidths = denseg.IsSetWidths();
     CDense_seg::TStarts::const_iterator start_it =
         denseg.GetStarts().begin();
     CDense_seg::TLens::const_iterator len_it =
@@ -148,7 +150,8 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
                 strand = *strand_it;
                 ++strand_it;
             }
-            alnseg.AddRow(**id_it, *start_it, m_HaveStrands, strand, 0);
+            int width = m_HaveWidths ? denseg.GetWidths()[seq] : 0;
+            alnseg.AddRow(**id_it, *start_it, m_HaveStrands, strand, width);
         }
         m_SrcSegs.push_back(alnseg);
     }
@@ -181,6 +184,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
             int start = -1;
             int len = 0;
             ENa_strand strand = eNa_strand_unknown;
+            bool have_strand = false;
             switch ( loc.Which() ) {
             case CSeq_loc::e_Empty:
                 id = &loc.GetEmpty();
@@ -191,7 +195,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
                 len = loc.GetInt().GetTo() - start + 1; // ???
                 if ( loc.GetInt().IsSetStrand() ) {
                     strand = loc.GetInt().GetStrand();
-                    m_HaveStrands = true;
+                    m_HaveStrands = have_strand = true;
                 }
                 break;
             default:
@@ -213,7 +217,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
                     }
                 }
             }
-            seglens[seg.AddRow(*id, start, m_HaveStrands, strand, 0).m_Id] = len;
+            seglens[seg.AddRow(*id, start, have_strand, strand, 0).m_Id] = len;
         }
         seg.m_Len = seg_len;
         if ( multi_width ) {
@@ -222,12 +226,12 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
             for (size_t i = 0; i < seg.m_Rows.size(); ++i) {
                 if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
                     seg.m_Rows[i].m_Width = 3;
-                    seg.m_Rows[i].m_Start *= 3;
                 }
             }
         }
         seglens.clear();
         m_SrcSegs.push_back(seg);
+        m_HaveWidths |= multi_width;
     }
 }
 
@@ -303,8 +307,10 @@ bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments) const
         return false; // empty alignment is not valid
     }
     SAlignment_Segment seg0 = segments[0];
-    for (size_t nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
-        wid.push_back(seg0.m_Rows[nrow].m_Width);
+    if (m_HaveWidths) {
+        for (size_t nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
+            wid.push_back(seg0.m_Rows[nrow].m_Width);
+        }
     }
     for (size_t nseg = 1; nseg < segments.size(); ++nseg) {
         // skip for dendiags
@@ -319,12 +325,14 @@ bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments) const
                     return false;
                 }
             }
-            if (seg0.m_Rows[nrow].m_Width != 0) {
-                if (wid[nrow] == 0) {
-                    wid[nrow] = seg0.m_Rows[nrow].m_Width;
-                }
-                if (seg0.m_Rows[nrow].m_Width != wid[nrow]) {
-                    return false;
+            if (m_HaveWidths) {
+                if (seg0.m_Rows[nrow].m_Width != 0) {
+                    if (wid[nrow] == 0) {
+                        wid[nrow] = seg0.m_Rows[nrow].m_Width;
+                    }
+                    if (seg0.m_Rows[nrow].m_Width != wid[nrow]) {
+                        return false;
+                    }
                 }
             }
         }
@@ -339,14 +347,15 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
 {
     // start and stop on the original sequence
     TSeqPos start = sseg.m_Rows[row_idx].m_Start;
-    TSeqPos stop = start + sseg.m_Len;
+    TSeqPos len = sseg.m_Len;
+    TSeqPos stop = start + len;
     if ( start != kInvalidSeqPos
         &&  cvt.ConvertInterval(start, stop, sseg.m_Rows[row_idx].m_Strand) ) {
         // At least part of the interval was converted. Calculate
         // trimming coords, trim each row.
         TSeqPos dl = cvt.m_Src_from <= start ? 0 : cvt.m_Src_from - start;
-        TSeqPos dr = cvt.m_Src_to >= stop ? 0 : cvt.m_Src_to - stop;
-        SAlignment_Segment dseg(sseg.m_Len - dl + dr);
+        TSeqPos dr = cvt.m_Src_to >= stop ? 0 : stop - cvt.m_Src_to;
+        SAlignment_Segment dseg(len - dl - dr);
         for (size_t i = 0; i < sseg.m_Rows.size(); ++i) {
             if (i == row_idx) {
                 // translate id and coords
@@ -384,43 +393,70 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
 
 void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
                                      size_t row_idx,
-                                     const CMappingRange& mapping_range)
+                                     const CMappingRange& mapping_range,
+                                     int width_flag)
 {
-    // start and stop on the original sequence
-    TSeqPos start = sseg.m_Rows[row_idx].m_Start;
-    TSeqPos stop = start + sseg.m_Len;
+    int dst_width = width_flag ? 3 : 1;
+    CMappingRange mapping_copy = mapping_range;
+    const SAlignment_Segment::SAlignment_Row& src_row = sseg.m_Rows[row_idx];
+    TSeqPos start = src_row.m_Start;
+    if (width_flag & CSeq_loc_Mapper::fWidthProtToNuc) {
+        dst_width = 1;
+        if (start != kInvalidSeqPos  &&  src_row.m_Width == 3) {
+            start *= 3;
+        }
+        if (width_flag & CSeq_loc_Mapper::fWidthNucToProt) {
+            mapping_copy.m_Src_from *= 3;
+            mapping_copy.m_Src_to = (mapping_copy.m_Src_to + 1)*3 - 1;
+            mapping_copy.m_Dst_from *= 3;
+        }
+    }
+    else if (!width_flag  &&  src_row.m_Width == 3) {
+        dst_width = 3;
+        if (start != kInvalidSeqPos) {
+            start *= 3;
+        }
+        mapping_copy.m_Src_from *= 3;
+        mapping_copy.m_Src_to = (mapping_copy.m_Src_to + 1)*3 - 1;
+        mapping_copy.m_Dst_from *= 3;
+    }
+    // stop on the original sequence
+    TSeqPos stop = start + sseg.m_Len - 1;
     if ( start != kInvalidSeqPos
-        &&  mapping_range.CanMap(start, stop,
-        sseg.m_Rows[row_idx].m_IsSetStrand,
-        sseg.m_Rows[row_idx].m_Strand) ) {
+        &&  mapping_copy.CanMap(start, stop,
+        src_row.m_IsSetStrand,
+        src_row.m_Strand) ) {
         // At least part of the interval was converted. Calculate
         // trimming coords, trim each row.
-        TSeqPos dl = mapping_range.m_Src_from <= start ? 0
-            : mapping_range.m_Src_from - start;
-        TSeqPos dr = mapping_range.m_Src_to >= stop ? 0
-            : mapping_range.m_Src_to - stop;
-        SAlignment_Segment dseg(sseg.m_Len - dl + dr);
+        TSeqPos dl = mapping_copy.m_Src_from <= start ? 0
+            : mapping_copy.m_Src_from - start;
+        TSeqPos dr = mapping_copy.m_Src_to >= stop ? 0
+            : stop - mapping_copy.m_Src_to;
+        SAlignment_Segment dseg(sseg.m_Len - dl - dr);
         for (size_t i = 0; i < sseg.m_Rows.size(); ++i) {
             if (i == row_idx) {
                 // translate id and coords
                 CMappingRange::TRange mapped_rg =
-                    mapping_range.Map_Range(start, stop);
+                    mapping_copy.Map_Range(start, stop);
                 ENa_strand dst_strand = eNa_strand_unknown;
-                mapping_range.Map_Strand(
-                    sseg.m_Rows[row_idx].m_IsSetStrand,
-                    sseg.m_Rows[row_idx].m_Strand,
+                mapping_copy.Map_Strand(
+                    src_row.m_IsSetStrand,
+                    src_row.m_Strand,
                     &dst_strand);
+                TSeqPos mapped_start = mapped_rg.GetFrom()/dst_width;
                 dseg.AddRow(*mapping_range.m_Dst_id,
-                    mapped_rg.GetFrom(),
-                    sseg.m_Rows[i].m_IsSetStrand,
+                    mapped_start,
+                    src_row.m_IsSetStrand,
                     dst_strand,
-                    sseg.m_Rows[i].m_Width)
+                    dst_width)
                     .SetMapped();
             }
             else {
                 TSeqPos dst_start = sseg.m_Rows[i].m_Start;
                 if (dst_start != kInvalidSeqPos) {
-                    dst_start += dl;
+                    int width = sseg.m_Rows[i].m_Width ?
+                        sseg.m_Rows[i].m_Width : 1;
+                    dst_start += dl/width;
                 }
                 dseg.AddRow(*sseg.m_Rows[i].m_Id.GetSeqId(),
                     dst_start,
@@ -434,7 +470,7 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
         // Empty mapping. Remove the row.
         SAlignment_Segment dseg = sseg;
         dseg.m_Rows[row_idx].m_Id =
-            CSeq_id_Handle::GetHandle(*mapping_range.m_Dst_id);
+            CSeq_id_Handle::GetHandle(*mapping_copy.m_Dst_id);
         dseg.m_Rows[row_idx].m_Start = kInvalidSeqPos;
         sseg.m_Mappings.push_back(dseg);
     }
@@ -469,13 +505,15 @@ bool CSeq_align_Mapper::x_ConvertSegments(TSegments& segs,
 
 
 bool CSeq_align_Mapper::x_ConvertSegments(TSegments& segs,
-                                          const CMappingRange& mapping_range)
+                                          const CMappingRange& mapping_range,
+                                          int width_flag)
 {
     bool res = false;
     NON_CONST_ITERATE(TSegments, ss, segs) {
         // Check already mapped parts
         if (ss->m_Mappings.size() > 0) {
-            if ( x_ConvertSegments(ss->m_Mappings, mapping_range) ) {
+            if ( x_ConvertSegments(ss->m_Mappings,
+                mapping_range, width_flag) ) {
                 // Don't use source segment if the ID was
                 // found in mappings.
                 res = true;
@@ -486,7 +524,7 @@ bool CSeq_align_Mapper::x_ConvertSegments(TSegments& segs,
         // This should not happen if the ID is present in mappings.
         for (size_t row = 0; row < ss->m_Rows.size(); ++row) {
             if (ss->m_Rows[row].m_Id == mapping_range.m_Src_id_Handle) {
-                x_MapSegment(*ss, row, mapping_range);
+                x_MapSegment(*ss, row, mapping_range, width_flag);
                 res = true;
             }
         }
@@ -511,7 +549,8 @@ void CSeq_align_Mapper::Convert(CSeq_loc_Conversion& cvt)
 }
 
 
-void CSeq_align_Mapper::Convert(const CMappingRange& mapping_range)
+void CSeq_align_Mapper::Convert(const CMappingRange& mapping_range,
+                                int width_flag)
 {
     _ASSERT(m_SubAligns.size() > 0  ||  x_IsValidAlign(m_SrcSegs));
 
@@ -519,11 +558,11 @@ void CSeq_align_Mapper::Convert(const CMappingRange& mapping_range)
 
     if (m_SubAligns.size() > 0) {
         NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
-            it->Convert(mapping_range);
+            it->Convert(mapping_range, width_flag);
         }
         return;
     }
-    x_ConvertSegments(m_SrcSegs, mapping_range);
+    x_ConvertSegments(m_SrcSegs, mapping_range, width_flag);
 }
 
 
@@ -588,7 +627,9 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
                 CRef<CSeq_id> id(new CSeq_id);
                 id->Assign(*row->m_Id.GetSeqId());
                 dseg.SetIds().push_back(id);
-                dseg.SetWidths().push_back(row->m_Width ? row->m_Width : 1);
+                if (m_HaveWidths) {
+                    dseg.SetWidths().push_back(row->m_Width);
+                }
             }
             ITERATE(TSegments, seg_it, m_DstSegs) {
                 dseg.SetLens().push_back(seg_it->m_Len);
@@ -620,14 +661,13 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
                     else {
                         // interval
                         loc->SetInt().SetId(*id);
-                        TSeqPos from = row->m_Start;
-                        TSeqPos to = row->m_Start + seg_it->m_Len - 1;
+                        TSeqPos len = seg_it->m_Len;
                         if (row->m_Width) {
-                            from /= row->m_Width;
-                            to /= row->m_Width;
+                            len /= row->m_Width;
                         }
-                        loc->SetInt().SetFrom(from);
-                        loc->SetInt().SetTo(to);
+                        loc->SetInt().SetFrom(row->m_Start);
+                        // len may be 0 after dividing by width
+                        loc->SetInt().SetTo(row->m_Start + (len ? len - 1 : 0));
                         if (row->m_IsSetStrand) {
                             loc->SetInt().SetStrand(row->m_Strand);
                         }
@@ -685,6 +725,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/04/12 14:35:59  grichenk
+* Fixed mapping of alignments between nucleotides and proteins
+*
 * Revision 1.3  2004/04/07 18:36:12  grichenk
 * Fixed std-seg mapping
 *

@@ -94,7 +94,8 @@ public:
     ~CSeq_align_Mapper(void) {}
 
     void Convert(CSeq_loc_Conversion& cvt);
-    void Convert(const CMappingRange& mapping_range);
+    void Convert(const CMappingRange& mapping_range,
+                 int width_flag);
 
     CRef<CSeq_align> GetDstAlign(void) const;
 
@@ -112,9 +113,12 @@ private:
                       CSeq_loc_Conversion& cvt);
     void x_MapSegment(SAlignment_Segment& sseg,
                       size_t row_idx,
-                      const CMappingRange& mapping_range);
+                      const CMappingRange& mapping_range,
+                      int width_flag);
     bool x_ConvertSegments(TSegments& segs, CSeq_loc_Conversion& cvt);
-    bool x_ConvertSegments(TSegments& segs, const CMappingRange& mapping_range);
+    bool x_ConvertSegments(TSegments& segs,
+                           const CMappingRange& mapping_range,
+                           int width_flag);
     void x_GetDstSegments(const TSegments& ssegs, TSegments& dsegs) const;
 
     // Used for e_Disc alignments
@@ -128,6 +132,7 @@ private:
     mutable TSegments            m_DstSegs;
     TSubAligns                   m_SubAligns;
     bool                         m_HaveStrands;
+    bool                         m_HaveWidths;
 };
 
 
@@ -183,6 +188,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/12 14:35:59  grichenk
+* Fixed mapping of alignments between nucleotides and proteins
+*
 * Revision 1.2  2004/04/07 18:36:12  grichenk
 * Fixed std-seg mapping
 *

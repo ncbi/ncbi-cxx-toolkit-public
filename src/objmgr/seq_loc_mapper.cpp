@@ -100,10 +100,12 @@ TSeqPos CMappingRange::Map_Pos(TSeqPos pos) const
 CMappingRange::TRange CMappingRange::Map_Range(TSeqPos from, TSeqPos to) const
 {
     if (!m_Reverse) {
-        return TRange(Map_Pos(from), Map_Pos(to));
+        return TRange(Map_Pos(max(from, m_Src_from)),
+            Map_Pos(min(to, m_Src_to)));
     }
     else {
-        return TRange(Map_Pos(to), Map_Pos(from));
+        return TRange(Map_Pos(min(to, m_Src_to)),
+            Map_Pos(max(from, m_Src_from)));
     }
 }
 
@@ -133,6 +135,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     _ASSERT(map_feat.IsSetProduct());
@@ -156,6 +159,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     x_Initialize(source, target);
@@ -169,6 +173,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_id);
@@ -182,6 +187,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_row);
@@ -193,6 +199,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
     : m_Scope(&target_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     CConstRef<CSeq_id> dst_id = target_seq.GetSeqId();
@@ -223,6 +230,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     x_Initialize(seq_map, dst_id);
@@ -235,6 +243,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
     : m_Scope(&source_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     if (depth > 0) {
@@ -269,6 +278,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
+      m_UseWidth(false),
       m_Dst_width(0)
 {
     if (depth > 0) {
@@ -604,14 +614,15 @@ void CSeq_loc_Mapper::x_Initialize(const CSeq_loc& source,
             _ASSERT(!frame);
         }
     }
+    m_UseWidth |= (src_width != m_Dst_width);
 
     // Create conversions
     CSeq_loc_CI src_it(source);
     CSeq_loc_CI dst_it(target);
     TSeqPos src_start = src_it.GetRange().GetFrom()*m_Dst_width;
     TSeqPos src_len = x_GetRangeLength(src_it)*m_Dst_width;
-    TSeqPos dst_start = dst_it.GetRange().GetFrom()*m_Dst_width;
-    TSeqPos dst_len = x_GetRangeLength(dst_it)*m_Dst_width;
+    TSeqPos dst_start = dst_it.GetRange().GetFrom()*src_width;
+    TSeqPos dst_len = x_GetRangeLength(dst_it)*src_width;
     if ( frame ) {
         // ignore pre-frame range
         if (src_width == 3) {
@@ -819,8 +830,9 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, size_t to_row)
         int src_width = 0;
         const CSeq_id& src_id = *diag.GetIds()[row];
         src_width = x_CheckSeqWidth(src_id, src_width);
-        int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
-        int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
+        m_UseWidth |= (src_width != m_Dst_width);
+        int dst_width_rel = (m_UseWidth) ? 1 : m_Dst_width;
+        int src_width_rel = (m_UseWidth) ? 1 : src_width;
         TSeqPos src_start = diag.GetStarts()[row]*dst_width_rel;
         TSeqPos src_len = diag.GetLen()*src_width*dst_width_rel;
         TSeqPos dst_start = diag.GetStarts()[to_row]*src_width_rel;
@@ -883,8 +895,9 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
         else {
             src_width = x_CheckSeqWidth(src_id, src_width);
         }
-        int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
-        int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
+        m_UseWidth |= (src_width != m_Dst_width);
+        int dst_width_rel = (m_UseWidth) ? 1 : m_Dst_width;
+        int src_width_rel = (m_UseWidth) ? 1 : src_width;
 
         for (size_t seg = 0; seg < numseg; ++seg) {
             int i_src_start = denseg.GetStarts()[seg*dim + row];
@@ -977,8 +990,9 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 
         int src_width = 0;
         src_width = x_CheckSeqWidth(src_id, src_width);
-        int dst_width_rel = (src_width == m_Dst_width) ? 1 : m_Dst_width;
-        int src_width_rel = (src_width == m_Dst_width) ? 1 : src_width;
+        m_UseWidth |= (src_width != m_Dst_width);
+        int dst_width_rel = (m_UseWidth) ? 1 : m_Dst_width;
+        int src_width_rel = (m_UseWidth) ? 1 : src_width;
 
         for (size_t seg = 0; seg < numseg; ++seg) {
             if (!pseg.GetPresent()[row]  ||  !pseg.GetPresent()[to_row]) {
@@ -1133,7 +1147,8 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
                                     ENa_strand       src_strand)
 {
     bool res = false;
-    if (m_Widths[CSeq_id_Handle::GetHandle(src_id)] & fWidthProtToNuc) {
+    if (m_UseWidth  &&
+        m_Widths[CSeq_id_Handle::GetHandle(src_id)] & fWidthProtToNuc) {
         src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
     }
 
@@ -1419,7 +1434,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                                  TSeqPos to,
                                                  int strand_idx)
 {
-    if (m_Widths[idh] & fWidthNucToProt) {
+    if (m_UseWidth  &&  (m_Widths[idh] & fWidthNucToProt)) {
         from = from/3;
         to = to/3;
     }
@@ -1555,7 +1570,8 @@ CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
     CSeq_align_Mapper aln_mapper(src_align);
     ITERATE(TIdMap, id_it, m_IdMap) {
         ITERATE(TRangeMap, rg_it, id_it->second) {
-            aln_mapper.Convert(*rg_it->second);
+            aln_mapper.Convert(*rg_it->second,
+                m_UseWidth ? m_Widths[id_it->first] : 0);
         }
     }
     return aln_mapper.GetDstAlign();
@@ -1568,6 +1584,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/04/12 14:35:59  grichenk
+* Fixed mapping of alignments between nucleotides and proteins
+*
 * Revision 1.12  2004/04/06 13:56:33  grichenk
 * Added possibility to remove gaps (NULLs) from mapped location
 *
