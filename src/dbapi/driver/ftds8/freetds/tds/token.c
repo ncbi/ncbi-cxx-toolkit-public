@@ -905,6 +905,7 @@ unsigned char *dest;
 TDS_NUMERIC *num;
 TDS_VARBINARY *varbin;
 int len;
+ TDS_SMALLINT cur_col_type;
 
 	info = tds->res_info;
 	if (!info)
@@ -918,6 +919,7 @@ int len;
 
 	for (i=0;i<info->num_cols;i++) {
 		curcol = info->columns[i];
+		cur_col_type= curcol->column_type;
         tdsdump_log(TDS_DBG_INFO1, "%L processing row.  column is %d varint size = %d\n", i, curcol->column_varint_size);
 		switch (curcol->column_varint_size) {
 			case 4: /* Its a BLOB... */
@@ -940,7 +942,7 @@ int len;
 				colsize = tds_get_byte(tds);
 				break;
 			case 0: 
-				colsize = get_size_by_type(curcol->column_type);
+				colsize = get_size_by_type(cur_col_type);
 				break;
 		}
 
@@ -951,7 +953,7 @@ int len;
 		} else {
 			tds_clr_null(info->current_row, i);
 
-			if (is_numeric_type(curcol->column_type)) {
+			if (is_numeric_type(cur_col_type)) {
 
 				/* 
 				** handling NUMERIC datatypes: 
@@ -972,10 +974,10 @@ int len;
 		        if (IS_TDS70(tds) || IS_TDS80(tds)) 
                 {
 				   tdsdump_log(TDS_DBG_INFO1, "%L swapping numeric data...\n");
-                   tds_swap_datatype(tds_get_conversion_type(curcol->column_type, colsize), (unsigned char *)num );
+                   tds_swap_datatype(tds_get_conversion_type(cur_col_type, colsize), (unsigned char *)num );
                 }
 
-			} else if (curcol->column_type == SYBVARBINARY) {
+			} else if (cur_col_type == SYBVARBINARY) {
 				varbin = (TDS_VARBINARY *) &(info->current_row[curcol->column_offset]);
 				varbin->len = colsize;
                             /*  It is important to re-zero out the whole
@@ -987,7 +989,7 @@ int len;
                                 memset(varbin->array,'\0',curcol->column_size);
 
 				tds_get_n(tds,varbin->array,colsize);
-			} else if (is_blob_type(curcol->column_type)) {
+			} else if (is_blob_type(cur_col_type)) {
 				if (curcol->column_unicodedata) colsize /= 2;
 				curcol->column_textvalue = realloc(curcol->column_textvalue,colsize+1); /* FIXME +1 needed by tds_get_string */
 				curcol->column_textsize = colsize;
@@ -1006,10 +1008,10 @@ int len;
 				}
 				/* FIXME correct for unicode ? */
 #ifdef NCBI_FTDS
-            if(curcol->column_type == SYBVARCHAR)
+            if(cur_col_type == SYBVARCHAR)
 #endif
                 dest[colsize]='\0';
-				if (curcol->column_type == SYBDATETIME4) {
+				if (cur_col_type == SYBDATETIME4) {
 					tdsdump_log(TDS_DBG_INFO1, "%L datetime4 %d %d %d %d\n", dest[0], dest[1], dest[2], dest[3]);
 				}
 			}
@@ -1028,12 +1030,12 @@ int len;
 			** Nope its an actual MS SQL bug -bsb
 			*/
 			if (tds->broken_dates &&
-				(curcol->column_type == SYBDATETIME ||
-				curcol->column_type == SYBDATETIME4 ||
-				curcol->column_type == SYBDATETIMN ||
-				curcol->column_type == SYBMONEY ||
-				curcol->column_type == SYBMONEY4 ||
-				(curcol->column_type == SYBMONEYN && curcol->column_size > 4))) 
+				(cur_col_type == SYBDATETIME ||
+				cur_col_type == SYBDATETIME4 ||
+				cur_col_type == SYBDATETIMN ||
+				cur_col_type == SYBMONEY ||
+				cur_col_type == SYBMONEY4 ||
+				(cur_col_type == SYBMONEYN && curcol->column_size > 4))) 
 				/* above line changed -- don't want this for 4 byte SYBMONEYN 
 					values (mlilback, 11/7/01) */
 			{
@@ -1043,10 +1045,10 @@ int len;
 				memcpy(dest,&dest[colsize/2],colsize/2);
 				memcpy(&dest[colsize/2],temp_buf,colsize/2);
 			}
-            if (tds->emul_little_endian && !is_numeric_type(curcol->column_type)) {
+            if (tds->emul_little_endian && !is_numeric_type(cur_col_type)) {
                 tdsdump_log(TDS_DBG_INFO1, "%L swapping coltype %d\n",
-                            tds_get_conversion_type(curcol->column_type,colsize));
-                tds_swap_datatype(tds_get_conversion_type(curcol->column_type, colsize),
+                            tds_get_conversion_type(cur_col_type,colsize));
+                tds_swap_datatype(tds_get_conversion_type(cur_col_type, colsize),
                                   &(info->current_row[curcol->column_offset])
                                  );
             }
@@ -1560,7 +1562,7 @@ void tds_clr_null(unsigned char *current_row, int column)
 */
 int tds_get_null(unsigned char *current_row, int column)
 {
- return ((current_row[column >> 3] & s_null_mask[column & 0x7]) != 0);
+ return (current_row[column >> 3] & s_null_mask[column & 0x7])? 1 : 0;
 }
 #else
 void tds_set_null(unsigned char *current_row, int column)

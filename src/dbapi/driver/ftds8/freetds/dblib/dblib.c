@@ -1593,21 +1593,22 @@ dbdata(DBPROCESS *dbproc, int column)
 {
 TDSCOLINFO * colinfo;
 TDSRESULTINFO * resinfo;
-TDSSOCKET * tds;
 TDS_VARBINARY *varbin;
+ register TDS_SMALLINT t;
 
-	tds = (TDSSOCKET *) dbproc->tds_socket;
-	resinfo = tds->res_info;
+	resinfo = dbproc->tds_socket->res_info;
 	if (column<1 || column>resinfo->num_cols) return NULL;
 
-	colinfo = resinfo->columns[column-1];
 	if (tds_get_null(resinfo->current_row,column-1)) {
 		return NULL;
 	}
-	if (is_blob_type(colinfo->column_type)) {
+
+	colinfo = resinfo->columns[column-1];
+	t= colinfo->column_type;
+	if (is_blob_type(t)) {
 		return (BYTE *)colinfo->column_textvalue;
 	} 
-	if (colinfo->column_type == SYBVARBINARY) {
+	if (t == SYBVARBINARY) {
 		varbin = (TDS_VARBINARY *)
 			&(resinfo->current_row[colinfo->column_offset]);
 		return (BYTE *)varbin->array;

@@ -81,21 +81,20 @@ TDSICONVINFO *iconv_info;
 char *tds7_unicode2ascii(TDSSOCKET *tds, const char *in_string, char *out_string, int len)
 {
 TDSICONVINFO *iconv_info;
-int i;
-#if HAVE_ICONV
-const char *in_ptr;
-char *out_ptr;
-size_t out_bytes, in_bytes;
-char quest_mark[] = "?\0"; /* best to live no-const */
-const char *pquest_mark; 
-size_t lquest_mark;
-#endif
+int i, j;
 
-	if (!in_string) return NULL;
+	if (!in_string || (len < 0)) return NULL;
 
 #if HAVE_ICONV
 	iconv_info = tds->iconv_info;
 	if (iconv_info->use_iconv) {
+	  const char *in_ptr;
+	  char *out_ptr;
+	  size_t out_bytes, in_bytes;
+	  char quest_mark[] = "?\0"; /* best to live no-const */
+	  const char *pquest_mark; 
+	  size_t lquest_mark;
+
      	out_bytes = len;
      	in_bytes = len * 2;
      	in_ptr = (char *)in_string;
@@ -131,10 +130,16 @@ size_t lquest_mark;
 	/* no iconv, strip high order byte if zero or replace with '?' 
 	 * this is the same of converting to ISO8859-1 charset using iconv */
 	/* FIXME update docs */
-	for (i=0;i<len;++i) {
-		out_string[i] = 
-			in_string[i*2+1] ? '?' : in_string[i*2];
+#ifdef NCBI_FTDS
+	for (i= j= 0; i != len; j+= 2) {
+		out_string[i++]= in_string[j];
 	}
+#else
+	for (i=j=0;i<len;j+= 2) {
+		out_string[i++] = 
+			in_string[j+1] ? '?' : in_string[j];
+	}
+#endif
 	out_string[i]='\0';
 	return out_string;
 }
