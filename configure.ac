@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.360 2005/03/31 21:43:21 ucko Exp $
+#  $Id: configure.ac,v 1.361 2005/04/04 13:58:09 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3799,7 +3799,7 @@ if test "$with_xerces" != no; then
                = xercesc::DOMImplementationRegistry::getDOMImplementation
                  (xercesc::XMLString::transcode("XML 1.0"));]])],
           ncbi_cv_lib_xerces_c=yes, ncbi_cv_lib_xerces_c=no)])
-   if test ncbi_cv_lib_xerces_c=yes; then
+   if test $ncbi_cv_lib_xerces_c = yes; then
       if test -f "$XERCES_LIBPATH/libxerces-c-static.a"; then
          XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static"
       else
@@ -3809,7 +3809,7 @@ if test "$with_xerces" != no; then
       with_xerces=no
    fi
 fi
-if test "with_xerces" != no; then
+if test "$with_xerces" != no; then
    WithPackages="$WithPackages Xerces"
    AC_DEFINE(HAVE_XERCES, 1, [Define to 1 if Xerces-C++ is available.])
 else
@@ -3849,7 +3849,7 @@ if test "$with_xalan" != no; then
           [AC_LANG_PROGRAM([[#include <xalanc/XalanEXSLT/XalanEXSLTMath.hpp>]],
              [[xalanc::XalanEXSLTMathFunctionsInstaller::installGlobal();]])],
           ncbi_cv_lib_xalan_c=yes, ncbi_cv_lib_xalan_c=no)])
-   if test ncbi_cv_lib_xalan_c=yes; then
+   if test $ncbi_cv_lib_xalan_c = yes; then
       if test -f "$XALAN_LIBPATH/libxalan-c-static.a"; then
          XALAN_STATIC_LIBS="-L$XALAN_LIBPATH -lxalan-c-static -lxalanMsg-static"
       else
@@ -3859,7 +3859,7 @@ if test "$with_xalan" != no; then
       with_xalan=no
    fi
 fi
-if test "with_xalan" != no; then
+if test "$with_xalan" != no; then
    WithPackages="$WithPackages Xalan"
    AC_DEFINE(HAVE_XALAN, 1, [Define to 1 if Xalan-C++ is available.])
 else

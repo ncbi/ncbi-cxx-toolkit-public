@@ -21525,7 +21525,7 @@ rm -f conftest.err conftest.$ac_objext \
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_xerces_c" >&5
 echo "${ECHO_T}$ncbi_cv_lib_xerces_c" >&6
-   if test ncbi_cv_lib_xerces_c=yes; then
+   if test $ncbi_cv_lib_xerces_c = yes; then
       if test -f "$XERCES_LIBPATH/libxerces-c-static.a"; then
          XERCES_STATIC_LIBS="-L$XERCES_LIBPATH -lxerces-c-static"
       else
@@ -21535,7 +21535,7 @@ echo "${ECHO_T}$ncbi_cv_lib_xerces_c" >&6
       with_xerces=no
    fi
 fi
-if test "with_xerces" != no; then
+if test "$with_xerces" != no; then
    WithPackages="$WithPackages Xerces"
 
 cat >>confdefs.h <<\_ACEOF
@@ -21628,7 +21628,7 @@ rm -f conftest.err conftest.$ac_objext \
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_xalan_c" >&5
 echo "${ECHO_T}$ncbi_cv_lib_xalan_c" >&6
-   if test ncbi_cv_lib_xalan_c=yes; then
+   if test $ncbi_cv_lib_xalan_c = yes; then
       if test -f "$XALAN_LIBPATH/libxalan-c-static.a"; then
          XALAN_STATIC_LIBS="-L$XALAN_LIBPATH -lxalan-c-static -lxalanMsg-static"
       else
@@ -21638,7 +21638,7 @@ echo "${ECHO_T}$ncbi_cv_lib_xalan_c" >&6
       with_xalan=no
    fi
 fi
-if test "with_xalan" != no; then
+if test "$with_xalan" != no; then
    WithPackages="$WithPackages Xalan"
 
 cat >>confdefs.h <<\_ACEOF
