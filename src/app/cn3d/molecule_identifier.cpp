@@ -183,11 +183,12 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
             if (identifier->gi != _gi) {
                 if (identifier->accession.size() > 0 && identifier->accession == _accession) {
                     // special case where accession is same, gi is different: two versions of same sequence
-                    ERRORMSG("The sequence being loaded (gi " << _gi << ") has the same accession code "
-                        "as a sequence already present (gi " << identifier->gi << "). Cn3D does not "
+                    FATALMSG("The sequence being processed (gi " << _gi << ") has the same accession code ("
+                        << _accession <<
+                        ") as a sequence already encountered (gi " << identifier->gi << "). Cn3D does not "
                         "allow two versions of the same sequence to be present simultaneously. If you want "
-                        "to import gi " << _gi << ", you need to delete gi " << identifier->gi << " from "
-                        "the alignment and import windows, save & reload, then import again.");
+                        "to use one (e.g. gi " << _gi << "), you need to first delete all instances of the other "
+                        "(e.g. gi " << identifier->gi << ").");
                     return NULL;
                 } else {
                     ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
@@ -338,6 +339,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/09/27 18:31:00  thiessen
+* exit gracefully on same accession different gi
+*
 * Revision 1.14  2004/09/15 18:34:38  thiessen
 * handle pir accessions
 *
