@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/18 02:41:32  thiessen
+* fix bug in virtual bonds and altConfs
+*
 * Revision 1.6  2000/07/16 23:19:10  thiessen
 * redo of drawing system
 *
@@ -241,7 +244,10 @@ bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
         for (e=ensembles.begin(); e!=ee; e++) {
             if (*e == ensemble) break;
         }
-        if (e == ee) return false;
+        if (e == ee) {
+            ERR_POST("AtomSet::SetActiveEnsemble received invalid ensemble");
+            return false;
+        }
     }
     activeEnsemble = ensemble;
     return true;
@@ -257,17 +263,20 @@ const Atom* AtomSet::GetAtom(int mID, int rID, int aID,
                              << rID << ',' << aID << ')');
         return NULL;
     }
-    AtomAltList::const_iterator atom = (*atomConfs).second.begin();
+    AtomAltList::const_iterator atom = atomConfs->second.begin();
 
     // if no activeEnsemble specified, just return first altConf
-    if (!activeEnsemble || getAny) return *atom;
+    if (!activeEnsemble) return *atom;
 
-    // otherwise, return first atom whose altConfID is in the activeEnsemble
-    AtomAltList::const_iterator e = (*atomConfs).second.end();
+    // otherwise, try to find first atom whose altConfID is in the activeEnsemble
+    AtomAltList::const_iterator e = atomConfs->second.end();
     for (; atom!=e; atom++) {
         if (activeEnsemble->find((*atom)->altConfID) != activeEnsemble->npos)
             return *atom;
     }
+
+    // if none found, but getAny is true, just return the first of the list
+    if (getAny) return atomConfs->second.front();
 
     return NULL;
 }

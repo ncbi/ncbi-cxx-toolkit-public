@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/18 02:41:33  thiessen
+* fix bug in virtual bonds and altConfs
+*
 * Revision 1.6  2000/07/18 00:06:00  thiessen
 * allow arbitrary rotation center
 *
@@ -250,6 +253,7 @@ void OpenGLRenderer::Display(void) const
 
     glLoadIdentity();
 
+    // move structureSet's center to origin
     if (structureSet)
         glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
 
@@ -474,6 +478,7 @@ void OpenGLRenderer::DrawStraightBond(const Vector& site1, const Vector& site2,
     SetColor(GL_AMBIENT, color1[0], color1[1], color1[2]);
     if (radius <= 0.0)
         DrawLine(site1, midpoint);
+    // ... will eventually draw cylinders for thick (radius>0) bonds
     
     SetColor(GL_AMBIENT, color2[0], color2[1], color2[2]);
     if (radius <= 0.0)

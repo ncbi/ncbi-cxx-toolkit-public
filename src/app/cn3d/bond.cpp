@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/18 02:41:32  thiessen
+* fix bug in virtual bonds and altConfs
+*
 * Revision 1.4  2000/07/17 22:37:17  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -137,11 +140,7 @@ bool Bond::Draw(const StructureBase *data) const
         set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, connectionColor, connectionColor);
 
     } else {
-        const ChemicalGraph *graph;
-        if (!GetParentOfType(&graph)) {
-            ERR_POST(Warning << "Bond::Draw() - can't get ChemicalGraph parent");
-            return false;
-        }
+        /*
         // color by object for now
         const StructureObject *object;
         GetParentOfType(&object);
@@ -151,14 +150,18 @@ bool Bond::Draw(const StructureBase *data) const
         else
             color = Vector(0,1,0); // green slaves
         set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, color, color);
-        /*
+        */
+        const ChemicalGraph *graph;
+        if (!GetParentOfType(&graph)) {
+            ERR_POST(Warning << "Bond::Draw() - can't get ChemicalGraph parent");
+            return false;
+        }
         // color by element for now
         const Residue::AtomInfo *info = graph->GetAtomInfo(atom1.mID, atom1.rID, atom1.aID);
         const Element *element1 = PeriodicTable.GetElement(info->atomicNumber);
         info = graph->GetAtomInfo(atom2.mID, atom2.rID, atom2.aID);
         const Element *element2 = PeriodicTable.GetElement(info->atomicNumber);
-        set->renderer->DrawLine(a1->site, a2->site, element1->color, element2->color);
-        */
+        set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, element1->color, element2->color);
     }
 
     return true;

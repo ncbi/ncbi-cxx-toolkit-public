@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/18 02:41:33  thiessen
+* fix bug in virtual bonds and altConfs
+*
 * Revision 1.3  2000/07/17 04:20:49  thiessen
 * now does correct structure alignment transformation
 *
@@ -70,14 +73,31 @@ Molecule::Molecule(StructureBase *parent,
         }
     }
 
-    // load residues from SEQUENCE OF Residue
+    // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
+    Residue *prevResidue = NULL;
+    int alphaID1, alphaID2;
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
     for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
+
         Residue *residue = new Residue(this, (*i).GetObject(), id,
             standardDictionary, localDictionary);
         if (residues.find(residue->id) != residues.end())
             ERR_POST(Fatal << "confused by repeated Residue ID");
         residues[residue->id] = residue;
+
+        if (prevResidue) {
+            // virtual bonds
+            alphaID1 = prevResidue->alphaID;
+            if (alphaID1 == Residue::NO_ALPHA_ID) continue;
+            alphaID2 = residue->alphaID;
+            if (alphaID2 == Residue::NO_ALPHA_ID) continue;
+            const Bond *bond = MakeBond(this, 
+                id, prevResidue->id, alphaID1,
+                id, residue->id, alphaID2,
+                Bond::eSingle);
+            if (bond) virtualBonds.push_back(bond);
+        }
+        prevResidue = residue;
     }
 
     // load inter-residue bonds from SEQUENCE OF Inter-residue-bond OPTIONAL
@@ -85,7 +105,6 @@ Molecule::Molecule(StructureBase *parent,
         CMolecule_graph::TInter_residue_bonds::const_iterator j, je=graph.GetInter_residue_bonds().end();
         for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
             
-            // regular peptide bonds 
             int order = j->GetObject().IsSetBond_order() ? 
                 j->GetObject().GetBond_order() : Bond::eUnknown;
             const Bond *bond = MakeBond(this, 
@@ -93,18 +112,6 @@ Molecule::Molecule(StructureBase *parent,
                 j->GetObject().GetAtom_id_2(),
                 order);
             if (bond) interResidueBonds.push_back(bond);
-
-            // virtual bonds
-            int alphaID1 = residues[j->GetObject().GetAtom_id_1().GetResidue_id().Get()]->alphaID;
-            if (alphaID1 == Residue::NO_ALPHA_ID) continue;
-            int alphaID2 = residues[j->GetObject().GetAtom_id_2().GetResidue_id().Get()]->alphaID;
-            if (alphaID2 == Residue::NO_ALPHA_ID) continue;
-            bond = MakeBond(this, 
-                id, j->GetObject().GetAtom_id_1().GetResidue_id().Get(), alphaID1,
-                id, j->GetObject().GetAtom_id_2().GetResidue_id().Get(), alphaID2,
-                Bond::eSingle);
-            if (bond) virtualBonds.push_back(bond);
-            
         }
     }
 }
