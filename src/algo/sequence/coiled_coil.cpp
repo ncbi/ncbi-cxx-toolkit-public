@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-const double sm_Propensities[26][7] = 
+const double CCoiledCoil::sm_Propensities[26][7] = 
     {
         {0,     0,     0,     0,     0,     0,     0    },
         {1.297, 1.551, 1.084, 2.612, 0.377, 1.248, 0.877}, // A
@@ -72,8 +72,8 @@ const double sm_Propensities[26][7] =
 
 
 template<class Seq>
-static void x_ComputeScores(const Seq& seq, vector<double>& scores,
-                            vector<unsigned int>& frames, TSeqPos win_len)
+void CCoil_ComputeScores(const Seq& seq, vector<double>& scores,
+                         vector<unsigned int>& frames, TSeqPos win_len)
 {
 
     vector<vector<double> > prelim_scores(7);
@@ -87,16 +87,19 @@ static void x_ComputeScores(const Seq& seq, vector<double>& scores,
         for (TSeqPos start = 0;  start < seq.size() - win_len + 1;  start++) {
             double prod;
             if (start > 0  &&
-                sm_Propensities[seq[start - 1]][(start - 1 + frame) % 7] != 0) {
+                CCoiledCoil::sm_Propensities[seq[start - 1]]
+                    [(start - 1 + frame) % 7] != 0) {
                 // compute product using last result, avoiding repeating mults
-                prod /= sm_Propensities[seq[start - 1]][(start - 1 + frame) % 7];
-                prod *= sm_Propensities[seq[start + win_len - 1]]
+                prod /= CCoiledCoil::sm_Propensities[seq[start - 1]]
+                    [(start - 1 + frame) % 7];
+                prod *= CCoiledCoil::sm_Propensities[seq[start + win_len - 1]]
                     [(start + win_len - 1 + frame) % 7];
             } else {
                 // compute product from scratch
                 prod = 1;
                 for (TSeqPos i = start;  i < start + win_len;  i++) {
-                    prod *= sm_Propensities[seq[i]][(i + frame) % 7];
+                    prod *= CCoiledCoil::sm_Propensities[seq[i]]
+                        [(i + frame) % 7];
                 }
             }
             prelim_scores[frame][start] = pow(prod, 1.0 / win_len);
@@ -160,7 +163,7 @@ void CCoiledCoil::ComputeScores(const string& seq, vector<double>& scores,
                                 vector<unsigned int>& frames,
                                 TSeqPos win_len)
 {
-    x_ComputeScores(seq, scores, frames, win_len);
+    CCoil_ComputeScores(seq, scores, frames, win_len);
 }
 
 
@@ -168,7 +171,7 @@ void CCoiledCoil::ComputeScores(const vector<char>& seq, vector<double>& scores,
                                 vector<unsigned int>& frames,
                                 TSeqPos win_len)
 {
-    x_ComputeScores(seq, scores, frames, win_len);
+    CCoil_ComputeScores(seq, scores, frames, win_len);
 }
 
 
@@ -181,7 +184,7 @@ void CCoiledCoil::ComputeScores(const CSeqVector& seq,
     CSeqVector vec(seq);
     vec.SetNcbiCoding();
     vec.GetSeqData(0, vec.size(), seq_ncbistdaa);
-    x_ComputeScores(seq_ncbistdaa, scores, frames, win_len);
+    CCoil_ComputeScores(seq_ncbistdaa, scores, frames, win_len);
 }
 
 
@@ -207,9 +210,9 @@ void CCoiledCoil::ScoreToProb(const vector<double>& scores,
 
 
 // find runs where ScoreToProb(score) >= 0.5
-static void x_PredictRegions(const vector<double>& scores,
-                             vector<CRef<CSeq_loc> >& regions,
-                             vector<double>& max_scores)
+void CCoiledCoil::x_PredictRegions(const vector<double>& scores,
+                                   vector<CRef<CSeq_loc> >& regions,
+                                   vector<double>& max_scores)
 {
     bool in_a_run = 0;
     TSeqPos begin, end;
@@ -250,15 +253,15 @@ static void x_PredictRegions(const vector<double>& scores,
 
 
 template<class Seq>
-static double PredictRegionsImpl(const Seq& seq,
-                             vector<CRef<objects::CSeq_loc> >& regions,
-                             vector<double>& max_scores,
-                             TSeqPos win_len)
+double CCoil_PredictRegions(const Seq& seq,
+                            vector<CRef<objects::CSeq_loc> >& regions,
+                            vector<double>& max_scores,
+                            TSeqPos win_len)
 {
     vector<double> scores;
     vector<unsigned int> frames;
     CCoiledCoil::ComputeScores(seq, scores, frames, win_len);
-    x_PredictRegions(scores, regions, max_scores);
+    CCoiledCoil::x_PredictRegions(scores, regions, max_scores);
     return *max_element(scores.begin(), scores.end());
 }
 
@@ -268,7 +271,7 @@ double CCoiledCoil::PredictRegions(const string& seq,
                                    vector<double>& max_scores,
                                    TSeqPos win_len)
 {
-    return PredictRegionsImpl(seq, regions, max_scores, win_len);
+    return CCoil_PredictRegions(seq, regions, max_scores, win_len);
 }
 
 
@@ -277,7 +280,7 @@ double CCoiledCoil::PredictRegions(const vector<char>& seq,
                                    vector<double>& max_scores,
                                    TSeqPos win_len)
 {
-    return PredictRegionsImpl(seq, regions, max_scores, win_len);
+    return CCoil_PredictRegions(seq, regions, max_scores, win_len);
 }
 
 
@@ -286,7 +289,7 @@ double CCoiledCoil::PredictRegions(const objects::CSeqVector& seq,
                                    vector<double>& max_scores,
                                    TSeqPos win_len)
 {
-    return PredictRegionsImpl(seq, regions, max_scores, win_len);
+    return CCoil_PredictRegions(seq, regions, max_scores, win_len);
 }
 
 
@@ -297,6 +300,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/09 18:30:55  ucko
+ * Fixes for WorkShop, which (still) doesn't let templates access
+ * anything file-static.
+ *
  * Revision 1.2  2003/09/09 16:10:20  dicuccio
  * Fxes for MSVC.  Moved templated functions into implementation file to avoid
  * naming / export conflicts.  Moved lookup table to implementation file.

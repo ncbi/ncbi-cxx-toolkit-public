@@ -84,6 +84,24 @@ public:
                                  vector<CRef<objects::CSeq_loc> >& regions,
                                  vector<double>& max_scores,
                                  TSeqPos win_len = 28);
+
+private:
+    static void x_PredictRegions(const vector<double>& scores,
+                                 vector<CRef<objects::CSeq_loc> >& regions,
+                                 vector<double>& max_scores);
+
+    template<class Seq>
+    friend void CCoil_ComputeScores(const Seq& seq, vector<double>& scores,
+                                    vector<unsigned int>& frames,
+                                    TSeqPos win_len);
+
+    template<class Seq>
+    friend double
+    CCoil_PredictRegions(const Seq& seq,
+                         vector<CRef<objects::CSeq_loc> >& regions,
+                         vector<double>& max_scores, TSeqPos win_len);
+
+    static const double CCoiledCoil::sm_Propensities[26][7];
 };
 
 
@@ -95,6 +113,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/09 18:30:48  ucko
+ * Fixes for WorkShop, which (still) doesn't let templates access
+ * anything file-static.
+ *
  * Revision 1.2  2003/09/09 16:09:08  dicuccio
  * Fixes for MSVC.  Moved member template into implementation file to avoid
  * naming / export conflicts.  Moved lookup table to implementation file.
