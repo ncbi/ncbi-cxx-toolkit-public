@@ -104,7 +104,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,CReader *driver,int gc_th
 {
   GBLOG_POST( "CGBDataLoader");
   
-#if 0
+#if defined(HAVE_LIBSYBASE) && defined(HAVE_LIBDL) 
   if(!m_Driver)
     {
       try
@@ -742,6 +742,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
         {
           auto_ptr<CBlob> blob(srp->RetrieveBlob(bs));
           //GBLOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
+          m_InvokeGC=true;
           if (blob->Class()==0)
             {
               tse_up->m_tse    = blob->Seq_entry();
@@ -790,6 +791,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/04/26 16:32:23  kimelman
+* a) turn on GC b) turn on PubSeq where sybase is available
+*
 * Revision 1.29  2002/04/12 22:54:28  kimelman
 * pubseq_reader auto call commented per Denis request
 *
