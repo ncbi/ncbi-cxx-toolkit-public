@@ -61,21 +61,21 @@ test -d "$target"  ||  error "Cannot create target dir \"$target\""
 makedir "$docdir" -p
 cp -pr "$builddir"/doc/* "$docdir"
 cd "$docdir"
-find . -type d -name CVS -exec rm -r {} \;
+find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
 
 
 # Include dir
 makedir "$incdir" -p
 cp -pr "$builddir"/include/* "$incdir"
 cd "$incdir"
-find . -type d -name CVS -exec rm -r {} \;
+find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
 
 
 # Source dir
 makedir "$srcdir" -p
 cp -pr "$builddir"/src/* "$srcdir"
 cd "$srcdir"
-find . -type d -name CVS -exec rm -r {} \;
+find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
 
 
 # Libraries
