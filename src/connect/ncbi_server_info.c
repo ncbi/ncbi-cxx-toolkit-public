@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2000/05/23 21:05:33  lavr
+ * Memory leaks fixed (appeared after recent server-info structure rearrangement)
+ *
  * Revision 6.9  2000/05/23 19:02:49  lavr
  * Server-info now includes rate; verbal representation changed
  *
@@ -204,7 +207,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
 {
     const SSERV_Attr* attr = s_GetAttrByType(info->type);
     size_t reserve = attr->tag_len+1 + MAX_IP_ADDRESS_LEN+1 + 5+1 +
-        10+1/*time*/ + 10+1/*algorithm*/;
+        10+1/*algorithm*/ + 12+1/*time*/ + 12+1/*rate*/;
     char* str;
 
     /* write server-specific info */
