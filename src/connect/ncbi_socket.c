@@ -228,12 +228,10 @@ typedef int TSOCK_Handle;
 #endif /*NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC*/
 
 
-#if defined(HAVE_SOCKLEN_T)
-        typedef socklen_t  SOCK_socklen_t;
-#elif defined(NCBI_OS_MAC)
-        typedef UInt32     SOCK_socklen_t;
+#ifdef HAVE_SOCKLEN_T
+typedef socklen_t  SOCK_socklen_t;
 #else
-        typedef int        SOCK_socklen_t;
+typedef int        SOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T*/
 
 
@@ -2582,6 +2580,13 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
         int                x_errno;
         struct sockaddr_in addr;
+#if defined(HAVE_SOCKLEN_T)
+        typedef socklen_t  SOCK_socklen_t;
+#elif defined(NCBI_OS_MAC)
+        typedef UInt32     SOCK_socklen_t;
+#else
+        typedef int        SOCK_socklen_t;
+#endif /*HAVE_SOCKLEN_T*/
         SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
         int                x_read = recvfrom(sock->sock, x_msg, x_msgsize, 0,
                                              (struct sockaddr*)&addr,&addrlen);
@@ -3026,6 +3031,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.94  2003/04/14 15:14:20  lavr
+ * Define SOCK_socklen_t for Mac's recvfrom() specially
+ *
  * Revision 6.93  2003/04/11 20:59:06  lavr
  * Aux type SOCK_socklen_t defined centrally
  *
@@ -3036,7 +3044,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
  * do not include arpa/inet.h on CW with MSL.
  *
  * Revision 6.90  2003/04/03 14:16:18  rsmith
- * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+ * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into
+ * NCBI_COMPILER_MW_MSL
  *
  * Revision 6.89  2003/04/02 16:21:34  rsmith
  * replace _MWERKS_ with NCBI_COMPILER_METROWERKS
