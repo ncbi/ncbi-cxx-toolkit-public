@@ -91,11 +91,6 @@ CRef<CTestThread> thr[k_NumThreadsMax];
 
 void* CTestThread::Main(void)
 {
-#if defined(_MT)
-    LOG_POST("Running thread");
-#else
-    LOG_POST("Simulating thread in ST mode");
-#endif
     int spawn_max;
     int first_idx;
     {{
@@ -182,6 +177,12 @@ int CThreadedApp::Run(void)
 
     assert(TestApp_Init());
 
+#if defined(_MT)
+    LOG_POST("Running " << s_NumThreads << " threads");
+#else
+    LOG_POST("Simulating " << s_NumThreads << " threads in ST mode");
+#endif
+
     int spawn_max;
     int first_idx;
     {{
@@ -263,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/16 15:58:28  grichenk
+ * Display running/simulating message only once.
+ *
  * Revision 1.5  2003/05/08 20:50:10  grichenk
  * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
  *
