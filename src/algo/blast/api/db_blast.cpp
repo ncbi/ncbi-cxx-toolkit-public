@@ -67,7 +67,7 @@ void CDbBlast::x_InitFields()
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
-                   EProgram p, RPSInfo* rps_info=0)
+                   EProgram p, RPSInfo* rps_info)
     : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info) 
 {
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
@@ -75,7 +75,7 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
-                   CBlastOptionsHandle& opts, RPSInfo* rps_info=0)
+                   CBlastOptionsHandle& opts, RPSInfo* rps_info)
     : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info) 
 {
     m_OptsHandle.Reset(&opts);    
@@ -316,6 +316,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2004/03/17 14:51:33  camacho
+ * Fix compiler errors
+ *
  * Revision 1.19  2004/03/16 23:32:28  dondosha
  * Added capability to run RPS BLAST seach; added function x_InitFields; changed mi_ to m_i in member field names
  *
