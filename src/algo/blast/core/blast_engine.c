@@ -195,6 +195,11 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       combined_hsp_list = NULL;
       
       for (chunk = 0; chunk < num_chunks; ++chunk) {
+         if (chunk > 0) {
+            offset += subject->length - DBSEQ_CHUNK_OVERLAP;
+            subject->sequence += 
+               (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
+         }
          subject->length = MIN(total_subject_length - offset, 
                                MAX_DBSEQ_LEN);
          
@@ -273,9 +278,6 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
             /* HSPs from this list are moved elsewhere, reset count to 0 */
             hsp_list->hspcnt = 0;
          }
-         offset += subject->length - DBSEQ_CHUNK_OVERLAP;
-         subject->sequence += 
-            (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
       } /* End loop on chunks of subject sequence */
       
       MergeHSPLists(combined_hsp_list, hsp_list_out, 0, 
