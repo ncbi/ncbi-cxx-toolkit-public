@@ -1098,6 +1098,13 @@ static void s_TEST_IntCache(void)
 {
     cout << "======== int cache test." << endl;
 
+    vector<int> data;
+    data.push_back(10);
+    data.push_back(20);
+    data.push_back(30);
+    data.push_back(40);
+
+    {{
     CBDB_BLOB_Cache bcache;
     bcache.Open(".");
 
@@ -1105,13 +1112,7 @@ static void s_TEST_IntCache(void)
 
     assert(icache);
 
-    icache->SetExpirationTime(10);
-
-    vector<int> data;
-    data.push_back(10);
-    data.push_back(20);
-    data.push_back(30);
-    data.push_back(40);
+    icache->SetExpirationTime(30);
 
     icache->Store(1, 1, data);
 
@@ -1127,6 +1128,33 @@ static void s_TEST_IntCache(void)
     assert(data2[1] == data[1]);
     assert(data2[2] == data[2]);
     assert(data2[3] == data[3]);
+
+    }}
+
+    {{
+    CBDB_BLOB_Cache bcache;
+    bcache.Open(".");
+
+    IIntCache* icache = bcache.GetIntCache();
+
+    assert(icache);
+
+
+    vector<int> data2;
+
+    icache->Read(1, 1, data2);
+
+    int sz = data2.size();
+
+    assert(data2.size() == 4);
+
+    assert(data2[0] == data[0]);
+    assert(data2[1] == data[1]);
+    assert(data2[2] == data[2]);
+    assert(data2[3] == data[3]);
+
+    }}
+
 
 }
 
@@ -1215,6 +1243,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/10/20 20:15:54  kuznets
+ * Cache test improved
+ *
  * Revision 1.22  2003/10/20 19:59:03  kuznets
  * + Unit test for Int cache
  *
