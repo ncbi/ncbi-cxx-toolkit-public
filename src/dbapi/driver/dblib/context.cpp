@@ -560,14 +560,14 @@ CDbapiDblibCF2::CreateInstance(
                     page_size = NStr::StringToInt( v.value );
                 }
             }
+        }
 
-            // Create a driver ...
-            drv = new CDBLibContext( db_version );
+        // Create a driver ...
+        drv = new CDBLibContext( db_version );
 
-            // Set parameters ...
-            if ( page_size ) {
-                drv->DBLIB_SetPacketSize( page_size );
-            }
+        // Set parameters ...
+        if ( page_size ) {
+            drv->DBLIB_SetPacketSize( page_size );
         }
     }
     return drv;
@@ -711,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/03/21 16:30:31  dicuccio
+ * Permit driver initialization even if parameter lists are not supplied
+ *
  * Revision 1.36  2005/03/21 14:08:30  ssikorsk
  * Fixed the 'version' of a databases protocol parameter handling
  *
