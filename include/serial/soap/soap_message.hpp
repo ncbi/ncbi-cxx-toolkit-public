@@ -56,6 +56,9 @@ public:
     void SetSoapNamespacePrefix(const string& prefix);
     const string& GetSoapNamespacePrefix(void) const;
 
+    void SetDefaultObjectNamespaceName(const string& ns_name);
+    const string& GetDefaultObjectNamespaceName(void) const;
+
 // writing
     void AddObject(const CSerialObject& obj, EMessagePart destination);
     void Write(CObjectOStream& out) const;
@@ -78,6 +81,7 @@ public:
 
 private:
     string m_Prefix;
+    string m_DefNamespaceName;
     TSoapContent m_Header;
     TSoapContent m_Body;
     TSoapContent m_FaultDetail;
@@ -108,6 +112,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/24 20:38:28  gouriano
+* Added default object namespace name
+*
 * Revision 1.3  2003/12/04 20:55:02  gouriano
 * correct parameter names
 *

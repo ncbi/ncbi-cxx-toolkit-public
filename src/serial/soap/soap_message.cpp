@@ -75,10 +75,32 @@ const string& CSoapMessage::GetSoapNamespacePrefix(void) const
     return m_Prefix;
 }
 
+void CSoapMessage::SetDefaultObjectNamespaceName(const string& ns_name)
+{
+    m_DefNamespaceName = ns_name;
+}
+const string& CSoapMessage::GetDefaultObjectNamespaceName(void) const
+{
+    return m_DefNamespaceName;
+}
+
 
 void CSoapMessage::AddObject(const CSerialObject& obj,
-                              EMessagePart destination)
+                             EMessagePart destination)
 {
+// verify namespace
+    CSerialObject* ser = const_cast<CSerialObject*>(&obj);
+    CAnyContentObject* any = dynamic_cast<CAnyContentObject*>(ser);
+    if (any) {
+        if ((any->GetNamespaceName()).empty()) {
+            any->SetNamespaceName(m_DefNamespaceName);
+        }
+    } else {
+        if (!ser->HasNamespaceName()) {
+            ser->SetNamespaceName(m_DefNamespaceName);
+        }
+    }
+
     if (destination == eMsgHeader) {
         m_Header.push_back( CConstRef<CSerialObject>(&obj));
     } else if (destination == eMsgBody) {
@@ -253,6 +275,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/24 20:39:13  gouriano
+* Added default object namespace name
+*
 * Revision 1.5  2004/06/18 18:17:59  gouriano
 * Use SOAP v1.1 namespace for envelope
 *
