@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Anton Lavrentiev
+ * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   NCBI server meta-address info
@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2000/12/29 17:39:42  lavr
+ * Pretty printed
+ *
  * Revision 6.12  2000/12/06 22:17:02  lavr
  * Binary host addresses are now explicitly stated to be in network byte
  * order, whereas binary port addresses now use native (host) representation
@@ -88,7 +91,7 @@ extern "C" {
 #endif
 
 
-/* Bit-mask of server types
+/* Server types
  */
 typedef enum {
     fSERV_Ncbid      = 0x1,
@@ -96,8 +99,10 @@ typedef enum {
     fSERV_HttpGet    = 0x4,
     fSERV_HttpPost   = 0x8,
     fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost
-#define fSERV_StatelessOnly 0x80
 } ESERV_Type;
+
+#define fSERV_Any           0
+#define fSERV_StatelessOnly 0x80
 typedef unsigned TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 
 
@@ -130,7 +135,7 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type);
  */
 typedef struct {
     size_t         args;
-#define SERV_NCBID_ARGS(i)      ((char *)(i) + (i)->args)
+#define SERV_NCBID_ARGS(ui)     ((char *)(ui) + (ui)->args)
 } SSERV_NcbidInfo;
 
 typedef struct {
@@ -140,8 +145,8 @@ typedef struct {
 typedef struct {
     size_t         path;
     size_t         args;
-#define SERV_HTTP_PATH(i)       ((char *)(i) + (i)->path)
-#define SERV_HTTP_ARGS(i)       ((char *)(i) + (i)->args)
+#define SERV_HTTP_PATH(ui)      ((char *)(ui) + (ui)->path)
+#define SERV_HTTP_ARGS(ui)      ((char *)(ui) + (ui)->args)
 } SSERV_HttpInfo;
 
 
@@ -154,14 +159,14 @@ typedef union {
 } USERV_Info;
 
 typedef struct {
-    ESERV_Type     type;        /* type of server                           */
-    unsigned int   host;        /* host the server running on, network b.o. */
-    unsigned short port;        /* port the server running on, host b.o.    */
-    unsigned short sful;        /* true if this is a stateful server        */
-    ESERV_Flags    flag;        /* algorithm flag for the server            */
-    time_t         time;        /* relaxation/expiration time/period        */
-    double         rate;        /* rate of the server                       */
-    USERV_Info     u;           /* server type-specific data/params         */
+    ESERV_Type     type;        /* type of server                            */
+    unsigned int   host;        /* host the server running on, network b.o.  */
+    unsigned short port;        /* port the server running on, host b.o.     */
+    unsigned short sful;        /* true if this is a stateful server (def=no)*/
+    ESERV_Flags    flag;        /* algorithm flag for the server             */
+    time_t         time;        /* relaxation/expiration time/period         */
+    double         rate;        /* rate of the server                        */
+    USERV_Info     u;           /* server type-specific data/params          */
 } SSERV_Info;
 
 
