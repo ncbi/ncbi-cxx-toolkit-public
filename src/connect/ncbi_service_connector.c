@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/03 22:35:53  lavr
+ * Next working revision (bugfixes and protocol changes)
+ *
  * Revision 6.3  2000/12/29 18:05:12  lavr
  * First working revision.
  *
@@ -78,6 +81,8 @@ extern "C" {
     static const char* s_VT_GetType(CONNECTOR       connector);
     static EIO_Status  s_VT_Open   (CONNECTOR       connector,
                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status (CONNECTOR       connector,
+                                    EIO_Event       dir);
     static EIO_Status  s_VT_Close  (CONNECTOR       connector,
                                     const STimeout* timeout);
     static void        s_Setup     (SMetaConnector *meta,
@@ -112,12 +117,13 @@ static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
  */
 static void s_Reset(SMetaConnector *meta)
 {
-    CONN_SET_METHOD(meta, wait,       0, 0);
-    CONN_SET_METHOD(meta, write,      0, 0);
-    CONN_SET_METHOD(meta, flush,      0, 0);
-    CONN_SET_METHOD(meta, read,       0, 0);
+    CONN_SET_METHOD(meta, wait,       0,           0);
+    CONN_SET_METHOD(meta, write,      0,           0);
+    CONN_SET_METHOD(meta, flush,      0,           0);
+    CONN_SET_METHOD(meta, read,       0,           0);
+    CONN_SET_METHOD(meta, status,     s_VT_Status, 0);
 #ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, 0, 0);
+    CONN_SET_METHOD(meta, wait_async, 0,           0);
 #endif
 }
 
@@ -146,13 +152,15 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
             unsigned char o1, o2, o3, o4;
             char host[64];
 
-            if (sscanf(line, "%d.%d.%d.%d %hu %x",
+            if (sscanf(line + sizeof(CONNECTION_INFO) - 1,
+                       "%d.%d.%d.%d %hu %x",
                        &i1, &i2, &i3, &i4, &uuu->port, &temp) < 6)
                 return 0/*failed*/;
             o1 = i1; o2 = i2; o3 = i3; o4 = i4;
             sprintf(host, "%d.%d.%d.%d", o1, o2, o3, o4);
             uuu->host = SOCK_gethostaddr(host);
             uuu->tckt = SOCK_htonl(temp);
+            SOCK_ntoa(uuu->host, host, sizeof(host));
             break;
         }
         if ((line = strchr(line, '\n')) != 0)
@@ -173,6 +181,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
 {
     SServiceConnector* uuu = (SServiceConnector*) data;
 
+    printf("Adjust info called with n = %d\n", n);
     if (n) {
         /* Failed connection request */
         
@@ -197,9 +206,11 @@ static EIO_Status s_VT_Open
 
     if (!uuu->iter && !s_OpenDispatcher(uuu))
         return eIO_Unknown;
-
-    if (uuu->info->client_mode != eClientModeFirewall)
-        info = SERV_GetNextInfo(uuu->iter);
+    
+    if (uuu->info->client_mode != eClientModeFirewall &&
+        !(info = SERV_GetNextInfo(uuu->iter)) &&
+        !(info = SERV_GetNextInfo(uuu->iter)))
+        return eIO_Unknown;
 
     if (!(net_info = ConnNetInfo_Clone(uuu->info)))
         return eIO_Unknown;
@@ -219,8 +230,7 @@ static EIO_Status s_VT_Open
                 net_info->req_method = eReqMethodPost;
                 header = "Connection-Mode: Stateless\r\n";
             }
-            strncpy(net_info->path, NCBID_NAME,
-                    sizeof(net_info->path) - 1);
+            strncpy(net_info->path, NCBID_NAME, sizeof(net_info->path) - 1);
             net_info->path[sizeof(net_info->path) - 1] = '\0';
             
             strncpy(net_info->args, SERV_NCBID_ARGS(&info->u.ncbid),
@@ -254,27 +264,8 @@ static EIO_Status s_VT_Open
         default: /* case fSERV_Standalone: */
             break;
         }
-    } else {
-        /* No connection point known */
-        switch (net_info->client_mode) {
-        case eClientModeFirewall:
-            /* This will be a dispatching request with conn-info back */
-            header = "Client-Mode: FIREWALL\r\n";
-            break;
-        case eClientModeStatefulCapable:
-            /* This will be a 'thru' stateless connection request
-               but with stateful dispatching info allowed.
-               NB: This has been eliminated, because as of present version,
-               we cannot substitute connector on-fly while we work with it :-(
-               header = "Dispatch-Mode: STATEFUL_INCLUSIVE"; */
-            header = "";
-            break;
-        case eClientModeStatelessOnly:
-            /* This will be a 'thru' stateless connection request */
-            header = "";
-            break;
-        }
-    }
+    } else
+        header = "Client-Mode: FIREWALL\r\n";
     
     if (header) {
         /* We create HTTP connector here */
@@ -300,7 +291,7 @@ static EIO_Status s_VT_Open
                                       uuu/*adj.data*/, 0/*clenup.data*/);
         /* What do we expect now? */
         if (net_info->client_mode == eClientModeFirewall ||
-            (info && info->type == fSERV_Ncbid && info->sful &&
+            (info && info->type == fSERV_Ncbid &&
              net_info->client_mode != eClientModeStatelessOnly)) {
             /* We'll wait for connection-info back */
             CONN c;
@@ -328,12 +319,12 @@ static EIO_Status s_VT_Open
         conn = SOCK_CreateConnector(net_info->host, net_info->port,
                                     net_info->max_try);
     }
-
+    
     ConnNetInfo_Destroy(net_info);
-
+    
     if (!conn)
         return eIO_Unknown;
-
+    
     status = METACONN_Add(&uuu->meta, conn);
     assert(status == eIO_Success);
     conn->meta = meta;
@@ -344,6 +335,7 @@ static EIO_Status s_VT_Open
     CONN_SET_METHOD(meta, write, uuu->meta.write, uuu->meta.c_write);
     CONN_SET_METHOD(meta, flush, uuu->meta.flush, uuu->meta.c_flush);
     CONN_SET_METHOD(meta, read,  uuu->meta.read,  uuu->meta.c_read);
+    CONN_SET_METHOD(meta, status,uuu->meta.status,uuu->meta.c_status);
 #ifdef IMPLEMENTED__CONN_WaitAsync
     CONN_SET_METHOD(meta, wait_async,
                     uuu->meta.wait_async, uuu->meta.c_wait_async);
@@ -363,8 +355,16 @@ static EIO_Status s_VT_Open
             }
         }
     }
-
+    
     return status;
+}
+
+
+static EIO_Status s_VT_Status
+(CONNECTOR      connector,
+ EIO_Event      dir)
+{
+    return eIO_Success;
 }
 
 
