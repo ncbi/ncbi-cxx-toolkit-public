@@ -331,13 +331,13 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, bool is_text, bool logit, 
 						          SQLPOINTER id, CODBC_Reporter& rep)
 {
-    string q= "set rowcount 1;\nupdate ";
+    string q= "update ";
     q+= descr_in.TableName();
     q+= " set ";
     q+= descr_in.ColumnName();
     q+= "=? where ";
     q+= descr_in.SearchConditions();
-    q+= " ;\nset rowcount 0";
+    //q+= " ;\nset rowcount 0";
 
 	if(!logit) {
 		switch(SQLSetStmtAttr(cmd, SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
@@ -358,12 +358,33 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
 	default: return false;
 	}
 			
+	SQLSMALLINT par_type, par_dig, par_null;
+    SQLUINTEGER par_size;
+
+#if 0
+	switch(SQLNumParams(cmd, &par_dig)) {
+	case SQL_SUCCESS: break;
+	case SQL_SUCCESS_WITH_INFO:
+	case SQL_ERROR:
+		rep.ReportErrors();
+	default: return false;
+	}
+#endif
+
+	switch(SQLDescribeParam(cmd, 1, &par_type, &par_size, &par_dig, &par_null)){
+	case SQL_SUCCESS_WITH_INFO:
+		rep.ReportErrors();
+	case SQL_SUCCESS: break;
+	case SQL_ERROR:
+		rep.ReportErrors();
+	default: return false;
+	}
 
     SQLINTEGER p= SQL_LEN_DATA_AT_EXEC(size);
 
     switch(SQLBindParameter(cmd, 1, SQL_PARAM_INPUT, 
-                     is_text? SQL_C_CHAR : SQL_C_BINARY,
-                     is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
+                     is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
+                     // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
                      size, 0, id, 0, &p)) {
 	case SQL_SUCCESS_WITH_INFO:
 		rep.ReportErrors();
@@ -497,6 +518,20 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         return 0;
     }
 
+    size_t s;
+    switch(SQLParamData(m_Cmd, (SQLPOINTER*)&s)) {
+	case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+    case SQL_SUCCESS:           break;
+	case SQL_NO_DATA:           break;
+    case SQL_NEED_DATA: 
+	    throw CDB_ClientEx(eDB_Error, 410044, "CODBC_Connection::SendChunk",
+                               "Not all the data were sent");
+	case SQL_ERROR:             m_Reporter.ReportErrors();
+	default:
+		throw CDB_ClientEx(eDB_Error, 410045, "CODBC_Connection::SendChunk",
+                           "SQLParamData failed");
+	}
+
     for(;;) {
         switch(SQLMoreResults(m_Cmd)) {
         case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
@@ -510,6 +545,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
             throw CDB_ClientEx(eDB_Error, 410015, "CODBC_SendDataCmd::SendChunk",
                                "SQLMoreResults failed (memory corruption suspected)");
         }
+		break;
     }
     return nof_bytes;
 }
@@ -553,8 +589,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2002/06/18 22:06:24  soussov
- * initial commit
+ * Revision 1.2  2002/07/05 20:47:56  soussov
+ * fixes bug in SendData
  *
  *
  * ===========================================================================
