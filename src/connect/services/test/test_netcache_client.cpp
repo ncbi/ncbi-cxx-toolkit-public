@@ -272,7 +272,7 @@ void s_RemoveBLOB_Test(const string& host, unsigned short port)
 static
 void s_ReadUpdateCharTest(const string& host, unsigned short port)
 {
-    CNetCacheClient nc("graceland", 9000);
+    CNetCacheClient nc(host, port);
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, 100);
@@ -290,6 +290,15 @@ void s_ReadUpdateCharTest(const string& host, unsigned short port)
     assert(blob_size == 1);
 }
 
+static
+void s_TestAlive(const string& host, unsigned short port)
+{
+    CNetCacheClient ncc (host, port);
+    bool b = ncc.IsAlive();
+    assert(b);
+    b = ncc.IsAlive();
+    assert(b);
+}
 
 int CTestNetCacheClient::Run(void)
 {
@@ -303,8 +312,8 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CSocket sock(host, port);
-        STimeout to = {0,0};
-        sock.SetTimeout(eIO_ReadWrite, &to);
+//        STimeout to = {0,0};
+//        sock.SetTimeout(eIO_ReadWrite, &to);
         CNetCacheClient nc_client(&sock);
 
         key = nc_client.PutData(test_data, sizeof(test_data));
@@ -386,6 +395,8 @@ int CTestNetCacheClient::Run(void)
 
     s_ReadUpdateCharTest(host, port);
 
+    s_TestAlive(host, port);
+
 /*
     unsigned delay = 70;
     cout << "Sleeping for " << delay << " seconds. Please wait...." << flush;
@@ -420,11 +431,12 @@ int CTestNetCacheClient::Run(void)
 
     cout << "Shutdown server" << endl;
     // Shutdown server
+/*
     {{
         CNetCacheClient nc_client(host, port);
         nc_client.ShutdownServer();
     }}
-    
+*/    
     return 0;
 }
 
@@ -438,6 +450,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/20 13:30:33  kuznets
+ * Minor changes
+ *
  * Revision 1.14  2004/11/09 20:05:31  kuznets
  * Two new tests from Yuri Kapustin
  *
