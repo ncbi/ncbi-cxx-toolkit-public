@@ -27,6 +27,10 @@ shift
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
+# Make timestamp
+timestamp_file="/tmp/check_exec_timestamp.$$"
+touch timestamp_file
+
 # Run command
 "$@" &
 pid=$!
@@ -41,20 +45,17 @@ status=$?
 
 # Special check for core file on Darwin
 if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
-   sleep 0 > /dev/null 2>&1  &
-   end_pid=$!
-   p=$pid
-   while [ $p -lt $end_pid ]; do
-      core="/cores/core.$p"
+   core_files=`find /cores/core.* -newer timestamp_file`
+   for core in $core_files ; do
       if [ -O "$core" ]; then
          # Move the core file to current directory with name "core"
          mv $core ./core > /dev/null 2>&1
          # Save only last core file
          # break
       fi
-      p=`expr $p + 1`
    done
-fi 
+fi
+rm timestamp_file > /dev/null 2&>1
 
 # Return test exit code
 exit $status
