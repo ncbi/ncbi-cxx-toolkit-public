@@ -398,14 +398,15 @@ bool CDBL_LangCmd::x_AssignParams()
             case eDB_SmallDateTime: {
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
-                strcpy(val_buffer, val.Value().AsString("M/D/Y h:m").c_str());
+                sprintf(val_buffer, "'%s'\n",
+			val.Value().AsString("M/D/Y h:m").c_str());
                 break;
             }
             case eDB_DateTime: {
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
-                strcpy(val_buffer,
-                       val.Value().AsString("M/D/Y h:m:s:S").c_str());
+                sprintf(val_buffer, "'%s'\n",
+			val.Value().AsString("M/D/Y h:m:s:S").c_str());
                 break;
             }
             default:
@@ -428,6 +429,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/12/18 16:47:11  soussov
+ * fixes bug in datetime argument processing
+ *
  * Revision 1.3  2001/12/13 23:48:44  soussov
  * inserts space after declare
  *
