@@ -796,6 +796,8 @@ void CObjectIStream::ReadChoiceVariant(const CObjectInfoCV& object)
 
 string CObjectIStream::ReadFileHeader(void)
 {
+    // this is to check if the file is empty or not
+    m_Input.PeekChar();
     return NcbiEmptyString;
 }
 
@@ -1520,6 +1522,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.133  2004/12/06 18:27:38  gouriano
+* Check if the file is empty in ReadFileHeader
+*
 * Revision 1.132  2004/11/30 15:06:04  dicuccio
 * Added #include for ncbithr.hpp
 *
