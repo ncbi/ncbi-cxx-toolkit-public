@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/04/13 06:33:52  lavr
+ * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
+ *
  * Revision 6.13  2001/07/31 15:07:58  lavr
  * Added paranoia log message: freeing a block in a NULL heap
  *
@@ -166,7 +169,7 @@ struct SHEAP_tag {
     TNCBI_Size    size;
     TNCBI_Size    chunk;
     FHEAP_Expand  expand;
-    int/*bool*/   copy;
+    int/*bool*/   copy;    /* (!=0) keeps user's serial number if provided */
 };
 
 
@@ -193,7 +196,7 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
     chunk = (TNCBI_Size) HEAP_ALIGN(chunk);
     if (!base) {
         size = (TNCBI_Size) _HEAP_ALIGN(sizeof(*b) + 1, chunk);
-        if (!expand || !(base = (*expand)(base, size))) {
+        if (!expand || !(base = (*expand)(0, size))) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Create: Cannot create (size = %u)",
                        (unsigned) size));
@@ -211,7 +214,7 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
     heap->size   = size;
     heap->chunk  = chunk;
     heap->expand = expand;
-    heap->copy   = 0;
+    heap->copy   = 0; /* original */
     b = (SHEAP_Block*) heap->base;
     b->flag = HEAP_FREE | HEAP_LAST;
     b->size = size;
@@ -245,7 +248,7 @@ HEAP HEAP_Attach(char* base)
     heap->base   = base;
     heap->chunk  = 0;
     heap->expand = 0;
-    heap->copy   = 0;
+    heap->copy   = 0; /* original */
     return heap;
 }
 
@@ -482,7 +485,7 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
 }
 
 
-HEAP HEAP_Copy(HEAP heap)
+HEAP HEAP_CopySerial(HEAP heap, int serial)
 {
     HEAP newheap;
     char* buf;
@@ -496,7 +499,7 @@ HEAP HEAP_Copy(HEAP heap)
     newheap->size   = heap->size;
     newheap->chunk  = 0;
     newheap->expand = 0;
-    newheap->copy   = 1;
+    newheap->copy   = serial ? serial : 1; /* copy */
     return newheap;
 }
 
@@ -523,4 +526,28 @@ void HEAP_Destroy(HEAP heap)
             (*heap->expand)(heap->base, 0);
         HEAP_Detach(heap);
     }
+}
+
+
+char* HEAP_Base(const HEAP heap)
+{
+    if (heap)
+        return heap->base;
+    return 0;
+}
+
+
+size_t HEAP_Size(const HEAP heap)
+{
+    if (heap)
+        return heap->size;
+    return 0;
+}
+
+
+int HEAP_Serial(const HEAP heap)
+{
+    if (heap)
+        return heap->copy;
+    return 0;
 }

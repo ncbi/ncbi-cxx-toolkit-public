@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/04/13 06:33:22  lavr
+ * +HEAP_Base(), +HEAP_Size(), +HEAP_Serial(), new HEAP_CopySerial()
+ *
  * Revision 6.9  2001/07/03 20:23:46  lavr
  * Added function: HEAP_Copy()
  *
@@ -131,11 +134,15 @@ SHEAP_Block* HEAP_Walk
  );
 
 
-/* Make a snapshot of a given heap. Returne a read-only heap
+/* Make a snapshot of a given heap. Return a read-only heap
  * (like one after HEAP_Attach), which must be freed by a call to
  * either HEAP_Detach or HEAP_Destroy when no longer needed.
+ * If a non-zero number provided (serial number) it is stored
+ * in the heap descriptor (zero number is always changed into 1).
  */
-HEAP HEAP_Copy(HEAP orig);
+HEAP HEAP_CopySerial(HEAP orig, int serial);
+
+#define HEAP_Copy(orig) HEAP_CopySerial(orig, 0)
 
 
 /* Detach heap (previously attached by HEAP_Attach).
@@ -146,6 +153,22 @@ void HEAP_Detach(HEAP heap);
 /* Destroy heap (previously created by HEAP_Create).
  */
 void HEAP_Destroy(HEAP heap);
+
+
+/* Get base address of the heap
+ */
+char* HEAP_Base(const HEAP heap);
+
+
+/* Get the extent of the heap
+ */
+size_t HEAP_Size(const HEAP heap);
+
+
+/* Get non-zero serial number of the heap.
+ * Return 0 if HEAP is passed as 0, or the heap is not a copy but original.
+ */
+int HEAP_Serial(const HEAP heap);
 
 
 #ifdef __cplusplus
