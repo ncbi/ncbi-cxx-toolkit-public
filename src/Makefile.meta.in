@@ -138,3 +138,11 @@ RELEVANT_SUBS = find "`pwd`" -type d | $(RELEVANT)
 all_p: $(RELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
 	@if $(RELEVANT_SUBS); then $(SUB_BRA) all_p $(SUB_KET); else true; fi
+
+clean_p: $(RELEVANT_FILE)
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
+	@if $(RELEVANT_SUBS); then $(SUB_BRA) clean_p $(SUB_KET); else true; fi
+
+purge_p: $(RELEVANT_FILE)
+	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) purge; else true; fi
+	@if $(RELEVANT_SUBS); then $(SUB_BRA) purge_p $(SUB_KET); else true; fi
