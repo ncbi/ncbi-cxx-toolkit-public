@@ -879,6 +879,33 @@ CSeq_id::CSeq_id
     x_Init(the_type, acc_in, name_in, version, release_in);
 }
 
+CSeq_id::CSeq_id
+( CSeq_id_Base::E_Choice the_type,
+  int           the_id)
+{
+  if(the_id<=0)
+    THROW1_TRACE(invalid_argument, "Specified Seq-id value is negative");
+  
+  switch (the_type) {
+  case CSeq_id::e_Local:
+    SetLocal().SetId(the_id);
+    break;
+  case CSeq_id::e_Gibbsq:
+    SetGibbsq(the_id);
+    break;
+  case CSeq_id::e_Gibbmt:
+    SetGibbmt(the_id);
+    break;
+  case CSeq_id::e_Giim:
+    SetGiim().SetId(the_id);
+    break;
+  case CSeq_id::e_Gi:
+    SetGi(the_id);
+    break;
+  default:
+    THROW1_TRACE(invalid_argument, "Specified Seq-id type is not numeric seq-id");
+  }  
+}
 
 // Karl Sirotkin 7/2001
 
@@ -1079,6 +1106,7 @@ CSeq_id::x_Init
 }
 
 
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -1086,6 +1114,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.49  2003/01/18 08:40:03  kimelman
+ * addes seqid constructor for numeric types
+ *
  * Revision 6.48  2003/01/15 18:27:13  ucko
  * +AK (accidentally skipped earlier -- sigh)
  *

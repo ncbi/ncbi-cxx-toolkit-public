@@ -74,6 +74,9 @@ public:
 
     // With proper choice
     CSeq_id(CSeq_id_Base::E_Choice the_type,
+            int           int_seq_id);     // see explanation in x_Init below
+    // With proper choice
+    CSeq_id(CSeq_id_Base::E_Choice the_type,
             const string&          acc_in,  // see explanation in x_Init below
             const string&          name_in,
             // force not optional; if not given, use the constructor below
@@ -363,6 +366,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2003/01/18 08:40:04  kimelman
+ * addes seqid constructor for numeric types
+ *
  * Revision 1.31  2003/01/07 19:52:07  ucko
  * Add more refseq types (NR_, NS_, NW_) and list the prefixes as comments.
  *
