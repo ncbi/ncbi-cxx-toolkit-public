@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/04/16 22:04:20  lavr
+ * #undef _ASSERT added for Windows to resolve macro redefinition
+ *
  * Revision 6.8  2002/04/15 23:51:10  lavr
  * +#include <stdio.h> to define stderr
  *
@@ -66,6 +69,7 @@
 #include "../ncbi_config.h"
 
 #ifdef NCBI_OS_MSWIN
+#  undef _ASSERT
 #  include <crtdbg.h>
 #  include <stdio.h>
 #  include <windows.h>
