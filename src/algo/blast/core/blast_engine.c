@@ -693,7 +693,7 @@ BLAST_SearchEngine(Uint1 program_number,
       /* Calculate cutoff scores for linking HSPs */
       if (hit_params->do_sum_stats) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
-                                 hit_params, db_length, seq_arg.seq->length);
+                                 hit_params, ext_params, db_length, seq_arg.seq->length); 
       }
 
       BLAST_SearchEngineCore(program_number, query, query_info,

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.103  2004/05/10 14:27:23  madden
+ * Correction to CalculateLinkHSPCutoffs to use gap_trigger in calculation of small cutoff
+ *
  * Revision 1.102  2004/05/07 15:22:15  papadopo
  * 1. add functions to allocate and free BlastScoringParameters structures
  * 2. apply a scaling factor to all cutoffs generated in HitSavingParameters
@@ -1642,13 +1645,14 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
 void
 CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
+   BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length)
 {
 	double gap_prob, gap_decay_rate, x_variable, y_variable;
 	Blast_KarlinBlk* kbp;
 	Int4 expected_length, gap_size, query_length;
 	Int8 search_sp;
-   Boolean translated_subject = (program == blast_type_tblastn || 
+        Boolean translated_subject = (program == blast_type_tblastn || 
                                  program == blast_type_rpstblastn || 
                                  program == blast_type_tblastx);
 
@@ -1700,7 +1704,7 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
       x_variable = y_variable*(gap_size*gap_size);
       x_variable /= (gap_prob + MY_EPS);
       hit_params->cutoff_small_gap = 
-         MAX(hit_params->cutoff_small_gap, 
+         MAX(ext_params->gap_trigger, 
              (Int4) floor((log(x_variable)/kbp->Lambda)) + 1);
 
       hit_params->ignore_small_gaps = FALSE;
