@@ -34,13 +34,15 @@
 */
 
 /// @file flat_gff_formatter.hpp
-/// Flat formatter for Generic Feature Format (incl. Gene Transfer Format)
+/// Flat formatter for Generic Feature Format v2 (incl. Gene Transfer Format).
 ///
 /// These formats are somewhat loosely defined (for the record, at
 /// http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml and
 /// http://genes.cs.wustl.edu/GTF2.html respectively) so we default to
 /// GenBank/DDBJ/EMBL keys and qualifiers except as needed for GTF
 /// compatibility.
+///
+/// There is a separate formatter (subclassing this one) for GFF 3.
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -71,25 +73,34 @@ public:
 
     CGFFFormatter(void);
 
-    virtual void Start       (IFlatTextOStream& text_os);
-    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream& text_os);
-    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream& text_os);
+    void Start       (IFlatTextOStream& text_os);
+    void StartSection(const CStartSectionItem&, IFlatTextOStream& text_os);
+    void EndSection  (const CEndSectionItem&,   IFlatTextOStream& text_os);
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
-    virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os);
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
+    void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
+    void FormatDate(const CDateItem& date, IFlatTextOStream& text_os);
+    void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
+    void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
+    void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
 
-private:
-    string x_GetGeneID(const CFlatFeature& feat, const string& gene_name, CBioseqContext& ctx) const;
-    string x_GetTranscriptID(const CFlatFeature& feat, const string& gene_id, CBioseqContext& ctx) const;
+protected:
+    virtual string x_GetAttrSep(void) const { return " "; }
+    virtual string x_FormatAttr(const string& name, const string& value) const;
+    virtual void   x_AddGeneID(list<string>& attr_list, const string& gene_id,
+                               const string& transcript_id) const;
+
     string x_GetSourceName(CBioseqContext& ctx) const;
     void   x_AddFeature(list<string>& l, const CSeq_loc& loc,
                         const string& source, const string& key,
                         const string& score, int frame, const string& attrs,
                         bool gtf, CBioseqContext& ctx,
                         bool tentative_stop = false) const;
+
+private:
+    string x_GetGeneID(const CFlatFeature& feat, const string& gene_name,
+                       CBioseqContext& ctx) const;
+    string x_GetTranscriptID(const CFlatFeature& feat, const string& gene_id,
+                             CBioseqContext& ctx) const;
 
     mutable TGFFFlags           m_GFFFlags;
     //CRef<IFlatTextOStream> m_Stream;
@@ -116,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/06/21 18:52:13  ucko
+* Refactor to ease subclassing by the GFF 3 formatter.
+*
 * Revision 1.3  2004/05/08 12:13:56  dicuccio
 * Added x_GetTranscripID() for handling transcript IDs
 *

@@ -63,7 +63,7 @@ void CGFFFormatter::Start(IFlatTextOStream& text_os)
 {
     list<string> l;
     l.push_back("##gff-version 2");
-    l.push_back("##source-version NCBI C++ formatter 0.1");
+    l.push_back("##source-version NCBI C++ formatter 0.2");
     l.push_back("##date " + CurrentTime().AsString("Y-M-D"));
     text_os.AddParagraph(l);
 }
@@ -88,7 +88,8 @@ void CGFFFormatter::StartSection(const CStartSectionItem& ssec, IFlatTextOStream
 }
 
 
-void CGFFFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_os)
+void CGFFFormatter::EndSection(const CEndSectionItem&,
+                               IFlatTextOStream& text_os)
 {
     if ( !m_EndSequence.empty() ) {
         list<string> l;
@@ -155,7 +156,7 @@ void CGFFFormatter::FormatFeature
     list<string>  attr_list;
 
     if ( !oldkey.empty() ) {
-        attr_list.push_back("gbkey \"" + oldkey + "\";");
+        attr_list.push_back(x_FormatAttr("gbkey", oldkey));
     }
 
     ITERATE (CFlatFeature::TQuals, it, feat->GetQuals()) {
@@ -168,30 +169,18 @@ void CGFFFormatter::FormatFeature
         } else if ((m_GFFFlags & fGTFCompat)  &&  !ctx.IsProt()
                    &&  name == "gene") {
             string gene_id = x_GetGeneID(*feat, (*it)->GetValue(), ctx);
+            string transcript_id;
             if (key != "gene") {
-                string transcript_id = x_GetTranscriptID(*feat, gene_id, ctx);
-                attr_list.push_front
-                    ("transcript_id \"" + transcript_id + "\";");
+                transcript_id = x_GetTranscriptID(*feat, gene_id, ctx);
             }
-            attr_list.push_front("gene_id \"" + gene_id + "\";");
+            x_AddGeneID(attr_list, gene_id, transcript_id);
             continue;
+        } else if (name == "transcript_id") {
+            name = "insd_transcript_id";
         }
-        string value;
-        NStr::Replace((*it)->GetValue(), " \b", kEmptyStr, value);
-        string value2(NStr::PrintableString(value));
-        // some parsers may be dumb, so quote further
-        value.erase();
-        ITERATE (string, c, value2) {
-            switch (*c) {
-            case ' ':  value += "\\x20"; break;
-            case '\"': value += "x22";   break; // already backslashed
-            case '#':  value += "\\x23"; break;
-            default:   value += *c;
-            }
-        }
-        attr_list.push_back(name + " \"" + value + "\";");
+        attr_list.push_back(x_FormatAttr(name, (*it)->GetValue()));
     }
-    string attrs(NStr::Join(attr_list, " "));
+    string attrs(NStr::Join(attr_list, x_GetAttrSep()));
 
     string source = x_GetSourceName(ctx);
 
@@ -231,7 +220,8 @@ void CGFFFormatter::FormatFeature
         }
     }
 
-    x_AddFeature(l, f.GetLoc(), source, key, "." /*score*/, frame, attrs, gtf, ctx, tentative_stop);
+    x_AddFeature(l, f.GetLoc(), source, key, "." /*score*/, frame, attrs,
+                 gtf, ctx, tentative_stop);
 
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
@@ -264,11 +254,41 @@ void CGFFFormatter::FormatFeature
         }
         if ( tentative_stop ) {
             x_AddFeature(l, *tentative_stop, source, "stop_codon",
-                                 "." /* score */, 0, attrs, gtf, ctx);
+                         "." /* score */, 0, attrs, gtf, ctx);
         }
     }
 
     text_os.AddParagraph(l, &seqfeat);
+}
+
+
+string CGFFFormatter::x_FormatAttr(const string& name, const string& value)
+    const
+{
+    string value1;
+    NStr::Replace(value, " \b", kEmptyStr, value1);
+    string value2(NStr::PrintableString(value1));
+    // some parsers may be dumb, so quote further
+    value1.erase();
+    ITERATE (string, c, value2) {
+        switch (*c) {
+        case ' ':  value1 += "\\x20"; break;
+        case '\"': value1 += "x22";   break; // already backslashed
+        case '#':  value1 += "\\x23"; break;
+        default:   value1 += *c;
+        }
+    }
+    return name + " \"" + value1 + "\";";
+}
+
+
+void CGFFFormatter::x_AddGeneID(list<string>& attr_list, const string& gene_id,
+                                const string& transcript_id) const
+{
+    if ( !transcript_id.empty() ) {
+        attr_list.push_front(x_FormatAttr("transcript_id", transcript_id));
+    }
+    attr_list.push_front(x_FormatAttr("gene_id", gene_id));
 }
 
 
@@ -520,7 +540,7 @@ void CGFFFormatter::x_AddFeature
             strand = '-';
         } else if (it.GetRange().IsWhole()
                    ||  (m_Strandedness <= CSeq_inst::eStrand_ss
-                        &&  ctx.GetMol() != CSeq_inst::eMol_dna)) {
+                        &&  ctx.GetMol() == CSeq_inst::eMol_aa)) {
             strand = '.'; // N/A
         }
 
@@ -532,7 +552,7 @@ void CGFFFormatter::x_AddFeature
         }
 
         string extra_attrs;
-        if (gtf  &&  attrs.find("exon_number ") == NPOS) {
+        if (gtf  &&  attrs.find("exon_number") == NPOS) {
             CSeq_loc       loc2;
             CSeq_interval& si = loc2.SetInt();
             si.SetFrom(from);
@@ -553,8 +573,8 @@ void CGFFFormatter::x_AddFeature
                     }
                 }
             }
-            extra_attrs = " exon_number \"" + NStr::IntToString(exon_number)
-                + "\";";
+            extra_attrs = x_GetAttrSep()
+                + x_FormatAttr("exon_number", NStr::IntToString(exon_number));
             ++exon_number;
         }
 
@@ -587,6 +607,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/06/21 18:53:42  ucko
+* Refactor to ease subclassing by the GFF 3 formatter.
+*
 * Revision 1.7  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
