@@ -95,11 +95,20 @@ public:
     // Return TRUE if Probe found at least one top level objects
     bool IsTopObjectFound() const { return m_TopLevelMap.size() != 0; }
 
-    // Event handling virtual function, called when top level object is found, 
-    // matching one of the candidates. This function can be overloaded in child
-    // classes to implement some custom actions 
-    // (like remembering the read object, initialization of UI, etc).
-    virtual void TopObjectFound(CObjectInfo& object);
+    // Return stream offset of the most recently found top object.
+    // Note: If the top object has not been found return value is undefined.
+    size_t GetStreamOffset() const { return m_StreamOffset; }
+
+    // Event handling virtual function, called when candidate is found but 
+    // before deserialization. This function can be overloaded in child
+    // classes to implement some custom actions. This function is called before
+    // deserialization.
+    virtual void ObjectFoundPre(const CObjectInfo& object, 
+                                size_t stream_offset);
+    
+    // Event handling virtual function, called when candidate is found
+    // and deserialized.
+    virtual void ObjectFoundPost(const CObjectInfo& object);
 
 protected:
     void ProbeASN1_Text(CObjectIStream& input);
@@ -111,6 +120,7 @@ private:
 
     TCandidates         m_Candidates;  // Possible candidates for type probing
     TTopLevelMapVector  m_TopLevelMap; // Vector of level object descriptions
+    size_t              m_StreamOffset;// Stream offset of the
 };
 
 
@@ -122,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/21 14:27:49  kuznets
+ * Added methods ObjectFoundPre, ObjectFoundPost
+ *
  * Revision 1.2  2003/05/19 16:38:37  kuznets
  * Added support for ASN text
  *
