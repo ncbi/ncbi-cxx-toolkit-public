@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/05/21 18:40:15  grichenk
+* Prohibited copy constructor and operator =()
+*
 * Revision 1.16  2002/05/06 03:30:36  vakatov
 * OM/OM1 renaming
 *
@@ -182,11 +185,9 @@ public:
 
     // 'ctors
     CSeqMap(void);
-    CSeqMap(const CSeqMap& another);
     ~CSeqMap(void);
 
     const size_t size(void) const;
-    CSeqMap& operator=(const CSeqMap& another);
     // Get all intervals
     const CSegmentInfo& operator[](size_t seg_idx) const;
 
@@ -199,6 +200,9 @@ private:
         bool minus_strand = false);
 
 private:
+    // Prohibit copy operator and constructor
+    CSeqMap(const CSeqMap&);
+    CSeqMap& operator= (const CSeqMap&);
     // Get the segment containing point "pos"
     size_t x_FindSegment(TSeqPos pos);
     // Try to resolve segment lengths up to the "pos". Return index of the
@@ -348,12 +352,6 @@ CSeqMap::CSeqMap(void)
 }
 
 inline
-CSeqMap::CSeqMap(const CSeqMap& another)
-{
-    *this = another;
-}
-
-inline
 CSeqMap::~CSeqMap(void)
 {
     return;
@@ -363,22 +361,6 @@ inline
 const size_t CSeqMap::size(void) const
 {
     return m_Data.size();
-}
-
-inline
-CSeqMap& CSeqMap::operator=(const CSeqMap& another)
-{
-    if (this != &another)
-    {
-        m_Data.clear();
-        vector< CRef< CSegmentInfo> >::const_iterator it;
-        for (it = another.m_Data.begin(); it != another.m_Data.end(); ++it)
-        {
-            m_Data.push_back( *it);
-        }
-    }
-    m_FirstUnresolvedPos = another.m_FirstUnresolvedPos;
-    return *this;
 }
 
 inline
