@@ -47,19 +47,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annot_id.hpp>
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/seq__.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -345,10 +333,63 @@ bool CBlobSplitterImpl::CopyDescr(CBioseq_SplitInfo& bioseq_info,
 }
 
 
-TSeqPos GetLength(const CSeq_loc& loc)
+TSeqPos GetLength(const CSeq_data& src)
 {
-    _ASSERT(loc.Which() == CSeq_loc::e_Int);
-    return loc.GetInt().GetLength();
+    switch ( src.Which() ) {
+    case CSeq_data::e_Iupacna:
+        return src.GetIupacna().Get().size();
+    case CSeq_data::e_Iupacaa:
+        return src.GetIupacaa().Get().size();
+    case CSeq_data::e_Ncbi2na:
+        return src.GetNcbi2na().Get().size()*4;
+    case CSeq_data::e_Ncbi4na:
+        return src.GetNcbi4na().Get().size()*2;
+    case CSeq_data::e_Ncbi8na:
+        return src.GetNcbi8na().Get().size();
+    case CSeq_data::e_Ncbi8aa:
+        return src.GetNcbi8aa().Get().size();
+    case CSeq_data::e_Ncbieaa:
+        return src.GetNcbieaa().Get().size();
+    default:
+        return kInvalidSeqPos;
+    }
+}
+
+
+TSeqPos GetLength(const CSeq_ext& src)
+{
+    _ASSERT(src.Which() == CSeq_ext::e_Delta);
+    const CDelta_ext& src_delta = src.GetDelta();
+    TSeqPos ret = 0;
+    ITERATE ( CDelta_ext::Tdata, it, src_delta.Get() ) {
+        const CDelta_seq& src_seq = **it;
+        switch ( src_seq.Which() ) {
+        case CDelta_seq::e_Loc:
+            ret += src_seq.GetLoc().GetInt().GetLength();
+            break;
+        case CDelta_seq::e_Literal:
+            ret += src_seq.GetLiteral().GetLength();
+            break;
+        default:
+            break;
+        }
+    }
+    return ret;
+}
+
+
+TSeqPos GetLength(const CSeq_inst& src)
+{
+    if ( src.IsSetLength() ) {
+        return src.GetLength();
+    }
+    else if ( src.IsSetSeq_data() ) {
+        return GetLength(src.GetSeq_data());
+    }
+    else if ( src.IsSetExt() ) {
+        return GetLength(src.GetExt());
+    }
+    return kInvalidSeqPos;
 }
 
 
@@ -364,8 +405,10 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
 
     dst.SetRepr(src.GetRepr());
     dst.SetMol(src.GetMol());
-    if ( src.IsSetLength() )
-        dst.SetLength(src.GetLength());
+
+    TSeqPos seq_length = GetLength(src);
+    if ( seq_length != kInvalidSeqPos )
+        dst.SetLength(seq_length);
     if ( src.IsSetFuzz() )
         dst.SetFuzz(const_cast<CInt_fuzz&>(src.GetFuzz()));
     if ( src.IsSetTopology() )
@@ -378,8 +421,8 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
     if ( src.IsSetSeq_data() ) {
         CSeq_data_SplitInfo data;
         CRange<TSeqPos> range;
-        range.SetFrom(0).SetLength(src.GetLength());
-        data.SetSeq_data(gi, range, src.GetSeq_data(), m_Params);
+        range.SetFrom(0).SetLength(seq_length);
+        data.SetSeq_data(gi, range, seq_length, src.GetSeq_data(), m_Params);
         info.Add(data);
     }
     else {
@@ -396,7 +439,7 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
             switch ( src_seq.Which() ) {
             case CDelta_seq::e_Loc:
                 new_seq = *it;
-                length = GetLength(src_seq.GetLoc());
+                length = src_seq.GetLoc().GetInt().GetLength();
                 break;
             case CDelta_seq::e_Literal:
             {{
@@ -411,7 +454,7 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
                     CSeq_data_SplitInfo data;
                     CRange<TSeqPos> range;
                     range.SetFrom(pos).SetLength(length);
-                    data.SetSeq_data(gi, range,
+                    data.SetSeq_data(gi, range, seq_length,
                                      src_lit.GetSeq_data(), m_Params);
                     info.Add(data);
                 }
@@ -479,6 +522,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/07/01 15:42:59  vasilche
+* Put Seq-data of short sequences (proteins) tegether with annotations.
+*
 * Revision 1.10  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

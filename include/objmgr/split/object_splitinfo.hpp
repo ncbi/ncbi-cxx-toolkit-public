@@ -215,7 +215,7 @@ class CSeq_data_SplitInfo : public CObject
 {
 public:
     typedef CRange<TSeqPos> TRange;
-    void SetSeq_data(int gi, const TRange& range,
+    void SetSeq_data(int gi, const TRange& range, TSeqPos seq_length,
                      const CSeq_data& data, const SSplitterParams& params);
 
     EAnnotPriority GetPriority(void) const;
@@ -224,6 +224,8 @@ public:
     TRange GetRange(void) const;
 
     CConstRef<CSeq_data> m_Data;
+
+    EAnnotPriority m_Priority;
 
     CSize       m_Size;
     CSeqsRange  m_Location;
@@ -234,8 +236,6 @@ class CSeq_inst_SplitInfo : public CObject
 {
 public:
     typedef vector<CSeq_data_SplitInfo> TSeq_data;
-
-    EAnnotPriority GetPriority(void) const;
 
     void Add(const CSeq_data_SplitInfo& data);
 
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/01 15:42:59  vasilche
+* Put Seq-data of short sequences (proteins) tegether with annotations.
+*
 * Revision 1.5  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

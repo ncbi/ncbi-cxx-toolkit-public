@@ -322,6 +322,7 @@ int CSeq_descr_SplitInfo::GetGi(void) const
 
 void CSeq_data_SplitInfo::SetSeq_data(int gi,
                                       const TRange& range,
+                                      TSeqPos seq_length,
                                       const CSeq_data& data,
                                       const SSplitterParams& params)
 {
@@ -330,6 +331,10 @@ void CSeq_data_SplitInfo::SetSeq_data(int gi,
     m_Data.Reset(&data);
     s_Sizer.Set(data, params);
     m_Size = CSize(s_Sizer);
+    m_Priority = eAnnotPriority_low;
+    if ( seq_length <= 10000 ) {
+        m_Priority = eAnnotPriority_regular;
+    }
 }
 
 
@@ -350,7 +355,7 @@ CSeq_data_SplitInfo::TRange CSeq_data_SplitInfo::GetRange(void) const
 
 EAnnotPriority CSeq_data_SplitInfo::GetPriority(void) const
 {
-    return eAnnotPriority_low;
+    return m_Priority;
 }
 
 
@@ -371,6 +376,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/07/01 15:42:59  vasilche
+* Put Seq-data of short sequences (proteins) tegether with annotations.
+*
 * Revision 1.8  2004/06/30 23:27:59  ucko
 * Make sure to call max on identically-typed arguments.
 *
