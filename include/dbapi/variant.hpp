@@ -189,6 +189,8 @@ public:
     // Truncates from buffer end to buffer start. 
     // Truncates everything if no argument
     void Truncate(size_t len = kMax_UInt);
+    // Moves the internal position pointer
+    bool MoveTo(size_t pos);
 
 protected:
     // Set methods
@@ -237,6 +239,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.18  2003/12/10 22:34:04  kholodov
+ * Added: MoveTo() method
+ *
  * Revision 1.17  2003/12/10 21:13:42  kholodov
  * Added: size argument in CVariant(EDB_Type) constructor
  *

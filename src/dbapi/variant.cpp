@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.26  2003/12/10 22:34:14  kholodov
+* Added: MoveTo() method
+*
 * Revision 1.25  2003/12/10 21:08:48  kholodov
 * Fixed: size of the fixed size columns is now correct for NULL value
 *
@@ -626,6 +629,21 @@ void CVariant::Truncate(size_t len)
     return;
 }
 
+bool CVariant::MoveTo(size_t pos)
+{
+
+    switch(GetType()) {
+    case eDB_Image:
+        return ((CDB_Image*)GetData())->MoveTo(pos);
+        break;
+    case eDB_Text:
+        return ((CDB_Text*)GetData())->MoveTo(pos);
+        break;
+    default:
+        throw CVariantException("CVariant::MoveTo(): invalid type");
+    }
+    return false;
+}
 
 CVariant& CVariant::operator=(const Int8& v)
 {
