@@ -40,7 +40,7 @@
 #include <algo/blast/api/blast_options.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
-#include <connect/ncbi_core.h>
+#include <algo/blast/api/blast_mtlock.hpp>
 
 // Core BLAST engine includes
 #include <algo/blast/core/blast_def.h>
@@ -50,6 +50,7 @@
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/hspstream_collector.h>
+#include <algo/blast/core/blast_traceback.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -71,13 +72,14 @@ void CDbBlast::x_InitFields()
     m_ipDiagnostics = NULL;
     m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(m_pSeqSrc));
     m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(m_pSeqSrc));
+    m_ibLocalResults = false;
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
                    EProgram p, RPSInfo* rps_info, BlastHSPStream* hsp_stream,
-                   MT_LOCK lock)
+                   bool mt)
     : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
-      m_pHspStream(hsp_stream), m_pLock(lock) 
+      m_pHspStream(hsp_stream), m_ibMultiThreaded(mt)
 {
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
     x_InitFields();
@@ -85,9 +87,9 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
                    CBlastOptionsHandle& opts, RPSInfo* rps_info, 
-                   BlastHSPStream* hsp_stream, MT_LOCK lock)
+                   BlastHSPStream* hsp_stream, bool mt)
     : m_tQueries(queries), m_pSeqSrc(seq_src), m_pRpsInfo(rps_info), 
-      m_pHspStream(hsp_stream), m_pLock(lock) 
+      m_pHspStream(hsp_stream), m_ibMultiThreaded(mt) 
 {
     m_OptsHandle.Reset(&opts);    
     x_InitFields();
@@ -96,6 +98,7 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
 CDbBlast::~CDbBlast()
 { 
     x_ResetQueryDs();
+    x_ResetResultDs();
 }
 
 /// Resets results data structures
@@ -108,6 +111,10 @@ CDbBlast::x_ResetResultDs()
     NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
         *itr = Blast_MessageFree(*itr);
     }
+    // Only free the HSP stream, if it was allocated locally. That is true 
+    // if and only if results are processed locally in this class.
+    if (m_ibLocalResults)
+        m_pHspStream = BlastHSPStreamFree(m_pHspStream);
 }
 
 /// Resets query data structures
@@ -123,20 +130,53 @@ CDbBlast::x_ResetQueryDs()
     m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
 
     m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
-    x_ResetResultDs();
+}
+
+/// Initializes the HSP stream structure, if it has not been passed by the 
+/// client.
+void
+CDbBlast::x_InitHSPStream()
+{
+    if (!m_pHspStream) {
+        m_ibLocalResults = true;
+        MT_LOCK lock = NULL;
+        if (m_ibMultiThreaded)
+            lock = Blast_CMT_LOCKInit();
+        int num_results;
+        EProgram program = GetOptions().GetProgram();
+
+        /* For RPS BLAST, number of "queries" in HSP stream is equal to 
+           number of sequences in the RPS BLAST database, because queries 
+           and subjects are switched in an RPS search. In all other cases,
+           it is the real number of queries. */
+        if (program == eRPSBlast || program == eRPSTblastn)
+            num_results = BLASTSeqSrcGetNumSeqs(m_pSeqSrc);
+        else
+            num_results = m_tQueries.size();
+
+        m_pHspStream = 
+            Blast_HSPListCollectorInitMT(GetOptions().GetProgramType(), 
+                GetOptions().GetHitSaveOpts(), num_results, TRUE, lock);
+    }
 }
 
 int CDbBlast::SetupSearch()
 {
     int status = 0;
-    EProgram x_eProgram = m_OptsHandle->GetOptions().GetProgram();
+    EBlastProgramType x_eProgram = m_OptsHandle->GetOptions().GetProgramType();
+
+    x_ResetResultDs();
+    // Initialize a new HSP stream, if necessary
+    x_InitHSPStream();
+    // Initialize a new diagnostics structure
+    m_ipDiagnostics = Blast_DiagnosticsInit();
 
     if ( !m_ibQuerySetUpDone ) {
         double scale_factor;
 
         x_ResetQueryDs();
-        bool translated_query = (x_eProgram == eBlastx || 
-                                 x_eProgram == eTblastx);
+        bool translated_query = (x_eProgram == eBlastTypeBlastx || 
+                                 x_eProgram == eBlastTypeTblastx);
 
         SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), 
                        &m_iclsQueryInfo);
@@ -145,7 +185,8 @@ int CDbBlast::SetupSearch()
 
         m_ipScoreBlock = 0;
 
-        if (x_eProgram == eRPSBlast || x_eProgram == eRPSTblastn)
+        if (x_eProgram == eBlastTypeRpsBlast || 
+            x_eProgram == eBlastTypeRpsTblastn)
             scale_factor = m_pRpsInfo->aux_info.scale_factor;
         else
             scale_factor = 1.0;
@@ -154,9 +195,9 @@ int CDbBlast::SetupSearch()
         BlastMaskInformation maskInfo;
 
         status = BLAST_MainSetUp(x_eProgram, 
-                                 m_OptsHandle->GetOptions().GetQueryOpts(),
-                                 m_OptsHandle->GetOptions().GetScoringOpts(),
-                                 m_OptsHandle->GetOptions().GetHitSaveOpts(),
+                                 GetOptions().GetQueryOpts(),
+                                 GetOptions().GetScoringOpts(),
+                                 GetOptions().GetHitSaveOpts(),
                                  m_iclsQueries, m_iclsQueryInfo,
                                  scale_factor,
                                  &m_ipLookupSegments, &maskInfo,
@@ -181,19 +222,17 @@ int CDbBlast::SetupSearch()
             BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
-        LookupTableWrapInit(m_iclsQueries, 
-            m_OptsHandle->GetOptions().GetLutOpts(), 
+        LookupTableWrapInit(m_iclsQueries, GetOptions().GetLutOpts(), 
             m_ipLookupSegments, m_ipScoreBlock, &m_ipLookupTable, m_pRpsInfo);
         
         m_ibQuerySetUpDone = true;
-        m_ipDiagnostics = Blast_DiagnosticsInit();
     }
     return status;
 }
 
 void CDbBlast::PartialRun()
 {
-    m_OptsHandle->GetOptions().Validate();
+    GetOptions().Validate();
     SetupSearch();
     RunSearchEngine();
 }
@@ -201,7 +240,7 @@ void CDbBlast::PartialRun()
 TSeqAlignVector
 CDbBlast::Run()
 {
-    m_OptsHandle->GetOptions().Validate();// throws an exception on failure
+    GetOptions().Validate();// throws an exception on failure
     SetupSearch();
     RunSearchEngine();
     return x_Results2SeqAlign();
@@ -231,7 +270,7 @@ compare_hsplist_hspcnt(const void* v1, const void* v2)
 void 
 CDbBlast::TrimBlastHSPResults()
 {
-    int total_hsp_limit = m_OptsHandle->GetOptions().GetTotalHspLimit();
+    int total_hsp_limit = GetOptions().GetTotalHspLimit();
 
     if (total_hsp_limit == 0)
         return;
@@ -289,55 +328,37 @@ CDbBlast::TrimBlastHSPResults()
 void 
 CDbBlast::RunSearchEngine()
 {
-    BlastHSPStream* hsp_stream = m_pHspStream;
     BlastHSPResults** results_ptr = NULL;
 
     // If HSP stream has been passed from the user, it means that results are
     // handled outside of the BLAST engine, and hence we need to pass a NULL 
     // results pointer to the engine.
-    if (!hsp_stream) {
-        Int4 num_results;
-        
-        /* For RPS BLAST, number of "queries" in HSP stream is equal to 
-           number of sequences in the RPS BLAST database, because queries 
-           and subjects are switched in an RPS search. In all other cases,
-           it is the real number of queries. */
-        num_results = ((m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) ?
-                       BLASTSeqSrcGetNumSeqs(m_pSeqSrc) : 
-                       m_iclsQueryInfo->num_queries);
-        hsp_stream = Blast_HSPListCollectorInitMT(
-                        m_OptsHandle->GetOptions().GetProgram(), 
-                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                        num_results, TRUE, m_pLock);
+    if (m_ibLocalResults) {
         results_ptr = &m_ipResults;
     }
 
     if (m_ipLookupTable->lut_type == RPS_LOOKUP_TABLE) {
-        BLAST_RPSSearchEngine(m_OptsHandle->GetOptions().GetProgram(), 
+        BLAST_RPSSearchEngine(GetOptions().GetProgramType(), 
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock,
-            m_OptsHandle->GetOptions().GetScoringOpts(), 
-            m_ipLookupTable, m_OptsHandle->GetOptions().GetInitWordOpts(), 
-            m_OptsHandle->GetOptions().GetExtnOpts(), 
-            m_OptsHandle->GetOptions().GetHitSaveOpts(),
-            m_OptsHandle->GetOptions().GetEffLenOpts(),
-            m_OptsHandle->GetOptions().GetPSIBlastOpts(), 
-            m_OptsHandle->GetOptions().GetDbOpts(),
-            hsp_stream, m_ipDiagnostics, results_ptr);
+            GetOptions().GetScoringOpts(), 
+            m_ipLookupTable, GetOptions().GetInitWordOpts(), 
+            GetOptions().GetExtnOpts(), 
+            GetOptions().GetHitSaveOpts(),
+            GetOptions().GetEffLenOpts(),
+            GetOptions().GetPSIBlastOpts(), 
+            GetOptions().GetDbOpts(),
+            m_pHspStream, m_ipDiagnostics, results_ptr);
     } else {
-        BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
+        BLAST_SearchEngine(GetOptions().GetProgramType(),
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock, 
-            m_OptsHandle->GetOptions().GetScoringOpts(), 
-            m_ipLookupTable, m_OptsHandle->GetOptions().GetInitWordOpts(), 
-            m_OptsHandle->GetOptions().GetExtnOpts(), 
-            m_OptsHandle->GetOptions().GetHitSaveOpts(), 
-            m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
-            m_OptsHandle->GetOptions().GetDbOpts(),
-            hsp_stream, m_ipDiagnostics, results_ptr);
+            GetOptions().GetScoringOpts(), 
+            m_ipLookupTable, GetOptions().GetInitWordOpts(), 
+            GetOptions().GetExtnOpts(), 
+            GetOptions().GetHitSaveOpts(), 
+            GetOptions().GetEffLenOpts(), NULL, 
+            GetOptions().GetDbOpts(),
+            m_pHspStream, m_ipDiagnostics, results_ptr);
     }
-
-    // Only free the HSP stream, if it was allocated locally
-    if (!m_pHspStream)
-        hsp_stream = BlastHSPStreamFree(hsp_stream);
 
     m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
 
@@ -350,6 +371,100 @@ CDbBlast::RunSearchEngine()
     TrimBlastHSPResults();
 }
 
+void CDbBlast::RunPreliminarySearch()
+{
+    Int2 status = 0;
+    BlastScoringParameters* score_params = NULL; ///< Scoring parameters 
+    BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
+                                                    parameters */
+    BlastHitSavingParameters* hit_params = NULL; ///< Hit saving parameters
+    BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters 
+                                          for effective lengths calculations */
+    BlastGapAlignStruct* gap_align = NULL; ///< Gapped alignment structure
+
+    status = 
+        BLAST_GapAlignSetUp(GetOptions().GetProgramType(), m_pSeqSrc, 
+            GetOptions().GetScoringOpts(), GetOptions().GetEffLenOpts(), 
+            GetOptions().GetExtnOpts(), GetOptions().GetHitSaveOpts(),
+            m_iclsQueryInfo, m_ipScoreBlock, &score_params, &ext_params, 
+            &hit_params, &eff_len_params, &gap_align);
+    if (status)
+        return;
+
+    BLAST_PreliminarySearchEngine(GetOptions().GetProgramType(),
+         m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, gap_align, 
+         score_params, m_ipLookupTable, GetOptions().GetInitWordOpts(), 
+         ext_params, hit_params, eff_len_params, 
+         GetOptions().GetPSIBlastOpts(), GetOptions().GetDbOpts(),
+         m_pHspStream, m_ipDiagnostics);
+
+    m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
+
+    /* The following works because the ListNodes' data point to simple
+       double-integer structures */
+    m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
+
+    /* Do not destruct score block here */
+    gap_align->sbp = NULL;
+    gap_align = BLAST_GapAlignStructFree(gap_align);
+
+    score_params = BlastScoringParametersFree(score_params);
+    hit_params = BlastHitSavingParametersFree(hit_params);
+    ext_params = BlastExtensionParametersFree(ext_params);
+    eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
+}
+
+TSeqAlignVector CDbBlast::RunTraceback()
+{
+    TSeqAlignVector retval;
+    Int2 status = 0;
+    BlastScoringParameters* score_params = NULL; ///< Scoring parameters 
+    BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
+                                                    parameters */
+    BlastHitSavingParameters* hit_params = NULL; ///< Hit saving parameters
+    BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters 
+                                          for effective lengths calculations */
+    BlastGapAlignStruct* gap_align = NULL; ///< Gapped alignment structure
+
+    /* Prohibit any subsequent writing to the HSP stream. */
+    BlastHSPStreamClose(m_pHspStream);
+
+    status = 
+        BLAST_GapAlignSetUp(GetOptions().GetProgramType(), m_pSeqSrc, 
+            GetOptions().GetScoringOpts(), GetOptions().GetEffLenOpts(), 
+            GetOptions().GetExtnOpts(), GetOptions().GetHitSaveOpts(),
+            m_iclsQueryInfo, m_ipScoreBlock, &score_params, &ext_params, 
+            &hit_params, &eff_len_params, &gap_align);
+   if (status)
+       return retval;
+
+    status = 
+      BLAST_ComputeTraceback(GetOptions().GetProgramType(), m_pHspStream, 
+          m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, gap_align, 
+          score_params, ext_params, hit_params, eff_len_params,
+          GetOptions().GetDbOpts(), GetOptions().GetPSIBlastOpts(), 
+          &m_ipResults);
+
+    /* Do not destruct score block here */
+    gap_align->sbp = NULL;
+    gap_align = BLAST_GapAlignStructFree(gap_align);
+
+    score_params = BlastScoringParametersFree(score_params);
+    hit_params = BlastHitSavingParametersFree(hit_params);
+    ext_params = BlastExtensionParametersFree(ext_params);
+    eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
+ 
+    if (status) 
+        return retval;
+   
+    /* If a limit is provided for number of HSPs to return, trim the extra
+       HSPs here */
+    TrimBlastHSPResults();
+    // Convert results to the Seq-align form
+    retval =  x_Results2SeqAlign();
+    return retval;
+}
+
 TSeqAlignVector
 CDbBlast::x_Results2SeqAlign()
 {
@@ -358,11 +473,11 @@ CDbBlast::x_Results2SeqAlign()
     if (!m_ipResults)
         return retval;
 
-    bool gappedMode = m_OptsHandle->GetOptions().GetGappedMode();
-    bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
+    bool gappedMode = GetOptions().GetGappedMode();
+    bool outOfFrameMode = GetOptions().GetOutOfFrameMode();
 
     retval = BLAST_Results2CSeqAlign(m_ipResults, 
-                 m_OptsHandle->GetOptions().GetProgram(),
+                 GetOptions().GetProgram(),
                  m_tQueries, m_pSeqSrc, 
                  gappedMode, outOfFrameMode);
 
@@ -378,6 +493,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2004/07/06 15:51:13  dondosha
+ * Changes in preparation for implementation of multi-threaded search
+ *
  * Revision 1.36  2004/06/28 13:40:51  madden
  * Use BlastMaskInformation rather than BlastMaskLoc in BLAST_MainSetUp
  *
