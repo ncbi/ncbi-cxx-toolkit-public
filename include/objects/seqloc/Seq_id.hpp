@@ -170,14 +170,17 @@ public:
 
         eAcc_swissprot = e_Swissprot | eAcc_other | fAcc_prot,
 
-        eAcc_refseq_prot           = e_Other | eAcc_other | fAcc_prot,
-        eAcc_refseq_contig         = e_Other | eAcc_segset,
-        eAcc_refseq_unreserved     = e_Other | 128 << 8,
-        eAcc_refseq_mrna           = e_Other | 129 << 8 | fAcc_nuc,
-        eAcc_refseq_chromosome     = e_Other | 130 << 8 | fAcc_nuc,
-        eAcc_refseq_genomic        = e_Other | 131 << 8 | fAcc_nuc,
-        eAcc_refseq_prot_predicted = eAcc_refseq_prot | fAcc_predicted,
-        eAcc_refseq_mrna_predicted = eAcc_refseq_mrna | fAcc_predicted,
+        eAcc_refseq_prot            = e_Other | eAcc_other | fAcc_prot,
+        eAcc_refseq_contig          = e_Other | eAcc_segset,
+        eAcc_refseq_unreserved      = e_Other | 128 << 8,
+        eAcc_refseq_mrna            = e_Other | 129 << 8 | fAcc_nuc,
+        eAcc_refseq_chromosome      = e_Other | 130 << 8 | fAcc_nuc,
+        eAcc_refseq_genomic         = e_Other | 131 << 8 | fAcc_nuc,
+        // non-coding RNA; currently only present in predicted version (XR_)
+        eAcc_refseq_ncrna           = e_Other | 132 << 8 | fAcc_nuc,
+        eAcc_refseq_prot_predicted  = eAcc_refseq_prot  | fAcc_predicted,
+        eAcc_refseq_mrna_predicted  = eAcc_refseq_mrna  | fAcc_predicted,
+        eAcc_refseq_ncrna_predicted = eAcc_refseq_ncrna | fAcc_predicted,
 
         eAcc_ddbj_prot      = e_Ddbj | eAcc_other  | fAcc_prot,
         eAcc_ddbj_other_nuc = e_Ddbj | eAcc_other  | fAcc_nuc,
@@ -269,6 +272,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2002/08/14 15:52:05  ucko
+ * Add eAcc_refseq_ncrna(_predicted) [non-coding RNA, XR_].
+ *
  * Revision 1.20  2002/08/01 20:32:52  ucko
  * s_IdentifyAccession -> IdentifyAccession; s_ is only for module-static names.
  *
