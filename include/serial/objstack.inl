@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/12/12 21:11:15  gouriano
+* added some debug tracing
+*
 * Revision 1.11  2002/11/19 19:45:13  gouriano
 * added const qualifier to GetSkipTag/GetNotag functions
 *
@@ -99,7 +102,6 @@ inline
 TTypeInfo CObjectStackFrame::GetTypeInfo(void) const
 {
     _ASSERT(m_FrameType != eFrameOther &&
-            m_FrameType != eFrameClassMember &&
             m_FrameType != eFrameChoiceVariant);
     _ASSERT(m_TypeInfo != 0);
     return m_TypeInfo;
@@ -134,6 +136,9 @@ inline
 void CObjectStackFrame::SetSkipTag(bool set)
 {
     m_SkipTag = set;
+#if defined(NCBI_SERIAL_IO_TRACE)
+    cout << ", "  << (m_SkipTag ? "S" : "!S");
+#endif
 }
 
 inline
@@ -146,6 +151,9 @@ inline
 void CObjectStackFrame::SetNotag(bool set)
 {
     m_Notag = set;
+#if defined(NCBI_SERIAL_IO_TRACE)
+    cout << ", "  << (m_Notag ? "N" : "!N");
+#endif
 }
 inline
 bool CObjectStackFrame::GetNotag(void) const
@@ -181,6 +189,9 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type)
 {
     TFrame& frame = PushFrame();
     frame.m_FrameType = type;
+#if defined(NCBI_SERIAL_IO_TRACE)
+    TracePushFrame(true);
+#endif
     return frame;
 }
 
@@ -213,6 +224,10 @@ inline
 void CObjectStack::PopFrame(void)
 {
     _ASSERT(!StackIsEmpty());
+#if defined(NCBI_SERIAL_IO_TRACE)
+    TracePushFrame(false);
+#endif
+    m_StackPtr->Reset();
     --m_StackPtr;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/12/12 21:11:36  gouriano
+* added some debug tracing
+*
 * Revision 1.7  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -169,5 +172,40 @@ void CObjectStack::PopErrorFrame(void)
     }
     PopFrame();
 }
+
+#if defined(NCBI_SERIAL_IO_TRACE)
+
+const char* CObjectStackFrame::GetFrameTypeName(void) const
+{
+    const char* s;
+    switch (GetFrameType())
+    {
+    default:                  s = "UNKNOWN";             break;
+    case eFrameOther:         s = "eFrameOther";         break;
+    case eFrameNamed:         s = "eFrameNamed";         break;
+    case eFrameArray:         s = "eFrameArray";         break;
+    case eFrameArrayElement:  s = "eFrameArrayElement";  break;
+    case eFrameClass:         s = "eFrameClass";         break;
+    case eFrameClassMember:   s = "eFrameClassMember";   break;
+    case eFrameChoice:        s = "eFrameChoice";        break;
+    case eFrameChoiceVariant: s = "eFrameChoiceVariant"; break;
+    case eFrameAttlist:       s = "eFrameAttlist";       break;
+    }
+    return s;
+}
+
+void CObjectStack::TracePushFrame(bool push) const
+{
+    cout << endl ;
+    int depth = (int)GetStackDepth();
+    cout << depth;
+    for (; depth>0; --depth) {
+        cout.put(' ');
+    }
+    cout << (push ? "Enter " : "Leave ") << m_StackPtr->GetFrameTypeName();
+}
+
+#endif
+
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/12/12 21:11:15  gouriano
+* added some debug tracing
+*
 * Revision 1.13  2002/11/19 19:45:13  gouriano
 * added const qualifier to GetSkipTag/GetNotag functions
 *
@@ -136,6 +139,10 @@ public:
     void SetNotag(bool set=true);
     bool GetNotag(void) const;
 
+#if defined(NCBI_SERIAL_IO_TRACE)
+    const char* GetFrameTypeName(void) const;
+#endif
+
 private:
     friend class CObjectStack;
 
@@ -165,6 +172,10 @@ public:
     void PopErrorFrame(void);
 
     void SetTopMemberId(const CMemberId& memberId);
+
+#if defined(NCBI_SERIAL_IO_TRACE)
+    void TracePushFrame(bool push) const;
+#endif
 
 protected:
     bool StackIsEmpty(void) const;
