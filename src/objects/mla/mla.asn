@@ -1,4 +1,4 @@
---$Revision: 5.2 $
+--$Revision: 5.3 $
 --********************************************************************
 --
 --  Network MEDLINE Archive message formats
@@ -17,6 +17,7 @@ NCBI-MedArchive DEFINITIONS ::=
 BEGIN
 
 IMPORTS Medline-entry, PubMedId FROM NCBI-Medline
+        Pubmed-entry FROM NCBI-PubMed
         Medline-si FROM NCBI-Medline
         Pub FROM NCBI-Pub
         Title FROM NCBI-Biblio;
@@ -109,7 +110,8 @@ Mla-back ::= CHOICE {
     getuids [7] SEQUENCE OF INTEGER, -- got a set of MUIDs
     getpmids [8] SEQUENCE OF INTEGER,-- got a set of PMIDs
     outuid [9] INTEGER,              -- result muid or 0 if not found
-    outpmid [10] PubMedId            -- result pmid or 0 if not found
+    outpmid [10] PubMedId,           -- result pmid or 0 if not found
+    getpme [11] Pubmed-entry         -- got Pubmed Entry
     }
 
 END
