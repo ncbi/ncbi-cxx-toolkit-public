@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/09/26 22:02:57  lavr
+ * HTTP request method added
+ *
  * Revision 6.1  2000/04/21 19:41:01  vakatov
  * Initial revision
  *
@@ -151,7 +154,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
         /* connect & send HTTP header */
         uuu->sock = URL_Connect
             (uuu->info->host, uuu->info->port, uuu->info->path,
-             uuu->info->args,
+             uuu->info->args, uuu->info->req_method,
              BUF_Size(uuu->buf), uuu->c_timeout, uuu->w_timeout,
              uuu->user_header,
              (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs));

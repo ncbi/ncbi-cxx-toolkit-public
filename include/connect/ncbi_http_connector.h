@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/09/26 22:02:55  lavr
+ * HTTP request method added
+ *
  * Revision 6.1  2000/04/21 19:40:58  vakatov
  * Initial revision
  *
@@ -76,7 +79,7 @@ extern "C" {
  *     will be forcibly closed, and you cannot communicate with it anymore
  *     (the peer CGI process will die).
  *
- *  *)  But if "fHCC_AutoReconnect" is set in "flags", then the connector will
+ *  *) But if "fHCC_AutoReconnect" is set in "flags", then the connector will
  *     make an automatic reconnect to the same CGI script with just the
  *     same parameters, and you can repeat the (1,2,3) micro-session with
  *     another instance of your peer CGI program.
@@ -122,7 +125,7 @@ extern CONNECTOR HTTP_CreateConnector
 
 /* An extended version of URL_CreateConnector() to change the URL of the
  * server CGI "on-the-fly":
- *   -- "adjust_info()" will be invoked each time before starting a
+ *  -- "adjust_info()" will be invoked each time before starting a
  *      new "HTTP micro-session"making a hit;  it will be passed "info"
  *      stored in the connector, and the # of previous unsuccessful
  *      attempts to start the current HTTP micro-session.
