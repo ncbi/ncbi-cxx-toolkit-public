@@ -78,6 +78,35 @@ s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_
     return status;
 }
 
+/** Returns the smallest lambda value from a collection
+ *  of Karlin-Altchul blocks
+ * @param kbp_in array of Karlin blocks to be searched [in]
+ * @param query_info information on number of queries (specifies number of
+ * elements in above array) [in]
+ * @return The smallest lambda value
+ */
+static double
+s_BlastFindSmallestLambda(Blast_KarlinBlk** kbp_in, 
+                          const BlastQueryInfo* query_info)
+{
+    Int4 i;
+    double min_lambda = 0.0;
+
+    ASSERT(kbp_in && query_info);
+
+    for (i=query_info->first_context; i<=query_info->last_context; i++) {
+        if (s_BlastKarlinBlkIsValid(kbp_in[i])) {
+            if (min_lambda == 0.0)
+                min_lambda = kbp_in[i]->Lambda;
+            else
+                min_lambda = MIN(min_lambda, kbp_in[i]->Lambda);
+        }
+    }
+
+    ASSERT(min_lambda > 0.0);
+    return min_lambda;
+}
+
 /** Determines optimal extension method given 1.) the type of
  * search (e.g., program, whether rps, discontig. mb etc.).
  * 2.) whether a flag is set specifying the AG stride option
@@ -179,7 +208,6 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
    ASSERT(word_options);
    ASSERT(sbp);
-   ASSERT(sbp->kbp_std[query_info->first_context]);
    if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_std) != 0)
          return -1;
 
@@ -190,7 +218,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
    (*parameters)->x_dropoff_init = (Int4)
       ceil(sbp->scale_factor * word_options->x_dropoff * NCBIMATH_LN2/
-           kbp_std->Lambda);
+           s_BlastFindSmallestLambda(sbp->kbp_std, query_info));
 
    if (program_number == eBlastTypeBlastn &&
       (query_info->contexts[query_info->last_context].query_offset +
@@ -215,64 +243,91 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
    BlastQueryInfo* query_info, Uint4 subj_length,
    BlastInitialWordParameters* parameters)
 {
-   Blast_KarlinBlk* kbp;
+   Blast_KarlinBlk** kbp_array;
    Boolean gapped_calculation = TRUE;
-   Int4 cutoff_s = 0;
-   Int4 gap_trigger = 0;
+   double gap_decay_rate = 0.0;
+   Int4 cutoff_s = INT4_MAX;
+   Int4 index;
 
    ASSERT(sbp);
    ASSERT(hit_params);
    ASSERT(query_info);
 
-   /* kbp_gap is only non-NULL for gapped searches! */
    if (sbp->kbp_gap) {
-      if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
-         return -1;
-   } else {
-      if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp) != 0)
-         return -1;
+      kbp_array = sbp->kbp_gap;
+   } else if (sbp->kbp_std) {
+      kbp_array = sbp->kbp_std;
       gapped_calculation = FALSE;
-   }
-
-   if (sbp->kbp_std)
-   { /* We calculate the gap_trigger value here and use it as a cutoff to save ungapped alignments in a gapped
-        search as well as a maximum value for the ungapped alignments in an ungapped search.  
-        gap_trigger (at 22 bits) seems like a good value for both of these.  Ungapped blastn is an exception (see
-        comment below) and it's not clear that this should be.  */
-      Blast_KarlinBlk* kbp_ungap;
-      const BlastInitialWordOptions* kOptions = parameters->options;
-      if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_ungap) != 0)
-          return -1;
-      gap_trigger = (Int4) ((kOptions->gap_trigger*NCBIMATH_LN2 + kbp_ungap->logK) / kbp_ungap->Lambda);
-   }
-
-   ASSERT(kbp);
-
-   if (!gapped_calculation || program_number == eBlastTypeBlastn) {
-      double cutoff_e = s_GetCutoffEvalue(program_number);
-      Int4 concat_qlen =
-          query_info->contexts[query_info->last_context].query_offset +
-          query_info->contexts[query_info->last_context].query_length;
-      Int4 avg_qlen = concat_qlen / (query_info->last_context + 1);
-      double gap_decay_rate = 0.0;
-      
-      /* FIXME, hit_params->link_hsp_params is NULL for gapped blastn so is gap_decay_rate. */
-      if (hit_params && hit_params->link_hsp_params)
-          gap_decay_rate = hit_params->link_hsp_params->gap_decay_rate;
-   
-       /* include the length of reverse complement for blastn searchs. */
-       if (program_number == eBlastTypeBlastn)
-          avg_qlen *= 2;
-   
-       BLAST_Cutoffs(&cutoff_s, &cutoff_e, kbp, MIN(subj_length, (Uint4) avg_qlen)*subj_length,
-                    TRUE, gap_decay_rate);
-
-       if (program_number != eBlastTypeBlastn)  /* Perform this check for compatiability with the old code */
-          cutoff_s = MIN(gap_trigger, cutoff_s);
    } else {
-      cutoff_s = gap_trigger;
+       return -1;
    }
 
+   /** @todo FIXME hit_params->link_hsp_params is NULL for 
+       gapped blastn, and so is gap_decay_rate. */
+
+   if (hit_params && hit_params->link_hsp_params)
+      gap_decay_rate = hit_params->link_hsp_params->gap_decay_rate;
+      
+   /* determine the smallest ungapped cutoff score across all contexts */
+
+   for (index = query_info->first_context; 
+                     index <= query_info->last_context; ++index) {
+
+      Int4 gap_trigger = INT4_MAX;
+      Blast_KarlinBlk* kbp;
+      Int4 new_cutoff;
+
+      /* We calculate the gap_trigger value here and use it as a cutoff 
+         to save ungapped alignments in a gapped search as well as a 
+         maximum value for the ungapped alignments in an ungapped search.  
+         gap_trigger (at 22 bits) seems like a good value for both of these.  
+         Ungapped blastn is an exception (see comment below) and it's 
+         not clear that this should be.  */
+
+      if (sbp->kbp_std) {
+         Blast_KarlinBlk* kbp_ungap = sbp->kbp_std[index];
+         const BlastInitialWordOptions* kOptions = parameters->options;
+
+         if (s_BlastKarlinBlkIsValid(kbp_ungap)) {
+            gap_trigger = (Int4) ((kOptions->gap_trigger * NCBIMATH_LN2 + 
+                                   kbp_ungap->logK) / kbp_ungap->Lambda);
+         }
+      }
+   
+      if (gap_trigger == INT4_MAX)  /* gap trigger must be valid to continue */
+          continue;
+
+      kbp = kbp_array[index];
+      if (!s_BlastKarlinBlkIsValid(kbp))  /* skip invalid Karlin blocks */
+          continue;
+
+      if (!gapped_calculation || program_number == eBlastTypeBlastn) {
+         double cutoff_e = s_GetCutoffEvalue(program_number);
+         Int4 query_length = query_info->contexts[index].query_length;
+
+         if (query_length == 0)     /* skip invalid contexts */
+             continue;
+   
+         /* include the length of reverse complement for blastn searchs. */
+         if (program_number == eBlastTypeBlastn)
+            query_length *= 2;
+      
+         new_cutoff = 0;
+         BLAST_Cutoffs(&new_cutoff, &cutoff_e, kbp, 
+                       MIN(subj_length, (Uint4) query_length)*subj_length,
+                       TRUE, gap_decay_rate);
+
+         /* Perform this check for compatibility with the old code */
+         if (program_number != eBlastTypeBlastn)  
+            new_cutoff = MIN(gap_trigger, new_cutoff);
+      } else {
+         new_cutoff = gap_trigger;
+      }
+
+      cutoff_s = MIN(cutoff_s, new_cutoff);
+   }
+
+   ASSERT(cutoff_s < INT4_MAX);
    if (sbp->scale_factor > 0)
       cutoff_s *= (Int4)sbp->scale_factor;
 
@@ -297,18 +352,15 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
         const BlastExtensionOptions* options, BlastScoreBlk* sbp,
         BlastQueryInfo* query_info, BlastExtensionParameters* *parameters)
 {
-   Blast_KarlinBlk* kbp=NULL;
-   Blast_KarlinBlk* kbp_gap=NULL;
    BlastExtensionParameters* params;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
       so don't do anything */
    if (!parameters)
       return 0;
-
-       
  
    if (sbp->kbp) {
+      Blast_KarlinBlk* kbp = NULL;
       if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
          return -1;
    } else {
@@ -324,15 +376,14 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
 
    /* Set gapped X-dropoffs only if it is a gapped search. */
    if (sbp->kbp_gap) {
-      if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp_gap) != 0)
-         return -1;
+      double min_lambda = s_BlastFindSmallestLambda(sbp->kbp_gap, query_info);
       params->gap_x_dropoff = (Int4) 
-          (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
-      // Note that this convertion from bits to raw score is done prematurely 
-      // here when rescaling and composition based statistics is applied, as we
-      // loose precision, therefore this is redone in Kappa_RedoAlignmentCore 
+          (options->gap_x_dropoff*NCBIMATH_LN2 / min_lambda);
+      /* Note that this conversion from bits to raw score is done prematurely 
+         when rescaling and composition based statistics is applied, as we
+         lose precision. Therefore this is redone in Kappa_RedoAlignmentCore */
       params->gap_x_dropoff_final = (Int4) 
-          (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp_gap->Lambda);
+          (options->gap_x_dropoff_final*NCBIMATH_LN2 / min_lambda);
    }
    
    if (sbp->scale_factor > 1.0) {
@@ -581,9 +632,9 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
    Int4 avg_subject_length, BlastHitSavingParameters* params)
 {
    BlastHitSavingOptions* options;
-   Blast_KarlinBlk* kbp;
+   Blast_KarlinBlk** kbp_array;
    double scale_factor = sbp->scale_factor;
-   Boolean gapped_calculation;
+   Boolean gapped_calculation = TRUE;
    Boolean do_sum_stats = FALSE;
 
    ASSERT(params);
@@ -597,46 +648,78 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
    /* Scoring options are not available here, but we can determine whether
       this is a gapped or ungapped search by checking whether gapped
       Karlin blocks have been set. */
-   gapped_calculation = (sbp->kbp_gap != NULL);
-   if (gapped_calculation) {
-      if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
-         return -1;
+   if (sbp->kbp_gap) {
+       kbp_array = sbp->kbp_gap;
+   } else if (sbp->kbp) {
+       kbp_array = sbp->kbp;
+       gapped_calculation = FALSE;
    } else {
-      if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
-         return -1;
+       return -1;
    }
 
-   /* Calculate cutoffs based on the current effective lengths information */
+   /* Calculate cutoffs based on effective length information */
    if (options->cutoff_score > 0) {
-      params->cutoff_score_max = params->cutoff_score = options->cutoff_score * (Int4) sbp->scale_factor;
+      params->cutoff_score_max = params->cutoff_score = 
+                            options->cutoff_score * (Int4) sbp->scale_factor;
    } else if (!options->phi_align) {
-      Int4 context = query_info->first_context;
-      Int8 searchsp = query_info->contexts[context].eff_searchsp;
-      double evalue = options->expect_value;
+      Int4 context;
+      Int4 cutoff_score_max = INT4_MAX;
 
-      /* translated RPS searches must scale the search space down */
-      if (program_number == eBlastTypeRpsTblastn)   /* FIXME, why only rpstblastn?  */
-         searchsp = searchsp / NUM_FRAMES;
+      /* Find the smallest gapped cutoff score across all contexts */
 
-      /* Get cutoff_score for specified evalue. */
-      params->cutoff_score_max = 0;  
-      BLAST_Cutoffs(&(params->cutoff_score_max), &evalue, kbp, searchsp, FALSE, 0);
+      for (context = query_info->first_context;
+                          context <= query_info->last_context; ++context) {
+         Blast_KarlinBlk* kbp;
+         Int8 searchsp;
+         Int4 new_cutoff = 0;
+         double evalue = options->expect_value;
 
-      params->cutoff_score = 0;
-      if (do_sum_stats && gapped_calculation)
-      {
-         double evalue_hsp=1.0;
+         kbp = kbp_array[context];
+         if (!s_BlastKarlinBlkIsValid(kbp))  /* skip invalid Karlin blocks */
+             continue;
+         searchsp = query_info->contexts[context].eff_searchsp;
+         if (searchsp == 0)         /* skip invalid contexts */
+            continue;
+   
+         /* translated RPS searches must scale the search space down */
+         /** @todo FIXME why only scale down rpstblastn search space?  */
+         if (program_number == eBlastTypeRpsTblastn) 
+            searchsp /= NUM_FRAMES;
+   
+         /* Get cutoff_score for specified evalue. */
+         BLAST_Cutoffs(&new_cutoff, &evalue, kbp, searchsp, FALSE, 0);
+         cutoff_score_max = MIN(cutoff_score_max, new_cutoff);
+      }
+
+      ASSERT(cutoff_score_max < INT4_MAX);
+      params->cutoff_score_max = cutoff_score_max;  
+      params->cutoff_score = cutoff_score_max;
+
+      /* If using sum statistics, use a modified cutoff score */
+      if (do_sum_stats && gapped_calculation) {
+
+         double evalue_hsp = 1.0;
          Int4 concat_qlen =
              query_info->contexts[query_info->last_context].query_offset +
              query_info->contexts[query_info->last_context].query_length - 1;
          Int4 avg_qlen = concat_qlen / (query_info->last_context + 1);
-         BLAST_Cutoffs(&params->cutoff_score, &evalue_hsp, kbp, (Int8) MIN(avg_qlen, avg_subject_length)* (Int8)avg_subject_length, 
-               TRUE, params->link_hsp_params->gap_decay_rate);
-         /* Assure that cutoff_score for one HSP is no larger than cutoff_score for specified expect value. */
-         params->cutoff_score = MIN(params->cutoff_score, params->cutoff_score_max);
+         Int8 searchsp = (Int8) MIN(avg_qlen, avg_subject_length) * 
+                                (Int8)avg_subject_length;
+
+         for (context = query_info->first_context;
+                             context <= query_info->last_context; ++context) {
+            Blast_KarlinBlk* kbp;
+            Int4 new_cutoff = 0;
+
+            kbp = kbp_array[context];
+            if (!s_BlastKarlinBlkIsValid(kbp))  /* skip invalid Karlin blocks */
+                continue;
+            BLAST_Cutoffs(&new_cutoff, &evalue_hsp, kbp, searchsp,
+                       TRUE, params->link_hsp_params->gap_decay_rate);
+            /* Update the computed cutoff if new_cutoff is smaller */
+            params->cutoff_score = MIN(params->cutoff_score, new_cutoff);
+         }
       }
-      else 
-         params->cutoff_score = params->cutoff_score_max;
      
       params->cutoff_score *= (Int4) scale_factor;
       params->cutoff_score_max *= (Int4) scale_factor;
@@ -745,6 +828,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/03/29 14:52:40  papadopo
+ * for a query seq. with multiple contexts, compute the minimum gapped/ungapped cutoff score and the maximum gapped/ungapped X-dropoff across all contexts
+ *
  * Revision 1.6  2005/02/03 22:23:37  camacho
  * Minor refactorings, add comments
  *
