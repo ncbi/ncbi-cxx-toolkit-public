@@ -253,7 +253,8 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
  * @param codes Geneic code string to use (must be in ncbistdaa encoding!)
  * @return Amino acid in ncbistdaa
  */
-static Uint1 CodonToAA (Uint1* codon, const Uint1* codes)
+static Uint1 
+s_CodonToAA (Uint1* codon, const Uint1* codes)
 {
    register Uint1 aa = 0, taa;
    register int i, j, k, index0, index1, index2;
@@ -314,7 +315,7 @@ BLAST_GetTranslation(const Uint1* query_seq, const Uint1* query_seq_rev,
 		codon[0] = nucl_seq[index];
 		codon[1] = nucl_seq[index+1];
 		codon[2] = nucl_seq[index+2];
-		residue = CodonToAA(codon, genetic_code);
+		residue = s_CodonToAA(codon, genetic_code);
 		if (IS_residue(residue))
 		{
 			prot_seq[index_prot] = residue;
@@ -827,7 +828,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
  * @return The translation table.
 */
 static Uint1*
-BLAST_GetTranslationTable(const Uint1* genetic_code, Boolean reverse_complement)
+s_BlastGetTranslationTable(const Uint1* genetic_code, Boolean reverse_complement)
 
 {
 	Int2 index1, index2, index3, bp1, bp2, bp3;
@@ -907,8 +908,8 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
       GetReverseNuclSequence(nucl_seq, nucl_length, 
                              &nucl_seq_rev);
    } else {
-      translation_table = BLAST_GetTranslationTable(genetic_code, FALSE);
-      translation_table_rc = BLAST_GetTranslationTable(genetic_code, TRUE);
+      translation_table = s_BlastGetTranslationTable(genetic_code, FALSE);
+      translation_table_rc = s_BlastGetTranslationTable(genetic_code, TRUE);
    } 
 
    frame_offsets = (Int4*) malloc((NUM_FRAMES+1)*sizeof(Int4));

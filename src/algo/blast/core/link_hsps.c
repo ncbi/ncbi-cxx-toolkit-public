@@ -94,7 +94,6 @@ typedef struct LinkHSPStruct {
 
 /** Calculates e-value of a set of HSPs with sum statistics.
  * @param program_number Type of BLAST program [in]
- * @param sbp Scoring block with statistical parameters [in]
  * @param query_info Query information structure [in]
  * @param subject_length Subject sequence length [in]
  * @param link_hsp_params Parameters for linking HSPs [in]
@@ -104,7 +103,7 @@ typedef struct LinkHSPStruct {
  * @return E-value of the all HSPs together
  */
 static double 
-SumHSPEvalue(EBlastProgramType program_number, BlastScoreBlk* sbp, 
+s_SumHSPEvalue(EBlastProgramType program_number, 
    BlastQueryInfo* query_info, Int4 subject_length, 
    const BlastLinkHSPParameters* link_hsp_params, 
    LinkHSPStruct* head_hsp, LinkHSPStruct* new_hsp, double* xsum)
@@ -152,7 +151,7 @@ SumHSPEvalue(EBlastProgramType program_number, BlastScoreBlk* sbp,
  *	The first function sorts in forward, the second in reverse order.
 */
 static int
-fwd_compare_hsps(const void* v1, const void* v2)
+s_FwdCompareHSPs(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
 	LinkHSPStruct** hp1,** hp2;
@@ -184,7 +183,7 @@ fwd_compare_hsps(const void* v1, const void* v2)
  *	The first function sorts in forward, the second in reverse order.
 */
 static int
-fwd_compare_hsps_transl(const void* v1, const void* v2)
+s_FwdCompareHSPsTransl(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
 	LinkHSPStruct** hp1,** hp2;
@@ -218,7 +217,7 @@ fwd_compare_hsps_transl(const void* v1, const void* v2)
 
 /* Comparison function based on end position in the query */
 static int
-end_compare_hsps(const void* v1, const void* v2)
+s_EndCompareHSPs(const void* v1, const void* v2)
 {
 	BlastHSP* h1,* h2;
 	LinkHSPStruct** hp1,** hp2;
@@ -247,7 +246,7 @@ end_compare_hsps(const void* v1, const void* v2)
 }
 
 static int
-xsum_compare_hsps(const void* v1, const void* v2)
+s_XSumCompareHSPs(const void* v1, const void* v2)
 {
     LinkHSPStruct* h1,* h2;
     LinkHSPStruct** hp1,** hp2;
@@ -270,7 +269,8 @@ xsum_compare_hsps(const void* v1, const void* v2)
 
 /* Find an HSP with offset closest, but not smaller/larger than a given one.
  */
-static Int4 hsp_binary_search(LinkHSPStruct** hsp_array, Int4 size, 
+static Int4 
+s_HSPBinarySearch(LinkHSPStruct** hsp_array, Int4 size, 
                               Int4 offset, Boolean right)
 {
    Int4 index, begin, end, coord;
@@ -293,7 +293,7 @@ static Int4 hsp_binary_search(LinkHSPStruct** hsp_array, Int4 size,
 }
 
 static int
-rev_compare_hsps(const void *v1, const void *v2)
+s_RevCompareHSPs(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
@@ -322,7 +322,7 @@ rev_compare_hsps(const void *v1, const void *v2)
 }
 
 static int
-rev_compare_hsps_transl(const void *v1, const void *v2)
+s_RevCompareHSPsTransl(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
@@ -355,7 +355,7 @@ rev_compare_hsps_transl(const void *v1, const void *v2)
 }
 
 static int
-rev_compare_hsps_tbn(const void *v1, const void *v2)
+s_RevCompareHSPsTbn(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
@@ -399,7 +399,7 @@ rev_compare_hsps_tbn(const void *v1, const void *v2)
 }
 
 static int
-rev_compare_hsps_tbx(const void *v1, const void *v2)
+s_RevCompareHSPsTbx(const void *v1, const void *v2)
 
 {
 	BlastHSP* h1,* h2;
@@ -459,7 +459,8 @@ typedef struct LinkHelpStruct {
   Int4 next_larger;
 } LinkHelpStruct;
 
-static LinkHSPStruct* LinkHSPStructReset(LinkHSPStruct* lhsp)
+static LinkHSPStruct* 
+s_LinkHSPStructReset(LinkHSPStruct* lhsp)
 {
    BlastHSP* hsp;
 
@@ -480,7 +481,7 @@ static LinkHSPStruct* LinkHSPStructReset(LinkHSPStruct* lhsp)
 }
 
 static Int2
-Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list, 
+s_BlastEvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, Int4 subject_length,
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation)
@@ -554,10 +555,10 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
    /* Sort by (reverse) position. */
    if (translated_query) {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
-            rev_compare_hsps_tbx);
+            s_RevCompareHSPsTbx);
    } else {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
-            rev_compare_hsps_tbn);
+            s_RevCompareHSPsTbn);
    }
 
    cutoff[0] = link_hsp_params->cutoff_small_gap;
@@ -626,7 +627,7 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 
 	for (frame_index=0; frame_index<num_query_frames; frame_index++)
 	{
-      hp_start = LinkHSPStructReset(hp_start);
+      hp_start = s_LinkHSPStructReset(hp_start);
       hp_start->next = hp_frame_start[frame_index];
       hp_frame_start[frame_index]->prev = hp_start;
       number_of_hsps = hp_frame_number[frame_index];
@@ -1064,14 +1065,14 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 
    if (translated_query) {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
-            rev_compare_hsps_transl);
+            s_RevCompareHSPsTransl);
       qsort(link_hsp_array, total_number_of_hsps,sizeof(LinkHSPStruct*), 
-            fwd_compare_hsps_transl);
+            s_FwdCompareHSPsTransl);
    } else {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
-            rev_compare_hsps);
+            s_RevCompareHSPs);
       qsort(link_hsp_array, total_number_of_hsps,sizeof(LinkHSPStruct*), 
-            fwd_compare_hsps);
+            s_FwdCompareHSPs);
    }
 
    /* Sort by starting position. */
@@ -1166,12 +1167,12 @@ Blast_EvenGapLinkHSPs(EBlastProgramType program_number, BlastHSPList* hsp_list,
 }
 
 static void 
-ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt)
+s_ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt)
 {
    Int4 index, index1, i;
    LinkHSPStruct* linkhsp;
 
-   qsort(linkhsp_array, hspcnt, sizeof(LinkHSPStruct*), xsum_compare_hsps);
+   qsort(linkhsp_array, hspcnt, sizeof(LinkHSPStruct*), s_XSumCompareHSPs);
 
    linkhsp = linkhsp_array[0];
    for (index=0; index<hspcnt; linkhsp = linkhsp->next) {
@@ -1195,7 +1196,7 @@ ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt)
 }
 
 static void 
-AddHSPToLinkedSet(LinkHSPStruct** head_hsp_ptr, LinkHSPStruct* new_hsp, 
+s_AddHSPToLinkedSet(LinkHSPStruct** head_hsp_ptr, LinkHSPStruct* new_hsp, 
                   double xsum, double evalue, Boolean reverse_link)
 {
    LinkHSPStruct* var_hsp = NULL;
@@ -1257,7 +1258,7 @@ AddHSPToLinkedSet(LinkHSPStruct** head_hsp_ptr, LinkHSPStruct* new_hsp,
  * @param link_hsp_params Parameters for linking HSPs [in]
  */
 static Int2
-Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list, 
+s_BlastUnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, Int4 subject_length, BlastScoreBlk* sbp, 
    const BlastLinkHSPParameters* link_hsp_params, Boolean gapped_calculation)
 {
@@ -1332,10 +1333,10 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
    memcpy(score_hsp_array, link_hsp_array, hspcnt*sizeof(LinkHSPStruct*));
    memcpy(offset_hsp_array, link_hsp_array, hspcnt*sizeof(LinkHSPStruct*));
    memcpy(end_hsp_array, link_hsp_array, hspcnt*sizeof(LinkHSPStruct*));
-   qsort(offset_hsp_array, hspcnt, sizeof(LinkHSPStruct*), fwd_compare_hsps);
-   qsort(end_hsp_array, hspcnt, sizeof(LinkHSPStruct*), end_compare_hsps);
+   qsort(offset_hsp_array, hspcnt, sizeof(LinkHSPStruct*), s_FwdCompareHSPs);
+   qsort(end_hsp_array, hspcnt, sizeof(LinkHSPStruct*), s_EndCompareHSPs);
 
-   qsort(score_hsp_array, hspcnt, sizeof(LinkHSPStruct*), xsum_compare_hsps);
+   qsort(score_hsp_array, hspcnt, sizeof(LinkHSPStruct*), s_XSumCompareHSPs);
       
    /* head_hsp is set to NULL whenever there is no current linked set that is
       being worked on. */
@@ -1363,7 +1364,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
       /* Look for closest HSP to the right that starts within the overlap size
        * from where this HSP set ends.
        */
-      index1 = hsp_binary_search(offset_hsp_array, hspcnt,
+      index1 = s_HSPBinarySearch(offset_hsp_array, hspcnt,
                                  var_hsp->hsp->query.end - overlap_size, TRUE);
       /* Check all HSPs that start in the window around this HSP set's end. */
       while (index1 < hspcnt && 
@@ -1384,7 +1385,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
             continue;
          /* Check if the e-value for the new combined HSP set is better than for
             the previously obtained set. */
-         if ((evalue = SumHSPEvalue(program, sbp, query_info, subject_length, 
+         if ((evalue = s_SumHSPEvalue(program, query_info, subject_length, 
                                     link_hsp_params, head_hsp, lhsp, &xsum)) < 
              MIN(best_evalue, lhsp->hsp->evalue)) {
             best_hsp = lhsp;
@@ -1396,7 +1397,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
       /* Look for farthest HSP to the left that ends within a window from 
        * where this HSP set starts.
        */
-      index1 = hsp_binary_search(end_hsp_array, hspcnt,
+      index1 = s_HSPBinarySearch(end_hsp_array, hspcnt,
                                  head_hsp->hsp->query.offset - gap_size, FALSE);
       /* Check all HSPs that end in the window around this HSP set's start. */ 
       while (index1 < hspcnt && end_hsp_array[index1]->hsp->query.end <= 
@@ -1422,7 +1423,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
          }
          /* Check if the e-value for the new combined HSP set is better than for
             the previously obtained set. */
-         if ((evalue = SumHSPEvalue(program, sbp, query_info, subject_length, 
+         if ((evalue = s_SumHSPEvalue(program, query_info, subject_length, 
                           link_hsp_params, var_hsp, head_hsp, &xsum)) < 
              MIN(var_hsp->hsp->evalue, best_evalue)) {
             best_hsp = lhsp;
@@ -1434,7 +1435,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
          
       /* Link the new HSP to the set, if it qualified. */
       if (best_hsp) {
-         AddHSPToLinkedSet(&head_hsp, best_hsp, best_xsum, best_evalue, 
+         s_AddHSPToLinkedSet(&head_hsp, best_hsp, best_xsum, best_evalue, 
                            reverse_link);
       } else {
          head_hsp = NULL;
@@ -1442,7 +1443,7 @@ Blast_UnevenGapLinkHSPs(EBlastProgramType program, BlastHSPList* hsp_list,
       }
    }
   
-   ConnectLinkHSPStructs(score_hsp_array, hspcnt);
+   s_ConnectLinkHSPStructs(score_hsp_array, hspcnt);
 
    head_hsp = score_hsp_array[0];
 
@@ -1496,7 +1497,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
     
     /* Link up the HSP's for this hsp_list. */
     if (link_hsp_params->longest_intron <= 0) {
-        Blast_EvenGapLinkHSPs(program_number, hsp_list, query_info, 
+        s_BlastEvenGapLinkHSPs(program_number, hsp_list, query_info, 
                               subject_length, sbp, link_hsp_params, 
                               gapped_calculation);
         /* The HSP's may be in a different order than they were before, 
@@ -1508,7 +1509,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
         Blast_HSPListGetEvalues(query_info, hsp_list, 
            gapped_calculation, sbp, link_hsp_params->gap_decay_rate);
         
-        Blast_UnevenGapLinkHSPs(program_number, hsp_list, query_info, 
+        s_BlastUnevenGapLinkHSPs(program_number, hsp_list, query_info, 
                                 subject_length, sbp, link_hsp_params,
                                 gapped_calculation);
     }

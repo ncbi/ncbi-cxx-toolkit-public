@@ -67,7 +67,9 @@ typedef struct seedSearchItems {
  * score matrix, program_flag says which variant of the program is
  * used; is_dna tells whether the strings are DNA or protein.
  */
-static void init_order(Int4 **matrix, Int4 program_flag, Boolean is_dna, seedSearchItems *seedSearch)
+static void 
+s_InitOrder(Int4 **matrix, Int4 program_flag, Boolean is_dna, 
+            seedSearchItems *seedSearch)
 {
     Uint1 i, j; /*loop indices for matrix*/ 
     Int4 *matrixRow; /*row of matrixToFill*/ 
@@ -101,7 +103,8 @@ static void init_order(Int4 **matrix, Int4 program_flag, Boolean is_dna, seedSea
 }
 
 /** Initialize occurrence probabilities for each amino acid */
-static void initProbs(seedSearchItems * seedSearch)
+static void 
+s_InitProbs(seedSearchItems * seedSearch)
 {
    double totalCount;  /*for Robinson frequencies*/
    seedSearch->pchars[0] = '-';
@@ -168,7 +171,8 @@ static void initProbs(seedSearchItems * seedSearch)
  * the last 4 positions of a match; they are used to
  * do the prefixPos and suffixPos calculations with bit arithmetic.
  */
-static void setting_tt(Int4* S, Int4 mask, Int4 mask2, Uint4* prefixPos, 
+static void 
+s_FindPrefixAndSuffixPos(Int4* S, Int4 mask, Int4 mask2, Uint4* prefixPos, 
 		       Uint4* suffixPos)
 {
   Int4 i; /*index over possible DNA encoded words, 4 bases per word*/
@@ -201,7 +205,8 @@ static void setting_tt(Int4* S, Int4 mask, Int4 mask2, Uint4* prefixPos,
 }
 
 /** Initialize mask and other arrays for DNA patterns*/
-static void init_pattern_DNA(patternSearchItems *patternSearch)
+static void 
+s_InitDNAPattern(patternSearchItems *patternSearch)
 {
   Int4 mask1; /*mask for one word in a set position*/
   Int4 compositeMask; /*superimposed mask1 in 4 adjacent positions*/
@@ -211,7 +216,7 @@ static void init_pattern_DNA(patternSearchItems *patternSearch)
     for (wordIndex = 0; wordIndex < patternSearch->numWords; wordIndex++) {
       mask1 = patternSearch->match_maskL[wordIndex];
       compositeMask = mask1 + (mask1>>1)+(mask1>>2)+(mask1>>3);
-      setting_tt(patternSearch->SLL[wordIndex], 
+      s_FindPrefixAndSuffixPos(patternSearch->SLL[wordIndex], 
       patternSearch->match_maskL[wordIndex], 
 	 compositeMask, patternSearch->DNAprefixSLL[wordIndex], patternSearch->DNAsuffixSLL[wordIndex]);
     }
@@ -222,7 +227,7 @@ static void init_pattern_DNA(patternSearchItems *patternSearch)
       (patternSearch->match_mask>>2) + (patternSearch->match_mask>>3); 
     patternSearch->DNAwhichPrefixPosPtr = patternSearch->DNAwhichPrefixPositions; 
     patternSearch->DNAwhichSuffixPosPtr = patternSearch->DNAwhichSuffixPositions;
-    setting_tt(patternSearch->whichPositionsByCharacter, 
+    s_FindPrefixAndSuffixPos(patternSearch->whichPositionsByCharacter, 
     patternSearch->match_mask, compositeMask, 
     patternSearch->DNAwhichPrefixPositions, patternSearch->DNAwhichSuffixPositions);
   }
@@ -235,7 +240,8 @@ static void init_pattern_DNA(patternSearchItems *patternSearch)
  * @param maxLength Limit on how long inputPattern can get [in]
  * @return the final length of the pattern or -1 if too long.
  */
-static Int4 expanding(Int4 *inputPatternMasked, Uint1 *inputPattern, 
+static Int4 
+s_ExpandPattern(Int4 *inputPatternMasked, Uint1 *inputPattern, 
 		      Int4 length, Int4 maxLength)
 {
     Int4 i, j; /*pattern indices*/
@@ -259,7 +265,7 @@ static Int4 expanding(Int4 *inputPatternMasked, Uint1 *inputPattern,
 	  tempPattern[j] = inputPattern[j];
 	}
 	recReturnValue2 = recReturnValue1 = 
-	  expanding(inputPatternMasked, inputPattern, length, maxLength);
+	  s_ExpandPattern(inputPatternMasked, inputPattern, length, maxLength);
 	if (recReturnValue1 == -1)
 	  return -1;
 	for (numPos = 0; numPos <= thisPlaceMasked; numPos++) {
@@ -283,7 +289,7 @@ static Int4 expanding(Int4 *inputPatternMasked, Uint1 *inputPattern,
 	      return (-1);
 	  }
 	  recReturnValue1 = 
-	    expanding(&inputPatternMasked[recReturnValue2], 
+	    s_ExpandPattern(&inputPatternMasked[recReturnValue2], 
 		      &inputPattern[recReturnValue2], 
 		      length + numPos - 1, 
 		      maxLength - recReturnValue2);
@@ -304,7 +310,8 @@ static Int4 expanding(Int4 *inputPatternMasked, Uint1 *inputPattern,
  * @param length How many bytes to pack? [in]
  * @return packed bit vector.
  */
-static Int4 packing(Uint1 *inputPattern, Int4 length)
+static Int4 
+s_PackPattern(Uint1 *inputPattern, Int4 length)
 {
     Int4 i; /*loop index*/
     Int4 returnValue = 0; /*value to return*/
@@ -320,7 +327,8 @@ static Int4 packing(Uint1 *inputPattern, Int4 length)
  * patternSearch->bitPatternByLetter.
  * @param numPlaces Number of positions in inputPattern [in]
  */
-static void longpacking(Int4 numPlaces, Uint1 *inputPattern, patternSearchItems *patternSearch)
+static void 
+s_PackLongPattern(Int4 numPlaces, Uint1 *inputPattern, patternSearchItems *patternSearch)
 {
     Int4 charIndex; /*index over characters in alphabet*/
     Int4 bitPattern; /*bit pattern for one word to pack*/
@@ -351,7 +359,8 @@ static void longpacking(Int4 numPlaces, Uint1 *inputPattern, patternSearchItems 
 }
 
 /** Return the number of 1 bits in the base 2 representation of a*/
-static Int4 num_of_one(Int4 a)
+static 
+Int4 s_NumOfOne(Int4 a)
 {
   Int4 returnValue;
   returnValue = 0;
@@ -364,7 +373,8 @@ static Int4 num_of_one(Int4 a)
 }
 
 /** Sets up field in patternSearch when pattern is very long*/
-static void longpacking2(Int4 *inputPatternMasked, Int4 numPlacesInPattern, patternSearchItems *patternSearch)
+static void 
+s_PackVeryLongPattern(Int4 *inputPatternMasked, Int4 numPlacesInPattern, patternSearchItems *patternSearch)
 {
     Int4 placeIndex; /*index over places in pattern rep.*/
     Int4 wordIndex; /*index over words*/
@@ -414,7 +424,7 @@ static void longpacking2(Int4 *inputPatternMasked, Int4 numPlacesInPattern, patt
       }
       else {
 	patternWordProbability *= (double) 
-	  num_of_one(inputPatternMasked[placeIndex])/ (double) ALPHABET_SIZE;
+	  s_NumOfOne(inputPatternMasked[placeIndex])/ (double) ALPHABET_SIZE;
 	}
     }
     patternSearch->numWords = wordIndex;
@@ -428,7 +438,7 @@ static void longpacking2(Int4 *inputPatternMasked, Int4 numPlacesInPattern, patt
  * @error_msg Error message, if any.
  */
 static Int4 
-init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp, 
+s_InitPattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp, 
              patternSearchItems* *pattern_info,
              Blast_Message* *error_msg)
 {
@@ -462,8 +472,8 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
     patternSearch = *pattern_info = 
        (patternSearchItems*) calloc(1, sizeof(patternSearchItems));
 
-    initProbs(seedSearch);
-    init_order(sbp->matrix, PAT_SEED_FLAG, FALSE, seedSearch);
+    s_InitProbs(seedSearch);
+    s_InitOrder(sbp->matrix, PAT_SEED_FLAG, FALSE, seedSearch);
 
     patternSearch->flagPatternLength = ONE_WORD_PATTERN; 
     patternSearch->patternProbability = 1.0;
@@ -616,24 +626,24 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
       tempInputPatternMasked[i] = patternSearch->inputPatternMasked[i]; 
       tj = j;
     }
-    j = expanding(patternSearch->inputPatternMasked, localPattern, j, MaxP);
+    j = s_ExpandPattern(patternSearch->inputPatternMasked, localPattern, j, MaxP);
     if ((j== -1) || ((j > BITS_PACKED_PER_WORD) && is_dna)) {
       patternSearch->flagPatternLength = PATTERN_TOO_LONG;
-      longpacking2(tempInputPatternMasked, tj, patternSearch);
+      s_PackVeryLongPattern(tempInputPatternMasked, tj, patternSearch);
       for (i = 0; i < tj; i++) 
          patternSearch->inputPatternMasked[i] = tempInputPatternMasked[i];
       patternSearch->highestPlace = tj;
       if (is_dna) 
-         init_pattern_DNA(patternSearch);
+         s_InitDNAPattern(patternSearch);
       return 1;
     }
     if (j > BITS_PACKED_PER_WORD) {
       patternSearch->flagPatternLength = MULTI_WORD_PATTERN;
-      longpacking(j, localPattern, patternSearch);
+      s_PackLongPattern(j, localPattern, patternSearch);
       return j;
     } 
     /*make a bit mask out of local pattern of length j*/
-    patternSearch->match_mask = packing(localPattern, j);
+    patternSearch->match_mask = s_PackPattern(localPattern, j);
     /*store for each character a bit mask of which positions
       that character can occur in*/
     for (charIndex = 0; charIndex < ALPHABET_SIZE; charIndex++) {
@@ -646,7 +656,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
     }
     patternSearch->whichPositionPtr = patternSearch->whichPositionsByCharacter;
     if (is_dna) 
-      init_pattern_DNA(patternSearch);
+      s_InitDNAPattern(patternSearch);
     return j; /*return number of places for pattern representation*/
 }
 
@@ -662,7 +672,7 @@ Int2 PHILookupTableNew(const LookupTableOptions* opt,
       return -1;
 
    lookup->is_dna = is_dna;
-   init_pattern((Uint1*)opt->phi_pattern, is_dna, sbp, &lookup->pattern_info,
+   s_InitPattern((Uint1*)opt->phi_pattern, is_dna, sbp, &lookup->pattern_info,
                 &error_msg); 
    lookup->num_matches = 0;
    lookup->allocated_size = MIN_PHI_LOOKUP_SIZE;
@@ -691,7 +701,8 @@ BlastPHILookupTable* PHILookupTableDestruct(BlastPHILookupTable* lut)
  * @param offset Offset in query at which pattern was found. [in]
  * @param length Length of the pattern at this offset. [in] 
  */
-static Int2 PHIBlastAddPatternHit(BlastPHILookupTable* lookup, Int4 offset, 
+static Int2 
+s_PHIBlastAddPatternHit(BlastPHILookupTable* lookup, Int4 offset, 
                                   Int4 length)
 {
    if (lookup->num_matches >= lookup->allocated_size) {
@@ -741,7 +752,7 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
                                      pattern_info);
       
       for (i = 0; i < twiceNumHits; i += 2) {
-         PHIBlastAddPatternHit(lookup, hitArray[i+1]+from, 
+         s_PHIBlastAddPatternHit(lookup, hitArray[i+1]+from, 
                                hitArray[i]-hitArray[i+1]+1);
       }
    }
@@ -756,7 +767,7 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
  * @return Do the two sequences match? 
  */
 static Boolean 
-PHIBlastMatchPatterns(Uint1* subject, Uint1* query, Int4 length)
+s_PHIBlastMatchPatterns(Uint1* subject, Uint1* query, Int4 length)
 {
    Int4 index;
 
@@ -806,7 +817,7 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
          /* Match pattern lengths in subject in query first; then 
             check for identical match of pattern */
          if (length == pat_lengths[index] &&
-             PHIBlastMatchPatterns(subject+offset, query+start_offsets[index], 
+             s_PHIBlastMatchPatterns(subject+offset, query+start_offsets[index], 
                                    length))
          {
             /* Pattern has matched completely. Save index into the array

@@ -45,7 +45,7 @@ static char const rcsid[] =
  * PSICreatePssmWithDiagnostics.
  */
 static void
-_PSICreatePssmCleanUp(PSIMatrix** pssm,
+s_PSICreatePssmCleanUp(PSIMatrix** pssm,
                       _PSIMsa* msa,
                       _PSIAlignedBlock* aligned_block,
                       _PSISequenceWeights* seq_weights,
@@ -54,7 +54,7 @@ _PSICreatePssmCleanUp(PSIMatrix** pssm,
 /** Copies pssm data from internal_pssm and sbp into pssm. None of its
  * parameters can be NULL. */
 static void
-_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
+s_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
              const BlastScoreBlk* sbp,
              PSIMatrix* pssm);
 
@@ -97,7 +97,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     *pssm = PSIMatrixNew(msa->dimensions->query_length, 
                          (Uint4) sbp->alphabet_size);
     if ( !msa || ! aligned_block || !seq_weights || !internal_pssm || !*pssm ) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
                               internal_pssm);
         return PSIERR_OUTOFMEM;
     }
@@ -112,21 +112,21 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     /*** Run the engine's stages ***/
     status = _PSIPurgeBiasedSegments(msa);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
 
     status = _PSIValidateMSA(msa, options->ignore_consensus);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
 
     status = _PSIComputeAlignmentBlocks(msa, aligned_block);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
@@ -135,7 +135,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
                                         options->ignore_consensus,
                                         seq_weights);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
@@ -143,7 +143,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     status = _PSIComputeFreqRatios(msa, seq_weights, sbp, aligned_block, 
                                    options->pseudo_count, internal_pssm);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
@@ -151,7 +151,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     status = _PSIConvertFreqRatiosToPSSM(internal_pssm, msa->query, sbp, 
                                          seq_weights->std_prob);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
@@ -160,13 +160,13 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     status = _PSIScaleMatrix(msa->query, seq_weights->std_prob, NULL, 
                              internal_pssm, sbp);
     if (status != PSI_SUCCESS) {
-        _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+        s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
 
     /*** Save the pssm outgoing parameter ***/
-    _PSISavePssm(internal_pssm, sbp, *pssm);
+    s_PSISavePssm(internal_pssm, sbp, *pssm);
 
     /*** Save diagnostics if required ***/
     if (request && diagnostics) {
@@ -176,7 +176,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         if ( !*diagnostics ) {
             /* FIXME: This could be changed to return a warning and not
              * deallocate PSSM data */
-            _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
+            s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                                   internal_pssm);
             return PSIERR_OUTOFMEM;
         }
@@ -184,12 +184,12 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
                                      internal_pssm, *diagnostics);
         if (status != PSI_SUCCESS) {
             *diagnostics = PSIDiagnosticsResponseFree(*diagnostics);
-            _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
+            s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights,
                                   internal_pssm);
             return status;
         }
     }
-    _PSICreatePssmCleanUp(NULL, msa, aligned_block, seq_weights, internal_pssm);
+    s_PSICreatePssmCleanUp(NULL, msa, aligned_block, seq_weights, internal_pssm);
 
     return PSI_SUCCESS;
 }
@@ -197,7 +197,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
 /****************************************************************************/
 
 static void
-_PSICreatePssmCleanUp(PSIMatrix** pssm,
+s_PSICreatePssmCleanUp(PSIMatrix** pssm,
                       _PSIMsa* msa,
                       _PSIAlignedBlock* aligned_block,
                       _PSISequenceWeights* seq_weights,
@@ -213,7 +213,7 @@ _PSICreatePssmCleanUp(PSIMatrix** pssm,
 }
 
 static void
-_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
+s_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
              const BlastScoreBlk* sbp,
              PSIMatrix* pssm)
 {

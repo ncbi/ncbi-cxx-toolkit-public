@@ -112,7 +112,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
 }
 
 static Int2
-PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
+s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    Blast_Message** blast_message)
 {
    Blast_KarlinBlk* kbp;
@@ -424,7 +424,7 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 
     /* Fills in block for gapped blast. */
     if (phi_align) {
-       PHIScoreBlkFill(sbp, scoring_options, blast_message);
+       s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else {
        for (context = query_info->first_context;
             context <= query_info->last_context; ++context) {
@@ -696,7 +696,7 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
                                query_info, ext_params);
 
    BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info, 
-                               total_length/num_seqs, hit_params);
+                               (Int4)(total_length/num_seqs), hit_params);
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */

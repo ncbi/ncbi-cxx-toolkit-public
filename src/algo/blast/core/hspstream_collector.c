@@ -48,7 +48,7 @@ static char const rcsid[] =
  * @return NULL.
  */
 static BlastHSPStream* 
-BlastHSPListCollectorFree(BlastHSPStream* hsp_stream) 
+s_BlastHSPListCollectorFree(BlastHSPStream* hsp_stream) 
 {
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
@@ -64,7 +64,7 @@ BlastHSPListCollectorFree(BlastHSPStream* hsp_stream)
  * @param hsp_stream The HSP stream to close [in] [out]
  */ 
 static void 
-BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
+s_BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
 {
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
@@ -91,7 +91,7 @@ BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
  * @return Success, error, or end of reading, when nothing left to read.
  */
 static int 
-BlastHSPListCollectorRead(BlastHSPStream* hsp_stream, 
+s_BlastHSPListCollectorRead(BlastHSPStream* hsp_stream, 
                           BlastHSPList** hsp_list_out) 
 {
    BlastHSPListCollectorData* stream_data = 
@@ -111,7 +111,7 @@ BlastHSPListCollectorRead(BlastHSPStream* hsp_stream,
       following 2 lines should be removed, and stream closure for writing 
       should be done outside of the read function. */
    if (!stream_data->results_sorted)
-      BlastHSPListCollectorClose(hsp_stream);
+      s_BlastHSPListCollectorClose(hsp_stream);
 
    /* Find index of the first query that has results. */
    for (index = stream_data->first_query_index; 
@@ -150,7 +150,7 @@ BlastHSPListCollectorRead(BlastHSPStream* hsp_stream,
  * @return Success or error, if stream is already closed for writing.
  */
 static int 
-BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream, 
+s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream, 
                            BlastHSPList** hsp_list)
 {
    BlastHSPListCollectorData* stream_data = 
@@ -198,17 +198,17 @@ BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
  * @return Filled HSP stream.
  */
 static BlastHSPStream* 
-BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args) 
+s_BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args) 
 {
     BlastHSPStreamFunctionPointerTypes fnptr;
 
-    fnptr.dtor = &BlastHSPListCollectorFree;
+    fnptr.dtor = &s_BlastHSPListCollectorFree;
     SetMethod(hsp_stream, eDestructor, fnptr);
-    fnptr.method = &BlastHSPListCollectorRead;
+    fnptr.method = &s_BlastHSPListCollectorRead;
     SetMethod(hsp_stream, eRead, fnptr);
-    fnptr.method = &BlastHSPListCollectorWrite;
+    fnptr.method = &s_BlastHSPListCollectorWrite;
     SetMethod(hsp_stream, eWrite, fnptr);
-    fnptr.closeFn = &BlastHSPListCollectorClose;
+    fnptr.closeFn = &s_BlastHSPListCollectorClose;
     SetMethod(hsp_stream, eClose, fnptr);
 
     SetData(hsp_stream, args);
@@ -234,7 +234,7 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program, BlastHitSavingOptions* h
     stream_data->first_query_index = 0;
     stream_data->x_lock = lock;
 
-    info.constructor = &BlastHSPListCollectorNew;
+    info.constructor = &s_BlastHSPListCollectorNew;
     info.ctor_argument = (void*)stream_data;
 
     return BlastHSPStreamNew(&info);
