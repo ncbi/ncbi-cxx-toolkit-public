@@ -858,6 +858,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	} 
 	//display feature. Feature, if set, will be displayed for query regardless
 
+        CSeq_id no_id;
 	for (list<alnFeatureInfo*>::iterator iter=bioseqFeature[row].begin();  iter != bioseqFeature[row].end(); iter++){
 	  if ( curRange.IntersectingWith((*iter)->alnRange)){  
 	    if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
@@ -867,7 +868,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    }
 	    out<<(*iter)->feature->featureId;
 	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin-(*iter)->feature->featureId.size());
-	    OutputSeq((*iter)->featureString, CSeq_id(), j, actualLineLen, 0, false, out);
+	    OutputSeq((*iter)->featureString, no_id, j, actualLineLen, 0, false, out);
 	    out<<endl;
 	  }
 	}
@@ -875,7 +876,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	//display middle line
 	if (row == 0 && ((m_AlignOption & eShowMiddleLine)) && !(m_AlignOption&eMultiAlign)) {
 	  AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin);
-	  OutputSeq(middleLine, CSeq_id(), j, actualLineLen, 0, false, out);
+	  OutputSeq(middleLine, no_id, j, actualLineLen, 0, false, out);
 	  out<<endl;
 	}
       }
@@ -1992,6 +1993,10 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.35  2004/04/26 16:50:48  ucko
+*Don't try to pass temporary (dummy) CSeq_id objects, even by const
+*reference, as CSeq_id has no public copy constructor.
+*
 *Revision 1.34  2004/04/14 16:29:03  jianye
 *deprecated getbioseq
 *
