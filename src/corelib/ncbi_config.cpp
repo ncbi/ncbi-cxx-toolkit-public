@@ -197,7 +197,8 @@ void ParamTree_ConvertSubNodes(const CNcbiRegistry&     reg,
 
 
 
-TParamTree* ParamTree_ConvertRegToTree(const CNcbiRegistry& reg)
+CConfig::TParamTree* 
+CConfig::ConvertRegToTree(const CNcbiRegistry& reg)
 {
     auto_ptr<TParamTree> tree_root(new TParamTree);
 
@@ -268,17 +269,44 @@ TParamTree* ParamTree_ConvertRegToTree(const CNcbiRegistry& reg)
 }
 
 
-const string& 
-ParamTree_GetString(const string&         driver_name,
-                    const TParamTree*     params,
-                    const string&         param_name, 
-                    ENcbiConfigErrAction  on_error,
-                    const string&         default_value)
+CConfig::CConfig(TParamTree* param_tree, EOwnership own)
+: m_ParamTree(param_tree),
+  m_OwnTree(own)
 {
-    const TParamTree* tn = params->FindSubNode(param_name);
+    _ASSERT(params);
+}
+
+CConfig::CConfig(const CNcbiRegistry& reg)
+{
+    m_ParamTree = ParamTree_ConvertRegToTree(reg);
+    _ASSERT(m_ParamTree);
+    m_OwnTree = eTakeOwnership;
+}
+
+CConfig::CConfig(const TParamTree* param_tree)
+{
+    _ASSERT(param_tree);
+
+    m_ParamTree = const_cast<TParamTree*>(param_tree);
+    m_OwnTree = eNoOwnership;
+}
+
+CConfig::~CConfig()
+{
+    if (m_OwnTree == eTakeOwnership)
+        delete m_ParamTree;
+}
+
+const string& 
+CConfig::GetString(const string&         driver_name,
+                   const string&         param_name, 
+                   EErrAction            on_error,
+                   const string&         default_value)
+{
+    const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
 
     if (tn == 0 || tn->GetValue().empty()) {
-        if (on_error == eConfErr_NoThrow) {
+        if (on_error == eErr_NoThrow) {
             return default_value;
         }
         string msg = 
@@ -289,21 +317,19 @@ ParamTree_GetString(const string&         driver_name,
     return tn->GetValue();
 }
 
-int ParamTree_GetInt(const string&         driver_name,
-                     const TParamTree*     params,
-                     const string&         param_name, 
-                     ENcbiConfigErrAction  on_error,
-                     int                   default_value)
+int CConfig::GetInt(const string&         driver_name,
+                    const string&         param_name, 
+                    EErrAction            on_error,
+                    int                   default_value)
 {
     const string& param =
-        ParamTree_GetString(driver_name,
-                            params,
+                  GetString(driver_name,
                             param_name,
                             on_error,
                             kEmptyStr);
 
     if (param.empty()) {
-        if (on_error == eConfErr_Throw) {
+        if (on_error == eErr_NoThrow) {
             string msg = 
                 "Cannot init " + driver_name 
                                 + ", empty parameter:" + param_name;
@@ -318,7 +344,7 @@ int ParamTree_GetInt(const string&         driver_name,
     }
     catch (CStringException& ex)
     {
-        if (on_error == eConfErr_Throw) {
+        if (on_error == eErr_NoThrow) {
             string msg = 
                 "Cannot init " + driver_name 
                                 + ", incorrect parameter format:" 
@@ -331,21 +357,19 @@ int ParamTree_GetInt(const string&         driver_name,
 }
 
 unsigned int 
-ParamTree_GetDataSize(const string&         driver_name,
-                      const TParamTree*     params,
-                      const string&         param_name, 
-                      ENcbiConfigErrAction  on_error,
-                      unsigned int          default_value)
+CConfig::GetDataSize(const string&         driver_name,
+                     const string&         param_name, 
+                     EErrAction            on_error,
+                     unsigned int          default_value)
 {
     const string& param =
-        ParamTree_GetString(driver_name,
-                            params,
+                  GetString(driver_name,
                             param_name,
                             on_error,
                             kEmptyStr);
 
     if (param.empty()) {
-        if (on_error == eConfErr_Throw) {
+        if (on_error == eErr_Throw) {
             string msg = 
                 "Cannot init " + driver_name 
                                 + ", empty parameter:" + param_name;
@@ -360,7 +384,7 @@ ParamTree_GetDataSize(const string&         driver_name,
     }
     catch (CStringException& ex)
     {
-        if (on_error == eConfErr_Throw) {
+        if (on_error == eErr_Throw) {
             string msg = 
                 "Cannot init " + driver_name 
                                 + ", incorrect parameter format:" 
@@ -372,21 +396,20 @@ ParamTree_GetDataSize(const string&         driver_name,
     return default_value;
 }
 
-bool ParamTree_GetBool(const string&         driver_name,
-                       const TParamTree*     params,
-                       const string&         param_name, 
-                       ENcbiConfigErrAction  on_error,
-                       bool                   default_value)
+
+bool CConfig::GetBool(const string&         driver_name,
+                      const string&         param_name, 
+                      EErrAction            on_error,
+                      bool                  default_value)
 {
     const string& param =
-        ParamTree_GetString(driver_name,
-                            params,
+                  GetString(driver_name,
                             param_name,
                             on_error,
                             kEmptyStr);
 
     if (param.empty()) {
-        if (on_error == eConfErr_Throw) {
+        if (on_error == eErr_Throw) {
             string msg = 
                 "Cannot init " + driver_name 
                                + ", empty parameter:" + param_name;
@@ -401,7 +424,7 @@ bool ParamTree_GetBool(const string&         driver_name,
     }
     catch (CStringException& ex)
     {
-        if (on_error == eConfErr_Throw) {
+        if (on_error == eErr_Throw) {
             string msg = 
                 "Cannot init " + driver_name 
                                + ", incorrect parameter format:" 
@@ -418,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/09/23 16:22:03  kuznets
+ * All ParamTree_ functions assembled in CConfig class
+ *
  * Revision 1.5  2004/09/23 14:19:23  kuznets
  * +ParamTree_GetDataSize
  *

@@ -158,7 +158,7 @@ CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
              ncbi::CInterfaceVersion<iface>::ePatchLevel)
 
 
-typedef TParamTree TPluginManagerParamTree;
+typedef CConfig::TParamTree TPluginManagerParamTree;
 
 
 /// IClassFactory<> --
@@ -820,11 +820,12 @@ IClassFactory<TClass, TIfVer>::GetParam(
                         bool                           mandatory,
                         const string&                  default_value) const
 {
-    return ParamTree_GetString(driver_name, 
-                               params, 
-                               param_name, 
-                               mandatory ? eConfErr_Throw : eConfErr_NoThrow, 
-                               default_value);
+    CConfig conf(params);
+    return conf.GetString(driver_name, 
+                          param_name, 
+                          mandatory ? 
+                            CConfig::eErr_Throw : CConfig::eErr_NoThrow, 
+                          default_value);
 }
 
 
@@ -835,6 +836,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/09/23 16:20:24  kuznets
+ * All ParamTree_ functions assembled in CConfig class
+ *
  * Revision 1.35  2004/09/23 13:48:40  kuznets
  * Some functions reimplemented using ncbi_config.hpp
  *

@@ -33,6 +33,7 @@
 /// Parameters initialization model
 
 #include <corelib/ncbi_tree.hpp>
+#include <corelib/ncbimisc.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -69,134 +70,140 @@ public:
 
 
 
-/// Instantiation parameters tree.
-/// 
-/// Plugin manager's intantiation model is based on class factories.
-/// Recursive class factory calls are modeled as tree, where specific
-/// subtree is responsible for CF parameters
-///
-typedef CTreePairNode<string, string>  TParamTree;
-
 class CNcbiRegistry;
 
-class CConfig
+class NCBI_XNCBI_EXPORT CConfig
 {
+public:
+    /// Instantiation parameters tree.
+    /// 
+    /// Plugin manager's intantiation model is based on class factories.
+    /// Recursive class factory calls are modeled as tree, where specific
+    /// subtree is responsible for CF parameters
+    ///
+    typedef CTreePairNode<string, string>  TParamTree;
+
+public:
+    /// Optionally takes ownership on passed param_tree
+    CConfig(TParamTree* param_tree, EOwnership own = eTakeOwnership);
+
+    /// Construct, take no tree ownership
+    CConfig(const TParamTree* param_tree);
+
+    /// Take registry and create a config tree out of it
+    CConfig(const CNcbiRegistry& reg);
+    ~CConfig();
+
+    /// Defines how to behave when parameter is missing
+    ///
+    enum EErrAction {
+        eErr_Throw,   ///< Throw an exception on error
+        eErr_NoThrow  ///< Return default value on error
+    };
+
+    /// Utility function to get an element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    ///
+    /// @param driver_name
+    ///    Name of the modure requesting parameter (used in diagnostics)
+    /// @param params
+    ///    Parameters tree
+    /// @param param_name
+    ///    Name of the parameter
+    /// @param mandatory
+    ///    Error action
+    /// @param default_value
+    ///    Default value for missing parameters
+    const string& GetString(const string&         driver_name,
+                            const string&         param_name, 
+                            EErrAction            on_error,
+                            const string&         default_value);
+    
+    /// Utility function to get an integer element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    ///
+    /// @param driver_name
+    ///    Name of the modure requesting parameter (used in diagnostics)
+    /// @param params
+    ///    Parameters tree
+    /// @param param_name
+    ///    Name of the parameter
+    /// @param mandatory
+    ///    Error action
+    /// @param default_value
+    ///    Default value for missing parameters
+    ///
+    /// @sa ParamTree_GetString
+    int GetInt(const string&         driver_name,
+               const string&         param_name, 
+               EErrAction            on_error,
+               int                   default_value);
+
+    /// Utility function to get an integer element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    /// This function undestands KB, MB, GB qualifiers at the end of the string
+    ///
+    /// @param driver_name
+    ///    Name of the modure requesting parameter (used in diagnostics)
+    /// @param params
+    ///    Parameters tree
+    /// @param param_name
+    ///    Name of the parameter
+    /// @param mandatory
+    ///    Error action
+    /// @param default_value
+    ///    Default value for missing parameters
+    ///
+    /// @sa ParamTree_GetString
+    unsigned int GetDataSize(const string&         driver_name,
+                             const string&         param_name, 
+                             EErrAction            on_error,
+                             unsigned int          default_value);
+
+    /// Utility function to get an integer element of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    ///
+    /// @param driver_name
+    ///    Name of the modure requesting parameter (used in diagnostics)
+    /// @param params
+    ///    Parameters tree
+    /// @param param_name
+    ///    Name of the parameter
+    /// @param mandatory
+    ///    Error action
+    /// @param default_value
+    ///    Default value for missing parameters
+    ///
+    /// @sa ParamTree_GetString
+    bool GetBool(const string&         driver_name,
+                 const string&         param_name, 
+                 EErrAction            on_error,
+                 bool                  default_value);
+
+    const TParamTree* GetTree() const { return m_ParamTree; }
+
+    /// Reconstruct param tree from the application registry
+    /// @param reg
+    ///     Application registry (loaded from the INI file)
+    /// @return 
+    ///     Reconstructed tree (caller is responsible for deletion)
+    ///
+    static
+    TParamTree* ConvertRegToTree(const CNcbiRegistry&  reg);
+
+
+private:
+    CConfig(const CConfig&);
+    CConfig& operator=(const CConfig&);
+
+protected:
+    TParamTree*  m_ParamTree;
+    EOwnership   m_OwnTree;
 };
-
-
-/// Reconstruct param tree from the application registry
-/// @param reg
-///     Application registry (loaded from the INI file)
-/// @return 
-///     Reconstructed tree (caller is responsible for deletion)
-///
-NCBI_XNCBI_EXPORT
-TParamTree* ParamTree_ConvertRegToTree(const CNcbiRegistry&  reg);
-
-/// Defines how to behave when parameter is missing
-///
-enum ENcbiConfigErrAction {
-    eConfErr_Throw,   ///< Throw an exception on error
-    eConfErr_NoThrow  ///< Return default value on error
-};
-
-/// Utility function to get an element of parameter tree
-/// Throws an exception when mandatory parameter is missing
-/// (or returns the deafult value)
-///
-/// @param driver_name
-///    Name of the modure requesting parameter (used in diagnostics)
-/// @param params
-///    Parameters tree
-/// @param param_name
-///    Name of the parameter
-/// @param mandatory
-///    Error action
-/// @param default_value
-///    Default value for missing parameters
-NCBI_XNCBI_EXPORT
-const string& 
-ParamTree_GetString(const string&         driver_name,
-                    const TParamTree*     params,
-                    const string&         param_name, 
-                    ENcbiConfigErrAction  on_error,
-                    const string&         default_value);
-
-
-
-/// Utility function to get an integer element of parameter tree
-/// Throws an exception when mandatory parameter is missing
-/// (or returns the deafult value)
-///
-/// @param driver_name
-///    Name of the modure requesting parameter (used in diagnostics)
-/// @param params
-///    Parameters tree
-/// @param param_name
-///    Name of the parameter
-/// @param mandatory
-///    Error action
-/// @param default_value
-///    Default value for missing parameters
-///
-/// @sa ParamTree_GetString
-NCBI_XNCBI_EXPORT
-int ParamTree_GetInt(const string&         driver_name,
-                     const TParamTree*     params,
-                     const string&         param_name, 
-                     ENcbiConfigErrAction  on_error,
-                     int                   default_value);
-
-
-/// Utility function to get an integer element of parameter tree
-/// Throws an exception when mandatory parameter is missing
-/// (or returns the deafult value)
-/// This function undestands KB, MB, GB qualifiers at the end of the string
-///
-/// @param driver_name
-///    Name of the modure requesting parameter (used in diagnostics)
-/// @param params
-///    Parameters tree
-/// @param param_name
-///    Name of the parameter
-/// @param mandatory
-///    Error action
-/// @param default_value
-///    Default value for missing parameters
-///
-/// @sa ParamTree_GetString
-NCBI_XNCBI_EXPORT
-unsigned int 
-ParamTree_GetDataSize(const string&         driver_name,
-                      const TParamTree*     params,
-                      const string&         param_name, 
-                      ENcbiConfigErrAction  on_error,
-                      unsigned int          default_value);
-
-
-/// Utility function to get an integer element of parameter tree
-/// Throws an exception when mandatory parameter is missing
-/// (or returns the deafult value)
-///
-/// @param driver_name
-///    Name of the modure requesting parameter (used in diagnostics)
-/// @param params
-///    Parameters tree
-/// @param param_name
-///    Name of the parameter
-/// @param mandatory
-///    Error action
-/// @param default_value
-///    Default value for missing parameters
-///
-/// @sa ParamTree_GetString
-NCBI_XNCBI_EXPORT
-bool ParamTree_GetBool(const string&         driver_name,
-                       const TParamTree*     params,
-                       const string&         param_name, 
-                       ENcbiConfigErrAction  on_error,
-                       bool                  default_value);
-
 
 /* @} */
 
@@ -207,6 +214,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/09/23 16:20:24  kuznets
+ * All ParamTree_ functions assembled in CConfig class
+ *
  * Revision 1.6  2004/09/23 15:40:55  kuznets
  * +DLL export for used functions
  *

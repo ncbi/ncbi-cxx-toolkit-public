@@ -125,11 +125,11 @@ protected:
                     bool                           mandatory,
                     int                            default_value) const
     {
-        return ParamTree_GetInt(m_DriverName,
-                                params,
-                                param_name,
-                                eConfErr_NoThrow,
-                                default_value);
+        CConfig conf(params);
+        return conf.GetInt(m_DriverName,
+                           param_name,
+                           CConfig::eErr_NoThrow,
+                           default_value);
     }
 
     /// Utility function to get an integer of parameter tree
@@ -141,11 +141,11 @@ protected:
                 bool                           mandatory,
                 unsigned int                   default_value) const
     {
-        return ParamTree_GetDataSize(m_DriverName,
-                                     params,
-                                     param_name,
-                                     eConfErr_NoThrow,
-                                     default_value);
+        CConfig conf(params);
+        return conf.GetDataSize(m_DriverName,
+                                param_name,
+                                CConfig::eErr_NoThrow,
+                                default_value);
     }
 
 
@@ -157,11 +157,12 @@ protected:
                       bool                           mandatory,
                       bool                           default_value) const
     {
-        return ParamTree_GetBool(m_DriverName,
-                                 params,
-                                 param_name,
-                                 eConfErr_NoThrow,
-                                 default_value);
+        CConfig conf(params);
+        return conf.GetBool(m_DriverName,
+                            param_name,
+                            CConfig::eErr_NoThrow,
+                            default_value);
+
     }
 
 
@@ -259,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/09/23 16:20:24  kuznets
+ * All ParamTree_ functions assembled in CConfig class
+ *
  * Revision 1.9  2004/09/23 14:19:59  kuznets
  * +GetParamDataSize
  *
