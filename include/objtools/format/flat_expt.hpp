@@ -40,13 +40,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFlatException: public CException
+class CFlatException : public CException
 {
 public:
 
     enum EErrCode {
         eNotSupported,
         eInternal,
+        eInvalidParam,
         eUnknown
     };
 
@@ -57,6 +58,7 @@ public:
         switch (GetErrCode()) {
         case eNotSupported:     return "eNotSupported";
         case eInternal:         return "eInternal";
+        case eInvalidParam:     return "eInvalidParam";
         case eUnknown:          return "eUnknown";
         default:                return CException::GetErrCodeString();
         }
@@ -74,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:51:53  shomrat
+* Added invalid parameter exception type
+*
 * Revision 1.1  2003/12/17 19:51:41  shomrat
 * Initial revision (adapted from flat lib)
 *
