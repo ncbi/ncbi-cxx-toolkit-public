@@ -1,5 +1,7 @@
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 /* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -99,6 +101,9 @@ CPssmEngine::x_CheckAgainstNullData()
     }
 }
 
+/** Converts a PSSM error message into a string
+ * @param error_code PSSM engine's error code as defined in blast_psi_priv.h
+ */
 static string
 x_PssmEngineErrorToString(int error_code)
 {
@@ -520,6 +525,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2004/11/02 20:37:34  camacho
+ * Doxygen fixes
+ *
  * Revision 1.19  2004/10/18 14:34:37  camacho
  * Added function to convert PSSM engine error codes to strings
  *

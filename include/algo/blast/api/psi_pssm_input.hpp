@@ -37,7 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <algo/blast/api/pssm_input.hpp>
 
-// Forward declaration for unit test classes
+/// Forward declaration for unit test classes
 class CPssmEngineTest;
 
 /** @addtogroup AlgoBlast
@@ -49,9 +49,11 @@ BEGIN_NCBI_SCOPE
 
 // Forward declarations in objects scope
 BEGIN_SCOPE(objects)
+#ifndef SKIP_DOXYGEN_PROCESSING
     class CSeq_align_set;
     class CDense_seg;
     class CScope;
+#endif /* SKIP_DOXYGEN_PROCESSING */
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
@@ -68,6 +70,8 @@ public:
     /// @param query_length length of the sequence above.
     /// @param sset pairwise alignment produced by BLAST where query was the
     /// query sequence.
+    /// @param scope object manager scope from which to retrieve sequence data
+    /// [in]
     /// @param opts options to be used in the PSSM engine
     /// @param matrix_name name of the substitution matrix to use to build PSSM
     /// If not provided, the default implementation of
@@ -96,7 +100,7 @@ private:
     unsigned char*                  m_Query;
     /// Scope where to retrieve the sequences in the aligment from
     CRef<objects::CScope>           m_Scope;
-    // Structure representing the multiple sequence alignment
+    /// Structure representing the multiple sequence alignment
     PSIMsa*                         m_Msa;
     /// Multiple sequence alignment dimensions
     PSIMsaDimensions                m_MsaDimensions;
@@ -114,10 +118,14 @@ private:
 
     /////////////////////////// Auxiliary functions ///////////////////////////
 
-    /// Tries to fetch the sequence data for the subject for the segments 
-    /// specified in the Dense-seg. If the sequence cannot be retrieved from the 
-    /// scope, a warning is printed and the pair (NULL, 0) is returned.
+    /// Typedef for sequence data and its length
     typedef pair<AutoPtr<Uint1, ArrayDeleter<Uint1> >, TSeqPos> TSeqPair;
+
+    /// Tries to fetch the sequence data for the subject for the segments 
+    /// specified in the Dense-seg. If the sequence cannot be retrieved from the
+    /// scope, a warning is printed and the pair (NULL, 0) is returned.
+    /// @param ds dense seg for which the sequence data is needed [in]
+    /// @param scope scope from which to obtain the sequence data [in]
     static TSeqPair 
     x_GetSubjectSequence(const objects::CDense_seg& ds, objects::CScope& scope);
 
@@ -138,6 +146,10 @@ private:
     /// Copies query sequence data to multiple alignment data structure
     void x_CopyQueryToMsa();
 
+    /// Returns the number of sequences that make up the multiple sequence
+    /// alignment
+    /// @throws CBlastException if this number hasn't been calculated yet (need
+    /// to invoke Process() first!)
     unsigned int GetNumAlignedSequences() const;
 
     /// Iterates over the Dense-seg passed in and extracts alignment 
@@ -148,7 +160,8 @@ private:
     void x_ProcessDenseg(const objects::CDense_seg& denseg, 
                          unsigned int msa_index);
 
-    friend class ::CPssmEngineTest;     // unit test class
+    /// unit test class
+    friend class ::CPssmEngineTest;
 };
 
 END_SCOPE(blast)
@@ -160,6 +173,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/11/02 20:37:16  camacho
+ * Doxygen fixes
+ *
  * Revision 1.7  2004/10/13 20:48:50  camacho
  * + support for requesting diagnostics information and specifying underlying matrix
  *

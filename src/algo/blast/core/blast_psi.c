@@ -1,5 +1,7 @@
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 /* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -138,18 +140,16 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         return status;
     }
 
-    status = _PSIComputeResidueFrequencies(msa, seq_weights, sbp, 
-                                           aligned_block, 
-                                           options->pseudo_count, 
-                                           internal_pssm);
+    status = _PSIComputeFreqRatios(msa, seq_weights, sbp, aligned_block, 
+                                   options->pseudo_count, internal_pssm);
     if (status != PSI_SUCCESS) {
         _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
         return status;
     }
 
-    status = _PSIConvertResidueFreqsToPSSM(internal_pssm, msa->query, sbp, 
-                                           seq_weights->std_prob);
+    status = _PSIConvertFreqRatiosToPSSM(internal_pssm, msa->query, sbp, 
+                                         seq_weights->std_prob);
     if (status != PSI_SUCCESS) {
         _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
@@ -157,8 +157,8 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     }
 
     /* FIXME: instead of NULL pass options->scaling_factor */
-    status = _PSIScaleMatrix(msa->query, msa->dimensions->query_length, 
-                             seq_weights->std_prob, NULL, internal_pssm, sbp);
+    status = _PSIScaleMatrix(msa->query, seq_weights->std_prob, NULL, 
+                             internal_pssm, sbp);
     if (status != PSI_SUCCESS) {
         _PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);

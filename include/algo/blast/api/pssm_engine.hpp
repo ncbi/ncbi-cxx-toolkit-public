@@ -149,7 +149,7 @@ private:
 
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
-    /// @param matrix_name underlying scoring matrix name [in]
+    /// @param opts options to be used in the PSSM engine [in]
     /// @param diagnostics contains diagnostics data from PSSM creation process
     /// to save into the return value [in]
     /// @return CPssmWithParameters object with equivalent contents to
@@ -179,6 +179,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/11/02 20:37:16  camacho
+ * Doxygen fixes
+ *
  * Revision 1.15  2004/10/13 20:48:50  camacho
  * + support for requesting diagnostics information and specifying underlying matrix
  *

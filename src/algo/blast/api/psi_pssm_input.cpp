@@ -1,5 +1,7 @@
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
     "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 /* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -72,22 +74,32 @@ BEGIN_SCOPE(blast)
 
 //////////////////////////////////////////////////////////////////////////////
 // Static function prototypes
+
+/// Returns the evalue from this score object
+/// @param score ASN.1 score object [in]
 static double 
 s_GetEvalue(const CScore& score);
 
+/// Returns the lowest score from the list of scores in CDense_seg::TScores
+/// @param scores list of scores [in]
 static double
 s_GetLowestEvalue(const CDense_seg::TScores& scores);
 
+/// Retrieves sequence data from sv. Caller is responsible for deallocating
+/// return value with delete[]
+/// @param sv CSeqVector containing sequence data [in]
+/// @return sequence data contained in sv
+/// @throws CBlastException if memory allocation fails
 static Uint1* 
-s_ExtractSequenceFromSeqVector(CSeqVector& sv);
+s_ExtractSequenceFromSeqVector(const CSeqVector& sv);
 
 // End static function prototypes
 //////////////////////////////////////////////////////////////////////////////
 
-CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
+CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
                                        unsigned int query_length,
-                                       CRef<CSeq_align_set> sset,
-                                       CRef<CScope> scope,
+                                       CRef<objects::CSeq_align_set> sset,
+                                       CRef<objects::CScope> scope,
                                        const PSIBlastOptions& opts,
                                        const char* matrix_name,
                                        const PSIDiagnosticsRequest* diags)
@@ -332,7 +344,7 @@ CPsiBlastInputData::x_ExtractAlignmentData()
 }
 
 void
-CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg, 
+CPsiBlastInputData::x_ProcessDenseg(const objects::CDense_seg& denseg, 
                                     unsigned int msa_index)
 {
     ASSERT(denseg.GetDim() == 2);
@@ -404,7 +416,8 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
 }
 
 CPsiBlastInputData::TSeqPair 
-CPsiBlastInputData::x_GetSubjectSequence(const CDense_seg& ds, CScope& scope) 
+CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds, 
+                                         objects::CScope& scope) 
 {
     ASSERT(ds.GetDim() == 2);
     Uint1* retval = NULL;
@@ -457,7 +470,6 @@ CPsiBlastInputData::x_GetSubjectSequence(const CDense_seg& ds, CScope& scope)
 //////////////////////////////////////////////////////////////////////////////
 // Static function definitions
 
-// Returns the evalue from this score object
 static double
 s_GetEvalue(const CScore& score)
 {
@@ -484,7 +496,7 @@ s_GetLowestEvalue(const CDense_seg::TScores& scores)
 }
 
 static Uint1* 
-s_ExtractSequenceFromSeqVector(CSeqVector& sv) 
+s_ExtractSequenceFromSeqVector(const CSeqVector& sv) 
 {
     Uint1* retval = NULL;
 
@@ -511,6 +523,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/11/02 20:37:34  camacho
+ * Doxygen fixes
+ *
  * Revision 1.8  2004/10/13 20:49:00  camacho
  * + support for requesting diagnostics information and specifying underlying matrix
  *
