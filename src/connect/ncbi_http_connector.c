@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/12 21:43:14  vakatov
+ * Minor cosmetic fix...
+ *
  * Revision 6.2  2000/09/26 22:02:57  lavr
  * HTTP request method added
  *
@@ -429,12 +432,11 @@ static EIO_Status s_VT_Read
                 str[n_peek] = '\0';
                 if (sscanf(str, " HTTP/%d.%d %d ",
                            &http_v1, &http_v2, &http_status) != 3  ||
-                    http_status < 200  ||  299 < http_status)
+                    http_status < 200  ||  299 < http_status) {
                     server_error = 1/*true*/;
-            }
+                }
 
-            /* skip HTTP header */
-            if (status == eIO_Success) {
+                /* skip HTTP header */
                 if ( uuu->info->debug_printout ) {
                     char   data[256];
                     size_t n_read;
