@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/09/25 19:44:08  gouriano
+* Corrected serialization of AnyContent object's attributes
+*
 * Revision 1.63  2003/09/22 20:55:23  gouriano
 * Corrected writing of AnyContent objects in case of no schema reference
 *
@@ -492,9 +495,11 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
 bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
 {
     if (m_UseSchemaRef) {
-        string nsName = GetDefaultSchemaNamespace();
+        string nsName;
         if (type->HasNamespaceName()) {
             nsName = type->GetNamespaceName();
+        } else if (m_NsPrefixes.empty()) {
+            nsName = GetDefaultSchemaNamespace();
         }
         return x_BeginNamespace(nsName,type->GetNamespacePrefix());
     }
@@ -532,13 +537,14 @@ bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
         return true;
     } else {
         m_CurrNsPrefix = m_NsNameToPrefix[ns_name];
+        m_NsPrefixes.push(m_CurrNsPrefix);
     }
     return false;
 }
 
 void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
 {
-    if (!m_UseSchemaRef) {
+    if (!m_UseSchemaRef || ns_name.empty()) {
         return;
     }
     string nsPrefix = m_NsNameToPrefix[ns_name];
@@ -743,16 +749,13 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
     if (obj.GetName().empty()) {
         return;
     }
-// open tag
     string ns_name(obj.GetNamespaceName());
-    if (m_UseSchemaRef) {
-        x_BeginNamespace(ns_name,obj.GetNamespacePrefix());
-    }
+    bool needNs = x_BeginNamespace(ns_name,obj.GetNamespacePrefix());
     OpenTag(obj.GetName());
 
     if (m_UseSchemaRef) {
         OpenTagEndBack();
-        if (!m_CurrNsPrefix.empty()) {
+        if (needNs) {
             m_Output.PutString(" xmlns");
             m_Output.PutChar(':');
             m_Output.PutString(m_CurrNsPrefix);

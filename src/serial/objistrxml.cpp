@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/09/25 19:44:08  gouriano
+* Corrected serialization of AnyContent object's attributes
+*
 * Revision 1.48  2003/09/16 14:48:36  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *
@@ -524,6 +527,8 @@ CLightString CObjectIStreamXml::ReadName(char c)
             m_NsNameToPrefix[value] = m_LastTag;
             char ch = SkipWS();
             return (ch == '>') ? CLightString() : ReadName(ch);
+        } else if (ns_prefix == "xml") {
+            iColon = 0;
         } else {
             if (m_Attlist) {
                 if (m_CurrNsPrefix != ns_prefix) {
@@ -877,6 +882,19 @@ void CObjectIStreamXml::ReadAnyContentTo(
             tagAny = ReadName(BeginOpeningTag());
             value += '<';
             value += tagAny;
+            while (HasAttlist()) {
+                string attribName = ReadName(SkipWS());
+                if (attribName.empty()) {
+                    break;
+                }
+                value += " ";
+                value += attribName;
+                value += "=\"";
+                string attribValue;
+                ReadAttributeValue(attribValue, true);
+                value += attribValue;
+                value += "\"";
+            }
             value += '>';
             ReadAnyContentTo(value,tagAny);
             value += "</";
