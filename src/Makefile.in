@@ -56,15 +56,17 @@ strip_for_install:
 	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check $(POTENTIAL_SUB_PROJ) $(EXPENDABLE_SUB_PROJ) Makefile
 	@test \! -f "$(apps_to_drop)" || \
 	  while read app; do \
-	    test -f "$(bindir)/$$app" && mkdir -p $(dbindir) && \
+	    test -f "$(bindir)/$$app" || continue; \
+	    mkdir -p $(dbindir) && \
 	      echo mv .../bin/$$app .../bin/.DEATH-ROW && \
 	      mv $(bindir)/$$app $(dbindir); \
 	  done < "$(apps_to_drop)"
 	@test \! -f "$(libs_to_drop)" || \
 	  while read lib; do \
-	    test -f "$(status_dir)/.$$lib.dep" && mkdir -p $(dlibdir) && \
+	    test -f "$(status_dir)/.$$lib.dep" || continue; \
+	    mkdir -p $(dlibdir) && \
 	      echo mv .../lib/lib$$lib.\* .../lib/.DEATH-ROW && \
 	      mv $(libdir)/lib$$lib.* $(dlibdir); \
-	    test -f "$(status_dir)/.$$lib-static.dep" && \
-	      mv $(libdir)/lib$$lib-static.* $(dlibdir); \
+	    test -f "$(status_dir)/.$$lib-static.dep" || continue; \
+	    mv $(libdir)/lib$$lib-static.* $(dlibdir); \
 	  done < "$(libs_to_drop)"
