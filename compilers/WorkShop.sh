@@ -63,10 +63,6 @@ if test -n "$1" ; then
 fi
 
 
-## Extra compiler-specific adjustments
-THREAD_LIBS="-mt -lthread -lpthread"
-
-
 ## Configure
 export CC CXX THREAD_LIBS NCBI_COMPILER
 

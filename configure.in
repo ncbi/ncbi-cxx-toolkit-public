@@ -233,7 +233,7 @@ AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
 
 #### Additional check for pre-defined compilers
 case "$compiler" in
-  WorkShop* | MIPSpro73 | MSVC )
+  MIPSpro73 | MSVC )
     if test -z "$NCBI_COMPILER" ; then
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
@@ -308,6 +308,7 @@ case "$host:$compiler" in
    RANLIB=":"
    CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
+   THREAD_LIBS=${THREAD_LIBS:="-mt -lthread -lpthread"}
    ;;
 
  *:MIPSpro73 )
