@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/07/23 16:40:39  thiessen
+* remove static decl
+*
 * Revision 1.22  2002/07/23 15:46:50  thiessen
 * print out more BLAST info; tweak save file name
 *
@@ -145,7 +148,7 @@ static const char Blosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
 /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
 };
 
-static std::map < char, std::map < char, int > > Blosum62Map;
+std::map < char, std::map < char, int > > Blosum62Map;
 
 inline char ScreenResidueCharacter(char original)
 {
