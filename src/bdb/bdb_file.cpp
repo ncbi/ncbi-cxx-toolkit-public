@@ -150,12 +150,15 @@ void CBDB_RawFile::Open(const char* filename,
         Close();
 
     if (!database  ||  !*database)
-        database = kDefaultDatabase;
+        database = 0; // database = kDefaultDatabase;
 
     x_Open(filename, database, open_mode);
 
     m_FileName = filename;
-    m_Database = database;
+    if (database)
+        m_Database = database;
+    else
+        m_Database = "";
 }
 
 
@@ -180,7 +183,7 @@ void CBDB_RawFile::Reopen(EOpenMode open_mode)
 void CBDB_RawFile::Remove(const char* filename, const char* database)
 {
     if (!database  ||  !*database)
-        database = kDefaultDatabase;
+        database = 0; // database = kDefaultDatabase;
 
     if (m_DB_Attached) {
         BDB_THROW(eInvalidOperation, "Cannot remove attached object");
@@ -657,6 +660,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/09/12 18:06:13  kuznets
+ * Commenented out usage of the default sub-database name when no name is supplied.
+ * When "database" argument is NULL BerkeleyDB create files of a slightly less-complex
+ * structure which should have positive effect on performance and may cure some
+ * problems.
+ *
  * Revision 1.21  2003/09/11 16:34:35  kuznets
  * Implemented byte-order independence.
  *
