@@ -28,6 +28,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/03 17:53:05  butanaev
+* Fixed bug in SetCurrent()
+*
 * Revision 1.2  2000/11/21 18:14:58  butanaev
 * Fixed bug in operator ++/-- (int)
 *
@@ -353,7 +356,7 @@ CTime& CTime::SetCurrent()
     struct tm* t = localtime(&timer);
 
     m_Day   = t->tm_mday;
-    m_Month = t->tm_mon;
+    m_Month = t->tm_mon + 1;
     x_SetYear  (t->tm_year + 1900);
     x_SetHour  (t->tm_hour);
     x_SetMinute(t->tm_min);
