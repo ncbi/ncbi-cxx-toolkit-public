@@ -176,7 +176,7 @@ int CTest::Run(void)
     // At success code below never been executed
     cout << endl << "TEST execution fails!" << endl << endl;
 
-    return 1;
+    return 77;
 }
 
 
@@ -209,6 +209,7 @@ int main(int argc, const char* argv[], const char* envp[])
         }
         exit(TEST_RESULT_C);
     }
+    cout << "Start tests:" << endl << endl;
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
@@ -217,6 +218,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2002/07/26 15:36:53  ivanov
+ * Changed exit code in the Run()
+ *
  * Revision 6.8  2002/07/25 15:53:06  ivanov
  * Changed exit code for failed test
  *
