@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 class CFindPattern {
 public:
-    static void Find(objects::CSeqVector& vec, const string& pattern,
+    static void Find(const objects::CSeqVector& vec, const string& pattern,
                      vector<TSeqPos>& starts, vector<TSeqPos>& ends);
 };
 
@@ -52,6 +52,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/15 19:51:07  jcherry
+ * CRegexp::GetMatch now takes a string&, not a char*
+ *
  * Revision 1.5  2003/11/04 17:49:23  dicuccio
  * Changed calling parameters for plugins - pass CPluginMessage instead of paired
  * CPluginCommand/CPluginReply

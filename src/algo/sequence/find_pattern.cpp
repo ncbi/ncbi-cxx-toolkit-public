@@ -38,13 +38,13 @@ USING_SCOPE(objects);
 
 
 // find all occurences of a pattern (regular expression) in a sequence
-void CFindPattern::Find(CSeqVector& vec, const string& pattern,
+void CFindPattern::Find(const CSeqVector& vec, const string& pattern,
                        vector<TSeqPos>& starts, vector<TSeqPos>& ends) {
 
     string seq;
     vec.GetSeqData( (TSeqPos) 0, vec.size(), seq );
 
-    // do a case-insensitive r. e. search for "all" (non-overlapping) occurences
+    // do a case-insensitive r.e. search for "all" (non-overlapping) occurences
     // note that it's somewhat ambiguous what this means
 
     // want to ignore case, and to allow white space (and comments) in pattern
@@ -53,7 +53,8 @@ void CFindPattern::Find(CSeqVector& vec, const string& pattern,
     starts.clear();
     ends.clear();
     unsigned int offset = 0;
-    while (!re.GetMatch(seq.data(), offset).empty()) {  // empty string means no match
+    while (!re.GetMatch(seq, offset).empty()) {  
+        // (empty string means no match)
         const int *res = re.GetResults(0);
         starts.push_back(res[0]);
         ends.push_back(res[1] - 1);
@@ -67,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/15 19:51:07  jcherry
+ * CRegexp::GetMatch now takes a string&, not a char*
+ *
  * Revision 1.4  2003/07/08 22:08:00  jcherry
  * Clear 'starts' and 'ends' before using them!
  *
