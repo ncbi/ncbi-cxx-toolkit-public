@@ -113,7 +113,7 @@ const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
                 + "Seq-id cannot be resolved: "
                 + GetSeqId(row).AsFastaString();
                 
-            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+            NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
         }
         return bioseq_handle;
     }
@@ -640,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/07/15 20:54:01  todorov
+* exception type fixed
+*
 * Revision 1.29  2003/07/15 20:46:09  todorov
 * Exception if bioseq handle is null
 *

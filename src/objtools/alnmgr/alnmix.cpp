@@ -204,7 +204,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                     + "Seq-id cannot be resolved: "
                     + (ds.GetIds())[row]->AsFastaString();
                 
-                NCBI_THROW(CAlnException, eMergeFailure, errstr);
+                NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
             }
 
             TBioseqHandleMap::iterator it = m_BioseqHandles.find(bioseq_handle);
@@ -1597,6 +1597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2003/07/15 20:54:01  todorov
+* exception type fixed
+*
 * Revision 1.62  2003/07/09 22:58:12  todorov
 * row index bug fix in case of fillunaln
 *
