@@ -162,6 +162,8 @@ public:
                                           const CBioseq_Handle& bh);
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CBioseq_Handle& bh);
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
+                                          const CSeq_entry& tse);
 
     // Get bioseq handle by seqloc
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc);
@@ -594,6 +596,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/11/21 20:33:03  grichenk
+* Added GetBioseqHandleFromTSE(CSeq_id, CSeq_entry)
+*
 * Revision 1.63  2003/11/12 15:49:48  vasilche
 * Added loading annotations on non gi Seq-id.
 *

@@ -617,6 +617,19 @@ CBioseq_Handle CScope_Impl::GetBioseqHandleFromTSE(const CSeq_id& id,
 }
 
 
+CBioseq_Handle CScope_Impl::GetBioseqHandleFromTSE(const CSeq_id& id,
+                                                   const CSeq_entry& tse)
+{
+    CBioseq_Handle ret;
+    ret.m_Seq_id = CSeq_id_Handle::GetHandle(id);
+    TTSE_Lock tse_lock = GetTSEInfo(&tse);
+    if ( tse_lock ) {
+        ret = x_GetBioseqHandleFromTSE(ret.m_Seq_id, *tse_lock);
+    }
+    return ret;
+}
+
+
 CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc)
 {
     CBioseq_Handle bh;
@@ -1046,6 +1059,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2003/11/21 20:33:03  grichenk
+* Added GetBioseqHandleFromTSE(CSeq_id, CSeq_entry)
+*
 * Revision 1.90  2003/11/19 22:18:03  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".
