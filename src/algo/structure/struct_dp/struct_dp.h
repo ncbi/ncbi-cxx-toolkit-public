@@ -94,6 +94,9 @@ DP_GlobalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/06/18 19:17:17  thiessen
+* try once more to fix lf issue
+*
 * Revision 1.2  2003/06/18 19:10:17  thiessen
 * fix lf issues
 *
