@@ -230,8 +230,7 @@ void COrf::FindOrfs(const CSeqVector& orig_vec,
 
 // build an annot representing CDSs
 CRef<CSeq_annot>
-COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code = 1,
-                   CRef<CSeq_id> id)
+COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CRef<CSeq_id> id)
 {
     CRef<CSeq_annot> annot(new CSeq_annot());
 
@@ -266,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/04 21:10:42  ucko
+ * MakeCDSAnnot: remove redundant (and illegal) default for id.
+ *
  * Revision 1.3  2003/09/04 19:27:53  jcherry
  * Made an ORF include the stop codon, and marked certain ORFs as
  * partial.  Put ability to construct a feature table into COrf.
