@@ -1,0 +1,9 @@
+# $Id$
+
+# Build library "xobjsimple"
+###############################
+ASN_DEP = seq seqloc
+
+LIB = xobjsimple
+SRC = simple_om
+

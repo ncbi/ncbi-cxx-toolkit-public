@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+##################################
+
+LIB_PROJ = xobjsimple
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
