@@ -55,11 +55,12 @@ BEGIN_SCOPE(objects)
 
 CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db, 
                              const map<string, int>& type_map,
-                             int object_id)
+                             int object_id,
+                             bool trace_to_top)
 {
     CLDS_Query query(db);
     CLDS_Query::SObjectDescr obj_descr = 
-        query.GetObjectDescr(type_map, object_id, true);
+        query.GetObjectDescr(type_map, object_id, trace_to_top);
 
     if (!obj_descr.is_object || obj_descr.id <= 0) {
         return CRef<CSeq_entry>();
@@ -174,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/01/13 17:38:20  kuznets
+ * LoadTSE added trace to top level entry option
+ *
  * Revision 1.7  2005/01/11 17:59:54  kuznets
  * Added missing code to read bioseq-set
  *

@@ -44,7 +44,8 @@ BEGIN_SCOPE(objects)
 // Load top level seq entry.
 CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(SLDS_TablesCollection& lds_db, 
                                              const map<string, int>& type_map,
-                                             int object_id);
+                                             int object_id,
+                                             bool trace_to_top = true);
 
 // Load annotation.
 CRef<CSeq_annot> 
@@ -57,6 +58,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/01/13 17:38:00  kuznets
+ * LoadTSE added trace to top level entry option
+ *
  * Revision 1.4  2003/07/14 19:46:26  kuznets
  * + annotation reading function
  *
