@@ -444,9 +444,9 @@ void CSplitCacheApp::Process(void)
     if ( args["compress"] ) {
         m_SplitterParams.m_Compression = m_SplitterParams.eCompression_nlm_zip;
     }
-    m_SplitterParams.m_DisableSplitDescriptions = args["keep_descriptions"];
-    m_SplitterParams.m_DisableSplitSequence = args["keep_sequence"];
-    m_SplitterParams.m_DisableSplitAnnotations = args["keep_annotations"];
+    m_SplitterParams.m_DisableSplitDescriptions |= args["keep_descriptions"];
+    m_SplitterParams.m_DisableSplitSequence |= args["keep_sequence"];
+    m_SplitterParams.m_DisableSplitAnnotations |= args["keep_annotations"];
     m_Resplit = args["resplit"];
     m_Recurse = args["recurse"];
     m_SplitterParams.SetChunkSize(args["chunk_size"].AsInteger()*1024);
@@ -774,6 +774,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/07/01 15:41:58  vasilche
+* Do not reset DisableSplitDescriptions flag.
+*
 * Revision 1.21  2004/06/30 21:02:02  vasilche
 * Added loading of external annotations from 26 satellite.
 *
