@@ -207,7 +207,7 @@ private:
     /// @param rps_mmap Pointer to memory-mapped lookup table file [out]
     /// @param rps_pssm_mmap Pointer to memory-mapped PSSM file [out]
     /// @param dbname Name of RPS database [in]
-    static void CDbBlast::x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo, 
+    static void         x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo, 
                                               CMemoryFile **rps_mmap,
                                               CMemoryFile **rps_pssm_mmap,
                                               string dbname);
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/01/19 13:06:59  rsmith
+* take out redundant and illegal class specification.
+*
 * Revision 1.31  2005/01/14 17:59:21  papadopo
 * add FillRPSInfo as a private member, to remove some xblast dependencies on SeqDB
 *
