@@ -35,6 +35,8 @@
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistl.hpp>
+#include <string.h>
+#include <ctype.h>
 #include <string>
 #include <list>
 
@@ -495,6 +497,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2002/03/01 17:54:38  kans
+ * include string.h and ctype.h
+ *
  * Revision 1.11  2002/02/22 22:23:20  vakatov
  * Comments changed/added for string comparison functions
  * #elseif --> #elif
