@@ -745,7 +745,7 @@ public:
     virtual string GetString() const
     {
         double v = Get();
-        return NStr::DoubleToString(v, 5);
+        return NStr::DoubleToString(v);
     }
 
     operator float() const 
@@ -815,7 +815,7 @@ public:
     virtual string GetString() const
     {
         double v = Get();
-        return NStr::DoubleToString(v, 5);
+        return NStr::DoubleToString(v);
     }
 
     operator double() const 
@@ -1617,6 +1617,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/10/28 14:19:19  kuznets
+ * Calling DoubleToString without precision (%g format) for float and double
+ * BDB fields (more accurate results for scientific data)
+ *
  * Revision 1.24  2003/10/27 14:19:12  kuznets
  * + methods to convert BDB types to string
  *
