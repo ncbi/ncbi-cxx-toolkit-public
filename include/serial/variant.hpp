@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/11/19 19:45:55  gouriano
+* added SetNotag method
+*
 * Revision 1.7  2002/10/15 13:39:06  gouriano
 * added "noprefix" flag
 *
@@ -128,6 +131,7 @@ public:
     EVariantType GetVariantType(void) const;
 
     CVariantInfo* SetNoPrefix(void);
+    CVariantInfo* SetNotag(void);
 
     bool IsInline(void) const;
     bool IsNonObjectPointer(void) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/11/19 19:45:55  gouriano
+* added SetNotag method
+*
 * Revision 1.7  2002/10/15 13:39:06  gouriano
 * added "noprefix" flag
 *
@@ -83,6 +86,13 @@ CVariantInfo::EVariantType CVariantInfo::GetVariantType(void) const
 
 inline
 CVariantInfo* CVariantInfo::SetNoPrefix(void)
+{
+    GetId().SetNoPrefix();
+    return this;
+}
+
+inline
+CVariantInfo* CVariantInfo::SetNotag(void)
 {
     GetId().SetNoPrefix();
     return this;
