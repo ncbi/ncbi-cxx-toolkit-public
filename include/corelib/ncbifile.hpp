@@ -354,6 +354,56 @@ public:
 
 
 
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for support file memory mapping
+//
+//
+
+// fwd-decl of struct containing OS-specific mem.-file handle
+struct SMemoryFileHandle;
+
+
+class CMemoryFile
+{
+public:
+    // Initializes the memory mapping on file "file_name".
+    // Throws an exception on error.
+    CMemoryFile(const string& file_name);
+
+    // Call Unmap();  do other cleanup...
+    ~CMemoryFile(void);
+
+    // Is memory-mapping supported (by the C++ Toolkit) on this platform
+    static bool IsSupported(void);
+
+    // Unmap file (if mapped).
+    // Return FALSE on error.
+    bool Unmap(void);
+
+    // Get pointer to beginning of data.
+    // Return NULL if mapped to a file of zero length, or if unmapped already.
+    void* GetPtr(void) const;
+
+    // Get size (in bytes) of the mapped area.
+    // Return "-1" if unmapped already.
+    Int8 GetSize(void) const;
+
+private:
+    // Map file to memory
+    void x_Map(const string& file_name);
+
+private:
+    SMemoryFileHandle*  m_Handle;   // Memory file handle
+    Int8                m_Size;     // Size (in bytes) of the mapped area
+    void*               m_DataPtr;  // Pointer to the begining of mapped data
+};
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Inline
@@ -445,12 +495,30 @@ bool CDir::Exists(void) const
 }
 
 
+// CMemoryFile
+
+inline
+void* CMemoryFile::GetPtr(void) const
+{
+    return m_DataPtr;
+}
+
+inline
+Int8 CMemoryFile::GetSize(void) const
+{
+    return m_Size;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/04/01 18:49:07  ivanov
+ * Added class CMemoryFile
+ *
  * Revision 1.9  2002/01/24 22:17:40  ivanov
  * Changed CDirEntry::Remove() and CDir::Remove()
  *
