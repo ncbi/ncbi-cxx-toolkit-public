@@ -84,15 +84,17 @@ CObjectManager::~CObjectManager(void)
 
 
 void CObjectManager::RegisterDataLoader(CDataLoader& loader,
-                                        EIsDefault   is_default)
+                                        EIsDefault   is_default,
+                                        CPriorityNode::TPriority priority)
 {
     TWriteLockGuard guard(m_OM_Lock);
-    x_RegisterLoader(loader, is_default);
+    x_RegisterLoader(loader, priority, is_default);
 }
 
 
 void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
-                                        EIsDefault is_default)
+                                        EIsDefault is_default,
+                                        CPriorityNode::TPriority priority)
 {
     string loader_name = factory.GetName();
     _ASSERT(!loader_name.empty());
@@ -110,13 +112,14 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
     // create loader
     CDataLoader* loader = factory.Create();
     // register
-    x_RegisterLoader(*loader, is_default);
+    x_RegisterLoader(*loader, priority, is_default);
 }
 
 
 void CObjectManager::RegisterDataLoader(TFACTORY_AUTOCREATE factory,
                                         const string& loader_name,
-                                        EIsDefault is_default)
+                                        EIsDefault is_default,
+                                        CPriorityNode::TPriority priority)
 {
     _ASSERT(!loader_name.empty());
     // if already registered
@@ -131,7 +134,7 @@ void CObjectManager::RegisterDataLoader(TFACTORY_AUTOCREATE factory,
     CDataLoader* loader = CREATE_AUTOCREATE(CDataLoader,factory);
     loader->SetName(loader_name);
     // register
-    x_RegisterLoader(*loader, is_default);
+    x_RegisterLoader(*loader, priority, is_default);
 }
 
 
@@ -232,7 +235,7 @@ CObjectManager::AcquireDataLoader(CDataLoader& loader)
     if ( !lock ) {
         guard.Release();
         TWriteLockGuard wguard(m_OM_Lock);
-        lock = x_RegisterLoader(loader, eNonDefault, true);
+        lock = x_RegisterLoader(loader, kPriority_NotSet, eNonDefault, true);
     }
     return lock;
 }
@@ -288,6 +291,7 @@ CObjectManager::x_FindDataSource(const CObject* key)
 
 CObjectManager::TDataSourceLock
 CObjectManager::x_RegisterLoader(CDataLoader& loader,
+                                 CPriorityNode::TPriority priority,
                                  EIsDefault is_default,
                                  bool no_warning)
 {
@@ -317,6 +321,9 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
     // create data source
     TDataSourceLock source(new CDataSource(loader, *this));
     source->DoDeleteThisObject();
+    if (priority != kPriority_NotSet) {
+        source->SetDefaultPriority(priority);
+    }
     _VERIFY(m_mapToSource.insert(TMapToSource::value_type(&loader,
                                                           source)).second);
     if (is_default == eDefault) {
@@ -431,6 +438,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/08/04 17:04:31  grichenk
+* Added default data-source priority assignment.
+* Added support for iterating all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.26  2003/06/19 18:34:28  vasilche
 * Fixed compilation on Windows.
 *

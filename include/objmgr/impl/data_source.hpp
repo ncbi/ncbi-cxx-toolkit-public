@@ -38,6 +38,7 @@
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/data_loader.hpp>
+#include <objmgr/impl/priority.hpp>
 
 #include <corelib/ncbimtx.hpp>
 
@@ -285,9 +286,7 @@ public:
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           const SAnnotSelector& sel,
                           const CSeq_entry_Info& entry_info);
-    void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotSelector& sel,
-                          const CSeq_annot_Info& annot_info);
+    void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
@@ -312,6 +311,9 @@ public:
     // bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
 
     string GetName(void) const;
+
+    CPriorityNode::TPriority GetDefaultPriority(void) const;
+    void SetDefaultPriority(CPriorityNode::TPriority priority);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -458,6 +460,9 @@ private:
 
     // > 0 if annotations need to be indexed.
     int                   m_DirtyAnnotIndexCount;
+
+    // Default priority for the datasource
+    CPriorityNode::TPriority m_DefaultPriority;
 };
 
 inline
@@ -490,6 +495,18 @@ bool CDataSource::IsLive(const CTSE_Info& tse)
     return m_Loader ? m_Loader->IsLive(tse) : true;
 }
 
+inline
+CPriorityNode::TPriority CDataSource::GetDefaultPriority(void) const
+{
+    return m_DefaultPriority;
+}
+
+inline
+void CDataSource::SetDefaultPriority(CPriorityNode::TPriority priority)
+{
+    m_DefaultPriority = priority;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -497,6 +514,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/08/04 17:04:29  grichenk
+* Added default data-source priority assignment.
+* Added support for iterating all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.60  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

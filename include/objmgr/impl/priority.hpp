@@ -100,6 +100,9 @@ private:
 };
 
 
+const CPriorityNode::TPriority kPriority_NotSet = -1;
+
+
 class NCBI_XOBJMGR_EXPORT CPriorityTree : public CObject
 {
 public:
@@ -111,7 +114,7 @@ public:
 
     const CPriorityTree& operator=(const CPriorityTree& node);
 
-    typedef int TPriority;
+    typedef CPriorityNode::TPriority TPriority;
     typedef CPriority_I iterator;
     typedef multimap<TPriority, CPriorityNode> TPriorityMap;
 
@@ -264,6 +267,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/08/04 17:04:29  grichenk
+* Added default data-source priority assignment.
+* Added support for iterating all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.10  2003/06/30 19:12:40  vasilche
 * Changed order of classes to make it compilable on MSVC.
 *

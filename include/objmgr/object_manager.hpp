@@ -38,6 +38,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/08/04 17:04:27  grichenk
+* Added default data-source priority assignment.
+* Added support for iterating all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.16  2003/06/30 18:41:05  vasilche
 * Removed unused commented code.
 *
@@ -95,6 +100,7 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <objmgr/data_loader_factory.hpp>
+#include <objmgr/impl/priority.hpp>
 
 #include <set>
 #include <map>
@@ -140,17 +146,20 @@ public:
     // Register existing data loader.
     // NOTE:  data loader must be created in the heap (ie using operator new).
     void RegisterDataLoader(CDataLoader& loader,
-                            EIsDefault   is_default = eNonDefault);
+                            EIsDefault   is_default = eNonDefault,
+                            CPriorityNode::TPriority priority = kPriority_NotSet);
 
     // Register data loader factory.
     // NOTE:  client has no control on when data loader is created or deleted.
     void RegisterDataLoader(CDataLoaderFactory& factory,
-                            EIsDefault          is_default = eNonDefault);
+                            EIsDefault          is_default = eNonDefault,
+                            CPriorityNode::TPriority priority = kPriority_NotSet);
     // RegisterDataLoader(*new CSimpleDataLoaderFactory<TDataLoader>(name), ...
 
     void RegisterDataLoader(TFACTORY_AUTOCREATE factory,
                             const string& loader_name,
-                            EIsDefault   is_default = eNonDefault);
+                            EIsDefault   is_default = eNonDefault,
+                            CPriorityNode::TPriority priority = kPriority_NotSet);
 
 
     // Revoke previously registered data loader.
@@ -186,6 +195,7 @@ private:
 // nobody else should use it
     TDataSourceLock x_RegisterTSE(CSeq_entry& top_entry);
     TDataSourceLock x_RegisterLoader(CDataLoader& loader,
+                                     CPriorityNode::TPriority priority,
                                      EIsDefault   is_default = eNonDefault,
                                      bool         no_warning = false);
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;

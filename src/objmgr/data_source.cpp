@@ -139,7 +139,8 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader),
       m_pTopEntry(0),
       m_ObjMgr(&objmgr),
-      m_DirtyAnnotIndexCount(0)
+      m_DirtyAnnotIndexCount(0),
+      m_DefaultPriority(99)
 {
     m_Loader->SetTargetDataSource(*this);
 }
@@ -149,7 +150,8 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0),
       m_pTopEntry(&entry),
       m_ObjMgr(&objmgr),
-      m_DirtyAnnotIndexCount(0)
+      m_DirtyAnnotIndexCount(0),
+      m_DefaultPriority(9)
 {
     AddTSE(entry, false);
 }
@@ -1010,9 +1012,7 @@ void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& loc,
 }
 
 
-void CDataSource::UpdateAnnotIndex(const CHandleRangeMap& /*loc*/,
-                                   const SAnnotSelector& /*sel*/,
-                                   const CSeq_annot_Info& annot_info)
+void CDataSource::UpdateAnnotIndex(const CSeq_annot_Info& annot_info)
 {
     TWriteLockGuard ds_guard(m_DataSource_Mtx);
     x_IndexSeq_annot(const_cast<CSeq_annot_Info&>(annot_info));
@@ -1389,6 +1389,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.116  2003/08/04 17:04:31  grichenk
+* Added default data-source priority assignment.
+* Added support for iterating all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.115  2003/07/17 22:51:31  vasilche
 * Fixed unused variables warnings.
 *
