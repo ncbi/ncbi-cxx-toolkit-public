@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/11/29 16:06:31  ivanov
+ * Changed using menu script name "menu.js" -> "ncbi_menu.js".
+ * Fixed error in using menu script without menu definitions.
+ *
  * Revision 1.4  2001/10/15 23:16:22  vakatov
  * + AddItem(const char* title, ...) to avoid "string/CNCBINode" ambiguity
  *
@@ -55,7 +59,7 @@ BEGIN_NCBI_SCOPE
 
 // URL to menu library (default)
 const string kJSMenuDefaultURL
-  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/menu.js";
+  = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu.js";
 
 
 CHTMLPopupMenu::CHTMLPopupMenu(const string& name)
@@ -108,7 +112,6 @@ void CHTMLPopupMenu::AddItem(const char*   title,
         THROW1_TRACE(runtime_error,
                      "CHTMLPopupMenu::AddItem() passed NULL title");
     }
-
     const string x_title(title);
     AddItem(x_title, action, color, mouseover, mouseout);
 }
@@ -273,10 +276,12 @@ string CHTMLPopupMenu::GetCodeHead(const string& menu_lib_url)
 
 string CHTMLPopupMenu::GetCodeBody(void)
 {
-    return "<script language=\"JavaScript1.2\">\n" \
-        "<!--\nfunction onLoad() {\nwindow.defaultjsmenu = new Menu();\n" \
-        "defaultjsmenu.writeMenus();\n}\n" \
-        "// For IE\nif (document.all) onLoad();\n//-->\n</script>\n";
+    return "<script language=\"JavaScript1.2\">\n"
+        "<!--\nfunction onLoad() {\nwindow.defaultjsmenu = new Menu();\n"
+        "defaultjsmenu.addMenuSeparator();\n"
+        "defaultjsmenu.writeMenus();\n"
+        "}\n"
+        "// For IE & NS6\nif (!document.layers) onLoad();\n//-->\n</script>\n";
 }
 
 
