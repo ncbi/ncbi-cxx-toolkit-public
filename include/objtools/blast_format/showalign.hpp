@@ -97,6 +97,16 @@ public:
     ePurple
   };
    
+  //frame defines for translated alignment
+  enum TranslatedFrames{
+    eFrameNotSet =0,
+    ePlusStrand1 = 1,
+    ePlusStrand2 = 2,
+    ePlusStrand3 = 3,
+    eMinusStrand1 = -1,
+    eMinusStrand2 = -2,
+    eMinusStrand3 = -3
+  };
   //Alignment display type, specific for showing blast-related info
   enum AlignType {
     eNotSet = 0, //Default
@@ -168,11 +178,10 @@ private:
     SeqlocInfo* seqloc;
     CRange<TSignedSeqPos> alnRange;
   };
-  
+  CConstRef<CSeq_align_set> m_SeqalignSetRef;  //reference to seqalign set for displaying
   list <SeqlocInfo*>& m_Seqloc;  //display character option for list of seqloc 
   list <FeatureInfo*>& m_QueryFeature;  //external feature such as phiblast pattern
   CScope& m_Scope;
-  CConstRef<CSeq_align_set> m_SeqalignSetRef;  //reference to seqalign set for displaying
  
   CAlnVec* m_AV;  //current aln vector
   int** m_Matrix;  //matrix used to compute the midline
@@ -232,4 +241,14 @@ private:
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/* 
+*===========================================
+*$Log$
+*Revision 1.9  2003/10/08 17:45:13  jianye
+*Added translated frame defs
+* 
+
+*===========================================
+*/
 #endif
