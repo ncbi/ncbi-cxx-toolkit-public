@@ -647,6 +647,7 @@ void CAlnMix::x_Merge()
                             CRef<CAlnMixSeq> row (new CAlnMixSeq);
                             row->m_BioseqHandle = seq1->m_BioseqHandle;
                             row->m_SeqId = seq1->m_SeqId;
+                            row->m_PositiveStrand = seq1->m_PositiveStrand;
                             row->m_Width = seq1->m_Width;
                             row->m_Frame = frame;
                             row->m_SeqIndex = seq1->m_SeqIndex;
@@ -711,6 +712,30 @@ void CAlnMix::x_Merge()
             lo_start_i = starts.end();
             hi_start_i = starts.end();
 
+
+            if (seq2) {
+                // check if the second row fits
+                // this will truncate the match if 
+                // there's an inconsistent overlap
+                // and truncation was requested
+                second_row_fits = x_SecondRowFits(match);
+                {{
+                    // reset the ones below,
+                    // since match may have been modified
+                    seq1 = match->m_AlnSeq1;
+                    start1 = match->m_Start1;
+                    match_list_iter1 = match->m_MatchIter1;
+                    seq2 = match->m_AlnSeq2;
+                    start2 = match->m_Start2;
+                    match_list_iter2 = match->m_MatchIter2;
+                    curr_len = len = match->m_Len;
+                }}
+                if (second_row_fits == eIgnoreMatch) {
+                    continue;
+                }
+            }
+
+
             if (!starts.size()) {
                 // no starts exist yet
 
@@ -745,32 +770,9 @@ void CAlnMix::x_Merge()
                 if (m_MergeFlags & fQuerySeqMergeOnly) {
                     seq2->m_DSIndex = match->m_DSIndex;
                 }
-                second_row_fits = eSecondRowFitsOk;
                 // DONE!
             } else {
                 // some starts exist already
-
-                if (seq2) {
-                    // check if the second row fits
-                    // this will truncate the match if 
-                    // there's an inconsistent overlap
-                    // and truncation was requested
-                    second_row_fits = x_SecondRowFits(match);
-                    {{
-                        // reset the ones below,
-                        // since match may have been modified
-                        seq1 = match->m_AlnSeq1;
-                        start1 = match->m_Start1;
-                        match_list_iter1 = match->m_MatchIter1;
-                        seq2 = match->m_AlnSeq2;
-                        start2 = match->m_Start2;
-                        match_list_iter2 = match->m_MatchIter2;
-                        curr_len = len = match->m_Len;
-                    }}
-                    if (second_row_fits == eIgnoreMatch) {
-                        continue;
-                    }
-                }
 
                 // look ahead
                 if ((lo_start_i = start_i = starts.lower_bound(start1))
@@ -2062,6 +2064,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.104  2004/09/09 23:10:41  todorov
+* Fixed the multi-framed ref sequence case
+*
 * Revision 1.103  2004/09/01 17:36:07  todorov
 * extended the unable-to-load-data exception msg even further
 *
