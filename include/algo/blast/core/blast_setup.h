@@ -141,7 +141,6 @@ Int2 BLAST_GapAlignSetUp(EBlastProgramType program_number,
  * @param query_info The query information structure. Effective lengths
  *                   are recalculated here. [in] [out]
  * @param sbp Scoring statistical parameters [in]
- * @param ext_params Parameters for gapped extensions. [in]
  * @param hit_params Parameters for saving hits. Score cutoffs are recalculated
  *                   here [in] [out]
  * @param word_params Parameters for ungapped extension. Score cutoffs are
@@ -155,7 +154,6 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
     const BlastScoringOptions* scoring_options,
     BlastQueryInfo* query_info, 
     BlastScoreBlk* sbp, 
-    const BlastExtensionParameters* ext_params,
     BlastHitSavingParameters* hit_params,
     BlastInitialWordParameters* word_params,
     BlastEffectiveLengthsParameters* eff_len_params);
@@ -200,6 +198,9 @@ Int2 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.45  2004/11/02 18:18:20  madden
+* Remove BlastExtensionParameters from BLAST_OneSubjectUpdateParameters prototype
+*
 * Revision 1.44  2004/08/11 11:58:43  ivanov
 * Added more export specifiers NCBI_XBLAST_EXPORT
 *
