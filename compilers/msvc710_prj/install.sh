@@ -14,11 +14,9 @@ target="${2:-//u/coremake/public/cxx.last}"
 compiler="${3:-msvc7}"
 compiler="$compiler_prj"
 
-echo $@
-exit 99
 
-if test -n "$3" ; then
-  echo "USAGE:  `basename $script` [build_dir] [install_dir]"
+if test -n "$4" ; then
+  echo "USAGE:  `basename $script` [build_dir] [install_dir] [compiler]"
 fi
 
 
