@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title>Working within the C++ source tree </title>
+</head>
+<body BGCOLOR=white>
+<h1> Working within the C++ source tree </h1>
+Most users will find that working in a <i>checked-out</i> subtree or a private
+directory is preferable to working directly in the C++ source tree. There are
+two good reasons to avoid doing so:
+<ol>
+<li> Building your own versions of the extensive libraries can be very time-consuming.
+<li> There is no guarantee that the library utilities your private code links to have not
+become obsolete.
+</ol>
+
+This section is provided for those developers who must work within the source tree.  The
+Reference Manual sections provide much more complete and technical discussion of all of
+the topics reviewed here, and many links to the relevant sections are provided. This
+page is provided simply as an overview of material presented in the Reference Manual.
+
+<ul>
+  <li> <a href="#checkout"> Check out the source tree and build the libraries</a> 
+  <li> <a href="#makefiles"> The project's directories and makefiles </a>
+  <li> <a href="#working">  Using the <i>include, bld</i>, and <i>src</i> subtrees </a>
+</ul>
+
+<a name="checkout">
+<a href="../config.html#ref_Source"><h3> Checkout the source tree and build the libraries</h3></a>
+Since you will be working inside the C++ source tree you will need to checkout
+everything inside <i>$CVSROOT/internal/c++</i>. Once you have done so, you will
+need to run one of the configure scripts in the <i>internal/c++</i> directory.
+For example, to configure your environment to work with the <i>gcc</i> compiler
+on Solaris in development mode, use: <i>./configure --with-debug</i>.
+
+The <i>configure script</i> is a multi-platform configuration shell script (generated from
+<i>configure.in</i> using <i>autoconf</i>). Here are some pointers to sections in the
+Reference Manual that will help you configure the build environment:
+<ul>
+<li> <a href="../config.html#ref_Wrappers"> Wrapper scripts</a> supporting various platforms
+<li> <a href="../config.html#ref_Running"> Optional configuration flags</a>
+</ul>
+
+The configure script concludes with a message describing how to build the C++ Toolkit
+libraries. If your application will be working with ASN.1 data, use the <i>--with-objects</i> flag
+in running the <i>configure</i> script, so as to populate the <i>include/objects</i> and
+<i>src/objects</i> subdirectories.
+
+<a name="makefiles">
+<h3> The project's directories and makefiles </h3>
+
+In general, each project should have an <i>include, src</i>, and <i>bld</i> subdirectory.
+A set of meta-makefiles present in all of the project source directories provide uniform
+local and recursive builds. In starting a new project, you should create directories
+of the same name in both the <i>src</i> and <i>include</i> subtrees, preferably in the
+<i>internal</i> subtree. In the new <i>src</i> directory, you should create <i>Makefile.in</i>
+and <i>Makefile.[proj].app</i>. As described in the Reference Manual section on 
+<a href="../new_proj.html#ref_Makefile">Project makefiles and sub-projects</a>, templates
+for these Makefiles are available in the top level of the newly created <i>build</i>
+directory. Once you have created these makefiles, running the <a href="../config.html#ref_Reconf">
+<i>status/config.status</i></a> script will create the necessary
+<i>bld</i> subdirectory for you, in the <i>build</i> subtree.
+
+<a name="working">  <h3>Using the <i>include, bld</i>, and <i>src</i> subtrees </h3>
+In general, all header files that will be accessed by multiple source modules outside
+the project directory should be written to the include directory. Header files that will
+be used solely inside the project's <i>src</i> directory should be written there, along with the
+implementation files. <p>
+
+To build the application, move to the subdirectory of that name in the build subtree, and
+simply type <i>make</i>. This will build your application and place a copy of it in the
+<i>bin</i> directory at the top level of the build subtree as well. 
+<p>
+
+</body>
+<a href="sub_tree.html"> <i> previous </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+</html>
+
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>

@@ -1,0 +1,73 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>TITLE</title>
+  </head>
+  <body bgcolor = white>
+    <h1> TITLE </h1>
+
+<ul>
+  <li> <a href="#t1"> TOPIC </a>
+  <li> <a href="#t2"> TOPIC </a>
+</ul>
+
+<a name="t1"> <h3> TOPIC </h3>
+<a name="t2"> <h3> TOPIC </h3>
+<p>
+
+For example, we could implement the Visit function on a
+<i>CBiostruc::TDescr</i> as follows:
+
+<font color = "#000080">
+<pre>
+void Visit (const CBiostruc::TDescr& descList) { 
+
+    for (CBiostruc::TDescr::const_iterator i1 = descList.begin();
+         i1 != descList.end(); ++i1) {
+
+        for (CStdTypeConstIterator&lt;string&gt; i = ConstBegin(**i1); i; ++i) {
+            cout << *i << endl;
+        }
+    }
+}
+</pre>
+<font color = black>
+
+The type iterators come in two flavors,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeIterator.html">
+<i>CStdTypeIterator</i></a> and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeIterator.html">
+<i>CTypeIterator</i></a>,
+with corresponding <i>const</i> implementations. This example uses a <i> const</i> standard
+type iterator to visit all <i>string </i> data members in a <i>CBiostruc_descr</i> object. Alternatively,
+if we had wanted to visit only the <i> CBiostruc_history </i> descriptors, the inner loop could
+be written as:
+<font color = "#000080">
+<pre>
+
+   for (CTypeConstIterator&lt;CBiostruc_history&gt; i = ConstBegin(**i1); i; ++i) {
+       visit(*i);
+   }
+</pre>
+<font color = black>
+<p>
+
+In both cases, the type iterators use type information about the object's class to walk through its
+list of data members, stopping at only those of the specified type. 
+
+
+   </body>
+<a href="newpage.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<!-- a href="newpage.html"> <i> next</i> </a-->
+</html>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>
