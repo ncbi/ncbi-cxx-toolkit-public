@@ -1,36 +1,39 @@
 /* $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
 *  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
 *
 * ===========================================================================
 *
 * File Name:  $Id$
 *
 * Author:  Michael Kholodov
-*   
+*
 * File Description:   Connection implementation
 *
 *
 * $Log$
+* Revision 1.19  2003/01/09 16:10:17  sapojnik
+* CConnection::Connect -- do not attempt SetDbName() if connection failed
+*
 * Revision 1.18  2002/11/27 17:19:49  kholodov
 * Added: Error output redirection to CToMultiExHandler object.
 *
@@ -152,7 +155,7 @@ void CConnection::ForceSingle(bool enable)
     m_forceSingle = enable;
 }
 
-void CConnection::Connect(const string& user, 
+void CConnection::Connect(const string& user,
                           const string& password,
                           const string& server,
                           const string& database)
@@ -164,8 +167,10 @@ void CConnection::Connect(const string& user,
                                     password,
                                     m_modeMask,
                                     m_ds->IsPoolUsed());
-    SetDbName(database);
-					   
+    if(m_connection) {
+        SetDbName(database);
+    }
+
 }
 
 CConnection::~CConnection()
@@ -177,7 +182,7 @@ CConnection::~CConnection()
     }
     Close();
     Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    _TRACE(GetIdent() << " " << (void*)this << " deleted.");
 }
 
 
@@ -191,7 +196,7 @@ string CConnection::GetDatabase()
     return m_database;
 }
 
-void CConnection::SetDbName(const string& name, 
+void CConnection::SetDbName(const string& name,
                             CDB_Connection* conn)
 {
 
@@ -229,7 +234,7 @@ void CConnection::Close()
     delete m_connection;
     m_connection = 0;
 }
-  
+
 CConnection* CConnection::Clone()
 {
     CConnection *conn = new CConnection(CloneCDB_Conn(), m_ds);
@@ -279,9 +284,9 @@ IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
     return bcp;
 }
 
-void CConnection::Action(const CDbapiEvent& e) 
+void CConnection::Action(const CDbapiEvent& e)
 {
-    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName()
            << "' from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
@@ -326,7 +331,7 @@ CConnection* CConnection::GetAuxConn()
 
 }
 
-void CConnection::MsgToEx(bool v) 
+void CConnection::MsgToEx(bool v)
 {
     if( !v ) {
         // Clear the previous handlers if present
@@ -344,7 +349,7 @@ CToMultiExHandler* CConnection::GetHandler()
     }
     return m_multiExH;
 }
-    
+
 CDB_MultiEx* CConnection::GetErrorAsEx()
 {
     return GetHandler()->GetMultiEx();
