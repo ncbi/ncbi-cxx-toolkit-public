@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CId1Reader;
+
 class NCBI_XOBJMGR_EXPORT CId1Seqref : public CSeqref
 {
 public:
@@ -105,13 +106,14 @@ private:
 class NCBI_XOBJMGR_EXPORT CId1Blob : public CBlob
 {
 public:
-    CId1Blob(CId1BlobSource& source);
+    CId1Blob(CId1BlobSource& source, bool is_snp);
     ~CId1Blob(void);
 
     CSeq_entry *Seq_entry(void);
 
 private:
     CId1BlobSource&  m_Source;
+    bool             m_IsSnp;
     CRef<CSeq_entry> m_Seq_entry;
 };
 
@@ -122,6 +124,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2003/07/24 19:28:08  vasilche
+* Implemented SNP split for ID1 loader.
+*
 * Revision 1.4  2003/06/02 16:01:37  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

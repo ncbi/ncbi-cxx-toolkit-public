@@ -29,8 +29,24 @@
 
 #include <objmgr/reader.hpp>
 
+#include <objmgr/impl/pack_string.hpp>
+
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+
+#include <serial/objistr.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+static const char* const STRING_PACK_ENV = "GENBANK_SNP_PACK_STRINGS";
+static const char* const SNP_SPLIT_ENV = "GENBANK_SNP_SPLIT";
+static const char* const ENV_YES = "YES";
 
 CBlob::CBlob(void)
     : m_Class(0)
@@ -80,12 +96,102 @@ int CReader::GetConst(const string& ) const
 }
 
 
+bool CReader::s_GetEnvFlag(const char* env, bool def_val)
+{
+    const char* val = ::getenv(env);
+    if ( !val ) {
+        return def_val;
+    }
+    string s(val);
+    return s == "1" || NStr::CompareNocase(s, ENV_YES) == 0;
+}
+
+
+bool CReader::TrySNPSplit(void)
+{
+    static bool snp_split = s_GetEnvFlag(SNP_SPLIT_ENV, true);
+    return snp_split;
+}
+
+
+bool CReader::TryStringPack(void)
+{
+    static bool use_string_pack = s_GetEnvFlag(STRING_PACK_ENV, true);
+    if ( !use_string_pack ) {
+        return false;
+    }
+
+    string s1("qual"), s2;
+    s1.c_str();
+    s2 = s1;
+    if ( s1.c_str() != s2.c_str() ) {
+        // strings don't use reference counters
+        return (use_string_pack = false);
+    }
+
+    return true;
+}
+
+
+void CReader::SetSNPReadHooks(CObjectIStream& in)
+{
+    if ( !TryStringPack() ) {
+        return;
+    }
+
+    CObjectTypeInfo type;
+
+    type = CType<CGb_qual>();
+    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
+    type.FindMember("val").SetLocalReadHook(in, new CPackStringClassHook(1));
+
+    type = CObjectTypeInfo(CType<CImp_feat>());
+    type.FindMember("key").SetLocalReadHook(in,
+                                            new CPackStringClassHook(32, 128));
+
+    type = CObjectTypeInfo(CType<CObject_id>());
+    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
+
+    type = CObjectTypeInfo(CType<CDbtag>());
+    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
+
+    type = CObjectTypeInfo(CType<CSeq_feat>());
+    type.FindMember("comment").SetLocalReadHook(in, new CPackStringClassHook);
+}
+
+
+void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
+{
+    if ( !TryStringPack() ) {
+        return;
+    }
+
+    CObjectTypeInfo type;
+
+    type = CObjectTypeInfo(CType<CObject_id>());
+    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
+
+    type = CObjectTypeInfo(CType<CImp_feat>());
+    type.FindMember("key").SetLocalReadHook(in,
+                                            new CPackStringClassHook(32, 128));
+
+    type = CObjectTypeInfo(CType<CDbtag>());
+    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
+
+    type = CType<CGb_qual>();
+    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
  * $Log$
+ * Revision 1.18  2003/07/24 19:28:09  vasilche
+ * Implemented SNP split for ID1 loader.
+ *
  * Revision 1.17  2003/07/17 20:07:56  vasilche
  * Reduced memory usage by feature indexes.
  * SNP data is loaded separately through PUBSEQ_OS.
@@ -177,4 +283,3 @@ END_NCBI_SCOPE
  * New streamable interfaces designed, ID1 reimplemented.
  *
  */
-

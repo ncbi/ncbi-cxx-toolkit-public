@@ -60,10 +60,10 @@ BEGIN_SCOPE(objects)
 // GBLoader Public interface 
 // 
 
-const char* GB_ENV_VAR = "GENBANK_LOADER_METHOD";
-const char* DEFAULT_DRIVERS_ORDER = "PUBSEQOS:ID1";
-const string DRV_PUBSEQOS = "PUBSEQOS";
-const string DRV_ID1 = "ID1";
+static const char* const DRV_ENV_VAR = "GENBANK_LOADER_METHOD";
+static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
+static const char* const DRV_PUBSEQOS = "PUBSEQOS";
+static const char* const DRV_ID1 = "ID1";
 
 
 CTSEUpload::CTSEUpload()
@@ -146,20 +146,23 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
     m_Driver(driver)
 {
     GBLOG_POST( "CGBDataLoader");
-    const char* env = ::getenv(GB_ENV_VAR);
-    if (!env) {
-        env = DEFAULT_DRIVERS_ORDER; // default drivers' order
-    }
-    list<string> drivers;
-    NStr::Split(env, ":", drivers);
-    for (list<string>::iterator drv = drivers.begin();
-        drv != drivers.end()  &&  !m_Driver; ++drv) {
-        m_Driver = s_CreateReader(*drv);
-    }
-    if(!m_Driver) {
-        THROW1_TRACE(runtime_error,
-                     "CGBDataLoader::CGBDataLoader: "
-                     "Could not create driver: " + string(env));
+    if ( !m_Driver ) {
+        const char* env = ::getenv(DRV_ENV_VAR);
+        if (!env) {
+            env = DEFAULT_DRV_ORDER; // default drivers' order
+        }
+        list<string> drivers;
+        NStr::Split(env, ":", drivers);
+        ITERATE ( list<string>, drv, drivers ) {
+            m_Driver = s_CreateReader(*drv);
+            if ( m_Driver )
+                break;
+        }
+        if(!m_Driver) {
+            THROW1_TRACE(runtime_error,
+                         "CGBDataLoader::CGBDataLoader: "
+                         "Could not create driver: " + string(env));
+        }
     }
   
     size_t i = m_Driver->GetParallelLevel();
@@ -957,6 +960,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/07/24 19:28:09  vasilche
+* Implemented SNP split for ID1 loader.
+*
 * Revision 1.80  2003/07/22 22:01:43  vasilche
 * Removed use of HAVE_LIBDL.
 *

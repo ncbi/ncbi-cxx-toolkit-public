@@ -29,10 +29,16 @@
  */
 
 #include <objmgr/reader_id1.hpp>
+
 #include <objmgr/impl/seqref_id1.hpp>
+#include <objmgr/impl/reader_zlib.hpp>
+
 #include <corelib/ncbistre.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/id1/id1__.hpp>
 
 #include <serial/enumvalues.hpp>
@@ -41,43 +47,45 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
-#include <memory>
 
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-bool CId1Reader::RetrieveSeqrefs(TSeqrefs& sr,
+bool CId1Reader::RetrieveSeqrefs(TSeqrefs& srs,
                                  const CSeq_id& seqId,
                                  TConn conn)
 {
-    return x_RetrieveSeqrefs(sr, seqId, conn);
+    return x_RetrieveSeqrefs(srs, seqId, conn);
 }
 
 
-bool CId1Reader::x_RetrieveSeqrefs(TSeqrefs& sr,
+bool CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
                                    const CSeq_id& seqId,
                                    TConn conn)
 {
     CConn_ServiceStream* server = GetService(conn);
     auto_ptr<CObjectIStream>
         server_input(CObjectIStream::Open(eSerial_AsnBinary, *server, false));
-    CID1server_request id1_request;
-    CID1server_back    id1_reply;
     int gi = 0;
 
     if (!seqId.IsGi()) {
-        id1_request.SetGetgi().Assign(seqId);
         {{
+            CID1server_request id1_request;
+            id1_request.SetGetgi().Assign(seqId);
+            
             CObjectOStreamAsnBinary server_output(*server);
             server_output << id1_request;
-            server_output.Flush();
         }}
+
+        CID1server_back id1_reply;
         *server_input >> id1_reply;
 
-        if (id1_reply.IsGotgi())
+        if (id1_reply.IsGotgi()) {
             gi = id1_reply.GetGotgi();
+        }
         else {
             LOG_POST("SeqId is not found");
             seqId.WriteAsFasta(cout);
@@ -87,30 +95,45 @@ bool CId1Reader::x_RetrieveSeqrefs(TSeqrefs& sr,
         gi = seqId.GetGi();
     }
 
-    if ( !gi )
+    if ( !gi ) {
         return true; // no data?
+    }
 
     {{
-        CID1server_maxcomplex blob;
+        CID1server_request id1_request;
+        CID1server_maxcomplex& blob = id1_request.SetGetblobinfo();
         blob.SetMaxplex(eEntry_complexities_entry);
         blob.SetGi(gi);
-        id1_request.SetGetblobinfo(blob);
-        {{
-            CObjectOStreamAsnBinary server_output(*server);
-            server_output << id1_request;
-            server_output.Flush();
-        }}
-        id1_request.Reset(); 
+
+        CObjectOStreamAsnBinary server_output(*server);
+        server_output << id1_request;
     }}
+
+    CID1server_back    id1_reply;
     *server_input >> id1_reply;
 
     if (id1_reply.IsGotblobinfo()) {
-        sr.push_back(CRef<CSeqref>
-                     (new CId1Seqref(*this,
-                                     gi,
-                                     id1_reply.GetGotblobinfo().GetSat(),
-                                     id1_reply.GetGotblobinfo().GetSat_key()))
-            );
+        const CID1blob_info& info = id1_reply.GetGotblobinfo();
+        CRef<CSeqref> sr;
+        sr.Reset(new CId1Seqref(*this, gi, info.GetSat(), info.GetSat_key()));
+        srs.push_back(sr);
+        if ( TrySNPSplit() ) {
+            CSeqref::TFlags flags;
+            if ( !info.IsSetExtfeatmask() ) {
+                flags = CSeqref::fHasExternal | CSeqref::fPossible;
+            }
+            else if ( info.GetExtfeatmask() != 0 ) {
+                flags = CSeqref::fHasExternal;
+            }
+            else {
+                flags = 0;
+            }
+            if ( flags ) {
+                sr.Reset(new CId1Seqref(*this, gi, kSat_SNP, gi));
+                sr->SetFlags(flags);
+                srs.push_back(sr);
+            }
+        }
     }
     return true;
 }
@@ -143,7 +166,14 @@ CId1BlobSource::CId1BlobSource(const CId1Seqref& seqId, TConn conn)
     : m_Seqref(seqId), m_Conn(conn), m_Count(0)
 {
     CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-    params->SetMaxplex(eEntry_complexities_entry);
+    bool is_external = seqId.Sat() == CReader::kSat_SNP;
+    bool skip_extfeat = !is_external && CReader::TrySNPSplit();
+    enum {
+        kNoExtFeat = 1<<4
+    };
+    params->SetMaxplex(skip_extfeat?
+                       eEntry_complexities_entry | kNoExtFeat:
+                       eEntry_complexities_entry);
     params->SetGi(seqId.Gi());
     params->SetEnt(seqId.SatKey());
     params->SetSat(NStr::IntToString(seqId.Sat()));
@@ -187,7 +217,8 @@ bool CId1BlobSource::HaveMoreBlobs(void)
 CBlob* CId1BlobSource::RetrieveBlob(void)
 {
     --m_Count;
-    return new CId1Blob(*this);
+    bool is_snp = m_Seqref.Sat() == CReader::kSat_SNP;
+    return new CId1Blob(*this, is_snp);
 }
 
 
@@ -199,8 +230,8 @@ CBlobSource* CId1Seqref::GetBlobSource(TPos , TPos ,
 }
 
 
-CId1Blob::CId1Blob(CId1BlobSource& source)
-    : m_Source(source)
+CId1Blob::CId1Blob(CId1BlobSource& source, bool is_snp)
+    : m_Source(source), m_IsSnp(is_snp)
 {
 }
 
@@ -212,18 +243,68 @@ CId1Blob::~CId1Blob(void)
 
 CSeq_entry* CId1Blob::Seq_entry()
 {
-    auto_ptr<CObjectIStream>
-        objStream(CObjectIStream::Open(eSerial_AsnBinary,
-                                       *m_Source.x_GetService(), false));
-    CID1server_back id1_reply;
+    if ( m_IsSnp ) {
+        CStreamByteSourceReader src(0, m_Source.x_GetService());
+        {{
+            // skip 2 bytes of hacked header
+            const size_t kSkipHeader = 2;
+            char buffer[kSkipHeader];
+            size_t to_skip = kSkipHeader;
+            while ( to_skip ) {
+                size_t cnt = src.Read(buffer, to_skip);
+                if ( cnt == 0 ) {
+                    NCBI_THROW(CEofException, eEof,
+                               "unexpected EOF while skipping ID1 SNP header");
+                }
+                to_skip -= cnt;
+            }
+        }}
+        CResultZBtSrc src2(&src);
+        
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src2));
 
-    *objStream >> id1_reply;
+        CReader::SetSNPReadHooks(*in);
+        
+        CRef<CSeq_annot> annot(new CSeq_annot);
 
-    if (id1_reply.IsGotseqentry())
-        m_Seq_entry = &id1_reply.SetGotseqentry();
-    else if (id1_reply.IsGotdeadseqentry())
-        m_Seq_entry = &id1_reply.SetGotdeadseqentry();
+        *in >> *annot;
 
+        {{
+            // skip 2 bytes of hacked footer
+            const size_t kSkipFooter = 2;
+            char buffer[kSkipFooter];
+            size_t to_skip = kSkipFooter;
+            while ( to_skip ) {
+                size_t cnt = src.Read(buffer, to_skip);
+                if ( cnt == 0 ) {
+                    NCBI_THROW(CEofException, eEof,
+                               "unexpected EOF while skipping ID1 SNP footer");
+                }
+                to_skip -= cnt;
+            }
+        }}
+
+        m_Seq_entry.Reset(new CSeq_entry);
+        m_Seq_entry->SetSet().SetSeq_set(); // it's not optional
+        m_Seq_entry->SetSet().SetAnnot().push_back(annot);
+    }
+    else {
+        CID1server_back id1_reply;
+
+        auto_ptr<CObjectIStream> in;
+        in.reset(CObjectIStream::Open(eSerial_AsnBinary,
+                                      *m_Source.x_GetService(), false));
+
+        CReader::SetSeqEntryReadHooks(*in);
+
+        *in >> id1_reply;
+
+        if (id1_reply.IsGotseqentry())
+            m_Seq_entry = &id1_reply.SetGotseqentry();
+        else if (id1_reply.IsGotdeadseqentry())
+            m_Seq_entry = &id1_reply.SetGotdeadseqentry();
+    }
     return m_Seq_entry;
 }
 
@@ -346,6 +427,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.40  2003/07/24 19:28:09  vasilche
+ * Implemented SNP split for ID1 loader.
+ *
  * Revision 1.39  2003/07/17 20:07:56  vasilche
  * Reduced memory usage by feature indexes.
  * SNP data is loaded separately through PUBSEQ_OS.

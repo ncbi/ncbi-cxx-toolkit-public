@@ -51,6 +51,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CPubseqReader;
+
 class NCBI_XOBJMGR_EXPORT CPubseqSeqref : public CSeqref
 {
 public:
@@ -149,52 +151,15 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CResultZBtSrc : public CByteSource
-{
-public:
-    CResultZBtSrc(CDB_Result* result);
-    ~CResultZBtSrc();
-
-    virtual CRef<CByteSourceReader> Open(void);
-
-private:
-    CDB_Result* m_Result;
-};
-
-
-class CResultZBtSrcX;
-class CResultZBtSrcRdr;
-
-
-class NCBI_XOBJMGR_EXPORT CResultZBtSrcRdr : public CByteSourceReader
-{
-public:
-    CResultZBtSrcRdr(CDB_Result* result);
-    ~CResultZBtSrcRdr();
-
-    enum EType {
-        eType_unknown,
-        eType_plain,
-        eType_zlib
-    };
-
-    virtual size_t Read(char* buffer, size_t bufferLength);
-
-    size_t x_Read(char* buffer, size_t bufferLength);
-
-private:
-    CDB_Result* m_Result;
-    EType       m_Type;
-    auto_ptr<CResultZBtSrcX> m_Decompressor;
-};
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
 * $Log$
+* Revision 1.6  2003/07/24 19:28:08  vasilche
+* Implemented SNP split for ID1 loader.
+*
 * Revision 1.5  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

@@ -29,30 +29,18 @@
 
 #include <objmgr/reader_pubseq.hpp>
 #include <objmgr/impl/seqref_pubseq.hpp>
-#include <objmgr/impl/pack_string.hpp>
+#include <objmgr/impl/reader_zlib.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/Imp_feat.hpp>
+#include <corelib/ncbicntr.hpp>
 
-#include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <serial/objectinfo.hpp>
-#include <serial/objectiter.hpp>
-#include <serial/iterator.hpp>
 
-#include <util/compress/zlib.hpp>
-
-#include <vector>
 #include <memory>
-#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -126,8 +114,7 @@ int CPubseqSeqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
 
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
 // we have non MT-safe library used in MT application
-DEFINE_STATIC_MUTEX(s_readers_mutex);
-static int    s_pubseq_readers=0;
+static CAtomicCounter s_pubseq_readers;
 #endif
 
 CPubseqReader::CPubseqReader(TConn noConn,
@@ -140,12 +127,12 @@ CPubseqReader::CPubseqReader(TConn noConn,
     noConn=1;
 #endif
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
-    {{
-        CMutexGuard g(s_readers_mutex);
-        if(s_pubseq_readers>0)
-            throw runtime_error("Attempt to open multiple pubseq_readers without MT-safe DB library");
-        s_pubseq_readers++;
-    }}
+    if ( s_pubseq_readers.Add(1) > 1 ) {
+        s_pubseq_readers.Add(-1);
+        THROW1_TRACE(runtime_error,
+                     "CPubseqReader: "
+                     "Attempt to open multiple pubseq_readers without MT-safe DB library");
+    }
 #endif
     SetParallelLevel(noConn);
     // LOG_POST("opened " << m_Pool.size() << " new connections");
@@ -157,10 +144,7 @@ CPubseqReader::~CPubseqReader()
     SetParallelLevel(0);
 
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-    {{
-        CMutexGuard g(s_readers_mutex);
-        s_pubseq_readers--;
-    }}
+    s_pubseq_readers.Add(-1);
 #endif
 }
 
@@ -205,8 +189,8 @@ CDB_Connection *CPubseqReader::NewConn()
         m_Context.reset((*createContextFunc)(&args));
         //m_Context.reset((*createContextFunc)(0));
     }
-    auto_ptr<CDB_Connection> conn(
-        m_Context->Connect(m_Server, m_User, m_Password, 0));
+    auto_ptr<CDB_Connection> conn(m_Context->Connect(m_Server,
+                                                     m_User, m_Password, 0));
     if ( conn.get() ) {
         auto_ptr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
         if ( cmd.get() ) {
@@ -287,9 +271,6 @@ bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
                     }
                 }
             }
-            
-            //LOG_POST(setw(3) << CThread::GetSelf() << ":: " <<
-            // "id_gi_by_seqid_asn => gi("<<gi << ")");
         }
     }
     
@@ -331,18 +312,29 @@ bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs,
                 }
             }
 
+            _ASSERT(sat.Value() != kSat_SNP);
             CRef<CSeqref> sr;
             sr.Reset(new CPubseqSeqref(*this,
                                        gi,
                                        sat.Value(),
                                        satKey.Value()));
             srs.push_back(sr);
-            if ( extFeat.IsNULL() || extFeat.Value() != 0 ) {
-                sr.Reset(new CPubseqSeqref(*this, gi, 15, gi));
-                sr->SetFlags(extFeat.IsNULL()?
-                             CSeqref::fHasExternal | CSeqref::fPossible:
-                             CSeqref::fHasExternal);
-                srs.push_back(sr);
+            if ( TrySNPSplit() ) {
+                CSeqref::TFlags flags;
+                if ( extFeat.IsNULL() ) {
+                    flags = CSeqref::fHasExternal | CSeqref::fPossible;
+                }
+                else if ( extFeat.Value() != 0 ) {
+                    flags = CSeqref::fHasExternal;
+                }
+                else {
+                    flags = 0;
+                }
+                if ( flags ) {
+                    sr.Reset(new CPubseqSeqref(*this, gi, kSat_SNP, gi));
+                    sr->SetFlags(flags);
+                    srs.push_back(sr);
+                }
             }
         }
     }
@@ -373,15 +365,19 @@ CBlobSource* CPubseqSeqref::GetBlobSource(TPos , TPos ,
 
 CPubseqBlobSource::CPubseqBlobSource(const CPubseqSeqref& seqId, TConn conn)
     : m_Seqref(seqId), m_Conn(conn),
-      m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 3))
+      m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 4))
 {
     CDB_Int giIn(seqId.Gi());
     CDB_SmallInt satIn(seqId.Sat());
     CDB_Int satKeyIn(seqId.SatKey());
+    bool is_external = seqId.Sat() == CReader::kSat_SNP;
+    bool load_external = is_external || !CReader::TrySNPSplit();
+    CDB_Int ext_feat(load_external);
 
     m_Cmd->SetParam("@gi", &giIn);
     m_Cmd->SetParam("@sat_key", &satKeyIn);
     m_Cmd->SetParam("@sat", &satIn);
+    m_Cmd->SetParam("@ext_feat", &ext_feat);
     m_Cmd->Send();
 }
 
@@ -437,10 +433,11 @@ void CPubseqBlobSource::x_GetNextBlob(void)
                 const string& name = m_Result->ItemName(pos);
                 _TRACE("next item: " << name);
                 if(name == "asn1") {
+                    bool is_snp = m_Seqref.Sat() == CReader::kSat_SNP;
                     m_Blob.Reset(new CPubseqBlob(*this,
                                                  classOut.Value(),
                                                  descrOut.Value(),
-                                                 m_Seqref.Sat() == 15));
+                                                 is_snp));
                     return;
                 }
                 else if(name == "confidential") {
@@ -480,69 +477,17 @@ CPubseqBlob::~CPubseqBlob(void)
 CSeq_entry *CPubseqBlob::Seq_entry()
 {
     if ( m_SNP ) {
-        CResultZBtSrc src(m_Source.m_Result.get());
+        CResultBtSrcRdr src(m_Source.m_Result.get());
+        CResultZBtSrc src2(&src);
         
         auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src));
+        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src2));
 
-        string s1("qual"), s2(s1);
-        if ( s1.data() == s2.data() ) {
-            CObjectTypeInfo type = CType<CGb_qual>();
-            type.FindMember("qual").SetLocalReadHook(*in, new CPackStringClassHook);
-            type.FindMember("val").SetLocalReadHook(*in, new CPackStringClassHook(1));
-            type = CObjectTypeInfo(CType<CImp_feat>());
-            type.FindMember("key").SetLocalReadHook(*in, new CPackStringClassHook(32, 128));
-
-            type = CObjectTypeInfo(CType<CObject_id>());
-            type.FindVariant("str").SetLocalReadHook(*in, new CPackStringChoiceHook);
-
-            type = CObjectTypeInfo(CType<CDbtag>());
-            type.FindMember("db").SetLocalReadHook(*in, new CPackStringClassHook);
-
-            type = CObjectTypeInfo(CType<CSeq_feat>());
-            type.FindMember("comment").SetLocalReadHook(*in, new CPackStringClassHook);
-        }
+        CReader::SetSNPReadHooks(*in);
         
         CRef<CSeq_annot> annot(new CSeq_annot);
 
         *in >> *annot;
-
-        in.reset();
-
-        if ( false ) {
-            if ( !annot->ReferencedOnlyOnce() )
-                ERR_POST("other reference to annot");
-            //annot.Release();
-            THROW1_TRACE(runtime_error, "abort");
-        }
-
-        if ( false ) {
-            set<string> qual, val;
-            size_t count = 0;
-            for( CTypeConstIterator<CGb_qual> i(ConstBegin(*annot)); i; ++i ) {
-                ++count;
-                {{
-                    const string& s = i->GetQual();
-                    set<string>& ss = qual;
-                    if ( s.data() != ss.insert(s).first->data() ) {
-                        THROW1_TRACE(runtime_error,
-                                     "bad ref counting");
-                    }
-                }}
-                {{
-                    const string& s = i->GetVal();
-                    set<string>& ss = val;
-                    if ( val.size() <= 1 &&
-                         s.data() != ss.insert(s).first->data() ) {
-                        THROW1_TRACE(runtime_error,
-                                     "bad ref counting");
-                    }
-                }}
-            }
-            NcbiCout << "annot stat: Gb-qual count: " << count <<
-                " qual count: " << qual.size() <<
-                " val count: " << val.size() << NcbiEndl;
-        }
 
         m_Seq_entry.Reset(new CSeq_entry);
         m_Seq_entry->SetSet().SetSeq_set(); // it's not optional
@@ -550,10 +495,11 @@ CSeq_entry *CPubseqBlob::Seq_entry()
     }
     else {
         CResultBtSrc src(m_Source.m_Result.get());
-
         auto_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Create(eSerial_AsnBinary, src));
         
+        CReader::SetSeqEntryReadHooks(*in);
+
         m_Seq_entry.Reset(new CSeq_entry);
         
         *in >> *m_Seq_entry;
@@ -603,200 +549,15 @@ size_t CResultBtSrcRdr::Read(char* buffer, size_t bufferLength)
 }
 
 
-CResultZBtSrc::CResultZBtSrc(CDB_Result* result)
-    : m_Result(result)
-{
-}
-
-
-CResultZBtSrc::~CResultZBtSrc()
-{
-}
-
-
-
-CRef<CByteSourceReader> CResultZBtSrc::Open(void)
-{
-    return CRef<CByteSourceReader>(new CResultZBtSrcRdr(m_Result));
-}
-
-
-class NCBI_XOBJMGR_EXPORT CResultZBtSrcX
-{
-public:
-    CResultZBtSrcX(CResultZBtSrcRdr& reader);
-    ~CResultZBtSrcX(void);
-
-    size_t Read(char* buffer, size_t bufferLength);
-    void ReadLength(void);
-
-    enum {
-        kMax_UncomprSize = 128*1024,
-        kMax_ComprSize = 128*1024
-    };
-
-private:
-    CResultZBtSrcRdr& m_Reader;
-    vector<char>      m_Buffer;
-    size_t            m_BufferPos;
-    size_t            m_BufferEnd;
-    CZipCompression   m_Decompressor;
-    vector<char>      m_Compressed;
-};
-
-
-CResultZBtSrcRdr::CResultZBtSrcRdr(CDB_Result* result)
-    : m_Result(result), m_Type(eType_unknown)
-{
-}
-
-
-CResultZBtSrcRdr::~CResultZBtSrcRdr()
-{
-}
-
-
-size_t CResultZBtSrcRdr::Read(char* buffer, size_t bufferLength)
-{
-    EType type = m_Type;
-    if ( type == eType_plain ) {
-        return x_Read(buffer, bufferLength);
-    }
-
-    if ( type == eType_unknown ) {
-        if ( bufferLength < 4 ) {
-            THROW1_TRACE(runtime_error,
-                         "CResultZBtSrcRdr: "
-                         "too small buffer to determine compression type");
-        }
-        size_t cnt = x_Read(buffer, 4);
-        if ( cnt != 4 ) {
-            // too few bytes - assume non "ZIP"
-            _TRACE("CResultZBtSrcRdr: non-ZIP: " << cnt);
-            m_Type = eType_plain;
-            return cnt;
-        }
-        if ( memcmp(buffer, "ZIP", cnt) != 0 ) {
-            // non "ZIP"
-            cnt += x_Read(buffer+4, bufferLength-4);
-            _TRACE("CResultZBtSrcRdr: non-ZIP: " << cnt);
-            m_Type = eType_plain;
-            return cnt;
-        }
-        m_Type = eType_zlib;
-
-        m_Decompressor.reset(new CResultZBtSrcX(*this));
-        //m_Decompressor->ReadLength();
-    }
-
-    return m_Decompressor->Read(buffer, bufferLength);
-}
-
-
-size_t CResultZBtSrcRdr::x_Read(char* buffer, size_t bufferLength)
-{
-    size_t ret = 0;
-    while ( bufferLength > 0 ) {
-        size_t cnt = m_Result->ReadItem(buffer, bufferLength);
-        if ( cnt == 0 ) {
-            if ( !m_Result->Fetch() )
-                break;
-        }
-        else {
-#if 0 // && _DEBUG
-            NcbiCout << "Data:";
-            for ( size_t i = 0; i < cnt; ++i ) {
-                NcbiCout << ' ' <<
-                    "0123456789abcdef"[(buffer[i]>>4)&15] << 
-                    "0123456789abcdef"[(buffer[i])&15];
-            }
-            NcbiCout << NcbiEndl;
-#endif
-            bufferLength -= cnt;
-            buffer += cnt;
-            ret += cnt;
-        }
-    }
-    return ret;
-}
-
-
-CResultZBtSrcX::CResultZBtSrcX(CResultZBtSrcRdr& reader)
-    : m_Reader(reader), m_BufferPos(0), m_BufferEnd(0)
-{
-}
-
-
-CResultZBtSrcX::~CResultZBtSrcX(void)
-{
-}
-
-
-void CResultZBtSrcX::ReadLength(void)
-{
-    char header[8];
-    if ( m_Reader.x_Read(header, 8) != 8 ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "too few header bytes");
-    }
-    unsigned int compr_size = 0;
-    for ( size_t i = 0; i < 4; ++i ) {
-        compr_size = (compr_size<<8) | (unsigned char)header[i];
-    }
-    unsigned int uncompr_size = 0;
-    for ( size_t i = 4; i < 8; ++i ) {
-        uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
-    }
-
-    if ( compr_size > kMax_ComprSize ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "compressed size is too large");
-    }
-    if ( uncompr_size > kMax_UncomprSize ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "uncompressed size is too large");
-    }
-    m_Compressed.reserve(compr_size);
-    if ( m_Reader.x_Read(&m_Compressed[0], compr_size) != compr_size ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "compressed data is not complete");
-    }
-    m_BufferPos = kMax_UInt;
-    m_Buffer.reserve(uncompr_size);
-    if ( !m_Decompressor.DecompressBuffer(&m_Compressed[0], compr_size,
-                                          &m_Buffer[0], uncompr_size,
-                                          &uncompr_size) ) {
-        THROW1_TRACE(runtime_error,
-                     "CResultZBtSrcX: "
-                     "decompression failed");
-    }
-    m_BufferEnd = uncompr_size;
-    m_BufferPos = 0;
-}
-
-
-size_t CResultZBtSrcX::Read(char* buffer, size_t bufferLength)
-{
-    while ( m_BufferPos == m_BufferEnd ) {
-        ReadLength();
-    }
-    size_t cnt = min(bufferLength, m_BufferEnd-m_BufferPos);
-    memcpy(buffer, &m_Buffer[m_BufferPos], cnt);
-    m_BufferPos += cnt;
-    return cnt;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
 * $Log$
+* Revision 1.32  2003/07/24 19:28:09  vasilche
+* Implemented SNP split for ID1 loader.
+*
 * Revision 1.31  2003/07/18 20:27:54  vasilche
 * Check if reference counting is working before trying ot use it.
 *

@@ -35,6 +35,9 @@
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+
+class CObjectIStream;
+
 BEGIN_SCOPE(objects)
 
 class CSeq_id;
@@ -151,6 +154,18 @@ public:
     // could become obsolete by fresher version 
     // -1 - never
     virtual int GetConst(const string& const_name) const;
+
+    enum {
+        kSat_SNP = 15
+    };
+
+    static bool s_GetEnvFlag(const char* env, bool def_val);
+
+    static bool TrySNPSplit(void);
+    static bool TryStringPack(void);
+
+    static void SetSNPReadHooks(CObjectIStream& in);
+    static void SetSeqEntryReadHooks(CObjectIStream& in);
 };
 
 END_SCOPE(objects)
@@ -158,6 +173,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.24  2003/07/24 19:28:08  vasilche
+* Implemented SNP split for ID1 loader.
+*
 * Revision 1.23  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
