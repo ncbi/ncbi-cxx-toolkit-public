@@ -439,7 +439,7 @@ CTrans_table::CTrans_table(const CGenetic_code& gc)
     const string * sncbieaa = 0;
 
     // find amino acid and orf start strings given genetic code instance
-    iterate (CGenetic_code::Tdata, gcd, gc.Get ()) {
+    ITERATE (CGenetic_code::Tdata, gcd, gc.Get ()) {
         switch ((*gcd)->Which ()) {
             case CGenetic_code::C_E::e_Ncbieaa :
                 ncbieaa = & (*gcd)->GetNcbieaa ();
@@ -489,8 +489,8 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     }
 
     // now look for the genetic code and initialize the translation table
-    iterate (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
-        iterate (CGenetic_code::Tdata, gcd, (*gcl)->Get ()) {
+    ITERATE (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
+        ITERATE (CGenetic_code::Tdata, gcd, (*gcl)->Get ()) {
             if ((*gcd)->IsId ()  &&  (*gcd)->GetId () == id) {
 
         	    // found proper genetic code, so create new trans table
@@ -520,7 +520,7 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (const CGenetic_code& gc)
     const string * ncbieaa  = 0;
     const string * sncbieaa = 0;
 
-    iterate (CGenetic_code::Tdata, gcd, gc.Get ()) {
+    ITERATE (CGenetic_code::Tdata, gcd, gc.Get ()) {
         switch ((*gcd)->Which ()) {
             case CGenetic_code::C_E::e_Id :
             {
@@ -558,7 +558,7 @@ const CGenetic_code_table & CGen_code_table_imp::GetCodeTable (void)
 
 const string& CGen_code_table_imp::GetNcbieaa(int id) const
 {
-    iterate (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
+    ITERATE (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
         if ( (*gcl)->GetId() == id ) {
             return (*gcl)->GetNcbieaa();
         }
@@ -575,7 +575,7 @@ const string& CGen_code_table_imp::GetNcbieaa(const CGenetic_code& gc) const
 
 const string& CGen_code_table_imp::GetSncbieaa(int id) const
 {
-    iterate (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
+    ITERATE (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
         if ( (*gcl)->GetId() == id ) {
             return (*gcl)->GetSncbieaa();
         }
@@ -697,6 +697,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.10  2003/04/18 19:40:38  kans
+* changed iterate to ITERATE
+*
 * Revision 6.9  2003/02/24 18:52:57  vasilche
 * Added optional mapped locations arguments to feature comparison.
 *

@@ -54,7 +54,7 @@ CGenetic_code::~CGenetic_code(void)
 const string& CGenetic_code::GetName(void) const
 {
     if ( !m_Name ) {
-        iterate( CGenetic_code::Tdata, gce, Get() ) {
+        ITERATE( CGenetic_code::Tdata, gce, Get() ) {
             if ( (*gce)->IsName() ) {
                 m_Name = &((*gce)->GetName());
                 break;
@@ -69,7 +69,7 @@ const string& CGenetic_code::GetName(void) const
 int CGenetic_code::GetId(void) const
 {
     if ( m_Id == 255 ) {
-        iterate( CGenetic_code::Tdata, gce, Get() ) {
+        ITERATE( CGenetic_code::Tdata, gce, Get() ) {
             if ( (*gce)->IsId() ) {
                 m_Id = (*gce)->GetId();
                 break;
@@ -83,7 +83,7 @@ int CGenetic_code::GetId(void) const
 const string& CGenetic_code::GetNcbieaa(void) const
 {
     if ( !m_Ncbieaa ) {
-        iterate( CGenetic_code::Tdata, gce, Get() ) {
+        ITERATE( CGenetic_code::Tdata, gce, Get() ) {
             if ( (*gce)->IsNcbieaa() ) {
                 m_Ncbieaa =  &((*gce)->GetNcbieaa());
                 break;
@@ -97,7 +97,7 @@ const string& CGenetic_code::GetNcbieaa(void) const
 const string& CGenetic_code::GetSncbieaa(void) const
 {
     if ( !m_Sncbieaa ) {
-        iterate( CGenetic_code::Tdata, gce, Get() ) {
+        ITERATE( CGenetic_code::Tdata, gce, Get() ) {
             if ( (*gce)->IsSncbieaa() ) {
                 m_Sncbieaa = &((*gce)->GetSncbieaa());
             }
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2003/04/18 19:40:38  kans
+* changed iterate to ITERATE
+*
 * Revision 6.1  2002/11/26 18:52:11  shomrat
 * Add convenience methods for the retrieval of internal data
 *

@@ -86,7 +86,7 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
 
     case COrgName::C_Name::e_Hybrid:
     {
-        iterate (CMultiOrgName::Tdata, it, name.GetHybrid().Get()) {
+        ITERATE (CMultiOrgName::Tdata, it, name.GetHybrid().Get()) {
             if ((*it)->GetFlatName(name_out, lineage)) {
                 return true;
             }
@@ -96,7 +96,7 @@ bool COrgName::GetFlatName(string& name_out, string* lineage) const
     case COrgName::C_Name::e_Partial:
     {
         string delim;
-        iterate (CPartialOrgName::Tdata, it, name.GetPartial().Get()) {
+        ITERATE (CPartialOrgName::Tdata, it, name.GetPartial().Get()) {
             name_out += delim + (*it)->GetName();
             delim = " ";
         }
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/18 19:40:39  kans
+* changed iterate to ITERATE
+*
 * Revision 1.1  2003/03/10 16:36:21  ucko
 * +GetFlatName
 *

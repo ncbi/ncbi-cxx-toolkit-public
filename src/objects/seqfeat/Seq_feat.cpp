@@ -122,7 +122,7 @@ int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
 const CGene_ref* CSeq_feat::GetGeneXref(void) const
 
 {
-    iterate(CSeq_feat::TXref, it, GetXref ()) {
+    ITERATE(CSeq_feat::TXref, it, GetXref ()) {
         if ((*it)->IsSetData () && (*it)->GetData ().IsGene ()) {
             return &((*it)->GetData ().GetGene ());
         }
@@ -133,7 +133,7 @@ const CGene_ref* CSeq_feat::GetGeneXref(void) const
 const CProt_ref* CSeq_feat::GetProtXref(void) const
 
 {
-    iterate(CSeq_feat::TXref, it, GetXref ()) {
+    ITERATE(CSeq_feat::TXref, it, GetXref ()) {
         if ((*it)->IsSetData () && (*it)->GetData ().IsProt ()) {
             return &((*it)->GetData ().GetProt ());
         }
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.13  2003/04/18 19:40:39  kans
+ * changed iterate to ITERATE
+ *
  * Revision 6.12  2003/02/26 17:53:06  vasilche
  * Added public version of feature comparison assuming that
  * total range check is done already.
