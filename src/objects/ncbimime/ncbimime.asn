@@ -1,4 +1,4 @@
---$Revision: 6.7 $
+--$Revision: 6.8 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -31,7 +31,8 @@ Ncbi-mime-asn1 ::= CHOICE {
 Bundle-seqs-aligns ::= SEQUENCE {
     sequences SET OF Seq-entry OPTIONAL,        -- sequences
     seqaligns SET OF Seq-annot OPTIONAL,        -- sequence alignments
-    strucaligns Biostruc-annot-set OPTIONAL     -- structure alignments
+    strucaligns Biostruc-annot-set OPTIONAL,    -- structure alignments
+    imports SET OF Seq-annot OPTIONAL           -- imports (updates in Cn3D)
 }
 
 Biostruc-or-id ::= CHOICE {
