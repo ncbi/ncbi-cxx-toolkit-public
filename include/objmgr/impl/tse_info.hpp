@@ -135,11 +135,14 @@ class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
     typedef CSeq_entry_Info TParent;
 public:
     enum EBlobState {
-        fState_none      = 0,
-        fState_dead      = 1 << 0,
-        fState_withdrawn = 1 << 1,
-        fState_private   = 1 << 2,
-        fState_no_data   = 1 << 3
+        fState_none          = 0,
+        fState_suppress_temp = 1 << 0,
+        fState_suppress_perm = 1 << 1,
+        fState_suppress      = fState_suppress_temp | fState_suppress_perm,
+        fState_dead          = 1 << 2,
+        fState_private       = 1 << 3,
+        fState_withdrawn     = 1 << 4,
+        fState_no_data       = 1 << 5 
     };
     typedef CConstRef<CObject>              TBlobId;
     typedef int                             TBlobState;

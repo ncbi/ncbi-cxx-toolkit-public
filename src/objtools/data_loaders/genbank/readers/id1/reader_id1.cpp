@@ -773,6 +773,12 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
             // no Seq-entry in reply, probably private data
             tse_info.SetBlobState(CTSE_Info::fState_no_data);
         }
+        if ( info.GetSuppress() ) {
+            tse_info.SetBlobState(
+                (info.GetSuppress() & 4)
+                ? CTSE_Info::fState_suppress_temp
+                : CTSE_Info::fState_suppress_perm);
+        }
         if ( info.GetWithdrawn() ) {
             tse_info.SetBlobState(CTSE_Info::fState_withdrawn);
         }

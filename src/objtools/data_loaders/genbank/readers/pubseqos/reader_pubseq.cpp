@@ -529,6 +529,17 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
                         tse_info->SetBlobState(CTSE_Info::fState_private);
                     }
                 }
+                else if ( name == "suppress" ) {
+                    CDB_Int v;
+                    result->GetItem(&v);
+                    _TRACE("suppress: "<<v.Value());
+                    if ( v.Value() ) {
+                        tse_info->SetBlobState(
+                            (v.Value() & 4)
+                            ? CTSE_Info::fState_suppress_temp
+                            : CTSE_Info::fState_suppress_perm);
+                    }
+                }
                 else if ( name == "override" ) {
                     CDB_Int v;
                     result->GetItem(&v);

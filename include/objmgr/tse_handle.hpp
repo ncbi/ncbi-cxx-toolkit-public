@@ -80,6 +80,11 @@ public:
     /// TSE info getters
     CBlobIdKey GetBlobId(void) const;
 
+    bool Blob_IsSuppressed(void) const;
+    bool Blob_IsSuppressedTemp(void) const;
+    bool Blob_IsSuppressedPerm(void) const;
+    bool Blob_IsDead(void) const;
+
     /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
     

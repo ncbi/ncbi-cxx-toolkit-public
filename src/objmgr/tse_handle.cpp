@@ -93,6 +93,30 @@ CBlobIdKey CTSE_Handle::GetBlobId(void) const
 }
 
 
+bool CTSE_Handle::Blob_IsSuppressed(void) const
+{
+    return Blob_IsSuppressedTemp()  ||  Blob_IsSuppressedPerm();
+}
+
+
+bool CTSE_Handle::Blob_IsSuppressedTemp(void) const
+{
+    return x_GetTSE_Info().GetBlobState() & CTSE_Info::fState_suppress_temp;
+}
+
+
+bool CTSE_Handle::Blob_IsSuppressedPerm(void) const
+{
+    return x_GetTSE_Info().GetBlobState() & CTSE_Info::fState_suppress_perm;
+}
+
+
+bool CTSE_Handle::Blob_IsDead(void) const
+{
+    return x_GetTSE_Info().GetBlobState() & CTSE_Info::fState_dead;
+}
+
+
 CSeq_entry_Handle CTSE_Handle::GetTopLevelEntry(void) const
 {
     return CSeq_entry_Handle(x_GetTSE_Info(), *this);
