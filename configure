@@ -1334,10 +1334,10 @@ ncbi_compiler_ver="0.0"
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
-     2\.95* )
+     2\.95* | 3.* )
        compiler="GCC"
        ncbi_compiler="GCC"
-       ncbi_compiler_ver="2.95" ;;
+       ncbi_compiler_ver="$compiler_ver" ;;
    esac
 elif test "$KCC" = "yes" ; then
    compiler_ver="$kcc_ver"
