@@ -103,7 +103,7 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 }
 
 /* Description in blast_extend.h */
-Int2 BLAST_ExtendWordInit(Uint4 query_length,
+Int2 BLAST_ExtendWordNew(Uint4 query_length,
    const BlastInitialWordOptions* word_options,
    Uint4 subject_length, BLAST_ExtendWord** ewp_ptr)
 {
@@ -1130,7 +1130,7 @@ static MB_StackTable* MBStackTableFree(MB_StackTable* stack_table)
    return NULL;
 }
 
-BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp)
+BLAST_ExtendWord* BLAST_ExtendWordFree(BLAST_ExtendWord* ewp)
 {
    BlastDiagTableFree(ewp->diag_table);
    MBStackTableFree(ewp->stack_table);
