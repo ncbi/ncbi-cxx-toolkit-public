@@ -34,10 +34,7 @@
  */
 
 #include <connect/ncbi_connection.h>
-
-
-BEGIN_NCBI_SCOPE
-
+#include <corelib/ncbistre.hpp>
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  include <util/stream_utils.hpp>
@@ -52,6 +49,7 @@ BEGIN_NCBI_SCOPE
 #  define CConn_StreambufBase streambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
 
+BEGIN_NCBI_SCOPE
 
 class CConn_Streambuf : public CConn_StreambufBase
 {
@@ -93,6 +91,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/09/23 01:43:03  ucko
+ * Make sure to #include <corelib/ncbistre.hpp> unconditionally.  (The
+ * indirect include is now conditional on MIPSpro...)
+ * Move BEGIN_NCBI_SCOPE to after all #includes.
+ *
  * Revision 6.21  2003/09/22 20:45:27  lavr
  * Define HAVE_BUGGY_IOS_CALLBACKS locally (not to depend on xutil, excl IRIX)
  *
