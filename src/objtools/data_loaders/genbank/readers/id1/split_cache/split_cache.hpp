@@ -89,6 +89,8 @@ private:
 };
 
 
+class CLog;
+class CSplitDataMaker;
 #define WAIT_LINE CLog line(this); line
 #define LINE(Msg) do { WAIT_LINE << Msg; } while(0)
 
@@ -199,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/02 19:49:31  vasilche
+* Added missing forward declarations.
+*
 * Revision 1.4  2003/12/02 19:12:24  vasilche
 * Fixed compilation on MSVC.
 *
