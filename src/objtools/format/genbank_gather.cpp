@@ -128,7 +128,7 @@ void CGenbankGatherer::x_DoSingleSection
         ItemOS() << new CGenomeItem(ctx);
     } else if ( ctx.GetStyle() == CFlatFileGenerator::eStyle_Contig ) {
         if ( ctx.ShowContigFeatures() ) {
-            x_GatherFeatures(false);
+            x_GatherFeatures();
         }
         ItemOS() << new CContigItem(ctx);
         if ( ctx.ShowContigAndSeq() ) {
@@ -138,7 +138,7 @@ void CGenbankGatherer::x_DoSingleSection
         }
         x_GatherSequence();
     } else {
-        x_GatherFeatures(false);
+        x_GatherFeatures();
         if ( ctx.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
             ItemOS() << new CContigItem(ctx);
         }
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:53:08  shomrat
+* x_GatherFeature signature changed
+*
 * Revision 1.3  2004/01/14 16:15:57  shomrat
 * removed const; using ctrl_items
 *
