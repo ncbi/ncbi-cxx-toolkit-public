@@ -276,6 +276,17 @@ public:
 
     void AddNode(CTreePairNode<TId, TValue>* node) { TParent::AddNode(node); }
 
+    const CTreePairNode<TId, TValue>* GetRoot() const 
+    { return (const CTreePairNode<TId, TValue>*)TParent::GetRoot(); }
+
+    CTreePairNode<TId, TValue>* GetRoot() 
+    { return (CTreePairNode<TId, TValue>*)TParent::GetRoot(); }
+
+    const CTreePairNode<TId, TValue>* GetParent() const 
+    { return (const CTreePairNode<TId, TValue>*)TParent::GetParent(); }
+
+    CTreePairNode<TId, TValue>* GetParent() 
+    { return (CTreePairNode<TId, TValue>*)TParent::GetParent(); }
 
     /// Return TParent::TValueType 
     /// (tree node value in terms of the upper level tree)
@@ -317,7 +328,8 @@ public:
     ///    hierachy of node ids to search for
     /// @param res
     ///    list of discovered found nodes (const pointers)
-    void FindNodes(const list<TId>& node_path, TConstPairTreeNodeList* res) const;
+    void FindNodes(const list<TId>&        node_path, 
+                   TConstPairTreeNodeList* res) const;
 
     /// Non recursive linear scan of all subnodes, with id comparison
     ///
@@ -326,6 +338,28 @@ public:
     /// If return value is not NULL Id and value can be received by
     /// FindSubNode(...)->GetId(), FindSubNode(...)->GetValue()
     const TPairTreeType* FindSubNode(const TId& id) const;
+
+    /// Parameters for Id node search
+    ///
+    enum ENodeSearchType
+    {
+        eImmediateSubNodes = (1 << 0),  ///< Search direct subnodes
+        eTopLevelNodes     = (1 << 1),  ///< Search subnodes of the root
+        eAllUpperSubNodes  = (1 << 2),  ///< Search all subnodes on the way up
+
+        eImmediateAndTop = (eImmediateSubNodes | eTopLevelNodes)
+    };
+
+    typedef int TNodeSearchMode; ///< Recombination of ENodeSearchType
+
+    /// Search for node
+    ///
+    /// @param sflag
+    ///     ORed ENodeSearchType
+    /// @return node pointer or NULL
+    const TPairTreeType* FindNode(const TId&      id, 
+                                  TNodeSearchMode sflag = eImmediateAndTop) const;
+
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -830,6 +864,34 @@ CTreePairNode<TId, TValue>::FindSubNode(const TId& id) const
     return 0;
 }
 
+template<class TId, class TValue>
+const CTreePairNode<TId, TValue>*
+CTreePairNode<TId, TValue>::FindNode(const TId&      id,
+                                     TNodeSearchMode sflag) const
+{
+    const TPairTreeType* ret = 0;
+    if (sflag & eImmediateSubNodes) {
+         ret = FindSubNode(id);
+    }
+
+    if (!ret && (sflag & eAllUpperSubNodes)) {
+        const TPairTreeType* parent = GetParent();
+        for (;parent; parent = parent->GetParent()) {
+            ret = parent->FindSubNode(id);
+            if (ret)
+                return ret;
+        }
+    }
+
+    if (!ret && (sflag & eTopLevelNodes)) {
+        const TPairTreeType* root = GetRoot();
+        if (root != this) {
+            ret = root->FindSubNode(id);
+        }
+    }
+    return ret;
+}
+
 /* @} */
 
 END_NCBI_SCOPE
@@ -838,6 +900,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/07/29 16:57:51  kuznets
+ * +CTreePairNode::FindNode
+ *
  * Revision 1.37  2004/07/29 13:14:08  kuznets
  * +CTreePairNode::AddNode()
  *
