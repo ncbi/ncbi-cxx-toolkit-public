@@ -64,24 +64,24 @@ class CFFContext;
 class CMasterContext : public CObject
 {
 public:
-    CMasterContext(const CBioseq& seq, CFFContext& ctx);
+    CMasterContext(const CBioseq_Handle& h, CFFContext& ctx);
     ~CMasterContext(void);
 
-    const CBioseq& GetBioseq(void) const { return *m_Seq; }
-    CBioseq_Handle& GetHandle(void) { return m_Handle; }
+    //const CBioseq& GetBioseq(void) const { return *m_Seq; }
     const CBioseq_Handle& GetHandle(void) const { return m_Handle; }
+    //const CBioseq_Handle& GetHandle(void) const { return m_Handle; }
     SIZE_TYPE GetNumSegments(void) const;
     const string& GetBaseName(void) const { return m_BaseName; }
 
     SIZE_TYPE GetPartNumber(const CBioseq_Handle& seq) const;
 
 private:
-    void x_SetBaseName(const CBioseq& seq);
+    void x_SetBaseName(void);
 
     // data
     string             m_BaseName;
     CBioseq_Handle     m_Handle;
-    CConstRef<CBioseq> m_Seq;
+    //CConstRef<CBioseq> m_Seq;
     mutable CFFContext*   m_Ctx;
 };
 
@@ -94,8 +94,8 @@ public:
     typedef CRef<CReferenceItem> TRef;
     typedef vector<TRef> TReferences;
 
-    CBioseqContext(const CBioseq& seq, CFFContext& ctx);
-    CBioseq_Handle& GetHandle(void);
+    CBioseqContext(const CBioseq_Handle& seq, CFFContext& ctx);
+    //const CBioseq_Handle& GetHandle(void);
     const CBioseq_Handle& GetHandle(void) const;
 
     SIZE_TYPE GetNumSegments(void) const;
@@ -164,19 +164,19 @@ public:
     bool IsRSWGSProt          (void) const;  // ZP_
     
 private:
-    SIZE_TYPE  x_CountSegs(const CBioseq& seq) const;
-    bool x_HasParts(const CBioseq& seq) const;
-    bool x_IsDeltaLitOnly(const CBioseq& seq);
-    bool x_IsPart(const CBioseq& seq) const;
-    const CBioseq& x_GetMasterForPart(const CBioseq& part) const;
+    //SIZE_TYPE  x_CountSegs(const CBioseq_Handle& seq) const;
+    bool x_HasParts(void) const;
+    bool x_IsDeltaLitOnly(void) const;
+    bool x_IsPart(void) const;
+    CBioseq_Handle x_GetMasterForPart(void) const;
     SIZE_TYPE x_GetPartNumber(const CBioseq_Handle& seq) const;
     bool x_IsGPS(void) const;
     
     
-    void x_SetId(const CBioseq& seq);
+    void x_SetId(void);
     void x_SetAccession(const CBioseq& seq);
 
-    CSeq_inst::TRepr x_GetRepr(const CBioseq& seq) const;
+    CSeq_inst::TRepr x_GetRepr(const CBioseq_Handle& seq) const;
     const CMolInfo*  x_GetMolinfo(void);
 
     // data
@@ -291,14 +291,14 @@ public:
     bool ViewNuc(void) const  { return (m_FilterFlags & fSkipNucleotides) == 0; }
     bool ViewProt(void) const { return (m_FilterFlags & fSkipProteins) == 0; }
 
-    const CSeq_entry& GetTSE(void) const;
-    void SetTSE(const CSeq_entry& tse);
+    const CSeq_entry_Handle& GetTSE(void) const;
+    void SetTSE(const CSeq_entry_Handle& tse);
 
     const CBioseq& GetActiveBioseq(void) const;
-    void SetActiveBioseq(const CBioseq& seq);
+    void SetActiveBioseq(const CBioseq_Handle& seq);
 
     const CBioseq* GetMasterBioseq(void) const;
-    void SetMasterBioseq(const CBioseq& master);
+    void SetMasterBioseq(const CBioseq_Handle& master);
 
     const CSeq_loc* GetLocation(void) const;
     void SetLocation(const CSeq_loc* loc);
@@ -309,8 +309,8 @@ public:
     const CSubmit_block* GetSeqSubmit(void) const;
     void SetSubmit(const CSubmit_block& sub);
 
-    CBioseq_Handle& GetHandle(void);
     const CBioseq_Handle& GetHandle(void) const;
+    //const CBioseq_Handle& GetHandle(void) const;
     void SetHandle(CBioseq_Handle& handle);
 
     const string& GetAccession(void) const;
@@ -423,6 +423,7 @@ public:
     bool ShowTranscript     (void) const { return x_Flags().ShowTranscript();      }
     bool ShowPeptides       (void) const { return x_Flags().ShowPeptides();        }
     bool ShowFtableRefs     (void) const { return x_Flags().ShowFtableRefs();      }
+    bool OldFeatsOrder      (void) const { return x_Flags().OldFeatsOrder();       }
     bool DoHtml             (void) const { return x_Flags().DoHtml();              }
 
     bool ShowGBBSource(void) const;
@@ -486,6 +487,7 @@ private:
         bool ShowTranscript     (void) const { return m_ShowTranscript;      }
         bool ShowPeptides       (void) const { return m_ShowPeptides;        }
         bool ShowFtableRefs     (void) const { return m_ShowFtableRefs;      }
+        bool OldFeatsOrder      (void) const { return m_OldFeatsOrder;       }
         bool DoHtml             (void) const { return m_DoHtml;              }
         
     private:
@@ -546,6 +548,7 @@ private:
         bool m_ShowTranscript;
         bool m_ShowPeptides;
         bool m_ShowFtableRefs;
+        bool m_OldFeatsOrder;
         bool m_DoHtml;
     };
 
@@ -558,8 +561,8 @@ private:
     TFilter          m_FilterFlags;
     CFlags           m_Flags;
 
-    CConstRef<CSeq_entry>  m_TSE;
-    CRef<CScope>           m_Scope;
+    CSeq_entry_Handle        m_TSE;
+    CRef<CScope  >           m_Scope;
     CConstRef<CSubmit_block> m_SeqSub;
     
     CRef<CMasterContext> m_Master;
@@ -670,16 +673,16 @@ void CFFContext::SetSubmit(const CSubmit_block& sub)
 
 
 inline
-const CSeq_entry& CFFContext::GetTSE(void) const
+const CSeq_entry_Handle& CFFContext::GetTSE(void) const
 {
-    return *m_TSE;
+    return m_TSE;
 }
 
 
 inline
-void CFFContext::SetTSE(const CSeq_entry& tse)
+void CFFContext::SetTSE(const CSeq_entry_Handle& tse)
 {
-    m_TSE.Reset(&tse);
+    m_TSE = tse;
 }
 
 
@@ -833,7 +836,7 @@ bool CFFContext::IsHup(void) const
 inline
 const CBioseq& CFFContext::GetActiveBioseq(void) const
 {
-    return m_Bioseq->GetHandle().GetBioseq();
+    return *m_Bioseq->GetHandle().GetBioseqCore();
 }
 
 
@@ -850,13 +853,13 @@ void CFFContext::SetLocation(const CSeq_loc* loc)
     m_Bioseq->SetLocation(loc);
 }
 
-
+/*
 inline
 CBioseq_Handle& CFFContext::GetHandle(void)
 {
     return m_Bioseq->GetHandle();
 }
-
+*/
 
 inline
 const CBioseq_Handle& CFFContext::GetHandle(void) const
@@ -1100,13 +1103,13 @@ SIZE_TYPE CBioseqContext::GetPartNumber(void) const
     return m_PartNumber;
 }
 
-
+/*
 inline
 CBioseq_Handle& CBioseqContext::GetHandle(void)
 {
     return m_Handle;
 }
-
+*/
 
 inline
 const CBioseq_Handle& CBioseqContext::GetHandle(void) const
@@ -1439,6 +1442,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/03/25 20:28:55  shomrat
+* Use handle objects
+*
 * Revision 1.11  2004/03/18 15:29:38  shomrat
 * + flag ShowFtableRefs
 *
