@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/10/27 22:23:51  thiessen
+* save structure alignments from vastalign.cgi imports
+*
 * Revision 1.20  2002/10/25 19:00:02  thiessen
 * retrieve VAST alignment from vastalign.cgi on structure import
 *
@@ -99,6 +102,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
 
 #include <list>
 
@@ -165,16 +169,23 @@ private:
     void ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet) const;
     void FetchSequences(StructureSet *sSet, SequenceList *newSequences) const;
 
+    void SortUpdates(void);
     void MakeEmptyAlignments(const SequenceList& newSequences,
         const Sequence *master, AlignmentList *newAlignments) const;
-    void GetVASTAlignments(const SequenceList& newSequences,
-        const Sequence *master, AlignmentList *newAlignments,
-        int masterFrom = -1, int masterTo = -1) const;  // -1 means unrestricted
 
     typedef std::list < ncbi::CRef < ncbi::objects::CBiostruc > > BiostrucList;
     BiostrucList pendingStructures;
+    typedef struct {
+        ncbi::CRef < ncbi::objects::CBiostruc_feature > structureAlignment;
+        int masterDomainID, slaveDomainID;
+    } StructureAlignmentInfo;
+    typedef std::list < StructureAlignmentInfo > PendingStructureAlignments;
+    PendingStructureAlignments pendingStructureAlignments;
 
-    void SortUpdates(void);
+    void GetVASTAlignments(const SequenceList& newSequences,
+        const Sequence *master, AlignmentList *newAlignments,
+		PendingStructureAlignments *structureAlignments,
+        int masterFrom = -1, int masterTo = -1) const;  // -1 means unrestricted
 };
 
 END_SCOPE(Cn3D)

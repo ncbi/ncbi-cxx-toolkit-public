@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/10/27 22:23:51  thiessen
+* save structure alignments from vastalign.cgi imports
+*
 * Revision 1.11  2002/07/03 13:39:39  thiessen
 * fix for redundant sequence removal
 *
@@ -556,11 +559,11 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     SetDataChanged(StructureSet::eSequenceData);
 
     // warn user if # structured slaves != # structure alignments
-    if (structureAlignments && nStructuredSlaves !=
-            structureAlignments->GetFeatures().front().GetObject().GetFeatures().size())
-        ERR_POST(Error << "Warning: Structure alignment list does not contain one alignment per "
-            "structured sequence!\nYou should recompute structure alignments before saving "
-            "in order to sync the lists.");
+//    if (structureAlignments && nStructuredSlaves !=
+//            structureAlignments->GetFeatures().front().GetObject().GetFeatures().size())
+//        ERR_POST(Error << "Warning: Structure alignment list does not contain one alignment per "
+//            "structured sequence!\nYou should recompute structure alignments before saving "
+//            "in order to sync the lists.");
 }
 
 bool ASNDataManager::WriteDataToFile(const char *filename, bool isBinary,

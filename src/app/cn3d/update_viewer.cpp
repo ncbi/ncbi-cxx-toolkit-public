@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/10/27 22:23:51  thiessen
+* save structure alignments from vastalign.cgi imports
+*
 * Revision 1.51  2002/10/25 19:00:02  thiessen
 * retrieve VAST alignment from vastalign.cgi on structure import
 *
@@ -208,13 +211,14 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb1/Biostruc_annot_set.hpp>
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
-#include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/mmdb3/Chem_graph_alignment.hpp>
 #include <objects/mmdb3/Chem_graph_pntrs.hpp>
 #include <objects/mmdb3/Residue_pntrs.hpp>
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
+#include <objects/mmdb3/Biostruc_feature_set_id.hpp>
+#include <objects/mmdb3/Biostruc_feature_id.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -604,7 +608,9 @@ void UpdateViewer::ImportSequences(void)
 }
 
 void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
-    const Sequence *master, AlignmentList *newAlignments, int masterFrom, int masterTo) const
+    const Sequence *master, AlignmentList *newAlignments,
+    PendingStructureAlignments *structureAlignments,
+    int masterFrom, int masterTo) const
 {
     if (master->identifier->pdbID.size() == 0) {
         ERR_POST(Error << "UpdateViewer::GetVASTAlignments() - "
@@ -708,6 +714,18 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
                 newBlock->width = (*i)->GetTo().Get() - (*i)->GetFrom().Get() + 1;
                 newAlignment->AddAlignedBlockAtEnd(newBlock);
             }
+
+            // add structure alignment to list
+            if (alignment.GetTransform().size() == 1) {
+                structureAlignments->resize(structureAlignments->size() + 1);
+                structureAlignments->back().structureAlignment =
+                    structureAlignment.SetFeatures().front()->SetFeatures().front();
+                structureAlignments->back().masterDomainID =
+                    structureAlignment.GetFeatures().front()->GetId().Get();
+                structureAlignments->back().slaveDomainID =
+                    structureAlignment.GetFeatures().front()->GetFeatures().front()->GetId().Get();
+            } else
+                ERR_POST(Warning << "no structure alignment in VAST data blob");
         }
 
         // finalize alignment
@@ -967,7 +985,8 @@ void UpdateViewer::ImportStructure(void)
             masterTo = aBlocks->back()->GetRangeOfRow(0)->to;
         }
     }
-    GetVASTAlignments(newSequences, master, &newAlignments, masterFrom, masterTo);
+    GetVASTAlignments(newSequences, master, &newAlignments,
+        &pendingStructureAlignments, masterFrom, masterTo);
 
     // add new alignment to update list
     if (newAlignments.size() == newSequences.size())
@@ -978,7 +997,7 @@ void UpdateViewer::ImportStructure(void)
         return;
     }
 
-    // add Biostruc to structure list later on, after merge
+    // will add Biostruc and structure alignments to ASN data later on, after merge
     pendingStructures.push_back(biostruc);
 
     // inform user of success
@@ -991,17 +1010,24 @@ void UpdateViewer::ImportStructure(void)
 
 void UpdateViewer::SavePendingStructures(void)
 {
-    TESTMSG("saving pending imported structures");
+    TESTMSG("saving pending imported structures and structure alignments");
     StructureSet *sSet =
         (alignmentManager->GetCurrentMultipleAlignment() &&
          alignmentManager->GetCurrentMultipleAlignment()->GetMaster()) ?
          alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->parentSet : NULL;
+    if (!sSet) return;
     while (pendingStructures.size() > 0) {
-        if (!sSet || !sSet->AddBiostrucToASN(pendingStructures.front().GetPointer())) {
+        if (!sSet->AddBiostrucToASN(pendingStructures.front().GetPointer())) {
             ERR_POST(Error << "UpdateViewer::SavePendingStructures() - error saving Biostruc");
             return;
         }
         pendingStructures.pop_front();
+    }
+    while (pendingStructureAlignments.size() > 0) {
+        sSet->AddStructureAlignment(pendingStructureAlignments.front().structureAlignment.GetPointer(),
+            pendingStructureAlignments.front().masterDomainID,
+            pendingStructureAlignments.front().slaveDomainID);
+        pendingStructureAlignments.pop_front();
     }
 }
 
