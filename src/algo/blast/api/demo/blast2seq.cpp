@@ -372,6 +372,7 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     }
     if (args["frameshift"].AsInteger()) {
         opt.SetFrameShiftPenalty(args["frameshift"].AsInteger());
+        opt.SetOutOfFrameMode();
     }
 
     return retval;
@@ -463,6 +464,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/03/09 18:55:34  dondosha
+ * Fix: set out-of-frame mode boolean option in addition to the frame shift penalty
+ *
  * Revision 1.36  2004/02/13 03:31:51  camacho
  * 1. Use CBlastOptionsHandle class (still needs some work)
  * 2. Remove dead code, clean up, add @todo doxygen tags
