@@ -104,11 +104,15 @@ public:
     ///   New transaction handler
     DB_TXN* CreateTxn(DB_TXN* parent_txn = 0, unsigned int flags = 0);
 
+    /// Return TRUE if environment has been open as transactional
+    bool IsTransactional() const { return m_Transactional; }
+
 private:
     CBDB_Env(const CBDB_Env&);
     CBDB_Env& operator=(const CBDB_Env&);
 private:
     DB_ENV*  m_Env;
+    bool     m_Transactional; ///< TRUE if environment is transactional
 };
 
 /* @} */
@@ -118,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/12 14:05:52  kuznets
+ * + CBDB_Env::IsTransactional
+ *
  * Revision 1.8  2003/12/10 19:13:07  kuznets
  * Added support of berkeley db transactions
  *
