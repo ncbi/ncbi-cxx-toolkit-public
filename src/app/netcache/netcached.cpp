@@ -39,13 +39,15 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
+#include <corelib/ncbimtx.hpp>
 
 #include <util/thread_nonstop.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
-#include <corelib/ncbimtx.hpp>
 
 #include <util/cache/icache.hpp>
 #include <util/cache/icache_clean_thread.hpp>
+#include <util/logrotate.hpp>
+
 #include <bdb/bdb_blobcache.hpp>
 
 #include <connect/threaded_server.hpp>
@@ -54,7 +56,7 @@
 
 USING_NCBI_SCOPE;
 
-const unsigned int kNetCacheBufSize = 64 * 1024;
+//const unsigned int kNetCacheBufSize = 64 * 1024;
 const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 
 /// General purpose NetCache Mutex
@@ -120,6 +122,49 @@ private:
 };
 
 
+/// @internal
+///
+/// Netcache server side request statistics
+///
+struct NetCache_RequestStat
+{
+    time_t    conn_time;    ///< request incoming time in seconds
+    unsigned  req_code;     ///< 'P' put, 'G' get
+    size_t    blob_size;    ///< BLOB size
+    double    elapsed;      ///< time in seconds to process request
+};
+
+/// @internal
+///
+/// Netcache logger
+///
+class CNetCache_Logger
+{
+public:
+    CNetCache_Logger(const string&    filename, 
+                     CNcbiStreamoff   limit)
+      : m_Log(filename, limit)
+    {}
+
+    void Put(const NetCache_RequestStat& stat)
+    {
+        string msg, tmp;
+        CTime tm(stat.conn_time);
+        msg = tm.AsString();
+        msg += ';';
+        msg += (char)stat.req_code;
+        msg += ';';
+        NStr::UInt8ToString(tmp, stat.blob_size);
+        msg += tmp;
+        msg += ';';
+        msg += NStr::DoubleToString(stat.elapsed, 5);
+        msg += "\n";
+
+        m_Log << msg;
+    }
+private:
+    CRotatingLogStream m_Log;
+};
 
 
 
@@ -134,12 +179,15 @@ public:
                     ICache*      cache,
                     unsigned     max_threads,
                     unsigned     init_threads,
-                    unsigned     network_timeout) 
+                    unsigned     network_timeout,
+                    bool         is_log) 
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
           m_Shutdown(false),
-          m_InactivityTimeout(network_timeout)
+          m_InactivityTimeout(network_timeout),
+          m_LogFlag(is_log),
+          m_TLS_Size(64 * 1024)
     {
         char hostname[256];
         int status = SOCK_gethostname(hostname, sizeof(hostname));
@@ -151,9 +199,14 @@ public:
         m_InitThreads = init_threads ? 
             (init_threads < m_MaxThreads ? init_threads : 2)  : 10;
         m_QueueSize = m_MaxThreads + 2;
+
+        x_CreateLog();
     }
 
     virtual ~CNetCacheServer() {}
+
+    unsigned int GetTLS_Size() const { return m_TLS_Size; }
+    void SetTLS_Size(unsigned int size) { m_TLS_Size = size; }
 
     /// Take request code from the socket and process the request
     virtual void  Process(SOCK sock);
@@ -165,7 +218,8 @@ public:
         eGet,
         eShutdown,
         eVersion,
-        eRemove
+        eRemove,
+        eLogging
     } ERequestType;
 
 private:
@@ -178,16 +232,23 @@ private:
     };
 
     /// Process "PUT" request
-    void ProcessPut(CSocket& sock, Request& req);
+    void ProcessPut(CSocket&              sock, 
+                    Request&              req,
+                    NetCache_RequestStat& stat);
 
     /// Process "GET" request
-    void ProcessGet(CSocket& sock, const Request& req);
+    void ProcessGet(CSocket&              sock, 
+                    const Request&        req,
+                    NetCache_RequestStat& stat);
 
     /// Process "SHUTDOWN" request
     void ProcessShutdown(CSocket& sock, const Request& req);
 
     /// Process "VERSION" request
     void ProcessVersion(CSocket& sock, const Request& req);
+
+    /// Process "LOG" request
+    void ProcessLog(CSocket& sock, const Request& req);
 
     /// Process "REMOVE" request
     void ProcessRemove(CSocket& sock, const Request& req);
@@ -209,6 +270,12 @@ private:
                            string*        id_str,
                            unsigned int*  transaction_id);
 
+
+    /// Get logger instance
+    CNetCache_Logger* GetLogger();
+    /// TRUE if logging is ON
+    bool IsLog() const;
+
 private:
     bool x_CheckBlobId(CSocket&       sock,
                        CNetCache_Key* blob_id, 
@@ -217,18 +284,25 @@ private:
     void x_WriteBuf(CSocket& sock,
                     char*    buf,
                     size_t   bytes);
+
+    void x_CreateLog();
 private:
     /// Host name where server runs
-    string          m_Host;
+    string             m_Host;
     /// ID counter
-    unsigned        m_MaxId;
+    unsigned           m_MaxId;
     /// Set of ids in use (PUT)
-    bm::bvector<>   m_UsedIds;
-    ICache*         m_Cache;
+    bm::bvector<>      m_UsedIds;
+    ICache*            m_Cache;
     /// Flags that server received a shutdown request
-    bool            m_Shutdown; 
+    bool               m_Shutdown; 
     /// Time to wait for the client (seconds)
-    unsigned        m_InactivityTimeout;
+    unsigned           m_InactivityTimeout;
+    /// Log writer
+    auto_ptr<CNetCache_Logger>  m_Logger;
+    /// Logging ON/OFF
+    bool                        m_LogFlag;
+    unsigned int                m_TLS_Size;
 };
 
 /// @internal
@@ -254,7 +328,8 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 ///
 struct ThreadData
 {
-    ThreadData() : buffer(new char[kNetCacheBufSize + 256]) {}
+    ThreadData(unsigned int size) 
+        : buffer(new char[size + 256]) {}
     AutoPtr<char, ArrayDeleter<char> >  buffer;
 };
 
@@ -274,6 +349,19 @@ void CNetCacheServer::Process(SOCK sock)
     string auth, request;
 
     try {
+        
+        NetCache_RequestStat    stat;
+        CStopWatch              sw(false); // OFF by default
+        bool is_log = IsLog();
+
+        if (is_log) {
+            CTime tm(CTime::eCurrent);
+            stat.conn_time = tm.GetTimeT();
+            stat.blob_size = 0;
+            sw.Start();
+        }
+
+
         CSocket socket;
         socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
 
@@ -288,7 +376,7 @@ void CNetCacheServer::Process(SOCK sock)
         ThreadData* tdata = s_tls->GetValue();
         if (tdata) {
         } else {
-            tdata = new ThreadData();
+            tdata = new ThreadData(GetTLS_Size());
             s_tls->SetValue(tdata, TlsCleanup);
         }
 
@@ -306,19 +394,28 @@ void CNetCacheServer::Process(SOCK sock)
 
                 switch (req.req_type) {
                 case ePut:
-                    ProcessPut(socket, req);
+                    stat.req_code = 'P';
+                    ProcessPut(socket, req, stat);
                     break;
                 case eGet:
-                    ProcessGet(socket, req);
+                    stat.req_code = 'G';
+                    ProcessGet(socket, req, stat);
                     break;
                 case eShutdown:
+                    stat.req_code = 'S';
                     ProcessShutdown(socket, req);
                     break;
                 case eVersion:
+                    stat.req_code = 'V';
                     ProcessVersion(socket, req);
                     break;
                 case eRemove:
+                    stat.req_code = 'R';
                     ProcessRemove(socket, req);
+                    break;
+                case eLogging:
+                    stat.req_code = 'L';
+                    ProcessLog(socket, req);
                     break;
                 case eError:
                     WriteMsg(socket, "ERR:", req.err_msg);
@@ -343,14 +440,24 @@ void CNetCacheServer::Process(SOCK sock)
         socket.SetTimeout(eIO_Read, &to);
         size_t n_read;
         socket.Read(buf, sizeof(buf), &n_read);
+
+        //
+        // Logging.
+        //
+        if (is_log) {
+            stat.elapsed = sw.Elapsed();
+            CNetCache_Logger* lg = GetLogger();
+            _ASSERT(lg);
+            lg->Put(stat);
+        }
     } 
     catch (CNetCacheException &ex)
     {
-        LOG_POST("Server error: " << ex.what());
+        ERR_POST("Server error: " << ex.what());
     }
     catch (exception& ex)
     {
-        LOG_POST("Execution error in command " << request << " " << ex.what());
+        ERR_POST("Execution error in command " << request << " " << ex.what());
     }
 }
 
@@ -415,7 +522,9 @@ void CNetCacheServer::x_WriteBuf(CSocket& sock,
 }
 
 
-void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
+void CNetCacheServer::ProcessGet(CSocket&               sock, 
+                                 const Request&         req,
+                                 NetCache_RequestStat&  stat)
 {
     const string& req_id = req.req_id;
 
@@ -437,7 +546,7 @@ void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
     ICache::BlobAccessDescr ba_descr;
     buf += 100;
     ba_descr.buf = buf;
-    ba_descr.buf_size = kNetCacheBufSize - 100;
+    ba_descr.buf_size = GetTLS_Size() - 100;
 
     m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
     if (ba_descr.blob_size == 0) { // not found
@@ -445,6 +554,8 @@ blob_not_found:
         WriteMsg(sock, "ERR:", "BLOB not found.");
         return;
     }
+
+    stat.blob_size = ba_descr.blob_size;
 
     if (ba_descr.reader == 0) {  // all in buffer
         string msg("OK:BLOB found. SIZE=");
@@ -483,7 +594,7 @@ blob_not_found:
 
     size_t bytes_read;
     do {
-        ERW_Result io_res = rdr->Read(buf, kNetCacheBufSize, &bytes_read);
+        ERW_Result io_res = rdr->Read(buf, GetTLS_Size(), &bytes_read);
         if (io_res == eRW_Success && bytes_read) {
             if (!read_flag) {
                 read_flag = true;
@@ -507,7 +618,9 @@ blob_not_found:
 
 }
 
-void CNetCacheServer::ProcessPut(CSocket& sock, Request& req)
+void CNetCacheServer::ProcessPut(CSocket&              sock, 
+                                 Request&              req,
+                                 NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
     unsigned int transaction_id;
@@ -541,6 +654,7 @@ void CNetCacheServer::ProcessPut(CSocket& sock, Request& req)
 
     while (ReadBuffer(sock, buf, &buffer_length)) {
         if (buffer_length) {
+            stat.blob_size += buffer_length;
             size_t bytes_written;
             ERW_Result res = 
                 iwrt->Write(buf, buffer_length, &bytes_written);
@@ -628,6 +742,12 @@ parse_blob_id:
         return;
     } // VERSION
 
+    if (strncmp(s, "LOG", 3) == 0) {
+        req->req_type = eLogging;
+        s += 3;
+        goto parse_blob_id;  // "ON/OFF" instead of blob_id in this case
+    } // LOG
+
 
     req->req_type = eError;
     req->err_msg = "Unknown request";
@@ -640,7 +760,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length
         return true;
     }
 
-    EIO_Status io_st = sock.Read(buf, kNetCacheBufSize, buffer_length);
+    EIO_Status io_st = sock.Read(buf, GetTLS_Size(), buffer_length);
     switch (io_st) 
     {
     case eIO_Success:
@@ -718,6 +838,7 @@ void CNetCacheServer::GenerateRequestId(const Request& req,
     CNetCache_GenerateBlobKey(id_str, id, m_Host, GetPort());
 }
 
+
 bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
                                     CNetCache_Key* blob_id, 
                                     const string&  blob_key)
@@ -740,6 +861,43 @@ bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
     return true;
 }
 
+void CNetCacheServer::ProcessLog(CSocket&  sock, const Request&  req)
+{
+    const char* str = req.req_id.c_str();
+    if (stricmp(str, "ON")==0) {
+        CFastMutexGuard guard(x_NetCacheMutex);
+        m_LogFlag = true;
+    } 
+    if (stricmp(str, "OFF")==0) {
+        CFastMutexGuard guard(x_NetCacheMutex);
+        m_LogFlag = false;
+    }
+}
+
+
+CNetCache_Logger* CNetCacheServer::GetLogger()
+{
+    CFastMutexGuard guard(x_NetCacheMutex);
+
+    return m_Logger.get();
+}
+
+bool CNetCacheServer::IsLog() const
+{
+    CFastMutexGuard guard(x_NetCacheMutex);
+    return m_LogFlag;
+}
+
+void CNetCacheServer::x_CreateLog()
+{
+    CFastMutexGuard guard(x_NetCacheMutex);
+
+    if (m_Logger.get()) {
+        return; // nothing to do
+    }
+    m_Logger.reset(
+        new CNetCache_Logger("netcached.log", 512 * 1024 * 1024));
+}
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -857,7 +1015,10 @@ int CNetCacheDApp::Run(void)
             }
 
         } else {
-            LOG_POST("Configuration error. Cannot init storage.");
+            string msg = 
+                "Configuration error. Cannot init storage. Driver name:";
+            msg += kBDBCacheDriverName;
+            ERR_POST(msg);
             return 1;
         }
 
@@ -869,26 +1030,34 @@ int CNetCacheDApp::Run(void)
         }
 
         int port = 
-            reg.GetInt("server", "port", 9000, CNcbiRegistry::eReturn);
+            reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
 
         unsigned max_threads =
-            reg.GetInt("server", "max_threads", 25, CNcbiRegistry::eReturn);
+            reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
         unsigned init_threads =
-            reg.GetInt("server", "init_threads", 5, CNcbiRegistry::eReturn);
+            reg.GetInt("server", "init_threads", 5, 0, CNcbiRegistry::eReturn);
         unsigned network_timeout =
-            reg.GetInt("server", "network_timeout", 10, CNcbiRegistry::eReturn);
+            reg.GetInt("server", "network_timeout", 10, 0, CNcbiRegistry::eReturn);
         if (network_timeout == 0) {
             LOG_POST(Warning << 
                 "INI file sets 0 sec. network timeout. Assume 10 seconds.");
             network_timeout =  10;
         }
 
+        bool is_log =
+            reg.GetBool("server", "log", false, 0, CNcbiRegistry::eReturn);
+        unsigned tls_size =
+            reg.GetInt("server", "tls_size", 64 * 1024, 0, CNcbiRegistry::eReturn);
+
         auto_ptr<CNetCacheServer> thr_srv(
             new CNetCacheServer(port, 
                                 cache.get(), 
                                 max_threads, 
                                 init_threads,
-                                network_timeout));
+                                network_timeout,
+                                is_log));
+
+        thr_srv->SetTLS_Size(tls_size);
 
         LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
@@ -916,6 +1085,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/12/27 16:31:32  kuznets
+ * Implemented server side logging
+ *
  * Revision 1.27  2004/12/22 21:02:53  grichenk
  * BDB and DBAPI caches split into separate libs.
  * Added entry point registration, fixed driver names.
