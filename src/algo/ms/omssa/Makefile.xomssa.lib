@@ -8,7 +8,7 @@ NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
-SRC = SpectrumSet msladder msms mspeak omssa Mod
+SRC = SpectrumSet msladder msms mspeak nrutil omssa Mod
 
 LIB = xomssa
 
