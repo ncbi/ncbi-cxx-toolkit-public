@@ -54,10 +54,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_connector.h>
-#include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_memory_connector.h>
+#include <connect/ncbi_service_connector.h>
+#include <connect/ncbi_socket_connector.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -226,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/08/12 15:05:15  lavr
+ * Included header files reordered
+ *
  * Revision 6.14  2002/06/12 19:19:25  lavr
  * Guard macro name standardized
  *
