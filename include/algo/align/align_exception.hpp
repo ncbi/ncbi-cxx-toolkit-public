@@ -50,6 +50,7 @@ public:
     enum EErrCode {
         eInternal,
         eBadParameter,
+        eMemoryLimit,
         eInvalidCharacter,
         eIncorrectSequenceOrder
     };
@@ -59,6 +60,8 @@ public:
             return "Internal error";
         case eBadParameter:
             return "One or more parameters passed are invalid";
+        case eMemoryLimit:
+            return "Memory limit exceeded";
         case eInvalidCharacter:
             return "Sequence contains one or more invalid characters";
         case eIncorrectSequenceOrder:
@@ -77,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/03/14 19:15:28  kapustin
+ * Add eMemoryLimit exception type
+ *
  * Revision 1.1  2003/02/26 21:30:32  gouriano
  * modify C++ exceptions thrown by this library
  *
