@@ -225,7 +225,7 @@ void CId1Reader::PrintStatistics(void) const
     PrintStat("ID1 resolution: resolved",
               resolve_gi_count, "gis", resolve_gi_time);
     PrintStat("ID1 resolution: resolved",
-              resolve_ver_count, "gis", resolve_ver_time);
+              resolve_ver_count, "vers", resolve_ver_time);
     PrintBlobStat("ID1 non-SNP: loaded",
                   main_blob_count, main_bytes, main_time);
     PrintBlobStat("ID1 SNP: loaded",
@@ -714,6 +714,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.60  2003/11/07 16:59:01  vasilche
+ * Fixed stats message.
+ *
  * Revision 1.59  2003/11/04 21:53:32  vasilche
  * Check only SNP bit in extfeat field in ID1 response.
  *
