@@ -69,8 +69,7 @@ public:
     /// @param length TemplateLength [in]
     void SetTemplateLength(unsigned char length) 
     {
-        m_Opts->SetScanStep(4);
-        m_Opts->SetSeedExtensionMethod(eUpdateDiag);
+        m_Opts->SetFullByteScan(true);
         m_Opts->SetMBTemplateLength(length);
     }
 
@@ -93,6 +92,12 @@ public:
             NCBI_THROW(CBlastException, eBadParameter, 
                        "Word size must be 11 or 12 only");
         }
+    }
+
+    /// Specifies that a byte at a time should be scanned.
+    void SetFullByteScan(bool val) 
+    {
+      m_Opts->SetFullByteScan(true);
     }
 
     /// NOTE: Unavailable for discontiguous megablast, throws a CBlastException
@@ -126,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/01/10 13:32:11  madden
+ * Removal of calls to SetScanStep, SetSeedExtensionMethod, added calls to SetFullByteScan
+ *
  * Revision 1.12  2004/12/28 13:36:17  madden
  * [GS]etWordSize is now an int rather than a short
  *
