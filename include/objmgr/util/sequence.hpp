@@ -218,6 +218,22 @@ enum EOverlapType {
 // Check if the two locations have ovarlap of a given type
 int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type);
 
+enum ESeqlocPartial {
+    eSeqlocPartial_Complete   =   0,
+    eSeqlocPartial_Start      =   1,
+    eSeqlocPartial_Stop       =   2,
+    eSeqlocPartial_Internal   =   4,
+    eSeqlocPartial_Other      =   8,
+    eSeqlocPartial_Nostart    =  16,
+    eSeqlocPartial_Nostop     =  32,
+    eSeqlocPartial_Nointernal =  64,
+    eSeqlocPartial_Limwrong   = 128,
+    eSeqlocPartial_Haderror   = 256
+};
+
+// Sets bits for incomplete location and/or errors
+int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
+
 END_SCOPE(sequence)
 
 // FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
@@ -439,6 +455,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2002/12/20 16:57:36  kans
+* ESeqlocPartial, SeqLocPartialCheck added
+*
 * Revision 1.15  2002/12/09 20:38:34  ucko
 * +sequence::LocationOffset
 *
