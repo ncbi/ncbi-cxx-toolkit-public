@@ -67,6 +67,9 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject
           Int4 query_context, Int2 subject_frame, Int4 score, 
           GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
 {
+   if (!ret_hsp)
+      return -1;
+
    BlastHSP* new_hsp = Blast_HSPNew();
 
    *ret_hsp = NULL;
@@ -946,6 +949,10 @@ static BlastHSPList* Blast_HSPListDup(BlastHSPList* hsp_list)
       BlastMemDup(hsp_list, sizeof(BlastHSPList));
    new_hsp_list->hsp_array = (BlastHSP**) 
       BlastMemDup(hsp_list->hsp_array, hsp_list->allocated*sizeof(BlastHSP*));
+   if (!new_hsp_list->hsp_array) {
+      sfree(new_hsp_list);
+      return NULL;
+   }
    new_hsp_list->allocated = hsp_list->allocated;
 
    return new_hsp_list;
@@ -1099,7 +1106,7 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
    Int4 index;
    
    if (hsp_list == NULL)
-      return 1;
+      return 0;
    
    if (gapped_calculation)
       kbp = sbp->kbp_gap_std;
@@ -1108,8 +1115,6 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
    
    hsp_cnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
-   /** If hsp_cnt > 0, hsp_array cannot be NULL */
-   ASSERT(!hsp_cnt || hsp_array);
 
    for (index=0; index<hsp_cnt; index++) {
       hsp = hsp_array[index];
@@ -1178,7 +1183,7 @@ Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list,
    double cutoff;
    
    if (hsp_list == NULL)
-      return 1;
+      return 0;
 
    cutoff = hit_options->expect_value;
 
@@ -1503,8 +1508,11 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
 
    /* If no previous HSP list, just return a copy of the new one. */
    if (!combined_hsp_list) {
-      *combined_hsp_list_ptr = Blast_HSPListDup(hsp_list);
+      if (!(combined_hsp_list = Blast_HSPListDup(hsp_list)))
+         return 1;
+      *combined_hsp_list_ptr = combined_hsp_list;
       hsp_list->hspcnt = 0;
+
       return 0;
    }
    /* Just append new list to the end of the old list, in case of 
@@ -1530,6 +1538,7 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
       combined_hsp_list->do_not_reallocate = TRUE;
 
    Blast_HSPListsCombineByScore(hsp_list, combined_hsp_list, new_hspcnt);
+
    return 0;
 }
 
