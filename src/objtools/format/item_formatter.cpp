@@ -160,7 +160,7 @@ list<string>& CFlatItemFormatter::Wrap
  const string& body,
  EPadContext where) const
 {
-    NStr::TWrapFlags flags = /* ??? NStr::fWrap_HTMLPre :*/ 0;
+    NStr::TWrapFlags flags = NStr::fWrap_FlatFile;
     string tag2;
     Pad(tag, tag2, where);
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
@@ -178,7 +178,7 @@ list<string>& CFlatItemFormatter::Wrap
  const string& body,
  EPadContext where) const
 {
-    NStr::TWrapFlags flags = /* ??? NStr::fWrap_HTMLPre :*/ 0;
+    NStr::TWrapFlags flags = NStr::fWrap_FlatFile;
     string tag2;
     Pad(tag, tag2, where);
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
@@ -416,6 +416,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/11/24 16:51:56  shomrat
+* Specify flat-file specific line wrap
+*
 * Revision 1.17  2004/11/15 20:10:10  shomrat
 * Handle electronic publications
 *
