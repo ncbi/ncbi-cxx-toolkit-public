@@ -43,10 +43,12 @@ CEmailDiagHandler::~CEmailDiagHandler(void)
 {
     CNcbiOstrstream* oss = dynamic_cast<CNcbiOstrstream*>(m_Stream);
     string body = CNcbiOstrstreamToString(*oss);
-    const char* msg = CORE_SendMail(m_To.c_str(), m_Sub.c_str(), body.c_str());
-    if (msg) {
-        // Need to report by other means, obviously...
-        NcbiCerr << msg << endl;
+    if ( !body.empty() ) {
+        const char* msg = CORE_SendMail(m_To.c_str(), m_Sub.c_str(), body.c_str());
+        if (msg) {
+            // Need to report by other means, obviously...
+            NcbiCerr << msg << endl;
+        }
     }
     delete m_Stream;
 }
@@ -59,6 +61,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2005/01/21 13:10:49  dicuccio
+ * Only send mail if the diagnostics body is not empty
+ *
  * Revision 6.3  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
