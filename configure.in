@@ -640,6 +640,12 @@ else
    FORCE_STATIC_LIB=
 fi
 
+if test "$LIB_OR_DLL" = "both"; then
+   STATIC="-static"
+else
+   STATIC=
+fi
+AC_SUBST(STATIC)
 
 # Linker command-line to build DLL
 case "$compiler" in
@@ -724,6 +730,7 @@ fi
 
 
 #### Tools
+AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
 AC_CHECK_PROG(STRIP, strip, strip, :)

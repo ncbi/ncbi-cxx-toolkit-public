@@ -51,6 +51,7 @@ COPY     = cp -p
 BINCOPY  = @BINCOPY@
 TOUCH    = touch
 BINTOUCH = $(TOUCH)
+LN_S	 = @LN_S@
 
 CC_FILTER  = @CC_FILTER@
 CXX_FILTER = @CXX_FILTER@
@@ -121,6 +122,8 @@ PRE_LIBS =
 
 ### DLL specifics
 LIB_OR_DLL = @LIB_OR_DLL@
+STATIC     = @STATIC@
+# library name suffix; either -static or empty
 
 LINK_DLL     = @LINK_DLL@
 CFLAGS_DLL   = @CFLAGS_DLL@

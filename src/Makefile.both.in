@@ -55,10 +55,12 @@ include $(builddir)/Makefile.$(Rules)
 
 ### The static library build rule
 
-XLIBOBJ = $(SOURCES:=@obj_ext@)
-XLOBJ   = $(LOBJ:=@obj_ext@)
-XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
-XLIBDEP = .$(LIB).dep
+XLIBOBJ     = $(SOURCES:=@obj_ext@)
+XLOBJ       = $(LOBJ:=@obj_ext@)
+XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
+XLIBDEP     = .$(LIB).dep
+XLIBLINK    = @lib_pre@$(LIB)$(STATIC)@lib_ext@
+XLIBDEPLINK = .$(LIB)$(STATIC).dep
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
@@ -67,6 +69,9 @@ $(XLIB): $(XLIBOBJ)
 	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
 	$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
+	-$(RM) $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK)
+	(cd $(libdir) && $(LN_S) $(XLIB) $(XLIBLINK))
+	(cd $(libdir) && $(LN_S) $(XLIBDEP) $(XLIBDEPLINK))
 
 
 ### The shared library build rule
