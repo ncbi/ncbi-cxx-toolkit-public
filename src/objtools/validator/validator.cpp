@@ -404,6 +404,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_PKG_FeaturePackagingProblem",
     "SEQ_PKG_GenomicProductPackagingProblem",
     "SEQ_PKG_InconsistentMolInfoBiomols",
+    "SEQ_PKG_GraphPackagingProblem",
 
     "SEQ_FEAT_InvalidForType",
     "SEQ_FEAT_PartialProblem",
@@ -799,6 +800,8 @@ a cDNA Bioseq packaged in the set, perhaps within a nuc-prot set. \
 RefSeq records may however be referenced remotely.",
 //  SEQ_PKG_InconsistentMolInfoBiomols
 "Mol-info.biomol is inconsistent within a segset or parts set.",
+//  SEQ_PKG_GraphPackagingProblem
+"A graph should be packaged on its bioseq, or on a set containing the Bioseq.",
 
 /* SEQ_FEAT */
 
@@ -1154,6 +1157,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/12/17 19:13:58  shomrat
+* Added SEQ_PKG_GraphPackagingProblem
+*
 * Revision 1.36  2003/12/16 17:34:23  shomrat
 * Added SEQ_INST_SeqLocLength
 *
