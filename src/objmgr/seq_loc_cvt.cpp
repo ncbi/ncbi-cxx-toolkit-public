@@ -1256,11 +1256,29 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         sort(cvts.begin(), cvts.end(), FSortConversions());
     }
 
+    CRef<CSeq_interval> last_int;
+    TSeqPos last_to = kInvalidSeqPos;
     NON_CONST_ITERATE ( TConversions, it, cvts ) {
         CRef<CSeq_loc_Conversion> cvt = *it;
         cvt->Reset();
         if (cvt->ConvertInterval(src)) {
-            ints.push_back(cvt->GetDstInterval());
+            CRef<CSeq_interval> mapped = cvt->GetDstInterval();
+            if ( revert_order ) {
+                if (bool(last_int) && cvt->GetSrc_to() >= last_to - 1) {
+                    last_int->ResetFuzz_from();
+                    mapped->ResetFuzz_to();
+                }
+                last_to = max(cvt->GetSrc_from(), src.GetFrom());
+            }
+            else {
+                if (bool(last_int) && cvt->GetSrc_from() <= last_to + 1) {
+                    last_int->ResetFuzz_to();
+                    mapped->ResetFuzz_from();
+                }
+                last_to = min(cvt->GetSrc_to(), src.GetTo());
+            }
+            last_int = mapped;
+            ints.push_back(mapped);
             total_range += cvt->GetTotalRange();
             res = true;
         }
@@ -1562,6 +1580,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/10/27 21:53:59  grichenk
+* Remove fuzz from parts of a completely mapped interval
+*
 * Revision 1.45  2004/10/27 19:31:46  vasilche
 * CSeq_loc_Conversion::Reset() made non-inline.
 * Fixed Int-fuzz when mapped on minus strand.
