@@ -94,7 +94,8 @@ bool CAlnMix::x_CompareAlnSegIndexes(const CAlnMixSegment* aln_seg1,
 }
 
 
-void CAlnMix::x_Reset() {
+void CAlnMix::x_Reset()
+{
     if (m_DS) {
         m_DS->Reset();
     }
@@ -107,7 +108,8 @@ void CAlnMix::x_Reset() {
 }
 
 
-void CAlnMix::x_CreateScope() {
+void CAlnMix::x_CreateScope()
+{
     m_ObjMgr = new CObjectManager;
     
     m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID", NULL, 2),
@@ -126,7 +128,10 @@ void CAlnMix::Merge(TMergeFlags flags)
             break; // nothing has been added
         case 1:
             // only one ds, nothing to merge
-            m_DS.Reset(const_cast<CDense_seg*>(&*m_InputDSs[0]));
+            m_DS.Reset(const_cast<CDense_seg*>(&*m_InputDSs.begin()->second));
+            m_Aln = new CSeq_align();
+            m_Aln->SetSegs().SetDenseg(*m_DS);
+            m_Aln->SetDim(m_DS->GetDim());
             break;
         default:
             m_DS = null;
@@ -265,7 +270,7 @@ void CAlnMix::Add(const CDense_seg &ds)
         ds_seq.push_back(aln_seq);
     }
 
-    //record all alignment relations using CAlnPos's
+    //record all alignment relations
     int           seg_off = 0;
     TSignedSeqPos start1, start2;
     TSeqPos       len;
@@ -1022,6 +1027,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/12/27 16:39:13  todorov
+* Fixed a bug in the single Dense-seg case.
+*
 * Revision 1.7  2002/12/23 18:03:51  todorov
 * Support for putting in and getting out Seq-aligns
 *
