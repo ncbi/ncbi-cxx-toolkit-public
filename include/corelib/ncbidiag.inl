@@ -2,126 +2,36 @@
 #define NCBIDIAG__INL
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov
-*
-* File Description:
-*   NCBI C++ diagnostic API
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.27  2002/02/13 22:39:13  ucko
-* Support AIX.
-*
-* Revision 1.26  2002/02/07 19:45:53  ucko
-* Optionally transfer ownership in GetDiagHandler.
-*
-* Revision 1.25  2001/11/14 15:14:59  ucko
-* Revise diagnostic handling to be more object-oriented.
-*
-* Revision 1.24  2001/10/29 15:16:11  ucko
-* Preserve default CGI diagnostic settings, even if customized by app.
-*
-* Revision 1.23  2001/10/16 23:44:05  vakatov
-* + SetDiagPostAllFlags()
-*
-* Revision 1.22  2001/06/14 03:37:28  vakatov
-* For the ErrCode manipulator, use CNcbiDiag:: method rather than a friend
-*
-* Revision 1.21  2001/06/13 23:19:36  vakatov
-* Revamped previous revision (prefix and error codes)
-*
-* Revision 1.20  2001/06/13 20:51:52  ivanov
-* + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
-* + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
-* + ErrCode(code[,subcode]) - CNcbiDiag error code manipulator.
-* + eDPF_ErrCode, eDPF_ErrSubCode - new post flags.
-*
-* Revision 1.19  2001/05/17 14:51:04  lavr
-* Typos corrected
-*
-* Revision 1.18  2000/04/04 22:31:57  vakatov
-* SetDiagTrace() -- auto-set basing on the application
-* environment and/or registry
-*
-* Revision 1.17  2000/02/18 16:54:04  vakatov
-* + eDiag_Critical
-*
-* Revision 1.16  2000/01/20 16:52:30  vakatov
-* SDiagMessage::Write() to replace SDiagMessage::Compose()
-* + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
-* + IsSetDiagHandler(), IsDiagStream()
-*
-* Revision 1.15  1999/12/29 22:30:22  vakatov
-* Use "exit()" rather than "abort()" in non-#_DEBUG mode
-*
-* Revision 1.14  1999/12/28 18:55:24  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.13  1999/09/27 16:23:20  vasilche
-* Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
-* so that they will be much easier for compilers to eat.
-*
-* Revision 1.12  1999/05/14 16:23:18  vakatov
-* CDiagBuffer::Reset: easy fix
-*
-* Revision 1.11  1999/05/12 21:11:42  vakatov
-* Minor fixes to compile by the Mac CodeWarrior C++ compiler
-*
-* Revision 1.10  1999/05/04 00:03:07  vakatov
-* Removed the redundant severity arg from macro ERR_POST()
-*
-* Revision 1.9  1999/04/30 19:20:58  vakatov
-* Added more details and more control on the diagnostics
-* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
-*
-* Revision 1.8  1998/12/30 21:52:17  vakatov
-* Fixed for the new SunPro 5.0 beta compiler that does not allow friend
-* templates and member(in-class) templates
-*
-* Revision 1.7  1998/11/05 00:00:42  vakatov
-* Fix in CDiagBuffer::Reset() to avoid "!=" ambiguity when using
-* new(templated) streams
-*
-* Revision 1.6  1998/11/04 23:46:36  vakatov
-* Fixed the "ncbidbg/diag" header circular dependencies
-*
-* Revision 1.5  1998/11/03 22:28:33  vakatov
-* Renamed Die/Post...Severity() to ...Level()
-*
-* Revision 1.4  1998/11/03 20:51:24  vakatov
-* Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
-*
-* Revision 1.3  1998/10/30 20:08:25  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
-* ==========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *   NCBI C++ diagnostic API
+ *
+ */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -441,5 +351,101 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_ErrSubCode = err_subcode;
 }
 
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.28  2002/04/11 20:39:17  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.27  2002/02/13 22:39:13  ucko
+ * Support AIX.
+ *
+ * Revision 1.26  2002/02/07 19:45:53  ucko
+ * Optionally transfer ownership in GetDiagHandler.
+ *
+ * Revision 1.25  2001/11/14 15:14:59  ucko
+ * Revise diagnostic handling to be more object-oriented.
+ *
+ * Revision 1.24  2001/10/29 15:16:11  ucko
+ * Preserve default CGI diagnostic settings, even if customized by app.
+ *
+ * Revision 1.23  2001/10/16 23:44:05  vakatov
+ * + SetDiagPostAllFlags()
+ *
+ * Revision 1.22  2001/06/14 03:37:28  vakatov
+ * For the ErrCode manipulator, use CNcbiDiag:: method rather than a friend
+ *
+ * Revision 1.21  2001/06/13 23:19:36  vakatov
+ * Revamped previous revision (prefix and error codes)
+ *
+ * Revision 1.20  2001/06/13 20:51:52  ivanov
+ * + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
+ * + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
+ * + ErrCode(code[,subcode]) - CNcbiDiag error code manipulator.
+ * + eDPF_ErrCode, eDPF_ErrSubCode - new post flags.
+ *
+ * Revision 1.19  2001/05/17 14:51:04  lavr
+ * Typos corrected
+ *
+ * Revision 1.18  2000/04/04 22:31:57  vakatov
+ * SetDiagTrace() -- auto-set basing on the application
+ * environment and/or registry
+ *
+ * Revision 1.17  2000/02/18 16:54:04  vakatov
+ * + eDiag_Critical
+ *
+ * Revision 1.16  2000/01/20 16:52:30  vakatov
+ * SDiagMessage::Write() to replace SDiagMessage::Compose()
+ * + operator<<(CNcbiOstream& os, const SDiagMessage& mess)
+ * + IsSetDiagHandler(), IsDiagStream()
+ *
+ * Revision 1.15  1999/12/29 22:30:22  vakatov
+ * Use "exit()" rather than "abort()" in non-#_DEBUG mode
+ *
+ * Revision 1.14  1999/12/28 18:55:24  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.13  1999/09/27 16:23:20  vasilche
+ * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
+ * so that they will be much easier for compilers to eat.
+ *
+ * Revision 1.12  1999/05/14 16:23:18  vakatov
+ * CDiagBuffer::Reset: easy fix
+ *
+ * Revision 1.11  1999/05/12 21:11:42  vakatov
+ * Minor fixes to compile by the Mac CodeWarrior C++ compiler
+ *
+ * Revision 1.10  1999/05/04 00:03:07  vakatov
+ * Removed the redundant severity arg from macro ERR_POST()
+ *
+ * Revision 1.9  1999/04/30 19:20:58  vakatov
+ * Added more details and more control on the diagnostics
+ * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+ *
+ * Revision 1.8  1998/12/30 21:52:17  vakatov
+ * Fixed for the new SunPro 5.0 beta compiler that does not allow friend
+ * templates and member(in-class) templates
+ *
+ * Revision 1.7  1998/11/05 00:00:42  vakatov
+ * Fix in CDiagBuffer::Reset() to avoid "!=" ambiguity when using
+ * new(templated) streams
+ *
+ * Revision 1.6  1998/11/04 23:46:36  vakatov
+ * Fixed the "ncbidbg/diag" header circular dependencies
+ *
+ * Revision 1.5  1998/11/03 22:28:33  vakatov
+ * Renamed Die/Post...Severity() to ...Level()
+ *
+ * Revision 1.4  1998/11/03 20:51:24  vakatov
+ * Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
+ *
+ * Revision 1.3  1998/10/30 20:08:25  vakatov
+ * Fixes to (first-time) compile and test-run on MSVS++
+ * ==========================================================================
+ */
 
 #endif /* def NCBIDIAG__HPP  &&  ndef NCBIDIAG__INL */

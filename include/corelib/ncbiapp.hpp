@@ -2,108 +2,36 @@
 #define NCBIAPP__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Vsevolod Sandomirskiy, Denis Vakatov
-*
-* File Description:
-*   CNcbiApplication -- a generic NCBI application class
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.20  2002/01/10 16:51:52  ivanov
-* Changed LoadConfig() -- new method to search the config file
-*
-* Revision 1.19  2002/01/07 16:58:21  vakatov
-* CNcbiApplication::GetArgs() -- a clearer error message
-*
-* Revision 1.18  2001/05/17 14:50:13  lavr
-* Typos corrected
-*
-* Revision 1.17  2001/04/13 02:58:43  vakatov
-* Do not apply R1.16 for non-UNIX platforms where we cannot configure
-* HAVE_NCBI_C yet
-*
-* Revision 1.16  2001/04/12 22:55:09  vakatov
-* [HAVE_NCBI_C]  Handle #GetArgs to avoid name clash with the NCBI C Toolkit
-*
-* Revision 1.15  2000/11/24 23:33:10  vakatov
-* CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
-* setup cmd.-line argument description, and then to retrieve their
-* values, respectively. Also implements internal error handling and
-* printout of USAGE for the described arguments.
-*
-* Revision 1.14  2000/01/20 17:51:16  vakatov
-* Major redesign and expansion of the "CNcbiApplication" class to
-*  - embed application arguments   "CNcbiArguments"
-*  - embed application environment "CNcbiEnvironment"
-*  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
-*  - allow memory-resided "per application" temp. diagnostic buffer
-*  - allow one to specify exact name of the config.-file to load, or to
-*    ignore the config.file (via constructor's "conf" arg)
-*  - added detailed comments
-*
-* Revision 1.13  1999/12/29 21:20:16  vakatov
-* More intelligent lookup for the default config.file. -- try to strip off
-* file extensions if cannot find an exact match;  more comments and tracing
-*
-* Revision 1.12  1999/11/15 18:57:01  vakatov
-* Added <memory> (for "auto_ptr<>" template)
-*
-* Revision 1.11  1999/11/15 15:53:27  sandomir
-* Registry support moved from CCgiApplication to CNcbiApplication
-*
-* Revision 1.10  1999/04/27 14:49:50  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.9  1998/12/28 17:56:25  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.8  1998/12/09 17:30:12  sandomir
-* ncbicgi.hpp deleted from ncbiapp.hpp
-*
-* Revision 1.7  1998/12/09 16:49:56  sandomir
-* CCgiApplication added
-*
-* Revision 1.6  1998/12/07 23:46:52  vakatov
-* Merged with "cgiapp.hpp";  minor fixes
-*
-* Revision 1.4  1998/12/03 21:24:21  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.3  1998/12/01 19:12:36  lewisg
-* added CCgiApplication
-*
-* Revision 1.2  1998/11/05 21:45:13  sandomir
-* std:: deleted
-*
-* Revision 1.1  1998/11/02 22:10:12  sandomir
-* CNcbiApplication added; netest sample updated
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Vsevolod Sandomirskiy, Denis Vakatov
+ *
+ * File Description:
+ *   CNcbiApplication -- a generic NCBI application class
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <memory>
@@ -281,6 +209,85 @@ inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.21  2002/04/11 20:39:16  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.20  2002/01/10 16:51:52  ivanov
+ * Changed LoadConfig() -- new method to search the config file
+ *
+ * Revision 1.19  2002/01/07 16:58:21  vakatov
+ * CNcbiApplication::GetArgs() -- a clearer error message
+ *
+ * Revision 1.18  2001/05/17 14:50:13  lavr
+ * Typos corrected
+ *
+ * Revision 1.17  2001/04/13 02:58:43  vakatov
+ * Do not apply R1.16 for non-UNIX platforms where we cannot configure
+ * HAVE_NCBI_C yet
+ *
+ * Revision 1.16  2001/04/12 22:55:09  vakatov
+ * [HAVE_NCBI_C]  Handle #GetArgs to avoid name clash with the NCBI C Toolkit
+ *
+ * Revision 1.15  2000/11/24 23:33:10  vakatov
+ * CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
+ * setup cmd.-line argument description, and then to retrieve their
+ * values, respectively. Also implements internal error handling and
+ * printout of USAGE for the described arguments.
+ *
+ * Revision 1.14  2000/01/20 17:51:16  vakatov
+ * Major redesign and expansion of the "CNcbiApplication" class to
+ *  - embed application arguments   "CNcbiArguments"
+ *  - embed application environment "CNcbiEnvironment"
+ *  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
+ *  - allow memory-resided "per application" temp. diagnostic buffer
+ *  - allow one to specify exact name of the config.-file to load, or to
+ *    ignore the config.file (via constructor's "conf" arg)
+ *  - added detailed comments
+ *
+ * Revision 1.13  1999/12/29 21:20:16  vakatov
+ * More intelligent lookup for the default config.file. -- try to strip off
+ * file extensions if cannot find an exact match;  more comments and tracing
+ *
+ * Revision 1.12  1999/11/15 18:57:01  vakatov
+ * Added <memory> (for "auto_ptr<>" template)
+ *
+ * Revision 1.11  1999/11/15 15:53:27  sandomir
+ * Registry support moved from CCgiApplication to CNcbiApplication
+ *
+ * Revision 1.10  1999/04/27 14:49:50  vasilche
+ * Added FastCGI interface.
+ * CNcbiContext renamed to CCgiContext.
+ *
+ * Revision 1.9  1998/12/28 17:56:25  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.8  1998/12/09 17:30:12  sandomir
+ * ncbicgi.hpp deleted from ncbiapp.hpp
+ *
+ * Revision 1.7  1998/12/09 16:49:56  sandomir
+ * CCgiApplication added
+ *
+ * Revision 1.6  1998/12/07 23:46:52  vakatov
+ * Merged with "cgiapp.hpp";  minor fixes
+ *
+ * Revision 1.4  1998/12/03 21:24:21  sandomir
+ * NcbiApplication and CgiApplication updated
+ *
+ * Revision 1.3  1998/12/01 19:12:36  lewisg
+ * added CCgiApplication
+ *
+ * Revision 1.2  1998/11/05 21:45:13  sandomir
+ * std:: deleted
+ *
+ * Revision 1.1  1998/11/02 22:10:12  sandomir
+ * CNcbiApplication added; netest sample updated
+ * ===========================================================================
+ */
 
 #endif // NCBIAPP__HPP
 

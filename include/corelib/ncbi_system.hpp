@@ -2,65 +2,41 @@
 #define NCBI_SYSTEM__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Ivanov
-*
-* File Description:
-*
-*   System functions:
-*      SetHeapLimit()
-*      SetCpuTimeLimit()
-*      GetCpuCount()
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2001/12/09 06:27:36  vakatov
-* GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
-*
-* Revision 1.5  2001/11/08 21:31:07  ivanov
-* Renamed GetCPUNumber() -> GetCpuCount()
-*
-* Revision 1.4  2001/11/08 21:10:22  ivanov
-* Added function GetCPUNumber()
-*
-* Revision 1.3  2001/07/23 15:59:36  ivanov
-* Added possibility using user defined dump print handler
-*
-* Revision 1.2  2001/07/02 21:33:05  vakatov
-* Fixed against SIGXCPU during the signal handling.
-* Increase the amount of reserved memory for the memory limit handler
-* to 10K (to fix for the 64-bit WorkShop compiler).
-* Use standard C++ arg.processing (ncbiargs) in the test suite.
-* Cleaned up the code. Get rid of the "Ncbi_" prefix.
-*
-* Revision 1.1  2001/07/02 16:47:25  ivanov
-* Initialization
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Ivanov
+ *
+ * File Description:
+ *
+ *   System functions:
+ *      SetHeapLimit()
+ *      SetCpuTimeLimit()
+ *      GetCpuCount()
+ *
+ */
+
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
@@ -124,6 +100,38 @@ extern unsigned int GetCpuCount(void);
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.7  2002/04/11 20:39:16  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.6  2001/12/09 06:27:36  vakatov
+ * GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
+ *
+ * Revision 1.5  2001/11/08 21:31:07  ivanov
+ * Renamed GetCPUNumber() -> GetCpuCount()
+ *
+ * Revision 1.4  2001/11/08 21:10:22  ivanov
+ * Added function GetCPUNumber()
+ *
+ * Revision 1.3  2001/07/23 15:59:36  ivanov
+ * Added possibility using user defined dump print handler
+ *
+ * Revision 1.2  2001/07/02 21:33:05  vakatov
+ * Fixed against SIGXCPU during the signal handling.
+ * Increase the amount of reserved memory for the memory limit handler
+ * to 10K (to fix for the 64-bit WorkShop compiler).
+ * Use standard C++ arg.processing (ncbiargs) in the test suite.
+ * Cleaned up the code. Get rid of the "Ncbi_" prefix.
+ *
+ * Revision 1.1  2001/07/02 16:47:25  ivanov
+ * Initialization
+ *
+ * ===========================================================================
+ */
 
 #endif  /* NCBI_SYSTEM__HPP */
 

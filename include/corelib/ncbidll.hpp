@@ -166,15 +166,18 @@ private:
 END_NCBI_SCOPE
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/04/11 20:39:17  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.3  2002/01/20 07:18:10  vakatov
  * CDll::GetEntryPoint() -- fool-proof cast of void ptr to func ptr
  *
  * Revision 1.2  2002/01/16 18:48:13  ivanov
- * Added new constructor and related "basename" rules for DLL names. Polished source code.
+ * Added new constructor and related "basename" rules for DLL names. 
+ * Polished source code.
  *
  * Revision 1.1  2002/01/15 19:06:07  ivanov
  * Initial revision

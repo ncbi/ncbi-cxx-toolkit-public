@@ -2,65 +2,54 @@
 #define NCBI_LIMITS__H
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov
-*
-* File Description:
-*
-*   Limits for the NCBI C/C++ fixed-size types:
-*      Char, Uchar
-*      Int1, Uint1  --  kMin_I1,       kMax_I1,       kMax_UI1
-*      Int2, Uint2  --  kMin_I2,       kMax_I2,       kMax_UI2
-*      Int4, Uint4  --  kMin_I4,       kMax_I4,       kMax_UI4
-*      Int8, Uint8  --  kMin_I8,       kMax_I8,       kMax_UI8
-*
-*   Limits for the built-in integer types:
-*      "char"       --  kMin_Char,     kMax_Char,     kMax_UChar
-*      "short"      --  kMin_Short,    kMax_Short,    kMax_UShort
-*      "int"        --  kMin_Int,      kMax_Int,      kMax_UInt
-*      "long"       --  kMin_Long,     kMax_Long,     kMax_ULong
-*      "long long"  --  kMin_LongLong, kMax_LongLong, kMax_ULongLong
-*      "__int64"    --  kMin_Int64,    kMax_Int64,    kMax_UInt64
-*
-*   Limits for the built-in floating-point types:
-*      "float"      --  kMin_Float,    kMax_Float
-*      "double"     --  kMin_Double,   kMax_Double
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2001/05/30 16:17:23  vakatov
-* Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
-* only when absolutely necessary (otherwise it conflicted with
-* "long long" for the Intel C++ compiler).
-*
-* Revision 1.1  2001/01/03 17:34:56  vakatov
-* Initial revision
-*
-* ==========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *
+ *   Limits for the NCBI C/C++ fixed-size types:
+ *      Char, Uchar
+ *      Int1, Uint1  --  kMin_I1,       kMax_I1,       kMax_UI1
+ *      Int2, Uint2  --  kMin_I2,       kMax_I2,       kMax_UI2
+ *      Int4, Uint4  --  kMin_I4,       kMax_I4,       kMax_UI4
+ *      Int8, Uint8  --  kMin_I8,       kMax_I8,       kMax_UI8
+ *
+ *   Limits for the built-in integer types:
+ *      "char"       --  kMin_Char,     kMax_Char,     kMax_UChar
+ *      "short"      --  kMin_Short,    kMax_Short,    kMax_UShort
+ *      "int"        --  kMin_Int,      kMax_Int,      kMax_UInt
+ *      "long"       --  kMin_Long,     kMax_Long,     kMax_ULong
+ *      "long long"  --  kMin_LongLong, kMax_LongLong, kMax_ULongLong
+ *      "__int64"    --  kMin_Int64,    kMax_Int64,    kMax_UInt64
+ *
+ *   Limits for the built-in floating-point types:
+ *      "float"      --  kMin_Float,    kMax_Float
+ *      "double"     --  kMin_Double,   kMax_Double
+ *
+ */
 
 #include <corelib/ncbitype.h>
 #include <limits.h>
@@ -217,5 +206,22 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 /* (END of C interface) */
 #endif  /* __cplusplus */
 
+
+/*
+ * ==========================================================================
+ * $Log$
+ * Revision 1.3  2002/04/11 20:39:15  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.2  2001/05/30 16:17:23  vakatov
+ * Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
+ * only when absolutely necessary (otherwise it conflicted with
+ * "long long" for the Intel C++ compiler).
+ *
+ * Revision 1.1  2001/01/03 17:34:56  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
 
 #endif /* NCBI_LIMITS__H */

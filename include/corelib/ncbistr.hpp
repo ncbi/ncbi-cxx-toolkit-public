@@ -493,10 +493,14 @@ bool PNocase::operator()(const string& s1, const string& s2) const
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2002/04/11 20:39:19  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.12  2002/03/01 17:54:38  kans
  * include string.h and ctype.h
  *

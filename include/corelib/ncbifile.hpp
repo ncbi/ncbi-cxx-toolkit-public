@@ -516,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/04/11 20:39:18  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.10  2002/04/01 18:49:07  ivanov
  * Added class CMemoryFile
  *
@@ -553,6 +556,5 @@ END_NCBI_SCOPE
  * Initial revision
  * ===========================================================================
  */
-
 
 #endif  /* CORELIB__NCBIFILE__HPP */

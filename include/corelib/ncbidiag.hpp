@@ -33,7 +33,6 @@
  *
  */
 
-
 #include <corelib/ncbistre.hpp>
 #include <list>
 #include <stdexcept>
@@ -386,10 +385,14 @@ private:
 
 END_NCBI_SCOPE
 
+
 /*
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.40  2002/04/11 20:39:16  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.39  2002/04/11 19:58:03  ivanov
  * Added function SuppressDiagPopupMessages()
  *

@@ -2,82 +2,42 @@
 #define NCBITIME_HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Anton    Butanayev <butanaev@ncbi.nlm.nih.gov>
-*           Denis    Vakatov   <vakatov@ncbi.nlm.nih.gov>
-*           Vladimir Ivanov    <ivanov@ncbi.nlm.nih.gov>*
-*
-* File Description:
-*   CTime - the standard Date/Time class;  it also can be used
-*           as a time span (to represent elapsed time).
-*
-*	NOTE:   Do not use Local time with time span and dates < "1/1/1900"
-*           (use GMT time only!!!)	
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2001/07/06 15:11:30  ivanov
-* Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
-*                                  SetTimeDBI(), SetTimeDBU()
-*
-* Revision 1.9  2001/07/04 19:41:07  vakatov
-* Get rid of an extra semicolon
-*
-* Revision 1.8  2001/06/12 16:56:36  vakatov
-* Added comments for the time constituents access methods
-*
-* Revision 1.7  2001/05/29 20:12:58  ivanov
-* Changed type of return value in NanoSecond().
-*
-* Revision 1.6  2001/05/29 16:14:34  ivanov
-* Return to nanosecond-revision. Corrected mistake of the work with local
-* time on Linux. Polish and improvement source code.
-* Renamed AsTimeT() -> GetTimerT().
-*
-* Revision 1.5  2001/04/30 22:01:29  lavr
-* Rollback to pre-nanosecond-revision due to necessity to use
-* configure to figure out names of global variables governing time zones
-*
-* Revision 1.4  2001/04/29 03:06:10  lavr
-* #include <time.h>" moved from .cpp to ncbitime.hpp
-*
-* Revision 1.3  2001/04/27 20:42:29  ivanov
-* Support for Local and UTC time added.
-* Support for work with nanoseconds added.
-*
-* Revision 1.2  2000/11/21 18:15:29  butanaev
-* Fixed bug in operator ++/-- (int)
-*
-* Revision 1.1  2000/11/20 22:17:42  vakatov
-* Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
-* its test suite ("test/test_ncbitime.cpp")
-*
-* ===========================================================================
-*/
-
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Anton    Butanayev <butanaev@ncbi.nlm.nih.gov>
+ *           Denis    Vakatov   <vakatov@ncbi.nlm.nih.gov>
+ *           Vladimir Ivanov    <ivanov@ncbi.nlm.nih.gov>*
+ *
+ * File Description:
+ *   CTime - the standard Date/Time class;  it also can be used
+ *           as a time span (to represent elapsed time).
+ *
+ *	NOTE:   Do not use Local time with time span and dates < "1/1/1900"
+ *           (use GMT time only!!!)	
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitype.h>
@@ -631,5 +591,51 @@ bool CTime::x_NeedAdjustTime(void) const
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.11  2002/04/11 20:39:20  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.10  2001/07/06 15:11:30  ivanov
+ * Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
+ *                                  SetTimeDBI(), SetTimeDBU()
+ *
+ * Revision 1.9  2001/07/04 19:41:07  vakatov
+ * Get rid of an extra semicolon
+ *
+ * Revision 1.8  2001/06/12 16:56:36  vakatov
+ * Added comments for the time constituents access methods
+ *
+ * Revision 1.7  2001/05/29 20:12:58  ivanov
+ * Changed type of return value in NanoSecond().
+ *
+ * Revision 1.6  2001/05/29 16:14:34  ivanov
+ * Return to nanosecond-revision. Corrected mistake of the work with local
+ * time on Linux. Polish and improvement source code.
+ * Renamed AsTimeT() -> GetTimerT().
+ *
+ * Revision 1.5  2001/04/30 22:01:29  lavr
+ * Rollback to pre-nanosecond-revision due to necessity to use
+ * configure to figure out names of global variables governing time zones
+ *
+ * Revision 1.4  2001/04/29 03:06:10  lavr
+ * #include <time.h>" moved from .cpp to ncbitime.hpp
+ *
+ * Revision 1.3  2001/04/27 20:42:29  ivanov
+ * Support for Local and UTC time added.
+ * Support for work with nanoseconds added.
+ *
+ * Revision 1.2  2000/11/21 18:15:29  butanaev
+ * Fixed bug in operator ++/-- (int)
+ *
+ * Revision 1.1  2000/11/20 22:17:42  vakatov
+ * Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
+ * its test suite ("test/test_ncbitime.cpp")
+ *
+ * ===========================================================================
+ */
 
 #endif /* NCBITIME__HPP */

@@ -2,131 +2,36 @@
 #define NCBIOBJ__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Eugene Vasilchenko
-*
-* File Description:
-*   Standard CObject and CRef classes for reference counter based GC
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.26  2001/10/10 04:03:22  vakatov
-* Added operator> for C(Const)Ref -- for ICC and MIPSpro
-*
-* Revision 1.25  2001/06/21 15:17:42  kholodov
-* Added: null special value, support for null in CRef classes, equality
-* operators.
-*
-* Revision 1.24  2001/06/13 14:19:54  grichenk
-* Added operators == and != for C(Const)Ref
-*
-* Revision 1.23  2001/05/17 14:53:56  lavr
-* Typos corrected
-*
-* Revision 1.22  2001/03/26 21:22:51  vakatov
-* Minor cosmetics
-*
-* Revision 1.21  2001/03/13 22:43:48  vakatov
-* Made "CObject" MT-safe
-* + CObject::DoDeleteThisObject()
-*
-* Revision 1.20  2001/03/05 22:14:18  vakatov
-* Added "operator<" for CRef:: and CConstRef:: to make them usable
-* as keys in the stnadard C++ associative containers (set, map, ...)
-*
-* Revision 1.19  2001/02/21 21:16:08  grichenk
-* CRef:: Release, Reset -- reset m_Ptr BEFORE removing the reference
-*
-* Revision 1.18  2000/12/26 17:25:38  vasilche
-* CRef<> returns non const object.
-*
-* Revision 1.17  2000/12/15 19:18:36  vakatov
-* Added assignment operator for CRef<> and CConstRef<>
-*
-* Revision 1.16  2000/12/15 15:36:29  vasilche
-* Added header corelib/ncbistr.hpp for all string utility functions.
-* Optimized string utility functions.
-* Added assignment operator to CRef<> and CConstRef<>.
-* Add Upcase() and Locase() methods for automatic conversion.
-*
-* Revision 1.15  2000/12/12 14:20:14  vasilche
-* Added operator bool to CArgValue.
-* Added standard typedef element_type to CRef<> and CConstRef<>.
-* Macro iterate() now calls method end() only once and uses temporary variable.
-* Various NStr::Compare() methods made faster.
-* Added class Upcase for printing strings to ostream with automatic conversion.
-*
-* Revision 1.14  2000/11/01 20:35:01  vasilche
-* Fixed detection of heap objects.
-* Removed ECanDelete enum and related constructors.
-*
-* Revision 1.13  2000/10/13 16:25:43  vasilche
-* Added heuristic for detection of CObject allocation in heap.
-*
-* Revision 1.12  2000/09/01 13:14:25  vasilche
-* Fixed throw() declaration in CRef/CConstRef
-*
-* Revision 1.11  2000/08/15 19:42:06  vasilche
-* Changed reference counter to allow detection of more errors.
-*
-* Revision 1.10  2000/06/16 16:29:42  vasilche
-* Added SetCanDelete() method to allow to change CObject 'in heap' status immediately after creation.
-*
-* Revision 1.9  2000/06/07 19:44:16  vasilche
-* Removed unneeded THROWS declaration - they lead to encreased code size.
-*
-* Revision 1.8  2000/05/09 16:36:54  vasilche
-* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
-*
-* Revision 1.7  2000/04/28 16:56:13  vasilche
-* Fixed implementation of CRef<> and CConstRef<>
-*
-* Revision 1.6  2000/03/31 17:08:07  kans
-* moved ECanDelete to public area of CObject
-*
-* Revision 1.5  2000/03/29 15:50:27  vasilche
-* Added const version of CRef - CConstRef.
-* CRef and CConstRef now accept classes inherited from CObject.
-*
-* Revision 1.4  2000/03/10 14:18:37  vasilche
-* Added CRef<>::GetPointerOrNull() method similar to std::auto_ptr<>.get()
-*
-* Revision 1.3  2000/03/08 14:18:19  vasilche
-* Fixed throws instructions.
-*
-* Revision 1.2  2000/03/07 15:25:42  vasilche
-* Fixed implementation of CRef::->
-*
-* Revision 1.1  2000/03/07 14:03:11  vasilche
-* Added CObject class as base for reference counted objects.
-* Added CRef templace for reference to CObject descendant.
-*
-*
-* ==========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Eugene Vasilchenko
+ *
+ * File Description:
+ *   Standard CObject and CRef classes for reference counter based GC
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
@@ -774,5 +679,108 @@ private:
 #include <corelib/ncbiobj.inl>
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.27  2002/04/11 20:39:18  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.26  2001/10/10 04:03:22  vakatov
+ * Added operator> for C(Const)Ref -- for ICC and MIPSpro
+ *
+ * Revision 1.25  2001/06/21 15:17:42  kholodov
+ * Added: null special value, support for null in CRef classes, equality
+ * operators.
+ *
+ * Revision 1.24  2001/06/13 14:19:54  grichenk
+ * Added operators == and != for C(Const)Ref
+ *
+ * Revision 1.23  2001/05/17 14:53:56  lavr
+ * Typos corrected
+ *
+ * Revision 1.22  2001/03/26 21:22:51  vakatov
+ * Minor cosmetics
+ *
+ * Revision 1.21  2001/03/13 22:43:48  vakatov
+ * Made "CObject" MT-safe
+ * + CObject::DoDeleteThisObject()
+ *
+ * Revision 1.20  2001/03/05 22:14:18  vakatov
+ * Added "operator<" for CRef:: and CConstRef:: to make them usable
+ * as keys in the stnadard C++ associative containers (set, map, ...)
+ *
+ * Revision 1.19  2001/02/21 21:16:08  grichenk
+ * CRef:: Release, Reset -- reset m_Ptr BEFORE removing the reference
+ *
+ * Revision 1.18  2000/12/26 17:25:38  vasilche
+ * CRef<> returns non const object.
+ *
+ * Revision 1.17  2000/12/15 19:18:36  vakatov
+ * Added assignment operator for CRef<> and CConstRef<>
+ *
+ * Revision 1.16  2000/12/15 15:36:29  vasilche
+ * Added header corelib/ncbistr.hpp for all string utility functions.
+ * Optimized string utility functions.
+ * Added assignment operator to CRef<> and CConstRef<>.
+ * Add Upcase() and Locase() methods for automatic conversion.
+ *
+ * Revision 1.15  2000/12/12 14:20:14  vasilche
+ * Added operator bool to CArgValue.
+ * Added standard typedef element_type to CRef<> and CConstRef<>.
+ * Macro iterate() now calls method end() only once and uses temporary variabl.
+ * Various NStr::Compare() methods made faster.
+ * Added class Upcase for printing strings to ostream with automatic conversion
+ *
+ * Revision 1.14  2000/11/01 20:35:01  vasilche
+ * Fixed detection of heap objects.
+ * Removed ECanDelete enum and related constructors.
+ *
+ * Revision 1.13  2000/10/13 16:25:43  vasilche
+ * Added heuristic for detection of CObject allocation in heap.
+ *
+ * Revision 1.12  2000/09/01 13:14:25  vasilche
+ * Fixed throw() declaration in CRef/CConstRef
+ *
+ * Revision 1.11  2000/08/15 19:42:06  vasilche
+ * Changed reference counter to allow detection of more errors.
+ *
+ * Revision 1.10  2000/06/16 16:29:42  vasilche
+ * Added SetCanDelete() method to allow to change CObject 'in heap' status 
+ * immediately after creation.
+ *
+ * Revision 1.9  2000/06/07 19:44:16  vasilche
+ * Removed unneeded THROWS declaration - they lead to encreased code size.
+ *
+ * Revision 1.8  2000/05/09 16:36:54  vasilche
+ * CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce
+ * possible errors.
+ *
+ * Revision 1.7  2000/04/28 16:56:13  vasilche
+ * Fixed implementation of CRef<> and CConstRef<>
+ *
+ * Revision 1.6  2000/03/31 17:08:07  kans
+ * moved ECanDelete to public area of CObject
+ *
+ * Revision 1.5  2000/03/29 15:50:27  vasilche
+ * Added const version of CRef - CConstRef.
+ * CRef and CConstRef now accept classes inherited from CObject.
+ *
+ * Revision 1.4  2000/03/10 14:18:37  vasilche
+ * Added CRef<>::GetPointerOrNull() method similar to std::auto_ptr<>.get()
+ *
+ * Revision 1.3  2000/03/08 14:18:19  vasilche
+ * Fixed throws instructions.
+ *
+ * Revision 1.2  2000/03/07 15:25:42  vasilche
+ * Fixed implementation of CRef::->
+ *
+ * Revision 1.1  2000/03/07 14:03:11  vasilche
+ * Added CObject class as base for reference counted objects.
+ * Added CRef templace for reference to CObject descendant.
+ *
+ * ==========================================================================
+ */
 
 #endif /* NCBIOBJ__HPP */

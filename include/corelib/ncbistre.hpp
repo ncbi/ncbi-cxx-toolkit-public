@@ -2,113 +2,37 @@
 #define NCBISTRE__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov
-*
-* File Description:
-*   NCBI C++ stream class wrappers
-*   Triggering between "new" and "old" C++ stream libraries
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.25  2001/08/15 20:53:00  juran
-* Heed warnings.
-*
-* Revision 1.24  2001/05/17 14:54:27  lavr
-* Typos corrected
-*
-* Revision 1.23  2001/03/26 20:26:57  vakatov
-* Added "Printable" symbol conversions (by A.Grichenko)
-*
-* Revision 1.22  2001/03/26 18:35:38  lavr
-* CT_* macros aligned in a pretty way
-*
-* Revision 1.21  2001/03/24 00:32:59  lavr
-* Macros added: CT_TO_INT_TYPE, CT_TO_CHAR_TYPE, CT_EQ_INT_TYPE
-*
-* Revision 1.20  2000/12/15 15:36:30  vasilche
-* Added header corelib/ncbistr.hpp for all string utility functions.
-* Optimized string utility functions.
-* Added assignment operator to CRef<> and CConstRef<>.
-* Add Upcase() and Locase() methods for automatic conversion.
-*
-* Revision 1.19  2000/12/12 14:39:46  vasilche
-* Added class Locase for printing strings to ostream with automatic conversion.
-*
-* Revision 1.18  2000/12/12 14:20:14  vasilche
-* Added operator bool to CArgValue.
-* Added standard typedef element_type to CRef<> and CConstRef<>.
-* Macro iterate() now calls method end() only once and uses temporary variable.
-* Various NStr::Compare() methods made faster.
-* Added class Upcase for printing strings to ostream with automatic conversion.
-*
-* Revision 1.17  1999/12/28 18:55:25  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.16  1999/11/09 20:57:03  vasilche
-* Fixed exception with conversion empty strstream to string.
-*
-* Revision 1.15  1999/10/21 15:44:18  vasilche
-* Added helper class CNcbiOstreamToString to convert CNcbiOstrstream buffer
-* to string.
-*
-* Revision 1.14  1999/06/08 21:34:35  vakatov
-* #HAVE_NO_CHAR_TRAITS::  handle the case of missing "std::char_traits::"
-*
-* Revision 1.13  1999/05/10 14:26:07  vakatov
-* Fixes to compile and link with the "egcs" C++ compiler under Linux
-*
-* Revision 1.12  1999/05/06 23:02:38  vakatov
-* Use the new(template-based, std::) stream library by default
-*
-* Revision 1.11  1998/12/28 17:56:29  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.10  1998/12/03 18:56:12  vakatov
-* minor fixes
-*
-* Revision 1.9  1998/12/03 16:38:32  vakatov
-* Added aux. function "Getline()" to read from "istream" to a "string"
-* Adopted standard I/O "string" <--> "istream" for old-fashioned streams
-*
-* Revision 1.8  1998/11/26 00:27:05  vakatov
-* Added <iomanip[.h]> and relevant #define's NcbiXXX
-*
-* Revision 1.7  1998/11/06 22:42:39  vakatov
-* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
-* API to namespace "ncbi::" and to use it by default, respectively
-* Introduced THROWS_NONE and THROWS(x) macros for the exception
-* specifications
-* Other fixes and rearrangements throughout the most of "corelib" code
-*
-* ==========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *   NCBI C++ stream class wrappers
+ *   Triggering between "new" and "old" C++ stream libraries
+ *
+ */
 
 #include <corelib/ncbistl.hpp>
 
@@ -403,5 +327,88 @@ extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
 extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
                                               NCBI_NS_STD::string& str);
 #endif
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.26  2002/04/11 20:39:19  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.25  2001/08/15 20:53:00  juran
+ * Heed warnings.
+ *
+ * Revision 1.24  2001/05/17 14:54:27  lavr
+ * Typos corrected
+ *
+ * Revision 1.23  2001/03/26 20:26:57  vakatov
+ * Added "Printable" symbol conversions (by A.Grichenko)
+ *
+ * Revision 1.22  2001/03/26 18:35:38  lavr
+ * CT_* macros aligned in a pretty way
+ *
+ * Revision 1.21  2001/03/24 00:32:59  lavr
+ * Macros added: CT_TO_INT_TYPE, CT_TO_CHAR_TYPE, CT_EQ_INT_TYPE
+ *
+ * Revision 1.20  2000/12/15 15:36:30  vasilche
+ * Added header corelib/ncbistr.hpp for all string utility functions.
+ * Optimized string utility functions.
+ * Added assignment operator to CRef<> and CConstRef<>.
+ * Add Upcase() and Locase() methods for automatic conversion.
+ *
+ * Revision 1.19  2000/12/12 14:39:46  vasilche
+ * Added class Locase for printing strings to ostream with automatic conversion
+ *
+ * Revision 1.18  2000/12/12 14:20:14  vasilche
+ * Added operator bool to CArgValue.
+ * Added standard typedef element_type to CRef<> and CConstRef<>.
+ * Macro iterate() now calls method end() only once and uses temporary variable
+ * Various NStr::Compare() methods made faster.
+ * Added class Upcase for printing strings to ostream with automatic conversion
+ *
+ * Revision 1.17  1999/12/28 18:55:25  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.16  1999/11/09 20:57:03  vasilche
+ * Fixed exception with conversion empty strstream to string.
+ *
+ * Revision 1.15  1999/10/21 15:44:18  vasilche
+ * Added helper class CNcbiOstreamToString to convert CNcbiOstrstream buffer
+ * to string.
+ *
+ * Revision 1.14  1999/06/08 21:34:35  vakatov
+ * #HAVE_NO_CHAR_TRAITS::  handle the case of missing "std::char_traits::"
+ *
+ * Revision 1.13  1999/05/10 14:26:07  vakatov
+ * Fixes to compile and link with the "egcs" C++ compiler under Linux
+ *
+ * Revision 1.12  1999/05/06 23:02:38  vakatov
+ * Use the new(template-based, std::) stream library by default
+ *
+ * Revision 1.11  1998/12/28 17:56:29  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.10  1998/12/03 18:56:12  vakatov
+ * minor fixes
+ *
+ * Revision 1.9  1998/12/03 16:38:32  vakatov
+ * Added aux. function "Getline()" to read from "istream" to a "string"
+ * Adopted standard I/O "string" <--> "istream" for old-fashioned streams
+ *
+ * Revision 1.8  1998/11/26 00:27:05  vakatov
+ * Added <iomanip[.h]> and relevant #define's NcbiXXX
+ *
+ * Revision 1.7  1998/11/06 22:42:39  vakatov
+ * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+ * API to namespace "ncbi::" and to use it by default, respectively
+ * Introduced THROWS_NONE and THROWS(x) macros for the exception
+ * specifications
+ * Other fixes and rearrangements throughout the most of "corelib" code
+ *
+ * ==========================================================================
+ */
 
 #endif /* NCBISTRE__HPP */

@@ -35,79 +35,6 @@
  *      exceptions    -- CArgException,     CArgHelpException
  *      constraints   -- CArgAllow; CArgAllow_{Strings, ..., Integers, Doubles}
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.20  2001/05/17 14:50:34  lavr
- * Typos corrected
- *
- * Revision 1.19  2001/03/16 16:39:13  vakatov
- * + <corelib/ncbi_limits.h>
- *
- * Revision 1.18  2001/01/22 23:07:12  vakatov
- * CArgValue::AsInteger() to return "int" (rather than "long")
- *
- * Revision 1.17  2000/12/24 00:12:59  vakatov
- * Radically revamped NCBIARGS.
- * Introduced optional key and posit. args without default value.
- * Added new arg.value constraint classes.
- * Passed flags to be detected by HasValue() rather than AsBoolean.
- * Simplified constraints on the number of mandatory and optional extra args.
- * Improved USAGE info and diagnostic messages. Etc...
- *
- * Revision 1.15  2000/11/29 00:07:25  vakatov
- * Flag and key args not to be sorted in alphabetical order by default; see
- * "usage_sort_args" in SetUsageContext().
- *
- * Revision 1.14  2000/11/24 23:28:31  vakatov
- * CArgValue::  added CloseFile()
- * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
- *
- * Revision 1.13  2000/11/22 22:04:29  vakatov
- * Added special flag "-h" and special exception CArgHelpException to
- * force USAGE printout in a standard manner
- *
- * Revision 1.12  2000/11/17 22:04:28  vakatov
- * CArgDescriptions::  Switch the order of optional args in methods
- * AddOptionalKey() and AddPlain(). Also, enforce the default value to
- * match arg. description (and constraints, if any) at all times.
- *
- * Revision 1.11  2000/11/13 20:31:05  vakatov
- * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
- *
- * Revision 1.10  2000/10/20 22:23:26  vakatov
- * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
- *
- * Revision 1.9  2000/10/20 20:25:53  vakatov
- * Redesigned/reimplemented the user-defined arg.value constraints
- * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
- *
- * Revision 1.8  2000/10/06 21:57:51  butanaev
- * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
- *
- * Revision 1.7  2000/09/29 17:11:22  butanaev
- * Got rid of IsDefaultValue(), added IsProvided().
- *
- * Revision 1.6  2000/09/28 21:01:58  butanaev
- * fPreOpen with opposite meaning took over fDelayOpen.
- * IsDefaultValue() added which returns true if no
- * value for an optional argument was provided in cmd. line.
- *
- * Revision 1.5  2000/09/22 21:27:13  butanaev
- * Fixed buf in handling default arg values.
- *
- * Revision 1.4  2000/09/19 21:18:11  butanaev
- * Added possibility to change file open mode on the fly
- *
- * Revision 1.3  2000/09/18 19:38:59  vasilche
- * Added CreateArgs() from CNcbiArguments.
- *
- * Revision 1.2  2000/09/06 18:56:56  butanaev
- * Added stdin, stdout support. Fixed bug in PrintOut.
- *
- * Revision 1.1  2000/08/31 23:54:47  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -672,5 +599,85 @@ private:
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.21  2002/04/11 20:39:16  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.20  2001/05/17 14:50:34  lavr
+ * Typos corrected
+ *
+ * Revision 1.19  2001/03/16 16:39:13  vakatov
+ * + <corelib/ncbi_limits.h>
+ *
+ * Revision 1.18  2001/01/22 23:07:12  vakatov
+ * CArgValue::AsInteger() to return "int" (rather than "long")
+ *
+ * Revision 1.17  2000/12/24 00:12:59  vakatov
+ * Radically revamped NCBIARGS.
+ * Introduced optional key and posit. args without default value.
+ * Added new arg.value constraint classes.
+ * Passed flags to be detected by HasValue() rather than AsBoolean.
+ * Simplified constraints on the number of mandatory and optional extra args.
+ * Improved USAGE info and diagnostic messages. Etc...
+ *
+ * Revision 1.15  2000/11/29 00:07:25  vakatov
+ * Flag and key args not to be sorted in alphabetical order by default; see
+ * "usage_sort_args" in SetUsageContext().
+ *
+ * Revision 1.14  2000/11/24 23:28:31  vakatov
+ * CArgValue::  added CloseFile()
+ * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
+ *
+ * Revision 1.13  2000/11/22 22:04:29  vakatov
+ * Added special flag "-h" and special exception CArgHelpException to
+ * force USAGE printout in a standard manner
+ *
+ * Revision 1.12  2000/11/17 22:04:28  vakatov
+ * CArgDescriptions::  Switch the order of optional args in methods
+ * AddOptionalKey() and AddPlain(). Also, enforce the default value to
+ * match arg. description (and constraints, if any) at all times.
+ *
+ * Revision 1.11  2000/11/13 20:31:05  vakatov
+ * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
+ *
+ * Revision 1.10  2000/10/20 22:23:26  vakatov
+ * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
+ *
+ * Revision 1.9  2000/10/20 20:25:53  vakatov
+ * Redesigned/reimplemented the user-defined arg.value constraints
+ * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
+ *
+ * Revision 1.8  2000/10/06 21:57:51  butanaev
+ * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
+ *
+ * Revision 1.7  2000/09/29 17:11:22  butanaev
+ * Got rid of IsDefaultValue(), added IsProvided().
+ *
+ * Revision 1.6  2000/09/28 21:01:58  butanaev
+ * fPreOpen with opposite meaning took over fDelayOpen.
+ * IsDefaultValue() added which returns true if no
+ * value for an optional argument was provided in cmd. line.
+ *
+ * Revision 1.5  2000/09/22 21:27:13  butanaev
+ * Fixed buf in handling default arg values.
+ *
+ * Revision 1.4  2000/09/19 21:18:11  butanaev
+ * Added possibility to change file open mode on the fly
+ *
+ * Revision 1.3  2000/09/18 19:38:59  vasilche
+ * Added CreateArgs() from CNcbiArguments.
+ *
+ * Revision 1.2  2000/09/06 18:56:56  butanaev
+ * Added stdin, stdout support. Fixed bug in PrintOut.
+ *
+ * Revision 1.1  2000/08/31 23:54:47  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
 
 #endif  /* NCBIARGS__HPP */

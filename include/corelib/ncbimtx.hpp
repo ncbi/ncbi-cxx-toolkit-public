@@ -38,7 +38,6 @@
  *
  */
 
-
 #include <corelib/ncbistl.hpp>
 #include <stdexcept>
 
@@ -367,10 +366,12 @@ void CFastMutex::Unlock(void)
 END_NCBI_SCOPE
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/04/11 20:39:18  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.6  2002/01/23 23:31:17  vakatov
  * Added CFastMutexGuard::Guard()
  *

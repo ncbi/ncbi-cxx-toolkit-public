@@ -2,204 +2,36 @@
 #define NCBISTD__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov, Eugene Vasilchenko
-*
-* File Description:
-*   The NCBI C++ standard #include's and #defin'itions
-*
-* --------------------------------------------------------------------------
-* $Log$
-* Revision 1.54  2001/05/30 16:04:22  vakatov
-* AutoPtr::  -- do not make it owner if the source AutoPtr object was not
-* an owner (for copy-constructor and operator=).
-*
-* Revision 1.53  2001/05/17 14:54:12  lavr
-* Typos corrected
-*
-* Revision 1.52  2001/04/13 02:52:34  vakatov
-* Rollback to R1.50.  It is premature to check for #HAVE_NCBI_C until
-* we can configure it on MS-Windows...
-*
-* Revision 1.51  2001/04/12 22:53:00  vakatov
-* Apply fix R1.50 only #if HAVE_NCBI_C
-*
-* Revision 1.50  2001/03/16 02:20:40  vakatov
-* [MSWIN]  Avoid the "Beep()" clash between MS-Win and C Toolkit headers
-*
-* Revision 1.49  2001/02/22 00:09:28  vakatov
-* non_const_iterate() -- added parenthesis around the "Cont" arg
-*
-* Revision 1.48  2000/12/24 00:01:48  vakatov
-* Moved some code from NCBIUTIL to NCBISTD.
-* Fixed AutoPtr to always work with assoc.containers
-*
-* Revision 1.46  2000/12/15 15:36:30  vasilche
-* Added header corelib/ncbistr.hpp for all string utility functions.
-* Optimized string utility functions.
-* Added assignment operator to CRef<> and CConstRef<>.
-* Add Upcase() and Locase() methods for automatic conversion.
-*
-* Revision 1.45  2000/12/12 14:20:14  vasilche
-* Added operator bool to CArgValue.
-* Added standard typedef element_type to CRef<> and CConstRef<>.
-* Macro iterate() now calls method end() only once and uses temporary variable.
-* Various NStr::Compare() methods made faster.
-* Added class Upcase for printing strings to ostream with automatic conversion.
-*
-* Revision 1.44  2000/12/11 20:42:48  vakatov
-* + NStr::PrintableString()
-*
-* Revision 1.43  2000/11/07 04:07:19  vakatov
-* kEmptyCStr, kEmptyStr (equiv. to NcbiEmptyCStr,NcbiEmptyString)
-*
-* Revision 1.42  2000/10/05 20:01:10  vakatov
-* auto_ptr -- no "const" in constructor and assignment
-*
-* Revision 1.41  2000/08/03 20:21:10  golikov
-* Added predicate PCase for AStrEquiv
-* PNocase, PCase goes through NStr::Compare now
-*
-* Revision 1.40  2000/07/19 19:03:52  vakatov
-* StringToBool() -- short and case-insensitive versions of "true"/"false"
-* ToUpper/ToLower(string&) -- fixed
-*
-* Revision 1.39  2000/04/17 19:30:12  vakatov
-* Allowed case-insensitive comparison for StartsWith() and EndsWith()
-*
-* Revision 1.38  2000/04/17 04:14:20  vakatov
-* NStr::  extended Compare(), and allow case-insensitive string comparison
-* NStr::  added ToLower() and ToUpper()
-*
-* Revision 1.37  2000/04/04 22:28:06  vakatov
-* NStr::  added conversions for "long"
-*
-* Revision 1.36  2000/02/17 20:00:24  vasilche
-* Added EResetVariant enum for serialization package.
-*
-* Revision 1.35  2000/01/20 16:24:20  vakatov
-* Kludging around the "NcbiEmptyString" to ensure its initialization when
-* it is used by the constructor of a statically allocated object
-* (I believe that it is actually just another Sun WorkShop compiler "feature")
-*
-* Revision 1.34  1999/12/28 19:04:22  vakatov
-* #HAVE_NO_MINMAX_TEMPLATE
-*
-* Revision 1.33  1999/12/28 18:55:25  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.32  1999/12/17 19:04:06  vasilche
-* NcbiEmptyString made extern.
-*
-* Revision 1.31  1999/12/03 21:36:45  vasilche
-* Added forward decaration of CEnumeratedTypeValues
-*
-* Revision 1.30  1999/11/26 18:45:08  golikov
-* NStr::Replace added
-*
-* Revision 1.29  1999/11/17 22:05:02  vakatov
-* [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
-*
-* Revision 1.28  1999/10/26 18:10:24  vakatov
-* [auto_ptr] -- simpler and more standard
-*
-* Revision 1.27  1999/09/29 22:22:37  vakatov
-* [auto_ptr] Use "mutable" rather than "static_cast" on m_Owns; fixed a
-*            double "delete" bug in reset().
-*
-* Revision 1.26  1999/09/14 18:49:40  vasilche
-* Added forward declaration of CTypeInfo class.
-*
-* Revision 1.25  1999/07/08 14:44:52  vakatov
-* Tiny fix in EndsWith()
-*
-* Revision 1.24  1999/07/06 15:21:04  vakatov
-* + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
-*
-* Revision 1.23  1999/06/21 15:59:40  vakatov
-* [auto_ptr] -- closer to standard:  added an ownership and
-* initialization/assignment with "auto_ptr<>&", made "release()" be "const"
-*
-* Revision 1.22  1999/06/15 20:50:03  vakatov
-* NStr::  +BoolToString, +StringToBool
-*
-* Revision 1.21  1999/05/28 20:12:29  vakatov
-* [HAVE_NO_AUTO_PTR]  Prohibit "operator=" in the home-made "auto_ptr::"
-*
-* Revision 1.20  1999/04/16 17:45:31  vakatov
-* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
-*
-* Revision 1.19  1999/04/15 21:56:47  vakatov
-* Introduced NcbiMin/NcbiMax to workaround some portability issues with
-* the standard "min/max"
-*
-* Revision 1.18  1999/04/14 21:20:31  vakatov
-* Dont use "snprintf()" as it is not quite portable yet
-*
-* Revision 1.17  1999/04/14 19:46:01  vakatov
-* Fixed for the features:
-*    { NCBI_OBSOLETE_STR_COMPARE, HAVE_NO_AUTO_PTR, HAVE_NO_SNPRINTF }
-*
-* Revision 1.16  1999/04/09 19:51:36  sandomir
-* minor changes in NStr::StringToXXX - base added
-*
-* Revision 1.15  1999/01/21 16:18:04  sandomir
-* minor changes due to NStr namespace to contain string utility functions
-*
-* Revision 1.14  1999/01/11 22:05:45  vasilche
-* Fixed CHTML_font size.
-* Added CHTML_image input element.
-*
-* Revision 1.13  1998/12/28 17:56:29  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.12  1998/12/21 17:19:36  sandomir
-* VC++ fixes in ncbistd; minor fixes in Resource
-*
-* Revision 1.11  1998/12/17 21:50:43  sandomir
-* CNCBINode fixed in Resource; case insensitive string comparison predicate added
-*
-* Revision 1.10  1998/12/15 17:38:16  vasilche
-* Added conversion functions string <> int.
-*
-* Revision 1.9  1998/12/04 23:36:30  vakatov
-* + NcbiEmptyCStr and NcbiEmptyString (const)
-*
-* Revision 1.8  1998/11/06 22:42:38  vakatov
-* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
-* API to namespace "ncbi::" and to use it by default, respectively
-* Introduced THROWS_NONE and THROWS(x) macros for the exception
-* specifications
-* Other fixes and rearrangements throughout the most of "corelib" code
-*
-* ==========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov, Eugene Vasilchenko
+ *
+ * File Description:
+ *   The NCBI C++ standard #include's and #defin'itions
+ *
+ */
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistl.hpp>
@@ -449,5 +281,181 @@ extern char* strdup(const char* str);
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.55  2002/04/11 20:39:19  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.54  2001/05/30 16:04:22  vakatov
+ * AutoPtr::  -- do not make it owner if the source AutoPtr object was not
+ * an owner (for copy-constructor and operator=).
+ *
+ * Revision 1.53  2001/05/17 14:54:12  lavr
+ * Typos corrected
+ *
+ * Revision 1.52  2001/04/13 02:52:34  vakatov
+ * Rollback to R1.50.  It is premature to check for #HAVE_NCBI_C until
+ * we can configure it on MS-Windows...
+ *
+ * Revision 1.51  2001/04/12 22:53:00  vakatov
+ * Apply fix R1.50 only #if HAVE_NCBI_C
+ *
+ * Revision 1.50  2001/03/16 02:20:40  vakatov
+ * [MSWIN]  Avoid the "Beep()" clash between MS-Win and C Toolkit headers
+ *
+ * Revision 1.49  2001/02/22 00:09:28  vakatov
+ * non_const_iterate() -- added parenthesis around the "Cont" arg
+ *
+ * Revision 1.48  2000/12/24 00:01:48  vakatov
+ * Moved some code from NCBIUTIL to NCBISTD.
+ * Fixed AutoPtr to always work with assoc.containers
+ *
+ * Revision 1.46  2000/12/15 15:36:30  vasilche
+ * Added header corelib/ncbistr.hpp for all string utility functions.
+ * Optimized string utility functions.
+ * Added assignment operator to CRef<> and CConstRef<>.
+ * Add Upcase() and Locase() methods for automatic conversion.
+ *
+ * Revision 1.45  2000/12/12 14:20:14  vasilche
+ * Added operator bool to CArgValue.
+ * Added standard typedef element_type to CRef<> and CConstRef<>.
+ * Macro iterate() now calls method end() only once and uses temporary variable
+ * Various NStr::Compare() methods made faster.
+ * Added class Upcase for printing strings to ostream with automatic conversion
+ *
+ * Revision 1.44  2000/12/11 20:42:48  vakatov
+ * + NStr::PrintableString()
+ *
+ * Revision 1.43  2000/11/07 04:07:19  vakatov
+ * kEmptyCStr, kEmptyStr (equiv. to NcbiEmptyCStr,NcbiEmptyString)
+ *
+ * Revision 1.42  2000/10/05 20:01:10  vakatov
+ * auto_ptr -- no "const" in constructor and assignment
+ *
+ * Revision 1.41  2000/08/03 20:21:10  golikov
+ * Added predicate PCase for AStrEquiv
+ * PNocase, PCase goes through NStr::Compare now
+ *
+ * Revision 1.40  2000/07/19 19:03:52  vakatov
+ * StringToBool() -- short and case-insensitive versions of "true"/"false"
+ * ToUpper/ToLower(string&) -- fixed
+ *
+ * Revision 1.39  2000/04/17 19:30:12  vakatov
+ * Allowed case-insensitive comparison for StartsWith() and EndsWith()
+ *
+ * Revision 1.38  2000/04/17 04:14:20  vakatov
+ * NStr::  extended Compare(), and allow case-insensitive string comparison
+ * NStr::  added ToLower() and ToUpper()
+ *
+ * Revision 1.37  2000/04/04 22:28:06  vakatov
+ * NStr::  added conversions for "long"
+ *
+ * Revision 1.36  2000/02/17 20:00:24  vasilche
+ * Added EResetVariant enum for serialization package.
+ *
+ * Revision 1.35  2000/01/20 16:24:20  vakatov
+ * Kludging around the "NcbiEmptyString" to ensure its initialization when
+ * it is used by the constructor of a statically allocated object
+ * (I believe that it is actually just another Sun WorkShop compiler "feature")
+ *
+ * Revision 1.34  1999/12/28 19:04:22  vakatov
+ * #HAVE_NO_MINMAX_TEMPLATE
+ *
+ * Revision 1.33  1999/12/28 18:55:25  vasilche
+ * Reduced size of compiled object files:
+ * 1. avoid inline or implicit virtual methods (especially destructors).
+ * 2. avoid std::string's methods usage in inline methods.
+ * 3. avoid string literals ("xxx") in inline methods.
+ *
+ * Revision 1.32  1999/12/17 19:04:06  vasilche
+ * NcbiEmptyString made extern.
+ *
+ * Revision 1.31  1999/12/03 21:36:45  vasilche
+ * Added forward decaration of CEnumeratedTypeValues
+ *
+ * Revision 1.30  1999/11/26 18:45:08  golikov
+ * NStr::Replace added
+ *
+ * Revision 1.29  1999/11/17 22:05:02  vakatov
+ * [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
+ *
+ * Revision 1.28  1999/10/26 18:10:24  vakatov
+ * [auto_ptr] -- simpler and more standard
+ *
+ * Revision 1.27  1999/09/29 22:22:37  vakatov
+ * [auto_ptr] Use "mutable" rather than "static_cast" on m_Owns; fixed a
+ *            double "delete" bug in reset().
+ *
+ * Revision 1.26  1999/09/14 18:49:40  vasilche
+ * Added forward declaration of CTypeInfo class.
+ *
+ * Revision 1.25  1999/07/08 14:44:52  vakatov
+ * Tiny fix in EndsWith()
+ *
+ * Revision 1.24  1999/07/06 15:21:04  vakatov
+ * + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
+ *
+ * Revision 1.23  1999/06/21 15:59:40  vakatov
+ * [auto_ptr] -- closer to standard:  added an ownership and
+ * initialization/assignment with "auto_ptr<>&", made "release()" be "const"
+ *
+ * Revision 1.22  1999/06/15 20:50:03  vakatov
+ * NStr::  +BoolToString, +StringToBool
+ *
+ * Revision 1.21  1999/05/28 20:12:29  vakatov
+ * [HAVE_NO_AUTO_PTR]  Prohibit "operator=" in the home-made "auto_ptr::"
+ *
+ * Revision 1.20  1999/04/16 17:45:31  vakatov
+ * [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
+ *
+ * Revision 1.19  1999/04/15 21:56:47  vakatov
+ * Introduced NcbiMin/NcbiMax to workaround some portability issues with
+ * the standard "min/max"
+ *
+ * Revision 1.18  1999/04/14 21:20:31  vakatov
+ * Dont use "snprintf()" as it is not quite portable yet
+ *
+ * Revision 1.17  1999/04/14 19:46:01  vakatov
+ * Fixed for the features:
+ *    { NCBI_OBSOLETE_STR_COMPARE, HAVE_NO_AUTO_PTR, HAVE_NO_SNPRINTF }
+ *
+ * Revision 1.16  1999/04/09 19:51:36  sandomir
+ * minor changes in NStr::StringToXXX - base added
+ *
+ * Revision 1.15  1999/01/21 16:18:04  sandomir
+ * minor changes due to NStr namespace to contain string utility functions
+ *
+ * Revision 1.14  1999/01/11 22:05:45  vasilche
+ * Fixed CHTML_font size.
+ * Added CHTML_image input element.
+ *
+ * Revision 1.13  1998/12/28 17:56:29  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.12  1998/12/21 17:19:36  sandomir
+ * VC++ fixes in ncbistd; minor fixes in Resource
+ *
+ * Revision 1.11  1998/12/17 21:50:43  sandomir
+ * CNCBINode fixed in Resource; case insensitive string comparison predicate
+ * added
+ *
+ * Revision 1.10  1998/12/15 17:38:16  vasilche
+ * Added conversion functions string <> int.
+ *
+ * Revision 1.9  1998/12/04 23:36:30  vakatov
+ * + NcbiEmptyCStr and NcbiEmptyString (const)
+ *
+ * Revision 1.8  1998/11/06 22:42:38  vakatov
+ * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+ * API to namespace "ncbi::" and to use it by default, respectively
+ * Introduced THROWS_NONE and THROWS(x) macros for the exception
+ * specifications
+ * Other fixes and rearrangements throughout the most of "corelib" code
+ *
+ * ==========================================================================
+ */
 
 #endif /* NCBISTD__HPP */

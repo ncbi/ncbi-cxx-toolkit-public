@@ -39,29 +39,6 @@
  *   CSafeStaticGuard::      -- guarantee for CSafePtr<> and CSafeRef<>
  *                              destruction and cleanup
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.6  2001/12/07 18:48:48  grichenk
- * Improved CSafeStaticGuard behaviour.
- *
- * Revision 1.5  2001/08/24 13:42:37  grichenk
- * Added CSafeStaticXXX::Set() methods for initialization with an
- * existing object
- *
- * Revision 1.4  2001/04/06 15:45:26  grichenk
- * Modified SelfCleanup() methods for more safety
- *
- * Revision 1.3  2001/03/30 23:10:10  grichenk
- * Protected from double initializations and deadlocks in multithread
- * environment
- *
- * Revision 1.2  2001/03/26 21:01:41  vakatov
- * CSafeStaticPtr, CSafeStaticRef -- added "operator *"
- *
- * Revision 1.1  2001/03/26 20:38:33  vakatov
- * Initial revision (by A.Grichenko)
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistl.hpp>
@@ -332,7 +309,36 @@ private:
 
 static CSafeStaticGuard s_CleanupGuard;
 
-
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.7  2002/04/11 20:39:15  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.6  2001/12/07 18:48:48  grichenk
+ * Improved CSafeStaticGuard behaviour.
+ *
+ * Revision 1.5  2001/08/24 13:42:37  grichenk
+ * Added CSafeStaticXXX::Set() methods for initialization with an
+ * existing object
+ *
+ * Revision 1.4  2001/04/06 15:45:26  grichenk
+ * Modified SelfCleanup() methods for more safety
+ *
+ * Revision 1.3  2001/03/30 23:10:10  grichenk
+ * Protected from double initializations and deadlocks in multithread
+ * environment
+ *
+ * Revision 1.2  2001/03/26 21:01:41  vakatov
+ * CSafeStaticPtr, CSafeStaticRef -- added "operator *"
+ *
+ * Revision 1.1  2001/03/26 20:38:33  vakatov
+ * Initial revision (by A.Grichenko)
+ *
+ * ===========================================================================
+ */
 
 #endif  /* NCBI_SAFE_STATIC__HPP */

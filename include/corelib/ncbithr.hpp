@@ -53,34 +53,6 @@
  *   SEMAPHORE:
  *      CSemaphore       -- application-wide semaphore
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.7  2001/12/10 18:07:53  vakatov
- * Added class "CSemaphore" -- application-wide semaphore
- *
- * Revision 1.6  2001/05/17 14:54:33  lavr
- * Typos corrected
- *
- * Revision 1.5  2001/03/30 22:57:32  grichenk
- * + CThread::GetSystemID()
- *
- * Revision 1.4  2001/03/26 21:45:28  vakatov
- * Workaround static initialization/destruction traps:  provide better
- * timing control, and allow safe use of the objects which are
- * either not yet initialized or already destructed. (with A.Grichenko)
- *
- * Revision 1.3  2001/03/13 22:43:19  vakatov
- * Full redesign.
- * Implemented all core functionality.
- * Thoroughly tested on different platforms.
- *
- * Revision 1.2  2000/12/11 06:48:51  vakatov
- * Revamped Mutex and RW-lock APIs
- *
- * Revision 1.1  2000/12/09 00:03:26  vakatov
- * First draft:  Mutex and RW-lock API
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiobj.hpp>
@@ -774,5 +746,40 @@ void CMutex::Unlock(void)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.8  2002/04/11 20:39:19  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.7  2001/12/10 18:07:53  vakatov
+ * Added class "CSemaphore" -- application-wide semaphore
+ *
+ * Revision 1.6  2001/05/17 14:54:33  lavr
+ * Typos corrected
+ *
+ * Revision 1.5  2001/03/30 22:57:32  grichenk
+ * + CThread::GetSystemID()
+ *
+ * Revision 1.4  2001/03/26 21:45:28  vakatov
+ * Workaround static initialization/destruction traps:  provide better
+ * timing control, and allow safe use of the objects which are
+ * either not yet initialized or already destructed. (with A.Grichenko)
+ *
+ * Revision 1.3  2001/03/13 22:43:19  vakatov
+ * Full redesign.
+ * Implemented all core functionality.
+ * Thoroughly tested on different platforms.
+ *
+ * Revision 1.2  2000/12/11 06:48:51  vakatov
+ * Revamped Mutex and RW-lock APIs
+ *
+ * Revision 1.1  2000/12/09 00:03:26  vakatov
+ * First draft:  Mutex and RW-lock API
+ *
+ * ===========================================================================
+ */
 
 #endif  /* NCBITHR__HPP */

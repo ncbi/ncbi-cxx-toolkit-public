@@ -2,81 +2,39 @@
 #define NCBIREG__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov
-*
-* File Description:
-*   Handle info in the NCBI configuration file(s):
-*      read and parse config. file
-*      search, edit, etc. in the retrieved configuration info
-*      dump info back to config. file
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.15  2001/09/11 00:46:56  vakatov
-* Fixes to R1.14:
-*   Renamed HasChanged() to Modified(), refined and extended its functionality
-*   Made Write() be "const" again
-*
-* Revision 1.14  2001/09/10 16:35:02  ivanov
-* Added method HasChanged()
-*
-* Revision 1.13  2001/06/22 21:50:20  ivanov
-* Added (with Denis Vakatov) ability for read/write the registry file
-* with comments. Also added functions GetComment() and SetComment().
-*
-* Revision 1.12  2001/05/17 14:54:01  lavr
-* Typos corrected
-*
-* Revision 1.11  2001/04/09 17:39:20  grichenk
-* CNcbiRegistry::Get() return type reverted to "const string&"
-*
-* Revision 1.10  2001/04/06 15:46:29  grichenk
-* Added thread-safety to CNcbiRegistry:: methods
-*
-* Revision 1.9  1999/09/02 21:53:23  vakatov
-* Allow '-' and '.' in the section/entry name
-*
-* Revision 1.8  1999/07/07 14:17:05  vakatov
-* CNcbiRegistry::  made the section and entry names be case-insensitive
-*
-* Revision 1.7  1999/07/06 15:26:31  vakatov
-* CNcbiRegistry::
-*   - allow multi-line values
-*   - allow values starting and ending with space symbols
-*   - introduced EFlags/TFlags for optional parameters in the class
-*     member functions -- rather than former numerous boolean parameters
-*
-* Revision 1.6  1998/12/28 17:56:28  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.5  1998/12/10 22:59:46  vakatov
-* CNcbiRegistry:: API is ready(and by-and-large tested)
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *   Handle info in the NCBI configuration file(s):
+ *      read and parse configuration file
+ *      search, edit, etc. in the retrieved configuration info
+ *      dump info back to config. file
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <list>
@@ -243,6 +201,55 @@ private:
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.16  2002/04/11 20:39:18  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.15  2001/09/11 00:46:56  vakatov
+ * Fixes to R1.14:
+ *   Renamed HasChanged() to Modified(), refined and extended its functionality
+ *   Made Write() be "const" again
+ *
+ * Revision 1.14  2001/09/10 16:35:02  ivanov
+ * Added method HasChanged()
+ *
+ * Revision 1.13  2001/06/22 21:50:20  ivanov
+ * Added (with Denis Vakatov) ability for read/write the registry file
+ * with comments. Also added functions GetComment() and SetComment().
+ *
+ * Revision 1.12  2001/05/17 14:54:01  lavr
+ * Typos corrected
+ *
+ * Revision 1.11  2001/04/09 17:39:20  grichenk
+ * CNcbiRegistry::Get() return type reverted to "const string&"
+ *
+ * Revision 1.10  2001/04/06 15:46:29  grichenk
+ * Added thread-safety to CNcbiRegistry:: methods
+ *
+ * Revision 1.9  1999/09/02 21:53:23  vakatov
+ * Allow '-' and '.' in the section/entry name
+ *
+ * Revision 1.8  1999/07/07 14:17:05  vakatov
+ * CNcbiRegistry::  made the section and entry names be case-insensitive
+ *
+ * Revision 1.7  1999/07/06 15:26:31  vakatov
+ * CNcbiRegistry::
+ *   - allow multi-line values
+ *   - allow values starting and ending with space symbols
+ *   - introduced EFlags/TFlags for optional parameters in the class
+ *     member functions -- rather than former numerous boolean parameters
+ *
+ * Revision 1.6  1998/12/28 17:56:28  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.5  1998/12/10 22:59:46  vakatov
+ * CNcbiRegistry:: API is ready(and by-and-large tested)
+ * ===========================================================================
+ */
 
 #endif  /* NCBIREG__HPP */
 
