@@ -21,11 +21,11 @@ kill $server_pid  ||  exit_code=2
 ( kill -9 $server_pid ) >/dev/null 2>&1
 if [ $exit_code != 0 ]; then
   if [ -s $client_log ]; then
-    echo '=== $client_log ==='
+    echo "=== $client_log ==="
     cat $client_log
   fi
   if [ -s $server_log ]; then
-    echo '=== $server_log ==='
+    echo "=== $server_log ==="
     cat $server_log
   fi
 fi
