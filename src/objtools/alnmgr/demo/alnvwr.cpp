@@ -62,6 +62,7 @@ USING_SCOPE(objects);
 
 void LogTime(const string& s)
 {
+
     static time_t prev_t;
     time_t        t = time(0);
 
@@ -80,9 +81,10 @@ class CAlnMgrTestApp : public CNcbiApplication
     void             View1();
     void             View2(int screen_width);
     void             View3(int screen_width);
-    void             View4();
+    void             View4(int screen_width);
     void             View5();
     void             View6();
+    void             View7();
     void             GetSeqPosFromAlnPosDemo();
 private:
     CRef<CAlnVec> m_AV;
@@ -116,35 +118,16 @@ void CAlnMgrTestApp::Init(void)
          "Anchor row (zero based)",
          CArgDescriptions::eInteger);
 
-    arg_desc->AddDefaultKey
-        ("v1", "",
-         "View1: Prints in table format.",
-         CArgDescriptions::eBoolean, "f");
-
-    arg_desc->AddDefaultKey
-        ("v2", "",
-         "View2: Prints in popset viewer style.",
-         CArgDescriptions::eBoolean, "f");
-
-    arg_desc->AddDefaultKey
-        ("v3", "",
-         "View3: Prints in popset viewer style. Alternative.",
-         CArgDescriptions::eBoolean, "f");
-
-    arg_desc->AddDefaultKey
-        ("v4", "",
-         "View4: Prints segments",
-         CArgDescriptions::eBoolean, "f");
-
-    arg_desc->AddDefaultKey
-        ("v5", "",
-         "View5: Prints chunks.",
-         CArgDescriptions::eBoolean, "f");
-
-    arg_desc->AddDefaultKey
-        ("v6", "",
-         "View6: Alternative ways to get the sequence.",
-         CArgDescriptions::eBoolean, "f");
+    arg_desc->AddOptionalKey
+        ("v", "",
+         "View format:\n"
+         "1. CSV table\n"
+         "2. Popset style using chunks\n"
+         "3. Popset style\n"
+         "4. Popset style speed optimized\n"
+         "5. Print chunks\n"
+         "6. Alternative ways to get sequence\n",
+         CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
         ("cf", "GetChunkFlags",
@@ -216,17 +199,19 @@ void CAlnMgrTestApp::LoadDenseg(void)
 
 void CAlnMgrTestApp::View1()
 {
-    cout << endl << "\t";
+    cout << ",";
     for (int seg=0; seg<m_AV->GetNumSegs(); seg++) {
-        cout << m_AV->GetLen(seg) << "\t";
-    }
-    for (int row=0; row<m_AV->GetNumRows(); row++) {
-        cout << row << "\t";
-        for (int seg=0; seg<m_AV->GetNumSegs(); seg++) {
-            cout << m_AV->GetStart(row, seg);
-        }
+        cout << "," << m_AV->GetLen(seg) << ",";
     }
     cout << endl;
+    for (int row=0; row<m_AV->GetNumRows(); row++) {
+        cout << row << ",";
+        for (int seg=0; seg<m_AV->GetNumSegs(); seg++) {
+            cout << m_AV->GetStart(row, seg) << "," 
+                 << m_AV->GetStop(row, seg) << ",";
+        }
+        cout << endl;
+    }
 }
 
 void CAlnMgrTestApp::View2(int screen_width)
@@ -258,9 +243,10 @@ void CAlnMgrTestApp::View2(int screen_width)
     } while (aln_pos < m_AV->GetAlnStop());
 }
 
+
 void CAlnMgrTestApp::View3(int screen_width)
 {
-    TSeqPos aln_len = m_AV->GetAlnStop();
+    TSeqPos aln_len = m_AV->GetAlnStop() + 1;
     const CAlnMap::TNumrow nrows = m_AV->GetNumRows();
     const CAlnMap::TNumseg nsegs = m_AV->GetNumSegs();
     const CDense_seg::TStarts& starts = m_AV->GetDenseg().GetStarts();
@@ -285,7 +271,7 @@ void CAlnMgrTestApp::View3(int screen_width)
                 break;
             }
         }
-            
+
         for (seg = 0, pos = row;  seg < nsegs; ++seg, pos += nrows) {
             len = lens[seg];
             if ((start = starts[pos]) >= 0) {
@@ -315,7 +301,7 @@ void CAlnMgrTestApp::View3(int screen_width)
     do {
         for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
             cout << m_AV->GetSeqId(row)
-                 << "\t" 
+                 << "\t"
                  << m_AV->GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
                  << "\t"
                  << buffer[row].substr(pos, screen_width)
@@ -333,10 +319,204 @@ void CAlnMgrTestApp::View3(int screen_width)
 }
 
 
+void CAlnMgrTestApp::View4(int scrn_width)
+{
+    TSeqPos aln_pos, len, curr_pos, anchor_pos, scrn_pos;
+    TSignedSeqPos start, stop, scrn_lft_seq_pos, scrn_rgt_seq_pos;
+    int seg, pos, left_seg, right_seg, nscrns, delta;
+    
+    TSeqPos                    aln_len    = m_AV->GetAlnStop() + 1;
+    CAlnMap::TNumrow           row        = 0,
+                               anchor_row = m_AV->GetAnchor();
+    const CAlnMap::TNumrow     nrows      = m_AV->GetNumRows();
+    const CAlnMap::TNumseg     nsegs      = m_AV->GetNumSegs();
+    const CDense_seg::TStarts& starts     = m_AV->GetDenseg().GetStarts();
+    const CDense_seg::TLens&   lens       = m_AV->GetDenseg().GetLens();
+    const bool                 anchored   = (bool)(anchor_row >= 0);
+    bool plus;
+
+    vector<string> buffer(nrows);
+    vector<list <TSeqPos> > insert_starts(nrows);
+    vector<list <TSeqPos> > insert_lens(nrows);
+    vector<list <TSeqPos> > scrn_lefts(nrows);
+    vector<list <TSeqPos> > scrn_rights(nrows);
+    
+    for (row = 0; row < nrows; row++) {
+
+        // allocate space for the row
+        buffer[row].reserve(aln_len + 1);
+        string buff;
+
+        left_seg = -1;
+        right_seg = -1;
+        aln_pos = 0;
+        scrn_pos = 0;
+        len = 0;
+        start = -1;
+        stop = -1;
+        scrn_lft_seq_pos = -1;
+        scrn_rgt_seq_pos = -1;
+
+        plus = m_AV->IsPositiveStrand(row);
+
+        // determine the ending left seg
+        for (seg = 0, pos = 0;
+             seg < nrows;
+             seg++, pos += nrows) {
+            if (starts[pos] >= 0) {
+                left_seg = seg;
+                break;
+            }
+        }
+            
+        // determine the ending right seg
+        for (seg = nsegs - 1, pos = seg * nrows + row;
+             seg >= 0;
+             --seg, pos -= nrows) {
+            if (starts[pos] >= 0) {
+                right_seg = seg;
+                break;
+            }
+        }
+
+        for (seg = 0, pos = row, aln_pos = 0, anchor_pos = anchor_row;
+             seg < nsegs;
+             ++seg, pos += nrows, anchor_pos += nrows, aln_pos += len) {
+
+            len = lens[seg];
+
+            if ((start = starts[pos]) >= 0) {
+
+                stop = start + len - 1;
+
+
+                if (anchored  &&  starts[anchor_pos] < 0) {
+                    // record the insert
+                    insert_starts[row].push_back(start);
+                    insert_lens[row].push_back(stop);
+                } else {
+                    // add regular sequence to buffer
+                    m_AV->GetSeqString(buff, row, start, stop);
+                    buffer[row] += buff;
+
+                    // take care of coords if necessary
+                    {{
+                        if (scrn_lft_seq_pos < 0) {
+                            scrn_lft_seq_pos = plus ? start : stop;
+                            if (scrn_rgt_seq_pos < 0) {
+                                scrn_rgt_seq_pos = scrn_lft_seq_pos;
+                            }
+                        }
+                        // previous scrns
+                        nscrns = (aln_pos - scrn_pos) / scrn_width;
+                        for (int i = 0; i < nscrns; i++) {
+                            scrn_lefts[row].push_back(scrn_lft_seq_pos);
+                            scrn_rights[row].push_back(scrn_rgt_seq_pos);
+                            scrn_pos += scrn_width;
+                        }
+                        if (nscrns > 0) {
+                            scrn_lft_seq_pos = plus ? start : stop;
+                        }
+                        // current scrns
+                        nscrns = (aln_pos + len - scrn_pos) / scrn_width;
+                        curr_pos = aln_pos;
+                        for (int i = 0; i < nscrns; i++) {
+                            delta = plus ?
+                                scrn_width - (curr_pos - scrn_pos) :
+                                curr_pos - scrn_pos - scrn_width;
+                            
+                            scrn_lefts[row].push_back(scrn_lft_seq_pos);
+                            if (plus ?
+                                scrn_lft_seq_pos < start :
+                                scrn_lft_seq_pos > stop) {
+                                scrn_lft_seq_pos = (plus ? start : stop) +
+                                    delta;
+                                scrn_rgt_seq_pos = scrn_lft_seq_pos +
+                                    (plus ? -1 : 1);
+                            } else {
+                                scrn_lft_seq_pos += delta;
+                                scrn_rgt_seq_pos += delta;
+                            }
+                            if (seg == left_seg  &&
+                                !scrn_rights[row].size()) {
+                                if (plus) {
+                                    scrn_rgt_seq_pos--;
+                                } else {
+                                    scrn_rgt_seq_pos++;
+                                }
+                            }
+                            scrn_rights[row].push_back(scrn_rgt_seq_pos);
+                            curr_pos = scrn_pos += scrn_width;
+                        }
+                        if (aln_pos + len <= scrn_pos) {
+                            scrn_lft_seq_pos = -1; // reset
+                        }
+                        scrn_rgt_seq_pos = plus ? stop : start;
+                    }}
+                }
+
+
+            } else {
+
+                // add appropriate number of gap/end chars
+                char* ch_buff = new char[len+1];
+                char fill_ch;
+
+                if (seg < left_seg  ||  seg > right_seg  &&  right_seg > 0) {
+                    fill_ch = m_AV->GetEndChar();
+                } else {
+                    fill_ch = m_AV->GetGapChar(row);
+                }
+
+                memset(ch_buff, fill_ch, len);
+                ch_buff[len] = 0;
+                buffer[row] += ch_buff;
+                delete[] ch_buff;
+            }
+
+
+        }
+
+        // take care of the remaining coords if necessary
+        {{
+            // previous scrns
+            nscrns = (aln_pos - scrn_pos) / (aln_len % scrn_width);
+            for (int i = 0; i < nscrns; i++) {
+                scrn_lefts[row].push_back(scrn_lft_seq_pos);
+                scrn_rights[row].push_back(scrn_rgt_seq_pos);
+                scrn_pos += scrn_width;
+            }
+        }}
+
+    }
+
+    pos = 0;
+    do {
+        for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
+            cout << m_AV->GetSeqId(row)
+                 << "\t" 
+                 << scrn_lefts[row].front()
+                 << "\t"
+                 << buffer[row].substr(pos, scrn_width)
+                 << "\t"
+                 << scrn_rights[row].front()
+                 << endl;
+            scrn_lefts[row].pop_front();
+            scrn_rights[row].pop_front();
+        }
+        cout << endl;
+        pos += scrn_width;
+        if (pos + scrn_width > aln_len) {
+            scrn_width = aln_len - pos;
+        }
+    } while (pos < aln_len);
+}
+
+
 
 // print segments
 
-void CAlnMgrTestApp::View4()
+void CAlnMgrTestApp::View5()
 {
     CAlnMap::TNumrow row;
 
@@ -378,7 +558,7 @@ void CAlnMgrTestApp::View4()
 
 // print chunks
 
-void CAlnMgrTestApp::View5()
+void CAlnMgrTestApp::View6()
 {
     CArgs args = GetArgs();
     CAlnMap::TNumrow row;
@@ -424,7 +604,7 @@ void CAlnMgrTestApp::View5()
 
 // alternative ways to get the sequence
 
-void CAlnMgrTestApp::View6()
+void CAlnMgrTestApp::View7()
 {
     string buff;
     CAlnMap::TNumseg seg;
@@ -489,27 +669,18 @@ int CAlnMgrTestApp::Run(void)
         m_AV->SetAnchor(args["a"].AsInteger());
     }
 
-    if (args["v1"]  &&  args["v1"].AsBoolean()) {
-        View1();
-    }
-    if (args["v2"]  &&  args["v2"].AsBoolean()) {
-        m_AV->SetGapChar('-');
-        m_AV->SetEndChar('.');
-        View2(40);
-    }
-    if (args["v3"]  &&  args["v3"].AsBoolean()) {
-        m_AV->SetGapChar('-');
-        m_AV->SetEndChar('.');
-        View3(40);
-    }
-    if (args["v4"]  &&  args["v4"].AsBoolean()) {
-        View4();
-    }
-    if (args["v5"]  &&  args["v5"].AsBoolean()) {
-        View5();
-    }
-    if (args["v6"]  &&  args["v6"].AsBoolean()) {
-        View6();
+    m_AV->SetGapChar('-');
+    m_AV->SetEndChar('.');
+    if (args["v"]) {
+        switch (args["v"].AsInteger()) {
+        case 1: View1(); break;
+        case 2: View2(40); break;
+        case 3: View3(40); break;
+        case 4: View4(40); break;
+        case 5: View5(); break;
+        case 6: View6(); break;
+        case 7: View7(); break;
+        }
     }
     return 0;
 }
@@ -529,6 +700,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/14 20:25:18  todorov
+* Added another, even faster viewer
+*
 * Revision 1.4  2003/07/08 19:27:46  todorov
 * Added an speed-optimized viewer
 *
