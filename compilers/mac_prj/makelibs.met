@@ -111,7 +111,7 @@ on SetProjectData()
 		
 		set myFiles to {"email_diag_handler.cpp", "ncbi_ansi_ext.c", "ncbi_buffer.c", "ncbi_conn_stream.cpp", ¬
 			"ncbi_conn_streambuf.cpp", "ncbi_connection.c", "ncbi_connector.c", "ncbi_connutil.c", ¬
-			"ncbi_core.c", "ncbi_core_cxx.cpp", "ncbi_file_connector.c", "ncbi_heapmgr.c", ¬
+			"ncbi_core.c", "ncbi_core_cxx.cpp", "ncbi_file_connector.c", "ncbi_heapmgr.c", "ncbi_host_info.c", ¬
 			"ncbi_http_connector.c", "ncbi_memory_connector.c", "ncbi_priv.c", "ncbi_sendmail.c", ¬
 			"ncbi_server_info.c", "ncbi_service.c", "ncbi_service_connector.c", "ncbi_dispd.c", ¬
 			"ncbi_lbsmd_stub.c", "ncbi_socket.c", "ncbi_socket_connector.c", "ncbi_util.c", "threaded_server.cpp"}
