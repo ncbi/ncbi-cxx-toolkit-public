@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/04/12 21:44:34  vakatov
+* Added dummy and private NStr::ToUpper/Lower(const char*) to prohibit
+* passing of constant C strings to the "regular" NStr::ToUpper/Lower()
+* variants.
+*
 * Revision 1.3  2001/03/16 19:38:55  grichenk
 * Added NStr::Split()
 *
@@ -74,7 +79,9 @@ private:
 
 
 // String-processing utilities
-struct NStr {
+class NStr
+{
+public:
     // conversion functions (throw an exception on the conversion error)
     static int StringToInt(const string& str, int base = 10);
     static unsigned int StringToUInt(const string& str, int base = 10);
@@ -128,11 +135,16 @@ struct NStr {
     static int Compare(const string& s1, const string& s2,
                        ECase use_case = eCase);
     
-    // these 4 methods change the passed string, then return it
+    // The following 4 methods change the passed string, then return it
     static string& ToLower(string& str);
     static char*   ToLower(char*   str);
     static string& ToUpper(string& str);
     static char*   ToUpper(char*   str);
+    // ...and these two are just dummies to prohibit passing constant C strings
+private:
+    static void/*dummy*/ ToLower(const char* /*dummy*/);
+    static void/*dummy*/ ToUpper(const char* /*dummy*/);
+public:
 
     static bool StartsWith(const string& str, const string& start,
                            ECase use_case = eCase);
@@ -146,16 +158,17 @@ struct NStr {
     };
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 
-    // starting from position "start_pos", replace no more than "max_replace"
-    // occurencies of substring "search" by string "replace"
-    // if "max_replace" is zero -- then replace all occurences.
+    // Starting from position "start_pos", replace no more than "max_replace"
+    // occurencies of substring "search" by string "replace".
+    // If "max_replace" is zero -- then replace all occurences.
+    // The result will be put to string "dst", and it will be returned as well.
     static string& Replace(const string& src,
                            const string& search,
                            const string& replace,
                            string& dst,
                            SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
-    // the same as the above Replace(), but return new string
+    // The same as the above Replace(), but return new string
     static string Replace(const string& src,
                           const string& search,
                           const string& replace,
