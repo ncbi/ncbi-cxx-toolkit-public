@@ -1436,8 +1436,10 @@ extern const char* StringToHostPort(const char*     str,
     size_t alen;
     int n = 0;
 
-    *host = 0;
-    *port = 0;
+    if (host)
+        *host = 0;
+    if (port)
+        *port = 0;
     for (s = str; *s; s++) {
         if (isspace((unsigned char)(*s)) || *s == ':')
             break;
@@ -1456,8 +1458,10 @@ extern const char* StringToHostPort(const char*     str,
             return alen ? 0 : str;
     } else
         p = 0;
-    *host = h;
-    *port = p;
+    if (host)
+        *host = h;
+    if (port)
+        *port = p;
     return s + n;
 }
 
@@ -1493,6 +1497,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2004/10/14 13:51:42  lavr
+ * StringToHostPort() to allow NULL ptrs
+ *
  * Revision 6.64  2004/04/06 19:25:56  lavr
  * Fix ConnNetInfo_DeleteArg() to remove arg's trailing '&'
  *
