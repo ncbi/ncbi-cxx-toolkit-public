@@ -47,6 +47,7 @@ public:
         eInvalidRow,
         eInvalidSegment,
         eInvalidDenseg,
+        eMergeFailure,
         eUnknownMergeFailure
     };
 
@@ -59,6 +60,7 @@ public:
         case eInvalidRow:           return "eInvalidRow";
         case eInvalidSegment:       return "eInvalidSegment";
         case eInvalidDenseg:        return "eInvalidDenseg";
+        case eMergeFailure:         return "eMergeFailure";
         case eUnknownMergeFailure:  return "eUnknownMergeFailure";
         default:                    return CException::GetErrCodeString();
         }
@@ -74,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/12/18 15:00:26  ucko
+ * +eMergeFailure
+ *
  * Revision 1.3  2002/09/27 17:35:44  todorov
  * added a merge exception
  *
