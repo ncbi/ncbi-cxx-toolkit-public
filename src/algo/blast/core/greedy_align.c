@@ -41,13 +41,6 @@ static char const rcsid[] =
 #include <algo/blast/core/greedy_align.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 
-/** Constants used during greedy alignment */
-enum {
-    MAX_SPACE = 1000000, /**< The number of SThreeVal structures available
-                              in a single link of the greedy memory pool */
-    LARGE = 100000000,   /**< used to represent infinity */
-};
-
 /** Ensures that an edit script has enough memory allocated
     to hold a given number of edit operations
 
@@ -207,22 +200,23 @@ SMBSpace*
 MBSpaceNew()
 {
     SMBSpace* new_space;
-    
+    const Int4 kMaxSpace = 1000000; 
+
     /** @todo FIXME: Later code assumes that a request will
-       never be made for more than MAX_SPACE structures at once */
+       never be made for more than kMaxSpace structures at once */
 
     new_space = (SMBSpace*)malloc(sizeof(SMBSpace));
     if (new_space == NULL)
         return NULL;
 
     new_space->space_array = (SThreeVal*)malloc(
-                                   MAX_SPACE * sizeof(SThreeVal));
+                                   kMaxSpace * sizeof(SThreeVal));
     if (new_space->space_array == NULL) {
         sfree(new_space);
         return NULL;
     }
     new_space->space_used = 0; 
-    new_space->space_allocated = MAX_SPACE;
+    new_space->space_allocated = kMaxSpace;
     new_space->next = NULL;
 
     return new_space;
@@ -709,6 +703,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     Int4 max_d;
     Int4* uplow_free;
     Int4 max_len = len2;
+    const Int4 kMaxScore = 100000000;   /* represents infinity */
  
     if (match_score % 2 == 1) {
         match_score *= 2;
@@ -814,8 +809,8 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
 
     /* set boundary for -1,-2,...,-max_cost+1*/
     for (k = 0; k < max_cost; k++) {
-        lower[k] = LARGE;  
-        upper[k] = -LARGE;
+        lower[k] = kMaxScore;  
+        upper[k] = -kMaxScore;
     }
     lower += max_cost;
     upper += max_cost; 
@@ -965,8 +960,8 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
             upper[d] = fupper;
         } 
         else {
-            lower[d] = LARGE; 
-            upper[d] = -LARGE;
+            lower[d] = kMaxScore; 
+            upper[d] = -kMaxScore;
         }
 
         if (lower[d-max_cost] <= upper[d-max_cost]) 
