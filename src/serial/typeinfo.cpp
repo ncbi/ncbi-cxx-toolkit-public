@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/12/23 18:42:22  dicuccio
+* Added #include to avoid warnings in Wn32 about deletion of incomplete types
+*
 * Revision 1.34  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -180,6 +183,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
+#include <serial/serialimpl.hpp>
 #include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
