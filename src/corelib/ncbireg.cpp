@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/08 23:39:32  vakatov
+* Comment starts from ';'(rather than '#')
+*
 * Revision 1.2  1998/12/08 23:32:47  vakatov
 * Redesigned to support "transient" parameters.
 * Still "a very draft"(compile through only).
@@ -72,7 +75,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, bool override, bool transient)
     for (line = 0;  NcbiGetline(is >> NcbiWs, str, '\n');  line++) {
         _ASSERT( !str.empty()  &&  !isspace(str[0]) );
         switch ( str[0] ) {
-        case '#':  { // comment
+        case ';':  { // comment
             break;
         }
 

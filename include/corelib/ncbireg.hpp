@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/08 23:39:29  vakatov
+* Comment starts from ';'(rather than '#')
+*
 * Revision 1.2  1998/12/08 23:32:46  vakatov
 * Redesigned to support "transient" parameters.
 * Still "a very draft"(compile through only).
@@ -61,7 +64,7 @@ BEGIN_NCBI_SCOPE
 // name2 = value2
 // ..............
 // [section2]
-// # This is a comment...
+// ; This is a comment...
 // name1 = value1
 // .............. 
 
