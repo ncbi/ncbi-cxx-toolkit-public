@@ -52,7 +52,8 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
      m_Configs       (configs),
 	 m_Name          ("_MasterProject"),
      m_ProjectDir    (project_dir),
-     m_ProjectItemExt("._")
+     m_ProjectItemExt("._"),
+     m_FilesSubdir   ("UtilityProjectsFiles")
 {
     m_CustomBuildCommand  = "@echo on\n";
     m_CustomBuildCommand += "devenv "\
@@ -223,7 +224,6 @@ s_RegisterCreatedFilter(CRef<CFilter>& filter, CSerialObject* parent)
     }}
 }
 
-
 void 
 CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter, 
                                                 const string&  project_id)
@@ -237,12 +237,20 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter,
         CreateProjectFileItem(project);
 
         SCustomBuildInfo build_info;
-        build_info.m_SourceFile  = project.m_ID + m_ProjectItemExt;
+        string source_file_path_abs = 
+            CDirEntry::ConcatPath(m_ProjectDir, 
+                                  project.m_ID + m_ProjectItemExt);
+        source_file_path_abs = CDirEntry::NormalizePath(source_file_path_abs);
+
+        build_info.m_SourceFile  = source_file_path_abs;
         build_info.m_Description = "Building project : $(InputName)";
         build_info.m_CommandLine = m_CustomBuildCommand;
         build_info.m_Outputs     = "$(InputPath).aanofile.out";
         
-        AddCustomBuildFileToFilter(filter, m_Configs, build_info);
+        AddCustomBuildFileToFilter(filter, 
+                                   m_Configs, 
+                                   m_ProjectDir, 
+                                   build_info);
 
     } else {
         LOG_POST(Error << "No project with id : " + project_id);
@@ -254,6 +262,7 @@ void
 CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjItem& project)
 {
     string file_path = CDirEntry::ConcatPath(m_ProjectDir, project.m_ID);
+
     file_path += m_ProjectItemExt;
 
     // Create dir if no such dir...
@@ -275,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/12 16:27:56  gorelenk
+ * Changed generation of command line for datatool.
+ *
  * Revision 1.9  2004/02/10 22:12:43  gorelenk
  * Added creation of new dir while saving _MasterProject parts.
  *

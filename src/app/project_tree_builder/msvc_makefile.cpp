@@ -40,8 +40,12 @@ BEGIN_NCBI_SCOPE
 CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
 {
     CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
-    if (ifs)
+    if (ifs) {
+        //read registry
         m_MakeFile.Read(ifs);
+        //and remember dir from where it was loaded
+        CDirEntry::SplitPath(file_path, &m_MakeFileBaseDir);
+    }
 }
 
 
@@ -191,7 +195,10 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
         const string& source_file = *p;
         
         SCustomBuildInfo build_info;
-        build_info.m_SourceFile = source_file;
+        string source_file_path_abs = 
+            CDirEntry::ConcatPath(m_MakeFileBaseDir, source_file);
+        build_info.m_SourceFile = 
+            CDirEntry::NormalizePath(source_file_path_abs);
         build_info.m_CommandLine = 
             m_MakeFile.GetString(source_file, "CommandLine", "");
         build_info.m_Description = 
@@ -251,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/12 16:27:56  gorelenk
+ * Changed generation of command line for datatool.
+ *
  * Revision 1.4  2004/02/10 18:02:46  gorelenk
  * + GetAdditionalLIB.
  * + GetExcludedLIB - customization of depends.

@@ -18,8 +18,9 @@ static void s_CollectRelPathes(const string&       path_from,
 
 static 
 void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
-                                   const CDataToolGeneratedSrc& src,                                   
-                                   SCustomBuildInfo*            build_info);
+                                   const CMsvcPrjProjectContext& context,
+                                   const CDataToolGeneratedSrc&  src,                                   
+                                   SCustomBuildInfo*             build_info);
 
 //-----------------------------------------------------------------------------
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<SConfigInfo>& configs)
@@ -454,7 +455,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             
             ITERATE(list<SCustomBuildInfo>, p, info_list) { 
                 const SCustomBuildInfo& build_info = *p;
-                AddCustomBuildFileToFilter(filter, m_Configs, build_info);
+                AddCustomBuildFileToFilter(filter, 
+                                           m_Configs, 
+                                           project_context.ProjectDir(),
+                                           build_info);
             }
 
             xmlprj.SetFiles().SetFilter().push_back(filter);
@@ -472,8 +476,14 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
                 const CDataToolGeneratedSrc& src = *p;
                 SCustomBuildInfo build_info;
-                CreateDatatoolCustomBuildInfo(prj, src, &build_info);
-                AddCustomBuildFileToFilter(filter, m_Configs, build_info);
+                CreateDatatoolCustomBuildInfo(prj, 
+                                              project_context, 
+                                              src, 
+                                              &build_info);
+                AddCustomBuildFileToFilter(filter, 
+                                           m_Configs, 
+                                           project_context.ProjectDir(), 
+                                           build_info);
             }
 
             xmlprj.SetFiles().SetFilter().push_back(filter);
@@ -498,6 +508,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
 static 
 void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
+                                   const CMsvcPrjProjectContext& context,
                                    const CDataToolGeneratedSrc& src,                                   
                                    SCustomBuildInfo*            build_info)
 {
@@ -518,8 +529,14 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
         return;
     //command line
     string tool_cmd_prfx = GetApp().GetDatatoolCommandLine();
+    tool_cmd_prfx += " -or ";
+    tool_cmd_prfx += 
+        CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src,
+                                      prj.m_SourcesBaseDir);
+
     tool_cmd_prfx += " -oR ";
-    tool_cmd_prfx += GetApp().GetProjectTreeInfo().m_Root;
+    tool_cmd_prfx += CDirEntry::CreateRelativePath(context.ProjectDir(),
+                                         GetApp().GetProjectTreeInfo().m_Root);
 
     string tool_cmd(tool_cmd_prfx);
     if ( !src.m_ImportModules.empty() ) {
@@ -728,6 +745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/12 16:27:57  gorelenk
+ * Changed generation of command line for datatool.
+ *
  * Revision 1.14  2004/02/10 18:09:12  gorelenk
  * Added definitions of functions SaveIfNewer and PromoteIfDifferent
  * - support for file overwriting only if it was changed.

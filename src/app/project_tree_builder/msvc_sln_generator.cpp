@@ -66,12 +66,27 @@ CMsvcSolutionGenerator::AddMasterProject(const string& base_name)
 }
 
 
+void 
+CMsvcSolutionGenerator::AddConfigureProject(const string& base_name)
+{
+    m_ConfigureProject.first  = base_name;
+    m_ConfigureProject.second = GenerateSlnGUID();
+}
+
+
 bool 
 CMsvcSolutionGenerator::IsSetMasterProject(void) const
 {
     return !m_MasterProject.first.empty() && !m_MasterProject.second.empty();
 }
 
+
+bool 
+CMsvcSolutionGenerator::IsSetConfigureProject(void) const
+{
+    return !m_ConfigureProject.first.empty() && 
+           !m_ConfigureProject.second.empty();
+}
 
 void 
 CMsvcSolutionGenerator::SaveSolution(const string& file_path)
@@ -93,7 +108,9 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         WriteProjectAndSection(ofs, p->second);
     }
     if ( IsSetMasterProject() )
-        WriteMasterProject(ofs);
+        WriteUtilityProject(m_MasterProject,    ofs);
+    if ( IsSetConfigureProject() )
+        WriteUtilityProject(m_ConfigureProject, ofs);
 
     //Start "Global" section
     ofs << "Global" << endl;
@@ -115,7 +132,9 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         WriteProjectConfigurations(ofs, p->second);
     }
     if ( IsSetMasterProject() )
-        WriteMasterProjectConfiguration(ofs);
+        WriteUtilityProjectConfiguration(m_MasterProject,   ofs);
+    if ( IsSetConfigureProject() )
+        WriteUtilityProjectConfiguration(m_ConfigureProject,ofs);
 
     ofs << '\t' << "EndGlobalSection" << endl;
 
@@ -238,18 +257,19 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
 
 
 void 
-CMsvcSolutionGenerator::WriteMasterProject(CNcbiOfstream& ofs)
+CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
+                                            CNcbiOfstream& ofs)
 {
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
         << "\") = \"" 
-        << m_MasterProject.first //basename
+        << project.first //basename
         << "\", \"";
 
-    ofs << m_MasterProject.first + MSVC_PROJECT_FILE_EXT 
+    ofs << project.first + MSVC_PROJECT_FILE_EXT 
         << "\", \"";
 
-    ofs << m_MasterProject.second //m_GUID 
+    ofs << project.second //m_GUID 
         << "\"" 
         << endl;
 
@@ -290,14 +310,15 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
 
 
 void 
-CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
+CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& project,
+                                                        CNcbiOfstream& ofs)
 {
     ITERATE(list<SConfigInfo>, p, m_Configs) {
 
         const string& config = (*p).m_Name;
         ofs << '\t' 
             << '\t' 
-            << m_MasterProject.second // project.m_GUID 
+            << project.second // project.m_GUID 
             << '.' 
             << config 
             << ".ActiveCfg = " 
@@ -306,7 +327,7 @@ CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
 
         ofs << '\t' 
             << '\t' 
-            << m_MasterProject.second // project.m_GUID 
+            << project.second // project.m_GUID 
             << '.' 
             << config 
             << ".Build.0 = " 
@@ -321,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/12 16:27:58  gorelenk
+ * Changed generation of command line for datatool.
+ *
  * Revision 1.8  2004/02/10 18:20:16  gorelenk
  * Changed LOG_POST messages.
  *

@@ -304,10 +304,13 @@ string ConfigName(const string& config)
 
 void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
                                 const list<SConfigInfo> configs,
+                                const string&           project_dir,
                                 const SCustomBuildInfo& build_info)
 {
     CRef<CFFile> file(new CFFile());
-    file->SetAttlist().SetRelativePath(build_info.m_SourceFile);
+    file->SetAttlist().SetRelativePath
+        (CDirEntry::CreateRelativePath(project_dir, 
+                                       build_info.m_SourceFile));
 
     ITERATE(list<SConfigInfo>, n , configs) {
         // Iterate all configurations
@@ -348,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/12 16:27:57  gorelenk
+ * Changed generation of command line for datatool.
+ *
  * Revision 1.11  2004/02/10 18:09:12  gorelenk
  * Added definitions of functions SaveIfNewer and PromoteIfDifferent
  * - support for file overwriting only if it was changed.
