@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/09/24 20:32:34  lavr
+ * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
+ *
  * Revision 1.2  2001/06/28 23:01:53  vakatov
  * Typo fixed (self-#include)
  *
@@ -91,20 +94,21 @@ AsnIoPtr CreateAsnConn
  *       CONN_Close(), both pointers become invalid, and should not be used.
  */
 CONN CreateAsnConn_ServiceEx
-(const char*         service_name,
- EAsnConn_Format     input_fmt,
- AsnIoPtr*           input,
- EAsnConn_Format     output_fmt,
- AsnIoPtr*           output,
- TSERV_Type          type,
- const SConnNetInfo* info
+(const char*           service,
+ EAsnConn_Format       input_fmt,
+ AsnIoPtr*             input,
+ EAsnConn_Format       output_fmt,
+ AsnIoPtr*             output,
+ TSERV_Type            type,
+ const SConnNetInfo*   net_info,
+ const SSERVICE_Extra* params
  );
 
 
 /* Equivalent of CreateAsnConn_ServiceEx with zeroes in last two arguments.
  */
 CONN CreateAsnConn_Service
-(const char*     service_name,
+(const char*     service,
  EAsnConn_Format input_fmt,
  AsnIoPtr*       input,
  EAsnConn_Format output_fmt,

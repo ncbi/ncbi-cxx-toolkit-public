@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/09/24 20:32:44  lavr
+ * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
+ *
  * Revision 1.2  2001/06/29 14:04:17  lavr
  * Close callback removes itself when called; fixes not to add callbacks
  * in CreateAsnConn_ServiceEx, because they are already there!
@@ -145,16 +148,17 @@ AsnIoPtr CreateAsnConn(CONN               conn,
 }
 
 
-CONN CreateAsnConn_ServiceEx(const char*         service_name,
-                             EAsnConn_Format     input_fmt,
-                             AsnIoPtr*           input,
-                             EAsnConn_Format     output_fmt,
-                             AsnIoPtr*           output,
-                             TSERV_Type          service_type,
-                             const SConnNetInfo* info)
+CONN CreateAsnConn_ServiceEx(const char*           service,
+                             EAsnConn_Format       input_fmt,
+                             AsnIoPtr*             input,
+                             EAsnConn_Format       output_fmt,
+                             AsnIoPtr*             output,
+                             TSERV_Type            type,
+                             const SConnNetInfo*   net_info,
+                             const SSERVICE_Extra* params)
 {
     CONN conn;
-    CONNECTOR c = SERVICE_CreateConnectorEx(service_name, service_type, info);
+    CONNECTOR c = SERVICE_CreateConnectorEx(service, type, net_info, params);
     if (!c || CONN_Create(c, &conn) != eIO_Success)
         return 0/*failed*/;
     assert(conn);
@@ -169,12 +173,12 @@ CONN CreateAsnConn_ServiceEx(const char*         service_name,
 }
 
 
-CONN CreateAsnConn_Service(const char*     service_name,
+CONN CreateAsnConn_Service(const char*     service,
                            EAsnConn_Format input_fmt,
                            AsnIoPtr*       input,
                            EAsnConn_Format output_fmt,
                            AsnIoPtr*       output)
 {
-    return CreateAsnConn_ServiceEx(service_name, input_fmt, input,
-                                   output_fmt, output, fSERV_Any, 0);
+    return CreateAsnConn_ServiceEx(service, input_fmt, input,
+                                   output_fmt, output, fSERV_Any, 0, 0);
 }
