@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/04/17 03:58:39  vakatov
+* CSerialNotImplemented:: -- constructor and destructor added
+*
 * Revision 1.5  2001/01/05 20:10:50  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -50,7 +53,7 @@
 * Fixed wrong encoding of StringStore in ASN.1 binary format.
 * Optimized logic of object collection.
 *
-*
+* ===========================================================================
 */
 
 #include <serial/exception.hpp>
@@ -66,8 +69,23 @@ CSerialException::~CSerialException(void) THROWS_NONE
 {
 }
 
+
+CSerialNotImplemented::CSerialNotImplemented(const string& msg) THROWS_NONE
+    : CSerialException(msg)
+{
+    return;
+}
+
+
+CSerialNotImplemented::~CSerialNotImplemented(void) THROWS_NONE
+{
+    return;
+}
+
+
 CInvalidChoiceSelection::CInvalidChoiceSelection(const string& current,
-                                                 const string& mustBe) THROWS_NONE
+                                                 const string& mustBe)
+    THROWS_NONE
     : runtime_error("Invalid choice selection: "+current+". "
                     "Expected: "+mustBe)
 {
