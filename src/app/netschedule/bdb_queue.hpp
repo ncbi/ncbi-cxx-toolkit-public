@@ -42,13 +42,19 @@
 
 
 #include <corelib/ncbimtx.hpp>
+
+#include <connect/netschedule_client.hpp>
+
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/bdb_cursor.hpp>
 #include <map>
 #include <vector>
 
 #include "job_status.hpp"
 #include "queue_clean_thread.hpp"
+#include "notif_thread.hpp"
+#include "job_time_line.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -67,6 +73,7 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldUint4        time_run;        ///<     run time
     CBDB_FieldUint4        time_done;       ///<     result submission time
     CBDB_FieldUint4        timeout;         ///<     individual timeout
+    CBDB_FieldUint4        run_timeout;     ///<     job run timeout
 
     CBDB_FieldUint4        worker_node1;    ///< IP address of worker node 1
     CBDB_FieldUint4        worker_node2;    ///< reserved
@@ -95,6 +102,7 @@ struct SQueueDB : public CBDB_File
         BindData("time_run",    &time_run);
         BindData("time_done",   &time_done);
         BindData("timeout",     &timeout);
+        BindData("run_timeout", &run_timeout);
 
         BindData("worker_node1", &worker_node1);
         BindData("worker_node2", &worker_node2);
@@ -159,11 +167,17 @@ struct SLockedQueue
     CRWLock                      wn_lock;      ///< wnodes locker
     string                       q_notif;      ///< Queue notification message
 
+    // Timeline object to control job execution timeout
+    CJobTimeLine*                run_time_line;
+    int                          run_timeout;
+    CRWLock                      rtl_lock;      ///< run_time_line locker
+
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
           notif_timeout(7), 
           last_notif(0), 
-          q_notif("NCBI_JSQ_")
+          q_notif("NCBI_JSQ_"),
+          run_time_line(0)
     {
         _ASSERT(!queue_name.empty());
         q_notif.append(queue_name);
@@ -175,6 +189,7 @@ struct SLockedQueue
             SQueueListener* node = *it;
             delete node;
         }
+        delete run_time_line;
     }
 };
 
@@ -225,7 +240,8 @@ public:
     void Open(const string& path, unsigned cache_ram_size);
     void MountQueue(const string& queue_name,
                     int           timeout,
-                    int           notif_timeout);
+                    int           notif_timeout,
+                    int           run_timeout);
     void Close();
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -233,9 +249,21 @@ public:
     /// Remove old jobs
     void Purge();
     void StopPurge();
-
     void RunPurgeThread();
     void StopPurgeThread();
+
+    /// Notify all listeners
+    void NotifyListeners();
+    void RunNotifThread();
+    void StopNotifThread();
+
+    void CheckExecutionTimeout();
+    void RunExecutionWatcherThread(unsigned run_delay);
+    void StopExecutionWatcherThread();
+
+
+    void SetUdpPort(unsigned short port) { m_UdpPort = port; }
+    unsigned short GetUdpPort() const { return m_UdpPort; }
 
     /// Main queue entry point
     ///
@@ -303,8 +331,19 @@ public:
         /// UDP notification to all listeners
         void NotifyListeners();
 
+        /// Check execution timeout.
+        /// All jobs failed to execute, go back to pending
+        void CheckExecutionTimeout();
+
+        /// Check job expiration
+        /// Returns new time if job not yet expired (or ended)
+        /// 0 means job ended in any way.
+        time_t CheckExecutionTimeout(unsigned job_id, time_t curr_time);
+
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
+
+        void RemoveFromTimeLine(unsigned job_id);
 
     private:
         CQueue(const CQueue&);
@@ -314,6 +353,8 @@ public:
         CQueueDataBase& m_Db;      ///< Parent structure reference
         SLockedQueue&   m_LQueue;  
     };
+
+
 
 protected:
     /// get next job id (counter increment)
@@ -340,7 +381,10 @@ private:
     unsigned int         m_DeleteChkPointCnt; ///< trans. checkpnt counter
     unsigned int         m_FreeStatusMemCnt;  ///< Free memory counter
     time_t               m_LastR2P;           ///< Return 2 Pending timestamp
+    unsigned short       m_UdpPort;           ///< UDP notification port      
 
+    CRef<CJobNotificationThread>             m_NotifThread;
+    CRef<CJobQueueExecutionWatcherThread>    m_ExeWatchThread;
 };
 
 
@@ -350,6 +394,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/09 17:37:17  kuznets
+ * Added node notification thread and execution control timeline
+ *
  * Revision 1.8  2005/03/04 12:06:41  kuznets
  * Implenyed UDP callback to clients
  *

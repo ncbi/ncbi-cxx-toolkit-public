@@ -32,67 +32,24 @@
 
 #include <ncbi_pch.hpp>
 
-
-#include <db.h>
-#include <bdb/bdb_expt.hpp>
-
+#include "notif_thread.hpp"
 #include "bdb_queue.hpp"
-#include "queue_clean_thread.hpp"
 
 BEGIN_NCBI_SCOPE
 
 class CQueueDataBase;
 
-void CJobQueueCleanerThread::DoJob(void)
+void CJobNotificationThread::DoJob(void)
 {
     try {
-        m_QueueDB.Purge();
+        m_QueueDB.NotifyListeners();
     } 
-    catch (CBDB_ErrnoException& ex)
-    {
-        int err_no = ex.BDB_GetErrno();
-        if (err_no == DB_RUNRECOVERY) {
-            ERR_POST("Fatal Berkeley DB error: DB_RUNRECOVERY");
-        } else {
-            ERR_POST(Error << "BDB Error when cleaning job queue: " 
-                           << ex.what()
-                           << " cleaning thread has been stopped.");
-        }
-        RequestStop();
-    }
     catch(exception& ex)
     {
         RequestStop();
-        ERR_POST(Error << "Error when cleaning queue: " 
+        ERR_POST(Error << "Error during notification: " 
                         << ex.what()
-                        << " cleaning thread has been stopped.");
-    }
-}
-
-
-void CJobQueueExecutionWatcherThread::DoJob(void)
-{
-    try {
-        m_QueueDB.CheckExecutionTimeout();
-    } 
-    catch (CBDB_ErrnoException& ex)
-    {
-        int err_no = ex.BDB_GetErrno();
-        if (err_no == DB_RUNRECOVERY) {
-            ERR_POST("Fatal Berkeley DB error: DB_RUNRECOVERY");
-        } else {
-            ERR_POST(Error << "BDB Error in execution watcher thread: " 
-                           << ex.what()
-                           << " watcher thread has been stopped.");
-        }
-        RequestStop();
-    }
-    catch(exception& ex)
-    {
-        RequestStop();
-        ERR_POST(Error << "Error in execution watcher: " 
-                        << ex.what()
-                        << " watcher thread has been stopped.");
+                        << " notification thread has been stopped.");
     }
 }
 
@@ -102,7 +59,7 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2005/03/09 17:37:17  kuznets
+ * Revision 1.1  2005/03/09 17:37:16  kuznets
  * Added node notification thread and execution control timeline
  *
  * Revision 1.1  2005/02/23 19:15:30  kuznets

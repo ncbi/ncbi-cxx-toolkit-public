@@ -1,5 +1,5 @@
-#ifndef NS_QUEUE_CLEAN_THREAD__HPP
-#define NS_QUEUE_CLEAN_THREAD__HPP
+#ifndef NS_NOTIF_THREAD__HPP
+#define NS_NOTIF_THREAD__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,7 +28,7 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: Queue cleaning thread.
+ * File Description: Notification thread
  *                   
  *
  */
@@ -42,10 +42,10 @@ class CQueueDataBase;
 /// Thread class, removes obsolete job records
 ///
 /// @internal
-class CJobQueueCleanerThread : public CThreadNonStop
+class CJobNotificationThread : public CThreadNonStop
 {
 public:
-    CJobQueueCleanerThread(CQueueDataBase& qdb,
+    CJobNotificationThread(CQueueDataBase& qdb,
                            unsigned run_delay,
                            unsigned stop_request_poll = 10)
     : CThreadNonStop(run_delay, stop_request_poll),
@@ -54,31 +54,8 @@ public:
 
     virtual void DoJob(void);
 private:
-    CJobQueueCleanerThread(const CJobQueueCleanerThread&);
-    CJobQueueCleanerThread& operator=(const CJobQueueCleanerThread&);
-private:
-    CQueueDataBase&  m_QueueDB;
-};
-
-
-/// Thread class, watches job execution, reschedules forgotten jobs
-///
-/// @internal
-class CJobQueueExecutionWatcherThread : public CThreadNonStop
-{
-public:
-    CJobQueueExecutionWatcherThread(CQueueDataBase& qdb,
-                                    unsigned run_delay,
-                                    unsigned stop_request_poll = 10)
-    : CThreadNonStop(run_delay, stop_request_poll),
-      m_QueueDB(qdb)
-    {}
-
-    virtual void DoJob(void);
-private:
-    CJobQueueExecutionWatcherThread(const CJobQueueExecutionWatcherThread&);
-    CJobQueueExecutionWatcherThread& 
-        operator=(const CJobQueueExecutionWatcherThread&);
+    CJobNotificationThread(const CJobNotificationThread&);
+    CJobNotificationThread& operator=(const CJobNotificationThread&);
 private:
     CQueueDataBase&  m_QueueDB;
 };
@@ -89,14 +66,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2005/03/09 17:37:17  kuznets
+ * Revision 1.1  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
- *
- * Revision 1.2  2005/02/23 19:18:18  kuznets
- * New line at the file end (GCC)
- *
- * Revision 1.1  2005/02/23 19:15:30  kuznets
- * Initial revision
  *
  *
  * ===========================================================================

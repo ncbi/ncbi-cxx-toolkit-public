@@ -197,6 +197,12 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
             x_SetClearStatusNoLock(job_id, status, old_status);
             break;
         }
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eReturned,
+                                    CNetScheduleClient::eDone);
+        if ((int)old_status >= 0) {
+            break;
+        }
         ReportInvalidStatus(job_id, status, old_status);
         break;
 
@@ -222,21 +228,21 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
             break;
         }
 
-        old_status = CNetScheduleClient::eCanceled;
+        old_status = CNetScheduleClient::eFailed;
         break;
 
     case CNetScheduleClient::eDone:
+        old_status = IsStatusNoLock(job_id, 
+                                    CNetScheduleClient::eCanceled,
+                                    CNetScheduleClient::eFailed);
+        if (IsCancelCode(old_status)) {
+            break;
+        }
         old_status = IsStatusNoLock(job_id, 
                                     CNetScheduleClient::eRunning,
                                     CNetScheduleClient::eReturned);
         if ((int)old_status >= 0) {
             x_SetClearStatusNoLock(job_id, status, old_status);
-            break;
-        }
-        old_status = IsStatusNoLock(job_id, 
-                                    CNetScheduleClient::eCanceled,
-                                    CNetScheduleClient::eFailed);
-        if (IsCancelCode(old_status)) {
             break;
         }
 
@@ -364,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/09 17:37:16  kuznets
+ * Added node notification thread and execution control timeline
+ *
  * Revision 1.7  2005/03/04 12:06:41  kuznets
  * Implenyed UDP callback to clients
  *

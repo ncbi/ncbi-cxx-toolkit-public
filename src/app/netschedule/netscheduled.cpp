@@ -60,15 +60,13 @@
 # include <signal.h>
 #endif
 
+#include "job_time_line.hpp"
 
 
 USING_NCBI_SCOPE;
 
-//const unsigned int kObjectTimeout = 60 * 60; ///< Default timeout in seconds
 
-/// General purpose NetSchedule Mutex
-DEFINE_STATIC_FAST_MUTEX(x_NetScheduleMutex);
-
+#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.5"
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -156,7 +154,7 @@ CRef< CTls<SThreadData> > s_tls(new CTls<SThreadData>);
 class CNetScheduleServer : public CThreadedServer
 {
 public:
-    CNetScheduleServer(unsigned int    port,
+    CNetScheduleServer(unsigned int    port,                       
                        CQueueDataBase* qdb,
                        unsigned        max_threads,
                        unsigned        init_threads,
@@ -237,7 +235,7 @@ private:
     unsigned           m_InactivityTimeout;
     
     /// Accept timeout for threaded server
-    STimeout                        m_ThrdSrvAcceptTimeout;
+    STimeout           m_ThrdSrvAcceptTimeout;
 
     CQueueDataBase*    m_QueueDB;
 };
@@ -372,7 +370,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 SetShutdownFlag();
                 break;
             case eVersion:
-                WriteMsg(socket, "OK:", "NCBI NetSchedule server version=0.4");
+                WriteMsg(socket, "OK:", NETSCHEDULED_VERSION);
                 break;
             case eDropQueue:
                 ProcessDropQueue(socket, *tdata);
@@ -616,10 +614,14 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
 
 
 
-#define NS_RETURN_ERROR(err) { req->req_type = eError; req->err_msg = err; return; }
-#define NS_SKIPSPACE(x)  while (*x && isspace(*x)) { ++x; }
-#define NS_CHECKEND(x, msg) if (!*s) { req->req_type = eError; req->err_msg = msg; }
-#define NS_GETSTRING(x, str) for (;*x && !isspace(*x); ++x) { str.push_back(*x); }
+#define NS_RETURN_ERROR(err) \
+    { req->req_type = eError; req->err_msg = err; return; }
+#define NS_SKIPSPACE(x)  \
+    while (*x && (*x == ' ' || *x == '\t')) { ++x; }
+#define NS_CHECKEND(x, msg) \
+    if (!*s) { req->req_type = eError; req->err_msg = msg; }
+#define NS_GETSTRING(x, str) \
+    for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
 
 
 void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
@@ -1006,7 +1008,7 @@ int CNetScheduleDApp::Run(void)
 
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname, 3600, 7); // default queue
+        qdb->MountQueue(qname, 3600, 7, 3600); // default queue
 
 
         // Scan and mount queues
@@ -1014,28 +1016,72 @@ int CNetScheduleDApp::Run(void)
         list<string> sections;
         reg.EnumerateSections(&sections);
 
+        unsigned min_run_timeout = 3600;
+
         string tmp;
         ITERATE(list<string>, it, sections) {
             const string& sname = *it;
             NStr::SplitInTwo(sname, "_", tmp, qname);
-            if (NStr::CompareNocase(tmp, "queue") == 0) {
-                int timeout = 
-                   reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
-                int notif_timeout =
-                   reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
-
-                LOG_POST(Info << "Mounting queue: "         << qname 
-                              << ". Timeout: "              << timeout 
-                              << ". Notification timeout: " << notif_timeout);
-                qdb->MountQueue(qname, timeout, notif_timeout);
+            if (NStr::CompareNocase(tmp, "queue") != 0) {
+                continue;
             }
+            int timeout = 
+                reg.GetInt(sname, "timeout", 3600, 0, IRegistry::eReturn);
+            int notif_timeout =
+                reg.GetInt(sname, "notif_timeout", 7, 0, IRegistry::eReturn);
+            int run_timeout =
+                reg.GetInt(sname, "run_timeout", 
+                                            timeout, 0, IRegistry::eReturn);
+
+            if (run_timeout < (int)min_run_timeout) {
+                min_run_timeout = run_timeout;
+            }
+
+            LOG_POST(Info 
+                << "Mounting queue:         " << qname          << "\n"
+                << "   Timeout:              " << timeout       << "\n"
+                << "   Notification timeout: " << notif_timeout << "\n"
+                << "   Run timeout:          " << run_timeout   << "\n"
+            );
+            qdb->MountQueue(qname, timeout, notif_timeout, run_timeout);
+            
         }
+
+        unsigned run_delay = min_run_timeout / 2;
+        if (run_delay == 0) {
+            run_delay = min_run_timeout;
+        }
+        qdb->RunExecutionWatcherThread(run_delay >= 0 ? run_delay : 2);
+
 
         qdb->RunPurgeThread();
 
+
         // Init threaded server
         int port = 
-            reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
+            reg.GetInt("server", "port", 9100, 0, CNcbiRegistry::eReturn);
+
+        int udp_port = 
+            reg.GetInt("server", "udp_port", 0, 0, CNcbiRegistry::eReturn);
+        if (udp_port == 0) {
+            udp_port = port + 1;
+            LOG_POST(Info << "UDP notification port: " << udp_port);
+        }
+        if (udp_port < 1024 || udp_port > 65535) {
+            LOG_POST(Error << "Invalid UDP port value: " << udp_port 
+                           << ". Notification will be disabled.");
+            udp_port = -1;
+        }
+        if (udp_port < 0) {
+            LOG_POST(Info << "UDP notification disabled. ");
+        }
+        if (udp_port > 0) {
+            qdb->SetUdpPort((unsigned short) udp_port);
+        }
+
+        qdb->RunNotifThread();
+
+
 
         unsigned max_threads =
             reg.GetInt("server", "max_threads", 25, 0, CNcbiRegistry::eReturn);
@@ -1110,6 +1156,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/09 17:37:16  kuznets
+ * Added node notification thread and execution control timeline
+ *
  * Revision 1.9  2005/03/04 12:06:41  kuznets
  * Implenyed UDP callback to clients
  *
