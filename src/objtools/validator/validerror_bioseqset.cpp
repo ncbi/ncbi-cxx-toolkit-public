@@ -146,7 +146,7 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
             CFeat_CI::e_Product);
         return (bool)mrna;
     }
-    return false;
+    return true;
 }
 
 
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/30 20:27:20  shomrat
+* Bug fix
+*
 * Revision 1.4  2003/01/06 17:37:19  shomrat
 * Fixed mismatch types
 *
