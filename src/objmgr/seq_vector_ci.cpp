@@ -49,6 +49,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static const TSeqPos kCacheSize = 1024;
+
+
 template<class DstIter, class SrcCont>
 void copy_8bit(DstIter dst, size_t count,
                const SrcCont& srcCont, size_t srcPos)
@@ -529,6 +532,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/08/19 18:34:11  vasilche
+* Buffer length constant moved to *.cpp file for easier modification.
+*
 * Revision 1.20  2003/07/21 14:30:48  vasilche
 * Fixed buffer destruction and exception processing.
 *

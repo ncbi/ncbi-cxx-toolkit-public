@@ -41,9 +41,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-static const TSeqPos kCacheSize = 1024;
-
-
 class CSeqVector;
 
 
@@ -192,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/08/19 18:34:11  vasilche
+* Buffer length constant moved to *.cpp file for easier modification.
+*
 * Revision 1.11  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.
