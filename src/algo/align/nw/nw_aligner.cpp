@@ -326,7 +326,6 @@ CNWAligner::TScore CNWAligner::x_Run()
             SetEndSpaceFree(false, esf_R1, false, esf_R2); // last region
             for(size_t istart = 4*guides_dim, i = istart; i != 0; i -= 4) {
 
-                cerr << i << endl;
                 q0 = m_guides[i - 3] + 1;
                 s0 = m_guides[i - 1] + 1;
                 size_t dim_query = q1 - q0, dim_subj = s1 - s0;
@@ -971,6 +970,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/05/19 13:37:47  kapustin
+ * Remove test dumping code
+ *
  * Revision 1.46  2004/05/18 21:43:40  kapustin
  * Code cleanup
  *

@@ -674,7 +674,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             back_inserter(pattern));
             for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
 
-#define DBG_DUMP_PATTERN
+//#define DBG_DUMP_PATTERN
 #ifdef  DBG_DUMP_PATTERN
 	      cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
 		   << pattern[j+2] << '\t' << pattern[j+3] << endl;
@@ -1148,6 +1148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/19 13:37:48  kapustin
+ * Remove test dumping code
+ *
  * Revision 1.10  2004/05/18 21:43:40  kapustin
  * Code cleanup
  *
