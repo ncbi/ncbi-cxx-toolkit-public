@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/10/26 18:10:24  vakatov
+* [auto_ptr] -- simpler and more standard
+*
 * Revision 1.27  1999/09/29 22:22:37  vakatov
 * [auto_ptr] Use "mutable" rather than "static_cast" on m_Owns; fixed a
 *            double "delete" bug in reset().
@@ -191,26 +194,22 @@ class CTypeInfo;
 
 #if defined(HAVE_NO_AUTO_PTR)
 template <class X> class auto_ptr {
+private:
+    X* m_Ptr;
+
 public:
-    explicit auto_ptr(X* p = 0)
-        : m_Owns(p != 0), m_Ptr(p) {}
-    auto_ptr(const auto_ptr<X>& a)
-        : m_Owns(a.m_Owns), m_Ptr(a.release()) {}
+    explicit auto_ptr(X* p = 0) : m_Ptr(p) {}
+    auto_ptr(const auto_ptr<X>& a) : m_Ptr(a.release()) {}
     auto_ptr<X>& operator=(const auto_ptr<X>& a) {
         if (this != &a) {
-            if (m_Ptr != a.m_Ptr) {
-                if ( m_Owns )
-                    delete m_Ptr;
-                m_Owns = a.m_Owns;
-            } else if ( a.m_Owns ) {
-                m_Owns = true;
-            }
+            if (m_Ptr  &&  m_Ptr != a.m_Ptr)
+               delete m_Ptr;
             m_Ptr = a.release();
         }
         return *this;
     }
     ~auto_ptr(void) {
-        if ( m_Owns )
+        if ( m_Ptr )
             delete m_Ptr;
     }
 
@@ -219,23 +218,16 @@ public:
     int operator==(const X* p)  const { return (m_Ptr == p); }
     X*  get(void)               const { return m_Ptr; }
 
-    X* release(void) const {
-        m_Owns = false;
-        return m_Ptr;
+    X* release(void) {
+        X* x_Ptr = m_Ptr;  m_Ptr = 0;  return x_Ptr;
     }
 
     void reset(X* p = 0) {
         if (m_Ptr != p) {
-            if ( m_Owns )
-                delete m_Ptr;
+            delete m_Ptr;
             m_Ptr = p;
-            m_Owns = (m_Ptr != 0);
         }
     }
-
-private:
-    mutable bool m_Owns;
-    X*           m_Ptr;
 };
 #endif /* HAVE_NO_AUTO_PTR */
 
