@@ -30,16 +30,10 @@
 *
 * File Description:
 *   Client for Medline archive server
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2002/03/06 22:07:11  ucko
-* Add simple code to communicate with the medarch server.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <objects/mla/Mla_back.hpp>
 
@@ -98,11 +92,23 @@ private:
     CRef<CMla_back> SendRequest(const CMla_request& request);
 
     CConn_ServiceStream* m_Stream; // Initialized on first use
-    CFastMutex           m_Mutex;
+    CMutex               m_Mutex;
 };
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.2  2002/04/22 19:00:15  ucko
+* Switch from CFastMutex to CMutex because SendRequest can call itself via Init.
+* Move log to end.
+*
+* Revision 1.1  2002/03/06 22:07:11  ucko
+* Add simple code to communicate with the medarch server.
+*
+* ===========================================================================
+*/
 #endif  /* MLA__HPP */
