@@ -189,7 +189,7 @@ private:
     CTSE_Info* x_AddToBioseqMap (CSeq_entry& entry,
                                   bool dead,
                                   TTSESet* tse_set);
-    void x_AddToAnnotMap  (CSeq_entry& entry);
+    void x_AddToAnnotMap  (CSeq_entry& entry, CTSE_Info* info = 0);
 
     // Find the seq-entry with best bioseq for the seq-id handle.
     // The best bioseq is the bioseq from the live TSE or from the
@@ -346,6 +346,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/02/24 14:51:10  grichenk
+* Minor improvements in annot indexing
+*
 * Revision 1.37  2003/02/13 14:34:32  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref

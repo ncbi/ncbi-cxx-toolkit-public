@@ -743,12 +743,8 @@ CTSE_Info* CDataSource::x_AddToBioseqMap(CSeq_entry& entry,
     entry.Parentize();
     CTSE_Info* info = x_IndexEntry(entry, entry, dead, tse_set);
     // Do not index new TSEs -- wait for annotations request
-    if ( info->IsIndexed() ) {
-        x_AddToAnnotMap(entry);
-    }
-    else {
-        m_IndexedAnnot = false; // reset the flag to enable indexing
-    }
+    _ASSERT(!info->IsIndexed());  // Can not be indexed - it's a new one
+    m_IndexedAnnot = false;       // reset the flag to enable indexing
     return info;
 }
 
@@ -849,13 +845,13 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
 }
 
 
-void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
+void CDataSource::x_AddToAnnotMap(CSeq_entry& entry, CTSE_Info* info)
 {
     // The entry must be already in the m_Entries map
     // Lock indexes
     CMutexGuard guard(m_DataSource_Mtx);    
 
-    CTSE_Info* tse = m_Entries[CRef<CSeq_entry>(&entry)];
+    CTSE_Info* tse = info ? info : m_Entries[CRef<CSeq_entry>(&entry)];
     CTSE_Guard tse_guard(*tse);
     tse->SetIndexed(true);
     const CBioseq::TAnnot* annot_list = 0;
@@ -869,7 +865,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
             annot_list = &entry.GetSet().GetAnnot();
         }
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
-            x_AddToAnnotMap(const_cast<CSeq_entry&>(**it));
+            x_AddToAnnotMap(const_cast<CSeq_entry&>(**it), tse);
         }
     }
     if ( !annot_list ) {
@@ -1432,7 +1428,7 @@ without the sequence but with references to the id and all dead TSEs
             //### Lock TSE so that another thread can not index it too
             CTSE_Guard guard(*tse_it->second);
             if ( !tse_it->second->IsIndexed() )
-                x_AddToAnnotMap(*tse_it->second->m_TSE);
+                x_AddToAnnotMap(*tse_it->second->m_TSE, tse_it->second);
         }
         m_IndexedAnnot = true;
     }
@@ -2483,6 +2479,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/02/24 14:51:11  grichenk
+* Minor improvements in annot indexing
+*
 * Revision 1.81  2003/02/13 14:34:34  grichenk
 * Renamed CAnnotObject -> CAnnotObject_Info
 * + CSeq_annot_Info and CAnnotObject_Ref
