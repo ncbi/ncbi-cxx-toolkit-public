@@ -412,26 +412,27 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         }
         list<string> components;
         GetComponents(macro, &components);
-        bool res = true;
+        bool res = false;
         ITERATE(list<string>, p, components) {
             const string& component = *p;
             ITERATE(list<SConfigInfo>, n, configs) {
                 const SConfigInfo& config = *n;
                 SLibInfo lib_info;
                 GetLibInfo(component, config, &lib_info);
-                if ( !IsLibOk(lib_info) ) {
+                if ( IsLibOk(lib_info) ) {
+                    res = true;
+                } else {
                     LOG_POST(Info << "Macro " << macro << " cannot be resolved for "
                         << component << " (" << config.m_Name << ")");
-                    res = false;
-                    break;
+//                    res = false;
+//                    break;
                 }
             }
         }
-        if (!res) {
-            continue;
+        if (res) {
+            string value =  m_Registry.GetString(macro, "Value", "");
+            m_Macros.AddDefinition(macro,value);
         }
-        string value =  m_Registry.GetString(macro, "Value", "");
-        m_Macros.AddDefinition(macro,value);
     }
 }
 
@@ -440,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/11/30 17:21:05  gouriano
+ * Resolve Macros on per-configuration basis
+ *
  * Revision 1.22  2004/11/29 17:03:39  gouriano
  * Add 3rd party library dependencies on per-configuration basis
  *
