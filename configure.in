@@ -32,7 +32,7 @@
 #    1) Process this file with "autoconf" to produce a "configure" script.
 #    2) Run the resultant "configure" script to produce
 #      a) "ncbiconf.h"
-#      a) "Makefile"
+#      a) "Makefile"s
 #    NOTE:  "--exec_prefix" flag must be specified by the user!
 #
 #############################################################################
@@ -100,28 +100,17 @@ AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
 AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 
+### Turn on compilation warnings
 changequote(, )dnl
-if test -z "$ac_not_debug"  ; then ### debug / non-debug
-  CFLAGS=`echo $CFLAGS | sed 's/[-]O[0-9]*/-D_DEBUG/g'`
-  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]O[0-9]*/-D_DEBUG/g'`
-else
-  CFLAGS=`echo $CFLAGS | sed 's/[-]g[0-9]//g'`
-  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]g[0-9]//g'`
-fi
-
 if test "$GCC" = "yes" ; then
-  CFLAGS=`echo $CFLAGS | sed 's/[-]g[0-9]*/-g3/g;s/[-]O[0-9]*/-O4/g' `
+  # GNU compiler
   CFLAGS="-Wall $CFLAGS"
-  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]g[0-9]*/-g3/g;s/[-]O[0-9]*/-O4/g' `
   CXXFLAGS="-Wall $CXXFLAGS"
-elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then  ### MSVC++ compiler
-  CFLAGS=`echo $CFLAGS | sed 's/[-]g[0-9]*/-DEBUG/g;s/[-]O[0-9]*/-O/g' `
+elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then
+  # MSVC++ compiler
   CFLAGS="-W4 $CFLAGS"
-  CXXFLAGS=`echo $CXXFLAGS | sed 's/[-]g[0-9]*/-DEBUG/g;s/[-]O[0-9]*/-O/g' `
   CXXFLAGS="-W4 $CXXFLAGS"
   CPPFLAGS="/nologo $CPPFLAGS"
-elif test -d /usr/local/lib ; then
-  LDFLAGS="-L/usr/local/lib $LDFLAGS"
 fi
 changequote([, ])dnl
 
@@ -221,5 +210,8 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
+
+#############################################################################
+### Create output files
 
 AC_OUTPUT( ${makefiles} )
