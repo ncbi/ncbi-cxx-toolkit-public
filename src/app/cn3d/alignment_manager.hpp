@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/17 14:34:18  thiessen
+* added row shift - editor basically complete
+*
 * Revision 1.16  2000/10/16 20:02:17  thiessen
 * working block creation
 *
@@ -107,6 +110,7 @@ class ConservationColorer;
 
 class Block; // defined below
 class UngappedAlignedBlock;
+class UnalignedBlock;
 
 class BlockMultipleAlignment
 {
@@ -187,6 +191,10 @@ public:
 
     // deletes the block containing this index; returns true if deletion occurred.
     bool DeleteBlock(int alignmentIndex);
+
+    // shifts (horizontally) the residues in and immediately surrounding an
+    // aligned block; retunrs true if any shift occurs.
+    bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex);
     
 private:
     ConservationColorer *conservationColorer;
@@ -206,7 +214,7 @@ private:
     BlockMap blockMap;
 
     bool CheckAlignedBlock(const Block *newBlock) const;
-    Block * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
+    UnalignedBlock * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);
     Block * GetBlockBefore(const Block *block) const;
     Block * GetBlockAfter(const Block *block) const;
     void InsertBlockBefore(Block *newBlock, const Block *insertAt);

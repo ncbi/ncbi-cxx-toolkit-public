@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/10/17 14:35:06  thiessen
+* added row shift - editor basically complete
+*
 * Revision 1.19  2000/10/16 20:03:06  thiessen
 * working block creation
 *
@@ -304,7 +307,7 @@ bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock
     return CheckAlignedBlock(newBlock);
 }
 
-Block * BlockMultipleAlignment::
+UnalignedBlock * BlockMultipleAlignment::
     CreateNewUnalignedBlockBetween(const Block *leftBlock, const Block *rightBlock)
 {
     if ((leftBlock && !leftBlock->IsAligned()) || 
@@ -316,7 +319,7 @@ Block * BlockMultipleAlignment::
     int row, from, to, length;
     SequenceList::const_iterator s, se = sequences->end();
 
-    Block *newBlock = new UnalignedBlock(sequences);
+    UnalignedBlock *newBlock = new UnalignedBlock(sequences);
     newBlock->width = 0;
 
     for (row=0, s=sequences->begin(); s!=se; row++, s++) {
@@ -817,6 +820,92 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         return true;
     } else
         return false;
+}
+
+bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex)
+{
+    Block
+        *blockFrom = blockMap[fromAlignmentIndex].block,
+        *blockTo = blockMap[toAlignmentIndex].block;
+    UngappedAlignedBlock *ABlock =
+        dynamic_cast<UngappedAlignedBlock*>(blockFrom);
+    if (ABlock) {
+        if (blockTo != blockFrom && blockTo->IsAligned()) return false;
+    } else {
+        ABlock = dynamic_cast<UngappedAlignedBlock*>(blockTo);
+        if (!ABlock) return false;
+    }
+
+    UnalignedBlock
+        *prevUABlock = dynamic_cast<UnalignedBlock*>(GetBlockBefore(ABlock)),
+        *nextUABlock = dynamic_cast<UnalignedBlock*>(GetBlockAfter(ABlock));
+    if (blockFrom != blockTo &&
+        ((ABlock == blockFrom && prevUABlock != blockTo && nextUABlock != blockTo) ||
+         (ABlock == blockTo && prevUABlock != blockFrom && nextUABlock != blockFrom)))
+        return false;
+
+    int requestedShift = toAlignmentIndex - fromAlignmentIndex, actualShift = 0, width = 0;
+    const Block::Range *prevRange = NULL, *nextRange = NULL,
+        *range = ABlock->GetRangeOfRow(row);
+    if (prevUABlock) prevRange = prevUABlock->GetRangeOfRow(row);
+    if (nextUABlock) nextRange = nextUABlock->GetRangeOfRow(row);
+    if (requestedShift > 0) {
+        if (prevUABlock) width = prevRange->to - prevRange->from + 1;
+        actualShift = (width > requestedShift) ? requestedShift : width;
+    } else {
+        if (nextUABlock) width = nextRange->to - nextRange->from + 1;
+        actualShift = (width > -requestedShift) ? requestedShift : -width;
+    }
+    if (actualShift == 0) return false;
+
+    TESTMSG("shifting row " << row << " by " << actualShift);
+
+    ABlock->SetRangeOfRow(row, range->from - actualShift, range->to - actualShift);
+
+    if (prevUABlock) {
+        prevUABlock->SetRangeOfRow(row, prevRange->from, prevRange->to - actualShift);
+        prevUABlock->width = 0;
+        for (int i=0; i<NRows(); i++) {
+            prevRange = prevUABlock->GetRangeOfRow(i);
+            width = prevRange->to - prevRange->from + 1;
+            if (width < 0) ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - negative width on left");
+            if (width > prevUABlock->width) prevUABlock->width = width;
+        }
+        if (prevUABlock->width == 0) {
+            TESTMSG("removing zero-width unaligned block on left");
+            RemoveBlock(prevUABlock);
+        }
+    } else {
+        TESTMSG("creating unaligned block on left");
+        prevUABlock = CreateNewUnalignedBlockBetween(GetBlockBefore(ABlock), ABlock);
+        InsertBlockBefore(prevUABlock, ABlock);
+    }
+
+    if (nextUABlock) {
+        nextUABlock->SetRangeOfRow(row, nextRange->from - actualShift, nextRange->to);
+        nextUABlock->width = 0;
+        for (int i=0; i<NRows(); i++) {
+            nextRange = nextUABlock->GetRangeOfRow(i);
+            width = nextRange->to - nextRange->from + 1;
+            if (width < 0) ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - negative width on right");
+            if (width > nextUABlock->width) nextUABlock->width = width;
+        }
+        if (nextUABlock->width == 0) {
+            TESTMSG("removing zero-width unaligned block on right");
+            RemoveBlock(nextUABlock);
+        }
+    } else {
+        TESTMSG("creating unaligned block on right");
+        nextUABlock = CreateNewUnalignedBlockBetween(ABlock, GetBlockAfter(ABlock));
+        InsertBlockAfter(ABlock, nextUABlock);
+    }
+
+    if (!CheckAlignedBlock(ABlock))
+        ERR_POST(Error << "BlockMultipleAlignment::ShiftRow() - shift failed to create valid aligned block");
+
+    UpdateBlockMapAndConservationColors();
+    messenger->PostRedrawSequenceViewers();
+    return true;
 }
 
 bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)

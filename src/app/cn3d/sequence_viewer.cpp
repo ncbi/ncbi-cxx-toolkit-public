@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/10/17 14:35:06  thiessen
+* added row shift - editor basically complete
+*
 * Revision 1.20  2000/10/16 20:03:07  thiessen
 * working block creation
 *
@@ -286,10 +289,10 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
     menuBar->Check(MID_SPLIT, true);
     viewerWidget->TitleAreaOff();
-    menuBar->Check(MID_SPLIT_BLOCK, false);
-    menuBar->Check(MID_MERGE_BLOCKS, false);
-    menuBar->Check(MID_CREATE_BLOCK, false);
-    menuBar->Check(MID_DELETE_BLOCK, false);
+//    menuBar->Check(MID_SPLIT_BLOCK, false);
+//    menuBar->Check(MID_MERGE_BLOCKS, false);
+//    menuBar->Check(MID_CREATE_BLOCK, false);
+//    menuBar->Check(MID_DELETE_BLOCK, false);
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
 
@@ -337,26 +340,25 @@ void SequenceViewerWindow::OnTitleView(wxCommandEvent& event)
 
 void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
 {
-    // check has already been toggled when this function is called, hence the '!'
-    bool editorOn = !menuBar->IsChecked(MID_ENABLE_EDIT);
+    bool turnEditorOn = menuBar->IsChecked(MID_ENABLE_EDIT);
 
     switch (event.GetId()) {
         case MID_ENABLE_EDIT:
-            if (editorOn) {
+            if (turnEditorOn) {
+                TESTMSG("turning on editor");
+                viewer->AddBlockBoundaryRow();
+            } else {
                 TESTMSG("turning off editor");
                 viewer->RemoveBlockBoundaryRow();
                 if (menuBar->IsChecked(MID_DRAG_HORIZ)) Command(MID_SELECT_RECT);
-            } else {
-                TESTMSG("turning on editor");
-                viewer->AddBlockBoundaryRow();
             }
-            EnableEditorMenuItems(!editorOn);
+            EnableEditorMenuItems(turnEditorOn);
             break;
         case MID_SPLIT_BLOCK:
             if (DoCreateBlock()) CreateBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
-            if (menuBar->IsChecked(MID_SPLIT_BLOCK))
+            if (DoSplitBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
                 SplitBlockOff();
@@ -365,7 +367,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoCreateBlock()) CreateBlockOff();
             if (DoDeleteBlock()) DeleteBlockOff();
-            if (menuBar->IsChecked(MID_MERGE_BLOCKS)) {
+            if (DoMergeBlocks()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
                 viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns);
@@ -376,7 +378,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
-            if (menuBar->IsChecked(MID_CREATE_BLOCK)) {
+            if (DoCreateBlock()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
                 viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns);
@@ -387,7 +389,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoCreateBlock()) CreateBlockOff();
-            if (menuBar->IsChecked(MID_DELETE_BLOCK))
+            if (DoDeleteBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
                 DeleteBlockOff();
@@ -407,10 +409,10 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
         menuBar->Enable(i, enabled);
     menuBar->Enable(MID_DRAG_HORIZ, enabled);
     if (!enabled) {
-        SplitBlockOff();
-        MergeBlocksOff();
-        CreateBlockOff();
-        DeleteBlockOff();
+        if (DoSplitBlock()) SplitBlockOff();
+        if (DoMergeBlocks()) MergeBlocksOff();
+        if (DoCreateBlock()) CreateBlockOff();
+        if (DoDeleteBlock()) DeleteBlockOff();
     }
 }
 
@@ -895,11 +897,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (alignment->DeleteBlock(column)) {
                 (*viewerWindow)->DeleteBlockOff();
                 (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                UpdateMaxRowWidth(); // in case alignment width has changed
                 if ((*viewerWindow)->AlwaysSyncStructures())
                     (*viewerWindow)->SyncStructures();
-
-                // in case alignment width has changed
-                UpdateMaxRowWidth();
             }
             return false;
         }
@@ -951,20 +951,32 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
     if (rowFrom != rowTo && columnFrom != columnTo) return;     // ignore diagonal drag
 
     if (columnFrom != columnTo) {
-
-        // process horizontal drag on special block boundary row
-        DisplayRowFromString *strRow = dynamic_cast<DisplayRowFromString*>(rows[rowFrom]);
-        if (strRow && alignment) {
-            wxString title;
-            wxColour ignored;
-            if (GetRowTitle(rowFrom, &title, &ignored) && title == blockBoundaryStringTitle.c_str()) {
-                char ch = strRow->theString[columnFrom];
-                if (ch == blockRightEdgeChar || ch == blockLeftEdgeChar || ch == blockOneColumnChar) {
-                    if (alignment->MoveBlockBoundary(columnFrom, columnTo)) {
-                        (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                        if ((*viewerWindow)->AlwaysSyncStructures())
-                            (*viewerWindow)->SyncStructures();
+        if (alignment) {
+            // process horizontal drag on special block boundary row
+            DisplayRowFromString *strRow = dynamic_cast<DisplayRowFromString*>(rows[rowFrom]);
+            if (strRow) {
+                wxString title;
+                wxColour ignored;
+                if (GetRowTitle(rowFrom, &title, &ignored) && title == blockBoundaryStringTitle.c_str()) {
+                    char ch = strRow->theString[columnFrom];
+                    if (ch == blockRightEdgeChar || ch == blockLeftEdgeChar || ch == blockOneColumnChar) {
+                        if (alignment->MoveBlockBoundary(columnFrom, columnTo)) {
+                            (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                            if ((*viewerWindow)->AlwaysSyncStructures())
+                                (*viewerWindow)->SyncStructures();
+                        }
                     }
+                }
+            }
+
+            // process drag on regular row - block row shift
+            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
+            if (alnRow) {
+                if (alignment->ShiftRow(alnRow->row, columnFrom, columnTo)) {
+                    (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                    UpdateMaxRowWidth(); // in case alignment width has changed
+                    if ((*viewerWindow)->AlwaysSyncStructures())
+                        (*viewerWindow)->SyncStructures();
                 }
             }
         }
