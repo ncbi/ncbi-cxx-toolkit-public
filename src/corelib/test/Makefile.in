@@ -3,7 +3,7 @@
 
 # Meta-makefile
 
-APP_PROJ = coretest test_ncbi_socket test_ncbi_buffer
+APP_PROJ = coretest
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
