@@ -1,4 +1,5 @@
 [-]
+_export = NCBI_BLAST_EXPORT
 clients = blastclient
 
 [blastclient]
