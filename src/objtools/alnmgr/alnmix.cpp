@@ -445,10 +445,43 @@ void CAlnMix::x_Merge()
     first_refseq = true; // mark the first loop
 
     while (true) {
-        if (first_refseq) {
-            match = *(match_i++);
+        // reached the end?
+        if (first_refseq ?
+            match_i == m_Matches.end()  &&  m_Matches.size() :
+            match_list_i == refseq->m_MatchList.end()) {
+
+            // move on to the next refseq
+            refseq->m_RefBy = 0;
+
+            // try to find the best scoring 'connected' candidate
+            ITERATE (TSeqs, it, m_Seqs){
+                if ( !((*it)->m_MatchList.empty())  &&
+                     (*it)->m_RefBy == refseq) {
+                    refseq = *it;
+                    break;
+                }
+            }
+            if (refseq->m_RefBy == 0) {
+                // no candidate was found 'connected' to the refseq
+                // continue with the highest scoring candidate
+                ITERATE (TSeqs, it, m_Seqs){
+                    if ( !((*it)->m_MatchList.empty()) ) {
+                        refseq = *it;
+                        break;
+                    }
+                }
+            }
+
+            if (refseq->m_MatchList.empty()) {
+                break; // done
+            } else {
+                first_refseq = false;
+                match_list_i = refseq->m_MatchList.begin();
+            }
+            continue;
         } else {
-            match = *(match_list_i++);
+            // iterate
+            match = first_refseq ? *(match_i++) : *(match_list_i++);
         }
 
         curr_len = len = match->m_Len;
@@ -885,40 +918,6 @@ void CAlnMix::x_Merge()
                 // done with this match -- restore the original seq2; 
                 // (to be reused in case of multiple mixes)
                 match->m_AlnSeq2 = orig_seq2;
-            }
-        }
-        
-        if (first_refseq  &&  
-            match_i == m_Matches.end()  &&  m_Matches.size()  ||
-            !first_refseq  &&  match_list_i == refseq->m_MatchList.end()) {
-
-            // and move on to the next refseq
-            refseq->m_RefBy = 0;
-
-            // try to find the best scoring 'connected' candidate
-            ITERATE (TSeqs, it, m_Seqs){
-                if ( !((*it)->m_MatchList.empty())  &&
-                     (*it)->m_RefBy == refseq) {
-                    refseq = *it;
-                    break;
-                }
-            }
-            if (refseq->m_RefBy == 0) {
-                // no candidate was found 'connected' to the refseq
-                // continue with the highest scoring candidate
-                ITERATE (TSeqs, it, m_Seqs){
-                    if ( !((*it)->m_MatchList.empty()) ) {
-                        refseq = *it;
-                        break;
-                    }
-                }
-            }
-
-            if (refseq->m_MatchList.empty()) {
-                break; // done
-            } else {
-                first_refseq = false;
-                match_list_i = refseq->m_MatchList.begin();
             }
         }
     }
@@ -1621,6 +1620,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2003/08/01 20:49:26  todorov
+* Changed the control of the main Merge() loop
+*
 * Revision 1.64  2003/07/31 18:50:29  todorov
 * Fixed a couple of truncation problems; Added a match deletion
 *
