@@ -751,6 +751,10 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 
     CS_INT outlen = 0;
 
+    if((buffer == 0) && (buffer_size == 0)) {
+	buffer= (void*)(&buffer_size);
+    }
+
     switch ( ct_get_data(m_Cmd, m_CurrItem+1, buffer, (CS_INT) buffer_size,
                          &outlen) ) {
     case CS_END_ITEM:
@@ -914,6 +918,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/01/04 19:41:46  soussov
+ * allows usage ReadItem(0, 0)
+ *
  * Revision 1.10  2001/11/06 18:02:00  lavr
  * Added methods formely inline (moved from header files)
  *
