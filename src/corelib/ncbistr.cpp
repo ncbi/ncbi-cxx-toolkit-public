@@ -527,7 +527,7 @@ string NStr::PtrToString(const void* value)
 {
     char buffer[64];
     ::sprintf(buffer+2, "%p", value);
-    if (buffer[3] == '0'  &&  buffer[4] == 'x')
+    if (buffer[2] == '0'  &&  buffer[3] == 'x')
         return buffer + 2;
 
     // need to add leading "0x"
@@ -1037,6 +1037,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2003/03/17 12:49:26  dicuccio
+ * Fixed indexing error in NStr::PtrToString() - buffer is 0-based index, not
+ * 1-based
+ *
  * Revision 1.86  2003/03/11 16:57:12  ucko
  * Process backspaces in NStr::Wrap, allowing in particular the use of
  * " \b" ("-\b") to indicate mid-word break (hyphenation) points.
