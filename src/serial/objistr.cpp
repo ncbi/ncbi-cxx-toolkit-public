@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/08/16 16:08:30  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.19  1999/08/13 20:22:57  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -150,6 +153,13 @@ string CObjectIStream::ReadTypeName(void)
 string CObjectIStream::ReadEnumName(void)
 {
     return NcbiEmptyString;
+}
+
+int CObjectIStream::ReadEnumValue(void)
+{
+    int value;
+    ReadStd(value);
+    return value;
 }
 
 void CObjectIStream::SetTypeMapper(CTypeMapper* typeMapper)

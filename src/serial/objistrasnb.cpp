@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/08/16 16:08:31  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.11  1999/08/13 20:22:57  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -790,6 +793,14 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     // by default: try this class
     BackSysTag();
     return eThisPointer;
+}
+
+int CObjectIStreamAsnBinary::ReadEnumValue(void)
+{
+    ExpectSysTag(eEnumerated);
+    int value;
+    ReadStdNumberValue(*this, value);
+    return value;
 }
 
 string CObjectIStreamAsnBinary::ReadMemberPointer(void)

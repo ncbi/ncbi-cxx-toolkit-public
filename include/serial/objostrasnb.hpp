@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/08/16 16:07:44  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.10  1999/07/26 18:31:31  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -101,6 +104,8 @@ public:
     virtual void WriteStd(const unsigned long& data);
     virtual void WriteStd(const float& data);
     virtual void WriteStd(const double& data);
+
+    virtual void WriteEnumValue(int value);
 
     void WriteNull(void);
     void WriteByte(TByte byte);

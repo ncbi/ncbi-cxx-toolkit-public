@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/08/16 16:07:43  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.18  1999/08/13 15:53:44  vasilche
 * C++ analog of asntool: datatool
 *
@@ -123,6 +126,7 @@ public:
 
     // try to write enum value name, false if none
     virtual bool WriteEnumName(const string& name);
+    virtual void WriteEnumValue(int value);
 
     // std C types readers
     virtual void WriteStd(const bool& data) = 0;

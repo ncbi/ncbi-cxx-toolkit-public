@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/08/16 16:08:30  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.17  1999/08/13 20:22:57  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -772,6 +775,60 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
+}
+
+void CEnumeratedTypeInfo::AddValue(const string& name, TValue value)
+{
+    if ( name.empty() )
+        THROW1_TRACE(runtime_error, "empty enum value name");
+    pair<TNameToValue::iterator, bool> p1 =
+        m_NameToValue.insert(TNameToValue::value_type(name, value));
+    if ( !p1.second )
+        THROW1_TRACE(runtime_error,
+                     "duplicated enum value name " + name);
+    pair<TValueToName::iterator, bool> p2 =
+        m_ValueToName.insert(TValueToName::value_type(value, name));
+    if ( !p2.second ) {
+        m_NameToValue.erase(p1.first);
+        THROW1_TRACE(runtime_error,
+                     "duplicated enum value " + name);
+    }
+}
+
+static CEnumeratedTypeInfo::TValue zeroValue = 0;
+
+TConstObjectPtr CEnumeratedTypeInfo::GetDefault(void) const
+{
+    return &zeroValue;
+}
+
+void CEnumeratedTypeInfo::ReadData(CObjectIStream& in,
+                                   TObjectPtr object) const
+{
+    string name = in.ReadEnumName();
+    if ( name.empty() ) {
+        if ( m_Integer ) {
+            in.ReadStd(Get(object));
+        }
+        else {
+            FindName(Get(object) = in.ReadEnumValue());
+        }
+    }
+    else {
+        Get(object) = FindValue(name);
+    }
+}
+
+void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
+                                    TConstObjectPtr object) const
+{
+    const string& name = FindName(Get(object));
+    if ( !out.WriteEnumName(name) ) {
+        if ( m_Integer )
+            out.WriteStd(Get(object));
+        else
+            out.WriteEnumValue(Get(object));
+    }
 }
 
 END_NCBI_SCOPE

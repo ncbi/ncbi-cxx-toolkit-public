@@ -26,99 +26,6 @@ private:
     ASNType* m_Type;
 };
 
-class CEnumeratedTypeInfo : public CStdTypeInfoTmpl<long>
-{
-    typedef CStdTypeInfoTmpl<long> CParent;
-public:
-    typedef CParent::TObjectType TValue;
-    typedef map<string, TValue> TNameToValue;
-    typedef map<TValue, string> TValueToName;
-
-    CEnumeratedTypeInfo(const string& name)
-        : CParent(name), m_NextValue(0)
-        {
-        }
-
-    void AddValue(const string& name, bool hasValue, TValue v);
-
-    TValue FindValue(const string& name) const
-        {
-            TNameToValue::const_iterator i = m_NameToValue.find(name);
-            if ( i == m_NameToValue.end() )
-                THROW1_TRACE(runtime_error,
-                             "invalid value of enumerated type");
-            return i->second;
-        }
-    const string& FindName(TValue value) const
-        {
-            TValueToName::const_iterator i = m_ValueToName.find(value);
-            if ( i == m_ValueToName.end() )
-                THROW1_TRACE(runtime_error,
-                             "invalid value of enumerated type");
-            return i->second;
-        }
-
-    virtual TConstObjectPtr GetDefault(void) const;
-
-protected:
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-private:
-    TValue m_NextValue;
-    TNameToValue m_NameToValue;
-    TValueToName m_ValueToName;
-};
-
-void CEnumeratedTypeInfo::AddValue(const string& name,
-                                   bool hasValue, TValue v)
-{
-    if ( name.empty() )
-        THROW1_TRACE(runtime_error, "empty enum value name");
-    TValue value = hasValue? v: m_NextValue;
-    pair<TNameToValue::iterator, bool> p1 =
-        m_NameToValue.insert(TNameToValue::value_type(name, value));
-    if ( !p1.second )
-        THROW1_TRACE(runtime_error,
-                     "duplicated enum value name " + name);
-    pair<TValueToName::iterator, bool> p2 =
-        m_ValueToName.insert(TValueToName::value_type(value, name));
-    if ( !p2.second ) {
-        m_NameToValue.erase(p1.first);
-        THROW1_TRACE(runtime_error,
-                     "duplicated enum value " + name);
-            }
-    m_NextValue = value + 1;
-}
-
-static CEnumeratedTypeInfo::TValue zeroValue = 0;
-
-TConstObjectPtr CEnumeratedTypeInfo::GetDefault(void) const
-{
-    return &zeroValue;
-}
-
-void CEnumeratedTypeInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
-{
-    string name = in.ReadEnumName();
-    if ( name.empty() ) {
-        in.ReadStd(Get(object));
-        FindName(Get(object));
-    }
-    else {
-        Get(object) = FindValue(name);
-    }
-}
-
-void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
-{
-    const string& name = FindName(Get(object));
-    if ( !out.WriteEnumName(name) )
-        out.WriteStd(Get(object));
-}
-
 union dataval {
     bool booleanValue;
     long integerValue;
@@ -310,12 +217,7 @@ ASNEnumeratedType::ASNEnumeratedType(ASNModule& module, const string& kw)
 {
 }
 
-void ASNEnumeratedType::AddValue(const string& valueName)
-{
-    values.push_back(TValues::value_type(valueName));
-}
-
-void ASNEnumeratedType::AddValue(const string& valueName, long value)
+void ASNEnumeratedType::AddValue(const string& valueName, int value)
 {
     values.push_back(TValues::value_type(valueName, value));
 }
@@ -329,9 +231,7 @@ ostream& ASNEnumeratedType::Print(ostream& out, int indent) const
         if ( i != values.begin() )
             out << ',';
         NewLine(out, indent);
-        out << i->id;
-        if ( i->hasValue )
-            out << " (" << i->value << ")";
+        out << i->id << " (" << i->value << ")";
     }
     NewLine(out, indent - 1);
     return out << "}";
@@ -357,7 +257,7 @@ CTypeInfo* ASNEnumeratedType::CreateTypeInfo(void)
     AutoPtr<CEnumeratedTypeInfo> info(new CEnumeratedTypeInfo(name));
     for ( TValues::const_iterator i = values.begin();
           i != values.end(); ++i ) {
-        info->AddValue(i->id, i->hasValue, i->value);
+        info->AddValue(i->id, i->value);
     }
     return info.release();
 }
@@ -508,18 +408,16 @@ bool ASNContainerType::Check(void)
 
 CTypeInfo* ASNContainerType::CreateTypeInfo(void)
 {
-    auto_ptr<CClassInfoTmpl> typeInfo(new CStructInfoTmpl(name,
-                                                          typeid(void),
-                                                          (members.size() + 1)*sizeof(dataval),
-                                                          keyword == "SET"));
+    auto_ptr<CClassInfoTmpl> typeInfo(new CStructInfoTmpl(name, typeid(void),
+        members.size()*sizeof(dataval), keyword == "SET"));
     int index = 0;
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i, ++index ) {
         ASNMember* member = i->get();
         CMemberInfo* memberInfo =
             typeInfo->AddMember(member->name,
-                                new CRealMemberInfo((index+1)*sizeof(dataval),
-                                                    new CTypeSource(member->type.get())));
+                   new CRealMemberInfo(index*sizeof(dataval),
+                                       new CTypeSource(member->type.get())));
         if ( member->Optional() )
             memberInfo->SetOptional();
         else if ( member->defaultValue ) {

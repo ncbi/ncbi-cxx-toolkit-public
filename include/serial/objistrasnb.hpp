@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/08/16 16:07:43  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.7  1999/07/26 18:31:30  vasilche
 * Implemented skipping of unused values.
 * Added more useful error report.
@@ -90,6 +93,8 @@ public:
     virtual void ReadStd(unsigned long& data);
     virtual void ReadStd(float& data);
     virtual void ReadStd(double& data);
+
+    virtual int ReadEnumValue(void);
 
     virtual void SkipValue(void);
 

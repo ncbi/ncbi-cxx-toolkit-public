@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/08/16 16:07:42  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.10  1999/08/13 20:22:56  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -70,11 +73,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/stdtypes.hpp>
 #include <serial/typeref.hpp>
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/typemap.hpp>
 #include <vector>
+#include <map>
 
 struct valnode;
 struct bytestore;
@@ -303,6 +308,50 @@ private:
     TWriteProc m_WriteProc;
 
     static map<TNewProc, COldAsnTypeInfo*> m_Types;
+};
+
+class CEnumeratedTypeInfo : public CStdTypeInfoTmpl<int>
+{
+    typedef CStdTypeInfoTmpl<int> CParent;
+public:
+    typedef CParent::TObjectType TValue;
+    typedef map<string, TValue> TNameToValue;
+    typedef map<TValue, string> TValueToName;
+
+    CEnumeratedTypeInfo(const string& name, bool isInteger = false)
+        : CParent(name), m_Integer(isInteger)
+        {
+        }
+
+    void AddValue(const string& name, TValue value);
+
+    TValue FindValue(const string& name) const
+        {
+            TNameToValue::const_iterator i = m_NameToValue.find(name);
+            if ( i == m_NameToValue.end() )
+                THROW1_TRACE(runtime_error,
+                             "invalid value of enumerated type");
+            return i->second;
+        }
+    const string& FindName(TValue value) const
+        {
+            TValueToName::const_iterator i = m_ValueToName.find(value);
+            if ( i == m_ValueToName.end() )
+                THROW1_TRACE(runtime_error,
+                             "invalid value of enumerated type");
+            return i->second;
+        }
+
+    virtual TConstObjectPtr GetDefault(void) const;
+
+protected:
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+
+private:
+    bool m_Integer;
+    TNameToValue m_NameToValue;
+    TValueToName m_ValueToName;
 };
 
 //#include <serial/asntypes.inl>

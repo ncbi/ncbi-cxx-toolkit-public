@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/08/16 16:08:31  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.16  1999/08/13 20:22:58  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -505,6 +508,12 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
 		WriteLength(length);
 		WriteBytes(str, length);
 	}
+}
+
+void CObjectOStreamAsnBinary::WriteEnumValue(int value)
+{
+    WriteSysTag(eEnumerated);
+    WriteNumberValue(*this, value);
 }
 
 void CObjectOStreamAsnBinary::WriteMemberPrefix(const CMemberId& id)

@@ -124,27 +124,20 @@ public:
     class Value {
     public:
         Value()
-            : hasValue(false)
             {
             }
-        Value(const string& i)
-            : id(i), hasValue(false)
-            {
-            }
-        Value(const string& i, long v)
-            : id(i), hasValue(true), value(v)
+        Value(const string& i, int v)
+            : id(i), value(v)
             {
             }
         string id;
-        bool hasValue;
-        long value;
+        int value;
     };
     typedef list<Value> TValues;
 
     ASNEnumeratedType(ASNModule& module, const string& kw);
 
-    void AddValue(const string& name);
-    void AddValue(const string& name, long value);
+    void AddValue(const string& name, int value);
 
     ostream& Print(ostream& out, int indent) const;
 

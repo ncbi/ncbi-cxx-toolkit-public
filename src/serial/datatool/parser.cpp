@@ -208,14 +208,10 @@ AutoPtr<ASNType> ASNParser::EnumeratedBlock(ASNModule& module,
 void ASNParser::EnumeratedValue(ASNEnumeratedType* t)
 {
     string id = Identifier();
-    if ( ConsumeIfSymbol('(') ) {
-        long value = Number();
-        ConsumeSymbol(')');
-        t->AddValue(id, value);
-    }
-    else {
-        t->AddValue(id);
-    }
+    ConsumeSymbol('(');
+    long value = Number();
+    ConsumeSymbol(')');
+    t->AddValue(id, value);
 }
 
 void ASNParser::TypeList(list<string>& ids)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/08/16 16:08:31  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.17  1999/08/13 20:22:58  vasilche
 * Fixed lot of bugs in datatool
 *
@@ -156,6 +159,11 @@ void CObjectOStream::WriteTypeName(const string& )
 bool CObjectOStream::WriteEnumName(const string& )
 {
     return false;
+}
+
+void CObjectOStream::WriteEnumValue(int value)
+{
+    WriteStd(value);
 }
 
 void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/08/16 16:07:43  vasilche
+* Added ENUMERATED type.
+*
 * Revision 1.20  1999/08/13 15:53:43  vasilche
 * C++ analog of asntool: datatool
 *
@@ -128,6 +131,7 @@ public:
     
     // try to read enum value name, "" if none
     virtual string ReadEnumName(void);
+    virtual int ReadEnumValue(void);
 
     virtual TTypeInfo MapType(const string& name);
     void SetTypeMapper(CTypeMapper* typeMapper);
