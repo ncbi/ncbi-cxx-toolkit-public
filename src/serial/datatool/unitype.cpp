@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/04/02 16:56:33  gouriano
+* made it possible to create named CTypeInfo for containers
+*
 * Revision 1.27  2003/06/24 20:55:42  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -305,7 +308,8 @@ TObjectPtr CUniSequenceDataType::CreateDefault(const CDataValue& ) const
 
 CTypeInfo* CUniSequenceDataType::CreateTypeInfo(void)
 {
-    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(m_ElementType->GetTypeInfo().Get()));
+    return UpdateModuleName(CStlClassInfo_list<AnyType>::CreateTypeInfo(
+        m_ElementType->GetTypeInfo().Get(), GlobalName()));
 }
 
 bool CUniSequenceDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const

@@ -513,6 +513,14 @@ public:
             SetFunctions(info);
             return info;
         }
+    static CTypeInfo* CreateTypeInfo(TTypeInfo elementType, const string& name)
+        {
+            CStlOneArgTemplate* info =
+                new CStlOneArgTemplate(sizeof(TObjectType), elementType,
+                                       false, name);
+            SetFunctions(info);
+            return info;
+        }
 
     static TTypeInfo GetSetTypeInfo(TTypeInfo elementType)
         {
@@ -710,6 +718,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/04/02 16:57:35  gouriano
+* made it possible to create named CTypeInfo for containers
+*
 * Revision 1.67  2004/03/25 15:57:55  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

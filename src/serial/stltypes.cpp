@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/04/02 16:57:09  gouriano
+* made it possible to create named CTypeInfo for containers
+*
 * Revision 1.39  2003/07/22 21:46:42  vasilche
 * Added SET OF implemented as vector<>.
 *
@@ -287,6 +290,13 @@ void CStlClassInfoUtil::CannotGetElementOfSet(void)
 void CStlClassInfoUtil::ThrowDuplicateElementError(void)
 {
     NCBI_THROW(CSerialException,eFail, "duplicate element of unique container");
+}
+
+CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
+                                       TTypeInfo type, bool randomOrder,
+                                       const string& name)
+    : CParent(size, name, type, randomOrder)
+{
 }
 
 CStlOneArgTemplate::CStlOneArgTemplate(size_t size,

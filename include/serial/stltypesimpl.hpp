@@ -75,6 +75,8 @@ class NCBI_XSERIAL_EXPORT CStlOneArgTemplate : public CContainerTypeInfo
     typedef CContainerTypeInfo CParent;
 public:
     CStlOneArgTemplate(size_t size, TTypeInfo dataType,
+                       bool randomOrder, const string& name);
+    CStlOneArgTemplate(size_t size, TTypeInfo dataType,
                        bool randomOrder);
     CStlOneArgTemplate(size_t size, const CTypeRef& dataType,
                        bool randomOrder);
@@ -151,6 +153,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/04/02 16:57:35  gouriano
+* made it possible to create named CTypeInfo for containers
+*
 * Revision 1.7  2003/07/22 21:47:04  vasilche
 * Added SET OF implemented as vector<>.
 *
