@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/18 18:57:40  thiessen
+* added transparent spheres
+*
 * Revision 1.6  2000/08/17 18:33:12  thiessen
 * minor fixes to StyleManager
 *
@@ -322,7 +325,12 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             return false;
     }
 
-    atomStyle->style = eSphereAtom;
+    // determine transparency
+    if (molecule->IsSolvent())
+        atomStyle->style = eTransparentAtom;
+    else
+        atomStyle->style = eSolidAtom;
+
     atomStyle->name = info->glName;
     return true;
 }

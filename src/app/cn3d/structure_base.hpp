@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/18 18:57:44  thiessen
+* added transparent spheres
+*
 * Revision 1.12  2000/08/17 14:22:01  thiessen
 * added working StyleManager
 *
@@ -73,8 +76,8 @@
 #define CN3D_STRUCTUREBASE__HPP
 
 // container type used for various lists
-#include <list>
-#define LIST_TYPE std::list
+#include <deque>
+#define LIST_TYPE std::deque    // most insertions will be at beginning or end
 
 #include <map>
 #include <corelib/ncbidiag.hpp>

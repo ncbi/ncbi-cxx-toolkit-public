@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/18 18:57:39  thiessen
+* added transparent spheres
+*
 * Revision 1.12  2000/08/17 14:24:06  thiessen
 * added working StyleManager
 *
@@ -317,6 +320,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
     AtomStyle atomStyle;
     const Atom *atom;
+    double alpha;
 
     // iterate atoms; key is atomID
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
@@ -331,8 +335,18 @@ bool Residue::Draw(const AtomSet *atomSet) const
         // get Atom* for appropriate altConf and draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed &&
             atomStyle.radius > 0.0 &&
-            (atom = atomSet->GetAtom(ap, overlayEnsembles)) != NULL)
-            parentSet->renderer->DrawAtom(atom->site, atomStyle);
+            (atom = atomSet->GetAtom(ap, overlayEnsembles)) != NULL) {
+
+            // add transparency; scale by occupancy if transparent
+            if (atomStyle.style == StyleManager::eTransparentAtom) {
+                alpha = 0.6;
+                if (atom->occupancy < 1 && atom->occupancy >= 0)
+                    alpha *= atom->occupancy;
+            } else
+                alpha = 1.0;
+
+            parentSet->renderer->DrawAtom(atom->site, atomStyle, alpha);
+        }
     }
 
     return true;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/18 18:57:43  thiessen
+* added transparent spheres
+*
 * Revision 1.13  2000/08/17 14:22:00  thiessen
 * added working StyleManager
 *
@@ -77,6 +80,9 @@
 
 // do not include GL headers here, so that other modules can more easily
 // access this without potential name conflicts
+
+#include <list>
+#include <map>
 
 #include "cn3d/vector_math.hpp"
 
@@ -130,7 +136,7 @@ public:
     void ChangeView(eViewAdjust control, int dX = 0, int dY = 0, int X2 = 0, int Y2 = 0);
 
     // draws the display lists
-    void Display(void) const;
+    void Display(void);
 
     // tells the renderer what structure(s) it's to draw
     void AttachStructureSet(StructureSet *targetStructureSet);
@@ -139,9 +145,9 @@ public:
     void Construct(void);
 
     // push the global view matrix, then apply transformation (e.g., for structure alignment)
-    void PushMatrix(const Matrix* xform) const;
+    void PushMatrix(const Matrix* xform);
     // pop matrix
-    void PopMatrix(void) const;
+    void PopMatrix(void);
 
     // display list management
     static const unsigned int NO_LIST, FIRST_LIST;
@@ -156,7 +162,7 @@ public:
     void ShowPreviousFrame(void);
 
     // drawing methods
-    void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
+    void DrawAtom(const Vector& site, const AtomStyle& atomStyle, double alpha);
     void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style,
         const Vector *site0, const Vector* site3);
     void DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& helixStyle);
@@ -165,7 +171,7 @@ public:
 
 private:
     StructureSet *structureSet;
-    void SetColor(int type, float red, float green, float blue, float alpha = 1.0);
+    void SetColor(int type, float red = 0.0, float green = 0.0, float blue = 0.0, float alpha = 1.0);
     void ConstructLogo(void);
 
     // camera data
@@ -186,6 +192,37 @@ private:
     int bondSides;                  // for bonds
     int wormSides, wormSegments;    // for worm bonds
     int helixSides;                 // for helix objects
+
+    // stuff for storing transparent spheres (done during Construct())
+    unsigned int currentDisplayList;
+    Matrix currentSlaveTransform;
+    typedef struct {
+        Vector site, color; 
+        unsigned int name;
+        double radius, alpha;
+    } SphereInfo;
+    typedef std::list < SphereInfo > SphereList;
+    typedef std::pair < SphereList, Matrix > SphereListAndTransform;
+    typedef std::map < unsigned int, SphereListAndTransform > SphereMap;
+    SphereMap sphereMap;
+    void AddTransparentSphere(const Vector& color, unsigned int name,
+        const Vector& site, double radius, double alpha);
+    void ClearTransparentSpheres(void) { sphereMap.clear(); }
+
+    // stuff for rendering transparent spheres (done during Display())
+    class SpherePtr
+    {
+    public:
+        Vector siteGL; // atom site in GL coordinates
+        double distanceFromCamera;
+        SphereInfo *ptr;
+        friend bool operator < (const SpherePtr& a, const SpherePtr& b)
+            { return (a.distanceFromCamera < b.distanceFromCamera); }
+    };
+    typedef std::list < SpherePtr > SpherePtrList;
+    SpherePtrList renderSphereList;
+    void AddTransparentSpheresFromList(unsigned int list);
+    void RenderTransparentSpheres(void);
 };
 
 END_SCOPE(Cn3D)

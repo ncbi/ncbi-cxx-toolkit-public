@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/18 18:57:39  thiessen
+* added transparent spheres
+*
 * Revision 1.17  2000/08/17 14:24:06  thiessen
 * added working StyleManager
 *
@@ -154,7 +157,8 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
 
 // OpenGLRenderer methods - initialization and setup
 
-OpenGLRenderer::OpenGLRenderer(void) : selectMode(false)
+OpenGLRenderer::OpenGLRenderer(void) :
+    selectMode(false), currentDisplayList(NO_LIST)
 {
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
@@ -336,32 +340,36 @@ void OpenGLRenderer::SetSize(int width, int height) const
     NewView();
 }
 
-void OpenGLRenderer::PushMatrix(const Matrix* m) const
+void OpenGLRenderer::PushMatrix(const Matrix* m)
 {
     glPushMatrix();
     if (m) {
         GLdouble g[16];
         Matrix2GL(*m, g);
         glMultMatrixd(g);
+        currentSlaveTransform = *m;
     }
 }
 
-void OpenGLRenderer::PopMatrix(void) const
+void OpenGLRenderer::PopMatrix(void)
 {
     glPopMatrix();
+    currentSlaveTransform.SetToIdentity();
 }
 
 // display list management stuff
 void OpenGLRenderer::StartDisplayList(unsigned int list)
 {
-    SetColor(GL_NONE, 0, 0, 0); // reset color caches in SetColor
+    SetColor(GL_NONE); // reset color caches in SetColor
     TESTMSG("creating display list " << list);
     glNewList(list, GL_COMPILE);
+    currentDisplayList = list;
 }
 
 void OpenGLRenderer::EndDisplayList(void)
 {
     glEndList();
+    currentDisplayList = NO_LIST;
 }
 
 
@@ -405,7 +413,7 @@ void OpenGLRenderer::ShowPreviousFrame(void)
 
 // methods dealing with structure data and drawing
 
-void OpenGLRenderer::Display(void) const
+void OpenGLRenderer::Display(void)
 {
     if (structureSet) {
         const Vector& background = structureSet->styleManager->GetBackgroundColor();
@@ -424,17 +432,29 @@ void OpenGLRenderer::Display(void) const
     
     if (structureSet) {
         if (currentFrame == ALL_FRAMES) {
-            for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++)
+            for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
                 glCallList(i);
+                AddTransparentSpheresFromList(i);
+            }
         } else {
             StructureSet::DisplayLists::const_iterator
                 l, le=structureSet->frameMap[currentFrame].end();
-            for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++)
+            for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++) {
                 glCallList(*l);
+                AddTransparentSpheresFromList(*l);
+            }
         }
-    } else {
-        glCallList(FIRST_LIST); // draw logo
+
+        // draw transparent spheres, which are already stored in view-transformed coordinates
+        glLoadIdentity();
+        RenderTransparentSpheres();
     }
+
+    // draw logo if no structure
+    else {
+        glCallList(FIRST_LIST);
+    }
+
     glFlush();
 }
 
@@ -503,6 +523,7 @@ void OpenGLRenderer::Construct(void)
     glLoadIdentity();
 
     if (structureSet) {
+        ClearTransparentSpheres();
         structureSet->DrawAll();
     } else {
         ConstructLogo();
@@ -653,15 +674,93 @@ void OpenGLRenderer::ConstructLogo(void)
     glEndList();
 }
 
-void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
+// stuff dealing with rendering of transparent spheres
+
+void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name,
+    const Vector& site, double radius, double alpha)
+{
+    if (currentDisplayList == NO_LIST) {
+        ERR_POST(Warning << "OpenGLRenderer::AddTransparentSphere() - not called during display list creation");
+        return;
+    }
+
+    SphereListAndTransform& sphereLT = sphereMap[currentDisplayList];
+    sphereLT.first.resize(sphereLT.first.size() + 1);
+    SphereInfo& info = sphereLT.first.back();
+    info.site = site;
+    info.name = name;
+    info.color = color;
+    info.radius = radius;
+    info.alpha = alpha;
+    if (sphereLT.first.size() == 1)
+        sphereLT.second = currentSlaveTransform;
+}
+
+void OpenGLRenderer::AddTransparentSpheresFromList(unsigned int list)
+{
+    Matrix view;
+    GL2Matrix(viewMatrix, &view);
+
+    // add spheres attached to this display list; calculate distance from camera to each one
+    SphereList::iterator i, ie=sphereMap[list].first.end();
+    for (i=sphereMap[list].first.begin(); i!=ie; i++) {
+
+        renderSphereList.resize(renderSphereList.size() + 1);
+        SpherePtr& sph = renderSphereList.back();
+
+        sph.siteGL = i->site;
+        ApplyTransformation(&sph.siteGL, sphereMap[list].second); // slave->master transform
+        ApplyTransformation(&sph.siteGL, view);                   // current view transform
+        sph.distanceFromCamera = (Vector(0,0,cameraDistance) - sph.siteGL).length() - i->radius;
+        sph.ptr = &(*i);
+    }
+}
+
+void OpenGLRenderer::RenderTransparentSpheres(void)
+{
+    SetColor(GL_NONE); // reset color caches in SetColor
+
+    // sort spheres by distance from camera
+    renderSphereList.sort();
+
+    // turn on blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // render spheres in order (farthest first)
+    SpherePtrList::reverse_iterator i, ie=renderSphereList.rend();
+    for (i=renderSphereList.rbegin(); i!=ie; i++) {
+        //TESTMSG("distance " << i->distanceFromCamera << " coord " << i->siteGL << " alpha " << i->ptr->alpha);
+        SetColor(GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
+        glLoadName(static_cast<GLuint>(i->ptr->name));
+        glPushMatrix();
+        glTranslated(i->siteGL.x, i->siteGL.y, i->siteGL.z);
+        gluSphere(qobj, i->ptr->radius, atomSlices, atomStacks);
+        glPopMatrix();
+    }
+
+    // turn off blending
+    glDisable(GL_BLEND);
+
+    renderSphereList.clear();
+}
+
+void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, double alpha)
 {
     if (atomStyle.radius <= 0.0) return;
-    SetColor(GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
-    glLoadName(static_cast<GLuint>(atomStyle.name));
-    glPushMatrix();
-    glTranslated(site.x, site.y, site.z);
-    gluSphere(qobj, atomStyle.radius, atomSlices, atomStacks);
-    glPopMatrix();
+
+    if (atomStyle.style == StyleManager::eSolidAtom) {
+        SetColor(GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
+        glLoadName(static_cast<GLuint>(atomStyle.name));
+        glPushMatrix();
+        glTranslated(site.x, site.y, site.z);
+        gluSphere(qobj, atomStyle.radius, atomSlices, atomStacks);
+        glPopMatrix();
+    }
+    // need to delay rendering of transparent spheres
+    else {
+        AddTransparentSphere(atomStyle.color, atomStyle.name, site, atomStyle.radius, alpha);
+    }
 }
 
 /* add a thick splined curve from point 1 *halfway* to point 2 */

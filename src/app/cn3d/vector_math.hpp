@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/18 18:57:44  thiessen
+* added transparent spheres
+*
 * Revision 1.8  2000/08/13 02:42:14  thiessen
 * added helix and strand objects
 *
@@ -192,6 +195,11 @@ public:
     }
     Matrix(const Matrix& o) {
         for (int i=0; i<16; i++) m[i]=o.m[i];
+    }
+    void SetToIdentity(void) {
+        m[0] = m[5] = m[10] = m[15] = 1;
+        m[1] = m[2] = m[3] = m[4] = m[6] = m[7] =
+        m[8] = m[9] = m[11] = m[12] = m[13] = m[14] = 0;
     }
     Matrix& operator = (const Matrix& o) {
         for (int i=0; i<16; i++) m[i]=o.m[i];

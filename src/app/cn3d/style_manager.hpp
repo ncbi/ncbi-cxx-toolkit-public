@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/18 18:57:44  thiessen
+* added transparent spheres
+*
 * Revision 1.7  2000/08/17 18:32:38  thiessen
 * minor fixes to StyleManager
 *
@@ -155,7 +158,8 @@ public:
 
     // display styles for various types of objects
     enum eDisplayStyle {
-        eSphereAtom,
+        eSolidAtom,
+        eTransparentAtom,
         eLineBond,
         eCylinderBond,
         eLineWormBond,
