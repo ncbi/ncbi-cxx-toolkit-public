@@ -262,12 +262,6 @@ void CODBCContext::ODBC_SetPacketSize(SQLUINTEGER packet_size)
     m_PacketSize = packet_size;
 }
 
-void CODBCContext::SetPacketSize(unsigned int packet_size)
-{
-    ODBC_SetPacketSize((SQLUINTEGER) packet_size);
-}
-
-
 
 SQLHENV CODBCContext::ODBC_GetContext() const
 {
@@ -407,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/07/18 19:20:34  soussov
+ * removes SetPacketSize function
+ *
  * Revision 1.7  2003/07/17 20:47:10  soussov
  * connections pool improvements
  *
