@@ -57,24 +57,24 @@ public:
     const string& GetSoapNamespacePrefix(void) const;
 
 // writing
-    void AddObject(const CSerialObject& obj, EMessagePart eDestination);
+    void AddObject(const CSerialObject& obj, EMessagePart destination);
     void Write(CObjectOStream& out) const;
 
 // reading
-    void Read(CObjectIStream& in);
-
-// data access
-    void RegisterObjectType(TTypeInfoGetter typeGetter);
+    void RegisterObjectType(TTypeInfoGetter type_getter);
     void RegisterObjectType(const CTypeInfo& type);
     void RegisterObjectType(const CSerialObject& obj);
 
+    void Read(CObjectIStream& in);
+
+// data access
     void Reset(void);
 
-    const TSoapContent& GetContent(EMessagePart eSource) const;
-    CConstRef<CSerialObject> GetSerialObject(const string& typeName,
-                                             EMessagePart eSource) const;
+    const TSoapContent& GetContent(EMessagePart source) const;
+    CConstRef<CSerialObject> GetSerialObject(const string& type_name,
+                                             EMessagePart source) const;
     CConstRef<CAnyContentObject> GetAnyContentObject(const string& name,
-                                                     EMessagePart eSource) const;
+                                                     EMessagePart source) const;
 
 private:
     string m_Prefix;
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/04 20:55:02  gouriano
+* correct parameter names
+*
 * Revision 1.2  2003/09/25 19:46:21  gouriano
 * Added soap Fault object
 *

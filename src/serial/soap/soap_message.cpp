@@ -75,11 +75,11 @@ const string& CSoapMessage::GetSoapNamespacePrefix(void) const
 
 
 void CSoapMessage::AddObject(const CSerialObject& obj,
-                              EMessagePart eDestination)
+                              EMessagePart destination)
 {
-    if (eDestination == eMsgHeader) {
+    if (destination == eMsgHeader) {
         m_Header.push_back( CConstRef<CSerialObject>(&obj));
-    } else if (eDestination == eMsgBody) {
+    } else if (destination == eMsgBody) {
         m_Body.push_back( CConstRef<CSerialObject>(&obj));
     } else {
         m_FaultDetail.push_back( CConstRef<CSerialObject>(&obj));
@@ -177,9 +177,9 @@ void CSoapMessage::Read(CObjectIStream& in)
 }
 
 
-void CSoapMessage::RegisterObjectType(TTypeInfoGetter typeGetter)
+void CSoapMessage::RegisterObjectType(TTypeInfoGetter type_getter)
 {
-    RegisterObjectType(*typeGetter());
+    RegisterObjectType(*type_getter());
 }
 
 void CSoapMessage::RegisterObjectType(const CTypeInfo& type)
@@ -203,11 +203,11 @@ void CSoapMessage::Reset(void)
 }
 
 const CSoapMessage::TSoapContent&
-CSoapMessage::GetContent(EMessagePart eSource) const
+CSoapMessage::GetContent(EMessagePart source) const
 {
-    if (eSource == eMsgHeader) {
+    if (source == eMsgHeader) {
         return m_Header;
-    } else if (eSource == eMsgBody) {
+    } else if (source == eMsgBody) {
         return m_Body;
     } else {
         return m_FaultDetail;
@@ -215,13 +215,13 @@ CSoapMessage::GetContent(EMessagePart eSource) const
 }
 
 CConstRef<CSerialObject>
-CSoapMessage::GetSerialObject(const string& typeName,
-                               EMessagePart eSource) const
+CSoapMessage::GetSerialObject(const string& type_name,
+                               EMessagePart source) const
 {
-    const TSoapContent& src = GetContent(eSource);
+    const TSoapContent& src = GetContent(source);
     TSoapContent::const_iterator it;
     for (it= src.begin(); it != src.end(); ++it) {
-        if ((*it)->GetThisTypeInfo()->GetName() == typeName) {
+        if ((*it)->GetThisTypeInfo()->GetName() == type_name) {
             return (*it);
         }
     }
@@ -230,9 +230,9 @@ CSoapMessage::GetSerialObject(const string& typeName,
 
 CConstRef<CAnyContentObject>
 CSoapMessage::GetAnyContentObject(const string& name,
-                                   EMessagePart eSource) const
+                                   EMessagePart source) const
 {
-    const TSoapContent& src = GetContent(eSource);
+    const TSoapContent& src = GetContent(source);
     TSoapContent::const_iterator it;
     for (it= src.begin(); it != src.end(); ++it) {
         const CAnyContentObject* obj =
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/04 20:56:03  gouriano
+* correct parameter names
+*
 * Revision 1.2  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *
