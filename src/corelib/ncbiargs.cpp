@@ -39,6 +39,12 @@
 #include <corelib/ncbienv.hpp>
 #include <algorithm>
 
+#if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#  include <io.h> 
+#  include <fcntl.h> 
+#endif
+
 BEGIN_NCBI_SCOPE
 
 
@@ -306,6 +312,10 @@ void CArg_InputFile::x_Open(void) const
         return;
 
     if (AsString() == "-") {
+#if defined(NCBI_OS_MSWIN)
+        if ((m_OpenMode & IOS_BASE::binary) != 0)
+            setmode(fileno(stdin), O_BINARY);
+#endif
         m_InputFile  = &cin;
         m_DeleteFlag = false;
     } else if ( !AsString().empty() ) {
@@ -356,13 +366,10 @@ CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 void CArg_InputFile::CloseFile(void) const
 {
     if ( !m_InputFile ) {
-        ERR_POST(Warning << s_ArgExptMsg( GetName(),
-            "CArg_InputFile::CloseFile: File was not opened", AsString()));
-/*
-                 CArgException(GetName(),
-                               "CArg_InputFile::CloseFile -- file not opened",
-                               AsString()).what());
-*/
+        ERR_POST(Warning
+                 << s_ArgExptMsg(GetName(),
+                                 "CArg_InputFile::CloseFile:  Unopened file",
+                                 AsString()));
         return;
     }
 
@@ -383,6 +390,10 @@ void CArg_OutputFile::x_Open(void) const
         return;
 
     if (AsString() == "-") {
+#if defined(NCBI_OS_MSWIN)
+        if ((m_OpenMode & IOS_BASE::binary) != 0)
+            setmode(fileno(stdout), O_BINARY);
+#endif
         m_OutputFile = &cout;
         m_DeleteFlag = false;
     } else if ( !AsString().empty() ) {
@@ -2193,6 +2204,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/09/27 23:25:50  vakatov
+ * [MSWIN]  CArg_***File::  set standard I/O streams to "binary" mode if so
+ *          specified by arg description
+ *
  * Revision 1.49  2004/07/22 15:26:09  vakatov
  * Allow "Int8" arguments
  *
