@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/08 17:47:34  kholodov
+* Removed SetDataBase() method
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -83,7 +86,7 @@ public:
 
   CDB_Connection* GetConnAux();
 
-  virtual void SetDataBase(const string& name);
+    //virtual void SetDataBase(const string& name);
   virtual string GetDataBase();
 
   void SetDbName(const string& name, CDB_Connection* conn = 0);

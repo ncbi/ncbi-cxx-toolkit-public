@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/02/08 17:47:34  kholodov
+* Removed SetDataBase() method
+*
 * Revision 1.3  2002/02/08 17:38:26  kholodov
 * Moved listener registration to parent objects
 *
@@ -93,12 +96,12 @@ CConnection::~CConnection()
   Notify(CDbapiDeletedEvent(this));
 }
 
-
+/*
 void CConnection::SetDataBase(const string& name)
 {
   SetDbName(name);
 }
-
+*/
 string CConnection::GetDataBase()
 {
   return m_database;

@@ -253,7 +253,7 @@ public:
 			 const string& database = kEmptyStr) = 0;
 
     // Set current database
-    virtual void SetDataBase(const string& name) = 0;
+    //virtual void SetDataBase(const string& name) = 0;
 
     // Get current database
     virtual string GetDataBase() = 0;
@@ -301,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/02/08 17:47:35  kholodov
+ * Removed SetDataBase() method
+ *
  * Revision 1.1  2002/01/30 14:51:24  kholodov
  * User DBAPI implementation, first commit
  *
