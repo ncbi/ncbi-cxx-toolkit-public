@@ -14,5 +14,5 @@ SRC = objmgr_sample
 ### BEGIN COPIED SETTINGS
 LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       dbapi_driver xser xutil xconnect xncbi
-LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
