@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/11 14:00:21  grichenk
+* CStreamByteSourceReader::Read() -- use readsome() instead of read()
+*
 * Revision 1.8  2001/01/05 20:09:05  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -109,8 +112,12 @@ CRef<CByteSourceReader> CStreamByteSource::Open(void)
 
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
+#ifdef __GNUC__
     m_Stream->read(buffer, bufferLength);
     return m_Stream->gcount();
+#else
+    return m_Stream->readsome(buffer, bufferLength);
+#endif
 }
 
 bool CStreamByteSourceReader::EndOfData(void) const
