@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.17 2002/01/04 14:35:30 juran Exp $
+	$Id: maketests.met,v 1.18 2002/01/31 21:05:16 kans Exp $
 	
    ================================================================================ *)
 
@@ -789,9 +789,6 @@ on SetupTarget(proj, flags)
 		repeat with i in projRsrcs
 			copy gRsrcsDir & i to end of filesToAdd
 		end repeat
-		if flags contains "Carbon" then
-			copy gRsrcsDir & "Carbon.r" to end of filesToAdd
-		end if
 		
 		Add Files filesToAdd
 		
