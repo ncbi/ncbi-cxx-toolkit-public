@@ -53,47 +53,10 @@ static inline TThreadSystemID GetThreadId(void)
 
 CLoadInfo::CLoadInfo(void)
 {
-    m_LoaderCounter.Set(0);
 }
 
 
 CLoadInfo::~CLoadInfo(void)
-{
-    _ASSERT(!HasLoaders());
-}
-
-
-bool CLoadInfo::HasLoaders(void) const
-{
-    return m_LoaderCounter.Get() != 0;
-}
-
-
-void CLoadInfo::AddLoader(void)
-{
-    if ( m_LoaderCounter.Add(1) == 1 ) {
-        LockForLoaders();
-    }
-    else {
-        _ASSERT(IsLoaded());
-    }
-}
-
-
-void CLoadInfo::RemoveLoader(void)
-{
-    if ( m_LoaderCounter.Add(-1) == 0 ) {
-        UnlockForLoaders();
-    }
-}
-
-
-void CLoadInfo::LockForLoaders(void)
-{
-}
-
-
-void CLoadInfo::UnlockForLoaders(void)
 {
 }
 
@@ -124,6 +87,15 @@ CLoadInfoBlob_ids::CLoadInfoBlob_ids(const TSeq_id& id)
 
 CLoadInfoBlob_ids::~CLoadInfoBlob_ids(void)
 {
+}
+
+
+CLoadInfoBlob_ids::TBlob_Info&
+CLoadInfoBlob_ids::AddBlob_id(const TBlob_id& id, const TBlob_Info& info)
+{
+    _ASSERT(!IsLoaded());
+    return m_Blob_ids.insert(TBlob_ids::value_type(id, info))
+        .first->second;
 }
 
 
@@ -159,20 +131,11 @@ CLoadInfoLock::CLoadInfoLock(CReaderRequestResult& owner,
       m_Info(info),
       m_Guard(m_Info->m_LoadLock, owner)
 {
-    //LOG_POST(GetThreadId()<<": Lock aquired for "<<&*m_Info<<" loaded: "<<m_Info->IsLoaded());
-    m_Info->AddLoader();
 }
 
 
 CLoadInfoLock::~CLoadInfoLock(void)
 {
-    m_Info->RemoveLoader();
-    if ( !m_Info->IsLoaded() ) {
-        //LOG_POST(GetThreadId()<<": release not loaded lock of "<<&*m_Info);
-    }
-    else {
-        //LOG_POST(GetThreadId()<<": release loaded lock of "<<&*m_Info);
-    }
     m_Guard.Release();
     m_Owner.ReleaseLoadLock(m_Info);
 }
@@ -180,7 +143,7 @@ CLoadInfoLock::~CLoadInfoLock(void)
 
 void CLoadInfoLock::SetLoaded(CObject* obj)
 {
-    //LOG_POST(GetThreadId()<<": set loaded to "<<&*m_Info<<" loaded: "<<m_Info->IsLoaded());
+    _ASSERT(!m_Info->m_LoadLock);
     if ( !obj ) {
         obj = new CObject;
     }
@@ -362,10 +325,9 @@ CReaderRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& /*key*/)
 
 
 CRef<CLoadInfoBlob_ids>
-CReaderRequestResult::GetInfoBlob_ids(const CSeq_id_Handle& /*key*/)
+CReaderRequestResult::GetInfoBlob_ids(const CSeq_id_Handle& key)
 {
-    NCBI_THROW(CLoaderException, eOtherError,
-               "CReaderRequestResult::GetInfoBlob_ids(): invalid call");
+    return Ref(new CLoadInfoBlob_ids(key));
 }
 
 #if 0

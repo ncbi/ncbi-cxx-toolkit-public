@@ -76,23 +76,15 @@ public:
         {
             return m_LoadLock;
         }
-    bool HasLoaders(void) const;
 
 private:
     friend class CLoadInfoLock;
     friend class CLoadLock_Base;
 
-    void AddLoader(void);
-    void RemoveLoader(void);
-
-    virtual void LockForLoaders(void);
-    virtual void UnlockForLoaders(void);
-
     CLoadInfo(const CLoadInfo&);
     CLoadInfo& operator=(const CLoadInfo&);
 
     CInitMutex<CObject> m_LoadLock;
-    CAtomicCounter      m_LoaderCounter;
 };
 
 
@@ -185,12 +177,7 @@ public:
             return m_Blob_ids.empty();
         }
 
-    TBlob_Info& AddBlob_id(const TBlob_id& id, const TBlob_Info& info)
-        {
-            _ASSERT(!IsLoaded());
-            return m_Blob_ids.insert(TBlob_ids::value_type(id, info))
-                .first->second;
-        }
+    TBlob_Info& AddBlob_id(const TBlob_id& id, const TBlob_Info& info);
 
 public:
     TSeq_id     m_Seq_id;
