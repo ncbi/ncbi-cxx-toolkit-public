@@ -180,8 +180,11 @@ files="\
 Makefile.app Makefile.lib Makefile.is_dll_support Makefile.dll Makefile.both \
 Makefile.rules Makefile.rules_with_autodep"
 
-mkdir "$install_builddir"  &&  cp -p $files "$install_builddir"  ||  \
-   Usage "Failed to copy makefiles to:  $install_builddir"
+mkdir "$install_builddir"  ||  Usage "Failed to create dir:  $install_builddir"
+for f in $files ; do
+   cp -p $script_dir/$f "$install_builddir/$f"  ||  \
+     Usage "Failed to copy makefile to:  $install_builddir/$f"
+done
 
 #    ...with $(builddir) adjustment
 files="\
