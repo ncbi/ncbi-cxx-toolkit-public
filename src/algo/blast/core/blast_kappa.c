@@ -52,7 +52,6 @@ static char const rcsid[] =
 #include "blast_posit.h"
 #include "blast_hits_priv.h"
 
-
 /** by what factor might initially reported E-value exceed true Evalue */
 #define EVALUE_STRETCH 5 
 
@@ -2208,7 +2207,7 @@ Kappa_SequenceGetWindow(
       amino acid string and return the filtered string*/
     {{
       BlastSeqLoc* mask_seqloc;
-      const Uint1 k_program_name = eBlastTypeBlastp;
+      const EBlastProgramType k_program_name = eBlastTypeBlastp;
 
       BlastSetUp_Filter(k_program_name, seqData->data, seqData->length,
                         0, BLASTP_MASK_INSTRUCTIONS, NULL, &mask_seqloc);
@@ -3091,9 +3090,18 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                 thisMatch->hsp_array[hsp_index],
                                 window, &query, &subject);
 
-            gapAlign->gap_x_dropoff =
-                (Int4) extendParams->options->gap_x_dropoff_final * NCBIMATH_LN2
-                / searchParams->kbp_gap_orig->Lambda*localScalingFactor;
+            if (positionBased) {
+                /* We don't use the scaled Lambda because we loose precision */
+                gapAlign->gap_x_dropoff =
+                    (Int4) extendParams->options->gap_x_dropoff_final * 
+                    NCBIMATH_LN2 / 
+                    searchParams->kbp_gap_orig->Lambda*localScalingFactor;
+            } else {
+                /* Lambda is already scaled */
+                gapAlign->gap_x_dropoff =
+                    (Int4) extendParams->options->gap_x_dropoff_final * 
+                    NCBIMATH_LN2 / kbp->Lambda;
+            }
             BLAST_GappedAlignmentWithTraceback(program_number,
                                                query.data, subject.data,
                                                gapAlign, scoringParams,
