@@ -212,7 +212,7 @@ SameStrand(const SAlignment_Row& r) const
 inline
 int SAlignment_Segment::SAlignment_Row::GetSegStart(void) const
 {
-    return m_Start != kInvalidSeqPos ? m_Start : -1;
+    return m_Start != kInvalidSeqPos ? int(m_Start) : -1;
 }
 
 
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/15 14:01:24  vasilche
+* Fixed int <> unsigned conversion warning.
+*
 * Revision 1.7  2004/05/26 14:57:36  ucko
 * Change CSeq_align_Mapper::m_Dim's type from unsigned int to size_t
 * for consistency with STL containers' size() methods.
