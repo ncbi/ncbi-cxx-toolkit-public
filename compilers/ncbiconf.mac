@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.mac,v 1.13 2003/04/14 20:27:09 lebedev Exp $
+/* $Id: ncbiconf.mac,v 1.14 2003/04/14 21:23:51 vakatov Exp $
  * By Jonathan Kans, NCBI (kans@ncbi.nlm.nih.gov)
  *
  * NOTE:  Unlike its UNIX counterpart, this configuration header
@@ -9,32 +9,32 @@
 #define NCBI_CXX_TOOLKIT  1
 
 #ifdef __MWERKS__
-#define NCBI_COMPILER_METROWERKS 1
+#  define NCBI_COMPILER_METROWERKS 1
 #endif
 
 #ifdef __MACH__
-#define NCBI_OS_DARWIN 1
-#define NCBI_OS_UNIX 1
-#define NCBI_OS      "MAC OSX"
-#define HOST         "PowerPC-Apple-MacOSX"
-#define HOST_OS      "MacOSX"
-/* fix for /usr/include/ctype.h */
-#define _USE_CTYPE_INLINE_ 1
+#  define NCBI_OS_DARWIN 1
+#  define NCBI_OS_UNIX 1
+#  define NCBI_OS      "MAC OSX"
+#  define HOST         "PowerPC-Apple-MacOSX"
+#  define HOST_OS      "MacOSX"
+   /* fix for /usr/include/ctype.h */
+#  define _USE_CTYPE_INLINE_ 1
 #else
-#define NCBI_OS_MAC  1
-#define NCBI_OS      "MAC"
-#define HOST         "PowerPC-Apple-MacOS"
-#define HOST_OS      "MacOS"
+#  define NCBI_OS_MAC  1
+#  define NCBI_OS      "MAC"
+#  define HOST         "PowerPC-Apple-MacOS"
+#  define HOST_OS      "MacOS"
 #endif
 
 #ifdef NCBI_COMPILER_MW_MSL
-#undef NCBI_COMPILER_MW_MSL
+#  undef NCBI_COMPILER_MW_MSL
 #endif
 
 #if defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS)
-#if _MSL_USING_MW_C_HEADERS
-#define NCBI_COMPILER_MW_MSL
-#endif
+#  if _MSL_USING_MW_C_HEADERS
+#    define NCBI_COMPILER_MW_MSL
+#  endif
 #endif
 
 #define HOST_CPU     "PowerPC"
@@ -66,4 +66,3 @@
 #define HAVE_STRSTREAM   1
 #define HAVE_UNISTD_H    1
 #define HAVE_IOS_XALLOC  1
-#undef AUTOMATIC_STREAMBUF_DESTRUCTION
