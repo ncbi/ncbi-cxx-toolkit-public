@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi language call
 * $Log$
+* Revision 1.3  2004/05/18 18:24:52  gorelenk
+* Added PCH - <ncbi_pch.hpp> .
+*
 * Revision 1.2  2002/07/18 19:51:04  starchen
 * fixed some error
 *
@@ -36,6 +39,8 @@
 *
 *============================================================================
 */
+
+#include <ncbi_pch.hpp>
 
 // the following function  do not describe any DBAPI usage
 
