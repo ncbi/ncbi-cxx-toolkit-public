@@ -564,9 +564,9 @@ void CMasterContext::x_SetBaseName(void)
         s_GetNameForBioseq(segment, seg_name);
     }
 
-    if (!seg_name.empty()  &&  NStr::EndsWith(seg_name, "1")  &&
+    if (!seg_name.empty()  &&  NStr::EndsWith(seg_name, '1')  &&
         parent_name.length() == seg_name.length()  &&
-        NStr::EndsWith(parent_name, "1")) {
+        NStr::EndsWith(parent_name, '1')) {
         for (size_t pos = parent_name.length() - 2; pos >= 0; --pos) {
             if (parent_name[pos] != '0') {
                 break;
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/10/05 15:38:11  shomrat
+* Use more efficient NStr::EndsWith function
+*
 * Revision 1.23  2004/09/01 19:56:36  shomrat
 * fixed intializaion of ShowGBBSource flag
 *
