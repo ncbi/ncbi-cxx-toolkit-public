@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2000/12/29 17:54:11  lavr
+ * NCBID stuff removed; ConnNetInfo_SetUserHeader added;
+ * modifications to ConnNetInfo_Print output.
+ *
  * Revision 6.9  2000/11/07 23:23:18  vakatov
  * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
  * (with "eMIME_Dispatch" added).
@@ -220,7 +224,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     else if (*str && strcasecmp(str, "stateful_capable") == 0)
         info->client_mode = eClientModeStatefulCapable;
     else
-        info->client_mode = eClientModeUnspecified;
+        info->client_mode = eClientModeStatelessOnly;
 
     /* prohibit the use of local load balancer? */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
@@ -229,14 +233,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                          strcasecmp(str, "true") == 0  ||
                          strcasecmp(str, "yes" ) == 0));
 
-    /* NCBID port */
-    REG_VALUE(REG_CONN_NCBID_PORT, str, 0);
-    val = atoi(str);
-    info->ncbid_port = (unsigned short) (val > 0 ? val : DEF_CONN_NCBID_PORT);
-
-    /* NCBID path */
-    REG_VALUE(REG_CONN_NCBID_PATH, info->ncbid_path, DEF_CONN_NCBID_PATH);
-
+    /* has no user header yet... */
+    info->http_user_header = 0;
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
 
@@ -276,6 +274,16 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 }
 
 
+extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
+                                      const char *user_header)
+{
+    if (info->http_user_header)
+        free((char *)info->http_user_header);
+    info->http_user_header = user_header ?
+        strcpy((char *)malloc(strlen(user_header) + 1), user_header) : 0;
+}
+
+
 extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
@@ -284,6 +292,11 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo));
     *x_info = *info;
+    x_info->http_user_header =
+        info->http_user_header ?
+        strcpy((char *)malloc(strlen(info->http_user_header) + 1),
+               info->http_user_header) :
+        0;
     return x_info;
 }
 
@@ -306,7 +319,7 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
     if ( !fp )
         return;
 
-    fprintf(fp, "\n\n----- [BEGIN] ConnNetInfo_Print -----\n");
+    fprintf(fp, "\n----- [BEGIN] ConnNetInfo_Print -----\n");
 
     if ( info ) {
         s_PrintString(fp, "client_host",     info->client_host);
@@ -322,13 +335,15 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
         s_PrintString(fp, "proxy_host",      info->proxy_host);
         s_PrintBool  (fp, "debug_printout",  info->debug_printout);
         s_PrintString(fp, "client_mode",   
-                      info->client_mode == eClientModeUnspecified ? "Unspec" : 
-                      (info->client_mode == eClientModeFirewall ? "Firewall" :
-                       (info->client_mode == eClientModeStatefulCapable ?
-                        "Stateful_Capable" : "Unknown")));
+                      info->client_mode == eClientModeStatelessOnly
+                      ? "Stateless_Only" :
+                      (info->client_mode == eClientModeStatefulCapable
+                       ? "Stateful_Capable" :
+                       (info->client_mode == eClientModeFirewall
+                        ? "Firewall"
+                        : "Unknown")));
         s_PrintBool  (fp, "lb_disable",      info->lb_disable);
-        s_PrintULong (fp, "ncbid_port",      info->ncbid_port);
-        s_PrintString(fp, "ncbid_path",      info->ncbid_path);
+        s_PrintString(fp, "user_header",     info->http_user_header);
         s_PrintBool  (fp, "proxy_adjusted",  info->http_proxy_adjusted);
     } else {
         fprintf(fp, "<NULL>\n");
@@ -338,12 +353,13 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
 }
 
 
-extern void ConnNetInfo_Destroy(SConnNetInfo** info)
+extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
-    if (!info  ||  !*info)
+    if (!info)
         return;
-    free(*info);
-    *info = 0;
+    if (info->http_user_header)
+        free((char *)info->http_user_header);
+    free(info);
 }
 
 
@@ -522,7 +538,7 @@ static EIO_Status s_StripToPattern
             }
             /* pattern found */
             if ( n_check ) {
-                size_t x_read =  b - buffer + pattern_size;
+                size_t x_read = b - buffer + pattern_size;
                 assert( memcmp(b, pattern, pattern_size) == 0 );
                 status = read_func(source, buffer + n_read, x_read - n_read,
                                    &x_discarded, eIO_Plain);
