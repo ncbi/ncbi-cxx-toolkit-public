@@ -860,6 +860,7 @@ Optional Packages:
  --with-lib-rebuilds=ask ask whether to update each app's libraries
  --with-projects=FILE    build projects listed in FILE by default
  --with-check=           run test suite after the build
+ --with-ncbi-public      ensure compatibility for all in-house platforms
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
@@ -1438,6 +1439,12 @@ if test "${with_check+set}" = set; then
 
 fi;
 
+# Check whether --with-ncbi-public or --without-ncbi-public was given.
+if test "${with_ncbi_public+set}" = set; then
+  withval="$with_ncbi_public"
+
+fi;
+
 ## NCBI packages
 
 # Check whether --with-ncbi-c or --without-ncbi-c was given.
@@ -1617,7 +1624,7 @@ fi;
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static runpath mt 64 projects \
+debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus fltk \
@@ -8360,8 +8367,12 @@ fi
 
 fi
 
-orig_LIBS=$LIBS
-LIBS="$NETWORK_LIBS $orig_LIBS"
+if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
+   { echo "$as_me:$LINENO: Skipping checks for get{addr,name}info (new in Solaris 8)." >&5
+echo "$as_me: Skipping checks for get{addr,name}info (new in Solaris 8)." >&6;}
+else
+   orig_LIBS=$LIBS
+   LIBS="$NETWORK_LIBS $orig_LIBS"
 
 
 for ac_func in getaddrinfo getnameinfo
@@ -8439,7 +8450,8 @@ _ACEOF
 fi
 done
 
-LIBS=$orig_LIBS
+   LIBS=$orig_LIBS
+fi
 
 MATH_LIBS=${MATH_LIBS:="-lm"}
 

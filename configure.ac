@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.113 2002/08/02 14:30:39 ucko Exp $
+#  $Id: configure.ac,v 1.114 2002/08/06 16:16:43 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -115,6 +115,8 @@ AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
 AC_ARG_WITH(check,
    [ --with-check=           run test suite after the build])
+AC_ARG_WITH(ncbi-public,
+   [ --with-ncbi-public      ensure compatibility for all in-house platforms])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -183,7 +185,7 @@ AC_ARG_WITH(manuals,
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization profiling dll static runpath mt 64 projects \
+debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus fltk \
@@ -1534,10 +1536,14 @@ if test -z "${NETWORK_LIBS+set}"; then
       [NETWORK_LIBS=$libnsl])
 fi
 
-orig_LIBS=$LIBS
-LIBS="$NETWORK_LIBS $orig_LIBS"
-AC_CHECK_FUNCS(getaddrinfo getnameinfo)
-LIBS=$orig_LIBS
+if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
+   AC_MSG_NOTICE([Skipping checks for get{addr,name}info (new in Solaris 8).])
+else
+   orig_LIBS=$LIBS
+   LIBS="$NETWORK_LIBS $orig_LIBS"
+   AC_CHECK_FUNCS(getaddrinfo getnameinfo)
+   LIBS=$orig_LIBS
+fi
 
 MATH_LIBS=${MATH_LIBS:="-lm"}
 
