@@ -63,18 +63,24 @@
 //#include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbi_limits.hpp>
 //#include <corelib/ncbi_process.hpp>
-//#include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_tree.hpp>
 //#include <corelib/plugin_manager.hpp>
 //#include <corelib/plugin_manager_impl.hpp>
 //#include <corelib/test_mt.hpp>
 //#include <corelib/version.hpp>
+
+
+// Third Party Libraries specific includes
+#ifdef NCBI_WXWIN_USE_PCH
+#include <wx/wx.h>
+#endif
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.4  2004/05/24 16:39:33  gorelenk
- * Removed ncbi_safe_static.hpp - causes problems with progs not using xncbi
+ * Revision 1.5  2004/05/26 18:45:10  gorelenk
+ * Added section for using wxWindows headers in PCH .
  *
  * Revision 1.3  2004/05/14 16:46:02  gorelenk
  * Comment some rarely used includes
