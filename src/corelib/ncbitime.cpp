@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/07/23 16:05:57  ivanov
+* Fixed bug in Get/Set DB-time formats (1 day difference)
+*
 * Revision 1.12  2001/07/06 15:11:11  ivanov
 * Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
 *                                  SetTimeDBI(), SetTimeDBU()
@@ -488,7 +491,7 @@ TDBTimeU CTime::GetTimeDBU(void) const
     unsigned first = s_Date2Number(CTime(1900, 1, 1));
     unsigned curr  = s_Date2Number(t);
 
-    dbt.days = (Uint2)(curr - first + 1);
+    dbt.days = (Uint2)(curr - first);
     dbt.time = (Uint2)(t.Hour() * 60 + t.Minute());
     return dbt;
 }
@@ -501,7 +504,7 @@ TDBTimeI CTime::GetTimeDBI(void) const
     unsigned first = s_Date2Number(CTime(1900, 1, 1));
     unsigned curr  = s_Date2Number(t);
 
-    dbt.days = (Int4)(curr - first + 1);
+    dbt.days = (Int4)(curr - first);
     dbt.time = (Int4)((t.Hour() * 3600 + t.Minute() * 60 + t.Second()) * 300) +
         (Int4)((double)t.NanoSecond() * 300 / kNanoSecondsPerSecond);
     return dbt;
@@ -514,9 +517,7 @@ CTime& CTime::SetTimeDBU(const TDBTimeU& t)
     CTime time(1900, 1, 1, 0, 0, 0, 0, eLocal);
 
     time.SetTimeZonePrecision(GetTimeZonePrecision());
-    if (t.days > 0) {
-        time.AddDay(t.days-1);
-    }
+    time.AddDay(t.days);
     time.AddMinute(t.time);
     time.ToTime(GetTimeZoneFormat());
 
@@ -531,9 +532,7 @@ CTime& CTime::SetTimeDBI(const TDBTimeI& t)
     CTime time(1900, 1, 1, 0, 0, 0, 0, eLocal);
 
     time.SetTimeZonePrecision(GetTimeZonePrecision());
-    if (t.days > 0) {
-        time.AddDay(t.days-1);
-    }
+    time.AddDay(t.days);
     time.AddSecond(t.time / 300);
     time.AddNanoSecond((long)((t.time % 300) * 
                               (double)kNanoSecondsPerSecond / 300));
