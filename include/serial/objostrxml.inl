@@ -35,7 +35,6 @@
 inline
 void CObjectOStreamXml::OpenStackTag(size_t level)
 {
-    OpenTagEnd();
     OpenTagStart();
     PrintTagName(level);
     OpenTagEnd();
@@ -57,17 +56,14 @@ void CObjectOStreamXml::CloseStackTag(size_t level)
 }
 
 inline
-void CObjectOStreamXml::OpenTag(const string& name, bool close)
+void CObjectOStreamXml::OpenTag(const string& name)
 {
-    OpenTagEnd();
     OpenTagStart();
     m_Output.PutString(name);
 #if defined(NCBI_SERIAL_IO_TRACE)
     TraceTag(name);
 #endif
-    if (close) {
-        OpenTagEnd();
-    }
+    OpenTagEnd();
 }
 
 inline
@@ -86,10 +82,10 @@ void CObjectOStreamXml::CloseTag(const string& name)
 }
 
 inline
-void CObjectOStreamXml::OpenTag(TTypeInfo type, bool close)
+void CObjectOStreamXml::OpenTag(TTypeInfo type)
 {
     _ASSERT(!type->GetName().empty());
-    OpenTag(type->GetName(), close);
+    OpenTag(type->GetName());
 }
 
 inline
@@ -185,6 +181,9 @@ string CObjectOStreamXml::GetDTDPublicId(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/01/10 16:53:36  gouriano
+* fixed a bug with optional class members
+*
 * Revision 1.8  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/01/10 16:54:10  gouriano
+* fixed a bug with optional class members
+*
 * Revision 1.43  2002/12/26 21:35:45  gouriano
 * corrected handling choice's XML attributes
 *
@@ -813,7 +816,7 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    OpenTag(namedTypeInfo, true);
+    OpenTag(namedTypeInfo);
 }
 
 void CObjectOStreamXml::EndNamedType(void)

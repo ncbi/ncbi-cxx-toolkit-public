@@ -199,12 +199,12 @@ private:
     void CloseTagStart(void);
     void CloseTagEnd(void);
 
-    void OpenTag(const string& name, bool close=false);
+    void OpenTag(const string& name);
     void EolIfEmptyTag(void);
     void CloseTag(const string& name);
     void OpenStackTag(size_t level);
     void CloseStackTag(size_t level);
-    void OpenTag(TTypeInfo type, bool close=false);
+    void OpenTag(TTypeInfo type);
     void CloseTag(TTypeInfo type);
     void OpenTagIfNamed(TTypeInfo type);
     void CloseTagIfNamed(TTypeInfo type);
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/01/10 16:53:36  gouriano
+* fixed a bug with optional class members
+*
 * Revision 1.25  2002/12/26 19:33:06  gouriano
 * changed XML I/O streams to properly handle object copying
 *
