@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.152 2002/12/11 18:15:09 ucko Exp $
+#  $Id: configure.ac,v 1.153 2002/12/12 19:39:31 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -642,10 +642,12 @@ case "$host_os:$compiler" in
    # See <http://fink.sourceforge.net/doc/porting/shared.php>.
    CONF_dll_ext=".dylib"
    CONF_loadable_ext=".so"
-   # Suppress warnings about potential changes in the size of long double;
-   # our ABI isn't too stable yet anyway.
-   CFLAGS="-Wno-long-double $CFLAGS"
-   CXXFLAGS="-Wno-long-double $CXXFLAGS"
+   if "$CXX" -v 2>&1 | grep -q Apple; then
+      # Suppress warnings about potential changes in the size of long double;
+      # our ABI isn't too stable yet anyway.
+      CFLAGS="-Wno-long-double $CFLAGS"
+      CXXFLAGS="-Wno-long-double $CXXFLAGS"
+   fi
    ;;
 esac
 
@@ -952,8 +954,13 @@ case "$compiler" in
         # and loadable objects (bundles).
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
         has_dll_loadable=""
-        LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
-        LINK_LOADABLE="$CXX $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
+        if "$CXX" -v 2>&1 | grep -q Apple; then
+           LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
+           LINK_LOADABLE="$CXX $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
+        else
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -o"
+           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
+        fi
         ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
@@ -1491,7 +1498,7 @@ AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
          char            buf[1024];
          int             err;
          struct servent* sp = 0;
-         err = getservbyname_r("", "", sp, buf, sizeof(buf), &hp);
+         err = getservbyname_r("", "", sp, buf, sizeof(buf), &sp);
        ]])],
        [
          ncbi_cv_func_getservbyname_r="6"
@@ -2051,7 +2058,7 @@ if test "$with_ncbi_c" != "no" ; then
    if test -n "$NCBI_C_ncbi" ; then
      :
    elif test "$OSTYPE" = "darwin" ; then
-     NCBI_C_ncbi="-lncbi -framework AppKit"
+     NCBI_C_ncbi="-lncbi -Wl,-framework,AppKit"
    else
      NCBI_C_ncbi="-lncbi"
    fi
