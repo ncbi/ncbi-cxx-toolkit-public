@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -48,7 +48,7 @@ Cn3d-drawing-style ::= ENUMERATED {     -- atom/bond/object rendering styles
     without-arrows (8)
 }
 
-Cn3d-color-scheme ::= ENUMERATED {  -- available color schemes (not all 
+Cn3d-color-scheme ::= ENUMERATED {  -- available color schemes (not all
                                     -- necessarily applicable to all objects)
     element (1),
     object (2),
@@ -142,7 +142,8 @@ Cn3d-residue-range ::= SEQUENCE {
 -- set of locations on a particular chain
 Cn3d-molecule-location ::= SEQUENCE {
     molecule-id Molecule-id,    -- MMDB molecule id
-    residues SEQUENCE OF Cn3d-residue-range
+    -- which residues; whole molecule implied if absent
+    residues SEQUENCE OF Cn3d-residue-range OPTIONAL
 }
 
 -- set of locations on a particular structure object (e.g., a PDB/MMDB
