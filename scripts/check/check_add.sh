@@ -37,7 +37,7 @@ if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
 fi
 
 x_tpath=`echo "$x_srcdir/$x_test" | sed 's%^.*/src/%%'`
-if grep -c CHECK_CMD $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
+if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
    echo "TEST -- $x_tpath"
 else 
    echo "SKIP -- $x_tpath"
@@ -53,7 +53,7 @@ x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app" | sed 's/^[^=]*=//'`
 
 if test -z "$x_run"; then
    # If command line not defined, then just run the test without parameters
-   x_run="$x_test$x_exeext"
+   x_run="$x_app$x_exeext"
 fi
 x_run=`echo "$x_run" | sed -e 's/ /%gj_s4%/g'`
 
