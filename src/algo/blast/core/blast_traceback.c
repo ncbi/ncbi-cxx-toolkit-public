@@ -1047,6 +1047,30 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
             }
 
             keep = TRUE;
+            if (is_ooframe) {
+               BlastOOFGetNumIdentical(query, subject, hsp, 
+                                       &hsp->num_ident, &align_length);
+               /* Adjust subject offsets for negative frames */
+               if (hsp->subject.frame < 0) {
+                  Int4 strand_start = subject_blk->length + 1;
+                  hsp->subject.offset -= strand_start;
+                  hsp->subject.end -= strand_start;
+                  hsp->subject.gapped_start -= strand_start;
+                  hsp->gap_info->start2 -= strand_start;
+               }
+            } else {
+               BlastHSPGetNumIdentical(query, subject, hsp, 
+                  score_options->gapped_calculation, &hsp->num_ident, 
+                  &align_length);
+            }
+
+            if (hsp->num_ident * 100 < 
+                align_length * hit_options->percent_identity) {
+               keep = FALSE;
+            }
+            
+               
+
             if (program_number == blast_type_blastp ||
                 program_number == blast_type_blastn) {
                if (hit_options->is_gapped && 
@@ -1063,20 +1087,6 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
                   keep = FALSE;
             }
 
-            if (is_ooframe) {
-               BlastOOFGetNumIdentical(query, subject, hsp, 
-                                       &hsp->num_ident, &align_length);
-            } else {
-               BlastHSPGetNumIdentical(query, subject, hsp, 
-                  score_options->gapped_calculation, &hsp->num_ident, 
-                  &align_length);
-            }
-
-            if (hsp->num_ident * 100 < 
-                align_length * hit_options->percent_identity) {
-               keep = FALSE;
-            }
-            
             if (scalingFactor != 0.0 && scalingFactor != 1.0) {
                /* Scale down score for blastp and tblastn. */
                hsp->score = (Int4)
