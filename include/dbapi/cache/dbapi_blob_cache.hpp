@@ -162,6 +162,8 @@ public:
                       const string& subkey,
                       void*         buf, 
                       size_t        buf_size);
+    virtual bool HasBlobs(const string&  key,
+                          const string&  subkey);
 
     virtual IReader* GetReadStream(const string&  key, 
                                    int            version,
@@ -289,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/22 15:25:37  kuznets
+ * +HasBlob()
+ *
  * Revision 1.13  2004/12/22 21:02:53  grichenk
  * BDB and DBAPI caches split into separate libs.
  * Added entry point registration, fixed driver names.
