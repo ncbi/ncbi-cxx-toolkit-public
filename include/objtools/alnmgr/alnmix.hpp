@@ -161,8 +161,6 @@ public:
         
     TSeqPos         m_Len;
     TStartIterators m_StartIts;
-    int             m_Index1;
-    int             m_Index2;
 };
 
 
@@ -301,6 +299,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/05/30 17:42:45  todorov
+* x_CreateSegmentsVector now uses a stack to order the segs
+*
 * Revision 1.22  2003/05/09 16:41:46  todorov
 * Optional mixing of the query sequence only
 *
