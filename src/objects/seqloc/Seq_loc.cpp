@@ -57,10 +57,74 @@ CSeq_loc::~CSeq_loc(void)
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
     TRange total_range(TRange::GetEmptyFrom(), TRange::GetEmptyTo());
-    CSeq_loc_CI loc_ci(*this);
-    for ( ; loc_ci; ++loc_ci) {
-        total_range += loc_ci.GetRange();
+
+    switch ( Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+        {
+            // Ignore empty locations
+            break;
+        }
+    case CSeq_loc::e_Whole:
+        {
+            total_range = TRange::GetWhole();
+            break;
+        }
+    case CSeq_loc::e_Int:
+        {
+            total_range.Set(GetInt().GetFrom(), GetInt().GetTo());
+            break;
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            total_range.Set(GetPnt().GetPoint(), GetPnt().GetPoint());
+            break;
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            iterate ( CPacked_seqint::Tdata, ii, GetPacked_int().Get() ) {
+                total_range += TRange((*ii)->GetFrom(), (*ii)->GetTo());
+            }
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            iterate ( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
+                total_range += TRange(*pi, *pi);
+            }
+            break;
+        }
+    case CSeq_loc::e_Mix:
+        {
+            iterate(CSeq_loc_mix::Tdata, li, GetMix().Get()) {
+                total_range += (*li)->GetTotalRange();
+            }
+            break;
+        }
+    case CSeq_loc::e_Equiv:
+        {
+            iterate(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
+                total_range += (*li)->GetTotalRange();
+            }
+            break;
+        }
+    case CSeq_loc::e_Bond:
+        {
+            total_range = TRange(GetBond().GetA().GetPoint(), GetBond().GetA().GetPoint());
+            if ( GetBond().IsSetB() ) {
+                total_range = TRange(GetBond().GetB().GetPoint(), GetBond().GetB().GetPoint());
+            }
+            break;
+        }
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            throw runtime_error
+                ("CSeq_loc_CI -- unsupported location type");
+        }
     }
+
     return total_range;
 }
 
@@ -81,15 +145,14 @@ CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc)
 }
 
 
-CSeq_loc_CI::~CSeq_loc_CI(void)
-{
-    return;
-}
-
-
 CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc_CI& iter)
 {
     *this = iter;
+}
+
+
+CSeq_loc_CI::~CSeq_loc_CI()
+{
 }
 
 
@@ -107,6 +170,15 @@ CSeq_loc_CI& CSeq_loc_CI::operator= (const CSeq_loc_CI& iter)
     return *this;
 }
 
+
+void CSeq_loc_CI::x_ThrowNotValid(const char* where) const
+{
+    string msg;
+    msg += "CSeq_loc_CI::";
+    msg += where;
+    msg += " -- iterator is not valid";
+    throw runtime_error(msg);
+}
 
 void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
 {
@@ -487,6 +559,10 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.21  2002/12/30 19:37:02  vasilche
+ * Rewrote CSeq_loc::GetTotalRange() to avoid using CSeq_loc_CI -
+ * it's too expensive.
+ *
  * Revision 6.20  2002/12/23 17:19:27  grichenk
  * Added GetSeq_loc() to CSeq_loc_CI
  *

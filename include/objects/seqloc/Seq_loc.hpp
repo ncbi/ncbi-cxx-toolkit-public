@@ -105,7 +105,7 @@ class NCBI_SEQLOC_EXPORT CSeq_loc_CI
 public:
     CSeq_loc_CI(void);
     CSeq_loc_CI(const CSeq_loc& loc);
-    virtual ~CSeq_loc_CI(void);
+    ~CSeq_loc_CI(void);
 
     CSeq_loc_CI(const CSeq_loc_CI& iter);
     CSeq_loc_CI& operator= (const CSeq_loc_CI& iter);
@@ -135,7 +135,8 @@ private:
     // Check the iterator position
     bool x_IsValid(void) const;
     // Check the position, throw runtime_error if not valid
-    void x_ThrowNotValid(string where) const;
+    void x_CheckNotValid(const char* where) const;
+    void x_ThrowNotValid(const char* where) const;
 
     // Process the location, fill the list
     void x_ProcessLocation(const CSeq_loc& loc);
@@ -216,36 +217,49 @@ CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
 }
 
 inline
+bool CSeq_loc_CI::x_IsValid(void) const
+{
+    return m_CurLoc != m_LocList.end();
+}
+
+inline
 CSeq_loc_CI::operator bool (void) const
 {
     return x_IsValid();
 }
 
 inline
+void CSeq_loc_CI::x_CheckNotValid(const char* where) const
+{
+    if ( !x_IsValid() )
+        x_ThrowNotValid(where);
+}
+
+inline
 const CSeq_id& CSeq_loc_CI::GetSeq_id(void) const
 {
-    x_ThrowNotValid("GetSeq_id()");
+    x_CheckNotValid("GetSeq_id()");
     return *m_CurLoc->m_Id;
 }
 
 inline
 CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
 {
-    x_ThrowNotValid("GetRange()");
+    x_CheckNotValid("GetRange()");
     return m_CurLoc->m_Range;
 }
 
 inline
 ENa_strand CSeq_loc_CI::GetStrand(void) const
 {
-    x_ThrowNotValid("GetStrand()");
+    x_CheckNotValid("GetStrand()");
     return m_CurLoc->m_Strand;
 }
 
 inline
 const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
 {
-    x_ThrowNotValid("GetSeq_loc()");
+    x_CheckNotValid("GetSeq_loc()");
     if ( !m_CurLoc->m_Loc ) {
         throw runtime_error(
             "CSeq_loc_CI::GetSeq_loc() -- NULL seq-loc");
@@ -256,7 +270,7 @@ const CSeq_loc& CSeq_loc_CI::GetSeq_loc(void) const
 inline
 bool CSeq_loc_CI::IsWhole(void) const
 {
-    x_ThrowNotValid("IsWhole()");
+    x_CheckNotValid("IsWhole()");
     return m_CurLoc->m_Range.IsWholeFrom()  &&
         m_CurLoc->m_Range.IsWholeTo();
 }
@@ -264,7 +278,7 @@ bool CSeq_loc_CI::IsWhole(void) const
 inline
 bool CSeq_loc_CI::IsEmpty(void) const
 {
-    x_ThrowNotValid("IsEmpty()");
+    x_CheckNotValid("IsEmpty()");
     return m_CurLoc->m_Range.IsEmptyFrom()  &&
         m_CurLoc->m_Range.IsEmptyTo();
 }
@@ -272,22 +286,8 @@ bool CSeq_loc_CI::IsEmpty(void) const
 inline
 bool CSeq_loc_CI::IsPoint(void) const
 {
-    x_ThrowNotValid("IsPoint()");
+    x_CheckNotValid("IsPoint()");
     return m_CurLoc->m_Range.GetLength() == 1;
-}
-
-inline
-bool CSeq_loc_CI::x_IsValid(void) const
-{
-    return m_CurLoc != m_LocList.end();
-}
-
-inline
-void CSeq_loc_CI::x_ThrowNotValid(string where) const
-{
-    if ( x_IsValid() )
-        return;
-    throw runtime_error("CSeq_loc_CI::" + where + " -- iterator is not valid");
 }
 
 /////////////////// end of CSeq_loc_CI inline methods
@@ -299,6 +299,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/12/30 19:37:02  vasilche
+ * Rewrote CSeq_loc::GetTotalRange() to avoid using CSeq_loc_CI -
+ * it's too expensive.
+ *
  * Revision 1.17  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *
