@@ -76,7 +76,7 @@ private:
 
     TRanges        m_Ranges;
 
-    friend class CDataSource;
+    // friend class CDataSource;
     friend class CHandleRangeMap;
 };
 
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/04 21:45:43  grichenk
+* Removed CDataSource from friends
+*
 * Revision 1.13  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
