@@ -8096,6 +8096,13 @@ if test "$with_ncbi_c" != "no" ; then
    if test "$with_mt" = "yes" ; then
      NCBI_C_LIBPATH="$NCBI_C_LIBPATH $NCBI_C_LIBPATH/ncbithr.o"
    fi
+   if test -n "$NCBI_C_ncbi" ; then
+     :
+   elif test "$OSTYPE" = "darwin" ; then
+     NCBI_C_ncbi="-lncbi -framework AppKit"
+   else
+     NCBI_C_ncbi="-lncbi"
+   fi
    NCBI_C_LIBPATH="-L$NCBI_C_LIBPATH"
    echo "$as_me:$LINENO: checking for the NCBI C toolkit in $NCBI_C_PATH" >&5
 echo $ECHO_N "checking for the NCBI C toolkit in $NCBI_C_PATH... $ECHO_C" >&6
@@ -8103,7 +8110,7 @@ if test "${ncbi_cv_lib_ctools+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
-       LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
+       LIBS="$NCBI_C_LIBPATH $NCBI_C_ncbi $NETWORK_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -8155,7 +8162,6 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_NCBI_C 1
 _ACEOF
 
-   NCBI_C_ncbi=${NCBI_C_ncbi:="-lncbi"}
 fi
 
 

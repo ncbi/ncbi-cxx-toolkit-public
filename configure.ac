@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.140 2002/10/16 18:45:14 ucko Exp $
+#  $Id: configure.ac,v 1.141 2002/10/22 20:00:49 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1876,10 +1876,17 @@ if test "$with_ncbi_c" != "no" ; then
    if test "$with_mt" = "yes" ; then
      NCBI_C_LIBPATH="$NCBI_C_LIBPATH $NCBI_C_LIBPATH/ncbithr.o"
    fi
+   if test -n "$NCBI_C_ncbi" ; then
+     :
+   elif test "$OSTYPE" = "darwin" ; then
+     NCBI_C_ncbi="-lncbi -framework AppKit"
+   else
+     NCBI_C_ncbi="-lncbi"
+   fi
    NCBI_C_LIBPATH="-L$NCBI_C_LIBPATH"
    AC_CACHE_CHECK([for the NCBI C toolkit in $NCBI_C_PATH], ncbi_cv_lib_ctools,
       [CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
-       LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
+       LIBS="$NCBI_C_LIBPATH $NCBI_C_ncbi $NETWORK_LIBS $orig_LIBS"
        AC_TRY_LINK(
           [#include <ncbi.h>],
           [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ],
@@ -1897,7 +1904,6 @@ if test "$with_ncbi_c" = "no" ; then
 else
    WithPackages="$WithPackages C-Toolkit"
    AC_DEFINE(HAVE_NCBI_C, 1, [Define to 1 if the NCBI C toolkit is available.])
-   NCBI_C_ncbi=${NCBI_C_ncbi:="-lncbi"}
 fi
 
 
