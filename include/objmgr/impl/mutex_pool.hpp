@@ -232,7 +232,6 @@ public:
         : m_Init(init)
         {
             if ( !init && pool.AcquireMutex(init, m_Mutex) ) {
-                _ASSERT(m_Mutex);
                 m_Guard.Guard(m_Mutex->GetMutex());
                 if ( init ) {
                     x_Release();
@@ -262,10 +261,7 @@ protected:
 
     void x_Release(void)
         {
-            _ASSERT(m_Mutex);
-            _ASSERT(m_Init);
             m_Mutex->GetPool().ReleaseMutex(m_Init, m_Mutex);
-            _ASSERT(!m_Mutex);
             m_Guard.Release();
         }
 
@@ -285,6 +281,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/01 18:02:37  vasilche
+* Removed invalid assert.
+* Moved asserts from .hpp to .cpp file.
+*
 * Revision 1.2  2003/06/25 17:09:27  vasilche
 * Fixed locking in CInitMutexPool.
 *

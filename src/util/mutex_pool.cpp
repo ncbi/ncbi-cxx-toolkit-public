@@ -73,13 +73,15 @@ bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
     }
     _ASSERT(local);
     mutex = local;
+    _ASSERT(mutex);
     return true;
 }
 
 
 void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
 {
-    _ASSERT(init);
+    _ASSERT(mutex);
+    //_ASSERT(init);
     CRef<TMutex> local(mutex);
     mutex.Reset();
     _ASSERT(local);
@@ -96,6 +98,7 @@ void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
             m_MutexList.push_back(local);
         }
     }
+    _ASSERT(!mutex);
 }
 
 
@@ -105,6 +108,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/07/01 18:02:37  vasilche
+* Removed invalid assert.
+* Moved asserts from .hpp to .cpp file.
+*
 * Revision 1.3  2003/06/25 17:09:28  vasilche
 * Fixed locking in CInitMutexPool.
 *
