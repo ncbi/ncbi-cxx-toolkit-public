@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/27 14:17:59  vasilche
+* Fixed bug with overloaded construtors of Block.
+*
 * Revision 1.23  1999/09/24 18:19:14  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -226,9 +229,9 @@ public:
     class Block {
     public:
         Block(CObjectOStream& out);
-        Block(CObjectOStream& out, unsigned size);
+        Block(size_t size, CObjectOStream& out);
         Block(CObjectOStream& out, bool randomOrder);
-        Block(CObjectOStream& out, bool randomOrder, unsigned size);
+        Block(size_t size, CObjectOStream& out, bool randomOrder);
         ~Block(void);
 
         void Next(void);
@@ -242,12 +245,12 @@ public:
                 return m_RandomOrder;
             }
 
-        unsigned GetNextIndex(void) const
+        size_t GetNextIndex(void) const
             {
                 return m_NextIndex;
             }
 
-        unsigned GetIndex(void) const
+        size_t GetIndex(void) const
             {
                 return GetNextIndex() - 1;
             }
@@ -257,7 +260,7 @@ public:
                 return GetNextIndex() == 0;
             }
 
-        unsigned GetSize(void) const
+        size_t GetSize(void) const
             {
                 return m_Size;
             }
@@ -279,8 +282,8 @@ public:
 
         bool m_Fixed;
         bool m_RandomOrder;
-        unsigned m_NextIndex;
-        unsigned m_Size;
+        size_t m_NextIndex;
+        size_t m_Size;
     };
 	class ByteBlock {
 	public:

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/27 14:17:59  vasilche
+* Fixed bug with overloaded construtors of Block.
+*
 * Revision 1.20  1999/09/22 20:11:51  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -327,7 +330,7 @@ protected:
         {
             const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::Block block(out, l.size());
+            CObjectOStream::Block block(l.size(), out);
             for ( TConstIterator i = l.begin(); i != l.end(); ++i ) {
                 block.Next();
                 out.WriteExternalObject(&*i, dataTypeInfo);
@@ -336,7 +339,7 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            CObjectIStream::Block block(CObjectIStream::eFixed, in);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             if ( block.Fixed() )
                 Reserve(object, block.GetSize());
@@ -466,7 +469,7 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            CObjectIStream::Block block(CObjectIStream::eFixed, in);
             while ( block.Next() ) {
                 Data data;
                 GetDataTypeInfo()->ReadData(in, &data);
@@ -576,7 +579,7 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& o = Get(object);
-            CObjectOStream::Block block(out, o.size());
+            CObjectOStream::Block block(o.size(), out);
             for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
                 block.Next();
                 WriteKeyValuePair(out, &i->first, &i->second);
@@ -586,7 +589,7 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            CObjectIStream::Block block(CObjectIStream::eFixed, in);
             while ( block.Next() ) {
                 TKeyType key;
                 TValueType value;
@@ -692,7 +695,7 @@ protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& o = Get(object);
-            CObjectOStream::Block block(out, o.size());
+            CObjectOStream::Block block(o.size(), out);
             for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
                 block.Next();
                 WriteKeyValuePair(out, &i->first, &i->second);
@@ -702,7 +705,7 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& o = Get(object);
-            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            CObjectIStream::Block block(CObjectIStream::eFixed, in);
             while ( block.Next() ) {
                 TKeyType key;
                 TValueType value;

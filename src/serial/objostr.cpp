@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/27 14:18:02  vasilche
+* Fixed bug with overloaded construtors of Block.
+*
 * Revision 1.23  1999/09/24 18:19:19  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -324,7 +327,7 @@ CObjectOStream::Block::Block(CObjectOStream& out)
     out.VBegin(*this);
 }
 
-CObjectOStream::Block::Block(CObjectOStream& out, unsigned size)
+CObjectOStream::Block::Block(size_t size, CObjectOStream& out)
     : m_Out(out), m_Fixed(true), m_RandomOrder(false),
       m_NextIndex(0), m_Size(size)
 {
@@ -338,7 +341,7 @@ CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder)
     out.VBegin(*this);
 }
 
-CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder, unsigned size)
+CObjectOStream::Block::Block(size_t size, CObjectOStream& out, bool randomOrder)
     : m_Out(out), m_Fixed(true), m_RandomOrder(randomOrder),
       m_NextIndex(0), m_Size(size)
 {

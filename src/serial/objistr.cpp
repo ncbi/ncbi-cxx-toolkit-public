@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/09/27 14:18:02  vasilche
+* Fixed bug with overloaded construtors of Block.
+*
 * Revision 1.28  1999/09/26 05:19:02  vakatov
 * FLT_MIN/MAX are not #define'd on some platforms
 *
@@ -460,7 +463,7 @@ CObjectIStream::Block::Block(CObjectIStream& in)
     in.VBegin(*this);
 }
 
-CObjectIStream::Block::Block(CObjectIStream& in, EFixed )
+CObjectIStream::Block::Block(EFixed , CObjectIStream& in)
     : m_In(in), m_Fixed(true), m_RandomOrder(false),
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {
@@ -474,7 +477,7 @@ CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder)
     in.VBegin(*this);
 }
 
-CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder , EFixed )
+CObjectIStream::Block::Block(EFixed , CObjectIStream& in, bool randomOrder)
     : m_In(in), m_Fixed(true), m_RandomOrder(randomOrder),
       m_Finished(false), m_Size(0), m_NextIndex(0)
 {

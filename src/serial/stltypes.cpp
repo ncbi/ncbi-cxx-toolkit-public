@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/09/27 14:18:03  vasilche
+* Fixed bug with overloaded construtors of Block.
+*
 * Revision 1.11  1999/09/23 20:38:01  vasilche
 * Fixed ambiguity.
 *
@@ -88,7 +91,7 @@ void CStlClassInfoMapImpl::WriteKeyValuePair(CObjectOStream& out,
                                              TConstObjectPtr key,
                                              TConstObjectPtr value) const
 {
-    CObjectOStream::Block block(out, unsigned(2));
+    CObjectOStream::Block block(2, out);
     block.Next();
     {
         CObjectOStream::Member m(out, CMemberId(1));
@@ -105,7 +108,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
                                             TObjectPtr key,
                                             TObjectPtr value) const
 {
-    CObjectIStream::Block block(in, CObjectIStream::eFixed);
+    CObjectIStream::Block block(CObjectIStream::eFixed, in);
     if ( !block.Next() )
         THROW1_TRACE(runtime_error, "map key expected");
     {

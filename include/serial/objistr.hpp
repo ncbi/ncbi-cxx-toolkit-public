@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/27 14:17:59  vasilche
+* Fixed bug with overloaded construtors of Block.
+*
 * Revision 1.25  1999/09/24 18:19:13  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -296,9 +299,9 @@ public:
     class Block {
     public:
         Block(CObjectIStream& in);
-        Block(CObjectIStream& in, EFixed eFixed);
+        Block(EFixed eFixed, CObjectIStream& in);
         Block(CObjectIStream& in, bool randomOrder);
-        Block(CObjectIStream& in, bool randomOrder, EFixed eFixed);
+        Block(EFixed eFixed, CObjectIStream& in, bool randomOrder);
         ~Block(void);
 
         bool Next(void);
@@ -317,12 +320,12 @@ public:
                 return m_Finished;
             }
 
-        unsigned GetNextIndex(void) const
+        size_t GetNextIndex(void) const
             {
                 return m_NextIndex;
             }
 
-        unsigned GetIndex(void) const
+        size_t GetIndex(void) const
             {
                 return GetNextIndex() - 1;
             }
@@ -332,7 +335,7 @@ public:
                 return GetNextIndex() == 0;
             }
 
-        unsigned GetSize(void) const
+        size_t GetSize(void) const
             {
                 return m_Size;
             }
@@ -355,8 +358,8 @@ public:
         bool m_Fixed;
         bool m_RandomOrder;
         bool m_Finished;
-        unsigned m_Size;
-        unsigned m_NextIndex;
+        size_t m_Size;
+        size_t m_NextIndex;
     };
 	class ByteBlock {
 	public:
@@ -456,7 +459,7 @@ protected:
             block.m_Size = 0;
             block.m_Finished = finished;
         }
-    static void SetFixed(Block& block, unsigned size)
+    static void SetFixed(Block& block, size_t size)
         {
             block.m_Fixed = true;
             block.m_Size = size;
