@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/24 17:51:46  vakatov
+* + CParseException
+* Removed "Ncbi" sub-prefix from the NCBI exception class names
+* [NCBI_OS_UNIX] s_DefSignalHandler() -- handle only SEGV,BUS and FPE
+*
 * Revision 1.3  1998/11/13 00:17:13  vakatov
 * [UNIX] Added handler for the unexpected exceptions
 *
@@ -64,16 +69,36 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////
-//  CNcbiErrnoException
+//  CErrnoException
 
-CNcbiErrnoException::CNcbiErrnoException(const string& what) throw()
-        : runtime_error(what + ":  " + strerror(errno)) {
+CErrnoException::CErrnoException(const string& what)
+    throw() : runtime_error(what + ": " + ::strerror(errno)) {
+        m_Errno = errno;
+}
+
+
+/////////////////////////////////
+//  CParseException
+
+static string s_ComposeParse(const string& what, SIZE_TYPE pos)
+{
+    char s[32];
+    ::sprintf(s, "%ld", (long)pos);
+    string str;
+    str.reserve(256);
+    return str.append("[").append(s).append("] ").append(what);
+}
+
+CParseException::CParseException(const string& what, SIZE_TYPE pos)
+    throw() : runtime_error(s_ComposeParse(what,pos)) {
+        m_Pos = pos;
 }
 
 
 
+
 /////////////////////////////////
-// CNcbiOSException
+// COSException
 
 #if defined(NCBI_OS_UNIX)
 
@@ -82,7 +107,7 @@ static void s_UnexpectedHandler(void) THROWS((bad_exception)) {
 }
 
 extern "C" void s_DefSignalHandler(int sig, siginfo_t*, void*)
-    THROWS((CNcbiOSException))
+    THROWS((COSException))
 {
   char msg[64];
   sprintf(msg, "Caught UNIX signal, code %d", sig);
@@ -90,16 +115,17 @@ extern "C" void s_DefSignalHandler(int sig, siginfo_t*, void*)
   switch ( sig ) {
   case SIGBUS:
   case SIGSEGV:
-      throw CNcbiMemException(msg);
+      throw CMemException(msg);
   case SIGFPE:
-      throw CNcbiFPEException(msg);
+      throw CFPEException(msg);
   default: 
-      throw CNcbiSystemException(msg);
+      break;
+      // throw CSystemException(msg);
   }
 }
 
 
-void CNcbiOSException::Initialize(void)
+void COSException::Initialize(void)
     THROWS((runtime_error))
 {
     // set DefSignalHandler() as signal handler for sync signals
@@ -114,7 +140,7 @@ void CNcbiOSException::Initialize(void)
     sigset_t sigset;
     sigfillset(&sigset);
     if (sigprocmask(SIG_BLOCK, &sigset, 0) != 0)
-        throw CNcbiErrnoException("CNcbiOSException:: block-all signal mask");
+        throw CErrnoException("COSException:: block-all signal mask");
     sigemptyset(&sigset);
 
     struct sigaction sa; 
@@ -128,13 +154,13 @@ void CNcbiOSException::Initialize(void)
     };
     for (const int* sig = s_Sig;  *sig;  sig++) {
         if (sigaction(*sig, &sa, 0) != 0)
-            throw CNcbiErrnoException("CNcbiOSException:: def. sig.-handler");
+            throw CErrnoException("COSException:: def. sig.-handler");
         if (sigaddset(&sigset, *sig) != 0)
-            throw CNcbiErrnoException("CNcbiOSException:: ");
+            throw CErrnoException("COSException:: ");
     }
 
     if (sigprocmask(SIG_UNBLOCK, &sigset, 0) != 0)
-        throw CNcbiErrnoException("CNcbiOSException:: unblocking sig.-mask");
+        throw CErrnoException("COSException:: unblocking sig.-mask");
 
     set_unexpected(s_UnexpectedHandler);
 }
@@ -142,7 +168,7 @@ void CNcbiOSException::Initialize(void)
 #elif defined(NCBI_OS_MSWIN)
 
 static void s_DefSEHandler(unsigned int sig, struct _EXCEPTION_POINTERS*)
-	THROWS((CNcbiOSException))
+	THROWS((COSException))
 {
     char msg[64];
     sprintf(msg, "Win32 exception code %X", sig);
@@ -153,19 +179,19 @@ static void s_DefSEHandler(unsigned int sig, struct _EXCEPTION_POINTERS*)
     case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
     case EXCEPTION_STACK_OVERFLOW:
     case EXCEPTION_INVALID_HANDLE:
-        throw CNcbiMemException(msg);
+        throw CMemException(msg);
     default:
         if (EXCEPTION_FLT_DENORMAL_OPERAND <= sig  &&
             sig <= EXCEPTION_INT_OVERFLOW) {
-            throw CNcbiFPEException(msg);
+            throw CFPEException(msg);
         }
 
-        throw CNcbiSystemException(msg);
+        throw CSystemException(msg);
     }
 }
 
 
-void CNcbiOSException::Initialize(void)
+void COSException::Initialize(void)
     THROWS((runtime_error)) {
         _set_se_translator(s_DefSEHandler);
 }
