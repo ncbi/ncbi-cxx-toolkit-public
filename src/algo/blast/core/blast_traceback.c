@@ -600,7 +600,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                      break;
                   } else {
                      new_hspcnt--;
-                     hsp_array[index2] = BlastHSPFree(hsp_array[index2]);
+                     hsp_array[index2] = BlastHSPFree(hsp2);
                   }
                }
             }
@@ -608,13 +608,16 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             if (keep) {
                new_hspcnt++;
             } else {
-               hsp_array[index] = BlastHSPFree(hsp_array[index]);
+               hsp_array[index] = BlastHSPFree(hsp);
             }
-         } else {	/* Should be kept? */
-            hsp_array[index] = BlastHSPFree(hsp_array[index]);
+         } else {
+            /* Score is below threshold */
+            gap_align->edit_block = GapXEditBlockDelete(gap_align->edit_block);
+            hsp_array[index] = BlastHSPFree(hsp);
          }
-      } else { /* Contained within another HSP, delete. */
-         hsp_array[index] = BlastHSPFree(hsp_array[index]);
+      } else { 
+         /* Contained within another HSP, delete. */
+         hsp_array[index] = BlastHSPFree(hsp);
       }
    } /* End loop on HSPs */
 
