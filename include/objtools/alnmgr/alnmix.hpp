@@ -63,18 +63,14 @@ public:
     ~CAlnMix(void);
 
     enum EAddFlags {
-        // ObjMgr is used to identify sequences and obtain a bioseqhandle.
-        // Also used to calc scores and determine the type of molecule
-        fDontUseObjMgr        = 0x01,
-
         // Determine score of each aligned segment in the process of mixing
         // (can only be set in addition to fUseObjMgr)
-        fCalcScore            = 0x02,
+        fCalcScore            = 0x01,
 
         // Force translation of nucleotide rows
         // This will result in an output Dense-seg that has Widths,
         // no matter if the whole alignment consists of nucleotides only.
-        fForceTranslation     = 0x0200
+        fForceTranslation     = 0x02
     };
     typedef int TAddFlags; // binary OR of EMergeFlags
 
@@ -349,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/11/08 13:36:13  todorov
+* Usage of OM now only depend on whether scope was provided at construction time
+*
 * Revision 1.47  2004/11/02 18:32:15  todorov
 * Changed (mostly shortened) a few internal members' names
 * for convenience and consistency
