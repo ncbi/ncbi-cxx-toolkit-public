@@ -203,8 +203,8 @@ NCBI_USING_NAMESPACE_STD;
 #  define NO_STD_DESTROY
 // replace cstddef with stddef.h
 #  define _STLP_CSTDDEF
-#include <stddef.h>
-#define USE_NO_ALLOC_TRAITS
+#  include <stddef.h>
+#  define USE_NO_ALLOC_TRAITS
 #endif
 
 #ifdef _DEBUG
@@ -443,5 +443,15 @@ template<> struct hash<string>
 };
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2005/02/09 19:11:41  grichenk
+ * Added CVS log
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif /* STLP_DEFS__HPP */

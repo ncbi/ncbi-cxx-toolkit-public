@@ -36,4 +36,14 @@
 #include <corelib/hash_impl/stlp_defs.hpp>
 #include <corelib/hash_impl/_hash_map.h>
 
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2005/02/09 19:11:41  grichenk
+ * Added CVS log
+ *
+ *
+ * ===========================================================================
+ */
+
 #endif /* HASH_MAP__HPP */
