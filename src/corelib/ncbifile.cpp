@@ -30,6 +30,13 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2001/12/18 21:36:38  juran
+ * Remove unneeded Mac headers.
+ * (Required functions copied to ncbi_os_mac.cpp)
+ * MoveRename PStr to PString in ncbi_os_mac.hpp.
+ * Don't use MoreFiles xxxCompat functions.  They're for System 6.
+ * Don't use global scope operator on functions copied into NCBI scope.
+ *
  * Revision 1.8  2001/11/19 23:38:44  vakatov
  * Fix to compile with SUN WorkShop (and maybe other) compiler(s)
  *
@@ -78,9 +85,6 @@
 #elif defined NCBI_OS_MAC
 #  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
-#  include "FSpCompat.h"
-#  include "MoreFilesExtras.h"
-#  include "DGFiles.h"
 #endif
 
 
@@ -91,22 +95,13 @@ BEGIN_NCBI_SCOPE
 
 static const FSSpec sNullFSS = {0, 0, "\p"};
 
-class PStr {
-public:
-    PStr(const unsigned char* str) { PstrPcpy(m_Str, str); }
-    friend bool operator==(const PStr& one, const PStr& other) {
-        return memcmp(one.m_Str, other.m_Str, one.m_Str[0]) == 0;
-    }
-private:
-    Str255 m_Str;
-};
-
 static bool operator==(const FSSpec &one, const FSSpec &other)
 {
     return one.vRefNum == other.vRefNum
         && one.parID   == other.parID
-        && PStr(one.name) == PStr(other.name);
+        && PString(one.name) == PString(other.name);
 }
+
 #endif
 
 
@@ -396,8 +391,8 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
         return true;
     }
     err = wantLocked 
-        ? ::FSpSetFLockCompat(&fss) 
-        : ::FSpRstFLockCompat(&fss);
+        ? ::FSpSetFLock(&fss) 
+        : ::FSpRstFLock(&fss);
 	
     return err == noErr;
 #else
@@ -501,7 +496,7 @@ CDirEntry::EType CDirEntry::GetType(void) const
     OSErr   err;
     long    dirID;
     Boolean isDir;
-    err = ::FSpGetDirectoryID(&FSS(), &dirID, &isDir);
+    err = FSpGetDirectoryID(&FSS(), &dirID, &isDir);
     if ( err )
         return eUnknown;
     return isDir ? eDir : eFile;
@@ -558,7 +553,7 @@ bool CDirEntry::Rename(const string& newname)
     if (newname.length() > maxFilenameLength) return false;
     Str31 newNameStr;
     Pstrcpy(newNameStr, newname.c_str());
-    OSErr err = FSpRenameCompat(&FSS(), newNameStr);
+    OSErr err = FSpRename(&FSS(), newNameStr);
     if (err != noErr) return false;
 #else
     if (rename(GetPath().c_str(), newname.c_str()) != 0) {
@@ -608,7 +603,7 @@ Int8 CFile::GetLength(void) const
 {
 #ifdef NCBI_OS_MAC
     long dataSize, rsrcSize;
-    OSErr err = ::FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
+    OSErr err = FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
     if (err != noErr) {
         return -1;
     } else {
