@@ -64,6 +64,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/09/28 20:45:26  lavr
+ * SConnNetInfo::max_try equal to 0 is now treated the same way as equal to 1
+ *
  * Revision 6.17  2001/09/19 15:58:37  lavr
  * Cut trailing blanks in blank lines
  *
@@ -164,7 +167,7 @@ typedef struct {
     char           args[1024];       /* service: args(e.g. for a CGI script) */
     EReqMethod     req_method;       /* method to use in the request         */
     STimeout*      timeout;          /* ptr to i/o tmo (infinite if NULL)    */
-    unsigned int   max_try;          /* max. # of attempts to establish conn */
+    unsigned int   max_try;          /* max. # of attempts to connect (>= 1) */
     char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
     char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
@@ -176,7 +179,7 @@ typedef struct {
 
     /* the following field(s) are for the internal use only! */
     int/*bool*/    http_proxy_adjusted;
-    STimeout       tmo;              /* Default storage for finite timeout   */
+    STimeout       tmo;              /* default storage for finite timeout   */
 } SConnNetInfo;
 
 
