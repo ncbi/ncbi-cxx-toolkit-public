@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.61 2002/04/24 04:02:42 vakatov Exp $
+#  $Id: configure.ac,v 1.62 2002/04/24 18:43:25 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -447,7 +447,7 @@ if test "$with_mt" = "yes" ; then
    esac
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"
    case "$host_os" in
-     solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread -lposix4"} ;;
+     solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lpthread -lposix4"} ;;
      *        )  THREAD_LIBS=${THREAD_LIBS:="-lpthread"} ;;
    esac
    LIBS="$LIBS $THREAD_LIBS"
