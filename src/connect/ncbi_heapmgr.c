@@ -142,31 +142,32 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
     SHEAP_Block* b;
     HEAP heap;
 
-    if ((!base && size) || (base && !size) ||
-        !(heap = (HEAP) malloc(sizeof(*heap))))
+    if (!base != !size || !(heap = (HEAP) malloc(sizeof(*heap))))
         return 0;
     chunk = (TNCBI_Size) HEAP_ALIGN(chunk);
     if (!base) {
         size = (TNCBI_Size) _HEAP_ALIGN(sizeof(*b) + 1, chunk);
-        if (!expand || !(base = (*expand)(0, size))) {
+        if (!size || !expand || !(base = (*expand)(0, size))) {
             CORE_LOGF(eLOG_Warning,
                       ("Heap Create: Cannot create (size = %u)",
-                       (unsigned) size));
+                       (unsigned)(size ? size : sizeof(*b))));
             free(heap);
             return 0;
         }
     }
-    if ((char*) HEAP_ALIGN(base) != base)
+    if ((char*) HEAP_ALIGN(base) != base) {
         CORE_LOGF(eLOG_Warning,
                   ("Heap Create: Unaligned base (0x%08lX)", (long) base));
-    if (size < (TNCBI_Size) HEAP_ALIGN(sizeof(*b) + 1))
+    }
+    if (size < (TNCBI_Size) HEAP_ALIGN(sizeof(*b) + 1)) {
         CORE_LOGF(eLOG_Warning, ("Heap Create: Heap is too small (%u, %u)",
                                  (unsigned) size, (unsigned) sizeof(*b)));
+    }
     heap->base   = base;
     heap->size   = size;
     heap->chunk  = chunk;
     heap->expand = expand;
-    heap->copy   = 0; /* original */
+    heap->copy   = 0/*original*/;
     b = (SHEAP_Block*) heap->base;
     b->flag = HEAP_FREE | HEAP_LAST;
     b->size = size;
@@ -178,12 +179,13 @@ HEAP HEAP_Attach(char* base)
 {
     SHEAP_Block* b;
     HEAP heap;
-    
+
     if (!base || !(heap = (HEAP) malloc(sizeof(*heap))))
         return 0;
-    if ((char*) HEAP_ALIGN(base) != base)
+    if ((char*) HEAP_ALIGN(base) != base) {
         CORE_LOGF(eLOG_Warning,
                   ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
+    }
     heap->size = 0;
     for (b = (SHEAP_Block*) base; ; b = (SHEAP_Block*) ((char*) b + b->size)) {
         if (!HEAP_ISUSED(b) && !HEAP_ISFREE(b)) {
@@ -198,9 +200,9 @@ HEAP HEAP_Attach(char* base)
             break;
     }
     heap->base   = base;
-    heap->chunk  = 0;
+    heap->chunk  = 0/*read-only*/;
     heap->expand = 0;
-    heap->copy   = 0; /* original */
+    heap->copy   = 0/*original*/;
     return heap;
 }
 
@@ -374,7 +376,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
         CORE_LOG(eLOG_Warning, "Heap Free: Heap is read-only");
         return;
     }
-    
+
     b = (SHEAP_Block*) heap->base;
     while ((char*) b < heap->base + heap->size) {
         if (HEAP_ISFREE(b)) {
@@ -404,7 +406,7 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
 {
     SHEAP_Block* b;
-    
+
     if (!heap) {
         CORE_LOG(eLOG_Warning, "Heap Walk: NULL heap");
         return 0;
@@ -461,9 +463,9 @@ HEAP HEAP_CopySerial(HEAP heap, int serial)
     newheap = (HEAP) (buf + HEAP_ALIGN(heap->size));
     newheap->base   = buf;
     newheap->size   = heap->size;
-    newheap->chunk  = 0;
+    newheap->chunk  = 0/*read-only*/;
     newheap->expand = 0;
-    newheap->copy   = serial ? serial : 1; /* copy */
+    newheap->copy   = serial ? serial : 1/*copy*/;
     return newheap;
 }
 
@@ -520,6 +522,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/03/24 19:45:15  lavr
+ * Added few minor changes and comments
+ *
  * Revision 6.16  2002/08/16 15:37:22  lavr
  * Warn if allocation attempted on a NULL heap
  *
