@@ -514,7 +514,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
             }
 
             filter_slp_combined = NULL;
-            CombineMaskLocations(filter_slp, &filter_slp_combined);
+            CombineMaskLocations(filter_slp, &filter_slp_combined, 0);
 
             filter_slp = BlastSeqLocFree(filter_slp);
 
