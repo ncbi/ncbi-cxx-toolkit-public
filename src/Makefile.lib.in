@@ -33,14 +33,17 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 
 ### C/C++ source file compilation rules
 
+CXXFLAGS_ALL = $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %@obj_ext@: ./%.cpp
-	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
+	$(CXX) @f_compile@ $(CXXFLAGS_ALL) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.cpp
-	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
+	$(CXX) @f_compile@ $(CXXFLAGS_ALL) $< @f_outobj@$@
+
+CFLAGS_ALL = $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %@obj_ext@: ./%.c
-	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
+	$(CC)  @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.c
-	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
+	$(CC)  @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@
 
 
 ### The library build rule
@@ -53,7 +56,7 @@ $(XLIB): $(XLIBOBJ)
 ### Standard targets
 
 all: $(XLIB) $(XOBJ)
-	@$(BINCOPY) $(XLIB) $(XOBJ) $(libdir)
+	$(BINCOPY) $(XLIB) $(XOBJ) $(libdir)
 
 clean:
 	-$(RMDIR) SunWS_cache
