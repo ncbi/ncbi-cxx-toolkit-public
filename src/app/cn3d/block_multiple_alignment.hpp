@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.24  2002/02/05 18:53:24  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -269,8 +272,8 @@ public:
     bool MarkBlock(int column);
     bool ClearMarks(void);  // remove all block flags
 
-    // this function does two things: it extracts from a multiple alignment all slave rows marked for
-    // removal (removeSlaves[i] == true); and for each slave removed, creates a new BlockMultipleAlignment
+    // this function does two things: it extracts from a multiple alignment all slave rows listed for
+    // removal; and if pairwiseAlignments!=NULL, for each slave removed creates a new BlockMultipleAlignment
     // that contains the alignment of just that slave with the master, as it was in the original multiple
     // (i.e., not according to the corresponding pre-IBM MasterSlaveAlignment)
     typedef std::list < BlockMultipleAlignment * > AlignmentList;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.122  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.121  2002/02/13 00:39:44  thiessen
 * add CN3D_HOME env var under unix
 *
@@ -509,6 +512,9 @@
 #include "cn3d/cdd_ref_dialog.hpp"
 #include "cn3d/cn3d_png.hpp"
 #include "cn3d/wx_tools.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
+#include "cn3d/sequence_set.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 #include <ncbienv.h>
 
@@ -1055,7 +1061,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
     EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  Cn3DMainFrame::OnSelectFavorite)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
-    EVT_MENU_RANGE(MID_EDIT_CDD_NAME, MID_ANNOT_CDD,        Cn3DMainFrame::OnCDD)
+    EVT_MENU_RANGE(MID_EDIT_CDD_NAME, MID_CDD_REJECT_SEQ,   Cn3DMainFrame::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
     EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
@@ -1209,6 +1215,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_EDIT_CDD_NOTES, "Edit N&otes");
     menu->Append(MID_EDIT_CDD_REFERENCES, "Edit &References");
     menu->Append(MID_ANNOT_CDD, "&Annotate");
+    menu->AppendSeparator();
+    menu->Append(MID_CDD_REJECT_SEQ, "Re&ject Sequence");
     menuBar->Append(menu, "&CDD");
 
     // Help menu
@@ -1657,6 +1665,53 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             if (!cddAnnotateDialog)
                 cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
             cddAnnotateDialog->Show(true);
+            break;
+        }
+        case MID_CDD_REJECT_SEQ: {
+            // make a list of slave sequences
+            std::vector < const Sequence * > sequences;
+            std::vector < wxString > descriptions;
+            const MoleculeIdentifier *master =
+                glCanvas->structureSet->alignmentManager->
+                    GetCurrentMultipleAlignment()->GetSequenceOfRow(0)->identifier;
+            SequenceSet::SequenceList::const_iterator
+                s, se = glCanvas->structureSet->sequenceSet->sequences.end();
+            for (s=glCanvas->structureSet->sequenceSet->sequences.begin(); s!=se; s++) {
+                if ((*s)->identifier != master && (*s)->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+                    wxString description;
+                    description.Printf("gi %i     ", (*s)->identifier->gi);
+                    if ((*s)->identifier->pdbID.size() > 0) {
+                        description += wxString('(') + (*s)->identifier->pdbID.c_str();
+                        if ((*s)->identifier->pdbChain != ' ')
+                            description += wxString('_') + (char) (*s)->identifier->pdbChain;
+                        description += ")     ";
+                    }
+                    if ((*s)->description.size() > 0)
+                        description += wxString(' ') + (*s)->description.c_str();
+                    descriptions.push_back(description);
+                    sequences.push_back(*s);
+                }
+            }
+            wxString *choices = new wxString[descriptions.size()];
+            int choice;
+            for (choice=0; choice<descriptions.size(); choice++) choices[choice] = descriptions[choice];
+            choice = wxGetSingleChoiceIndex("Reject which sequence?", "Reject Sequence",
+                descriptions.size(), choices, this);
+            if (choice >= 0) {
+                wxString message = "Are you sure you want to reject this sequence?\n\n";
+                message += choices[choice];
+                message += "\n\nIf so, enter a brief reason why:";
+                wxString reason = wxGetTextFromUser(message, "Reject Sequence", "", this);
+                if (reason.size() == 0) {
+                    wxMessageBox("Reject action cancelled!", "", wxOK | wxICON_INFORMATION, this);
+                } else {
+                    int purge = wxMessageBox("Do you want to purge all instances of this sequence "
+                        " from the multiple alignment and update list?",
+                        "", wxYES_NO | wxICON_QUESTION, this);
+                    glCanvas->structureSet->
+                        RejectAndPurgeSequence(sequences[choice], reason.c_str(), purge == wxYES);
+                }
+            }
             break;
         }
     }

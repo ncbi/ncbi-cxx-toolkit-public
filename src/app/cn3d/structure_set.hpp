@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/02/19 14:59:40  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.63  2002/02/12 17:19:22  thiessen
 * first working structure import
 *
@@ -349,6 +352,9 @@ public:
 
     // adds a new Sequence to the SequenceSet
     const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
+
+    // reject sequence (from CDD)
+    void RejectAndPurgeSequence(const Sequence *reject, std::string reason, bool purge);
 
     // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
     Bioseq * GetOrCreateBioseq(const Sequence *sequence);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.38  2001/11/30 14:02:05  thiessen
 * progress on sequence imports to single structures
 *
@@ -176,6 +179,7 @@ class ThreaderOptions;
 class UpdateViewer;
 class BLASTer;
 class StructureSet;
+class MoleculeIdentifier;
 
 class AlignmentManager : public ShowHideCallbackObject
 {
@@ -242,6 +246,9 @@ public:
 
     // get a list of (slave) sequences present in the updates
     void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
+
+    // remove sequence from both multiple alignment and updates
+    void PurgeSequence(const MoleculeIdentifier *identifier);
 
 private:
     void Init(void);

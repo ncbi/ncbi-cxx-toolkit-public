@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.69  2002/02/12 17:19:20  thiessen
 * first working structure import
 *
@@ -920,6 +923,61 @@ void AlignmentManager::ReplaceUpdatesInASN(const ncbi::objects::CCdd::TPending& 
         sequenceSet->parentSet->ReplaceUpdates(newUpdates);
     else
         ERR_POST(Error << "AlignmentManager::ReplaceUpdatesInASN() - can't get StructureSet");
+}
+
+void AlignmentManager::PurgeSequence(const MoleculeIdentifier *identifier)
+{
+    BlockMultipleAlignment *multiple =
+        sequenceViewer->GetCurrentAlignments() ? sequenceViewer->GetCurrentAlignments()->front() : NULL;
+    if (!multiple) return;
+
+    // remove matching rows from multiple alignment
+    std::vector < int > rowsToRemove;
+    int i;
+    for (i=1; i<multiple->NRows(); i++)
+        if (multiple->GetSequenceOfRow(i)->identifier == identifier)
+            rowsToRemove.push_back(i);
+
+    if (rowsToRemove.size() > 0) {
+
+        // turn on editor, and update multiple pointer
+        if (!sequenceViewer->EditorIsOn()) {
+            sequenceViewer->TurnOnEditor();
+            multiple = sequenceViewer->GetCurrentAlignments()->front();
+        }
+
+        if (!multiple->ExtractRows(rowsToRemove, NULL)) {
+            ERR_POST("AlignmentManager::PurgeSequence() - ExtractRows failed!");
+            return;
+        }
+
+        // remove rows from SequenceDisplay
+        SequenceDisplay *display = sequenceViewer->GetCurrentDisplay();
+        if (!display) {
+            ERR_POST("AlignmentManager::PurgeSequence() - can't get SequenceDisplay!");
+            return;
+        }
+        display->RowsRemoved(rowsToRemove, multiple);
+    }
+
+    // remove matching alignments from Update window
+    const ViewerBase::AlignmentList *currentUpdates = updateViewer->GetCurrentAlignments();
+    if (!currentUpdates) return;
+    ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
+
+    for (u=currentUpdates->begin(); u!=ue; u++) // quick check if any match found
+        if ((*u)->GetSequenceOfRow(1)->identifier == identifier) break;
+
+    if (u != ue) {
+        ViewerBase::AlignmentList updatesToKeep;
+        for (u=currentUpdates->begin(); u!=ue; u++) {
+            if ((*u)->GetSequenceOfRow(1)->identifier != identifier) {
+                BlockMultipleAlignment *keep = (*u)->Clone();
+                updatesToKeep.push_back(keep);
+            }
+        }
+        updateViewer->ReplaceAlignments(updatesToKeep);
+    }
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.57  2002/01/18 13:55:29  thiessen
 * add help menu and viewer
 *
@@ -400,6 +403,7 @@ public:
             MID_EDIT_CDD_NOTES,
             MID_EDIT_CDD_REFERENCES,
             MID_ANNOT_CDD,
+            MID_CDD_REJECT_SEQ,
         // Help menu
             MID_HELP_COMMANDS,
 

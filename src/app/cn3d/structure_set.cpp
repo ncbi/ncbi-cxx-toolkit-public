@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2002/02/19 14:59:40  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.95  2002/02/12 17:19:22  thiessen
 * first working structure import
 *
@@ -349,7 +352,8 @@
 #include <objects/mmdb3/Biostruc_feature_set_id.hpp>
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
-
+#include <objects/cdd/Reject_id.hpp>
+#include <objects/cdd/Update_comment.hpp>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/data_manager.hpp"
@@ -1160,6 +1164,23 @@ const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
     dataManager->SetDataChanged(eSequenceData);
 
     return newSeq;
+}
+
+void StructureSet::RejectAndPurgeSequence(const Sequence *reject, std::string reason, bool purge)
+{
+    if (!dataManager->IsCDD() || !reject || reason.size() == 0) return;
+
+    CReject_id *rejectID = new CReject_id();
+    rejectID->SetIds() = reject->bioseqASN->GetId();    // copy Seq-id lists
+
+    CUpdate_comment *comment = new CUpdate_comment();
+    comment->SetComment(reason);
+    rejectID->SetDescription().push_back(CRef < CUpdate_comment > (comment));
+
+    dataManager->AddReject(rejectID);
+
+    if (purge)
+        alignmentManager->PurgeSequence(reject->identifier);
 }
 
 // trivial methods...

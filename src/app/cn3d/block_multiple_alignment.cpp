@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/02/19 14:59:38  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.33  2002/02/05 18:53:24  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -1265,41 +1268,43 @@ bool BlockMultipleAlignment::ExtractRows(
 
     BlockList::const_iterator b, br, be = blocks.end();
 
-    TESTMSG("creating new pairwise alignments");
-    SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
-    for (i=0; i<slavesToRemove.size(); i++) {
+    if (pairwiseAlignments) {
+        TESTMSG("creating new pairwise alignments");
+        SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
+        for (i=0; i<slavesToRemove.size(); i++) {
 
-        // redraw molecule associated with removed row
-        const Molecule *molecule = GetSequenceOfRow(slavesToRemove[i])->molecule;
-        if (molecule) GlobalMessenger()->PostRedrawMolecule(molecule);
+            // redraw molecule associated with removed row
+            const Molecule *molecule = GetSequenceOfRow(slavesToRemove[i])->molecule;
+            if (molecule) GlobalMessenger()->PostRedrawMolecule(molecule);
 
-        // create new pairwise alignment from each removed row
-        SequenceList *newSeqs = new SequenceList(2);
-        (*newSeqs)[0] = (*sequences)[0];
-        (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
-        BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
-        for (b=blocks.begin(); b!=be; b++) {
-            UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
+            // create new pairwise alignment from each removed row
+            SequenceList *newSeqs = new SequenceList(2);
+            (*newSeqs)[0] = (*sequences)[0];
+            (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
+            BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
+            for (b=blocks.begin(); b!=be; b++) {
+                UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
 
-            // only copy blocks that aren't flagged to be realigned
-            if (ABlock && markBlocks.find(ABlock) == markBlocks.end()) {
-                UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
-                const Block::Range *range = ABlock->GetRangeOfRow(0);
-                newABlock->SetRangeOfRow(0, range->from, range->to);
-                range = ABlock->GetRangeOfRow(slavesToRemove[i]);
-                newABlock->SetRangeOfRow(1, range->from, range->to);
-                newABlock->width = range->to - range->from + 1;
-                newAlignment->AddAlignedBlockAtEnd(newABlock);
+                // only copy blocks that aren't flagged to be realigned
+                if (ABlock && markBlocks.find(ABlock) == markBlocks.end()) {
+                    UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
+                    const Block::Range *range = ABlock->GetRangeOfRow(0);
+                    newABlock->SetRangeOfRow(0, range->from, range->to);
+                    range = ABlock->GetRangeOfRow(slavesToRemove[i]);
+                    newABlock->SetRangeOfRow(1, range->from, range->to);
+                    newABlock->width = range->to - range->from + 1;
+                    newAlignment->AddAlignedBlockAtEnd(newABlock);
+                }
             }
+            if (!newAlignment->AddUnalignedBlocks() ||
+                !newAlignment->UpdateBlockMapAndColors()) {
+                ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
+                return false;
+            }
+            pairwiseAlignments->push_back(newAlignment);
         }
-        if (!newAlignment->AddUnalignedBlocks() ||
-            !newAlignment->UpdateBlockMapAndColors()) {
-            ERR_POST(Error << "BlockMultipleAlignment::ExtractRows() - error creating new alignment");
-            return false;
-        }
-        pairwiseAlignments->push_back(newAlignment);
+        SetDiagPostLevel(eDiag_Info);
     }
-    SetDiagPostLevel(eDiag_Info);
 
     // remove sequences
     TESTMSG("deleting sequences");

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.6  2002/02/12 17:19:21  thiessen
 * first working structure import
 *
@@ -730,6 +733,15 @@ ncbi::objects::CSeq_id * ASNDataManager::GetCDDMaster3d(void) const
         return cdd->GetMaster3d().front().GetPointer(); // just return the first one...
     else
         return NULL;
+}
+
+void ASNDataManager::AddReject(ncbi::objects::CReject_id *reject)
+{
+    CCdd *cdd = GetInternalCDDData();
+    if (!cdd) return;
+
+    cdd->SetRejects().push_back(CRef < CReject_id > (reject));
+    dataChanged |= StructureSet::eCDDData;
 }
 
 END_SCOPE(Cn3D)

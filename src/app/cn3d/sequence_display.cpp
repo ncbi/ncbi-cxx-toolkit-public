@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.40  2002/02/15 15:27:12  thiessen
 * on Mac, use meta for MouseDown events
 *
@@ -598,11 +601,11 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                         return false;
                     }
 
-                    // redraw molecule associated with removed row
-                    const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
-
                     // delete row based on alignment row # (not display row #); redraw molecule
                     if (alignment->DeleteRow(selectedRow->row)) {
+
+                        // redraw molecule associated with removed row
+                        const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
 
                         // delete this row from the display, and update higher row #'s
                         RowVector::iterator r, re = rows.end(), toDelete;

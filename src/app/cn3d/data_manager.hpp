@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/02/19 14:59:39  thiessen
+* add CDD reject and purge sequence
+*
 * Revision 1.5  2002/02/12 17:19:21  thiessen
 * first working structure import
 *
@@ -65,6 +68,7 @@
 #include <objects/cn3d/Cn3d_style_dictionary.hpp>
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/cdd/Reject_id.hpp>
 
 #include <list>
 #include <vector>
@@ -148,6 +152,9 @@ public:
     const ncbi::objects::CCn3d_user_annotations * GetUserAnnotations(void) const;
     void SetUserAnnotations(ncbi::objects::CCn3d_user_annotations& annots);
     void RemoveUserAnnotations(void);
+
+    // add sequence to CDD rejects list
+    void AddReject(ncbi::objects::CReject_id *reject);
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates
