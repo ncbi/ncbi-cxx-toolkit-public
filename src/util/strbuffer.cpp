@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/02/26 21:32:00  gouriano
+* modify C++ exceptions thrown by this library
+*
 * Revision 1.34  2002/11/18 19:49:37  grichenk
 * More details in error messages
 *
@@ -394,11 +397,13 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                     return pos;
                 }
                 m_Error = "end of file";
-                THROW0_TRACE(CEofException());
+//                THROW0_TRACE(CEofException());
+                NCBI_THROW(CEofException,eEof,m_Error);
             }
             else {
                 m_Error = "read fault";
-                THROW1_TRACE(CIOException, "read fault");
+//                THROW1_TRACE(CIOException, "read fault");
+                NCBI_THROW(CIOException,eRead,m_Error);
             }
         }
         m_DataEndPos += count;
@@ -516,7 +521,9 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
 void CIStreamBuffer::BadNumber(void)
 {
     m_Error = "bad number";
-    THROW1_TRACE(runtime_error, "bad number in line " + NStr::UIntToString(GetLine()));
+//    THROW1_TRACE(runtime_error, "bad number in line " + NStr::UIntToString(GetLine()));
+    NCBI_THROW(CIOException,eRead,
+        "bad number in line " + NStr::UIntToString(GetLine()));
 }
 
 Int4 CIStreamBuffer::GetInt4(void)
@@ -690,7 +697,8 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
     if ( count != 0 ) {
         if ( !m_Output.write(m_Buffer, count) ) {
             m_Error = "write fault";
-            THROW1_TRACE(CIOException, "write fault");
+//            THROW1_TRACE(CIOException, "write fault");
+            NCBI_THROW(CIOException,eWrite,m_Error);
         }
         if ( leave != 0 ) {
             memmove(m_Buffer, m_Buffer + count, leave);
@@ -712,7 +720,8 @@ void COStreamBuffer::Flush(void)
     m_Output.clear();
     try {
         if ( !m_Output.flush() )
-            THROW1_TRACE(CIOException, "COStreamBuffer::Flush() failed");
+//            THROW1_TRACE(CIOException, "COStreamBuffer::Flush() failed");
+            NCBI_THROW(CIOException,eFlush,"COStreamBuffer::Flush: failed");
     } catch (...) {
         m_Output.clear(state);
         throw;
@@ -924,28 +933,11 @@ void COStreamBuffer::Write(CByteSourceReader& reader)
             if ( reader.EndOfData() )
                 return;
             else
-                THROW1_TRACE(CIOException, "buffer read fault");
+//                THROW1_TRACE(CIOException, "buffer read fault");
+                NCBI_THROW(CIOException,eRead,"buffer read fault");
         }
         m_CurrentPos += count;
     }
-}
-
-CIOException::CIOException(const string& msg) THROWS_NONE
-    : runtime_error(msg)
-{
-}
-
-CIOException::~CIOException(void) THROWS_NONE
-{
-}
-
-CEofException::CEofException(void) THROWS_NONE
-    : CIOException("end of file")
-{
-}
-
-CEofException::~CEofException(void) THROWS_NONE
-{
 }
 
 END_NCBI_SCOPE

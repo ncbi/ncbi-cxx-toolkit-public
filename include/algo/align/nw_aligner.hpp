@@ -43,41 +43,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <algo/algo_exception.hpp>
 #include <vector>
 #include <string>
 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-// Exceptions
-//
-
-class CNWAlignerException : public CException 
-{
-public:
-    enum EErrCode {
-        eInternal,
-        eBadParameter,
-        eInvalidCharacter,
-        eIncorrectSequenceOrder
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eInternal:
-            return "Internal error";
-        case eBadParameter:
-            return "One or more parameters passed are invalid";
-        case eInvalidCharacter:
-            return "Sequence contains one or more invalid characters";
-        case eIncorrectSequenceOrder:
-            return "mRna should go first";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CNWAlignerException, CException);
-};
 
 
 // NW algorithm encapsulation
@@ -201,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/02/26 21:30:32  gouriano
+ * modify C++ exceptions thrown by this library
+ *
  * Revision 1.10  2003/02/21 16:41:11  dicuccio
  * Added Win32 export specifier
  *

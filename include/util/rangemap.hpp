@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <util/range.hpp>
+#include <util/util_exception.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -546,8 +547,10 @@ public:
 
     pair<iterator, bool> insert(const value_type& value)
         {
-            if ( value.first.Empty() )
-                THROW1_TRACE(runtime_error, "empty key range");
+            if ( value.first.Empty() ) {
+//                THROW1_TRACE(runtime_error, "empty key range");
+                NCBI_THROW(CUtilException,eWrongData,"empty key range");
+            }
 
             // key in select map
             position_type selectKey =
@@ -608,8 +611,10 @@ public:
 
     iterator insert(const value_type& value)
         {
-            if ( value.first.Empty() )
-                THROW1_TRACE(runtime_error, "empty key range");
+            if ( value.first.Empty() ) {
+//                THROW1_TRACE(runtime_error, "empty key range");
+                NCBI_THROW(CUtilException,eWrongData,"empty key range");
+            }
 
             // select key
             position_type selectKey =
@@ -635,6 +640,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/02/26 21:34:06  gouriano
+* modify C++ exceptions thrown by this library
+*
 * Revision 1.19  2003/02/07 16:54:01  vasilche
 * Pass all structures with size > sizeof int by reference.
 * Move cvs log to the end of files.

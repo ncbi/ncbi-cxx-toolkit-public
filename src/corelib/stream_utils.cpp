@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/util_exception.hpp>
 #include <util/stream_utils.hpp>
 #include <string.h>
 
@@ -214,7 +215,9 @@ int CPushback_Streambuf::sync(void)
 streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                        streamsize    /*buf_size*/)
 {
-    THROW1_TRACE(runtime_error, "CPushback_Streambuf::setbuf() not allowed");
+//    THROW1_TRACE(runtime_error, "CPushback_Streambuf::setbuf() not allowed");
+    NCBI_THROW(CUtilException,eWrongCommand,
+        "CPushback_Streambuf::setbuf: not allowed");
     /*NOTREACHED*/
     return this;
 }
@@ -373,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2003/02/26 21:32:00  gouriano
+ * modify C++ exceptions thrown by this library
+ *
  * Revision 1.14  2002/12/19 14:50:42  dicuccio
  * Changed a friend class -> friend struct (relieves a warning for MSVC)
  *

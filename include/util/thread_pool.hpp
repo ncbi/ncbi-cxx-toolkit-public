@@ -45,6 +45,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <util/util_exception.hpp>
 
 #include <deque>
 
@@ -209,26 +210,6 @@ protected:
 };
 
 
-class NCBI_XUTIL_EXPORT CBlockingQueueException
-    : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-    enum EErrCode {
-        eFull,    // attempt to insert into a full queue
-        eTimedOut // Put or WaitForRoom timed out
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eFull:     return "eFull";
-        case eTimedOut: return "eTimedOut";
-        default:        return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CBlockingQueueException,CException);
-};
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
@@ -384,6 +365,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/02/26 21:34:06  gouriano
+* modify C++ exceptions thrown by this library
+*
 * Revision 1.9  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *

@@ -33,6 +33,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <util/bytesrc.hpp>
+#include <util/util_exception.hpp>
 #include <util/stream_utils.hpp>
 #include <algorithm>
 
@@ -108,8 +109,10 @@ CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
     : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
 {
-    if ( !*m_Stream )
-        THROW1_TRACE(runtime_error, "file not found: " + fileName);
+    if ( !*m_Stream ) {
+//        THROW1_TRACE(runtime_error, "file not found: " + fileName);
+        NCBI_THROW(CUtilException,eNoInput,"file not found: " + fileName);
+    }
 }
 
 
@@ -160,8 +163,11 @@ CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
       m_FStream(source->GetFileName().c_str(),
                 IFStreamFlags(source->IsBinary()))
 {
-    if ( !m_FStream )
-        THROW1_TRACE(runtime_error, "file not found: " +source->GetFileName());
+    if ( !m_FStream ) {
+//        THROW1_TRACE(runtime_error, "file not found: " +source->GetFileName());
+        NCBI_THROW(CUtilException,eNoInput,
+            "file not found: " +source->GetFileName());
+    }
     m_Stream = &m_FStream;
 }
 
@@ -305,6 +311,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2003/02/26 21:32:00  gouriano
+ * modify C++ exceptions thrown by this library
+ *
  * Revision 1.18  2002/11/27 21:08:52  lavr
  * Take advantage of CStreamUtils::Readsome() in CStreamByteSource::Read()
  *

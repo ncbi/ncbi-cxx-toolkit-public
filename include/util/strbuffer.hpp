@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/02/26 21:34:06  gouriano
+* modify C++ exceptions thrown by this library
+*
 * Revision 1.27  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *
@@ -143,6 +146,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <util/util_exception.hpp>
 #include <string.h>
 
 #include <util/bytesrc.hpp>
@@ -156,21 +160,6 @@ class CSubSourceCollector;
 #define THROWS1(arg)
 #define THROWS1_NONE
 
-// this exception is thrown when IO error occurred in serialization
-class NCBI_XUTIL_EXPORT CIOException : public runtime_error
-{
-public:
-    CIOException(const string& msg) THROWS_NONE;
-    ~CIOException(void) THROWS_NONE;
-};
-
-// this exception is thrown when unexpected end of file found
-class NCBI_XUTIL_EXPORT CEofException : public CIOException
-{
-public:
-    CEofException(void) THROWS_NONE;
-    ~CEofException(void) THROWS_NONE;
-};
 
 class NCBI_XUTIL_EXPORT CIStreamBuffer
 {
