@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/05/06 16:52:55  vasilche
+* Added 'pause' argument.
+*
 * Revision 1.5  2003/04/24 16:12:39  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
@@ -63,6 +66,7 @@
 */
 
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_util.h>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -124,6 +128,7 @@ protected:
 
     int m_gi_from;
     int m_gi_to;
+    int m_pause;
 };
 
 
@@ -168,7 +173,7 @@ bool CTestOM::Thread_Run(int idx)
     CScope scope(*m_ObjMgr);
     scope.AddDefaults();
 
-    int from, to, delta;
+    int from, to;
     // make them go in opposite directions
     if (idx % 2 == 0) {
         from = m_gi_from;
@@ -177,10 +182,13 @@ bool CTestOM::Thread_Run(int idx)
         from = m_gi_to;
         to = m_gi_from;
     }
-    delta = (to > from) ? 1 : -1;
+    int delta = (to > from) ? 1 : -1;
+    int pause = m_pause;
 
-    for (int i = from;
-         ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
+    for ( int i = from, end = to+delta; i != end; i += delta ) {
+        if ( i != from && pause ) {
+            SleepSec(pause);
+        }
         try {
 // load sequence
             CSeq_id sid;
@@ -286,6 +294,10 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("togi", "ToGi",
          "Process sequences in the interval TO this Gi",
          CArgDescriptions::eInteger, NStr::IntToString(g_gi_to));
+    args.AddDefaultKey
+        ("pause", "Pause",
+         "Pause between requests in seconds",
+         CArgDescriptions::eInteger, "0");
     return true;
 }
 
@@ -297,6 +309,7 @@ bool CTestOM::TestApp_Init(void)
     const CArgs& args = GetArgs();
     m_gi_from = args["fromgi"].AsInteger();
     m_gi_to   = args["togi"].AsInteger();
+    m_pause   = args["pause"].AsInteger();
 
     NcbiCout << "Testing ObjectManager ("
         << "gi from "

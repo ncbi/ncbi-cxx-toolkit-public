@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
@@ -101,6 +102,9 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("count", "RepeatCount",
                             "repeat test work RepeatCount times",
                             CArgDescriptions::eInteger, "1");
+    arg_desc->AddDefaultKey("pause", "Pause",
+                            "pause between tests in seconds",
+                            CArgDescriptions::eInteger, "0");
 
     arg_desc->AddDefaultKey("resolve", "ResolveMethod",
                             "Method of segments resolution",
@@ -603,6 +607,7 @@ int CDemoApp::Run(void)
         resolve = CFeat_CI::eResolve_TSE;
 
     int repeat_count = args["count"].AsInteger();
+    int pause = args["pause"].AsInteger();
     bool only_features = args["only_features"];
     bool print_features = args["print_features"];
     bool split = args["split"];
@@ -652,6 +657,9 @@ int CDemoApp::Run(void)
     }
 
     for ( int c = 0; c < repeat_count; ++c ) {
+        if ( c && pause ) {
+            SleepSec(pause);
+        }
         string sout;
         int count;
         if ( c == 0 && split ) {
@@ -852,6 +860,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/05/06 16:52:54  vasilche
+* Added 'pause' argument.
+*
 * Revision 1.24  2003/04/29 19:51:14  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
