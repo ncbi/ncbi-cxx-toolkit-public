@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.1 2004/06/17 17:43:23 bolton Exp $
+-- $Id: pcassay.asn,v 1.2 2004/07/13 14:31:17 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -32,9 +32,9 @@
 
 NCBI-PCAssay DEFINITIONS ::= BEGIN
 
-IMPORTS Pub                 FROM NCBI-Pub
-        Date, Object-id     FROM NCBI-General
-        PC-ID, PC-Source    FROM NCBI-PCSubstance;
+IMPORTS Pub                              FROM NCBI-Pub
+        Date, Object-id                  FROM NCBI-General
+        PC-ID, PC-Source, PC-XRefData    FROM NCBI-PCSubstance;
 
 -- EXPORTS ;
 
@@ -72,6 +72,7 @@ PC-AssayDataSession ::= SEQUENCE {
     -- External Tracking Information
     date              Date,                                -- Deposition Release/Submission Date
     source-id         Object-id                  OPTIONAL, -- External Identifier for Deposition (for Indexing)
+    xref              SEQUENCE OF PC-XRefData    OPTIONAL, -- Linkout Information for this Data Session
 
     -- Assay Result Data
     data              SEQUENCE OF PC-AssayResults,         -- Deposited Assay Results (vector)
@@ -151,6 +152,7 @@ PC-AssayDescription ::= SEQUENCE {
     procedure         SEQUENCE OF VisibleString  OPTIONAL, -- Procedure used to generate results
     comment           SEQUENCE OF VisibleString  OPTIONAL, -- Comments provided by Depositor
     pub               SEQUENCE OF Pub            OPTIONAL, -- Articles Describing this Assay
+    xref              SEQUENCE OF PC-XRefData    OPTIONAL, -- Linkout Information for this Assay Description
 
     -- Allowed Assay Result Types
     results           SEQUENCE OF PC-ResultType,           -- Allowed Result Definitions (vector)
@@ -291,9 +293,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
--- Revision 1.1  2004/06/17 17:43:23  bolton
--- Moved PubChem ASN.1 specification objects "pcsubstance" and "pcassay" to
--- the primary object location from the internal PubChem location.
+-- Revision 1.2  2004/07/13 14:31:17  bolton
+-- Added PC-XRefData, imported from the PCSubstance specification, to the
+-- DataSession and AssayDescription blocks.
 --
 -- Revision 1.18  2004/06/10 13:24:18  bolton
 -- Changes made to in documentation and enumerations to detail that "0" is an
@@ -353,4 +355,5 @@ END
 -- Minor changes to make "pcassay" library compile.
 --
 -- ===========================================================================
+
 
