@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/01/28 20:26:39  lavr
+ * Completely redesigned
+ *
  * Revision 1.4  2001/12/17 22:18:21  ucko
  * Overload xsgetn unconditionally.
  *
@@ -79,35 +82,39 @@ public:
     virtual ~CPushback_Streambuf();
 
 protected:
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual CT_INT_TYPE underflow(void);
-    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-    virtual streamsize  showmanyc(void);
-    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
+    virtual CT_INT_TYPE  overflow(CT_INT_TYPE c);
+    virtual streamsize   xsputn(const CT_CHAR_TYPE* buf, streamsize n);
+    virtual CT_INT_TYPE  underflow(void);
+    virtual streamsize   xsgetn(CT_CHAR_TYPE* buf, streamsize n);
+    virtual streamsize   showmanyc(void);
 
-    virtual int         sync(void);
+    virtual int          sync(void);
 
-    // this method is declared here to be disabled (exception) at run-time
-    virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
+    virtual CT_INT_TYPE  pbackfail(CT_INT_TYPE c = CT_EOF);
+
+    // declared setbuf here to only throw an exception at run-time
+    virtual streambuf*   setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    streambuf* x_SelfDestroy(void);
+    void                 x_FillBuffer(void);
 
-    bool          m_SelfDestroy;  // if x_SelfDestroy() is already in progress
-    istream&      m_Is;           // i/o stream this streambuf is attached to
-    streambuf*    m_Sb;           // original streambuf
-    CT_CHAR_TYPE* m_Buf;
-    streamsize    m_BufSize;
-    void*         m_DelPtr;
+    istream&             m_Is;      // i/o stream this streambuf is attached to
+    streambuf*           m_Sb;      // original streambuf
+    CT_CHAR_TYPE*        m_Buf;     // == 0 when the buffer has been emptied
+    streamsize           m_BufSize;
+    void*                m_DelPtr;
+
+    static const streamsize k_MinBufSize;
 };
 
+
+const streamsize CPushback_Streambuf::k_MinBufSize = 4096;
 
 
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          CT_CHAR_TYPE* buf,
                                          streamsize    buf_size,
                                          void*         del_ptr) :
-    m_SelfDestroy(false),
     m_Is(is), m_Sb(is.rdbuf()),
     m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
@@ -119,21 +126,15 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
 
 CPushback_Streambuf::~CPushback_Streambuf()
 {
-    if ( m_DelPtr ) {
-        delete[] (char*) m_DelPtr;
-    }
-
-    if ( m_SelfDestroy ) {
-        m_Is.rdbuf(m_Sb);
-    } else {
+    delete[] (CT_CHAR_TYPE*) m_DelPtr;
+    if (dynamic_cast<CPushback_Streambuf*> (m_Sb))
         delete m_Sb;
-    }
 }
 
 
 CT_INT_TYPE CPushback_Streambuf::overflow(CT_INT_TYPE c)
 {
-    if ( CT_EQ_INT_TYPE(c, CT_EOF) ) {
+    if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         return m_Sb->sputc(CT_TO_CHAR_TYPE(c));
     }
     if (m_Sb->PUBSYNC() == 0) {
@@ -143,48 +144,50 @@ CT_INT_TYPE CPushback_Streambuf::overflow(CT_INT_TYPE c)
 }
 
 
+streamsize CPushback_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize n)
+{
+    // hope that this is an optimized copy operation (instead of overflow()s)
+    return m_Sb->sputn(buf, n);
+}
+
+
 CT_INT_TYPE CPushback_Streambuf::underflow(void)
 {
     // we are here because there is no more data in the pushback buffer
-    streambuf* sb = x_SelfDestroy();
-    return sb->sgetc();
+    x_FillBuffer();
+    if (gptr() < egptr())
+        return CT_TO_INT_TYPE(*gptr());
+    return CT_EOF;
 }
 
 
 streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    if (gptr() >= egptr()) {
-        streambuf* sb = x_SelfDestroy();
-        CT_INT_TYPE c = sb->sbumpc();
-        if ( CT_EQ_INT_TYPE(c, CT_EOF) ) {
-            return 0;
+    size_t n_total = 0;
+    while (m) {
+        if (gptr() < egptr()) {
+            size_t n       = (size_t) m;
+            size_t n_avail = (size_t) (egptr() - gptr());
+            size_t n_read  = (n <= n_avail) ? n : n_avail;
+            memcpy(buf, gptr(), n_read*sizeof(CT_CHAR_TYPE));
+            gbump((int) n_read);
+            m       -= streamsize(n_read);
+            buf     += streamsize(n_read);
+            n_total += streamsize(n_read);
+        } else {
+            x_FillBuffer();
+            if (gptr() >= egptr())
+                break;
         }
-        *buf = CT_TO_CHAR_TYPE(c);
-        return 1;
     }
-
-    // return whatever we have in the buffer; do not look into m_Sb this time
-    size_t n = (size_t) m;
-    size_t n_avail = egptr() - gptr();
-    size_t n_read = (n <= n_avail) ? n : n_avail;
-    memcpy(buf, gptr(), n_read);
-    gbump((int) n_read);
-    return n_read;
+    return n_total;
 }
 
 
 streamsize CPushback_Streambuf::showmanyc(void)
 {
     // we are here because (according to the standard) gptr() >= egptr()
-    streambuf* sb = x_SelfDestroy();
-    return sb->in_avail();
-}
-
-
-streamsize CPushback_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize n)
-{
-    // hope that this is an optimized copy operation (instead of overflow()s)
-    return m_Sb->sputn(buf, n);
+    return m_Sb->in_avail();
 }
 
 
@@ -202,20 +205,67 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-// NB: Never use class data members after calling this beast!
-streambuf* CPushback_Streambuf::x_SelfDestroy()
+CT_INT_TYPE CPushback_Streambuf::pbackfail(CT_INT_TYPE /*c*/)
 {
-    streambuf* sb = m_Sb;
-    m_SelfDestroy = true;
-    delete this;
-    return sb;
+    /* We always keep "usual backup condition" (27.5.2.4.3.13) after
+     * underflow(), i.e. 1 byte backup after a good read is always possible.
+     * That is, this function gets called only if the user tries to
+     * back up more than once (although, some attempts may be successful,
+     * this function call denotes that the backup area is full).
+     */
+    return CT_EOF; // always fail
 }
 
+
+void CPushback_Streambuf::x_FillBuffer()
+{
+    _ASSERT(m_Sb);
+    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
+    if ( sb ) {
+        _ASSERT(&m_Is == &sb->m_Is);
+        m_Sb     = sb->m_Sb;
+        sb->m_Sb = 0;
+        if (sb->gptr() >= sb->egptr()) {
+            delete sb;
+            x_FillBuffer();
+            return;
+        }
+        delete[] (CT_CHAR_TYPE*) m_DelPtr;
+        m_Buf        = sb->m_Buf;
+        m_BufSize    = sb->m_BufSize;
+        m_DelPtr     = sb->m_DelPtr;
+        sb->m_DelPtr = 0;
+        setg(sb->gptr(), sb->gptr(), sb->egptr());
+        delete sb;
+    } else {
+        CT_CHAR_TYPE* bp = 0;
+        streamsize buf_size = m_DelPtr
+            ? (streamsize)(m_Buf - (CT_CHAR_TYPE*) m_DelPtr) + m_BufSize : 0;
+        if (buf_size < k_MinBufSize) {
+            buf_size = k_MinBufSize;
+            bp = new CT_CHAR_TYPE[buf_size];
+        }
+        streamsize n = m_Sb->sgetn(bp? bp : (CT_CHAR_TYPE*)m_DelPtr, buf_size);
+        if (n <= 0) {
+            // NB: For unknown reasons WorkShop6 can return -1 from sgetn :-/
+            delete bp;
+            return;
+        }
+        if (bp) {
+            delete[] (CT_CHAR_TYPE*) m_DelPtr;
+            m_DelPtr = bp;
+        }
+        m_Buf = (CT_CHAR_TYPE*) m_DelPtr;
+        m_BufSize = buf_size;
+        setg(m_Buf, m_Buf, m_Buf + n);
+    }
+}
 
 
 /*****************************************************************************
  *  Public interface
  */
+
 
 extern void UTIL_StreamPushback(istream&      is,
                                 CT_CHAR_TYPE* buf,
@@ -223,28 +273,28 @@ extern void UTIL_StreamPushback(istream&      is,
                                 void*         del_ptr)
 {
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
-
     _ASSERT(del_ptr <= buf);
     if ( sb ) {
-        // We may not need to create another streambuf, just recycle the
-        // existing one here...
+        // We may not need to create another streambuf,
+        //     just recycle the existing one here...
         _ASSERT(del_ptr < (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)  ||
                 sb->m_Buf + sb->m_BufSize <= del_ptr);
-
-        // Points to a (adjacent) part of the internal buffer we just read?
+        // 1/ points to a (adjacent) part of the internal buffer we just read?
         if (sb->m_Buf <= buf  &&  buf + buf_size == sb->gptr()) {
             _ASSERT(!del_ptr  ||  del_ptr == sb->m_DelPtr);
             sb->setg(buf, buf, sb->m_Buf + sb->m_BufSize);
             return;
         }
-        // Equal to a (adjacent) part of the internal buffer we just read?
-        if ((streamsize)(sb->gptr() - sb->m_Buf) >= buf_size  &&
-            memcmp(buf, sb->gptr() - buf_size, buf_size) == 0) {
-            sb->gbump(-int(buf_size));
-            if ( del_ptr ) {
-                delete[] (char*) del_ptr;
+        // 2/ equal to a (adjacent) part of the internal buffer we just read?
+        if ((streamsize)(sb->gptr() - sb->m_Buf) >= buf_size) {
+            CT_CHAR_TYPE* bp = sb->gptr() - buf_size;
+            if (memcmp(buf, bp, buf_size) == 0) {
+                sb->setg(bp, bp, sb->egptr());
+                if ( del_ptr ) {
+                    delete[] (CT_CHAR_TYPE*) del_ptr;
+                }
+                return;
             }
-            return;
         }
     }
 
