@@ -42,6 +42,7 @@
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
 
 
 /** @addtogroup AlgoBlast
@@ -126,7 +127,7 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CB
         retval = new CRPSTBlastnOptionsHandle(locality);
         break;
         
-    case ePSIblast:
+    case ePSIBlast:
         retval = new CPSIBlastOptionsHandle(locality);
         break;
         
@@ -148,6 +149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 20:19:55  ucko
+ * Trivial compilation fixes.
+ *
  * Revision 1.6  2004/05/17 19:42:23  bealer
  * - Add PSIBlast to factory.
  *
