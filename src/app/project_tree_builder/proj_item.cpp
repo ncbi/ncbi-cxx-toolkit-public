@@ -34,6 +34,10 @@
 BEGIN_NCBI_SCOPE
 
 
+static CProjItem::TProjType s_GetAsnProjectType(const string& base_dir,
+                                                const string& projname);
+
+
 //-----------------------------------------------------------------------------
 CProjItem::CProjItem(void)
 {
@@ -63,14 +67,16 @@ CProjItem::CProjItem(TProjType type,
                      const string& sources_base,
                      const list<string>& sources, 
                      const list<string>& depends,
-                     const list<string>& requires)
+                     const list<string>& requires,
+                     const list<CDataToolGeneratedSrc> datatool_src)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
-    m_SourcesBaseDir(sources_base),
+    m_SourcesBaseDir (sources_base),
     m_Sources (sources), 
     m_Depends (depends),
-    m_Requires(requires)
+    m_Requires(requires),
+    m_DatatoolSources(datatool_src)
 {
 }
 
@@ -97,6 +103,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_Sources        = item.m_Sources;
     m_Depends        = item.m_Depends;
     m_Requires       = item.m_Requires;
+    m_DatatoolSources= item.m_DatatoolSources;
 }
 
 
@@ -179,115 +186,29 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
         
                 string applib_mfilepath = 
                     CDirEntry::ConcatPath(source_base_dir,
-                         CreateMakeAppLibFileName(info.m_ProjType, proj_name));
+                         CreateMakeAppLibFileName(source_base_dir, 
+                                                  info.m_Type, proj_name));
+                if ( applib_mfilepath.empty() )
+                    continue;
             
-                if (info.m_ProjType == CProjItem::eApp) {
+                if (info.m_Type == SMakeInInfo::eApp) {
 
-                    TFiles::const_iterator m = makeapp.find(applib_mfilepath);
-                    if (m == makeapp.end()) {
-
-                        LOG_POST("**** No Makefile.*.app for Makefile.in :"
-                                  + p->first);
-                        continue;
-                    }
-
-                    CSimpleMakeFileContents::TContents::const_iterator k = 
-                        m->second.m_Contents.find("SRC");
-                    if (k == m->second.m_Contents.end()) {
-
-                        LOG_POST("**** No SRC key in Makefile.*.app :"
-                                  + applib_mfilepath);
-                        continue;
-                    }
-
-                    //sources - full pathes
-                    //We'll create relative pathes from them
-                    list<string> sources;
-                    CreateFullPathes(source_base_dir, k->second, &sources);
-
-                    //depends
-                    list<string> depends;
-                    k = m->second.m_Contents.find("LIB");
-                    if (k != m->second.m_Contents.end())
-                        depends = k->second;
-
-                    //requires
-                    list<string> requires;
-                    k = m->second.m_Contents.find("REQUIRES");
-                    if (k != m->second.m_Contents.end())
-                        requires = k->second;
-
-                    //project name
-                    k = m->second.m_Contents.find("APP");
-                    if (k == m->second.m_Contents.end()  ||  
-                                                           k->second.empty()) {
-
-                        LOG_POST("**** No APP key or empty in Makefile.*.app :"
-                                  + applib_mfilepath);
-                        continue;
-                    }
-                    string proj_id = k->second.front();
-
-                    tree->m_Projects[proj_id] =  CProjItem( CProjItem::eApp, 
-                                                               proj_name, 
-                                                               proj_id,
-                                                               source_base_dir,
-                                                               sources, 
-                                                               depends,
-                                                               requires);
-
+                    DoCreateAppProject(source_base_dir, 
+                                       proj_name, 
+                                       applib_mfilepath, makeapp, tree);
                 }
-                else if (info.m_ProjType == CProjItem::eLib) {
+                else if (info.m_Type == SMakeInInfo::eLib) {
 
-                    TFiles::const_iterator m = makelib.find(applib_mfilepath);
-                    if (m == makelib.end()) {
+                    DoCreateLibProject(source_base_dir, 
+                                       proj_name, 
+                                       applib_mfilepath, makelib, tree);
+                }
+                else if (info.m_Type == SMakeInInfo::eAsn) {
 
-                        LOG_POST("**** No Makefile.*.lib for Makefile.in :"
-                                  + p->first);
-                        continue;
-                    }
-
-                    CSimpleMakeFileContents::TContents::const_iterator k = 
-                        m->second.m_Contents.find("SRC");
-                    if (k == m->second.m_Contents.end()) {
-
-                        LOG_POST("**** No SRC key in Makefile.*.lib :"
-                                  + applib_mfilepath);
-                        continue;
-                    }
-
-                    // sources - full pathes 
-                    // We'll create relative pathes from them)
-                    list<string> sources;
-                    CreateFullPathes(source_base_dir, k->second, &sources);
-
-                    // depends - TODO
-                    list<string> depends;
-
-                    //requires
-                    list<string> requires;
-                    k = m->second.m_Contents.find("REQUIRES");
-                    if (k != m->second.m_Contents.end())
-                        requires = k->second;
-
-                    //project name
-                    k = m->second.m_Contents.find("LIB");
-                    if (k == m->second.m_Contents.end()  ||  
-                                                           k->second.empty()) {
-
-                        LOG_POST("**** No LIB key or empty in Makefile.*.lib :"
-                                  + applib_mfilepath);
-                        continue;
-                    }
-                    string proj_id = k->second.front();
-
-                    tree->m_Projects[proj_id] =  CProjItem( CProjItem::eLib,
-                                                               proj_name, 
-                                                               proj_id,
-                                                               source_base_dir,
-                                                               sources, 
-                                                               depends,
-                                                               requires);
+                    DoCreateAsnProject(source_base_dir, 
+                                       proj_name, 
+                                       applib_mfilepath, 
+                                       makeapp, makelib, tree);
                 }
             }
         }
@@ -324,6 +245,176 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 }
 
 
+string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
+                                             const string& proj_name,
+                                             const string& applib_mfilepath,
+                                             const TFiles& makeapp , 
+                                             CProjectItemsTree* tree)
+{
+    TFiles::const_iterator m = makeapp.find(applib_mfilepath);
+    if (m == makeapp.end()) {
+
+        LOG_POST("**** No Makefile.*.app for Makefile.in :"
+                  + applib_mfilepath);
+        return "";
+    }
+
+    CSimpleMakeFileContents::TContents::const_iterator k = 
+        m->second.m_Contents.find("SRC");
+    if (k == m->second.m_Contents.end()) {
+
+        LOG_POST("**** No SRC key in Makefile.*.app :"
+                  + applib_mfilepath);
+        return "";
+    }
+
+    //sources - full pathes
+    //We'll create relative pathes from them
+    list<string> sources;
+    CreateFullPathes(source_base_dir, k->second, &sources);
+
+    //depends
+    list<string> depends;
+    k = m->second.m_Contents.find("LIB");
+    if (k != m->second.m_Contents.end())
+        depends = k->second;
+
+    //requires
+    list<string> requires;
+    k = m->second.m_Contents.find("REQUIRES");
+    if (k != m->second.m_Contents.end())
+        requires = k->second;
+
+    //project name
+    k = m->second.m_Contents.find("APP");
+    if (k == m->second.m_Contents.end()  ||  
+                                           k->second.empty()) {
+
+        LOG_POST("**** No APP key or empty in Makefile.*.app :"
+                  + applib_mfilepath);
+        return "";
+    }
+    string proj_id = k->second.front();
+
+    list<CDataToolGeneratedSrc> datatool_src;
+    tree->m_Projects[proj_id] =  CProjItem(CProjItem::eApp, 
+                                           proj_name, 
+                                           proj_id,
+                                           source_base_dir,
+                                           sources, 
+                                           depends,
+                                           requires,
+                                           datatool_src);
+    return proj_id;
+}
+
+
+string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
+                                             const string& proj_name,
+                                             const string& applib_mfilepath,
+                                             const TFiles& makelib , 
+                                             CProjectItemsTree* tree)
+{
+    TFiles::const_iterator m = makelib.find(applib_mfilepath);
+    if (m == makelib.end()) {
+
+        LOG_POST("**** No Makefile.*.lib for Makefile.in :"
+                  + applib_mfilepath);
+        return "";
+    }
+
+    CSimpleMakeFileContents::TContents::const_iterator k = 
+        m->second.m_Contents.find("SRC");
+    if (k == m->second.m_Contents.end()) {
+
+        LOG_POST("**** No SRC key in Makefile.*.lib :"
+                  + applib_mfilepath);
+        return "";
+    }
+
+    // sources - full pathes 
+    // We'll create relative pathes from them)
+    list<string> sources;
+    CreateFullPathes(source_base_dir, k->second, &sources);
+
+    // depends - TODO
+    list<string> depends;
+
+    //requires
+    list<string> requires;
+    k = m->second.m_Contents.find("REQUIRES");
+    if (k != m->second.m_Contents.end())
+        requires = k->second;
+
+    //project name
+    k = m->second.m_Contents.find("LIB");
+    if (k == m->second.m_Contents.end()  ||  
+                                           k->second.empty()) {
+
+        LOG_POST("**** No LIB key or empty in Makefile.*.lib :"
+                  + applib_mfilepath);
+        return "";
+    }
+    string proj_id = k->second.front();
+
+    list<CDataToolGeneratedSrc> datatool_src;
+    tree->m_Projects[proj_id] =  CProjItem(CProjItem::eLib,
+                                           proj_name, 
+                                           proj_id,
+                                           source_base_dir,
+                                           sources, 
+                                           depends,
+                                           requires,
+                                           datatool_src);
+    return proj_id;
+}
+
+
+string CProjectItemsTree::DoCreateAsnProject(const string& source_base_dir,
+                                             const string& proj_name,
+                                             const string& applib_mfilepath,
+                                             const TFiles& makeapp, 
+                                             const TFiles& makelib, 
+                                             CProjectItemsTree* tree)
+{
+    CProjItem::TProjType proj_type = 
+        s_GetAsnProjectType(source_base_dir, proj_name);
+    
+    string proj_id = 
+        proj_type == CProjItem::eLib? 
+            DoCreateLibProject(source_base_dir, 
+                               proj_name, applib_mfilepath, makelib, tree) : 
+            DoCreateAppProject(source_base_dir, 
+                               proj_name, applib_mfilepath, makeapp, tree);
+    if ( proj_id.empty() )
+        return "";
+    
+    CProjectItemsTree::TProjects::iterator p = tree->m_Projects.find(proj_id);
+    if (p == tree->m_Projects.end()) {
+        LOG_POST("^^^^^^^^^ Can not find ASN project with id : " + proj_id);
+        return "";
+    }
+    CProjItem& project = p->second;
+
+    //Add depends from datatoool for ASN projects
+    project.m_Depends.push_back(GetApp().GetDatatoolId());
+
+    //Will process .asn or .dtd files
+    string source_file_path = CDirEntry::ConcatPath(source_base_dir, proj_name);
+    if ( CDirEntry(source_file_path + ".asn").Exists() )
+        source_file_path += ".asn";
+    else if ( CDirEntry(source_file_path + ".dtd").Exists() )
+        source_file_path += ".dtd";
+
+    CDataToolGeneratedSrc data_tool_src;
+    CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
+    if ( !data_tool_src.IsEmpty() )
+        project.m_DatatoolSources.push_back(data_tool_src);
+
+    return proj_id;
+}
+
+
 void CProjectItemsTree::AnalyzeMakeIn
     (const CSimpleMakeFileContents& makein_contents,
      TMakeInInfoList*               info)
@@ -335,32 +426,66 @@ void CProjectItemsTree::AnalyzeMakeIn
 
     if (p != makein_contents.m_Contents.end()) {
 
-        info->push_back(SMakeInInfo(CProjItem::eLib, p->second)); 
+        info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second)); 
     }
 
     p = makein_contents.m_Contents.find("APP_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
-        info->push_back(SMakeInInfo(CProjItem::eApp, p->second)); 
+        info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second)); 
+    }
+
+    p = makein_contents.m_Contents.find("ASN_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second)); 
     }
 
     //TODO - DLL_PROJ
 }
 
 
+static CProjItem::TProjType s_GetAsnProjectType(const string& base_dir,
+                                                const string& projname)
+{
+    string fname = "Makefile." + projname;
+    
+    if ( CDirEntry(CDirEntry::ConcatPath
+               (base_dir, fname + ".lib")).Exists() )
+        return CProjItem::eLib;
+    else if (CDirEntry(CDirEntry::ConcatPath
+               (base_dir, fname + ".app")).Exists() )
+        return CProjItem::eApp;
+
+    LOG_POST("Inconsistent ASN project: " + projname);
+    return CProjItem::eNoProj;
+}
+
+
 string CProjectItemsTree::CreateMakeAppLibFileName
-    (CProjItem::TProjType projtype,
-     const string&        projname)
+    (const string&            base_dir,
+     SMakeInInfo::TMakeinType makeintype,
+     const string&            projname)
 {
     string fname = "Makefile." + projname;
 
-    switch (projtype) {
-    case CProjItem::eApp:
+    switch (makeintype) {
+    case SMakeInInfo::eApp:
         fname += ".app";
         break;
-    case CProjItem::eLib:
+    case SMakeInInfo::eLib:
         fname += ".lib";
         break;
+    case SMakeInInfo::eAsn: {
+        CProjItem::TProjType proj_type = 
+            s_GetAsnProjectType(base_dir, projname);
+        
+        if (proj_type == CProjItem::eNoProj)
+            return "";
+        
+        fname += proj_type==CProjItem::eLib? ".lib": ".app";
+        break;
+    }
     }
     return fname;
 }
@@ -652,11 +777,93 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
 }
 
 
+//-----------------------------------------------------------------------------
+CProjectTreeFolders::CProjectTreeFolders(const CProjectItemsTree& tree)
+:m_RootParent("/", NULL)
+{
+    ITERATE(CProjectItemsTree::TProjects, p, tree.m_Projects) {
+
+        const CProjItem& project = p->second;
+        
+        TPath path;
+        CreatePath(GetApp().GetProjectTreeInfo().m_RootSrc, 
+                   project.m_SourcesBaseDir, 
+                   &path);
+        SProjectTreeFolder* folder = FindOrCreateFolder(path);
+        folder->m_Name = path.back();
+        folder->m_Projects.insert(project.m_ID);
+    }
+}
+
+
+SProjectTreeFolder* 
+CProjectTreeFolders::CreateFolder(SProjectTreeFolder* parent,
+                                  const string&       folder_name)
+{
+    m_Folders.push_back(SProjectTreeFolder(folder_name, parent));
+    SProjectTreeFolder* inserted = &(m_Folders.back());
+
+    parent->m_Siblings.insert
+        (SProjectTreeFolder::TSiblings::value_type(folder_name, inserted));
+    
+    return inserted;
+
+}
+
+SProjectTreeFolder* 
+CProjectTreeFolders::FindFolder(const TPath& path)
+{
+    SProjectTreeFolder& folder_i = m_RootParent;
+    ITERATE(TPath, p, path) {
+        const string& node = *p;
+        SProjectTreeFolder::TSiblings::iterator n = 
+            folder_i.m_Siblings.find(node);
+        if (n == folder_i.m_Siblings.end())
+            return NULL;
+        folder_i = *(n->second);
+    }
+    return &folder_i;
+}
+
+
+SProjectTreeFolder* 
+CProjectTreeFolders::FindOrCreateFolder(const TPath& path)
+{
+    SProjectTreeFolder* folder_i = &m_RootParent;
+    ITERATE(TPath, p, path) {
+        const string& node = *p;
+        SProjectTreeFolder::TSiblings::iterator n = folder_i->m_Siblings.find(node);
+        if (n == folder_i->m_Siblings.end()) {
+            folder_i = CreateFolder(folder_i, node);
+        } else {        
+            folder_i = n->second;
+        }
+    }
+    return folder_i;
+}
+
+
+void CProjectTreeFolders::CreatePath(const string& root_src_dir, 
+                                     const string& project_base_dir,
+                                     TPath*        path)
+{
+    path->clear();
+    
+    string rel_dir = 
+        CDirEntry::CreateRelativePath(root_src_dir, project_base_dir);
+    string sep(1, CDirEntry::GetPathSeparator());
+    NStr::Split(rel_dir, sep, *path);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/30 20:44:22  gorelenk
+ * Initial revision.
+ *
  * Revision 1.6  2004/01/28 17:55:50  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,

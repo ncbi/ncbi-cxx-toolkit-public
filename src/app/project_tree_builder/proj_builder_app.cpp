@@ -340,6 +340,32 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     return *m_ProjectTreeInfo;
 }
 
+
+string CProjBulderApp::GetDatatoolId(void) const
+{
+    return GetConfig().GetString("Datatool", "datatool", "datatool");
+}
+
+
+string CProjBulderApp::GetDatatoolPathForApp(void) const
+{
+    return GetConfig().GetString("Datatool", "Location.App", "datatool.exe");
+}
+
+
+string CProjBulderApp::GetDatatoolPathForLib(void) const
+{
+    return GetConfig().GetString("Datatool", "Location.Lib", "datatool.exe");
+}
+
+
+string CProjBulderApp::GetDatatoolCommandLine(void) const
+{
+    return GetConfig().GetString("Datatool", "CommandLine", "");
+}
+
+
+
 CProjBulderApp& GetApp(void)
 {
     static CProjBulderApp theApp;
@@ -361,6 +387,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/01/30 20:44:22  gorelenk
+ * Initial revision.
+ *
  * Revision 1.8  2004/01/29 15:45:13  gorelenk
  * Added support of project tree filtering
  *
