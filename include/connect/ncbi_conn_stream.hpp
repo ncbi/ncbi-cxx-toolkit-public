@@ -64,6 +64,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <connect/ncbi_ftp_connector.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_namedpipe_connector.hpp>
 #include <connect/ncbi_memory_connector.h>
@@ -337,6 +338,7 @@ private:
 ///
 /// CConn_NamedPipeStream
 ///
+
 class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
 {
 public:
@@ -354,6 +356,34 @@ private:
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConn_FTPDownloadStream
+///
+
+class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_IOStream
+{
+public:
+    CConn_FTPDownloadStream
+    (const string&   host,
+     const string&   file     = kEmptyStr,
+     const string&   user     = kEmptyStr,
+     const string&   pass     = kEmptyStr,
+     const string&   path     = kEmptyStr,
+     unsigned short  port     = 0,
+     streamsize      offset   = 0,
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize
+     );
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_FTPDownloadStream(const CConn_FTPDownloadStream&);
+    CConn_FTPDownloadStream& operator= (const CConn_FTPDownloadStream&);
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -363,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.33  2004/12/08 21:01:20  lavr
+ * +CConn_FTPDownloadStream
+ *
  * Revision 6.32  2004/10/28 12:48:26  lavr
  * Memory stream lock ownership -> EOwnership, MT_LOCK cleanup in dtor()
  *

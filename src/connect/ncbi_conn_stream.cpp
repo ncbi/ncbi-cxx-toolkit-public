@@ -336,12 +336,40 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
 }
 
 
+CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&   host,
+                                                 const string&   file,
+                                                 const string&   user,
+                                                 const string&   pass,
+                                                 const string&   path,
+                                                 unsigned short  port,
+                                                 streamsize      offset,
+                                                 const STimeout* timeout,
+                                                 streamsize      buf_size)
+    : CConn_IOStream(FTP_CreateDownloadConnector(host.c_str(), port,
+                                                 user.c_str(), pass.c_str(),
+                                                 path.c_str(), eDefault),
+                     timeout, buf_size)
+{
+    if (file != kEmptyStr) {
+        if (offset != 0) {
+            *this << "REST " << offset << endl;
+        }
+        if (*this) {
+            *this << "RETR " << file << endl;
+        }
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2004/12/08 21:01:42  lavr
+ * +CConn_FTPDownloadStream
+ *
  * Revision 6.39  2004/10/28 12:49:33  lavr
  * Memory stream lock ownership -> EOwnership, MT_LOCK cleanup in dtor()
  *
