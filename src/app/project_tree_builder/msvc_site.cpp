@@ -183,7 +183,7 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
         SLibInfo lib_info;
         site.GetLibInfo(m_3PartyLib, config, &lib_info);
 
-        if ( !lib_info.IsEmpty() &&  !IsLibOk(lib_info)) {
+        if ( !IsLibOk(lib_info) ) {
 
             m_Choice = eLib;
             break;
@@ -249,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/20 22:09:00  gorelenk
+ * Changed implementation of struct SLibChoice constructor.
+ *
  * Revision 1.10  2004/04/19 15:39:43  gorelenk
  * Implemeted choice related members of class CMsvcSite:
  * struct SLibChoice constructor,functions IsLibWithChoice,
