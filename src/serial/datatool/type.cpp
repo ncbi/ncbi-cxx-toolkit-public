@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/02/12 21:39:51  gouriano
+* corrected code generator so primitive data types (bool,int,etc)
+* are returned by value, not by reference
+*
 * Revision 1.67  2003/02/10 17:56:14  gouriano
 * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
 *
@@ -191,6 +195,8 @@
 #include <serial/datatool/reftype.hpp>
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/choicetype.hpp>
+#include <serial/datatool/statictype.hpp>
+#include <serial/datatool/enumtype.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <algorithm>
@@ -632,6 +638,30 @@ string CDataType::GetDefaultString(const CDataValue& ) const
 {
     Warning("Default is not supported by this type");
     return "...";
+}
+
+bool CDataType::IsPrimitive(void) const
+{
+    const CStaticDataType* st = dynamic_cast<const CStaticDataType*>(this);
+    if (st) {
+        const CBoolDataType* b = dynamic_cast<const CBoolDataType*>(this);
+        if (b) {
+            return true;
+        }
+        const CIntDataType* i = dynamic_cast<const CIntDataType*>(this);
+        if (i) {
+            return true;
+        }
+        const CRealDataType* r = dynamic_cast<const CRealDataType*>(this);
+        if (r) {
+            return true;
+        }
+    }
+    const CEnumDataType* e = dynamic_cast<const CEnumDataType*>(this);
+    if (e) {
+        return true;
+    }
+    return false;
 }
 
 bool CDataType::x_IsSavedName(const string& name)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/02/12 21:39:52  gouriano
+* corrected code generator so primitive data types (bool,int,etc)
+* are returned by value, not by reference
+*
 * Revision 1.37  2002/11/19 19:48:28  gouriano
 * added support of XML attributes of choice variants
 *
@@ -772,9 +776,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 code.ClassPublic() <<
                     "    bool Is"<<i->cName<<"(void) const;\n";
             }
-            code.ClassPublic() <<
-                "    const "<<cType<<"& Get"<<i->cName<<"(void) const;"
-                "\n";
+            if (i->dataType && i->dataType->IsPrimitive()) {
+                code.ClassPublic() <<
+                    "    "<<cType<<" Get"<<i->cName<<"(void) const;"
+                    "\n";
+            } else {
+                code.ClassPublic() <<
+                    "    const "<<cType<<"& Get"<<i->cName<<"(void) const;"
+                    "\n";
+            }
             setters <<
                 "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eSimpleMember ||
@@ -824,8 +834,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "    (*m_" <<i->cName<< ").Reset();\n"
                     "}\n"
                     "\n";
-                code.MethodStart(inl) <<
-                    "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                if (i->dataType && i->dataType->IsPrimitive()) {
+                    code.MethodStart(inl) <<
+                        methodPrefix<<"T"<<i->cName;
+                } else {
+                    code.MethodStart(inl) <<
+                        "const "<<methodPrefix<<"T"<<i->cName<<"&";
+                }
+                code.Methods(inl) <<
+                    " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                     "{\n";
                 code.Methods(inl) <<
                     "    return (*m_"<<i->cName<<");\n"
@@ -853,8 +870,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "    return "STATE_MEMBER" == "STATE_PREFIX<<i->cName<<";\n"
                     "}\n"
                     "\n";
-                code.MethodStart(inl) <<
-                    "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                if (i->dataType && i->dataType->IsPrimitive()) {
+                    code.MethodStart(inl) <<
+                        methodPrefix<<"T"<<i->cName;
+                } else {
+                    code.MethodStart(inl) <<
+                        "const "<<methodPrefix<<"T"<<i->cName<<"&";
+                }
+                code.Methods(inl) <<
+                    " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                     "{\n"
                     "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
                 if ( i->delayed ) {
@@ -881,7 +905,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                      i->memberType == eStringMember ) {
                     inlineMethods <<
                         "inline\n"
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(";
+                    inlineMethods << "const T" << i->cName << "&";
+                    inlineMethods <<
+                        " value)\n"
                         "{\n"
                         "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                     if ( i->delayed ) {

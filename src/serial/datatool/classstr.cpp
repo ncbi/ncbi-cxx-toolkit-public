@@ -435,12 +435,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
             string cType = i->type->GetCType(code.GetNamespace());
             // generate getter
-            code.ClassPublic() <<
-                "    const "<<cType<<"& Get"<<i->cName<<"(void) const;\n";
             inl = !i->ref;
-            code.MethodStart(inl) <<
-                "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                "{\n";
+            if (i->dataType && i->dataType->IsPrimitive()) {
+                code.ClassPublic() <<
+                    "    "<<cType<<" Get"<<i->cName<<"(void) const;\n";
+                code.MethodStart(inl) <<
+                    ""<<methodPrefix<<i->tName<<" "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                    "{\n";
+            } else {
+                code.ClassPublic() <<
+                    "    const "<<cType<<"& Get"<<i->cName<<"(void) const;\n";
+                code.MethodStart(inl) <<
+                    "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                    "{\n";
+            }
             if ( i->delayed ) {
                 code.Methods(inl) <<
                     "    "DELAY_PREFIX<<i->cName<<".Update();\n";
@@ -543,7 +551,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
                     inlineMethods <<
                         "inline\n"
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<cType<<"& value)\n"
                         "{\n";
                     if ( i->delayed ) {
                         inlineMethods <<
@@ -1094,6 +1102,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/02/12 21:39:51  gouriano
+* corrected code generator so primitive data types (bool,int,etc)
+* are returned by value, not by reference
+*
 * Revision 1.45  2002/12/23 18:40:07  dicuccio
 * Added new command-line option: -oex <export-specifier> for adding WIn32 export
 * specifiers to generated objects.
