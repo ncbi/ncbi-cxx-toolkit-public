@@ -78,11 +78,12 @@ inline
 CTSE_Info::TAnnotSelectorKey
 CTSE_Info::x_GetAnnotSelectorKey(const SAnnotSelector& sel)
 {
-    _ASSERT(size_t(sel.m_AnnotChoice) < 0x100);
-    _ASSERT(size_t(sel.m_FeatChoice) < 0x100);
-    _ASSERT(size_t(sel.m_FeatProduct) < 0x10000);
-    return (sel.m_AnnotChoice) | (sel.m_FeatChoice << 8) |
-        (sel.m_FeatProduct << 16);
+    _ASSERT(size_t(sel.GetAnnotChoice()) < 0x100);
+    _ASSERT(size_t(sel.GetFeatChoice()) < 0x100);
+    _ASSERT(size_t(sel.GetFeatProduct()) < 0x10000);
+    return (sel.GetAnnotChoice()) |
+        (sel.GetFeatChoice() << 8) |
+        (sel.GetFeatProduct() << 16);
 }
 
 const CTSE_Info::TRangeMap*
@@ -207,6 +208,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/10 16:55:17  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.18  2003/03/05 20:56:43  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

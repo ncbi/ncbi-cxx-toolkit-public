@@ -50,7 +50,7 @@ CAnnot_CI::CAnnot_CI(void)
 inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const SAnnotSelector& sel)
 {
-    return out << "{ annot="<<sel.m_AnnotChoice<<" feat="<<sel.m_FeatChoice<<" product="<<sel.m_FeatProduct<<" }";
+    return out << "{ annot="<<sel.GetAnnotChoice()<<" feat="<<sel.GetFeatChoice()<<" product="<<sel.GetFeatProduct()<<" }";
 }
 
 
@@ -207,6 +207,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/03/10 16:55:17  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.21  2003/03/05 20:56:43  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

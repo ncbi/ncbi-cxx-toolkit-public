@@ -171,6 +171,13 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 }
 
 
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
+                                              const CBioseq_Handle& bh)
+{
+    return GetBioseqHandleFromTSE(GetIdHandle(id), bh);
+}
+
+
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
 {
     CMutexGuard guard(m_Scope_Mtx);
@@ -183,6 +190,31 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
         }
     }
     return bh;
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
+                                              const CBioseq_Handle& bh)
+{
+    CMutexGuard guard(m_Scope_Mtx);
+    TCache::const_iterator it = m_Cache.find(id);
+    if ( it != m_Cache.end() && it->second ) {
+        if ( &it->second.GetTopLevelSeqEntry() != &bh.GetTopLevelSeqEntry() ) {
+            return CBioseq_Handle();
+        }
+        return it->second;
+    }
+    CBioseq_Handle ret;
+    TSeq_id_HandleSet hset;
+    x_GetIdMapper().GetMatchingHandles(id.GetSeqId(), hset);
+    iterate ( TSeq_id_HandleSet, hit, hset ) {
+        CSeqMatch_Info match(id, *static_cast<CTSE_Info*>(bh.m_TSE),
+                             bh.x_GetDataSource());
+        ret = match.GetDataSource()->GetBioseqHandle(*this, match);
+        if ( ret )
+            break;
+    }
+    return ret;
 }
 
 
@@ -308,6 +340,19 @@ void CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
         x_AddToHistory(**tse_it);
     }
+}
+
+
+CTSE_Lock CScope::GetTSEInfo(const CSeq_entry* tse)
+{
+    CTSE_Lock ret;
+    CMutexGuard guard(m_Scope_Mtx);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        ret = (*it)->GetTSEInfo(tse);
+        if ( ret )
+            break;
+    }
+    return ret;
 }
 
 
@@ -478,6 +523,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/03/10 16:55:17  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.47  2003/03/05 20:55:29  vasilche
 * Added cache cleaning in CScope::ResetHistory().
 *

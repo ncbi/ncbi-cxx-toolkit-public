@@ -79,7 +79,7 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
 CDataSource::~CDataSource(void)
 {
     // Find and drop each TSE
-    while (m_Entries.size() > 0) {
+    while ( !m_Entries.empty() ) {
         _ASSERT( !m_Entries.begin()->second->CounterLocked() );
         DropTSE(*(m_Entries.begin()->second->m_TSE));
     }
@@ -161,14 +161,12 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope,
                                             CSeqMatch_Info& info)
 {
     // The TSE is locked by the scope, so, it can not be deleted.
-    CSeq_entry* se = 0;
-    {{
-        //### CMutexGuard guard(sm_DataSource_Mtx);
-        TBioseqMap::iterator found =
-            info->m_BioseqMap.find(info.GetIdHandle());
-        _ASSERT(found != info->m_BioseqMap.end());
-        se = found->second->m_Entry;
-    }}
+    //### CMutexGuard guard(sm_DataSource_Mtx);
+    TBioseqMap::iterator found =
+        info->m_BioseqMap.find(info.GetIdHandle());
+    if ( found == info->m_BioseqMap.end() )
+        return CBioseq_Handle();
+    CSeq_entry* se = found->second->m_Entry;
     CBioseq_Handle h(info.GetIdHandle());
     h.x_ResolveTo(scope, *this, *se, *info);
     // Locked by BestResolve() in CScope::x_BestResolve()
@@ -219,6 +217,17 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
     //### CMutexGuard guard(sm_DataSource_Mtx);
     _ASSERT(handle.m_DataSource == this);
     return *m_Entries[CRef<CSeq_entry>(handle.m_Entry)]->m_TSE;
+}
+
+
+CTSE_Lock CDataSource::GetTSEInfo(const CSeq_entry* entry)
+{
+    CConstRef<CSeq_entry> ref(entry);
+    CMutexGuard guard(m_DataSource_Mtx);
+    TEntries::iterator found = m_Entries.find(ref);
+    if (found == m_Entries.end())
+        return CTSE_Lock();
+    return CTSE_Lock(found->second.GetPointerOrNull());
 }
 
 
@@ -411,7 +420,7 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
-    return const_cast<CSeq_entry*>(found->first.GetPointer());
+    return const_cast<CSeq_entry*>(found->first.GetPointerOrNull());
 }
 
 
@@ -1564,8 +1573,8 @@ void CDataSource::x_DropAnnotMap(const CSeq_entry& entry)
 bool CDataSource::x_MakeGenericSelector(SAnnotSelector& annotSelector) const
 {
     // make more generic selector
-    if ( annotSelector.m_FeatChoice != CSeqFeatData::e_not_set ) {
-        annotSelector.m_FeatChoice = CSeqFeatData::e_not_set;
+    if ( annotSelector.GetFeatChoice() != CSeqFeatData::e_not_set ) {
+        annotSelector.SetFeatChoice(CSeqFeatData::e_not_set);
     }
     else {
         // we already did most generic selector
@@ -1590,7 +1599,7 @@ void CDataSource::x_MapAnnot(CTSE_Info& tse,
 {
     SAnnotObject_Index annotRef;
     annotRef.m_AnnotObject = annotObj;
-    annotRef.m_IndexBy = annotSelector.m_FeatProduct;
+    annotRef.m_IndexBy = annotSelector.GetFeatProduct();
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
         annotRef.m_HandleRange = mapit;
@@ -1659,11 +1668,11 @@ void CDataSource::x_MapAnnot(CTSE_Info& tse,
     m_AnnotObjects[annotObj->GetObject().GetPointer()] = annotObj;
     SAnnotSelector annotSel(annotObj->Which());
     if ( annotObj->IsFeat() ) {
-        annotSel.m_FeatChoice = annotObj->GetFeat().GetData().Which();
+        annotSel.SetFeatChoice(annotObj->GetFeat().GetData().Which());
     }
     x_MapAnnot(tse, annotObj, annotObj->GetRangeMap(), annotSel);
     if ( annotObj->IsFeat() && annotObj->GetProductMap() ) {
-        annotSel.m_FeatProduct = true;
+        annotSel.SetByProduct();
         x_MapAnnot(tse, annotObj, *annotObj->GetProductMap(), annotSel);
     }
 }
@@ -1684,11 +1693,11 @@ void CDataSource::x_DropAnnot(const CObject* annotPtr)
 
     SAnnotSelector annotSel(annotObj->Which());
     if ( annotObj->IsFeat() ) {
-        annotSel.m_FeatChoice = annotObj->GetFeat().GetData().Which();
+        annotSel.SetFeatChoice(annotObj->GetFeat().GetData().Which());
     }
     x_DropAnnot(*tse, annotObj, annotObj->GetRangeMap(), annotSel);
     if ( annotObj->IsFeat() && annotObj->GetProductMap() ) {
-        annotSel.m_FeatProduct = true;
+        annotSel.SetByProduct();
         x_DropAnnot(*tse, annotObj, *annotObj->GetProductMap(), annotSel);
     }
 }    
@@ -2155,6 +2164,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2003/03/10 16:55:17  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.87  2003/03/05 20:56:43  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

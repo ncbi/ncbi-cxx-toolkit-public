@@ -173,7 +173,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
     : SAnnotSelector(params),
       m_Scope(bioseq.m_Scope)
 {
-    SetLimitTSE(static_cast<CTSE_Info*>(bioseq.m_TSE));
+    SetLimitTSE(&bioseq.GetTopLevelSeqEntry());
     x_Initialize(bioseq, start, stop);
 }
 
@@ -206,7 +206,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)
-                     .SetLimitTSE(static_cast<CTSE_Info*>(bioseq.m_TSE))),
+                     .SetLimitTSE(&bioseq.GetTopLevelSeqEntry())),
       m_Scope(bioseq.m_Scope)
 {
     x_Initialize(bioseq, start, stop);
@@ -272,7 +272,8 @@ public:
     bool ConvertInterval(TSeqPos src_from, TSeqPos src_to);
     bool ConvertInterval(const CSeq_interval& src);
 
-    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
+                 bool always = false);
 
     void Convert(CAnnotObject_Ref& obj, int index);
 
@@ -299,6 +300,7 @@ private:
     bool           m_Partial;
     CScope*        m_Scope;
     // temporaries for conversion results
+    CRef<CSeq_loc>      dst_loc;
     CRef<CSeq_interval> dst_int;
     CRef<CSeq_point>    dst_pnt;
 };
@@ -432,7 +434,8 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
 }
 
 
-bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
+bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
+                                  bool always)
 {
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
@@ -450,13 +453,13 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
             if ( !bh ) {
                 THROW1_TRACE(runtime_error,
-                             "CAnnotTypes_CI::x_ConvertLocToMaster: "
+                             "CSeq_loc_Conversion::Convert: "
                              "cannot determine sequence length");
             }
             CBioseq_Handle::TBioseqCore core = bh.GetBioseqCore();
             if ( !core->GetInst().IsSetLength() ) {
                 THROW1_TRACE(runtime_error,
-                             "CAnnotTypes_CI::x_ConvertLocToMaster: "
+                             "CSeq_loc_Conversion::Convert: "
                              "cannot determine sequence length");
             }
             if ( ConvertInterval(0, core->GetInst().GetLength()) ) {
@@ -523,7 +526,6 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     {
         const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
         CSeq_loc_mix::Tdata* dst_mix = 0;
-        CRef<CSeq_loc> dst_loc;
         iterate ( CSeq_loc_mix::Tdata, i, src_mix ) {
             if ( Convert(**i, dst_loc) ) {
                 if ( !dst_mix ) {
@@ -539,7 +541,6 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     {
         const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
         CSeq_loc_equiv::Tdata* dst_equiv = 0;
-        CRef<CSeq_loc> dst_loc;
         iterate ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
             if ( Convert(**i, dst_loc) ) {
                 if ( !dst_equiv ) {
@@ -573,16 +574,14 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     }
     default:
         THROW1_TRACE(runtime_error,
-                     "CAnnotTypes_CI::x_ConvertLocToMaster() -- "
+                     "CSeq_loc_Conversion::Convert: "
                      "Unsupported location type");
     }
-    if ( m_Partial ) {
-        return dst;
+    if ( always && !dst ) {
+        dst.Reset(new CSeq_loc);
+        dst->SetEmpty();
     }
-    else {
-        dst.Reset();
-        return false;
-    }
+    return dst;
 }
 
 
@@ -593,20 +592,12 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
     if ( obj.IsFeat() ) {
         const CSeq_feat& feat = obj.GetFeat();
         if ( index == 0 ) {
-            bool converted = Convert(feat.GetLocation(), ref.m_MappedLoc);
-            bool partial = IsPartial();
-            ref.SetPartial(partial);
-            if ( !converted && partial ) {
-                ref.m_MappedLoc.Reset(new CSeq_loc);
-            }
+            Convert(feat.GetLocation(), ref.m_MappedLoc, true);
+            ref.SetPartial(IsPartial());
         }
         else if ( feat.IsSetProduct() ) {
-            bool converted = Convert(feat.GetProduct(), ref.m_MappedProd);
-            bool partial = IsPartial();
-            ref.SetPartial(partial);
-            if ( !converted && partial ) {
-                ref.m_MappedProd.Reset(new CSeq_loc);
-            }
+            Convert(feat.GetProduct(), ref.m_MappedProd, true);
+            ref.SetPartial(IsPartial());
         }
     }
 }
@@ -614,21 +605,20 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
 
 void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 {
+    if ( !m_LimitObject )
+        m_LimitObjectType = eLimit_None;
+
     x_Search(master_loc, 0);
     if ( m_ResolveMethod != eResolve_None ) {
         iterate ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(
-                m_Scope->x_GetIdMapper().GetSeq_id(idit->first));
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
             if ( !bh ) {
                 // resolve by Seq-id only
-                
-                continue;
+                THROW1_TRACE(runtime_error,
+                             "CAnnotTypes_CI::x_Initialize -- "
+                             "Cannot resolve master id");
             }
-            const CSeq_entry* limit_tse = 0;
-            if (m_ResolveMethod == eResolve_TSE) {
-                limit_tse = &bh.GetTopLevelSeqEntry();
-            }
-        
+            
             CHandleRange::TRange idrange = idit->second.GetOverlappingRange();
             const CSeqMap& seqMap = bh.GetSeqMap();
             CSeqMap_CI smit(seqMap.FindResolved(idrange.GetFrom(),
@@ -637,11 +627,9 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
                                                 CSeqMap::fFindRef));
             while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
                 _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
-                if ( limit_tse ) {
-                    CBioseq_Handle bh2 =
-                        m_Scope->GetBioseqHandle(smit.GetRefSeqid());
-                    // The referenced sequence must be in the same TSE
-                    if ( !bh2  || limit_tse != &bh2.GetTopLevelSeqEntry() ) {
+                if ( m_ResolveMethod == eResolve_TSE ) {
+                    if ( !m_Scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(),
+                                                          bh) ) {
                         smit.Next(false);
                         continue;
                     }
@@ -668,16 +656,30 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
     if ( cvt )
         cvt->SetSrcId(id);
 
-    TTSESet entries;
-    m_Scope->GetTSESetWithAnnots(id, entries);
-
     CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    iterate ( TTSESet, tse_it, entries ) {
-        if ( m_LimitTSE  &&  *tse_it != m_LimitTSE ) {
-            continue;
+    TTSESet entries;
+    switch ( m_LimitObjectType ) {
+    case eLimit_TSE:
+    {
+        if ( m_TSESet.empty() ) {
+            const CSeq_entry* tse = 
+                static_cast<const CSeq_entry*>(m_LimitObject.GetPointer());
+            CTSE_Lock tse_info = m_Scope->GetTSEInfo(tse);
+            if ( tse_info ) {
+                m_TSESet.insert(tse_info);
+            }
         }
-        m_TSESet.insert(*tse_it);
+        entries = m_TSESet;
+        break;
+    }
+    case eLimit_Entry:
+    case eLimit_Annot:
+    default:
+        m_Scope->GetTSESetWithAnnots(id, entries);
+        break;
+    }
+    iterate ( TTSESet, tse_it, entries ) {
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
 
@@ -686,18 +688,24 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
             continue;
         }
 
+        m_TSESet.insert(*tse_it);
+
         for ( CTSE_Info::TRangeMap::const_iterator aoit = rmap->begin(range);
               aoit; ++aoit ) {
             const SAnnotObject_Index& annot_index = aoit->second;
             const CAnnotObject_Info& annot_info =
                 *annot_index.m_AnnotObject;
-            if ( bool(m_LimitSeqEntry)  &&
-                 &annot_info.GetSeq_entry() != m_LimitSeqEntry ) {
-                continue;
+            if ( m_LimitObjectType == eLimit_Entry ) {
+                if ( &annot_info.GetSeq_entry() !=
+                     m_LimitObject.GetPointerOrNull() ) {
+                    continue;
+                }
             }
-            if ( bool(m_LimitSeqAnnot)  &&
-                 &annot_info.GetSeq_annot() != m_LimitSeqAnnot ) {
-                continue;
+            else if ( m_LimitObjectType == eLimit_Annot ) {
+                if ( &annot_info.GetSeq_annot() !=
+                     m_LimitObject.GetPointerOrNull() ) {
+                    continue;
+                }
             }
 
             if ( m_OverlapType == eOverlap_Intervals &&
@@ -789,6 +797,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/03/10 16:55:17  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.51  2003/03/05 20:56:43  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

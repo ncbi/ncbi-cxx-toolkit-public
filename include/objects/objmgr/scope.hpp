@@ -98,6 +98,11 @@ public:
     virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
     CBioseq_Handle  GetBioseqHandle(const CSeq_id_Handle& id);
 
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
+                                          const CBioseq_Handle& bh);
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
+                                          const CBioseq_Handle& bh);
+
     // Get bioseq handle by seqloc
     CBioseq_Handle  GetBioseqHandle(const CSeq_loc& loc);
 
@@ -133,6 +138,7 @@ public:
                           CSeq_annot::C_Data::E_Choice sel);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              CAnnotTypes_CI::TTSESet& tse_set);
+    CTSE_Lock GetTSEInfo(const CSeq_entry* tse);
 
 private:
     void x_DetachFromOM(void);
@@ -195,6 +201,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/03/10 16:55:16  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.32  2003/03/03 20:32:47  vasilche
 * Removed obsolete method GetSynonyms().
 *

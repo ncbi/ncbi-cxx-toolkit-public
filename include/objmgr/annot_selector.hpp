@@ -46,6 +46,33 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
 {
     typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
     typedef CSeqFeatData::E_Choice       TFeatChoice;
+    // Flag to indicate location overlapping method
+    enum EOverlapType {
+        eOverlap_Intervals,  // default - overlapping of individual intervals
+        eOverlap_TotalRange  // overlapping of total ranges only
+    };
+    // Flag to indicate references resolution method
+    enum EResolveMethod {
+        eResolve_None, // Do not search annotations on segments
+        eResolve_TSE,  // default - search only on segments in the same TSE
+        eResolve_All   // Search annotations for all referenced sequences
+    };
+    // Flag to indicate sorting method
+    enum ESortOrder {
+        eSortOrder_Normal,  // default - increasing start, decreasing length
+        eSortOrder_Reverse  // decresing end, decreasing length
+    };
+    // Flag to indicate joining feature visible through multiple segments
+    enum ECombineMethod {
+        eCombine_None,       // default - do not combine feature from segments
+        eCombine_All         // combine feature from different segments
+    };
+    enum ELimitObject {
+        eLimit_None,
+        eLimit_TSE,
+        eLimit_Entry,
+        eLimit_Annot
+    };
 
     SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
                    TFeatChoice  feat  = CSeqFeatData::e_not_set,
@@ -72,64 +99,36 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
     {
     }
     
-
-/*
-    bool operator==(const SAnnotSelector& sel) const
-        {
-            return
-                m_AnnotChoice == sel.m_AnnotChoice &&
-                m_FeatChoice == sel.m_FeatChoice &&
-                m_FeatProduct == sel.m_FeatProduct;
-        }
-    bool operator< (const SAnnotSelector& sel) const
-        {
-            return
-                m_AnnotChoice < sel.m_AnnotChoice ||
-                (m_AnnotChoice == sel.m_AnnotChoice &&
-                 (m_FeatChoice < sel.m_FeatChoice ||
-                  (m_FeatChoice == sel.m_FeatChoice &&
-                   m_FeatProduct < sel.m_FeatProduct)));
-        }
-*/
-
-    TAnnotChoice m_AnnotChoice;  // Annotation type
-    TFeatChoice  m_FeatChoice;   // Seq-feat subtype
-    int          m_FeatProduct;  // set to "true" for searching products
-
     SAnnotSelector& SetAnnotChoice(TAnnotChoice choice)
         {
             m_AnnotChoice = choice;
             return *this;
         }
-    
+    TAnnotChoice GetAnnotChoice(void) const
+        {
+            return m_AnnotChoice;
+        }
 
-    // Flag to indicate location overlapping method
-    enum EOverlapType {
-        eOverlap_Intervals,  // default - overlapping of individual intervals
-        eOverlap_TotalRange  // overlapping of total ranges only
-    };
-    // Flag to indicate references resolution method
-    enum EResolveMethod {
-        eResolve_None, // Do not search annotations on segments
-        eResolve_TSE,  // default - search only on segments in the same TSE
-        eResolve_All   // Search annotations for all referenced sequences
-    };
-    // Flag to indicate sorting method
-    enum ESortOrder {
-        eSortOrder_Normal,  // default - increasing start, decreasing length
-        eSortOrder_Reverse  // decresing end, decreasing length
-    };
-    // Flag to indicate joining feature visible through multiple segments
-    enum ECombineMethod {
-        eCombine_None,       // default - do not combine feature from segments
-        eCombine_All         // combine feature from different segments
-    };
+    SAnnotSelector& SetFeatChoice(TFeatChoice choice)
+        {
+            m_FeatChoice = choice;
+            return *this;
+        }
+    TFeatChoice GetFeatChoice(void) const
+        {
+            return m_FeatChoice;
+        }
 
     SAnnotSelector& SetByProduct(bool byProduct = true)
         {
             m_FeatProduct = byProduct;
             return *this;
         }
+    int GetFeatProduct(void) const
+        {
+            return m_FeatProduct;
+        }
+
     SAnnotSelector& SetOverlapType(EOverlapType overlap_type)
         {
             m_OverlapType = overlap_type;
@@ -143,16 +142,19 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         {
             return SetOverlapType(eOverlap_TotalRange);
         }
+
     SAnnotSelector& SetSortOrder(ESortOrder sort_order)
         {
             m_SortOrder = sort_order;
             return *this;
         }
+
     SAnnotSelector& SetCombineMethod(ECombineMethod combine_method)
         {
             m_CombineMethod = combine_method;
             return *this;
         }
+
     SAnnotSelector& SetResolveMethod(EResolveMethod resolve_method)
         {
             m_ResolveMethod = resolve_method;
@@ -170,29 +172,42 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         {
             return SetResolveMethod(eResolve_All);
         }
-    SAnnotSelector& SetLimitTSE(CTSE_Info* tse)
+
+    SAnnotSelector& SetLimitNone(void)
         {
-            m_LimitTSE.Set(tse);
+            m_LimitObjectType = eLimit_None;
+            m_LimitObject.Reset();
+            return *this;
+        }
+    SAnnotSelector& SetLimitTSE(const CSeq_entry* tse)
+        {
+            m_LimitObjectType = eLimit_TSE;
+            m_LimitObject.Reset(tse);
             return *this;
         }
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* entry)
         {
-            m_LimitSeqEntry.Reset(entry);
+            m_LimitObjectType = eLimit_Entry;
+            m_LimitObject.Reset(entry);
             return *this;
         }
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* annot)
         {
-            m_LimitSeqAnnot.Reset(annot);
+            m_LimitObjectType = eLimit_Annot;
+            m_LimitObject.Reset(annot);
             return *this;
         }
 
+protected:
+    TAnnotChoice          m_AnnotChoice;  // Annotation type
+    TFeatChoice           m_FeatChoice;   // Seq-feat subtype
+    int                   m_FeatProduct;  // "true" for searching products
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
     ESortOrder            m_SortOrder;
     ECombineMethod        m_CombineMethod;
-    CTSE_Lock             m_LimitTSE;
-    CConstRef<CSeq_entry> m_LimitSeqEntry;
-    CConstRef<CSeq_annot> m_LimitSeqAnnot;
+    ELimitObject          m_LimitObjectType;
+    CConstRef<CObject>    m_LimitObject;
 };
 
 
@@ -202,6 +217,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/10 16:55:16  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.3  2003/03/05 20:56:42  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

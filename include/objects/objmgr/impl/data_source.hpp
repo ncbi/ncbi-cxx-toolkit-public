@@ -121,6 +121,8 @@ public:
     /// Get top level Seq-Entry for a Bioseq
     const CSeq_entry& GetTSE(const CBioseq_Handle& handle);
 
+    CTSE_Lock GetTSEInfo(const CSeq_entry* entry);
+
     /// Get Bioseq core structure
     CBioseq_Handle::TBioseqCore GetBioseqCore(const CBioseq_Handle& handle);
 
@@ -359,6 +361,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/03/10 16:55:16  vasilche
+* Cleaned SAnnotSelector structure.
+* Added shortcut when features are limited to one TSE.
+*
 * Revision 1.42  2003/03/03 20:31:09  vasilche
 * Removed obsolete method PopulateTSESet().
 *
