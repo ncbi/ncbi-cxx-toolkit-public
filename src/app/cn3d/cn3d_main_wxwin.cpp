@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.153  2002/08/18 03:14:11  thiessen
+* another fix for wx versions
+*
 * Revision 1.152  2002/08/15 22:13:13  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -1547,7 +1550,11 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
     initialFontData.SetInitialFont(initialFont);
 
     // bring up font chooser dialog
+#if wxVERSION >= 2303
     wxFontDialog dialog(this, initialFontData);
+#else
+    wxFontDialog dialog(this, &initialFontData);
+#endif
     int result = dialog.ShowModal();
 
     // if user selected a font
