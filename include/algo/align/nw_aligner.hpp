@@ -73,7 +73,7 @@ public:
     virtual ~CNWAligner(void) {}
 
     // Compute the alignment
-    TScore Run(void);
+    virtual TScore Run(void);
 
     // Setters
     void SetSequences(const char* seq1, size_t len1,
@@ -225,22 +225,25 @@ protected:
 
 struct CNWAligner::SAlignInOut {
 
-    SAlignInOut(): m_seg1(0), m_len1(0), m_seg2(0), m_len2(0), m_space(0) {}
-    SAlignInOut(const char* seg1, size_t len1, bool esfL1, bool esfR1,
-                const char* seg2, size_t len2, bool esfL2, bool esfR2):
-        m_seg1(seg1), m_len1(len1), m_esf_L1(esfL1), m_esf_R1(esfR1),
-        m_seg2(seg2), m_len2(len2), m_esf_L2(esfL2), m_esf_R2(esfR2)
+    SAlignInOut(): m_offset1(0), m_len1(0), 
+                   m_offset2(0), m_len2(0), 
+                   m_space(0) {}
+
+    SAlignInOut(size_t offset1, size_t len1, bool esfL1, bool esfR1,
+                size_t offset2, size_t len2, bool esfL2, bool esfR2):
+        m_offset1(offset1), m_len1(len1), m_esf_L1(esfL1), m_esf_R1(esfR1),
+        m_offset2(offset1), m_len2(len2), m_esf_L2(esfL2), m_esf_R2(esfR2)
     {
         m_space = m_len1*m_len2;
     }
 
     // [in] first sequence
-    const char* m_seg1;
+    size_t      m_offset1;
     size_t      m_len1;
     bool        m_esf_L1, m_esf_R1;
 
     // [in] second sequence
-    const char* m_seg2;
+    size_t      m_offset2;
     size_t      m_len2;
     bool        m_esf_L2, m_esf_R2;
 
@@ -270,6 +273,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/08/31 16:19:03  papadopo
+ * 1. Make 'Run' method virtual
+ * 2. Make SAlignInOut use sequence offsets instead of char pointers
+ *
  * Revision 1.34  2004/06/29 20:46:04  kapustin
  * Support simultaneous segment computing
  *
