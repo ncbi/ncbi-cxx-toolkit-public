@@ -61,7 +61,7 @@ public:
         Storage(void);
         Storage(const Storage& src);
         ~Storage(void);
-        typedef TWebMethod* const_iterator;
+        typedef const TWebMethod* const_iterator;
         const_iterator begin(void) const;
         const_iterator end(void) const;
         void push_back(TWebMethod value);
@@ -105,3 +105,12 @@ private:
 };
 
 END_NCBI_SCOPE
+
+/* --------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2004/06/28 17:07:29  gouriano
+* added const qualifier to the definition of Storage::const_iterator
+*
+*
+* ===========================================================================
+*/
