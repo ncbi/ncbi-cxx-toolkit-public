@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/08/15 18:43:34  lavr
+* FIXED CStreamByteSourceReader::Read:
+* ios::clear() has to have no arguments in order to clear EOF state.
+*
 * Revision 1.14  2001/05/30 19:55:35  grichenk
 * Fixed one more non-blocking stream reading bug, added comments
 *
@@ -133,9 +137,8 @@ size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
     m_Stream->read(buffer, bufferLength);
     size_t count = m_Stream->gcount();
     // Reset "eof" flag if some data have been read
-    if (count  &&  m_Stream->eof()) {
-        m_Stream->clear(ios::eofbit);
-    }
+    if (count  &&  m_Stream->eof())
+        m_Stream->clear();
     return count;
 #else
     // Try to read data
