@@ -776,8 +776,8 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
    Int4 length[CODON_LENGTH];
    
    total_length = QueryInfo_GetSeqBufLen(query_info);
-   
-   buffer = (Uint1*) malloc(total_length);
+   /* Allocate 1 extra byte for a final sentinel. */ 
+   buffer = (Uint1*) malloc(total_length+1);
 
    for (index = 0; index <= query_info->last_context; index += CODON_LENGTH) {
       seq = &buffer[query_info->contexts[index].query_offset];
@@ -794,10 +794,13 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
             /* Once one frame is past its end, we are done */
             break;
          }
-         tmp_seq = &query_blk->sequence[query_info->contexts[index+context].query_offset];
+         tmp_seq = 
+         &query_blk->sequence[query_info->contexts[index+context].query_offset];
          *seq++ = tmp_seq[offset];
       }
    }
+   /* Add a sentinel null byte at the end. */
+   *seq = NULLB;
 
    /* The mixed-frame protein sequence buffer will be saved in 
       'sequence_start' */
@@ -940,7 +943,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
       Uint1* seq;
       Int4 index, i;
 
-      *mixed_seq_ptr = mixed_seq = (Uint1*) malloc(2*(nucl_length+1));
+      *mixed_seq_ptr = mixed_seq = (Uint1*) malloc(2*nucl_length+3);
       seq = mixed_seq;
       for (index = 0; index < NUM_FRAMES; index += CODON_LENGTH) {
          for (i = 0; i <= nucl_length; ++i) {
@@ -949,6 +952,7 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
             *seq++ = translation_buffer[frame_offsets[index+context]+offset];
          }
       }
+      *seq = NULLB;
    }
    if (translation_buffer_ptr)
       *translation_buffer_ptr = translation_buffer;
@@ -972,51 +976,56 @@ int Blast_GetPartialTranslation(const Uint1* nucl_seq,
    Uint1* nucl_seq_rev = NULL;
    Int4 length;
    
-   if ((translation_buffer = 
-        (Uint1*) malloc(2*(nucl_length+1)+1)) == NULL)
-      return -1;
-   if (translation_buffer_ptr)
-      *translation_buffer_ptr = translation_buffer;
-
    if (frame < 0) {
-      /* First produce the reverse strand of the nucleotide sequence */
-      GetReverseNuclSequence(nucl_seq, nucl_length, &nucl_seq_rev);
+       /* First produce the reverse strand of the nucleotide sequence */
+       GetReverseNuclSequence(nucl_seq, nucl_length, &nucl_seq_rev);
    } 
-
+   
    if (!mixed_seq_ptr) {
-      length = 
-         BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
-            nucl_length, frame, translation_buffer, genetic_code);
-      if (protein_length)
-         *protein_length = length;
+       if ((translation_buffer = 
+            (Uint1*) malloc(nucl_length/CODON_LENGTH+2)) == NULL)
+           return -1;
+           
+       length = 
+           BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
+                                nucl_length, frame, translation_buffer, 
+                                genetic_code);
+       if (protein_length)
+           *protein_length = length;
    } else {
-      Int2 index;
-      Int2 frame_sign = ((frame < 0) ? -1 : 1);
-      Int4 offset = 0;
-      Int4 frame_offsets[3];
-      Uint1* seq;
+       Int2 index;
+       Int2 frame_sign = ((frame < 0) ? -1 : 1);
+       Int4 offset = 0;
+       Int4 frame_offsets[CODON_LENGTH];
+       Uint1* seq;
+       
+       if ((translation_buffer = (Uint1*) malloc(nucl_length+2)) == NULL)
+           return -1;
 
-      for (index = 1; index <= 3; ++index) {
-         length = 
-            BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
-               nucl_length, (short)(frame_sign*index), translation_buffer+offset, 
-               genetic_code);
-         frame_offsets[index-1] = offset;
-         offset += length + 1;
-      }
+       for (index = 1; index <= CODON_LENGTH; ++index) {
+           length = 
+               BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
+                                    nucl_length, (short)(frame_sign*index), 
+                                    translation_buffer+offset, genetic_code);
+           frame_offsets[index-1] = offset;
+           offset += length + 1;
+       }
 
-      *mixed_seq_ptr = (Uint1*) malloc(2*(nucl_length+1));
-      if (protein_length)
-         *protein_length = 2*nucl_length - 1;
-      for (index = 0, seq = *mixed_seq_ptr; index <= nucl_length; 
-           ++index, ++seq) {
-         *seq = translation_buffer[frame_offsets[index%3]+(index/3)];
-      }
+       *mixed_seq_ptr = (Uint1*) malloc(nucl_length+2);
+       if (protein_length)
+           *protein_length = nucl_length;
+       for (index = 0, seq = *mixed_seq_ptr; index <= nucl_length; 
+            ++index, ++seq) {
+           *seq = translation_buffer[frame_offsets[index%CODON_LENGTH] +
+                                     (index/CODON_LENGTH)];
+       }
    }
 
    sfree(nucl_seq_rev);
-   if (!translation_buffer_ptr)
-      sfree(translation_buffer);
+   if (translation_buffer_ptr)
+       *translation_buffer_ptr = translation_buffer;
+   else
+       sfree(translation_buffer);
 
    return 0;
 }
@@ -1235,6 +1244,7 @@ Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk,
          BLAST_GetAllTranslations(subject_blk->sequence_start, 
             NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
             NULL, NULL, &subject_blk->oof_sequence);
+         subject_blk->oof_sequence_allocated = TRUE;
       } else {
          BLAST_GetAllTranslations(subject_blk->sequence_start, 
             NCBI4NA_ENCODING, subject_blk->length, gen_code_string, 
