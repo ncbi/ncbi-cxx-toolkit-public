@@ -82,7 +82,7 @@ private:
 
 
 template  <class TDataLoader>
-class NCBI_XOBJMGR_EXPORT CSimpleDataLoaderFactory : public CDataLoaderFactory
+class CSimpleDataLoaderFactory : public CDataLoaderFactory
 {
 public:
     CSimpleDataLoaderFactory(const string& name)
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/07/26 19:15:39  friedman
+* Templates can not be exported. As per Mike D.
+*
 * Revision 1.4  2004/07/26 14:13:31  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.
