@@ -411,8 +411,9 @@ bool CTDS_CursorCmd::x_AssignParams()
             case eDB_DateTime: {
                 CDB_DateTime& val =
                     dynamic_cast<CDB_DateTime&> (param);
-                string t = val.Value().AsString("M/D/Y h:m:s:S");
-                sprintf(val_buffer, "'%s'", t.c_str());
+                string t = val.Value().AsString("M/D/Y h:m:s");
+                sprintf(val_buffer, "'%s:%.3d'", t.c_str(),
+			(int)(val.Value().NanoSecond()/1000000));
                 break;
             }
             default:
@@ -436,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/12/18 19:29:08  soussov
+ * adds conversion from nanosecs to milisecs for datetime args
+ *
  * Revision 1.3  2001/12/18 17:56:38  soussov
  * copy-paste bug in datetime processing fixed
  *

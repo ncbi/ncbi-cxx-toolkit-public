@@ -356,8 +356,9 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
         case eDB_DateTime: {
             const CDB_SmallDateTime& val =
                 dynamic_cast<const CDB_SmallDateTime&> (param);
-            sprintf(val_buffer, "'%s'\n",
-                   val.Value().AsString("M/D/Y h:m:s:S").c_str());
+            sprintf(val_buffer, "'%s:%.3d'\n",
+		    val.Value().AsString("M/D/Y h:m:s").c_str(),
+		    (int)(val.Value().NanoSecond()/1000000));
             break;
         }
         default:
@@ -471,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/12/18 19:29:08  soussov
+ * adds conversion from nanosecs to milisecs for datetime args
+ *
  * Revision 1.3  2001/12/18 16:42:44  soussov
  * fixes bug in datetime argument processing
  *
