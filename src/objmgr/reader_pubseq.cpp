@@ -20,65 +20,75 @@
 *
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
+*
+*  Author:  Anton Butanaev, Eugene Vasilchenko
+*
+*  File Description: Data reader from Pubseq_OS
+*
 */
 
 #include <objects/objmgr/reader_pubseq.hpp>
+#include <objects/objmgr/impl/seqref_pubseq.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 
-#include "strstreambuf.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-void CPubseqSeqref::Save(ostream &os) const
+
+CDB_Connection* CPubseqSeqref::x_GetConn(TConn conn) const
 {
-  CSeqref::Save(os);
-  os << m_Gi << m_Sat << m_SatKey;
+    return m_Reader.GetConnection(conn);
 }
 
-void CPubseqSeqref::Restore(istream &is)
+
+void CPubseqSeqref::x_Reconnect(TConn conn) const
 {
-  CSeqref::Restore(is);
-  is >> m_Gi >> m_Sat >> m_SatKey;
+    m_Reader.Reconnect(conn);
 }
+
 
 char* CPubseqSeqref::print(char *s,int size) const
 {
-  CNcbiOstrstream ostr(s,size);
-  ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
-  s[ostr.pcount()]=0;
-  return s;
+    CNcbiOstrstream ostr(s,size);
+    ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
+    s[ostr.pcount()]=0;
+    return s;
 }
+
 
 char* CPubseqSeqref::printTSE(char *s,int size) const
 {
-  CNcbiOstrstream ostr(s,size);
-  ostr << "TSE(" << Sat() << "," << SatKey () << ")" ;
-  s[ostr.pcount()]=0;
-  return s;
+    CNcbiOstrstream ostr(s,size);
+    ostr << "TSE(" << Sat() << "," << SatKey () << ")" ;
+    s[ostr.pcount()]=0;
+    return s;
 }
 
-int CPubseqSeqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
-{
-  const CPubseqSeqref *p = dynamic_cast<const CPubseqSeqref*>(& seqRef);
-  if(p==0) throw runtime_error("Attempt to compare seqrefs from different sources");
-  if(ml==eContext) return 0;
 
-  //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
+int CPubseqSeqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
+{
+    const CPubseqSeqref *p = dynamic_cast<const CPubseqSeqref*>(& seqRef);
+    if(p==0) {
+        throw runtime_error("Attempt to compare seqrefs from different sources");
+    }
+    if(ml==eContext) return 0;
+
+    //cout << "Compare" ; print(); cout << " vs "; p->print(); cout << endl;
     
-  if(Sat() < p->Sat())  return -1;
-  if(Sat() > p->Sat())  return 1;
-  // Sat() == p->Sat()
-  if(SatKey() < p->SatKey())  return -1;
-  if(SatKey() > p->SatKey())  return 1;
-  // blob == p->blob
-  //cout << "Same TSE" << endl;
-  if(ml==eTSE) return 0;
-  if(Gi() < p->Gi())  return -1;
-  if(Gi() > p->Gi())  return 1;
-  //cout << "Same GI" << endl;
-  return 0;
+    if(Sat() < p->Sat())  return -1;
+    if(Sat() > p->Sat())  return 1;
+    // Sat() == p->Sat()
+    if(SatKey() < p->SatKey())  return -1;
+    if(SatKey() > p->SatKey())  return 1;
+    // blob == p->blob
+    //cout << "Same TSE" << endl;
+    if(ml==eTSE) return 0;
+    if(Gi() < p->Gi())  return -1;
+    if(Gi() > p->Gi())  return 1;
+    //cout << "Same GI" << endl;
+    return 0;
 }
 
 
@@ -88,347 +98,388 @@ DEFINE_STATIC_MUTEX(s_readers_mutex);
 static int    s_pubseq_readers=0;
 #endif
 
-CPubseqReader::CPubseqReader(unsigned noConn,const string& server,const string& user,const string& pswd)
-  : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL)
+CPubseqReader::CPubseqReader(TConn noConn,
+                             const string& server,
+                             const string& user,
+                             const string& pswd)
+    : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL)
 {
 #if !defined(HAVE_SYBASE_REENTRANT)
-  noConn=1;
+    noConn=1;
 #endif
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
-  {{
-    CMutexGuard g(s_readers_mutex);
-    if(s_pubseq_readers>0)
-      throw runtime_error("Attempt to open multiple pubseq_readers without MT-safe DB library");
-    s_pubseq_readers++;
-  }}
+    {{
+        CMutexGuard g(s_readers_mutex);
+        if(s_pubseq_readers>0)
+            throw runtime_error("Attempt to open multiple pubseq_readers without MT-safe DB library");
+        s_pubseq_readers++;
+    }}
 #endif
-  for(unsigned i = 0; i < noConn; ++i)
-    m_Pool.push_back(NewConn());
-  // LOG_POST("opened " << m_Pool.size() << " new connections");
+    SetParallelLevel(noConn);
+    // LOG_POST("opened " << m_Pool.size() << " new connections");
 }
 
 CPubseqReader::~CPubseqReader()
 {
-  // LOG_POST("closed " << m_Pool.size() << " connections");
-  for(unsigned i = 0; i < m_Pool.size(); ++i)
-    delete m_Pool[i];
+    // LOG_POST("closed " << m_Pool.size() << " connections");
+    SetParallelLevel(0);
 
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-  {{
-    CMutexGuard g(s_readers_mutex);
-    s_pubseq_readers--;
-  }}
+    {{
+        CMutexGuard g(s_readers_mutex);
+        s_pubseq_readers--;
+    }}
 #endif
 }
 
-size_t CPubseqReader::GetParallelLevel(void) const
+CReader::TConn CPubseqReader::GetParallelLevel(void) const
 {
-  return m_Pool.size();
+    return m_Pool.size();
 }
 
-void CPubseqReader::SetParallelLevel(size_t size)
+void CPubseqReader::SetParallelLevel(TConn size)
 {
-  size_t poolSize = m_Pool.size();
-  for(size_t i = size; i < poolSize; ++i)
-    delete m_Pool[i];
+    size_t oldSize = m_Pool.size();
+    for(size_t i = size; i < oldSize; ++i)
+        delete m_Pool[i];
 
-  m_Pool.resize(size);
+    m_Pool.resize(size);
 
-  for(size_t i = poolSize; i < size; ++i)
-    m_Pool[i] = NewConn();
+    for(size_t i = oldSize; i < size; ++i)
+        m_Pool[i] = NewConn();
 }
 
 CDB_Connection *CPubseqReader::NewConn()
 {
-  if(m_Context.get() == NULL)
-  {
-    C_DriverMgr drvMgr;
-    string errmsg;
-    FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib",&errmsg);
-    if(! createContextFunc)
-      {
-        LOG_POST(errmsg);
-#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-        throw runtime_error("No ctlib available");
-#else
-        createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
-        if(! createContextFunc)
-          {
+    if ( m_Context.get() == NULL ) {
+        C_DriverMgr drvMgr;
+        string errmsg;
+        FDBAPI_CreateContext createContextFunc = drvMgr.GetDriver("ctlib",&errmsg);
+        if ( !createContextFunc ) {
             LOG_POST(errmsg);
-            throw runtime_error("Neither ctlib nor dblib are available");
-          }
+#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
+            throw runtime_error("No ctlib available");
+#else
+            createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
+            if ( !createContextFunc ) {
+                LOG_POST(errmsg);
+                throw runtime_error("Neither ctlib nor dblib are available");
+            }
 #endif
-      }
-    map<string,string> args;
-    args["packet"]="3584"; // 7*512
-    m_Context.reset((*createContextFunc)(&args));
-    //m_Context.reset((*createContextFunc)(0));
-  }
-  return m_Context->Connect(m_Server, m_User, m_Password, 0);
+        }
+        map<string,string> args;
+        args["packet"]="3584"; // 7*512
+        m_Context.reset((*createContextFunc)(&args));
+        //m_Context.reset((*createContextFunc)(0));
+    }
+    return m_Context->Connect(m_Server, m_User, m_Password, 0);
 }
 
-void CPubseqReader::Reconnect(size_t conn)
+
+CDB_Connection* CPubseqReader::GetConnection(TConn conn)
 {
-  LOG_POST("Reconnect");
-  conn = conn % m_Pool.size();
-  delete m_Pool[conn];
-  m_Pool[conn] = NewConn();
+    return m_Pool[conn % m_Pool.size()];
 }
 
-streambuf *CPubseqReader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
+
+void CPubseqReader::Reconnect(TConn conn)
 {
-  try
-  {
-    return x_SeqrefStreamBuf(seqId, conn);
-  }
-  catch(const CDB_Exception&)
-  {
-    Reconnect(conn);
-    throw;
-  }
+    LOG_POST("Reconnect");
+    conn = conn % m_Pool.size();
+    delete m_Pool[conn];
+    m_Pool[conn] = NewConn();
 }
 
-streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
+
+bool CPubseqReader::RetrieveSeqrefs(TSeqrefs& sr,
+                                    const CSeq_id& seqId,
+                                    TConn conn)
 {
-  int gi = 0;
+    try {
+        return x_RetrieveSeqrefs(sr, seqId, conn);
+    }
+    catch ( const CDB_Connection& ) {
+        Reconnect(conn);
+        throw;
+    }
+}
 
-  if(seqId.IsGi())
-    gi = seqId.GetGi();
-  else
-    {
-      CNcbiOstrstream oss;
-      {
-        CObjectOStreamAsn ooss(oss);
-        ooss << seqId;
-      }
-      oss << " " ;
-      oss.freeze(false);
-      oss.str()[oss.pcount()-1]=0;
-      CDB_VarChar asnIn(oss.str());
 
-      auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
-      cmd->SetParam("@asnin", &asnIn);
-      cmd->Send();
-      CDB_Int giFound;
+bool CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& sr,
+                                      const CSeq_id& seqId,
+                                      TConn con)
+{
+    int gi = 0;
 
-      while(cmd->HasMoreResults())
+    if(seqId.IsGi())
+        gi = seqId.GetGi();
+    else {
+        CNcbiOstrstream oss;
         {
-          auto_ptr<CDB_Result> result(cmd->Result());
-          if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
-            continue;
-          
-          while(result->Fetch())
-            {
-              for(unsigned pos = 0; pos < result->NofItems(); ++pos)
-                {
-                  string name = result->ItemName(pos);
-                  if (name == "gi")
-                    result->GetItem(&giFound);
-                  else
-                    result->SkipItem();
+            CObjectOStreamAsn ooss(oss);
+            ooss << seqId;
+        }
+        CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
+        
+        auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_by_seqid_asn", 1));
+        cmd->SetParam("@asnin", &asnIn);
+        cmd->Send();
+        CDB_Int giFound;
+        
+        while(cmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> result(cmd->Result());
+            if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
+                continue;
+            
+            while(result->Fetch()) {
+                for(unsigned pos = 0; pos < result->NofItems(); ++pos) {
+                    string name = result->ItemName(pos);
+                    if (name == "gi")
+                        result->GetItem(&giFound);
+                    else
+                        result->SkipItem();
                 }
             }
-          
-          gi = giFound.Value();
-          //LOG_POST(setw(3) << CThread::GetSelf() << ":: " << "id_gi_by_seqid_asn => gi("<<gi << ")");
+            
+            gi = giFound.Value();
+            //LOG_POST(setw(3) << CThread::GetSelf() << ":: " << "id_gi_by_seqid_asn => gi("<<gi << ")");
+        }
+    }
+    
+    if (gi == 0)
+        return true; // no data?
+
+    {
+        auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_class", 1));
+        CDB_Int giIn(gi);
+        cmd->SetParam("@gi", &giIn);
+        cmd->Send();
+        CDB_Int giOut(gi);
+        CDB_Int satOut;
+        CDB_Int satKeyOut;
+        
+        while(cmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> result(cmd->Result());
+            if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
+                continue;
+            
+            if(result->Fetch()) {
+                result->GetItem(&satOut);
+                result->SkipItem();
+                result->GetItem(&satKeyOut);
+
+                sr.push_back(CRef<CSeqref>(new CPubseqSeqref
+                                           (*this,
+                                            giOut.Value(),
+                                            satOut.Value(),
+                                            satKeyOut.Value())));
+            }
+            while(result->Fetch()) {
+                // do nothing
+            }
         }
     }
   
-  auto_ptr<strstream> ss(new strstream);
-  if(gi == 0)
-    return new CStrStreamBuf(ss.release());
+    return true;
+}
 
-  {
-    auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_class", 1));
-    CDB_Int giIn(gi);
-    cmd->SetParam("@gi", &giIn);
-    cmd->Send();
-    CDB_Int giOut(gi);
-    CDB_Int satOut;
-    CDB_Int satKeyOut;
-    bool  done=false;
 
-    while(cmd->HasMoreResults())
-    {
-      auto_ptr<CDB_Result> result(cmd->Result());
-      if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
-        continue;
+CPubseqSeqref::CPubseqSeqref(CPubseqReader& reader,
+                             int gi, int sat, int satkey)
+    : m_Reader(reader), m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
+{
+    Flag() = 0;
+}
 
-      if(result->Fetch())
-        {
-          result->GetItem(&satOut);
-          result->SkipItem();
-          result->GetItem(&satKeyOut);
 
-          CPubseqSeqref pubseqRef;
-          pubseqRef.m_Gi.Value() = giOut.Value();
-          pubseqRef.m_Sat.Value() = satOut.Value();
-          pubseqRef.m_SatKey.Value() = satKeyOut.Value();
-          pubseqRef.m_Flag.Value() = 0;
-          *ss << pubseqRef;
-          done=true;
-      }
-      while(result->Fetch());
+CPubseqSeqref::~CPubseqSeqref(void)
+{
+}
+
+
+CBlobSource* CPubseqSeqref::GetBlobSource(TPos , TPos ,
+                                          TBlobClass ,
+                                          TConn conn) const
+{
+    return new CPubseqBlobSource(*this, conn);
+}
+
+
+CPubseqBlobSource::CPubseqBlobSource(const CPubseqSeqref& seqId, TConn conn)
+    : m_Seqref(seqId), m_Conn(conn),
+      m_Cmd(seqId.x_GetConn(conn)->RPC("id_get_asn", 5))
+{
+    try {
+        CDB_Int giIn(seqId.Gi());
+        CDB_SmallInt satIn(seqId.Sat());
+        CDB_Int satKeyIn(seqId.SatKey());
+        CDB_Int z(0);
+        CDB_Int o(1);
+
+        m_Cmd->SetParam("@gi", &giIn);
+        m_Cmd->SetParam("@sat_key", &satKeyIn);
+        m_Cmd->SetParam("@sat", &satIn);
+        m_Cmd->SetParam("@maxplex", &z);
+        m_Cmd->SetParam("@outfmt", &z);
+        m_Cmd->SetParam("@ext_feat", &o);
+        m_Cmd->Send();
     }
-  }
-  
-  return new CStrStreamBuf(ss.release());
+    catch ( ... ) {
+        x_Reconnect();
+        throw;
+    }
 }
 
-CSeqref *CPubseqReader::RetrieveSeqref(istream &is)
+
+CPubseqBlobSource::~CPubseqBlobSource(void)
 {
-  CPubseqSeqref *seqref = new CPubseqSeqref;
-  is >> *seqref;
-  seqref->m_Reader = this;
-  return seqref;
 }
 
-struct CPubseqStreamBuf : public streambuf
+
+void CPubseqBlobSource::x_Reconnect(void) const
 {
-  CPubseqStreamBuf(CPubseqSeqref &pubseqSeqref, CDB_Connection *conn);
-  virtual ~CPubseqStreamBuf() {}
-  virtual CT_INT_TYPE underflow();
+    m_Seqref.x_Reconnect(m_Conn);
+}
 
-  enum EStatus {eInit, eNewRow, eBlob};
-  CPubseqSeqref &m_Seqref;
-  EStatus m_Status;
-  CDB_Connection *m_Conn;
-  auto_ptr<CDB_RPCCmd> m_Cmd;
-  auto_ptr<CDB_Result> m_Result;
-  bool m_Eof;
-  CT_CHAR_TYPE m_Buffer[1000];
-};
 
-CPubseqStreamBuf::CPubseqStreamBuf(CPubseqSeqref &pubseqSeqref, CDB_Connection *conn) :
-m_Seqref(pubseqSeqref), m_Status(eInit), m_Conn(conn)
-{}
-
-CT_INT_TYPE CPubseqStreamBuf::underflow()
+bool CPubseqBlobSource::HaveMoreBlobs(void)
 {
-  if(m_Status == eInit)
-  {
-    m_Cmd.reset(m_Conn->RPC("id_get_asn", 5));
+    if ( !m_Blob ) {
+        x_GetNextBlob();
+    }
+    return m_Blob;
+}
 
-    CDB_Int giIn(m_Seqref.Gi());
-    CDB_SmallInt satIn(m_Seqref.Sat());
-    CDB_Int satKeyIn(m_Seqref.SatKey());
-    CDB_Int z(0);
-    CDB_Int o(1);
 
-    m_Cmd->SetParam("@gi", &giIn);
-    m_Cmd->SetParam("@sat_key", &satKeyIn);
-    m_Cmd->SetParam("@sat", &satIn);
-    m_Cmd->SetParam("@maxplex", &z);
-    m_Cmd->SetParam("@outfmt", &z);
-    m_Cmd->SetParam("@ext_feat", &o);
-    m_Cmd->Send();
+CBlob* CPubseqBlobSource::RetrieveBlob(void)
+{
+    return m_Blob.Release();
+}
+
+
+void CPubseqBlobSource::x_GetNextBlob(void)
+{
+    try {
+        // new row
+        CDB_VarChar descrOut("-");
+        CDB_Int classOut(0);
+        CDB_Int confidential(0),withdrawn(0);
     
-    m_Status = eNewRow;
-    return underflow();
-  }
-  else if(m_Status == eNewRow)
-  {
-    CDB_VarChar descrOut("-");
-    CDB_Int classOut(0);
-    CDB_Int confidential(0),withdrawn(0);
-    
-    while(m_Cmd->HasMoreResults())
-    {
-      if(m_Cmd->HasFailed() && confidential.Value()>0 || withdrawn.Value()>0)
-        {
-          LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
-          return CT_EOF;
+        while(m_Cmd->HasMoreResults()) {
+            _TRACE("next result");
+            if ( m_Cmd->HasFailed() && confidential.Value()>0 ||
+                 withdrawn.Value()>0 ) {
+                LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
+                return;
+            }
+            
+            m_Result.reset(m_Cmd->Result());
+            if (m_Result.get() == 0 || m_Result->ResultType() != eDB_RowResult)
+                continue;
+            
+            while(m_Result->Fetch()) {
+                _TRACE("next fetch: " << m_Result->NofItems() << " items");
+                for ( unsigned pos = 0; pos < m_Result->NofItems(); ++pos ) {
+                    const string name = m_Result->ItemName(pos);
+                    _TRACE("next item: " << name);
+                    if(name == "asn1") {
+                        m_Blob.Reset(new CPubseqBlob(*this,
+                                                     classOut.Value(),
+                                                     descrOut.Value()));
+                        return;
+                    }
+                    else if(name == "confidential") {
+                        m_Result->GetItem(&confidential);
+                    }
+                    else if(name == "override") {
+                        m_Result->GetItem(&withdrawn);
+                    }
+                    else {
+                        m_Result->SkipItem();
+                    }
+                }
+            }
         }
-      
-      m_Result.reset(m_Cmd->Result());
-      if (m_Result.get() == 0  ||  m_Result->ResultType() != eDB_RowResult)
-        continue;
-
-      while(m_Result->Fetch())
-      {
-        for(unsigned pos = 0; pos < m_Result->NofItems(); ++pos)
-        {
-          const string name = m_Result->ItemName(pos);
-          if(name == "asn1")
-          {
-            CStringStreamable descr(descrOut.Value());
-            CIntStreamable cl(classOut.Value());
-            CNcbiOstrstream os;
-            os << cl << descr;
-
-            memcpy(m_Buffer, os.str(), os.pcount());
-            os.freeze(false);
-            setg(m_Buffer, m_Buffer, m_Buffer + os.pcount());
-
-            m_Status = eBlob;
-            return CT_TO_INT_TYPE(m_Buffer[0]);
-          }
-          else if(name == "confidential")
-            m_Result->GetItem(&confidential);
-          else if(name == "override")
-            m_Result->GetItem(&withdrawn);
-          else
-            m_Result->SkipItem();
+        if(confidential.Value()>0 || withdrawn.Value()>0) {
+            LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
+            return;
         }
-      }
     }
-    if(confidential.Value()>0 || withdrawn.Value()>0)
-      {
-        LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
-        return CT_EOF;
-      }
-    throw runtime_error("id_get_asn: asn not found");
-  }
-  else if(m_Status == eBlob)
-  {
-    size_t size = m_Result->ReadItem(m_Buffer, sizeof(m_Buffer));
-    if(size != 0)
-    {
-      setg(m_Buffer, m_Buffer, m_Buffer + size);
-      return CT_TO_INT_TYPE(m_Buffer[0]);
+    catch ( ... ) {
+        x_Reconnect();
+        throw;
     }
-  }
-  return CT_EOF;
 }
 
-streambuf *CPubseqSeqref::BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn)
+
+CPubseqBlob::CPubseqBlob(CPubseqBlobSource& source,
+                         int cls, const string& descr)
+    : m_Source(source)
 {
-  m_Conn = conn;
-  return new CPubseqStreamBuf(*this, m_Reader->m_Pool[conn]);
+    Class() = cls;
+    Descr() = descr;
 }
+
+
+CPubseqBlob::~CPubseqBlob(void)
+{
+}
+
 
 CSeq_entry *CPubseqBlob::Seq_entry()
 {
-  CObjectIStreamAsnBinary ois(m_IStream);
-  CSeq_entry *se = new CSeq_entry;
-  m_Seq_entry = se;
-  
-  try
-  {
-    ois >> *se;
-  }
-  catch(const CDB_Exception&)
-  {
-    m_Seqref->m_Reader->Reconnect(m_Seqref->m_Conn);
-    throw;
-  }
-  return se;
+    try {
+        CResultByteSource src(m_Source.m_Result.get());
+        auto_ptr<CObjectIStream> in
+            (CObjectIStream::Create(eSerial_AsnBinary, src));
+
+        m_Seq_entry = new CSeq_entry;
+
+        *in >> *m_Seq_entry;
+    }
+    catch ( ... ) {
+        m_Source.x_Reconnect();
+        throw;
+    }
+
+    return m_Seq_entry;
 }
 
-CBlob *CPubseqSeqref::RetrieveBlob(istream &is)
+
+CResultByteSource::CResultByteSource(CDB_Result* result)
+    : m_Result(result)
 {
-  auto_ptr<CBlob> blob(new CPubseqBlob(is));
-  try
-  {
-    is >> *blob.get();
-  }
-  catch(const CDB_Exception&)
-  {
-    m_Reader->Reconnect(m_Conn);
-    throw;
-  }
-  return blob.release();
 }
+
+
+CResultByteSource::~CResultByteSource()
+{
+}
+
+
+
+CRef<CByteSourceReader> CResultByteSource::Open(void)
+{
+    return CRef<CByteSourceReader>(new CResultByteSourceReader(m_Result));
+}
+
+
+CResultByteSourceReader::CResultByteSourceReader(CDB_Result* result)
+    : m_Result(result)
+{
+}
+
+
+CResultByteSourceReader::~CResultByteSourceReader()
+{
+}
+
+
+size_t CResultByteSourceReader::Read(char* buffer, size_t bufferLength)
+{
+    return m_Result->ReadItem(buffer, bufferLength);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -436,6 +487,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.23  2003/04/15 14:24:08  vasilche
+* Changed CReader interface to not to use fake streams.
+*
 * Revision 1.22  2003/04/02 03:57:09  kimelman
 * packet size tuning
 *

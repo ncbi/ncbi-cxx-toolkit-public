@@ -23,23 +23,22 @@
 *
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
+*
+*  Author:  Anton Butanaev, Eugene Vasilchenko
+*
+*  File Description: Data reader from Pubseq_OS
+*
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <serial/serial.hpp>
-#include <serial/enumvalues.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasnb.hpp>
 #include <objects/objmgr/reader.hpp>
-
-#include <dbapi/driver/public.hpp>
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/driver_mgr.hpp>
-
 #include <vector>
 
-
 BEGIN_NCBI_SCOPE
+
+class CDB_Connection;
+class I_DriverContext;
+
 BEGIN_SCOPE(objects)
 
 
@@ -47,76 +46,35 @@ class CPubseqReader;
 class CPubseqBlob;
 
 
-class NCBI_XOBJMGR_EXPORT CPubseqSeqref : public CSeqref
-{
-public:
-  virtual void Save(ostream &os) const;
-  virtual void Restore(istream &is);
-  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn = 0);
-  virtual CBlob *RetrieveBlob(istream &is);
-
-  CIntStreamable::TInt Gi() const { return m_Gi.Value(); }
-  CIntStreamable::TInt Sat() const { return m_Sat.Value(); }
-  CIntStreamable::TInt SatKey() const { return m_SatKey.Value(); }
-
-  virtual CSeqref *Dup() const { return new CPubseqSeqref(*this); }
-  virtual char *print(char*,int) const;
-  virtual char *printTSE(char*,int) const;
-  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const;
-
-private:
-  friend class CPubseqReader;
-  friend class CPubseqBlob;
-
-  streambuf *x_BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn);
-  CIntStreamable m_Gi;
-  CIntStreamable m_Sat;
-  CIntStreamable m_SatKey;
-  CPubseqReader *m_Reader;
-  unsigned m_Conn;
-};
-
-
-
 class NCBI_XOBJMGR_EXPORT CPubseqReader : public CReader
 {
 public:
-  CPubseqReader(unsigned = 2,const string& server = "PUBSEQ_OS",const string& user="anyone",const string& pswd = "allowed");
-  ~CPubseqReader();
-  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0);
-  virtual CSeqref *RetrieveSeqref(istream &is);
+    CPubseqReader(TConn parallelLevel = 2,
+                  const string& server = "PUBSEQ_OS",
+                  const string& user="anyone",
+                  const string& pswd = "allowed");
 
-  virtual size_t GetParallelLevel(void) const;
-  virtual void SetParallelLevel(size_t);
-  virtual void Reconnect(size_t);
+    ~CPubseqReader();
+
+    virtual bool RetrieveSeqrefs(TSeqrefs& sr,
+                                 const CSeq_id& seqId,
+                                 TConn conn = 0);
+
+    virtual TConn GetParallelLevel(void) const;
+    virtual void SetParallelLevel(TConn);
+    CDB_Connection* GetConnection(TConn);
+    virtual void Reconnect(TConn);
 
 private:
-  friend class CPubseqSeqref;
-  streambuf *x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn);
-  CDB_Connection *NewConn();
+    bool x_RetrieveSeqrefs(TSeqrefs& sr, const CSeq_id& seqId, TConn conn);
+
+    CDB_Connection *NewConn();
   
-  string                    m_Server;
-  string                    m_User;
-  string                    m_Password;
-  auto_ptr<I_DriverContext> m_Context;
-  vector<CDB_Connection *>  m_Pool;
-};
-
-
-
-class NCBI_XOBJMGR_EXPORT CPubseqBlob : public CBlob
-{
-public:
-  CSeq_entry *Seq_entry();
-
-protected:
-  friend class CPubseqSeqref;
-  CPubseqBlob(istream &is) : CBlob(is) {}
-
-private:
-
-  CRef<CSeq_entry> m_Seq_entry;
-  CPubseqSeqref *m_Seqref;
+    string                    m_Server;
+    string                    m_User;
+    string                    m_Password;
+    auto_ptr<I_DriverContext> m_Context;
+    vector<CDB_Connection *>  m_Pool;
 };
 
 
@@ -127,6 +85,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2003/04/15 14:24:07  vasilche
+* Changed CReader interface to not to use fake streams.
+*
 * Revision 1.11  2003/03/26 16:11:06  vasilche
 * Removed redundant const modifier from integral return types.
 *

@@ -24,6 +24,11 @@
 *
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
+*
+*  Author:  Anton Butanaev, Eugene Vasilchenko
+*
+*  File Description: Base data reader interface
+*
 */
 
 #include <iostream>
@@ -33,132 +38,100 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-    class NCBI_XOBJMGR_EXPORT CStreamable
-    {
-    public:
-        virtual ~CStreamable() {}
-        virtual void Save(ostream &) const = 0;
-        virtual void Restore(istream &) = 0;
-    };
-
-ostream & operator << (ostream &os, const CStreamable &obj);
-istream & operator >> (istream &is, CStreamable &obj);
-
-class NCBI_XOBJMGR_EXPORT CIntStreamable : public CStreamable
+class NCBI_XOBJMGR_EXPORT CBlob : public CObject
 {
 public:
-    typedef unsigned long TInt;
-  
-    CIntStreamable(TInt value = 0) : m_Value(value) {}
-    virtual void Save(ostream &) const;
-    virtual void Restore(istream &);
-    TInt &Value()       { return m_Value; }
-    TInt  Value() const { return m_Value; }
-  
-private:
-    TInt m_Value;
-};
+    typedef TSeqPos TPos;
+    typedef int TBlobClass;
+    typedef unsigned TConn;
 
-class NCBI_XOBJMGR_EXPORT CStringStreamable : public CStreamable
-{
-public:
-    CStringStreamable(const string &value = "") : m_Value(value) {}
-    virtual void Save(ostream &) const;
-    virtual void Restore(istream &);
-    string&       Value()       { return m_Value; }
-    const string& Value() const { return m_Value; }
+    CBlob(void);
+    virtual ~CBlob(void);
+
+    virtual CSeq_entry *Seq_entry(void) = 0;
+
+    string& Descr() { return m_Descr; }
+    int&    Class() { return m_Class; }
 
 private:
-    string m_Value;
+    int m_Class;
+    string m_Descr;
 };
 
-class NCBI_XOBJMGR_EXPORT CIStream : public istream
+class NCBI_XOBJMGR_EXPORT CBlobSource : public CObject
 {
 public:
-    CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(IOS_BASE::skipws); }
-    ~CIStream() { delete m_sb; }
+    typedef TSeqPos TPos;
+    typedef int TBlobClass;
+    typedef unsigned TConn;
 
-    bool Eof();
-    static size_t Read(istream &is, char* buffer, size_t bufferLength);
+    CBlobSource(void);
+    virtual ~CBlobSource(void);
 
-    streambuf *m_sb;
+    virtual bool HaveMoreBlobs(void) = 0;
+    virtual CBlob* RetrieveBlob(void) = 0;
 };
 
-class NCBI_XOBJMGR_EXPORT CBlobDescr : public CStringStreamable
-{
-};
-
-class NCBI_XOBJMGR_EXPORT CBlobClass : public CIntStreamable
-{
-};
-
-class NCBI_XOBJMGR_EXPORT CSeqrefFlag : public CIntStreamable
-{
-};
-
-class NCBI_XOBJMGR_EXPORT CBlob : public CStreamable
+class NCBI_XOBJMGR_EXPORT CSeqref : public CObject
 {
 public:
-    virtual void Save(ostream &) const;
-    virtual void Restore(istream &);
-    virtual CSeq_entry *Seq_entry() { return NULL; }
-    string &Descr() { return m_Descr.Value(); }
-    CBlobClass::TInt &Class() { return m_Class.Value(); }
+    CSeqref(void);
+    virtual ~CSeqref(void);
+    
+    typedef TSeqPos TPos;
+    typedef int TBlobClass;
+    typedef unsigned TConn;
 
-protected:
-    CBlob(istream &is) : m_IStream(is) {}
-    istream &m_IStream;
-private:
-    CBlobClass m_Class;
-    CBlobDescr m_Descr;
-};
+    virtual CBlobSource* GetBlobSource(TPos start, TPos stop,
+                                       TBlobClass blobClass,
+                                       TConn conn = 0) const = 0;
 
-class NCBI_XOBJMGR_EXPORT CSeqref : public CStreamable
-{
-public:
-  
-    virtual void       Save(ostream &os) const { m_Flag.Save(os); }
-    virtual void       Restore(istream &is) { m_Flag.Restore(is); }
-    virtual streambuf *BlobStreamBuf(int start, int stop,
-                                     const CBlobClass &cl,
-                                     unsigned conn = 0) = 0;
-    virtual CBlob     *RetrieveBlob(istream &is) = 0;
-    virtual CSeqref*   Dup() const = 0;
-    virtual char*      print(char*,int)    const = 0;
-    virtual char*      printTSE(char*,int) const = 0;
+    virtual char*      print(char*, int)    const = 0;
+    virtual char*      printTSE(char*, int) const = 0;
 
     enum EMatchLevel {
         eContext,
         eTSE    ,
         eSeq
     };
-    virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const = 0;
-    CSeqrefFlag::TInt &Flag() { return m_Flag.Value(); }
 
-    CSeqrefFlag m_Flag;
+    virtual int Compare(const CSeqref& seqRef,
+                        EMatchLevel ml = eSeq) const = 0;
+
+    int  Flag() const { return m_Flag; }
+    int& Flag()       { return m_Flag; }
+
+private:
+    int  m_Flag;
 };
 
-class NCBI_XOBJMGR_EXPORT CReader
+class NCBI_XOBJMGR_EXPORT CReader : public CObject
 {
 public:
-  
-    virtual ~CReader() {}
-    virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId,
-                                       unsigned conn = 0) = 0;
-    virtual CSeqref *RetrieveSeqref(istream &is) = 0;
+    CReader(void);
+    virtual ~CReader(void);
+
+    typedef TSeqPos TPos;
+    typedef int TBlobClass;
+    typedef unsigned TConn;
+
+    typedef vector< CRef<CSeqref> > TSeqrefs;
+
+    virtual bool RetrieveSeqrefs(TSeqrefs& sr,
+                                 const CSeq_id& seqId,
+                                 TConn conn = 0) = 0;
 
     // return the level of reasonable parallelism
     // 1 - non MTsafe; 0 - no synchronization required,
     // n - at most n connection is advised/supported
-    virtual size_t GetParallelLevel(void) const = 0;
-    virtual void SetParallelLevel(size_t) = 0;
-    virtual void Reconnect(size_t) = 0;
+    virtual TConn GetParallelLevel(void) const = 0;
+    virtual void SetParallelLevel(TConn conn) = 0;
+    virtual void Reconnect(TConn conn) = 0;
 
     // returns the time in secons when already retrived data
     // could become obsolete by fresher version 
     // -1 - never
-    virtual CIntStreamable::TInt GetConst(string &const_name) const;
-
+    virtual int GetConst(const string& const_name) const;
 };
 
 END_SCOPE(objects)
@@ -166,6 +139,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.20  2003/04/15 14:24:07  vasilche
+* Changed CReader interface to not to use fake streams.
+*
 * Revision 1.19  2003/03/26 16:11:06  vasilche
 * Removed redundant const modifier from integral return types.
 *

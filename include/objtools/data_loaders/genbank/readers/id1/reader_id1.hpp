@@ -23,92 +23,48 @@
 *
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
+*
+*  Author:  Anton Butanaev, Eugene Vasilchenko
+*
+*  File Description: Data reader from ID1
+*
 */
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/reader.hpp>
 
-#include <objects/id1/ID1server_back.hpp>
-#include <objects/id1/ID1server_request.hpp>
-#include <objects/id1/ID1server_maxcomplex.hpp>
-#include <objects/seq/Seq_hist_rec.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/Object_id.hpp>
-
-#include <connect/ncbi_util.h>
-#include <connect/ncbi_socket.h>
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_conn_stream.hpp>
-
 BEGIN_NCBI_SCOPE
+
+class CConn_ServiceStream;
+
 BEGIN_SCOPE(objects)
 
-class CId1Reader;
-class NCBI_XOBJMGR_EXPORT CId1Seqref : public CSeqref
-{
-public:
-  virtual void Save(ostream &os) const;
-  virtual void Restore(istream &is);
-  virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn = 0);
-  virtual CBlob *RetrieveBlob(istream &is);
-  virtual CSeqref* Dup() const;
-  virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const ;
-  virtual char* print(char*,int)    const;
-  virtual char* printTSE(char*,int) const;
-
-  CIntStreamable::TInt &Gi() { return m_Gi.Value(); };
-  CIntStreamable::TInt &Sat() { return m_Sat.Value(); };
-  CIntStreamable::TInt &SatKey() { return m_SatKey.Value(); };
-  
-  CIntStreamable::TInt  Gi()     const { return m_Gi.Value(); };
-  CIntStreamable::TInt  Sat()    const { return m_Sat.Value(); };
-  CIntStreamable::TInt  SatKey() const { return m_SatKey.Value(); };
-
-private:
-  friend class CId1Reader;
-  streambuf *x_BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn);
-  CIntStreamable m_Gi;
-  CIntStreamable m_Sat;
-  CIntStreamable m_SatKey;
-  CId1Reader *m_Reader;
-};
-
-class NCBI_XOBJMGR_EXPORT CId1Blob : public CBlob
-{
-public:
-
-  void Save(ostream &os) const;
-  void Restore(istream &is);
-  CSeq_entry *Seq_entry();
-
-protected:
-  friend class CId1Seqref;
-  CId1Blob(istream &is) : CBlob(is) {}
-
-private:
-  CRef<CSeq_entry> m_Seq_entry;
-};
+class CId1Seqref;
 
 class NCBI_XOBJMGR_EXPORT CId1Reader : public CReader
 {
 public:
-  CId1Reader(unsigned noConn = 5);
-  ~CId1Reader();
-  virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn = 0);
-  virtual CSeqref *RetrieveSeqref(istream &is);
+    CId1Reader(TConn noConn = 5);
+    ~CId1Reader();
 
-  virtual size_t GetParallelLevel(void) const;
-  virtual void SetParallelLevel(size_t);
-  virtual void Reconnect(size_t);
+    virtual bool RetrieveSeqrefs(TSeqrefs& sr,
+                                 const CSeq_id& seqId,
+                                 TConn conn = 0);
+
+    virtual TConn GetParallelLevel(void) const;
+    virtual void SetParallelLevel(TConn);
+    virtual void Reconnect(TConn);
+    CConn_ServiceStream* GetService(unsigned conn);
 
 protected:
-  CConn_ServiceStream *NewID1Service();
+    CConn_ServiceStream *NewID1Service();
 
 private:
-  friend class CId1Seqref;
-  streambuf *x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn);
-  vector<CConn_ServiceStream *> m_Pool;
+    friend class CId1Seqref;
+    bool x_RetrieveSeqrefs(TSeqrefs& sr, const CSeq_id &seqId, TConn conn);
+    vector<CConn_ServiceStream *> m_Pool;
 };
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -116,6 +72,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.14  2003/04/15 14:24:07  vasilche
+* Changed CReader interface to not to use fake streams.
+*
 * Revision 1.13  2003/03/26 16:11:06  vasilche
 * Removed redundant const modifier from integral return types.
 *

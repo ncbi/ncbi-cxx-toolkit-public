@@ -22,12 +22,15 @@
  *
  * ===========================================================================
  *
- *  Author:  Anton Butanaev
+ *  Author:  Anton Butanaev, Eugene Vasilchenko
+ *
+ *  File Description: Data reader from ID1
  *
  */
 
 #include <corelib/ncbistre.hpp>
 #include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr/impl/seqref_id1.hpp>
 #include <objects/id1/id1__.hpp>
 
 #include <serial/enumvalues.hpp>
@@ -37,7 +40,6 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 
-#include "strstreambuf.hpp"
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  include <util/stream_utils.hpp>
@@ -48,10 +50,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-streambuf* CId1Reader::SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
+bool CId1Reader::RetrieveSeqrefs(TSeqrefs& sr,
+                                 const CSeq_id& seqId,
+                                 TConn conn)
 {
     try {
-        return x_SeqrefStreamBuf(seqId, conn);
+        return x_RetrieveSeqrefs(sr, seqId, conn);
     }
     catch(const CIOException&) {
         Reconnect(conn);
@@ -60,9 +64,11 @@ streambuf* CId1Reader::SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
 }
 
 
-streambuf* CId1Reader::x_SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
+bool CId1Reader::x_RetrieveSeqrefs(TSeqrefs& sr,
+                                   const CSeq_id& seqId,
+                                   TConn conn)
 {
-    CConn_ServiceStream* server = m_Pool[conn % m_Pool.size()];
+    CConn_ServiceStream* server = GetService(conn);
     auto_ptr<CObjectIStream>
         server_input(CObjectIStream::Open(eSerial_AsnBinary, *server, false));
     CID1server_request id1_request;
@@ -84,13 +90,13 @@ streambuf* CId1Reader::x_SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
             LOG_POST("SeqId is not found");
             seqId.WriteAsFasta(cout);
         }
-    } else
+    }
+    else {
         gi = seqId.GetGi();
+    }
 
-    auto_ptr<strstream> ss(new strstream);
-
-    if (!gi)
-        return new CStrStreamBuf(ss.release());
+    if ( !gi )
+        return true; // no data?
 
     {{
         CID1server_maxcomplex blob;
@@ -107,213 +113,154 @@ streambuf* CId1Reader::x_SeqrefStreamBuf(const CSeq_id& seqId, unsigned conn)
     *server_input >> id1_reply;
 
     if (id1_reply.IsGotblobinfo()) {
-        CId1Seqref id1Seqref;
-        id1Seqref.Gi()     = gi;
-        id1Seqref.Sat()    = id1_reply.GetGotblobinfo().GetSat();
-        id1Seqref.SatKey() = id1_reply.GetGotblobinfo().GetSat_key();
-        id1Seqref.Flag()   = 0;
-        *ss << id1Seqref;
+        sr.push_back(CRef<CSeqref>
+                     (new CId1Seqref(*this,
+                                     gi,
+                                     id1_reply.GetGotblobinfo().GetSat(),
+                                     id1_reply.GetGotblobinfo().GetSat_key()))
+            );
     }
-    return new CStrStreamBuf(ss.release());
+    return true;
 }
 
 
-void CId1Seqref::Save(ostream& os) const
+CId1Seqref::CId1Seqref(CId1Reader& reader, int gi, int sat, int satkey)
+    : m_Reader(reader), m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
 {
-    CSeqref::Save(os);
-    os << m_Gi << m_Sat << m_SatKey;
+    Flag() = 0;
 }
 
 
-void CId1Seqref::Restore(istream& is)
-{
-    CSeqref::Restore(is);
-    is >> m_Gi >> m_Sat >> m_SatKey;
-}
-
-
-CSeqref* CId1Seqref::Dup(void) const
-{
-    return new CId1Seqref(*this);
-}
-
-
-CSeqref* CId1Reader::RetrieveSeqref(istream &is)
-{
-    CId1Seqref* id1Seqref = new CId1Seqref;
-    id1Seqref->m_Reader = this;
-    is >> *id1Seqref;
-    return id1Seqref;
-}
-
-#ifdef NCBI_COMPILER_MIPSPRO
-class CId1StreamBuf : public CMIPSPRO_ReadsomeTolerantStreambuf
-#else
-class CId1StreamBuf : public streambuf
-#endif/*NCBI_COMPILER_MIPSPRO*/
-{
-public:
-    CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream* server);
-    ~CId1StreamBuf();
-    void                 Close(void) { m_Server = 0; }
-
-protected:
-    virtual CT_INT_TYPE  underflow(void);
-    virtual streamsize   xsgetn(CT_CHAR_TYPE* buf, streamsize size);
-
-    CId1Seqref&          m_Id1Seqref;
-    CT_CHAR_TYPE         buffer[1024];
-    CConn_ServiceStream* m_Server;
-};
-
-
-CId1StreamBuf::CId1StreamBuf(CId1Seqref&          id1Seqref,
-                             CConn_ServiceStream* server) :
-    m_Id1Seqref(id1Seqref)
-{
-    CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-    params->SetMaxplex(eEntry_complexities_entry);
-    params->SetGi(m_Id1Seqref.Gi());
-    params->SetEnt(m_Id1Seqref.SatKey());
-    params->SetSat(NStr::IntToString(m_Id1Seqref.Sat()));
-
-    CID1server_request id1_request;
-    id1_request.SetGetsefromgi(*params);
-
-    m_Server = server;
-    {{
-        CObjectOStreamAsnBinary server_output(*m_Server);
-        server_output << id1_request;
-        server_output.Flush();
-    }}
-}
-
-
-CId1StreamBuf::~CId1StreamBuf()
+CId1Seqref::~CId1Seqref(void)
 {
 }
 
 
-CT_INT_TYPE CId1StreamBuf::underflow(void)
+CConn_ServiceStream* CId1Seqref::x_GetService(TConn conn) const
 {
-    if ( !m_Server )
-        return CT_EOF;
-
-#ifdef NCBI_COMPILER_MIPSPRO
-    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
-        return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = 0;
-#endif/*NCBI_COMPILER_MIPSPRO*/    
-
-    size_t n = CIStream::Read(*m_Server, buffer, sizeof(buffer));
-    setg(buffer, buffer, buffer + n);
-    return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
+    return m_Reader.GetService(conn);
 }
 
 
-streamsize CId1StreamBuf::xsgetn(CT_CHAR_TYPE* buf, streamsize size)
+void CId1Seqref::x_Reconnect(TConn conn) const
 {
-    if (!m_Server || !size)
-        return 0;
-
-    if (gptr() < egptr()) {
-        size_t m = egptr() - gptr();
-        if (m > size)
-            m = size;
-        memcpy(buf, gptr(), m);
-        gbump((int) m);
-        return m;
-    }
-
-    CT_CHAR_TYPE* ptr = size > sizeof(buffer) ? buf : buffer;
-    size_t n = CIStream::Read(*m_Server, ptr, size);
-    if (n) {
-        // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-        if (ptr == buffer) {
-            memcpy(buf, buffer, n);
-            setg(buffer, buffer + n, buffer + n);
-        } else {
-            size_t bs = n > sizeof(buffer) ? sizeof(buffer) : n;
-            memcpy(buffer, buf + n - bs, bs);
-            setg(buffer, buffer + bs, buffer + bs);
-        }
-    }
-    return n;
+    m_Reader.Reconnect(conn);
 }
 
 
-streambuf *CId1Seqref::BlobStreamBuf(int a, int b,
-                                     const CBlobClass &c, unsigned conn)
+CId1BlobSource::CId1BlobSource(const CId1Seqref& seqId, TConn conn)
+    : m_Seqref(seqId), m_Conn(conn), m_Count(0)
 {
     try {
-        return x_BlobStreamBuf(a, b, c, conn);
+        CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
+        params->SetMaxplex(eEntry_complexities_entry);
+        params->SetGi(seqId.Gi());
+        params->SetEnt(seqId.SatKey());
+        params->SetSat(NStr::IntToString(seqId.Sat()));
+
+        CID1server_request id1_request;
+        id1_request.SetGetsefromgi(*params);
+
+        {{
+            CObjectOStreamAsnBinary server_output(*x_GetService());
+            server_output << id1_request;
+            server_output.Flush();
+            m_Count = 1;
+        }}
     }
-    catch(const CIOException&) {
-        m_Reader->Reconnect(conn);
+    catch ( ... ) {
+        x_Reconnect();
         throw;
     }
 }
 
 
-streambuf* CId1Seqref::x_BlobStreamBuf(int, int,
-                                       const CBlobClass&, unsigned conn)
+CId1BlobSource::~CId1BlobSource(void)
 {
-    auto_ptr<CId1StreamBuf>
-        b(new CId1StreamBuf(*this,
-                            m_Reader->m_Pool[conn % m_Reader->m_Pool.size()]));
-    return b.release();
+}
+
+
+CConn_ServiceStream* CId1BlobSource::x_GetService(void) const
+{
+    return m_Seqref.x_GetService(m_Conn);
+}
+
+
+void CId1BlobSource::x_Reconnect(void)
+{
+    m_Seqref.x_Reconnect(m_Conn);
+    m_Count = 0;
+}
+
+
+bool CId1BlobSource::HaveMoreBlobs(void)
+{
+    return m_Count > 0;
+}
+
+
+CBlob* CId1BlobSource::RetrieveBlob(void)
+{
+    --m_Count;
+    return new CId1Blob(*this);
+}
+
+
+CBlobSource* CId1Seqref::GetBlobSource(TPos , TPos ,
+                                       TBlobClass ,
+                                       TConn conn) const
+{
+    return new CId1BlobSource(*this, conn);
+}
+
+
+CId1Blob::CId1Blob(CId1BlobSource& source)
+    : m_Source(source)
+{
+}
+
+
+CId1Blob::~CId1Blob(void)
+{
 }
 
 
 CSeq_entry* CId1Blob::Seq_entry()
 {
-    auto_ptr<CObjectIStream>
-        objStream(CObjectIStream::Open(eSerial_AsnBinary, m_IStream, false));
-    CID1server_back id1_reply;
-    bool cleanup=false;
-
     try {
+        auto_ptr<CObjectIStream>
+            objStream(CObjectIStream::Open(eSerial_AsnBinary,
+                                           *m_Source.x_GetService(), false));
+        CID1server_back id1_reply;
+
         *objStream >> id1_reply;
-        static_cast<CId1StreamBuf*> (m_IStream.rdbuf())->Close();
+
+        if (id1_reply.IsGotseqentry())
+            m_Seq_entry = &id1_reply.SetGotseqentry();
+        else if (id1_reply.IsGotdeadseqentry())
+            m_Seq_entry = &id1_reply.SetGotdeadseqentry();
+
+        return m_Seq_entry;
     }
     catch (exception& e) {
         LOG_POST("TROUBLE: reader_id1: can not read Seq-entry from reply: "
                  << e.what() );
-        cleanup=true;
+        m_Seq_entry = 0;
+        m_Source.x_Reconnect();
+        throw;
     }
-
-    if (id1_reply.IsGotseqentry())
-        m_Seq_entry = &id1_reply.SetGotseqentry();
-    else if (id1_reply.IsGotdeadseqentry())
-        m_Seq_entry = &id1_reply.SetGotdeadseqentry();
-
-    if (cleanup)
-        m_Seq_entry=0;
-    return m_Seq_entry;
-}
-
-
-CBlob* CId1Seqref::RetrieveBlob(istream& is)
-{
-    return new CId1Blob(is);
-}
-
-
-void CId1Blob::Save(ostream& os) const
-{
-    CBlob::Save(os);
-}
-
-
-void CId1Blob::Restore(istream& is)
-{
-    CBlob::Restore(is);
+    catch (...) {
+        LOG_POST("TROUBLE: reader_id1: can not read Seq-entry from reply");
+        m_Seq_entry = 0;
+        m_Source.x_Reconnect();
+        throw;
+    }
 }
 
 
 char* CId1Seqref::print(char* s, int size) const
 {
-    CNcbiOstrstream ostr(s,size);
+    CNcbiOstrstream ostr(s, size);
     ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")";
     s[ostr.pcount()] = 0;
     return s;
@@ -322,19 +269,18 @@ char* CId1Seqref::print(char* s, int size) const
 
 char* CId1Seqref::printTSE(char* s, int size) const
 {
-    CNcbiOstrstream ostr(s,size);
+    CNcbiOstrstream ostr(s, size);
     ostr << "TSE(" << Sat() << "," << SatKey () << ")";
     s[ostr.pcount()] = 0;
     return s;
 }
 
 
-int CId1Seqref::Compare(const CSeqref &seqRef, EMatchLevel ml) const
+int CId1Seqref::Compare(const CSeqref& seqRef, EMatchLevel ml) const
 {
     const CId1Seqref* p = dynamic_cast<const CId1Seqref*> (&seqRef);
     if (!p) {
-        throw
-            runtime_error("Attempt to compare seqrefs from different sources");
+        throw runtime_error("Attempt to compare seqrefs from different sources");
     }
     if (ml == eContext)
         return 0;
@@ -371,32 +317,31 @@ CId1Reader::CId1Reader(unsigned noConn)
 #if !defined(NCBI_THREADS)
     noConn=1;
 #endif
-    for (unsigned i = 0; i < noConn; ++i)
-        m_Pool.push_back(NewID1Service());
+    SetParallelLevel(noConn);
 }
 
 
 CId1Reader::~CId1Reader()
 {
-    for (size_t i = 0; i < m_Pool.size(); ++i)
-        delete m_Pool[i];
+    SetParallelLevel(0);
 }
 
 
-size_t CId1Reader::GetParallelLevel(void) const
+CReader::TConn CId1Reader::GetParallelLevel(void) const
 {
     return m_Pool.size();
 }
 
 
-void CId1Reader::SetParallelLevel(size_t size)
+void CId1Reader::SetParallelLevel(TConn size)
 {
-    size_t poolSize = m_Pool.size();
-    for (size_t i = size; i < poolSize; ++i)
+    size_t oldSize = m_Pool.size();
+    for (size_t i = size; i < oldSize; ++i)
         delete m_Pool[i];
 
     m_Pool.resize(size);
-    for (size_t i = poolSize; i < size; ++i)
+
+    for (size_t i = oldSize; i < size; ++i)
         m_Pool[i] = NewID1Service();
 }
 
@@ -411,7 +356,13 @@ CConn_ServiceStream* CId1Reader::NewID1Service(void)
 }
 
 
-void CId1Reader::Reconnect(size_t conn)
+CConn_ServiceStream* CId1Reader::GetService(TConn conn)
+{
+    return m_Pool[conn % m_Pool.size()];
+}
+
+
+void CId1Reader::Reconnect(TConn conn)
 {
     _TRACE("Reconnect(" << conn << ")");
     conn = conn % m_Pool.size();
@@ -426,6 +377,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.34  2003/04/15 14:24:08  vasilche
+ * Changed CReader interface to not to use fake streams.
+ *
  * Revision 1.33  2003/04/07 16:56:57  vasilche
  * Fixed unassigned member in ID1 request.
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/04/15 14:24:08  vasilche
+* Changed CReader interface to not to use fake streams.
+*
 * Revision 1.21  2003/04/03 14:17:43  vasilche
 * Allow using data loaded from file.
 *
@@ -129,7 +132,6 @@
 #include <objects/objmgr/graph_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/bioseq_ci.hpp>
 
 
@@ -221,7 +223,7 @@ int CDemoApp::Run(void)
     // The last argument "eDefault" informs the OM that the loader
     // must be included in scopes during the CScope::AddDefaults() call.
     pOm->RegisterDataLoader(
-        *new CGBDataLoader("ID", new CId1Reader, 2),
+        *new CGBDataLoader("ID", 0, 2),
         CObjectManager::eDefault);
 
     // Create a new scope.

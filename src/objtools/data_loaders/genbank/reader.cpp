@@ -21,7 +21,9 @@
  *  Please cite the author in any work or product based on this material.
  * ===========================================================================
  *
- *  Author:  Anton Butanaev
+ *  Author:  Anton Butanaev, Eugene Vasilchenko
+ *
+ *  File Description: Base data reader interface
  *
  */
 
@@ -32,88 +34,47 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-ostream& operator << (ostream &os, const CStreamable &obj)
+CBlob::CBlob(void)
 {
-    obj.Save(os);
-    return os;
 }
 
 
-istream& operator >> (istream &is, CStreamable &obj)
+CBlob::~CBlob(void)
 {
-    obj.Restore(is);
-    return is;
 }
 
 
-void CIntStreamable::Save(ostream &os) const
+CBlobSource::CBlobSource(void)
 {
-    for (size_t i = 0; i < sizeof(m_Value); ++i)
-        os.put(static_cast<char>((m_Value>>(8 * i)) & 0xff));
 }
 
 
-void CIntStreamable::Restore(istream &is)
+CBlobSource::~CBlobSource(void)
 {
-    m_Value=0;
-    for (size_t i = 0; i < sizeof(m_Value); ++i)
-        m_Value += static_cast<TInt>(is.get())<<(8 * i);
 }
 
 
-void CStringStreamable::Save(ostream &os) const
+CSeqref::CSeqref(void)
 {
-    CIntStreamable length = m_Value.length();
-    os << length;
-    os.write(m_Value.data(), m_Value.length());
 }
 
 
-void CStringStreamable::Restore(istream &is)
+CSeqref::~CSeqref(void)
 {
-    CIntStreamable length;
-    is >> length;
-    if ( is ) {
-        m_Value.resize(length.Value());
-        is.read(&m_Value[0], length.Value());
-    }
 }
 
 
-void CBlob::Save(ostream &os) const
+CReader::CReader(void)
 {
-    os << m_Class << m_Descr;
 }
 
 
-void CBlob::Restore(istream &is)
+CReader::~CReader(void)
 {
-    is >> m_Class >> m_Descr;
 }
 
 
-size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength)
-{
-    return CStreamUtils::Readsome(is, buffer, bufferLength);
-}
-
-
-bool CIStream::Eof()
-{
-    CT_INT_TYPE c = get();
-
-    if (eof())
-        return true;
-
-    if ( good() )
-        putback(c);
-
-    return false;
-}
-
-
-CIntStreamable::TInt CReader::GetConst(string &) const
+int CReader::GetConst(const string& ) const
 {
     return 0;
 }
@@ -125,6 +86,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.13  2003/04/15 14:24:08  vasilche
+ * Changed CReader interface to not to use fake streams.
+ *
  * Revision 1.12  2003/03/28 03:27:24  lavr
  * CIStream::Eof() conditional compilation removed; code reformatted
  *

@@ -143,86 +143,99 @@ public:
 class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
-  struct SLeveledMutex
-  {
-    unsigned        m_SlowTraverseMode;
-    CMutex          m_Lookup;
-    CMutexPool      m_Pool;
-  };
+    struct SLeveledMutex
+    {
+        unsigned        m_SlowTraverseMode;
+        CMutex          m_Lookup;
+        CMutexPool      m_Pool;
+    };
 
-  CGBDataLoader(const string& loader_name="GENBANK",CReader *driver=0,int gc_threshold=100);
-  virtual ~CGBDataLoader(void);
+    CGBDataLoader(const string& loader_name="GENBANK",
+                  CReader *driver=0,
+                  int gc_threshold=100);
+    virtual ~CGBDataLoader(void);
   
-  virtual bool DropTSE(const CSeq_entry* sep);
-  virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
-      TTSESet* tse_set = 0);
+    virtual bool DropTSE(const CSeq_entry* sep);
+    virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
+                            TTSESet* tse_set = 0);
   
-  virtual CTSE_Info*
-  ResolveConflict(const CSeq_id_Handle& handle,
-                  const TTSESet&        tse_set);
+    virtual CTSE_Info*
+    ResolveConflict(const CSeq_id_Handle& handle,
+                    const TTSESet&        tse_set);
   
-  virtual void GC(void);
-  virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+    virtual void GC(void);
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
   
 private:
-  class CCmpTSE
-  {
+    class CCmpTSE
+    {
     private:
-      CSeqref *m_sr;
+        CRef<CSeqref> m_sr;
     public:
-      CCmpTSE(CSeqref *sr)           : m_sr(sr)        {};
-      CCmpTSE(auto_ptr<CSeqref> &asr): m_sr(asr.get()) {};
-      ~CCmpTSE(void) {};
-      operator bool  (void)       const { return m_sr!=0;};
-      bool operator< (const CCmpTSE &b) const { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;};
-      bool operator==(const CCmpTSE &b) const { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;};
-      bool operator<=(const CCmpTSE &b) const { return *this == b && *this < b ;};
-      CSeqref& get() const { return *m_sr; };
-  };
-  struct STSEinfo;
-  struct SSeqrefs;
+        CCmpTSE(const CRef<CSeqref>& sr) : m_sr(sr)        {}
+        CCmpTSE(CSeqref* sr)             : m_sr(sr)        {}
+        ~CCmpTSE(void) {}
+
+        operator bool  (void)       const { return m_sr;};
+
+        bool operator< (const CCmpTSE &b) const
+            { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;}
+        bool operator==(const CCmpTSE &b) const
+            { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;}
+        bool operator<=(const CCmpTSE &b) const
+            { return *this == b && *this < b ;}
+
+        CSeqref& get() { return *m_sr; };
+        const CSeqref& get() const { return *m_sr; }
+    };
+    struct STSEinfo;
+    struct SSeqrefs;
   
-  typedef CIntStreamable::TInt             TInt;
+    typedef int                              TMask;
   
-  typedef map<CCmpTSE          ,STSEinfo*> TSr2TSEinfo   ;
-  typedef map<const CSeq_entry*,STSEinfo*> TTse2TSEinfo  ;
-  typedef map<TSeq_id_Key     , SSeqrefs*> TSeqId2Seqrefs;
+    typedef map<CCmpTSE          ,STSEinfo*> TSr2TSEinfo   ;
+    typedef map<const CSeq_entry*,STSEinfo*> TTse2TSEinfo  ;
+    typedef map<TSeq_id_Key     , SSeqrefs*> TSeqId2Seqrefs;
   
-  CReader        *m_Driver;
-  TSr2TSEinfo     m_Sr2TseInfo;
-  TTse2TSEinfo    m_Tse2TseInfo;
+    CReader        *m_Driver;
+    TSr2TSEinfo     m_Sr2TseInfo;
+    TTse2TSEinfo    m_Tse2TseInfo;
   
-  TSeqId2Seqrefs  m_Bs2Sr;
+    TSeqId2Seqrefs  m_Bs2Sr;
   
-  CTimer          m_Timer;
+    CTimer          m_Timer;
   
-  SLeveledMutex   m_Locks;
+    SLeveledMutex   m_Locks;
   
-  STSEinfo       *m_UseListHead;
-  STSEinfo       *m_UseListTail;
-  unsigned        m_TseCount;
-  unsigned        m_TseGC_Threshhold;
-  bool            m_InvokeGC;
-  void            x_UpdateDropList(STSEinfo *p);
-  void            x_DropTSEinfo(STSEinfo *tse);
+    STSEinfo       *m_UseListHead;
+    STSEinfo       *m_UseListTail;
+    unsigned        m_TseCount;
+    unsigned        m_TseGC_Threshhold;
+    bool            m_InvokeGC;
+    void            x_UpdateDropList(STSEinfo *p);
+    void            x_DropTSEinfo(STSEinfo *tse);
   
-  //
-  // private code
-  //
-  const CSeq_id*  x_GetSeqId(const TSeq_id_Key h);
+    //
+    // private code
+    //
+    const CSeq_id*  x_GetSeqId(const TSeq_id_Key h);
   
-  TInt            x_Request2SeqrefMask(const EChoice choice);
-  TInt            x_Request2BlobMask(const EChoice choice);
+    TMask           x_Request2SeqrefMask(const EChoice choice);
+    TMask           x_Request2BlobMask(const EChoice choice);
   
   
-  typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
-  bool            x_GetRecords(const TSeq_id_Key key,const CHandleRange &hrange, EChoice choice,
-      TTSESet* tse_set);
-  bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
-  bool            x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
-  bool            x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask,
-      TTSESet* tse_set);
-  void            x_Check(STSEinfo *me);
+    typedef map<CSeq_id_Handle,CHandleRange> TLocMap;
+    bool            x_GetRecords(const TSeq_id_Key key,
+                                 const CHandleRange &hrange, EChoice choice,
+                                 TTSESet* tse_set);
+    bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
+    bool            x_NeedMoreData(CTSEUpload *tse_up,
+                                   const CSeqref& srp,
+                                   int from,int to, TMask blob_mask);
+    bool            x_GetData(STSEinfo *tse,const CSeqref& srp,
+                              int from,int to, TMask blob_mask,
+                              TTSESet* tse_set);
+    void            x_Check(STSEinfo *me);
 };
 
 
@@ -233,6 +246,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.30  2003/04/15 14:24:07  vasilche
+ * Changed CReader interface to not to use fake streams.
+ *
  * Revision 1.29  2003/03/03 20:34:51  vasilche
  * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
  * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
