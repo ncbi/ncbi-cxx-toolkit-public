@@ -570,6 +570,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  *                     (for "eIO_Read" only) if EOF was detected
  *   eIO_Unknown    -- if an error was detected during the last I/O
  *   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write
+ *   eIO_Timeout    -- if the socket is not yet actually connected
  *   eIO_Success    -- otherwise (incl. eIO_Timeout on last I/O)
  *
  * NOTE:  The SOCK_Read() and SOCK_Wait(eIO_Read) will not return any error
@@ -877,6 +878,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2003/06/12 13:21:21  lavr
+ * Added eIO_Timeout as a return code for SOCK_Status()
+ *
  * Revision 6.38  2003/05/20 21:24:32  lavr
  * SOCK_Write(): note added on writing 0 bytes to a socket
  *
