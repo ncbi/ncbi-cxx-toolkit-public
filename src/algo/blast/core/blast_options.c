@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.45  2003/07/30 18:58:10  dondosha
+ * Removed unused member matrixname from lookup table options
+ *
  * Revision 1.44  2003/07/30 17:15:00  dondosha
  * Minor fixes for very strict compiler warnings
  *
@@ -763,12 +766,6 @@ LookupTableOptionsPtr
 LookupTableOptionsFree(LookupTableOptionsPtr options)
 
 {
-
-	if (options)
-	{
-	  sfree(options->matrixname);
-	}
-
 	sfree(options);
 	return NULL;
 }
@@ -784,7 +781,6 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptionsPtr *options)
    if (program_number != blast_type_blastn) {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
       (*options)->alphabet_size = 25;
-      (*options)->matrixname = strdup("BLOSUM62");
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
       if (program_number == blast_type_blastp)

@@ -138,7 +138,6 @@ extern "C" {
  * Also needed: query sequence and query length.
  */
 typedef struct LookupTableOptions {
-   CharPtr matrixname;  /**< Amino acid substitution matrix */
    Int4 threshold; /**< Score threshold for putting words in a lookup table */
    Int4 lut_type; /**< What kind of lookup table to construct? E.g. blastn 
                      allows for traditional and megablast style lookup table */
