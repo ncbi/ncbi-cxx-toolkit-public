@@ -455,7 +455,7 @@ void CAlnMix::x_Merge()
     CAlnMixMatch * match;
 
     refseq = *(m_Seqs.begin());
-    refseq->m_PositiveStrand = true;
+    refseq->m_PositiveStrand = ! (m_MergeFlags & fNegativeStrand);
     TMatches::iterator match_i = m_Matches.begin();
 
     CRef<CAlnMixSegment> seg;
@@ -901,7 +901,14 @@ void CAlnMix::x_CreateSegmentsVector()
 
     CAlnMixSeq * refseq = (*m_Rows.begin()); 
     // for each refseq segment
-    non_const_iterate (CAlnMixSeq::TStarts, refseq_start_i, refseq->m_Starts) {
+    CAlnMixSeq::TStarts::iterator refseq_start_i;
+    if (refseq->m_PositiveStrand) {
+        refseq_start_i = refseq->m_Starts.begin();
+    } else {
+        refseq_start_i = refseq->m_Starts.end();
+        refseq_start_i--;
+    }
+    while (refseq_start_i != refseq->m_Starts.end()) {
         CAlnMixSegment * refseq_seg = refseq_start_i->second;
 
         // check the gapped segments on the left
@@ -960,6 +967,12 @@ void CAlnMix::x_CreateSegmentsVector()
 
         // add the refseq segment
         m_Segments.push_back(refseq_seg);
+
+        if (refseq->m_PositiveStrand) {
+            refseq_start_i++;
+        } else {
+            refseq_start_i--;
+        }
     }
 }
 
@@ -1162,6 +1175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/01/10 00:11:37  todorov
+* Implemented fNegativeStrand
+*
 * Revision 1.16  2003/01/07 17:23:49  todorov
 * Added conditionally compiled validation code
 *
