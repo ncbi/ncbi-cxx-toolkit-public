@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/10/23 12:43:31  gouriano
+* comment out unused parameters
+*
 * Revision 1.7  2002/06/04 17:18:33  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *
@@ -73,10 +76,10 @@ class CTestDataLoader : public CDataLoader
 {
 public:
     CTestDataLoader(const string& loader_name) : CDataLoader( loader_name) {}
-    virtual bool GetRecords(const CHandleRangeMap& hrmap,
-        const EChoice choice,
-        TTSESet* tse_set = 0) { return false; }
-    virtual bool DropTSE(const CSeq_entry *sep)  {return false;}
+    virtual bool GetRecords(const CHandleRangeMap& /*hrmap*/,
+        const EChoice /*choice*/,
+        TTSESet* /*tse_set = 0*/) { return false; }
+    virtual bool DropTSE(const CSeq_entry* /*sep*/)  {return false;}
     virtual void GC(void) {return;}
 };
 
