@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/29 17:25:16  vasilche
+* Added possibility to change ASNIO mode (mainly for XML output).
+* Fixed warnings on 64 bit compilers.
+*
 * Revision 1.6  1999/11/24 20:18:19  golikov
 * flush moved from CreateSubNodes to PrintChildren -> loose of text fixed
 *
@@ -63,7 +67,12 @@ extern "C" {
 }
 
 CAsnWriteNode::CAsnWriteNode(void)
-    : m_Out(0)
+    : m_Out(0), m_Mode(ASNIO_TEXT)
+{
+}
+
+CAsnWriteNode::CAsnWriteNode(int mode)
+    : m_Out(0), m_Mode(mode)
 {
 }
 
@@ -76,7 +85,7 @@ AsnIoPtr CAsnWriteNode::GetOut(void)
 {
     AsnIoPtr out = m_Out;
     if ( !out ) {
-        out = m_Out = AsnIoNew(ASNIO_TEXT | ASNIO_OUT, 0, this, 0, WriteAsn);
+        out = m_Out = AsnIoNew(m_Mode | ASNIO_OUT, 0, this, 0, WriteAsn);
     }
     return out;
 }

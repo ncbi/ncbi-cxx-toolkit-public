@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/29 17:25:16  vasilche
+* Added possibility to change ASNIO mode (mainly for XML output).
+* Fixed warnings on 64 bit compilers.
+*
 * Revision 1.8  1999/10/21 16:57:11  golikov
 * AsnMemoryWrite mode param added
 *
@@ -95,7 +99,7 @@ void AsnMemoryRead::Init(void)
 
 size_t AsnMemoryRead::Read(char* buffer, size_t size)
 {
-    int count = min(size, m_Size - m_Ptr);
+    size_t count = min(size, m_Size - m_Ptr);
     memcpy(buffer, m_Data + m_Ptr, count);
     m_Ptr += count;
     return count;
@@ -106,7 +110,7 @@ Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
     if ( !data || !buffer )
         return -1;
 
-    return static_cast<AsnMemoryRead*>(data)->Read(buffer, size);
+    return Int2(static_cast<AsnMemoryRead*>(data)->Read(buffer, size));
 }
 
 AsnMemoryWrite::AsnMemoryWrite(Uint2 mode)
@@ -145,7 +149,7 @@ Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
     if ( !data || !buffer )
         return -1;
 
-    return static_cast<AsnMemoryWrite*>(data)->Write(buffer, size);
+    return Int2(static_cast<AsnMemoryWrite*>(data)->Write(buffer, size));
 }
 
 void AsnMemoryWrite::flush(void) const

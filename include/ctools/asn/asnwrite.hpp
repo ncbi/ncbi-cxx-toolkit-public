@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/29 17:25:11  vasilche
+* Added possibility to change ASNIO mode (mainly for XML output).
+* Fixed warnings on 64 bit compilers.
+*
 * Revision 1.6  1999/11/24 20:18:09  golikov
 * flush moved from CreateSubNodes to PrintChildren -> loose of text fixed
 *
@@ -66,6 +70,7 @@ class CAsnWriteNode : public CHTMLNode
 {
 public:
     CAsnWriteNode(void);
+    CAsnWriteNode(int mode); // ASNIO_TEXT or ASNIO_XML
     ~CAsnWriteNode(void);
 
     AsnIoPtr GetOut(void);
@@ -80,6 +85,7 @@ private:
 
     // cached ASN.1 communication interface pointer
     AsnIoPtr m_Out;
+    int m_Mode;
 };
 
 #include <asn/asnwrite.inl>
