@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/04/04 21:33:13  grichenk
+* Fixed GetSequence() for sequences with unresolved segments
+*
 * Revision 1.29  2002/04/03 18:06:47  grichenk
 * Fixed segmented sequence bugs (invalid positioning of literals
 * and gaps). Improved CSeqVector performance.
@@ -463,6 +466,18 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         CSeqMap& seqmap = x_GetSeqMap(rhandle);
         // Omit the last element - it is always eSeqEnd
         CSeqMap::CSegmentInfo seg = seqmap.x_Resolve(point, scope);
+        if (seg.m_Position > point  ||
+            seg.m_Position + seg.m_Length - 1 < point) {
+            // This may happen when the x_Resolve() was unable to
+            // resolve some references before the point and the total
+            // length of the sequence appears to be less than point.
+            // Immitate a gap of length 1.
+            seq_piece->dest_start = point;
+            seq_piece->length = 1;
+            seq_piece->src_data = 0;
+            seq_piece->src_start = 0;
+            return true;
+        }
         switch (seg.m_SegType) {
         case CSeqMap::eSeqData:
             {
@@ -503,6 +518,13 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                         seq_piece->src_start = 0;
                         seq_piece->src_data = tmp;
                     }
+                    return true;
+                }
+                else {
+                    seq_piece->dest_start = seg.m_Position;
+                    seq_piece->length = seg.m_Length;
+                    seq_piece->src_data = 0;
+                    seq_piece->src_start = 0;
                     return true;
                 }
                 break;
