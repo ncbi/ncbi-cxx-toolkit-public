@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.99 2002/06/21 18:29:38 ucko Exp $
+#  $Id: configure.ac,v 1.100 2002/06/24 04:15:54 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1678,8 +1678,7 @@ SYBASE_LIBPATH=
 ## FreeTDS libraries
 freetds=
 if test "$with_ftds" != "no" ; then
-#   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
-   if test "$with_ftds" = "yes" ; then
+   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
       FTDS_LOCAL_PATH="dbapi/driver/ftds/freetds"
       if test -f ${srcdir}/src/$FTDS_LOCAL_PATH/Makefile.in ; then
          FTDS_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
