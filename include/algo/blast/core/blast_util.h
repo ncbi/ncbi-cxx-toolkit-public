@@ -59,6 +59,9 @@ extern "C" {
 
 #define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & 0x03)
 
+/** Number of translation frames */
+#define NUM_FRAMES 6
+
 #if 0
 /** Retrieve a sequence from the BLAST database
  * @param db BLAST database [in]
@@ -261,11 +264,11 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
  * @param nucl_length Length of the nucleotide sequence [in]
  * @param genetic_code The genetic code to be used for translations,
  *                     in ncbistdaa encoding [in]
- * @param translation_buffer_ptr Buffer to hold all translated frames [out]
+ * @param translation_buffer_ptr Buffer to hold the frames of the translated 
+ *                               sequence. [out]
  * @param frame_offsets_ptr Offsets into the translation buffer for each 
- *                          frame [out]
- * @param mixed_seq_ptr If not NULL, will hold a mixed frame sequence for 
- *                      out-of-frame gapping [out]
+ *                          frame. [out]
+ * @param mixed_seq_ptr Pointer to buffer for the mixed frame sequence [out]
  */
 Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
         Int4 nucl_length, Uint1* genetic_code, 
