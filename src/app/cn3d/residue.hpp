@@ -61,7 +61,8 @@ public:
     Residue(StructureBase *parent,
         const ncbi::objects::CResidue& residue, int moleculeID,
         const ResidueGraphList& standardDictionary,
-        const ResidueGraphList& localDictionary);
+        const ResidueGraphList& localDictionary,
+        int nResidues, int moleculeType);
     ~Residue(void);
 
     // public data
@@ -140,6 +141,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/03/15 18:53:49  thiessen
+* don't draw single-residue heterogens in aa/nuc style
+*
 * Revision 1.20  2004/02/19 17:05:05  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

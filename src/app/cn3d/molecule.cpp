@@ -141,7 +141,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     for (i=graph.GetResidue_sequence().begin(); i!=ie; ++i) {
 
         const Residue *residue = new Residue(this, (*i).GetObject(), id,
-            standardDictionary, localDictionary);
+            standardDictionary, localDictionary, graph.GetResidue_sequence().size(), type);
         residues[residue->id] = residue;
         ++nResidues;
 
@@ -405,6 +405,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/03/15 18:53:49  thiessen
+* don't draw single-residue heterogens in aa/nuc style
+*
 * Revision 1.43  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -140,9 +140,10 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
 }
 
 Residue::Residue(StructureBase *parent,
-    const CResidue& residue, int moleculeID,
-    const ResidueGraphList& standardDictionary,
-    const ResidueGraphList& localDictionary) :
+        const CResidue& residue, int moleculeID,
+        const ResidueGraphList& standardDictionary,
+        const ResidueGraphList& localDictionary,
+        int nResidues, int moleculeType) :
     StructureBase(parent), code(NO_CODE), alphaID(NO_ALPHA_ID), type(eOther)
 {
     // get ID
@@ -196,7 +197,10 @@ Residue::Residue(StructureBase *parent,
     }
 
     // get type
-    if (residueGraph->IsSetResidue_type())
+    if (residueGraph->IsSetResidue_type() &&
+            // handle special case of single-residue "heterogens" composed of a natural residue - leave as 'other'
+            !(nResidues == 1 &&
+                (moleculeType == Molecule::eSolvent || moleculeType == Molecule::eNonpolymer || moleculeType == Molecule::eOther)))
         type = static_cast<eType>(residueGraph->GetResidue_type());
 
     // get StructureObject* parent
@@ -456,6 +460,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/03/15 18:53:49  thiessen
+* don't draw single-residue heterogens in aa/nuc style
+*
 * Revision 1.34  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
