@@ -121,6 +121,9 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("max_feat", "MaxFeat",
                             "Max number of features to iterate",
                             CArgDescriptions::eInteger, "0");
+    arg_desc->AddDefaultKey("depth", "depth",
+                            "Max depth of segments to iterate",
+                            CArgDescriptions::eInteger, "100");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -621,6 +624,7 @@ int CDemoApp::Run(void)
     if ( args["no_sort"] )
         order = SAnnotSelector::eSortOrder_None;
     int max_feat = args["max_feat"].AsInteger();
+    int depth = args["depth"].AsInteger();
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -729,7 +733,8 @@ int CDemoApp::Run(void)
                              SAnnotSelector()
                              .SetResolveMethod(resolve)
                              .SetSortOrder(order)
-                             .SetMaxSize(max_feat));
+                             .SetMaxSize(max_feat)
+                             .SetResolveDepth(depth));
             for ( ; feat_it;  ++feat_it) {
                 count++;
                 // Get seq-annot containing the feature
@@ -871,6 +876,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/07/08 15:09:44  vasilche
+* Added argument to test depth of segment resolution.
+*
 * Revision 1.28  2003/06/25 20:56:32  grichenk
 * Added max number of annotations to annot-selector, updated demo.
 *
