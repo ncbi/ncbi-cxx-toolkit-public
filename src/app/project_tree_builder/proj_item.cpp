@@ -139,7 +139,7 @@ CProjItem::CProjItem(TProjType type,
                      const list<string>&   libs_3_party,
                      const list<string>&   include_dirs,
                      const list<string>&   defines,
-                     bool expendable)
+                     EMakeFileType maketype)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
@@ -151,7 +151,7 @@ CProjItem::CProjItem(TProjType type,
     m_Libs3Party (libs_3_party),
     m_IncludeDirs(include_dirs),
     m_Defines (defines),
-    m_Expendable(expendable)
+    m_MakeType(maketype)
 {
 }
 
@@ -165,7 +165,7 @@ CProjItem::~CProjItem(void)
 void CProjItem::Clear(void)
 {
     m_ProjType = CProjKey::eNoProj;
-    m_Expendable = false;
+    m_MakeType = eMakeType_Undefined;
 }
 
 
@@ -184,7 +184,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_DatatoolSources= item.m_DatatoolSources;
     m_Defines        = item.m_Defines;
     m_NcbiCLibs      = item.m_NcbiCLibs;
-    m_Expendable     = item.m_Expendable;
+    m_MakeType     = item.m_MakeType;
 }
 
 
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/01/31 16:37:38  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.26  2005/01/10 15:40:09  gouriano
  * Make PTB pick up MSVC tune-up for DLLs
  *

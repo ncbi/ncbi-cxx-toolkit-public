@@ -114,7 +114,7 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
         string module_path = CDirEntry::ConcatPath(dir, 
                                                   base + ".module");
         if ( CDirEntry(module_path).Exists() ) {
-            CSimpleMakeFileContents fc(module_path);
+            CSimpleMakeFileContents fc(module_path, eMakeType_Undefined);
             CSimpleMakeFileContents::TContents::const_iterator p = 
                 fc.m_Contents.find("MODULE_IMPORT");
             if (p != fc.m_Contents.end()) {
@@ -138,7 +138,7 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
 
         if ( CDirEntry(files_path).Exists() ) {
 
-            CSimpleMakeFileContents fc(files_path);
+            CSimpleMakeFileContents fc(files_path, eMakeType_Undefined);
 
             // GENERATED_HPP
             CSimpleMakeFileContents::TContents::const_iterator p = 
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/01/31 16:37:38  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.7  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

@@ -509,8 +509,8 @@ private:
 class CPreBuildEventTool : public IPreBuildEventTool
 {
 public:
-    CPreBuildEventTool(bool expendable)
-        : m_Expendable(expendable)
+    CPreBuildEventTool(EMakeFileType maketype)
+        : m_MakeType(maketype)
     {
     }
     virtual string Name(void) const
@@ -520,13 +520,16 @@ public:
     virtual string CommandLine(void) const
     {
         string command_line;
-        if (m_Expendable) {
-            command_line += "@echo EXPENDABLE project\n";
+        if (m_MakeType != eMakeType_Undefined) {
+            string echo = MakeFileTypeAsString(m_MakeType);
+            if (!echo.empty()) {
+                command_line += "@echo " + echo + " project\n";
+            }
         }
         return command_line;
     }
 private:    
-    bool m_Expendable;
+    EMakeFileType m_MakeType;
 
 	CPreBuildEventTool(const CPreBuildEventTool&);
 	CPreBuildEventTool& operator= (const CPreBuildEventTool&);
@@ -535,8 +538,8 @@ private:
 class CPreBuildEventToolLibImpl : public CPreBuildEventTool // for LIB
 {
 public:
-    CPreBuildEventToolLibImpl(const list<string>& lib_depends, bool expendable)
-        : CPreBuildEventTool(expendable), m_LibDepends(lib_depends)
+    CPreBuildEventToolLibImpl(const list<string>& lib_depends, EMakeFileType maketype)
+        : CPreBuildEventTool(maketype), m_LibDepends(lib_depends)
     {
     }
 
@@ -746,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/01/31 16:38:00  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.21  2004/12/20 21:07:48  gouriano
  * Eliminate compiler warnings
  *

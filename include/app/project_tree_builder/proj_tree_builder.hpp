@@ -67,16 +67,16 @@ struct SMakeProjectT
 
         SMakeInInfo(TMakeinType          type,
                     const list<string>&  names,
-                    bool expendable = false)
+                    EMakeFileType        maketype)
             :m_Type     (type),
              m_ProjNames(names),
-             m_Expendable(expendable)
+             m_MakeType(maketype)
         {
         }
         
         TMakeinType   m_Type;
         list<string>  m_ProjNames;
-        bool m_Expendable;
+        EMakeFileType m_MakeType;
     };
 
     static CProjItem::TProjType GetProjType(const string& base_dir,
@@ -154,7 +154,7 @@ struct SAppProjectT : public SMakeProjectT
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
                              CProjectItemsTree* tree,
-                             bool expendable);
+                             EMakeFileType maketype);
 };
 
 
@@ -173,7 +173,7 @@ struct SLibProjectT : public SMakeProjectT
                              const string&      applib_mfilepath,
                              const TFiles&      makeapp, 
                              CProjectItemsTree* tree,
-                             bool expendable);
+                             EMakeFileType maketype);
 };
 
 
@@ -196,7 +196,7 @@ struct SAsnProjectT : public SMakeProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             bool expendable);
+                             EMakeFileType maketype);
     
     typedef enum {
             eNoAsn,
@@ -226,7 +226,7 @@ struct SAsnProjectSingleT : public SAsnProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             bool expendable);
+                             EMakeFileType maketype);
 };
 
 
@@ -246,7 +246,7 @@ struct SAsnProjectMultipleT : public SAsnProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             bool expendable);
+                             EMakeFileType maketype);
 };
 
 
@@ -265,7 +265,7 @@ struct SMsvcProjectT : public SMakeProjectT
                              const string&      applib_mfilepath,
                              const TFiles&      makemsvc, 
                              CProjectItemsTree* tree,
-                             bool expendable);
+                             EMakeFileType maketype);
 };
 
 
@@ -307,19 +307,24 @@ private:
     static void ProcessDir (const string&         dir_name, 
                             bool                  is_root,
                             const IProjectFilter* filter,
-                            SMakeFiles*           makefiles);
+                            SMakeFiles*           makefiles,
+                            EMakeFileType         maketype);
 
     static void ProcessMakeInFile  (const string& file_name, 
-                                    SMakeFiles*   makefiles);
+                                    SMakeFiles*   makefiles,
+                                    EMakeFileType type);
 
     static void ProcessMakeLibFile (const string& file_name, 
-                                    SMakeFiles*   makefiles);
+                                    SMakeFiles*   makefiles,
+                                    EMakeFileType type);
 
     static void ProcessMakeAppFile (const string& file_name, 
-                                    SMakeFiles*   makefiles);
+                                    SMakeFiles*   makefiles,
+                                    EMakeFileType type);
 
-    static void ProcessUserProjFile (const string& file_name, 
-                                     SMakeFiles*   makefiles);
+    static void ProcessUserProjFile(const string& file_name, 
+                                    SMakeFiles*   makefiles,
+                                    EMakeFileType type);
 
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 
@@ -334,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/01/31 16:38:00  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.9  2004/12/20 15:20:30  gouriano
  * Process macros in library dependencies
  *

@@ -131,9 +131,9 @@ public:
         return m_PreBuilds;
     }
 
-    bool IsExpendable(void) const
+    EMakeFileType GetMakeType(void) const
     {
-        return m_Expendable;
+        return m_MakeType;
     }
 private:
     // Prohibited to:
@@ -174,7 +174,7 @@ private:
 
     list<string> m_NcbiCLibs;
     
-    bool m_Expendable;
+    EMakeFileType m_MakeType;
 };
 
 
@@ -525,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/01/31 16:38:00  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.21  2004/12/20 15:19:58  gouriano
  * Added diagnostic information
  *

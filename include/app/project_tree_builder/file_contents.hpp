@@ -41,6 +41,15 @@
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
+enum EMakeFileType {
+    eMakeType_Undefined  = 0,
+    eMakeType_Expendable = 1,
+    eMakeType_Potential  = 2,
+    eMakeType_Excluded   = 3
+};
+
+string MakeFileTypeAsString(EMakeFileType type);
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CSimpleMakeFileContents --
@@ -58,7 +67,7 @@ public:
     CSimpleMakeFileContents& operator= (
 	    const CSimpleMakeFileContents& contents);
 
-    CSimpleMakeFileContents(const string& file_path);
+    CSimpleMakeFileContents(const string& file_path, EMakeFileType type);
 
     ~CSimpleMakeFileContents(void);
 
@@ -68,6 +77,11 @@ public:
 
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
     void AddDefinition( const string& key, const string& value);
+    
+    EMakeFileType GetMakeType(void) const
+    {
+        return m_Type;
+    }
 
     /// Debug dump
     void Dump(CNcbiOfstream& ostr) const;
@@ -100,6 +114,7 @@ private:
     };
 
     void AddReadyKV(const SKeyValue& kv);
+    EMakeFileType m_Type;
 };
 
 
@@ -108,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/01/31 16:38:00  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.7  2004/07/20 13:39:29  gouriano
  * Added conditional macro definition
  *

@@ -32,6 +32,7 @@
 
 
 #include <app/project_tree_builder/proj_datatool_generated_src.hpp>
+#include <app/project_tree_builder/file_contents.hpp>
 
 #include <corelib/ncbienv.hpp>
 
@@ -105,7 +106,7 @@ public:
               const list<string>&   libs_3_party,
               const list<string>&   include_dirs,
               const list<string>&   defines,
-              bool expendable);
+              EMakeFileType maketype);
     
     ~CProjItem(void);
 
@@ -150,8 +151,8 @@ public:
     /// Libraries from NCBI C Toolkit to link with
     list<string>  m_NcbiCLibs;
     
-    /// If the project is EXPENDABLE
-    bool m_Expendable;
+    /// Type of the project
+    EMakeFileType m_MakeType;
 
 
 private:
@@ -165,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/01/31 16:38:00  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.20  2005/01/10 15:40:49  gouriano
  * Make PTB pick up MSVC tune-up for DLLs
  *

@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 //-----------------------------------------------------------------------------
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
-    m_Expendable = project.m_Expendable;
+    m_MakeType = project.m_MakeType;
     //MSVC project name created from project type and project ID
     m_ProjectName  = CreateProjectName(CProjKey(project.m_ProjType, 
                                                 project.m_ID));
@@ -663,9 +663,9 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
     if (project_context.ProjectType() == CProjKey::eLib) {
         m_PreBuildEvent.reset(new CPreBuildEventToolLibImpl
                                                 (project_context.PreBuilds(),
-                                                 project_context.IsExpendable()));
+                                                 project_context.GetMakeType()));
     } else {
-        m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.IsExpendable()));
+        m_PreBuildEvent.reset(new CPreBuildEventTool(project_context.GetMakeType()));
     }
     m_PreLinkEvent.reset(new CPreLinkEventToolDummyImpl());
 
@@ -955,6 +955,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/01/31 16:37:38  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.45  2005/01/10 15:40:09  gouriano
  * Make PTB pick up MSVC tune-up for DLLs
  *

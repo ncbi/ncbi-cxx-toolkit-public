@@ -35,9 +35,20 @@
 
 BEGIN_NCBI_SCOPE
 
+string MakeFileTypeAsString(EMakeFileType type)
+{
+    switch (type) {
+    case eMakeType_Undefined:  return "";
+    case eMakeType_Expendable: return "EXPENDABLE";
+    case eMakeType_Potential:  return "POTENTIAL";
+    case eMakeType_Excluded:   return "EXCLUDED";
+    default:                   return "INCORRECT!";
+    }
+}
 
 //-----------------------------------------------------------------------------
 CSimpleMakeFileContents::CSimpleMakeFileContents(void)
+    : m_Type( eMakeType_Undefined )
 {
 }
 
@@ -59,9 +70,11 @@ CSimpleMakeFileContents& CSimpleMakeFileContents::operator=
 }
 
 
-CSimpleMakeFileContents::CSimpleMakeFileContents(const string& file_path)
+CSimpleMakeFileContents::CSimpleMakeFileContents(
+    const string& file_path, EMakeFileType type)
 {
     LoadFrom(file_path, this);
+    m_Type = type;
 }
 
 
@@ -73,12 +86,14 @@ CSimpleMakeFileContents::~CSimpleMakeFileContents(void)
 void CSimpleMakeFileContents::Clear(void)
 {
     m_Contents.clear();
+    m_Type = eMakeType_Undefined;
 }
 
 
 void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
 {
     m_Contents = contents.m_Contents;
+    m_Type = contents.m_Type;
 }
 
 
@@ -242,6 +257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/01/31 16:37:38  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.15  2004/10/12 16:17:33  ivanov
  * Cosmetics
  *

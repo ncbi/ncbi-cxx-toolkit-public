@@ -140,12 +140,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         SAsnProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, makelib, tree, info.m_Expendable);
+                                               makeapp, makelib, tree, info.m_MakeType);
                     } else {
                         SAppProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, tree, info.m_Expendable);
+                                               makeapp, tree, info.m_MakeType);
                     }
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eLib) {
@@ -159,12 +159,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                         SAsnProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makeapp, makelib, tree, info.m_Expendable);
+                                               makeapp, makelib, tree, info.m_MakeType);
                     } else {
                         SLibProjectT::DoCreate(source_base_dir, 
                                                proj_name, 
                                                applib_mfilepath, 
-                                               makelib, tree, info.m_Expendable);
+                                               makelib, tree, info.m_MakeType);
                     }
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eAsn) {
@@ -172,14 +172,14 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     SAsnProjectT::DoCreate(source_base_dir, 
                                            proj_name, 
                                            applib_mfilepath, 
-                                           makeapp, makelib, tree, info.m_Expendable);
+                                           makeapp, makelib, tree, info.m_MakeType);
                 }
                 else if (info.m_Type == SMakeProjectT::SMakeInInfo::eMsvc) {
 
                     SMsvcProjectT::DoCreate(source_base_dir,
                                             proj_name,
                                             applib_mfilepath,
-                                            makemsvc, tree, info.m_Expendable);
+                                            makemsvc, tree, info.m_MakeType);
                 }
             }
         }
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/01/31 16:37:38  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.7  2004/12/20 15:29:01  gouriano
  * Preserve original dependency chain for reporting
  *

@@ -375,9 +375,9 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
         string makefile_name = 
             SMakeProjectT::CreateMakeAppLibFileName(lib.m_SourcesBaseDir,
                                                     lib.m_Name);
-        CSimpleMakeFileContents makefile
-                                 (CDirEntry::ConcatPath(lib.m_SourcesBaseDir,
-                                                        makefile_name));
+        CSimpleMakeFileContents makefile(
+            CDirEntry::ConcatPath(lib.m_SourcesBaseDir,makefile_name),
+            eMakeType_Undefined);
         CSimpleMakeFileContents::TContents::const_iterator p = 
             makefile.m_Contents.find("NCBI_C_LIBS");
 
@@ -580,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/01/31 16:37:38  gouriano
+ * Keep track of subproject types and propagate it down the project tree
+ *
  * Revision 1.28  2005/01/10 15:40:09  gouriano
  * Make PTB pick up MSVC tune-up for DLLs
  *
