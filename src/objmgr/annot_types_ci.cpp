@@ -568,7 +568,7 @@ void CAnnotTypes_CI::x_Clear(void)
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
     _ASSERT(it.m_AnnotMappingSet.empty());
-    _ASSERT(it.m_AnnotCount == m_AnnotSet.size());
+    _ASSERT(it.m_AnnotCount == it.m_AnnotSet.size());
     if ( this != &it ) {
         x_Clear();
         // Copy TSE list, set TSE locks
@@ -1301,6 +1301,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2003/10/28 14:46:29  vasilche
+* Fixed wrong _ASSERT().
+*
 * Revision 1.96  2003/10/27 20:07:10  vasilche
 * Started implementation of full annotations' mapping.
 *
