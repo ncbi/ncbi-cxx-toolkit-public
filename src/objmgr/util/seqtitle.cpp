@@ -676,7 +676,7 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
                 BREAK(it);
             }
         }}
-        if (org.Empty()  &&  cds_loc) {
+        if (org.Empty()  &&  cds_loc.NotEmpty()) {
             CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc);
             for (; id; ++id) {
                 CBioseq_Handle na_handle = scope.GetBioseqHandle(*id);
@@ -776,6 +776,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/08/22 15:36:14  ucko
+* Fix stupid MSVC build error by adding yet another redundant .NotEmpty().
+*
 * Revision 1.5  2002/08/21 15:30:00  ucko
 * s_TitleFromProtein: when looking for the organism name, start with the
 * actual product, and deal with references to absent sequences.
