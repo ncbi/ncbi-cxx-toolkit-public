@@ -185,7 +185,7 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
         if (x_IsSpecial(timeout)) {
             m_Timeout = timeout;
         } else { // make a copy
-            m_Timeout = new STimeout(timeout);
+            m_Timeout = new STimeout(*timeout);
         }
         if ( !x_IsSpecial(old_timeout) ) {
             delete old_timeout;
@@ -275,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/06/22 22:57:35  ucko
+* Fix typo in SetTimeout.
+*
 * Revision 1.6  2004/06/22 21:10:03  ucko
 * Add accessors for service, format, and retry limit.
 * Save requested timeout, and apply it to new connections; this should
