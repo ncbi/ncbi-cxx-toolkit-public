@@ -33,6 +33,7 @@
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
+#include <serial/typeinfo.hpp>
 #include <serial/soap/soap_message.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -108,6 +109,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/30 13:50:05  gouriano
+* Added typeinfo.hpp include
+*
 * Revision 1.5  2004/06/28 17:07:29  gouriano
 * added const qualifier to the definition of Storage::const_iterator
 *
