@@ -43,6 +43,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/phi_extend.h>
 
+
 #if 0
 extern OIDListPtr LIBCALL 
 BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
@@ -245,16 +246,22 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info, 
                                   score_options->is_ooframe);
          
-#ifdef DO_LINK_HSPS
-         if (hit_options->do_sum_stats == TRUE)
-            status = BLAST_LinkHsps(hsp_list);
-         else
-#endif
+         if (hit_options->do_sum_stats == TRUE) {
+            status = BLAST_LinkHsps(program_number, hsp_list, query_info,
+                        subject, gap_align->sbp, hit_params, 
+                        hit_options->is_gapped);
+         } else if (hit_options->phi_align) {
+            /* These e-values will not be accurate yet, since we don't know
+               the number of pattern occurrencies in the database. That
+               is arbitrarily set to 1 at this time. */
+            PHIGetEvalue(hsp_list, gap_align->sbp);
+         } else {
             /* Calculate e-values for all HSPs */
             status = 
                BLAST_GetNonSumStatsEvalue(program_number, query_info, 
                   hsp_list, hit_options, gap_align->sbp);
-         
+         }
+
          /* Discard HSPs that don't pass the e-value test */
          status = BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
          
@@ -493,10 +500,12 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    aux_struct->ewp = ewp;
 
    /* pick which gapped alignment algorithm to use */
-   if (ext_options->algorithm_type == EXTEND_DYN_PROG)
-     aux_struct->GetGappedScore = BLAST_GetGappedScore;
+   if (phi_lookup)
+      aux_struct->GetGappedScore = PHIGetGappedScore;
+   else if (ext_options->algorithm_type == EXTEND_DYN_PROG)
+      aux_struct->GetGappedScore = BLAST_GetGappedScore;
    else
-     aux_struct->GetGappedScore = BLAST_MbGetGappedScore;
+      aux_struct->GetGappedScore = BLAST_MbGetGappedScore;
 
    offset_array_size = GetOffsetArraySize(lookup_wrap);
 
@@ -748,6 +757,12 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    
    itr = BlastSeqSrcIteratorFree(itr);
    BlastSequenceBlkFree(seq_arg.seq);
+
+   if (hit_options->phi_align) {
+      /* Save the product of effective occurrencies of pattern in query and
+         occurrencies of pattern in database */
+      gap_align->sbp->effective_search_sp *= return_stats->db_hits;
+   }
 
    /* Now sort the hit lists for all queries */
    BLAST_SortResults(results);
