@@ -187,9 +187,7 @@ public:
     CSeqVector& GetSeqVector(void) {
         if ( !m_SeqVector ) {
             m_SeqVector = new CSeqVector
-                (m_BioseqHandle->GetSeqVector
-                 (CBioseq_Handle::eCoding_Iupac,
-                  CBioseq_Handle::eStrand_Plus));
+                (m_BioseqHandle->GetSeqVector(CBioseq_Handle::eCoding_Iupac));
         }
         return *m_SeqVector;
     }
@@ -289,6 +287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/01/22 20:13:02  vasilche
+* Changed use of CBioseqHandle::GetSeqVector() method.
+*
 * Revision 1.14  2003/01/10 00:42:42  todorov
 * Optional sorting of seqs by score
 *
