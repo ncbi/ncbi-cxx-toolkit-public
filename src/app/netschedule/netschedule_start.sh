@@ -33,7 +33,7 @@ netscheduled=${BIN_PATH}netscheduled
 service_wait=15
 mail_to="kuznets@ncbi -c vakatov@ncbi"
 
-
+LD_LIBRARY_PATH=$BIN_PATH; export LD_LIBRARY_PATH
 
 if [ ! -d "$run_dir" ]; then
     Die "Startup directory ( $run_dir ) does not exist"
