@@ -87,12 +87,12 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     string                    prefix, title, suffix;
     string                    organism;
     CBioseq_Handle::TBioseqCore core        = hnd.GetBioseqCore();
-    CConstRef<CTextseq_id>    tsid        = NULL;
-    CConstRef<CPDB_seq_id>    pdb_id      = NULL;
-    CConstRef<CPatent_seq_id> pat_id      = NULL;
-    CConstRef<CDbtag>         general_id  = NULL;
-    CConstRef<CBioSource>     source      = NULL;
-    CConstRef<CMolInfo>       mol_info    = NULL;
+    CConstRef<CTextseq_id>    tsid(NULL);
+    CConstRef<CPDB_seq_id>    pdb_id(NULL);
+    CConstRef<CPatent_seq_id> pat_id(NULL);
+    CConstRef<CDbtag>         general_id(NULL);
+    CConstRef<CBioSource>     source(NULL);
+    CConstRef<CMolInfo>       mol_info(NULL);
     bool                      third_party = false;
     bool                      is_nc       = false;
     bool                      wgs_master  = false;
@@ -774,6 +774,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/11/08 19:43:38  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.7  2002/08/27 15:25:20  ucko
 * Use CSeq_id::IdentifyAccession to improve accession-based tests.
 *

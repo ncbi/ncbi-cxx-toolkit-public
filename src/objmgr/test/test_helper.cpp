@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/11/08 19:43:37  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.17  2002/09/10 19:55:54  grichenk
 * Catch exceptions when resolving seq-maps; new arguments for GetSeqVector()
 *
@@ -856,7 +859,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         try {
-            CConstRef<CSeqMap> seq_map = &handle.CreateResolvedSeqMap();
+            CConstRef<CSeqMap> seq_map(&handle.CreateResolvedSeqMap());
             // Iterate seq-map except the last element
             TSeqPos len = 0;
             for (size_t i = 0; i < seq_map->size(); i++) {
@@ -908,7 +911,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         _ASSERT(seq_str_compl.empty());
     }
 
-    CConstRef<CBioseq> bioseq = &(handle.GetBioseq());
+    CConstRef<CBioseq> bioseq(&(handle.GetBioseq()));
 
     int count = 0;
     // Test CSeq_descr iterator

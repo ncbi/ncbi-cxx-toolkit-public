@@ -135,7 +135,7 @@ int CSampleObjmgrApplication::Run(void)
     }
 
     // Get the Bioseq object.
-    CConstRef<CBioseq> bioseq = &bioseq_handle.GetBioseq();
+    CConstRef<CBioseq> bioseq(&bioseq_handle.GetBioseq());
     // Printout each Seq-id from the Bioseq.
     cout << "ID: ";
     // "iterate" is the same as:
@@ -186,7 +186,7 @@ int CSampleObjmgrApplication::Run(void)
          feat_it;  ++feat_it) {
         feat_count++;
         // Get Seq-annot containing the feature
-        CConstRef<CSeq_annot> annot = &feat_it.GetSeq_annot();
+        CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
     }
     cout << "   [whole]           Any:    " << feat_count << endl;
 
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2002/11/08 19:43:34  grichenk
+ * CConstRef<> constructor made explicit
+ *
  * Revision 1.7  2002/11/04 21:29:01  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *

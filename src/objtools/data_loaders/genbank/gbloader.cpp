@@ -436,7 +436,7 @@ CGBDataLoader::GC(void)
       char b[100];
       GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
 #endif
-      CConstRef<CSeq_entry> se = sep;
+      CConstRef<CSeq_entry> se(sep);
       g.Unlock();
       if(GetDataSource()->DropTSE(*se))
         m_InvokeGC=false;
@@ -820,6 +820,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/11/08 19:43:35  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.42  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

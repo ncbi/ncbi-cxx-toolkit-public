@@ -306,7 +306,7 @@ const CScope::TRequestHistory& CScope::x_GetHistory(void)
 
 void CScope::x_AddToHistory(const CTSE_Info& tse, bool lock)
 {
-    if ( m_History.insert(&tse).second  &&  lock ) {
+    if ( m_History.insert(CConstRef<CTSE_Info>(&tse)).second  &&  lock ) {
         tse.LockCounter();
     }
 }
@@ -409,6 +409,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/11/08 19:43:35  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.34  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

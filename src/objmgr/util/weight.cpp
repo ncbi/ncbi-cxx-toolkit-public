@@ -150,7 +150,7 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
         }
 
         if (is_mature) {
-            locations.insert(&feat->GetLocation());
+            locations.insert(CConstRef<CSeq_loc>(&feat->GetLocation()));
         } else if (is_signal  &&  signal.Empty()) {
             signal = &*feat;
         }
@@ -170,7 +170,7 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
             interval.SetTo(v.size() - 1);
             interval.SetId(*const_cast<CSeq_id*>(core->GetId().front().GetPointer()));
         }
-        locations.insert(whole);
+        locations.insert(CConstRef<CSeq_loc>(whole));
     }
 
     iterate(set<CConstRef<CSeq_loc> >, it, locations) {
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2002/11/08 19:43:38  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.13  2002/11/04 21:29:19  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

@@ -105,7 +105,7 @@ inline
 void CAlnMix::Add(const CDense_seg &ds)
 {
     m_DS.Reset();
-    m_InputDSs.push_back(&ds);
+    m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
 }
 
 
@@ -130,6 +130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/11/08 19:43:33  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.5  2002/11/04 21:28:57  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

@@ -416,7 +416,7 @@ public:
         : m_Ptr(0)
         {
         }
-    CConstRef(TObjectType* ptr)
+    explicit CConstRef(TObjectType* ptr)
         {
             if ( ptr )
                 CRefBase<C>::AddReference(ptr);
@@ -751,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2002/11/08 19:43:29  grichenk
+ * CConstRef<> constructor made explicit
+ *
  * Revision 1.38  2002/11/04 21:30:53  grichenk
  * Made CRef<> constructor explicit, const CRef<> getters
  * return const references/pointers.

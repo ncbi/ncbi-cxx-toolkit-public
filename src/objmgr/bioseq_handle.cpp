@@ -90,14 +90,14 @@ CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
     return CSeqVector(*this,
         use_iupac_coding ? eCoding_Iupac : eCoding_NotSet,
         plus_strand ? eStrand_Plus : eStrand_Minus,
-        *m_Scope, 0);
+        *m_Scope, CConstRef<CSeq_loc>(0));
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         EVectorStrand strand) const
 {
-    return CSeqVector(*this, coding, strand, *m_Scope, 0);
+    return CSeqVector(*this, coding, strand, *m_Scope, CConstRef<CSeq_loc>(0));
 }
 
 
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/11/08 19:43:35  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.22  2002/09/03 21:27:01  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.

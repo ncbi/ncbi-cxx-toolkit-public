@@ -185,7 +185,7 @@ void CTestRangeMap::TestIntervalTree(void) const
     // fill
     for ( int count = 0; count < m_RangeNumber; ) {
         TRange range = RandomRange();
-        m.Insert(range, 0);
+        m.Insert(range, CConstRef<CObject>(0));
         ++count;
         Added(range);
     }
@@ -230,7 +230,7 @@ void CTestRangeMap::TestRangeMap(void) const
     // fill
     for ( int count = 0; count < m_RangeNumber; ) {
         TRange range = RandomRange();
-        m.insert(TMap::value_type(range, 0));
+        m.insert(TMap::value_type(range, CConstRef<CObject>(0)));
         ++count;
         Added(range);
     }
@@ -354,6 +354,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/11/08 19:43:39  grichenk
+ * CConstRef<> constructor made explicit
+ *
  * Revision 1.10  2002/04/16 18:52:16  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

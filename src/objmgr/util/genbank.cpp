@@ -1189,14 +1189,16 @@ bool CGenbankWriter::WriteReference(const CBioseq_Handle& handle) const
 
         for (CSeqdesc_CI it(handle, CSeqdesc::e_Pub);
              it;  ++it) {
-            v.push_back(new CReference(it->GetPub(), everywhere));
+            v.push_back(CConstRef<CReference>
+                        (new CReference(it->GetPub(), everywhere)));
         }
 
         // get references from features
         for (CFeat_CI pub(m_Scope, everywhere, CSeqFeatData::e_Pub);
              pub;  ++pub) {
-            v.push_back(new CReference(pub->GetData().GetPub(),
-                                       pub->GetLocation()));
+            v.push_back(CConstRef<CReference>
+                        (new CReference(pub->GetData().GetPub(),
+                         pub->GetLocation())))                                                                                                                                                                              ;
         }
     }}
 
@@ -2762,6 +2764,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2002/11/08 19:43:38  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.23  2002/10/10 17:57:56  ucko
 * Make most methods const (and m_Stream consequently mutable) to keep
 * WorkShop from complaining when CGenbankWriter is used as a temporary.

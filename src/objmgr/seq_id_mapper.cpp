@@ -151,9 +151,10 @@ TSeq_id_Info CSeq_id_int_Tree::FindEqual(const CSeq_id& id) const
     x_Check(id);
     TIntMap::const_iterator it = m_IntMap.find(x_Get(id));
     if (it != m_IntMap.end()) {
-        return TSeq_id_Info(&x_GetSeq_id(it->second), x_GetKey(it->second));
+        return TSeq_id_Info(CConstRef<CSeq_id>(&x_GetSeq_id(it->second)),
+                            x_GetKey(it->second));
     }
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 
@@ -174,7 +175,8 @@ void CSeq_id_int_Tree::FindMatchStr(string sid,
         if (it == m_IntMap.end())
             return;
         id_list.push_back(TSeq_id_Info(
-            &x_GetSeq_id(it->second), x_GetKey(it->second)));
+            CConstRef<CSeq_id>(&x_GetSeq_id(it->second)),
+            x_GetKey(it->second)));
     }
     catch (CStringException) {
         // Not an integer value
@@ -332,22 +334,25 @@ CSeq_id_Textseq_Tree::x_FindVersionEqual(const TVersions& ver_list,
         if (tid.IsSetVersion()  &&  tid_it.IsSetVersion()) {
             // Compare versions
             if (tid.GetVersion() == tid_it.GetVersion()) {
-                return TSeq_id_Info(&x_GetSeq_id(*vit), x_GetKey(*vit));
+                return TSeq_id_Info
+                    (CConstRef<CSeq_id>(&x_GetSeq_id(*vit)), x_GetKey(*vit));
             }
         }
         else if (tid.IsSetRelease()  &&  tid_it.IsSetRelease()) {
             // Compare releases if no version specified
             if (tid.GetRelease() == tid_it.GetRelease()) {
-                return TSeq_id_Info(&x_GetSeq_id(*vit), x_GetKey(*vit));
+                return TSeq_id_Info
+                    (CConstRef<CSeq_id>(&x_GetSeq_id(*vit)), x_GetKey(*vit));
             }
         }
         else if (!tid.IsSetVersion()  &&  !tid.IsSetRelease()  &&
             !tid_it.IsSetVersion()  &&  !tid_it.IsSetRelease()) {
             // No version/release for both seq-ids
-            return TSeq_id_Info(&x_GetSeq_id(*vit), x_GetKey(*vit));
+            return TSeq_id_Info
+                (CConstRef<CSeq_id>(&x_GetSeq_id(*vit)), x_GetKey(*vit));
         }
     }
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 
@@ -362,23 +367,23 @@ TSeq_id_Info CSeq_id_Textseq_Tree::FindEqual(const CSeq_id& id) const
     if ( tid.IsSetAccession() ) {
         it = m_ByAccession.find(tid.GetAccession());
         if (it == m_ByAccession.end()) {
-            return TSeq_id_Info(0, 0);
+            return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
         }
     }
     else if ( tid.IsSetName() ) {
         it = m_ByName.find(tid.GetName());
         if (it == m_ByName.end()) {
-            return TSeq_id_Info(0, 0);
+            return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
         }
     }
     else {
-        return TSeq_id_Info(0, 0);
+        return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
     }
     TSeq_id_Info info = x_FindVersionEqual(it->second, tid);
     if ( info.first ) {
         return info;
     }
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 
@@ -402,11 +407,11 @@ void CSeq_id_Textseq_Tree::x_FindVersionMatch(const TVersions& ver_list,
             rel_it = vit_ref.GetRelease();
         if (ver == ver_it || ver == 0) {
             id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(*vit), x_GetKey(*vit)));
+                CConstRef<CSeq_id>(&x_GetSeq_id(*vit)), x_GetKey(*vit)));
         }
         else if (rel == rel_it || rel.empty()) {
             id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(*vit), x_GetKey(*vit)));
+                CConstRef<CSeq_id>(&x_GetSeq_id(*vit)), x_GetKey(*vit)));
         }
     }
 }
@@ -449,7 +454,7 @@ void CSeq_id_Textseq_Tree::FindMatchStr(string sid,
     }
     iterate(TVersions, vit, it->second) {
         id_list.push_back(TSeq_id_Info(
-            &x_GetSeq_id(*vit), x_GetKey(*vit)));
+            CConstRef<CSeq_id>(&x_GetSeq_id(*vit)), x_GetKey(*vit)));
     }
 }
 
@@ -792,19 +797,21 @@ TSeq_id_Info CSeq_id_Local_Tree::FindEqual(const CSeq_id& id) const
     if ( oid.IsStr() ) {
         TByStr::const_iterator it = m_ByStr.find(oid.GetStr());
         if (it != m_ByStr.end()) {
-            return
-                TSeq_id_Info(&x_GetSeq_id(it->second), x_GetKey(it->second));
+            return TSeq_id_Info
+                (CConstRef<CSeq_id>(&x_GetSeq_id(it->second)),
+                 x_GetKey(it->second));
         }
     }
     else if ( oid.IsId() ) {
         TById::const_iterator it = m_ById.find(oid.GetId());
         if (it != m_ById.end()) {
-            return
-                TSeq_id_Info(&x_GetSeq_id(it->second), x_GetKey(it->second));
+            return TSeq_id_Info
+                (CConstRef<CSeq_id>(&x_GetSeq_id(it->second)),
+                 x_GetKey(it->second));
         }
     }
     // Not found
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 
@@ -823,7 +830,7 @@ void CSeq_id_Local_Tree::FindMatchStr(string sid,
     TByStr::const_iterator str_it = m_ByStr.find(sid);
     if (str_it != m_ByStr.end()) {
         id_list.push_back(TSeq_id_Info(
-            &x_GetSeq_id(str_it->second), x_GetKey(str_it->second)));
+            CConstRef<CSeq_id>(&x_GetSeq_id(str_it->second)), x_GetKey(str_it->second)));
     }
     try {
         int value = NStr::StringToInt(sid);
@@ -831,7 +838,8 @@ void CSeq_id_Local_Tree::FindMatchStr(string sid,
         if (int_it == m_ById.end())
             return;
         id_list.push_back(TSeq_id_Info(
-            &x_GetSeq_id(int_it->second), x_GetKey(int_it->second)));
+            CConstRef<CSeq_id>(&x_GetSeq_id(int_it->second)),
+            x_GetKey(int_it->second)));
     }
     catch (CStringException) {
         // Not an integer value
@@ -921,24 +929,26 @@ TSeq_id_Info CSeq_id_General_Tree::FindEqual(const CSeq_id& id) const
     const CObject_id& oid = id.GetGeneral().GetTag();
     TDbMap::const_iterator db = m_DbMap.find(id.GetGeneral().GetDb());
     if (db == m_DbMap.end())
-        return TSeq_id_Info(0, 0);
+        return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
     const STagMap& tm = db->second;
     if ( oid.IsStr() ) {
         STagMap::TByStr::const_iterator it = tm.m_ByStr.find(oid.GetStr());
         if (it != tm.m_ByStr.end()) {
             return TSeq_id_Info
-                (&x_GetSeq_id(it->second), x_GetKey(it->second));
+                (CConstRef<CSeq_id>(&x_GetSeq_id(it->second)),
+                 x_GetKey(it->second));
         }
     }
     else if ( oid.IsId() ) {
         STagMap::TById::const_iterator it = tm.m_ById.find(oid.GetId());
         if (it != tm.m_ById.end()) {
             return TSeq_id_Info
-                (&x_GetSeq_id(it->second), x_GetKey(it->second));
+                (CConstRef<CSeq_id>(&x_GetSeq_id(it->second)),
+                 x_GetKey(it->second));
         }
     }
     // Not found
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 
@@ -958,7 +968,7 @@ void CSeq_id_General_Tree::FindMatchStr(string sid,
             db_it->second.m_ByStr.find(sid);
         if (str_it != db_it->second.m_ByStr.end()) {
             id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(str_it->second),
+                CConstRef<CSeq_id>(&x_GetSeq_id(str_it->second)),
                 x_GetKey(str_it->second)));
         }
         try {
@@ -968,7 +978,7 @@ void CSeq_id_General_Tree::FindMatchStr(string sid,
             if (int_it == db_it->second.m_ById.end())
                 return;
             id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(int_it->second),
+                CConstRef<CSeq_id>(&x_GetSeq_id(int_it->second)),
                 x_GetKey(int_it->second)));
         }
         catch (CStringException) {
@@ -1064,17 +1074,17 @@ TSeq_id_Info CSeq_id_Giim_Tree::FindEqual(const CSeq_id& id) const
     const CGiimport_id& gid = id.GetGiim();
     TIdMap::const_iterator id_it = m_IdMap.find(gid.GetId());
     if (id_it == m_IdMap.end())
-        return TSeq_id_Info(0, 0);
+        return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
     iterate(TGiimList, dbr_it, id_it->second) {
         const CGiimport_id& gid2 = x_GetSeq_id(*dbr_it).GetGiim();
         // Both Db and Release must be equal
         if ( !gid.Equals(gid2) ) {
             return TSeq_id_Info
-                (&x_GetSeq_id(*dbr_it), x_GetKey(*dbr_it));
+                (CConstRef<CSeq_id>(&x_GetSeq_id(*dbr_it)), x_GetKey(*dbr_it));
         }
     }
     // Not found
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 
@@ -1095,7 +1105,7 @@ void CSeq_id_Giim_Tree::FindMatchStr(string sid,
             return;
         iterate(TGiimList, git, it->second) {
             id_list.push_back(TSeq_id_Info(
-                &x_GetSeq_id(*git), x_GetKey(*git)));
+                CConstRef<CSeq_id>(&x_GetSeq_id(*git)), x_GetKey(*git)));
         }
     }
     catch (CStringException) {
@@ -1177,34 +1187,36 @@ TSeq_id_Info CSeq_id_Patent_Tree::FindEqual(const CSeq_id& id) const
     TByCountry::const_iterator country_it =
         m_CountryMap.find(pid.GetCit().GetCountry());
     if (country_it == m_CountryMap.end())
-        return TSeq_id_Info(0, 0);
+        return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
     const SPat_idMap& pats = country_it->second;
     if ( pid.GetCit().GetId().IsNumber() ) {
         SPat_idMap::TByNumber::const_iterator num_it =
             pats.m_ByNumber.find(pid.GetCit().GetId().GetNumber());
         if (num_it == pats.m_ByNumber.end())
-            return TSeq_id_Info(0, 0);
+            return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
         SPat_idMap::TBySeqid::const_iterator seqid_it =
             num_it->second.find(pid.GetSeqid());
         if (seqid_it != num_it->second.end()) {
-            return TSeq_id_Info(&x_GetSeq_id(seqid_it->second),
-                x_GetKey(seqid_it->second));
+            return TSeq_id_Info
+                (CConstRef<CSeq_id>(&x_GetSeq_id(seqid_it->second)),
+                 x_GetKey(seqid_it->second));
         }
     }
     else if ( pid.GetCit().GetId().IsApp_number() ) {
         SPat_idMap::TByNumber::const_iterator app_it =
             pats.m_ByApp_number.find(pid.GetCit().GetId().GetApp_number());
         if (app_it == pats.m_ByApp_number.end())
-            return TSeq_id_Info(0, 0);
+            return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
         SPat_idMap::TBySeqid::const_iterator seqid_it =
             app_it->second.find(pid.GetSeqid());
         if (seqid_it != app_it->second.end()) {
-            return TSeq_id_Info(&x_GetSeq_id(seqid_it->second),
-                x_GetKey(seqid_it->second));
+            return TSeq_id_Info
+                (CConstRef<CSeq_id>(&x_GetSeq_id(seqid_it->second)),
+                 x_GetKey(seqid_it->second));
         }
     }
     // Not found
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 void CSeq_id_Patent_Tree::FindMatch(const CSeq_id& id,
@@ -1223,7 +1235,8 @@ void CSeq_id_Patent_Tree::FindMatchStr(string sid,
         if (nit != cit->second.m_ByNumber.end()) {
             iterate(SPat_idMap::TBySeqid, iit, nit->second) {
                 id_list.push_back(TSeq_id_Info(
-                    &x_GetSeq_id(iit->second), x_GetKey(iit->second)));
+                    CConstRef<CSeq_id>(&x_GetSeq_id(iit->second)),
+                    x_GetKey(iit->second)));
             }
         }
         SPat_idMap::TByNumber::const_iterator ait =
@@ -1231,7 +1244,8 @@ void CSeq_id_Patent_Tree::FindMatchStr(string sid,
         if (ait != cit->second.m_ByApp_number.end()) {
             iterate(SPat_idMap::TBySeqid, iit, nit->second) {
                 id_list.push_back(TSeq_id_Info(
-                    &x_GetSeq_id(iit->second), x_GetKey(iit->second)));
+                    CConstRef<CSeq_id>(&x_GetSeq_id(iit->second)),
+                    x_GetKey(iit->second)));
             }
         }
     }
@@ -1350,14 +1364,15 @@ TSeq_id_Info CSeq_id_PDB_Tree::FindEqual(const CSeq_id& id) const
     const CPDB_seq_id& pid = id.GetPdb();
     TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     if (mol_it == m_MolMap.end())
-        return TSeq_id_Info(0, 0);
+        return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
     iterate(TSubMolList, it, mol_it->second) {
         if (pid.Equals(x_GetSeq_id(*it).GetPdb())) {
-            return TSeq_id_Info(&x_GetSeq_id(*it), x_GetKey(*it));
+            return TSeq_id_Info(CConstRef<CSeq_id>(&x_GetSeq_id(*it)),
+                                x_GetKey(*it));
         }
     }
     // Not found
-    return TSeq_id_Info(0, 0);
+    return TSeq_id_Info(CConstRef<CSeq_id>(0), 0);
 }
 
 void CSeq_id_PDB_Tree::FindMatch(const CSeq_id& id,
@@ -1376,7 +1391,8 @@ void CSeq_id_PDB_Tree::FindMatch(const CSeq_id& id,
                 !pid.GetRel().Equals(pid2.GetRel()) )
                 continue;
         }
-        id_list.push_back(TSeq_id_Info(&x_GetSeq_id(*it), x_GetKey(*it)));
+        id_list.push_back(TSeq_id_Info(CConstRef<CSeq_id>(&x_GetSeq_id(*it)),
+                                       x_GetKey(*it)));
     }
 }
 
@@ -1389,7 +1405,7 @@ void CSeq_id_PDB_Tree::FindMatchStr(string sid,
         return;
     iterate(TSubMolList, sub_it, mit->second) {
         id_list.push_back(TSeq_id_Info(
-            &x_GetSeq_id(*sub_it), x_GetKey(*sub_it)));
+            CConstRef<CSeq_id>(&x_GetSeq_id(*sub_it)), x_GetKey(*sub_it)));
     }
 }
 
@@ -1674,6 +1690,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/11/08 19:43:35  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.22  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

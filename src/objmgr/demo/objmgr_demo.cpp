@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/11/08 19:43:36  grichenk
+* CConstRef<> constructor made explicit
+*
 * Revision 1.9  2002/11/04 21:29:13  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -173,7 +176,7 @@ int CDemoApp::Run(void)
     }
 
     // Get the bioseq
-    CConstRef<CBioseq> bioseq = &handle.GetBioseq();
+    CConstRef<CBioseq> bioseq(&handle.GetBioseq());
     // -- use the bioseq: print the first seq-id
     NcbiCout << "First ID = " <<
         (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
@@ -214,7 +217,7 @@ int CDemoApp::Run(void)
          feat_it;  ++feat_it) {
         count++;
         // Get seq-annot containing the feature
-        CConstRef<CSeq_annot> annot = &feat_it.GetSeq_annot();
+        CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
     }
     NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
 
