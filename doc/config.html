@@ -1160,16 +1160,22 @@ put to:
   <li> <i>\\dizzy\public\wxwin\<b>src</b></i>
   <li> <i>\\dizzy\public\wxwin\<b>docs</b></i>
 </ul>
-Your project has to specify all the library names (<b>tiff jpeg pnm xpm zlib wx</b>) in <i>"Project/Settings..."</i>,
-tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
+Your project has to specify all the library names (<b>tiff jpeg pnm xpm zlib wx</b>) in <i>"Project"/"Settings..."</i>,
+tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>. Please note that although the
+wxWindows documentation instructs you to use *.lib in Release mode and *d.lib in Debug mode, we renamed the libraries to have
+the same names in any configuration, but put them in different directories.
 <br>
 You also have to put the correct path to the libraries (either <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
 or <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>, depending on the configuration you are going to use)
 in the field <i>"Additional library path"</i>.
 <p>
 We recommend that you put the include file directory <i>\\dizzy\public\wxwin\<b>include</b></i>
-in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor",
-</i>list <i>"Additional include directories"</i>.
+in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor"</i>,
+list <i>"Additional include directories"</i>. Note that you <b>should not</i> define <tt>__WXDEBUG__</tt> as
+instructed by wxWindows documentation. The wxWindows configuration file <tt>setup.h</tt> was specifically patched to set this
+symbol automatically when in any Debug configuration. Any other wxWindows-related preprocessor symbols should be defined
+as described in documentation (using <i>"Project"/"Settings..."</i>,  tab <i>"C/C++"</i>, category <i>"General"</i>,
+list <i>"Preprocessor definitions"</i>), and they will be propagated to any configuration of the project.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
 Moreover, if one of conversion <a href="msvc_prj.html#scripts">scripts</a> is then applied to your project,
