@@ -1,119 +1,372 @@
-<!-- $Id$ -->
-<!--#set var="TITLE" value="NCBI C++ Toolkit -- Home Page" -->
-<!--#set var="DOCROOT" value="." -->
-<!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
-
-<hr>
-<!--EOW-->
-
-<!--  Main 'chapters'   -->
-
-<ul>
-<li> <h2> Overview </h2></li>
-    <ul>
-    <li>
-    <b>Introduction</b></li>
-
-    <li>
-    <a href="get_started.html"><b>Getting Started</b></a></li>
-
-    </ul><p></p>
-
-<li> <h2> Development Framework </h2></li>
-    <ul>
-    <li>
-    <a href="download.html"><b>Retrieve the Source Code</b></a></li>
-
-
-    <li>
-    <a href="config.html"><b>Configure, Build and Install</b></a></li>
-
-    <li>
-    <a href="makefiles.html"><b>Working with Makefiles</b></a></li>
-
-    <li>
-    <a href="projects.html"><b>Create and Manage Projects</b></a></li>
-
-    <li>
-    <a href="policies.html"><b>Programming Policies and Guidelines</b></a></li>
-
-    </ul><p></p>
-
-<li> <h2> Software </h2></li>
-    <ul>
-    <li>
-    <a href="libs.html"><b>C++ Toolkit Library Reference</b></a>
-    </li>
-
-    <li>
-    <a href="debugging.html"><b>Debugging</b></a>
-    </li>
-
-    <li>
-    <a href="tools.html"><b>Tools and Applications</b></a>
-    </li>
-
-    <li>
-    <a href="examples.html"><b>Examples</b></a></li>
-
-    <li>
-    <a href="tests.html#ref_TestDatatool"><b>Tests</b></a></li>
-
-    <li>
-    <a href="c_toolkit.html"><b>Working with the NCBI C Toolkit</b></a></li>
-
-    </ul><p></p>
-
-<a name="ref_Help"></a>
-<li> <h2> Help and Support </h2></li>
-    <ul>
-    <a name="ref_SBrowser"></a>
-    <li>
-    <a href="source_browser.html"><b>Source Browser</b></a></li>
-
-    <li>
-    <a href="faq.html"><b>FAQ</b> <font size=-1>(Frequently Asked Questions)</font></a></li>
-
-    <li>
-    <a href="mailing_lists.html"><b>Mailing Lists</b></a></li>
-
-    <li>
-    <a href="links.html"><b> Useful Documentation Links</b></a></li><p></p>
-
-    </ul><p></p>
-
-</ul>
-
-<!--#include virtual="./ssi/navlinks.shtml" -->
-
-<table BORDER=0 CELLSPACING=0 WIDTH="607" >
-<script>
-<!--
-print_author('cpp-core', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
-print_author('cpp-core', 'Eugene Vasilchenko');
-print_author('cpp-core', 'Anton Lavrentiev');
-print_author('cpp-core', 'Aaron Ucko');
-print_author('cpp-core', 'Andrey Gourianov');
-print_author('cpp-core', 'Alexey Grichenko');
-print_author('cpp-core', 'Vladimir Ivanov');
-print_author('cpp-core', 'Chris Lanczycki');
-print_author('cpp-core', 'Diane Zimmerman');
-print_author('cpp-core', 'Lewis Geer');
-// -->
-</script>
-</table>
-
-<!--#include virtual="./ssi/footer.shtml" -->
+<HTML><HEAD><TITLE>The NCBI C++ Toolkit</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=utf-8">
+<META content="Karanjit Siyan" name=author>
+<META content="Free Portable C++ Libraries for Unix/Windows/Mac_OS, Free Portable Networking and Interprocess Communication (IPC) library with IOSTREAM adaptors, Free Portable MultiThreading Library, Free Portable CGI and Fast-CGI Library, Free Portable HTML Generation Library, Free Portable SQL Database Access Library, Free Portable C++ wrapper library for BerkeleyDB, Free Portable GZIP and BZ2 C++ Wrapper Library with IOSTREAM adaptors, Free Portable ASN.1 and XML Serialization Library with C++ Code Generator Tool (datatool), Free Portable Date and Time Library, Free Portable File System Function Library, Free Portable Command-Line Argument, Free Portable Configuration and Environment Processing Library, Free Portable Sequence Alignment Algorithms Library, Free Portable BLAST Engine Library, Free Portable Biological Sequences Retrieval and Processing Library, Free Portable Portable FLTK and OpenGL based GUI and graphic libraries, Free Portable CRef smart pointer," 
+name=keywords>
+<META http-equiv=content-script-type content=text/javascript><LINK media=screen 
+href="index_html_files/default.css" type=text/css rel=stylesheet>
+<META content="Microsoft FrontPage 5.0" name=GENERATOR></HEAD>
+<BODY>
+<TABLE height="100%" cellSpacing=0 cellPadding=0 width="100%" border=0>
+  <TBODY>
+  <TR vAlign=top align=middle>
+    <TD class=container>
+      <TABLE cellSpacing=0 cellPadding=0 width=670 border=0>
+        <TBODY>
+        <TR>
+          <TD class=top-area colSpan=3 width="699">
+            <TABLE cellSpacing=0 cellPadding=0 width="100%" border=0>
+              <TBODY>
+              <TR>
+                <TD width="100%">
+                <img border="0" src="index_html_files/toolkit_banner.gif" width="600" height="100"></TD></TR></TBODY></TABLE>
+            <TABLE cellSpacing=0 cellPadding=0 width="100%" border=0>
+              <TBODY>
+              <TR>
+                <TD><IMG height=2 src="index_html_files/blank.gif" width=2 
+                  border=0></TD></TR></TBODY></TABLE>
+            <TABLE cellSpacing=0 cellPadding=0 width="100%" border=0>
+              <TBODY>
+              <TR>
+                <TD class=submenu-container>
+                  &nbsp;</TD></TR>
+              <TR>
+                <TD class=submenu-colour 
+                  style="BACKGROUND-COLOR: #e1c498"><IMG height=2 
+                  src="index_html_files/blank.gif" width=2 
+              border=0></TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD class=middle-left-area width="8"></TD>
+          <TD class=middle-center-area width="517">
+            &nbsp;<TABLE cellSpacing=0 cellPadding=0 border=0>
+              <TBODY>
+              <TR>
+                <TD 
+                style="PADDING-RIGHT: 10px; PADDING-LEFT: 10px; PADDING-BOTTOM: 10px; PADDING-TOP: 10px">
+                  <H1><a href="http://www.ncbi.nlm.nih.gov/">NCBI</a> C++ Toolkit</H1>
+                  <p>NCBI C++ Toolkit provides <b>free</b>, <b>portable</b>, <b>
+                  public domain</b> libraries with <b>no restrictions use</b> - 
+                  on Unix, MS Windows, and  Mac OS platforms:</p>
+                  <ul>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.intro_conn">
+                    Networking and Interprocess Communication (IPC) library</a> 
+                    with 
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.cpp_connection_streams">
+                    IOSTREAM adaptors</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.intro_corelib#intro_threads">
+                    MultiThreading Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.intro_cgi">
+                    CGI and Fast-CGI Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.intro_html">
+                    HTML Generation Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.intro_dbapi">
+                    SQL Database Access Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.chapter.ch_bdb">
+                    C++ wrapper library for BerkeleyDB</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/rwstream_8hpp.html">C++ 
+                    IOSTREAM Adaptor/Wrapper Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/zlib_8hpp.html">GZIP</a> and
+                    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/bzip2_8hpp.html">BZ2</a> C++
+                    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/compress_8hpp.html">Wrapper Library</a> with
+                    <a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/stream_8hpp.html">IOSTREAM adaptors</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.intro_ser">
+                    ASN.1 and XML Serialization Library </a>with C++ 
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.datatool">Code 
+                    Generator Tool (datatool)</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.intro_corelib#intro_time">
+                    Date and Time Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.files_dirs">
+                    File System Function Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.intro_corelib#intro_appframe">
+                    Command-Line Argument, Configuration and Environment 
+                    Processing Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.chapter.ch_algoalign">Sequence Alignment Algorithms Library</a></li>
+                    <li>BLAST Engine Library</li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.section.intro_objmgr">
+                    Biological Sequences Retrieval and Processing Library</a></li>
+                    <li>
+                    <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.chapter.ch_gui">
+                    Portable FLTK and OpenGL based GUI and graphic libraries</a></li>
+                  </ul>
+                  <p>Besides the above, there are a whole lot more useful 
+                  libraries, both general purpose and biotech-related that are 
+                  constantly developed, maintained and used in real-life 
+                  production by hundreds of Web and standalone applications and 
+                  their programmers (also counted in hundreds).</p>
+                  <P align="left">If you are a C++ developer you will find the portable 
+                  nature of the libraries very useful in building cross-platform 
+                  applications even if you do not have much interest in 
+                  Bioinformatics.&nbsp;Libraries such as the ones for the CGI/Fast-CGI, 
+                  HTML, Networking, SQL Database Access,&nbsp; ASN.1 and XML 
+                  Serialization are quite general purpose and can be used in a 
+                  variety of applications outside the Bioinformatics problem 
+                  domain. </P>
+                  <P>The C++ Toolkit undergoes active development with the 
+                  libraries being built every night. The source code is freely 
+                  available through 
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.ftp_download">FTP</a> and 
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.cvs_external">CVS</a>. The documentation for the C++ 
+                  Toolkit is available 
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">online</a> in the 
+                  <a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=Books">NCBI Bookshelf</a> 
+                  format and 
+                  also as 
+                  <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/DOC/PDF/ncbi_toolkit--Apr_27_2004.pdf">downloadable  book in Acrobat&#39;s PDF format</a>.</P>
+                  <A name=source></A>
+                  <H2>Getting The Source Code</H2>
+                  <p>For a current list of the source code archives for 
+                  different operating system/compiler combinations consult the 
+                  current
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.release_notes">Release Notes</a> .</p>
+                  <p>For
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.ftp_download">FTP retrieval</a> consult the indicated link.</p>
+                  <p>For
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.cvs_external">CVS retrieval</a> consult the indicated link.</p>
+                  <P></P>
+                  <A  name=install></A>
+                  <H2>Installing</H2>
+                  <p>Since the C++ Toolkit supports a variety of platforms and 
+                  compilers, the process of building the libraries involves 
+                  determining the platform and compiler specific features as 
+                  well as third-party packages.</p>
+                  <p>This is facilitated by 
+                   
+                  running a platform-independent shell script
+                  <span class="ncbi_script">configure on Unix or boot-strapping 
+                  solution CONFIGURE on MSVC 7.1</span>. Additional details 
+                  on the
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.chapter.ch_config">
+                  installation procedure</a> can be found at the indicated link.
+                  </p>
+                  <a name="public_releases"/>
+                  <H2>Public Releases</H2>
+                  <p>Typically, new public versions of the C++ Toolkit are 
+                  released four times a year. The
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.release_notes">Release Notes</a> are also updated when a new public version 
+                  of the C++ Toolkit becomes available. </p>
+                  <a name="documentation"/>
+                  <H2>Documentation</H2>
+                  <p>The C++ Toolkit
+                  <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
+                  documentation is available online</a> through NCBI&#39;s&nbsp; 
+                  Book Viewer and also as a
+                  <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/DOC/PDF/ncbi_toolkit--CURRENT.pdf">book in PDF format</a>. </p>
+                  <p>The online documentation is updated weekly with the latest 
+                  version available every Thursday. The PDF version is currently 
+                  lagging behind but will be synchronized with the online 
+                  version in the future. </p>
+                  <a name="support"/>
+                  <H2>Support</H2>
+                  <P>The software is provided on an as-is basis. The following 
+                  are some useful mailing lists and other links that can provide 
+                  support:</P>
+                  <ul>
+                    <li>Announces:
+                    <a class="text-ref" href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-announce" target="_new">
+                    <span class="ncbi_url">
+                    http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-announce</span>
+                    </a>(read-only) </li>
+                    <li>Everybody:
+                    <a class="text-ref" href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp" target="_new">
+                    <span class="ncbi_url">
+                    http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp</span> </a>
+                    </li>
+                    <li>Core developers:
+                    <a class="text-ref" href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-core" target="_new">
+                    <span class="ncbi_url">
+                    http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-core</span>
+                    </a></li>
+                    <li>Object Manager:
+                    <a class="text-ref" href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-objmgr" target="_new">
+                    <span class="ncbi_url">
+                    http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-objmgr</span>
+                    </a></li>
+                    <li>GUI:
+                    <a class="text-ref" href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-gui" target="_new">
+                    <span class="ncbi_url">
+                    http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-gui</span>
+                    </a></li>
+                    <li>CVS logs:
+                    <a class="text-ref" href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-cvs" target="_new">
+                    <span class="ncbi_url">
+                    http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-cvs</span>
+                    </a>(read-only) </li>
+                  </ul>
+                  <p>&nbsp;</TD></TR></TBODY></TABLE></TD>
+          <TD class=middle-right-area width="199">
+            <TABLE cellSpacing=0 cellPadding=0 border=0>
+              <TBODY>
+              <TR>
+                <TD 
+                style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 10px; PADDING-TOP: 0px">
+                  <DIV><IMG height=10 src="index_html_files/blank.gif" width=1 
+                  border=0></DIV>
+                  <TABLE cellSpacing=0 cellPadding=0 width="221" border=0>
+                    <TBODY>
+                    <TR>
+                      <TD width="86"><IMG height=1 src="index_html_files/blank.gif" 
+                        width=20 border=0></TD>
+                      <TD class=side-menu-container width="135">
+                        <TABLE cellSpacing=0 cellPadding=0 width="135" 
+border=0 style="border-collapse: collapse" bordercolor="#111111">
+                          <TBODY>
+                          <TR>
+                            <TD class=side-menu-item 
+                            colSpan=2><B>Contents:</B></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a class="page-map" href="#source">The Source Code</a></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a class="page-map" href="#install">Installing</a></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a class="page-map" href="#public_releases">Public 
+                            Releases</a></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a class="page-map" href="#documentation">Documentation</a></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a class="page-map" href="#support">Support</a></TD></TR>
+                          <TR>
+                            <TD style="PADDING-BOTTOM: 3px; PADDING-TOP: 3px" 
+                            colSpan=2>
+                              <TABLE cellSpacing=0 cellPadding=0 width="100%" 
+                              border=0>
+                                <TBODY>
+                                <TR>
+                                <TD 
+                                background=index_html_files/dotted-line.gif><IMG 
+                                height=1 src="index_html_files/blank.gif" 
+                                width=1 border=0></TD></TR></TBODY></TABLE></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item colSpan=2><B>Installation 
+                            Links:</B></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.release_notes">Release Notes</a></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.ftp_download">
+                            FTP Download</a></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.cvs_external">
+                            CVS Retrieval</a></TD></TR>
+                          <TR>
+                            <TD style="PADDING-BOTTOM: 3px; PADDING-TOP: 3px" 
+                            colSpan=2>
+                              <TABLE cellSpacing=0 cellPadding=0 width="100%" 
+                              border=0>
+                                <TBODY>
+                                <TR>
+                                <TD 
+                                background=index_html_files/dotted-line.gif><IMG 
+                                height=1 src="index_html_files/blank.gif" 
+                                width=1 border=0></TD></TR></TBODY></TABLE></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item colSpan=2><B>Documentation 
+                            Links:</B></TD></TR>
+                          <TR>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">Online documentation</a></TD></TR>
+                          <tr>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a href="ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools++/DOC/PDF/ncbi_toolkit--CURRENT.pdf">PDF 
+                            documentation</a></TD>
+                          </tr>
+                          <tr>
+                            <TD style="PADDING-BOTTOM: 3px; PADDING-TOP: 3px" 
+                            colSpan=2>
+                              <TABLE cellSpacing=0 cellPadding=0 width="100%" 
+                              border=0>
+                                <TBODY>
+                                <TR>
+                                <TD 
+                                background=index_html_files/dotted-line.gif><IMG 
+                                height=1 src="index_html_files/blank.gif" 
+                                width=1 border=0></TD></TR></TBODY></TABLE></TD>
+                          </tr>
+                          <tr>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px" colspan="2"><b>Other 
+                            Links:</b></TD>
+                          </tr>
+                          <tr>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-RIGHT: 3px">•</TD>
+                            <TD class=side-menu-item-thin 
+                            style="PADDING-LEFT: 0px">
+                            <a href="http://www.ncbi.nlm.nih.gov">NCBI Home Page</a></TD>
+                          </tr>
+                          </TBODY></TABLE></TD></TR></TBODY></TABLE>
+                  <P></P><A href="http://www.nitrobit.de/">
+                  </A></TD></TR>
+              <TR>
+                <TD 
+                style="PADDING-RIGHT: 0px; PADDING-LEFT: 0px; PADDING-BOTTOM: 0px; PADDING-TOP: 0px">&nbsp;</TD></TR></TBODY></TABLE></TD></TR>
+        <TR>
+          <TD class=bottom-area colSpan=3 width="699">
+            <TABLE cellSpacing=0 cellPadding=0 width="100%" border=0>
+              <TBODY>
+              <TR>
+                <TD background=index_html_files/dotted-line.gif><IMG height=1 
+                  src="index_html_files/blank.gif" width=1 
+              border=0></TD></TR></TBODY></TABLE>
+            <TABLE cellSpacing=0 cellPadding=0 width="100%" border=0>
+              <TBODY>
+              <TR>
+                <TD class=legalese>
+                <p style="text-align: center"><b><font size="1">
+                <a href="http://www.ncbi.nlm.nih.gov">NCBI Home Page</a></font></b><br>
+                </p>
+                <center><small><a href="http://www.ncbi.nlm.nih.gov/About/disclaimer.html">Copyright 
+                and Disclaimer</a></small></center>
+&nbsp;</TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></BODY></HTML>
