@@ -76,7 +76,7 @@ CScope::CScope(CObjectManager& objmgr)
 
 CScope::~CScope(void)
 {
-    if ( bool(m_Impl) && m_Impl->m_HeapScope == this ) {
+    if ( m_Impl && m_Impl->m_HeapScope == this ) {
         m_Impl->m_HeapScope = 0;
     }
 }
@@ -357,6 +357,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.112  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *

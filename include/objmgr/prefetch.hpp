@@ -177,7 +177,7 @@ CBioseq_Handle CPrefetchToken::NextBioseqHandle(CScope& scope)
 inline
 CPrefetchToken::operator bool(void) const
 {
-    return bool(m_Impl)  &&  bool(*m_Impl);
+    return m_Impl  &&  *m_Impl;
 }
 
 
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.7  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *

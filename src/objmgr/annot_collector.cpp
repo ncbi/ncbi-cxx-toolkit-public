@@ -1290,7 +1290,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     continue;
                 }
 
-                bool is_circular = bool(aoit->second.m_HandleRange)  &&
+                bool is_circular = aoit->second.m_HandleRange  &&
                     aoit->second.m_HandleRange->GetData().IsCircular();
                 need_unique |= is_circular;
                 CAnnotObject_Ref annot_ref(annot_info);
@@ -1797,6 +1797,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.43  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

@@ -109,7 +109,7 @@ class NCBI_XOBJMGR_EXPORT CInitMutex_Base
 public:
     operator bool(void) const
         {
-            return m_Object;
+            return m_Object.NotEmpty();
         }
     bool operator!(void) const
         {
@@ -283,6 +283,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.4  2004/09/13 18:31:20  vasilche
 * Fixed ASSERT condition.
 *

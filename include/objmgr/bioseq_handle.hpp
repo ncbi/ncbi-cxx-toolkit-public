@@ -549,7 +549,7 @@ const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 inline
 CBioseq_Handle::operator bool(void)  const
 {
-    return m_Info;
+    return m_Info.NotEmpty();
 }
 
 
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2005/01/12 17:16:13  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.69  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

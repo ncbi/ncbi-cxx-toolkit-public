@@ -62,7 +62,7 @@ public:
 
     operator bool(void) const
         {
-            return m_Info;
+            return m_Info.NotEmpty();
         }
     bool operator!(void) const
         {

@@ -121,8 +121,7 @@ const CAnnotTypes_CI::TAnnotSet& CAnnotTypes_CI::x_GetAnnotSet(void) const
 inline
 bool CAnnotTypes_CI::IsValid(void) const
 {
-    return bool(m_DataCollector)
-        &&  m_CurrAnnot != x_GetAnnotSet().end();
+    return m_DataCollector &&  m_CurrAnnot != x_GetAnnotSet().end();
 }
 
 
@@ -191,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/01/12 17:16:13  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.72  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

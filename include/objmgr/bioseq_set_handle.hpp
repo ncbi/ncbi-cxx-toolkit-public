@@ -469,7 +469,7 @@ const CBioseq_set_Info& CBioseq_set_Handle::x_GetInfo(void) const
 inline
 CBioseq_set_Handle::operator bool(void) const
 {
-    return m_Info;
+    return m_Info.NotEmpty();
 }
 
 
@@ -546,6 +546,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/01/12 17:16:13  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.13  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *

@@ -121,7 +121,7 @@ struct SSeqMatch_TSE
 
     operator bool(void) const
         {
-            return m_Bioseq;
+            return m_Bioseq.NotEmpty();
         }
     bool operator!(void) const
         {

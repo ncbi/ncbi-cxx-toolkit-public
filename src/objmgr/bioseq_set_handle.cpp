@@ -117,7 +117,7 @@ bool CBioseq_set_Handle::IsSetId(void) const
 
 bool CBioseq_set_Handle::CanGetId(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetId();
+    return m_Info  &&  x_GetInfo().CanGetId();
 }
 
 
@@ -135,7 +135,7 @@ bool CBioseq_set_Handle::IsSetColl(void) const
 
 bool CBioseq_set_Handle::CanGetColl(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetColl();
+    return m_Info  &&  x_GetInfo().CanGetColl();
 }
 
 
@@ -153,7 +153,7 @@ bool CBioseq_set_Handle::IsSetLevel(void) const
 
 bool CBioseq_set_Handle::CanGetLevel(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetLevel();
+    return m_Info  &&  x_GetInfo().CanGetLevel();
 }
 
 
@@ -171,7 +171,7 @@ bool CBioseq_set_Handle::IsSetClass(void) const
 
 bool CBioseq_set_Handle::CanGetClass(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetClass();
+    return m_Info  &&  x_GetInfo().CanGetClass();
 }
 
 
@@ -189,7 +189,7 @@ bool CBioseq_set_Handle::IsSetRelease(void) const
 
 bool CBioseq_set_Handle::CanGetRelease(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetRelease();
+    return m_Info  &&  x_GetInfo().CanGetRelease();
 }
 
 
@@ -207,7 +207,7 @@ bool CBioseq_set_Handle::IsSetDate(void) const
 
 bool CBioseq_set_Handle::CanGetDate(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetDate();
+    return m_Info  &&  x_GetInfo().CanGetDate();
 }
 
 
@@ -225,7 +225,7 @@ bool CBioseq_set_Handle::IsSetDescr(void) const
 
 bool CBioseq_set_Handle::CanGetDescr(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetDescr();
+    return m_Info  &&  x_GetInfo().CanGetDescr();
 }
 
 
@@ -492,6 +492,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.13  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *

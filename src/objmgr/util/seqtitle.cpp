@@ -704,7 +704,7 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
         }
         if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
             // XXX - gene_feat might not always be exactly what we want
-            if (bool(gene) && gene->IsSetLocus_tag()) {
+            if (gene && gene->IsSetLocus_tag()) {
                 result += ' ' + gene->GetLocus_tag();
             }
         }
@@ -865,6 +865,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.48  2004/12/22 15:56:46  vasilche
 * Updated for new API in CSeqMap.
 *

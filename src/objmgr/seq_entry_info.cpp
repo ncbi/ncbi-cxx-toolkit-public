@@ -472,7 +472,7 @@ void CSeq_entry_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 bool CSeq_entry_Info::IsSetDescr(void) const
 {
     x_Update(fNeedUpdate_descr);
-    return bool(m_Contents) && m_Contents->IsSetDescr();
+    return m_Contents && m_Contents->IsSetDescr();
 }
 
 
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/01/12 17:16:14  vasilche
+ * Avoid performance warning on MSVC.
+ *
  * Revision 1.20  2004/10/07 14:03:32  vasilche
  * Use shared among TSEs CTSE_Split_Info.
  * Use typedefs and methods for TSE and DataSource locking.

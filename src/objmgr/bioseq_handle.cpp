@@ -166,7 +166,7 @@ bool CBioseq_Handle::IsSetId(void) const
 
 bool CBioseq_Handle::CanGetId(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetId();
+    return m_Info  &&  x_GetInfo().CanGetId();
 }
 
 
@@ -184,7 +184,7 @@ bool CBioseq_Handle::IsSetDescr(void) const
 
 bool CBioseq_Handle::CanGetDescr(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetDescr();
+    return m_Info  &&  x_GetInfo().CanGetDescr();
 }
 
 
@@ -202,7 +202,7 @@ bool CBioseq_Handle::IsSetInst(void) const
 
 bool CBioseq_Handle::CanGetInst(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst();
+    return m_Info  &&  x_GetInfo().CanGetInst();
 }
 
 
@@ -220,7 +220,7 @@ bool CBioseq_Handle::IsSetInst_Repr(void) const
 
 bool CBioseq_Handle::CanGetInst_Repr(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Repr();
+    return m_Info  &&  x_GetInfo().CanGetInst_Repr();
 }
 
 
@@ -238,7 +238,7 @@ bool CBioseq_Handle::IsSetInst_Mol(void) const
 
 bool CBioseq_Handle::CanGetInst_Mol(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Mol();
+    return m_Info  &&  x_GetInfo().CanGetInst_Mol();
 }
 
 
@@ -256,7 +256,7 @@ bool CBioseq_Handle::IsSetInst_Length(void) const
 
 bool CBioseq_Handle::CanGetInst_Length(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Length();
+    return m_Info  &&  x_GetInfo().CanGetInst_Length();
 }
 
 
@@ -285,7 +285,7 @@ bool CBioseq_Handle::IsSetInst_Fuzz(void) const
 
 bool CBioseq_Handle::CanGetInst_Fuzz(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Fuzz();
+    return m_Info  &&  x_GetInfo().CanGetInst_Fuzz();
 }
 
 
@@ -303,7 +303,7 @@ bool CBioseq_Handle::IsSetInst_Topology(void) const
 
 bool CBioseq_Handle::CanGetInst_Topology(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Topology();
+    return m_Info  &&  x_GetInfo().CanGetInst_Topology();
 }
 
 
@@ -321,7 +321,7 @@ bool CBioseq_Handle::IsSetInst_Strand(void) const
 
 bool CBioseq_Handle::CanGetInst_Strand(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Strand();
+    return m_Info  &&  x_GetInfo().CanGetInst_Strand();
 }
 
 
@@ -339,7 +339,7 @@ bool CBioseq_Handle::IsSetInst_Seq_data(void) const
 
 bool CBioseq_Handle::CanGetInst_Seq_data(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Seq_data();
+    return m_Info  &&  x_GetInfo().CanGetInst_Seq_data();
 }
 
 
@@ -358,7 +358,7 @@ bool CBioseq_Handle::IsSetInst_Ext(void) const
 
 bool CBioseq_Handle::CanGetInst_Ext(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Ext();
+    return m_Info  &&  x_GetInfo().CanGetInst_Ext();
 }
 
 
@@ -376,7 +376,7 @@ bool CBioseq_Handle::IsSetInst_Hist(void) const
 
 bool CBioseq_Handle::CanGetInst_Hist(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().CanGetInst_Hist();
+    return m_Info  &&  x_GetInfo().CanGetInst_Hist();
 }
 
 
@@ -462,7 +462,7 @@ CConstRef<CSynonymsSet> CBioseq_Handle::GetSynonyms(void) const
 bool CBioseq_Handle::IsSynonym(const CSeq_id& id) const
 {
     CConstRef<CSynonymsSet> syns = GetSynonyms();
-    return bool(syns) && syns->ContainsSynonym(CSeq_id_Handle::GetHandle(id));
+    return syns && syns->ContainsSynonym(CSeq_id_Handle::GetHandle(id));
 }
 
 
@@ -742,6 +742,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.79  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

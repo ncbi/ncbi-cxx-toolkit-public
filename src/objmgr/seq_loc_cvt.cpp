@@ -244,7 +244,7 @@ bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
                 m_DstFuzz_from = &src.GetFuzz();
             }
             // normalize left and right fuzz values
-            if ( bool(m_DstFuzz_from) && m_DstFuzz_from->IsLim() &&
+            if ( m_DstFuzz_from && m_DstFuzz_from->IsLim() &&
                  m_DstFuzz_from->GetLim() == CInt_fuzz::eLim_lt ) {
                 m_DstFuzz_from.Reset();
                 m_PartialFlag |= fPartial_from;
@@ -278,12 +278,12 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
             }
         }
         // normalize left and right fuzz values
-        if ( bool(m_DstFuzz_from) && m_DstFuzz_from->IsLim() &&
+        if ( m_DstFuzz_from && m_DstFuzz_from->IsLim() &&
              m_DstFuzz_from->GetLim() == CInt_fuzz::eLim_lt ) {
             m_DstFuzz_from.Reset();
             m_PartialFlag |= fPartial_from;
         }
-        if ( bool(m_DstFuzz_to) && m_DstFuzz_to->IsLim() &&
+        if ( m_DstFuzz_to && m_DstFuzz_to->IsLim() &&
              m_DstFuzz_to->GetLim() == CInt_fuzz::eLim_gt ) {
             m_DstFuzz_to.Reset();
             m_PartialFlag |= fPartial_to;
@@ -659,7 +659,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
     if ( flag == eCnvAlways && IsSpecialLoc() ) {
         SetDstLoc(dst);
     }
-    return *dst;
+    return dst->NotEmpty();
 }
 
 
@@ -732,7 +732,7 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
         bool partial = m_Partial;
         Reset();
         m_Partial = partial;
-        if (bool(cb_loc)  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
+        if (cb_loc  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
             CRef<CCode_break> cb(new CCode_break);
             cb->SetAa(const_cast<CCode_break::TAa&>((*it)->GetAa()));
             cb->SetLoc(*cb_loc);
@@ -799,7 +799,7 @@ void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
     bool partial = m_Partial;
     Reset();
     m_Partial = partial;
-    if (bool(ac_loc)  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
+    if (ac_loc  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
         mapped_feat->SetData()
             .SetRna().SetExt().SetTRNA().SetAnticodon(*ac_loc);
     }
@@ -872,7 +872,7 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
     ref.SetPartial(m_Partial || ref.IsPartial());
     ref.SetTotalRange(m_TotalRange);
     if ( IsSpecialLoc() ) {
-        if ( bool(m_DstFuzz_from) || bool(m_DstFuzz_to) ) {
+        if ( m_DstFuzz_from || m_DstFuzz_to ) {
             CRef<CSeq_loc> mapped_loc;
             SetDstLoc(&mapped_loc);
             ref.SetMappedSeq_loc(mapped_loc);
@@ -1022,7 +1022,7 @@ void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
         CRef<CSeq_loc> cb_loc;
         Convert((*it)->GetLoc(), &cb_loc, 0);
         m_TotalRange = TRange::GetEmpty();
-        if (bool(cb_loc)  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
+        if (cb_loc  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
             CRef<CCode_break> cb(new CCode_break);
             cb->SetAa(const_cast<CCode_break::TAa&>((*it)->GetAa()));
             cb->SetLoc(*cb_loc);
@@ -1082,7 +1082,7 @@ void CSeq_loc_Conversion_Set::ConvertRna(CAnnotObject_Ref& ref,
     Convert(src_anticodon, &ac_loc, 0);
     // Preserve partial flag
     m_TotalRange = TRange::GetEmpty();
-    if (bool(ac_loc)  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
+    if (ac_loc  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
         mapped_feat->SetData()
             .SetRna().SetExt().SetTRNA().SetAnticodon(*ac_loc);
     }
@@ -1265,7 +1265,7 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         if (cvt->ConvertInterval(src)) {
             CRef<CSeq_interval> mapped = cvt->GetDstInterval();
             if ( revert_order ) {
-                if (bool(last_int) && cvt->GetSrc_to() == last_to - 1) {
+                if (last_int && cvt->GetSrc_to() == last_to - 1) {
                     last_int->SetPartialRight(false);
                     mapped->SetPartialLeft(false);
                     //last_int->ResetFuzz_from();
@@ -1274,7 +1274,7 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
                 last_to = cvt->GetSrc_from();
             }
             else {
-                if (bool(last_int) && cvt->GetSrc_from() == last_to + 1) {
+                if (last_int && cvt->GetSrc_from() == last_to + 1) {
                     last_int->SetPartialRight(false);
                     mapped->SetPartialLeft(false);
                     //last_int->ResetFuzz_to();
@@ -1433,7 +1433,7 @@ bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
             CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
             src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint(),
             loc_index);
-        for ( ; mit  &&  !bool(pntA); ++mit) {
+        for ( ; mit  &&  !pntA; ++mit) {
             CSeq_loc_Conversion& cvt = *mit->second;
             cvt.Reset();
             if (cvt.ConvertPoint(src_bond.GetA())) {
@@ -1448,10 +1448,10 @@ bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
             CSeq_id_Handle::GetHandle(src_bond.GetB().GetId()),
             src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint(),
             loc_index);
-        for ( ; mit  &&  !bool(pntB); ++mit) {
+        for ( ; mit  &&  !pntB; ++mit) {
             CSeq_loc_Conversion& cvt = *mit->second;
             cvt.Reset();
-            if (!bool(pntB)  &&  cvt.ConvertPoint(src_bond.GetB())) {
+            if (!pntB  &&  cvt.ConvertPoint(src_bond.GetB())) {
                 pntB = cvt.GetDstPoint();
                 m_TotalRange += cvt.GetTotalRange();
                 res = true;
@@ -1459,21 +1459,21 @@ bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
         }
     }
     CSeq_bond& dst_bond = (*dst)->SetBond();
-    if ( bool(pntA)  ||  bool(pntB) ) {
-        if ( bool(pntA) ) {
+    if ( pntA  ||  pntB ) {
+        if ( pntA ) {
             dst_bond.SetA(*pntA);
         }
         else {
             dst_bond.SetA().Assign(src_bond.GetA());
         }
-        if ( bool(pntB) ) {
+        if ( pntB ) {
             dst_bond.SetB(*pntB);
         }
         else if ( src_bond.IsSetB() ) {
             dst_bond.SetB().Assign(src_bond.GetB());
         }
     }
-    m_Partial |= (!bool(pntA)  ||  !bool(pntB));
+    m_Partial |= (!pntA  ||  !pntB);
     return res;
 }
 
@@ -1586,6 +1586,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.48  2004/12/22 15:56:34  vasilche
 * Updated to changes in CScope_Impl interface.
 *

@@ -72,7 +72,7 @@ public:
 
     operator bool(void) const
         {
-            return m_Object;
+            return m_Object.NotEmpty();
         }
     bool operator!(void) const
         {
@@ -153,7 +153,7 @@ public:
 
     operator bool(void) const
         {
-            return m_Object;
+            return m_Object.NotEmpty();
         }
     bool operator!(void) const
         {

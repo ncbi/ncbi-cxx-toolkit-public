@@ -259,7 +259,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
 
     bool HasLimit(void)
         {
-            return m_LimitObject;
+            return m_LimitObject.NotEmpty();
         }
     SAnnotSelector& SetLimitNone(void);
     SAnnotSelector& SetLimitTSE(const CTSE_Handle& limit);
@@ -407,6 +407,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/01/12 17:16:13  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.42  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

@@ -66,7 +66,7 @@ public:
 
     bool IsSplit(void) const
         {
-            return m_SplitInfo;
+            return m_SplitInfo.NotEmpty();
         }
 
     typedef map<CID2S_Chunk_Id, CConstRef<CID2S_Chunk> > TChunks;
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.6  2004/08/04 14:48:49  vasilche
 * Added exports for MSVC. Added joining of very small chunks with skeleton.
 *

@@ -230,7 +230,7 @@ const CTSE_Handle& CSeq_annot_Handle::GetTSE_Handle(void) const
 inline
 CSeq_annot_Handle::operator bool(void) const
 {
-    return m_Info;
+    return m_Info.NotEmpty();
 }
 
 
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.15  2005/01/06 16:41:30  grichenk
 * Removed deprecated methods
 *

@@ -119,7 +119,7 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
     CFastMutexGuard guard(m_SeqMap_Mtx);
 
     // check for object
-    if ( bool(segment.m_RefObject) && segment.m_ObjType == eSeqData ) {
+    if ( segment.m_RefObject && segment.m_ObjType == eSeqData ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
 
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.15  2004/11/22 16:04:47  grichenk
 * Added IsUnknownLength()
 *

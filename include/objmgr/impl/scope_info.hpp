@@ -443,7 +443,7 @@ bool CTSE_ScopeInfo::CanBeUnloaded(void) const
 inline
 bool CBioseq_ScopeInfo::HasBioseq(void) const
 {
-    return bool(m_Bioseq) || bool(m_UnloadedInfo);
+    return m_Bioseq || m_UnloadedInfo;
 }
 
 
@@ -453,6 +453,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.14  2004/12/28 18:39:46  vasilche
 * Added lost scope lock in CTSE_Handle.
 *

@@ -192,7 +192,7 @@ CSeqTestManager::RunTests(const CSerialObject& obj,
         CRef<CSeq_test_result_set> ref = 
             RunTests(*static_cast<CSerialObject *>(iter.Get().GetObjectPtr()),
                      ctx);
-        if (bool(ref)  &&  ref->Get().size()) {
+        if (ref  &&  ref->Get().size()) {
             CRef<CSeqTestResults> r(new CSeqTestResults());
             r->SetResults(*ref);
             results.push_back(r);
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/01/12 17:17:08  vasilche
+ * Avoid performance warning on MSVC.
+ *
  * Revision 1.6  2004/10/21 21:02:03  jcherry
  * Added test for code-breaks in CDS feature and recording of
  * lengths of protein product and translation.

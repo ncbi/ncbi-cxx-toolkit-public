@@ -504,7 +504,7 @@ CScope_Impl& CSeq_entry_Handle::x_GetScopeImpl(void) const
 inline
 CSeq_entry_Handle::operator bool(void) const
 {
-    return m_Info;
+    return m_Info.NotEmpty();
 }
 
 
@@ -594,6 +594,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.16  2005/01/05 18:43:57  vasilche
 * Added CTSE_Handle::GetTopLevelEntry().
 *

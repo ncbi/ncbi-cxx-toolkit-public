@@ -284,7 +284,7 @@ void CSeqMap::x_SetObject(const CSegment& seg, const CObject& obj)
     // lock for object modification
     CFastMutexGuard guard(m_SeqMap_Mtx);
     // check for object
-    if ( bool(seg.m_RefObject) && seg.m_SegType == seg.m_ObjType ) {
+    if ( seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object
@@ -299,7 +299,7 @@ void CSeqMap::x_SetChunk(const CSegment& seg, CTSE_Chunk_Info& chunk)
     //CFastMutexGuard guard(m_SeqMap_Mtx);
     // check for object
     if ( seg.m_ObjType == eSeqChunk ||
-         bool(seg.m_RefObject) && seg.m_SegType == seg.m_ObjType ) {
+         seg.m_RefObject && seg.m_SegType == seg.m_ObjType ) {
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object

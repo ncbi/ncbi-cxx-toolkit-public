@@ -443,7 +443,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         bool reverse = m_Seg.GetRefMinusStrand();
 
         bool randomize = false;
-        if (cacheCoding == CSeq_data::e_Ncbi2na  &&  bool(m_Randomizer)) {
+        if (cacheCoding == CSeq_data::e_Ncbi2na  &&  m_Randomizer) {
             cacheCoding = CSeq_data::e_Ncbi4na;
             randomize = true;
         }
@@ -519,7 +519,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         break;
     }
     case CSeqMap::eSeqGap:
-        if (m_Coding == CSeq_data::e_Ncbi2na  &&  bool(m_Randomizer)) {
+        if (m_Coding == CSeq_data::e_Ncbi2na  &&  m_Randomizer) {
             fill(m_Cache, m_Cache + count,
                 CSeqVector::x_GetGapChar(CSeq_data::e_Ncbi4na));
             m_Randomizer->RandomizeData(m_Cache, count, start);
@@ -773,6 +773,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.39  2004/12/22 15:56:18  vasilche
 * Added CTSE_Handle.
 * Allow used TSE linking.

@@ -62,7 +62,7 @@ public:
     // check is scope is not null
     bool IsSet(void) const
         {
-            return m_Scope;
+            return m_Scope.NotEmpty();
         }
     bool IsNull(void) const
         {
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.3  2004/12/22 15:56:13  vasilche
 * Removed bool operator to avoid ambiguity on Sun.
 *

@@ -104,7 +104,7 @@ CConstRef<CSeq_entry> CSeq_entry_Handle::GetSeq_entryCore(void) const
 
 bool CSeq_entry_Handle::HasParentEntry(void) const
 {
-    return bool(m_Info)  &&  x_GetInfo().HasParent_Info();
+    return m_Info  &&  x_GetInfo().HasParent_Info();
 }
 
 
@@ -495,6 +495,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.14  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *

@@ -236,7 +236,7 @@ bool CBioseq_set_Info::IsSetId(void) const
 inline
 bool CBioseq_set_Info::CanGetId(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetId();
+    return m_Object  &&  m_Object->CanGetId();
 }
 
 
@@ -271,7 +271,7 @@ bool CBioseq_set_Info::IsSetColl(void) const
 inline
 bool CBioseq_set_Info::CanGetColl(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetColl();
+    return m_Object  &&  m_Object->CanGetColl();
 }
 
 
@@ -306,7 +306,7 @@ bool CBioseq_set_Info::IsSetLevel(void) const
 inline
 bool CBioseq_set_Info::CanGetLevel(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetLevel();
+    return m_Object  &&  m_Object->CanGetLevel();
 }
 
 
@@ -341,7 +341,7 @@ bool CBioseq_set_Info::IsSetClass(void) const
 inline
 bool CBioseq_set_Info::CanGetClass(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetClass();
+    return m_Object  &&  m_Object->CanGetClass();
 }
 
 
@@ -376,7 +376,7 @@ bool CBioseq_set_Info::IsSetRelease(void) const
 inline
 bool CBioseq_set_Info::CanGetRelease(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetRelease();
+    return m_Object  &&  m_Object->CanGetRelease();
 }
 
 
@@ -411,7 +411,7 @@ bool CBioseq_set_Info::IsSetDate(void) const
 inline
 bool CBioseq_set_Info::CanGetDate(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetDate();
+    return m_Object  &&  m_Object->CanGetDate();
 }
 
 
@@ -446,7 +446,7 @@ bool CBioseq_set_Info::IsSetSeq_set(void) const
 inline
 bool CBioseq_set_Info::CanGetSeq_set(void) const
 {
-    return bool(m_Object)  &&  m_Object->CanGetSeq_set();
+    return m_Object  &&  m_Object->CanGetSeq_set();
 }
 
 
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.6  2004/08/19 14:20:58  vasilche
 * Added splitting of whole Bioseqs.
 *

@@ -189,7 +189,7 @@ bool CObjectManager::RevokeDataLoader(CDataLoader& loader)
     }
     TDataSourceLock lock = x_RevokeDataLoader(&loader);
     guard.Release();
-    return lock;
+    return lock.NotEmpty();
 }
 
 
@@ -204,7 +204,7 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
     }
     TDataSourceLock lock = x_RevokeDataLoader(loader);
     guard.Release();
-    return lock;
+    return lock.NotEmpty();
 }
 
 
@@ -383,7 +383,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
                      loader_name << " already registered");
         }
         TMapToSource::const_iterator it = m_mapToSource.find(&loader);
-        _ASSERT(it != m_mapToSource.end() && bool(it->second));
+        _ASSERT(it != m_mapToSource.end() && it->second);
         return it->second;
     }
     ins.first->second = &loader;
@@ -477,6 +477,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.45  2004/12/22 15:56:10  vasilche
 * ReleaseDataSource made public.
 * Removed obsolete DebugDump.

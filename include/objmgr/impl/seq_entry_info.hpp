@@ -223,7 +223,7 @@ protected:
 inline
 bool CSeq_entry_Info::HasSeq_entry(void) const
 {
-    return m_Object;
+    return m_Object.NotEmpty();
 }
 
 
@@ -268,6 +268,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.16  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.

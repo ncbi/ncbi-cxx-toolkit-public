@@ -182,7 +182,7 @@ CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 inline
 bool CSeq_annot_Info::x_HasSNP_annot_Info(void) const
 {
-    return m_SNP_Info;
+    return m_SNP_Info.NotEmpty();
 }
 
 
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.18  2004/12/22 15:56:27  vasilche
 * Use SAnnotObjectsIndex.
 *

@@ -199,7 +199,7 @@ CScope_Impl::x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                            CRef<CSeq_entry_Info> entry,
                            int index)
 {
-    _ASSERT(seqset && bool(entry));
+    _ASSERT(seqset && entry);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
 
@@ -216,7 +216,7 @@ CBioseq_EditHandle
 CScope_Impl::x_SelectSeq(const CSeq_entry_EditHandle& entry,
                          CRef<CBioseq_Info> bioseq)
 {
-    _ASSERT(entry && bool(bioseq));
+    _ASSERT(entry && bioseq);
     _ASSERT(entry.Which() == CSeq_entry::e_not_set);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
@@ -234,7 +234,7 @@ CBioseq_set_EditHandle
 CScope_Impl::x_SelectSet(const CSeq_entry_EditHandle& entry,
                          CRef<CBioseq_set_Info> seqset)
 {
-    _ASSERT(entry && bool(seqset));
+    _ASSERT(entry && seqset);
     _ASSERT(entry.Which() == CSeq_entry::e_not_set);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
@@ -252,7 +252,7 @@ CSeq_annot_EditHandle
 CScope_Impl::x_AttachAnnot(const CSeq_entry_EditHandle& entry,
                            CRef<CSeq_annot_Info> annot)
 {
-    _ASSERT(entry && bool(annot));
+    _ASSERT(entry && annot);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
 
@@ -776,7 +776,7 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
             TReadLockGuard rguard(m_Scope_Conf_RWLock);
             info = x_GetBioseq_Info(id, get_flag, match);
         }}
-        if ( bool(info) && info->HasBioseq() ) {
+        if ( info && info->HasBioseq() ) {
             ret = GetBioseqHandle(id, *info);
         }
     }
@@ -1214,7 +1214,7 @@ CScope_Impl::TIds CScope_Impl::GetIds(const CSeq_id_Handle& idh)
     SSeqMatch_Scope match;
     CRef<CBioseq_ScopeInfo> info =
         x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
-    if ( bool(info)  &&  info->HasBioseq() ) {
+    if ( info  &&  info->HasBioseq() ) {
         return info->GetIds();
     }
     // Unknown bioseq, try to find in data sources

@@ -185,13 +185,13 @@ bool CPriorityTree::IsEmpty(void) const
 inline
 bool CPriorityNode::IsTree(void) const
 {
-    return m_SubTree;
+    return m_SubTree.NotEmpty();
 }
 
 inline
 bool CPriorityNode::IsLeaf(void) const
 {
-    return m_Leaf;
+    return m_Leaf.NotEmpty();
 }
 
 inline
@@ -259,6 +259,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/12 17:16:14  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.14  2004/12/22 15:56:25  vasilche
 * Implemented deep copying of CPriorityTree.
 *
