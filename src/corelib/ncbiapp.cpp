@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/08/20 14:58:10  vakatov
+* Get rid of some compilation warnings
+*
 * Revision 1.32  2001/08/10 18:26:07  vakatov
 * Allow user to throw "CArgException" (and thus force USAGE printout
 * with user-provided explanation) not from any of Init(), Run() or Exit().
@@ -351,7 +354,7 @@ int CNcbiApplication::AppMain
             LOG_POST(m_ArgDesc->PrintUsage(str));
             exit_code = 0;
         }
-        catch (CArgException& e) {
+        catch (CArgException&) {
             throw;
         }
         catch (exception& e) {
@@ -364,7 +367,7 @@ int CNcbiApplication::AppMain
             try {
                 exit_code = Run();
             }
-            catch (CArgException& e) {
+            catch (CArgException&) {
                 throw;
             }
             catch (exception& e) {
@@ -377,7 +380,7 @@ int CNcbiApplication::AppMain
         try {
             Exit();
         }
-        catch (CArgException& e) {
+        catch (CArgException&) {
             throw;
         }
         catch (exception& e) {
