@@ -528,8 +528,9 @@ void CAlnMix::x_Merge()
             if (ds_cnt == m_InputDSs.size()) {
                 m_SingleRefseq = true;
                 if ( !first_refseq ) {
+                    CRef<CAlnMixSeq> refseq = *it;
                     m_Seqs.erase(it);
-                    m_Seqs.insert(m_Seqs.begin(), *it);
+                    m_Seqs.insert(m_Seqs.begin(), refseq);
                 }
                 break;
             }
@@ -2175,6 +2176,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.113  2004/10/26 17:46:32  todorov
+* Prevented iterator invalidation in case refseq needs to be moved to first row
+*
 * Revision 1.112  2004/10/18 15:10:45  todorov
 * Use of OM now only depends on whether scope was provided at construction time
 *
