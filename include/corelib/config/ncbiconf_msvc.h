@@ -1,11 +1,16 @@
 /* $Id$
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
- * Win32, MSVC++ 6.0
+ * MS-Win 32/64, MSVC++ 6.0/.NET
  *
  * NOTE:  Unlike its UNIX counterpart, this configuration header
  *        is manually maintained in order to keep it in-sync with the
  *        "configure"-generated configuration headers.
+ */
+
+
+/*
+ *  Standard Toolkit/MSVC properties
  */
 
 #define NCBI_CXX_TOOLKIT  1
@@ -55,26 +60,15 @@
 #define HAVE_WINDOWS_H   1
 #define HAVE_WSTRING     1
 
-#define HAVE_OPENGL      1
-#define HAVE_FLTK        1
-
-#define HAVE_IOS_REGISTER_CALLBACK 1
-#define HAVE_IOS_XALLOC  1
-
-#define HAVE_ODBC        1
-#define HAVE_ODBCSS_H    1
-
-/* optional parameters */
-/*#define HAVE_PUBSEQ_OS   1/**/
-/*#define HAVE_LIBZ        1/**/
-/*#define HAVE_LIBBZ2      1/**/
-#define HAVE_LIBJPEG     1
-#define HAVE_LIBTIFF     1
-#define HAVE_LIBPNG      1
-#define HAVE_LIBGIF      1
-
 #ifdef _WIN64
 typedef __int64 ssize_t;
 #else
 typedef   int   ssize_t;
 #endif
+
+
+/*
+ *  Site localization
+ */
+
+#include "ncbiconf_msvc_site.h"
