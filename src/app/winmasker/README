@@ -210,15 +210,15 @@ Stage 2 Options
 
         default: interval
 
-        The possible values are "interval" and "fasta". If FASTA 
-        format is selected the output is a FASTA file with masked
-        regions in lower case letters. If the interval format is
-        selected the output is a file containing, for each processed
-        sequence, a sorted set of continuous masked subsequences.
-        For the format of the intervals file see section FILES.
-        [NOTE: Case of the input does not matter. All input sequences
-        are considered unmasked and window masker does not preserve
-        the case of the input.]
+        The possible values are "interval" and "fasta". If "fasta" 
+        format is selected the output is a FASTA formatted file with 
+        masked regions in lower case letters. If the interval format 
+        is selected the output is a file containing, for each 
+        processed sequence, a sorted set of continuous masked 
+        subsequences.  For the format of the intervals file see 
+        section FILES.  [NOTE: Case of the input does not matter. All 
+        input sequences are considered unmasked and window masker 
+        does not preserve the case of the input.]
 
     -output output_file_name
 
