@@ -9071,7 +9071,7 @@ else
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_sybase_r" >&5
 echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6
-      if test ncbi_cv_lib_sybase_r = yes; then
+      if test $ncbi_cv_lib_sybase_r = yes; then
          syb_sfx=_r$bit64_sfx
       fi
    fi

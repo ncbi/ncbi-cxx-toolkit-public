@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.157 2002/12/20 20:18:53 ucko Exp $
+#  $Id: configure.ac,v 1.158 2002/12/30 17:26:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1857,7 +1857,7 @@ if test "$with_sybase" != "no" ; then
           else
              ncbi_cv_lib_sybase_r=no
           fi])
-      if test ncbi_cv_lib_sybase_r = yes; then
+      if test $ncbi_cv_lib_sybase_r = yes; then
          syb_sfx=_r$bit64_sfx
       fi
    fi
