@@ -199,7 +199,7 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
   } else {
      lookup->word_length = opt->word_size;
      lookup->charsize = ilog2(kAlphabetSize/COMPRESSION_RATIO); 
-     if (!is_protein && opt->word_size >= kMinAGWordSize)  
+     if (opt->word_size >= kMinAGWordSize)  
      {
           lookup->scan_step = CalculateBestStride(opt->word_size, opt->variable_wordsize, 
                opt->lut_type);
@@ -402,7 +402,10 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
   Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
-  BlastLookupTable* lookup = lookup_wrap->lut;
+  BlastLookupTable* lookup;
+
+  ASSERT(lookup_wrap->lut_type == AA_LOOKUP_TABLE);
+  lookup = (BlastLookupTable*) lookup_wrap->lut;
 
   s_first = subject->sequence + *offset;
   s_last  = subject->sequence + subject->length - lookup->wordsize; 
@@ -480,8 +483,11 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
   Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
-  BlastRPSLookupTable* lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
+  BlastRPSLookupTable* lookup;
   RPSBackboneCell *cell;
+
+  ASSERT(lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
+  lookup = (BlastRPSLookupTable*) lookup_wrap->lut;
 
   s_first = sequence->sequence + *offset;
   s_last  = sequence->sequence + sequence->length - lookup->wordsize; 
@@ -946,18 +952,22 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
 			   Int4 max_hits,  
        Int4* end_offset)
 {
-   BlastLookupTable* lookup = (BlastLookupTable*) lookup_wrap->lut;
+   BlastLookupTable* lookup;
    Uint1* s;
    Uint1* abs_start;
    Int4  index=0, s_off;
-   
    Int4* lookup_pos;
    Int4 num_hits;
    Int4 q_off;
-   PV_ARRAY_TYPE *pv_array = lookup->pv;
+   PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
    Int4 compressed_wordsize, compressed_scan_step;
    Int4 i;
+
+   ASSERT(lookup_wrap->lut_type == NA_LOOKUP_TABLE);
+   lookup = (BlastLookupTable*) lookup_wrap->lut;
+  
+   pv_array = lookup->pv;
 
    ASSERT(lookup->scan_step > 0);
 
@@ -1057,14 +1067,20 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    Uint1* s;
    Uint1* abs_start,* s_end;
    Int4  index=0, s_off;
-   BlastLookupTable* lookup = (BlastLookupTable*) lookup_wrap->lut;
+   BlastLookupTable* lookup;
    Int4* lookup_pos;
    Int4 num_hits;
    Int4 q_off;
-   PV_ARRAY_TYPE *pv_array = lookup->pv;
+   PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
-   Int4 reduced_word_length = lookup->reduced_wordsize*COMPRESSION_RATIO;
+   Int4 reduced_word_length;
    Int4 i;
+
+   ASSERT(lookup_wrap->lut_type == NA_LOOKUP_TABLE);
+   lookup = (BlastLookupTable*) lookup_wrap->lut;
+
+   pv_array = lookup->pv;
+   reduced_word_length = lookup->reduced_wordsize*COMPRESSION_RATIO;
 
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;

@@ -600,17 +600,23 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
        Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
        Int4* end_offset)
 {
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
+   BlastMBLookupTable* mb_lt;
    Uint1* s;
    Uint1* abs_start;
    Int4  index=0, s_off;
    
    Int4 q_off;
-   PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
+   PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
    Int4 compressed_wordsize, compressed_scan_step, word_size;
-   Uint1 pv_array_bts = mb_lt->pv_array_bts;
+   Uint1 pv_array_bts;
    
+   ASSERT(lookup_wrap->lut_type == MB_LOOKUP_TABLE);
+   mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
+
+   pv_array = mb_lt->pv_array;
+   pv_array_bts = mb_lt->pv_array_bts;
+
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size. */
    max_hits -= mb_lt->longest_chain;
@@ -685,11 +691,18 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 index;
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt;
    Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
-   PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
-   Uint1 pv_array_bts = mb_lt->pv_array_bts;
-   Int4 compressed_wordsize = mb_lt->compressed_wordsize;
+   PV_ARRAY_TYPE *pv_array;
+   Uint1 pv_array_bts;
+   Int4 compressed_wordsize;
+
+   ASSERT(lookup->lut_type == MB_LOOKUP_TABLE);
+   mb_lt = (BlastMBLookupTable*) lookup->lut;
+
+   pv_array = mb_lt->pv_array;
+   pv_array_bts = mb_lt->pv_array_bts;
+   compressed_wordsize = mb_lt->compressed_wordsize;
 
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size.
@@ -740,16 +753,27 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 word, index, index2=0;
-   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt;
    Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
-   Boolean two_templates = mb_lt->two_templates;
-   Uint1 template_type = mb_lt->template_type;
-   Uint1 second_template_type = mb_lt->second_template_type;
-   PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
-   Uint1 pv_array_bts = mb_lt->pv_array_bts;
-   Int4 compressed_wordsize = mb_lt->compressed_wordsize;
-   Uint4 word_end_offset = start_offset + mb_lt->word_length;
+   Boolean two_templates;
+   Uint1 template_type;
+   Uint1 second_template_type;
+   PV_ARRAY_TYPE *pv_array;
+   Uint1 pv_array_bts;
+   Int4 compressed_wordsize;
+   Uint4 word_end_offset;
    Uint4 last_end_offset = *end_offset;
+
+   ASSERT(lookup->lut_type == MB_LOOKUP_TABLE);
+   mb_lt = (BlastMBLookupTable*) lookup->lut;
+
+   two_templates = mb_lt->two_templates;
+   template_type = mb_lt->template_type;
+   second_template_type = mb_lt->second_template_type;
+   pv_array = mb_lt->pv_array;
+   pv_array_bts = mb_lt->pv_array_bts;
+   compressed_wordsize = mb_lt->compressed_wordsize;
+   word_end_offset = start_offset + mb_lt->word_length;
 
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size. */

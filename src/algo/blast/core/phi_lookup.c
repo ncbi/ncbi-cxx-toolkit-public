@@ -790,12 +790,20 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         Int4 array_size)
 {
    Uint1* subject, *query;
-   BlastPHILookupTable* lookup = (BlastPHILookupTable*) lookup_wrap->lut;
+   BlastPHILookupTable* lookup;
    Int4 index, count = 0, twiceNumHits, i;
-   Int4 *start_offsets = lookup->start_offsets;
-   Int4 *pat_lengths = lookup->lengths;
+   Int4 *start_offsets;
+   Int4 *pat_lengths;
    Int4 offset, length;
    Int4 hitArray[MAX_HIT];
+
+   ASSERT(lookup_wrap->lut_type == PHI_NA_LOOKUP ||
+          lookup_wrap->lut_type == PHI_AA_LOOKUP);
+
+   lookup = (BlastPHILookupTable*) lookup_wrap->lut;
+
+   start_offsets = lookup->start_offsets;
+   pat_lengths = lookup->lengths;
 
    query = query_blk->sequence;
    subject = subject_blk->sequence;
