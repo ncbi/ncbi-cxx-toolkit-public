@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/05/09 22:26:11  kimelman
+* test more than one record
+*
 * Revision 1.20  2002/05/08 22:32:00  kimelman
 * log flags
 *
@@ -140,10 +143,10 @@ int CTestApplication::Run()
     // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
     pOm->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),CObjectManager::eDefault);
 
-    for (int i = 1;  i < 500;  i++) {
+    for (int i = 1;  i < 50;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();
-        int gi = i  + 18565551 - i  ; 
+        int gi = i  + 18565551 - 5  ; 
         CSeq_id x;
         x.SetGi(gi);
         CBioseq_Handle h = scope.GetBioseqHandle(x);
