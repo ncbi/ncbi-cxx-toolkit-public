@@ -391,7 +391,6 @@ NStr::StringToUInt_DataSize(const string& str, int base  /* =10 */,
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
     if (errno || value > kMax_UInt) {
-        err:
         if (on_error == eConvErr_Throw) {
             NCBI_THROW2(CStringException, eConvert,
                         "String cannot be converted unsigned int",
@@ -1600,6 +1599,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.116  2004/09/22 13:52:36  kuznets
+ * Code cleanup
+ *
  * Revision 1.115  2004/09/21 18:45:03  kuznets
  * SoftStringToUInt renamed StringToUInt_DataSize
  *
