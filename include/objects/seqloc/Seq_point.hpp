@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/01/28 19:06:52  shomrat
+ * Added methods to ease the construction of objects
+ *
  * Revision 1.5  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *
@@ -73,6 +76,8 @@ class NCBI_SEQLOC_EXPORT CSeq_point : public CSeq_point_Base
 public:
     // constructor
     CSeq_point(void);
+    CSeq_point(TId& id, TPoint point, TStrand strand = eNa_strand_unknown);
+
     // destructor
     ~CSeq_point(void);
 
@@ -95,6 +100,17 @@ private:
 inline
 CSeq_point::CSeq_point(void)
 {
+}
+
+
+inline
+CSeq_point::CSeq_point(TId& id, TPoint point, TStrand strand)
+{
+    SetPoint(point);
+    SetId(id);
+    if ( strand != eNa_strand_unknown ) {
+        SetStrand(strand);
+    }
 }
 
 
