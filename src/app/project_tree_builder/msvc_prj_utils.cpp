@@ -29,9 +29,11 @@
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
+
 
 
 BEGIN_NCBI_SCOPE
@@ -70,6 +72,7 @@ void SaveToXmlFile  (const string&               file_path,
 }
 
 
+//-----------------------------------------------------------------------------
 class CGuidGenerator
 {
 public:
@@ -155,6 +158,7 @@ string SourceFileExt(const string& file_path)
 }
 
 
+//-----------------------------------------------------------------------------
 SConfigInfo::SConfigInfo(void)
     :m_Debug(false)
 {
@@ -176,12 +180,96 @@ CMsvc7RegSettings::CMsvc7RegSettings(void)
 }
 
 
+bool IsSubdir(const string& abs_parent_dir, const string& abs_dir)
+{
+    return abs_dir.find(abs_parent_dir) == 0;
+}
+
+
+string GetOpt(const CNcbiRegistry& registry, 
+              const string& section, 
+              const string& opt, 
+              const string& config)
+{
+    string section_spec = section + '.' + config;
+    string val_spec = registry.GetString(section_spec, opt, "");
+    if ( !val_spec.empty() )
+        return val_spec;
+
+    return registry.GetString(section, opt, "");
+}
+
+
+string GetOpt(const CNcbiRegistry& registry, 
+              const string&        section, 
+              const string&        opt, 
+              const SConfigInfo&   config)
+{
+    string section_spec(section);
+    section_spec += config.m_Debug? ".debug": ".release";
+    string section_dr(section_spec); //section.debug or section.release
+    section_spec += '.';
+    section_spec += config.m_Name;
+
+    string val_spec = registry.GetString(section_spec, opt, "");
+    if ( !val_spec.empty() )
+        return val_spec;
+
+    val_spec = registry.GetString(section_dr, opt, "");
+    if ( !val_spec.empty() )
+        return val_spec;
+
+    return registry.GetString(section, opt, "");
+}
+
+
+
+string ConfigName(const string& config)
+{
+    return config +'|'+ MSVC_PROJECT_PLATFORM;
+}
+
+
+void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
+                                const list<SConfigInfo> configs,
+                                const SCustomBuildInfo& build_info)
+{
+    CRef<CFFile> file(new CFFile());
+    file->SetAttlist().SetRelativePath(build_info.m_SourceFile);
+
+    ITERATE(list<SConfigInfo>, n , configs) {
+        // Iterate all configurations
+        const string& config = (*n).m_Name;
+
+        CRef<CFileConfiguration> file_config(new CFileConfiguration());
+        file_config->SetAttlist().SetName(ConfigName(config));
+
+        CRef<CTool> custom_build(new CTool(""));
+        custom_build->SetAttlist().SetName("VCCustomBuildTool");
+        custom_build->SetAttlist().SetDescription(build_info.m_Description);
+        custom_build->SetAttlist().SetCommandLine(build_info.m_CommandLine);
+        custom_build->SetAttlist().SetOutputs(build_info.m_Outputs);
+        file_config->SetTool(*custom_build);
+
+        file->SetFileConfiguration().push_back(file_config);
+    }
+    CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+    ce->SetFile(*file);
+    filter->SetFF().SetFF().push_back(ce);
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/28 17:55:49  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.4  2004/01/26 19:27:28  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

@@ -32,6 +32,7 @@
 #include <app/project_tree_builder/msvc_project_context.hpp>
 #include <app/project_tree_builder/msvc_tools_implement.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/msvc_site.hpp>
 
 #include <set>
 
@@ -39,14 +40,26 @@
 BEGIN_NCBI_SCOPE
 
 
+//-----------------------------------------------------------------------------
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
-    //
-    m_ProjectName         = project.m_ID;
+    //MSVC project name it's project ID from project tree
+    m_ProjectName    = project.m_ID;
+
+    m_SourcesBaseDir = project.m_SourcesBaseDir;
+    m_Requires       = project.m_Requires;
+
+    // Get msvc project makefile
+    m_MsvcProjectMakefile = 
+        auto_ptr<CMsvcProjectMakefile>
+            (new CMsvcProjectMakefile
+                    (CDirEntry::ConcatPath
+                            (m_SourcesBaseDir, 
+                             CreateMsvcProjectMakefileName(project))));
 
     // Collect all dirs of source files into m_SourcesDirsAbs:
     set<string> sources_dirs;
-    sources_dirs.insert(project.m_SourcesBaseDir);
+    sources_dirs.insert(m_SourcesBaseDir);
     ITERATE(list<string>, p, project.m_Sources) {
         
         string dir;
@@ -77,23 +90,18 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
 
     // Creating project dir:
-    m_ProjectDir = project.m_SourcesBaseDir;
+    m_ProjectDir = m_SourcesBaseDir;
     m_ProjectDir.replace(m_ProjectDir.find(src_tag), 
                          src_tag.length(), 
                          project_tag);
-
-    //TODO 
-    m_AdditionalLinkerOptions = "";
-    //TODO 
-    m_AdditionalLibrarianOptions = "";
 
     m_ProjType = project.m_ProjType;
 
      // Generate include dirs:
     //Root for all include dirs:
-    string incl_dir = string(project.m_SourcesBaseDir, 
+    string incl_dir = string(m_SourcesBaseDir, 
                              0, 
-                             project.m_SourcesBaseDir.find(src_tag));
+                             m_SourcesBaseDir.find(src_tag));
     m_IncludeDirsRoot = CDirEntry::ConcatPath(incl_dir, "include");
 
 
@@ -105,26 +113,119 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                             include_tag);
         m_IncludeDirsAbs.push_back(include_dir);
     }
-    
-  
-    m_AdditionalIncludeDirectories = 
-        CDirEntry::CreateRelativePath(m_ProjectDir, m_IncludeDirsRoot);
-    
-    m_MsvcProjectMakefile = 
-        auto_ptr<CMsvcProjectMakefile>
-            (new CMsvcProjectMakefile
-                    (CDirEntry::ConcatPath
-                            (project.m_SourcesBaseDir, 
-                             CreateMsvcProjectMakefileName(project))));
+
+    // Get custom build files and adjust pathes 
+    m_MsvcProjectMakefile->GetCustomBuildInfo(&m_CustomBuildInfo);
+    NON_CONST_ITERATE(list<SCustomBuildInfo>, p, m_CustomBuildInfo) {
+       SCustomBuildInfo& build_info = *p;
+       string file_path_abs = 
+           CDirEntry::ConcatPath(m_SourcesBaseDir, build_info.m_SourceFile);
+       build_info.m_SourceFile = 
+           CDirEntry::CreateRelativePath(m_ProjectDir, file_path_abs);           
+    }
 }
 
 
-const CMsvcProjectMakefile& CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
+string CMsvcPrjProjectContext::AdditionalIncludeDirectories
+                                            (const SConfigInfo& cfg_info) const
+{
+    string add_include_dirs = 
+        CDirEntry::CreateRelativePath(m_ProjectDir, m_IncludeDirsRoot);
+
+    list<string> makefile_add_incl_dirs;
+    m_MsvcProjectMakefile->GetAdditionalIncludeDirs(cfg_info, 
+                                                    &makefile_add_incl_dirs);
+
+    ITERATE(list<string>, p, makefile_add_incl_dirs) {
+        const string& dir = *p;
+        string dir_abs = 
+            CDirEntry::AddTrailingPathSeparator
+                (CDirEntry::ConcatPath(m_SourcesBaseDir, dir));
+
+        add_include_dirs += ", ";
+        add_include_dirs += 
+            CDirEntry::CreateRelativePath
+                        (m_ProjectDir, dir_abs);
+    }
+
+    ITERATE(list<string>, p, m_Requires) {
+        const string& requires = *p;
+        SLibInfo lib_info;
+        GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
+        if ( !lib_info.m_IncludeDir.empty() ) {
+            add_include_dirs += ", ";
+            add_include_dirs += lib_info.m_IncludeDir;
+        }
+    }
+
+    return add_include_dirs;
+}
+
+
+string CMsvcPrjProjectContext::AdditionalLinkerOptions
+                                            (const SConfigInfo& cfg_info) const
+{
+    string libs_str("");
+
+    ITERATE(list<string>, p, m_Requires) {
+        const string& requires = *p;
+        SLibInfo lib_info;
+        GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
+        if ( !lib_info.IsEmpty() ) {
+            libs_str += " ";
+            libs_str += NStr::Join(lib_info.m_Libs, " ");
+        }
+    }
+
+    return libs_str;
+}
+
+
+string CMsvcPrjProjectContext::AdditionalLibrarianOptions
+                                            (const SConfigInfo& cfg_info) const
+{
+    return AdditionalLinkerOptions(cfg_info);
+}
+
+
+string CMsvcPrjProjectContext::AdditionalLibraryDirectories
+                                            (const SConfigInfo& cfg_info) const
+{
+    string dirs_str("");
+    ITERATE(list<string>, p, m_Requires) {
+        const string& requires = *p;
+        SLibInfo lib_info;
+        GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
+        if ( !lib_info.IsEmpty() ) {
+            dirs_str += lib_info.m_IncludeDir;
+            dirs_str += ", ";
+        }
+    }
+
+    return dirs_str;
+}
+
+
+
+const CMsvcProjectMakefile& 
+CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
 {
     return *m_MsvcProjectMakefile;
 }
 
 
+bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj)
+{
+    ITERATE(list<string>, p, prj.m_Requires) {
+        const string& requires = *p;
+        if ( !GetApp().GetSite().IsProvided(requires) )
+            return false;
+    }
+    return true;
+}
+
+
+//-----------------------------------------------------------------------------
 CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     (const SConfigInfo&            config, 
      const CMsvcPrjProjectContext& prj_context)
@@ -176,7 +277,6 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
 }
 
 //------------------------------------------------------------------------------
-
 static IConfiguration* s_CreateConfiguration
     (const CMsvcPrjGeneralContext& general_context,
      const CMsvcPrjProjectContext& project_context);
@@ -197,8 +297,7 @@ static IResourceCompilerTool* s_CreateResourceCompilerTool
     (const CMsvcPrjGeneralContext& general_context,
      const CMsvcPrjProjectContext& project_context);
 
-//------------------------------------------------------------------------------
-
+//-----------------------------------------------------------------------------
 CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
                        const CMsvcPrjProjectContext& project_context)
 {
@@ -378,8 +477,8 @@ static bool s_IsRelease(const CMsvcPrjGeneralContext& general_context,
 }
 
 
+//-----------------------------------------------------------------------------
 // Creators:
-
 static IConfiguration* 
 s_CreateConfiguration(const CMsvcPrjGeneralContext& general_context,
                       const CMsvcPrjProjectContext& project_context)
@@ -402,31 +501,17 @@ s_CreateConfiguration(const CMsvcPrjGeneralContext& general_context,
 }
 
 
-//------------------------------------------------------------------------------------------
 static ICompilerTool* 
 s_CreateCompilerTool(const CMsvcPrjGeneralContext& general_context,
 					 const CMsvcPrjProjectContext& project_context)
 {
-    //-------- EXE ---------
-    //
-    if ( s_IsDebug (general_context, project_context) )
-	     return new CCompilerToolImpl <SDebug>
-                        (project_context.AdditionalIncludeDirectories(),
-                         project_context.GetMsvcProjectMakefile(),
-                         general_context.m_Config.m_RuntimeLibrary,
-                         general_context.GetMsvcMetaMakefile());
-
-
-    if ( s_IsRelease(general_context, project_context) )
-	     return new CCompilerToolImpl <SRelease>
-                        (project_context.AdditionalIncludeDirectories(),
-                         project_context.GetMsvcProjectMakefile(),
-                         general_context.m_Config.m_RuntimeLibrary,
-                         general_context.GetMsvcMetaMakefile());
-
-
-    // unsupported tool
-    return NULL;
+    return new CCompilerToolImpl
+       (project_context.AdditionalIncludeDirectories(general_context.m_Config),
+        project_context.GetMsvcProjectMakefile(),
+        general_context.m_Config.m_RuntimeLibrary,
+        general_context.GetMsvcMetaMakefile(),
+        general_context.m_Config,
+        general_context.m_Type);
 }
 
 
@@ -435,42 +520,34 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                    const CMsvcPrjProjectContext& project_context)
 {
     //---- EXE ----
-    if ( s_IsExe  (general_context, project_context)  &&
-         s_IsDebug(general_context, project_context) )
-        return new CLinkerToolImpl<SDebug, SApp>
-                       (project_context.AdditionalLinkerOptions(),
+    if ( s_IsExe  (general_context, project_context) )
+        return new CLinkerToolImpl<SApp>
+                       (project_context.AdditionalLinkerOptions
+                                            (general_context.m_Config),
+                        project_context.AdditionalLibraryDirectories
+                                            (general_context.m_Config),
                         project_context.ProjectName(),
                         project_context.GetMsvcProjectMakefile(),
-                        general_context.GetMsvcMetaMakefile());
+                        general_context.GetMsvcMetaMakefile(),
+                        general_context.m_Config);
 
-    if ( s_IsExe    (general_context, project_context)  &&
-         s_IsRelease(general_context, project_context) )
-        return new CLinkerToolImpl<SRelease, SApp>
-                       (project_context.AdditionalLinkerOptions(),
-                        project_context.ProjectName(),
-                        project_context.GetMsvcProjectMakefile(),
-                        general_context.GetMsvcMetaMakefile());
 
     //---- LIB ----
     if ( s_IsLib(general_context, project_context) )
         return new CLinkerToolDummyImpl();
 
     //---- DLL ----
-    if ( s_IsDll  (general_context, project_context)  &&
-         s_IsDebug(general_context, project_context) )
-        return new CLinkerToolImpl<SDebug, SDll>
-                       (project_context.AdditionalLinkerOptions(),
+    if ( s_IsDll  (general_context, project_context) )
+        return new CLinkerToolImpl<SDll>
+                       (project_context.AdditionalLinkerOptions
+                                            (general_context.m_Config),
+                        project_context.AdditionalLibraryDirectories
+                                            (general_context.m_Config),
                         project_context.ProjectName(),
                         project_context.GetMsvcProjectMakefile(),
-                        general_context.GetMsvcMetaMakefile());
+                        general_context.GetMsvcMetaMakefile(),
+                        general_context.m_Config);
 
-    if ( s_IsDll    (general_context, project_context)  &&
-         s_IsRelease(general_context, project_context) )
-        return new CLinkerToolImpl<SRelease, SDll>
-                       (project_context.AdditionalLinkerOptions(),
-                        project_context.ProjectName(),
-                        project_context.GetMsvcProjectMakefile(),
-                        general_context.GetMsvcMetaMakefile());
     // unsupported tool
     return NULL;
 }
@@ -480,30 +557,25 @@ static ILibrarianTool*
 s_CreateLibrarianTool(const CMsvcPrjGeneralContext& general_context,
                       const CMsvcPrjProjectContext& project_context)
 {
-    if ( s_IsLib  (general_context, project_context) &&
-         s_IsDebug(general_context, project_context))
-	    return new CLibrarianToolImpl<SDebug>
-                                (project_context.AdditionalLibrarianOptions(),
+    if ( s_IsLib  (general_context, project_context) )
+	    return new CLibrarianToolImpl
+                                (project_context.AdditionalLibrarianOptions
+                                                    (general_context.m_Config),
+                                 project_context.AdditionalLibraryDirectories
+                                                    (general_context.m_Config),
 								 project_context.ProjectName(),
                                  project_context.GetMsvcProjectMakefile(),
-                                 general_context.GetMsvcMetaMakefile());
+                                 general_context.GetMsvcMetaMakefile(),
+                                 general_context.m_Config);
 
-    if ( s_IsLib    (general_context, project_context) &&
-         s_IsRelease(general_context, project_context))
-	    return new CLibrarianToolImpl<SRelease>
-                                (project_context.AdditionalLibrarianOptions(),
-								 project_context.ProjectName(),
-                                 project_context.GetMsvcProjectMakefile(),
-                                 general_context.GetMsvcMetaMakefile());
-
-    // unsupported tool
+    // dummy tool
     return new CLibrarianToolDummyImpl();
 }
 
 
-static IResourceCompilerTool* s_CreateResourceCompilerTool(
-                                  const CMsvcPrjGeneralContext& general_context,
-                                  const CMsvcPrjProjectContext& project_context)
+static IResourceCompilerTool* s_CreateResourceCompilerTool
+                                (const CMsvcPrjGeneralContext& general_context,
+                                 const CMsvcPrjProjectContext& project_context)
 {
 
     if ( s_IsDll  (general_context, project_context)  &&
@@ -514,7 +586,7 @@ static IResourceCompilerTool* s_CreateResourceCompilerTool(
          s_IsRelease(general_context, project_context) )
         return new CResourceCompilerToolImpl<SRelease>();
 
-    // unsupported tool
+    // dummy tool
     return new CResourceCompilerToolDummyImpl();
 }
 
@@ -524,6 +596,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/28 17:55:49  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.5  2004/01/26 19:27:29  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

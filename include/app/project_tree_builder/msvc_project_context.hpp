@@ -59,10 +59,7 @@ public:
     CMsvcPrjProjectContext(const CProjItem& project);
 
     //Compiler::General
-    string AdditionalIncludeDirectories(void) const
-    {
-        return m_AdditionalIncludeDirectories;
-    }
+    string AdditionalIncludeDirectories(const SConfigInfo& cfg_info) const;
 
     //Linker::General
     string ProjectName(void) const
@@ -70,17 +67,16 @@ public:
         return m_ProjectName;
     }
 
-    string AdditionalLinkerOptions(void) const
-    {
-        return m_AdditionalLinkerOptions;
-    }
+
+    string AdditionalLinkerOptions(const SConfigInfo& cfg_info) const;
 
 
-    string AdditionalLibrarianOptions(void) const
-    {
-        return m_AdditionalLibrarianOptions;
-    }
+    string AdditionalLibrarianOptions(const SConfigInfo& cfg_info) const;
 
+    
+    string AdditionalLibraryDirectories(const SConfigInfo& cfg_info) const;
+
+ 
     string ProjectDir(void) const
     {
         return m_ProjectDir;
@@ -106,6 +102,15 @@ public:
 
     const CMsvcProjectMakefile& GetMsvcProjectMakefile(void) const;
 
+    
+    static bool IsRequiresOk(const CProjItem& prj);
+
+
+    const list<SCustomBuildInfo>& GetCustomBuildInfo(void) const
+    {
+        return m_CustomBuildInfo;
+    }
+
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
@@ -115,8 +120,6 @@ private:
 
     string m_ProjectName;
 
-    string m_AdditionalIncludeDirectories;
-    string m_AdditionalLinkerOptions;
     string m_AdditionalLibrarianOptions;
 
     string m_ProjectDir;
@@ -129,6 +132,11 @@ private:
     list<string> m_IncludeDirsAbs;
 
     auto_ptr<CMsvcProjectMakefile> m_MsvcProjectMakefile;
+
+    string       m_SourcesBaseDir;
+    list<string> m_Requires;
+
+    list<SCustomBuildInfo> m_CustomBuildInfo;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -472,6 +480,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/28 17:55:06  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.4  2004/01/26 19:25:41  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

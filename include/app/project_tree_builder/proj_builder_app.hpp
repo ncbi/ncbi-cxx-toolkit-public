@@ -34,9 +34,9 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
+#include <app/project_tree_builder/proj_utils.hpp>
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/resolver.hpp>
-#include <app/project_tree_builder/proj_utils.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/msvc_makefile.hpp>
@@ -74,17 +74,6 @@ private:
     /// Parse program arguments.
     void ParseArguments(void);
 
-
-
-    /// Root dir of building tree.
-    string m_Root;
-
-    /// src child dir of Root.
-    string m_RootSrc;
-
-    /// Subtree to buil (default is m_RootSrc).
-    string m_SubTree;
-
     /// Solution to build.
     string m_Solution;
 
@@ -100,6 +89,8 @@ private:
     auto_ptr<CMsvcSite>         m_MsvcSite;
     auto_ptr<CMsvcMetaMakefile> m_MsvcMetaMakefile;
 
+    auto_ptr<SProjectTreeInfo>  m_ProjectTreeInfo;
+
 public:
 
     void    GetMetaDataFiles    (list<string>*      files)   const;
@@ -111,6 +102,8 @@ public:
 
     const CMsvcMetaMakefile& GetMetaMakefile(void);
 
+    const SProjectTreeInfo&  GetProjectTreeInfo(void);
+    
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
 };
@@ -167,6 +160,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/28 17:55:06  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.6  2004/01/26 19:25:42  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

@@ -30,9 +30,36 @@
  */
 #include <corelib/ncbireg.hpp>
 #include <set>
-
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SLibInfo --
+///
+/// Abstraction of lib description in site.
+///
+/// Provides information about 
+/// additional include dir, library path and libs list.
+
+struct SLibInfo
+{
+    string       m_IncludeDir;
+    string       m_LibPath;
+    list<string> m_Libs;
+
+    bool IsEmpty(void) const
+    {
+        return m_Libs.empty();
+    }
+    void Clear(void)
+    {
+        m_IncludeDir.erase();
+        m_LibPath.erase();
+        m_Libs.clear();
+    }
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -41,7 +68,7 @@ BEGIN_NCBI_SCOPE
 /// Abstraction of user site for building of C++ projects.
 ///
 /// Provides information about libraries availability as well as implicit
-/// exclusion of some project tree branches from build.
+/// exclusion of some branches from project tree.
 
 class CMsvcSite
 {
@@ -52,8 +79,12 @@ public:
 
     bool IsImplicitExclude(const string& node) const;
 
-private:
+    void GetLibInfo(const string& lib, 
+                    const SConfigInfo& config, SLibInfo* libinfo) const;
 
+private:
+    const CNcbiRegistry& m_Registry;
+    
     set<string> m_NotProvidedThing;
     set<string> m_ImplicitExcludeNodes;
 
@@ -68,6 +99,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/28 17:55:06  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.1  2004/01/26 19:25:41  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

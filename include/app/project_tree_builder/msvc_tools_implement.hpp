@@ -35,6 +35,7 @@
 
 #include <app/project_tree_builder/msvc_project_context.hpp>
 #include <app/project_tree_builder/msvc_traits.hpp>
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
 
 #include <corelib/ncbienv.hpp>
 
@@ -61,7 +62,7 @@ public:
 
     virtual string Name(void) const
     {
-	    return m_ConfigurationName + '|' + "Win32";
+	    return ConfigName(m_ConfigurationName);
     }
     virtual string OutputDirectory(void) const
     {
@@ -90,26 +91,48 @@ private:
     CConfigurationImpl& operator= (const CConfigurationImpl&);
 };
 
+
+static string s_GetDefaultPreprocessorDefinitions
+                            (const SConfigInfo&                   config, 
+                             CMsvcPrjGeneralContext::TTargetType  target_type)
+{
+    string defines = config.m_Debug ? "_DEBUG;" : "NDEBUG;" ;
+    switch (target_type) {
+    case CMsvcPrjGeneralContext::eLib:
+        defines +=  "WIN32;_LIB;";
+        break;
+    case CMsvcPrjGeneralContext::eExe:
+        defines += "WIN32;_CONSOLE;";
+        break;
+    case CMsvcPrjGeneralContext::eDll:
+        defines += "WIN32;_WINDOWS;_USRDLL;";
+        break;
+    }
+    return defines;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CCompilerToolImpl --
 ///
 /// Implementation of ICompilerTool interface.
 ///
-/// Accepts trait classes as a template parameters.
-
-template < class DebugReleaseTrait > 
+/// Uses msvc makefiles information
 class CCompilerToolImpl : public ICompilerTool
 {
 public:
     CCompilerToolImpl(const string&               additional_include_dirs,
                       const CMsvcProjectMakefile& project_makefile,
                       const string&               runtimeLibraryOption,
-                      const CMsvcMetaMakefile&    meta_makefile)
+                      const CMsvcMetaMakefile&    meta_makefile,
+                      const SConfigInfo&          config,
+                      CMsvcPrjGeneralContext::TTargetType target_type)
 	    :m_AdditionalIncludeDirectories(additional_include_dirs),
          m_MsvcProjectMakefile         (project_makefile),
          m_RuntimeLibraryOption        (runtimeLibraryOption),
-         m_MsvcMetaMakefile            (meta_makefile)
+         m_MsvcMetaMakefile            (meta_makefile),
+         m_Config                      (config),
+         m_TargetType                  (target_type)
     {
     }
 
@@ -124,7 +147,7 @@ public:
         return GetCompilerOpt(m_MsvcMetaMakefile, \
                               m_MsvcProjectMakefile, \
                               #opt, \
-                              DebugReleaseTrait::debug() ); \
+                              m_Config ); \
     }
 
     SUPPORT_COMPILER_OPTION(Optimization)
@@ -134,7 +157,19 @@ public:
 	    return m_AdditionalIncludeDirectories;
     }
 
-    SUPPORT_COMPILER_OPTION(PreprocessorDefinitions)
+    //SUPPORT_COMPILER_OPTION(PreprocessorDefinitions)
+    virtual string PreprocessorDefinitions(void) const
+    {
+        string defines = 
+            s_GetDefaultPreprocessorDefinitions(m_Config, m_TargetType);
+
+        defines += GetCompilerOpt(m_MsvcMetaMakefile,
+                                  m_MsvcProjectMakefile,
+                                  "PreprocessorDefinitions",
+                                  m_Config );
+        return defines;
+    }
+
     SUPPORT_COMPILER_OPTION(MinimalRebuild)
     SUPPORT_COMPILER_OPTION(BasicRuntimeChecks)
 
@@ -174,6 +209,9 @@ private:
     const CMsvcProjectMakefile& m_MsvcProjectMakefile;
     string                      m_RuntimeLibraryOption;
     const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
+    SConfigInfo                 m_Config;
+
+    CMsvcPrjGeneralContext::TTargetType m_TargetType;
 
     CCompilerToolImpl(void);
     CCompilerToolImpl(const CCompilerToolImpl&);
@@ -189,19 +227,22 @@ private:
 ///
 /// Accepts trait classes as a template parameters.
 
-template <  class DebugReleaseTrait,
-            class ConfTrait > 
+template <class ConfTrait > 
 class CLinkerToolImpl : public ILinkerTool
 {
 public:
     CLinkerToolImpl(const string& additional_options,
+                    const string& additional_library_directories,
                     const string& project_name,
                     const CMsvcProjectMakefile& project_makefile,
-                    const CMsvcMetaMakefile&    meta_makefile)
+                    const CMsvcMetaMakefile&    meta_makefile,
+                    const SConfigInfo&          config)
 	    :m_AdditionalOptions    (additional_options),
+         m_AdditionalLibraryDirectories(additional_library_directories),
 		 m_ProjectName          (project_name),
          m_MsvcProjectMakefile  (project_makefile),
-         m_MsvcMetaMakefile     (meta_makefile)
+         m_MsvcMetaMakefile     (meta_makefile),
+         m_Config               (config)
     {
     }
     virtual string Name(void) const
@@ -223,7 +264,7 @@ public:
         return GetLinkerOpt(m_MsvcMetaMakefile, \
                             m_MsvcProjectMakefile, \
                             #opt, \
-                            DebugReleaseTrait::debug() ); \
+                            m_Config ); \
     }
     
     SUPPORT_LINKER_OPTION(LinkIncremental)
@@ -246,11 +287,17 @@ public:
     SUPPORT_LINKER_OPTION(EnableCOMDATFolding)
     SUPPORT_LINKER_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_LINKER_OPTION(IgnoreDefaultLibraryNames)
-    SUPPORT_LINKER_OPTION(AdditionalLibraryDirectories)
+
+    virtual string AdditionalLibraryDirectories(void) const
+    {
+	    return m_AdditionalLibraryDirectories;
+    }
 
 private:
-    string m_AdditionalOptions;
-    string m_ProjectName;
+    string      m_AdditionalOptions;
+    string      m_AdditionalLibraryDirectories;
+    string      m_ProjectName;
+    SConfigInfo m_Config;
 
     const CMsvcProjectMakefile& m_MsvcProjectMakefile;
     const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
@@ -319,19 +366,21 @@ private:
 /// Implementation of ILibrarianTool interface.
 ///
 /// Implementation for LIB targets.
-
-template <  class DebugReleaseTrait > 
 class CLibrarianToolImpl : public ILibrarianTool
 {
 public:
     CLibrarianToolImpl( const string& additional_options,
+                        const string& additional_library_directories,
                         const string& project_name,
                         const CMsvcProjectMakefile& project_makefile,
-                        const CMsvcMetaMakefile&    meta_makefile)
+                        const CMsvcMetaMakefile&    meta_makefile,
+                        const SConfigInfo&          config)
 	    :m_AdditionalOptions    (additional_options),
+         m_AdditionalLibraryDirectories(additional_library_directories),
 	     m_ProjectName          (project_name),
          m_MsvcProjectMakefile  (project_makefile),
-         m_MsvcMetaMakefile     (meta_makefile)
+         m_MsvcMetaMakefile     (meta_makefile),
+         m_Config               (config)
     {
     }
     virtual string Name(void) const
@@ -354,16 +403,22 @@ public:
         return GetLinkerOpt(m_MsvcMetaMakefile, \
                             m_MsvcProjectMakefile, \
                             #opt, \
-                            DebugReleaseTrait::debug() ); \
+                            m_Config ); \
     }
     
     SUPPORT_LIBRARIAN_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_LIBRARIAN_OPTION(IgnoreDefaultLibraryNames)
-    SUPPORT_LIBRARIAN_OPTION(AdditionalLibraryDirectories)
+
+    virtual string AdditionalLibraryDirectories(void) const
+    {
+	    return m_AdditionalLibraryDirectories;
+    }
 
 private:
-    string m_AdditionalOptions;
-    string m_ProjectName;
+    string      m_AdditionalOptions;
+    string      m_AdditionalLibraryDirectories;
+    string      m_ProjectName;
+    SConfigInfo m_Config;
    
     const CMsvcProjectMakefile& m_MsvcProjectMakefile;
     const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
@@ -540,6 +595,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/28 17:55:06  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.4  2004/01/26 19:25:42  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

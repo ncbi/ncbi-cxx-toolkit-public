@@ -85,9 +85,6 @@ private:
 
     string m_CustomBuildCommand;
 
-    ///Helpers:
-    string ConfigName(const string& config) const;
-
     /// Project source base dir / Filter
     typedef map<string, CRef<CFilter> > TFiltersCache;
     TFiltersCache m_FiltersCache;
@@ -120,6 +117,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/28 17:55:05  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.3  2004/01/26 19:25:41  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

@@ -30,6 +30,7 @@
  */
 #include <corelib/ncbireg.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
@@ -49,11 +50,11 @@ class CMsvcMetaMakefile
 public:
     CMsvcMetaMakefile(const string& file_path);
     
-    bool Empty(void) const;
+    bool IsEmpty(void) const;
 
-    string GetCompilerOpt (const string& opt, bool debug) const;
-    string GetLinkerOpt   (const string& opt, bool debug) const;
-    string GetLibrarianOpt(const string& opt, bool debug) const;
+    string GetCompilerOpt (const string& opt, const SConfigInfo& config) const;
+    string GetLinkerOpt   (const string& opt, const SConfigInfo& config) const;
+    string GetLibrarianOpt(const string& opt, const SConfigInfo& config) const;
 
 protected:
     CNcbiRegistry m_MakeFile;
@@ -83,11 +84,18 @@ public:
 
     bool IsExcludeProject(bool default_val) const;
 
-    void GetAdditionalSourceFiles(bool debug, list<string>* files) const;
-    void GetExcludedSourceFiles  (bool debug, list<string>* files) const;
+    void GetAdditionalSourceFiles(const SConfigInfo& config, 
+                                  list<string>*      files) const;
+
+    void GetExcludedSourceFiles  (const SConfigInfo& config, 
+                                  list<string>*      files) const;
+    
+    void GetAdditionalIncludeDirs(const SConfigInfo& config, 
+                                  list<string>*      files) const;
+
+    void GetCustomBuildInfo(list<SCustomBuildInfo>* info) const;
 
 private:
-    
     
     //Prohibited to
     CMsvcProjectMakefile(void);
@@ -102,22 +110,22 @@ string CreateMsvcProjectMakefileName(const CProjItem& project);
 /// Get option with taking into account 2 makefiles : matafile and project_file
 
 /// Compiler
-string GetCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
-                      const CMsvcProjectMakefile& project_file,
-                      const string&               opt,
-                      bool                        debug);
+string GetCompilerOpt (const CMsvcMetaMakefile&    meta_file, 
+                       const CMsvcProjectMakefile& project_file,
+                       const string&               opt,
+                       const SConfigInfo&          config);
 
 /// Linker
-string GetLinkerOpt  (const CMsvcMetaMakefile&    meta_file, 
-                      const CMsvcProjectMakefile& project_file,
-                      const string&               opt,
-                      bool                        debug);
+string GetLinkerOpt   (const CMsvcMetaMakefile&    meta_file, 
+                       const CMsvcProjectMakefile& project_file,
+                       const string&               opt,
+                       const SConfigInfo&          config);
 
 /// Librarian
 string GetLibrarianOpt(const CMsvcMetaMakefile&    meta_file, 
                        const CMsvcProjectMakefile& project_file,
                        const string&               opt,
-                       bool                        debug);
+                       const SConfigInfo&          config);
 
 
 END_NCBI_SCOPE
@@ -125,6 +133,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/28 17:55:04  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.1  2004/01/26 19:25:40  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

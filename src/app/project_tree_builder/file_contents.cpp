@@ -35,6 +35,7 @@
 BEGIN_NCBI_SCOPE
 
 
+//-----------------------------------------------------------------------------
 CSimpleMakeFileContents::CSimpleMakeFileContents(void)
 {
 }
@@ -227,6 +228,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/28 17:55:48  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.5  2004/01/26 19:27:27  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

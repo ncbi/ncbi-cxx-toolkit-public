@@ -37,12 +37,15 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Key Value struct
 struct SKeyValue
 {
     string m_Key;
     string m_Value;
 };
 
+/// Get parent_dir of the provided dir
+/// a/b/c/ -> a/b/
 inline string GetParentDir(const string& dir)
 {
     string parent_dir;
@@ -51,7 +54,8 @@ inline string GetParentDir(const string& dir)
     return parent_dir;
 }
 
-
+/// Get folder name of provided dir
+/// a/b/c/ -> c
 inline string GetFolder(const string& dir)
 {
     string folder;
@@ -60,12 +64,35 @@ inline string GetFolder(const string& dir)
     return folder;
 }
 
+///
+struct SProjectTreeInfo
+{
+    /// Root of the project tree
+    string m_Root;
+
+    /// src child dir of Root.
+    string m_RootSrc;
+
+    /// Subtree to buil (default is m_RootSrc).
+    string m_SubTree;
+
+    list<string> m_NotProvidedRequests;
+
+    string       m_ImplicitExclude;
+};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/28 17:55:07  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.3  2004/01/22 17:57:09  gorelenk
  * first version
  *

@@ -38,7 +38,26 @@
 
 BEGIN_NCBI_SCOPE
 
+struct PIsExcludedByMakefile
+{
+    bool operator() (const pair<string, CProjItem>& item) const
+    {
+        const CProjItem& project = item.second;
+        CMsvcPrjProjectContext prj_context(project);
+        if ( IsSubdir(GetApp().GetProjectTreeInfo().m_ImplicitExclude, 
+                      project.m_SourcesBaseDir) ) {
+            // implicitly excluded from build
+            return prj_context.GetMsvcProjectMakefile().IsExcludeProject(true);
+        } else {
+            // implicitly included to build
+            return prj_context.GetMsvcProjectMakefile().IsExcludeProject
+                                                                       (false);
+        }
+    }
+};
 
+
+//-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
 }
@@ -87,13 +106,16 @@ int CProjBulderApp::Run(void)
 
 
     // Build projects tree
-    CProjectItemsTree projects_tree(m_RootSrc);
-    CProjectTreeBuilder::BuildProjectTree(m_SubTree, 
-                                          m_RootSrc, 
+    CProjectItemsTree projects_tree(GetProjectTreeInfo().m_RootSrc);
+    CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_SubTree, 
+                                          GetProjectTreeInfo().m_RootSrc, 
                                           &projects_tree);
 
     // MSVC specific part:
     
+    // Exclude some projects from build.
+    EraseIf(projects_tree.m_Projects, PIsExcludedByMakefile());
+
     // Projects
     CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
 
@@ -120,6 +142,7 @@ int CProjBulderApp::Run(void)
     return 0;
 }
 
+
 void CProjBulderApp::Exit(void)
 {
 	//TODO
@@ -130,14 +153,10 @@ void CProjBulderApp::ParseArguments(void)
 {
     CArgs args = GetArgs();
 
-    // Root
-    m_Root     = CDirEntry::AddTrailingPathSeparator(args["root"].AsString());
-    m_RootSrc  = CDirEntry::AddTrailingPathSeparator
-                    (CDirEntry::ConcatPath(m_Root, "src"));
-
-    // Subtree to build
-    string subtree = args["subtree"].AsString();
-    m_SubTree  = CDirEntry::ConcatPath(m_Root, subtree);
+    /// Root dir of building tree,
+    /// src child dir of Root,
+    /// Subtree to buil (default is m_RootSrc)
+    /// are provided by SProjectTreeInfo (see GetProjectTreeInfo(void) below)
 
     // Solution
     m_Solution = args["solution"].AsString();
@@ -193,7 +212,7 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
         SConfigInfo config;
         config.m_Name  = config_name;
         config.m_Debug = GetConfig().GetString(config_name, 
-                                               "Debug",
+                                               "debug",
                                                "FALSE") != "FALSE";
         config.m_RuntimeLibrary = GetConfig().GetString(config_name, 
                                                         "runtimeLibraryOption",
@@ -250,11 +269,11 @@ const CMsvcMetaMakefile& CProjBulderApp::GetMetaMakefile(void)
         m_MsvcMetaMakefile = 
             auto_ptr<CMsvcMetaMakefile>
                 (new CMsvcMetaMakefile
-                        (CDirEntry::ConcatPath(m_RootSrc,
+                        (CDirEntry::ConcatPath(GetProjectTreeInfo().m_RootSrc,
                                                meta_makefile_fname)));
         
         //Metamakefile must present and must not be empty
-        if ( m_MsvcMetaMakefile->Empty() )
+        if ( m_MsvcMetaMakefile->IsEmpty() )
             NCBI_THROW(CProjBulderAppException, 
                        eMetaMakefile, meta_makefile_fname);
     }
@@ -262,6 +281,48 @@ const CMsvcMetaMakefile& CProjBulderApp::GetMetaMakefile(void)
     return *m_MsvcMetaMakefile;
 }
 
+
+const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
+{
+    if ( !m_ProjectTreeInfo.get() ) {
+        
+        m_ProjectTreeInfo = auto_ptr<SProjectTreeInfo> (new SProjectTreeInfo);
+        
+        CArgs args = GetArgs();
+        
+        // Root, etc.
+        m_ProjectTreeInfo->m_Root = 
+            CDirEntry::AddTrailingPathSeparator(args["root"].AsString());
+        m_ProjectTreeInfo->m_RootSrc = 
+            CDirEntry::AddTrailingPathSeparator
+                (CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, "src"));
+
+        // Subtree to build
+        string subtree = args["subtree"].AsString();
+        m_ProjectTreeInfo->m_SubTree  = 
+            CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, subtree);
+        CDirEntry::AddTrailingPathSeparator(m_ProjectTreeInfo->m_SubTree);
+
+        // Not provided requests
+        string not_provided_requests_str = 
+            GetConfig().GetString("ProjectTree", "NotProvidedRequests", "");
+        NStr::Split(not_provided_requests_str, " \t,", 
+                    m_ProjectTreeInfo->m_NotProvidedRequests);
+        
+        // ImplicitExclude - all subdirs will be excluded by default
+        string implicit_exclude 
+            = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
+        if ( !implicit_exclude.empty() ) {
+            m_ProjectTreeInfo->m_ImplicitExclude = 
+                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_RootSrc, 
+                                      implicit_exclude);
+            
+            CDirEntry::AddTrailingPathSeparator
+                (m_ProjectTreeInfo->m_ImplicitExclude);
+        }
+    }
+    return *m_ProjectTreeInfo;
+}
 
 CProjBulderApp& GetApp(void)
 {
@@ -284,6 +345,13 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/28 17:55:50  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.6  2004/01/26 19:27:30  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

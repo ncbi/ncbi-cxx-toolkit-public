@@ -33,7 +33,7 @@
 
 BEGIN_NCBI_SCOPE
 
-
+//-----------------------------------------------------------------------------
 CSymResolver::CSymResolver(void)
 {
     Clear();
@@ -143,6 +143,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/28 17:55:50  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.3  2004/01/22 17:57:55  gorelenk
  * first version
  *

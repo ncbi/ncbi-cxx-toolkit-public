@@ -32,9 +32,15 @@
 
 
 #include "VisualStudioProject.hpp"
+#include <corelib/ncbireg.hpp>
+
+#include "Tool.hpp"
+#include "File.hpp"
+#include "Files.hpp"
+#include "Filter.hpp"
+#include "FileConfiguration.hpp"
 
 #include <corelib/ncbienv.hpp>
-
 BEGIN_NCBI_SCOPE
 
 /// Creates CVisualStudioProject class instanse from file.
@@ -91,6 +97,39 @@ struct SConfigInfo
     string m_RuntimeLibrary;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SCustomBuildInfo --
+///
+/// Abstraction of custom build source file.
+///
+/// Information for custom buil source file 
+/// (not *.c, *.cpp, *.midl, *.rc, etc.)
+/// MSVC does not know how to buil this file and
+/// we provide information how to do it.
+/// 
+
+struct SCustomBuildInfo
+{
+    string m_SourceFile;
+    string m_CommandLine;
+    string m_Description;
+    string m_Outputs;
+    string m_AdditionalDependencies;
+
+    bool IsEmpty(void) const
+    {
+        return m_SourceFile.empty() || m_CommandLine.empty();
+    }
+    void Clear(void)
+    {
+        m_SourceFile.erase();
+        m_CommandLine.erase();
+        m_Description.erase();
+        m_Outputs.erase();
+        m_AdditionalDependencies.erase();
+    }
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -119,11 +158,61 @@ private:
 };
 
 
+/// Is abs_dir a parent of abs_parent_dir.
+bool IsSubdir(const string& abs_parent_dir, const string& abs_dir);
+
+
+/// Erase if predicate is true
+template <class C, class P> 
+void EraseIf(C& cont, const P& pred)
+{
+    for (C::iterator p = cont.begin(); p != cont.end(); )
+    {
+        if ( pred(*p) )
+            p = cont.erase(p);
+        else
+            ++p;
+    }
+}
+
+/// Get option fron registry from  
+///     [<section>.debug.<ConfigName>] section for debug configuratios
+///  or [<section>.release.<ConfigName>] for release configurations
+///
+/// if no such option then try      
+///     [<section>.debug]
+/// or  [<section>.release]
+///
+/// if no such option then finally try
+///     [<section>]
+///
+string GetOpt(const CNcbiRegistry& registry, 
+              const string&        section, 
+              const string&        opt, 
+              const SConfigInfo&   config);
+
+/// return <config>|Win32 as needed by MSVC compiler
+string ConfigName(const string& config);
+
+
+/// Common function shared by 
+/// CMsvcMasterProjectGenerator and CMsvcProjectGenerator
+void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
+                                const list<SConfigInfo> configs,
+                                const SCustomBuildInfo& build_info);
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/28 17:55:05  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.4  2004/01/26 19:25:41  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

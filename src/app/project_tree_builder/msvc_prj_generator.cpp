@@ -26,6 +26,7 @@ static void s_CollectRelPathes(const string&       path_from,
                                list<string>*       rel_pathes);
 
 
+//-----------------------------------------------------------------------------
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<SConfigInfo>& configs)
     :m_Configs(configs)
 {
@@ -39,8 +40,13 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 
 bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
-    CVisualStudioProject xmlprj;
     CMsvcPrjProjectContext project_context(prj);
+    if ( !CMsvcPrjProjectContext::IsRequiresOk(prj) ) {
+        LOG_POST("====== Can not find all requires for project: " + prj.m_ID);
+        return false;
+    }
+
+    CVisualStudioProject xmlprj;
     
     {{
         //Attributes:
@@ -59,18 +65,19 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
     ITERATE(list<SConfigInfo>, p , m_Configs) {
 
-        const string& config = (*p).m_Name; 
+        const SConfigInfo& cfg_info = *p; 
 
         //contexts:
         
-        CMsvcPrjGeneralContext general_context(*p, project_context);
+        CMsvcPrjGeneralContext general_context(cfg_info, project_context);
 
         //MSVC Tools
         CMsvcTools msvc_tool(general_context, project_context);
 
         CRef<CConfiguration> conf(new CConfiguration());
 
-#define BIND_TOOLS(tool, msvctool, X) tool->SetAttlist().Set##X(msvctool->##X())
+#define BIND_TOOLS(tool, msvctool, X) \
+                  tool->SetAttlist().Set##X(msvctool->##X())
 
         {{
             //Configuration
@@ -102,14 +109,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             //Optimization
             BIND_TOOLS(tool, msvc_tool.Compiler(), Optimization);
 
-            //AdditionalIncludeDirectories
-            {{
-                BIND_TOOLS(tool, 
-                           msvc_tool.Compiler(), 
-                           AdditionalIncludeDirectories);
+            //AdditionalIncludeDirectories - more dirs are coming from makefile
+            BIND_TOOLS(tool, 
+                       msvc_tool.Compiler(), AdditionalIncludeDirectories);
 
-            }}
-            
             //PreprocessorDefinitions
             BIND_TOOLS(tool, msvc_tool.Compiler(), PreprocessorDefinitions);
             
@@ -133,8 +136,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //Detect64BitPortabilityProblems
             BIND_TOOLS(tool, 
-                       msvc_tool.Compiler(), 
-                       Detect64BitPortabilityProblems);
+                       msvc_tool.Compiler(), Detect64BitPortabilityProblems);
 
             //DebugInformationFormat
             BIND_TOOLS(tool, msvc_tool.Compiler(), DebugInformationFormat);
@@ -156,29 +158,40 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //OptimizeForProcessor
             BIND_TOOLS(tool, msvc_tool.Compiler(), OptimizeForProcessor);
+            
             //StructMemberAlignment 
             BIND_TOOLS(tool, msvc_tool.Compiler(), StructMemberAlignment);
+            
             //CallingConvention
             BIND_TOOLS(tool, msvc_tool.Compiler(), CallingConvention);
+            
             //IgnoreStandardIncludePath
             BIND_TOOLS(tool, msvc_tool.Compiler(), IgnoreStandardIncludePath);
+            
             //ExceptionHandling
             BIND_TOOLS(tool, msvc_tool.Compiler(), ExceptionHandling);
+            
             //BufferSecurityCheck
             BIND_TOOLS(tool, msvc_tool.Compiler(), BufferSecurityCheck);
+            
             //DisableSpecificWarnings
             BIND_TOOLS(tool, msvc_tool.Compiler(), DisableSpecificWarnings);
+            
             //UndefinePreprocessorDefinitions
-            BIND_TOOLS(tool, msvc_tool.Compiler(), UndefinePreprocessorDefinitions);
+            BIND_TOOLS(tool, 
+                       msvc_tool.Compiler(), UndefinePreprocessorDefinitions);
+            
             //AdditionalOptions
             BIND_TOOLS(tool, msvc_tool.Compiler(), AdditionalOptions);
+            
             //GlobalOptimizations
             BIND_TOOLS(tool, msvc_tool.Compiler(), GlobalOptimizations);
+            
             //FavorSizeOrSpeed
             BIND_TOOLS(tool, msvc_tool.Compiler(), FavorSizeOrSpeed);
+            
             //BrowseInformation
             BIND_TOOLS(tool, msvc_tool.Compiler(), BrowseInformation);
-
 
             conf->SetTool().push_back(tool);
         }}
@@ -222,8 +235,10 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //IgnoreAllDefaultLibraries
             BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreAllDefaultLibraries);
+            
             //IgnoreDefaultLibraryNames
             BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreDefaultLibraryNames);
+            
             //AdditionalLibraryDirectories
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalLibraryDirectories);
 
@@ -250,7 +265,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             BIND_TOOLS(tool, msvc_tool.Librarian(), IgnoreDefaultLibraryNames);
 
             //AdditionalLibraryDirectories
-            BIND_TOOLS(tool, msvc_tool.Librarian(), AdditionalLibraryDirectories);
+            BIND_TOOLS(tool, 
+                       msvc_tool.Librarian(), AdditionalLibraryDirectories);
 
             conf->SetTool().push_back(tool);
         }}
@@ -377,7 +393,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
             ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
 
         list<string> rel_pathes;
-        CollectSources(prj,project_context, &rel_pathes); 
+        CollectSources(prj, project_context, &rel_pathes); 
         ITERATE(list<string>, p, rel_pathes) {
             //Include collected source files
             CRef< CFFile > file(new CFFile());
@@ -436,6 +452,23 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
         xmlprj.SetFiles().SetFilter().push_back(filter);
     }}
+    {{
+        //Custom Build files
+        const list<SCustomBuildInfo>& info_list = 
+            project_context.GetCustomBuildInfo();
+
+        if ( !info_list.empty() ) {
+            CRef<CFilter> filter(new CFilter());
+            filter->SetAttlist().SetName("Custom Build Files");
+            filter->SetAttlist().SetFilter("");
+            
+            ITERATE(list<SCustomBuildInfo>, p, info_list) { 
+                const SCustomBuildInfo& build_info = *p;
+                AddCustomBuildFileToFilter(filter, m_Configs, build_info);
+            }
+
+        }
+    }}
 
     {{
         //Globals
@@ -454,6 +487,27 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 }
 
 
+struct PSourcesExclude
+{
+    PSourcesExclude(const list<string>& excluded_sources)
+    {
+        copy(excluded_sources.begin(), excluded_sources.end(), 
+             inserter(m_ExcludedSources, m_ExcludedSources.end()) );
+    }
+
+    bool operator() (const string& src) const
+    {
+        string src_base;
+        CDirEntry::SplitPath(src, NULL, &src_base);
+        return m_ExcludedSources.find(src_base) != m_ExcludedSources.end();
+    }
+
+    set<string> m_ExcludedSources;
+private:
+    PSourcesExclude();
+};
+
+
 void 
 CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
                                        const CMsvcPrjProjectContext& context,
@@ -461,7 +515,22 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
 {
     rel_pathes->clear();
 
-    ITERATE(list<string>, p, project.m_Sources) {
+    list<string> sources(project.m_Sources);
+    list<string> included_sources;
+    context.GetMsvcProjectMakefile().GetAdditionalSourceFiles //TODO
+                                            (SConfigInfo(),&included_sources);
+
+    ITERATE(list<string>, p, included_sources) {
+        sources.push_back(CDirEntry::ConcatPath(project.m_SourcesBaseDir, *p));
+    }
+
+    list<string> excluded_sources;
+    context.GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
+                                            (SConfigInfo(), &included_sources);
+    PSourcesExclude pred(excluded_sources);
+    EraseIf(sources, pred);
+
+    ITERATE(list<string>, p, sources) {
 
         const string& abs_path = *p; // whithout ext.
 
@@ -554,6 +623,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/28 17:55:48  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.7  2004/01/26 19:27:28  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

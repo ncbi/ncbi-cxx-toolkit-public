@@ -39,6 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 
+//-----------------------------------------------------------------------------
 CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
     ( const CProjectItemsTree& tree,
       const list<SConfigInfo>& configs,
@@ -59,13 +60,6 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
 
 CMsvcMasterProjectGenerator::~CMsvcMasterProjectGenerator(void)
 {
-}
-
-
-string 
-CMsvcMasterProjectGenerator::ConfigName(const string& config) const
-{
-    return config +'|'+ MSVC_PROJECT_PLATFORM;
 }
 
 
@@ -277,32 +271,16 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter,
     if (p != m_Tree.m_Projects.end()) {
         // Add project to this filter (folder)
         const CProjItem& project = p->second;
-
-        CRef<CFFile> file(new CFFile());
-        file->SetAttlist().SetRelativePath(project.m_ID + m_ProjectItemExt);
-        
         CreateProjectFileItem(project);
 
-        ITERATE(list<SConfigInfo>, n , m_Configs) {
-            // Iterate all configurations
-            const string& config = (*n).m_Name;
+        SCustomBuildInfo build_info;
+        build_info.m_SourceFile  = project.m_ID + m_ProjectItemExt;
+        build_info.m_Description = "Building project : $(InputName)";
+        build_info.m_CommandLine = m_CustomBuildCommand;
+        build_info.m_Outputs     = "$(InputPath).aanofile.out";
+        
+        AddCustomBuildFileToFilter(filter, m_Configs, build_info);
 
-            CRef<CFileConfiguration> file_config(new CFileConfiguration());
-            file_config->SetAttlist().SetName(ConfigName(config));
-
-            CRef<CTool> custom_build(new CTool(""));
-            custom_build->SetAttlist().SetName("VCCustomBuildTool");
-            custom_build->SetAttlist().SetDescription
-                ("Building project : $(InputName)");
-            custom_build->SetAttlist().SetCommandLine(m_CustomBuildCommand);
-            custom_build->SetAttlist().SetOutputs("$(InputPath).aanofile.out");
-            file_config->SetTool(*custom_build);
-
-            file->SetFileConfiguration().push_back(file_config);
-        }
-        CRef< CFilter_Base::C_FF::C_E > ce( new CFilter_Base::C_FF::C_E() );
-        ce->SetFile(*file);
-        filter->SetFF().SetFF().push_back(ce);
     } else {
         LOG_POST("||||||||| No project with id : " + project_id);
     }
@@ -326,6 +304,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/28 17:55:48  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.3  2004/01/26 19:27:28  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

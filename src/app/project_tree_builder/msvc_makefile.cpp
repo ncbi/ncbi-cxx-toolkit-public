@@ -35,7 +35,7 @@
 
 BEGIN_NCBI_SCOPE
 
-
+//-----------------------------------------------------------------------------
 CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
 {
     CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
@@ -44,23 +44,15 @@ CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
 }
 
 
-bool CMsvcMetaMakefile::Empty(void) const
+bool CMsvcMetaMakefile::IsEmpty(void) const
 {
     return m_MakeFile.Empty();
 }
 
 
-static string s_GetOpt(const CNcbiRegistry& makefile, 
-                       const string& section, 
-                       const string& opt, 
-                       bool debug)
+static string s_Config(bool debug)
 {
-    string section_spec = section + (debug? ".Debug" : ".Release");
-    string val_spec = makefile.GetString(section_spec, opt, "");
-    if ( !val_spec.empty() )
-        return val_spec;
-
-    return makefile.GetString(section, opt, "");
+    return debug? "Debug" : "Release";
 }
 
 
@@ -89,24 +81,28 @@ string CreateMsvcProjectMakefileName(const CProjItem& project)
 }
 
 
-string CMsvcMetaMakefile::GetCompilerOpt(const string& opt, bool debug) const
+string CMsvcMetaMakefile::GetCompilerOpt(const string& opt, 
+                                         const SConfigInfo& config) const
 {
-    return s_GetOpt(m_MakeFile, "Compiler", opt, debug);
+    return GetOpt(m_MakeFile, "Compiler", opt, config);
 }
 
 
-string CMsvcMetaMakefile::GetLinkerOpt(const string& opt, bool debug) const
+string CMsvcMetaMakefile::GetLinkerOpt(const string& opt, 
+                                       const SConfigInfo& config) const
 {
-    return s_GetOpt(m_MakeFile, "Linker", opt, debug);
+    return GetOpt(m_MakeFile, "Linker", opt, config);
 }
 
 
-string CMsvcMetaMakefile::GetLibrarianOpt(const string& opt, bool debug) const
+string CMsvcMetaMakefile::GetLibrarianOpt(const string& opt, 
+                                          const SConfigInfo& config) const
 {
-    return s_GetOpt(m_MakeFile, "Librarian", opt, debug);
+    return GetOpt(m_MakeFile, "Librarian", opt, config);
 }
 
 
+//-----------------------------------------------------------------------------
 CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
     :CMsvcMetaMakefile(file_path)
 {
@@ -120,66 +116,109 @@ bool CMsvcProjectMakefile::IsExcludeProject(bool default_val) const
     if ( val.empty() )
         return default_val;
 
-    return val == "FALSE";
+    return val != "FALSE";
 }
 
 
-void CMsvcProjectMakefile::GetAdditionalSourceFiles(bool debug, 
+void CMsvcProjectMakefile::GetAdditionalSourceFiles(const SConfigInfo& config,
                                                     list<string>* files) const
 {
     string files_string = 
-        s_GetOpt(m_MakeFile, "AddToProject", "SourceFiles", debug);
+        GetOpt(m_MakeFile, "AddToProject", "SourceFiles", config);
     
     NStr::Split(files_string, " \t,", *files);
 }
 
 
-void CMsvcProjectMakefile::GetExcludedSourceFiles(bool debug, 
+void CMsvcProjectMakefile::GetExcludedSourceFiles(const SConfigInfo& config,  
                                                   list<string>* files) const
 {
     string files_string = 
-        s_GetOpt(m_MakeFile, "ExcludedFromProject", "SourceFiles", debug);
+        GetOpt(m_MakeFile, 
+               "ExcludedFromProject", "SourceFiles", config);
     
     NStr::Split(files_string, " \t,", *files);
 }
 
 
+void CMsvcProjectMakefile::GetAdditionalIncludeDirs(const SConfigInfo& config,  
+                                                    list<string>* dirs) const
+{
+    string dirs_string = 
+        GetOpt(m_MakeFile, "AddToProject", "IncludeDirs", config);
+    
+    NStr::Split(dirs_string, " \t,", *dirs);
+}
+
+
+void 
+CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
+{
+    info->clear();
+
+    string source_files_str = 
+        m_MakeFile.GetString("CustomBuild", "SourceFiles", "");
+    
+    list<string> source_files;
+    NStr::Split(source_files_str, " \t,", source_files);
+
+    ITERATE(list<string>, p, source_files){
+        const string& source_file = *p;
+        
+        SCustomBuildInfo build_info;
+        build_info.m_SourceFile = source_file;
+        build_info.m_CommandLine = 
+            m_MakeFile.GetString(source_file, "CommandLine", "");
+        build_info.m_Description = 
+            m_MakeFile.GetString(source_file, "Description", "");
+        build_info.m_Outputs = 
+            m_MakeFile.GetString(source_file, "Outputs", "");
+        build_info.m_AdditionalDependencies = 
+            m_MakeFile.GetString(source_file, "AdditionalDependencies", "");
+
+        if ( !build_info.IsEmpty() )
+            info->push_back(build_info);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
 string GetCompilerOpt(const CMsvcMetaMakefile&    meta_file, 
                       const CMsvcProjectMakefile& project_file,
                       const string&               opt,
-                      bool                        debug)
+                      const SConfigInfo&          config)
 {
-   string val = project_file.GetCompilerOpt(opt, debug);
+   string val = project_file.GetCompilerOpt(opt, config);
    if ( !val.empty() )
        return val;
    
-   return meta_file.GetCompilerOpt(opt, debug);
+   return meta_file.GetCompilerOpt(opt, config);
 }
 
 
 string GetLinkerOpt(const CMsvcMetaMakefile&    meta_file, 
                     const CMsvcProjectMakefile& project_file,
                     const string&               opt,
-                    bool                        debug)
+                    const SConfigInfo&          config)
 {
-   string val = project_file.GetLinkerOpt(opt, debug);
+   string val = project_file.GetLinkerOpt(opt, config);
    if ( !val.empty() )
        return val;
    
-   return meta_file.GetLinkerOpt(opt, debug);
+   return meta_file.GetLinkerOpt(opt, config);
 }
 
 
 string GetLibrarianOpt(const CMsvcMetaMakefile&    meta_file, 
                        const CMsvcProjectMakefile& project_file,
                        const string&               opt,
-                       bool                        debug)
+                       const SConfigInfo&          config)
 {
-   string val = project_file.GetLibrarianOpt(opt, debug);
+   string val = project_file.GetLibrarianOpt(opt, config);
    if ( !val.empty() )
        return val;
    
-   return meta_file.GetLibrarianOpt(opt, debug);
+   return meta_file.GetLibrarianOpt(opt, config);
 }
 
 END_NCBI_SCOPE
@@ -187,6 +226,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/28 17:55:48  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.1  2004/01/26 19:27:28  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

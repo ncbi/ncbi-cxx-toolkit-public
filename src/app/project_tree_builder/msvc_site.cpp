@@ -29,6 +29,8 @@
 
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
+
+
 #include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -48,13 +50,14 @@ static void s_LoadSet(const CNcbiRegistry& registry,
         values->insert(*p);
 }
 
-
+//-----------------------------------------------------------------------------
 CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
+    :m_Registry(registry)
 {
-    s_LoadSet(registry, 
+    s_LoadSet(m_Registry, 
               "ProjectTree", "NotProvidedRequests", &m_NotProvidedThing);
 
-    s_LoadSet(registry, 
+    s_LoadSet(m_Registry, 
               "ProjectTree", "ImplicitExclude", &m_ImplicitExcludeNodes);
 }
 
@@ -71,10 +74,30 @@ bool CMsvcSite::IsImplicitExclude(const string& node) const
 }
 
 
+void CMsvcSite::GetLibInfo(const string& lib, 
+                           const SConfigInfo& config, SLibInfo* libinfo) const
+{
+    libinfo->Clear();
+
+    libinfo->m_IncludeDir = GetOpt(m_Registry, lib, "INCLUDE", config);
+    libinfo->m_LibPath    = GetOpt(m_Registry, lib, "LIBPATH", config);
+
+    string libs_str = GetOpt(m_Registry, lib, "LIB", config);
+    NStr::Split(libs_str, " \t,", libinfo->m_Libs); //TODO
+}
+
+
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/28 17:55:49  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.1  2004/01/26 19:27:29  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

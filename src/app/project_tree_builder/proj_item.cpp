@@ -34,6 +34,7 @@
 BEGIN_NCBI_SCOPE
 
 
+//-----------------------------------------------------------------------------
 CProjItem::CProjItem(void)
 {
     Clear();
@@ -99,9 +100,7 @@ void CProjItem::SetFrom(const CProjItem& item)
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
+//-----------------------------------------------------------------------------
 CProjectItemsTree::CProjectItemsTree(void)
 {
     Clear();
@@ -163,8 +162,8 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 
     ITERATE(TFiles, p, makein) {
 
-        string sources_dir;
-        CDirEntry::SplitPath(p->first, &sources_dir);
+        string source_base_dir;
+        CDirEntry::SplitPath(p->first, &source_base_dir);
 
         TMakeInInfoList list_info;
         AnalyzeMakeIn(p->second, &list_info);
@@ -178,8 +177,9 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                 //project id
                 const string proj_name = *n;
         
-                string applib_mfilepath = CDirEntry::ConcatPath(sources_dir,
-                               CreateMakeAppLibFileName(info.m_ProjType, proj_name));
+                string applib_mfilepath = 
+                    CDirEntry::ConcatPath(source_base_dir,
+                         CreateMakeAppLibFileName(info.m_ProjType, proj_name));
             
                 if (info.m_ProjType == CProjItem::eApp) {
 
@@ -203,7 +203,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     //sources - full pathes
                     //We'll create relative pathes from them
                     list<string> sources;
-                    CreateFullPathes(sources_dir, k->second, &sources);
+                    CreateFullPathes(source_base_dir, k->second, &sources);
 
                     //depends
                     list<string> depends;
@@ -220,7 +220,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     //project name
                     k = m->second.m_Contents.find("APP");
                     if (k == m->second.m_Contents.end()  ||  
-                                                            k->second.empty()) {
+                                                           k->second.empty()) {
 
                         LOG_POST("**** No APP key or empty in Makefile.*.app :"
                                   + applib_mfilepath);
@@ -228,8 +228,6 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     }
                     string proj_id = k->second.front();
 
-                    string source_base_dir;
-                    CDirEntry::SplitPath(p->first, &source_base_dir);
                     tree->m_Projects[proj_id] =  CProjItem( CProjItem::eApp, 
                                                                proj_name, 
                                                                proj_id,
@@ -261,7 +259,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     // sources - full pathes 
                     // We'll create relative pathes from them)
                     list<string> sources;
-                    CreateFullPathes(sources_dir, k->second, &sources);
+                    CreateFullPathes(source_base_dir, k->second, &sources);
 
                     // depends - TODO
                     list<string> depends;
@@ -275,7 +273,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     //project name
                     k = m->second.m_Contents.find("LIB");
                     if (k == m->second.m_Contents.end()  ||  
-                                                            k->second.empty()) {
+                                                           k->second.empty()) {
 
                         LOG_POST("**** No LIB key or empty in Makefile.*.lib :"
                                   + applib_mfilepath);
@@ -283,8 +281,6 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                     }
                     string proj_id = k->second.front();
 
-                    string source_base_dir;
-                    CDirEntry::SplitPath(p->first, &source_base_dir);
                     tree->m_Projects[proj_id] =  CProjItem( CProjItem::eLib,
                                                                proj_name, 
                                                                proj_id,
@@ -296,6 +292,35 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
             }
         }
     }
+
+    {{
+        // REQUIRES tags in Makefile.in(s)
+        ITERATE(TFiles, p, makein) {
+
+            string makein_dir;
+            CDirEntry::SplitPath(p->first, &makein_dir);
+            const CSimpleMakeFileContents& makein_contents = p->second;
+            NON_CONST_ITERATE(TProjects, n, tree->m_Projects) {
+
+                CProjItem& project = n->second;
+                if ( IsSubdir(makein_dir, project.m_SourcesBaseDir) ) {
+
+                    CSimpleMakeFileContents::TContents::const_iterator k = 
+                        makein_contents.m_Contents.find("REQUIRES");
+                    if ( k != makein_contents.m_Contents.end() ) {
+
+                        const list<string> requires = k->second;
+                        copy(requires.begin(), 
+                             requires.end(), 
+                             back_inserter(project.m_Requires));
+                        
+                        project.m_Requires.sort();
+                        project.m_Requires.unique();
+                    }
+                }
+            }
+        }
+    }}
 }
 
 
@@ -425,6 +450,7 @@ void CProjectItemsTree::GetSiblings(const string& parent_id,
 }
 
 
+//-----------------------------------------------------------------------------
 static bool s_IsMakeInFile(const string& name)
 {
     return name == "Makefile.in";
@@ -445,6 +471,7 @@ static bool s_IsMakeAppFile(const string& name)
 }
 
 
+//-----------------------------------------------------------------------------
 void 
 CProjectTreeBuilder::BuildOneProjectTree(const string&       start_node_path,
                                          const string&       root_src_path,
@@ -499,7 +526,7 @@ CProjectTreeBuilder::BuildProjectTree(const string&       start_node_path,
                 // id of project we have to resolve
                 const string& prj_id = *p;
                 CProjectItemsTree::TProjects::const_iterator n = 
-                                             whole_tree.m_Projects.find(prj_id);
+                                            whole_tree.m_Projects.find(prj_id);
             
                 if (n != whole_tree.m_Projects.end()) {
                     //insert this project to target_tree
@@ -630,6 +657,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/28 17:55:50  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.5  2004/01/26 19:27:30  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

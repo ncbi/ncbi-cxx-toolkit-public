@@ -37,8 +37,9 @@
 
 BEGIN_NCBI_SCOPE
 
-
-CMsvcSolutionGenerator::CMsvcSolutionGenerator(const list<SConfigInfo>& configs)
+//-----------------------------------------------------------------------------
+CMsvcSolutionGenerator::CMsvcSolutionGenerator
+                                            (const list<SConfigInfo>& configs)
     :m_Configs(configs)
 {
 }
@@ -172,7 +173,8 @@ CMsvcSolutionGenerator::CPrjContext::~CPrjContext(void)
 }
 
 
-void CMsvcSolutionGenerator::CPrjContext::Clear(void)
+void 
+CMsvcSolutionGenerator::CPrjContext::Clear(void)
 {
     //TODO
 }
@@ -190,8 +192,9 @@ CMsvcSolutionGenerator::CPrjContext::SetFrom
 }
 
 
-void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs, 
-                                                    const CPrjContext& project)
+void 
+CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs, 
+                                               const CPrjContext& project)
 {
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID 
@@ -199,7 +202,7 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         << project.m_ProjectName 
         << "\", \"";
 
-    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, project.m_ProjectPath) 
+    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, project.m_ProjectPath)
         << "\", \"";
 
     ofs << project.m_GUID 
@@ -233,7 +236,8 @@ void CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
 }
 
 
-void CMsvcSolutionGenerator::WriteMasterProject(CNcbiOfstream& ofs)
+void 
+CMsvcSolutionGenerator::WriteMasterProject(CNcbiOfstream& ofs)
 {
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
@@ -269,8 +273,7 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
             << '.' 
             << config 
             << ".ActiveCfg = " 
-            << config 
-            << "|Win32" 
+            << ConfigName(config)
             << endl;
 
         ofs << '\t' 
@@ -279,8 +282,7 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
             << '.' 
             << config 
             << ".Build.0 = " 
-            << config 
-            << "|Win32" 
+            << ConfigName(config)
             << endl;
     }
 }
@@ -298,8 +300,7 @@ CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
             << '.' 
             << config 
             << ".ActiveCfg = " 
-            << config 
-            << "|Win32" 
+            << ConfigName(config)
             << endl;
 
         ofs << '\t' 
@@ -308,8 +309,7 @@ CMsvcSolutionGenerator::WriteMasterProjectConfiguration(CNcbiOfstream& ofs)
             << '.' 
             << config 
             << ".Build.0 = " 
-            << config 
-            << "|Win32" 
+            << ConfigName(config)
             << endl;
     }
 }
@@ -320,6 +320,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/28 17:55:49  gorelenk
+ * += For msvc makefile support of :
+ *                 Requires tag, ExcludeProject tag,
+ *                 AddToProject section (SourceFiles and IncludeDirs),
+ *                 CustomBuild section.
+ * += For support of user local site.
+ *
  * Revision 1.5  2004/01/26 19:27:29  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support
