@@ -301,7 +301,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
     CRef<CSeq_annot> seq_annot (new CSeq_annot);
     seq_annot->SetData().SetAlign().push_back(GetSeqAlign());
 
-    m_Entry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+    m_Entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
     m_Entry->SetSet().SetAnnot().push_back(seq_annot);
 
     CBioseq_set::TSeq_set& seq_set = m_Entry->SetSet().SetSeq_set();
@@ -370,6 +370,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/23 19:35:21  jcherry
+ * Set class to pop-set rather than nuc-prot
+ *
  * Revision 1.8  2004/03/02 20:18:50  jcherry
  * Don't throw in callback called by C code
  *
