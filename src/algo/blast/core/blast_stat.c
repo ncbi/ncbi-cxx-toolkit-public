@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.25  2003/07/31 17:48:06  madden
+ * Remove call to FileLength
+ *
  * Revision 1.24  2003/07/31 14:31:41  camacho
  * Replaced Char for char
  *
@@ -1066,8 +1069,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlk* sbp, char* matrix_path)
     if (sbp->read_in_matrix) {
         ASSERT(matrix_path != NULL);
 
-        if((FileLength(matrix_path) <= 0) ||
-           ((fp = fopen(matrix_path, "r")) == NULL))
+        if((fp=fopen(matrix_path, "r")) == NULL)
            return -1;
 
         if((status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
