@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/10/20 19:29:52  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.28  2000/10/20 15:51:52  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -450,7 +453,7 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
         }
     }
     else {
-        in >> member;
+        in.ReadClassMember(member);
     }
 }
 
@@ -471,6 +474,6 @@ void CWriteSeqSetHook::WriteClassMember(CObjectOStream& out,
         }
     }
     else {
-        out << member;
+        out.WriteClassMember(member);
     }
 }

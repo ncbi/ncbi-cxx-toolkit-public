@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/20 19:29:36  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.1  2000/10/20 15:51:40  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -47,23 +50,6 @@
 #include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
-
-void operator<<(CObjectOStream& out, const CConstObjectInfoMI& member)
-{
-    const CMemberInfo* memberInfo = member.GetMemberInfo();
-    TConstObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
-    out.WriteClassMember(memberInfo->GetId(),
-                         memberInfo->GetTypeInfo(),
-                         memberInfo->GetMemberPtr(classPtr));
-}
-
-void operator>>(CObjectIStream& in, const CObjectInfoMI& member)
-{
-    const CMemberInfo* memberInfo = member.GetMemberInfo();
-    TObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
-    in.ReadObject(memberInfo->GetMemberPtr(classPtr),
-                  memberInfo->GetTypeInfo());
-}
 
 // readers
 void CObjectInfo::ReadContainer(CObjectIStream& in,

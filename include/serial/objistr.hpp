@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/10/20 19:29:15  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.56  2000/10/20 15:51:26  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -274,6 +277,9 @@ class CDelayBuffer;
 class CByteSource;
 class CByteSourceReader;
 
+class CObjectInfo;
+class CObjectInfoMI;
+
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CContainerTypeInfo;
@@ -349,6 +355,9 @@ public:
 
     // temporary reader
     void ReadSeparateObject(const CObjectInfo& object);
+
+	// member
+	void ReadClassMember(const CObjectInfoMI& member);
 
     // END OF USER INTERFACE
 

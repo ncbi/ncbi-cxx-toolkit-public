@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2000/10/20 19:29:36  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.66  2000/10/20 15:51:40  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -304,6 +307,7 @@
 #include <serial/delaybuf.hpp>
 #include <serial/objistrimpl.hpp>
 #include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
 #include <serial/objlist.hpp>
 
 #include <limits.h>
@@ -688,6 +692,14 @@ void CObjectIStream::ReadObject(const CObjectInfo& object)
 void CObjectIStream::SkipObject(const CObjectTypeInfo& objectType)
 {
     SkipObject(objectType.GetTypeInfo());
+}
+
+void CObjectIStream::ReadClassMember(const CObjectInfo::CMemberIterator& member)
+{
+    const CMemberInfo* memberInfo = member.GetMemberInfo();
+    TObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
+    ReadObject(memberInfo->GetMemberPtr(classPtr),
+		       memberInfo->GetTypeInfo());
 }
 
 string CObjectIStream::ReadFileHeader(void)

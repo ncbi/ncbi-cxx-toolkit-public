@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/20 19:29:15  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.1  2000/10/20 15:51:25  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -214,9 +217,6 @@ void operator<<(COStreamContainer& o, const T& element)
 {
     o.WriteElement(ConstObjectInfo(element));
 }
-
-void operator<<(CObjectOStream& out, const CConstObjectInfoMI& member);
-void operator>>(CObjectIStream& in, const CObjectInfoMI& member);
 
 #include <serial/objectio.inl>
 

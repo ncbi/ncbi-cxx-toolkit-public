@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/10/20 19:29:36  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.53  2000/10/20 15:51:42  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -263,6 +266,7 @@
 #include <serial/member.hpp>
 #include <serial/variant.hpp>
 #include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
 #include <serial/objlist.hpp>
 
 #if HAVE_NCBI_C
@@ -436,6 +440,15 @@ void CObjectOStream::EndOfWrite(void)
 void CObjectOStream::WriteObject(const CConstObjectInfo& object)
 {
     WriteObject(object.GetObjectPtr(), object.GetTypeInfo());
+}
+
+void CObjectOStream::WriteClassMember(const CConstObjectInfo::CMemberIterator& member)
+{
+    const CMemberInfo* memberInfo = member.GetMemberInfo();
+    TConstObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
+    WriteClassMember(memberInfo->GetId(),
+                     memberInfo->GetTypeInfo(),
+                     memberInfo->GetMemberPtr(classPtr));
 }
 
 void CObjectOStream::Write(const CConstObjectInfo& object)

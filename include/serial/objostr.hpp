@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/10/20 19:29:15  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
 * Revision 1.51  2000/10/20 15:51:27  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -255,6 +258,9 @@ BEGIN_NCBI_SCOPE
 class CMemberId;
 class CDelayBuffer;
 
+class CConstObjectInfo;
+class CConstObjectInfoMI;
+
 class CWriteObjectHook;
 class CWriteClassMembersHook;
 class CWriteChoiceVariantHook;
@@ -327,6 +333,9 @@ public:
 
     // internal writer
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
+
+	// member interface
+	void WriteClassMember(const CConstObjectInfoMI& member);
 
     // END OF USER INTERFACE
 
