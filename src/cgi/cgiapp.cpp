@@ -97,7 +97,7 @@ int CCgiApplication::Run(void)
             ERR_POST(msg);  // Post error notification even if no logging
         }
         if ( is_stat_log ) {
-            stat->Reset(start_time, result, e.what());
+            stat->Reset(start_time, result, &e);
             msg = stat->Compose();
             stat->Submit(msg);
         }
@@ -527,11 +527,11 @@ CCgiStatistics::~CCgiStatistics()
 
 void CCgiStatistics::Reset(const CTime& start_time,
                            int          result,
-                           const char*  err_msg)
+                           const exception*  ex)
 {
     m_StartTime = start_time;
     m_Result    = result;
-    m_ErrMsg    = err_msg ? err_msg : "";
+    m_ErrMsg    = ex ? ex->what() : kEmptyStr;
 }
 
 
@@ -684,6 +684,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/02/26 17:34:35  kuznets
+* CCgiStatistics::Reset changed to take exception as a parameter
+*
 * Revision 1.40  2003/02/25 14:11:11  kuznets
 * Added support of CCookieAffinity service interface, host IP address, cookie encoding
 *

@@ -273,7 +273,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 ERR_POST(msg);  // Post error notification even if no logging
             }
             if ( is_stat_log ) {
-                stat->Reset(start_time, *result, e.what());
+                stat->Reset(start_time, *result, &e);
                 msg = stat->Compose();
                 stat->Submit(msg);
             }
@@ -336,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2003/02/26 17:34:36  kuznets
+ * CCgiStatistics::Reset changed to take exception as a parameter
+ *
  * Revision 1.24  2003/02/24 20:01:54  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *

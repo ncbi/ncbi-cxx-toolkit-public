@@ -171,7 +171,7 @@ protected:
     // applications and every iteration if it is FastCGI.
     virtual void Reset(const CTime& start_time,
                        int          result,
-                       const char*  err_msg = 0);
+                       const exception*  ex = 0);
 
     // Compose message for statistics logging.
     // This default implementation constructs the message from the fragments
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/02/26 17:34:03  kuznets
+* CCgiStatistics::Reset changed to take exception as a parameter
+*
 * Revision 1.32  2003/02/25 14:10:56  kuznets
 * Added support of CCookieAffinity service interface, host IP address, cookie encoding
 *
