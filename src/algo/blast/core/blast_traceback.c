@@ -409,7 +409,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    const PSIBlastOptions* psi_options)
 {
    Int4 index, index1, index2;
-   Boolean hsp_start_is_contained, hsp_end_is_contained, do_not_do;
+   Boolean hsp_start_is_contained, hsp_end_is_contained;
    BlastHSP* hsp,* hsp1=NULL,* hsp2;
    Uint1* query,* subject,* subject_start = NULL;
    Int4 query_length, query_length_orig;
@@ -532,11 +532,9 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             frame_offsets[context+1] - frame_offsets[context] - 1;
       }
 
-      do_not_do = FALSE;
-      
-      if (do_not_do == FALSE && (hsp_start_is_contained == FALSE || 
+      if ((hsp_start_is_contained == FALSE || 
            hsp_end_is_contained == FALSE || hsp->score > hsp1->score)) {
-         if (!is_ooframe && 
+         if (!phi_align && !is_ooframe && 
              (((hsp->query.gapped_start == 0 && 
                 hsp->subject.gapped_start == 0) ||
                !BLAST_CheckStartForGappedAlignment(hsp, query, 
