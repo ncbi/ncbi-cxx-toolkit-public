@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/01 19:12:36  lewisg
+* added CCgiApplication
+*
 * Revision 1.2  1998/11/05 21:45:13  sandomir
 * std:: deleted
 *
@@ -44,10 +47,12 @@
 */
 
 #include <ncbistd.hpp>
+#include <ncbicgi.hpp>
 
 #include <vector>
 #include <string>
 
+BEGIN_NCBI_SCOPE
 //
 // class CNcbiApplication
 //
@@ -69,20 +74,43 @@ class CNcbiApplication
 {
 public:
 
-  CNcbiApplication( int argc, char* argv[] ) throw();
-  virtual ~CNcbiApplication( void ) throw();
+    CNcbiApplication( int argc, char* argv[] ) /* throw() */ ;
+    virtual ~CNcbiApplication( void ) /* throw() */ ;
 
-  virtual void Init( void ); // initialization
-  virtual void Exit( void ); // cleanup
+    virtual void Init( void ); // initialization
+    virtual void Exit( void ); // cleanup
 
-  virtual int Run( void ); 
+    virtual int Run( void ); 
 
-protected:
+    /* protected: */
 
-  // saved command line parameters
-  vector< string, allocator<string> > m_argv;
+    // saved command line parameters
+    vector< string, allocator<string> > m_arguments;
+
+    // in case you want it the old fashioned way
+    int m_argc;
+    char **m_argv;
 
 };
 
 
+class CCgiApplication: public CNcbiApplication
+{
+public:
+    CCgiApplication(int argc, char* argv[], CNcbiIstream* istr=0,
+                bool indexes_as_entries=true);
+
+    virtual void Init( void ); 
+    virtual void Exit( void );
+    virtual int Run( void ); 
+   
+    CCgiRequest m_CgiRequest;
+    TCgiEntries m_CgiEntries;  // the CgiEntries in m_CgiRequest
+    
+};
+
+END_NCBI_SCOPE
+
 #endif // NCBIAPP__HPP
+
+

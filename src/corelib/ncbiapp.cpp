@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/01 19:12:08  lewisg
+* added CCgiApplication
+*
 * Revision 1.2  1998/11/05 21:45:14  sandomir
 * std:: deleted
 *
@@ -40,30 +43,30 @@
 * ===========================================================================
 */
 
-using namespace std;
-
+#include <ncbistd.hpp>
 #include <ncbiapp.hpp>
-#include <ncbiexcp.hpp>
+// #include <ncbiexcp.hpp>
+BEGIN_NCBI_SCOPE
+
 
 //
 // class CNcbiApplication
 //
 
-CNcbiApplication::CNcbiApplication( int argc, char* argv[] ) throw()
-  : m_argv()
+CNcbiApplication::CNcbiApplication( int argc, char* argv[] ) /* throw(): m_argv() */ : m_argc(argc), m_argv(argv)
 {
   for( int i = 0; i < argc; i++ ) {
-    m_argv.push_back( argv[ i ] );
+    m_arguments.push_back( argv[ i ] );
   }
 }
 
-CNcbiApplication::~CNcbiApplication( void ) throw()
+CNcbiApplication::~CNcbiApplication( void ) /* throw() */
 {}
 
 void CNcbiApplication::Init( void )
 {
-  CNcbiOSException::SetDefHandler();
-  set_unexpected( CNcbiOSException::UnexpectedHandler );
+    /*  CNcbiOSException::SetDefHandler();
+	set_unexpected( CNcbiOSException::UnexpectedHandler ); */
   return;
 }
 
@@ -77,3 +80,16 @@ int CNcbiApplication::Run( void )
   return 0;
 }
     
+
+// CGI applications
+
+CCgiApplication::CCgiApplication(int argc, char* argv[], CNcbiIstream* istr,
+				 bool indexes_as_entries)
+        : CNcbiApplication(argc, argv),
+	  m_CgiRequest(argc, argv, istr, indexes_as_entries)
+{
+    m_CgiEntries = m_CgiRequest.GetEntries();
+}
+
+
+END_NCBI_SCOPE
