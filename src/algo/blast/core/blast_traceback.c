@@ -865,11 +865,12 @@ BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* seq_src, BlastGapAlignStruct* gap_align,
-        const BlastScoringParameters* score_params,
+        BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         BlastEffectiveLengthsParameters* eff_len_params,
-        const BlastDatabaseOptions* db_options)
+        const BlastDatabaseOptions* db_options,
+        const PSIBlastOptions* psi_options)
 {
    Int2 status = 0;
    Int4 query_index, subject_index;

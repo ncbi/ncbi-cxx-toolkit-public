@@ -87,16 +87,18 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
  * @param eff_len_params Parameters for recalculating effective search 
  *                       space. Can change if not a database search. [in]
  * @param db_options Options containing database genetic code string [in]
+ * @param psi_options Options for iterative searches [in]
  * @return nonzero indicates failure, otherwise zero
  */
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
-        const BlastScoringParameters* score_params,
+        BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         BlastEffectiveLengthsParameters* eff_len_params,
-        const BlastDatabaseOptions* db_options);
+        const BlastDatabaseOptions* db_options,
+        const PSIBlastOptions* psi_options);
 
 /** Compute traceback information for alignments found by an
  *  RPS blast search. This function performs two major tasks:
