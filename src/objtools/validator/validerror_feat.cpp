@@ -2754,7 +2754,7 @@ void CValidError_feat::ValidateFeatBioSource
         string taxname = org.GetTaxname();
         string dtaxname = dorg.GetTaxname();
         if ( NStr::CompareNocase(taxname, dtaxname) != 0 ) {
-            if ( !dbsrc.CanGetIs_focus()  &&  !IsTransgenic(dbsrc) ) {
+            if ( !dbsrc.CanGetIs_focus()  &&  !m_Imp.IsTransgenic(dbsrc) ) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceNeedsFocus,
                     "BioSource descriptor must have focus or transgenic "
                     "when BioSource feature with different taxname is "
@@ -2763,19 +2763,6 @@ void CValidError_feat::ValidateFeatBioSource
         }
     }
     m_Imp.ValidateBioSource(bsrc, feat);
-}
-
-
-bool CValidError_feat::IsTransgenic(const CBioSource& bsrc)
-{
-    if ( bsrc.CanGetSubtype() ) {
-        ITERATE( CBioSource::TSubtype, sub, bsrc.GetSubtype() ) {
-            if ( (*sub)->GetSubtype() == CSubSource::eSubtype_transgenic ) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 
@@ -2832,6 +2819,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/07/29 17:10:47  shomrat
+* Moved IsTransgenic to shared implementation class
+*
 * Revision 1.61  2004/07/07 16:05:12  shomrat
 * + ValidateAnticodon
 *
