@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/05/07 18:20:34  lavr
+ * +fLOG_None
+ *
  * Revision 6.11  2002/02/11 21:49:06  lavr
  * +CORE_GetPlatform()
  *
@@ -176,7 +179,8 @@ typedef enum {
     fLOG_Module   = 0x2,
     fLOG_FileLine = 0x4, /* (must always be printed for "eLOG_Trace" level) */
     fLOG_DateTime = 0x8,
-    fLOG_OmitNoteLevel = 0x4000 /* Do not add "NOTE:" if eLOG_Note is level */
+    fLOG_OmitNoteLevel = 0x4000,/* do not add "NOTE:" if eLOG_Note is level */
+    fLOG_None     = 0x8000 /* nothing but the error message and data        */
 } ELOG_Format;
 typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
 #define fLOG_Short  (fLOG_Level)
