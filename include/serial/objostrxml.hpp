@@ -160,8 +160,6 @@ protected:
 
     virtual void WriteContainer(const CContainerTypeInfo* containerType,
                                 TConstObjectPtr containerPtr);
-    void WriteContainerContents(const CContainerTypeInfo* containerType,
-                                TConstObjectPtr containerPtr);
 
     virtual void WriteClass(const CClassTypeInfo* objectType,
                             TConstObjectPtr objectPtr);
@@ -172,8 +170,6 @@ protected:
                                   const CDelayBuffer& buffer);
 
     virtual void WriteChoice(const CChoiceTypeInfo* choiceType,
-                             TConstObjectPtr choicePtr);
-    void WriteChoiceContents(const CChoiceTypeInfo* choiceType,
                              TConstObjectPtr choicePtr);
 /*
     // COPY
@@ -190,6 +186,10 @@ protected:
                             CObjectStreamCopier& copier);
 */
 #endif
+    void WriteContainerContents(const CContainerTypeInfo* containerType,
+                                TConstObjectPtr containerPtr);
+    void WriteChoiceContents(const CChoiceTypeInfo* choiceType,
+                             TConstObjectPtr choicePtr);
     // low level I/O
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
     virtual void EndNamedType(void);
@@ -306,6 +306,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/06/08 20:23:37  gouriano
+* Moved several functions out of VIRTUAL_MID_LEVEL_IO condition:
+* there is no need for them to be there
+*
 * Revision 1.38  2004/01/08 17:42:34  gouriano
 * Added encoding Windows-1252.
 * Made it possible to omit document type declaration

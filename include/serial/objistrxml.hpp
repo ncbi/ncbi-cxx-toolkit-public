@@ -120,29 +120,29 @@ protected:
     void CloseTagIfNamed(TTypeInfo type);
     bool WillHaveName(TTypeInfo elementType);
 
+    bool HasAnyContent(const CClassTypeInfoBase* classType);
+    bool HasMoreElements(TTypeInfo elementType);
+    TMemberIndex FindDeep(TTypeInfo type, const CLightString& name) const;
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void ReadNamedType(TTypeInfo namedTypeInfo,
                                TTypeInfo typeInfo,
                                TObjectPtr object);
 
-    bool HasAnyContent(const CClassTypeInfoBase* classType);
-    bool HasMoreElements(TTypeInfo elementType);
-    TMemberIndex FindDeep(TTypeInfo type, const CLightString& name) const;
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
 
-    void ReadContainerContents(const CContainerTypeInfo* containerType,
-                               TObjectPtr containerPtr);
-    void SkipContainerContents(const CContainerTypeInfo* containerType);
 
     virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
                             TObjectPtr choicePtr);
     virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
+#endif
+    void ReadContainerContents(const CContainerTypeInfo* containerType,
+                               TObjectPtr containerPtr);
+    void SkipContainerContents(const CContainerTypeInfo* containerType);
     void ReadChoiceContents(const CChoiceTypeInfo* choiceType,
                             TObjectPtr choicePtr);
     void SkipChoiceContents(const CChoiceTypeInfo* choiceType);
-#endif
 
     // low level I/O
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
@@ -254,6 +254,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/06/08 20:23:37  gouriano
+* Moved several functions out of VIRTUAL_MID_LEVEL_IO condition:
+* there is no need for them to be there
+*
 * Revision 1.35  2004/04/28 19:24:53  gouriano
 * Corrected reading of containers
 *
