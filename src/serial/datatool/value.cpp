@@ -7,8 +7,8 @@ ostream& NewLine(ostream& out, int indent)
     return ASNType::NewLine(out, indent);
 }
 
-ASNValue::ASNValue()
-    : line(0)
+ASNValue::ASNValue(const CFilePosition& pos)
+    : filePos(pos)
 {
 }
 
@@ -18,9 +18,12 @@ ASNValue::~ASNValue()
 
 void ASNValue::Warning(const string& mess) const
 {
-    if ( line > 0 )
-        cerr << line;
-    cerr << ": " << mess << endl;
+    cerr << filePos << ": " << mess << endl;
+}
+
+ASNNullValue::ASNNullValue(const CFilePosition& pos)
+    : ASNValue(pos)
+{
 }
 
 ostream& ASNNullValue::Print(ostream& out, int )
@@ -28,8 +31,8 @@ ostream& ASNNullValue::Print(ostream& out, int )
     return out << "NULL";
 }
 
-ASNBoolValue::ASNBoolValue(bool v)
-    : value(v)
+ASNBoolValue::ASNBoolValue(const CFilePosition& pos, bool v)
+    : ASNValue(pos), value(v)
 {
 }
 
@@ -38,8 +41,8 @@ ostream& ASNBoolValue::Print(ostream& out, int )
     return out << (value? "TRUE": "FALSE");
 }
 
-ASNIntegerValue::ASNIntegerValue(int v)
-    : value(v)
+ASNIntegerValue::ASNIntegerValue(const CFilePosition& pos, int v)
+    : ASNValue(pos), value(v)
 {
 }
 
@@ -48,8 +51,8 @@ ostream& ASNIntegerValue::Print(ostream& out, int )
     return out << value;
 }
 
-ASNStringValue::ASNStringValue(const string& v)
-    : value(v)
+ASNStringValue::ASNStringValue(const CFilePosition& pos, const string& v)
+    : ASNValue(pos), value(v)
 {
 }
 
@@ -67,8 +70,8 @@ ostream& ASNStringValue::Print(ostream& out, int )
     return out << '"';
 }
 
-ASNBitStringValue::ASNBitStringValue(const string& v)
-    : value(v)
+ASNBitStringValue::ASNBitStringValue(const CFilePosition& pos, const string& v)
+    : ASNValue(pos), value(v)
 {
 }
 
@@ -77,8 +80,8 @@ ostream& ASNBitStringValue::Print(ostream& out, int )
     return out << value;
 }
 
-ASNIdValue::ASNIdValue(const string& v)
-    : id(v)
+ASNIdValue::ASNIdValue(const CFilePosition& pos, const string& v)
+    : ASNValue(pos), id(v)
 {
 }
 
@@ -87,12 +90,14 @@ ostream& ASNIdValue::Print(ostream& out, int )
     return out << id;
 }
 
-ASNNamedValue::ASNNamedValue()
+ASNNamedValue::ASNNamedValue(const CFilePosition& pos)
+    : ASNValue(pos)
 {
 }
 
-ASNNamedValue::ASNNamedValue(const string& n, const AutoPtr<ASNValue>& v)
-    : name(n), value(v)
+ASNNamedValue::ASNNamedValue(const CFilePosition& pos,
+                             const string& n, const AutoPtr<ASNValue>& v)
+    : ASNValue(pos), name(n), value(v)
 {
 }
 
@@ -108,6 +113,11 @@ ostream& ASNNamedValue::Print(ostream& out, int indent)
         out << ' ';
     }
     return value->Print(out, indent);
+}
+
+ASNBlockValue::ASNBlockValue(const CFilePosition& pos)
+    : ASNValue(pos)
+{
 }
 
 ostream& ASNBlockValue::Print(ostream& out, int indent)

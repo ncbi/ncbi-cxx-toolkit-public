@@ -46,7 +46,7 @@ const ASNModule::TypeInfo* CModuleSet::FindType(const string& fullName) const
               i != modules.end(); ++i ) {
             ASNModule* module = (*i).get();
             const ASNModule::TypeInfo* t = module->FindType(fullName);
-            if ( t ) {
+            if ( t && t->type ) {
                 if ( type == 0 )
                     type = t;
                 else {

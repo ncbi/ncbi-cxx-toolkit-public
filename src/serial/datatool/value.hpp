@@ -5,30 +5,32 @@
 #include <corelib/ncbistre.hpp>
 #include <list>
 #include "autoptr.hpp"
+#include "typecontext.hpp"
 
 USING_NCBI_SCOPE;
 
 class ASNValue {
 public:
-    ASNValue();
+    ASNValue(const CFilePosition& pos);
     virtual ~ASNValue();
 
     virtual CNcbiOstream& Print(CNcbiOstream& out, int indent) = 0;
 
     void Warning(const string& mess) const;
     
-    int line;
+    CFilePosition filePos;
 };
 
 class ASNNullValue : public ASNValue {
 public:
+    ASNNullValue(const CFilePosition& pos);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 };
 
 class ASNBoolValue : public ASNValue {
 public:
-    ASNBoolValue(bool v);
+    ASNBoolValue(const CFilePosition& pos, bool v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
@@ -37,7 +39,7 @@ public:
 
 class ASNIntegerValue : public ASNValue {
 public:
-    ASNIntegerValue(int v);
+    ASNIntegerValue(const CFilePosition& pos, int v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
@@ -46,7 +48,7 @@ public:
 
 class ASNStringValue : public ASNValue {
 public:
-    ASNStringValue(const string& v);
+    ASNStringValue(const CFilePosition& pos, const string& v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
@@ -55,7 +57,7 @@ public:
 
 class ASNBitStringValue : public ASNValue {
 public:
-    ASNBitStringValue(const string& v);
+    ASNBitStringValue(const CFilePosition& pos, const string& v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
@@ -64,7 +66,7 @@ public:
 
 class ASNIdValue : public ASNValue {
 public:
-    ASNIdValue(const string& v);
+    ASNIdValue(const CFilePosition& pos, const string& v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
@@ -73,8 +75,9 @@ public:
 
 class ASNNamedValue : public ASNValue {
 public:
-    ASNNamedValue();
-    ASNNamedValue(const string& id, const AutoPtr<ASNValue>& v);
+    ASNNamedValue(const CFilePosition& pos);
+    ASNNamedValue(const CFilePosition& pos,
+                  const string& id, const AutoPtr<ASNValue>& v);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
@@ -85,6 +88,8 @@ public:
 class ASNBlockValue : public ASNValue {
 public:
     typedef list<AutoPtr<ASNValue> > TValues;
+
+    ASNBlockValue(const CFilePosition& pos);
 
     CNcbiOstream& Print(CNcbiOstream& out, int indent);
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/10/08 21:00:39  vasilche
+* Implemented automatic generation of unnamed ASN.1 types.
+*
 * Revision 1.1  1999/09/24 18:20:05  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -124,7 +127,9 @@ public:
         }
     virtual TObjectPtr Create(void) const
         {
-            return new TObjectType;
+            TObjectType* obj = new TObjectType;
+            obj->index = -1;
+            return obj;
         }
 
 protected:

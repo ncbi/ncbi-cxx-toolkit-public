@@ -1,7 +1,5 @@
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbireg.hpp>
 #include <algorithm>
-#include <set>
 #include <typeinfo>
 #include "moduleset.hpp"
 #include "module.hpp"
@@ -116,11 +114,6 @@ void CCodeGenerator::GenerateCode(void)
 
 bool CCodeGenerator::AddType(const ASNType* type)
 {
-    if ( type->name.empty() ) {
-        THROW1_TRACE(runtime_error,
-                     "unnamed type: " + string(typeid(*type).name()));
-    }
-
     string fileName = type->FileName(m_Config);
     AutoPtr<CFileCode>& file = m_Files[fileName];
     if ( !file )
@@ -130,24 +123,19 @@ bool CCodeGenerator::AddType(const ASNType* type)
 
 CClassCode* CCodeGenerator::GetClassCode(const ASNType* type)
 {
-    if ( type->name.empty() ) {
-        THROW1_TRACE(runtime_error,
-                     "unnamed type: " + string(typeid(*type).name()));
-    }
-
     string fileName = type->FileName(m_Config);
     TOutputFiles::const_iterator fi = m_Files.find(fileName);
-    if ( fi == m_Files.end() )
-        THROW1_TRACE(runtime_error, "cannot get class info for " + type->name);
+    if ( fi == m_Files.end() ) {
+        THROW1_TRACE(runtime_error,
+                     "cannot get class info for \"" + type->name + "\" @ " +
+                     type->context.GetFilePos().ToString() + " (filename: " +
+                     fileName + ")");
+    }
     return fi->second->GetClassCode(type);
 }
 
-void CCodeGenerator::CollectTypes(const ASNType* type)
+void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
 {
-/*
-    _TRACE("CollectTypes: " <<
-           typeid(*type).name() << " \"" << type->name << "\"");
-*/
     if ( m_ExcludeTypes.find(type->name) != m_ExcludeTypes.end() ) {
         ERR_POST(Warning << "Skipping type: " << type->name);
         return;
@@ -156,7 +144,7 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
     const ASNOfType* array = dynamic_cast<const ASNOfType*>(type);
     if ( array != 0 ) {
         // SET OF or SEQUENCE OF
-        if ( !array->name.empty() ) {
+        if ( force || !array->name.empty() ) {
             if ( !AddType(type) )
                 return;
         }
@@ -176,13 +164,13 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
     if ( dynamic_cast<const ASNFixedType*>(type) != 0 ||
          dynamic_cast<const ASNEnumeratedType*>(type) != 0 ) {
         // STD type
-        if ( !type->name.empty() ) {
+        if ( force || !type->name.empty() ) {
             AddType(type);
         }
         return;
     }
 
-    if ( !type->name.empty() ) {
+    if ( force || !type->name.empty() ) {
         if ( type->ClassName(m_Config) == "-" ) {
             ERR_POST(Warning << "Skipping type: " << type->name);
             return;
@@ -192,39 +180,25 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
     const ASNChoiceType* choice =
         dynamic_cast<const ASNChoiceType*>(type);
     if ( choice != 0 ) {
-        if ( !choice->name.empty() ) {
-            if ( !AddType(type) )
-                return;
-        }
-        else {
-            ERR_POST("unknown choice!");
-        }
+        if ( !AddType(type) )
+            return;
 
         if ( m_ExcludeAllTypes )
             return;
-
-        CClassCode* choiceCode = GetClassCode(type);
 
         // collect member's types
         for ( ASNMemberContainerType::TMembers::const_iterator mi =
                   choice->members.begin();
               mi != choice->members.end(); ++mi ) {
             const ASNType* memberType = mi->get()->type.get();
-/*
-            _TRACE("member: " << mi->get()->name << ": " <<
-                   typeid(*memberType).name() << " \"" << memberType->name << '"');
-*/
-            CollectTypes(memberType);
-            CClassCode* memberCode = GetClassCode(memberType);
-            if ( memberCode )
-                memberCode->AddParentType(choiceCode);
+            CollectTypes(memberType, true);
         }
     }
 
     const ASNMemberContainerType* cont =
         dynamic_cast<const ASNMemberContainerType*>(type);
     if ( cont != 0 ) {
-        if ( !cont->name.empty() ) {
+        if ( force || !cont->name.empty() ) {
             if ( !AddType(type) )
                 return;
         }
@@ -237,20 +211,6 @@ void CCodeGenerator::CollectTypes(const ASNType* type)
                   cont->members.begin();
               mi != cont->members.end(); ++mi ) {
             const ASNType* memberType = mi->get()->type.get();
-/*
-            if ( dynamic_cast<const ASNEnumeratedType*>(memberType) != 0 ) {
-                // enum type
-                if ( memberType->name.empty() ) {
-                    // set name of unnamed enum to name of field
-                    const_cast<ASNType*>(memberType)->name = mi->get()->name;
-                }
-                continue;
-            }
-*/
-/*
-            _TRACE("member: " << mi->get()->name << ": " <<
-                   typeid(*memberType).name() << " \"" << memberType->name << '"');
-*/
             CollectTypes(memberType);
         }
         return;

@@ -4,12 +4,12 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <memory>
-#include <set>
 #include "parser.hpp"
 #include "lexer.hpp"
 #include "moduleset.hpp"
-#include "module.hpp"
-#include "type.hpp"
+//#include "module.hpp"
+//#include "type.hpp"
+#include "typecontext.hpp"
 #include "generate.hpp"
 
 USING_NCBI_SCOPE;
@@ -43,8 +43,10 @@ SourceFile::SourceFile(const string& name, bool binary)
         m_Open = false;
     }
     else {
-        m_StreamPtr = new ifstream(name.c_str(),
-                                   binary? ios::in | ios::binary: ios::in);
+        m_StreamPtr = new CNcbiIfstream(name.c_str(),
+                                        binary?
+                                            IOS_BASE::in | IOS_BASE::binary:
+                                            IOS_BASE::in);
         if ( !*m_StreamPtr ) {
             delete m_StreamPtr;
             m_StreamPtr = 0;
@@ -84,8 +86,10 @@ DestinationFile::DestinationFile(const string& name, bool binary)
         m_Open = false;
     }
     else {
-        m_StreamPtr = new ofstream(name.c_str(),
-                                   binary? ios::in | ios::binary: ios::in);
+        m_StreamPtr = new CNcbiOfstream(name.c_str(),
+                                        binary?
+                                            IOS_BASE::out | IOS_BASE::binary:
+                                            IOS_BASE::out);
         if ( !*m_StreamPtr ) {
             delete m_StreamPtr;
             m_StreamPtr = 0;
@@ -123,7 +127,7 @@ struct FileInfo {
     EFileType type;
 };
 
-typedef pair<TObjectPtr, TTypeInfo> TObject;
+typedef pair<AnyType, TTypeInfo> TObject;
 
 static void Help(void)
 {
@@ -368,7 +372,7 @@ void LoadDefinition(CModuleSet& types, const FileInfo& file)
     ASNLexer lexer(in);
     ASNParser parser(lexer);
     try {
-        parser.Modules(types);
+        parser.Modules(CFilePosition(file.name), types);
     }
     catch (...) {
         NcbiCerr << "Current token: " << parser.Next() << " '" <<
@@ -391,7 +395,8 @@ void StoreDefinition(const CModuleSet& types, const FileInfo& file)
     }
 }
 
-TObject LoadValue(CModuleSet& types, const FileInfo& file, const string& typeName)
+TObject LoadValue(CModuleSet& types, const FileInfo& file,
+                  const string& defTypeName)
 {
     SourceFile in(file.name, file.type == eASNBinary);
 
@@ -406,20 +411,23 @@ TObject LoadValue(CModuleSet& types, const FileInfo& file, const string& typeNam
     default:
         Error("value format not supported");
     }
-    objIn->SetTypeMapper(&types);
-    string type = objIn->ReadTypeName();
-    if ( type.empty() ) {
-        if ( typeName.empty() )
+    //    objIn->SetTypeMapper(&types);
+    string typeName = objIn->ReadTypeName();
+    if ( typeName.empty() ) {
+        if ( defTypeName.empty() )
             Error("ASN.1 value type must be specified (-t)");
-        type = typeName;
+        typeName = defTypeName;
     }
+    const ASNModule::TypeInfo* asnTypeInfo = types.FindType(typeName);
+    TTypeInfo typeInfo = CTypeRef(new CAnyTypeSource(asnTypeInfo->type)).Get();
+/*    
     TTypeInfo typeInfo = types.MapType(type);
     if ( typeInfo == 0 )
         Error("type not found: ", type.c_str());
-    
-    TObjectPtr object = 0;
-    objIn->ReadExternalObject(&object, typeInfo);
-    return make_pair(object, typeInfo);
+*/
+    AnyType value;
+    objIn->ReadExternalObject(&value, typeInfo);
+    return make_pair(value, typeInfo);
 }
 
 void StoreValue(const TObject& object, const FileInfo& file)

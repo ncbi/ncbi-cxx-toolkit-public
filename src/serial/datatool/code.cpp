@@ -1,7 +1,6 @@
-#include <corelib/ncbireg.hpp>
+//#include <corelib/ncbireg.hpp>
 #include "code.hpp"
 #include "type.hpp"
-#include <fstream>
 
 CFileCode::CFileCode(const CNcbiRegistry& registry,
                      const string& baseName, const string& headerPrefix)
@@ -279,12 +278,12 @@ const ASNType* CClassCode::GetParentType(void) const
 {
     const ASNType* parent = GetType()->ParentType(*this);
     if ( !parent ) {
-        switch ( m_ParentTypes.size() ) {
+        switch ( GetType()->choices.size() ) {
         case 0:
             // no parent type
             return 0;
         case 1:
-            parent = (*m_ParentTypes.begin())->GetType();
+            parent = *(GetType()->choices.begin());
             break;
         default:
             ERR_POST("more then one parent of type: " + GetType()->name);
@@ -304,16 +303,6 @@ string CClassCode::GetParentClass(void) const
         return parent->ClassName(*this);
     else
         return GetType()->ParentClass(*this);
-}
-
-const string& CClassCode::GetVar(const string& value) const
-{
-    return GetType()->GetVar(*this, value);
-}
-
-void CClassCode::AddParentType(CClassCode* parent)
-{
-    m_ParentTypes.insert(parent);
 }
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const

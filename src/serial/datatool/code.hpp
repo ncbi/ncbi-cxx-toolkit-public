@@ -3,6 +3,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <set>
+#include <map>
 #include <list>
 #include "autoptr.hpp"
 
@@ -95,8 +96,6 @@ public:
             return m_Type;
         }
 
-    const string& GetVar(const string& value) const;
-
     const string& GetNamespace(void) const
         {
             return m_Namespace;
@@ -147,8 +146,6 @@ public:
             m_Enums.insert(enumDef);
         }
 
-    void AddParentType(CClassCode* parent);
-
     CNcbiOstream& HPP(void)
         {
             return m_HPP;
@@ -165,7 +162,6 @@ public:
 private:
     CFileCode& m_Code;
     const ASNType* m_Type;
-    set<CClassCode*> m_ParentTypes;
     string m_Namespace;
     string m_ClassName;
     string m_ParentClass;

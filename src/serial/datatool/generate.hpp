@@ -23,7 +23,7 @@ public:
     void GetAllTypes(void);
     static void GetTypes(TTypeNames& typeNames, const string& name);
 
-    void CollectTypes(const ASNType* type);
+    void CollectTypes(const ASNType* type, bool force = false);
     bool AddType(const ASNType* type);
     CClassCode* GetClassCode(const ASNType* type);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/10/08 21:00:43  vasilche
+* Implemented automatic generation of unnamed ASN.1 types.
+*
 * Revision 1.18  1999/10/04 16:22:17  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -742,7 +745,9 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
 int CObjectIStreamAsnBinary::ReadEnumValue(void)
 {
     ExpectSysTag(eEnumerated);
-    return ReadInt();
+    int data;
+    ReadStdSigned(*this, data);
+    return data;
 }
 
 string CObjectIStreamAsnBinary::ReadMemberPointer(void)

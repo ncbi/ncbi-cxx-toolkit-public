@@ -8,7 +8,7 @@
 
 APP = datatool
 OBJ = moduleset alexer aparser parser lexer type value module \
-      main generate code
+      main generate code typecontext
 LIB = xser xncbi
 
 CPPFLAGS = -I. $(ORIG_CPPFLAGS)

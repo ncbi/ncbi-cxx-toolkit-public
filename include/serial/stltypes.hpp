@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/10/08 21:00:39  vasilche
+* Implemented automatic generation of unnamed ASN.1 types.
+*
 * Revision 1.21  1999/09/27 14:17:59  vasilche
 * Fixed bug with overloaded construtors of Block.
 *
@@ -258,8 +261,17 @@ public:
     typedef typename TObjectType::const_iterator TConstIterator;
 
     CStlOneArgTemplateImpl<List>(const CTypeRef& dataType)
-        : CParent(dataType)
+        : CParent(dataType), m_RandomOrder(false)
         { }
+
+    bool RandomOrder(void) const
+        {
+            return m_RandomOrder;
+        }
+    void SetRandomOrder(bool random = true)
+        {
+            m_RandomOrder = random;
+        }
 
     static TObjectType& Get(TObjectPtr object)
         {
@@ -330,7 +342,7 @@ protected:
         {
             const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::Block block(l.size(), out);
+            CObjectOStream::Block block(l.size(), out, RandomOrder());
             for ( TConstIterator i = l.begin(); i != l.end(); ++i ) {
                 block.Next();
                 out.WriteExternalObject(&*i, dataTypeInfo);
@@ -339,7 +351,7 @@ protected:
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
-            CObjectIStream::Block block(CObjectIStream::eFixed, in);
+            CObjectIStream::Block block(CObjectIStream::eFixed, in, RandomOrder());
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
             if ( block.Fixed() )
                 Reserve(object, block.GetSize());
@@ -351,6 +363,9 @@ protected:
 
     virtual void Reserve(TObjectPtr object, size_t length) const = 0;
     virtual TObjectPtr AddEmpty(TObjectPtr object, size_t index) const = 0;
+
+private:
+    bool m_RandomOrder;
 };
 
 template<typename Data>

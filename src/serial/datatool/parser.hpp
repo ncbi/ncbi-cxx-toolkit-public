@@ -3,11 +3,13 @@
 
 #include "aparser.hpp"
 #include "autoptr.hpp"
+#include "typecontext.hpp"
 #include <list>
 
 class CModuleSet;
 class ASNModule;
 class ASNType;
+class ASNMemberContainerType;
 class ASNValue;
 class ASNMember;
 class ASNEnumeratedType;
@@ -20,20 +22,22 @@ public:
         {
         }
 
-    void Modules(CModuleSet& moduleSet);
-    void Module(CModuleSet& moduleSet);
-    void Imports(ASNModule* module);
-    void Exports(ASNModule* module);
-    void ModuleBody(ASNModule* module);
-    AutoPtr<ASNType> Type(ASNModule& module);
-    AutoPtr<ASNType> x_Type(ASNModule& module);
-    void TypesBlock(ASNModule& module, list<AutoPtr<ASNMember> >& members);
-    AutoPtr<ASNMember> NamedDataType(ASNModule& module);
-    AutoPtr<ASNType> EnumeratedBlock(ASNModule& module, const string& keyword);
-    void EnumeratedValue(ASNEnumeratedType* t);
+    void Modules(const CFilePosition& filePos, CModuleSet& moduleSet);
+    void Module(const CDataTypeContext& ctx, CModuleSet& moduleSet);
+    void Imports(const CDataTypeContext& ctx);
+    void Exports(const CDataTypeContext& ctx);
+    void ModuleBody(const CDataTypeContext& ctx);
+    AutoPtr<ASNType> Type(const CDataTypeContext& ctx);
+    AutoPtr<ASNType> x_Type(const CDataTypeContext& ctx);
+    void TypesBlock(const CDataTypeContext& ctx,
+                    ASNMemberContainerType& container);
+    AutoPtr<ASNMember> NamedDataType(const CDataTypeContext& ctx);
+    AutoPtr<ASNType> EnumeratedBlock(const CDataTypeContext& ctx,
+                                     const string& keyword);
+    void EnumeratedValue(ASNEnumeratedType& t);
     void TypeList(list<string>& ids);
-    AutoPtr<ASNValue> Value(void);
-    AutoPtr<ASNValue> x_Value(void);
+    AutoPtr<ASNValue> Value(const CDataTypeContext& ctx);
+    AutoPtr<ASNValue> x_Value(const CDataTypeContext& ctx);
     int Number(void);
     string String(void);
     string Identifier(void);

@@ -3,6 +3,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
+#include <serial/typeref.hpp>
 #include <list>
 #include <set>
 #include <map>
@@ -20,6 +21,8 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 class ASNModule;
+class ASNType;
+class ASNChoiceType;
 class CClassCode;
 
 class CTypeStrings {
@@ -80,13 +83,13 @@ class ASNType {
 public:
     typedef void* TObjectPtr;
 
-    ASNType(ASNModule& module);
-    ASNType(ASNModule& module, const string& name);
+    ASNType(const CDataTypeContext& context);
+    ASNType(const CDataTypeContext& context, const string& name);
     virtual ~ASNType();
 
     ASNModule& GetModule(void) const
         {
-            return m_Module;
+            return context.GetModule();
         }
 
     string ClassName(const CNcbiRegistry& registry) const;
@@ -111,32 +114,29 @@ public:
 
     virtual void GenerateCode(CClassCode& code) const;
 
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
-    //    virtual bool SimpleType(void) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 
-    int line;
     string name; // for named type
-    const ASNType* parent;
+    CDataTypeContext context;
+
+    // tree info
+    set<const ASNChoiceType*> choices;
+    bool inSet;
 
 protected:
     virtual CTypeInfo* CreateTypeInfo(void);
 
 private:
-    ASNModule& m_Module;
     AutoPtr<CTypeInfo> m_CreatedTypeInfo;
 };
 
 class ASNFixedType : public ASNType {
 public:
-    ASNFixedType(ASNModule& module, const string& kw);
+    ASNFixedType(const CDataTypeContext& context, const string& kw);
 
     ostream& Print(ostream& out, int indent) const;
 
-    //    bool SimpleType(void) const;
-
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
     virtual string GetDefaultCType(void) const;
 
 private:
@@ -145,7 +145,7 @@ private:
 
 class ASNNullType : public ASNFixedType {
 public:
-    ASNNullType(ASNModule& module);
+    ASNNullType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -156,7 +156,7 @@ public:
 
 class ASNBooleanType : public ASNFixedType {
 public:
-    ASNBooleanType(ASNModule& module);
+    ASNBooleanType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -167,7 +167,7 @@ public:
 
 class ASNRealType : public ASNFixedType {
 public:
-    ASNRealType(ASNModule& module);
+    ASNRealType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -178,8 +178,8 @@ public:
 
 class ASNVisibleStringType : public ASNFixedType {
 public:
-    ASNVisibleStringType(ASNModule& module);
-    ASNVisibleStringType(ASNModule& module, const string& kw);
+    ASNVisibleStringType(const CDataTypeContext& context);
+    ASNVisibleStringType(const CDataTypeContext& context, const string& kw);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -190,12 +190,12 @@ public:
 
 class ASNStringStoreType : public ASNVisibleStringType {
 public:
-    ASNStringStoreType(ASNModule& module);
+    ASNStringStoreType(const CDataTypeContext& context);
 };
 
 class ASNBitStringType : public ASNFixedType {
 public:
-    ASNBitStringType(ASNModule& module);
+    ASNBitStringType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -203,12 +203,11 @@ public:
 
 class ASNOctetStringType : public ASNFixedType {
 public:
-    ASNOctetStringType(ASNModule& module);
+    ASNOctetStringType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 };
 
 class ASNEnumeratedType : public ASNType {
@@ -227,7 +226,16 @@ public:
     };
     typedef list<Value> TValues;
 
-    ASNEnumeratedType(ASNModule& module, const string& kw);
+    ASNEnumeratedType(const CDataTypeContext& context, const string& kw);
+
+    bool IsInteger(void) const
+        {
+            return isInteger;
+        }
+    const string& Keyword(void) const
+        {
+            return keyword;
+        }
 
     void AddValue(const string& name, int value);
 
@@ -237,12 +245,11 @@ public:
     TObjectPtr CreateDefault(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
-    //    bool SimpleType(void) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 
 private:
     string keyword;
+    bool isInteger;
 
 public:
     TValues values;
@@ -250,7 +257,7 @@ public:
 
 class ASNIntegerType : public ASNFixedType {
 public:
-    ASNIntegerType(ASNModule& module);
+    ASNIntegerType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
     TObjectPtr CreateDefault(const ASNValue& value);
@@ -261,7 +268,7 @@ public:
 
 class ASNUserType : public ASNType {
 public:
-    ASNUserType(ASNModule& module, const string& n);
+    ASNUserType(const CDataTypeContext& context, const string& n);
 
     ostream& Print(ostream& out, int indent) const;
 
@@ -271,8 +278,7 @@ public:
 
     const CTypeInfo* GetTypeInfo(void);
 
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 
     string userTypeName;
 
@@ -281,7 +287,7 @@ public:
 
 class ASNOfType : public ASNType {
 public:
-    ASNOfType(const string& kw, const AutoPtr<ASNType>& t);
+    ASNOfType(const CDataTypeContext& context, const string& kw);
 
     ostream& Print(ostream& out, int indent) const;
 
@@ -297,22 +303,20 @@ private:
 
 class ASNSetOfType : public ASNOfType {
 public:
-    ASNSetOfType(const AutoPtr<ASNType>& type);
+    ASNSetOfType(const CDataTypeContext& context);
 
     CTypeInfo* CreateTypeInfo(void);
     
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 };
 
 class ASNSequenceOfType : public ASNOfType {
 public:
-    ASNSequenceOfType(const AutoPtr<ASNType>& type);
+    ASNSequenceOfType(const CDataTypeContext& context);
 
     CTypeInfo* CreateTypeInfo(void);
 
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 };
 
 class ASNMember {
@@ -341,7 +345,7 @@ class ASNMemberContainerType : public ASNType {
 public:
     typedef list<AutoPtr<ASNMember> > TMembers;
 
-    ASNMemberContainerType(ASNModule& module, const string& kw);
+    ASNMemberContainerType(const CDataTypeContext& context, const string& kw);
     
     ostream& Print(ostream& out, int indent) const;
 
@@ -358,15 +362,12 @@ private:
 class ASNContainerType : public ASNMemberContainerType {
     typedef ASNMemberContainerType CParent;
 public:
-    ASNContainerType(ASNModule& module, const string& kw);
+    ASNContainerType(const CDataTypeContext& context, const string& kw);
     
     CTypeInfo* CreateTypeInfo(void);
     
     virtual void GenerateCode(CClassCode& code) const;
-/*
-    void GetCType(CTypeStrings& tType,
-                  CClassCode& code, const string& key) const;
-*/
+
 protected:
     virtual CClassInfoTmpl* CreateClassInfo(void);
 };
@@ -374,7 +375,7 @@ protected:
 class ASNSetType : public ASNContainerType {
     typedef ASNContainerType CParent;
 public:
-    ASNSetType(ASNModule& module);
+    ASNSetType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
 
@@ -385,7 +386,7 @@ protected:
 class ASNSequenceType : public ASNContainerType {
     typedef ASNContainerType CParent;
 public:
-    ASNSequenceType(ASNModule& module);
+    ASNSequenceType(const CDataTypeContext& context);
 
     bool CheckValue(const ASNValue& value);
 };
@@ -393,14 +394,14 @@ public:
 class ASNChoiceType : public ASNMemberContainerType {
     typedef ASNMemberContainerType CParent;
 public:
-    ASNChoiceType(ASNModule& module);
+    ASNChoiceType(const CDataTypeContext& context);
 
+    bool Check(void);
     bool CheckValue(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
     virtual void GenerateCode(CClassCode& code) const;
-    virtual void GetCType(CTypeStrings& tType,
-                          CClassCode& code, const string& key) const;
+    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
 };
 
 #endif
