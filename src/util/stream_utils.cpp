@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/12/17 22:18:21  ucko
+ * Overload xsgetn unconditionally.
+ *
  * Revision 1.3  2001/12/13 17:21:27  vakatov
  * [GCC, NCBI_COMPILER_VERSION > 2.95.X]  Use pubsync() rather than sync()
  *
@@ -78,9 +81,7 @@ public:
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
     virtual CT_INT_TYPE underflow(void);
-#ifdef NCBI_COMPILER_GCC
     virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-#endif
     virtual streamsize  showmanyc(void);
     virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
 
@@ -150,7 +151,6 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
 }
 
 
-#ifdef NCBI_COMPILER_GCC
 streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     if (gptr() >= egptr()) {
@@ -171,7 +171,6 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     gbump((int) n_read);
     return n_read;
 }
-#endif
 
 
 streamsize CPushback_Streambuf::showmanyc(void)
