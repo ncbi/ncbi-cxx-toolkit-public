@@ -209,7 +209,7 @@ double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
   
   // pre-align the regions
   m_aligner->SetSequences(m_Seq1 + q0, dimq, m_Seq2 + s0, dims, false);
-  m_aligner->SetEndSpaceFree(true, true, false, false);
+  m_aligner->SetEndSpaceFree(true, true, true, true);
   m_aligner->Run();
   CNWFormatter formatter(*m_aligner);
   string exons;
@@ -274,7 +274,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
       }
       
       // setup esf
-      m_aligner->SetEndSpaceFree(true, true, false, false);
+      m_aligner->SetEndSpaceFree(true, true, true, true);
 
       // align
       m_aligner->Run();
@@ -694,6 +694,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/10 19:22:31  kapustin
+ * Change esf mode to full
+ *
  * Revision 1.2  2003/10/31 19:43:15  kapustin
  * Format and compatibility update
  *
