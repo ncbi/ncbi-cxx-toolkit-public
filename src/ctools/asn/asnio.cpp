@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/04/15 21:58:24  vakatov
+* Use NcbiMin instead of MIN
+*
 * Revision 1.3  1999/04/14 19:11:51  vakatov
 * Added "LIBCALLBACK" to AsnRead/Write proto (MSVC++ feature)
 *
@@ -81,7 +84,7 @@ void AsnMemoryRead::Init(void)
 
 size_t AsnMemoryRead::Read(char* buffer, size_t size)
 {
-    int count = MIN(size, m_Size - m_Ptr);
+    int count = NcbiMin(size, m_Size - m_Ptr);
     memcpy(buffer, m_Data + m_Ptr, count);
     m_Ptr += count;
     return count;
