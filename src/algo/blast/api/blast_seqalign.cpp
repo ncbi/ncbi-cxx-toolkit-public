@@ -703,7 +703,7 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
         const BlastSeqSrc* bssp,
         const SSeqLoc *subject,
         const BlastScoringOptions* score_options, 
-        const BlastScoreBlk* sbp, bool is_gapped)
+        const BlastScoreBlk* sbp)
 {
     _ASSERT(results->num_queries == (int)query.size());
     _ASSERT(bssp || subject);
@@ -711,6 +711,7 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
     TSeqAlignVector retval;
     int index;
     CConstRef<CSeq_id> query_id;
+    bool is_gapped = (bool) score_options->gapped_calculation;
 
     // Process each query's hit list
     for (index = 0; index < results->num_queries; 
@@ -736,6 +737,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/10/30 21:40:57  dondosha
+* Removed unneeded extra argument from BLAST_Results2CSeqAlign
+*
 * Revision 1.19  2003/10/28 20:53:59  camacho
 * Temporarily use exception for unimplemented function
 *

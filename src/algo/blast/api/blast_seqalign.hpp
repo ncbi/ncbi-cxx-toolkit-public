@@ -59,7 +59,6 @@ BEGIN_SCOPE(blast)
  * @param subject Subject sequence (for 2 sequences search) [in]
  * @param score_options contains scoring options [in]
  * @param sbp scoring and statistical information [in]
- * @param is_gapped Was this a gapped search? [in]
  * @return Vector of seqalign sets (one set per query sequence).
  */
 TSeqAlignVector
@@ -69,7 +68,7 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
                           const BlastSeqSrc* bssp, 
                           const SSeqLoc* subject,
                           const BlastScoringOptions* score_options, 
-                          const BlastScoreBlk* sbp, bool is_gapped);
+                          const BlastScoreBlk* sbp);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -78,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/10/30 21:40:36  dondosha
+* Removed unneeded extra argument from BLAST_Results2CSeqAlign
+*
 * Revision 1.15  2003/08/19 20:24:17  dondosha
 * Added TSeqAlignVector type as a return type for results-to-seqalign functions and input for formatting
 *
