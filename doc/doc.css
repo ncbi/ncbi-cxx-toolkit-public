@@ -54,6 +54,11 @@ TR.shade { background: #cccccc; }   /*     grey */
 TD.shade { background: #cccccc; }   /*     grey */
 
 
+/* Search form */
+
+INPUT.search_text   { background-color: #f5f5f5; }
+INPUT.search_start  { font-weight: bold; }
+
 /*  Used to highlight text during internal documentation review  */
 
 SPAN.red    { background: red; }
