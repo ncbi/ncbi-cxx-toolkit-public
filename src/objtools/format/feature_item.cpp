@@ -1124,6 +1124,22 @@ const CProt_ref* CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
         }
     }
 
+    bool maploc = false, fig = false;
+    for ( CSeqdesc_CI it(prot, CSeqdesc::e_Pub); it; ++it ) {
+        const CPubdesc& pub = it->GetPub();
+        if ( !maploc  &&  pub.CanGetMaploc() ) {
+            string mapstr = "Map location " + pub.GetMaploc();
+            RemovePeriodFromEnd(mapstr);
+            x_AddQual(eFQ_maploc, new CFlatStringQVal(mapstr));
+            maploc = true;
+        }
+        if ( !fig  &&  pub.CanGetFig() ) {
+            string figstr = "This sequence comes from " + pub.GetFig();
+            RemovePeriodFromEnd(figstr);
+            x_AddQual(eFQ_figure, new CFlatStringQVal(figstr));
+            fig = true;
+        }
+    }
     return pref;
 }
 
@@ -1302,6 +1318,19 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
 
     ITERATE (CBioseq::TId, it, ids) {
         const CSeq_id& id = **it;
+        CSeq_id::E_Choice choice = id.Which();
+        if ( choice != CSeq_id::e_Genbank  &&
+             choice != CSeq_id::e_Embl  &&
+             choice != CSeq_id::e_Ddbj  &&
+             choice != CSeq_id::e_Gi  &&
+             choice != CSeq_id::e_Other  &&
+             choice != CSeq_id::e_General  &&
+             choice != CSeq_id::e_Tpg  &&
+             choice != CSeq_id::e_Tpe  &&
+             choice != CSeq_id::e_Tpd ) {
+            continue;
+        }
+
         if ( &id == best  &&  !id.IsGi() ) {
             // we've already done 'best'. 
             continue;
@@ -1885,22 +1914,36 @@ void CFeatureItem::x_FormatQual
 }
 
 
-void CFeatureItem::x_CleanQuals(void) const
+const CFlatStringQVal* CFeatureItem::x_GetStringQual(EFeatureQualifier slot) const
 {
-    // /gene same as feature.comment will suppress /note
-    if ( m_Feat->CanGetComment()  &&  x_HasQual(eFQ_gene) ) {
-        const IFlatQVal* qval = m_Quals.Find(eFQ_gene)->second;
-        const CFlatStringQVal* strval = 
-            dynamic_cast<const CFlatStringQVal*>(qval);
-        if ( strval != 0  &&  
-             NStr::EqualNocase(strval->GetValue(), m_Feat->GetComment()) ) {
-            x_RemoveQuals(eFQ_seqfeat_note);
-        }
+    const IFlatQVal* qual = 0;
+    if ( x_HasQual(slot) ) {
+        qual = m_Quals.Find(slot)->second;
     }
+    return dynamic_cast<const CFlatStringQVal*>(qual);
 }
 
 
+void CFeatureItem::x_CleanQuals(void) const
+{
+    const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
+    if ( gene != 0 ) {
+        // /gene same as feature.comment will suppress /note
+        if ( m_Feat->CanGetComment() ) {
+            if ( NStr::Equal(gene->GetValue(), m_Feat->GetComment()) ) {
+                x_RemoveQuals(eFQ_seqfeat_note);
+            }
+        }
 
+        // remove protein description that equals the gene name, case sensitive
+        const CFlatStringQVal* prod_desc = x_GetStringQual(eFQ_prot_desc);
+        if ( prod_desc != 0 ) {
+            if ( NStr::Equal(gene->GetValue(), prod_desc->GetValue()) ) {
+                x_RemoveQuals(eFQ_prot_desc);
+            }
+        }
+    }
+}
 
 
 void CFeatureItem::x_AddFTableQuals(CBioseqContext& ctx) const
@@ -2837,6 +2880,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/05/07 15:22:39  shomrat
+* Added qualifiers add Seq-id filters
+*
 * Revision 1.21  2004/05/06 19:41:00  ucko
 * Kill unwanted definition of ff as a macro, if present (as on Mac OS 10.3)
 *
