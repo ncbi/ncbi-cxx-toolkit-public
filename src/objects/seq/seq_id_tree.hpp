@@ -163,7 +163,6 @@ public:
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(string sid,
                               TSeq_id_MatchList& id_list) const;
-    virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
 
@@ -624,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/03/29 16:01:24  grichenk
+* Removed CSeq_id_not_set_Tree::HaveReverseMatch()
+*
 * Revision 1.11  2004/10/01 20:28:29  vasilche
 * Accession and name are case insensitive.
 *

@@ -248,12 +248,6 @@ void CSeq_id_not_set_Tree::FindMatchStr(string /*sid*/,
 }
 
 
-bool CSeq_id_not_set_Tree::HaveReverseMatch(const CSeq_id_Handle& /*id*/) const
-{
-    return false;
-}
-
-
 void CSeq_id_not_set_Tree::FindReverseMatch(const CSeq_id_Handle& /*id*/,
                                             TSeq_id_MatchList& /*id_list*/)
 {
@@ -1705,6 +1699,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/03/29 16:01:24  grichenk
+* Removed CSeq_id_not_set_Tree::HaveReverseMatch()
+*
 * Revision 1.19  2004/11/15 15:06:45  grichenk
 * Removed empty ID warnings
 *
