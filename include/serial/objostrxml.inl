@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/10/18 14:25:51  gouriano
+* added possibility to enable/disable/set public identifier
+*
 * Revision 1.4  2001/11/09 19:07:22  grichenk
 * Fixed DTDFilePrefix functions
 *
@@ -137,7 +140,7 @@ void CObjectOStreamXml::SetDTDFileName(const string& filename)
 }
 
 inline
-string CObjectOStreamXml::GetDTDFilePrefix(void)
+string CObjectOStreamXml::GetDTDFilePrefix(void) const
 {
     if ( !m_UseDefaultDTDFilePrefix ) {
         return m_DTDFilePrefix;
@@ -148,7 +151,7 @@ string CObjectOStreamXml::GetDTDFilePrefix(void)
 }
 
 inline
-string CObjectOStreamXml::GetDTDFileName(void)
+string CObjectOStreamXml::GetDTDFileName(void) const
 {
     return m_DTDFileName;
 }
@@ -163,6 +166,30 @@ inline
 string CObjectOStreamXml::GetDefaultDTDFilePrefix(void)
 {
     return sm_DefaultDTDFilePrefix;
+}
+
+inline
+void CObjectOStreamXml::EnableDTDPublicId(void)
+{
+    m_UsePublicId = true;
+}
+
+inline
+void CObjectOStreamXml::DisableDTDPublicId(void)
+{
+    m_UsePublicId = false;
+}
+inline
+
+void CObjectOStreamXml::SetDTDPublicId(const string& publicId)
+{
+    m_PublicId = publicId;
+}
+
+inline
+string CObjectOStreamXml::GetDTDPublicId(void) const
+{
+    return m_PublicId;
 }
 
 #endif /* def OBJOSTRXML__HPP  &&  ndef OBJOSTRXML__INL */

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/10/18 14:25:52  gouriano
+* added possibility to enable/disable/set public identifier
+*
 * Revision 1.20  2002/03/07 22:02:00  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -153,7 +156,7 @@ public:
     // If it has been set to any value (including empty string), then
     // that value will be used.
     void   SetDTDFilePrefix(const string& prefix);
-    string GetDTDFilePrefix(void);
+    string GetDTDFilePrefix(void) const;
 
     // Default (global) DTD file prefix.
     static void   SetDefaultDTDFilePrefix(const string& prefix);
@@ -162,7 +165,18 @@ public:
     // If "DTDFileName" is not set or set to empty string for this stream,
     // then type name will be used as the file name.
     void   SetDTDFileName(const string& filename);
-    string GetDTDFileName(void);
+    string GetDTDFileName(void) const;
+
+    // Enable/disable DTD public identifier.
+    // If disabled (it is ENABLED by default), only system identifier
+    // will be written in the output XML stream
+    void EnableDTDPublicId(void);
+    void DisableDTDPublicId(void);
+    // DTD public identifier. If set to non-empty string, the stream will
+    // write this in the output XML file. Otherwise the "default" public id
+    // will be generated
+    void SetDTDPublicId(const string& publicId);
+    string GetDTDPublicId(void) const;
 
 protected:
     virtual void WriteBool(bool data);
@@ -289,6 +303,8 @@ private:
     bool   m_UseDefaultDTDFilePrefix;
     string m_DTDFilePrefix;
     string m_DTDFileName;
+    bool   m_UsePublicId;
+    string m_PublicId;
     static string sm_DefaultDTDFilePrefix;
 };
 

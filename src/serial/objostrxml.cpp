@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/10/18 14:27:09  gouriano
+* added possibility to enable/disable/set public identifier
+*
 * Revision 1.33  2002/10/15 13:47:59  gouriano
 * modified to handle "standard" (generated from DTD) XML i/o
 *
@@ -201,7 +204,8 @@ string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut),
       m_LastTagAction(eTagClose),
-      m_UseDefaultDTDFilePrefix(true)
+      m_UseDefaultDTDFilePrefix(true),
+      m_UsePublicId(true)
 {
     m_Output.SetBackLimit(1);
 }
@@ -259,9 +263,21 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
     m_Output.PutEol();
     m_Output.PutString("<!DOCTYPE ");
     m_Output.PutString(type->GetName());
-    m_Output.PutString(" PUBLIC \"-//NCBI//");
-    m_Output.PutString(GetPublicModuleName(type));
-    m_Output.PutString("/EN\" \"");
+    
+    if (m_UsePublicId) {
+        m_Output.PutString(" PUBLIC \"");
+        if (m_PublicId.empty()) {
+            m_Output.PutString("-//NCBI//");
+            m_Output.PutString(GetPublicModuleName(type));
+            m_Output.PutString("/EN");
+        } else {
+            m_Output.PutString(m_PublicId);
+        }
+        m_Output.PutString("\"");
+    } else {
+        m_Output.PutString(" SYSTEM");
+    }
+    m_Output.PutString(" \"");
     m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
     m_Output.PutString(".dtd\">");
     m_Output.PutEol();
