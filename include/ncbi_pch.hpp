@@ -33,44 +33,15 @@
  ** Header file to be pre-compiled and speed up build of NCBI C++ Toolkit
  **/
 
+// All of the below headers appear in >40% of C++ Toolkit compilation
+// units.  (So do about a dozen other corelib headers, but these
+// indirectly include all the rest.)
 
-//TODO - define file content
-#include <corelib/ddumpable.hpp>
-#include <corelib/metareg.hpp>
-///#include <corelib/ncbiapp.hpp>
-///#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbiatomic.hpp>
-#include <corelib/ncbicntr.hpp>
-#include <corelib/ncbidbg.hpp>
-#include <corelib/ncbidiag.hpp>
-//#include <corelib/ncbidll.hpp>
-///#include <corelib/ncbienv.hpp>
-//#include <corelib/ncbiexec.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbifile.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiobj.hpp>
-///#include <corelib/ncbireg.hpp>
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbithr.hpp>
-#include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
-//#include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbi_limits.hpp>
-//#include <corelib/ncbi_process.hpp>
-//#include <corelib/ncbi_safe_static.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbi_tree.hpp>
-//#include <corelib/plugin_manager.hpp>
-//#include <corelib/plugin_manager_impl.hpp>
-//#include <corelib/test_mt.hpp>
-//#include <corelib/version.hpp>
-
 
 // Third Party Libraries specific includes
 #ifdef NCBI_WXWIN_USE_PCH
@@ -79,6 +50,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/29 14:46:15  ucko
+ * Reduce to a non-redundant handful of headers with >40% usage.
+ *
  * Revision 1.7  2004/06/01 13:16:59  gorelenk
  * Changed PCH for wxWindows to wxprec.h
  *
