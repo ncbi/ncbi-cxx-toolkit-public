@@ -387,7 +387,13 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
     _ASSERT(!m_DB_Attached);
     u_int32_t open_flags = DB_CREATE;
 
-    DB_TXN* txn = GetTxn();
+    DB_TXN* txn = 0; //GetTxn();
+
+    if (m_Env) {
+        if (m_Env->IsTransactional()) {
+            open_flags |= DB_THREAD | DB_AUTO_COMMIT;
+        }
+    }
 
     int ret = m_DB->open(m_DB,
                          txn,
@@ -742,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/12/12 14:09:12  kuznets
+ * Changed file opening code to work correct in transactional environment.
+ *
  * Revision 1.26  2003/12/10 19:14:08  kuznets
  * Added support of berkeley db transactions
  *
