@@ -45,6 +45,7 @@
 #include <serial/iterator.hpp>
 #include <objects/omssa/omssa__.hpp>
 #include <serial/objostrxml.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <fstream>
 #include <string>
@@ -282,14 +283,18 @@ int COMSSA::Run()
     CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
 
     // read in modifications
-    auto_ptr<CObjectIStream> 
-    modsin(CObjectIStream::Open(args["mx"].AsString().c_str(), eSerial_Xml));
-    if(modsin->fail()) {	    
-        ERR_POST(Fatal << "ommsacl: unable open modification file" << 
-                 args["mx"].AsString());
-	    return 1;
+    {  
+        CDirEntry DirEntry(GetProgramExecutablePath());
+        string ModFileName = DirEntry.GetDir() + args["mx"].AsString();
+        auto_ptr<CObjectIStream> 
+        modsin(CObjectIStream::Open(ModFileName.c_str(), eSerial_Xml));
+        if(modsin->fail()) {	    
+            ERR_POST(Fatal << "ommsacl: unable open modification file" << 
+                     ModFileName);
+    	    return 1;
+        }
+        modsin->Read(ObjectInfo(*Modset));
     }
-    modsin->Read(ObjectInfo(*Modset));
 
 
 	// print out the modification list
@@ -522,6 +527,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.29  2005/03/22 22:22:34  lewisg
+  search executable path for mods.xml
+
   Revision 1.28  2005/03/15 20:47:55  lewisg
   fix bug in pkl import
 
