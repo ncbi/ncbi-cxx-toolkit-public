@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/06/07 19:45:59  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.46  2000/06/01 19:07:03  vasilche
 * Added parsing of XML data.
 *
@@ -332,9 +337,10 @@ bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
 {
     if ( !GetChar(expect, skipWhiteSpace) ) {
-        ThrowError(eFormatError,
-                   string("'") + PeekChar() + "': expected '" +
-                   expect + "'");
+        string msg("\'");
+        msg += expect;
+        msg += "' expected";
+        ThrowError(eFormatError, msg);
     }
 }
 
@@ -349,9 +355,12 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
         return false;
     }
     m_Input.UngetChar(c);
-    ThrowError(eFormatError,
-               string("'") + PeekChar() + "': '"+
-               choiceTrue + "' or '" + choiceFalse + "' expected");
+    string msg("\'");
+    msg += choiceTrue;
+    msg += "' or '";
+    msg += choiceFalse;
+    msg += "' expected";
+    ThrowError(eFormatError, msg);
     return false;
 }
 
@@ -794,8 +803,7 @@ void CObjectIStreamAsn::SkipByteBlock(void)
         }
         else {
             m_Input.UngetChar(c);
-            ThrowError(eFormatError,
-                       string("bad char in octet string: '") + c + "'");
+            ThrowError(eFormatError, "bad char in octet string");
         }
     }
 	Expect('H', true);
@@ -806,37 +814,10 @@ CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
     return ReadUInt();
 }
 
-void CObjectIStreamAsn::BeginArray(CObjectStackArray& /*array*/)
-{
-    Expect('{', true);
-}
-
-void CObjectIStreamAsn::EndArray(CObjectStackArray& array)
-{
-    Expect('}');
-    array.End();
-}
-
-bool CObjectIStreamAsn::BeginArrayElement(CObjectStackArrayElement& e)
-{
-    char c = SkipWhiteSpace();
-    if ( e.GetArrayFrame().IsEmpty() ) {
-        if ( c == '}' )
-            return false;
-        e.GetArrayFrame().SetNonEmpty();
-    }
-    else {
-        if ( c != ',' )
-            return false;
-        m_Input.SkipChar();
-    }
-    e.Begin();
-    return true;
-}
-
 void CObjectIStreamAsn::ReadArray(CObjectArrayReader& reader,
-                                  TTypeInfo arrayType, bool randomOrder,
-                                  TTypeInfo elementType)
+                                  TTypeInfo /*arrayType*/,
+                                  bool /*randomOrder*/,
+                                  TTypeInfo /*elementType*/)
 {
     Expect('{', true);
     
@@ -989,8 +970,7 @@ void CObjectIStreamAsn::ReadClassRandom(CObjectClassReader& reader,
                 break;
             }
             else {
-                ThrowError(eFormatError,
-                           string("'")+PeekChar()+"': ',' or '}' expected");
+                ThrowError(eFormatError, "',' or '}' expected");
             }
         }
         
@@ -1055,8 +1035,7 @@ void CObjectIStreamAsn::ReadClassSequential(CObjectClassReader& reader,
                 break;
             }
             else {
-                ThrowError(eFormatError,
-                           string("'")+PeekChar()+"': ',' or '}' expected");
+                ThrowError(eFormatError, "',' or '}' expected");
             }
         }
 
@@ -1072,6 +1051,7 @@ void CObjectIStreamAsn::ReadClassSequential(CObjectClassReader& reader,
     cls.End();
 }
 
+#if 0
 CObjectIStreamAsn::TMemberIndex
 CObjectIStreamAsn::BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                       const CMembers& members)
@@ -1083,9 +1063,10 @@ CObjectIStreamAsn::BeginChoiceVariant(CObjectStackChoiceVariant& v,
     v.SetName(members.GetMemberId(index));
     return index;
 }
+#endif
 
 void CObjectIStreamAsn::ReadChoice(CObjectChoiceReader& reader,
-                                   TTypeInfo choiceInfo,
+                                   TTypeInfo /*choiceInfo*/,
                                    const CMembersInfo& variants)
 {
     CObjectStackChoiceVariant v(*this);
@@ -1125,8 +1106,7 @@ int CObjectIStreamAsn::GetHexChar(void)
             break;
         default:
             m_Input.UngetChar(c);
-            ThrowError(eFormatError,
-                       string("bad char in octet string: '") + c + "'");
+            ThrowError(eFormatError, "bad char in octet string");
         }
     }
 }
@@ -1251,8 +1231,7 @@ size_t CObjectIStreamAsn::AsnRead(AsnIo& asn, char* data, size_t length)
         SIZE_TYPE nameLength = name.size();
         count = nameLength + 3;
         if ( length < count ) {
-            ThrowError(eFormatError,
-                       "buffer too small to put structure name: " + name);
+            ThrowError(eFail, "buffer too small to put structure name");
         }
         memcpy(data, name.data(), nameLength);
         data[nameLength] = ':';

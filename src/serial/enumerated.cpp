@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/06/07 19:45:58  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.8  2000/06/01 19:07:02  vasilche
 * Added parsing of XML data.
 *
@@ -120,8 +125,7 @@ CEnumeratedTypeValues::NameToValue(void) const
             pair<TNameToValue::iterator, bool> p =
                 m->insert(TNameToValue::value_type(s, i->second));
             if ( !p.second ) {
-                THROW1_TRACE(runtime_error,
-                             "duplicated enum value name " + i->first);
+                THROW1_TRACE(runtime_error, "duplicated enum value name");
             }
         }
     }

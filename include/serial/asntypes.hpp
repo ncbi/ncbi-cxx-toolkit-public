@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/06/07 19:45:41  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.26  2000/03/31 21:38:17  vasilche
 * Renamed First() -> FirstNode(), Next() -> NextNode() to avoid name conflict.
 *
@@ -154,6 +159,22 @@ public:
 	CSequenceOfTypeInfo(const char* name, TTypeInfo type);
     ~CSequenceOfTypeInfo(void);
 
+    size_t GetNextOffset(void) const
+        {
+            return m_NextOffset;
+        }
+    size_t GetDataOffset(void) const
+        {
+            return m_DataOffset;
+        }
+    
+    TTypeInfo GetDataTypeInfo(void) const
+        {
+            return m_DataType;
+        }
+
+    TObjectPtr CreateData(void) const;
+
     static TObjectPtr& FirstNode(TObjectPtr object)
         {
             return TType::Get(object);
@@ -200,13 +221,6 @@ private:
     void SetValNodeNext(void);
     // SET OF CHOICE (use choice's valnode->next field as link)
     void SetChoiceNext(void);
-
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataType;
-        }
-
-    TObjectPtr CreateData(void) const;
 
 protected:
 

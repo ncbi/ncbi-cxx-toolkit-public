@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/06/07 19:46:01  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.20  2000/05/24 20:08:50  vasilche
 * Implemented XML dump.
 *
@@ -131,12 +136,12 @@ CTypeInfo::~CTypeInfo(void)
 
 TObjectPtr CTypeInfo::Create(void) const
 {
-    THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
+    THROW1_TRACE(runtime_error, "This type cannot be allocated on heap");
 }
 
 void CTypeInfo::Delete(TObjectPtr /*object*/) const
 {
-    THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
+    THROW1_TRACE(runtime_error, "This type cannot be allocated on heap");
 }
 
 void CTypeInfo::DeleteExternalObjects(TObjectPtr /*object*/) const

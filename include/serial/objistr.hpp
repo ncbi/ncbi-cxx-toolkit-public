@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/06/07 19:45:42  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.42  2000/06/01 19:06:56  vasilche
 * Added parsing of XML data.
 *
@@ -594,15 +599,9 @@ public:
     };
 
     // block interface
-    virtual void BeginArray(CObjectStackArray& array) = 0;
-    virtual void EndArray(CObjectStackArray& array);
-
-    virtual bool BeginArrayElement(CObjectStackArrayElement& e) = 0;
-    virtual void EndArrayElement(CObjectStackArrayElement& e);
-
     virtual void ReadArray(CObjectArrayReader& reader,
                            TTypeInfo arrayType, bool randomOrder,
-                           TTypeInfo elementType);
+                           TTypeInfo elementType) = 0;
     void SkipArray(TTypeInfo arrayType, bool randomOrder,
                    TTypeInfo elementType)
         {
@@ -643,12 +642,14 @@ public:
         }
 
     // choice interface
+#if 0
     virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                             const CMembers& variants) = 0;
     virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
+#endif
     virtual void ReadChoice(CObjectChoiceReader& reader,
                             TTypeInfo classType,
-                            const CMembersInfo& variants);
+                            const CMembersInfo& variants) = 0;
 
     // byte block
 	virtual void BeginBytes(ByteBlock& block) = 0;

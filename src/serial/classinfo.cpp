@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/06/07 19:45:57  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.45  2000/06/01 19:07:02  vasilche
 * Added parsing of XML data.
 *
@@ -267,34 +272,6 @@ TConstObjectPtr GetMember(const CMemberInfo* memberInfo,
     return memberInfo->GetMember(object);
 }
 
-#if 0
-static
-bool IsMemberDefault(TConstObjectPtr object,
-                     const CMembersInfo& members, size_t index)
-{
-    const CMemberInfo* info = members.GetMemberInfo(index);
-    if ( info->HaveSetFlag() ) {
-        return !info->GetSetFlag(object);
-    }
-    else if ( info->CanBeDelayed() && info->GetDelayBuffer(object) ) {
-        return false;
-    }
-    else if ( info->Optional() ) {
-        TConstObjectPtr def = info->GetDefault();
-        TTypeInfo typeInfo = info->GetTypeInfo();
-        // we already checke for delayed buffer so we'll not call ::GetMember()
-        TConstObjectPtr member = info->GetMember(object);
-        if ( !def ) {
-            return typeInfo->IsDefault(member);
-        }
-        else {
-            return typeInfo->Equals(member, def);
-        }
-    }
-    return false;
-}
-#endif
-
 static
 void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info)
 {
@@ -383,9 +360,7 @@ CClassInfoTmpl::TClassesById& CClassInfoTmpl::ClassesById(void)
                 if ( !classes->insert(
                          TClassesById::value_type(&info->GetId(),
                                                   info)).second ) {
-                    THROW1_TRACE(runtime_error,
-                                 "duplicated class ids " +
-                                 string(info->GetId().name()));
+                    THROW1_TRACE(runtime_error, "duplicated class ids");
                 }
             }
         }
@@ -408,8 +383,7 @@ CClassInfoTmpl::TClassesByName& CClassInfoTmpl::ClassesByName(void)
                 if ( !classes->insert(
                          TClassesByName::value_type(info->GetName(),
                                                     info)).second ) {
-                    THROW1_TRACE(runtime_error,
-                                 "duplicated class names " + info->GetName());
+                    THROW1_TRACE(runtime_error, "duplicated class names");
                 }
             }
         }
@@ -450,7 +424,9 @@ TTypeInfo CClassInfoTmpl::GetClassInfoById(const type_info& id)
     TClassesById& types = ClassesById();
     TClassesById::iterator i = types.find(&id);
     if ( i == types.end() ) {
-        THROW1_TRACE(runtime_error, "class not found: " + string(id.name()));
+        string msg("class not found: ");
+        msg += id.name();
+        THROW1_TRACE(runtime_error, msg);
     }
     return i->second;
 }
@@ -460,7 +436,9 @@ TTypeInfo CClassInfoTmpl::GetClassInfoByName(const string& name)
     TClassesByName& classes = ClassesByName();
     TClassesByName::iterator i = classes.find(name);
     if ( i == classes.end() ) {
-        THROW1_TRACE(runtime_error, "class not found: " + name);
+        string msg("class not found: ");
+        msg += name;
+        THROW1_TRACE(runtime_error, msg);
     }
     return i->second;
 }
@@ -538,13 +516,12 @@ public:
             parentClass->WriteData(out, m_Object);
         }
 
-    virtual size_t WriteMembers(CObjectOStream& out,
-                                const CMembersInfo& members)
+    virtual void WriteMembers(CObjectOStream& out,
+                              const CMembersInfo& members)
         {
             TConstObjectPtr obj = m_Object;
         
             size_t memberCount = members.GetSize();
-            size_t count = 0;
             for ( size_t index = 0; index < memberCount; ++index ) {
                 const CMemberInfo* info = members.GetMemberInfo(index);
                 bool haveSetFlag = info->HaveSetFlag();
@@ -556,9 +533,8 @@ public:
                      const CDelayBuffer& buffer = info->GetDelayBuffer(obj);
                      if ( buffer ) {
                          if ( buffer.HaveFormat(out.GetDataFormat()) ) {
-                             out.WriteDelayedClassMember(
-                                 members.GetMemberId(index),
-                                 count++, buffer);
+                             out.WriteDelayedClassMember(*this,
+                                 members.GetMemberId(index), buffer);
                              continue;
                          }
                          // cannot write delayed buffer -> proceed after update
@@ -580,10 +556,9 @@ public:
                     }
                 }
 
-                out.WriteClassMember(members.GetMemberId(index), count++,
+                out.WriteClassMember(*this, members.GetMemberId(index),
                                      typeInfo, member);
             }
-            return count;
         }
 
 private:
@@ -732,13 +707,6 @@ TTypeInfo CClassInfoTmpl::GetParentTypeInfo(void) const
 bool CClassInfoTmpl::IsDefault(TConstObjectPtr /*object*/) const
 {
     return false;
-#if 0
-    for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        if ( !IsMemberDefault(object, m_Members, i) )
-            return false;
-    }
-    return true;
-#endif
 }
 
 void CClassInfoTmpl::SetDefault(TObjectPtr dst) const

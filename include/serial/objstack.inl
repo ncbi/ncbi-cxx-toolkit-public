@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/07 19:45:44  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.2  2000/06/01 19:06:58  vasilche
 * Added parsing of XML data.
 *
@@ -262,15 +267,9 @@ CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStack& stack)
 }
 
 inline
-CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStackChoice& ch)
-    : CObjectStackFrame(ch, eFrameChoiceVariant)
-{
-}
-
-inline
-CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStackChoice& ch,
+CObjectStackChoiceVariant::CObjectStackChoiceVariant(CObjectStack& stack,
                                                      const CMemberId& id)
-    : CObjectStackFrame(ch, eFrameChoiceVariant, id)
+    : CObjectStackFrame(stack, eFrameChoiceVariant, id)
 {
 }
 

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/06/07 19:45:43  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.24  2000/06/01 19:06:57  vasilche
 * Added parsing of XML data.
 *
@@ -168,9 +173,6 @@ protected:
 
     void WriteNull(void);
 
-    virtual void BeginArray(CObjectStackArray& array);
-    virtual void EndArray(CObjectStackArray& array);
-    virtual void BeginArrayElement(CObjectStackArrayElement& e);
     virtual void WriteArray(CObjectArrayWriter& writer,
                             TTypeInfo arrayType, bool randomOrder,
                             TTypeInfo elementType);
@@ -183,16 +185,25 @@ protected:
                             TTypeInfo classInfo, 
                             const CMembersInfo& members,
                             bool randomOrder);
-    virtual void WriteClassMember(const CMemberId& id,
-                                  size_t index,
+    virtual void WriteClassMember(CObjectClassWriter& writer,
+                                  const CMemberId& id,
                                   TTypeInfo memberInfo,
                                   TConstObjectPtr memberPtr);
-    virtual void WriteDelayedClassMember(const CMemberId& id,
-                                         size_t index,
+    virtual void WriteDelayedClassMember(CObjectClassWriter& writer,
+                                         const CMemberId& id,
                                          const CDelayBuffer& buffer);
 
+#if 0
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                     const CMemberId& id);
+#endif
+    virtual void WriteChoice(TTypeInfo choiceType,
+                             const CMemberId& id,
+                             TTypeInfo memberInfo,
+                             TConstObjectPtr memberPtr);
+    virtual void WriteDelayedChoice(TTypeInfo choiceType,
+                                    const CMemberId& id,
+                                    const CDelayBuffer& buffer);
 
 	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,

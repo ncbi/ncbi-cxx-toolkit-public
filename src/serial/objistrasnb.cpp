@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/06/07 19:45:59  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.35  2000/06/01 19:07:04  vasilche
 * Added parsing of XML data.
 *
@@ -357,7 +362,8 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagParsed;
 #endif
-    return name + char(c & 0x7f);
+    name += char(c & 0x7f);
+    return name;
 }
 
 TByte CObjectIStreamAsnBinary::PeekAnyTag(void)
@@ -849,36 +855,16 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     return s;
 }
 
-void CObjectIStreamAsnBinary::BeginArray(CObjectStackArray& array)
-{
-    ExpectSysTag(eUniversal, true, array.RandomOrder()? eSet: eSequence);
-    ExpectIndefiniteLength();
-}
-
-void CObjectIStreamAsnBinary::EndArray(CObjectStackArray& array)
-{
-    ExpectEndOfContent();
-    array.End();
-}
-
 inline
 bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 {
     return PeekTagByte() != KEndOfContentsByte;
 }
 
-bool CObjectIStreamAsnBinary::BeginArrayElement(CObjectStackArrayElement& e)
-{
-    if ( HaveMoreElements() ) {
-        e.Begin();
-        return true;
-    }
-    return false;
-}
-
 void CObjectIStreamAsnBinary::ReadArray(CObjectArrayReader& reader,
-                                        TTypeInfo arrayType, bool randomOrder,
-                                        TTypeInfo elementType)
+                                        TTypeInfo /*arrayType*/,
+                                        bool randomOrder,
+                                        TTypeInfo /*elementType*/)
 {
     ExpectSysTag(eUniversal, true, randomOrder? eSet: eSequence);
     ExpectIndefiniteLength();
@@ -1058,6 +1044,7 @@ void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
     ExpectEndOfContent();
 }
 
+#if 0
 CObjectIStreamAsnBinary::TMemberIndex
 CObjectIStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                             const CMembers& variants)
@@ -1075,11 +1062,13 @@ void CObjectIStreamAsnBinary::EndChoiceVariant(CObjectStackChoiceVariant& v)
 {
     ExpectEndOfContent();
     v.End();
-    v.GetChoiceFrame().End();
+    _ASSERT(v.GetPrevous());
+    v.GetPrevous()->End();
 }
+#endif
 
 void CObjectIStreamAsnBinary::ReadChoice(CObjectChoiceReader& reader,
-                                         TTypeInfo choiceInfo,
+                                         TTypeInfo /*choiceInfo*/,
                                          const CMembersInfo& variants)
 {
     CObjectStackChoiceVariant v(*this);

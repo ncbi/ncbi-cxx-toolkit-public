@@ -29,10 +29,15 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Iterators through object hierarchy
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/06/07 19:45:42  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.11  2000/06/01 19:06:55  vasilche
 * Added parsing of XML data.
 *
@@ -84,19 +89,21 @@
 
 BEGIN_NCBI_SCOPE
 
+// class holding information about point of object hierarchy
+// Do not use it directly
 class CBeginInfo
 {
 public:
     typedef CChildrenIterator TChildrenIterator;
     typedef CObjectInfo TObjectInfo;
-
+    
     CBeginInfo(TObjectPtr objectPtr, TTypeInfo typeInfo,
                bool detectLoops = false)
         : m_ObjectPtr(objectPtr), m_TypeInfo(typeInfo),
           m_DetectLoops(detectLoops)
         {
         }
-
+    
     TObjectPtr GetObjectPtr(void) const
         {
             return m_ObjectPtr;
@@ -116,6 +123,8 @@ private:
     bool m_DetectLoops;
 };
 
+// class holding information about root of non-modifiable object hierarchy
+// Do not use it directly
 class CConstBeginInfo
 {
 public:
@@ -147,13 +156,14 @@ public:
         {
             return m_DetectLoops;
         }
-
+    
 private:
     TConstObjectPtr m_ObjectPtr;
     TTypeInfo m_TypeInfo;
     bool m_DetectLoops;
 };
 
+// CTreeIterator is base class for all iterators over modifiable object
 class CTreeIterator
 {
 public:
@@ -162,23 +172,26 @@ public:
     typedef TChildrenIterator::TObjectInfo TObjectInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
 
+    // construct object iterator
     CTreeIterator(void)
         : m_Valid(false), m_SkipSubTree(false), m_Stack(0), m_StackDepth(0)
         {
         }
     virtual ~CTreeIterator(void);
 
-
+    // get information about current object
     TObjectInfo& Get(void)
         {
             _ASSERT(Valid());
             return m_CurrentObject;
         }
+    // get information about current object
     const TObjectInfo& Get(void) const
         {
             _ASSERT(Valid());
             return m_CurrentObject;
         }
+    // get type information of current object
     TTypeInfo GetCurrentTypeInfo(void) const
         {
             return Get().GetTypeInfo();
@@ -186,7 +199,7 @@ public:
 
     // reset iterator to initial state (!Valid() && End())
     void Reset(void);
-
+    
     // points to a valid object
     bool Valid(void) const
         {
@@ -207,16 +220,20 @@ public:
             m_SkipSubTree = true;
         }
 
+    // check whether iterator is not finished
     operator bool(void)
         {
             return !End();
         }
+    // go to next object
     CTreeIterator& operator++(void)
         {
             Next();
             return *this;
         }
-
+    
+    // class describing stack level of traversal
+    // do not use it directly
     class CTreeLevel : public TChildrenIterator {
     public:
         CTreeLevel(const TObjectInfo& owner, CTreeLevel* previousLevel)
@@ -235,7 +252,9 @@ public:
         CTreeLevel* m_PreviousLevel;
     };
 
+    // initialize iterator to new root of object hierarchy
     void Begin(const TBeginInfo& beginInfo);
+    // delete currently pointed object (throws exception if failed)
     void Erase(void);
 
 protected:
@@ -261,6 +280,8 @@ private:
     auto_ptr<TVisitedObjects> m_VisitedObjects;
 };
 
+// CTreeIterator is base class for all iterators over non-modifiable object
+// Do not use it directly
 class CTreeConstIterator
 {
 public:
@@ -269,6 +290,7 @@ public:
     typedef TChildrenIterator::TObjectInfo TObjectInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
 
+    // construct object iterator
     CTreeConstIterator(void)
         : m_Valid(false), m_SkipSubTree(false), m_Stack(0), m_StackDepth(0)
         {
@@ -276,16 +298,19 @@ public:
     virtual ~CTreeConstIterator(void);
 
 
+    // get information about current object
     TObjectInfo& Get(void)
         {
             _ASSERT(Valid());
             return m_CurrentObject;
         }
+    // get information about current object
     const TObjectInfo& Get(void) const
         {
             _ASSERT(Valid());
             return m_CurrentObject;
         }
+    // get type information of current object
     TTypeInfo GetCurrentTypeInfo(void) const
         {
             return Get().GetTypeInfo();
@@ -314,16 +339,20 @@ public:
             m_SkipSubTree = true;
         }
 
+    // check whether iterator is not finished
     operator bool(void)
         {
             return !End();
         }
+    // go to next object
     CTreeConstIterator& operator++(void)
         {
             Next();
             return *this;
         }
 
+    // class describing stack level of traversal
+    // do not use it directly
     class CTreeLevel : public TChildrenIterator {
     public:
         CTreeLevel(const TObjectInfo& owner, CTreeLevel* previousLevel)
@@ -342,6 +371,7 @@ public:
         CTreeLevel* m_PreviousLevel;
     };
 
+    // initialize iterator to new root of object hierarchy
     void Begin(const TBeginInfo& beginInfo);
 
 protected:
@@ -367,6 +397,8 @@ private:
     auto_ptr<TVisitedObjects> m_VisitedObjects;
 };
 
+// template base class for CTypeIterator<> and CTypeConstIterator<>
+// Do not use it directly
 template<class Parent>
 class CTypeIteratorBase : public Parent
 {
@@ -396,6 +428,8 @@ private:
     TTypeInfo m_NeedType;
 };
 
+// template base class for CTypesIterator and CTypesConstIterator
+// Do not use it directly
 template<class Parent>
 class CTypesIteratorBase : public Parent
 {
@@ -465,6 +499,7 @@ private:
     TTypeInfo m_MatchType;
 };
 
+// template class for iteration on objects of class C
 template<class C, class TypeGetter = C>
 class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
 {
@@ -499,6 +534,7 @@ public:
         }
 };
 
+// template class for iteration on objects of class C (non-medifiable version)
 template<class C, class TypeGetter = C>
 class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>
 {
@@ -528,6 +564,7 @@ public:
         }
 };
 
+// template class for iteration on objects of standard C++ type T
 template<typename T>
 class CStdTypeIterator : public CTypeIterator<T, CStdTypeInfo<T> >
 {
@@ -550,6 +587,8 @@ public:
         }
 };
 
+// template class for iteration on objects of standard C++ type T
+// (non-modifiable version)
 template<typename T>
 class CStdTypeConstIterator : public CTypeConstIterator<T, CStdTypeInfo<T> >
 {
@@ -572,16 +611,23 @@ public:
         }
 };
 
+// class for iteration on objects derived from class CObject
 typedef CTypeIterator<CObject, CObjectGetTypeInfo> CObjectIterator;
+// class for iteration on objects derived from class CObject
+// (non-modifiable version)
 typedef CTypeConstIterator<CObject, CObjectGetTypeInfo> CObjectConstIterator;
 
+// class for iteration on objects of list of types
 typedef CTypesIteratorBase<CTreeIterator> CTypesIterator;
+// class for iteration on objects of list of types (non-modifiable version)
 typedef CTypesIteratorBase<CTreeConstIterator> CTypesConstIterator;
 
+// enum flag for turning on loop detection in object hierarchy
 enum EDetectLoops {
     eDetectLoops
 };
 
+// get starting point of object hierarchy
 template<class C>
 inline
 CBeginInfo Begin(C& obj)
@@ -589,6 +635,7 @@ CBeginInfo Begin(C& obj)
     return CBeginInfo(&obj, C::GetTypeInfo(), false);
 }
 
+// get starting point of non-modifiable object hierarchy
 template<class C>
 inline
 CConstBeginInfo ConstBegin(const C& obj)
@@ -603,6 +650,7 @@ CConstBeginInfo Begin(const C& obj)
     return CConstBeginInfo(&obj, C::GetTypeInfo(), false);
 }
 
+// get starting point of object hierarchy with loop detection
 template<class C>
 inline
 CBeginInfo Begin(C& obj, EDetectLoops)
@@ -610,6 +658,7 @@ CBeginInfo Begin(C& obj, EDetectLoops)
     return CBeginInfo(&obj, C::GetTypeInfo(), true);
 }
 
+// get starting point of non-modifiable object hierarchy with loop detection
 template<class C>
 inline
 CConstBeginInfo ConstBegin(const C& obj, EDetectLoops)
@@ -624,6 +673,7 @@ CConstBeginInfo Begin(const C& obj, EDetectLoops)
     return CConstBeginInfo(&obj, C::GetTypeInfo(), true);
 }
 
+// helper template for working with CTypesIterator and CTypesConstIterator
 template<class C>
 class Type
 {

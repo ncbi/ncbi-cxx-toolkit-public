@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/06/07 19:46:00  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.36  2000/06/01 19:07:05  vasilche
 * Added parsing of XML data.
 *
@@ -340,7 +345,6 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 }
 
 template<typename T>
-static
 void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
 {
     for ( int shift = (count - 1) * 8; shift >= 0; shift -= 8 ) {
@@ -465,7 +469,6 @@ void CObjectOStreamAsnBinary::WriteNull(void)
 }
 
 template<typename T>
-static
 void WriteSNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 {
     size_t length;
@@ -500,7 +503,6 @@ void WriteSNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 }
 
 template<typename T>
-static
 void WriteUNumberValue(CObjectOStreamAsnBinary& out, const T& data)
 {
     size_t length;
@@ -668,24 +670,15 @@ void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
     WriteEndOfContent();
 }
 
-void CObjectOStreamAsnBinary::BeginArray(CObjectStackArray& array)
-{
-    WriteShortTag(eUniversal, true, array.RandomOrder()? eSet: eSequence);
-    WriteIndefiniteLength();
-}
-
-void CObjectOStreamAsnBinary::EndArray(CObjectStackArray& array)
-{
-    WriteEndOfContent();
-    array.End();
-}
-
 void CObjectOStreamAsnBinary::WriteArray(CObjectArrayWriter& writer,
                                          TTypeInfo arrayType, bool randomOrder,
                                          TTypeInfo elementType)
 {
     CObjectStackArray array(*this, arrayType, randomOrder);
-    WriteShortTag(eUniversal, true, randomOrder? eSet: eSequence);
+    if ( randomOrder )
+        WriteShortTag(eUniversal, true, eSet);
+    else
+        WriteShortTag(eUniversal, true, eSequence);
     WriteIndefiniteLength();
     
     CObjectStackArrayElement element(array, elementType);
@@ -747,8 +740,8 @@ void CObjectOStreamAsnBinary::WriteClass(CObjectClassWriter& writer,
     WriteEndOfContent();
 }
 
-void CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& id,
-                                               size_t /*index*/,
+void CObjectOStreamAsnBinary::WriteClassMember(CObjectClassWriter& writer,
+                                               const CMemberId& id,
                                                TTypeInfo memberTypeInfo,
                                                TConstObjectPtr memberPtr)
 {
@@ -763,8 +756,8 @@ void CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& id,
     m.End();
 }
 
-void CObjectOStreamAsnBinary::WriteDelayedClassMember(const CMemberId& id,
-                                                      size_t /*index*/,
+void CObjectOStreamAsnBinary::WriteDelayedClassMember(CObjectClassWriter& ,
+                                                      const CMemberId& id,
                                                       const CDelayBuffer& buff)
 {
     CObjectStackClassMember m(*this, id);
@@ -779,6 +772,7 @@ void CObjectOStreamAsnBinary::WriteDelayedClassMember(const CMemberId& id,
     m.End();
 }
 
+#if 0
 void CObjectOStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& ,
                                                  const CMemberId& id)
 {
@@ -790,7 +784,43 @@ void CObjectOStreamAsnBinary::EndChoiceVariant(CObjectStackChoiceVariant& v)
 {
     WriteEndOfContent();
     v.End();
-    v.GetChoiceFrame().End();
+    _ASSERT(v.GetPrevous());
+    v.GetPrevous()->End();
+}
+#endif
+
+void CObjectOStreamAsnBinary::WriteChoice(TTypeInfo /*choiceType*/,
+                                          const CMemberId& id,
+                                          TTypeInfo memberInfo,
+                                          TConstObjectPtr memberPtr)
+{
+    CObjectStackChoiceVariant v(*this, id);
+
+    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+
+    memberInfo->WriteData(*this, memberPtr);
+
+    WriteEndOfContent();
+
+    v.End();
+}
+
+void CObjectOStreamAsnBinary::WriteDelayedChoice(TTypeInfo /*choiceType*/,
+                                                 const CMemberId& id,
+                                                 const CDelayBuffer& buffer)
+{
+    CObjectStackChoiceVariant v(*this, id);
+
+    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+    
+    if ( !buffer.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+
+    WriteEndOfContent();
+
+    v.End();
 }
 
 void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)

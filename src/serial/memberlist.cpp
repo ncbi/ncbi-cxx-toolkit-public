@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/06/07 19:45:58  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.13  2000/06/01 19:07:03  vasilche
 * Added parsing of XML data.
 *
@@ -122,8 +127,7 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
             if ( !members->insert(TMembersByName::value_type(name,
                                                              i)).second ) {
                 if ( !name.empty() )
-                    THROW1_TRACE(runtime_error,
-                                 "duplicated member name: " + name);
+                    THROW1_TRACE(runtime_error, "duplicated member name");
             }
         }
     }
@@ -149,9 +153,7 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
             }
             if ( !members->insert(TMembersByTag::
                       value_type(t, i)).second ) {
-                THROW1_TRACE(runtime_error,
-                             "duplicated member tag: " +
-                             m_Members[i].ToString());
+                THROW1_TRACE(runtime_error, "duplicated member tag");
             }
             currentTag = t;
         }
@@ -281,9 +283,7 @@ CMembersInfo::GetMembersByOffset(void) const
             size_t offset = info.GetOffset();
             if ( !members->insert(TMembersByOffset::
                                   value_type(offset, i)).second ) {
-                THROW1_TRACE(runtime_error,
-                             "conflict member offset: " +
-                             NStr::UIntToString(offset));
+                THROW1_TRACE(runtime_error, "conflict member offset");
             }
         }
         // check overlaps

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/06/07 19:45:58  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.7  2000/02/01 21:47:22  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Added buffering to CObjectIStreamAsn.
@@ -67,72 +72,5 @@
 #include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
-
-#if 0
-CMemberInfo::~CMemberInfo(void)
-{
-}
-
-size_t CMemberInfo::GetSize(void) const
-{
-    return GetTypeInfo()->GetSize();
-}
-
-CMemberInfo* CMemberInfo::SetOptional(void)
-{
-    m_Optional = true;
-    return this;
-}
-
-CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
-{
-    SetOptional();
-    m_Default = def;
-    return this;
-}
-
-TConstObjectPtr CMemberInfo::GetDefault(void) const
-{
-    return m_Default;
-}
-
-size_t CRealMemberInfo::GetOffset(void) const
-{
-    return m_Offset;
-}
-
-TTypeInfo CRealMemberInfo::GetTypeInfo(void) const
-{
-    return m_Type.Get();
-}
-
-const CMemberInfo* CMemberAliasInfo::GetBaseMember(void) const
-{
-    const CMemberInfo* baseMember = m_BaseMember;
-    if ( !baseMember ) {
-        TTypeInfo contTypeInfo = m_ContainerType.Get();
-        CTypeInfo::TMemberIndex index = contTypeInfo->FindMember(m_MemberName);
-        if ( index < 0 )
-            THROW1_TRACE(runtime_error, "member not found: " + m_MemberName);
-        m_BaseMember = baseMember = contTypeInfo->GetMemberInfo(index);
-    }
-    return baseMember;
-}
-
-size_t CMemberAliasInfo::GetOffset(void) const
-{
-    return GetBaseMember()->GetOffset();
-}
-
-TTypeInfo CMemberAliasInfo::GetTypeInfo(void) const
-{
-    return GetBaseMember()->GetTypeInfo();
-}
-
-TTypeInfo CTypedMemberAliasInfo::GetTypeInfo(void) const
-{
-    return m_Type.Get();
-}
-#endif
 
 END_NCBI_SCOPE

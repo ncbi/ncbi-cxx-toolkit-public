@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/06/07 19:45:57  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.15  2000/06/01 19:07:02  vasilche
 * Added parsing of XML data.
 *
@@ -211,23 +216,20 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 {
     TMemberIndex index = GetIndex(object);
     if ( index >= 0 && index < GetVariantsCount() ) {
-        const CMemberId& id = GetMembers().GetMemberId(index);
-
-        CObjectStackChoice choice(out, this);
-        CObjectStackChoiceVariant variant(choice, id);
-
-        out.BeginChoiceVariant(variant, id);
-
-        const CMemberInfo* memberInfo = m_Members.GetMemberInfo(index);
-        if ( memberInfo->CanBeDelayed() &&
-             memberInfo->GetDelayBuffer(object).Write(out) ) {
-            // copied original delayed read buffer, do nothing
-        }
-        else {
-            memberInfo->GetTypeInfo()->WriteData(out, GetData(object, index));
+        const CMemberInfo* info = m_Members.GetMemberInfo(index);
+        const CMemberId& id = m_Members.GetMemberId(index);
+        if ( info->CanBeDelayed() ) {
+             const CDelayBuffer& buffer = info->GetDelayBuffer(object);
+             if ( buffer ) {
+                 if ( buffer.HaveFormat(out.GetDataFormat()) ) {
+                     out.WriteDelayedChoice(this, id, buffer);
+                     return;
+                 }
+             }
         }
 
-        out.EndChoiceVariant(variant);
+        out.WriteChoice(this, id,
+                        info->GetTypeInfo(), GetData(object, index));
     }
     else {
         THROW1_TRACE(runtime_error, "cannot write unset choice");

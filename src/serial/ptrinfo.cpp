@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/06/07 19:46:00  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.21  2000/05/24 20:08:49  vasilche
 * Implemented XML dump.
 *
@@ -179,7 +184,7 @@ CPointerTypeInfo::x_GetObjectPointer(TConstObjectPtr object) const
 }
 
 void CPointerTypeInfo::SetObjectPointer(TObjectPtr object,
-                      TObjectPtr pointer) const
+                                        TObjectPtr pointer) const
 {
     *static_cast<TObjectPtr*>(object) = pointer;
 }

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/06/07 19:45:58  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.52  2000/06/01 19:07:03  vasilche
 * Added parsing of XML data.
 *
@@ -685,9 +690,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
             }
             else {
                 SetFailFlags(eFormatError);
-                THROW1_TRACE(runtime_error, "incompatible member type: " +
-                             info.GetTypeInfo()->GetName() + " need: " +
-                             declaredType->GetName());
+                THROW1_TRACE(runtime_error, "incompatible member type");
             }
         }
         return info.GetObjectPtr();
@@ -863,33 +866,6 @@ void CObjectIStream::SkipValue(void)
     THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
-void CObjectIStream::EndArray(CObjectStackArray& array)
-{
-    array.End();
-}
-
-void CObjectIStream::EndArrayElement(CObjectStackArrayElement& e)
-{
-    e.End();
-}
-
-void CObjectIStream::ReadArray(CObjectArrayReader& reader,
-                               TTypeInfo arrayType, bool randomOrder,
-                               TTypeInfo elementType)
-{
-    CObjectStackArray array(*this, arrayType, randomOrder);
-    BeginArray(array);
-    
-    CObjectStackArrayElement e(array, elementType);
-    
-    while ( BeginArrayElement(e) ) {
-        reader.ReadElement(*this);
-        EndArrayElement(e);
-    }
-    
-    EndArray(array);
-}
-
 void CObjectIStream::ReadNamedType(TTypeInfo /*namedTypeInfo*/,
                                    TTypeInfo typeInfo, TObjectPtr object)
 {
@@ -993,10 +969,12 @@ void CObjectIStream::ReadClassSequential(CObjectClassReader& reader,
     EndClass(cls);
 }
 
+#if 0
 void CObjectIStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
 {
     v.End();
-    v.GetChoiceFrame().End();
+    _ASSERT(v.GetPrevous());
+    v.GetPrevous()->End();
 }
 
 void CObjectIStream::ReadChoice(CObjectChoiceReader& reader,
@@ -1009,6 +987,7 @@ void CObjectIStream::ReadChoice(CObjectChoiceReader& reader,
     reader.ReadChoiceVariant(*this, members, index);
     EndChoiceVariant(v);
 }
+#endif
 
 size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
                                        bool forceLength)

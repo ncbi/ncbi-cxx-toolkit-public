@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/07 19:45:44  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.2  2000/06/01 19:06:58  vasilche
 * Added parsing of XML data.
 *
@@ -80,14 +85,10 @@ protected:
     void WriteNull(void);
     void WriteEscapedChar(char c);
 
-    virtual void BeginArray(CObjectStackArray& array);
-    virtual void EndArray(CObjectStackArray& array);
-    virtual void BeginArrayElement(CObjectStackArrayElement& e);
-    virtual void EndArrayElement(CObjectStackArrayElement& e);
     virtual void WriteArray(CObjectArrayWriter& writer,
                             TTypeInfo arrayType, bool randomOrder,
                             TTypeInfo elementType);
-    bool WriteArrayContents(CObjectArrayWriter& writer,
+    void WriteArrayContents(CObjectArrayWriter& writer,
                             TTypeInfo elementType);
 
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
@@ -102,20 +103,34 @@ protected:
                             TTypeInfo classInfo, 
                             const CMembersInfo& members,
                             bool randomOrder);
-    bool WriteClassContents(CObjectClassWriter& writer,
+    void WriteClassContents(CObjectClassWriter& writer,
                             TTypeInfo classInfo,
                             const CMembersInfo& members);
-    virtual void WriteClassMember(const CMemberId& id,
-                                  size_t index,
+    virtual void WriteClassMember(CObjectClassWriter& writer,
+                                         const CMemberId& id,
                                   TTypeInfo memberInfo,
                                   TConstObjectPtr memberPtr);
-    virtual void WriteDelayedClassMember(const CMemberId& id,
-                                         size_t index,
+    virtual void WriteDelayedClassMember(CObjectClassWriter& writer,
+                                         const CMemberId& id,
                                          const CDelayBuffer& buffer);
 
+#if 0
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                     const CMemberId& id);
     virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
+#endif
+    virtual void WriteChoice(TTypeInfo choiceType,
+                             const CMemberId& id,
+                             TTypeInfo memberInfo,
+                             TConstObjectPtr memberPtr);
+    virtual void WriteDelayedChoice(TTypeInfo choiceType,
+                                    const CMemberId& id,
+                                    const CDelayBuffer& buffer);
+    void WriteChoiceVariant(const CMemberId& id,
+                            TTypeInfo memberInfo,
+                            TConstObjectPtr memberPtr);
+    void WriteDelayedChoiceVariant(const CMemberId& id,
+                                   const CDelayBuffer& buffer);
 
 	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,

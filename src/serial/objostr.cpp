@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/06/07 19:46:00  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.40  2000/06/01 19:07:04  vasilche
 * Added parsing of XML data.
 *
@@ -434,40 +439,6 @@ void CObjectOStream::WriteThis(TConstObjectPtr object, CWriteObjectInfo& info)
     WriteObject(object, info);
 }
 
-void CObjectOStream::EndArray(CObjectStackArray& array)
-{
-    array.End();
-}
-
-void CObjectOStream::BeginArrayElement(CObjectStackArrayElement& e)
-{
-    e.Begin();
-}
-
-void CObjectOStream::EndArrayElement(CObjectStackArrayElement& e)
-{
-    e.End();
-}
-
-void CObjectOStream::WriteArray(CObjectArrayWriter& writer,
-                                TTypeInfo arrayType, bool randomOrder,
-                                TTypeInfo elementType)
-{
-    CObjectStackArray array(*this, arrayType, randomOrder);
-    BeginArray(array);
-    
-    if ( !writer.NoMoreElements() ) {
-        CObjectStackArrayElement element(array, elementType);
-        do {
-            BeginArrayElement(element);
-            writer.WriteElement(*this);
-            EndArrayElement(element);
-        } while ( !writer.NoMoreElements() );
-    }
-
-    EndArray(array);
-}
-
 void CObjectOStream::WriteNamedType(TTypeInfo /*namedTypeInfo*/,
                                     TTypeInfo typeInfo,
                                     TConstObjectPtr object)
@@ -503,8 +474,8 @@ void CObjectOStream::WriteClass(CObjectClassWriter& writer,
     EndClass(cls);
 }
 
-void CObjectOStream::WriteClassMember(const CMemberId& id,
-                                      size_t /*index*/,
+void CObjectOStream::WriteClassMember(CObjectClassWriter& ,
+                                      const CMemberId& id,
                                       TTypeInfo memberTypeInfo,
                                       TConstObjectPtr memberPtr)
 {
@@ -516,8 +487,8 @@ void CObjectOStream::WriteClassMember(const CMemberId& id,
     EndClassMember(m);
 }
 
-void CObjectOStream::WriteDelayedClassMember(const CMemberId& id,
-                                             size_t /*index*/,
+void CObjectOStream::WriteDelayedClassMember(CObjectClassWriter& ,
+                                             const CMemberId& id,
                                              const CDelayBuffer& buffer)
 {
     CObjectStackClassMember m(*this, id);
@@ -529,11 +500,42 @@ void CObjectOStream::WriteDelayedClassMember(const CMemberId& id,
     EndClassMember(m);
 }
 
+#if 0
 void CObjectOStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
 {
     v.End();
-    v.GetChoiceFrame().End();
+    _ASSERT(v.GetPrevous());
+    v.GetPrevous()->End();
 }
+
+void CObjectOStream::WriteChoice(TTypeInfo choiceType,
+                                 const CMemberId& id,
+                                 TTypeInfo memberInfo,
+                                 TConstObjectPtr memberPtr)
+{
+    CObjectStackChoice choice(*this, choiceType);
+    CObjectStackChoiceVariant v(*this, id);
+    BeginChoiceVariant(v, id);
+    
+    memberInfo->WriteData(*this, memberPtr);
+    
+    EndChoiceVariant(v);
+}
+
+void CObjectOStream::WriteDelayedChoice(TTypeInfo choiceType,
+                                        const CMemberId& id,
+                                        const CDelayBuffer& buffer)
+{
+    CObjectStackChoice choice(*this, choiceType);
+    CObjectStackChoiceVariant v(*this, id);
+    BeginChoiceVariant(v, id);
+    
+    if ( !buffer.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+
+    EndChoiceVariant(v);
+}
+#endif
 
 void CObjectOStream::BeginBytes(const ByteBlock& )
 {

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/06/07 19:46:00  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.39  2000/06/01 19:07:05  vasilche
 * Added parsing of XML data.
 *
@@ -393,31 +398,6 @@ void CObjectOStreamAsn::WriteOther(TConstObjectPtr object,
     WriteObject(object, info);
 }
 
-void CObjectOStreamAsn::BeginArray(CObjectStackArray& /*array*/)
-{
-    m_Output.PutChar('{');
-    m_Output.IncIndentLevel();
-}
-
-void CObjectOStreamAsn::EndArray(CObjectStackArray& array)
-{
-    m_Output.DecIndentLevel();
-    m_Output.PutEol();
-    m_Output.PutChar('}');
-    array.End();
-}
-
-void CObjectOStreamAsn::BeginArrayElement(CObjectStackArrayElement& e)
-{
-    if ( e.GetArrayFrame().IsEmpty() )
-        e.GetArrayFrame().SetNonEmpty();
-    else
-        m_Output.PutChar(',');
-    
-    m_Output.PutEol();
-    e.Begin();
-}
-
 void CObjectOStreamAsn::WriteArray(CObjectArrayWriter& writer,
                                    TTypeInfo arrayType, bool randomOrder,
                                    TTypeInfo elementType)
@@ -496,12 +476,14 @@ void CObjectOStreamAsn::WriteClass(CObjectClassWriter& writer,
     m_Output.PutChar('}');
 }
 
-void CObjectOStreamAsn::WriteClassMember(const CMemberId& id,
-                                         size_t index,
+void CObjectOStreamAsn::WriteClassMember(CObjectClassWriter& writer,
+                                         const CMemberId& id,
                                          TTypeInfo memberTypeInfo,
                                          TConstObjectPtr memberPtr)
 {
-    if ( index != 0 )
+    if ( writer.m_Empty )
+        writer.m_Empty = false;
+    else
         m_Output.PutChar(',');
     
     CObjectStackClassMember m(*this, id);
@@ -514,11 +496,13 @@ void CObjectOStreamAsn::WriteClassMember(const CMemberId& id,
     m.End();
 }
 
-void CObjectOStreamAsn::WriteDelayedClassMember(const CMemberId& id,
-                                                size_t index,
+void CObjectOStreamAsn::WriteDelayedClassMember(CObjectClassWriter& writer,
+                                                const CMemberId& id,
                                                 const CDelayBuffer& buffer)
 {
-    if ( index != 0 )
+    if ( writer.m_Empty )
+        writer.m_Empty = false;
+    else
         m_Output.PutChar(',');
     
     CObjectStackClassMember m(*this, id);
@@ -532,11 +516,43 @@ void CObjectOStreamAsn::WriteDelayedClassMember(const CMemberId& id,
     m.End();
 }
 
+#if 0
 void CObjectOStreamAsn::BeginChoiceVariant(CObjectStackChoiceVariant& /*v*/,
                                            const CMemberId& id)
 {
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
+}
+#endif
+
+void CObjectOStreamAsn::WriteChoice(TTypeInfo /*choiceType*/,
+                                    const CMemberId& id,
+                                    TTypeInfo memberInfo,
+                                    TConstObjectPtr memberPtr)
+{
+    CObjectStackChoiceVariant v(*this, id);
+
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
+
+    memberInfo->WriteData(*this, memberPtr);
+
+    v.End();
+}
+
+void CObjectOStreamAsn::WriteDelayedChoice(TTypeInfo /*choiceType*/,
+                                           const CMemberId& id,
+                                           const CDelayBuffer& buffer)
+{
+    CObjectStackChoiceVariant v(*this, id);
+
+    m_Output.PutString(id.GetName());
+    m_Output.PutChar(' ');
+    
+    if ( !buffer.Write(*this) )
+        THROW1_TRACE(runtime_error, "internal error");
+
+    v.End();
 }
 
 void CObjectOStreamAsn::BeginBytes(const ByteBlock& )

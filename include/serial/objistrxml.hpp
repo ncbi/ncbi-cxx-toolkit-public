@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/06/07 19:45:43  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.1  2000/06/01 19:06:57  vasilche
 * Added parsing of XML data.
 *
@@ -96,10 +101,11 @@ protected:
     void OpenTag(const CObjectStackFrame& e);
     void CloseTag(const CObjectStackFrame& e);
 
-    void BeginArray(CObjectStackArray& array);
-    void EndArray(CObjectStackArray& array);
-    bool BeginArrayElement(CObjectStackArrayElement& e);
-    void EndArrayElement(CObjectStackArrayElement& e);
+    virtual void ReadArray(CObjectArrayReader& reader,
+                           TTypeInfo arrayType, bool randomOrder,
+                           TTypeInfo elementType);
+    void ReadArrayContents(CObjectArrayReader& reader,
+                           TTypeInfo elementType);
 
     void ReadNamedType(TTypeInfo namedTypeInfo,
                        TTypeInfo typeInfo,
@@ -114,9 +120,16 @@ protected:
                                   CClassMemberPosition& pos);
     void EndClassMember(CObjectStackClassMember& m);
 
+#if 0
     TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
                                     const CMembers& members);
     void EndChoiceVariant(CObjectStackChoiceVariant& v);
+#endif
+    void ReadChoice(CObjectChoiceReader& reader,
+                    TTypeInfo classType,
+                    const CMembersInfo& variants);
+    void ReadChoiceVariant(CObjectChoiceReader& reader,
+                           const CMembersInfo& variants);
     
     void BeginBytes(ByteBlock& );
     int GetHexChar(void);
@@ -147,7 +160,7 @@ private:
     void BeginData(void);
 
     int ReadEscapedChar(char endingChar);
-    void ReadData(string& s);
+    void ReadTagData(string& s);
 
     CLightString ReadName(char c);
     CLightString ReadAttributeName(void);

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/06/07 19:45:44  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.2  2000/06/01 19:06:58  vasilche
 * Added parsing of XML data.
 *
@@ -318,13 +323,7 @@ class CObjectStackChoiceVariant : public CObjectStackFrame
 {
 public:
     CObjectStackChoiceVariant(CObjectStack& stack);
-    CObjectStackChoiceVariant(CObjectStackChoice& choice);
-    CObjectStackChoiceVariant(CObjectStackChoice& choice, const CMemberId& id);
-
-    CObjectStackChoice& GetChoiceFrame(void) const
-        {
-            return *static_cast<CObjectStackChoice*>(GetPrevous());
-        }
+    CObjectStackChoiceVariant(CObjectStack& stack, const CMemberId& id);
 };
 
 #include <serial/objstack.inl>

@@ -253,24 +253,33 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     return info; \
 }
 
-#define M(Name,Type,Args) \
+#define SERIAL_MEMBER(Name,Type,Args) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(Type)Args>::Ptr(MEMBER_PTR(Name)),\
     SERIAL_REF(Type)Args
-#define STD_M(Name) \
+#define SERIAL_STD_MEMBER(Name) \
     MEMBER_PTR(Name),NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR(Name))
-#define ENUM_M(Name,Type) \
+#define SERIAL_CLASS_MEMBER(Name) \
+    MEMBER_PTR(Name),&Name::GetTypeInfo)
+#define SERIAL_ENUM_MEMBER(Name,Type) \
     NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name),\
     NCBI_NAME2(GetEnumInfo_, Type)())
     
-#define ADD_N_M(Name,Mem,Type,Args) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name,M(Mem,Type,Args))
-#define ADD_N_STD_M(Name,Mem) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name,STD_M(Mem))
-#define ADD_N_ENUM_M(Name,Mem,Type) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name,ENUM_M(Mem,Type))
-#define ADD_M(Name,Type,Args) ADD_N_M(#Name,Name,Type,Args)
-#define ADD_STD_M(Name) ADD_N_STD_M(#Name,Name)
-#define ADD_ENUM_M(Name,Type) ADD_N_ENUM_M(#Name,Name,Type)
+#define ADD_NAMED_MEMBER(Name,Mem,Type,Args) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name, \
+                            SERIAL_MEMBER(Mem,Type,Args))
+#define ADD_NAMED_STD_MEMBER(Name,Mem) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name, \
+                            SERIAL_STD_MEMBER(Mem))
+#define ADD_NAMED_CLASS_MEMBER(Name,Mem) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name, \
+                            SERIAL_CLASS_MEMBER(Mem))
+#define ADD_NAMED_ENUM_MEMBER(Name,Mem,Type) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name, \
+                            SERIAL_ENUM_MEMBER(Mem,Type))
+#define ADD_MEMBER(Name,Type,Args) ADD_NAMED_MEMBER(#Name,Name,Type,Args)
+#define ADD_STD_MEMBER(Name) ADD_NAMED_STD_MEMBER(#Name,Name)
+#define ADD_CLASS_MEMBER(Name) ADD_NAMED_CLASS_MEMBER(#Name,Name)
+#define ADD_ENUM_MEMBER(Name,Type) ADD_NAMED_ENUM_MEMBER(#Name,Name,Type)
 
 // member types
 template<typename T>
@@ -278,41 +287,6 @@ inline
 CMemberInfo* MemberInfo(const T* member, const CTypeRef typeRef)
 {
 	return new CRealMemberInfo(size_t(member), typeRef);
-}
-
-template<typename T>
-inline
-CMemberInfo* ClassMemberInfo(const T* member)
-{
-	return MemberInfo(member, GetTypeRef(member));
-}
-
-template<typename T>
-inline
-CMemberInfo* StdMemberInfo(const T* member)
-{
-	return MemberInfo(member, GetStdTypeInfoGetter(member));
-}
-
-template<typename T>
-inline
-CMemberInfo* PtrMemberInfo(const T* member, CTypeRef typeRef)
-{
-	return MemberInfo(member, GetPtrTypeRef(member, typeRef));
-}
-
-template<typename T>
-inline
-CMemberInfo* PtrMemberInfo(const T* const* member)
-{
-	return MemberInfo(member, GetPtrTypeRef(member));
-}
-
-template<typename T>
-inline
-CMemberInfo* StlMemberInfo(const T* member)
-{
-	return MemberInfo(member, GetStlTypeRef(member));
 }
 
 #if HAVE_NCBI_C
@@ -424,45 +398,19 @@ BEGIN_TYPE_INFO(valnode, NCBI_NAME2(GetTypeInfo_struct_, Class), \
 
 #define END_CHOICE_INFO END_TYPE_INFO
 
-#define BEGIN_ENUM_INFO(Method, Enum, IsInteger) \
+#define BEGIN_NAMED_ENUM_INFO(Name, Method, Enum, IsInteger) \
 const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 { static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0; if ( !enumInfo ) { \
-    enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(#Enum, IsInteger); \
+    enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(Name, IsInteger); \
     Enum enumValue;
+#define BEGIN_ENUM_INFO(Method, Enum, IsInteger) \
+    BEGIN_NAMED_ENUM_INFO(#Enum, Method, Enum, IsInteger)
 
 #define ADD_ENUM_VALUE(Name, Value) enumInfo->AddValue(Name, enumValue = Value)
 
 #define END_ENUM_INFO } return enumInfo; }
 
-// adding members
-#define STD_MEMBER(Member) \
-    NCBI_NS_NCBI::StdMemberInfo(MEMBER_PTR(Member))
-#define ADD_NAMED_STD_MEMBER(Name, Member) \
-    info->GetMembers().AddMember(Name, STD_MEMBER(Member))
-#define ADD_STD_MEMBER(Member) \
-    ADD_NAMED_STD_MEMBER(#Member, Member)
-
-#define CLASS_MEMBER(Member) \
-	NCBI_NS_NCBI::ClassMemberInfo(MEMBER_PTR(Member))
-#define ADD_NAMED_CLASS_MEMBER(Name, Member) \
-	info->GetMembers().AddMember(Name, CLASS_MEMBER(Member))
-#define ADD_CLASS_MEMBER(Member) \
-    ADD_NAMED_CLASS_MEMBER(#Member, Member)
-
-#define PTR_CLASS_MEMBER(Member) \
-	NCBI_NS_NCBI::PtrMemberInfo(MEMBER_PTR(Member))
-#define ADD_NAMED_PTR_CLASS_MEMBER(Name, Member) \
-	info->GetMembers().AddMember(Name, PTR_CLASS_MEMBER(Member))
-#define ADD_PTR_CLASS_MEMBER(Member) \
-    ADD_NAMED_PTR_CLASS_MEMBER(#Member, Member)
-
-#define STL_CLASS_MEMBER(Member) \
-	NCBI_NS_NCBI::StlMemberInfo(MEMBER_PTR(Member))
-#define ADD_NAMED_STL_CLASS_MEMBER(Name, Member) \
-	info->GetMembers().AddMember(Name, STL_CLASS_MEMBER(Member))
-#define ADD_STL_CLASS_MEMBER(Member) \
-    ADD_NAMED_STL_CLASS_MEMBER(#Member, Member)
-
+// adding old ASN members
 #define ASN_MEMBER(Member, Type) \
 	NCBI_NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
 #define ADD_NAMED_ASN_MEMBER(Name, Member, Type) \

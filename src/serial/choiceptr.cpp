@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/06/07 19:45:57  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.16  2000/06/01 19:07:02  vasilche
 * Added parsing of XML data.
 *
@@ -210,8 +215,7 @@ CChoicePointerTypeInfo::FindVariant(TConstObjectPtr object) const
     }
     TVariantsByType::const_iterator p = variants.find(id);
     if ( p == variants.end() )
-        THROW1_TRACE(runtime_error,
-                     "incompatible type: " + string(id->name()));
+        THROW1_TRACE(runtime_error, "incompatible CChoicePointer type");
     return p->second;
 }
 
@@ -220,46 +224,64 @@ void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,
 {
     TConstObjectPtr data = GetObjectPointer(object);
     TIndex index = FindVariant(data);
-    const CMemberId& id = m_Variants.GetMemberId(index);
-
-    CObjectStackChoice choice(out, this);
-    CObjectStackChoiceVariant variant(choice, id);
-
-    out.BeginChoiceVariant(variant, id);
-
+    const CMemberId& id = GetVariants().GetMemberId(index);
     TTypeInfo dataType = GetVariantType(index);
     if ( !dataType )
         dataType = CNullTypeInfo::GetTypeInfo();
-    out.WriteExternalObject(data, dataType);
-
-    out.EndChoiceVariant(variant);
+    out.WriteChoice(this, id, dataType, data);
 }
+
+class CChoicePointerTypeInfoReader : public CObjectChoiceReader
+{
+public:
+    CChoicePointerTypeInfoReader(const CChoicePointerTypeInfo* choice,
+                                 TObjectPtr object)
+        : m_Choice(choice), m_Object(object)
+        {
+        }
+
+    virtual void ReadChoiceVariant(CObjectIStream& in,
+                                   const CMembersInfo& members, int index)
+        {
+            const CChoicePointerTypeInfo* choice = m_Choice;
+            TObjectPtr object = m_Object;
+            TTypeInfo dataType = members.GetMemberInfo(index)->GetTypeInfo();
+            if ( !dataType )
+                dataType = CNullTypeInfo::GetTypeInfo();
+            TObjectPtr data = dataType->Create();
+            choice->SetObjectPointer(object, data);
+            in.ReadExternalObject(data, dataType);
+        }
+
+private:
+    const CChoicePointerTypeInfo* m_Choice;
+    TObjectPtr m_Object;
+};
+
+class CChoicePointerTypeInfoSkipper : public CObjectChoiceReader
+{
+public:
+    virtual void ReadChoiceVariant(CObjectIStream& in,
+                                   const CMembersInfo& members, int index)
+        {
+            TTypeInfo dataType = members.GetMemberInfo(index)->GetTypeInfo();
+            if ( !dataType )
+                dataType = CNullTypeInfo::GetTypeInfo();
+            in.SkipExternalObject(dataType);
+        }
+};
 
 void CChoicePointerTypeInfo::ReadData(CObjectIStream& in,
                                       TObjectPtr object) const
 {
-    CObjectStackChoice choice(in, this);
-    CObjectStackChoiceVariant v(choice);
-    TMemberIndex index = in.BeginChoiceVariant(v, m_Variants);
-    TTypeInfo dataType = GetVariantType(index);
-    if ( !dataType )
-        dataType = CNullTypeInfo::GetTypeInfo();
-    TObjectPtr data = dataType->Create();
-    SetObjectPointer(object, data);
-    in.ReadExternalObject(data, dataType);
-    in.EndChoiceVariant(v);
+    CChoicePointerTypeInfoReader reader(this, object);
+    in.ReadChoice(reader, this, GetVariants());
 }
 
 void CChoicePointerTypeInfo::SkipData(CObjectIStream& in) const
 {
-    CObjectStackChoice choice(in, this);
-    CObjectStackChoiceVariant v(choice);
-    TMemberIndex index = in.BeginChoiceVariant(v, m_Variants);
-    TTypeInfo dataType = GetVariantType(index);
-    if ( !dataType )
-        dataType = CNullTypeInfo::GetTypeInfo();
-    in.SkipExternalObject(dataType);
-    in.EndChoiceVariant(v);
+    CChoicePointerTypeInfoSkipper skipper;
+    in.ReadChoice(skipper, this, GetVariants());
 }
 
 CNullTypeInfo::CNullTypeInfo(void)

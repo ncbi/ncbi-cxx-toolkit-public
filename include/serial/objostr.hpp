@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/06/07 19:45:43  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.39  2000/06/01 19:06:57  vasilche
 * Added parsing of XML data.
 *
@@ -214,13 +219,19 @@ protected:
 class CObjectClassWriter
 {
 public:
+    CObjectClassWriter(void)
+        : m_Empty(true)
+        {
+        }
     virtual ~CObjectClassWriter(void);
 
     virtual void WriteParentClass(CObjectOStream& out,
                                   TTypeInfo parentClassInfo) = 0;
     // returns amount of members written
-    virtual size_t WriteMembers(CObjectOStream& out,
-                                const CMembersInfo& members) = 0;
+    virtual void WriteMembers(CObjectOStream& out,
+                              const CMembersInfo& members) = 0;
+
+    bool m_Empty;
 };
 
 class CObjectOStream : public CObjectStack
@@ -396,20 +407,15 @@ public:
 #endif
 
     // array interface
-    virtual void BeginArray(CObjectStackArray& array) = 0;
-    virtual void EndArray(CObjectStackArray& array);
-
-    virtual void BeginArrayElement(CObjectStackArrayElement& element);
-    virtual void EndArrayElement(CObjectStackArrayElement& element);
-
     virtual void WriteArray(CObjectArrayWriter& writer,
                             TTypeInfo arrayType, bool randomOrder,
-                            TTypeInfo elementType);
+                            TTypeInfo elementType) = 0;
 
-    // class interface
+    // named type interface
     virtual void WriteNamedType(TTypeInfo namedTypeInfo,
                                 TTypeInfo typeInfo, TConstObjectPtr object);
 
+    // class interface
     virtual void BeginClass(CObjectStackClass& cls) = 0;
     virtual void EndClass(CObjectStackClass& cls);
 
@@ -420,17 +426,27 @@ public:
                             TTypeInfo classInfo, 
                             const CMembersInfo& members,
                             bool randomOrder);
-    virtual void WriteClassMember(const CMemberId& id,
-                                  size_t index,
+    virtual void WriteClassMember(CObjectClassWriter& writer,
+                                  const CMemberId& id,
                                   TTypeInfo memberInfo,
                                   TConstObjectPtr memberPtr);
-    virtual void WriteDelayedClassMember(const CMemberId& id,
-                                         size_t index,
+    virtual void WriteDelayedClassMember(CObjectClassWriter& writer,
+                                         const CMemberId& id,
                                          const CDelayBuffer& buffer);
 
+    // choice interface
+#if 0
     virtual void BeginChoiceVariant(CObjectStackChoiceVariant& variant,
                                     const CMemberId& id) = 0;
     virtual void EndChoiceVariant(CObjectStackChoiceVariant& variant);
+#endif
+    virtual void WriteChoice(TTypeInfo choiceType,
+                             const CMemberId& id,
+                             TTypeInfo memberInfo,
+                             TConstObjectPtr memberPtr) = 0;
+    virtual void WriteDelayedChoice(TTypeInfo choiceType,
+                                    const CMemberId& id,
+                                    const CDelayBuffer& buffer) = 0;
 
 	// write byte blocks
 	virtual void BeginBytes(const ByteBlock& block);

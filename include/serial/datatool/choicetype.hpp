@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/06/07 19:45:54  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.3  2000/05/24 20:08:30  vasilche
 * Implemented DTD generation.
 *
@@ -62,11 +67,11 @@
 */
 
 #include <serial/tool/blocktype.hpp>
-#include <serial/tool/statictype.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CChoiceDataType : public CDataMemberContainerType {
+class CChoiceDataType : public CDataMemberContainerType
+{
     typedef CDataMemberContainerType CParent;
 public:
     void FixTypeTree(void) const;

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/06/07 19:45:57  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
 * Revision 1.39  2000/05/24 20:08:45  vasilche
 * Implemented XML dump.
 *
@@ -370,72 +375,103 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
+class CSequenceWriter : public CObjectArrayWriter
+{
+public:
+    CSequenceWriter(const CSequenceOfTypeInfo* sequenceType,
+                    TConstObjectPtr object)
+        : CObjectArrayWriter(CSequenceOfTypeInfo::FirstNode(object) == 0),
+          m_ElementType(sequenceType->GetDataTypeInfo()),
+          m_NextOffset(sequenceType->GetNextOffset()),
+          m_DataOffset(sequenceType->GetDataOffset()),
+          m_Object(CSequenceOfTypeInfo::FirstNode(object))
+        {
+        }
+
+    TConstObjectPtr NextNode(TConstObjectPtr object) const
+        {
+            return CType<TConstObjectPtr>::Get(Add(object, m_NextOffset));
+        }
+    TConstObjectPtr Data(TConstObjectPtr object) const
+        {
+            return Add(object, m_DataOffset);
+        }
+
+    virtual void WriteElement(CObjectOStream& out)
+        {
+            TConstObjectPtr object = m_Object;
+            m_ElementType->WriteData(out, Data(object));
+            m_NoMoreElements = (m_Object = NextNode(object)) == 0;
+        }
+
+private:
+    TTypeInfo m_ElementType;
+    size_t m_NextOffset;
+    size_t m_DataOffset;
+    TConstObjectPtr m_Object;
+};
+
+class CSequenceReader : public CObjectArrayReader
+{
+public:
+    CSequenceReader(const CSequenceOfTypeInfo* sequenceType,
+                    TObjectPtr object)
+        : m_SequenceType(sequenceType),
+          m_ElementType(sequenceType->GetDataTypeInfo()),
+          m_NextOffset(sequenceType->GetNextOffset()),
+          m_DataOffset(sequenceType->GetDataOffset()),
+          m_Object(object), m_FirstNode(true)
+        {
+            CSequenceOfTypeInfo::FirstNode(object) = 0;
+        }
+
+    TObjectPtr& NextNode(TObjectPtr object) const
+        {
+            return CType<TObjectPtr>::Get(Add(object, m_NextOffset));
+        }
+    TObjectPtr Data(TObjectPtr object) const
+        {
+            return Add(object, m_DataOffset);
+        }
+
+    virtual void ReadElement(CObjectIStream& in)
+        {
+            TObjectPtr object = m_Object;
+            TObjectPtr* nextPtr;
+            if ( m_FirstNode ) {
+                m_FirstNode = false;
+                nextPtr = &CSequenceOfTypeInfo::FirstNode(object);
+            }
+            else {
+                nextPtr = &NextNode(object);
+            }
+            object = *nextPtr;
+            if ( !object )
+                object = *nextPtr = m_SequenceType->CreateData();
+            m_ElementType->ReadData(in, Data(object));
+        }
+
+private:
+    const CSequenceOfTypeInfo* m_SequenceType;
+    TTypeInfo m_ElementType;
+    size_t m_NextOffset;
+    size_t m_DataOffset;
+    TObjectPtr m_Object;
+    bool m_FirstNode;
+};
+
 void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
                                     TConstObjectPtr object) const
 {
-    TTypeInfo dataType = GetDataTypeInfo();
-
-    CObjectStackArray array(out, this, RandomOrder());
-    out.BeginArray(array);
-
-    CObjectStackArrayElement element(array, dataType);
-
-    for ( object = FirstNode(object); object; object = NextNode(object) ) {
-        out.BeginArrayElement(element);
-
-        dataType->WriteData(out, Data(object));
-
-        out.EndArrayElement(element);
-    }
-
-    out.EndArray(array);
+    CSequenceWriter writer(this, object);
+    out.WriteArray(writer, this, RandomOrder(), GetDataTypeInfo());
 }
 
 void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    TTypeInfo dataType = GetDataTypeInfo();
-    _TRACE("SequenceOf<" << dataType->GetName() << ">::ReadData(" <<
-           NStr::PtrToString(object) << ")");
-
-    CObjectStackArray array(in, this, RandomOrder());
-    in.BeginArray(array);
-
-    CObjectStackArrayElement e(array, dataType);
-
-    if ( !in.BeginArrayElement(e) ) {
-        FirstNode(object) = 0;
-        in.EndArray(array);
-        return;
-    }
-
-    TObjectPtr next = FirstNode(object);
-    if ( next == 0 ) {
-        ERR_POST(Warning << "null sequence pointer"); 
-        next = FirstNode(object) = CreateData();
-        _TRACE("new " << dataType->GetName() << ": " <<
-               NStr::PtrToString(next));
-    }
-    object = next;
-
-    dataType->ReadData(in, Data(object));
-    in.EndArrayElement(e);
-
-    while ( in.BeginArrayElement(e) ) {
-        next = NextNode(object);
-        if ( next == 0 ) {
-            ERR_POST(Warning << "null sequence pointer"); 
-            next = NextNode(object) = CreateData();
-            _TRACE("new " << dataType->GetName() << ": " <<
-                   NStr::PtrToString(next));
-        }
-        object = next;
-
-        dataType->ReadData(in, Data(object));
-        in.EndArrayElement(e);
-    }
-
-    in.EndArray(array);
+    CSequenceReader reader(this, object);
+    in.ReadArray(reader, this, RandomOrder(), GetDataTypeInfo());
 }
 
 void CSequenceOfTypeInfo::SkipData(CObjectIStream& in) const
