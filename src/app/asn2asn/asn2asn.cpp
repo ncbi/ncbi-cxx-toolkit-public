@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/01/20 21:51:28  vakatov
+* Fixed to follow changes of the "CNcbiApplication" interface
+*
 * Revision 1.4  2000/01/10 19:47:20  vasilche
 * Member type typedef now generated in _Base class.
 *
@@ -46,8 +49,8 @@
 */
 
 #include "asn2asn.hpp"
-#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbienv.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <serial/objistrasn.hpp>
@@ -121,18 +124,19 @@ void PrintUsage(void)
 }
 
 static
-void InvalidArgument(const char* arg)
+void InvalidArgument(const string& arg)
 {
     ERR_POST(Error << "Invalid argument: " << arg);
     PrintUsage();
 }
 
 static
-const char* StringArgument(const char* arg)
+const string& StringArgument(const CNcbiArguments& args, SIZE_TYPE i)
 {
-    if ( !arg || !*arg )
+    if (i >= args.Size()  ||  args[i].empty()) {
         InvalidArgument("Argument required");
-    return arg;
+    }
+    return args[i];
 }
 
 static
@@ -154,42 +158,40 @@ int CAsn2Asn::Run(void)
     string logFile;
     CNcbiDiagStream logStream(&NcbiCerr);
 
-    if ( m_Argc == 1 )
+    if (GetArguments().Size() == 1)
         PrintUsage();
 
-    {
-        for ( int i = 1; i < m_Argc; ++i ) {
-            const char* arg = m_Argv[i];
-            if ( arg[0] == '-' ) {
-                switch ( arg[1] ) {
-                case 'i':
-                    inFile = StringArgument(m_Argv[++i]);
-                    break;
-                case 'e':
-                    inSeqEntry = true;
-                    break;
-                case 'b':
-                    inBinary = true;
-                    break;
-                case 'o':
-                    outFile = StringArgument(m_Argv[++i]);
-                    break;
-                case 's':
-                    outBinary = true;
-                    break;
-                case 'l':
-                    logFile = StringArgument(m_Argv[++i]);
-                    break;
-                default:
-                    InvalidArgument(arg);
-                    break;
-                }
-            }
-            else {
+    for (SIZE_TYPE i = 1;  i < GetArguments().Size();  i++) {
+        const string& arg = GetArguments()[i];
+        if (arg[0] == '-') {
+            switch ( arg[1] ) {
+            case 'i':
+                inFile = StringArgument(GetArguments(), ++i);
+                break;
+            case 'e':
+                inSeqEntry = true;
+                break;
+            case 'b':
+                inBinary = true;
+                break;
+            case 'o':
+                outFile = StringArgument(GetArguments(), ++i);
+                break;
+            case 's':
+                outBinary = true;
+                break;
+            case 'l':
+                logFile = StringArgument(GetArguments(), ++i);
+                break;
+            default:
                 InvalidArgument(arg);
+                break;
             }
+        } else {
+            InvalidArgument(arg);
         }
     }
+
 
     if ( !logFile.empty() ) {
         if ( logFile == "stderr" || logFile == "-" ) {
