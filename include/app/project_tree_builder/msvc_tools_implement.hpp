@@ -124,13 +124,13 @@ class CCompilerToolImpl : public ICompilerTool
 public:
     typedef CMsvcPrjGeneralContext::TTargetType TTargetType;
 
-    CCompilerToolImpl(const string&               additional_include_dirs,
-                      const CMsvcProjectMakefile& project_makefile,
-                      const string&               runtimeLibraryOption,
-                      const CMsvcMetaMakefile&    meta_makefile,
-                      const SConfigInfo&          config,
-                      TTargetType                 target_type,
-                      const list<string>&         defines)
+    CCompilerToolImpl(const string&            additional_include_dirs,
+                      const IMsvcMetaMakefile& project_makefile,
+                      const string&            runtimeLibraryOption,
+                      const IMsvcMetaMakefile& meta_makefile,
+                      const SConfigInfo&       config,
+                      TTargetType              target_type,
+                      const list<string>&      defines)
 	    :m_AdditionalIncludeDirectories(additional_include_dirs),
          m_MsvcProjectMakefile         (project_makefile),
          m_RuntimeLibraryOption        (runtimeLibraryOption),
@@ -216,14 +216,14 @@ public:
     SUPPORT_COMPILER_OPTION(BrowseInformation)
 
 private:
-    string                      m_AdditionalIncludeDirectories;
-    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
-    string                      m_RuntimeLibraryOption;
-    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
-    SConfigInfo                 m_Config;
-    list<string>                m_Defines;
+    string                   m_AdditionalIncludeDirectories;
+    const IMsvcMetaMakefile& m_MsvcProjectMakefile;
+    string                   m_RuntimeLibraryOption;
+    const IMsvcMetaMakefile& m_MsvcMetaMakefile;
+    SConfigInfo              m_Config;
+    list<string>             m_Defines;
 
-    TTargetType                 m_TargetType;
+    TTargetType              m_TargetType;
 
     // No value-type semantics
     CCompilerToolImpl(void);
@@ -244,12 +244,12 @@ template <class ConfTrait >
 class CLinkerToolImpl : public ILinkerTool
 {
 public:
-    CLinkerToolImpl(const string& additional_options,
-                    const string& additional_library_directories,
-                    const string& project_id,
-                    const CMsvcProjectMakefile& project_makefile,
-                    const CMsvcMetaMakefile&    meta_makefile,
-                    const SConfigInfo&          config)
+    CLinkerToolImpl(const string&            additional_options,
+                    const string&            additional_library_directories,
+                    const string&            project_id,
+                    const IMsvcMetaMakefile& project_makefile,
+                    const IMsvcMetaMakefile& meta_makefile,
+                    const SConfigInfo&       config)
 	    :m_AdditionalOptions    (additional_options),
          m_AdditionalLibraryDirectories(additional_library_directories),
 		 m_ProjectId            (project_id),
@@ -324,8 +324,8 @@ private:
     string      m_ProjectId;
     SConfigInfo m_Config;
 
-    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
-    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
+    const IMsvcMetaMakefile& m_MsvcProjectMakefile;
+    const IMsvcMetaMakefile&            m_MsvcMetaMakefile;
 
     CLinkerToolImpl(void);
     CLinkerToolImpl(const CLinkerToolImpl&);
@@ -394,10 +394,10 @@ private:
 class CLibrarianToolImpl : public ILibrarianTool
 {
 public:
-    CLibrarianToolImpl( const string& project_id,
-                        const CMsvcProjectMakefile& project_makefile,
-                        const CMsvcMetaMakefile&    meta_makefile,
-                        const SConfigInfo&          config)
+    CLibrarianToolImpl( const string&            project_id,
+                        const IMsvcMetaMakefile& project_makefile,
+                        const IMsvcMetaMakefile& meta_makefile,
+                        const SConfigInfo&       config)
         :m_ProjectId            (project_id),
          m_MsvcProjectMakefile  (project_makefile),
          m_MsvcMetaMakefile     (meta_makefile),
@@ -432,8 +432,8 @@ private:
     string      m_ProjectId;
     SConfigInfo m_Config;
    
-    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
-    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
+    const IMsvcMetaMakefile& m_MsvcProjectMakefile;
+    const IMsvcMetaMakefile& m_MsvcMetaMakefile;
 
     CLibrarianToolImpl(void);
     CLibrarianToolImpl(const CLibrarianToolImpl&);
@@ -588,10 +588,10 @@ template <class DebugReleaseTrait>
 class CResourceCompilerToolImpl : public IResourceCompilerTool
 {
 public:
-    CResourceCompilerToolImpl(const string&               additional_include_dirs,
-                              const CMsvcProjectMakefile& project_makefile,
-                              const CMsvcMetaMakefile&    meta_makefile,
-                              const SConfigInfo&          config)
+    CResourceCompilerToolImpl(const string&            additional_include_dirs,
+                              const IMsvcMetaMakefile& project_makefile,
+                              const IMsvcMetaMakefile& meta_makefile,
+                              const SConfigInfo&       config)
       :m_AdditionalIncludeDirectories(additional_include_dirs),
        m_MsvcProjectMakefile(project_makefile),
        m_MsvcMetaMakefile   (meta_makefile),
@@ -627,10 +627,10 @@ public:
     }
 
 private:
-    string m_AdditionalIncludeDirectories;
-    const CMsvcProjectMakefile& m_MsvcProjectMakefile;
-    const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
-    const SConfigInfo&          m_Config;
+    string                   m_AdditionalIncludeDirectories;
+    const IMsvcMetaMakefile& m_MsvcProjectMakefile;
+    const IMsvcMetaMakefile& m_MsvcMetaMakefile;
+    const SConfigInfo&       m_Config;
 
     CResourceCompilerToolImpl(const CResourceCompilerToolImpl&);
     CResourceCompilerToolImpl& operator= (const CResourceCompilerToolImpl&);
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/07 13:54:52  gorelenk
+ * Classes *ToolImpl, switched to using interface IMsvcMetaMakefile.
+ *
  * Revision 1.12  2004/05/21 13:45:41  gorelenk
  * Changed implementation of class CLinkerToolImpl method OutputFile -
  * allow to override linker Output File settings in user .msvc makefile.
