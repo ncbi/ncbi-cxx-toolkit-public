@@ -52,18 +52,18 @@ overview of the NCBI C++ Toolkit and its use.
     New Project (lib, application) Development Aids</a>
     <ul>
       <li> <a href="#ref_OutsideImport">
-           <b><i>import_project.sh</i></b> -- prepare a new project that lives in an NCBI C++ subtree
+           <b><tt>import_project.sh</tt></b> -- prepare a new project that lives in an NCBI C++ subtree
            </a>
       <li> <a href="#ref_OutsideCreate">
-           <b><i>new_project.sh</i></b> -- prepare a new project that only links to the NCBI C++ tree
+           <b><tt>new_project.sh</tt></b> -- prepare a new project that only links to the NCBI C++ tree
            </a>
       <li> <a href="#ref_OutsideHello">
-           <b><i>hello.sh</i></b> -- a simple demo CGI application HELLO
+           <b><tt>hello.sh</tt></b> -- a simple demo CGI application HELLO
            </a>
     </ul>
   <li> <a href="mkfiles.html">
     A real-life example of the NCBI C++ makefile hierarchy
-   (project <i><b>corelib/</b></i>)</a>
+   (project <tt><b>corelib/</b></tt>)</a>
 </ul>
 
 <hr>
@@ -134,7 +134,9 @@ should contain:
 
 <font size=-1>
 (For the overall NCBI C++ CVS tree structure see
-<a href="config.html#ref_Source">the configuration page</a>.)
+<a href="config.html#ref_Source">the configuration page</a>; see the
+<a href="download.html">download page</a> for source acquisition information
+and <a href="cvs.html">CVS details</a>.)
 </font>
 
 <p>
@@ -202,9 +204,11 @@ very top level contains:
 
 <p>
 To create your new project (<i>e.g.</i>, "bar_proj") directories in the
-NCBI C++ CVS tree to directory <b><i>foo/c++/</i></b>):<pre>
-cd foo/c++/include && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
-cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
+NCBI C++ CVS tree to directory <b><i>foo/c++/</i></b>):
+
+<pre>
+    cd foo/c++/include && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
+    cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
 </pre>
 
 Now you can <a href="new_mod.html">add</a> and edit your project C++
@@ -246,15 +250,15 @@ and recursive builds.
 A typical <i>meta-makefile</i> template(e.g. <i><b>Makefile.in</b></i> in your
 <b><i>foo/c++/src/bar_proj/</i></b> dir) looks like that:
 <pre>
-# Makefile.bar_u1, Makefile.bar_u1 ...
-USR_PROJ = bar_u1 bar_u2 ...
-# Makefile.bar_l1.lib, Makefile.bar_l1.lib ...
-LIB_PROJ = bar_l1 bar_l2 ...
-# Makefile.bar_a1.app, Makefile.bar_a1.app ...
-APP_PROJ = bar_a1 bar_l2 ...
-SUB_PROJ = app sub_proj1 sub_proj2
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
+    # Makefile.bar_u1, Makefile.bar_u1 ...
+    USR_PROJ = bar_u1 bar_u2 ...
+    # Makefile.bar_l1.lib, Makefile.bar_l1.lib ...
+    LIB_PROJ = bar_l1 bar_l2 ...
+    # Makefile.bar_a1.app, Makefile.bar_a1.app ...
+    APP_PROJ = bar_a1 bar_l2 ...
+    SUB_PROJ = app sub_proj1 sub_proj2
+    srcdir = @srcdir@
+    include @builddir@/Makefile.meta
 </pre>
 
 The mandatory <i>"srcdir = @srcdir@ ; include @builddir@/Makefile.meta"</i>
@@ -691,16 +695,19 @@ library <i><b>libxmylib.a</b></i> from two source files
 <i><b>xmy_src1.cpp</b></i> and <i><b>xmy_src2.c</b></i>, and one
 pre-compiled object file <i><b>some_obj1.o</b></i>.
 To make the example even more realistic, we assume that the said
-source files include headers from the NCBI C Toolkit.<pre>
-File Makefile.xmylib.lib:
+source files include headers from the NCBI C Toolkit.
 
-LIB      = xmylib
-SRC      = xmy_src1 xmy_src2
-OBJ      = some_obj1
-REQUIRES = xrequirement
-CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
-CXXFLAGS = $(FAST_CXXFLAGS) -xyz
-CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
+<pre>
+    File Makefile.xmylib.lib:
+
+    LIB      = xmylib
+    SRC      = xmy_src1 xmy_src2
+    OBJ      = some_obj1
+    REQUIRES = xrequirement
+    CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
+    CXXFLAGS = $(FAST_CXXFLAGS) -xyz
+    CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)
+</pre>
 
 <ul>
   <li> Skip building this library if <tt>xrequirement</tt>
@@ -736,11 +743,11 @@ and <a href="config.html#ref_DLL"><i>dynamic (DLL)</i></a> versions of
 the library. <br>
 To encourage its build as a <i>DLL</i> on the capable
 platforms, you can explicitly specify:
-<pre>LIB_OR_DLL = dll</pre>
+<pre>    LIB_OR_DLL = dll</pre>
 or
-<pre>LIB_OR_DLL = both</pre>
+<pre>    LIB_OR_DLL = both</pre>
 Conversely, if you want the library be always built as <i>static</i>, specify:
-<pre>LIB_OR_DLL = lib</pre>
+<pre>    LIB_OR_DLL = lib</pre>
 
 
 <p>
@@ -763,15 +770,16 @@ building the toolkit as both shared and static libraries
 (<i><b>configure --with-dll --with-static ...</b></i>), but is fine
 with a shared libxncbi.
 <pre>
-File Makefile.my_exe.app:
+    File Makefile.my_exe.app:
 
-APP      = my_exe
-SRC      = my_main my_src1 my_src2
-OBJ      = some_obj
-LIB      = xmylib$(STATIC) xncbi
-REQUIRES = xrequirement
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_SSSDB_INCLUDE)
-LIBS     = $(NCBI_SSSDB_LIBS) $(SYBASE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)</pre>
+    APP      = my_exe
+    SRC      = my_main my_src1 my_src2
+    OBJ      = some_obj
+    LIB      = xmylib$(STATIC) xncbi
+    REQUIRES = xrequirement
+    CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_SSSDB_INCLUDE)
+    LIBS     = $(NCBI_SSSDB_LIBS) $(SYBASE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+</pre>
 
 <ul>
   <li> Skip building this library if xrequirement
@@ -857,49 +865,49 @@ And, of course, it provides build rules for all the
 <a href="#ref_MakeProjTarget">standard make targets</a>.
 
 <pre>
-File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
+    File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
 
-# Build a code generator for hard-coding the chrom data into an obj file
-# Generate header and source "humchrom_dat.[ch]" from data file
-# "humchrom.dat"
-# Deploy the header to the compiler-specific include dir
-# Compile source code
-#################################
+    # Build a code generator for hard-coding the chrom data into an obj file
+    # Generate header and source "humchrom_dat.[ch]" from data file
+    # "humchrom.dat"
+    # Deploy the header to the compiler-specific include dir
+    # Compile source code
+    #################################
 
-include $(builddir)/Makefile.mk
+    include $(builddir)/Makefile.mk
 
-BUILD__HC_GEN_OBJ = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" \
-srcdir="$(srcdir)" TMPL="hc_gen_obj" $(MFLAGS)
+    BUILD__HC_GEN_OBJ = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" \
+    srcdir="$(srcdir)" TMPL="hc_gen_obj" $(MFLAGS)
 
 
-all_r: all
-all: build_hc_gen_obj humchrom_dat.dep
+    all_r: all
+    all: build_hc_gen_obj humchrom_dat.dep
 
-purge_r: purge
-purge:   x_clean
-	$(BUILD__HC_GEN_OBJ) purge
+    purge_r: purge
+    purge:   x_clean
+        $(BUILD__HC_GEN_OBJ) purge
 
-clean_r: clean
-clean:   x_clean
-	$(BUILD__HC_GEN_OBJ) clean
-x_clean:
-	-rm -f humchrom_dat.h
-	-rm -f humchrom_dat.c
+    clean_r: clean
+    clean:   x_clean
+        $(BUILD__HC_GEN_OBJ) clean
+    x_clean:
+        -rm -f humchrom_dat.h
+        -rm -f humchrom_dat.c
 
-build_hc_gen_obj:
-	$(BUILD__HC_GEN_OBJ) all
+    build_hc_gen_obj:
+        $(BUILD__HC_GEN_OBJ) all
 
-humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
-    -cp -p humchrom_dat.c humchrom_dat.save.c
-    $(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat
-        -f humchrom_dat
-    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h
-        $(incdir)/humchrom_dat.h
-    -rm humchrom_dat.h
-    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c
-        humchrom_dat.save.c
-    mv humchrom_dat.save.c humchrom_dat.c
-    touch humchrom_dat.dep
+    humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
+        -cp -p humchrom_dat.c humchrom_dat.save.c
+        $(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat
+            -f humchrom_dat
+        $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h
+            $(incdir)/humchrom_dat.h
+        -rm humchrom_dat.h
+        $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c
+            humchrom_dat.save.c
+        mv humchrom_dat.save.c humchrom_dat.c
+        touch humchrom_dat.dep
 </pre>
 
 
@@ -1081,59 +1089,67 @@ Here are the keywords you can list in REQUIRES in a customized
 <a name="ref_Outside"></a>
 <h2>New Project (lib, application) Development Aids</h2>
 
-NOTE:  in NCBI, you can use the scripts located in the pre-built NCBI C++
-toolkit directory <b><i>$NCBI/c++/scripts/.</i></b>
+<i><b>NOTE</b></i>:  in NCBI, you can use the scripts located in the pre-built NCBI C++
+toolkit directory <b><tt>$NCBI/c++/scripts/.</tt></b>
 
 <p>
 <br>
 <a name="ref_OutsideImport"></a>
-<h3><b><i>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</i></b></h3>
+<h3><b><tt>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</tt></b></h3>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 In many cases, you work on your own project which <b>is a part</b> of the
 NCBI C++ tree, and you do not want to check out, update and rebuild
 the whole NCBI C++ tree. -- Instead, you just want to use headers and
 libraries of the pre-built NCBI C++ Toolkit to build your project.
 
 <p>
-The shell script <b><i>import_project.sh</i></b> will checkout
+The shell script <b><tt>import_project.sh</tt></b> will checkout
 your project's source and include directories from CVS, and it will create
 a (temporary) makefile based on the project's <i>customized makefile</i>.
 This makefile will also contain a reference to the pre-built NCBI C++ toolkit.
 
 <p>
-For <a href="new_project.import.session">EXAMPLE</a>:
-<br>&nbsp;&nbsp;&nbsp;
-<b>
-   <a href="scripts_usage.html#ref_Import_ProjectUsage">import_project.sh</a> hello
-</b>
-<br>
+For example (<a href="scripts_usage.html#ref_Import_ProjectUsage">full usage</a>):
+
+
+<pre>
+    <a href="new_project.import.session"><b><tt>import_project.sh hello</tt></b></a>
+</pre>
+
+
 will check out the whole <b>hello</b> demo project from the NCBI C++ tree
-(<b><i>$CVSROOT/internal/c++/src/hello/</i></b>), and create a
-makefile <b><i>Makefile.hello_app</i></b> that uses the project's
-<i>customized makefile</i> <b><i>Makefile.hello.app</i></b>.
+(<b><tt>$CVSROOT/internal/c++/src/hello/</tt></b>), and create a
+makefile <b><tt>Makefile.hello_app</tt></b> that uses the project's
+<i>customized makefile</i> <b><tt>Makefile.hello.app</tt></b>.
 Now you can just go to the created working directory
-<b><i>internal/c++/src/hello/</i></b> and build the demo application
+<b><tt>internal/c++/src/hello/</tt></b> and build the demo application
 <b>hello.cgi</b> using:
-<br>&nbsp;&nbsp;&nbsp;
-<b>
-   make -f Makefile.hello_app
-</b>
+<pre>
+    <b>make -f Makefile.hello_app</b>
+</pre>
+</dl>
 
 <p>
 <br>
 <a name="ref_OutsideCreate"></a>
-<h3><b><i>scripts/new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></i></b> </h3>
+<h3><b><tt>scripts/new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></b> </h3>
 
-<p></p>
+<dl>
+    <dt>
+    <dd>
 This script will create a startup <i>makefile</i> for a new, from-scratch
 project called "<tt>name</tt>" which uses the NCBI C++ Toolkit (and possibly the C Toolkit as
 well).  For new libraries, <tt>type=lib</tt> while for new applications <tt>type=app</tt>.
 
 <p></p>
-Sample code will be included in the project directory for new applications; different samples
-are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based on the <tt>corelib</tt> library),
-<tt>type=app/cgi</tt> (for a CGI or Fast-CGI application), and <tt>type=app/objects</tt>
+Sample code will be included in the project directory for new applications.  Different samples
+are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based
+on the <a href="libs.html#ref_SumXNCBI"><tt>corelib</tt></a> library),
+<tt>type=app/cgi</tt> (for a <a href="libs.html#ref_SumXCGI">CGI or Fast-CGI</a> application),
+<tt>type=app/objmgr</tt> (for an application using the <i>Object Manager</i>) and <tt>type=app/objects</tt>
 (for an application using ASN.1 objects).
 
 <p></p>
@@ -1146,15 +1162,14 @@ You will need to slightly edit the resultant <i>makefile</i> to:
        (if it's an application), if needed
 </ul>
 
-
 <p>
-For <a href="new_project.create.session"> EXAMPLE</a>:
+For example (<a href="scripts_usage.html#ref_New_ProjectUsage">full usage</a>):
 
 <pre>
-   new_project.sh foo app/basic
+    <a href="new_project.create.session"><b><tt>new_project.sh foo app/basic</tt></b></a>
 </pre>
 
-<br>
+
 creates a model <i>makefile</i> <tt>Makefile.foo_app</tt> to build
 an application using tools and flags hard-coded in <tt>$NCBI/c++/Debug/build/Makefile.mk</tt>,
 and headers from <tt>$NCBI/c++/include/</tt>.  The file <tt>/tmp/foo/foo.cpp</tt> is
@@ -1166,7 +1181,7 @@ Now, after specifying the application name, list of source files, etc.,
 you can just go to the created working directory <tt>foo/</tt> and build your application using:
 
 <pre>
-   make -f Makefile.foo_app
+    make -f Makefile.foo_app
 </pre>
 
 <p>
@@ -1174,13 +1189,16 @@ You can easily change the active version of NCBI C++ Toolkit
 by manually setting variable <b>$(builddir)</b> in the file
 <tt>Makefile.foo_app</tt> to the desired Toolkit path, e.g.,
 <tt>builddir = </tt>$(NCBI)/<tt>c++/GCC-Release/build</tt>
+</dl>
 
 <p>
 <br>
 <a name="ref_OutsideHello"></a>
-<h3><b><i>scripts/hello.sh</i></b> </h3>
+<h3><b><tt>scripts/hello.sh</tt></b> </h3>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 This script will:
 <ul>
   <li> retrieve the demo CGI application project HELLO
@@ -1188,12 +1206,12 @@ This script will:
   <li> build HELLO application using this makefile
   <li> run HELLO application
 </ul>
-It will produce the file <b><i>hello.html</i></b> containing a model
+It will produce the file <tt>hello.html</tt> containing a model
 HTTP response. For more info on the HELLO CGI project see
 in section
 <i><a href="tools.html">NCBI C++ tools and applications</a> /
 <a href="tools/hello/hello.html">HELLO.CGI -- a demo CGI application (NCBI C++)</a></i>.
-
+</dl>
 
 <br></br>
 <hr>
