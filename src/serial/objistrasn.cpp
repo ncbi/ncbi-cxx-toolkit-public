@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/08/17 15:13:06  vasilche
+* Comments are allowed in ASN.1 text files.
+* String values now parsed in accordance with ASN.1 specification.
+*
 * Revision 1.21  1999/08/13 15:53:50  vasilche
 * C++ analog of asntool: datatool
 *
@@ -131,23 +135,9 @@
 BEGIN_NCBI_SCOPE
 
 
-static inline
-bool IsAlpha(char c)
-{
-    return isalpha(c) || c == '_';
-}
-
-static inline
-bool IsAlphaNum(char c)
-{
-    return isalnum(c) || c == '_';
-}
-
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
     : m_Input(in), m_Line(1)
-#if !USE_UNGET
-	, m_GetChar(-1), m_UngetChar(-1)
-#endif
+	, m_UngetChar(-1), m_UngetChar1(-1)
 {
 }
 
@@ -173,17 +163,10 @@ void CObjectIStreamAsn::CheckError(void)
 inline
 char CObjectIStreamAsn::GetChar(void)
 {
-#if USE_UNGET
-	char c;
-	m_Input.get(c);
-    CheckError();
-	//_TRACE("GetChar(): '" << c << "'");
-	return c;
-#else
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
-	    m_UngetChar = -1;
-		m_GetChar = unget;
+        m_UngetChar = m_UngetChar1;
+	    m_UngetChar1 = -1;
         //_TRACE("GetChar(): '" << char(unget) << "'");
 		return char(unget);
 	}
@@ -191,49 +174,37 @@ char CObjectIStreamAsn::GetChar(void)
 		char c;
 		m_Input.get(c);
         CheckError();
-		m_GetChar = (unsigned char)c;
         //_TRACE("GetChar(): '" << c << "'");
 		return c;
 	}
-#endif
 }
 
 inline
 char CObjectIStreamAsn::GetChar0(void)
 {
-#if USE_UNGET
-	return GetChar();
-#else
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
         //_TRACE("GetChar0(): '" << char(unget) << "'");
-	    m_UngetChar = -1;
-		m_GetChar = unget;
+        m_UngetChar = m_UngetChar1;
+	    m_UngetChar1 = -1;
 		return char(unget);
 	}
 	else {
         SetFailFlags(eIllegalCall);
 		throw runtime_error("bad GetChar0 call");
 	}
-#endif
 }
 
 inline
-void CObjectIStreamAsn::UngetChar(void)
+void CObjectIStreamAsn::UngetChar(char c)
 {
-#if USE_UNGET
-	//_TRACE("UngetChar...");
-	m_Input.unget();
-    CheckError();
-#else
-    if ( m_UngetChar >= 0 || m_GetChar < 0 ) {
+    if ( m_UngetChar1 >= 0 ) {
         SetFailFlags(eIllegalCall);
         throw runtime_error("cannot unget");
     }
     //_TRACE("UngetChar(): '" << char(m_GetChar) << "'");
-	m_UngetChar = m_GetChar;
-	m_GetChar = -1;
-#endif
+	m_UngetChar1 = m_UngetChar;
+    m_UngetChar = (unsigned char)c;
 }
 
 inline
@@ -258,11 +229,24 @@ bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 		}
 	}
 	else {
-		if ( GetChar() == expect )
+        char c = GetChar();
+		if ( c == expect )
 			return true;
-		UngetChar();
+		UngetChar(c);
 	}
 	return false;
+}
+
+inline
+bool CObjectIStreamAsn::FirstIdChar(char c)
+{
+    return isalpha(c) || c == '_';
+}
+
+inline
+bool CObjectIStreamAsn::IdChar(char c)
+{
+    return isalnum(c) || c == '_' || c == '.';
 }
 
 inline
@@ -296,7 +280,7 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
 	    else if ( c == choiceFalse )
 		    return false;
 		else
-	        UngetChar();
+	        UngetChar(c);
 	}
     SetFailFlags(eFormatError);
     THROW1_TRACE(runtime_error, string("'") + choiceTrue +
@@ -325,88 +309,44 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
         case '\n':
             m_Line++;
             break;
-/*
         case '-':
             // check for comments
-            if ( GetChar() == '-' )
-*/
+            c = GetChar();
+            if ( c != '-' ) {
+                UngetChar(c);
+                UngetChar('-');
+                return '-';
+            }
+            // skip comments
+            SkipComments();
+            break;
         default:
-            UngetChar();
+            UngetChar(c);
             return c;
         }
     }
 }
 
-bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
+void CObjectIStreamAsn::SkipComments(void)
 {
-#if CPLUSPLUS_STRINGS
-    char c = GetChar();
-    if ( c == '\\' ) {
-        c = GetChar();
+    for ( ;; ) {
+        char c = GetChar();
         switch ( c ) {
-        case 'r':
-            c = '\r';
-            break;
-        case 'n':
-            c = '\n';
-            break;
-        case 't':
-            c = '\t';
-            break;
-        default:
-            if ( c >= '0' && c <= '3' ) {
-                // octal code
-                c -= '0';
-                for ( int i = 1; i < 2; i++ ) {
-                    char cc = GetChar();
-                    if ( cc >= '0' && cc <= '7' ) {
-                        c = (c << 3) + (cc - '0');
-                    }
-                    else {
-                        UngetChar();
-                        break;
-                    }
-                }
+        case '\n':
+            m_Line++;
+            return;
+        case '-':
+            c = GetChar();
+            switch ( GetChar() ) {
+            case '\n':
+                m_Line++;
+                return;
+            case '-':
+                return;
             }
-        }
-        out = c;
-        return true;
-    }
-    else if ( c < ' ' ) {
-        if ( c == '\n' )
-            m_Line++;
-        SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "bad char in string");
-    }
-    else if ( c == terminator ) {
-        return false;
-    }
-    else {
-        out = c;
-        return true;
-    }
-#else
-    char c;
-    while ( (c = GetChar()) != terminator ) {
-        if ( c == '\n' ) {
-            m_Line++;
-        }
-        else if ( c < ' ' && c >= 0 ) {
-            SetFailFlags(eFormatError);
-            THROW1_TRACE(runtime_error, "bad char in string");
-        }
-        else {
-            out = c;
-            return true;
+            break;
         }
     }
-    if ( GetChar() != terminator ) {
-        UngetChar();
-        return false;
-    }
-    out = terminator;
-    return true;
-#endif
 }
 
 string CObjectIStreamAsn::ReadTypeName()
@@ -418,7 +358,7 @@ string CObjectIStreamAsn::ReadTypeName()
 
 string CObjectIStreamAsn::ReadEnumName()
 {
-    if ( IsAlphaNum(SkipWhiteSpace()) )
+    if ( FirstIdChar(SkipWhiteSpace()) )
         return ReadId();
     else
         return NcbiEmptyString;
@@ -439,18 +379,20 @@ void CObjectIStreamAsn::ReadStd(bool& data)
 
 void CObjectIStreamAsn::ReadStd(char& data)
 {
-    Expect('\'', true);
-    if ( !ReadEscapedChar(data, '\'') ) {
+    string s = ReadString();
+    if ( s.size() != 1 ) {
         SetFailFlags(eFormatError);
-        THROW1_TRACE(runtime_error, "empty char");
+        THROW1_TRACE(runtime_error, "one char string expected");
     }
+    data = s[0];
 }
 
 template<typename T>
 void ReadStdSigned(CObjectIStreamAsn& in, T& data)
 {
     bool sign;
-    switch ( in.GetChar(true) ) {
+    char c = in.GetChar(true);
+    switch ( c ) {
     case '-':
         sign = true;
         break;
@@ -458,11 +400,11 @@ void ReadStdSigned(CObjectIStreamAsn& in, T& data)
         sign = false;
         break;
     default:
-        in.UngetChar();
+        in.UngetChar(c);
         sign = false;
         break;
     }
-    char c = in.GetChar();
+    c = in.GetChar();
     if ( c < '0' || c > '9' ) {
         in.SetFailFlags(in.eFormatError);
         THROW1_TRACE(runtime_error, "bad number");
@@ -472,7 +414,7 @@ void ReadStdSigned(CObjectIStreamAsn& in, T& data)
         // TODO: check overflow
         n = n * 10 + (c - '0');
     }
-    in.UngetChar();
+    in.UngetChar(c);
     if ( sign )
         data = -n;
     else
@@ -494,7 +436,7 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
         // TODO: check overflow
         n = n * 10 + (c - '0');
     }
-    in.UngetChar();
+    in.UngetChar(c);
     data = n;
 }
 
@@ -582,10 +524,35 @@ string CObjectIStreamAsn::ReadString(void)
     Expect('\"', true);
     string s;
     char c;
-    while ( ReadEscapedChar(c, '\"') ) {
-        s += c;
+    for ( ;; ) {
+        c = GetChar();
+        switch ( c ) {
+        case '\n':
+            m_Line++;
+            break;
+        case '\"':
+            c = GetChar();
+            if ( c == '\"' ) {
+                // double quote -> one quote
+                s += '\"';
+            }
+            else {
+                // end of string
+                UngetChar(c);
+                return s;
+            }
+            break;
+        default:
+            if ( c < ' ' && c >= 0 ) {
+                SetFailFlags(eFormatError);
+                THROW1_TRACE(runtime_error, "bad char in string");
+            }
+            else {
+                s += c;
+            }
+            break;
+        }
     }
-    return s;
 }
 
 string CObjectIStreamAsn::ReadId(void)
@@ -598,16 +565,34 @@ string CObjectIStreamAsn::ReadId(void)
 		}
 	}
 	else {
-	    if ( !IsAlpha(c) ) {
-		    UngetChar();
+	    if ( !FirstIdChar(c) ) {
+		    UngetChar(c);
             ERR_POST(Warning << "unexpected char in id");
             return NcbiEmptyString;
 	    }
 	    s += c;
-		while ( IsAlphaNum(c = GetChar()) || c == '-' || c == '.' ) {
-			s += c;
+        for ( ;; ) {
+            c = GetChar();
+            if ( IdChar(c) ) {
+                s += c;
+            }
+            else if ( c == '-' ) {
+                c = GetChar();
+                if ( IdChar(c) ) {
+                    s += '-';
+                    s += c;
+                }
+                else {
+                    UngetChar(c);
+                    UngetChar('-');
+                    break;
+                }
+            }
+            else {
+                UngetChar(c);
+                break;
+            }
 	    }
-		UngetChar();
 	}
     return s;
 }
@@ -650,7 +635,7 @@ size_t CObjectIStreamAsn::ReadBytes(const ByteBlock& , char* dst, size_t length)
 			cc = c - 'A' + 10;
 		}
 		else if ( c == '\'' ) {
-			UngetChar();
+			UngetChar(c);
 			return count;
 		}
 		else {
@@ -688,12 +673,12 @@ CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
     case '@':
         return eObjectPointer;
     case '{':
-        UngetChar();
+        UngetChar(c);
         return eThisPointer;
     case ':':
         return eOtherPointer;
     default:
-        UngetChar();
+        UngetChar(c);
         return eThisPointer;
     }
 }
@@ -722,12 +707,13 @@ void CObjectIStreamAsn::SkipValue()
 {
     int blockLevel = 0;
     for ( ;; ) {
-        char c, c1;
-        switch ( (c = GetChar()) ) {
+        char c = GetChar();
+        switch ( c ) {
         case '\'':
+            SkipBitString();
+            break;
         case '\"':
-            while ( ReadEscapedChar(c1, c) )
-                ;
+            SkipString();
             break;
         case '{':
             ++blockLevel;
@@ -735,7 +721,7 @@ void CObjectIStreamAsn::SkipValue()
         case '}':
             switch ( blockLevel ) {
             case 0:
-                UngetChar();
+                UngetChar(c);
                 return;
             case 1:
                 return;
@@ -746,7 +732,7 @@ void CObjectIStreamAsn::SkipValue()
             break;
         case ',':
             if ( blockLevel == 0 ) {
-                UngetChar();
+                UngetChar(c);
                 return;
             }
             break;
@@ -756,6 +742,34 @@ void CObjectIStreamAsn::SkipValue()
     }
 }
 
+void CObjectIStreamAsn::SkipBitString(void)
+{
+    char c;
+    for ( ;; ) {
+        c = GetChar();
+        if ( c == '\'' ) {
+            c = GetChar();
+            if ( c != 'B' && c != 'H' )
+                UngetChar(c);
+            return;
+        }
+    }
+}
+
+void CObjectIStreamAsn::SkipString(void)
+{
+    char c;
+    for ( ;; ) {
+        c = GetChar();
+        if ( c == '\"' ) {
+            c = GetChar();
+            if ( c != '\"' ) {
+                UngetChar(c);
+                return;
+            }
+        }
+    }
+}
 unsigned CObjectIStreamAsn::GetAsnFlags(void)
 {
     return ASNIO_TEXT;

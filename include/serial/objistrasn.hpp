@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/08/17 15:13:03  vasilche
+* Comments are allowed in ASN.1 text files.
+* String values now parsed in accordance with ASN.1 specification.
+*
 * Revision 1.15  1999/08/13 15:53:43  vasilche
 * C++ analog of asntool: datatool
 *
@@ -101,7 +105,6 @@
 #include <corelib/ncbistre.hpp>
 #include <serial/objistr.hpp>
 
-#define USE_UNGET 0
 
 BEGIN_NCBI_SCOPE
 
@@ -170,7 +173,7 @@ public:
     // low level methods
     char GetChar(void);
     char GetChar0(void); // get char after call to UngetChar
-    void UngetChar(void);
+    void UngetChar(char c);
 
 	// parse methods
     char GetChar(bool skipWhiteSpace);
@@ -179,16 +182,19 @@ private:
     void Expect(char c, bool skipWhiteSpace = false);
     bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
     void ExpectString(const char* s, bool skipWhiteSpace = false);
-    bool ReadEscapedChar(char& out, char terminator);
+
+    static bool FirstIdChar(char c);
+    static bool IdChar(char c);
 
     char SkipWhiteSpace(void);
+    void SkipComments(void);
+    void SkipString(void);
+    void SkipBitString(void);
 
     CNcbiIstream& m_Input;
     int m_Line;
-#if !USE_UNGET
-	int m_GetChar;
 	int m_UngetChar;
-#endif
+    int m_UngetChar1;
 };
 
 //#include <objistrb.inl>

@@ -18,6 +18,8 @@ enum EFileType {
     eXMLText
 };
 
+typedef pair<TObjectPtr, TTypeInfo> TObject;
+
 static void Help(void)
 {
     NcbiCout << endl <<
@@ -60,10 +62,9 @@ static void LoadDefinition(CModuleSet& types,
                            const string& fileName, EFileType fileType);
 static void StoreDefinition(const CModuleSet& types,
                             const string& fileName, EFileType fileType);
-static
-pair<TObjectPtr, TTypeInfo> LoadValue(CModuleSet& types, const string& typeName,
-                                      const string& fileName, EFileType fileType);
-static void StoreValue(const pair<TObjectPtr, TTypeInfo>& object,
+static TObject LoadValue(CModuleSet& types, const string& typeName,
+                         const string& fileName, EFileType fileType);
+static void StoreValue(const TObject& object,
                        const string& fileName, EFileType fileType);
 
 int main(int argc, const char*argv[])
@@ -141,8 +142,7 @@ int main(int argc, const char*argv[])
         if ( dataInFile.empty() )
             return 0;
 
-        pair<TObjectPtr, TTypeInfo> object =
-            LoadValue(types, dataInName, dataInFile, dataInType);
+        TObject object = LoadValue(types, dataInName, dataInFile, dataInType);
 
         if ( !dataOutFile.empty() )
             StoreValue(object, dataOutFile, dataOutType);
@@ -218,8 +218,8 @@ void StoreDefinition(const CModuleSet& types,
     }
 }
 
-pair<TObjectPtr, TTypeInfo> LoadValue(CModuleSet& types, const string& typeName,
-                                      const string& fileName, EFileType fileType)
+TObject LoadValue(CModuleSet& types, const string& typeName,
+                  const string& fileName, EFileType fileType)
 {
     ifstream fileIn;
     CNcbiIstream* in;
@@ -261,7 +261,7 @@ pair<TObjectPtr, TTypeInfo> LoadValue(CModuleSet& types, const string& typeName,
     return make_pair(object, typeInfo);
 }
 
-void StoreValue(const pair<TObjectPtr, TTypeInfo>& object,
+void StoreValue(const TObject& object,
                 const string& fileName, EFileType fileType)
 {
     ofstream fileOut;
