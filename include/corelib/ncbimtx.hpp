@@ -38,6 +38,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/03/26 22:50:24  grichenk
+ * Fixed CFastMutex::Unlock() bug
+ *
  * Revision 1.2  2001/03/26 21:11:37  vakatov
  * Allow use of not yet initialized mutexes (with A.Grichenko)
  *
@@ -358,7 +361,7 @@ void CFastMutex::Lock(void)
 inline
 void CFastMutex::Unlock(void)
 {
-    if ( !m_Initialized ) {
+    if ( m_Initialized ) {
         LeaveCriticalSection(&m_Handle);
     }
 }
