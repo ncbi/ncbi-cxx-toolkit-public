@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2002/09/14 18:41:05  thiessen
+* fix center-on-aligned omission
+*
 * Revision 1.109  2002/09/14 17:03:07  thiessen
 * center initial view on aligned residues
 *
@@ -1194,6 +1197,7 @@ void StructureSet::CenterViewOnAlignedResidues(void)
     std::deque < Vector > coords;
     Molecule::ResidueMap::const_iterator r, re = masterMolecule->residues.end();
     for (r=masterMolecule->residues.begin(); r!=re; r++) {
+        if (!alignment->IsAligned(0, r->first - 1)) continue;
         if (r->second->alphaID == Residue::NO_ALPHA_ID) continue;
         AtomPntr ap(masterMolecule->id, r->first, r->second->alphaID);
         const AtomCoord* atom = masterObject->coordSets.front()->atomSet->GetAtom(ap, true, true);
