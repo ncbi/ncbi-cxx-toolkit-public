@@ -1028,7 +1028,7 @@ string CFile::GetTmpNameEx(const string& dir, const string& prefix)
         pattern = AddTrailingPathSeparator(dir);
 	}
     pattern += prefix + "XXXXXX";
-    auto_ptr<char> filename(strdup(pattern.c_str()));
+    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
     int fd = mkstemp(filename.get());
 	close(fd);
     remove(filename.get());
@@ -1696,6 +1696,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2003/10/23 12:10:51  ucko
+ * Use AutoPtr with CDeleter rather than auto_ptr, which is *not*
+ * guaranteed to be appropriate for malloc()ed memory.
+ *
  * Revision 1.60  2003/10/22 13:25:47  ivanov
  * GetTmpName[Ex]:  replaced tempnam() with mkstemp() for UNIX
  *
