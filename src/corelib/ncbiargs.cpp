@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2000/11/08 17:48:37  butanaev
+ * There was no minus in optional key synopsis, fixed.
+ *
  * Revision 1.18  2000/11/01 20:37:15  vasilche
  * Fixed detection of heap objects.
  * Removed ECanDelete enum and related constructors.
@@ -782,7 +785,7 @@ CArgDesc_OptionalKey::~CArgDesc_OptionalKey(void)
 string CArgDesc_OptionalKey::GetUsageSynopsis(const string& name,
                                               bool /*optional*/) const
 {
-    return "[" + name + " " + GetSynopsis() + "]";
+    return "[-" + name + " " + GetSynopsis() + "]";
 }
 
 
