@@ -30,6 +30,10 @@ classes</a></li>
 
 <li>
 <a href="#copyhooks">The <i>Copy</i> hook classes</a></li>
+
+<li>
+<a href="#blocks">The <i>ByteBlock</i> and <i>CharBlock</i> classes</a></li>
+
 </ul>
 <a NAME="intro"></a>
 <h3>
@@ -508,6 +512,91 @@ Newly derived copy hooks can be installed by invoking the <i>SetGlobalCopyObject
 or
 <i>SetLocalCopyObjectHook()</i> methods for the appropriate type information
 objects.
+
+<p><a NAME="blocks"></a>
+<h3>
+The <i>ByteBlock</i> and <i>CharBlock</i> classes</h3>
+
+<i>CObject[IO]Stream::ByteBlock</i> class may be used for non-standard processing
+of an OCTET STRING data, e.g. from a read/write hooks. The
+<i>CObject[IO]Stream::CharBlock</i> class has almost the same functionality,
+but may be used for VisibleString data processing.
+<p>
+
+An example of using ByteBlock or CharBlock classes is generating
+data on-the-fly in a write hook. To use block classes:
+<ol>
+<li>Initialize the block variable with an i/o stream and, in case of
+output stream, the length of the block.</li>
+
+<li>Use Read()/Write() functions to process block data</li>
+
+<li>Close the block with the End() function</li>
+</ol>
+
+Below is an example of using <i>CObjectOStream::ByteBlock</i> in an object
+write hook for non-standard data processing. Note, that ByteBlock
+and CharBlock classes read/write data only. You should also provide
+some code for writing class' and members' tags.
+<p>
+
+Since OCTET STRING and VisibleString in the NCBI C++ Toolkit are
+implemented as <i>vector&lt;char&gt;</i> and <i>string</i> classes, which have
+no serailization type info, you can not install a read or write hook
+for these classes. The example also demonstrates how to process
+members of these types using the contaning class hook.
+
+<pre><font color="#008080">
+
+void CWriteMyObjectHook::WriteObject(CObjectOStream&amp; out,
+                                     const CConstObjectInfo&amp; object)
+{
+    const CMyObject&amp; obj = *reinterpret_cast&lt;const CMyObject*&gt;
+        (object.GetObjectPtr());
+    if ( NothingToProcess(obj) ) {
+        // No special processing - use default write method
+        object.GetTypeInfo()-&gt;DefaultWriteData(out, object.GetObjectPtr());
+        return;
+    }
+
+    // Write object open tag
+    out.BeginClass(object.GetClassTypeInfo());
+    // Iterate object members
+    for (CConstObjectInfo::CMemberIterator member =
+        object.BeginMembers(); member; ++member) {
+
+        if ( NeedProcessing(member) ) {
+            // Write the special member manually
+            out.BeginClassMember(member.GetMemberInfo()-&gt;GetId());
+            // Start byte block, specify output stream and block size
+            size_t length = GetRealDataLength(member);
+            CObjectOStream::ByteBlock bb(out, length);
+            // Processing and output
+            for (int i = 0; i &lt; length; ) {
+                char* buf;
+                int buf_size;
+                // Assuming ProcessData() generates the data from "member",
+                // starting from position "i" and stores the data to "buf"
+                ProcessData(member, i, &amp;buf_size, &amp;buf);
+                i += buf_size;
+                bb.Write(buf, buf_size);
+            }
+        }
+        // Close the byte block
+        bb.End();
+        // Close the member
+        out.EndClassMember();
+    }
+    else {
+        // Default writer for members without special processing
+        if ( member.IsSet() )
+            out.WriteClassMember(member);
+    }
+    // Close the object
+    out.EndClass();
+}
+</font></pre>
+
 <p><i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp; <a href="asn.html"><i>next</i>&nbsp;</a>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
