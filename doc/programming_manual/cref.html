@@ -42,8 +42,8 @@ For example, the following code has two very serious problems:
 <pre>
     int* ip = new int(5);
     {
-        auto_ptr&lt;int&gt; a1 = ip;
-        auto_ptr&lt;int&gt; a2 = ip;
+        auto_ptr&lt;int&gt; a1(ip);
+        auto_ptr&lt;int&gt; a2(ip);
     }
     *ip = 10/(*ip);
 </pre>
