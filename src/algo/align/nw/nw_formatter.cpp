@@ -52,6 +52,10 @@ USING_SCOPE(objects);
 CNWFormatter::CNWFormatter (const CNWAligner& aligner):
     m_aligner(&aligner)
 {
+    const char id_not_set[] = "ID_not_set";
+    CRef<CSeq_id> seqid (new CSeq_id);
+    seqid->SetLocal().SetStr(id_not_set);
+    m_Seq1Id = m_Seq2Id = seqid;
 }
 
 
@@ -524,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/02/23 22:11:42  kapustin
+ * Add default non-zero seqid
+ *
  * Revision 1.14  2005/02/23 16:59:38  kapustin
  * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
  *
