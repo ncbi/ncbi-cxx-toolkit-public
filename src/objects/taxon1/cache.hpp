@@ -51,6 +51,7 @@ class COrgRefCache
 {
 public:
     COrgRefCache( CTaxon1& host );
+    ~COrgRefCache();
 
     bool Init( unsigned nCapacity = 10 );
 
@@ -106,11 +107,7 @@ private:
         CRef< CTaxon2_data > m_pTax2;
 
         CTaxon1Node*  m_pTreeNode;
-        // 	COrg_ref* p_org_ref;
-        // 	bool is_uncultured;
-        // 	bool is_species;
-        // 	bool has_modif;
-        // 	list< string > blast_name;
+
         CTaxon1_data* GetData1();
         CTaxon2_data* GetData2();
     };
@@ -362,6 +359,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.15  2004/07/16 15:12:39  domrach
+ * Forgotten destructor added. Memory leak fixed.
+ *
  * Revision 6.14  2004/06/16 12:03:04  dicuccio
  * Disallow copying of COrgRefCache
  *

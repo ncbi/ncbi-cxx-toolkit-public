@@ -47,6 +47,16 @@ COrgRefCache::COrgRefCache( CTaxon1& host )
     return;
 }
 
+COrgRefCache::~COrgRefCache()
+{
+    delete[] m_ppEntries;
+    for( list<SCacheEntry*>::iterator i = m_lCache.begin();
+	 i != m_lCache.end();
+	 ++i ) {
+	delete *i;
+    }
+}
+
 bool
 COrgRefCache::Init( unsigned nCapacity )
 {
@@ -1370,6 +1380,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.22  2004/07/16 15:12:39  domrach
+ * Forgotten destructor added. Memory leak fixed.
+ *
  * Revision 6.21  2004/05/19 17:27:10  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
