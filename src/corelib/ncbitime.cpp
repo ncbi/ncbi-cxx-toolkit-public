@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/29 20:14:03  ivanov
+* Added #include <sys/time.h> for UNIX platforms.
+*
 * Revision 1.8  2001/05/29 16:14:01  ivanov
 * Return to nanosecond-revision. Corrected mistake of the work with local
 * time on Linux. Polish and improvement source code.
@@ -67,6 +70,8 @@
 
 #if defined NCBI_OS_MSWIN
 #   include <sys/timeb.h> 
+#elif defined NCBI_OS_UNIX
+#   include <sys/time.h> 
 #endif
 
 
