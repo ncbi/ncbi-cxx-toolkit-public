@@ -75,7 +75,7 @@ void CTestNetScheduleStress::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "NetSchedule stress test");
+                              "NetSchedule stress test prog='test 1.0.1'");
     
     arg_desc->AddPositional("hostname", 
                             "NetSchedule host name.", 
@@ -163,7 +163,7 @@ void TestNetscheduleLB(const string&  queue)
 {
     NcbiCout << "Load balancing client test" << NcbiEndl;
 
-    CNetScheduleClient_LB cl("stress_test", "NC_test", queue, 1, 50);
+    CNetScheduleClient_LB cl("stress_test prog='test 1.0.0'", "NC_test", queue, 1, 50);
     cl.AddServiceAddress("didimo", 9100);
     cl.AddServiceAddress("icoremake2", 9100);
 
@@ -218,6 +218,7 @@ int CTestNetScheduleStress::Run(void)
     CNetScheduleClient::EJobStatus status;
     CNetScheduleClient cl(host, port, "client_test", queue_name);
     cl.ActivateRequestRateControl(false);
+    cl.SetProgramVersion("test 1.0.0");
 
     const string input = "Hello " + queue_name;
 
@@ -429,6 +430,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/06 12:38:59  kuznets
+ * Use version control
+ *
  * Revision 1.9  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *
