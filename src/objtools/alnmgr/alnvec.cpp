@@ -302,7 +302,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                             scrn_rgt_seq_pos += delta;
                         }
                         if (seg == left_seg  &&
-                            !scrn_rights->size()) {
+                            scrn_lft_seq_pos == scrn_rgt_seq_pos) {
                             if (plus) {
                                 scrn_rgt_seq_pos--;
                             } else {
@@ -797,6 +797,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/07/22 19:18:37  todorov
+* fixed a 1st seg check in GetWhole...
+*
 * Revision 1.35  2003/07/21 21:29:39  todorov
 * cleaned an expression
 *
