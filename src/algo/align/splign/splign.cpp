@@ -1291,10 +1291,43 @@ double CSplign::SAlignedCompartment::GetIdentity() const
     return double(matches) / trans.size();
 }
 
-typedef vector<char> TNetCacheBuffer;
+namespace splign_local {
+
+    template<typename T>
+    void ElemToBuffer(const T& n, char*& p)
+    {
+        *(reinterpret_cast<T*>(p)) = n;
+        p += sizeof(n);
+    }
+    
+    template<>
+    void ElemToBuffer(const string& s, char*& p)
+    {
+        copy(s.begin(), s.end(), p);
+        p += s.size();
+        *p++ = 0;
+    }
+    
+    template<typename T>
+    void ElemFromBuffer(T& n, const char*& p)
+    {
+        n = *(reinterpret_cast<const T*>(p));
+        p += sizeof(n);
+    }
+    
+    template<>
+    void ElemFromBuffer(string& s, const char*& p)
+    {
+        s = p;
+        p += s.size() + 1;
+    }
+}
+
 
 void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
 {
+    using namespace splign_local;
+
     if(target == 0) {
         NCBI_THROW( CAlgoAlignException,
                     eBadParameter,
@@ -1307,13 +1340,11 @@ void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
     vector<char> core (core_size);
 
     char* p = &core.front();
-
-    *((size_t*)p) = m_id; p += sizeof m_id;
-    *((bool*)p)   = m_error;; p += sizeof m_error;
-    copy(m_msg.begin(), m_msg.end(), p); p += m_msg.size();
-    *p++ = 0;
-    *((bool*)p) = m_QueryStrand; p += sizeof m_QueryStrand;
-    *((bool*)p) = m_SubjStrand;  p += sizeof m_SubjStrand;
+    ElemToBuffer(m_id, p);
+    ElemToBuffer(m_error, p);
+    ElemToBuffer(m_msg, p);
+    ElemToBuffer(m_QueryStrand, p);
+    ElemToBuffer(m_SubjStrand, p);
     
     typedef vector<TNetCacheBuffer> TBuffers;
     TBuffers vb (m_segments.size());
@@ -1345,36 +1376,37 @@ void CSplign::SAlignedCompartment::ToBuffer(TNetCacheBuffer* target) const
 
 void CSplign::SAlignedCompartment::FromBuffer(const TNetCacheBuffer& source)
 {
-    TNetCacheBuffer::const_iterator is = source.begin(), ise = source.end();
+    using namespace splign_local;
+
     const size_t min_size = sizeof m_id + sizeof m_error + 1 
         + sizeof m_QueryStrand + sizeof m_SubjStrand;
     if(source.size() < min_size) {
-    NCBI_THROW(CAlgoAlignException, eInternal,
-               g_msg_NetCacheBufferIncomplete);
+        NCBI_THROW(CAlgoAlignException, eInternal,
+                   g_msg_NetCacheBufferIncomplete);
     }
     
-    m_id = *((const size_t*)&(*is));  is += sizeof m_id;
-    m_error = *((const bool*)&(*is)); is += sizeof m_error;
-    TNetCacheBuffer::const_iterator is0 = is;
-    while(*is++);
-    m_msg.resize(is - is0 - 1);
-    copy(is0, is - 1, m_msg.begin());
-    m_QueryStrand = *((bool*)&(*is)); is += sizeof m_QueryStrand;
-    m_SubjStrand = *((bool*)&(*is));  is += sizeof m_SubjStrand;
-
-    while(is < ise) {
-        const size_t seg_buf_size = *((size_t*)&(*is));
-        is += sizeof(size_t);
+    const char* p =  &source.front();
+    ElemFromBuffer(m_id, p);
+    ElemFromBuffer(m_error, p);
+    ElemFromBuffer(m_msg, p);
+    ElemFromBuffer(m_QueryStrand, p);
+    ElemFromBuffer(m_SubjStrand, p);
+    const char* pe = &source.back();
+    while(p <= pe) {
+        size_t seg_buf_size = 0;
+        ElemFromBuffer(seg_buf_size, p);
         m_segments.push_back(SSegment());
         SSegment& seg = m_segments.back();
-        seg.FromBuffer(TNetCacheBuffer(is, is + seg_buf_size));
-        is += seg_buf_size;
+        seg.FromBuffer(TNetCacheBuffer(p, p + seg_buf_size));
+        p += seg_buf_size;
     }
 }
 
 
 void CSplign::SSegment::ToBuffer(TNetCacheBuffer* target) const
 {
+    using namespace splign_local;
+
     if(target == 0) {
         NCBI_THROW( CAlgoAlignException,
                     eBadParameter,
@@ -1388,54 +1420,42 @@ void CSplign::SSegment::ToBuffer(TNetCacheBuffer* target) const
     target->resize(total_size);
     
     char* p = &target->front();
-
-    *((bool*)p) = m_exon;   p += sizeof m_exon;
-    *((double*)p) = m_idty; p += sizeof m_idty;
-    *((size_t*)p) = m_len;  p += sizeof m_len;
-
+    ElemToBuffer(m_exon, p);
+    ElemToBuffer(m_idty, p);
+    ElemToBuffer(m_len, p);
     for(size_t i = 0; i < 4; ++i) {
-        *((size_t*)p) = m_box[i];
-        p += sizeof m_box[i];
+        ElemToBuffer(m_box[i], p);
     }
-    copy(m_annot.begin(), m_annot.end(), p); p += m_annot.size();
-    *p++ = 0;
-
-    copy(m_details.begin(), m_details.end(), p); p += m_details.size();
-    *p++ = 0;
-
-    *((CNWAligner::TScore*)p) = m_score;
+    ElemToBuffer(m_annot, p);
+    ElemToBuffer(m_details, p);
+    ElemToBuffer(m_score, p);
 }
 
 
 void CSplign::SSegment::FromBuffer(const TNetCacheBuffer& source)
 {
-    TNetCacheBuffer::const_iterator is = source.begin(), ise = source.end();
+    using namespace splign_local;
+
     const size_t min_size = sizeof m_exon + sizeof m_idty + sizeof m_len + 
         + sizeof m_box + 1 + 1 + sizeof m_score;
+
     if(source.size() < min_size) {
         NCBI_THROW(CAlgoAlignException, eInternal,
                g_msg_NetCacheBufferIncomplete);
     }
     
-    m_exon = *((const bool*)&(*is));  is += sizeof m_exon;
-    m_idty = *((const double*)&(*is)); is += sizeof m_idty;
-    m_len = *((const size_t*)&(*is));  is += sizeof m_len;
+    const char* p = &source.front();
+    ElemFromBuffer(m_exon, p);
+    ElemFromBuffer(m_idty, p);
+    ElemFromBuffer(m_len, p);
 
     for(size_t i = 0; i < 4; ++i) {
-        m_box[i] = *((const size_t*)&(*is));  is += sizeof m_box[i];
+        ElemFromBuffer(m_box[i], p);
     }
     
-    TNetCacheBuffer::const_iterator is0 = is;
-    while(*is++);
-    m_annot.resize(is0 - is - 1);
-    copy(is0, is - 1, m_annot.begin());
-
-    is0 = is;
-    while(*is++);
-    m_details.resize(is0 - is - 1);
-    copy(is0, is - 1, m_details.begin());
-
-    m_score = *((const CNWAligner::TScore*)&(*is));
+    ElemFromBuffer(m_annot, p);
+    ElemFromBuffer(m_details, p);
+    ElemFromBuffer(m_score, p);
 }
 
 END_NCBI_SCOPE
@@ -1443,8 +1463,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/12/01 14:55:08  kapustin
+ * +ElemToBuffer
+ *
  * Revision 1.23  2004/11/29 14:37:16  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be 
+ * specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two
+ * additional parameters to specify starting coordinates.
  *
  * Revision 1.22  2004/09/27 17:12:38  kapustin
  * Move splign_compartment_finder.hpp to /include/algo/align/splign.
