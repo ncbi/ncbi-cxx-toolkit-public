@@ -328,7 +328,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         }
         verify(BUF_Peek(uuu->http, header, size) == size);
         header[size] = '\0';
-        if (strcmp(&header[size - 4], "\r\n\r\n") == 0)
+        if (size >= 4  &&  strcmp(&header[size - 4], "\r\n\r\n") == 0)
             break/*full header captured*/;
         free(header);
 
@@ -976,6 +976,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2003/11/26 12:57:11  lavr
+ * s_ReadHeader(): check header size first before looking for end-of-header
+ *
  * Revision 6.61  2003/11/03 17:37:42  lavr
  * Fix previous accidental commit and provide corrent change log info:
  * 1. Added more notes about SOCK_Shutdown() being left commented out;
