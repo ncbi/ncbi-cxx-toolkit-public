@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/11/21 18:07:25  thiessen
+* show whole objects again on evidence show
+*
 * Revision 1.29  2002/11/12 20:35:36  thiessen
 * use ShowDomainsWithHighlights for structure evidence show
 *
@@ -833,11 +836,17 @@ void CDDAnnotateDialog::ShowEvidence(void)
 
     // highlight residues if structure evidence
     else if (IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvidence)) {
-        HighlightResidues(structureSet, selectedEvidence->GetBsannot());
-        structureSet->showHideManager->ShowDomainsWithHighlights(structureSet);
-        wxMessageBox(
-            selectedEvidence->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str(),
-            "Structure Evidence", wxOK | wxCENTRE, this);
+        int mmdbID = HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+        if (mmdbID > 0) {
+            structureSet->showHideManager->MakeAllVisible();
+            StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
+            for (o=structureSet->objects.begin(); o!=oe; o++)
+                if ((*o)->mmdbID != mmdbID)
+                    structureSet->showHideManager->Show(*o, false);
+            wxMessageBox(
+                selectedEvidence->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str(),
+                "Structure Evidence", wxOK | wxCENTRE, this);
+        }
     }
 
     else if (selectedEvidence->IsComment()) {
