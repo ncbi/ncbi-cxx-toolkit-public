@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/05/17 15:07:08  lavr
+* Typos corrected
+*
 * Revision 1.25  2001/04/25 20:41:53  vakatov
 * <limits.h>, <float.h>  --->  <corelib/ncbi_limits.h>
 *
@@ -54,7 +57,7 @@
 *
 * Revision 1.19  2000/10/20 15:51:43  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -73,7 +76,7 @@
 * All this lead to smaller compiled code size (libraries and programs).
 *
 * Revision 1.15  2000/10/05 15:52:51  vasilche
-* Avoid useing snprintf bacause it's missing on osf1_gcc
+* Avoid using snprintf because it's missing on osf1_gcc
 *
 * Revision 1.14  2000/10/05 13:17:17  vasilche
 * Added missing #include <stdio.h>

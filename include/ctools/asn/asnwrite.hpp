@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/17 14:49:59  lavr
+* Typos corrected
+*
 * Revision 1.8  2001/02/10 05:00:04  lavr
 * ctools added in #includes
 *
@@ -51,7 +54,7 @@
 * Fixed warning about mixing pointers to "C" and "C++" functions.
 *
 * Revision 1.3  1999/02/26 21:03:29  vasilche
-* CAsnWriteNode made simple node. Use CHTML_pre explicitely.
+* CAsnWriteNode made simple node. Use CHTML_pre explicitly.
 * Fixed bug in CHTML_table::Row.
 * Added CHTML_table::HeaderCell & DataCell methods.
 *

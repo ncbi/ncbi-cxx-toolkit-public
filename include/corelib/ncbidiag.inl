@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/17 14:51:04  lavr
+* Typos corrected
+*
 * Revision 1.18  2000/04/04 22:31:57  vakatov
 * SetDiagTrace() -- auto-set basing on the application
 * environment and/or registry
@@ -62,7 +65,7 @@
 * CDiagBuffer::Reset: easy fix
 *
 * Revision 1.11  1999/05/12 21:11:42  vakatov
-* Minor fixes to copile by the Mac CodeWarrior C++ compiler
+* Minor fixes to compile by the Mac CodeWarrior C++ compiler
 *
 * Revision 1.10  1999/05/04 00:03:07  vakatov
 * Removed the redundant severity arg from macro ERR_POST()

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/17 14:49:01  lavr
+* Typos corrected
+*
 * Revision 1.15  2000/12/23 23:53:19  vakatov
 * TLMsg container to use AutoPtr instead of regular pointer
 *
@@ -164,7 +167,7 @@ private:
 // class CCgiContext
 //
 // CCgiContext is a wrapper for request, response, server context.
-// In addtion, it contains list of messages as html nodes.
+// In addition, it contains list of messages as html nodes.
 // Having non-const reference, CCgiContext's user has access to its 
 // all internal data
 // Context will try to create request from given data or default request

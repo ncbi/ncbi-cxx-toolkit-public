@@ -30,8 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2001/05/17 15:07:08  lavr
+* Typos corrected
+*
 * Revision 1.77  2001/05/16 17:55:39  grichenk
-* Redesigned support for non-blocking sream read operations
+* Redesigned support for non-blocking stream read operations
 *
 * Revision 1.76  2001/05/11 20:41:17  grichenk
 * Added support for non-blocking stream reading
@@ -69,7 +72,7 @@
 *
 * Revision 1.66  2000/10/20 15:51:40  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -232,7 +235,7 @@
 * Fixed several incompatibilities with Windows
 *
 * Revision 1.29  1999/09/27 14:18:02  vasilche
-* Fixed bug with overloaded construtors of Block.
+* Fixed bug with overloaded constructors of Block.
 *
 * Revision 1.28  1999/09/26 05:19:02  vakatov
 * FLT_MIN/MAX are not #define'd on some platforms
@@ -241,7 +244,7 @@
 * Removed dependency on NCBI toolkit.
 *
 * Revision 1.26  1999/09/23 21:16:07  vasilche
-* Removed dependance on asn.h
+* Removed dependence on asn.h
 *
 * Revision 1.25  1999/09/23 20:25:04  vasilche
 * Added support HAVE_NCBI_C

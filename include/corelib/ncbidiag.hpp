@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/17 14:50:58  lavr
+* Typos corrected
+*
 * Revision 1.23  2000/11/29 16:58:23  vakatov
 * Added LOG_POST() macro -- to print the posted message only
 *
@@ -352,7 +355,7 @@ extern bool IsDiagStream(const CNcbiOstream* os);
 #include <corelib/ncbidiag.inl>
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBIDIAG__HPP */

@@ -29,10 +29,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Module container: base classe for module set
+*   Module container: base classes for module set
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 15:00:42  lavr
+* Typos corrected
+*
 * Revision 1.2  2000/04/07 19:26:09  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace

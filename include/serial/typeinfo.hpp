@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
 * Revision 1.34  2000/11/07 17:25:13  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -243,7 +246,7 @@ public:
 
     // check, whether object contains default value
     virtual bool IsDefault(TConstObjectPtr object) const = 0;
-    // check if both objects contain the same valuse
+    // check if both objects contain the same values
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const = 0;
     // set object to default value
@@ -254,7 +257,7 @@ public:
     // return true if type is inherited from CObject
     virtual bool IsCObject(void) const;
     virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
-    // return true CTypeInfo of object (redefined in polimorfic classes)
+    // return true CTypeInfo of object (redefined in polymorphic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
     // I/O interface:

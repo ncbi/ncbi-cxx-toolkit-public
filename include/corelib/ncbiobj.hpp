@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/05/17 14:53:56  lavr
+* Typos corrected
+*
 * Revision 1.22  2001/03/26 21:22:51  vakatov
 * Minor cosmetics
 *
@@ -41,7 +44,7 @@
 * + CObject::DoDeleteThisObject()
 *
 * Revision 1.20  2001/03/05 22:14:18  vakatov
-* Added "operator<" for CRef:: and CConstRef:: to make them useable
+* Added "operator<" for CRef:: and CConstRef:: to make them usable
 * as keys in the stnadard C++ associative containers (set, map, ...)
 *
 * Revision 1.19  2001/02/21 21:16:08  grichenk
@@ -77,7 +80,7 @@
 * Fixed throw() declaration in CRef/CConstRef
 *
 * Revision 1.11  2000/08/15 19:42:06  vasilche
-* Changed refernce counter to allow detection of more errors.
+* Changed reference counter to allow detection of more errors.
 *
 * Revision 1.10  2000/06/16 16:29:42  vasilche
 * Added SetCanDelete() method to allow to change CObject 'in heap' status immediately after creation.

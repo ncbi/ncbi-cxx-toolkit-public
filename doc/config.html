@@ -177,7 +177,7 @@ file naming conventions on different platforms.
 <p>
 Thus, a configuration is needed to encounter the platform-
 and compiler-specific features.
-For this purporse, we are using the GNU
+For this purpose, we are using the GNU
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a> 
 utility to automatically generate compiler-specific header file
 <i>ncbiconf.h</i> and makefiles that would work for the given platform.
@@ -225,7 +225,7 @@ trees would refer to just the same (origin) NCBI C++
 <a href="src_tree.gif"><i>source tree</i></a> and <i>include tree</i>,
 while each
 <a href="bld_tree.gif"><i>build tree</i></a>
-can contain its own (platform/compilator-specific)
+can contain its own (platform/compiler-specific)
 <i>ncbiconf.h</i> header, and/or different set of compilation/linking/etc.
 flags and tools ("frozen" in the makefiles, especially in
 <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>).
@@ -394,7 +394,7 @@ the following platforms:
 </ul>
 
 On any other platform, the <i><b>--without-dll</b></i> scenario will be
-enforced unconditionally (even if you explicitely specified
+enforced unconditionally (even if you explicitly specified
 <i><b>--with-dll</b></i>).
 
 
@@ -565,7 +565,7 @@ script after the configuration is complete:
 </ul>
 where <i>&lt;some_action&gt;</i> can be some script with parameters.
 The trick here is that in the &lt;some_action&gt; string, all
-occurences of "<i>{}</i>" will be replaced by the build dir name.
+occurrences of "<i>{}</i>" will be replaced by the build dir name.
 <br><i>Example:</i>
 <br>&nbsp;&nbsp;&nbsp;<i>configure <b>--with-extra-action=</b>"echo foobar {}"</i>
 <br>will execute (after the configuration is done):
@@ -1310,7 +1310,7 @@ There is a short summary:
 	<li>Use script <a href="msvc_prj.html#one2one_sh"><i>one2one.sh</i></a> to change configuration in any
 	single-configuration project file (e.g. from <tt>ReleaseDLL</tt> to <tt>DebugMT</tt>).</li>
 	<li>Use script <a href="msvc_prj.html#one2all_sh"><i>one2all.sh</i></a> to convert a single configuration
-	(template) project file to the multi-configuration one (contating all of the following configurations:
+	(template) project file to the multi-configuration one (containing all of the following configurations:
 	<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>).</li>
 </ul>
 
@@ -1486,7 +1486,7 @@ Instead,
 	<ul>
 		<li><tt>DLL</tt>: build DLL versions of wxWindows libraries, and store them in <tt>wxwin/ReleaseDLL</tt>
 			and <tt>wxwin/DebugDLL</tt> directories (for <tt>ReleaseDLL</tt> and <tt>DebugDLL</tt> configurations
-			respectvely).</li>
+			respectively).</li>
 		<li><tt>LIB</tt>: build static versions of wxWindows libraries, and store them in directories
 			<tt>wxwin/Debug</tt>, <tt>wxwin/DebugMT</tt>, <tt>wxwin/Release</tt>, and <tt>wxwin/ReleaseMT</tt>.</li>
 		<li><tt>ALL</tt>: build everything listed above.</li>
@@ -1548,7 +1548,7 @@ For convenience and uniformity, a copy of the source code directory (<b>altsrc</
 As in case with <a href="#refWxwinPaths">wxWindows</a> library, if the project that we provide
 is using the NCBI C Toolkit, then the include files and libraries are referred by means of both
 relative and absolute paths. If you are going to use your local copy of the NCBI C Toolkit, then
-place it in directory <tt>ncbi</tt>, which must reside in the same directory, where the C++ Tookit does
+place it in directory <tt>ncbi</tt>, which must reside in the same directory, where the C++ Toolkit does
 (i.e. <tt>ncbi</tt> and <tt>cxx</tt> subdirectories must appear in the same parent directory). Then, you have to copy the C Toolkit libraries to either
 <tt>ncbi/ReleaseMT</tt> or <tt>ncbi/DebugMT</tt>
 subdirectories (according to the configuration used).

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/17 15:05:00  lavr
+* Typos corrected
+*
 * Revision 1.6  2001/04/30 22:01:30  lavr
 * Rollback to pre-nanosecond-revision due to necessity to use
 * configure to figure out names of global variables governing time zones
@@ -437,7 +440,7 @@ bool CTime::IsValid() const
 
     s_DaysInMonth[1] = IsLeap() ? 29 : 28;
   
-    if (Year() < 1755) // first georgian date
+    if (Year() < 1755) // first Gregorian date
         return false;
     if (Month()  < 1  ||  Month()  > 12)
         return false;

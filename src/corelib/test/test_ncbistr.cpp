@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2001/05/17 15:05:09  lavr
+* Typos corrected
+*
 * Revision 6.1  2001/03/26 20:34:38  vakatov
 * Initial revision (moved from "coretest.cpp")
 *
@@ -316,14 +319,14 @@ int CTestApplication::Run(void)
         "emptydelim"
     };
 
-    list<string> splitted;
+    list<string> split;
 
     for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
-        NStr::Split(s_SplitStr[i], s_SplitDelim[i], splitted);
+        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split);
     }
 
     int i = 0;
-    iterate(list<string>, it, splitted) {
+    iterate(list<string>, it, split) {
         _ASSERT(NStr::Compare(*it, split_result[i++]) == 0);
     }
     

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/05/17 14:54:12  lavr
+* Typos corrected
+*
 * Revision 1.52  2001/04/13 02:52:34  vakatov
 * Rollback to R1.50.  It is premature to check for #HAVE_NCBI_C until
 * we can configure it on MS-Windows...
@@ -207,7 +210,7 @@ BEGIN_NCBI_SCOPE
 //  auto_ptr
 //
 // Replacement of std::auto_ptr for compilers with poor "auto_ptr"
-// implementtaion.
+// implementation.
 //
 
 #if defined(HAVE_NO_AUTO_PTR)

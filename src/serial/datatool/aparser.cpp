@@ -30,9 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/17 15:07:11  lavr
+* Typos corrected
+*
 * Revision 1.11  2000/11/29 17:42:42  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.10  2000/11/15 20:34:53  vasilche
 * Added user comments to ENUMERATED types.

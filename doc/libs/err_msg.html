@@ -130,7 +130,7 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 		<li> <a href="../docxx/CErrnoException.html"> CErrnoException </a>
 		  -- to report failure in a standard C library
 		  function; it automatically appends to the user message a
-		  system-spefific description reported by <b>errno</b>
+		  system-specific description reported by <b>errno</b>
 		<li> <a href="../docxx/CParseException.html"> CParseException </a>
 		  -- to report an erroneous position (passed in
 		  the additional constructor parameter) along with the user message
@@ -393,7 +393,7 @@ Warning: This is a warning 1235
 	 <a name="ref_ERR_POST"><h4>ERR_POST macro</h4></a>
 
 	 There is an <b><i>ERR_POST(message)</i></b> macro that can be used to
-	 shorten the error posting code. This macro implicitely creates a temporary
+	 shorten the error posting code. This macro implicitly creates a temporary
 	 <b><i>CNcbiDiag</i></b> object and put the passed "message" into it.
 	 The default severity for the posted message is <i>eDiag_Trace</i> but it
 	 can be easily overwritten using the

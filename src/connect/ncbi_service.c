@@ -30,11 +30,14 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/05/17 15:02:51  lavr
+ * Typos corrected
+ *
  * Revision 6.19  2001/04/24 21:37:26  lavr
  * New code for: SERV_MapperName() and SERV_Penalize().
  *
  * Revision 6.18  2001/03/21 21:23:30  lavr
- * Explicit type converion size_t -> unsigned in printf
+ * Explicit type conversion size_t -> unsigned in printf
  *
  * Revision 6.17  2001/03/20 22:03:32  lavr
  * BUGFIX in SERV_Print (miscalculation of buflen for accepted server types)

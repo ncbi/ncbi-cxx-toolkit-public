@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/05/17 15:02:51  lavr
+ * Typos corrected
+ *
  * Revision 6.20  2001/05/11 15:30:31  lavr
  * Protocol change: REQUEST_FAILED -> DISP_FAILURES
  *
@@ -321,8 +324,8 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
                 continue;
         } else if (strncasecmp(b, HTTP_DISP_FAILURES,
                                sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
-#if defined(_DEBUG) && !defined(NDEBUG)
             b += sizeof(HTTP_DISP_FAILURES) - 1;
+#if defined(_DEBUG) && !defined(NDEBUG)
             while (*b && isspace((unsigned char)(*b)))
                 b++;
             if (!(p = strchr(b, '\r')))

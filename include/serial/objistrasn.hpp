@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
 * Revision 1.47  2001/01/05 20:10:35  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -48,7 +51,7 @@
 *
 * Revision 1.44  2000/10/20 15:51:26  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/17 15:04:59  lavr
+* Typos corrected
+*
 * Revision 1.15  2001/04/09 17:39:45  grichenk
 * CNcbiRegistry::Get() return type reverted to "const string&"
 *
@@ -550,5 +553,5 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     _ASSERT(beg <= end);
     *to = value.substr(beg, end - beg + 1);
 }
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

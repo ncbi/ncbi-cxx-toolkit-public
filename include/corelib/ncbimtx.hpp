@@ -38,6 +38,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/05/17 14:53:50  lavr
+ * Typos corrected
+ *
  * Revision 1.4  2001/04/16 18:45:28  vakatov
  * Do not include system MT-related headers if in single-thread mode
  *
@@ -118,11 +121,11 @@ class CInternalMutex
 public:
     // Create mutex handle
     CInternalMutex (void);
-    // Close mutex handle (no checks if it's still aquired)
+    // Close mutex handle (no checks if it's still acquired)
     ~CInternalMutex(void);
 
 protected:
-    // Aquire mutex for the current thread (no nesting checks)
+    // Acquire mutex for the current thread (no nesting checks)
     void Lock  (void);
     // Release mutex (no owner or nesting checks)
     void Unlock(void);
@@ -162,10 +165,10 @@ class CFastMutex
 public:
     // Create mutex handle
     CFastMutex (void);
-    // Close mutex handle (no checks if it's still aquired)
+    // Close mutex handle (no checks if it's still acquired)
     ~CFastMutex(void);
 
-    // Aquire mutex for the current thread (no nesting checks)
+    // Acquire mutex for the current thread (no nesting checks)
     void Lock  (void);
     // Release mutex (no owner or nesting checks)
     void Unlock(void);
@@ -246,7 +249,7 @@ void CInternalMutex::Lock(void)
         return;
     }
 
-    // Aquire system mutex
+    // Acquire system mutex
 #if defined(NCBI_NO_THREADS)
     return;
 #else
@@ -296,8 +299,8 @@ bool CInternalMutex::TryLock(void)
         return true;
     }
 
-    // Check if the system mutex is aquired.
-    // If not, aquire for the current thread.
+    // Check if the system mutex is acquired.
+    // If not, acquire for the current thread.
 #if defined(NCBI_WIN32_THREADS)
     DWORD status = WaitForSingleObject(m_Handle, 0);
     if (status == WAIT_OBJECT_0) {

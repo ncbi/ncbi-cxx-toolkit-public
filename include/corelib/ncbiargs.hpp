@@ -37,6 +37,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2001/05/17 14:50:34  lavr
+ * Typos corrected
+ *
  * Revision 1.19  2001/03/16 16:39:13  vakatov
  * + <corelib/ncbi_limits.h>
  *
@@ -156,7 +159,7 @@ class CArgAllow;
 //            be applied in the argument description, see "EType")
 //
 // {arg_pos***} and {arg_extra***} -- position-dependent arguments, with
-// no tag preceeding them.
+// no tag preceding them.
 // {arg_pos***} -- have individual names and descriptions (see methods
 // AddPositional***).
 // {arg_extra***} have one description for all (see method AddExtra).
@@ -313,8 +316,8 @@ public:
     enum EType {
         eString = 0, // an arbitrary string
         eBoolean,    // {'true', 't', 'false', 'f'},  case-insensitive
-        eInteger,    // conversible into an integer number (int)
-        eDouble,     // conversible into a floating point number (double)
+        eInteger,    // convertible into an integer number (int)
+        eDouble,     // convertible into a floating point number (double)
         eInputFile,  // name of file (must exist and be readable)
         eOutputFile, // name of file (must be writeable)
 
@@ -434,7 +437,7 @@ public:
     // provided arg. descriptions and usage context. Return "str".
     string& PrintUsage(string& str) const;
 
-    // Check if the "name" is syntaxically correct: it can contain only
+    // Check if the "name" is spelled correctly: it can contain only
     // alphanumeric characters and underscore ('_'), or be empty.
     static bool VerifyName(const string& name, bool extended = false);
 

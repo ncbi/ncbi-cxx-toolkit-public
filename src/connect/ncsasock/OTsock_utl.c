@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.2  2001/05/17 15:04:37  lavr
+* Typos corrected
+*
 * Revision 6.1  2000/03/21 00:40:06  kans
 * no need for OpenResolver, CloseResolver here
 *

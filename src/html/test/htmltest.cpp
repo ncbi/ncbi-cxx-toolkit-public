@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/17 15:05:44  lavr
+* Typos corrected
+*
 * Revision 1.17  2000/10/18 13:25:51  vasilche
 * Added missing constructors to CHTML_font.
 *
@@ -40,7 +43,7 @@
 * Revision 1.15  2000/07/18 17:21:42  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
-* Changed algorythm of emitting EOL symbols in html output.
+* Changed algorithm of emitting EOL symbols in html output.
 *
 * Revision 1.14  1999/10/28 13:40:39  vasilche
 * Added reference counters to CNCBINode.

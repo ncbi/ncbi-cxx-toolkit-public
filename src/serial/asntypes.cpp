@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/05/17 15:07:04  lavr
+* Typos corrected
+*
 * Revision 1.53  2000/12/12 14:28:01  vasilche
 * Changed the way arguments are processed.
 *
@@ -41,7 +44,7 @@
 *
 * Revision 1.51  2000/10/20 15:51:36  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -164,7 +167,7 @@
 * Removed dependency on NCBI toolkit.
 *
 * Revision 1.24  1999/09/23 21:16:07  vasilche
-* Removed dependance on asn.h
+* Removed dependence on asn.h
 *
 * Revision 1.23  1999/09/23 20:25:03  vasilche
 * Added support HAVE_NCBI_C
@@ -502,7 +505,7 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
             _TRACE("SequenceOf(" << type->GetName() << ") SEQUENCE");
         }
         else if ( asnType->GetSize() <= sizeof(dataval) ) {
-            // statndard types and SET/SEQUENCE OF
+            // standard types and SET/SEQUENCE OF
             _TRACE("SequenceOf(" << type->GetName() << ") AUTO VALNODE");
             SetValNodeNext();
 			m_ElementType = asnType;

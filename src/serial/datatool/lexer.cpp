@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
 * Revision 1.11  2000/12/15 15:38:51  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -203,7 +206,7 @@ void ASNLexer::LookupString(void)
                 LexerWarning("unclosed string");
                 return;
             }
-            LexerWarning("illagal character in string: \\0");
+            LexerWarning("illegal character in string: \\0");
             AddStringChar(c);
             AddChar();
             break;
@@ -243,7 +246,7 @@ TToken ASNLexer::LookupBinHexString(void)
                 return token;
             }
             AddChar();
-            LexerWarning("illagal character in bit string");
+            LexerWarning("illegal character in bit string");
             break;
         case '0':
         case '1':

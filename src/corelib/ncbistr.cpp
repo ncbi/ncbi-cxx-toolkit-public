@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/05/17 15:04:59  lavr
+* Typos corrected
+*
 * Revision 1.42  2001/04/12 21:39:44  vakatov
 * NStr::Replace() -- check against source and dest. strings being the same
 *
@@ -139,8 +142,8 @@
 * Removed the redundant severity arg from macro ERR_POST()
 *
 * Revision 1.11  1999/04/22 14:19:04  vasilche
-* Added _TRACE_THROW() macro which can be configured to make coredump at some poin
-* t fo throwing exception.
+* Added _TRACE_THROW() macro, which can be configured to produce coredump
+* at a point of throwing an exception.
 *
 * Revision 1.10  1999/04/14 21:20:33  vakatov
 * Dont use "snprintf()" as it is not quite portable yet
@@ -327,7 +330,7 @@ int NStr::CompareCase(const char* s1, const char* s2)
         // if end of string or different
         if ( !c1 || diff )
             return diff; // return difference
-        ++s1;  ++s2; // otherwice go to next chars
+        ++s1;  ++s2; // otherwise go to next chars
     }
 }
 
@@ -341,7 +344,7 @@ int NStr::CompareNocase(const char* s1, const char* s2)
         // if end of string or different
         if ( !c1 || diff )
             return diff; // return difference
-        ++s1;  ++s2; // otherwice go to next chars
+        ++s1;  ++s2; // otherwise go to next chars
     }
 }
 

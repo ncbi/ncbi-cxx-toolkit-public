@@ -21,6 +21,9 @@
  *
  * RCS Modification History:
  * $Log$
+ * Revision 6.1  2001/05/17 15:04:38  lavr
+ * Typos corrected
+ *
  * Revision 6.0  1997/08/25 18:37:20  madden
  * Revision changed to 6.0
  *
@@ -59,12 +62,12 @@
 	/* non standard */
 #define UPDATEA		0x9		/* add resource record */
 #define UPDATED		0xa		/* delete a specific resource record */
-#define UPDATEDA	0xb		/* delete all nemed resource record */
+#define UPDATEDA	0xb		/* delete all named resource record */
 #define UPDATEM		0xc		/* modify a specific resource record */
 #define UPDATEMA	0xd		/* modify all named resource record */
 
 #define ZONEINIT	0xe		/* initial zone transfer */
-#define ZONEREF		0xf		/* incremental zone referesh */
+#define ZONEREF		0xf		/* incremental zone refresh */
 
 /*
  * Currently defined response codes
@@ -85,7 +88,7 @@
 #define T_NS		2		/* authoritative server */
 #define T_MD		3		/* mail destination */
 #define T_MF		4		/* mail forwarder */
-#define T_CNAME		5		/* connonical name */
+#define T_CNAME		5		/* canonical name */
 #define T_SOA		6		/* start of authority zone */
 #define T_MB		7		/* mailbox domain name */
 #define T_MG		8		/* mail group member */
@@ -157,7 +160,7 @@
 /*
  * Structure for query header, the order of the fields is machine and
  * compiler dependent, in our case, the bits within a byte are assignd 
- * least significant first, while the order of transmition is most 
+ * least significant first, while the order of transmission is most 
  * significant first.  This requires a somewhat confusing rearrangement.
  */
 

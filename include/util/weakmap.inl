@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
 * Revision 1.6  2001/01/05 20:08:54  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -41,7 +44,7 @@
 *
 * Revision 1.4  2000/10/20 15:51:28  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *

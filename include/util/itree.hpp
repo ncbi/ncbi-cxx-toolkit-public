@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
 * Revision 1.2  2001/01/29 15:18:38  vasilche
 * Cleaned CRangeMap and CIntervalTree classes.
 *
@@ -279,7 +282,7 @@ private:
 };
 
 // deal with intervals with coordinates in range [0, max], where max is
-// CIntervalTree costructor argument.
+// CIntervalTree constructor argument.
 class CIntervalTree
 {
 public:
@@ -402,7 +405,7 @@ private:
     TTreeMap m_ByX;
 
 #if defined(_RWSTD_VER) && !defined(_RWSTD_ALLOCATOR)
-    // BW_1: non statdard Sun's allocators
+    // BW_1: non standard Sun's allocators
     typedef allocator_interface<allocator<TTreeNode>,TTreeNode> TNodeAllocator;
     typedef allocator_interface<allocator<TTreeNodeInts>,TTreeNodeInts> TNodeIntervalsAllocator;
 #else

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/05/17 15:07:15  lavr
+* Typos corrected
+*
 * Revision 1.25  2001/05/11 13:58:52  grichenk
 * Removed "while" reading loop in CIStreamBuffer::FillBuffer()
 *
@@ -51,7 +54,7 @@
 *
 * Revision 1.20  2000/10/20 15:51:44  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *

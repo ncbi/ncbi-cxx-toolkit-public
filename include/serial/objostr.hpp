@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
 * Revision 1.57  2001/01/05 20:10:36  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -57,7 +60,7 @@
 *
 * Revision 1.51  2000/10/20 15:51:27  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -183,7 +186,7 @@
 * Fixed bug with old ASN.1 structures.
 *
 * Revision 1.24  1999/09/27 14:17:59  vasilche
-* Fixed bug with overloaded construtors of Block.
+* Fixed bug with overloaded constructors of Block.
 *
 * Revision 1.23  1999/09/24 18:19:14  vasilche
 * Removed dependency on NCBI toolkit.

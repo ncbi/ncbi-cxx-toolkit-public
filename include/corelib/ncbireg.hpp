@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/17 14:54:01  lavr
+* Typos corrected
+*
 * Revision 1.11  2001/04/09 17:39:20  grichenk
 * CNcbiRegistry::Get() return type reverted to "const string&"
 *
@@ -155,7 +158,7 @@ public:
                       TFlags flags = 0) const;
 
     // Set the configuration parameter value(unset if "value" is empty)
-    // Return "true" if the new "value" is succesfully set(or unset)
+    // Return "true" if the new "value" is successfully set(or unset)
     //
     // Valid flags := { ePersistent, eNoOverride, eTruncate }
     // If there was already an entry with the same <section,name> key:
@@ -194,7 +197,7 @@ private:
 };  // CNcbiRegistry
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBIREG__HPP */

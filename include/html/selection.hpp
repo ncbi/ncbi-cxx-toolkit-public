@@ -33,8 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/05/17 14:55:48  lavr
+* Typos corrected
+*
 * Revision 1.3  1999/05/12 21:11:44  vakatov
-* Minor fixes to copile by the Mac CodeWarrior C++ compiler
+* Minor fixes to compile by the Mac CodeWarrior C++ compiler
 *
 * Revision 1.2  1999/03/26 22:00:00  sandomir
 * checked option in Radio button fixed; minor fixes in Selection

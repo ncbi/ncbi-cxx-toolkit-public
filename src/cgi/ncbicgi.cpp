@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/05/17 15:01:49  lavr
+* Typos corrected
+*
 * Revision 1.46  2001/02/02 20:55:13  vakatov
 * CCgiRequest::GetEntry() -- "const"
 *
@@ -1194,5 +1197,5 @@ extern string URL_EncodeString(const string& str)
 }
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

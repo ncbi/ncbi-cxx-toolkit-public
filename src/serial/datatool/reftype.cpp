@@ -26,10 +26,13 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Type reference defenition
+*   Type reference definition
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
 * Revision 1.23  2000/11/20 17:26:33  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.

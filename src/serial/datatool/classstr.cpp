@@ -30,9 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/05/17 15:07:11  lavr
+* Typos corrected
+*
 * Revision 1.29  2000/11/29 17:42:43  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.28  2000/11/07 17:26:25  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
@@ -135,7 +138,7 @@
 * Fixed variable conflict in generated files on MSVC.
 *
 * Revision 1.2  2000/02/02 18:54:15  vasilche
-* Fixed variable coflict in MSVC.
+* Fixed variable conflict in MSVC.
 * Added missing #include <serial/choice.hpp>
 *
 * Revision 1.1  2000/02/01 21:47:55  vasilche

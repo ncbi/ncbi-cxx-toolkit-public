@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/05/17 14:54:18  lavr
+* Typos corrected
+*
 * Revision 1.4  2001/04/12 21:44:34  vakatov
 * Added dummy and private NStr::ToUpper/Lower(const char*) to prohibit
 * passing of constant C strings to the "regular" NStr::ToUpper/Lower()
@@ -159,8 +162,8 @@ public:
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 
     // Starting from position "start_pos", replace no more than "max_replace"
-    // occurencies of substring "search" by string "replace".
-    // If "max_replace" is zero -- then replace all occurences.
+    // occurrences of substring "search" by string "replace".
+    // If "max_replace" is zero -- then replace all occurrences.
     // The result will be put to string "dst", and it will be returned as well.
     static string& Replace(const string& src,
                            const string& search,
@@ -175,7 +178,7 @@ public:
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
     // Split string "str" using symbols from "delim" as delimiters
-    // Add the resultant tockens to the list "arr". Return "arr".
+    // Add the resultant tokens to the list "arr". Return "arr".
     static list<string>& Split(const string& str,
                                const string& delim,
                                list<string>& arr);

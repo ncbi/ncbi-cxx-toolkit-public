@@ -70,7 +70,7 @@ TTypeInfoGetter GetStdTypeInfoGetter(const T* )
 
 // some compilers cannot resolve overloading by
 // (char* const*) and (const char* const*) in template
-// so we'll add explicit implemetations:
+// so we'll add explicit implementations:
 
 inline
 TTypeInfoGetter GetStdTypeInfoGetter(char* const* )

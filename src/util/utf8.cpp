@@ -26,10 +26,13 @@
 * Author: Aleksey Vinokurov, Vladimir Ivanov
 *
 * File Description:
-*   UTF8 convertor functions
+*   UTF8 converter functions
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 15:07:15  lavr
+* Typos corrected
+*
 * Revision 1.2  2001/04/18 16:31:59  ivanov
 * Change types TUnicodeChar, TUnicodeString to simple types.
 * TUnicode char to long, TUnicodeString to vector<long>.
@@ -277,7 +280,7 @@ vector<long> StringToVector (const string& src)
 {
     vector<long> dst;      // String to result 
     long         ch;       // Unicode symbol code
-    size_t       utf_len;  // Length of Unucode symbol
+    size_t       utf_len;  // Length of Unicode symbol
     size_t       src_len;  // Length of source string
 
     src_len=src.size();

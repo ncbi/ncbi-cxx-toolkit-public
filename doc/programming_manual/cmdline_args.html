@@ -35,7 +35,7 @@ argument's attributes and constraints</a></li>
 
 <ul>
 <li>
-<a href="#ref_CArgDescriptions_Attr">Argument attributes (name,synopsys,
+<a href="#ref_CArgDescriptions_Attr">Argument attributes (name,synopsis,
 comment, value type, default value)</a></li>
 
 <li>
@@ -314,7 +314,7 @@ whose arguments are identical to the <i>AddOptionalKey()</i> method, less
 the <i>synopsis</i> argument. Finally, the <i><a href="../lxr/ident?i=AddExtra">AddExtra()</a></i>
 method is used to define a single description for a set of "extra" unnamed
 positional arguments of uniform type.
-<p>Any of the registered descriptions can be tested for existance and/or
+<p>Any of the registered descriptions can be tested for existence and/or
 deleted using:
 <br><font color="#008080">&nbsp;&nbsp; bool Exist(const string&amp; name)
 const;</font>
@@ -333,9 +333,9 @@ restrictions) for the argument
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eBoolean,&nbsp;&nbsp;&nbsp;
 // {'true', 't', 'false', 'f'},&nbsp; case-insensitive</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInteger,&nbsp;&nbsp;&nbsp;
-// convertable to an integer number (long)</font>
+// convertible to an integer number (long)</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eDouble,&nbsp;&nbsp;&nbsp;&nbsp;
-// convertable to a floating point number (double)</font>
+// convertible to a floating point number (double)</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInputFile,&nbsp;
 // name of file (must exist and be readable)</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eOutputFile&nbsp;
@@ -425,7 +425,7 @@ which have been registered. The first step of this method involves a <i>pre-chec
 that tests to see if the constraint policy is satisfiable. If so, then
 the individual argument values are loaded, and a <i>post-check</i> is performed
 to ensure that all of the mandatory arguments were present and that the
-positional arguments satisfied the contraint policy.
+positional arguments satisfied the constraint policy.
 <p>Exceptions which are thrown during argument processing can be presented
 to the user, but by themselves do not provide very useful information.
 Catching the exception and displaying it <i>along</i> with a usage message
@@ -492,7 +492,7 @@ public:
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](string&amp; name);&nbsp;&nbsp;&nbsp;&nbsp; // retrieve value by argument name
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](unsigned idx);&nbsp;&nbsp;&nbsp;&nbsp; // retrieve value by unnamed arg's index
 
-&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Print all agruments to "str"
+&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Print all arguments to "str"
 };</font></pre>
 One of the most important capabilities of this class is not shown here
 however, as it is a public method implemented by private data members of

@@ -30,12 +30,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
 * Revision 1.30  2001/02/02 16:20:01  vasilche
 * Fixed file path processing on Mac
 *
 * Revision 1.29  2000/11/29 17:42:45  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.28  2000/11/15 20:34:55  vasilche
 * Added user comments to ENUMERATED types.

@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/17 14:53:41  lavr
+* Typos corrected
+*
 * Revision 1.21  2000/04/04 22:30:25  vakatov
 * SetThrowTraceAbort() -- auto-set basing on the application
 * environment and/or registry
@@ -77,7 +80,7 @@
 * Removed the redundant severity arg from macro ERR_POST()
 *
 * Revision 1.9  1999/01/07 16:15:09  vakatov
-* Explicitely specify "NCBI_NS_NCBI::" in the preprocessor macros
+* Explicitly specify "NCBI_NS_NCBI::" in the preprocessor macros
 *
 * Revision 1.8  1999/01/04 22:41:41  vakatov
 * Do not use so-called "hardware-exceptions" as these are not supported
@@ -346,7 +349,7 @@ public:
     SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
 };
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBIEXPT__HPP */

@@ -118,7 +118,7 @@ design issue becomes how one can ensure that methods which may have been
 defined only in the <i>user class</i> will be available for all instances
 of that class. In particular, these instances may occur as contained elements
 of another object which is compiled in a different library.&nbsp; These
-inter-object dependancies are the motivation for the <i>user classes.</i>
+inter-object dependencies are the motivation for the <i>user classes.</i>
 As depicted schematically below, all references to external objects which
 occur inside the <i>base classes</i>, access external <i>user</i> <i>classes</i>,
 so as to include any methods which may be defined only in the<i> user classes</i>:
@@ -218,7 +218,7 @@ to recompile the <i>seq</i> library,<i> libseq.a</i>, i.e.:
 <p>The new method can now be invoked from within a <i>CBioseq</i> object
 as: <i>myBioseq.GetInst().CalculateLength().</i>
 <p>The key issue that determines whether or not you will need to rebuild
-any <i>external</i> libraries that <i>use</i> the modified user class invloves
+any <i>external</i> libraries that <i>use</i> the modified user class involves
 the class layout in memory.&nbsp; All of the external libraries which reference
 the object refer to the class layout that existed prior to the changes
 you have made. Thus, if your modifications do <i>not</i> affect the class

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/17 14:49:37  lavr
+* Typos corrected
+*
 * Revision 1.9  1999/11/02 20:35:39  vakatov
 * Redesigned of CCgiCookie and CCgiCookies to make them closer to the
 * cookie standard, smarter, and easier in use
@@ -146,7 +149,7 @@ protected:
     // Cookies
     CCgiCookies m_Cookies;
 
-    // Defalut output stream
+    // Default output stream
     CNcbiOstream* m_Output;
 };
 
@@ -156,7 +159,7 @@ protected:
 // types, etc. are in this file
 #include <cgi/ncbicgir.inl>
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBICGIR__HPP */

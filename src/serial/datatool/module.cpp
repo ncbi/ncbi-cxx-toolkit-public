@@ -30,9 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
 * Revision 1.29  2000/11/29 17:42:44  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.28  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
@@ -382,7 +385,7 @@ bool CDataTypeModule::CheckNames()
             const string& name = *t;
             if ( m_LocalTypes.find(name) != m_LocalTypes.end() ) {
                 ERR_POST(Warning <<
-                         "import conflicts with local defenition: " << name);
+                         "import conflicts with local definition: " << name);
                 ok = false;
                 continue;
             }

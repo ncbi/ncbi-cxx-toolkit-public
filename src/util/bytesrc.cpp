@@ -30,8 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/17 15:07:15  lavr
+* Typos corrected
+*
 * Revision 1.11  2001/05/16 17:55:40  grichenk
-* Redesigned support for non-blocking sream read operations
+* Redesigned support for non-blocking stream read operations
 *
 * Revision 1.10  2001/05/11 20:41:19  grichenk
 * Added support for non-blocking stream reading

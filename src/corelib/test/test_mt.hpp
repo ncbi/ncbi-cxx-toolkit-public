@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/05/17 15:05:08  lavr
+ * Typos corrected
+ *
  * Revision 6.1  2001/04/06 15:53:08  grichenk
  * Initial revision
  *
@@ -85,7 +88,7 @@ extern int           s_SpawnBy;
 class CThreadedApp : public CNcbiApplication
 {
 public:
-    // Ovverride constructor to initialize the application
+    // Override constructor to initialize the application
     CThreadedApp(void);
     ~CThreadedApp(void);
 

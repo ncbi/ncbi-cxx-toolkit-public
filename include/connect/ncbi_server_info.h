@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/05/17 14:49:46  lavr
+ * Typos corrected
+ *
  * Revision 6.19  2001/05/03 16:35:34  lavr
  * Local bonus coefficient modified: meaning of negative value changed
  *
@@ -286,7 +289,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *       B=double     [0.0 = default]
  *           specifies a multiplicative bonus given to a server run locally,
  *           when calculating reachability rate.
- *           Special rules apply to negitive/zero values:
+ *           Special rules apply to negative/zero values:
  *           0.0 means not to use the described rate increase at all (default
  *           rate calculation is used, which only slightly increases rates
  *           of locally run servers).

@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2001/05/17 15:05:00  lavr
+ * Typos corrected
+ *
  * Revision 1.9  2001/04/03 18:20:45  grichenk
  * CThread::Exit() and CThread::Wrapper() redesigned to use
  * CExitThreadException instead of system functions
@@ -290,7 +293,7 @@ public:
     // Create a copy of exception object, increase counter.
     CExitThreadException(const CExitThreadException& prev);
 
-    // Destroy the object, decrease counter. If the couter is
+    // Destroy the object, decrease counter. If the counter is
     // zero outside of CThread::Wrapper(), rethrow exception.
     ~CExitThreadException(void);
 
@@ -587,7 +590,7 @@ void CThread::Exit(void* exit_data)
         x_this->m_ExitData = exit_data;
     }}
 
-    // Throw the exception to be catched by Wrapper()
+    // Throw the exception to be caught by Wrapper()
     throw CExitThreadException();
 }
 

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/17 14:50:41  lavr
+* Typos corrected
+*
 * Revision 1.21  2000/06/23 15:12:57  thiessen
 * minor change to _ASSERT macro to avoid frequent Mac warnings about semicolons
 *
@@ -74,7 +77,7 @@
 * Fixed "{...}" macros to "do {...} while(0)" lest it to mess up with "if"s
 *
 * Revision 1.10  1999/01/07 16:15:09  vakatov
-* Explicitely specify "NCBI_NS_NCBI::" in the preprocessor macros
+* Explicitly specify "NCBI_NS_NCBI::" in the preprocessor macros
 *
 * Revision 1.9  1998/12/28 17:56:26  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
@@ -137,7 +140,7 @@ BEGIN_NCBI_SCOPE
 #endif  /* else!_DEBUG */
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBIDBG__HPP */

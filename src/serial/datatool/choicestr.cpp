@@ -30,9 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/05/17 15:07:11  lavr
+* Typos corrected
+*
 * Revision 1.25  2000/11/29 17:42:42  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.24  2000/11/07 17:26:24  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues

@@ -84,7 +84,7 @@
 #define	O_EXLOCK	00400		/* exclusive file lock present */
 /*			00800	*/	/* unused */
 #endif
-#define	O_CREAT		01000		/* create if nonexistant */
+#define	O_CREAT		01000		/* create if inexistent */
 #define	O_TRUNC		02000		/* truncate to zero length */
 #define	O_EXCL		04000		/* error if already exists */
 /*			08000	*/	/* unused */

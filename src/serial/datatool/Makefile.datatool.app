@@ -1,6 +1,6 @@
 #################################
 # $Id$
-# Author:  Eugen Vasilchenko (vasilche@ncbi.nlm.nih.gov)
+# Author:  Eugene Vasilchenko (vasilche@ncbi.nlm.nih.gov)
 #################################
 
 # Build DATATOOL application

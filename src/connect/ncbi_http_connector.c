@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/05/17 15:02:51  lavr
+ * Typos corrected
+ *
  * Revision 6.13  2001/05/08 20:26:27  lavr
  * Patches in re-try code
  *
@@ -129,7 +132,7 @@ typedef struct {
 
 static int/*bool*/ s_Adjust(SHttpConnector* uuu)
 {
-    /* we're here becuase something is going wrong */
+    /* we're here because something is going wrong */
     uuu->fail_count++;
     /* adjust info before another connection attempt */
     if (!uuu->adjust_info ||

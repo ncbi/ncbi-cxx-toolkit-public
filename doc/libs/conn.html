@@ -82,7 +82,7 @@ Flush internal output queue, if this is supported by the current connection type
 Set the timeout on the specified I/O action, <i><b>eIO_Read</b></i>, <i><b>eIO_Write</b></i>, <i><b>eIO_ReadWrite</b></i>, <i><b>eIO_Open</b></i>, and <i><b>eIO_Close</b></i>. The latter 2 actions are
 used in a phase of opening and closing the link, respectively: if connection
 cannot be established (closed) within the specified period, <i><b>eIO_Timeout</b></i> would result. <i><b>eIO_Timeout</b></i> would result if reading/writing could not
-be completed within specified time range, correspondingly. A timeout can be passed as a NULL-pointer. This special case denotes an infitine value for that timeout.
+be completed within specified time range, correspondingly. A timeout can be passed as a NULL-pointer. This special case denotes an infinite value for that timeout.
 
 <li> <i><b>CONN_GetTimeout</b></i>&nbsp;<tt>(CONN conn, EIO_Event action);</tt><br>
 Obtain (via return value of type <i><b>const STimeout*</b></i>)
@@ -233,7 +233,7 @@ Constructors defined in:
 #include &lt;connect/ncbi_http_connector.h&gt;
 </pre>
 
-The simplest form of this connector's contstructor takes 3 parameters:
+The simplest form of this connector's constructor takes 3 parameters:
 <pre>
 extern CONNECTOR HTTP_CreateConnector
 (const SConnNetInfo* info,
@@ -394,7 +394,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
 This form is assumed to be rarely used by the users directly, but it provides rich access to the internal management of HTTP connections.
 
 <p>
-First two agruments are identical to their counterparts in the arguments number
+First two arguments are identical to their counterparts in the arguments number
 one and three of <i><b>HTTP_CreateConnector()</b></i>. HTTP user header field
 (if any) is taken directly from the passed <tt>SConnNetInfo</tt> (which can be
 passed as NULL meaning to use the environment, registry and defaults as described above).
@@ -417,7 +417,7 @@ The callback return value "true" means successful adjustment. Return value
 "false" stops the connection trying and returns an error to the application.
 
 <p>
-When connector is been destoyed, the custom object <tt>adjust_data</tt> can be
+When connector is been destroyed, the custom object <tt>adjust_data</tt> can be
 destroyed as well by the callback, specified as the last argument of the
 extended constructor.
 
@@ -439,9 +439,9 @@ This is the most complex connector in the library. It can initiate data exchange
 sits on top of either HTTP or SOCKET connectors.
 
 <p>
-The library provides these two forms of conector's constructor:
+The library provides these two forms of connector's constructor:
 <pre>
-SERVICE_CreateConnector(const char* sevice_name);
+SERVICE_CreateConnector(const char* service_name);
 
 SERVICE_CreateConnectorEx
 (const char*         service_name, /* The registered name of an NCBI service */
@@ -556,7 +556,7 @@ flag in the server type bitmask, if it was not set there already
 (convenient to modify the dispatching using environment and/or registry,
 if the flag is not set; yet allows to hardcode the flag at compile-time
 by setting it in constructor's <tt>type</tt> argument explicitly);
-<li><tt>lb_disable</tt> set to "true" means to always use remote dispatcher (via network connection) even if locally running load-balancing daemon is avaliable
+<li><tt>lb_disable</tt> set to "true" means to always use remote dispatcher (via network connection) even if locally running load-balancing daemon is available
 (by default, local load-balancing deamon consulted first to resolve
 the name of the service);
 <li><tt>firewall</tt> set to "true" disables the direct connection to

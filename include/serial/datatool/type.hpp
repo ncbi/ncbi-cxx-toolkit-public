@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/05/17 15:00:42  lavr
+* Typos corrected
+*
 * Revision 1.12  2001/02/15 21:39:28  kholodov
 * Modified: pointer to parent CDataMember added to CDataType class.
 * Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
@@ -44,7 +47,7 @@
 *
 * Revision 1.10  2000/11/29 17:42:31  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.9  2000/11/15 20:34:44  vasilche
 * Added user comments to ENUMERATED types.

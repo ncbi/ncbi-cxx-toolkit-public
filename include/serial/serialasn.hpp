@@ -99,7 +99,7 @@ GetOldAsnTypeRef(const string& name,
     return COldAsnTypeInfoGetTypeInfo(name, reinterpret_cast<TAsnNewProc>(newProc), reinterpret_cast<TAsnFreeProc>(freeProc), reinterpret_cast<TAsnReadProc>(readProc), reinterpret_cast<TAsnWriteProc>(writeProc));
 }
 
-// old ASN structires info
+// old ASN structures info
 #define BEGIN_NAMED_ASN_STRUCT_INFO(AsnStructAlias, AsnStructName) \
     BEGIN_TYPE_INFO(NCBI_NAME2(struct_,AsnStructName), \
         ASN_STRUCT_METHOD_NAME(AsnStructName), \

@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/05/17 15:04:59  lavr
+* Typos corrected
+*
 * Revision 1.27  2001/03/30 22:49:22  grichenk
 * KCC freeze() bug workaround
 *
@@ -543,5 +546,5 @@ CNcbiDiag& CNcbiDiag::SetFile(const char* file)
     return *this;
 }
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

@@ -33,13 +33,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/17 14:55:37  lavr
+* Typos corrected
+*
 * Revision 1.18  2000/12/12 14:38:37  vasilche
 * Changed the way CHTMLNode::CreateSubNodes() is called.
 *
 * Revision 1.17  2000/07/18 17:21:34  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
-* Changed algorythm of emitting EOL symbols in html output.
+* Changed algorithm of emitting EOL symbols in html output.
 *
 * Revision 1.16  2000/03/29 15:50:38  vasilche
 * Added const version of CRef - CConstRef.
@@ -233,7 +236,7 @@ public:
 
     // this method will be called once before Print()
     virtual void CreateSubNodes(void);
-    // call CreateSubNodes() if it's not calles yet
+    // call CreateSubNodes() if it's not called yet
     void Initialize(void);
 
     // finds and replaces text with a node    
@@ -245,7 +248,7 @@ public:
     bool HaveAttributes(void) const;
     TAttributes& Attributes(void);
     const TAttributes& Attributes(void) const;
-    // retreive attribute
+    // retrieve attribute
     bool HaveAttribute(const string& name) const;
     const string& GetAttribute(const string& name) const;
     bool AttributeIsOptional(const string& name) const;
@@ -280,7 +283,7 @@ protected:
     auto_ptr<TAttributes> m_Attributes; // attributes, e.g. href="link.html"
 
 private:
-    // to prevent copy contructor
+    // to prevent copy constructor
     CNCBINode(const CNCBINode& node);
     // to prevent assignment operator
     CNCBINode& operator=(const CNCBINode& node);

@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  2001/05/17 15:04:38  lavr
+* Typos corrected
+*
 * Revision 6.0  1997/08/25 18:38:15  madden
 * Revision changed to 6.0
 *
@@ -79,7 +82,7 @@
  *
  *
  *	Socket operations are single threaded and half-duplex. Fixing this is
- *	left as an execise for the reader. Shouldn't be a terrible problem
+ *	left as an exercise for the reader. Shouldn't be a terrible problem
  *	anyway. Read() never blocks and write() only blocks for long if there
  *	is a problem.
  *
@@ -125,7 +128,7 @@
  *
  * ----------------
  *
- *		EBUG  	     an internal error occured.
+ *		EBUG  	     an internal error occurred.
  */
  
 #ifdef USEDUMP
@@ -558,7 +561,7 @@ int s_accept(
 /*
  * s_accept_once
  *
- * A mac specific routine, designed to compenstate for a bug
+ * A mac specific routine, designed to compensate for a bug
  * in MacTCP. If you close a passive, unconnected stream,
  * MacTCP will generate an error. s_accept always creates
  * a new listening (passive open) stream that will eventually

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.9  2001/05/17 15:02:50  lavr
+* Typos corrected
+*
 * Revision 6.8  2001/05/14 16:47:45  lavr
 * streambuf::xsgetn commented out as it badly interferes
 * with truly-blocking stream reading via istream::read.
@@ -44,8 +47,8 @@
 * CT_EQ_INT_TYPE used throughout to compare CT_INT_TYPE values
 *
 * Revision 6.4  2001/03/24 00:34:40  lavr
-* Accurate converions between CT_CHAR_TYPE and CT_INT_TYPE
-* (BUGFIX: promotion of 255 as signed char to int caused EOF (-1) gets returned)
+* Accurate conversions between CT_CHAR_TYPE and CT_INT_TYPE
+* (BUGFIX: promotion of (signed char)255 to int caused EOF (-1) gets returned)
 *
 * Revision 6.3  2001/01/12 23:49:20  lavr
 * Timeout and GetCONN method added

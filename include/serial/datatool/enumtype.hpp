@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/17 15:00:42  lavr
+* Typos corrected
+*
 * Revision 1.9  2000/12/15 15:38:35  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -40,7 +43,7 @@
 *
 * Revision 1.8  2000/11/29 17:42:30  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.7  2000/11/20 17:26:11  vasilche
 * Fixed warnings on 64 bit platforms.

@@ -52,6 +52,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/05/17 14:54:33  lavr
+ * Typos corrected
+ *
  * Revision 1.5  2001/03/30 22:57:32  grichenk
  * + CThread::GetSystemID()
  *
@@ -332,7 +335,7 @@ private:
 //    Mutex that allows nesting (with runtime checks)
 //
 //  Allows for nested locks by the same thread. Checks the mutex
-//  owner before unlocking. This mutex should be used when perfomance
+//  owner before unlocking. This mutex should be used when performance
 //  is less important than data protection.
 //
 
@@ -352,7 +355,7 @@ public:
     // unlocked, then act like a Lock() on an unlocked mutex.
     void Lock(void);
 
-    // Try to aquire the mutex. On success, return "true", and acquire
+    // Try to acquire the mutex. On success, return "true", and acquire
     // the mutex (just as the Lock() above does).
     // If the mutex is already acquired by another thread, then return "false".
     bool TryLock(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/17 15:05:42  lavr
+* Typos corrected
+*
 * Revision 1.23  2000/12/12 14:38:45  vasilche
 * Changed the way CHTMLNode::CreateSubNodes() is called.
 *
@@ -46,7 +49,7 @@
 * Revision 1.19  2000/07/18 17:21:40  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
-* Changed algorythm of emitting EOL symbols in html output.
+* Changed algorithm of emitting EOL symbols in html output.
 *
 * Revision 1.18  2000/03/29 15:50:43  vasilche
 * Added const version of CRef - CConstRef.
@@ -82,7 +85,7 @@
 *
 * Revision 1.9  1999/03/18 17:54:50  vasilche
 * CNCBINode will try to call PrintEnd if exception in PrintChildren
-* occures
+* occurs
 *
 * Revision 1.8  1999/01/25 19:32:44  vasilche
 * Virtual destructors now work properly.

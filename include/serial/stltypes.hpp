@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
 * Revision 1.56  2001/01/29 15:19:56  vasilche
 * Reduced memory usage on Sun.
 *
@@ -183,7 +186,7 @@
 * Implemented automatic generation of unnamed ASN.1 types.
 *
 * Revision 1.21  1999/09/27 14:17:59  vasilche
-* Fixed bug with overloaded construtors of Block.
+* Fixed bug with overloaded constructors of Block.
 *
 * Revision 1.20  1999/09/22 20:11:51  vasilche
 * Modified for compilation on IRIX native c++ compiler.

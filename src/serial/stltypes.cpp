@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/05/17 15:07:09  lavr
+* Typos corrected
+*
 * Revision 1.34  2000/11/07 17:25:42  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -137,7 +140,7 @@
 * Simplified generation of GetTypeInfo methods.
 *
 * Revision 1.12  1999/09/27 14:18:03  vasilche
-* Fixed bug with overloaded construtors of Block.
+* Fixed bug with overloaded constructors of Block.
 *
 * Revision 1.11  1999/09/23 20:38:01  vasilche
 * Fixed ambiguity.

@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -14,6 +14,9 @@
  *
  * RCS Modification History:
  * $Log$
+ * Revision 6.1  2001/05/17 15:04:38  lavr
+ * Typos corrected
+ *
  * Revision 6.0  1997/08/25 18:38:10  madden
  * Revision changed to 6.0
  *
@@ -318,7 +321,7 @@ int sock_udp_can_recv(SocketPtr sp)
 	if (sp->asyncerr == inProgress)
 		return(0);
 	
-	return 1;  // must recieve if not reading, even if an error occured - must handle error.
+	return 1;  // must receive if not reading, even if an error occurred - must handle error.
 	}
 
 /*

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
 * Revision 1.23  2001/03/14 17:59:24  vakatov
 * COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
 * to avoid clash with MS-Win system headers' #define
@@ -49,7 +52,7 @@
 *
 * Revision 1.19  2000/10/20 15:51:28  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -142,7 +145,7 @@ class CSubSourceCollector;
 #define THROWS1(arg)
 #define THROWS1_NONE
 
-// this exception is thrown when IO error occured in serialization
+// this exception is thrown when IO error occurred in serialization
 class CIOException : public runtime_error
 {
 public:
@@ -192,7 +195,7 @@ public:
         THROWS1((CIOException));
 
     // precondition: last char extracted was either '\r' or '\n'
-    // action: inctement line count and
+    // action: increment line count and
     //         extract next complimentary '\r' or '\n' char if any
     void SkipEndOfLine(char lastChar)
         THROWS1((CIOException));

@@ -21,6 +21,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.3  2001/05/17 15:04:38  lavr
+* Typos corrected
+*
 * Revision 6.2  2000/03/20 21:49:05  kans
 * initial work on OpenTransport (Churchill)
 *
@@ -57,7 +60,7 @@ struct	hostent {
 	char	**h_addr_list;	/* list of addresses from name server */
 };
 
-#define	h_addr	h_addr_list[0]	/* address, for backward compatiblity */
+#define	h_addr	h_addr_list[0]	/* address, for backward compatibility */
 
 
 /*

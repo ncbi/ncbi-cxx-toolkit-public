@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -64,7 +64,7 @@ typedef enum spin_msg
  *
  * The data param is only defined for TCP read and write. 
  * For TCP reads:
- *  Nubmer of bytes left to read in.
+ *  Number of bytes left to read in.
  * For TCP writes:
  *  Number of bytes left to write. Note that this may be 0 for writes once all
  *  the necessary writes are queued up and the library is simply waiting for

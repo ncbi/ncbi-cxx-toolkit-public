@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 15:07:15  lavr
+* Typos corrected
+*
 * Revision 1.2  2001/01/05 20:09:05  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -109,7 +112,7 @@ void CChecksum::NextLine(void)
 //  This code assumes that an unsigned is at least 32 bits wide and
 //  that the predefined type char occupies one 8-bit byte of storage.
 
-//  The polynom used is
+//  The polynomial used is
 //  x^32+x^26+x^23+x^22+x^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x^1+x^0
 #define CRC32_POLYNOM 0x04c11db7
 

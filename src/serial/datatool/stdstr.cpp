@@ -30,9 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
 * Revision 1.9  2000/11/29 17:42:45  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.8  2000/08/25 15:59:24  vasilche
 * Renamed directory tool -> datatool.

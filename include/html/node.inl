@@ -33,10 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/17 14:55:43  lavr
+* Typos corrected
+*
 * Revision 1.10  2000/07/18 17:21:35  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
-* Changed algorythm of emitting EOL symbols in html output.
+* Changed algorithm of emitting EOL symbols in html output.
 *
 * Revision 1.9  2000/03/29 15:50:39  vasilche
 * Added const version of CRef - CConstRef.

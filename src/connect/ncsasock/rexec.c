@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  2001/05/17 15:04:38  lavr
+* Typos corrected
+*
 * Revision 6.0  1997/08/25 18:37:39  madden
 * Revision changed to 6.0
 *
@@ -33,7 +36,7 @@
 
 /*
  * rexec.c
- * Mac implimentation of rexec. Uses NCSA MacTCP sockets.
+ * Mac implementation of rexec. Uses NCSA MacTCP sockets.
  * Written by Charlie Reiman - Tom actually had nothing to do with this file
  * Started Friday, July 13, 1990 10:04:33 AM
  */
@@ -178,7 +181,7 @@ int rexec(
 		anErr = s_accept_once(*fd2p,(struct sockaddr *)&her,&herlen);
 		/*
 		 * might want to check and make sure that the connected machine
-		 * is the right one, but that seems a bit execessive.
+		 * is the right one, but that seems a bit excessive.
 		 */
 		DOERR
 		
@@ -210,7 +213,7 @@ int rexec(
 	}
 
 /*
- * Polls an exisiting stderr hookup from a previous rexec for any error
+ * Polls an existing stderr hookup from a previous rexec for any error
  * text. If there is, it will be returned in str, up to strln bytes
  *
  * Assumes sock is connected properly and str is not null.

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/17 14:50:13  lavr
+* Typos corrected
+*
 * Revision 1.17  2001/04/13 02:58:43  vakatov
 * Do not apply R1.16 for non-UNIX platforms where we cannot configure
 * HAVE_NCBI_C yet
@@ -152,7 +155,7 @@ public:
     // and where to get the configuration file (see LoadConfig()) to load
     // to the application registry (accessible via GetConfig()).
     // Throw exception if:  (a) not-only instance;  (b) cannot load
-    // explicitely specified config.file;  (c) SetupDiag throws an exception. 
+    // explicitly specified config.file;  (c) SetupDiag throws an exception. 
     int AppMain
     (int                argc,  // as in a regular "main(argc, argv, envp)"
      const char* const* argv,

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
 * Revision 1.41  1999/12/17 19:04:53  vasilche
 * Simplified generation of GetTypeInfo methods.
 *
@@ -40,7 +43,7 @@
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
 * Revision 1.39  1999/11/19 15:47:20  vasilche
-* Added specification of several tamplates with <char*> and <const char*> to
+* Added specification of several templates with <char*> and <const char*> to
 * avoid warnings on MAC
 *
 * Revision 1.38  1999/11/16 15:40:14  vasilche
@@ -58,10 +61,10 @@
 * Fixed template generation for enums.
 *
 * Revision 1.34  1999/10/15 16:37:47  vasilche
-* Added namespace specificators.
+* Added namespace specifiers.
 *
 * Revision 1.33  1999/10/15 13:58:43  vasilche
-* Added namespace specificators in defenition of all macros.
+* Added namespace specifiers in definition of all macros.
 *
 * Revision 1.32  1999/10/04 19:39:45  vasilche
 * Fixed bug in CObjectOStreamBinary.

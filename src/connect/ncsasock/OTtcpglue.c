@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -14,6 +14,9 @@
  *
  * RCS Modification History:
  * $Log$
+ * Revision 6.2  2001/05/17 15:04:38  lavr
+ * Typos corrected
+ *
  * Revision 6.1  2000/03/20 21:50:36  kans
  * initial checkin - initial work on OpenTransport (Churchill)
  *
@@ -121,7 +124,7 @@ OSStatus ot_DNRInit(void)
 		gDNRep = OTOpenInternetServices( kDefaultInternetServicesPath, 0, &theError);
 	}
 
-	/* Make the provider syncronous */
+	/* Make the provider synchronous */
 	if( theError == kOTNoError){
 		theError = OTSetSynchronous( gDNRep);
 	}
@@ -325,7 +328,7 @@ OSErr ot_TCPCreate(
 	if (err == noErr){
 		OSErr junk;
 
-		// set the endpoint to run syncronously, i.e. wait for results
+		// set the endpoint to run synchronously, i.e. wait for results
 		junk = OTSetSynchronous(ep);
 		OTAssert("xTCPCreate: OTSetSynchronous failed", junk == noErr);
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
 * Revision 1.15  2001/04/13 14:57:21  kholodov
 * Added: SetDTDFileName function to set DTD module name in XML header
 *
@@ -53,7 +56,7 @@
 *
 * Revision 1.11  2000/10/20 15:51:27  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *

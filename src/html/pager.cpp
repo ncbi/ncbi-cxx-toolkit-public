@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/17 15:05:42  lavr
+* Typos corrected
+*
 * Revision 1.24  2001/03/06 21:35:26  golikov
 * some const changes
 *
@@ -47,13 +50,13 @@
 * Fixed bug with lost const_iterator
 *
 * Revision 1.19  1999/09/15 18:28:32  vasilche
-* Fixed coredump occured in jrbrowser.
+* Fixed coredump occurred in jrbrowser.
 *
 * Revision 1.18  1999/09/13 15:37:39  golikov
 * Image sizes in page numbers added
 *
 * Revision 1.17  1999/06/25 20:02:38  golikov
-* "Show:" trasfered to pager
+* "Show:" transferred to pager
 *
 * Revision 1.16  1999/06/11 20:30:30  vasilche
 * We should catch exception by reference, because catching by value

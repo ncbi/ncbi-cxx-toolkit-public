@@ -30,9 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/05/17 15:07:04  lavr
+* Typos corrected
+*
 * Revision 1.58  2000/10/20 15:51:37  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -460,7 +463,7 @@ void AssignMemberDefault2(TObjectPtr object, const CMemberInfo* info)
         return; // member not set
     
     TObjectPtr member = GetMember(info, object);
-    // assign member dafault
+    // assign member default
     TTypeInfo memberType = info->GetTypeInfo();
     TConstObjectPtr def = info->GetDefault();
     if ( def == 0 ) {

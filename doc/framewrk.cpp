@@ -30,8 +30,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.5  1999/04/16 18:00:36  vakatov
-* <ncbistd.hpp> --> <corelib/ncbistd.hpp>
+* Revision 1.6  2001/05/17 14:43:29  lavr
+* Typos corrected
 *
 * ===========================================================================
 */
@@ -59,5 +59,5 @@ BEGIN_NCBI_SCOPE
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

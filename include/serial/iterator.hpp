@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/17 14:56:45  lavr
+* Typos corrected
+*
 * Revision 1.19  2000/11/09 15:21:25  vasilche
 * Fixed bugs in iterators.
 * Added iterator constructors from CObjectInfo.
@@ -43,7 +46,7 @@
 *
 * Revision 1.17  2000/10/20 15:51:23  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -101,7 +104,7 @@
 * Added iteratorbase.hpp header for basic internal classes.
 *
 * Revision 1.3  2000/03/29 18:02:39  vasilche
-* Workaroung of bug in MSVC: abstract member in template.
+* Workaround of bug in MSVC: abstract member in template.
 *
 * Revision 1.2  2000/03/29 17:22:34  vasilche
 * Fixed ambiguity in Begin() template function.

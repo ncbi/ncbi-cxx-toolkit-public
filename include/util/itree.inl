@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
 * Revision 1.2  2001/01/29 15:18:39  vasilche
 * Cleaned CRangeMap and CIntervalTree classes.
 *
@@ -338,7 +341,7 @@ void CIntervalTree::Delete(interval_type interval)
     _ASSERT(!traits::IsLimit(interval));
     if ( !m_ByX.erase(interval) ) {
         THROW1_TRACE(runtime_error,
-                     "CIntervalTree::Delete: interval desn't exist");
+                     "CIntervalTree::Delete: interval doesn't exist");
     }
     else {
         DoDelete(&m_Root, interval);

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/05/17 15:03:07  lavr
+ * Typos corrected
+ *
  * Revision 6.19  2001/05/11 15:32:05  lavr
  * Minor patch in code of 'fallback to STATELESS'
  *
@@ -40,10 +43,10 @@
  * Flow control fixed in s_Open for firewall connection
  *
  * Revision 6.16  2001/04/26 20:20:57  lavr
- * Default tags are explicilty used to differ from a Web browser
+ * Default tags are explicitly used to differ from a Web browser
  *
  * Revision 6.15  2001/04/25 15:49:54  lavr
- * Memory leaks in Open (when unsuccessul) fixed
+ * Memory leaks in Open (when unsuccessful) fixed
  *
  * Revision 6.14  2001/04/24 21:36:50  lavr
  * More structured code to re-try abrupted connection/mapping attempts

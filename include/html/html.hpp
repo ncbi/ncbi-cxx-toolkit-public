@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/05/17 14:55:24  lavr
+* Typos corrected
+*
 * Revision 1.48  2000/10/18 13:25:46  vasilche
 * Added missing constructors to CHTML_font.
 *
@@ -53,7 +56,7 @@
 * Revision 1.43  2000/07/18 17:21:34  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
-* Changed algorythm of emitting EOL symbols in html output.
+* Changed algorithm of emitting EOL symbols in html output.
 *
 * Revision 1.42  2000/07/12 16:37:37  vasilche
 * Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
@@ -112,7 +115,7 @@
 * Changed CHTML_form constructors.
 *
 * Revision 1.26  1999/02/26 21:03:30  vasilche
-* CAsnWriteNode made simple node. Use CHTML_pre explicitely.
+* CAsnWriteNode made simple node. Use CHTML_pre explicitly.
 * Fixed bug in CHTML_table::Row.
 * Added CHTML_table::HeaderCell & DataCell methods.
 *

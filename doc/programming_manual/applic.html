@@ -64,7 +64,7 @@ In addition, the application class provides the same features previously
 implemented in the C Toolkit, namely:
 <ul>
 <li>
-Mechanisms for specifiying where, when, and how errors should be reported</li>
+Mechanisms for specifying where, when, and how errors should be reported</li>
 
 <li>
 Methods for reading, accessing, modifying, and writing information in the
@@ -83,7 +83,7 @@ and <i>CNcbiDiag</i> data members.
 <p><a NAME="CNcbiArguments"></a>The <i><a href="../docxx/CNcbiArguments.html">CNcbiArguments</a></i>
 class provides a data structure for holding the application's command-line
 arguments, along with methods for accessing and modifying these. Access
-to the agrument values is implemented using the built-in <i>[ ]</i> operator
+to the argument values is implemented using the built-in <i>[ ]</i> operator
 . For example, the first argument in <i>argv</i> (following the program
 name) can be retrieved using the
 <i>CNcbiApplication::GetArguments()</i>
@@ -93,7 +93,7 @@ method, as:
 <i>GetArguments()</i> returns the <i>CNcbiArguments</i> object,
 whose argument values can then be retrieved using the <i>[ ]</i> operator.
 Four additional <i>CNcbiArgument</i> member functions support retrieval
-and modification of the program name (intitially <i>argv</i>[0]). A helper
+and modification of the program name (initially <i>argv</i>[0]). A helper
 class, described in <i><a href="argdescr.html">Parsing, validating, and
 accessing command line arguments</a></i>, supports the generation of
 <i>USAGE</i>
@@ -134,7 +134,7 @@ Creating a Simple Application Class</h3>
 <b>Step 1.</b> Define a subclass of the <i>CNcbiApplication </i>class.
 <p>Because <i>CNcbiApplication::Run() </i>is defined as a pure virtual
 function, the class cannot be used directly. Instead, you must first define
-a subclass which inherits from <i>CNcbiApplication</i>, and implementat
+a subclass which inherits from <i>CNcbiApplication</i>, and implement
 <i>Run()
 </i>in
 the subclass.

@@ -33,8 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
 * Revision 1.8  2001/05/16 17:55:36  grichenk
-* Redesigned support for non-blocking sream read operations
+* Redesigned support for non-blocking stream read operations
 *
 * Revision 1.7  2001/05/11 20:41:14  grichenk
 * Added support for non-blocking stream reading
@@ -92,7 +95,7 @@ public:
     virtual size_t Read(char* buffer, size_t bufferLength) = 0;
 
     // call this method after Read returned zero to determine whether
-    // end of data reached or error occured
+    // end of data reached or error occurred
     virtual bool EndOfData(void) const;
 
     virtual CRef<CSubSourceCollector> SubSource(size_t prepend);

@@ -3,7 +3,7 @@
  * Original author: Tom Milligan
  * Current author: Charlie Reiman - creiman@ncsa.uiuc.edu
  *
- * This source file is placed in the public domian.
+ * This source file is placed in the public domain.
  * Any resemblance to NCSA Telnet, living or dead, is purely coincidental.
  *
  *      National Center for Supercomputing Applications
@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.2  2001/05/17 15:04:38  lavr
+* Typos corrected
+*
 * Revision 6.1  1997/12/12 22:39:21  kans
 * DisposPtr now DisposePtr
 *
@@ -144,7 +147,7 @@ extern SocketPtr sockets;
 extern SpinFn spinroutine;
 
 /*
- *	tuneable constants
+ *	tunable constants
  */
 #define SOCK_IOINBUF_SIZE		128		/* Size of stdio input buffer */
 #define SOCK_IOOUTBUF_SIZE		128		/* Size of stdio output buffer */

@@ -35,7 +35,7 @@ argument attributes and constraints</a></li>
 
 <ul>
 <li>
-<a href="#ref_CArgDescriptions_Attr">Argument attributes (name, synopsys,
+<a href="#ref_CArgDescriptions_Attr">Argument attributes (name, synopsis,
 comment, value type, default value)</a></li>
 
 <li>
@@ -207,7 +207,7 @@ be applied in the argument description, see "EType")
 <br>//
 <br>// {<font color="#FF0000">arg_pos***</font>} and {<font color="#FF0000">arg_extra***</font>}
 -- position-dependent arguments, with
-<br>// no tag preceeding them.
+<br>// no tag preceding them.
 <br>// {<font color="#FF0000">arg_pos***</font>} -- have individual names
 and descriptions (see methods
 <br>// AddPositional***).
@@ -410,13 +410,13 @@ arguments to expect using <font color="#3333FF">n_mandatory</font> and
 <i><a href="../lxr/ident?i=AddExtra">AddExtra(n_mandatory,
 n_optional, comment, type, flags)</a></i></dd>
 </dl>
-Any of the registered descriptions can be tested for existance and/or deleted
+Any of the registered descriptions can be tested for existence and/or deleted
 using:
 <p><font color="#008080">&nbsp;&nbsp; bool Exist(const string&amp; name)
 const;</font>
 <br><font color="#008080"><b>&nbsp;&nbsp; </b>void Delete(const string&amp;
 name);</font>
-<p>These methods can also be applied to the unnamed postional arguments
+<p>These methods can also be applied to the unnamed positional arguments
 (as a <i>group</i>),&nbsp; using: <i>Exist(kEmptyStr) </i>and<i> Delete(kEmptyStr).</i>
 <h4>
 <a NAME="ref_CArgDescriptions_StdValueTypes"></a>Standard types: type restrictions
@@ -435,9 +435,9 @@ is defined as:
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eBoolean,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 // {'true', 't', 'false', 'f'},&nbsp; case-insensitive</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInteger,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-// convertable to an integer number (long)</font>
+// convertible to an integer number (long)</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eDouble,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-// convertable to a floating point number (double)</font>
+// convertible to a floating point number (double)</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eInputFile,&nbsp;&nbsp;&nbsp;
 // name of file (must exist and be readable)</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eOutputFile&nbsp;
@@ -465,7 +465,7 @@ takes the two integer arguments as lower and upper bounds for allowed values.
 Similarly, the <i><a href="../docxx/CArgAllow_Doubles.html">CArgAllow_Doubles</a></i>
 class can be used to specify a range of allowed floating point values.&nbsp;
 For both classes, the order of the numeric arguments does not matter, as
-the constructors will use <i>min/max </i>comparisions to generate a valid
+the constructors will use <i>min/max </i>comparisons to generate a valid
 range.
 <p>A third class derived from the <i>CArgAllow</i> class is the <i><a href="../docxx/CArgAllow_Strings.html">CArgAllow_Strings</a></i>
 class.&nbsp; In this case, the set of allowed values can not be specified
@@ -576,7 +576,7 @@ public:
 &nbsp;&nbsp;&nbsp; unsigned GetNExtra(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // number of passed unnamed(extra) arguments
 &nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](unsigned idx);&nbsp; // retrieve value by unnamed arg's index
 
-&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // print all agruments to "str"
+&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // print all arguments to "str"
 };</font></pre>
 As a result of executing <i>CArgDescriptions::CreateArgs()</i>, the command
 line's arguments are validated against the registered descriptions, and

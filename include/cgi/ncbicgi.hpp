@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/05/17 14:49:25  lavr
+* Typos corrected
+*
 * Revision 1.47  2001/02/02 20:55:11  vakatov
 * CCgiRequest::GetEntry() -- "const"
 *
@@ -46,7 +49,7 @@
 * Added HTTP_EOL string macro.
 *
 * Revision 1.44  2000/05/01 17:04:31  vasilche
-* MSVC doesn't allow contant initialization in class body.
+* MSVC doesn't allow content initialization in class body.
 *
 * Revision 1.43  2000/05/01 16:58:12  vasilche
 * Allow missing Content-Length and Content-Type headers.
@@ -541,7 +544,7 @@ extern string URL_EncodeString(const string& str);
 #include <cgi/ncbicgi.inl>
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBICGI__HPP */

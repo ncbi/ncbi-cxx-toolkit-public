@@ -30,10 +30,13 @@
 *   Eugene Vasilchenko
 *
 * File Description:
-*   Some usefull classes and methods.
+*   Some useful classes and methods.
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/17 14:54:44  lavr
+* Typos corrected
+*
 * Revision 1.15  2000/12/24 00:01:48  vakatov
 * Moved some code from NCBIUTIL to NCBISTD.
 * Fixed AutoPtr to always work with assoc.containers
@@ -107,7 +110,7 @@
 *
 * Revision 1.4  1999/03/15 20:01:59  vasilche
 * Changed query-command interaction.
-* qwebenv files splitted to smaller chunks.
+* qwebenv files split to smaller chunks.
 *
 * Revision 1.3  1999/02/25 19:50:36  vasilche
 * First implementation of history page.

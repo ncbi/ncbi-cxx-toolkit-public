@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/17 15:07:12  lavr
+* Typos corrected
+*
 * Revision 1.18  2001/02/02 20:50:35  vasilche
 * Fixed defines on Mac
 *
@@ -38,7 +41,7 @@
 *
 * Revision 1.16  2000/11/29 17:42:44  vasilche
 * Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependancy.
+* Added srcutil.hpp file to reduce file dependency.
 *
 * Revision 1.15  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
@@ -351,7 +354,7 @@ string MakeFileName(const string& fname, size_t addLength)
 
     _TRACE("MakeFileName(\""<<fname<<"\", "<<addLength<<") remove="<<remove);
     // 1st step: parse name dividing by '_' sorting elements by their size
-    SIZE_TYPE removeable = 0; // removeable part of string
+    SIZE_TYPE removable = 0; // removable part of string
     typedef set<SSubString, SSubString::ByLength> TByLength;
     TByLength byLength;
     {
@@ -364,19 +367,19 @@ string MakeFileName(const string& fname, size_t addLength)
                 break;
             }
             _TRACE("MakeFileName: \""<<name.substr(curr, und - curr)<<"\"");
-            removeable += (und - curr);
+            removable += (und - curr);
             byLength.insert(SSubString(name.substr(curr, und - curr), order));
             curr = und + 1;
             ++order;
         }
         _TRACE("MakeFileName: \""<<name.substr(curr)<<"\"");
-        removeable += name.size() - curr;
+        removable += name.size() - curr;
         byLength.insert(SSubString(name.substr(curr), order));
     }
-    _TRACE("MakeFileName: removeable="<<removeable);
+    _TRACE("MakeFileName: removable="<<removable);
 
-    // if removeable part of string too small...
-    if ( removeable - remove < size_t(MAX_FILE_NAME_LENGTH - addLength) / 2 ) {
+    // if removable part of string too small...
+    if ( removable - remove < size_t(MAX_FILE_NAME_LENGTH - addLength) / 2 ) {
         // we'll do plain truncate
         _TRACE("MakeFileName: return \""<<name.substr(0, MAX_FILE_NAME_LENGTH - addLength)<<"\"");
         return name.substr(0, MAX_FILE_NAME_LENGTH - addLength);

@@ -29,7 +29,7 @@ Web-Env ::= {
           }
         },
         relation "link",
-        db "proteine",
+        db "protein",
         items itemCount -20
       }
     }

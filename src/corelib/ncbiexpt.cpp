@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/17 15:04:59  lavr
+* Typos corrected
+*
 * Revision 1.16  2000/11/16 23:52:41  vakatov
 * Porting to Mac...
 *
@@ -171,5 +174,5 @@ CParseException::~CParseException(void) THROWS_NONE
 {
 }
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

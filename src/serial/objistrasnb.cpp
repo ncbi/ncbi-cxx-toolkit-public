@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/05/17 15:07:08  lavr
+* Typos corrected
+*
 * Revision 1.51  2001/01/22 23:12:57  vakatov
 * CObjectIStreamAsnBinary::{Read,Skip}ClassSequential() - use cur.member "pos"
 *
@@ -51,7 +54,7 @@
 *
 * Revision 1.46  2000/10/20 15:51:41  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -182,7 +185,7 @@
 * Removed dependency on NCBI toolkit.
 *
 * Revision 1.16  1999/09/23 21:16:08  vasilche
-* Removed dependance on asn.h
+* Removed dependence on asn.h
 *
 * Revision 1.15  1999/09/23 18:56:59  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp

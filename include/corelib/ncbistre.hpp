@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/17 14:54:27  lavr
+* Typos corrected
+*
 * Revision 1.23  2001/03/26 20:26:57  vakatov
 * Added "Printable" symbol conversions (by A.Grichenko)
 *
@@ -211,7 +214,7 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiBadbit   IOS_PREFIX::badbit
 #define NcbiHardfail IOS_PREFIX::hardfail
 
-// Read from "is" to "str" up to the delimeter symbol "delim"(or EOF)
+// Read from "is" to "str" up to the delimiter symbol "delim"(or EOF)
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
 
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
@@ -385,7 +388,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s);
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s);
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 // Provide formatted I/O of standard C++ "string" by "old-fashioned" IOSTREAMs

@@ -33,8 +33,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1999/04/16 18:00:36  vakatov
-* <ncbistd.hpp> --> <corelib/ncbistd.hpp>
+* Revision 1.5  2001/05/17 14:43:42  lavr
+* Typos corrected
 *
 * ===========================================================================
 */
@@ -60,7 +60,7 @@ BEGIN_NCBI_SCOPE
 #include <framewrk.inl>
 
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* FRAMEWRK__HPP */

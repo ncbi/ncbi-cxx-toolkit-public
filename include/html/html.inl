@@ -33,13 +33,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/17 14:55:32  lavr
+* Typos corrected
+*
 * Revision 1.24  2000/10/18 13:25:47  vasilche
 * Added missing constructors to CHTML_font.
 *
 * Revision 1.23  2000/07/18 17:21:34  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
-* Changed algorythm of emitting EOL symbols in html output.
+* Changed algorithm of emitting EOL symbols in html output.
 *
 * Revision 1.22  1999/12/28 21:01:03  vasilche
 * Fixed conflict on MS VC between bool and const string& arguments by
@@ -74,7 +77,7 @@
 * Fixed several warnings detected by GCC
 *
 * Revision 1.13  1999/04/15 16:28:37  vasilche
-* Fixed type in defenition of list HTML tags.
+* Fixed type in definition of list HTML tags.
 *
 * Revision 1.12  1999/04/08 19:00:26  vasilche
 * Added current cell pointer to CHTML_table

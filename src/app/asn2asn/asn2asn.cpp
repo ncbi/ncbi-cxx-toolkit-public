@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/05/17 15:05:45  lavr
+* Typos corrected
+*
 * Revision 1.38  2001/02/01 19:53:17  vasilche
 * Reading program arguments from file moved to CNcbiApplication::AppMain.
 *
@@ -64,7 +67,7 @@
 *
 * Revision 1.28  2000/10/20 15:51:52  vasilche
 * Fixed data error processing.
-* Added interface for costructing container objects directly into output stream.
+* Added interface for constructing container objects directly into output stream.
 * object.hpp, object.inl and object.cpp were split to
 * objectinfo.*, objecttype.*, objectiter.* and objectio.*.
 *
@@ -132,7 +135,7 @@
 * Generated class names now have 'C' prefix.
 *
 * Revision 1.7  2000/02/04 18:09:57  vasilche
-* Adde binary option to files.
+* Added binary option to files.
 *
 * Revision 1.6  2000/02/04 17:57:45  vasilche
 * Fixed for new generated classes interface.
