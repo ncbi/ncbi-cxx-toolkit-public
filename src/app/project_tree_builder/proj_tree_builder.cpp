@@ -1034,7 +1034,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                                      const IProjectFilter* filter,
                                      SMakeFiles*           makefiles)
 {
-#if 0
+#if 1
     // Do not collect makefile from root directory
     CDir dir(dir_name);
     CDir::TEntries contents = dir.GetEntries("*");
@@ -1066,6 +1066,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     }
 #endif
 
+#if 0
     CDir dir(dir_name);
     CDir::TEntries contents = dir.GetEntries("*");
     
@@ -1138,7 +1139,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 ProcessDir(path, false, filter, makefiles);
         }
     }
-
+#endif
 }
 
 
@@ -1302,6 +1303,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/15 14:14:31  gorelenk
+ * Changed CProjectTreeBuilder::ProcessDir - changed procedure of
+ * subdirs iteration .
+ *
  * Revision 1.10  2004/06/14 18:57:59  gorelenk
  * Changed CProjectTreeBuilder::ProcessDir
  * - added support of EXPENDABLE_SUB_PROJ .
