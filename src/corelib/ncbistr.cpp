@@ -236,11 +236,11 @@ int NStr::StringToNumeric(const string& str)
     return (int) value;
 }
 
-# define CHECK_ENDPTR() \
+# define CHECK_ENDPTR()                                     \
     if (check_endptr == eCheck_Need  &&  *endptr != '\0') { \
-        NCBI_THROW2(CStringException,eBadArgs, \
-            "No symbols should be after number", \
-            s_DiffPtr(endptr,str.c_str())); \
+        NCBI_THROW2(CStringException, eBadArgs,             \
+            "No symbols should follow the number",          \
+            s_DiffPtr(endptr, str.c_str()));                \
     }
 
 int NStr::StringToInt(const string& str, int base /* = 10 */,
@@ -250,9 +250,10 @@ int NStr::StringToInt(const string& str, int base /* = 10 */,
     char* endptr = 0;
     long value = strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
-        value < kMin_Int || value > kMax_Int)
-        NCBI_THROW2(CStringException,eConvert,"String cannot be converted",
-            s_DiffPtr(endptr,str.c_str()));
+        value < kMin_Int || value > kMax_Int) {
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted",
+                    s_DiffPtr(endptr, str.c_str()));
+    }
     CHECK_ENDPTR();
     return (int) value;
 }
@@ -264,10 +265,10 @@ unsigned int NStr::StringToUInt(const string& str, int base /* =10 */,
     errno = 0;
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
-        value > kMax_UInt)
-        NCBI_THROW2(CStringException,eConvert,"String cannot be converted",
-            s_DiffPtr(endptr,str.c_str()));
+    if (errno  ||  !endptr  ||  endptr == str.c_str()  ||  value > kMax_UInt) {
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted",
+                    s_DiffPtr(endptr, str.c_str()));
+    }
     CHECK_ENDPTR();
     return (unsigned int) value;
 }
@@ -279,9 +280,10 @@ long NStr::StringToLong(const string& str, int base /* = 10 */,
     errno = 0;
     char* endptr = 0;
     long value = strtol(str.c_str(), &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str())
-        NCBI_THROW2(CStringException,eConvert,"String cannot be converted",
-            s_DiffPtr(endptr,str.c_str()));
+    if (errno  ||  !endptr  ||  endptr == str.c_str()) {
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted",
+                    s_DiffPtr(endptr, str.c_str()));
+    }
     CHECK_ENDPTR();
     return value;
 }
@@ -293,9 +295,10 @@ unsigned long NStr::StringToULong(const string& str, int base /*=10 */,
     errno = 0;
     char* endptr = 0;
     unsigned long value = strtoul(str.c_str(), &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str())
-        NCBI_THROW2(CStringException,eConvert,"String cannot be converted",
-            s_DiffPtr(endptr,str.c_str()));
+    if (errno  ||  !endptr  ||  endptr == str.c_str()) {
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted",
+                    s_DiffPtr(endptr, str.c_str()));
+    }
     CHECK_ENDPTR();
     return value;
 }
@@ -307,10 +310,11 @@ double NStr::StringToDouble(const string& str,
     errno = 0;
     char* endptr = 0;
     double value = strtod(str.c_str(), &endptr);
-    if (errno  ||  !endptr  ||  endptr == str.c_str())
-        NCBI_THROW2(CStringException,eConvert,"String cannot be converted",
-            s_DiffPtr(endptr,str.c_str()));
-    if ( *endptr == '.' )
+    if (errno  ||  !endptr  ||  endptr == str.c_str()) {
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted",
+                    s_DiffPtr(endptr, str.c_str()));
+    }
+    if (*(endptr - 1) != '.'  &&  *endptr == '.')
         endptr++;
     CHECK_ENDPTR();
     return value;
@@ -375,25 +379,29 @@ Int8 NStr::StringToInt8(const string& str)
         break;
     }
 
-    if (!isdigit(*pc))
-        NCBI_THROW2(CStringException,eConvert,
-            "String cannot be converted",s_DiffPtr(pc,str.c_str()));
+    if (!isdigit(*pc)) {
+        NCBI_THROW2(CStringException, eConvert, "String cannot be converted",
+                    s_DiffPtr(pc, str.c_str()));
+    }
 
     Int8 n = 0;
     Int8 limdiv = kMax_I8 / 10;
     Int8 limoff = kMax_I8 % 10;
 
     while (*pc) {
-        if (!isdigit(*pc))
-            NCBI_THROW2(CStringException,eConvert,
-                "String cannot be converted",s_DiffPtr(pc,str.c_str()));
+        if (!isdigit(*pc)) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted",
+                        s_DiffPtr(pc, str.c_str()));
+        }
         int delta = *pc++ - '0';
         n *= 10;
 
         // Overflow checking
         if (n > limdiv || (n == limdiv && delta > limoff)) {
-            NCBI_THROW2(CStringException,eConvert,
-                "String cannot be converted",s_DiffPtr(pc,str.c_str()));
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted",
+                        s_DiffPtr(pc, str.c_str()));
         }
 
         n += delta;
@@ -421,11 +429,11 @@ Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
         if (base == 10  &&  !isdigit(ch)              ||
             base == 16  &&  !isxdigit(ch)             ||
             base == 8   &&  (ch < '0'  ||  ch > '7')  ||
-            base == 2   &&  (ch < '0'  ||  ch > '1')) {  
+            base == 2   &&  (ch < '0'  ||  ch > '1')) {
 
-            NCBI_THROW2(CStringException,eConvert,
-				"String cannot be converted - bad format",
-                s_DiffPtr(pc,str.c_str()));
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted - bad format",
+                        s_DiffPtr(pc, str.c_str()));
         }
 
         int delta;  // corresponding numeric value of *pc
@@ -441,9 +449,9 @@ Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
 
         // Overflow checking
         if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
-            NCBI_THROW2(CStringException,eConvert,
-				"String cannot be converted - overflow",
-                 s_DiffPtr(pc,str.c_str()));
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted - overflow",
+                        s_DiffPtr(pc, str.c_str()));
         }
 
         n += delta;
@@ -536,7 +544,7 @@ const void* NStr::StringToPtr(const string& str)
     // look for an address marker
     if (str.find("0x") != 0) {
         NCBI_THROW2(CStringException, eConvert,
-        "String cannot be converted", 0);
+                    "String cannot be converted", 0);
     }
     string s = str.substr(2, str.length()-2);
 
@@ -579,7 +587,7 @@ bool NStr::StringToBool(const string& str)
          AStrEquiv(str, s_kNString,     PNocase()) )
         return false;
 
-    NCBI_THROW2(CStringException,eConvert,"String cannot be converted",0);
+    NCBI_THROW2(CStringException, eConvert, "String cannot be converted", 0);
 }
 
 
@@ -608,8 +616,8 @@ string& NStr::Replace(const string& src,
 {
     // source and destination should not be the same
     if (&src == &dst) {
-        NCBI_THROW2(CStringException,eBadArgs,
-                   "String method called with inappropriate arguments",0);
+        NCBI_THROW2(CStringException, eBadArgs,
+                    "String method called with inappropriate arguments", 0);
     }
 
     dst = src;
@@ -764,7 +772,7 @@ static SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
         case '\"': // start of "string"; advance to end
             pos = str.find('\"', pos + 1);
             if (pos == NPOS) {
-                NCBI_THROW2(CStringException,eFormat,
+                NCBI_THROW2(CStringException, eFormat,
                             "Unclosed string in HTML tag", start);
                 // return pos;
             }
@@ -775,7 +783,7 @@ static SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
                 &&  str[pos + 1] == '-') {
                 pos = str.find("--", pos + 2);
                 if (pos == NPOS) {
-                    NCBI_THROW2(CStringException,eFormat,
+                    NCBI_THROW2(CStringException, eFormat,
                                 "Unclosed comment in HTML tag", start);
                     // return pos;
                 } else {
@@ -784,7 +792,7 @@ static SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
             }
         }
     }
-    NCBI_THROW2(CStringException,eFormat, "Unclosed HTML tag", start);
+    NCBI_THROW2(CStringException, eFormat, "Unclosed HTML tag", start);
     // return NPOS;
 }
 
@@ -1002,6 +1010,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2003/02/27 15:34:01  lavr
+ * Bugfix in converting string to double [spurious dots], some reformatting
+ *
  * Revision 1.82  2003/02/26 21:07:52  siyan
  * Remove const for base parameter for StringToUInt8
  *
@@ -1009,16 +1020,16 @@ END_NCBI_SCOPE
  * Added/deleted whitespaces to conform to existing coding style
  *
  * Revision 1.80  2003/02/26 16:45:53  siyan
- * Reimplemented NStr::StringToUInt8 to support additional base parameters that can
- * take radix values such as 10(default), 16, 8, 2.
+ * Reimplemented NStr::StringToUInt8 to support additional base parameters
+ * that can take radix values such as 10(default), 16, 8, 2.
  * Reimplemented StringToPtr to support 64 bit addresses.
  *
  * Revision 1.79  2003/02/25 19:14:53  kuznets
  * NStr::StringToBool changed to understand YES/NO
  *
  * Revision 1.78  2003/02/25 15:43:40  dicuccio
- * Added #ifdef'd hack for MSVC's non-standard sprintf() in PtrToString() - '%p'
- * lacks a leading '0x'
+ * Added #ifdef'd hack for MSVC's non-standard sprintf() in PtrToString(),
+ * '%p' lacks a leading '0x'
  *
  * Revision 1.77  2003/02/25 14:43:53  dicuccio
  * Added handling of special NULL pointer encoding in StringToPtr()
