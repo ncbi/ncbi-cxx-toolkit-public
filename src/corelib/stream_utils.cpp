@@ -336,14 +336,14 @@ streamsize CStreamUtils::Readsome(istream&      is,
 {
 #ifdef NCBI_COMPILER_GCC
 #  if NCBI_COMPILER_VERSION < 300
-#    define NCBI_NO_READSOME
+#    define NCBI_NO_READSOME 1
 #  endif
 #endif
 
 #ifdef NCBI_NO_READSOME
 #undef NCBI_NO_READSOME
     // Special case: GCC had no readsome() prior to ver 3.0;
-    // read() will set "eof" flag if gcount() < bufferLength
+    // read() will set "eof" flag if gcount() < buf_size
     is.read(buf, buf_size);
     streamsize count = is.gcount();
     // Reset "eof" flag if some data have been read
@@ -361,7 +361,7 @@ streamsize CStreamUtils::Readsome(istream&      is,
         return 0;
     if (buf_size == 1)
         return 1; // Do not need more data
-    // Read more data (up to the bufferLength)
+    // Read more data (up to "buf_size" bytes)
     return is.readsome(buf+1, buf_size-1) + 1;
 #endif
 }
@@ -373,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2002/11/28 03:28:01  lavr
+ * Comments updated
+ *
  * Revision 1.12  2002/11/27 21:08:01  lavr
  * Rename "stream_pushback" -> "stream_utils" and enclose utils in a class
  * Add new utility method Readsome() for non-blocking read
