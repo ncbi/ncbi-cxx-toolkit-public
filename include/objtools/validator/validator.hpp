@@ -187,19 +187,21 @@ class NCBI_VALIDATOR_EXPORT CValidator : public CObject
 public:
 
     enum EValidOptions {
-        eVal_non_ascii       = 0x1,
-        eVal_no_context      = 0x2,
-        eVal_val_align       = 0x4,
-        eVal_val_exons       = 0x8,
-        eVal_splice_err      = 0x10,
-        eVal_ovl_pep_err     = 0x20,
-        eVal_need_taxid      = 0x40,
-        eVal_need_isojta     = 0x80, 
-        eVal_validate_id_set = 0x100,
-        eVal_remote_fetch    = 0x200,
+        eVal_non_ascii               = 0x1,
+        eVal_no_context              = 0x2,
+        eVal_val_align               = 0x4,
+        eVal_val_exons               = 0x8,
+        eVal_splice_err              = 0x10,
+        eVal_ovl_pep_err             = 0x20,
+        eVal_need_taxid              = 0x40,
+        eVal_need_isojta             = 0x80,
+        eVal_validate_id_set         = 0x100,
+        eVal_remote_fetch            = 0x200,
+        eVal_far_fetch_mrna_products = 0x400,
+        eVal_far_fetch_cds_products  = 0x800,
 
         // !!! For test purposes only {
-        eVal_perf_bottlenecks  = 0x1000
+        eVal_perf_bottlenecks  = 0x10000
         // }
     };
 
@@ -342,6 +344,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/09/21 15:45:13  shomrat
+* + options: far_fetch_mrna_products, far_fetch_cds_products
+*
 * Revision 1.15  2004/07/29 16:06:44  shomrat
 * Separated error message from offending object's description
 *
