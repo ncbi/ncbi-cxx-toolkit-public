@@ -321,7 +321,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             if (seq) {
                 s_FixSeqData(seq);
                 if (was_lc) {
-                    lowercase->SetMix().AddInterval(*best_id, lc_start, pos);
+                    lowercase->SetPacked_int().AddInterval
+                        (*best_id, lc_start, pos);
                 }
             }
             seq = new CBioseq;
@@ -377,7 +378,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                         if (is_lc && !was_lc) {
                             lc_start = pos;
                         } else if (was_lc && !is_lc) {
-                            lowercase->SetMix().AddInterval
+                            lowercase->SetPacked_int().AddInterval
                                 (*best_id, lc_start, pos);
                         }
                         was_lc = is_lc;
@@ -443,7 +444,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     if (seq) {
         s_FixSeqData(seq);
         if (was_lc) {
-            lowercase->SetMix().AddInterval(*best_id, lc_start, pos);
+            lowercase->SetPacked_int().AddInterval(*best_id, lc_start, pos);
         }
     }
     // simplify if possible
@@ -505,6 +506,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/11 14:39:54  ucko
+* Populate "lowercase" with Packed_seqints rather than general Seq_loc_mixes.
+*
 * Revision 1.6  2003/08/08 21:29:12  dondosha
 * Changed type of lcase_mask in ReadFasta to vector of CConstRefs
 *
