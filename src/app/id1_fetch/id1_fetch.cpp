@@ -30,11 +30,14 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/07/19 19:40:20  lavr
+ * Typo fixed
+ *
  * Revision 1.6  2001/06/01 18:43:44  vakatov
  * Comment out excessive debug/trace printout
  *
  * Revision 1.5  2001/05/16 17:55:37  grichenk
- * Redesigned support for non-blocking sream read operations
+ * Redesigned support for non-blocking stream read operations
  *
  * Revision 1.4  2001/05/11 20:41:16  grichenk
  * Added support for non-blocking stream reading
