@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/11/14 20:56:46  gouriano
+* added AddMember method
+*
 * Revision 1.16  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -165,6 +168,28 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
 CClassTypeInfoBase::~CClassTypeInfoBase(void)
 {
     Deregister();
+}
+
+CMemberInfo* CClassTypeInfoBase::AddMember(const char* memberId,
+                                           const void* memberPtr,
+                                           const CTypeRef& memberType)
+{
+    CMemberInfo* memberInfo = new CMemberInfo(this, memberId,
+                                              TPointerOffsetType(memberPtr),
+                                              memberType);
+    GetItems().AddItem(memberInfo);
+    return memberInfo;
+}
+
+CMemberInfo* CClassTypeInfoBase::AddMember(const CMemberId& memberId,
+                                           const void* memberPtr,
+                                           const CTypeRef& memberType)
+{
+    CMemberInfo* memberInfo = new CMemberInfo(this, memberId,
+                                              TPointerOffsetType(memberPtr),
+                                              memberType);
+    GetItems().AddItem(memberInfo);
+    return memberInfo;
 }
 
 void CClassTypeInfoBase::InitClassTypeInfoBase(const type_info& id)
