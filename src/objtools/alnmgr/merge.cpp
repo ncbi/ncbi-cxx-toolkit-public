@@ -34,6 +34,8 @@
 #include <objects/alnmgr/alnmix.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+
+#ifdef HAVE_NCBI_C
 #include <ctools/asn_converter.hpp>
 
 //for CObjectOStreamAsnBinary << const ncbi::objects::CSeq_align
@@ -43,6 +45,7 @@
 #include <alignmgr2.h>
 #include <accid1.h>
 #include <lsqfetch.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -50,6 +53,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 bool CAlnMix::x_MergeInit()
 {
+#ifdef HAVE_NCBI_C
     LocalSeqFetchInit(FALSE);
     ID1BioseqFetchEnable("wally", FALSE);
     /* standard setup */
@@ -84,6 +88,10 @@ bool CAlnMix::x_MergeInit()
     }
     ObjMgrSetHold(); 
     return true;
+#else
+    NCBI_THROW(CException, eUnknown,
+               "CAlnMix::x_MergeInit: C Toolkit not present");
+#endif
 }
 
 
@@ -114,6 +122,7 @@ void CAlnMix::x_Merge()
         }
     }
 
+#ifdef HAVE_NCBI_C
     DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
 
     // convert the c++ aln list to c aln lst
@@ -157,6 +166,10 @@ void CAlnMix::x_Merge()
     CTypeIterator<CDense_seg> ds_it = Begin(*shared);
 
     m_DS = &*ds_it;
+#else
+    NCBI_THROW(CException, eUnknown,
+               "CAlnMix::x_Merge: C Toolkit not present");
+#endif
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -166,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/10/22 21:06:18  ucko
+* Conditionalize the code that needs the C Toolkit on HAVE_NCBI_C.
+*
 * Revision 1.4  2002/10/10 17:16:15  todorov
 * .
 *
