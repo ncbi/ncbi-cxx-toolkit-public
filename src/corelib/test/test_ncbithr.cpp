@@ -729,6 +729,10 @@ int CThreadedApp::Run(void)
                     delete exit_locks[i];
                 }
             }
+            else {
+                // Provide a possibility for the child thread to run
+                CMutexGuard exit_guard(*exit_locks[i]);
+            }
         }
     }
 
@@ -755,6 +759,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2004/08/23 16:32:46  grichenk
+ * Fixed problem with stuck threads on BSD.
+ *
  * Revision 6.7  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
