@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2002/09/10 16:54:15  kholodov
+* Modified: using CDB_Object::operator=() for CVariant assignments
+*
 * Revision 1.8  2002/04/15 19:12:11  kholodov
 * Added simple type conversions
 *
@@ -469,8 +472,7 @@ bool CVariant::IsNull() const
 
 CVariant& CVariant::operator=(const CVariant& v)
 {
-    CVariant temp(v);
-    swap(m_data, temp.m_data);
+    *(m_data) = *(v.m_data);
     return *this;
 }
 
