@@ -52,37 +52,30 @@ OBJ = \
 	wx_tools
 
 LIB = \
-	cdd \
-	ncbimime \
-	mmdb1 \
-	mmdb2 \
-	mmdb3 \
-	cn3d \
-	pub \
-	seqset \
-	$(SEQ_LIBS) \
-	general \
-	medline \
-	biblio \
-	xser \
-	xncbi \
-	xutil \
-	xctools \
-	xconnect
+	cdd ncbimime cn3d mmdb1 mmdb2 mmdb3	seqset \
+	$(SEQ_LIBS) pub medline	biblio general \
+	xser xutil xctools xconnect xncbi
 
+
+# Development configuration for Paul Thiessen...
 WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wxgtk$(D_SFX)-2.3-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs) $(shell $(WX_CONFIG) --gl-libs)
-
 GTK_CONFIG = $(HOME)/Programs/GTK-1.2-$(DEBUG_SFX)/install/bin/gtk-config
 GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
+# ...the following two assignments switch to the development configuration:
+WXWIN_INCLUDE = $(WX_CPPFLAGS) $(GTK_CFLAGS)
+WXWIN_LIBS    = $(WX_LIBS)
 
-CPPFLAGS = $(ORIG_CPPFLAGS) \
-	-I$(includedir)/gui_ctools \
-	$(WX_CPPFLAGS) $(GTK_CFLAGS) \
-	$(NCBI_C_INCLUDE)
 
-LIBS = $(ORIG_LIBS) \
-	$(WX_LIBS) \
-	$(NCBI_C_LIBPATH) \
-	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi -lm
+CPPFLAGS = \
+   -I$(srcdir)/.. \
+   $(NCBI_C_INCLUDE) \
+   $(WXWIN_INCLUDE) $(GTK_CFLAGS) \
+   $(ORIG_CPPFLAGS)
+
+LIBS = \
+   $(NCBI_C_LIBPATH) \
+      -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi \
+   $(WXWIN_LIBS) \
+   $(ORIG_LIBS)
