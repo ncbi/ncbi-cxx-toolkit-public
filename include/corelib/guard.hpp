@@ -122,7 +122,11 @@ public:
     /// Destructor releases the resource.
     ~CGuard()
     {
-        Release();
+        try {
+            Release();
+        } catch(std::exception& ) {
+            // catch and ignore std exceptions in destructor
+        }
     }
 
     /// Manually force the resource to be released.
@@ -162,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/06 16:14:02  kuznets
+ * try and ignore exceptions in ~CGuard
+ *
  * Revision 1.2  2004/06/17 19:20:12  vasilche
  * Simplify CGuard code - no exceptions or return values.
  *
