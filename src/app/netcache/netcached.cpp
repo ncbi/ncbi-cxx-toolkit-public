@@ -143,6 +143,24 @@ struct NetCache_RequestStat
 };
 
 /// @internal
+class CNetCacheLogStream : public CRotatingLogStream
+{
+public:
+    typedef CRotatingLogStream TParent;
+public:
+    CNetCacheLogStream(const string&    filename, 
+                       CNcbiStreamoff   limit)
+    : TParent(filename, limit)
+    {}
+protected:
+    virtual string x_BackupName(string& name)
+    {
+        return kEmptyStr;
+    }
+
+};
+
+/// @internal
 ///
 /// Netcache logger
 ///
@@ -182,7 +200,7 @@ public:
     }
     void Rotate() { m_Log.Rotate(); }
 private:
-    CRotatingLogStream m_Log;
+    CNetCacheLogStream m_Log;
 };
 
 class CNetCacheServer;
@@ -768,7 +786,6 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
     string err_msg(prefix);
     err_msg.append(msg);
     err_msg.append("\r\n");
-
     size_t n_written;
     /* EIO_Status io_st = */
         sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
@@ -1224,6 +1241,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/02/15 15:16:50  kuznets
+ * Rotated log stream, overloaded x_BackupName to self-rotate
+ *
  * Revision 1.41  2005/02/09 19:36:39  kuznets
  * Restored accidentally removed SetTimeout()
  *
