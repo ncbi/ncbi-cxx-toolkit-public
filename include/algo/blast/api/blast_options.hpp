@@ -336,8 +336,8 @@ CBlastOption::SetMatrixName(const char* matrix)
     m_LutOpts->matrixname = (char*) MemFree(m_LutOpts->matrixname);
     m_ScoringOpts->matrix = (char*) MemFree(m_ScoringOpts->matrix);
 
-    m_LutOpts->matrixname = StringSave(matrix);
-    m_ScoringOpts->matrix = StringSave(matrix);
+    m_LutOpts->matrixname = strdup(matrix);
+    m_ScoringOpts->matrix = strdup(matrix);
 }
 
 inline int
@@ -450,14 +450,14 @@ CBlastOption::SetFilterString(const char* f)
 #if 0
     if (!StringICmp(f, "T")) {
         if (m_Program == CBlastOption::eBlastn)
-            m_QueryOpts->filter_string = StringSave("D");
+            m_QueryOpts->filter_string = strdup("D");
         else
-            m_QueryOpts->filter_string = StringSave("S");
+            m_QueryOpts->filter_string = strdup("S");
     } else {
-        m_QueryOpts->filter_string = StringSave(f);
+        m_QueryOpts->filter_string = strdup(f);
     }
 #endif
-    m_QueryOpts->filter_string = StringSave(f);
+    m_QueryOpts->filter_string = strdup(f);
 }
 
 inline ENa_strand
@@ -978,6 +978,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/30 13:55:09  coulouri
+* use strdup()
+*
 * Revision 1.4  2003/07/23 21:29:37  camacho
 * Update BlastDatabaseOptions
 *
