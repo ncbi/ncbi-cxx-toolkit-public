@@ -80,7 +80,8 @@ static string s_TitleFromChromosome(const CBioSource&    source,
 
 static string s_TitleFromProtein   (const CBioseq_Handle& handle,
                                           CScope&        scope,
-                                          string&        organism);
+                                          string&        organism,
+                                          bool           all_proteins);
 static string s_TitleFromSegment   (const CBioseq_Handle& handle,
                                           CScope&        scope);
                                           
@@ -298,7 +299,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     }
 
     if (title.empty()  &&  hnd.GetBioseqMolType() == CSeq_inst::eMol_aa) {
-        title = s_TitleFromProtein(hnd, scope, organism);
+        title = s_TitleFromProtein(hnd, scope, organism,
+                                   flags & fGetTitle_AllProteins);
         if ( !title.empty() ) {
             flags |= fGetTitle_Organism;
         }
@@ -656,7 +658,7 @@ static string s_TitleFromChromosome(const CBioSource& source,
 
 
 static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
-                                 string& organism)
+                                 string& organism, bool all_proteins)
 {
     CConstRef<CProt_ref> prot;
     CConstRef<CSeq_loc>  cds_loc;
@@ -692,11 +694,14 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
     if (prot.NotEmpty()  &&  prot->IsSetName()  &&  !prot->GetName().empty()) {
         bool first = true;
         ITERATE (CProt_ref::TName, it, prot->GetName()) {
-            if (!first) {
+            if ( !first ) {
                 result += "; ";
             }
             result += *it;
             first = false;
+            if ( !all_proteins ) {
+                break; // just give the first
+            }
         }
         if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
             // XXX - gene_feat might not always be exactly what we want
@@ -861,6 +866,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.43  2004/10/14 20:30:00  ucko
+* Add a flag fGetTitle_AllProteins (off by default) that governs whether
+* to include all protein names or just the first, per recent changes to
+* the C Toolkit.
+*
 * Revision 1.42  2004/10/07 15:55:00  ucko
 * s/GetInst_Mol/GetBioseqMolType/
 *

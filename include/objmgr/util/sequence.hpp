@@ -161,7 +161,8 @@ sequence::ECompare Compare(const CSeq_loc& loc1,
 // should ignore any existing title Seqdesc.
 enum EGetTitleFlags {
     fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
-    fGetTitle_Organism    = 0x2  // append [organism]
+    fGetTitle_Organism    = 0x2, // append [organism]
+    fGetTitle_AllProteins = 0x4  // normally just names the first
 };
 typedef int TGetTitleFlags;
 NCBI_XOBJUTIL_EXPORT
@@ -733,6 +734,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.48  2004/10/14 20:29:50  ucko
+* Add a flag fGetTitle_AllProteins (off by default) that governs whether
+* to include all protein names or just the first, per recent changes to
+* the C Toolkit.
+*
 * Revision 1.47  2004/10/12 18:57:57  dicuccio
 * Added variant of sequence::GetId() that takes a seq-id instead of a bioseq
 * handle
