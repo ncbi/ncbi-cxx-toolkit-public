@@ -6,7 +6,9 @@
 #include <list>
 #include <map>
 #include "autoptr.hpp"
-#include "module.hpp"
+
+class ASNModule;
+class ASNType;
 
 USING_NCBI_SCOPE;
 
@@ -18,6 +20,8 @@ public:
 
     CModuleSet(void);
     virtual ~CModuleSet(void);
+
+    void DumpTypes(CNcbiOstream& out) const;
 
     void SetMainTypes(void);
 

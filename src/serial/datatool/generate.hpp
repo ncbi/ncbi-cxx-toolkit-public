@@ -6,7 +6,8 @@
 #include <set>
 #include <map>
 #include "moduleset.hpp"
-#include "code.hpp"
+
+class CFileCode;
 
 class CCodeGenerator
 {
@@ -25,7 +26,6 @@ public:
 
     void CollectTypes(const ASNType* type, bool force = false);
     bool AddType(const ASNType* type);
-    CClassCode* GetClassCode(const ASNType* type);
 
     CNcbiRegistry m_Config;
     CModuleSet m_Modules;

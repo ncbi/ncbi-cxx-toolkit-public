@@ -7,8 +7,8 @@
 #include "parser.hpp"
 #include "lexer.hpp"
 #include "moduleset.hpp"
-//#include "module.hpp"
-//#include "type.hpp"
+#include "module.hpp"
+#include "type.hpp"
 #include "typecontext.hpp"
 #include "generate.hpp"
 

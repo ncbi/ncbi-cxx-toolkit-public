@@ -1,3 +1,4 @@
+#include <typeinfo>
 #include "module.hpp"
 #include "moduleset.hpp"
 #include "exceptions.hpp"
@@ -19,8 +20,9 @@ ASNModule::~ASNModule()
 
 void ASNModule::AddDefinition(const string& def, const AutoPtr<ASNType> type)
 {
-    type->name = def;
-    definitions.push_back(type);
+    //type->name = def;
+    _TRACE(name << '.' << def << " ::= " << typeid(*type).name());
+    definitions.push_back(make_pair(def, type));
 }
 
 ostream& ASNModule::Print(ostream& out) const
@@ -60,7 +62,7 @@ ostream& ASNModule::Print(ostream& out) const
 
     for ( TDefinitions::const_iterator i = definitions.begin();
           i != definitions.end(); ++i ) {
-        out << (*i)->name << " ::= "; (*i)->Print(out, 0);
+        out << i->first << " ::= "; i->second->Print(out, 0);
         out << endl << endl;
     }
 
@@ -69,10 +71,10 @@ ostream& ASNModule::Print(ostream& out) const
 
 bool ASNModule::Check()
 {
-    bool ok = CheckNames();
+    bool ok = true;
     for ( TDefinitions::const_iterator d = definitions.begin();
           d != definitions.end(); ++d ) {
-        if ( !(*d)->Check() )
+        if ( !d->second->Check() )
             ok = false;
     }
     return ok;
@@ -92,7 +94,8 @@ bool ASNModule::CheckNames()
     types.clear();
     for ( TDefinitions::const_iterator d = definitions.begin();
           d != definitions.end(); ++d ) {
-        const string& n = (*d)->name;
+        const string& n = d->first;
+        ASNType* type = d->second.get();
         pair< TTypes::iterator, bool > ins =
             types.insert(TTypes::value_type(n, n));
         if ( !ins.second ) {
@@ -100,7 +103,7 @@ bool ASNModule::CheckNames()
             ok = false;
         }
         else {
-            ins.first->second.type = d->get();
+            ins.first->second.type = type;
         }
     }
     for ( TExports::const_iterator e = exports.begin();

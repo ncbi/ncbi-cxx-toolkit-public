@@ -1,3 +1,4 @@
+#include <typeinfo>
 #include "moduleset.hpp"
 #include "module.hpp"
 #include "type.hpp"
@@ -11,6 +12,21 @@ CModuleSet::~CModuleSet(void)
 {
 }
 
+void CModuleSet::DumpTypes(CNcbiOstream& out) const
+{
+    for ( TModules::const_iterator mi = modules.begin();
+          mi != modules.end(); ++mi ) {
+        const ASNModule* module = mi->second.get();
+        for ( ASNModule::TDefinitions::const_iterator di =
+                  module->definitions.begin();
+              di != module->definitions.end();
+              ++di ) {
+            out << module->name << '.' << di->first << " ::= " <<
+                typeid(*di->second).name() << endl;
+        }
+    }
+}
+
 void CModuleSet::SetMainTypes(void)
 {
     for ( TModules::iterator mi = modules.begin();
@@ -19,7 +35,7 @@ void CModuleSet::SetMainTypes(void)
         for ( ASNModule::TDefinitions::iterator di = module->definitions.begin();
               di != module->definitions.end();
               ++di ) {
-            (*di)->main = true;
+            di->second->main = true;
         }
     }
 }
@@ -27,6 +43,11 @@ void CModuleSet::SetMainTypes(void)
 bool CModuleSet::Check(void) const
 {
     bool ok = true;
+    for ( TModules::const_iterator mi = modules.begin();
+          mi != modules.end(); ++mi ) {
+        if ( !mi->second->CheckNames() )
+            ok = false;
+    }
     for ( TModules::const_iterator mi = modules.begin();
           mi != modules.end(); ++mi ) {
         if ( !mi->second->Check() )
@@ -98,5 +119,6 @@ ASNType* CModuleSet::Resolve(const string& moduleName,
                      "type not found: " + moduleName + '.' + typeName);
     }
     // no such module
-    THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName);
+    THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName +
+                 " for type " + typeName);
 }

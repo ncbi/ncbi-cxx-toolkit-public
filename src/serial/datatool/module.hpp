@@ -3,7 +3,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include <set>
 #include <list>
 #include <map>
 #include "autoptr.hpp"
@@ -27,7 +26,7 @@ public:
         list<string> types;
     };
     typedef list< AutoPtr<Import> > TImports;
-    typedef list< AutoPtr<ASNType> > TDefinitions;
+    typedef list< pair< string, AutoPtr<ASNType> > > TDefinitions;
 
     void AddDefinition(const string& name, const AutoPtr<ASNType> type);
 

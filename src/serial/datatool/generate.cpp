@@ -42,10 +42,11 @@ void CCodeGenerator::GetAllTypes(void)
                   module->definitions.begin();
               ti != module->definitions.end();
               ++ti ) {
-            const ASNType* type = ti->get();
-            if ( !type->name.empty() && type->main &&
+            const string& name = ti->first;
+            const ASNType* type = ti->second.get();
+            if ( !name.empty() && type->main &&
                  type->ClassName(m_Config) != "-" )
-                m_GenerateTypes.insert(module->name + '.' + type->name);
+                m_GenerateTypes.insert(module->name + '.' + name);
         }
     }
 }
@@ -82,7 +83,7 @@ void CCodeGenerator::GenerateCode(void)
     for ( TTypeNames::const_iterator ti = m_GenerateTypes.begin();
           ti != m_GenerateTypes.end();
           ++ti ) {
-        CollectTypes(m_Modules.ResolveFull(*ti));
+        CollectTypes(m_Modules.ResolveFull(*ti), true);
     }
     
     // generate output files
@@ -116,30 +117,12 @@ bool CCodeGenerator::AddType(const ASNType* type)
     return file->AddType(type);
 }
 
-CClassCode* CCodeGenerator::GetClassCode(const ASNType* type)
-{
-    string fileName = type->FileName(m_Config);
-    TOutputFiles::const_iterator fi = m_Files.find(fileName);
-    if ( fi == m_Files.end() ) {
-        THROW1_TRACE(runtime_error,
-                     "cannot get class info for \"" + type->name + "\" @ " +
-                     type->context.GetFilePos().ToString() + " (filename: " +
-                     fileName + ")");
-    }
-    return fi->second->GetClassCode(type);
-}
-
 void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
 {
-    if ( m_ExcludeTypes.find(type->name) != m_ExcludeTypes.end() ) {
-        ERR_POST(Warning << "Skipping type: " << type->name);
-        return;
-    }
-    
     const ASNOfType* array = dynamic_cast<const ASNOfType*>(type);
     if ( array != 0 ) {
         // SET OF or SEQUENCE OF
-        if ( force || !array->name.empty() ) {
+        if ( force ) {
             if ( !AddType(type) )
                 return;
         }
@@ -153,22 +136,26 @@ void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
     const ASNUserType* user = dynamic_cast<const ASNUserType*>(type);
     if ( user != 0 ) {
         // reference to another type
-        CollectTypes(user->Resolve());
+        if ( m_ExcludeTypes.find(user->userTypeName) != m_ExcludeTypes.end() ) {
+            ERR_POST(Warning << "Skipping type: " << user->userTypeName);
+            return;
+        }
+        CollectTypes(user->Resolve(), true);
         return;
     }
 
     if ( dynamic_cast<const ASNFixedType*>(type) != 0 ||
          dynamic_cast<const ASNEnumeratedType*>(type) != 0 ) {
         // STD type
-        if ( force || !type->name.empty() ) {
+        if ( force ) {
             AddType(type);
         }
         return;
     }
 
-    if ( force || !type->name.empty() ) {
+    if ( force ) {
         if ( type->ClassName(m_Config) == "-" ) {
-            ERR_POST(Warning << "Skipping type: " << type->name);
+            ERR_POST(Warning << "Skipping type: " << type->IdName());
             return;
         }
     }
@@ -194,7 +181,7 @@ void CCodeGenerator::CollectTypes(const ASNType* type, bool force)
     const ASNMemberContainerType* cont =
         dynamic_cast<const ASNMemberContainerType*>(type);
     if ( cont != 0 ) {
-        if ( force || !cont->name.empty() ) {
+        if ( force ) {
             if ( !AddType(type) )
                 return;
         }

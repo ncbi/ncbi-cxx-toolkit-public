@@ -79,7 +79,7 @@ public:
     typedef CFileCode::TForwards TForwards;
     typedef set<string> TEnums;
 
-    CClassCode(CFileCode& file, const ASNType* type);
+    CClassCode(CFileCode& file, const string& typeName, const ASNType* type);
     ~CClassCode(void);
     
     const CNcbiRegistry& GetRegistry(void) const
@@ -91,6 +91,10 @@ public:
             return m_Code.GetRegistry();
         }
 
+    const string& GetTypeName(void) const
+        {
+            return m_TypeName;
+        }
     const ASNType* GetType(void) const
         {
             return m_Type;
@@ -161,6 +165,7 @@ public:
 
 private:
     CFileCode& m_Code;
+    string m_TypeName;
     const ASNType* m_Type;
     string m_Namespace;
     string m_ClassName;
@@ -170,6 +175,60 @@ private:
     mutable CNcbiOstrstream m_HPP;
     mutable CNcbiOstrstream m_CPP;
     TEnums m_Enums;
+};
+
+class CTypeStrings {
+public:
+    typedef set<string> TIncludes;
+    typedef map<string, string> TForwards;
+
+    enum ETypeType {
+        eStdType,
+        eClassType,
+        eComplexType,
+        ePointerType
+    };
+    void SetStd(const string& c);
+    void SetClass(const string& c);
+    void SetComplex(const string& c, const string& m);
+    void SetComplex(const string& c, const string& m,
+                    const CTypeStrings& arg);
+    void SetComplex(const string& c, const string& m,
+                    const CTypeStrings& arg1, const CTypeStrings& arg2);
+
+    ETypeType type;
+    string cType;
+    string macro;
+
+    void ToSimple(void);
+        
+    string GetRef(void) const;
+
+    void AddHPPInclude(const string& s)
+        {
+            m_HPPIncludes.insert(s);
+        }
+    void AddCPPInclude(const string& s)
+        {
+            m_CPPIncludes.insert(s);
+        }
+    void AddForwardDeclaration(const string& s, const string& ns)
+        {
+            m_ForwardDeclarations[s] = ns;
+        }
+    void AddIncludes(const CTypeStrings& arg);
+
+    void AddMember(CClassCode& code,
+                   const string& member) const;
+    void AddMember(CClassCode& code,
+                   const string& name, const string& member) const;
+private:
+    void x_AddMember(CClassCode& code,
+                     const string& name, const string& member) const;
+
+    TIncludes m_HPPIncludes;
+    TIncludes m_CPPIncludes;
+    TForwards m_ForwardDeclarations;
 };
 
 class CNamespace

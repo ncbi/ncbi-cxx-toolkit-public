@@ -196,13 +196,13 @@ bool CFileCode::AddType(const ASNType* type)
     _TRACE(m_CPPName << '(' << long(this) << ')' <<
            " AddType: " << type->name << '(' << long(type) << ')');
 */
-    AutoPtr<CClassCode>& cls = m_Classes[type->name];
+    AutoPtr<CClassCode>& cls = m_Classes[type->IdName()];
     if ( cls ) {
         _ASSERT(cls->GetType() == type);
         return false;
     }
 
-    cls = new CClassCode(*this, type);
+    cls = new CClassCode(*this, type->IdName(), type);
 
     GetClassCode(type);
     return true;
@@ -214,9 +214,9 @@ CClassCode* CFileCode::GetClassCode(const ASNType* type)
     _TRACE(m_CPPName << '(' << long(this) << ')' <<
            " GetClassCode: " << type->name << '(' << long(type) << ')');
 */
-    TClasses::const_iterator ci = m_Classes.find(type->name);
+    TClasses::const_iterator ci = m_Classes.find(type->IdName());
     if ( ci == m_Classes.end() )
-        THROW1_TRACE(runtime_error, "cannot get class info for " + type->name);
+        THROW1_TRACE(runtime_error, "cannot get class info for " + type->IdName());
 
     return ci->second.get();
 }
@@ -258,8 +258,9 @@ void CNamespace::Set(const string& ns)
     }
 }
 
-CClassCode::CClassCode(CFileCode& code, const ASNType* type)
-    : m_Code(code), m_Type(type),
+CClassCode::CClassCode(CFileCode& code,
+                       const string& typeName, const ASNType* type)
+    : m_Code(code), m_TypeName(typeName), m_Type(type),
       m_Namespace(type->Namespace(code)),
       m_ClassName(type->ClassName(code)),
       m_Abstract(false)
@@ -288,7 +289,7 @@ const ASNType* CClassCode::GetParentType(void) const
             parent = *(GetType()->choices.begin());
             break;
         default:
-            ERR_POST("more then one parent of type: " + GetType()->name);
+            ERR_POST("more then one parent of type: " + GetType()->IdName());
             return 0;
         }
     }
@@ -353,7 +354,7 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
         code << "BEGIN_ABSTRACT_CLASS_INFO3(\"";
     else
         code << "BEGIN_CLASS_INFO3(\"";
-    code << GetType()->name << "\", " <<
+    code << GetTypeName() << "\", " <<
         GetClassName() << ", " << GetClassName() << "_Base)" << endl <<
         '{' << endl;
     if ( GetParentType() ) {
