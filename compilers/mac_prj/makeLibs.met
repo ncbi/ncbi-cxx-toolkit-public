@@ -5,6 +5,7 @@ property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
+property pDLRootFolder : "sw:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -374,26 +375,27 @@ on SetProjectData()
 		set SomeObjects to {"biblio", "general", "medline", "pub"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
-		set XUtils to {"xconnect", "xncbi", "xser", "xutil", "regexp"}
+		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "regexp"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
-		set UsualStatics to MostObjects & XUtils
+		set UsualStatics to MostObjects & ObjTools
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
 			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", {"xalgoseq"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		
-		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", {"submit", "xobjread"} & LdsLibs)
+		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", {"submit"})
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
@@ -819,8 +821,11 @@ on SetupTarget(proj, targetIndex)
 		end repeat
 		
 		if projFeatures contains "libdl" then
-			my AppendAccessPath("sw:lib", false, false)
-			copy "/sw/lib/libdl.a" to end of filesToAdd
+			my PushAccessPath(pDLRootFolder & "include", false, false)
+			if projFeatures contains "DLL" or projFeatures contains "plugin" then
+				my PushAccessPath(pDLRootFolder & "lib", false, false)
+				copy (POSIX path of pDLRootFolder) & "lib/libdl.a" to end of filesToAdd
+			end if
 		end if
 		
 		-- try
