@@ -384,7 +384,7 @@ void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
     _ASSERT(sections);
     sections->clear();
     TReadGuard LOCK(*this);
-    return x_Enumerate(kEmptyStr, *sections, flags);
+    x_Enumerate(kEmptyStr, *sections, flags);
 }
 
 void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
@@ -403,7 +403,7 @@ void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
         return;
     }
     TReadGuard LOCK(*this);
-    return x_Enumerate(clean_section, *entries, flags);
+    x_Enumerate(clean_section, *entries, flags);
 }
 
 void IRegistry::ReadLock (void)
@@ -836,7 +836,8 @@ void CCompoundRegistry::Add(const IRegistry& reg, TPriority prio,
     // Needed for some operations that touch (only) metadata...
     IRegistry& nc_reg = const_cast<IRegistry&>(reg);
     // XXX - Check whether reg is a duplicate, at least in debug mode?
-    m_PriorityMap.insert(make_pair(prio, CRef<IRegistry>(&nc_reg)));
+    m_PriorityMap.insert(TPriorityMap::value_type
+                         (prio, CRef<IRegistry>(&nc_reg)));
     if (name.size()) {
         CRef<IRegistry>& preg = m_NameMap[name];
         if (preg) {
@@ -983,7 +984,7 @@ void CCompoundRegistry::x_Enumerate(const string& section,
 void CCompoundRegistry::x_ChildLockAction(FLockAction action)
 {
     NON_CONST_ITERATE (TPriorityMap, it, m_PriorityMap) {
-        (it->second->*action)();
+        ((*it->second).*action)();
     }
 }
 
@@ -1097,8 +1098,8 @@ void CTwoLayerRegistry::x_Enumerate(const string& section,
 
 void CTwoLayerRegistry::x_ChildLockAction(FLockAction action)
 {
-    (m_Transient->*action)();
-    (m_Persistent->*action)();
+    ((*m_Transient).*action)();
+    ((*m_Persistent).*action)();
 }
 
 void CTwoLayerRegistry::x_Clear(TFlags flags)
@@ -1287,6 +1288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/12/20 17:34:13  ucko
+ * Fix silly portability bugs.
+ *
  * Revision 1.42  2004/12/20 15:28:34  ucko
  * Extensively refactor, and add support for subregistries.
  *
