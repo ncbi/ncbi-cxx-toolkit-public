@@ -2,6 +2,8 @@
 
 SRC = reader reader_snp seqref split_parser
 
+ASN_DEP = id2
+
 LIB = ncbi_xreader
 
 # Build shared version when possible
