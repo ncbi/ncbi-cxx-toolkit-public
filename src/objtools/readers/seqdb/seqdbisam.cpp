@@ -64,9 +64,10 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
     
     m_Atlas.Lock(locked);
     
-    bool found = m_Atlas.GetFileSize(m_IndexFname, m_IndexFileLength);
+    bool found_index_file =
+        m_Atlas.GetFileSize(m_IndexFname, m_IndexFileLength);
     
-    if ((! found) || (m_IndexFileLength < info_needed)) {
+    if ((! found_index_file) || (m_IndexFileLength < info_needed)) {
         return eWrongFile;
     }
     
@@ -96,10 +97,12 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
         m_DataFileLength = SeqDB_GetStdOrd(& FileInfo[2]);
         
         Uint4 disk_file_length(0);
-        bool found = m_Atlas.GetFileSize(m_DataFname, disk_file_length);
+        bool found_data_file =
+            m_Atlas.GetFileSize(m_DataFname, disk_file_length);
         
-        if ((! found) || (m_DataFileLength != disk_file_length))
+        if ((! found_data_file) || (m_DataFileLength != disk_file_length)) {
             return eWrongFile;
+        }
     }
     
     // This space reserved for future use
@@ -536,7 +539,8 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
                           offset_end);
     }
     
-    Int4 * key_offset_addr = (Int4 *) m_IndexLease.GetPtr(key_offset);
+    const char * key_offset_addr =
+        (const char *) m_IndexLease.GetPtr(key_offset);
     
     if (trim_to_null) {
         for(Uint4 i = 0; i<length; i++) {
@@ -547,7 +551,7 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
         }
     }
     
-    str.assign((char*)key_offset_addr, length * sizeof(Int4));
+    str.assign(key_offset_addr, length);
 }
 
 
@@ -964,8 +968,10 @@ s_SeqDB_EndOfFastaID(const string & str, size_t pos)
         return string::npos; // bad
     }
     
+    string portion(str, pos, vbar - pos);
+    
     CSeq_id::E_Choice choice =
-        CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str());
+        CSeq_id::WhichInverseSeqId(portion.c_str());
     
     if (choice != CSeq_id::e_not_set) {
         size_t vbar_prev = vbar;
@@ -1011,12 +1017,21 @@ s_SeqDB_ParseSeqIDs(const string              & line,
         if (end == string::npos) {
             // We didn't get a clean parse -- ignore the data after
             // this point, and return what we have.
-            
-            return ! seqids.empty();
+            break;
         }
         
         string element(line, pos, end - pos);
-        CRef<CSeq_id> id(new CSeq_id(element));
+        
+        CRef<CSeq_id> id;
+        
+        try {
+            id = new CSeq_id(element);
+        }
+        catch(invalid_argument &) {
+            // Maybe this should be done: "seqids.clear();"
+            break;
+        }
+        
         seqids.push_back(id);
         pos = end + 1;
     }
@@ -1084,9 +1099,9 @@ bool CSeqDBIsam::StringToOid(const string   & acc,
     return false;
 }
 
-bool CSeqDBIsam::x_SparseStringToOid(const string   & acc,
-                                     Uint4          & oids,
-                                     CSeqDBLockHold & locked)
+bool CSeqDBIsam::x_SparseStringToOid(const string   &,
+                                     Uint4          &,
+                                     CSeqDBLockHold &)
 {
     cerr << " this should be derived from readdb_acc2fastaEx().." << endl;
     _TROUBLE;
@@ -1218,9 +1233,8 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
     num_id = (Uint4)-1;
     
     vector< CRef< CSeq_id > > seqid_set;
-    s_SeqDB_ParseSeqIDs(acc, seqid_set);
     
-    if (seqid_set.size()) {
+    if (s_SeqDB_ParseSeqIDs(acc, seqid_set)) {
         // Something like SeqIdFindBest()
         CRef<CSeq_id> bestid =
             FindBestChoice(seqid_set, CSeq_id::BestRank);
