@@ -60,6 +60,7 @@ extern "C" {
 #define BLAST_WINDOW_SIZE_PROT 40
 #define BLAST_WINDOW_SIZE_NUCL 0
 #define BLAST_WINDOW_SIZE_MEGABLAST 0
+#define BLAST_WINDOW_SIZE_DISC 40
 
 /** length of word to trigger an extension. */
 #define BLAST_WORDSIZE_PROT 3
