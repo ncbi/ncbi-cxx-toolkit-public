@@ -73,8 +73,6 @@ const int kAIon = 0, kBIon = 1, kCIon = 2, kXIon = 3, kYIon = 4,
     kZIon = 5;
 const int kIonTypes = 6;
 
-// proton mass
-const double kProton = 1.008;
 // direction.  1 = N->C, -1 = C->N
 const double kWater = 18.015; 
 
@@ -508,6 +506,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.16  2004/12/06 22:57:34  lewisg
+  add new file formats
+
   Revision 1.15  2004/12/03 21:14:16  lewisg
   file loading code
 

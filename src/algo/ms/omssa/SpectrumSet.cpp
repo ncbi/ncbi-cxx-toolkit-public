@@ -82,6 +82,8 @@ int CSpectrumSet::LoadFile(EFileType FileType, std::istream& DTA, int Max)
         return LoadMultBlankLineDTA(DTA, Max, true);
         break;
     case eMGF:
+        return LoadMGF(DTA, Max);
+        break;
     case eASC:
     case ePKS:
     case eSCIEX:
@@ -152,7 +154,8 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
 
             while (NStr::Compare(Line, 0, 5, "</dta") != 0) {
                 CNcbiIstrstream istr(Line.c_str());
-                if (!GetDTABody(istr, MySpectrum)) break;
+                if (!GetDTABody(istr, MySpectrum)) 
+                    break;
                 GotOne = true;
                 getline(DTA, Line);
             } 
@@ -190,24 +193,32 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
         do {
 //            GotOne = true;
             Count++;
-            if (Max > 0 && Count > Max) return -1;  // too many
+            if (Max > 0 && Count > Max) 
+                return -1;  // too many
 
             MySpectrum = new CMSSpectrum;
             MySpectrum->SetNumber(iIndex);
             iIndex++;
 
-            if (!GetDTAHeader(DTA, MySpectrum, isPKL)) return 1;
+            if (!GetDTAHeader(DTA, MySpectrum, isPKL)) 
+                if(DTA.eof() && GotOne) 
+                    break;  // probably the end of the file
+                else
+                    return 1;
             getline(DTA, Line);
             getline(DTA, Line);
 
             if (!DTA || DTA.eof()) {
-                if (GotOne) return 0;
-                else return 1;
+                if (GotOne) 
+                    return 0;
+                else 
+                    return 1;
             }
 
             while (Line != "") {
                 CNcbiIstrstream istr(Line.c_str());
-                if (!GetDTABody(istr, MySpectrum)) break;
+                if (!GetDTABody(istr, MySpectrum)) 
+                    break;
                 GotOne = true;
                 getline(DTA, Line);
             } 
@@ -215,7 +226,8 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
             Set().push_back(MySpectrum);
         } while (DTA && !DTA.eof());
 
-        if (!GotOne) return 1;
+        if (!GotOne) 
+            return 1;
 
     } catch (NCBI_NS_STD::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadMultBlankLineDTA: " << e.what());
@@ -236,23 +248,35 @@ bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
                                 bool isPKL)
 {
     double dummy(0.0L);
+    double precursor(0.0L);
 
-    DTA >> dummy;
-    if (dummy <= 0) {
+    // read in precursor
+    DTA >> precursor;
+    if (precursor <= 0) {
         return false;
     }
-    MySpectrum->SetPrecursormz(static_cast <int> ((dummy-1.00794)*MSSCALE));
+
+    // read in pkl intensity
     if(isPKL) {
         DTA >> dummy;
         if (dummy <= 0) {
             return false;
         }
     }
+
+    // read in charge
     DTA >> dummy;
     if (dummy <= 0) {
         return false;
     }
     MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
+
+    // correct dta MH+ to true precursor
+    if(!isPKL) {
+        precursor = (precursor + (dummy - 1)*kProton ) / dummy;
+    }
+    MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
+
     return true;
 }
 
@@ -265,11 +289,13 @@ bool CSpectrumSet::GetDTABody(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
     double dummy(0.0L);
 
     DTA >> dummy;
-    if (dummy <= 0) return false;
+    if (dummy <= 0) 
+        return false;
     MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
     // attenuate the really big peaks
     DTA >> dummy;
-    if (dummy <= 0) return false;
+    if (dummy <= 0) 
+        return false;
     if (dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
     MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
 
@@ -310,6 +336,121 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
     return 0;
 }
 
+///
+/// load mgf
+///
+
+int CSpectrumSet::LoadMGF(std::istream& DTA, int Max)
+{
+    CRef <CMSSpectrum> MySpectrum;
+    int iIndex(0); // the spectrum index
+    int Count(0);  // total number of spectra
+    int retval;
+    bool GotOne(false);  // has a spectrum been read?
+    try {
+        
+        do {
+            Count++;
+            if (Max > 0 && Count > Max) 
+                return -1;  // too many
+
+            MySpectrum = new CMSSpectrum;
+            MySpectrum->SetNumber(iIndex);
+            iIndex++;
+            retval = GetMGFBlock(DTA, MySpectrum);
+
+            if (retval == 0 ) {
+                GotOne = true;
+            }
+            else if (retval == 1) {
+                return 1;  // something went wrong
+            }
+            // retval = -1 means no more records found
+            if (retval != -1) Set().push_back(MySpectrum);
+
+        } while (DTA && !DTA.eof() && retval != -1);
+
+        if (!GotOne) 
+            return 1;
+
+    } catch (NCBI_NS_STD::exception& e) {
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadMGF: " << e.what());
+        throw;
+    } catch (...) {
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadMGF: " );
+        throw;
+    }
+
+    return 0;
+}
+
+
+///
+/// Read in an ms/ms block in an mgf file
+///
+int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+{
+    string Line;
+    bool GotMass(false);
+    double dummy;
+
+    // find the start of the block
+    do {
+        getline(DTA, Line);
+        if(!DTA || DTA.eof()) 
+            return -1;
+    } while (NStr::CompareNocase(Line, 0, 10, "BEGIN IONS") != 0);
+
+    // scan in headers
+    do {
+        getline(DTA, Line);
+        if(!DTA || DTA.eof()) 
+            return 1;
+        if (NStr::CompareNocase(Line, 0, 6, "TITLE=") == 0) {
+            MySpectrum->SetIds().push_back(Line.substr(6, Line.size()-6));
+        }
+        else if (NStr::CompareNocase(Line, 0, 8, "PEPMASS=") == 0) {
+            // mandatory.
+            GotMass = true;
+            // create istrstream as some broken mgf generators insert whitespace separated cruft after mass
+            string LastLine(Line.substr(8, Line.size()-8));
+            CNcbiIstrstream istr(LastLine.c_str());
+            double precursor;
+            istr >> precursor;
+            MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
+        }
+        // keep looping while the first character is not numeric
+    } while (Line.substr(0, 1).find_first_not_of("0123456789.-") == 0);
+
+    if(!GotMass) 
+        return 1;
+
+    while (NStr::CompareNocase(Line, 0, 8, "END IONS") != 0) {
+        if(!DTA || DTA.eof()) 
+            return 1;
+        CNcbiIstrstream istr(Line.c_str());
+        // get rid of blank lines (technically not allowed, but they do occur)
+        if(Line.empty()) 
+            goto skipone;
+        // skip comments (technically not allowed)
+        if(Line.find_first_of("#;/!") == 0) 
+            goto skipone;
+
+        istr >> dummy;
+        if (dummy <= 0) 
+            return 1;
+        MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
+        // attenuate the really big peaks
+        istr >> dummy;
+        if (dummy <= 0) 
+            return 1;
+        if (dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
+        MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
+skipone:
+        getline(DTA, Line);
+    } 
+    return 0;
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -320,6 +461,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/12/06 22:57:34  lewisg
+ * add new file formats
+ *
  * Revision 1.13  2004/12/03 21:14:16  lewisg
  * file loading code
  *

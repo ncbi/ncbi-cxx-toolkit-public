@@ -48,6 +48,9 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// proton mass
+const double kProton = 1.008;
+
 enum EFileType { eDTA, eDTABlank, eDTAXML, eASC, ePKL, ePKS, eSCIEX, eMGF, eUnknown };
 
 class NCBI_XOMSSA_EXPORT CSpectrumSet : public CMSSpectrumset {
@@ -92,6 +95,15 @@ public:
                  bool isPKL = false     // pkl formatted?
 			     );
 
+    ///
+    /// load mgf file
+    ///
+    /// returns -1 if more than Max spectra read
+    int LoadMGF(
+			     std::istream& DTA,  // stream containing mgf file
+                 int Max = 0   // maximum number of dtas to read in, 0= no limit
+			     );
+
 protected:
 
     ///
@@ -106,12 +118,15 @@ protected:
     ///
     /// Read in the body of a dta file
     ///
-    bool CSpectrumSet::GetDTABody(
+    bool GetDTABody(
 				  std::istream& DTA,   // input stream
 				  CRef <CMSSpectrum>& MySpectrum   // asn.1 container for spectra
 				  );
 
-
+    ///
+    /// Read in an ms/ms block in an mgf file
+    ///
+    int GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum); 
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -145,6 +160,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/12/06 22:57:34  lewisg
+ * add new file formats
+ *
  * Revision 1.6  2004/12/03 21:14:16  lewisg
  * file loading code
  *

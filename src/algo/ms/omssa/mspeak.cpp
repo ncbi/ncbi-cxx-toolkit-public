@@ -316,13 +316,13 @@ bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
     }
 }
 
-
+#if 0
 void CMSPeak::AddTotalMass(int massin, int tolin)
 {
     TotalMass = massin;
     tol = tolin;
 }
-
+#endif
 
 void CMSPeak::Sort(int Which)
 {
@@ -432,9 +432,10 @@ bool CMSPeak::CompareTop(CLadder& Ladder)
 int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
 {
     try {
-	TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
+//	TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
 	SetTolerance(MSMSTolerance);
 	Charge = *(Spectrum.GetCharge().begin());
+    Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)Scale);  
 	Num[MSORIGINAL] = 0;   
     
 	const CMSSpectrum::TMz& Mz = Spectrum.GetMz();
@@ -460,7 +461,7 @@ int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance, int Scale)
 int CMSPeak::CountRange(double StartFraction, double StopFraction)
 {
     CMZI Start, Stop;
-    int Precursor = static_cast <int> (TotalMass/Charge + tol/2.0);
+    int Precursor = static_cast <int> (Precursormz + tol/2.0);
     Start.MZ = static_cast <int> (StartFraction * Precursor);
     Stop.MZ = static_cast <int> (StopFraction * Precursor);
     CMZI *LoHit = lower_bound(MZI[MSORIGINAL], MZI[MSORIGINAL] +
@@ -475,7 +476,7 @@ int CMSPeak::CountRange(double StartFraction, double StopFraction)
 int CMSPeak::PercentBelow(void)
 {
     CMZI precursor;
-    precursor.MZ = static_cast <int> (TotalMass/Charge + tol/2.0);
+    precursor.MZ = static_cast <int> (Precursormz + tol/2.0);
     CMZI *Hit = upper_bound(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL],
 			    precursor, CMZICompare());
     Hit++;  // go above the peak
@@ -552,7 +553,7 @@ void CMSPeak::InitHitList(int Minhit)
 
 void CMSPeak::xWrite(std::ostream& FileOut, CMZI *Temp, int Num)
 {
-    FileOut << (double)(TotalMass+kProton)/MSSCALE << " " << Charge << endl;
+    FileOut << CalcPrecursorMass(Charge)/(double)MSSCALE + kProton << " " << Charge << endl;
 
     int i;
     unsigned Intensity;
@@ -613,7 +614,7 @@ void CMSPeak::CullBaseLine(double Threshold, CMZI *Temp, int& TempLen)
 
 
 // cull precursors
-void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, double Precursor)
+void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, int Precursor)
 {
     // chop out precursors
     int iTemp(0), iMZI;
@@ -700,10 +701,8 @@ void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
     TempLen = Num[MSORIGINAL];
 
     int iCharges;
-	double Precursor;
 	for(iCharges = 0; iCharges < GetNumCharges(); iCharges++){
-		Precursor = GetMass()/(double)(GetCharges()[iCharges]);
-		CullPrecursor(Temp, TempLen, Precursor);
+		CullPrecursor(Temp, TempLen, CalcPrecursorMass(GetCharges()[iCharges]));
 	}
 //#define DEBUG_PEAKS1
 #ifdef DEBUG_PEAKS1
@@ -811,9 +810,6 @@ void CMSPeak::SmartCull(double Threshold, int SingleWindow,
 	sort(Temp, Temp+TempLen , CMZICompareIntensity());
     }
 #endif
-#if 0
-    CullPrecursor(Temp, TempLen, Precursor);
-#endif
     CullIsotope(Temp, TempLen);
 #ifdef DEBUG_PEAKS1
     {
@@ -842,7 +838,7 @@ void CMSPeak::SmartCull(double Threshold, int SingleWindow,
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
 	if(Deleted.count(iMZI) != 0) continue;
 	HitCount = 0;
-	if(!ConsiderMultProduct || Temp[iMZI].MZ > GetMass()/2.0) {
+	if(!ConsiderMultProduct || Temp[iMZI].MZ > Precursormz) {
 	    // if charge 1 region, allow fewer peaks
 	    Window = SingleWindow; //27;
 	    HitsAllowed = SingleNum;
@@ -1041,10 +1037,14 @@ void CMSPeakSet::SortPeaks(int Peptol)
     	    // correction for incorrect charge determination.
     	    // see 12/13/02 notebook, pg. 135
     	    ptol = Peaks->GetCharges()[iCharges] * Peptol;
+#if 0
     	    CalcMass = static_cast <int> ((Peaks->GetMass() +
     					   Peaks->GetCharge()*kProton*MSSCALE) * 
     					  Peaks->GetCharges()[iCharges]/(double)(Peaks->GetCharge()) - 
     					  Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
+#endif
+            CalcMass = static_cast <int> (Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
+                                          Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
             temp = new TMassPeak;
     	    temp->Mass = CalcMass;
     	    temp->Peptol = ptol;

@@ -514,7 +514,7 @@ private:
 public:
     ~CMSPeak(void);
 	
-    void AddTotalMass(int massin, int tolin);
+//    void AddTotalMass(int massin, int tolin);
     void Sort(int Which = MSORIGINAL);
 	
     // Read a spectrum set into a CMSPeak
@@ -527,7 +527,7 @@ public:
     // iterate thru peaks, deleting ones that pass the test
     void CullIterate(CMZI *Temp, int& TempLen, TMZIbool FCN);
     // cull precursors
-    void CullPrecursor(CMZI *Temp, int& TempLen, double Precursor);
+    void CullPrecursor(CMZI *Temp, int& TempLen, int Precursor);
     // take out peaks below a threshold
     void CullBaseLine(double Threshold, CMZI *Temp, int& TempLen);
     // cull isotopes using the Markey Method
@@ -641,7 +641,11 @@ public:
 
 
     // getter-setters
-    int GetMass(void);
+//    int GetMass(void);
+    // get precursor m/z
+    int GetPrecursormz(void);
+    // gets a calculated neutral mass
+    int CalcPrecursorMass(int PrecursorCharge);
     // get charge that came from input file
     int GetCharge(void);
 	// gets min precursor charge to consider multiply charged product ions
@@ -675,7 +679,8 @@ private:
     bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
     bool *Match;    // is a peak matched or not?
     CMZI ** IntensitySort;  // points to CMZI original, sorted.
-    int TotalMass;  // neutral mass
+//    int TotalMass;  // neutral mass
+    int Precursormz;
     int Charge;    // Charge from input file
     int Charges[MSMAXCHARGE];  // Computed allowed charges
     int NumCharges;  // array size of Charges[]
@@ -747,9 +752,21 @@ inline int& CMSPeak::SetPeptidesExamined(int ChargeIn)
     return PeptidesExamined[ChargeIn - Charges[0]];
 }
 
+#if 0
 inline int CMSPeak::GetMass(void) 
 { 
     return TotalMass; 
+}
+#endif
+
+inline int CMSPeak::GetPrecursormz(void)
+{
+    return Precursormz;
+}
+
+inline int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
+{
+    return Precursormz * Charge - Charge * kProton * MSSCALE;
 }
 
 // get charge that came from input file
@@ -942,6 +959,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.22  2004/12/06 22:57:34  lewisg
+  add new file formats
+
   Revision 1.21  2004/12/03 21:14:16  lewisg
   file loading code
 

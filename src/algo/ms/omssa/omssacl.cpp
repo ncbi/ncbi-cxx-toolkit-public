@@ -83,7 +83,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 6));
+    SetVersion(CVersionInfo(0, 9, 7));
 }
 
 
@@ -153,6 +153,8 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("fb", "dtainfile", "multiple dta files separated by blank lines to search",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fp", "pklinfile", "pkl formatted file",
+                CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("fm", "pklinfile", "mgf formatted file",
                 CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("o", "textasnoutfile", "filename for text asn.1 formatted search results",
 			   CArgDescriptions::eString, "");
@@ -352,6 +354,15 @@ int COMSSA::Run()
 	    }
 	    FileRetVal = Spectrumset->LoadFile(ePKL, PeakFile);
 	}
+    else if(args["fm"].AsString().size() != 0) {
+         ifstream PeakFile(args["fm"].AsString().c_str());
+         if(!PeakFile) {
+         ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
+              args["fm"].AsString());
+         return 1;
+         }
+         FileRetVal = Spectrumset->LoadFile(eMGF, PeakFile);
+     }
 	else {
 	    ERR_POST(Fatal << "omssatest: input file not given.");
 	    return 1;
@@ -505,6 +516,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.24  2004/12/06 22:57:34  lewisg
+  add new file formats
+
   Revision 1.23  2004/12/03 21:14:16  lewisg
   file loading code
 
