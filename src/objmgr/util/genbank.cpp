@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/03/06 22:18:25  ucko
+* Whoops, accidentally committed old unfinished publication-ordering
+* changes; clarify their status in a comment.
+*
 * Revision 1.16  2002/03/06 22:08:40  ucko
 * Add code to calculate protein weights.
 *
@@ -1175,6 +1179,7 @@ private:
 
 
 // Modeled after SortReferences from the C toolkit.
+// Does not yet cover everything the C version does!
 
 bool CRefLess::operator()(CConstRef<CReference> ref1,
                           CConstRef<CReference> ref2)
