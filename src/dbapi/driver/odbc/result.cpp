@@ -425,6 +425,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         break;
     }
 
+    case SQL_BIGINT:
     case SQL_DECIMAL:
     case SQL_NUMERIC: {
         switch (  item_buf->GetType()  ) {
@@ -988,6 +989,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/01/02 21:05:35  soussov
+ * SQL_BIGINT added in CODBC_RowResult::xLoadItem
+ *
  * Revision 1.2  2002/07/05 15:15:10  soussov
  * fixes bug in ReadItem
  *
