@@ -181,9 +181,6 @@ public:
                               const string& menu_lib_url = kEmptyStr);
     static string GetCodeBody(EType type = eSmith,
                               bool use_dynamic_menu = false);
-    /// Get HTML code for inserting into end of the BODY block.
-    static string GetCodeBodyTagHandler(EType type);
-    static string GetCodeBodyTagAction(EType type);
 
 private:
     /// Get code for menu items in text format (internal JS function code).
@@ -233,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/12/02 14:21:35  ivanov
+ * Remjved obsolete functions GetCodeBodyTag[Handler|Action]()
+ *
  * Revision 1.14  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *
