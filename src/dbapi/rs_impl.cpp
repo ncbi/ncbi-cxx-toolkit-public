@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/05/13 19:07:33  kholodov
+* Modified: every call to GetBlobIStream() returns new istream& object. Changed to retrieve data from several BLOB columns.
+*
 * Revision 1.3  2002/04/05 19:29:50  kholodov
 * Modified: GetBlobIStream() returns one and the same object, which is created
 * on the first call.
@@ -135,9 +138,14 @@ size_t CResultSet::Read(void* buf, size_t size)
 
 istream& CResultSet::GetBlobIStream(size_t buf_size)
 {
+#if 0
     if( m_istr == 0 ) {
         m_istr = new CBlobIStream(m_rs, buf_size);
     }
+#endif
+    delete m_istr;
+    m_istr = new CBlobIStream(m_rs, buf_size);
+ 
     return *m_istr;
 }
 
@@ -183,7 +191,7 @@ void CResultSet::Action(const CDbapiEvent& e)
 
 int CResultSet::GetColNum(const string& name) {
     
-    int i = 0;
+    unsigned int i = 0;
     for( ; i < m_rs->NofItems(); ++i ) {
         
         if( !NStr::Compare(m_rs->ItemName(i), name) )
