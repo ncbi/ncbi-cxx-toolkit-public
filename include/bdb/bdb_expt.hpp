@@ -33,9 +33,7 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
-
-#include <db.h>
+#include <corelib/ncbiexpt.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -61,10 +59,7 @@ class NCBI_BDB_EXPORT CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 class NCBI_BDB_EXPORT CBDB_StrErrAdapt
 {
 public:
-    static const char* strerror(int errnum)
-    {
-        return ::db_strerror(errnum);
-    }
+    static const char* strerror(int errnum);
 };
 
 
@@ -181,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/27 18:57:16  dicuccio
+ * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
+ *
  * Revision 1.4  2003/06/03 18:50:09  kuznets
  * Added dll export/import specifications
  *

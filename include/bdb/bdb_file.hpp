@@ -33,7 +33,7 @@
  */
 
 
-#include "bdb_types.hpp"
+#include <bdb/bdb_types.hpp>
 
 #include <db.h>
 
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/27 18:57:16  dicuccio
+ * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
+ *
  * Revision 1.7  2003/06/10 20:07:27  kuznets
  * Fixed header files not to repeat information from the README file
  *

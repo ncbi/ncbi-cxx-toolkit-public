@@ -32,7 +32,7 @@
  *
  */
 
-#include "bdb_file.hpp"
+#include <bdb/bdb_file.hpp>
 #include <algorithm>
 
 
@@ -192,6 +192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/27 18:57:16  dicuccio
+ * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
+ *
  * Revision 1.4  2003/06/10 20:07:27  kuznets
  * Fixed header files not to repeat information from the README file
  *
