@@ -1731,6 +1731,9 @@ CAnnot_Collector::MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
         else if ( feat_ref.IsMappedProduct() ) {
             mapped_feat->SetProduct(mapped_location);
         }
+        if ( feat_ref.IsPartial() ) {
+            mapped_feat->SetPartial(true);
+        }
 
         ret = mapped_feat;
         m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
@@ -1748,6 +1751,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/10/19 20:51:49  vasilche
+* Restored lost PARTIAL flag on mapped features.
+*
 * Revision 1.28  2004/10/12 17:09:00  grichenk
 * Added mapping of code-break.
 *
