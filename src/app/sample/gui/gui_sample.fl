@@ -1,7 +1,7 @@
 # data file for the Fltk User Interface Designer (fluid)
 version 1.0100 
-header_name {.h} 
-code_name {.cxx}
+header_name {.hpp} 
+code_name {.cpp}
 Function {sliderCB(Fl_Widget* o, void*)} {open private return_type void
 } {
   code {printf("%g     \\r", ((Fl_Counter*)o)->value());
