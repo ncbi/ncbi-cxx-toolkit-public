@@ -233,6 +233,32 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
 NCBI_XBLAST_EXPORT
 BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
 
+/** Create auxiliary query structures with all data corresponding
+ * to a single query sequence within a concatenated set. Allocates the 
+ * structures if the pointers are NULL on input; otherwise only changes the
+ * contents.
+ * @param one_query_info_ptr Pointer to the query information structure for a 
+ *                           single query. Allocated and filled here, so the
+ *                           caller of this function will be responsible for
+ *                           freeing it. [out]
+ * @param one_query_ptr Pointer to the query sequence block structure; allocated
+ *                      here, but the contents are not allocated; it is still 
+ *                      safe to free by the caller after use. [out]
+ * @param query_info Query information structure containing information about a 
+ *                   concatenated set. [in]
+ * @param query Query sequence block corresponding to a concatenated set of 
+ *              queries. [in]
+ * @param query_index Which query index to create the auxiliary structures 
+ *                    for? [in]
+ * @return -1 if memory allocation failed; 0 on success
+ */
+NCBI_XBLAST_EXPORT
+Int2 Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr, 
+                              BLAST_SequenceBlk** one_query_ptr,
+                              const BlastQueryInfo* query_info, 
+                              BLAST_SequenceBlk* query, Int4 query_index);
+
+
 NCBI_XBLAST_EXPORT
 Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
                    Uint1** packed_seq);

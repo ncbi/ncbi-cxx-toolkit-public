@@ -1055,3 +1055,73 @@ Int4 BSearchInt4(Int4 n, Int4* A, Int4 size)
     }
     return b;
 }
+
+Int2
+Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr, 
+                         BLAST_SequenceBlk** one_query_ptr,
+                         const BlastQueryInfo* query_info, 
+                         BLAST_SequenceBlk* query, Int4 query_index)
+{
+    Int4 num_frames;
+    Int4 index;
+    Int4 first_context;
+    Int4 query_offset;
+    BlastQueryInfo* one_query_info = NULL;
+    BLAST_SequenceBlk* one_query = NULL;
+
+    if (!one_query_info_ptr || !one_query_ptr || !query_info || !query ||
+        query_index >= query_info->num_queries)
+        return -1;
+
+    num_frames = (query_info->last_context / query_info->num_queries) + 1;
+    first_context = query_index*num_frames;
+    query_offset = query_info->context_offsets[first_context];
+
+    one_query_info = *one_query_info_ptr;
+    /* If this hasn't been already done, allocate new query information 
+       structure. */
+    if (!one_query_info) {
+        one_query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
+        *one_query_info_ptr = one_query_info;
+        one_query_info->context_offsets = 
+            (Int4*) malloc((num_frames+1)*sizeof(Int4));
+        one_query_info->eff_searchsp_array = 
+            (Int8*) malloc(num_frames*sizeof(Int8));
+        one_query_info->length_adjustments = 
+            (Int4*) malloc(num_frames*sizeof(Int4));
+    }
+    one_query = *one_query_ptr;
+    /* If this hasn't been already done, allocate new sequence block. */
+    if (!one_query) {
+        one_query = (BLAST_SequenceBlk*) calloc(1, sizeof(BLAST_SequenceBlk));
+        *one_query_ptr = one_query;
+    }
+    if (!one_query_info || !one_query)
+        return -1;
+
+    one_query_info->num_queries = 1;
+    one_query_info->last_context = num_frames - 1;
+    memcpy(one_query_info->context_offsets, 
+           &query_info->context_offsets[first_context], 
+           (num_frames+1)*sizeof(Int4));
+    /* Make context offsets relative to this query. */
+    for (index = 0; index <= num_frames; ++index)
+        one_query_info->context_offsets[index] -= query_offset;
+    /* Copy the search space and length adjustments values for this query. */
+    memcpy(one_query_info->eff_searchsp_array, 
+           &query_info->eff_searchsp_array[first_context],
+           num_frames*sizeof(Int8));
+    memcpy(one_query_info->length_adjustments, 
+           &query_info->length_adjustments[first_context],
+           num_frames*sizeof(Int4));
+
+    /* Fill the sequence block information for this one query. */
+    memset(one_query, 0, sizeof(BLAST_SequenceBlk));
+    one_query->sequence = &query->sequence[query_offset];
+    one_query->length = one_query_info->context_offsets[num_frames] - 1;
+    one_query->sequence_allocated = FALSE;
+    one_query->oid = query_index;
+
+    return 0;
+}
+
