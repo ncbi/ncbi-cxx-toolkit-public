@@ -233,6 +233,11 @@ on SetProjectData()
 		AddSimpleProject("xutil", {}, "util")
 		AddSimpleProject("regexp", {}, "util:regexp")
 		AddSimpleProject("ximage", {}, "util:image")
+		AddSimpleProjectExceptFiles("z", {}, "util:compress:zlib", Â
+			{"example.c", "maketree.c", "minigzip.c"})
+		AddSimpleProjectListFiles("bz2", {}, "util:compress:bzip2", Â
+			{"blocksort.c", "huffman.c", "crctable.c", "randtable.c", "compress.c", "decompress.c", "bzlib.c"})
+		AddSimpleProject("xcompress", {}, "util:compress")
 		AddSimpleProject("bdb", {"bdb"}, "bdb")
 		
 		set libdbFiles to {Â
@@ -377,6 +382,7 @@ on SetProjectData()
 			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
 		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "regexp"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
+		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
@@ -384,7 +390,7 @@ on SetProjectData()
 			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
