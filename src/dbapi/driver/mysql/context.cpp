@@ -143,6 +143,7 @@ NCBI_EntryPoint_xdbapi_mysql(
     CHostEntryPointImpl<CDbapiMySqlCF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
+NCBI_DBAPIDRIVER_MYSQL_EXPORT
 void
 DBAPI_RegisterDriver_MYSQL(void)
 {
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/02 19:29:54  ssikorsk
+ * Export new RegisterDriver function on Windows
+ *
  * Revision 1.9  2005/03/01 15:22:55  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *

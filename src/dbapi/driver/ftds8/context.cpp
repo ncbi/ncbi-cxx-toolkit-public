@@ -604,6 +604,7 @@ NCBI_EntryPoint_xdbapi_ftds(
     CHostEntryPointImpl<CDbapiFtdsCF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
+NCBI_DBAPIDRIVER_FTDS_EXPORT
 void
 DBAPI_RegisterDriver_FTDS(void)
 {
@@ -617,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/03/02 19:29:54  ssikorsk
+ * Export new RegisterDriver function on Windows
+ *
  * Revision 1.32  2005/03/01 15:22:55  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *

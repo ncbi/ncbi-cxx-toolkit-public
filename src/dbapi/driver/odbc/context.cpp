@@ -524,6 +524,7 @@ NCBI_EntryPoint_xdbapi_odbc(
     CHostEntryPointImpl<CDbapiOdbcCF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
+NCBI_DBAPIDRIVER_ODBC_EXPORT
 void
 DBAPI_RegisterDriver_ODBC(void)
 {
@@ -538,6 +539,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/02 19:29:54  ssikorsk
+ * Export new RegisterDriver function on Windows
+ *
  * Revision 1.16  2005/03/01 15:22:55  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *

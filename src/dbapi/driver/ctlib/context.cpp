@@ -1021,6 +1021,7 @@ NCBI_EntryPoint_xdbapi_ctlib(
     CHostEntryPointImpl<CDbapiCtlibCF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
+NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
 DBAPI_RegisterDriver_CTLIB(void)
 {
@@ -1035,6 +1036,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/03/02 19:29:54  ssikorsk
+ * Export new RegisterDriver function on Windows
+ *
  * Revision 1.34  2005/03/01 15:22:55  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *
