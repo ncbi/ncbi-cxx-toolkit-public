@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2001/09/06 18:34:28  thiessen
+* more mac tweaks
+*
 * Revision 1.78  2001/09/06 18:15:44  thiessen
 * fix OpenGL window initialization/OnSize to work on Mac
 *
@@ -757,10 +760,18 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_ZOOM_OUT, "Zoom &Out\tx");
     menu->Append(MID_RESET, "&Reset");
     menu->AppendSeparator();
+#ifdef __WXMSW__
     menu->Append(MID_NEXT_FRAME, "&Next Frame\tRight");
     menu->Append(MID_PREV_FRAME, "Pre&vious Frame\tLeft");
     menu->Append(MID_FIRST_FRAME, "&First Frame\tDown");
     menu->Append(MID_LAST_FRAME, "&Last Frame\tUp");
+#else
+    // other platforms don't like to display these long accelerator names
+    menu->Append(MID_NEXT_FRAME, "&Next Frame");
+    menu->Append(MID_PREV_FRAME, "Pre&vious Frame");
+    menu->Append(MID_FIRST_FRAME, "&First Frame");
+    menu->Append(MID_LAST_FRAME, "&Last Frame");
+#endif
     menu->Append(MID_ALL_FRAMES, "&All Frames\ta");
     menu->AppendSeparator();
     subMenu = new wxMenu;
@@ -1519,6 +1530,10 @@ void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
     wxGLCanvas::OnSize(event);
     renderer->NewView();
+#ifdef __WXMAC__
+    // seems this should not be necessary, but until Mac wxGLCanvas move/resize fixed...
+    Refresh(false);
+#endif
 }
 
 void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
