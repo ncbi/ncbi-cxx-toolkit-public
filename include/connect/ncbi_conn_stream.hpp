@@ -54,7 +54,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_http_connector.h>
+#include <connect/ncbi_namedpipe_connector.hpp>
 #include <connect/ncbi_memory_connector.h>
+#include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
 
@@ -71,7 +73,7 @@ BEGIN_NCBI_SCOPE
 class CConn_Streambuf; // Forward declaration
 
 
-const streamsize kConn_DefBufSize = 4096;
+const streamsize kConn_DefaultBufSize = 4096;
 
 
 /*
@@ -91,14 +93,21 @@ public:
     CConn_IOStream
     (CONNECTOR       connector,
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefBufSize,
+     streamsize      buf_size = kConn_DefaultBufSize,
      bool            do_tie   = true);
     virtual ~CConn_IOStream(void);
 
-    CONN GetCONN() const;
+    CONN GetCONN(void) const;
+
+protected:
+    CConn_IOStream(CConn_Streambuf* sb);
 
 private:
     CConn_Streambuf* m_CSb;
+
+    // Disable copy constructor and assignment.
+    CConn_IOStream(const CConn_IOStream&);
+    CConn_IOStream& operator= (const CConn_IOStream&);
 };
 
 
@@ -118,7 +127,7 @@ public:
      unsigned short  port,         /* ... and port number */
      unsigned int    max_try  = 3, /* number of attempts  */
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefBufSize);
+     streamsize      buf_size = kConn_DefaultBufSize);
 
     // This variant uses existing socket "sock" to build the stream upon it.
     // NOTE:  it revokes all ownership of the socket, and further assumes the
@@ -128,7 +137,12 @@ public:
     (SOCK            sock,         /* socket              */
      unsigned int    max_try  = 3, /* number of attempts  */
      const STimeout* timeout  = kDefaultTimeout,
-     streamsize      buf_size = kConn_DefBufSize);
+     streamsize      buf_size = kConn_DefaultBufSize);
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_SocketStream(const CConn_SocketStream&);
+    CConn_SocketStream& operator= (const CConn_SocketStream&);
 };
 
 
@@ -167,14 +181,14 @@ public:
      unsigned short  port        = 80,
      THCC_Flags      flags       = fHCC_AutoReconnect,
      const STimeout* timeout     = kDefaultTimeout,
-     streamsize      buf_size    = kConn_DefBufSize
+     streamsize      buf_size    = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
     (const string&   url,
      THCC_Flags      flags       = fHCC_AutoReconnect,
      const STimeout* timeout     = kDefaultTimeout,
-     streamsize      buf_size    = kConn_DefBufSize
+     streamsize      buf_size    = kConn_DefaultBufSize
      );
 
     CConn_HttpStream
@@ -182,8 +196,13 @@ public:
      const string&       user_header = kEmptyStr,
      THCC_Flags          flags       = fHCC_AutoReconnect,
      const STimeout*     timeout     = kDefaultTimeout,
-     streamsize          buf_size    = kConn_DefBufSize
+     streamsize          buf_size    = kConn_DefaultBufSize
      );
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_HttpStream(const CConn_HttpStream&);
+    CConn_HttpStream& operator= (const CConn_HttpStream&);
 };
 
 
@@ -211,7 +230,12 @@ public:
      const SConnNetInfo*   net_info = 0,
      const SSERVICE_Extra* params   = 0,
      const STimeout*       timeout  = kDefaultTimeout,
-     streamsize            buf_size = kConn_DefBufSize);
+     streamsize            buf_size = kConn_DefaultBufSize);
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_ServiceStream(const CConn_ServiceStream&);
+    CConn_ServiceStream& operator= (const CConn_ServiceStream&);
 };
 
 
@@ -227,8 +251,68 @@ class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 public:
     CConn_MemoryStream(CRWLock*   lk = 0,
                        bool       pass_lk_ownership = true,
-                       streamsize buf_size = kConn_DefBufSize);
+                       streamsize buf_size = kConn_DefaultBufSize);
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_MemoryStream(const CConn_MemoryStream&);
+    CConn_MemoryStream& operator= (const CConn_MemoryStream&);
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConn_PipeStream
+///
+
+class NCBI_XCONNECT_EXPORT CConn_PipeStream : public CConn_IOStream
+{
+public:
+    CConn_PipeStream
+    (const string&         cmd,
+     const vector<string>& args,
+     CPipe::TCreateFlags   create_flags = 0,
+     const STimeout*       timeout      = kDefaultTimeout,
+     streamsize            buf_size     = kConn_DefaultBufSize
+     );
+
+    /// Set the read handle of the child process as specified by "handle"
+    /// (eStdOut/eStdErr).
+    EIO_Status SetReadHandle(CPipe::EChildIOHandle from_handle);
+    CPipe&     GetPipe(void) { return m_Pipe; };
+
+protected:
+    CPipe m_Pipe;                       // underlying pipe
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_PipeStream(const CConn_PipeStream&);
+    CConn_PipeStream& operator= (const CConn_PipeStream&);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CConn_NamedPipeStream
+///
+class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
+{
+public:
+    CConn_NamedPipeStream
+    (const string&   pipename,
+     size_t          pipesize = CNamedPipe::kDefaultPipeSize,
+     const STimeout* timeout  = kDefaultTimeout,
+     streamsize      buf_size = kConn_DefaultBufSize
+     );
+
+private:
+    // Disable copy constructor and assignment.
+    CConn_NamedPipeStream(const CConn_NamedPipeStream&);
+    CConn_NamedPipeStream& operator= (const CConn_NamedPipeStream&);
+};
+
 
 
 END_NCBI_SCOPE
@@ -240,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/09/23 21:00:02  lavr
+ * +CConn_PipeStream, +CConn_NamedPipeStream, +disabled copy ctors and assigns
+ *
  * Revision 6.21  2003/08/25 14:47:00  lavr
  * Employ new k..Timeout constants
  *
