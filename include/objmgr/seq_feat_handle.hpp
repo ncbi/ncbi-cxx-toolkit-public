@@ -94,6 +94,7 @@ public:
     // Mappings for CSeq_feat methods
     bool IsSetId(void) const;
     const CFeat_id& GetId(void) const;
+    bool IsSetData(void) const;
     const CSeqFeatData& GetData(void) const;
     bool IsSetPartial(void) const;
     bool GetPartial(void) const;
@@ -232,6 +233,13 @@ inline
 const CFeat_id& CSeq_feat_Handle::GetId(void) const
 {
     return x_GetSeq_feat().GetId();
+}
+
+
+inline
+bool CSeq_feat_Handle::IsSetData(void) const
+{
+    return x_GetSeq_feat().IsSetData();
 }
 
 
@@ -453,6 +461,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/02/25 15:58:42  grichenk
+* Added IsSetData()
+*
 * Revision 1.10  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *
