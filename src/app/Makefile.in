@@ -3,7 +3,7 @@
 # Miscellaneous applications
 #################################
 
-SUB_PROJ = sample id1_fetch
+SUB_PROJ = sample asn2asn id1_fetch
 EXPENDABLE_SUB_PROJ = cn3d
 
 srcdir = @srcdir@
