@@ -1,8 +1,8 @@
 [-]
 _export = NCBI_ENTREZ2_EXPORT
-clients = client
+clients = entrez2_client
 
-[client]
+[entrez2_client]
 class   = CEntrez2Client
 service = ENTREZ2
 request = Entrez2-request.request

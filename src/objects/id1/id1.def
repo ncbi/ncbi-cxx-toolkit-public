@@ -1,8 +1,8 @@
 [-]
 _export = NCBI_ID1_EXPORT
-clients = client
+clients = id1_client
 
-[client]
+[id1_client]
 class                 = CID1Client
 service               = ID1
 request               = ID1server-request

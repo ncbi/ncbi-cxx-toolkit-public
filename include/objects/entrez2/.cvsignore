@@ -1,5 +1,4 @@
 .cvsignore
 [A-Z]*.hpp
 entrez2__.hpp
-client.hpp
-client_.hpp
+entrez2_client_.hpp

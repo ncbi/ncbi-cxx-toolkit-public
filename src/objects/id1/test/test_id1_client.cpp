@@ -41,7 +41,7 @@
 #include <objects/id1/Entry_complexities.hpp>
 #include <objects/id1/ID1Seq_hist.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
-#include <objects/id1/client.hpp>
+#include <objects/id1/id1_client.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -185,6 +185,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/04/09 16:00:14  ucko
+* Give all RPC clients unique basenames.
+*
 * Revision 1.4  2003/03/11 15:39:12  kuznets
 * iterate -> ITERATE
 *

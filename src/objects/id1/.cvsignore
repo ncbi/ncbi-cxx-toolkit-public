@@ -1,8 +1,7 @@
 .cvsignore
 [A-Z]*.cpp
 *__.cpp
-client.cpp
-client_.cpp
+id1_client_.cpp
 Makefile.in
 Makefile.*.lib
 *.files

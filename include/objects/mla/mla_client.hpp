@@ -34,12 +34,12 @@
  *   'mla.asn'.
  */
 
-#ifndef OBJECTS_MLA_CLIENT_HPP
-#define OBJECTS_MLA_CLIENT_HPP
+#ifndef OBJECTS_MLA_MLA_CLIENT_HPP
+#define OBJECTS_MLA_MLA_CLIENT_HPP
 
 
 // generated includes
-#include <objects/mla/client_.hpp>
+#include <objects/mla/mla_client_.hpp>
 
 // kludge to make sure the proper << is visible to the base class
 #include <objects/mla/Error_val.hpp> 
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.1  2003/04/09 16:00:13  ucko
+* Give all RPC clients unique basenames.
+*
 * Revision 1.1  2002/11/15 17:17:24  ucko
 * Pull in Error_val.hpp to ensure our operator << is visible to the code
 * in client_.cpp.
@@ -97,5 +100,5 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif // OBJECTS_MLA_CLIENT_HPP
+#endif // OBJECTS_MLA_MLA_CLIENT_HPP
 /* Original file checksum: lines: 93, chars: 2368, CRC32: da8f8793 */

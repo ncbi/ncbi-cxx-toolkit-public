@@ -49,14 +49,14 @@
 #include <objects/entrez2/Entrez2_docsum_list.hpp>
 #include <objects/entrez2/Entrez2_eval_boolean.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
-#include <objects/entrez2/client.hpp>
+#include <objects/entrez2/entrez2_client.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/id1/ID1Seq_hist.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
-#include <objects/id1/client.hpp>
+#include <objects/id1/id1_client.hpp>
 
 #include <objects/objmgr/graph_ci.hpp>
 #include <objects/objmgr/object_manager.hpp>
@@ -738,6 +738,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/04/09 16:00:15  ucko
+* Give all RPC clients unique basenames.
+*
 * Revision 1.41  2003/04/03 17:45:25  ucko
 * Switch to new (differently buggy ;-)) flat-file generator.
 * Drop s_SplitString, as NStr::Tokenize does the same thing.

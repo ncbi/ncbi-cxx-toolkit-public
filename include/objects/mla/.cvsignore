@@ -1,5 +1,4 @@
 .cvsignore
 [A-Z]*.hpp
 mla__.hpp
-client.hpp
-client_.hpp
+mla_client_.hpp

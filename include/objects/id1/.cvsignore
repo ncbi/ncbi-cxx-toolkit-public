@@ -1,5 +1,4 @@
 .cvsignore
 [A-Z]*.hpp
 id1__.hpp
-client.hpp
-client_.hpp
+id1_client_.hpp

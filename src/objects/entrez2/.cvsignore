@@ -5,8 +5,8 @@
 .cvsignore
 [A-Z]*.cpp
 *__.cpp
-client.cpp
-client_.cpp
+entrez2_client.cpp
+entrez2_client_.cpp
 Makefile.*.lib
 Makefile.in
 gmon.out

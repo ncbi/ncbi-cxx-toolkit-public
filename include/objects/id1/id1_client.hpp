@@ -34,12 +34,12 @@
  *   'id1.asn'.
  */
 
-#ifndef OBJECTS_ID1_CLIENT_HPP
-#define OBJECTS_ID1_CLIENT_HPP
+#ifndef OBJECTS_ID1_ID1_CLIENT_HPP
+#define OBJECTS_ID1_ID1_CLIENT_HPP
 
 
 // generated includes
-#include <objects/id1/client_.hpp>
+#include <objects/id1/id1_client_.hpp>
 
 // generated classes
 
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.1  2003/04/09 16:00:13  ucko
+* Give all RPC clients unique basenames.
+*
 * Revision 1.2  2003/03/21 16:00:03  shomrat
 * Added export specifier
 *
@@ -105,5 +108,5 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif // OBJECTS_ID1_CLIENT_HPP
+#endif // OBJECTS_ID1_ID1_CLIENT_HPP
 /* Original file checksum: lines: 93, chars: 2368, CRC32: 45b6687e */
