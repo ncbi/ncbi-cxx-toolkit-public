@@ -251,7 +251,11 @@ static Int4 readBlockData(CharPtr asnFileName, FILE *diagfp,
   }
   listOfSeqAligns = blockAlignPtr->seqannot->data;
   ddp = listOfSeqAligns->segs;
-  (*sequence_id) = ddp->id;
+  if (NULL != blockAlignPtr->trunc_master) {
+       (*sequence_id) = blockAlignPtr->trunc_master->id;
+  } 
+  else 
+    (*sequence_id) = ddp->id;
   blockCounter = 0;
   
   /* get masterSequence which is a Uint1Ptr out of
@@ -828,6 +832,7 @@ alignBlocks * alignBlocksNew(numBlocks)
   returnValue->extendedBackScore = 0;
   returnValue->extendedForwardScore = 0;
   returnValue->score = 0;
+  returnValue->scoreAdded = 0;
   returnValue->numBlocksMatched = 0;
   returnValue->next = NULL;
   return(returnValue);
@@ -876,6 +881,7 @@ void initializeBestPairs(Int4 numBlocks, Int4 queryLength, Int4 initialBestScore
     while (NULL != thisAlignPiece) {
       nextAlignBlock = alignBlocksNew(numBlocks);
       nextAlignBlock->score = thisAlignPiece->score;
+      nextAlignBlock->scoreAdded = thisAlignPiece->score;
       nextAlignBlock->numBlocksMatched = 1;
       nextAlignBlock->queryStarts[blockIndex] = thisAlignPiece->queryStart;
       nextAlignBlock->queryEnds[blockIndex] = thisAlignPiece->queryEnd;
@@ -988,6 +994,7 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 		secondBlockCandidate->queryEnds[blockIndex2];
 	      newAlignBlocks->score = firstBlockCandidate->score +
 		                      secondBlockCandidate->score;
+	      newAlignBlocks->scoreAdded = secondBlockCandidate->score;
 	      newAlignBlocks->numBlocksMatched = firstBlockCandidate->numBlocksMatched +
 		                      secondBlockCandidate->numBlocksMatched;
 	      if (newAlignBlocks->score > firstBlockCandidate->extendedForwardScore)
@@ -1026,6 +1033,7 @@ alignBlocks *copyAlignBlock(alignBlocks *oldAlignBlock, Int4 numBlocks)
     returnAlignBlock->queryStarts[i] = oldAlignBlock->queryStarts[i];
     returnAlignBlock->queryEnds[i] = oldAlignBlock->queryEnds[i];
     returnAlignBlock->score = oldAlignBlock->score;
+    returnAlignBlock->scoreAdded = oldAlignBlock->scoreAdded;
     returnAlignBlock->numBlocksMatched = oldAlignBlock->numBlocksMatched;
     returnAlignBlock->extendedForwardScore = oldAlignBlock->extendedForwardScore;
     returnAlignBlock->extendedBackScore = oldAlignBlock->extendedBackScore;
@@ -1158,8 +1166,9 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
     for(blockIndex2 = startLoop2; blockIndex2 < endLoop2; blockIndex2++) {
       oldAlignBlock = bestPairs[blockIndex1][blockIndex2];
       while(NULL != oldAlignBlock) {
-	if ((0 == oldAlignBlock->extendedForwardScore) &&
-	    (0 == oldAlignBlock->extendedBackScore)) {
+	if (((0 == oldAlignBlock->extendedForwardScore) ||
+	     (oldAlignBlock->score >= oldAlignBlock->extendedForwardScore)) &&
+	    (0 == oldAlignBlock->extendedBackScore) && (oldAlignBlock->scoreAdded >= 0)) {
 	  newAlignBlock = copyAlignBlock(oldAlignBlock,numBlocks);
 	  numToPrint++;
 	  if (NULL == lastAlignBlock) {
@@ -1524,7 +1533,7 @@ Int2  Main(void)
 	 }
      }
    
-   sep = FastaToSeqEntryEx(infp, FALSE, NULL, FALSE);
+   sep = FastaToSeqEntryEx(infp, FALSE, NULL, believe_query);
    if (sep != NULL) {
      query_bsp = NULL;
      SeqEntryExplore(sep, &query_bsp, FindProt);
@@ -1605,9 +1614,13 @@ Int2  Main(void)
  
    searchSpaceSize = getSearchSpaceSize(masterLength,myargs[14].intvalue,myargs[15].intvalue);
 
-   private_slp = SeqLocIntNew(0, fake_bsp->length-1 , Seq_strand_plus, SeqIdFindBest(fake_bsp->id, SEQID_GI));
-   local_sequence_id = SeqIdFindBest(SeqLocId(private_slp), SEQID_GI);
-   query_id = SeqIdDup(local_sequence_id);
+   if (believe_query)
+     query_id = query_bsp->id;
+   else {
+     private_slp = SeqLocIntNew(0, fake_bsp->length-1 , Seq_strand_plus, SeqIdFindBest(fake_bsp->id, SEQID_GI));
+     local_sequence_id = SeqIdFindBest(SeqLocId(private_slp), SEQID_GI);
+     query_id = SeqIdDup(local_sequence_id);
+   }
 
    allocateAlignPieceMemory(numBlocks);
    localAlignment = (Boolean) myargs[29].intvalue;

@@ -38,7 +38,7 @@ Contents: header file for block IMPALA
 /*
  * $Id$
  *
- * This file is the same as Alejandro's blocka.h as of 8/13/02
+ * This file is the same as Alejandro's blocka.h as of 12/13/02
  */
 
 #include <ncbi.h>
@@ -63,6 +63,7 @@ typedef struct alignBlocks {
   Int4 extendedBackScore;
   Int4 extendedForwardScore;
   Int4 score;
+  Int4 scoreAdded;
   Int4 numBlocksMatched;
   struct alignBlocks *next;
 } alignBlocks;

@@ -57,6 +57,7 @@ typedef struct alignBlocks {
   Int4 extendedBackScore;
   Int4 extendedForwardScore;
   Int4 score;
+  Int4 scoreAdded;
   Int4 numBlocksMatched;
   struct alignBlocks *next;
 } alignBlocks;
