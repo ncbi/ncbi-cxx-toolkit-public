@@ -42,9 +42,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// Default compression I/O stream buffer size
-const streamsize kCompressionDefaultBufSize = 16*1024;
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -226,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/10 16:17:48  ivanov
+ * Moved kCompressionDefaultBufSize definition to compress.hpp
+ *
  * Revision 1.5  2003/06/17 15:49:32  ivanov
  * The second Compression API redesign. Replaced all standalone compression-
  * decompression I/O classes with unified CCompression[I/O]Stream classes.
