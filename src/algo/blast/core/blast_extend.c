@@ -103,7 +103,7 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 }
 
 /* Description in blast_extend.h */
-Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
+Int2 BLAST_ExtendWordInit(Uint4 query_length,
    const BlastInitialWordOptions* word_options,
    Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr)
 {
@@ -125,7 +125,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
          (MB_StackTable*) malloc(sizeof(MB_StackTable));
 
       av_search_space = 
-         ((double) query->length) * dblen / dbseq_num;
+         ((double) query_length) * dblen / dbseq_num;
       num_stacks = MIN(1 + (Int4) (sqrt(av_search_space)/100), 500);
       stack_size = 5000/num_stacks;
       stack_table->stack_index = (Int4*) calloc(num_stacks, sizeof(Int4));
@@ -144,7 +144,7 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
       BLAST_DiagTable* diag_table;
 
       ewp->diag_table = diag_table = 
-         BLAST_DiagTableNew(query->length, multiple_hits, 
+         BLAST_DiagTableNew(query_length, multiple_hits, 
                             word_options->window_size);
       /* Allocate the buffer to be used for diagonal array. */
       buffer = 
