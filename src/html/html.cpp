@@ -449,10 +449,10 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
             CNCBINode* parent = previous->GetNode();
             if ( parent && parent->HaveChildren() &&
                  parent->Children().size() > 1 )
-                out << endl; // separate child nodes by newline
+                out << '\n'; // separate child nodes by newline
         }
         else {
-            out << endl;
+            out << '\n';
         }
     }
     return out;
@@ -475,7 +475,7 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
                 return out;
             }
         }
-        out << endl;
+        out << '\n';
     }
     return out;
 }
@@ -2077,6 +2077,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2003/05/30 18:39:33  lavr
+ * Replace endl's with explicit '\n' to avoid premature flushing
+ *
  * Revision 1.84  2003/05/15 12:33:54  ucko
  * s_Find: drop assertion, and just return NPOS at/past the end of s.
  *
