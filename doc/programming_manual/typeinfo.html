@@ -232,10 +232,10 @@ to the type information for its members can be gained using a
 a <i>CMemberIterator</i> pointing to the first data member in the class; the 
 <i>FindMember*()</i> methods return a <i>CMemberIterator</i> pointing to a data member
 whose name or tag matches the input argument. The <i>CMemberIterator</i> class is a 
-bidirectional iterator whose operators are defined as follows: 
+forward iterator whose operators are defined as follows: 
 
 <ul>
-<li> the <i>++</i> and <i>--</i> operators increment/decrement the iterator, respectively
+<li> the <i>++</i> operator increments the iterator
 <li> the <i>()</i> operator tests that the iterator has not exceeded the legitimate range
 <li> the <i>*</i> dereferencing operator returns a <i>CObjectTypeInfo</i> object for the current data member
 </ul>
@@ -256,10 +256,7 @@ interface does not permit any modifications to the object in its methods. The co
 <center><i>    CConstObjectInfo(const void* instancePtr, const CTypeInfo* typeinfoPtr);</i></center><p>
 
 Alternatively, the constructor can be invoked with a single STL <i>pair</i> containing these
-two objects, i.e.:<p>
-
-<center><i>    CConstObjectInfo(pair&lt;const void*, const CTypeInfo*>);</i></center>
-<p>
+two objects.<p>
 
 Each <i>CConstObjectInfo</i> contains a pointer to the object's type information as well as
 a pointer to an instance of the object. The existence or validity of this instance
@@ -272,12 +269,7 @@ can be checked using any of the following <i>CConstObjectInfo</i> methods and op
 The instance pointed to can be accessed via <i>CConstObjectInfo::GetObjectPtr()</i>, and the 
 pointer can be reset to a null pointer using <i>CConstObjectInfo::ResetObjectPtr()</i>. The 
 value type returned by <i>GetObjectPtr</i> is a <i>void</i> pointer however, and is therefore
-of limited utility. A more useful method is the <i>GetPair()</i> function, which returns
-an STL <i>pair</i>:
-
-<pre>
-		pair&lt;const void*, const CTypeInfo*> GetPair(void) const;
-</pre>
+of limited utility. <p>
 
 For <i>primitive</i> type objects, the <i>CConstObjectInfo</i> interface provides access to the currently
 assigned value using <i>GetPrimitiveValueXxx()</i>. Here, <i>Xxx</i> may be <i>Bool, Char, Long,
@@ -306,7 +298,7 @@ calls the appropriate <i>GetPrimitiveValueXxx()</i> method depending on the bran
 
 Member iterator methods are also defined in the <i>CConstObjectInfo</i> class, with a similar
 interface to that found in the <i>CObjectTypeInfo</i> class. In this case however, the dereferencing
-operators return a <i>CConstObjectInfo</i> object - <i>not</i> a <i>CObjectTypeInfo()</i> object -
+operators return a <i>CConstObjectInfo</i> object - <i>not</i> a <i>CObjectTypeInfo</i> object -
 for the current member. For C++ <i>class</i> objects, these member functions are:
 
     <ul><li><i> CMemberIterator BeginMembers(void) const;</i>
@@ -321,10 +313,9 @@ dereferencing operator (*) can be applied to the object returned by this method 
 still be accessed using the <i>CObjectTypeInfo</i> methods.<p>
 
 The <i>CConstObjectInfo</i> class also defines an <i>element</i> iterator for container type
-objects. Like other bidirectional iterators, the <i>CElementIterator</i> interface includes
-increment, decrement, testing, and dereferencing operators. In this case, the dereferencing operator
-(*) returns an STL <i>pair&lt;const void*, const CTypeInfo*></i> that references the current
-element.<p>
+objects. <i>CConstObjectInfo::CElementIterator</i> is a forward iterator whose interface includes increment and
+testing operators. Dereferencing is implemented by the iterator's <i>GetElement()</i> method, which
+returns a <i>CConstObjectInfo*></i> for the current element.<p>
 
 Finally, for <i>pointer</i> type objects, the type returned by the method <i>GetPointedObject()</i>
 is also a <i>CConstObjectInfo</i> for the object - not a <i>CObjectTypeInfo</i> object.<p>
@@ -339,12 +330,11 @@ object itself or its data members.<p>
 
 For <i>primitive</i> type objects, a set of <i>SetPrimitiveValueXxx()</i> methods are available,
 complimentary to the <i>GetPrimitiveValueXxx()</i> methods described above.  Methods that return
-member and choice variant iterator objects are again reimplemented, and the de-referencing operators
-now return a <i>CObjectInfo</i> object for that data member or variant. As the <i>CObjectInfo</i>
-now points to a <i>mutable</i> object, these iterators can be used to set values for the data member
-or variant. Similarly, the dereferencing operator (*) for a <i>CObjectInfo</i>'s
-<i>CElementIterator</i> returns an STL <i>pair&lt;void*, const CTypeInfo*></i>, where the element
-pointed to by the <i>void</i> pointer is mutable.
+member iterator objects are again reimplemented, and the de-referencing operators now return a
+<i>CObjectInfo</i> object for that data member. As the <i>CObjectInfo</i> now points to a
+<i>mutable</i> object, these iterators can be used to set values for the data member. Similarly, 
+<i>*GetCurrentChoiceVariant()</i> now returns a <i>CObjectInfo</i>. as does 
+<i>CObjectInfo::CElementIterator::GetElement()</i>. 
 
 <a name = "usage"> <h3>Usage of object type information </h3>
 We can now reconsider how the <a href="#example"> <i>LoadObject()</i></a> function might be
