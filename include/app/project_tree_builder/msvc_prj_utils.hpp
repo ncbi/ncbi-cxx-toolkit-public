@@ -216,18 +216,37 @@ string GetOpt(const CNcbiRegistry& registry,
 string ConfigName(const string& config);
 
 
-/// Add source file and use PCH if possible 
-class CSourceFileToProjectInserter
+
+//-----------------------------------------------------------------------------
+
+// Base interface class for all insertors
+class IFilesToProjectInserter
 {
 public:
-    CSourceFileToProjectInserter(const string&            project_id,
-                                 const list<SConfigInfo>& configs,
-                                 const string&            project_dir);
+    virtual ~IFilesToProjectInserter(void)
+    {
+    }
 
-    ~CSourceFileToProjectInserter(void);
+    virtual void AddSourceFile (const string& rel_file_path) = 0;
+    virtual void AddHeaderFile (const string& rel_file_path) = 0;
+    virtual void AddInlineFile (const string& rel_file_path) = 0;
 
-    void operator() (CRef<CFilter>&          filter, 
-                     const string&           rel_source_file);
+    virtual void Finalize      (void)                        = 0;
+};
+
+
+// Insert .cpp and .c files to filter and set PCH usage if necessary
+class CSrcToFilterInserterWithPch
+{
+public:
+    CSrcToFilterInserterWithPch(const string&            project_id,
+                                const list<SConfigInfo>& configs,
+                                const string&            project_dir);
+
+    ~CSrcToFilterInserterWithPch(void);
+
+    void operator() (CRef<CFilter>& filter, 
+                     const string&  rel_source_file);
 
 private:
     string            m_ProjectId;
@@ -246,7 +265,96 @@ private:
 
     TPch DefinePchUsage(const string&     project_dir,
                         const string&     rel_source_file);
+    // Prohibited to:
+    CSrcToFilterInserterWithPch(void);
+    CSrcToFilterInserterWithPch(const CSrcToFilterInserterWithPch&);
+    CSrcToFilterInserterWithPch& operator=(const CSrcToFilterInserterWithPch&);
 };
+
+
+class CBasicProjectsFilesInserter : public IFilesToProjectInserter
+{
+public:
+    CBasicProjectsFilesInserter(CVisualStudioProject*    vcproj,
+                                const string&            project_id,
+                                const list<SConfigInfo>& configs,
+                                const string&            project_dir);
+
+    virtual ~CBasicProjectsFilesInserter(void);
+
+    // IFilesToProjectInserter implementation
+    virtual void AddSourceFile (const string& rel_file_path);
+    virtual void AddHeaderFile (const string& rel_file_path);
+    virtual void AddInlineFile (const string& rel_file_path);
+
+    virtual void Finalize      (void);
+
+    struct SFiltersItem
+    {
+        CRef<CFilter> m_SourceFiles;
+        CRef<CFilter> m_HeaderFiles;
+        CRef<CFilter> m_InlineFiles;
+        
+        void Initilize(void);
+
+        void AddSourceFile (CSrcToFilterInserterWithPch& inserter_w_pch,
+                            const string&                rel_file_path);
+
+        void AddHeaderFile (const string& rel_file_path);
+
+        void AddInlineFile (const string& rel_file_path);
+
+    };
+
+private:
+    CVisualStudioProject*       m_Vcproj;
+    
+    CSrcToFilterInserterWithPch m_SrcInserter;
+    SFiltersItem                m_Filters;
+    
+
+    // Prohibited to:
+    CBasicProjectsFilesInserter(void);
+    CBasicProjectsFilesInserter(const CBasicProjectsFilesInserter&);
+    CBasicProjectsFilesInserter& operator=(const CBasicProjectsFilesInserter&);
+};
+
+class CDllProjectFilesInserter : public IFilesToProjectInserter
+{
+public:
+    CDllProjectFilesInserter(CVisualStudioProject*    vcproj,
+                             const CProjKey           dll_project_key,
+                             const list<SConfigInfo>& configs,
+                             const string&            project_dir);
+
+    virtual ~CDllProjectFilesInserter(void);
+
+    // IFilesToProjectInserter implementation
+    virtual void AddSourceFile (const string& rel_file_path);
+    virtual void AddHeaderFile (const string& rel_file_path);
+    virtual void AddInlineFile (const string& rel_file_path);
+
+    virtual void Finalize      (void);
+
+private:
+    CVisualStudioProject*       m_Vcproj;
+    CProjKey                    m_DllProjectKey;
+    CSrcToFilterInserterWithPch m_SrcInserter;
+    string                      m_ProjectDir;
+
+    typedef CBasicProjectsFilesInserter::SFiltersItem TFiltersItem;
+    TFiltersItem  m_PrivateFilters;
+    CRef<CFilter> m_HostedLibrariesRootFilter;
+
+    typedef map<CProjKey, TFiltersItem> THostedLibs;
+    THostedLibs m_HostedLibs;
+
+    // Prohibited to:
+    CDllProjectFilesInserter(void);
+    CDllProjectFilesInserter(const CDllProjectFilesInserter&);
+    CDllProjectFilesInserter& operator=(const CDllProjectFilesInserter&);
+};
+
 
 /// Common function shared by 
 /// CMsvcMasterProjectGenerator and CMsvcProjectGenerator
@@ -308,6 +416,10 @@ public:
     void RegisterHeader  (const string&   hrd_file_path, 
                           const CProjKey& dll_project_id,
                           const CProjKey& lib_project_id);
+    // Register .inl    files during DLL creation
+    void RegisterInline  (const string&   inl_file_path, 
+                          const CProjKey& dll_project_id,
+                          const CProjKey& lib_project_id);
 
     
     // Retrive original lib_id for .cpp .c file
@@ -316,12 +428,16 @@ public:
     // Retrive original lib_id for .cpp .c file
     CProjKey GetHeaderLib(const string&   hdr_file_path, 
                           const CProjKey& dll_project_id) const;
+    // Retrive original lib_id for .inl file
+    CProjKey GetInlineLib(const string&   inl_file_path, 
+                          const CProjKey& dll_project_id) const;
 private:
 
     typedef pair<string,    CProjKey> TDllSrcKey;
     typedef map<TDllSrcKey, CProjKey> TDistrMap;
     TDistrMap m_SourcesMap;
     TDistrMap m_HeadersMap;
+    TDistrMap m_InlinesMap;
 
     //prohibited to
     CDllSrcFilesDistr(const CDllSrcFilesDistr&);
@@ -335,6 +451,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/05/26 17:56:59  gorelenk
+ * Refactored source files inserter:
+ * old inserter moved to class CSrcToFilterInserterWithPch,
+ * declared interface IFilesToProjectInserter and 2 implementations:
+ * CBasicProjectsFilesInserter for app/lib projects and
+ * CDllProjectFilesInserter for dlls.
+ *
  * Revision 1.19  2004/05/17 16:13:44  gorelenk
  * Added declaration of class CDllSrcFilesDistr .
  *
