@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/03/10 21:20:23  sandomir
+* Resource added to CNcbiContext
+*
 * Revision 1.16  1999/02/22 21:12:39  sandomir
 * MsgRequest -> NcbiContext
 *
@@ -89,10 +92,12 @@ BEGIN_NCBI_SCOPE
 // class CNcbiResource 
 //
 
-CNcbiContext::CNcbiContext( CCgiRequest& request, 
+CNcbiContext::CNcbiContext( CNcbiResource& resource,
+                            CCgiRequest& request, 
                             CCgiResponse& response,
                             CCgiServerContext& srvCtx )
-    : m_request( request ), m_response( response ), m_srvCtx( srvCtx )
+    : m_resource( resource ), m_request( request ), m_response( response ), 
+      m_srvCtx( srvCtx )
 {}
 
 //

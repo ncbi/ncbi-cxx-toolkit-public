@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/03/10 21:20:23  sandomir
+* Resource added to CNcbiContext
+*
 * Revision 1.21  1999/02/22 21:12:37  sandomir
 * MsgRequest -> NcbiContext
 *
@@ -121,34 +124,40 @@ public:
 In addtion, it contains list of messages.
 Having non-const reference, CNcbiContext's user has access to its all internal data
 */
+
+class CNcbiResource;
  
 class CNcbiContext
 {
 public:
 
-    CNcbiContext( CCgiRequest& request, 
+    CNcbiContext( CNcbiResource& resource,
+                  CCgiRequest& request, 
                   CCgiResponse& response,
                   CCgiServerContext& srvCtx );
 
-    const CCgiRequest& GetRequest( void ) const;
-    CCgiRequest& GetRequest( void );
+    const CNcbiResource& GetResource( void ) const THROWS_NONE;
 
-    const CCgiResponse& GetResponse( void ) const;
-    CCgiResponse& GetResponse( void );
+    const CCgiRequest& GetRequest( void ) const THROWS_NONE;
+    CCgiRequest& GetRequest( void ) THROWS_NONE;
 
-    const CCgiServerContext& GetServCtx( void ) const;
-    CCgiServerContext& GetServCtx( void );
+    const CCgiResponse& GetResponse( void ) const THROWS_NONE;
+    CCgiResponse& GetResponse( void ) THROWS_NONE;
+
+    const CCgiServerContext& GetServCtx( void ) const THROWS_NONE;
+    CCgiServerContext& GetServCtx( void ) THROWS_NONE;
 
     typedef list<string> TMsgList;
 
-    const TMsgList& GetMsg( void ) const;
-    TMsgList& GetMsg( void );
+    const TMsgList& GetMsg( void ) const THROWS_NONE;
+    TMsgList& GetMsg( void ) THROWS_NONE;
 
     void PutMsg( const string& msg );
     void ClearMsgList( void );
 
 private:
 
+    CNcbiResource& m_resource;
     CCgiRequest& m_request;
     CCgiResponse& m_response;
     CCgiServerContext& m_srvCtx;

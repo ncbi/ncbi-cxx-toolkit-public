@@ -34,58 +34,66 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/03/10 21:20:23  sandomir
+* Resource added to CNcbiContext
+*
 * Revision 1.1  1999/02/22 21:12:38  sandomir
 * MsgRequest -> NcbiContext
 *
 * ===========================================================================
 */
 
-inline const CCgiRequest& CNcbiContext::GetRequest( void ) const
+inline const CNcbiResource& CNcbiContext::GetResource( void ) const THROWS_NONE
+{
+    return m_resource;
+}
+
+inline const CCgiRequest& CNcbiContext::GetRequest( void ) const THROWS_NONE
 { 
     return m_request;
 }
    
-inline CCgiRequest& CNcbiContext::GetRequest( void )
+inline CCgiRequest& CNcbiContext::GetRequest( void ) THROWS_NONE
 { 
     return m_request;
 }
       
-inline const CCgiResponse& CNcbiContext::GetResponse( void ) const
+inline const CCgiResponse& CNcbiContext::GetResponse( void ) const THROWS_NONE
 { 
     return m_response;
 }
      
-inline CCgiResponse& CNcbiContext::GetResponse( void )
+inline CCgiResponse& CNcbiContext::GetResponse( void ) THROWS_NONE
 { 
     return m_response;
 }
 
-inline const CCgiServerContext& CNcbiContext::GetServCtx( void ) const
+inline const CCgiServerContext& CNcbiContext::GetServCtx( void ) const THROWS_NONE
 { 
     return m_srvCtx;
 }
 
-inline CCgiServerContext& CNcbiContext::GetServCtx( void )
+inline CCgiServerContext& CNcbiContext::GetServCtx( void ) THROWS_NONE
 { 
     return m_srvCtx;
 }
 
-inline const CNcbiContext::TMsgList& CNcbiContext::GetMsg( void ) const
+inline const CNcbiContext::TMsgList& CNcbiContext::GetMsg( void ) const THROWS_NONE
 { 
     return m_msg;
 }
  
-inline CNcbiContext::TMsgList& CNcbiContext::GetMsg( void )
+inline CNcbiContext::TMsgList& CNcbiContext::GetMsg( void ) THROWS_NONE
 { 
     return m_msg;
 }
 
-inline void CNcbiContext::PutMsg( const string& msg )
+inline void CNcbiContext::PutMsg( const string& msg ) 
 {
     m_msg.push_back( msg ); 
 }
 
-inline void CNcbiContext::ClearMsgList( void )
+inline void CNcbiContext::ClearMsgList( void ) 
 {
     m_msg.clear();
 }
