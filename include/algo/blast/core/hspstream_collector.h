@@ -55,8 +55,8 @@ typedef struct BlastHSPListCollectorData {
                                read call? */
    Int4 first_query_index;  /**< Index of the first query to try getting 
                                results from. */
-   MT_LOCK x_lock;   /**< Mutex for writing and reading results.
-                                  @todo FIXME: not implemented yet. */
+   MT_LOCK x_lock;   /**< Mutex for writing and reading results. */
+                                  
 } BlastHSPListCollectorData;
 
 /** Initialize the collector HSP stream for a multi-threaded search. The 
