@@ -147,7 +147,6 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
         const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
-        const BlastDatabaseOptions* db_options,
         const double* karlin_k,
         BlastHSPResults** results);
 
@@ -161,13 +160,11 @@ Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number);
  * Input includes only data that likely needs modification. This function
  * could be static in blast_traceback.c, but for a unit test which checks its
  * functionality.
- * @param query_start start of alignment on query [in]
- * @param query_end end of alignment on query [in]
- * @param subject_start start of alignment on subject [in]
- * @param subject_end end of alignment on subject [in]
- * @param score New score for this HSP [in]
- * @param gap_edit traceback from final gapped alignment [in] [out]
+ * @param gap_align Structure containing gapped alignment information [in]
  * @param hsp Original HSP from the preliminary stage [in] [out]
+ * @param query_length Length of the query sequence [in]
+ * @param subject_length Length of the subject sequence [in]
+ * @param program Type of BLAST program [in]
  */
 Int2
 Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp, 
