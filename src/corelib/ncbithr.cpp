@@ -1281,9 +1281,13 @@ void CSemaphore::Post(unsigned int count)
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/04/11 21:08:03  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.16  2002/04/11 20:00:45  ivanov
  * Returned standard assert() vice CORE_ASSERT()
  *

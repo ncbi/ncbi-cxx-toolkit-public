@@ -27,7 +27,6 @@
  *
  * File Description:  System functions
  *
- * ---------------------------------------------------------------------------
  */
 
 #include <corelib/ncbimtx.hpp>
@@ -354,8 +353,12 @@ unsigned int GetCpuCount(void)
 END_NCBI_SCOPE
 
 
-/* ---------------------------------------------------------------------------
+/*
+ * ===========================================================================
  * $Log$
+ * Revision 1.19  2002/04/11 21:08:00  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.18  2002/04/01 18:52:49  ivanov
  * Cosmetic changes
  *

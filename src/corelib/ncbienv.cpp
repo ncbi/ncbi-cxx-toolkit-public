@@ -30,20 +30,6 @@
  *      environment     -- CNcbiEnvironment
  *      cmd.-line args  -- CNcbiArguments
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2000/08/31 23:50:21  vakatov
- * CNcbiArguments:: Inlined Size() and operator[];   use <deque>
- *
- * Revision 1.2  2000/01/20 16:36:04  vakatov
- * Added class CNcbiArguments::   application command-line arguments & name
- * Added CNcbiEnvironment::Reset(), and comments to CNcbiEnvironment::
- * Dont #include <ncbienv.inl>
- *
- * Revision 1.1  1999/05/04 16:14:46  vasilche
- * Fixed problems with program environment.
- * Added class CNcbiEnvironment for cached access to C environment.
- * ===========================================================================
  */
 
 #include <corelib/ncbienv.hpp>
@@ -234,3 +220,25 @@ void CNcbiArguments::Add(const string& arg)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2002/04/11 21:08:02  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.3  2000/08/31 23:50:21  vakatov
+ * CNcbiArguments:: Inlined Size() and operator[];   use <deque>
+ *
+ * Revision 1.2  2000/01/20 16:36:04  vakatov
+ * Added class CNcbiArguments::   application command-line arguments & name
+ * Added CNcbiEnvironment::Reset(), and comments to CNcbiEnvironment::
+ * Dont #include <ncbienv.inl>
+ *
+ * Revision 1.1  1999/05/04 16:14:46  vasilche
+ * Fixed problems with program environment.
+ * Added class CNcbiEnvironment for cached access to C environment.
+ *
+ * ===========================================================================
+ */

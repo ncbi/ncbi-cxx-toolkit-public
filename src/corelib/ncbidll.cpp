@@ -28,19 +28,6 @@
  * File Description:
  *   Portable DLL handling
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2002/03/25 18:10:00  ucko
- * Make errmsg const to accommodate platforms (FreeBSD at least) where
- * dlerror returns const char*.
- *
- * Revision 1.2  2002/01/16 18:48:57  ivanov
- * Added new constructor and related "basename" rules for DLL names. Polished source code.
- *
- * Revision 1.1  2002/01/15 19:05:28  ivanov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbidll.hpp>
@@ -220,3 +207,24 @@ void CDll::x_ThrowException(const string& what)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2002/04/11 21:08:02  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.3  2002/03/25 18:10:00  ucko
+ * Make errmsg const to accommodate platforms (FreeBSD at least) where
+ * dlerror returns const char*.
+ *
+ * Revision 1.2  2002/01/16 18:48:57  ivanov
+ * Added new constructor and related "basename" rules for DLL names. 
+ * Polished source code.
+ *
+ * Revision 1.1  2002/01/15 19:05:28  ivanov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

@@ -1,151 +1,35 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Vsevolod Sandomirskiy, Denis Vakatov
-*
-* File Description:
-*   CNcbiApplication -- a generic NCBI application class
-*   CCgiApplication  -- a NCBI CGI-application class
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.36  2002/01/22 19:28:37  ivanov
-* Changed ConcatPath() -> ConcatPathEx() in LoadConfig()
-*
-* Revision 1.35  2002/01/20 05:53:59  vakatov
-* Get rid of a GCC warning;  formally rearrange some code.
-*
-* Revision 1.34  2002/01/10 16:52:20  ivanov
-* Changed LoadConfig() -- new method to search the config file
-*
-* Revision 1.33  2001/08/20 14:58:10  vakatov
-* Get rid of some compilation warnings
-*
-* Revision 1.32  2001/08/10 18:26:07  vakatov
-* Allow user to throw "CArgException" (and thus force USAGE printout
-* with user-provided explanation) not from any of Init(), Run() or Exit().
-*
-* Revision 1.31  2001/07/07 01:19:28  juran
-* Use "ncbi" for app name on Mac OS (if argv[0] is null).
-*
-* Revision 1.30  2001/03/26 20:07:40  vakatov
-* [NCBI_OS_MAC]  Use argv[0] (if available) as basename for ".args"
-*
-* Revision 1.29  2001/02/02 16:19:27  vasilche
-* Fixed reading program arguments on Mac
-*
-* Revision 1.28  2001/02/01 19:53:26  vasilche
-* Reading program arguments from file moved to CNcbiApplication::AppMain.
-*
-* Revision 1.27  2000/12/23 05:50:53  vakatov
-* AppMain() -- check m_ArgDesc for NULL
-*
-* Revision 1.26  2000/11/29 17:00:25  vakatov
-* Use LOG_POST instead of ERR_POST to print cmd.-line arg usage
-*
-* Revision 1.25  2000/11/24 23:33:12  vakatov
-* CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
-* setup cmd.-line argument description, and then to retrieve their
-* values, respectively. Also implements internal error handling and
-* printout of USAGE for the described arguments.
-*
-* Revision 1.24  2000/11/01 20:37:15  vasilche
-* Fixed detection of heap objects.
-* Removed ECanDelete enum and related constructors.
-* Disabled sync_with_stdio ad the beginning of AppMain.
-*
-* Revision 1.23  2000/06/09 18:41:04  vakatov
-* FlushDiag() -- check for empty diag.buffer
-*
-* Revision 1.22  2000/04/04 22:33:35  vakatov
-* Auto-set the tracing and the "abort-on-throw" debugging features
-* basing on the application environment and/or registry
-*
-* Revision 1.21  2000/01/20 17:51:18  vakatov
-* Major redesign and expansion of the "CNcbiApplication" class to
-*  - embed application arguments   "CNcbiArguments"
-*  - embed application environment "CNcbiEnvironment"
-*  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
-*  - allow memory-resided "per application" temp. diagnostic buffer
-*  - allow one to specify exact name of the config.-file to load, or to
-*    ignore the config.file (via constructor's "conf" arg)
-*  - added detailed comments
-*
-* Revision 1.20  1999/12/29 21:20:18  vakatov
-* More intelligent lookup for the default config.file. -- try to strip off
-* file extensions if cannot find an exact match;  more comments and tracing
-*
-* Revision 1.19  1999/11/15 15:54:59  sandomir
-* Registry support moved from CCgiApplication to CNcbiApplication
-*
-* Revision 1.18  1999/06/11 20:30:37  vasilche
-* We should catch exception by reference, because catching by value
-* doesn't preserve comment string.
-*
-* Revision 1.17  1999/05/04 00:03:12  vakatov
-* Removed the redundant severity arg from macro ERR_POST()
-*
-* Revision 1.16  1999/04/30 19:21:03  vakatov
-* Added more details and more control on the diagnostics
-* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
-*
-* Revision 1.15  1999/04/27 14:50:06  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.14  1999/02/22 21:12:38  sandomir
-* MsgRequest -> NcbiContext
-*
-* Revision 1.13  1998/12/28 23:29:06  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.12  1998/12/28 15:43:12  sandomir
-* minor fixed in CgiApp and Resource
-*
-* Revision 1.11  1998/12/14 15:30:07  sandomir
-* minor fixes in CNcbiApplication; command handling fixed
-*
-* Revision 1.10  1998/12/09 22:59:35  lewisg
-* use new cgiapp class
-*
-* Revision 1.7  1998/12/09 16:49:56  sandomir
-* CCgiApplication added
-*
-* Revision 1.4  1998/12/03 21:24:23  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.3  1998/12/01 19:12:08  lewisg
-* added CCgiApplication
-*
-* Revision 1.2  1998/11/05 21:45:14  sandomir
-* std:: deleted
-*
-* Revision 1.1  1998/11/02 22:10:13  sandomir
-* CNcbiApplication added; netest sample updated
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Vsevolod Sandomirskiy, Denis Vakatov
+ *
+ * File Description:
+ *   CNcbiApplication -- a generic NCBI application class
+ *   CCgiApplication  -- a NCBI CGI-application class
+ *
+ */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -615,3 +499,127 @@ CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.37  2002/04/11 21:08:00  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.36  2002/01/22 19:28:37  ivanov
+ * Changed ConcatPath() -> ConcatPathEx() in LoadConfig()
+ *
+ * Revision 1.35  2002/01/20 05:53:59  vakatov
+ * Get rid of a GCC warning;  formally rearrange some code.
+ *
+ * Revision 1.34  2002/01/10 16:52:20  ivanov
+ * Changed LoadConfig() -- new method to search the config file
+ *
+ * Revision 1.33  2001/08/20 14:58:10  vakatov
+ * Get rid of some compilation warnings
+ *
+ * Revision 1.32  2001/08/10 18:26:07  vakatov
+ * Allow user to throw "CArgException" (and thus force USAGE printout
+ * with user-provided explanation) not from any of Init(), Run() or Exit().
+ *
+ * Revision 1.31  2001/07/07 01:19:28  juran
+ * Use "ncbi" for app name on Mac OS (if argv[0] is null).
+ *
+ * Revision 1.30  2001/03/26 20:07:40  vakatov
+ * [NCBI_OS_MAC]  Use argv[0] (if available) as basename for ".args"
+ *
+ * Revision 1.29  2001/02/02 16:19:27  vasilche
+ * Fixed reading program arguments on Mac
+ *
+ * Revision 1.28  2001/02/01 19:53:26  vasilche
+ * Reading program arguments from file moved to CNcbiApplication::AppMain.
+ *
+ * Revision 1.27  2000/12/23 05:50:53  vakatov
+ * AppMain() -- check m_ArgDesc for NULL
+ *
+ * Revision 1.26  2000/11/29 17:00:25  vakatov
+ * Use LOG_POST instead of ERR_POST to print cmd.-line arg usage
+ *
+ * Revision 1.25  2000/11/24 23:33:12  vakatov
+ * CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
+ * setup cmd.-line argument description, and then to retrieve their
+ * values, respectively. Also implements internal error handling and
+ * printout of USAGE for the described arguments.
+ *
+ * Revision 1.24  2000/11/01 20:37:15  vasilche
+ * Fixed detection of heap objects.
+ * Removed ECanDelete enum and related constructors.
+ * Disabled sync_with_stdio ad the beginning of AppMain.
+ *
+ * Revision 1.23  2000/06/09 18:41:04  vakatov
+ * FlushDiag() -- check for empty diag.buffer
+ *
+ * Revision 1.22  2000/04/04 22:33:35  vakatov
+ * Auto-set the tracing and the "abort-on-throw" debugging features
+ * basing on the application environment and/or registry
+ *
+ * Revision 1.21  2000/01/20 17:51:18  vakatov
+ * Major redesign and expansion of the "CNcbiApplication" class to 
+ *  - embed application arguments   "CNcbiArguments"
+ *  - embed application environment "CNcbiEnvironment"
+ *  - allow auto-setup or "by choice" (see enum EAppDiagStream) of diagnostics
+ *  - allow memory-resided "per application" temp. diagnostic buffer
+ *  - allow one to specify exact name of the config.-file to load, or to
+ *    ignore the config.file (via constructor's "conf" arg)
+ *  - added detailed comments
+ *
+ * Revision 1.20  1999/12/29 21:20:18  vakatov
+ * More intelligent lookup for the default config.file. -- try to strip off
+ * file extensions if cannot find an exact match;  more comments and tracing
+ *
+ * Revision 1.19  1999/11/15 15:54:59  sandomir
+ * Registry support moved from CCgiApplication to CNcbiApplication
+ *
+ * Revision 1.18  1999/06/11 20:30:37  vasilche
+ * We should catch exception by reference, because catching by value
+ * doesn't preserve comment string.
+ *
+ * Revision 1.17  1999/05/04 00:03:12  vakatov
+ * Removed the redundant severity arg from macro ERR_POST()
+ *
+ * Revision 1.16  1999/04/30 19:21:03  vakatov
+ * Added more details and more control on the diagnostics
+ * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+ *
+ * Revision 1.15  1999/04/27 14:50:06  vasilche
+ * Added FastCGI interface.
+ * CNcbiContext renamed to CCgiContext.
+ *
+ * Revision 1.14  1999/02/22 21:12:38  sandomir
+ * MsgRequest -> NcbiContext
+ *
+ * Revision 1.13  1998/12/28 23:29:06  vakatov
+ * New CVS and development tree structure for the NCBI C++ projects
+ *
+ * Revision 1.12  1998/12/28 15:43:12  sandomir
+ * minor fixed in CgiApp and Resource
+ *
+ * Revision 1.11  1998/12/14 15:30:07  sandomir
+ * minor fixes in CNcbiApplication; command handling fixed
+ *
+ * Revision 1.10  1998/12/09 22:59:35  lewisg
+ * use new cgiapp class
+ *
+ * Revision 1.7  1998/12/09 16:49:56  sandomir
+ * CCgiApplication added
+ *
+ * Revision 1.4  1998/12/03 21:24:23  sandomir
+ * NcbiApplication and CgiApplication updated
+ *
+ * Revision 1.3  1998/12/01 19:12:08  lewisg
+ * added CCgiApplication
+ *
+ * Revision 1.2  1998/11/05 21:45:14  sandomir
+ * std:: deleted
+ *
+ * Revision 1.1  1998/11/02 22:10:13  sandomir
+ * CNcbiApplication added; netest sample updated
+ *
+ * ===========================================================================
+ */

@@ -33,7 +33,6 @@
  * 
  */
 
-
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbithr.hpp>
 
@@ -81,9 +80,13 @@ BEGIN_NCBI_SCOPE
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/04/11 21:08:01  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.6  2002/04/11 20:00:45  ivanov
  * Returned standard assert() vice CORE_ASSERT()
  *

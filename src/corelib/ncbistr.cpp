@@ -465,9 +465,13 @@ extern char* strdup(const char* str)
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2002/04/11 21:08:03  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.46  2002/02/22 17:50:52  ivanov
  * Added compatible compare functions strcmp, strncmp, strcasecmp, strncasecmp.
  * Was speed-up some Compare..() functions.

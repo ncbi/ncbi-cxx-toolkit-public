@@ -1,91 +1,33 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Anton    Butanayev <butanaev@ncbi.nlm.nih.gov>
-*           Denis    Vakatov   <vakatov@ncbi.nlm.nih.gov>
-*           Vladimir Ivanov    <ivanov@ncbi.nlm.nih.gov>
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.15  2002/03/25 17:08:17  ucko
-* Centralize treatment of Cygwin as Unix rather than Windows in configure.
-*
-* Revision 1.14  2002/03/22 19:59:29  ucko
-* Use timegm() when available [fixes FreeBSD build].
-* Tweak to work on Cygwin.
-*
-* Revision 1.13  2001/07/23 16:05:57  ivanov
-* Fixed bug in Get/Set DB-time formats (1 day difference)
-*
-* Revision 1.12  2001/07/06 15:11:11  ivanov
-* Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
-*                                  SetTimeDBI(), SetTimeDBU()
-*
-* Revision 1.11  2001/06/20 14:46:17  vakatov
-* Get rid of the '^M' symbols introduced in the R1.10 log
-*
-* Revision 1.10  2001/06/19 23:03:46  juran
-* Replace timezone and daylight with macros
-* Implement for Mac OS
-* Note:  This compiles, but it may not work correctly yet.
-*
-* Revision 1.9  2001/05/29 20:14:03  ivanov
-* Added #include <sys/time.h> for UNIX platforms.
-*
-* Revision 1.8  2001/05/29 16:14:01  ivanov
-* Return to nanosecond-revision. Corrected mistake of the work with local
-* time on Linux. Polish and improvement source code.
-* Renamed AsTimeT() -> GetTimerT().
-*
-* Revision 1.7  2001/05/17 15:05:00  lavr
-* Typos corrected
-*
-* Revision 1.6  2001/04/30 22:01:30  lavr
-* Rollback to pre-nanosecond-revision due to necessity to use
-* configure to figure out names of global variables governing time zones
-*
-* Revision 1.5  2001/04/29 03:06:09  lavr
-* #include <time.h>" moved from .cpp to ncbitime.hpp
-*
-* Revision 1.4  2001/04/27 20:38:14  ivanov
-* Support for Local and UTC time added.
-* Support for work with nanoseconds added.
-*
-* Revision 1.3  2001/01/03 17:53:05  butanaev
-* Fixed bug in SetCurrent()
-*
-* Revision 1.2  2000/11/21 18:14:58  butanaev
-* Fixed bug in operator ++/-- (int)
-*
-* Revision 1.1  2000/11/20 22:17:46  vakatov
-* Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
-* its test suite ("test/test_ncbitime.cpp")
-*
-* ===========================================================================
-*/
-
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Anton    Butanayev <butanaev@ncbi.nlm.nih.gov>
+ *           Denis    Vakatov   <vakatov@ncbi.nlm.nih.gov>
+ *           Vladimir Ivanov    <ivanov@ncbi.nlm.nih.gov>
+ *
+ */
 
 #include <corelib/ncbitime.hpp>
 #include <stdlib.h>
@@ -1108,3 +1050,67 @@ CTime Truncate(const CTime& t)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.16  2002/04/11 21:08:04  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.15  2002/03/25 17:08:17  ucko
+ * Centralize treatment of Cygwin as Unix rather than Windows in configure.
+ *
+ * Revision 1.14  2002/03/22 19:59:29  ucko
+ * Use timegm() when available [fixes FreeBSD build].
+ * Tweak to work on Cygwin.
+ *
+ * Revision 1.13  2001/07/23 16:05:57  ivanov
+ * Fixed bug in Get/Set DB-time formats (1 day difference)
+ *
+ * Revision 1.12  2001/07/06 15:11:11  ivanov
+ * Added support DataBase-time's -- GetTimeDBI(), GetTimeDBU()
+ *                                  SetTimeDBI(), SetTimeDBU()
+ *
+ * Revision 1.11  2001/06/20 14:46:17  vakatov
+ * Get rid of the '^M' symbols introduced in the R1.10 log
+ *
+ * Revision 1.10  2001/06/19 23:03:46  juran
+ * Replace timezone and daylight with macros
+ * Implement for Mac OS
+ * Note:  This compiles, but it may not work correctly yet.
+ *
+ * Revision 1.9  2001/05/29 20:14:03  ivanov
+ * Added #include <sys/time.h> for UNIX platforms.
+ *
+ * Revision 1.8  2001/05/29 16:14:01  ivanov
+ * Return to nanosecond-revision. Corrected mistake of the work with local
+ * time on Linux. Polish and improvement source code.
+ * Renamed AsTimeT() -> GetTimerT().
+ *
+ * Revision 1.7  2001/05/17 15:05:00  lavr
+ * Typos corrected
+ *
+ * Revision 1.6  2001/04/30 22:01:30  lavr
+ * Rollback to pre-nanosecond-revision due to necessity to use
+ * configure to figure out names of global variables governing time zones
+ *
+ * Revision 1.5  2001/04/29 03:06:09  lavr
+ * #include <time.h>" moved from .cpp to ncbitime.hpp
+ *
+ * Revision 1.4  2001/04/27 20:38:14  ivanov
+ * Support for Local and UTC time added.
+ * Support for work with nanoseconds added.
+ *
+ * Revision 1.3  2001/01/03 17:53:05  butanaev
+ * Fixed bug in SetCurrent()
+ *
+ * Revision 1.2  2000/11/21 18:14:58  butanaev
+ * Fixed bug in operator ++/-- (int)
+ *
+ * Revision 1.1  2000/11/20 22:17:46  vakatov
+ * Added NCBI date/time class CTime ("ncbitime.[ch]pp") and
+ * its test suite ("test/test_ncbitime.cpp")
+ *
+ * ===========================================================================
+ */

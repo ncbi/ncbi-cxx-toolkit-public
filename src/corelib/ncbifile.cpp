@@ -27,7 +27,6 @@
  *
  * File Description:   Files and directories accessory functions
  *
- * ---------------------------------------------------------------------------
  */
 
 #include <corelib/ncbifile.hpp>
@@ -1318,6 +1317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/04/11 21:08:02  ivanov
+ * CVS log moved to end of the file
+ *
  * Revision 1.20  2002/04/01 18:49:54  ivanov
  * Added class CMemoryFile. Added including <windows.h> under MS Windows
  *

@@ -33,16 +33,8 @@
  *      parsed values -- CArgs,             CArgValue
  *      exceptions    -- CArgException, ARG_THROW()
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2001/01/22 23:07:15  vakatov
- * CArgValue::AsInteger() to return "int" (rather than "long")
- *
- * Revision 1.1  2000/12/24 00:05:46  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
+
 
 #if !defined(NCBIARGS__CPP)
 #  error "PRIVATE header -- for inclusion by ncbiargs.cpp only!"
@@ -424,3 +416,18 @@ public:
     virtual string GetUsageSynopsis(bool name_only = false) const;
 };
 
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2002/04/11 21:08:01  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.2  2001/01/22 23:07:15  vakatov
+ * CArgValue::AsInteger() to return "int" (rather than "long")
+ *
+ * Revision 1.1  2000/12/24 00:05:46  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

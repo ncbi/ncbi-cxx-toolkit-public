@@ -32,116 +32,6 @@
  *      exceptions    -- CArgException, ARG_THROW()
  *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.33  2001/07/24 23:33:14  vakatov
- * Use _DEBUG_ARG() to get rid of the compiler warnings in Release mode
- *
- * Revision 1.32  2001/03/16 16:40:18  vakatov
- * Moved <corelib/ncbi_limits.h> to the header
- *
- * Revision 1.31  2001/01/22 23:07:14  vakatov
- * CArgValue::AsInteger() to return "int" (rather than "long")
- *
- * Revision 1.30  2001/01/03 17:45:35  vakatov
- * + <ncbi_limits.h>
- *
- * Revision 1.29  2000/12/24 00:13:00  vakatov
- * Radically revamped NCBIARGS.
- * Introduced optional key and posit. args without default value.
- * Added new arg.value constraint classes.
- * Passed flags to be detected by HasValue() rather than AsBoolean.
- * Simplified constraints on the number of mandatory and optional extra args.
- * Improved USAGE info and diagnostic messages. Etc...
- *
- * Revision 1.26  2000/11/29 00:18:13  vakatov
- * s_ProcessArgument() -- avoid nested quotes in the exception message
- *
- * Revision 1.25  2000/11/29 00:07:28  vakatov
- * Flag and key args not to be sorted in alphabetical order by default; see
- * "usage_sort_args" in SetUsageContext().
- *
- * Revision 1.24  2000/11/24 23:28:33  vakatov
- * CArgValue::  added CloseFile()
- * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
- *
- * Revision 1.23  2000/11/22 22:04:31  vakatov
- * Added special flag "-h" and special exception CArgHelpException to
- * force USAGE printout in a standard manner
- *
- * Revision 1.22  2000/11/17 22:04:30  vakatov
- * CArgDescriptions::  Switch the order of optional args in methods
- * AddOptionalKey() and AddPlain(). Also, enforce the default value to
- * match arg. description (and constraints, if any) at all times.
- *
- * Revision 1.21  2000/11/13 20:31:07  vakatov
- * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
- *
- * Revision 1.20  2000/11/09 21:02:58  vakatov
- * USAGE to show default value for optional arguments
- *
- * Revision 1.19  2000/11/08 17:48:37  butanaev
- * There was no minus in optional key synopsis, fixed.
- *
- * Revision 1.18  2000/11/01 20:37:15  vasilche
- * Fixed detection of heap objects.
- * Removed ECanDelete enum and related constructors.
- * Disabled sync_with_stdio ad the beginning of AppMain.
- *
- * Revision 1.17  2000/10/30 22:26:29  vakatov
- * Get rid of "s_IsAvailableExtra()" -- not used anymore
- *
- * Revision 1.16  2000/10/20 22:33:37  vakatov
- * CArgAllow_Integers, CArgAllow_Doubles:  swap min/max, if necessary
- *
- * Revision 1.15  2000/10/20 22:23:28  vakatov
- * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
- *
- * Revision 1.14  2000/10/20 20:25:55  vakatov
- * Redesigned/reimplemented the user-defined arg.value constraints
- * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
- *
- * Revision 1.13  2000/10/13 16:26:30  vasilche
- * Added heuristic for detection of CObject allocation in heap.
- *
- * Revision 1.12  2000/10/11 21:03:49  vakatov
- * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
- * (reported by Forte6 Patch 109490-01)
- *
- * Revision 1.11  2000/10/06 21:56:45  butanaev
- * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
- *
- * Revision 1.10  2000/09/29 17:10:54  butanaev
- * Got rid of IsDefaultValue(), added IsProvided().
- *
- * Revision 1.9  2000/09/28 21:00:14  butanaev
- * fPreOpen with opposite meaning took over fDelayOpen.
- * IsDefaultValue() added which returns true if no
- * value for an optional argument was provided in cmd. line.
- *
- *
- * Revision 1.7  2000/09/28 19:38:00  butanaev
- * stdin and stdout now referenced as '-' Example: ./test_ncbiargs -if - -of -
- *
- * Revision 1.6  2000/09/22 21:25:59  butanaev
- * Fixed bug in handling default arg values.
- *
- * Revision 1.5  2000/09/19 21:19:58  butanaev
- * Added possibility to change file open mode on the fly
- *
- * Revision 1.4  2000/09/18 19:39:02  vasilche
- * Added CreateArgs() from CNcbiArguments.
- *
- * Revision 1.3  2000/09/12 15:00:30  butanaev
- * Fixed bug with stdin, stdout caused compilation errors on IRIX.
- *
- * Revision 1.2  2000/09/06 18:56:04  butanaev
- * Added stdin, stdout support. Fixed bug in PrintOut.
- *
- * Revision 1.1  2000/08/31 23:54:49  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiargs.hpp>
@@ -2317,3 +2207,120 @@ string CArgAllow_Doubles::GetUsage(void) const
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.34  2002/04/11 21:08:01  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.33  2001/07/24 23:33:14  vakatov
+ * Use _DEBUG_ARG() to get rid of the compiler warnings in Release mode
+ *
+ * Revision 1.32  2001/03/16 16:40:18  vakatov
+ * Moved <corelib/ncbi_limits.h> to the header
+ *
+ * Revision 1.31  2001/01/22 23:07:14  vakatov
+ * CArgValue::AsInteger() to return "int" (rather than "long")
+ *
+ * Revision 1.30  2001/01/03 17:45:35  vakatov
+ * + <ncbi_limits.h>
+ *
+ * Revision 1.29  2000/12/24 00:13:00  vakatov
+ * Radically revamped NCBIARGS.
+ * Introduced optional key and posit. args without default value.
+ * Added new arg.value constraint classes.
+ * Passed flags to be detected by HasValue() rather than AsBoolean.
+ * Simplified constraints on the number of mandatory and optional extra args.
+ * Improved USAGE info and diagnostic messages. Etc...
+ *
+ * Revision 1.26  2000/11/29 00:18:13  vakatov
+ * s_ProcessArgument() -- avoid nested quotes in the exception message
+ *
+ * Revision 1.25  2000/11/29 00:07:28  vakatov
+ * Flag and key args not to be sorted in alphabetical order by default; see
+ * "usage_sort_args" in SetUsageContext().
+ *
+ * Revision 1.24  2000/11/24 23:28:33  vakatov
+ * CArgValue::  added CloseFile()
+ * CArgValue::  get rid of "change_mode" feature in AsInput/OutputFile()
+ *
+ * Revision 1.23  2000/11/22 22:04:31  vakatov
+ * Added special flag "-h" and special exception CArgHelpException to
+ * force USAGE printout in a standard manner
+ *
+ * Revision 1.22  2000/11/17 22:04:30  vakatov
+ * CArgDescriptions::  Switch the order of optional args in methods
+ * AddOptionalKey() and AddPlain(). Also, enforce the default value to
+ * match arg. description (and constraints, if any) at all times.
+ *
+ * Revision 1.21  2000/11/13 20:31:07  vakatov
+ * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
+ *
+ * Revision 1.20  2000/11/09 21:02:58  vakatov
+ * USAGE to show default value for optional arguments
+ *
+ * Revision 1.19  2000/11/08 17:48:37  butanaev
+ * There was no minus in optional key synopsis, fixed.
+ *
+ * Revision 1.18  2000/11/01 20:37:15  vasilche
+ * Fixed detection of heap objects.
+ * Removed ECanDelete enum and related constructors.
+ * Disabled sync_with_stdio ad the beginning of AppMain.
+ *
+ * Revision 1.17  2000/10/30 22:26:29  vakatov
+ * Get rid of "s_IsAvailableExtra()" -- not used anymore
+ *
+ * Revision 1.16  2000/10/20 22:33:37  vakatov
+ * CArgAllow_Integers, CArgAllow_Doubles:  swap min/max, if necessary
+ *
+ * Revision 1.15  2000/10/20 22:23:28  vakatov
+ * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
+ *
+ * Revision 1.14  2000/10/20 20:25:55  vakatov
+ * Redesigned/reimplemented the user-defined arg.value constraints
+ * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
+ *
+ * Revision 1.13  2000/10/13 16:26:30  vasilche
+ * Added heuristic for detection of CObject allocation in heap.
+ *
+ * Revision 1.12  2000/10/11 21:03:49  vakatov
+ * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+ * (reported by Forte6 Patch 109490-01)
+ *
+ * Revision 1.11  2000/10/06 21:56:45  butanaev
+ * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
+ *
+ * Revision 1.10  2000/09/29 17:10:54  butanaev
+ * Got rid of IsDefaultValue(), added IsProvided().
+ *
+ * Revision 1.9  2000/09/28 21:00:14  butanaev
+ * fPreOpen with opposite meaning took over fDelayOpen.
+ * IsDefaultValue() added which returns true if no
+ * value for an optional argument was provided in cmd. line.
+ *
+ *
+ * Revision 1.7  2000/09/28 19:38:00  butanaev
+ * stdin and stdout now referenced as '-' Example: ./test_ncbiargs -if - -of -
+ *
+ * Revision 1.6  2000/09/22 21:25:59  butanaev
+ * Fixed bug in handling default arg values.
+ *
+ * Revision 1.5  2000/09/19 21:19:58  butanaev
+ * Added possibility to change file open mode on the fly
+ *
+ * Revision 1.4  2000/09/18 19:39:02  vasilche
+ * Added CreateArgs() from CNcbiArguments.
+ *
+ * Revision 1.3  2000/09/12 15:00:30  butanaev
+ * Fixed bug with stdin, stdout caused compilation errors on IRIX.
+ *
+ * Revision 1.2  2000/09/06 18:56:04  butanaev
+ * Added stdin, stdout support. Fixed bug in PrintOut.
+ *
+ * Revision 1.1  2000/08/31 23:54:49  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

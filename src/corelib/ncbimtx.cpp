@@ -31,19 +31,9 @@
  *   MUTEX:
  *      CInternalMutex   -- platform-dependent mutex functionality
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.2  2001/12/13 19:45:36  gouriano
- * added xxValidateAction functions
- *
- * Revision 1.1  2001/03/26 20:31:13  vakatov
- * Initial revision (moved code from "ncbithr.cpp")
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbimtx.hpp>
-
 #include "ncbidbg_p.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -82,3 +72,19 @@ CInternalMutex::~CInternalMutex(void)
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.3  2002/04/11 21:08:02  ivanov
+ * CVS log moved to end of the file
+ *
+ * Revision 1.2  2001/12/13 19:45:36  gouriano
+ * added xxValidateAction functions
+ *
+ * Revision 1.1  2001/03/26 20:31:13  vakatov
+ * Initial revision (moved code from "ncbithr.cpp")
+ *
+ * ===========================================================================
+ */
