@@ -996,6 +996,13 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
             break;
         }
         vec->m_StopSegs.push_back(seg);
+
+        // add unaligned chunk if needed
+        if (flags & fAddUnalignedChunks  &&
+            type & fUnalignedOnRight) {
+            vec->m_StartSegs.push_back(seg+1);
+            vec->m_StopSegs.push_back(seg);
+        }
     }
 }
 
@@ -1007,6 +1014,75 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     CAlnMap::TNumseg stop_seg  = m_StopSegs[i];
 
     CRef<CAlnChunk>  chunk(new CAlnChunk());
+
+    if (start_seg > stop_seg) {
+        // flipped segs means this is unaligned region;
+        // deal with it specially
+
+        // type
+        chunk->SetType(fUnaligned | fInsert);
+        
+        TSignedSeqPos 
+            l_from   = -1, 
+            l_to     = -1,
+            r_from   = -1,
+            r_to     = -1,
+            aln_from = -1, 
+            aln_to   = -1;
+        TSegTypeFlags type;
+
+        // explore on the left
+        TNumseg l_seg = start_seg;
+        while (--l_seg >= 0) {
+            type = m_AlnMap.x_GetRawSegType(m_Row, l_seg);
+            if (type & fSeq) {
+                l_from = m_AlnMap.m_Starts[l_seg * m_AlnMap.m_NumRows
+                                         + m_Row];
+                l_to = l_from + m_AlnMap.x_GetLen(m_Row, l_seg) - 1;
+                if (aln_to != -1) {
+                    break;
+                }
+            }
+            if ( !(type & fNotAlignedToSeqOnAnchor) ) {
+                aln_to = m_AlnMap.GetAlnStop
+                    (m_AlnMap.x_GetSegFromRawSeg(l_seg).GetAlnSeg());
+                if (l_from != - 1) {
+                    break;
+                }
+            }
+        }
+
+        // explore on the right
+        TNumseg r_seg = stop_seg;
+        while (++r_seg < m_AlnMap.m_NumSegs) {
+            type = m_AlnMap.x_GetRawSegType(m_Row, r_seg);
+            if (type & fSeq) {
+                r_from = m_AlnMap.m_Starts[r_seg * m_AlnMap.m_NumRows
+                                         + m_Row];
+                r_to = r_from + m_AlnMap.x_GetLen(m_Row, r_seg) - 1;
+                if (aln_from != -1) {
+                    break;
+                }
+            }
+            if ( !(type & fNotAlignedToSeqOnAnchor) ) {
+                aln_from = m_AlnMap.GetAlnStart
+                    (m_AlnMap.x_GetSegFromRawSeg(r_seg).GetAlnSeg());
+                if (r_from != - 1) {
+                    break;
+                }
+            }
+        }
+
+        if (m_AlnMap.IsPositiveStrand(m_Row)) {
+            chunk->SetRange().Set(l_to + 1, r_from - 1);
+        } else {
+            chunk->SetRange().Set(r_to + 1, l_from - 1);
+        }
+        chunk->SetAlnRange().Set(aln_from, aln_to);
+         
+        return chunk;
+    }
+
     TSignedSeqPos from, to;
     from = m_AlnMap.m_Starts[start_seg * m_AlnMap.m_NumRows
                                      + m_Row];
@@ -1016,6 +1092,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         from = -1;
         to = -1;
     }
+
     chunk->SetRange().Set(from, to);
     chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, start_seg));
 
@@ -1044,7 +1121,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         CNumSegWithOffset seg = m_AlnMap.x_GetSegFromRawSeg(start_seg);
         if (seg.GetAlnSeg() < 0) {
             // before the aln start
-            from = -1;
+            from = 0;
         } else {
             if (seg.GetOffset() > 0) {
                 // between aln segs
@@ -1060,7 +1137,7 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         seg = m_AlnMap.x_GetSegFromRawSeg(stop_seg);
         if (seg.GetAlnSeg() < 0) {
             // before the aln start
-            to = 0;
+            to = -1;
         } else {
             if (seg.GetOffset() > 0) {
                 // between aln segs
@@ -1122,6 +1199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/09/15 20:09:52  todorov
+* Extended Get{Aln,Seq}Chunks with the ability to obtain [implicit] unaligned regions. Also completed AlnRange swapping (rev 1.42).
+*
 * Revision 1.48  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
