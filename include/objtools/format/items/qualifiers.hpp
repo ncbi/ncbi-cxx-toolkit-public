@@ -88,12 +88,16 @@ public:
     const string& GetPrefix(void) const { return m_Prefix; }
     const string& GetSuffix(void) const { return m_Suffix; }
 
+    void SetAddPeriod(bool add = true) { m_AddPeriod = add; }
+    bool GetAddPeriod(void) const { return m_AddPeriod; }
+
 private:
     string m_Name, m_Value, m_Prefix, m_Suffix;
     TStyle m_Style;
+    bool m_AddPeriod;
 };
 
-typedef CRef<CFormatQual>      TFlatQual;
+typedef CRef<CFormatQual>    TFlatQual;
 typedef vector<TFlatQual>    TFlatQuals;
 
 
@@ -104,8 +108,9 @@ class IFlatQVal : public CObject
 {
 public:
     enum EFlags {
-        fIsNote   = 0x1,
-        fIsSource = 0x2
+        fIsNote      = 0x1,
+        fIsSource    = 0x2,
+        fAddPeriod   = 0x4
     };
     typedef int TFlags; // binary OR of EFlags
 
@@ -123,9 +128,11 @@ protected:
     IFlatQVal(const string* pfx = &kSpace, const string* sfx = &kEmptyStr)
         : m_Prefix(pfx), m_Suffix(sfx)
     { }
-    void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-        TStyle st = CFormatQual::eQuoted) const {
-        q.push_back(TFlatQual(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st))); 
+    TFlatQual x_AddFQ(TFlatQuals& q, const string& n, const string& v,
+                      TStyle st = CFormatQual::eQuoted) const {
+        TFlatQual res(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st));
+        q.push_back(res); 
+        return res;
     }
 
     mutable const string* m_Prefix;
@@ -234,10 +241,12 @@ public:
                 TFlags flags) const;
 
     const string& GetValue(void) const { return m_Value; }
+    void SetAddPeriod(void) { m_AddPeriod = IFlatQVal::fAddPeriod; }
 
 protected:
-    mutable string  m_Value;
-    TStyle  m_Style;
+    mutable string    m_Value;
+    TStyle            m_Style;
+    IFlatQVal::TFlags m_AddPeriod;
 };
 
 
@@ -387,7 +396,9 @@ private:
 class CFlatOrgModQVal : public IFlatQVal
 {
 public:
-    CFlatOrgModQVal(const COrgMod& value) : m_Value(&value) { }
+    CFlatOrgModQVal(const COrgMod& value) :
+      IFlatQVal(&kSpace, &kSemicolon), m_Value(&value) { }
+
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
@@ -450,7 +461,10 @@ private:
 class CFlatSubSourceQVal : public IFlatQVal
 {
 public:
-    CFlatSubSourceQVal(const CSubSource& value) : m_Value(&value) { }
+    CFlatSubSourceQVal(const CSubSource& value) :
+        IFlatQVal(&kSpace, &kSemicolon), m_Value(&value)
+    { }
+
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
@@ -552,6 +566,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/11/15 20:03:49  shomrat
+* Better control of period in qualifiers
+*
 * Revision 1.16  2004/10/18 18:44:58  shomrat
 * Added Gene and Bond qual classes
 *
