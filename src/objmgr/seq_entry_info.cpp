@@ -343,6 +343,9 @@ void CSeq_entry_Info::x_SetObject(TObject& obj)
     _ASSERT(!m_Contents);
 
     m_Object.Reset(&obj);
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     switch ( (m_Which = obj.Which()) ) {
     case CSeq_entry::e_Seq:
         m_Contents.Reset(new CBioseq_Info(obj.SetSeq()));
@@ -365,6 +368,9 @@ void CSeq_entry_Info::x_SetObject(const CSeq_entry_Info& info)
 
     m_Which = info.m_Which;
     m_Object.Reset(new CSeq_entry);
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     switch ( m_Which ) {
     case CSeq_entry::e_Seq:
     {
@@ -560,6 +566,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/08/17 15:56:22  vasilche
+ * Added mapping and unmapping CSeq_entry -> CSeq_entry_Info in x_SetObject().
+ *
  * Revision 1.18  2004/08/13 15:55:16  vasilche
  * Do not map null Seq-entry.
  *
