@@ -35,6 +35,10 @@
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
+#include <time.h>
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif
 /* This header must go last */
 #include "test_assert.h"
 
@@ -46,6 +50,8 @@ int main(int argc, char* argv[])
     SConnNetInfo* net_info;
     THCC_Flags    flags;
     CONN          conn;
+    time_t        t;
+    size_t        n;
     char*         s;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
@@ -77,18 +83,32 @@ int main(int argc, char* argv[])
     CORE_LOG(eLOG_Note, "Creating HTTP connector");
     if (!(connector = HTTP_CreateConnector(net_info, 0, flags)))
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
-    ConnNetInfo_Destroy(net_info);
 
     CORE_LOG(eLOG_Note, "Creating connection");
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create connection");
     CONN_SetTimeout(conn, eIO_Open, &s_ZeroTmo);
+    CONN_SetTimeout(conn, eIO_ReadWrite, &s_ZeroTmo);
 
+    t = time(0);
     for (;;) {
-        size_t n;
         char blk[512];
-        EIO_Status status = CONN_Read(conn,blk,sizeof(blk),&n,eIO_ReadPlain);
+        EIO_Status status = CONN_Wait(conn, eIO_Read, &s_ZeroTmo);
 
+        if (status != eIO_Success) {
+            if (status == eIO_Closed)
+                break;
+            if (time(0) - t > (net_info->timeout->sec +
+                               (net_info->timeout->usec + 500000)/1000000)) {
+                CORE_LOG(eLOG_Fatal, "Timed out");
+            }
+#ifdef NCBI_OS_UNIX
+            usleep(500);
+#endif
+            continue;
+        }
+
+        status = CONN_Read(conn, blk, sizeof(blk), &n, eIO_ReadPlain);
         if (status != eIO_Success && status != eIO_Closed)
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
         if (n) {
@@ -100,6 +120,7 @@ int main(int argc, char* argv[])
             CORE_LOG(eLOG_Fatal, "Empty read");
     }
 
+    ConnNetInfo_Destroy(net_info);
     CORE_LOG(eLOG_Note, "Closing connection");
     CONN_Close(conn);
 
@@ -112,6 +133,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/05/19 16:58:37  lavr
+ * Modified to use {0,0} timeouts in CONN_Wait() and use app timeout handling
+ *
  * Revision 6.8  2003/05/14 03:58:43  lavr
  * Match changes in respective APIs of the tests
  *
