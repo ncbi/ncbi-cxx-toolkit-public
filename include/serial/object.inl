@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/26 19:24:54  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
 * Revision 1.8  2000/09/26 17:38:07  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -88,6 +91,12 @@ inline
 TTypeInfo CObjectTypeInfo::GetTypeInfo(void) const
 {
     return m_TypeInfo;
+}
+
+inline
+CTypeInfo* CObjectTypeInfo::GetNCTypeInfo(void) const
+{
+    return const_cast<CTypeInfo*>(GetTypeInfo());
 }
 
 inline
@@ -850,6 +859,12 @@ const CMemberInfo* CObjectTypeInfoMI::GetMemberInfo(void) const
 }
 
 inline
+CMemberInfo* CObjectTypeInfoMI::GetNCMemberInfo(void) const
+{
+    return const_cast<CMemberInfo*>(GetMemberInfo());
+}
+
+inline
 CObjectTypeInfo CObjectTypeInfoMI::GetMemberType(void) const
 {
     return GetMemberInfo()->GetTypeInfo();
@@ -925,6 +940,12 @@ inline
 const CVariantInfo* CObjectTypeInfoVI::GetVariantInfo(void) const
 {
     return GetChoiceTypeInfo()->GetVariantInfo(GetVariantIndex());
+}
+
+inline
+CVariantInfo* CObjectTypeInfoVI::GetNCVariantInfo(void) const
+{
+    return const_cast<CVariantInfo*>(GetVariantInfo());
 }
 
 inline
@@ -1164,6 +1185,12 @@ inline
 const CVariantInfo* CObjectTypeInfoCV::GetVariantInfo(void) const
 {
     return GetChoiceTypeInfo()->GetVariantInfo(GetVariantIndex());
+}
+
+inline
+CVariantInfo* CObjectTypeInfoCV::GetNCVariantInfo(void) const
+{
+    return const_cast<CVariantInfo*>(GetVariantInfo());
 }
 
 inline

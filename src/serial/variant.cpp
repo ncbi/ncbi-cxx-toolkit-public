@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/26 19:24:58  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
 * Revision 1.2  2000/09/26 17:38:23  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -694,6 +697,39 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
     }
     else
         variantInfo->DefaultCopyVariant(stream);
+}
+
+void CVariantInfo::SetReadHook(CObjectIStream* stream,
+                               CReadChoiceVariantHook* hook)
+{
+    m_ReadHookData.SetHook(stream, hook);
+}
+
+void CVariantInfo::ResetReadHook(CObjectIStream* stream)
+{
+    m_ReadHookData.ResetHook(stream);
+}
+
+void CVariantInfo::SetWriteHook(CObjectOStream* stream,
+                                CWriteChoiceVariantHook* hook)
+{
+    m_WriteHookData.SetHook(stream, hook);
+}
+
+void CVariantInfo::ResetWriteHook(CObjectOStream* stream)
+{
+    m_WriteHookData.ResetHook(stream);
+}
+
+void CVariantInfo::SetCopyHook(CObjectStreamCopier* stream,
+                               CCopyChoiceVariantHook* hook)
+{
+    m_CopyHookData.SetHook(stream, hook);
+}
+
+void CVariantInfo::ResetCopyHook(CObjectStreamCopier* stream)
+{
+    m_CopyHookData.ResetHook(stream);
 }
 
 END_NCBI_SCOPE

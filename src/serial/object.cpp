@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/26 19:24:57  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
 * Revision 1.9  2000/09/26 17:38:21  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -93,6 +96,69 @@ void CObjectTypeInfo::WrongTypeFamily(ETypeFamily needFamily) const
     THROW1_TRACE(runtime_error, "wrong type family");
 }
 
+void CObjectTypeInfo::SetLocalReadHook(CObjectIStream& stream,
+                                       CReadObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetLocalReadHook(stream, hook);
+}
+
+void CObjectTypeInfo::SetGlobalReadHook(CReadObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetGlobalReadHook(hook);
+}
+
+void CObjectTypeInfo::ResetLocalReadHook(CObjectIStream& stream) const
+{
+    GetNCTypeInfo()->ResetLocalReadHook(stream);
+}
+
+void CObjectTypeInfo::ResetGlobalReadHook(void) const
+{
+    GetNCTypeInfo()->ResetGlobalReadHook();
+}
+
+void CObjectTypeInfo::SetLocalWriteHook(CObjectOStream& stream,
+                                        CWriteObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetLocalWriteHook(stream, hook);
+}
+
+void CObjectTypeInfo::SetGlobalWriteHook(CWriteObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetGlobalWriteHook(hook);
+}
+
+void CObjectTypeInfo::ResetLocalWriteHook(CObjectOStream& stream) const
+{
+    GetNCTypeInfo()->ResetLocalWriteHook(stream);
+}
+
+void CObjectTypeInfo::ResetGlobalWriteHook(void) const
+{
+    GetNCTypeInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                       CCopyObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetLocalCopyHook(stream, hook);
+}
+
+void CObjectTypeInfo::SetGlobalCopyHook(CCopyObjectHook* hook) const
+{
+    GetNCTypeInfo()->SetGlobalCopyHook(hook);
+}
+
+void CObjectTypeInfo::ResetLocalCopyHook(CObjectStreamCopier& stream) const
+{
+    GetNCTypeInfo()->ResetLocalCopyHook(stream);
+}
+
+void CObjectTypeInfo::ResetGlobalCopyHook(void) const
+{
+    GetNCTypeInfo()->ResetGlobalCopyHook();
+}
+
 // container iterators
 
 CConstObjectInfoEI::CConstObjectInfoEI(const CConstObjectInfo& object)
@@ -150,6 +216,69 @@ bool CObjectTypeInfoMI::IsSet(const CConstObjectInfo& object) const
     return true;
 }
 
+void CObjectTypeInfoMI::SetLocalReadHook(CObjectIStream& stream,
+                                         CReadClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetLocalReadHook(stream, hook);
+}
+
+void CObjectTypeInfoMI::SetGlobalReadHook(CReadClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetGlobalReadHook(hook);
+}
+
+void CObjectTypeInfoMI::ResetLocalReadHook(CObjectIStream& stream) const
+{
+    GetNCMemberInfo()->ResetLocalReadHook(stream);
+}
+
+void CObjectTypeInfoMI::ResetGlobalReadHook(void) const
+{
+    GetNCMemberInfo()->ResetGlobalReadHook();
+}
+
+void CObjectTypeInfoMI::SetLocalWriteHook(CObjectOStream& stream,
+                                          CWriteClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetLocalWriteHook(stream, hook);
+}
+
+void CObjectTypeInfoMI::SetGlobalWriteHook(CWriteClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetGlobalWriteHook(hook);
+}
+
+void CObjectTypeInfoMI::ResetLocalWriteHook(CObjectOStream& stream) const
+{
+    GetNCMemberInfo()->ResetLocalWriteHook(stream);
+}
+
+void CObjectTypeInfoMI::ResetGlobalWriteHook(void) const
+{
+    GetNCMemberInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfoMI::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                         CCopyClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetLocalCopyHook(stream, hook);
+}
+
+void CObjectTypeInfoMI::SetGlobalCopyHook(CCopyClassMemberHook* hook) const
+{
+    GetNCMemberInfo()->SetGlobalCopyHook(hook);
+}
+
+void CObjectTypeInfoMI::ResetLocalCopyHook(CObjectStreamCopier& stream) const
+{
+    GetNCMemberInfo()->ResetLocalCopyHook(stream);
+}
+
+void CObjectTypeInfoMI::ResetGlobalCopyHook(void) const
+{
+    GetNCMemberInfo()->ResetGlobalCopyHook();
+}
+
 pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
 {
     const CMemberInfo* memberInfo = GetMemberInfo();
@@ -187,6 +316,132 @@ void CObjectInfoMI::Erase(void)
 }
 
 // choice iterators
+
+void CObjectTypeInfoVI::SetLocalReadHook(CObjectIStream& stream,
+                                         CReadChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalReadHook(stream, hook);
+}
+
+void CObjectTypeInfoVI::SetGlobalReadHook(CReadChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalReadHook(hook);
+}
+
+void CObjectTypeInfoVI::ResetLocalReadHook(CObjectIStream& stream) const
+{
+    GetNCVariantInfo()->ResetLocalReadHook(stream);
+}
+
+void CObjectTypeInfoVI::ResetGlobalReadHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalReadHook();
+}
+
+void CObjectTypeInfoVI::SetLocalWriteHook(CObjectOStream& stream,
+                                          CWriteChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalWriteHook(stream, hook);
+}
+
+void CObjectTypeInfoVI::SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalWriteHook(hook);
+}
+
+void CObjectTypeInfoVI::ResetLocalWriteHook(CObjectOStream& stream) const
+{
+    GetNCVariantInfo()->ResetLocalWriteHook(stream);
+}
+
+void CObjectTypeInfoVI::ResetGlobalWriteHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfoVI::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                         CCopyChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalCopyHook(stream, hook);
+}
+
+void CObjectTypeInfoVI::SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalCopyHook(hook);
+}
+
+void CObjectTypeInfoVI::ResetLocalCopyHook(CObjectStreamCopier& stream) const
+{
+    GetNCVariantInfo()->ResetLocalCopyHook(stream);
+}
+
+void CObjectTypeInfoVI::ResetGlobalCopyHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalCopyHook();
+}
+
+void CObjectTypeInfoCV::SetLocalReadHook(CObjectIStream& stream,
+                                         CReadChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalReadHook(stream, hook);
+}
+
+void CObjectTypeInfoCV::SetGlobalReadHook(CReadChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalReadHook(hook);
+}
+
+void CObjectTypeInfoCV::ResetLocalReadHook(CObjectIStream& stream) const
+{
+    GetNCVariantInfo()->ResetLocalReadHook(stream);
+}
+
+void CObjectTypeInfoCV::ResetGlobalReadHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalReadHook();
+}
+
+void CObjectTypeInfoCV::SetLocalWriteHook(CObjectOStream& stream,
+                                          CWriteChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalWriteHook(stream, hook);
+}
+
+void CObjectTypeInfoCV::SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalWriteHook(hook);
+}
+
+void CObjectTypeInfoCV::ResetLocalWriteHook(CObjectOStream& stream) const
+{
+    GetNCVariantInfo()->ResetLocalWriteHook(stream);
+}
+
+void CObjectTypeInfoCV::ResetGlobalWriteHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalWriteHook();
+}
+
+void CObjectTypeInfoCV::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                         CCopyChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetLocalCopyHook(stream, hook);
+}
+
+void CObjectTypeInfoCV::SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const
+{
+    GetNCVariantInfo()->SetGlobalCopyHook(hook);
+}
+
+void CObjectTypeInfoCV::ResetLocalCopyHook(CObjectStreamCopier& stream) const
+{
+    GetNCVariantInfo()->ResetLocalCopyHook(stream);
+}
+
+void CObjectTypeInfoCV::ResetGlobalCopyHook(void) const
+{
+    GetNCVariantInfo()->ResetGlobalCopyHook();
+}
 
 pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoCV::GetVariantPair(void) const
 {

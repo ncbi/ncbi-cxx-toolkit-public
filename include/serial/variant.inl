@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/26 19:24:54  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
 * Revision 1.2  2000/09/26 17:38:08  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -180,6 +183,81 @@ inline
 void CVariantInfo::DefaultCopyVariant(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetDefaultFunction()(stream, this);
+}
+
+inline
+void CVariantInfo::SetGlobalReadHook(CReadChoiceVariantHook* hook)
+{
+    SetReadHook(0, hook);
+}
+
+inline
+void CVariantInfo::SetLocalReadHook(CObjectIStream& in,
+                                    CReadChoiceVariantHook* hook)
+{
+    SetReadHook(&in, hook);
+}
+
+inline
+void CVariantInfo::ResetGlobalReadHook(void)
+{
+    ResetReadHook(0);
+}
+
+inline
+void CVariantInfo::ResetLocalReadHook(CObjectIStream& in)
+{
+    ResetReadHook(&in);
+}
+
+inline
+void CVariantInfo::SetGlobalWriteHook(CWriteChoiceVariantHook* hook)
+{
+    SetWriteHook(0, hook);
+}
+
+inline
+void CVariantInfo::SetLocalWriteHook(CObjectOStream& stream,
+                                     CWriteChoiceVariantHook* hook)
+{
+    SetWriteHook(&stream, hook);
+}
+
+inline
+void CVariantInfo::ResetGlobalWriteHook(void)
+{
+    ResetWriteHook(0);
+}
+
+inline
+void CVariantInfo::ResetLocalWriteHook(CObjectOStream& stream)
+{
+    ResetWriteHook(&stream);
+}
+
+inline
+void CVariantInfo::SetGlobalCopyHook(CCopyChoiceVariantHook* hook)
+{
+    SetCopyHook(0, hook);
+}
+
+inline
+void CVariantInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                    CCopyChoiceVariantHook* hook)
+{
+    SetCopyHook(&stream, hook);
+}
+
+inline
+void CVariantInfo::ResetGlobalCopyHook(void)
+{
+    ResetCopyHook(0);
+}
+
+inline
+void CVariantInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
+{
+    ResetCopyHook(&stream);
 }
 
 #endif /* def VARIANT__HPP  &&  ndef VARIANT__INL */

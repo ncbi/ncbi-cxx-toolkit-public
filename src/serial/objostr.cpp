@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/09/26 19:24:57  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
 * Revision 1.47  2000/09/26 17:38:22  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -317,6 +320,20 @@ void CObjectOStream::EndOfWrite(void)
     FlushBuffer();
     m_Objects.Clear();
 }    
+
+void CObjectOStream::Write(const CConstObjectInfo& object)
+{
+    // root writer
+    BEGIN_OBJECT_FRAME2(eFrameNamed, object.GetTypeInfo());
+    
+    WriteTypeName(object.GetTypeInfo());
+
+    WriteObject(object);
+
+    EndOfWrite();
+    
+    END_OBJECT_FRAME();
+}
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/09/26 19:24:53  vasilche
+* Added user interface for setting read/write/copy hooks.
+*
 * Revision 1.14  2000/09/26 17:38:07  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -184,6 +187,22 @@ public:
     // only when GetTypeFamily() == CTypeInfo::eTypePointer
     CObjectTypeInfo GetPointedType(void) const;
 
+    void SetLocalReadHook(CObjectIStream& stream,
+                          CReadObjectHook* hook) const;
+    void SetGlobalReadHook(CReadObjectHook* hook) const;
+    void ResetLocalReadHook(CObjectIStream& stream) const;
+    void ResetGlobalReadHook(void) const;
+    void SetLocalWriteHook(CObjectOStream& stream,
+                          CWriteObjectHook* hook) const;
+    void SetGlobalWriteHook(CWriteObjectHook* hook) const;
+    void ResetLocalWriteHook(CObjectOStream& stream) const;
+    void ResetGlobalWriteHook(void) const;
+    void SetLocalCopyHook(CObjectStreamCopier& stream,
+                          CCopyObjectHook* hook) const;
+    void SetGlobalCopyHook(CCopyObjectHook* hook) const;
+    void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
+    void ResetGlobalCopyHook(void) const;
+
 public: // mostly for internal use
     TTypeInfo GetTypeInfo(void) const;
     const CPrimitiveTypeInfo* GetPrimitiveTypeInfo(void) const;
@@ -209,6 +228,9 @@ protected:
 
 private:
     TTypeInfo m_TypeInfo;
+
+private:
+    CTypeInfo* GetNCTypeInfo(void) const;
 };
 
 class CConstObjectInfo : public CObjectTypeInfo
@@ -457,6 +479,22 @@ public:
     CObjectTypeInfo GetMemberType(void) const;
     CObjectTypeInfo operator*(void) const;
 
+    void SetLocalReadHook(CObjectIStream& stream,
+                          CReadClassMemberHook* hook) const;
+    void SetGlobalReadHook(CReadClassMemberHook* hook) const;
+    void ResetLocalReadHook(CObjectIStream& stream) const;
+    void ResetGlobalReadHook(void) const;
+    void SetLocalWriteHook(CObjectOStream& stream,
+                          CWriteClassMemberHook* hook) const;
+    void SetGlobalWriteHook(CWriteClassMemberHook* hook) const;
+    void ResetLocalWriteHook(CObjectOStream& stream) const;
+    void ResetGlobalWriteHook(void) const;
+    void SetLocalCopyHook(CObjectStreamCopier& stream,
+                          CCopyClassMemberHook* hook) const;
+    void SetGlobalCopyHook(CCopyClassMemberHook* hook) const;
+    void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
+    void ResetGlobalCopyHook(void) const;
+
 public: // mostly for internal use
     const CMemberInfo* GetMemberInfo(void) const;
 
@@ -467,6 +505,9 @@ protected:
     const CClassTypeInfo* GetClassTypeInfo(void) const;
 
     bool IsSet(const CConstObjectInfo& object) const;
+
+private:
+    CMemberInfo* GetNCMemberInfo(void) const;
 };
 
 class CObjectTypeInfoVI : public CObjectTypeInfoII
@@ -487,6 +528,22 @@ public:
     CObjectTypeInfo GetVariantType(void) const;
     CObjectTypeInfo operator*(void) const;
 
+    void SetLocalReadHook(CObjectIStream& stream,
+                          CReadChoiceVariantHook* hook) const;
+    void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
+    void ResetLocalReadHook(CObjectIStream& stream) const;
+    void ResetGlobalReadHook(void) const;
+    void SetLocalWriteHook(CObjectOStream& stream,
+                          CWriteChoiceVariantHook* hook) const;
+    void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
+    void ResetLocalWriteHook(CObjectOStream& stream) const;
+    void ResetGlobalWriteHook(void) const;
+    void SetLocalCopyHook(CObjectStreamCopier& stream,
+                          CCopyChoiceVariantHook* hook) const;
+    void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
+    void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
+    void ResetGlobalCopyHook(void) const;
+
 public: // mostly for internal use
     const CVariantInfo* GetVariantInfo(void) const;
 
@@ -495,6 +552,9 @@ protected:
     void Init(const CObjectTypeInfo& info, TMemberIndex index);
 
     const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
+
+private:
+    CVariantInfo* GetNCVariantInfo(void) const;
 };
 
 class CConstObjectInfoMI : public CObjectTypeInfoMI
@@ -575,6 +635,22 @@ public:
     CObjectTypeInfo operator*(void) const;
     CObjectTypeInfo operator->(void) const;
 
+    void SetLocalReadHook(CObjectIStream& stream,
+                          CReadChoiceVariantHook* hook) const;
+    void SetGlobalReadHook(CReadChoiceVariantHook* hook) const;
+    void ResetLocalReadHook(CObjectIStream& stream) const;
+    void ResetGlobalReadHook(void) const;
+    void SetLocalWriteHook(CObjectOStream& stream,
+                          CWriteChoiceVariantHook* hook) const;
+    void SetGlobalWriteHook(CWriteChoiceVariantHook* hook) const;
+    void ResetLocalWriteHook(CObjectOStream& stream) const;
+    void ResetGlobalWriteHook(void) const;
+    void SetLocalCopyHook(CObjectStreamCopier& stream,
+                          CCopyChoiceVariantHook* hook) const;
+    void SetGlobalCopyHook(CCopyChoiceVariantHook* hook) const;
+    void ResetLocalCopyHook(CObjectStreamCopier& stream) const;
+    void ResetGlobalCopyHook(void) const;
+
 public: // mostly for internal use
     const CVariantInfo* GetVariantInfo(void) const;
 
@@ -588,6 +664,9 @@ protected:
 private:
     const CChoiceTypeInfo* m_ChoiceTypeInfo;
     TMemberIndex m_VariantIndex;
+
+private:
+    CVariantInfo* GetNCVariantInfo(void) const;
 };
 
 class CConstObjectInfoCV : public CObjectTypeInfoCV
@@ -668,6 +747,20 @@ inline
 pair<TConstObjectPtr, TTypeInfo> ObjectInfo(const C& obj)
 {
     return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
+}
+
+template<class C>
+inline
+pair<TObjectPtr, TTypeInfo> RefChoiceInfo(CRef<C>& obj)
+{
+    return pair<TObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
+}
+
+template<class C>
+inline
+pair<TConstObjectPtr, TTypeInfo> ConstRefChoiceInfo(const CRef<C>& obj)
+{
+    return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetRefChoiceTypeInfo());
 }
 
 END_NCBI_SCOPE
