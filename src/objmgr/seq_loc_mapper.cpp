@@ -924,12 +924,12 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_diag& diag, size_t to_row)
         const CSeq_id& src_id = *diag.GetIds()[row];
         src_width = x_CheckSeqWidth(src_id, src_width);
         m_UseWidth |= (src_width != m_Dst_width);
-        int dst_width_rel = (m_UseWidth) ? 1 : m_Dst_width;
-        int src_width_rel = (m_UseWidth) ? 1 : src_width;
-        TSeqPos src_start = diag.GetStarts()[row]*dst_width_rel;
+        int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
+        int src_width_rel = (m_UseWidth) ? src_width : 1;
         TSeqPos src_len = diag.GetLen()*src_width*dst_width_rel;
+        TSeqPos dst_len = src_len;
+        TSeqPos src_start = diag.GetStarts()[row]*dst_width_rel;
         TSeqPos dst_start = diag.GetStarts()[to_row]*src_width_rel;
-        TSeqPos dst_len = diag.GetLen()*m_Dst_width*src_width_rel;
         ENa_strand src_strand = have_strands ?
             diag.GetStrands()[row] : eNa_strand_unknown;
         x_NextMappingRange(
@@ -989,8 +989,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
             src_width = x_CheckSeqWidth(src_id, src_width);
         }
         m_UseWidth |= (src_width != m_Dst_width);
-        int dst_width_rel = (m_UseWidth) ? 1 : m_Dst_width;
-        int src_width_rel = (m_UseWidth) ? 1 : src_width;
+        int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
+        int src_width_rel = (m_UseWidth) ? src_width : 1;
 
         for (size_t seg = 0; seg < numseg; ++seg) {
             int i_src_start = denseg.GetStarts()[seg*dim + row];
@@ -1006,8 +1006,9 @@ void CSeq_loc_Mapper::x_InitAlign(const CDense_seg& denseg, size_t to_row)
 
             // In alignments with multiple sequence types segment length
             // should be multiplied by character width.
-            TSeqPos src_len = denseg.GetLens()[seg]*src_width*dst_width_rel;
-            TSeqPos dst_len = denseg.GetLens()[seg]*m_Dst_width*src_width_rel;
+            TSeqPos src_len =
+                denseg.GetLens()[seg]*src_width_rel*dst_width_rel;
+            TSeqPos dst_len = src_len;
             TSeqPos src_start = (TSeqPos)(i_src_start)*dst_width_rel;
             TSeqPos dst_start = (TSeqPos)(i_dst_start)*src_width_rel;
             x_NextMappingRange(
@@ -1084,8 +1085,8 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
         int src_width = 0;
         src_width = x_CheckSeqWidth(src_id, src_width);
         m_UseWidth |= (src_width != m_Dst_width);
-        int dst_width_rel = (m_UseWidth) ? 1 : m_Dst_width;
-        int src_width_rel = (m_UseWidth) ? 1 : src_width;
+        int dst_width_rel = (m_UseWidth) ? m_Dst_width : 1;
+        int src_width_rel = (m_UseWidth) ? src_width : 1;
 
         for (size_t seg = 0; seg < numseg; ++seg) {
             if (!pseg.GetPresent()[row]  ||  !pseg.GetPresent()[to_row]) {
@@ -1100,7 +1101,7 @@ void CSeq_loc_Mapper::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
             // In alignments with multiple sequence types segment length
             // should be multiplied by character width.
             TSeqPos src_len = pseg.GetLens()[seg]*src_width*dst_width_rel;
-            TSeqPos dst_len = pseg.GetLens()[seg]*m_Dst_width*src_width_rel;
+            TSeqPos dst_len = src_len;
             TSeqPos src_start = pseg.GetStarts()[seg*dim + row]*dst_width_rel;
             TSeqPos dst_start = pseg.GetStarts()[seg*dim + to_row]*src_width_rel;
             x_NextMappingRange(
@@ -1882,6 +1883,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/10/14 13:55:08  grichenk
+* Fixed usage of widths
+*
 * Revision 1.26  2004/09/27 16:52:27  grichenk
 * Fixed order of mapped intervals
 *
