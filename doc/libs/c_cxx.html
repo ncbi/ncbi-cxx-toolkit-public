@@ -24,6 +24,7 @@ inside NCBI users at:
     <ul>
          <li> <a href="#ref_LOG"><tt>LOG</tt> and <tt>CNcbiDiag</tt></a>
          <li> <a href="#ref_REG"><tt>REG</tt> and <tt>CNcbiRegistry</tt></a>
+         <li> <a href="#ref_LOCK"><tt>MT_LOCK</tt> and <tt>CRWLock</tt></a>
          <li> <a href="#ref_ConnectCxx"><tt>CONNECT</tt> Library in C++ Code</a>
          <ul>
               <li><a href="#ref_SettingLOG">Setting <tt>LOG</tt></a>
@@ -103,7 +104,8 @@ Being written with an assumption to be used "as is" in the NCBI C Toolkit and
 yet to be in the C++ Toolkit tree, <tt>CONNECT</tt> library could not
 use directly all the utility objects offered by the C++ Toolkit such as
 message logging <a href="../programming_manual/diag.html"><b><i>CNcbiDiag</i></b></a>,
-registry <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a> etc.
+registry <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a>, and
+MT-locks <a href="threads.html#crwlock"><b><i>CRWLock</i></b></a>.
 All <a href="../lxr/source/include/connect/ncbi_core.h">these objects</a> were replaced
 with helper objects coded entirely in C (as tables of function pointers and data).
 
@@ -169,6 +171,26 @@ Similarly to <i>CORE LOG</i> setting, the returned handle can be later used
 with <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>
 declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>
 to set up the global registry object (<i>CORE C registry</i>).
+
+<p>
+<hr>
+
+
+<a name="ref_LOCK"></a><h3><tt>MT_LOCK</tt> and <tt>CRWLock</tt></h3>
+
+There is a function
+<pre>
+<tt>MT_LOCK</tt> <a href="../lxr/ident?i=MT_LOCK_cxx2c"><b><i>MT_LOCK_cxx2c</i></b></a>&nbsp;<tt>(CRWLock* lock, bool pass_ownership = false)</tt>
+</pre>
+declared in <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>,
+which converts an object of class <b><i>CRWLock</i></b> into a C object <b><i>MT_LOCK</i></b>. The latter can
+be used as an argument to <a href="../lxr/ident?i=CORE_SetLOCK"><b><i>CORE_SetLOCK()</i></b></a> for
+setting the global CORE lock, used by a low level code, written in C. Note that passing 0 as the lock pointer
+will effectively create a new internal <tt>CRWLock</tt> object, which will then be converted into <tt>MT_LOCK</tt> and
+returned. This object is destroyed then the corresponding <tt>MT_LOCK</tt> is asked to do so.
+If the pointer to <tt>CRWLock</tt> is passed non NULL then the second argument can specify whether
+resulting <tt>MT_LOCK</tt> acquires the ownership of the lock, thus is able to delete the lock when destructing itself.
+
 <p>
 <hr>
 
@@ -213,8 +235,15 @@ here <tt>cxxreg</tt> is a <b><i>CNcbiRegistry</i></b> registry object created an
 
 <a name="ref_SettingLOCK"></a><h4>Setting MT-Locking</h4>
 
-This section is yet to be written.
+To set up a CORE lock, which is used throughout the low level code, including places of
+calls of non-reentrant library calls (if no reentrant counterparts were detected during
+configure process), one can place the following statement close to the beginning of the
+program:
+<pre>
+    CORE_SetLOCK(MT_LOCK_cxx2c());
+</pre>
 
+Note that the use of this call is extremely important in a multi-threaded environment.
 
 <p>
 <hr>
