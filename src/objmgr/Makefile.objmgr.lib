@@ -19,5 +19,4 @@ SRC = snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
 LIB    = xobjmgr
 
 # Dependencies for shared library
-DLL_LIB = id1 seqset $(SEQ_LIBS) pub medline biblio \
-      general dbapi_driver xser xutil xcompress z bz2 xconnect xncbi
+DLL_LIB = id2 id1 seqset $(SEQ_LIBS) pub medline biblio general xcompress z bz2
