@@ -26,13 +26,16 @@
  * Author:  Anton Lavrentiev
  *
  * File description:
- *   C++->C conversion functions for basic corelib stuff:
+ *   C++->C conversion functions for basic CORE connect stuff:
  *     Registry
  *     Logging
  *     Locking
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/05/07 18:21:23  lavr
+ * +#include <ncbidiag.hpp>
+ *
  * Revision 6.8  2002/01/25 23:33:04  vakatov
  * s_LOCK_Handler() -- to match handler proto, return boolean value (not VOID!)
  *
@@ -63,12 +66,17 @@
  */
 
 #include <connect/ncbi_core_cxx.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 #include <string.h>
 
 
 BEGIN_NCBI_SCOPE
 
+
+/***********************************************************************
+ *                              Registry                               *
+ ***********************************************************************/
 
 static void s_REG_Get(void* user_data,
                       const char* section, const char* name,
@@ -120,6 +128,10 @@ extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
          0);
 }
 
+
+/***********************************************************************
+ *                                Logger                               *
+ ***********************************************************************/
 
 static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
 {
@@ -179,6 +191,10 @@ extern LOG LOG_cxx2c(void)
                       0);
 }
 
+
+/***********************************************************************
+ *                               MT-Lock                               *
+ ***********************************************************************/
 
 static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
 {
