@@ -1,5 +1,6 @@
 #ifndef NCBI_TAXON1_CACHE_HPP
 #define NCBI_TAXON1_CACHE_HPP
+
 /* $Id$
  * ===========================================================================
  *
@@ -31,23 +32,21 @@
  *     NCBI Taxonomy information retreival library caching mechanism
  *
  */
+
 #include <objects/taxon1/taxon1.hpp>
-
-#include "CTreeCont.hpp"
-
+#include "ctreecont.hpp"
 #include <map>
 
-BEGIN_NCBI_SCOPE
 
-#ifndef BEGIN_objects_SCOPE
-#  define BEGIN_objects_SCOPE BEGIN_SCOPE(objects)
-#  define END_objects_SCOPE END_SCOPE(objects)
-#endif
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
+
 
 class CTaxon1Node;
 
-class COrgRefCache {
+
+class COrgRefCache
+{
 public:
     COrgRefCache( CTaxon1& host );
 
@@ -92,35 +91,34 @@ public:
 private:
     friend class CTaxon1Node;
     struct SCacheEntry {
-	friend class CTaxon1Node;
-	CRef< CTaxon1_data > m_pTax1;
-	CRef< CTaxon2_data > m_pTax2;
+        friend class CTaxon1Node;
+        CRef< CTaxon1_data > m_pTax1;
+        CRef< CTaxon2_data > m_pTax2;
 
-	CTaxon1Node*  m_pTreeNode;
-// 	COrg_ref* p_org_ref;
-// 	bool is_uncultured;
-// 	bool is_species;
-// 	bool has_modif;
-// 	std::list< std::string > blast_name;
-	CTaxon1_data* GetData1();
-	CTaxon2_data* GetData2();
+        CTaxon1Node*  m_pTreeNode;
+        // 	COrg_ref* p_org_ref;
+        // 	bool is_uncultured;
+        // 	bool is_species;
+        // 	bool has_modif;
+        // 	list< string > blast_name;
+        CTaxon1_data* GetData1();
+        CTaxon2_data* GetData2();
     };
 
-    CTaxon1&         m_host;
+    CTaxon1&           m_host;
 
-    unsigned         m_nMaxTaxId;
-    CTaxon1Node**    m_ppEntries; // index by tax_id
-    CTreeCont        m_tPartTree; // Partial tree
+    unsigned           m_nMaxTaxId;
+    CTaxon1Node**      m_ppEntries; // index by tax_id
+    CTreeCont          m_tPartTree; // Partial tree
 
-    unsigned         m_nCacheCapacity; // Max number of elements in cache
-    std::list< SCacheEntry* >
-                     m_lCache; // LRU list
+    unsigned           m_nCacheCapacity; // Max number of elements in cache
+    list<SCacheEntry*> m_lCache; // LRU list
 
     bool             BuildOrgRef( CTaxon1Node& node, COrg_ref& org,
-				  bool& is_species );
+                                  bool& is_species );
     bool             BuildOrgModifier( CTaxon1Node* pNode,
-				       list< CRef<COrgMod> >& lMod,
-				       CTaxon1Node* pParent = NULL );
+                                       list< CRef<COrgMod> >& lMod,
+                                       CTaxon1Node* pParent = NULL );
     bool             SetBinomialName( CTaxon1Node& node, COrgName& on );
     bool             SetPartialName( CTaxon1Node& node, COrgName& on );
     // Rank stuff
@@ -134,7 +132,7 @@ private:
     int m_nFormaRank;
     int m_nVarietyRank;
 
-    typedef std::map<int, std::string> TRankMap;
+    typedef map<int, string> TRankMap;
     typedef TRankMap::const_iterator TRankMapCI;
     typedef TRankMap::iterator TRankMapI;
 
@@ -148,7 +146,7 @@ private:
     short m_ncCommon;
     short m_ncSynonym;
 
-    typedef std::map<short, std::string> TNameClassMap;
+    typedef map<short, string> TNameClassMap;
     typedef TNameClassMap::const_iterator TNameClassMapCI;
     typedef TNameClassMap::iterator TNameClassMapI;
     TNameClassMap m_ncStorage;
@@ -160,10 +158,10 @@ private:
     short m_divViruses;
     short m_divPhages;
     struct SDivision {
-	std::string m_sCode;
-	std::string m_sName;
+        string m_sCode;
+        string m_sName;
     };
-    typedef std::map<short, struct SDivision> TDivisionMap;
+    typedef map<short, struct SDivision> TDivisionMap;
     typedef TDivisionMap::const_iterator TDivisionMapCI;
     typedef TDivisionMap::iterator TDivisionMapI;
     TDivisionMap m_divStorage;
@@ -172,43 +170,53 @@ private:
     short    FindDivisionByCode( const char* pchCode ) const;
 };
 
-class CTaxon1Node : public CTreeContNodeBase {
+
+
+class CTaxon1Node : public CTreeContNodeBase
+{
 public:
     CTaxon1Node( const CRef< CTaxon1_name >& ref )
-	: m_ref( ref ), m_cacheEntry( NULL ) {}
+        : m_ref( ref ), m_cacheEntry( NULL ) {}
 
-    int                       GetTaxId() const { return m_ref->GetTaxid(); }
-    const std::string&        GetName() const { return m_ref->GetOname(); }
-    const std::string&        GetBlastName() const{ return m_ref->GetUname(); }
-    short                     GetRank() const;
-    short                     GetDivision() const;
-    short                     GetGC() const;
-    short                     GetMGC() const;
+    int                GetTaxId() const { return m_ref->GetTaxid(); }
+    const string&      GetName() const { return m_ref->GetOname(); }
+    const string&      GetBlastName() const{ return m_ref->GetUname(); }
+    short              GetRank() const;
+    short              GetDivision() const;
+    short              GetGC() const;
+    short              GetMGC() const;
+                       
+    bool               IsUncultured() const;
+    bool               IsGBHidden() const;
 
-    bool                      IsUncultured() const;
-    bool                      IsGBHidden() const;
+    COrgRefCache::SCacheEntry* GetEntry() { return m_cacheEntry; }
 
-    COrgRefCache::SCacheEntry*GetEntry() { return m_cacheEntry; }
-
-    CTaxon1Node*              GetParent()
+    CTaxon1Node*               GetParent()
     { return static_cast<CTaxon1Node*>(Parent()); }
 private:
     friend class COrgRefCache;
-    CRef< CTaxon1_name >      m_ref;
+    CRef< CTaxon1_name >       m_ref;
 
-    COrgRefCache::SCacheEntry*m_cacheEntry;
+    COrgRefCache::SCacheEntry* m_cacheEntry;
 };
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE
 END_NCBI_SCOPE
+
+
 
 /*
  * $Log$
+ * Revision 6.2  2002/01/31 00:31:26  vakatov
+ * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
+ * Get rid of "std::" which is unnecessary and sometimes un-compilable.
+ * Also done some source identation/beautification.
+ *
  * Revision 6.1  2002/01/28 19:56:10  domrach
  * Initial checkin of the library implementation files
  *
- *
  * ===========================================================================
  */
+
 #endif // NCBI_TAXON1_CACHE_HPP

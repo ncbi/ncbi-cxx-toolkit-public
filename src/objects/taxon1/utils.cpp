@@ -1,11 +1,11 @@
 #include <objects/taxon1/taxon1.hpp>
 
-#include "CTreeCont.hpp"
+#include "ctreecont.hpp"
 #include "cache.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 bool
 CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
@@ -13,83 +13,83 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
     unsigned nIterCount( 0 );
     unsigned fail_flags( 0 );
     if( !m_pServer ) {
-	SetLastError( "Service is not initialized" );
-	return false;
+        SetLastError( "Service is not initialized" );
+        return false;
     }
     SetLastError( NULL );
 
     do {
-	bool bNeedReconnect( false );
+        bool bNeedReconnect( false );
 
-	try {
-	    *m_pOut << req;
-	    m_pOut->Flush();
+        try {
+            *m_pOut << req;
+            m_pOut->Flush();
 
-	    if( m_pOut->InGoodState() ) {
-		try {
-		    *m_pIn >> resp;
+            if( m_pOut->InGoodState() ) {
+                try {
+                    *m_pIn >> resp;
 		
-		    if( m_pIn->InGoodState() ) {
-			if( resp.IsError() ) { // Process error here
-			    std::string err;
-			    resp.GetError().GetErrorText( err );
-			    SetLastError( err.c_str() );
-			    return false;
-			} else
-			    return true;
-		    }
-		} catch( exception& e ) {
-		    SetLastError( e.what() );
-		}
-		fail_flags = m_pIn->GetFailFlags();
-		bNeedReconnect = (fail_flags & ( CObjectIStream::eEOF
-						|CObjectIStream::eReadError
-						|CObjectIStream::eOverflow
-						|CObjectIStream::eFail
-						|CObjectIStream::eNotOpen ));
-	    } else {
-		m_pOut->ThrowError1((CObjectOStream::EFailFlags)
-				    m_pOut->GetFailFlags(),
-				    "Output stream is in bad state");
-	    }
-	} catch( exception& e ) {
-	    SetLastError( e.what() );
-	    fail_flags = m_pOut->GetFailFlags();
-	    bNeedReconnect = (fail_flags & ( CObjectOStream::eEOF
-					    |CObjectOStream::eWriteError
-					    |CObjectOStream::eOverflow
-					    |CObjectOStream::eFail
-					    |CObjectOStream::eNotOpen ));
-	}	    
+                    if( m_pIn->InGoodState() ) {
+                        if( resp.IsError() ) { // Process error here
+                            string err;
+                            resp.GetError().GetErrorText( err );
+                            SetLastError( err.c_str() );
+                            return false;
+                        } else
+                            return true;
+                    }
+                } catch( exception& e ) {
+                    SetLastError( e.what() );
+                }
+                fail_flags = m_pIn->GetFailFlags();
+                bNeedReconnect = (fail_flags & ( CObjectIStream::eEOF
+                                                 |CObjectIStream::eReadError
+                                                 |CObjectIStream::eOverflow
+                                                 |CObjectIStream::eFail
+                                                 |CObjectIStream::eNotOpen ));
+            } else {
+                m_pOut->ThrowError1((CObjectOStream::EFailFlags)
+                                    m_pOut->GetFailFlags(),
+                                    "Output stream is in bad state");
+            }
+        } catch( exception& e ) {
+            SetLastError( e.what() );
+            fail_flags = m_pOut->GetFailFlags();
+            bNeedReconnect = (fail_flags & ( CObjectOStream::eEOF
+                                             |CObjectOStream::eWriteError
+                                             |CObjectOStream::eOverflow
+                                             |CObjectOStream::eFail
+                                             |CObjectOStream::eNotOpen ));
+        }	    
 	
-	if( !bNeedReconnect )
-	    break;
-	// Reconnect the service
-	if( nIterCount < m_nReconnectAttempts ) {
-	    delete m_pOut;
-	    delete m_pIn;
-	    delete m_pServer;
-	    m_pOut = NULL;
-	    m_pIn = NULL;
-	    m_pServer = NULL;
-	    try {
-		auto_ptr<CObjectOStream> pOut;
-		auto_ptr<CObjectIStream> pIn;
-		auto_ptr<CConn_ServiceStream>
-		    pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
-						     0, 0, &m_timeout) );
+        if( !bNeedReconnect )
+            break;
+        // Reconnect the service
+        if( nIterCount < m_nReconnectAttempts ) {
+            delete m_pOut;
+            delete m_pIn;
+            delete m_pServer;
+            m_pOut = NULL;
+            m_pIn = NULL;
+            m_pServer = NULL;
+            try {
+                auto_ptr<CObjectOStream> pOut;
+                auto_ptr<CObjectIStream> pIn;
+                auto_ptr<CConn_ServiceStream>
+                    pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
+                                                     0, 0, &m_timeout) );
 		
-		pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
-		pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
-		m_pServer = pServer.release();
-		m_pIn = pIn.release();
-		m_pOut = pOut.release();
-	    } catch( exception& e ) {
-		SetLastError( e.what() );
-	    }
-	} else { // No more attempts left
-	    break;
-	}
+                pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
+                pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
+                m_pServer = pServer.release();
+                m_pIn = pIn.release();
+                m_pOut = pOut.release();
+            } catch( exception& e ) {
+                SetLastError( e.what() );
+            }
+        } else { // No more attempts left
+            break;
+        }
     } while( nIterCount++ < m_nReconnectAttempts );
     return false;
 }
@@ -98,9 +98,9 @@ void
 CTaxon1::SetLastError( const char* pchErr )
 {
     if( pchErr )
-	m_sLastError.assign( pchErr );
+        m_sLastError.assign( pchErr );
     else
-	m_sLastError.erase();
+        m_sLastError.erase();
 }
 
 //////////////////////////////////
@@ -153,7 +153,7 @@ CTaxon1Node::IsGBHidden() const
     return (m_ref->GetCde() & TXC_GBHIDE);
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 

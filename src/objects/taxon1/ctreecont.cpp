@@ -30,19 +30,21 @@
 * File Description:  General purpose tree container implementation
 *
 */
-#include "CTreeCont.hpp"
+
+#include "ctreecont.hpp"
+
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 bool CTreeIterator::BelongSubtree(const CTreeContNodeBase* subtree_root)
 {
     if(m_node == subtree_root)
-	return true;
+        return true;
     for(CTreeContNodeBase* pN= m_node->m_parent; pN != 0; pN= pN->m_parent) {
-	if(pN == subtree_root)
-	    return true;
+        if(pN == subtree_root)
+            return true;
     }
     return false;
 }
@@ -51,55 +53,58 @@ bool CTreeIterator::AboveNode(CTreeContNodeBase* node)
 {
     if(node == 0) return false;
     do {
-	if(node->m_parent == m_node) return true;
+        if(node->m_parent == m_node) return true;
     }
     while((node= node->m_parent) != 0);
 
     return false;
 }
 
-bool CTreeIterator::GoAncestor(CTreeContNodeBase* node) // move cursor to the nearest common ancestor
+// move cursor to the nearest common ancestor
+bool CTreeIterator::GoAncestor(CTreeContNodeBase* node)
 {
     if(BelongSubtree(node)) {
-	m_node= node;
-	return true;
+        m_node= node;
+        return true;
     }
     CTreeContNodeBase* pN= m_node;;
     while(!AboveNode(node)) {
-	if(m_node->m_parent == 0) {
-	    m_node= pN;
-	    return false;
-	}
-	m_node= m_node->m_parent;
+        if(m_node->m_parent == 0) {
+            m_node= pN;
+            return false;
+        }
+        m_node= m_node->m_parent;
     }
     return true;
 }
 
 
-bool CTreeIterator::AddChild(CTreeContNodeBase* new_node) // add child to a node pointed by cursor
+// add child to a node pointed by cursor
+bool CTreeIterator::AddChild(CTreeContNodeBase* new_node)
 {
     if(new_node) {
-	m_tree->AddChild(m_node);
-	new_node->m_parent= m_node;
-	new_node->m_sibling= m_node->m_child;
-	new_node->m_child= 0;
-	m_node->m_child= new_node;
-	m_tree->Done(new_node);
-	return true;
+        m_tree->AddChild(m_node);
+        new_node->m_parent= m_node;
+        new_node->m_sibling= m_node->m_child;
+        new_node->m_child= 0;
+        m_node->m_child= new_node;
+        m_tree->Done(new_node);
+        return true;
     }
     return false;
 }
 
-bool CTreeIterator::AddSibling(CTreeContNodeBase* new_node) // add sibling to a node pointed by cursor
+// add sibling to a node pointed by cursor
+bool CTreeIterator::AddSibling(CTreeContNodeBase* new_node)
 {
     if(new_node && m_node->m_parent) {
-	m_tree->AddChild(m_node->m_parent);
-	new_node->m_parent= m_node->m_parent;
-	new_node->m_sibling= m_node->m_sibling;
-	new_node->m_child= 0;
-	m_node->m_sibling= new_node;
-	m_tree->Done(new_node);
-	return true;
+        m_tree->AddChild(m_node->m_parent);
+        new_node->m_parent= m_node->m_parent;
+        new_node->m_sibling= m_node->m_sibling;
+        new_node->m_child= 0;
+        m_node->m_sibling= new_node;
+        m_tree->Done(new_node);
+        return true;
     }
     return false;
 }
@@ -107,7 +112,7 @@ bool CTreeIterator::AddSibling(CTreeContNodeBase* new_node) // add sibling to a 
 bool CTreeIterator::MoveNode(CTreeContNodeBase* to_node)
 {
     if((to_node == 0) || AboveNode(to_node)) {
-	return false;
+        return false;
     }
 
     if(m_node->m_parent == to_node) return true;
@@ -118,14 +123,14 @@ bool CTreeIterator::MoveNode(CTreeContNodeBase* to_node)
 
     // detach the node
     if(m_node->m_parent->m_child == m_node) { // this is a first child
-	m_node->m_parent->m_child= m_node->m_sibling;
+        m_node->m_parent->m_child= m_node->m_sibling;
     }
     else {
-	CTreeContNodeBase* pN;
-	for( pN= m_node->m_parent->m_child;
-	     pN->m_sibling != m_node;
-	     pN= pN->m_sibling );
-	pN->m_sibling= m_node->m_sibling;
+        CTreeContNodeBase* pN;
+        for( pN= m_node->m_parent->m_child;
+             pN->m_sibling != m_node;
+             pN= pN->m_sibling );
+        pN->m_sibling= m_node->m_sibling;
     }
 
     // attach it
@@ -142,7 +147,7 @@ bool CTreeIterator::MoveNode(CTreeContNodeBase* to_node)
 bool CTreeIterator::MoveChildren(CTreeContNodeBase* to_node)
 {
     if((to_node == 0) || AboveNode(to_node)) {
-	return false;
+        return false;
     }
 
     if((m_node == to_node) || (m_node->m_child == 0)) return true;
@@ -153,8 +158,8 @@ bool CTreeIterator::MoveChildren(CTreeContNodeBase* to_node)
     CTreeContNodeBase* pN= m_node->m_child;
 
     do {
-	pN->m_parent= to_node;
-	if(pN->m_sibling == 0) break;
+        pN->m_parent= to_node;
+        if(pN->m_sibling == 0) break;
     }
     while((pN= pN->m_sibling) != 0);
 
@@ -172,8 +177,8 @@ void CTreeCont::DelNodeInternal(CTreeContNodeBase* pN)
 {
     CTreeContNodeBase* pNxt;
     for(CTreeContNodeBase* pChild= pN->m_child; pChild != 0; pChild= pNxt) {
-	pNxt= pChild->m_sibling;
-	DelNodeInternal(pChild);
+        pNxt= pChild->m_sibling;
+        DelNodeInternal(pChild);
     }
     delete pN;
 }
@@ -189,13 +194,13 @@ bool CTreeIterator::DeleteSubtree()
 
     // detach the node
     if(m_node->m_parent->m_child == m_node) { // this is a first child
-	m_node->m_parent->m_child= m_node->m_sibling;
+        m_node->m_parent->m_child= m_node->m_sibling;
     }
     else {
-	for(pN= m_node->m_parent->m_child;
-	    pN->m_sibling != m_node;
-	    pN= pN->m_sibling);
-	pN->m_sibling= m_node->m_sibling;
+        for(pN= m_node->m_parent->m_child;
+            pN->m_sibling != m_node;
+            pN= pN->m_sibling);
+        pN->m_sibling= m_node->m_sibling;
     }
 
     pN= m_node->m_parent;
@@ -214,7 +219,7 @@ bool CTreeIterator::DeleteNode()
 {
     if(m_node->m_parent == 0) return false; // can't delete the root
     if(m_node->m_child) {
-	MoveChildren(m_node->m_parent);
+        MoveChildren(m_node->m_parent);
     }
 
     return DeleteSubtree();
@@ -223,24 +228,24 @@ bool CTreeIterator::DeleteNode()
 bool CTreeIterator::Merge(CTreeContNodeBase* to_node)
 {
     if(MoveChildren(to_node)) {
-	m_tree->Merge(m_node, to_node, this);
-	to_node->Merge(m_node);
+        m_tree->Merge(m_node, to_node, this);
+        to_node->Merge(m_node);
 	
-	// detach the node
-	if(m_node->m_parent->m_child == m_node) { // this is a first child
-	    m_node->m_parent->m_child= m_node->m_sibling;
-	}
-	else {
-	    CTreeContNodeBase* pN;
-	    for(pN= m_node->m_parent->m_child;
-		pN->m_sibling != m_node;
-		pN= pN->m_sibling);
-	    pN->m_sibling= m_node->m_sibling;
-	}
-	delete m_node;
-	m_node= to_node;
-	m_tree->Done(m_node);
-	return true;
+        // detach the node
+        if(m_node->m_parent->m_child == m_node) { // this is a first child
+            m_node->m_parent->m_child= m_node->m_sibling;
+        }
+        else {
+            CTreeContNodeBase* pN;
+            for(pN= m_node->m_parent->m_child;
+                pN->m_sibling != m_node;
+                pN= pN->m_sibling);
+            pN->m_sibling= m_node->m_sibling;
+        }
+        delete m_node;
+        m_node= to_node;
+        m_tree->Done(m_node);
+        return true;
     }
     return false;	
 }
@@ -251,24 +256,24 @@ CTreeIterator::ForEachDownward(C4Each& cb)
     switch( cb.Execute(m_node) ) {
     default:
     case eCont:
-	if(!m_node->IsTerminal()) {
-	    switch( cb.LevelBegin(m_node) ) {
-	    case eStop: return eStop;
-	    default:
-	    case eCont:
-		if(GoChild()) {
-		    do {
-			if(ForEachDownward(cb)==eStop)
-			    return eStop;
-		    } while(GoSibling());
-		}
-	    case eSkip: // Means skip this level
-		break;
-	    }
-	    GoParent();
-	    if( cb.LevelEnd(m_node) == eStop )
-		return eStop;
-	}
+        if(!m_node->IsTerminal()) {
+            switch( cb.LevelBegin(m_node) ) {
+            case eStop: return eStop;
+            default:
+            case eCont:
+                if(GoChild()) {
+                    do {
+                        if(ForEachDownward(cb)==eStop)
+                            return eStop;
+                    } while(GoSibling());
+                }
+            case eSkip: // Means skip this level
+                break;
+            }
+            GoParent();
+            if( cb.LevelEnd(m_node) == eStop )
+                return eStop;
+        }
     case eSkip:	break;
     case eStop: return eStop;
     }
@@ -281,13 +286,13 @@ CTreeIterator::ForEachDownward(ForEachFunc ucb, void* user_data)
     switch( (*ucb)(m_node, user_data) ) {
     default:
     case eCont:
-	if(GoChild()) {
-	    do {
-		if(ForEachDownward(ucb, user_data)==eStop)
-		    return eStop;
-	    } while(GoSibling());
-	    GoParent();
-	}
+        if(GoChild()) {
+            do {
+                if(ForEachDownward(ucb, user_data)==eStop)
+                    return eStop;
+            } while(GoSibling());
+            GoParent();
+        }
     case eSkip:	break;
     case eStop: return eStop;
     }
@@ -298,53 +303,53 @@ CTreeIterator::EAction
 CTreeIterator::ForEachDownwardLimited(C4Each& cb, int levels)
 {
     if(levels > 0) {
-	switch( cb.Execute(m_node) ) {
-	default:
-	case eCont:
-	    if(!m_node->IsTerminal()) {
-		switch( cb.LevelBegin(m_node) ) {
-		case eStop: return eStop;
-		default:
-		case eCont:
-		    if(GoChild()) {
-			do {
-			    if(ForEachDownwardLimited(cb, levels-1)==eStop)
-				return eStop;
-			} while(GoSibling());
-		    }
-		case eSkip: // Means skip this level
-		    break;
-		}
-		GoParent();
-		if( cb.LevelEnd(m_node) == eStop )
-		    return eStop;
-	    }
-	case eSkip: break;
-	case eStop: return eStop;
-	}
+        switch( cb.Execute(m_node) ) {
+        default:
+        case eCont:
+            if(!m_node->IsTerminal()) {
+                switch( cb.LevelBegin(m_node) ) {
+                case eStop: return eStop;
+                default:
+                case eCont:
+                    if(GoChild()) {
+                        do {
+                            if(ForEachDownwardLimited(cb, levels-1)==eStop)
+                                return eStop;
+                        } while(GoSibling());
+                    }
+                case eSkip: // Means skip this level
+                    break;
+                }
+                GoParent();
+                if( cb.LevelEnd(m_node) == eStop )
+                    return eStop;
+            }
+        case eSkip: break;
+        case eStop: return eStop;
+        }
     }
     return eCont;
 }
 
 CTreeIterator::EAction
 CTreeIterator::ForEachDownwardLimited(ForEachFunc ucb, void* user_data,
-					   int levels)
+                                      int levels)
 {
     if(levels > 0) {
-	switch( (*ucb)(m_node, user_data) ) {
-	default:
-	case eCont:
-	    if(GoChild()) {
-		do {
-		    if(ForEachDownwardLimited(ucb, user_data,
-						   levels-1)==eStop)
-			return eStop;
-		} while(GoSibling());
-		GoParent();
-	    }
-	case eSkip: break;
-	case eStop: return eStop;
-	}
+        switch( (*ucb)(m_node, user_data) ) {
+        default:
+        case eCont:
+            if(GoChild()) {
+                do {
+                    if(ForEachDownwardLimited(ucb, user_data,
+                                              levels-1)==eStop)
+                        return eStop;
+                } while(GoSibling());
+                GoParent();
+            }
+        case eSkip: break;
+        case eStop: return eStop;
+        }
     }
     return eCont;
 }
@@ -369,19 +374,19 @@ CTreeCont::GetConstIterator() const
 void
 CTreeCont::DeleteSubtree(CTreeContNodeBase*, CTreeIterator*)
 {
-//     int i;
+    //     int i;
 
-//     if((n= m_cursorPot.nof()) > 1) {
-// 	// move all cursors out of deleted subtree
-// 	CTreeIterator* iCursor;
+    //     if((n= m_cursorPot.nof()) > 1) {
+    // 	// move all cursors out of deleted subtree
+    // 	CTreeIterator* iCursor;
 
-// 	for(i= 0; i < n; i++) {
-// 	    iCursor= (CTreeIterator*)(m_cursorPot.get(i));
-// 	    if((iCursor != pCursor) && iCursor->belongSubtree(stroot)) {
-// 		iCursor->GoNode(stroot->m_parent); // move it up
-// 	    }
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    iCursor= (CTreeIterator*)(m_cursorPot.get(i));
+    // 	    if((iCursor != pCursor) && iCursor->belongSubtree(stroot)) {
+    // 		iCursor->GoNode(stroot->m_parent); // move it up
+    // 	    }
+    // 	}
+    //     }
 }
 
 ////////////////////////////////////////////////////////////
@@ -389,17 +394,17 @@ CTreeCont::DeleteSubtree(CTreeContNodeBase*, CTreeIterator*)
 ////////////////////////////////////////////////////////////
 void CTreeCont::Done(CTreeContNodeBase* node)
 {
-//     int n= m_spyPot.nof();
+    //     int n= m_spyPot.nof();
 
-//     if(n > 0) { // notify all spies about delSubtree operation
-// 	int i;
-// 	CTreeContSpy* pSpy;
+    //     if(n > 0) { // notify all spies about delSubtree operation
+    // 	int i;
+    // 	CTreeContSpy* pSpy;
 
-// 	for(i= 0; i < n; i++) {
-// 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
-// 	    pSpy->Done(node);
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
+    // 	    pSpy->Done(node);
+    // 	}
+    //     }
 }
 
 ///////////////////////////////////////////////////////////
@@ -407,17 +412,17 @@ void CTreeCont::Done(CTreeContNodeBase* node)
 ///////////////////////////////////////////////////////////
 void CTreeCont::MoveNode(CTreeContNodeBase*, CTreeContNodeBase*)
 {
-//     int n= m_spyPot.nof();
+    //     int n= m_spyPot.nof();
 
-//     if(n > 0) { // notify all spies about delSubtree operation
-// 	int i;
-// 	CTreeContSpy* pSpy;
+    //     if(n > 0) { // notify all spies about delSubtree operation
+    // 	int i;
+    // 	CTreeContSpy* pSpy;
 
-// 	for(i= 0; i < n; i++) {
-// 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
-// 	    pSpy->node_move(node2move, new_parent);
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
+    // 	    pSpy->node_move(node2move, new_parent);
+    // 	}
+    //     }
 }
 
 //////////////////////////////////////////////////////////////
@@ -425,17 +430,17 @@ void CTreeCont::MoveNode(CTreeContNodeBase*, CTreeContNodeBase*)
 //////////////////////////////////////////////////////////////
 void CTreeCont::MoveChildren(CTreeContNodeBase*, CTreeContNodeBase*)
 {
-//     int n= m_spyPot.nof();
+    //     int n= m_spyPot.nof();
 
-//     if(n > 0) { // notify all spies about delSubtree operation
-// 	int i;
-// 	CTreeContSpy* pSpy;
+    //     if(n > 0) { // notify all spies about delSubtree operation
+    // 	int i;
+    // 	CTreeContSpy* pSpy;
 
-// 	for(i= 0; i < n; i++) {
-// 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
-// 	    pSpy->children_move(old_parent, new_parent);
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
+    // 	    pSpy->children_move(old_parent, new_parent);
+    // 	}
+    //     }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -443,66 +448,66 @@ void CTreeCont::MoveChildren(CTreeContNodeBase*, CTreeContNodeBase*)
 ///////////////////////////////////////////////////////////////
 void CTreeCont::AddChild(CTreeContNodeBase*)
 {
-//     int n= m_spyPot.nof();
+    //     int n= m_spyPot.nof();
 
-//     if(n > 0) { // notify all spies about delSubtree operation
-// 	int i;
-// 	CTreeContSpy* pSpy;
+    //     if(n > 0) { // notify all spies about delSubtree operation
+    // 	int i;
+    // 	CTreeContSpy* pSpy;
 
-// 	for(i= 0; i < n; i++) {
-// 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
-// 	    pSpy->child_add(parent);
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
+    // 	    pSpy->child_add(parent);
+    // 	}
+    //     }
 }
 
 //////////////////////////////////////////////////////
 // merge nodes notification (private method)
 //////////////////////////////////////////////////////
 void CTreeCont::Merge(CTreeContNodeBase* , CTreeContNodeBase* ,
-		      CTreeIterator* )
+                      CTreeIterator* )
 {
-//     int i;
-//     int n= m_spyPot.nof();
+    //     int i;
+    //     int n= m_spyPot.nof();
 
-//     if(n > 0) { // notify all spies about delSubtree operation
-// 	CTreeContSpy* pSpy;
+    //     if(n > 0) { // notify all spies about delSubtree operation
+    // 	CTreeContSpy* pSpy;
 
-// 	for(i= 0; i < n; i++) {
-// 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
-// 	    pSpy->node_merge(src, dst);
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    pSpy= (CTreeContSpy*)(m_spyPot.get(i));
+    // 	    pSpy->node_merge(src, dst);
+    // 	}
+    //     }
 
-//     if((n= m_cursorPot.nof()) > 1) {
-// 	// move all cursors out of src
-// 	CTreeIterator* iCursor;
+    //     if((n= m_cursorPot.nof()) > 1) {
+    // 	// move all cursors out of src
+    // 	CTreeIterator* iCursor;
 
-// 	for(i= 0; i < n; i++) {
-// 	    iCursor= (CTreeIterator*)(m_cursorPot.get(i));
-// 	    if((iCursor != pCursor) && (iCursor->getNode() == src)) {
-// 		iCursor->GoNode(dst); // move it to merged node
-// 	    }
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    iCursor= (CTreeIterator*)(m_cursorPot.get(i));
+    // 	    if((iCursor != pCursor) && (iCursor->getNode() == src)) {
+    // 		iCursor->GoNode(dst); // move it to merged node
+    // 	    }
+    // 	}
+    //     }
 }
 
 CTreeCont::~CTreeCont()
 {
-//     int i, n;
+    //     int i, n;
 
-//     // delete all cursors
-//     if((n= m_cursorPot.nof()) > 1) {
-// 	// move all cursors out of deleted subtree
-// 	CTreeIterator* iCursor;
+    //     // delete all cursors
+    //     if((n= m_cursorPot.nof()) > 1) {
+    // 	// move all cursors out of deleted subtree
+    // 	CTreeIterator* iCursor;
 
-// 	for(i= 0; i < n; i++) {
-// 	    iCursor= (CTreeIterator*)(m_cursorPot.get(i));
-// 	    delete iCursor;
-// 	}
-//     }
+    // 	for(i= 0; i < n; i++) {
+    // 	    iCursor= (CTreeIterator*)(m_cursorPot.get(i));
+    // 	    delete iCursor;
+    // 	}
+    //     }
     if(m_root)
-	DelNodeInternal(m_root);
+        DelNodeInternal(m_root);
 }
 
 
@@ -510,26 +515,27 @@ bool CTreeCont::AddNode(CTreeContNodeBase* pParentNode,
                         CTreeContNodeBase* pNewNode)
 {
     if(pNewNode && pParentNode) {
-	pNewNode->m_parent = pParentNode;
-	pNewNode->m_sibling = pParentNode->m_child;
-	pNewNode->m_child = 0;
-	pParentNode->m_child = pNewNode;
+        pNewNode->m_parent = pParentNode;
+        pNewNode->m_sibling = pParentNode->m_child;
+        pNewNode->m_child = 0;
+        pParentNode->m_child = pNewNode;
 
-	return true;
+        return true;
     }
 
     return false;
 }
 
 
-bool CTreeConstIterator::BelongSubtree(const CTreeContNodeBase* subtree_root) const
+bool CTreeConstIterator::BelongSubtree(const CTreeContNodeBase* subtree_root)
+    const
 {
     if(m_node == subtree_root)
-	return true;
+        return true;
     for(const CTreeContNodeBase* pN= m_node->m_parent; pN != 0;
-	pN= pN->m_parent) {
-	if(pN == subtree_root)
-	    return true;
+        pN= pN->m_parent) {
+        if(pN == subtree_root)
+            return true;
     }
     return false;
 }
@@ -537,10 +543,10 @@ bool CTreeConstIterator::BelongSubtree(const CTreeContNodeBase* subtree_root) co
 bool CTreeConstIterator::AboveNode(const CTreeContNodeBase* node) const
 {
     if(node == 0)
-	return false;
+        return false;
     do {
-	if(node->m_parent == m_node)
-	    return true;
+        if(node->m_parent == m_node)
+            return true;
     }
     while((node= node->m_parent) != 0);
 
@@ -551,16 +557,16 @@ bool CTreeConstIterator::AboveNode(const CTreeContNodeBase* node) const
 bool CTreeConstIterator::GoAncestor(const CTreeContNodeBase* node)
 {
     if(BelongSubtree(node)) {
-	m_node= node;
-	return true;
+        m_node= node;
+        return true;
     }
     const CTreeContNodeBase* pN= m_node;;
     while(!AboveNode(node)) {
-	if(m_node->m_parent == 0) {
-	    m_node= pN;
-	    return false;
-	}
-	m_node= m_node->m_parent;
+        if(m_node->m_parent == 0) {
+            m_node= pN;
+            return false;
+        }
+        m_node= m_node->m_parent;
     }
     return true;
 }
@@ -571,23 +577,23 @@ CTreeConstIterator::ForEachDownward(C4Each& cb)
     switch( cb.Execute(m_node) ) {
     default:
     case eCont:
-	if(!m_node->IsTerminal()) {
-	    switch( cb.LevelBegin(m_node) ) {
-	    case eStop: return eStop;
-	    default:
-	    case eCont:
-		if(GoChild()) {
-		    do {
-			if(ForEachDownward(cb)==eStop) return eStop;
-		    } while(GoSibling());
-		}
-	    case eSkip: // Means skip this level
-		break;
-	    }
-	    GoParent();
-	    if( cb.LevelEnd(m_node) == eStop )
-		return eStop;
-	}
+        if(!m_node->IsTerminal()) {
+            switch( cb.LevelBegin(m_node) ) {
+            case eStop: return eStop;
+            default:
+            case eCont:
+                if(GoChild()) {
+                    do {
+                        if(ForEachDownward(cb)==eStop) return eStop;
+                    } while(GoSibling());
+                }
+            case eSkip: // Means skip this level
+                break;
+            }
+            GoParent();
+            if( cb.LevelEnd(m_node) == eStop )
+                return eStop;
+        }
     case eSkip:	break;
     case eStop: return eStop;
     }
@@ -600,12 +606,12 @@ CTreeConstIterator::ForEachDownward(ForEachFunc ucb, void* user_data)
     switch( (*ucb)(m_node, user_data) ) {
     default:
     case eCont:
-	if(GoChild()) {
-	    do {
-		if(ForEachDownward(ucb, user_data)==eStop) return eStop;
-	    } while(GoSibling());
-	    GoParent();
-	}
+        if(GoChild()) {
+            do {
+                if(ForEachDownward(ucb, user_data)==eStop) return eStop;
+            } while(GoSibling());
+            GoParent();
+        }
     case eSkip:	break;
     case eStop: return eStop;
     }
@@ -616,84 +622,84 @@ CTreeConstIterator::EAction
 CTreeConstIterator::ForEachDownwardLimited(C4Each& cb, int levels)
 {
     if(levels > 0) {
-	switch( cb.Execute(m_node) ) {
-	default:
-	case eCont:
-	    if(!m_node->IsTerminal()) {
-		switch( cb.LevelBegin(m_node) ) {
-		case eStop: return eStop;
-		default:
-		case eCont:
-		    if(GoChild()) {
-			do {
-			    if(ForEachDownwardLimited(cb, levels-1)==eStop)
-				return eStop;
-			} while(GoSibling());
-		    }
-		case eSkip: // Means skip this level
-		    break;
-		}
-		GoParent();
-		if( cb.LevelEnd(m_node) == eStop )
-		    return eStop;
-	    }
-	case eSkip: break;
-	case eStop: return eStop;
-	}
+        switch( cb.Execute(m_node) ) {
+        default:
+        case eCont:
+            if(!m_node->IsTerminal()) {
+                switch( cb.LevelBegin(m_node) ) {
+                case eStop: return eStop;
+                default:
+                case eCont:
+                    if(GoChild()) {
+                        do {
+                            if(ForEachDownwardLimited(cb, levels-1)==eStop)
+                                return eStop;
+                        } while(GoSibling());
+                    }
+                case eSkip: // Means skip this level
+                    break;
+                }
+                GoParent();
+                if( cb.LevelEnd(m_node) == eStop )
+                    return eStop;
+            }
+        case eSkip: break;
+        case eStop: return eStop;
+        }
     }
     return eCont;
 }
 
 CTreeConstIterator::EAction
 CTreeConstIterator::ForEachDownwardLimited( ForEachFunc ucb,
-					    void* user_data, int levels)
+                                            void* user_data, int levels)
 {
     if(levels > 0) {
-	switch( (*ucb)(m_node, user_data) ) {
-	default:
-	case eCont:
-	    if(GoChild()) {
-		do {
-		    if(ForEachDownwardLimited(ucb, user_data,
-					      levels-1)==eStop)
-			return eStop;
-		} while(GoSibling());
-		GoParent();
-	    }
-	case eSkip: break;
-	case eStop: return eStop;
-	}
+        switch( (*ucb)(m_node, user_data) ) {
+        default:
+        case eCont:
+            if(GoChild()) {
+                do {
+                    if(ForEachDownwardLimited(ucb, user_data,
+                                              levels-1)==eStop)
+                        return eStop;
+                } while(GoSibling());
+                GoParent();
+            }
+        case eSkip: break;
+        case eStop: return eStop;
+        }
     }
     return eCont;
 }
 
 // add child preserving the sorting order
 bool CTreeIterator::AddChild(CTreeContNodeBase* new_node, 
-			     CTreeIterator::CSortPredicate& pred )
+                             CTreeIterator::CSortPredicate& pred )
 {
     // Temporary 
     CTreeContNodeBase* prev;
     CTreeContNodeBase* next;
     
     if( GoChild() ) {
-	new_node->m_child = 0;
-	new_node->m_parent = m_node->Parent();
-	prev = 0;
-	next = GetNode();
-	while( next && pred.Execute( next, new_node ) ) {
-	    prev = next;
-	    next = prev->Sibling();
-	}
-	new_node->m_sibling = next;
-	if( prev ) { // insert after prevtmp
-	    prev->m_sibling = new_node;
-	} else { // insert as first child
-	    prev->Parent()->m_child = next;
-	}
-	// Restore state
-	GoParent();
+        new_node->m_child = 0;
+        new_node->m_parent = m_node->Parent();
+        prev = 0;
+        next = GetNode();
+        while( next && pred.Execute( next, new_node ) ) {
+            prev = next;
+            next = prev->Sibling();
+        }
+        new_node->m_sibling = next;
+        if( prev ) { // insert after prevtmp
+            prev->m_sibling = new_node;
+        } else { // insert as first child
+            prev->Parent()->m_child = next;
+        }
+        // Restore state
+        GoParent();
     } else {
-	return AddChild( new_node );
+        return AddChild( new_node );
     }
     return true;
 }
@@ -707,50 +713,52 @@ void CTreeIterator::SortChildren( CTreeIterator::CSortPredicate& pred )
     CTreeContNodeBase* prevtmp;
     
     if( GoChild() ) {
-	prev = GetNode();
-	if( GoSibling() ) {
-	    next = GetNode();
-	    while( next ) {
-		if( !pred.Execute( prev, next ) ) { // The order is not right
-		    tmp = prev->Parent()->Child();
-		    prevtmp = 0;
-		    while( tmp != prev && pred.Execute( tmp, next ) &&
-			   (prevtmp = tmp) && (tmp = tmp->Sibling()) );
-		    if( tmp ) {
-			prev->m_sibling = next->m_sibling; // Move from prev place
-			if( prevtmp ) { // insert after prevtmp
-			    next->m_sibling = prevtmp->m_sibling;
-			    prevtmp->m_sibling = next;
-			} else { // insert as first child
-			    next->m_sibling = prev->Parent()->Child();
-			    prev->Parent()->m_child = next;
-			}
-		    }
-		} else { // the oreder is right, move to the next
-		    prev = next;
-		}
-		next = prev->Sibling();
-	    }
-	}
-	// Restore state
-	GoParent();
+        prev = GetNode();
+        if( GoSibling() ) {
+            next = GetNode();
+            while( next ) {
+                if( !pred.Execute( prev, next ) ) { // The order is not right
+                    tmp = prev->Parent()->Child();
+                    prevtmp = 0;
+                    while( tmp != prev && pred.Execute( tmp, next ) &&
+                           (prevtmp = tmp) && (tmp = tmp->Sibling()) );
+                    if( tmp ) {
+                        // Move from prev place
+                        prev->m_sibling = next->m_sibling;
+
+                        if( prevtmp ) { // insert after prevtmp
+                            next->m_sibling = prevtmp->m_sibling;
+                            prevtmp->m_sibling = next;
+                        } else { // insert as first child
+                            next->m_sibling = prev->Parent()->Child();
+                            prev->Parent()->m_child = next;
+                        }
+                    }
+                } else { // the oreder is right, move to the next
+                    prev = next;
+                }
+                next = prev->Sibling();
+            }
+        }
+        // Restore state
+        GoParent();
     }
 }
 
 class CLevelSort : public CTreeIterator::C4Each {
 public:
     CLevelSort( CTreeIterator::CSortPredicate& pred, CTreeCont* tree )
-	: m_pred(pred), m_tree(tree) {}
+        : m_pred(pred), m_tree(tree) {}
     virtual CTreeIterator::EAction Execute(CTreeContNodeBase* pNode) {
-	CTreeIterator::EAction retc = CTreeIterator::eCont;
-	CTreeIterator* it = m_tree->GetIterator();
-	if( it->GoNode( pNode ) ) {
-	    it->SortChildren( m_pred );
-	} else {
-	    retc = CTreeIterator::eSkip;
-	}
-	delete it;
-	return retc;
+        CTreeIterator::EAction retc = CTreeIterator::eCont;
+        CTreeIterator* it = m_tree->GetIterator();
+        if( it->GoNode( pNode ) ) {
+            it->SortChildren( m_pred );
+        } else {
+            retc = CTreeIterator::eSkip;
+        }
+        delete it;
+        return retc;
     }
 private:
     CTreeIterator::CSortPredicate& m_pred;
@@ -768,22 +776,22 @@ CTreeIterator::EAction
 CTreeIterator::ForEachUpward(C4Each& cb)
 {
     if(!m_node->IsTerminal()) {
-	switch( cb.LevelBegin(m_node) ) {
-	case eStop: return eStop;
-	default:
-	case eCont:
-	    if(GoChild()) {
-		do {
-		    if(ForEachUpward(cb)==eStop)
-			return eStop;
-		} while(GoSibling());
-	    }
-	case eSkip: // Means skip this level
-	    break;
-	}
-	GoParent();
-	if( cb.LevelEnd(m_node) == eStop )
-	    return eStop;
+        switch( cb.LevelBegin(m_node) ) {
+        case eStop: return eStop;
+        default:
+        case eCont:
+            if(GoChild()) {
+                do {
+                    if(ForEachUpward(cb)==eStop)
+                        return eStop;
+                } while(GoSibling());
+            }
+        case eSkip: // Means skip this level
+            break;
+        }
+        GoParent();
+        if( cb.LevelEnd(m_node) == eStop )
+            return eStop;
     }
     return cb.Execute(m_node);
 }
@@ -792,11 +800,11 @@ CTreeIterator::EAction
 CTreeIterator::ForEachUpward(ForEachFunc ucb, void* user_data)
 {
     if(GoChild()) {
-	do {
-	    if(ForEachUpward(ucb, user_data)==eStop)
-		return eStop;
-	} while(GoSibling());
-	GoParent();
+        do {
+            if(ForEachUpward(ucb, user_data)==eStop)
+                return eStop;
+        } while(GoSibling());
+        GoParent();
     }
     return (*ucb)(m_node, user_data);
 }
@@ -805,43 +813,43 @@ CTreeIterator::EAction
 CTreeIterator::ForEachUpwardLimited(C4Each& cb, int levels)
 {
     if(levels > 0) {
-	if(!m_node->IsTerminal()) {
-	    switch( cb.LevelBegin(m_node) ) {
-	    case eStop: return eStop;
-	    default:
-	    case eCont:
-		if(GoChild()) {
-		    do {
-			if(ForEachUpwardLimited(cb, levels-1)==eStop)
-			    return eStop;
-		    } while(GoSibling());
-		}
-	    case eSkip: // Means skip this level
-		break;
-	    }
-	    GoParent();
-	    if( cb.LevelEnd(m_node) == eStop )
-		return eStop;
-	}
-	return cb.Execute(m_node);
+        if(!m_node->IsTerminal()) {
+            switch( cb.LevelBegin(m_node) ) {
+            case eStop: return eStop;
+            default:
+            case eCont:
+                if(GoChild()) {
+                    do {
+                        if(ForEachUpwardLimited(cb, levels-1)==eStop)
+                            return eStop;
+                    } while(GoSibling());
+                }
+            case eSkip: // Means skip this level
+                break;
+            }
+            GoParent();
+            if( cb.LevelEnd(m_node) == eStop )
+                return eStop;
+        }
+        return cb.Execute(m_node);
     }
     return eCont;
 }
 
 CTreeIterator::EAction
 CTreeIterator::ForEachUpwardLimited(ForEachFunc ucb, void* user_data,
-				    int levels)
+                                    int levels)
 {
     if(levels > 0) {
-	if(GoChild()) {
-	    do {
-		if(ForEachUpwardLimited(ucb, user_data,
-					levels-1)==eStop)
-		    return eStop;
-	    } while(GoSibling());
-	    GoParent();
-	}
-	return (*ucb)(m_node, user_data);
+        if(GoChild()) {
+            do {
+                if(ForEachUpwardLimited(ucb, user_data,
+                                        levels-1)==eStop)
+                    return eStop;
+            } while(GoSibling());
+            GoParent();
+        }
+        return (*ucb)(m_node, user_data);
     }
     return eCont;
 }
@@ -850,22 +858,22 @@ CTreeConstIterator::EAction
 CTreeConstIterator::ForEachUpward(C4Each& cb)
 {
     if(!m_node->IsTerminal()) {
-	switch( cb.LevelBegin(m_node) ) {
-	case eStop: return eStop;
-	default:
-	case eCont:
-	    if(GoChild()) {
-		do {
-		    if(ForEachUpward(cb)==eStop)
-			return eStop;
-		} while(GoSibling());
-	    }
-	case eSkip: // Means skip this level
-	    break;
-	}
-	GoParent();
-	if( cb.LevelEnd(m_node) == eStop )
-	    return eStop;
+        switch( cb.LevelBegin(m_node) ) {
+        case eStop: return eStop;
+        default:
+        case eCont:
+            if(GoChild()) {
+                do {
+                    if(ForEachUpward(cb)==eStop)
+                        return eStop;
+                } while(GoSibling());
+            }
+        case eSkip: // Means skip this level
+            break;
+        }
+        GoParent();
+        if( cb.LevelEnd(m_node) == eStop )
+            return eStop;
     }
     return cb.Execute(m_node);
 }
@@ -874,11 +882,11 @@ CTreeConstIterator::EAction
 CTreeConstIterator::ForEachUpward(ForEachFunc ucb, void* user_data)
 {
     if(GoChild()) {
-	do {
-	    if(ForEachUpward(ucb, user_data)==eStop)
-		return eStop;
-	} while(GoSibling());
-	GoParent();
+        do {
+            if(ForEachUpward(ucb, user_data)==eStop)
+                return eStop;
+        } while(GoSibling());
+        GoParent();
     }
     return (*ucb)(m_node, user_data);
 }
@@ -887,53 +895,60 @@ CTreeConstIterator::EAction
 CTreeConstIterator::ForEachUpwardLimited(C4Each& cb, int levels)
 {
     if(levels > 0) {
-	if(!m_node->IsTerminal()) {
-	    switch( cb.LevelBegin(m_node) ) {
-	    case eStop: return eStop;
-	    default:
-	    case eCont:
-		if(GoChild()) {
-		    do {
-			if(ForEachUpwardLimited(cb, levels-1)==eStop)
-			    return eStop;
-		    } while(GoSibling());
-		}
-	    case eSkip: // Means skip this level
-		break;
-	    }
-	    GoParent();
-	    if( cb.LevelEnd(m_node) == eStop )
-		return eStop;
-	}
-	return cb.Execute(m_node);
+        if(!m_node->IsTerminal()) {
+            switch( cb.LevelBegin(m_node) ) {
+            case eStop: return eStop;
+            default:
+            case eCont:
+                if(GoChild()) {
+                    do {
+                        if(ForEachUpwardLimited(cb, levels-1)==eStop)
+                            return eStop;
+                    } while(GoSibling());
+                }
+            case eSkip: // Means skip this level
+                break;
+            }
+            GoParent();
+            if( cb.LevelEnd(m_node) == eStop )
+                return eStop;
+        }
+        return cb.Execute(m_node);
     }
     return eCont;
 }
 
 CTreeConstIterator::EAction
 CTreeConstIterator::ForEachUpwardLimited(ForEachFunc ucb, void* user_data,
-					 int levels)
+                                         int levels)
 {
     if(levels > 0) {
-	if(GoChild()) {
-	    do {
-		if(ForEachUpwardLimited(ucb, user_data,
-					levels-1)==eStop)
-		    return eStop;
-	    } while(GoSibling());
-	    GoParent();
-	}
-	return (*ucb)(m_node, user_data);
+        if(GoChild()) {
+            do {
+                if(ForEachUpwardLimited(ucb, user_data,
+                                        levels-1)==eStop)
+                    return eStop;
+            } while(GoSibling());
+            GoParent();
+        }
+        return (*ucb)(m_node, user_data);
     }
     return eCont;
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE
 END_NCBI_SCOPE
+
+
 
 /*
  * $Log$
+ * Revision 6.2  2002/01/31 00:31:26  vakatov
+ * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
+ * Get rid of "std::" which is unnecessary and sometimes un-compilable.
+ * Also done some source identation/beautification.
+ *
  * Revision 6.1  2002/01/30 16:13:37  domrach
  * Changes made to pass through MSVC compiler. Some src files renamed
  *

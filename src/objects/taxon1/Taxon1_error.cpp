@@ -35,31 +35,31 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/31 00:31:26  vakatov
+ * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
+ * Get rid of "std::" which is unnecessary and sometimes un-compilable.
+ * Also done some source identation/beautification.
+ *
  * Revision 6.1  2002/01/29 17:19:41  domrach
  * Initial checkin
- *
  *
  * ===========================================================================
  */
 
-// standard includes
-
-// generated includes
 #include <objects/taxon1/Taxon1_error.hpp>
 
-// generated classes
-
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// destructor
 CTaxon1_error::~CTaxon1_error(void)
 {
+    return;
 }
 
+
 void
-CTaxon1_error::GetErrorText( std::string& err ) const
+CTaxon1_error::GetErrorText(string& err) const
 {
     switch( GetLevel() ) {
     default:
@@ -70,11 +70,11 @@ CTaxon1_error::GetErrorText( std::string& err ) const
     case eLevel_fatal:err.assign( "FATAL: " ); break;
     }
     if( IsSetMsg() )
-	err.append( GetMsg() );
+        err.append( GetMsg() );
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 
 /* Original file checksum: lines: 61, chars: 1895, CRC32: 345d6dd */
