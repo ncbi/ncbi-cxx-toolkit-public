@@ -22,8 +22,7 @@ EXPENDABLE_SUB_PROJ = @gui@ @check@
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 include ./Makefile.meta
 
-$(OPTIONAL_PROJ) util connect cgi html hello: corelib
-hello: html cgi
+$(OPTIONAL_PROJ) util connect cgi html: corelib
 
 objects: serial connect dbapi util
 
