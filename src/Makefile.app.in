@@ -47,7 +47,7 @@ XLIB = @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(LIB:=.dep)
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
-	$(LINK) $(LDFLAGS) $(XOBJ) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
+	$(LINK) $(LDFLAGS) $(XOBJ) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
 	$(STRIP) $(XAPP)
 
 

@@ -104,6 +104,7 @@ CXXFLAGS = $(CONF_CXXFLAGS)
 CPPFLAGS = $(CONF_CPPFLAGS)
 LDFLAGS  = $(CONF_LDFLAGS)
 LIBS     = $(CONF_LIBS)
+PRE_LIBS =
 
 
 ### Do not use any default suffix rules
