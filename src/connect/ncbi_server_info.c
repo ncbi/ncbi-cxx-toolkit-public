@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/03/02 20:09:14  lavr
+ * Typo fixed
+ *
  * Revision 6.20  2001/03/01 18:48:19  lavr
  * NCBID allowed to have '' (special case) as an empty argument
  *
@@ -87,7 +90,7 @@
  * Added explicit type casting to get "very smart" compilers happy
  *
  * Revision 6.3  2000/05/15 19:06:09  lavr
- * Use home-made ANSI extentions (NCBI_***)
+ * Use home-made ANSI extensions (NCBI_***)
  *
  * Revision 6.2  2000/05/12 21:42:59  lavr
  * Cleaned up for the C++ compilation, etc.

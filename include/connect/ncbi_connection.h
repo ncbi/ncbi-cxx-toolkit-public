@@ -46,6 +46,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/02 20:07:33  lavr
+ * Typo fixed
+ *
  * Revision 6.5  2001/02/09 17:33:38  lavr
  * CONN_GetType added
  *
@@ -161,7 +164,7 @@ extern EIO_Status CONN_Flush
 
 
 /* Read up to "size" bytes from the connection to mem.buffer pointed by "buf".
- * In "*n_read", return the number of succesfully read bytes.
+ * In "*n_read", return the number of successfully read bytes.
  * If there is absolutely no data available to read and the timeout (see
  * CONN_SetTimeout()) is expired then return eIO_Timeout (and "*n_read" := 0).
  * The arg "how" means:

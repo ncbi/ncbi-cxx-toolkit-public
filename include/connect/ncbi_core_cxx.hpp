@@ -28,7 +28,7 @@
  *
  * Author:  Anton Lavrentiev
  *
- * File dscription:
+ * File description:
  *   C++->C conversion functions for basic corelib stuff:
  *     Registry
  *     Logging
@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/03/02 20:06:41  lavr
+ * Typo fixed
+ *
  * Revision 6.3  2001/01/23 23:08:05  lavr
  * LOG_cxx2c introduced
  *

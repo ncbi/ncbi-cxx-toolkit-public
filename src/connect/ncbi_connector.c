@@ -31,9 +31,12 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/03/02 20:07:56  lavr
+ * Typo fixed
+ *
  * Revision 6.3  2001/01/25 16:57:08  lavr
  * METACONN_Remove revoked call to free() with connector:
- * connector's DESTROY method is now (back) resposible to call free().
+ * connector's DESTROY method is now (back) responsible to call free().
  *
  * Revision 6.2  2001/01/12 23:51:38  lavr
  * Message logging modified for use LOG facility only

@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/03/02 20:08:05  lavr
+ * Typo fixed
+ *
  * Revision 6.16  2001/01/25 16:58:33  lavr
  * ConnNetInfo_SetUserHeader now used throughout to set/reset http_user_header
  *
@@ -373,7 +376,7 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
                        (info->debug_printout == eDebugPrintout_Data
                         ? "DATA" : "Unknown")));
         s_PrintBool  (fp, "stateless",       info->stateless);   
-        s_PrintBool  (fp, "firewal",         info->firewall);
+        s_PrintBool  (fp, "firewall",        info->firewall);
         s_PrintBool  (fp, "lb_disable",      info->lb_disable);
         s_PrintString(fp, "user_header",     info->http_user_header);
         s_PrintBool  (fp, "proxy_adjusted",  info->http_proxy_adjusted);

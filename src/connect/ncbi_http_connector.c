@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/03/02 20:08:47  lavr
+ * Typo fixed
+ *
  * Revision 6.9  2001/01/25 16:53:24  lavr
  * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
  *
@@ -219,7 +222,7 @@ static EIO_Status s_FlushData(SHttpConnector* uuu)
             return status;
         }
 
-        /* on success, discard the succesfully written data and continue */
+        /* on success, discard the successfully written data and continue */
         BUF_Read(uuu->obuf, 0, n_written);
     } while ( BUF_Size(uuu->obuf) );
 

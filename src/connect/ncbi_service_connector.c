@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/03/02 20:10:07  lavr
+ * Typo fixed
+ *
  * Revision 6.10  2001/03/01 00:32:15  lavr
  * FIX: Empty update does not generate parse error
  *
@@ -399,7 +402,7 @@ static EIO_Status s_VT_Open
         uuu->tckt = 0;
         conn = HTTP_CreateConnectorEx(net_info, fHCC_AutoReconnect,
                                       s_ParseHeader, s_AdjustInfo,
-                                      uuu/*adj.data*/, 0/*clenup.data*/);
+                                      uuu/*adj.data*/, 0/*cleanup.data*/);
         /* What do we expect now? */
         if (!net_info->stateless &&
             (net_info->firewall || info->type == fSERV_Ncbid)) {

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/03/02 20:09:06  lavr
+ * Typo fixed
+ *
  * Revision 6.4  2001/03/01 00:30:23  lavr
  * Toolkit configuration moved to ncbi_sendmail_.c
  *
@@ -70,7 +73,7 @@
 
 /* Read SMTP reply from the socket.
  * Return reply in the buffer provided,
- * and reply code (posivite value) as a return value.
+ * and reply code (positive value) as a return value.
  * Return a negative code in case of problem (protocol reply
  * read error or protocol violations).
  * Return 0 in case of call error.
