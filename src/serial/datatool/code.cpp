@@ -237,7 +237,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
         ERR_POST("Cannot create file: " << fileName);
         return false;
     }
-    if ( streampos(header.tellp()) != 0 ) {
+    if ( streampos(header.tellp()) != streampos(0) ) {
         ERR_POST("Will not overwrite existing user file: " << fileName);
         return false;
     }
@@ -305,7 +305,7 @@ bool CFileCode::GenerateUserCPP(const string& path) const
         ERR_POST("Cannot create file: " << fileName);
         return false;
     }
-    if ( streampos(code.tellp()) != 0 ) {
+    if ( streampos(code.tellp()) != streampos(0) ) {
         ERR_POST("Will not overwrite existing user file: " << fileName);
         return false;
     }
