@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/05/24 13:32:32  thiessen
+* further tweaks for GTK
+*
 * Revision 1.25  2001/05/15 23:48:37  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -435,26 +438,26 @@ static void LaunchWebPage(const char *url)
 {
     if(!url) return;
 
-#ifdef __WXMSW__
+#if defined(__WXMSW__)
     if (!MSWin_OpenDocument(url)) {
         ERR_POST(Error << "Unable to launch browser");
     }
-#endif
-/*
-#ifdef __WXGTK__
-    argv [0] = "netscape";
-    CharPtr            argv [8];
-    int child;
-    argv [1] = url;
+    
+#elif defined(__WXGTK__)
+    char *argv[8];
+    argv [0] = const_cast<char *>("netscape");
+    argv [1] = const_cast<char *>(url);
     argv [2] = NULL;
+    int child;
     child = fork();
-    if(child == 0) {
-        if (execvp ("netscape", argv) == -1) {
+    if (child == 0) {
+        if (execvp("netscape", argv) == -1) {
             ERR_POST(Error << "Unable to launch netscape");
             exit(-1);
         }
     }
 #endif
+/*
 #ifdef __WXMAC__
     Nlm_SendURLAppleEvent (url, "MOSS", NULL);
 #endif

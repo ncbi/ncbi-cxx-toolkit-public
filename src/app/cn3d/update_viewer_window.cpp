@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/24 13:32:32  thiessen
+* further tweaks for GTK
+*
 * Revision 1.14  2001/05/23 17:45:40  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -230,8 +233,8 @@ bool UpdateViewerWindow::SaveDialog(bool canCancel)
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(ThreaderOptionsDialog, wxDialog)
-    EVT_BUTTON(-1, ThreaderOptionsDialog::OnButton)
-    EVT_CLOSE (   ThreaderOptionsDialog::OnCloseWindow)
+    EVT_BUTTON(-1,  ThreaderOptionsDialog::OnButton)
+    EVT_CLOSE (     ThreaderOptionsDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions) :
@@ -291,7 +294,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     bMerge = new wxCheckBox(this, -1, "", wxDefaultPosition, wxDefaultSize, 0);
     bMerge->SetValue(true);
     grid->Add(bMerge, 0, wxALIGN_CENTRE|wxALL, 5);
-    grid->Add(20, 20, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    grid->Add(20, SPIN_CTRL_HEIGHT, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // freeze blocks
     wxStaticText *item19 = new wxStaticText(this, -1, "Freeze isolated blocks?", wxDefaultPosition, wxDefaultSize, 0);
@@ -299,7 +302,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     bFreeze = new wxCheckBox(this, -1, "", wxDefaultPosition, wxDefaultSize, 0);
     bFreeze->SetValue(true);
     grid->Add(bFreeze, 0, wxALIGN_CENTRE|wxALL, 5);
-    grid->Add(20, 20, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    grid->Add(20, SPIN_CTRL_HEIGHT, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item2->Add(grid, 0, wxALIGN_CENTRE|wxALL, 5);
     item1->Add(item2, 0, wxALIGN_CENTRE|wxALL, 5);
