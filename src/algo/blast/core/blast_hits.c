@@ -104,34 +104,6 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject
    return 0;
 }
 
-/*
-
- Comments in blast_hits.h
-
-*/
-Int2
-Blast_HSPReset(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject_end,
-          Int4 score, GapEditBlock* *gap_edit, BlastHSP* hsp)
-{
-
-   if (hsp == NULL)
-     return -1;
-
-   hsp->score = score;
-   hsp->query.offset = query_start;
-   hsp->subject.offset = subject_start;
-   hsp->query.length = query_end - query_start;
-   hsp->subject.length = subject_end - subject_start;
-   hsp->query.end = query_end;
-   hsp->subject.end = subject_end;
-   if (gap_edit && *gap_edit)
-   { /* If this is non-NULL transfer ownership. */
-        hsp->gap_info = *gap_edit;
-        *gap_edit = NULL;
-   }
-   return 0;
-}
-
 void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
 {
    double paramC;
@@ -295,18 +267,17 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
 }
 
 Boolean 
-Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, 
-                Uint1* query_start, Uint1* subject_start, 
-                const BlastInitialWordParameters* word_params,
-                const BlastHitSavingParameters* hit_params, 
-                const BlastQueryInfo* query_info, BlastScoreBlk* sbp)
+Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start, 
+   Uint1* subject_start, const BlastInitialWordParameters* word_params,
+   const BlastHitSavingParameters* hit_params, const BlastQueryInfo* query_info,
+   BlastScoreBlk* sbp, Boolean translated)
 {
    Int4 sum, score;
    Int4** matrix;
    Uint1* query,* subject;
    Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
    Int4 index;
-   const Uint1 kResidueMask = 0x0f;
+   const Uint1 kResidueMask = (translated ? 0xff : 0x0f);
    Boolean delete_hsp;
 
    matrix = sbp->matrix;
@@ -622,6 +593,119 @@ s_BlastHSPContained(BlastHSP* hsp1, BlastHSP* hsp2)
    }
    
    return (hsp_start_is_contained && hsp_end_is_contained);
+}
+
+
+Int2
+Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk, 
+                                      BlastHSP* hsp,
+                                      Boolean is_ooframe, 
+                                      const Uint1* gen_code_string, 
+                                      Uint1** translation_buffer_ptr,
+                                      Uint1** subject_ptr, 
+                                      Int4* subject_length_ptr,
+                                      Int4* start_shift_ptr)
+{
+   Int4 translation_length;
+   Uint1* translation_buffer;
+   Uint1* subject;
+   Int4 start_shift;
+   Int4 nucl_shift;
+   Int2 status = 0;
+
+   ASSERT(subject_blk && hsp && gen_code_string && translation_buffer_ptr &&
+          subject_ptr && subject_length_ptr && start_shift_ptr);
+
+   translation_buffer = *translation_buffer_ptr;
+   sfree(translation_buffer);
+
+   if (!is_ooframe) {
+      start_shift = 
+         MAX(0, 3*hsp->subject.offset - MAX_FULL_TRANSLATION);
+      translation_length =
+         MIN(3*hsp->subject.end + MAX_FULL_TRANSLATION, 
+             subject_blk->length) - start_shift;
+      if (hsp->subject.frame > 0) {
+         nucl_shift = start_shift;
+      } else {
+         nucl_shift = subject_blk->length - start_shift - translation_length;
+      }
+      status = (Int2)
+         Blast_GetPartialTranslation(subject_blk->sequence_start+nucl_shift, 
+                                     translation_length, hsp->subject.frame,
+                                     gen_code_string, &translation_buffer, 
+                                     subject_length_ptr, NULL);
+      /* Below, the start_shift will be used for the protein
+         coordinates, so need to divide it by 3 */
+      start_shift /= CODON_LENGTH;
+   } else {
+      Int4 oof_start, oof_end;
+      if (hsp->subject.frame > 0) {
+         oof_start = 0;
+         oof_end = subject_blk->length;
+      } else {
+         oof_start = subject_blk->length + 1;
+         oof_end = 2*subject_blk->length + 1;
+      }
+      
+      start_shift = 
+         MAX(oof_start, hsp->subject.offset - MAX_FULL_TRANSLATION);
+      translation_length =
+         MIN(hsp->subject.end + MAX_FULL_TRANSLATION, 
+             oof_end) - start_shift;
+      if (hsp->subject.frame > 0) {
+         nucl_shift = start_shift - oof_start;
+      } else {
+         nucl_shift = oof_end - start_shift - translation_length;
+      }
+      status = (Int2)
+         Blast_GetPartialTranslation(subject_blk->sequence_start+nucl_shift, 
+                                     translation_length, hsp->subject.frame, 
+                                     gen_code_string, NULL, 
+                                     subject_length_ptr, &translation_buffer);
+   }
+   hsp->subject.offset -= start_shift;
+   hsp->subject.gapped_start -= start_shift;
+   *translation_buffer_ptr = translation_buffer;
+   *start_shift_ptr = start_shift;
+
+   if (!is_ooframe) {
+      subject = translation_buffer + 1;
+   } else {
+      subject = translation_buffer + CODON_LENGTH;
+   }
+   *subject_ptr = subject;
+
+   return status;
+}
+
+void
+Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, BLAST_SequenceBlk* subject_blk, 
+                             Boolean is_ooframe, Int4 start_shift)
+{
+
+            if (is_ooframe) {
+               /* Adjust subject offsets for negative frames */
+               if (hsp->subject.frame < 0) {
+                  Int4 strand_start = subject_blk->length + 1;
+                  hsp->subject.offset -= strand_start;
+                  hsp->subject.end -= strand_start;
+                  hsp->subject.gapped_start -= strand_start;
+                  hsp->gap_info->start2 -= strand_start;
+               }
+            } 
+
+            /* Adjust subject offsets if shifted (partial) sequence was used 
+               for extension */
+            if (start_shift > 0) {
+               hsp->subject.offset += start_shift;
+               hsp->subject.end += start_shift;
+               hsp->subject.gapped_start += start_shift;
+               if (hsp->gap_info)
+                  hsp->gap_info->start2 += start_shift;
+            }
+
+            return;
 }
 
 /** Comparison callback function for sorting HSPs by score. Assumes that both 
@@ -1542,12 +1626,13 @@ s_BlastHSPListCheckDiagonalInclusion(BlastHSPList* hsp_list)
 }
 
 Int2 
-Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
-   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
+Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program, 
+   BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
+   BLAST_SequenceBlk* subject_blk, 
    const BlastInitialWordParameters* word_params,
    const BlastHitSavingParameters* hit_params, const BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
-   const BlastSeqSrc* seq_src)
+   const BlastSeqSrc* seq_src, const Uint1* gen_code_string)
 {
    BlastHSP** hsp_array,* hsp;
    Uint1* query_start,* subject_start = NULL;
@@ -1555,6 +1640,11 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    Boolean gapped;
    Boolean purge, delete_hsp;
    Int2 status = 0;
+   const Boolean kTranslateSubject = (program == eBlastTypeTblastn ||
+                                      program == eBlastTypeTblastx); 
+   Boolean partial_translation;
+   Uint1* translation_buffer = NULL;
+   Int4* frame_offsets = NULL;
 
    if (!hsp_list)
       return status;
@@ -1576,15 +1666,27 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
          needed by the BlastSeqSrc API. */
       GetSeqArg seq_arg;
       seq_arg.oid = subject_blk->oid;
-      seq_arg.encoding = BLASTNA_ENCODING;
+      seq_arg.encoding =
+         (kTranslateSubject ? NCBI4NA_ENCODING : BLASTNA_ENCODING);
       seq_arg.seq = subject_blk;
       /* Return the packed sequence to the database */
       BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
       /* Get the unpacked sequence */
       BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg);
    }
-   /* The sequence in blastna encoding is now stored in sequence_start */
-   subject_start = subject_blk->sequence_start + 1;
+
+   if (kTranslateSubject) {
+      if (!gen_code_string)
+         return -1;
+      /* Get the translation buffer, unless sequence is too long, in which case
+         the partial translations will be performed for each HSP as needed. */
+      Blast_SetUpSubjectTranslation(subject_blk, gen_code_string,
+                                    &translation_buffer, &frame_offsets, 
+                                    &partial_translation);
+   } else {
+      /* Store sequence in blastna encoding in sequence_start */
+      subject_start = subject_blk->sequence_start + 1;
+   }
 
    purge = FALSE;
    for (index = 0; index < hspcnt; ++index) {
@@ -1598,13 +1700,33 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       query_start = query_blk->sequence + query_info->context_offsets[context];
 
       if (gapped) {
+         /* NB: This can only happen for blastn after greedy extension with 
+            traceback. */
          delete_hsp = 
             Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query_start, 
                subject_start, hit_params, score_params, query_info, sbp);
       } else {
+         Int4 start_shift = 0;
+         if (kTranslateSubject) {
+            if (partial_translation) {
+               Int4 subject_length = 0; /* Dummy variable */
+               Blast_HSPGetPartialSubjectTranslation(subject_blk, hsp, FALSE,
+                  gen_code_string, &translation_buffer, &subject_start,
+                  &subject_length, &start_shift);
+            } else {
+               Int4 subject_context = FrameToContext(hsp->subject.frame);
+               subject_start = 
+                  translation_buffer + frame_offsets[subject_context] + 1;
+            }
+         }
+
          delete_hsp = 
             Blast_HSPReevaluateWithAmbiguitiesUngapped(hsp, query_start, 
-               subject_start, word_params, hit_params, query_info, sbp);
+               subject_start, word_params, hit_params, query_info, sbp, 
+               kTranslateSubject);
+         /* If partial translation was done and subject sequence was shifted,
+            shift back offsets in the HSP structure. */
+         Blast_HSPAdjustSubjectOffset(hsp, subject_blk, FALSE, start_shift);
       }
    
       if (delete_hsp) { /* This HSP is now below the cutoff */
@@ -1612,6 +1734,9 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
          purge = TRUE;
       }
    }
+
+   sfree(translation_buffer);
+   sfree(frame_offsets);
     
    if (purge) {
       Blast_HSPListPurgeNullHSPs(hsp_list);
