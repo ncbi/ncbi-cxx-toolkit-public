@@ -1,4 +1,4 @@
 [A-Z]*.hpp
 blast__.hpp
-client.hpp
-client_.hpp
+blastclient.hpp
+blastclient_.hpp
