@@ -56,17 +56,35 @@ public:
 void CCpGDemoApp::Init(void)
 {
     auto_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
+    argDescr->AddDefaultKey("gc", "gcContent", "calibrated organism %GC "
+                            "content (ie. human: 0.5, rat: 0.48)",
+                            CArgDescriptions::eDouble, "0.5");
+    argDescr->AddDefaultKey("cpg", "obsexp",
+                            "observed / expected CpG ratio",
+                            CArgDescriptions::eDouble, "0.6");
+    argDescr->AddDefaultKey("win", "window_size",
+                            "width of sliding window",
+                            CArgDescriptions::eInteger, "200");
+    argDescr->AddDefaultKey("len", "min_length",
+                            "minimum length of an island",
+                            CArgDescriptions::eInteger, "500");
+    argDescr->AddOptionalKey("m", "merge_isles",
+                             "merge adjacent islands within the specified "
+                             "distance of each other",
+                             CArgDescriptions::eInteger);
+
+
+
     argDescr->AddOptionalKey("a", "accession",
                              "Single accession", CArgDescriptions::eString);
     argDescr->AddOptionalKey("i", "infile",
                              "List of accessions",
                              CArgDescriptions::eInputFile);
-    argDescr->AddKey("o", "outfile",
-                     "Root name for output files ('.strict' and '.relaxed'"
-                     " will be added)", CArgDescriptions::eOutputFile);
+    argDescr->AddExtra(0,99, "fasta files", CArgDescriptions::eInputFile);
+
 
     argDescr->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Scans sequences for CpG islands\n", false);
+                              "Scans sequences for CpG islands; uses algorithm based upon Takai & Jones, 2002.  Output sent to stdout.\n", false);
     SetupArgDescriptions(argDescr.release());
 }
 
@@ -83,13 +101,11 @@ CNcbiOstream& operator<< (CNcbiOstream& o, SCpGIsland i)
 };
 
 //---------------------------------------------------------------------------
-// PRE : accession to scan, scope in which to resolve accession, two open
-// output streams
+// PRE : accession to scan, scope in which to resolve accession, CArgs
+// containing cpg island-scanning parameters
 // POST: 0 if successful, any islands found in the given accession according
-// to the strict rules have been sent to strictFile & those meeting the
-// relaxed rules to relaxedFile
-int ScanForCpGs(const string& acc, CScope &scope, ostream& strictFile,
-                ostream& relaxedFile)
+// to the arguments have been sent to cout
+int ScanForCpGs(const string& acc, CScope &scope, const CArgs& args)
 {
     CSeq_id seq_id(acc);
     if (seq_id.Which() == CSeq_id::e_not_set) {
@@ -97,34 +113,81 @@ int ScanForCpGs(const string& acc, CScope &scope, ostream& strictFile,
         return 1;
     }
 
-     CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
-    if (bioseq_handle) {
-        CSeqVector sv =
-            bioseq_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
 
-        string seqString;
-        seqString.reserve(sv.size());
-        sv.GetSeqData(0, sv.size(), seqString);
-
-        CCpGIslands cpgIsles(seqString.data(), seqString.length(),
-                             200, 200, 0.5, 0.6);
-        cpgIsles.MergeIslesWithin(100);
-
-        ITERATE(CCpGIslands, i, cpgIsles) {
-            relaxedFile << acc << "\t" << *i << endl;
-        }
-
-        cpgIsles.Calc(200, 500, 0.5, 0.6);
-        ITERATE(CCpGIslands, i, cpgIsles) {
-            strictFile << acc << "\t" << *i << endl;
-        }
-
-        return 0;
-    } else {
+    if (!bioseq_handle) {
         cerr << "Bioseq load FAILED." << endl;
         return 2;
     }
+
+    CSeqVector sv =
+        bioseq_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);    
+    string seqString;
+    seqString.reserve(sv.size());
+    sv.GetSeqData(0, sv.size(), seqString);
+    
+    CCpGIslands cpgIsles(seqString.data(), seqString.length(),
+                         args["win"].AsInteger(), args["len"].AsInteger(),
+                         args["gc"].AsDouble(), args["cpg"].AsDouble());
+    if (args["m"]) {
+        cpgIsles.MergeIslesWithin(args["m"].AsInteger());
+    }
+    
+    ITERATE(CCpGIslands::TIsles, i, cpgIsles.GetIsles()) {
+        cout << acc << "\t" << *i << endl;
+    }
+
+    return 0;
 }
+
+//---------------------------------------------------------------------------
+// PRE : fasta file to scan, scope in which to resolve accession, CArgs
+// containing cpg island-scanning parameters
+// POST: 0 if successful, any islands found in the given accession according
+// to the arguments have been sent to cout
+int ScanForCpGs(istream &infile, const CArgs &args)
+{
+    string localID;
+
+    infile >> localID;
+    //skip rest of line
+    infile.ignore(numeric_limits<int>::max(), '\n');
+
+    while (infile) {
+        if (localID[0] != '>') {
+            ERR_POST(Critical << "FASTA file garbled around '" <<localID<<"'");
+            return 1;
+        }
+        
+        //read in nucleotides
+        string seqString, lineBuff;
+        while (!infile.eof() && infile.peek() != '>') {
+            getline(infile, lineBuff);
+            if (seqString.size() + lineBuff.size() > seqString.capacity())
+                seqString.reserve(seqString.capacity() * 2);
+            seqString += lineBuff;
+        }
+
+        //scan
+        CCpGIslands cpgIsles(seqString.data(), seqString.length(),
+                             args["win"].AsInteger(), args["len"].AsInteger(),
+                             args["gc"].AsDouble(), args["cpg"].AsDouble());
+        if (args["m"]) {
+            cpgIsles.MergeIslesWithin(args["m"].AsInteger());
+        }
+
+        //output
+        ITERATE(CCpGIslands::TIsles, i, cpgIsles.GetIsles()) {
+            cout << localID << "\t" << *i << endl;
+        }
+
+        infile >> localID;
+        infile.ignore(numeric_limits<int>::max(), '\n');
+    }
+
+    return 0;
+}
+
 
 /*---------------------------------------------------------------------------*/
 
@@ -138,16 +201,20 @@ int CCpGDemoApp::Run(void)
     scope.AddDefaults();
     int retCode = 0;
 
-    ofstream strictFile((args["o"].AsString() + ".strict").c_str());
-    ofstream relaxedFile((args["o"].AsString() + ".relaxed").c_str());
-    strictFile.precision(2);
-    strictFile.setf(ios::fixed, ios::floatfield);
-    relaxedFile.precision(2);
-    relaxedFile.setf(ios::fixed, ios::floatfield);
+    cout.precision(2);
+    cout.setf(ios::fixed, ios::floatfield);
+    cout << "# CpG islands.  Win:" << args["win"].AsInteger()
+         << "; Min len:" << args["len"].AsInteger() << "; Min %GC:"
+         <<  args["gc"].AsDouble() << "; Min obs/exp CpG: "
+         << args["cpg"].AsDouble();
+    if (args["m"]) {
+        cout << "; Merge islands within: " << args["m"].AsInteger();
+    }
+    cout << endl;
+    cout << "# label\tisle_start\tisle_stop\t%GC\tobs/exp CpG" << endl;
 
     if (args["a"]) {
-        retCode = 
-            ScanForCpGs(args["a"].AsString(), scope, strictFile, relaxedFile);
+        retCode = ScanForCpGs(args["a"].AsString(), scope, args);
     }
 
     if (args["i"]) {
@@ -156,11 +223,17 @@ int CCpGDemoApp::Run(void)
 
         infile >> acc;
         while (infile.good()) {
-            cout << "Processing " << acc << endl;
-            if (ScanForCpGs(acc, scope, strictFile, relaxedFile) != 0) {
+            cerr << "Processing " << acc << endl;
+            if (ScanForCpGs(acc, scope, args) != 0) {
                 retCode = 3;
             }
             infile >> acc;
+        }
+    }
+
+    for (unsigned int i = 1; i <= args.GetNExtra(); ++i) {
+        if (!ScanForCpGs(args[i].AsInputFile(), args)) {
+            retCode = 3;
         }
     }
 
@@ -177,6 +250,10 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/12 20:06:34  johnson
+ * accommodate MSVC 7 refactoring; also made more features accessible from
+ * command line
+ *
  * Revision 1.2  2003/06/17 15:35:12  johnson
  * remove stray char
  *
