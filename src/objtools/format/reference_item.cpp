@@ -147,31 +147,137 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_s
 }
 
 
+static const string kDigits = "0123456789";
+static const string kRomans  = "IVXLCDM-";
+
+
+static bool s_ParsePagesPart(const string& pages, SIZE_TYPE& dig, string& let)
+{
+    bool first_digits = true;
+
+    if (pages.empty()) {
+        return false;
+    }
+
+    // numbers come first
+    if (isdigit(pages[0])) {
+        first_digits = true;
+        dig = NStr::StringToUInt(pages, 10, NStr::eCheck_Skip);
+        SIZE_TYPE i = pages.find_first_not_of(kDigits);
+        if (i != NPOS) {
+            let = pages.substr(i);
+        }
+    } else if (isalpha(pages[0])) {  // letters come first
+        first_digits = false;
+        SIZE_TYPE i = pages.find_first_of(kDigits);
+        if (i == NPOS) {
+            let = pages;
+        } else {
+            let = pages.substr(0, i);
+            dig = NStr::StringToUInt(pages.substr(i), 10, NStr::eCheck_Skip);
+        }
+    }
+
+    return first_digits;
+}
+
+
+static bool s_ParsePages
+(const string& pages,
+ SIZE_TYPE& dig1,
+ string& let1,
+ SIZE_TYPE& dig2,
+ string& let2,
+ bool &first_digits)
+{
+    if (pages.empty()) {
+        return false;
+    }
+
+    dig1 = dig2 = 0;
+    let1.erase();
+    let2.erase();
+
+    SIZE_TYPE hyphen = pages.find('-');
+    _ASSERT(hyphen != NPOS);
+
+    first_digits = s_ParsePagesPart(pages.substr(0, hyphen), dig1, let1);
+    s_ParsePagesPart(pages.substr(hyphen + 1, NPOS), dig2, let2);
+
+    return true;
+}
+
 static void s_FixPages(string& pages)
 {
-    static const string kNumeric = "0123456789";
-    // Restore redundant leading digits of the second number if needed
-    SIZE_TYPE digits1 = pages.find_first_not_of(kNumeric);
-    if ( digits1 != NPOS) {
-        SIZE_TYPE hyphen = pages.find('-', digits1);
-        if ( hyphen != NPOS ) {
-            SIZE_TYPE digits2 = pages.find_first_not_of(kNumeric,
-                hyphen + 1);
-            digits2 -= hyphen + 1;
-            if ( digits2 < digits1 ) {
-                // lengths of the tail portions
-                SIZE_TYPE len1 = hyphen + digits2 - digits1;
-                SIZE_TYPE len2 = pages.size() - hyphen - 1;
-                int x = NStr::strncasecmp(&pages[digits1 - digits2],
-                    &pages[hyphen + 1],
-                    min(len1, len2));
-                if ( x > 0  ||  (x == 0  &&  len1 >= len2) ) {
-                    // complain?
-                } else {
-                    pages.insert(hyphen + 1, pages, 0,
-                        digits1 - digits2);
-                }
+    NStr::TruncateSpacesInPlace(pages);
+    if (pages.empty()) {
+        return;
+    }
+
+    // allow all roman numerals (and hyphen) 
+    if (pages.find_first_not_of(kRomans) == NPOS) {
+        return;
+    }
+
+    // reject if no dash
+    if (pages.find('-') == NPOS) {
+        return;
+    }
+    
+    SIZE_TYPE dig1, dig2;
+    string let1, let2;
+    bool first_digits;
+
+    s_ParsePages(pages, dig1, let1, dig2, let2, first_digits);
+
+    if (first_digits) {
+        if (dig2 == 0) {
+            return;
+        }
+    } else {
+        if ((dig1 == 0)  &&  (dig2 != 0)) {
+            return;
+        }
+    }
+
+    // The following expands "F502-512" into "F502-F512" and
+    // checks, for entries like "12a-12c" that a > c.  "12aa-12ab",
+    // "125G-137A", "125-G137" would be rejected.
+    if (!let1.empty()  &&  let2.empty()  &&  !first_digits) {
+        let2 = let1;
+    }
+    if (first_digits  &&  !let1.empty()  &&  !let2.empty()) {
+        if (let2 < let1) {
+            return;
+        }
+    }
+
+    // The following expands "125-37" into "125-137".
+    if (dig1 != 0  &&  dig2 != 0) {
+        if (dig2 < dig1) {
+            string num1 = NStr::UIntToString(dig1);
+            string num2 = NStr::UIntToString(dig2);
+            if (num1.length() > num2.length()) {
+                size_t diff = num1.length() - num2.length();
+                dig2 = NStr::StringToUInt(num1.substr(0, diff) + num2);
             }
+        }
+    }
+    if (dig2 < dig1) {
+        return;
+    }
+
+    if (first_digits) {
+        pages = NStr::UIntToString(dig1) + let1 + "-" + NStr::UIntToString(dig2) + let2;
+    } else {
+        pages = let1;
+        if (dig1 != 0) {
+            pages += NStr::UIntToString(dig1);
+        }
+        pages += '-';
+        pages += let2;
+        if (dig2 != 0) {
+            pages += NStr::UIntToString(dig2);
         }
     }
 }
@@ -180,7 +286,7 @@ static void s_FixPages(string& pages)
 CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
     CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished),
     m_Serial(kMax_Int), m_JustUids(false), m_Prepub(CImprint::ePrepub_other),
-    m_UseDate(true)
+    m_UseDate(true), m_IsElectronicPub(false)
 {
     _ASSERT(desc.IsPub());
     
@@ -200,7 +306,7 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
 CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
     CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished),
     m_Serial(kMax_Int), m_JustUids(false), m_Prepub(CImprint::ePrepub_other),
-    m_UseDate(true)
+    m_UseDate(true), m_IsElectronicPub(false)
 {
     _ASSERT(feat.GetData().IsPub());
 
@@ -221,7 +327,7 @@ CReferenceItem::CReferenceItem
  const CSeq_loc* loc) :
     CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_PMID(0), m_MUID(0),
     m_Category(eUnpublished), m_Serial(kMax_Int), m_JustUids(false),
-    m_Prepub(CImprint::ePrepub_other), m_UseDate(true)
+    m_Prepub(CImprint::ePrepub_other), m_UseDate(true), m_IsElectronicPub(false)
 {
     x_SetObject(pub);
 
@@ -603,7 +709,7 @@ void CReferenceItem::x_Init(const CCit_sub& sub, CBioseqContext& ctx)
     } else {
         // complain?
         if ( sub.CanGetImp() ) {
-            m_Date = &sub.GetImp().GetDate();
+            m_Date = (sub.GetImp().IsSetDate() ? &sub.GetImp().GetDate() : NULL);
         }
     }
 
@@ -888,15 +994,16 @@ void CReferenceItem::x_SetJournal(const CTitle& title, CBioseqContext& ctx)
         }
     }
 
-    bool electronic_journal = false;
+    
     if ( ttl == 0 ) {
         ttl = title.Get().front();
         if ( ttl != 0  &&  ttl->IsName() ) {
             if ( NStr::StartsWith(ttl->GetName(), "(er)", NStr::eNocase) ) {
-                electronic_journal = true;
+                m_IsElectronicPub = true;
             }
         }
-        if ( require_iso_jta  &&  !electronic_journal ) {
+        // release mode requires iso_jta title
+        if ( require_iso_jta  &&  !m_IsElectronicPub ) {
             return;
         }
 
@@ -1021,7 +1128,9 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
     }
     if ( imp.IsSetPages()  &&  !imp.GetPages().empty() ) {
         m_Pages = imp.GetPages();
-        s_FixPages(m_Pages);
+        if (!m_IsElectronicPub) {
+            s_FixPages(m_Pages);
+        }
     }
     if (!m_Volume.empty()  ||  !m_Pages.empty()) {
         if (imp.IsSetPart_sup()) {
@@ -1039,6 +1148,9 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
             m_Prepub != CImprint::ePrepub_in_press ? eUnpublished : ePublished;
     } else {
         m_Category = ePublished;
+    }
+    if ( imp.IsSetPubstatus() ) {
+        m_IsElectronicPub = (imp.GetPubstatus() == 3  || imp.GetPubstatus() == 10);
     }
 }
 
@@ -1114,11 +1226,27 @@ string CReferenceItem::GetAuthString(const CAuth_list* alp)
 }
 
 
+// Historical relic from C version
+static void s_RemovePeriod(string& title)
+{
+    if (NStr::EndsWith(title, '.')) {
+        size_t last = title.length() - 1;
+        if (last > 5) {
+           if (title[last - 1] != '.'  ||  title[last - 2] != '.') {
+               title.erase(last);
+           }
+        }
+    }
+}
+
+
 void CReferenceItem::x_CleanData(void)
 {
     // title
-    StripSpaces(m_Title);
+    NStr::TruncateSpacesInPlace(m_Title);
+    StripSpaces(m_Title);   // internal spaces
     ConvertQuotes(m_Title);
+    s_RemovePeriod(m_Title);
 
     // journal
     StripSpaces(m_Journal);  // internal spaces
@@ -1376,6 +1504,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/10/18 18:57:25  shomrat
+* Fix page numbers; Handle electronic publications
+*
 * Revision 1.22  2004/10/05 18:06:28  shomrat
 * in place TruncateSpaces ->TruncateSpacesInPlace
 *
