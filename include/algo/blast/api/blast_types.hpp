@@ -51,6 +51,7 @@ enum EProgram {
     eTblastx,           //< Translated nucl-Translated nucl
 	eMegablast,			//< Nucl-Nucl (traditional megablast)
 	eDiscMegablast,		//< Nucl-Nucl using discontiguous megablast
+    eRPSBlast,          //< protein-pssm (reverse-position-specific BLAST)
     eBlastProgramMax    //< Undefined program
 };
 
@@ -82,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/10 14:55:19  madden
+* Added enum type for eRPSBlast
+*
 * Revision 1.8  2003/12/09 17:07:58  camacho
 * Added missing initializer
 *
