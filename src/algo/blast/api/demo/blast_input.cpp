@@ -74,14 +74,15 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
         CRef<CSeq_loc> seqloc(new CSeq_loc());
         if (strand == eNa_strand_plus || strand == eNa_strand_minus || 
             from > 0 || 
-            (to > 0 && to < sequence::GetLength(*itr->GetId().front(), scope)-1))
+            (to > 0 && to < sequence::GetLength(*itr->GetId().front(), 
+                                                scope)-1))
         {
             seqloc->SetInt().SetFrom(from);
             seqloc->SetInt().SetTo(to);
             seqloc->SetInt().SetStrand(strand);
-            seqloc->SetInt().SetId(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
+            seqloc->SetInt().SetId().Assign(*itr->GetId().front());
         } else {
-            seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
+            seqloc->SetWhole().Assign(*itr->GetId().front());
         }
         CRef<CScope> s(scope);
         SSeqLoc *slp;
