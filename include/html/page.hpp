@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <html/html.hpp>
 #include <html/nodemap.hpp>
+#include <html/jsmenu.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -140,12 +141,10 @@ public:
     //          value for it, then we can skip call this function.
     //       2) Dynamic menu work only in new browsers. They use one container
     //          for all menus instead of separately container for each menu in 
-    //          nondynamic mode.
-    // In most cases (except if popup menus are defined only in the page
-    // template or printed by non-CNCBINode tag mapper), you can omit this
-    // function call.
-    void EnablePopupMenu(const string& menu_script_url  = kEmptyStr,
-                         bool          use_dynamic_menu = false);
+    //          nondynamic mode. This parameter have effect only with eSmith menu type.
+    void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
+                         const string& menu_script_url = kEmptyStr,
+                         bool use_dynamic_menu = false);
 
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
@@ -161,15 +160,27 @@ private:
     string   m_Title;
 
     // Template sources
-    string      m_TemplateFile;    // file name
-    istream*    m_TemplateStream;  // stream
+    string      m_TemplateFile;        // file name
+    istream*    m_TemplateStream;      // stream
     const void* m_TemplateBuffer;      // some buffer...
     size_t      m_TemplateBufferSize;  // ...and its size
 
-    // Popup menu variables
-    string m_PopupMenuLibUrl;
-    bool   m_UsePopupMenu;
-    bool   m_UsePopupMenuDynamic;
+    // The popup menu info structure
+    struct SPopupMenuInfo {
+        SPopupMenuInfo() {
+            m_UseDynamicMenu = false;
+        };
+        SPopupMenuInfo(const string& url, bool use_dynamic_menu) {
+            m_Url = url;
+            m_UseDynamicMenu = use_dynamic_menu;
+        }
+        string m_Url;
+        bool   m_UseDynamicMenu; // Only for eSmith menu type
+    };
+    // The popup menus usage info
+    typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
+    TPopupMenus m_PopupMenus;
+    bool        m_UsePopupMenus;
 };
 
 
@@ -248,9 +259,13 @@ END_NCBI_SCOPE
 
 #endif  /* HTML__PAGE__HPP */
 
+
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/09 22:12:45  ivanov
+* Added support for Sergey Kurdin's popup menu.
+*
 * Revision 1.24  2002/09/11 16:07:32  dicuccio
 * added x_CreateTemplate()
 * moved cvs log to the bottom of the page
