@@ -85,7 +85,7 @@ class CScoreMatrixBuilder
 {
 public:
     // C-tor
-    // @param query Query or Consensus sequence for the alignment. The data
+    // @param query query or consensus sequence for the alignment. The data
     // query points to is *not* copied.
     CScoreMatrixBuilder(const Uint1* query,
                         TSeqPos query_sz,
@@ -130,7 +130,6 @@ protected:
     /// Allow specification of seq-ids for considering sequences to process
     void x_SelectBySeqId(const std::vector< CRef<objects::CSeq_id> >& ids);
 
-private:
     // Convenience typedefs
     typedef AutoPtr<PsiAlignmentData, CDeleter<PsiAlignmentData> > 
         TPsiAlignDataSmartPtr;
@@ -142,6 +141,8 @@ private:
     CRef<objects::CSeq_align_set>   m_SeqAlignSet;
     PsiInfo                         m_PssmDimensions;
 
+    /// Default constructor available for derived test classes
+    CScoreMatrixBuilder() {}
     /// Prohibit copy constructor
     CScoreMatrixBuilder(const CScoreMatrixBuilder& rhs);
     /// Prohibit assignment operator
@@ -178,6 +179,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/06/16 12:17:54  camacho
+ * Fix for unit tests
+ *
  * Revision 1.3  2004/06/08 22:27:44  camacho
  * Add missing doxygen comments
  *
