@@ -1264,6 +1264,7 @@ static const char* s_MIME_SubType[eMIME_Unknown+1] = {
     "x-www-form",
     "html",
     "plain",
+    "xml",
     "x-unknown"
 };
 
@@ -1486,6 +1487,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.62  2004/01/07 19:23:29  lavr
+ * "xml" added as a MIME subtype
+ *
  * Revision 6.61  2003/11/12 17:46:12  lavr
  * HostPortToString() changed to be a little more efficient
  *
