@@ -121,6 +121,16 @@ int CTest::Run(void)
         0
     };
 
+
+    {{
+        string        ld_path_setting               ("LD_LIBRARY_PATH=");
+        const string& ld_path = GetEnvironment().Get("LD_LIBRARY_PATH");
+        if (ld_path.size()) {
+            ld_path_setting += ld_path;
+            my_env[0] = strdup(ld_path_setting.c_str());
+        }
+    }}
+
     const char* args_c[3];   // Arguments for SpawnV[E]
     args_c[1] = "SpawnV[E]";
     args_c[2] = 0;
@@ -255,6 +265,10 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2003/07/16 13:38:06  ucko
+ * Make sure to preserve LD_LIBRARY_PATH if it was set in the original
+ * environment, since we may need it to find libxncbi.so.
+ *
  * Revision 6.15  2003/04/08 20:32:40  ivanov
  * Get rid of an unused variable
  *
