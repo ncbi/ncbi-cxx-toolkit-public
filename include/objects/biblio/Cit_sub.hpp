@@ -57,7 +57,7 @@ public:
     ~CCit_sub(void);
 
     // Appends a label to "label" based on content
-    void GetLabel(string* label) const;
+    void GetLabel(string* label, bool unique = false) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/10/22 14:13:33  shomrat
+* Add unique option to GetLabel
+*
 * Revision 1.1  2004/02/24 15:52:22  grichenk
 * Initial revision
 *
