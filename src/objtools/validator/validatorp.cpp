@@ -785,22 +785,28 @@ void CValidError_imp::ValidatePubdesc
 {
     int uid = 0;
 
-    ITERATE( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
-        switch( (*pub)->Which() ) {
+    ITERATE( CPub_equiv::Tdata, pub_iter, pubdesc.GetPub().Get() ) {
+        const CPub& pub = **pub_iter;
+
+        switch( pub.Which() ) {
         case CPub::e_Gen:
-            ValidatePubGen((*pub)->GetGen(), obj);
+            ValidatePubGen(pub.GetGen(), obj);
             break;
 
         case CPub::e_Muid:
-            uid = (*pub)->GetMuid();
+            if ( uid == 0 ) {
+                uid = pub.GetMuid();
+            }
             break;
 
         case CPub::e_Pmid:
-            uid = (*pub)->GetPmid().Get();
+            if ( uid == 0 ) {
+                uid = pub.GetPmid();
+            }
             break;
             
         case CPub::e_Article:
-            ValidatePubArticle((*pub)->GetArticle(), obj);
+            ValidatePubArticle(pub.GetArticle(), uid, obj);
             break;
 
         case CPub::e_Equiv:
@@ -835,6 +841,7 @@ void CValidError_imp::ValidatePubGen
 
 void CValidError_imp::ValidatePubArticle
 (const CCit_art& art,
+ int uid,
  const CSerialObject& obj)
 {
     if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) { 
@@ -889,7 +896,7 @@ void CValidError_imp::ValidatePubArticle
                 bool no_pages = !imp.IsSetPages()  ||
                                 IsBlankString(imp.GetPages());
 
-                EDiagSev sev = IsNC() ? eDiag_Warning : eDiag_Error;
+                EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
 
                 if ( no_vol  &&  no_pages ) {
                     PostErr(sev, eErr_GENERIC_MissingPubInfo, 
@@ -944,7 +951,7 @@ void CValidError_imp::ValidatePubArticle
                 }
             }
         }
-        if ( !has_iso_jta  &&  (in_press  ||  IsRequireISOJTA()) ) {
+        if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA()) ) {
             PostErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
                 "ISO journal title abbreviation missing", obj);
         }
@@ -2324,6 +2331,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/10/27 17:02:01  shomrat
+* fixes to ValidatePubdesc and ValidatePubArticle
+*
 * Revision 1.40  2003/10/20 16:12:32  shomrat
 * Added SEQ_FEAT_OnlyGeneXrefs test
 *
