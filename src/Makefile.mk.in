@@ -27,6 +27,7 @@ INTERNAL = @internal@
 exec_prefix = @exec_prefix@
 top_srcdir  = @top_srcdir@
 includedir  = @includedir@
+builddir    = @builddir@
 incdir      = @incdir@
 libdir      = @libdir@
 bindir      = @bindir@
