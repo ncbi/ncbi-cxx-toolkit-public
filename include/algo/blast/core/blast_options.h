@@ -272,9 +272,8 @@ typedef enum EBlastPrelimGapExt {
 typedef enum EBlastTbackExt {
     eDynProgTbck,          /**< standard affine gapping */
     eGreedyTbck,           /**< Greedy extension (megaBlast) */
-    eSmithWatermanTbck,    /**< Smith-waterman finds optimal scores, then 
+    eSmithWatermanTbck     /**< Smith-waterman finds optimal scores, then 
                                 ALIGN_EX to find alignment. */
-    eSkipTbck              /**< Traceback information is not needed */
 } EBlastTbackExt;
 
 /** Options used for gapped extension 

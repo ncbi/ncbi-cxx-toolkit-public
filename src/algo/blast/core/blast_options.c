@@ -479,7 +479,6 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
       case 1:
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
          options->ePrelimGapExt = eGreedyWithTracebackExt;
-         options->eTbackExt = eSkipTbck;
          break;
       case 2:
          options->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
@@ -1675,6 +1674,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.148  2004/12/21 17:10:58  dondosha
+ * Removed eSkipTbck option
+ *
  * Revision 1.147  2004/12/13 22:26:59  camacho
  * Consolidated structure group customizations in option: nsg_compatibility_mode
  *
