@@ -326,7 +326,10 @@ case "$host_os:$compiler" in
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
-   AR=${AR:="$CXX -xar -o"}
+   if test "$with_mt" = "yes" ; then
+      MT_FLAG="-mt"
+   fi
+   AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP=":"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
@@ -334,15 +337,15 @@ case "$host_os:$compiler" in
    RANLIB=":"
    CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
-   THREAD_LIBS=${THREAD_LIBS:="-mt -lthread -lpthread"}
+   THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread"}
    ;;
 
  solaris*:KCC )
    with_bincopy=${with_bincopy:="no"}
    if test "$with_mt" = "yes" ; then
-      LDFLAGS_DLL="-mt $LDFLAGS_DLL"
+      MT_FLAG="-mt"
    fi
-   THREAD_LIBS=${THREAD_LIBS:="-mt -lthread -lpthread"}
+   THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread"}
    ;;
 
  irix*:MIPSpro73 )
@@ -530,10 +533,10 @@ case "$compiler" in
    LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
    ;;
  WorkShop* )
-   LINK_DLL="$CXX $ARCH_CFLAGS -G -h \$@ -o"
+   LINK_DLL="$CXX $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
    ;;
  KCC )
-   LINK_DLL="$CXX $ARCH_CFLAGS $LDFLAGS_DLL --soname \$@ -o"
+   LINK_DLL="$CXX $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
    ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
@@ -549,9 +552,9 @@ if test "$with_mt" = "yes" ; then
    THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
    case "$host_os:$compiler" in
     solaris*:WorkShop* | solaris*:KCC )
-      CFLAGS="-mt $CFLAGS"
-      CXXFLAGS="-mt $CXXFLAGS"
-      LDFLAGS="-mt $LDFLAGS"
+      CFLAGS="$MT_FLAG $CFLAGS"
+      CXXFLAGS="$MT_FLAG $CXXFLAGS"
+      LDFLAGS="$MT_FLAG $LDFLAGS"
       ;;
     *:GCC | irix*:MIPSpro73 | *:KCC)
       ;;
@@ -578,11 +581,7 @@ fi
 
 #### KAI compiler::  common flags and definitions
 if test "$compiler" = "KCC" ; then
-   if test "$with_mt" = "yes" ; then
-      AR=${AR:="$CXX -mt -o"}
-   else
-      AR=${AR:="$CXX -o"}
-   fi
+   AR=${AR:="$CXX $MT_FLAG -o"}
    CFLAGS="--display_error_number --c $CFLAGS"
    CXXFLAGS="--display_error_number --one_instantiation_per_object $CXXFLAGS"
    case "$host_os" in
