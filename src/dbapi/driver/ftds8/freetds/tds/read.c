@@ -243,7 +243,11 @@ int pos,have;
 		}
 		pos+=have;
 		need-=have;
+#ifdef NCBI_FTDS
+		if(tds_read_packet(tds) < 0) return dest;
+#else
 		tds_read_packet(tds);
+#endif
 		have=tds->in_len;
 	}
 	if (need>0) {
