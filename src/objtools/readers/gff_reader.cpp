@@ -195,13 +195,13 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
     record->key    = v[2];
 
     try {
-        from = NStr::StringToUInt(v[3]);
+        from = NStr::StringToUInt(v[3]) - 1;
     } catch (std::exception& e) {
         x_Warn(string("Bad FROM position: ") + e.what(), x_GetLineNumber());
     }
 
     try {
-        to = NStr::StringToUInt(v[4]);
+        to = NStr::StringToUInt(v[4]) - 1;
     } catch (std::exception& e) {
         x_Warn(string("Bad TO position: ") + e.what(), x_GetLineNumber());
     }
@@ -642,6 +642,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/12/31 12:48:29  dicuccio
+* Fixed interpretation of positions - GFF/GTF is 1-based, ASN.1 is 0-based
+*
 * Revision 1.2  2003/12/04 00:58:24  ucko
 * Fix for WorkShop's context-insensitive make_pair.
 *
