@@ -353,8 +353,9 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
 
     bool is_transgenic = false;
 
+    CBioSource::TOrigin origin = CBioSource::eOrigin_unknown;
     if ( bsrc ) {
-        CBioSource::TOrigin origin = bsrc->GetOrigin();
+        origin = bsrc->GetOrigin();
         if ( bsrc->CanGetOrg() ) {
             const COrg_ref& org = bsrc->GetOrg();
             if ( org.CanGetOrgname()  &&  org.GetOrgname().CanGetDiv() ) {
@@ -366,74 +367,75 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
             if ( (*subsource)->CanGetSubtype()  &&
                 (*subsource)->GetSubtype() == CSubSource::eSubtype_transgenic ) {
                 is_transgenic = true;
-            }
-        }
-        
-        switch ( ctx.GetTech() ) {
-        case CMolInfo::eTech_est:
-            m_Division = "EST";
-            break;
-        case CMolInfo::eTech_sts:
-            m_Division = "STS";
-            break;
-        case CMolInfo::eTech_survey:
-            m_Division = "GSS";
-            break;
-        case CMolInfo::eTech_htgs_0:
-        case CMolInfo::eTech_htgs_1:
-        case CMolInfo::eTech_htgs_2:
-            m_Division = "HTG";
-            break;
-        case CMolInfo::eTech_htc:
-            m_Division = "HTC";
-            break;
-        default:
-            break;
-        }
-
-        if ( origin == CBioSource::eOrigin_synthetic   ||
-             origin == CBioSource::eOrigin_mut         ||
-             origin == CBioSource::eOrigin_artificial  ||
-             is_transgenic ) {
-            m_Division = "SYN";
-        }
-
-        ITERATE( CBioseq::TId, id, bsh.GetBioseqCore()->GetId() ) {
-            if ( (*id)->IdentifyAccession() == CSeq_id::eAcc_patent ) {
-                m_Division = "PAT";
                 break;
             }
         }
+    }
 
-        // more complicated code for division, if necessary, goes here
-        
-        for ( CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc ) {
-            const CGB_block& gb = gb_desc->GetGenbank();
-            if ( gb.CanGetDiv() ) {
-                if ( m_Division.empty()    ||
-                     gb.GetDiv() == "SYN"  ||
-                     gb.GetDiv() == "PAT" ) {
+    switch ( ctx.GetTech() ) {
+    case CMolInfo::eTech_est:
+        m_Division = "EST";
+        break;
+    case CMolInfo::eTech_sts:
+        m_Division = "STS";
+        break;
+    case CMolInfo::eTech_survey:
+        m_Division = "GSS";
+        break;
+    case CMolInfo::eTech_htgs_0:
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+        m_Division = "HTG";
+        break;
+    case CMolInfo::eTech_htc:
+        m_Division = "HTC";
+        break;
+    default:
+        break;
+    }
+
+    if (origin == CBioSource::eOrigin_synthetic   ||
+        origin == CBioSource::eOrigin_mut         ||
+        origin == CBioSource::eOrigin_artificial  ||
+        is_transgenic ) {
+        m_Division = "SYN";
+    }
+
+    ITERATE (CBioseq_Handle::TId, iter, bsh.GetId()) {
+        if (*iter  &&  iter->GetSeqId()->IsPatent()) {
+            m_Division = "PAT";
+            break;
+        }
+    }
+
+    // more complicated code for division, if necessary, goes here
+
+    for (CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc) {
+        const CGB_block& gb = gb_desc->GetGenbank();
+        if (gb.CanGetDiv()) {
+            if (m_Division.empty()    ||
+                gb.GetDiv() == "SYN"  ||
+                gb.GetDiv() == "PAT") {
                     m_Division = gb.GetDiv();
-                }
             }
         }
+    }
 
-        const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
-        if ( ctx.Config().IsFormatEMBL() ) {
-            for ( CSeqdesc_CI embl_desc(bsh, CSeqdesc::e_Embl); 
-                  embl_desc; 
-                  ++embl_desc ) {
+    const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
+    if ( ctx.Config().IsFormatEMBL() ) {
+        for ( CSeqdesc_CI embl_desc(bsh, CSeqdesc::e_Embl); 
+            embl_desc; 
+            ++embl_desc ) {
                 const CEMBL_block& embl = embl_desc->GetEmbl();
                 if ( embl.CanGetDiv() ) {
                     if ( embl.GetDiv() == CEMBL_block::eDiv_other  &&
-                         molinfo == 0 ) {
-                        m_Division = "HUM";
-                    } else {
-                        m_Division = embl.GetDiv();
-                    }
+                        molinfo == 0 ) {
+                            m_Division = "HUM";
+                        } else {
+                            m_Division = embl.GetDiv();
+                        }
                 }
             }
-        }
     }
 
     // Set a default value (3 spaces)
@@ -566,6 +568,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/10/05 15:46:36  shomrat
+* Fixes to division part
+*
 * Revision 1.11  2004/08/26 17:04:53  shomrat
 * use accession for genome view
 *
