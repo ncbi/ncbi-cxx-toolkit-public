@@ -1,0 +1,6 @@
+# $Id$
+
+LIB_PROJ = bzip2
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

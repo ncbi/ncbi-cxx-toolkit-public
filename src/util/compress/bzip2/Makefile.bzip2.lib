@@ -1,0 +1,6 @@
+# $Id$
+
+SRC = blocksort huffman crctable randtable compress decompress bzlib
+LIB = bz2
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/compress/bzip2
