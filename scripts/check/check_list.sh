@@ -52,10 +52,10 @@ cd $conf_name/build  ||  exit 3
 make check_r RUN_CHECK=N CHECK_USE_IGNORE_LIST=N
 
 # Copy check list to target dir
-###cp check.sh.list "$target_dir"  ||  exit 4
+cp check.sh.list "$target_dir"  ||  exit 4
 
 # Cleanup
 cd ../../..
-###rm -rf "$src_dir" > /dev/null
+rm -rf "$src_dir" > /dev/null
 
 exit 0
