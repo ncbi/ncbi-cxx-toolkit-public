@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/05/24 20:50:51  vasilche
+* Fixed compilation error.
+*
 * Revision 1.38  2000/05/24 20:08:15  vasilche
 * Implemented XML dump.
 *
@@ -393,7 +396,8 @@ public:
 
     virtual void ReadFrom(CObjectIStream& in)
         {
-            m_Object.push_back(typename List::value_type());
+			typename List::value_type value;
+            m_Object.push_back(value);
             m_DataTypeInfo->ReadData(in, &m_Object.back());
         }
 
