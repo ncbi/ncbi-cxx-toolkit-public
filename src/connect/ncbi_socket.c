@@ -30,38 +30,38 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  1999/10/19 16:16:01  vakatov
+ * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
+ * not #define'd
+ *
  * Revision 6.1  1999/10/18 15:36:38  vakatov
  * Initial revision (derived from the former "ncbisock.[ch]")
- *
- * Revision 1.14  1999/10/13 21:23:42  vakatov
- * Tested/Purified on Solaris and MS-Win
- *
  * ===========================================================================
  */
 
 
-/* Kludge to compile with the NCBI C toolkit (using <ncbilcl.h>).
+/* Kludge to compile with the NCBI C or C++ toolkits -- when the platform
+ * (NCBI_OS_{UNIX, MSWIN, MAC}) is not specified in the command-line
  */
-#if !defined(NCBI_C)
-#  include <ncbiconf.h>
-#else
-#  include <ncbilcl.h>
-#  if defined(OS_UNIX)
-#    define NCBI_OS_UNIX 1
-#    define NCBI_OS "UNIX"
-#    if !defined(HAVE_GETHOSTBYNAME_R)  &&  defined(OS_UNIX_SOL)
-#      define HAVE_GETHOSTBYNAME_R 1
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
+#  if defined(NCBI_C)
+#    include <ncbilcl.h>
+#    if defined(OS_UNIX)
+#      define NCBI_OS_UNIX 1
+#      if !defined(HAVE_GETHOSTBYNAME_R)  &&  defined(OS_UNIX_SOL)
+#        define HAVE_GETHOSTBYNAME_R 1
+#      endif
+#    elif defined(OS_MSWIN)
+#      define NCBI_OS_MSWIN 1
+#    elif defined(OS_MAC)
+#      define NCBI_OS_MAC 1
+#    else
+#      error "Unknown OS, must be one of OS_UNIX, OS_MSWIN, OS_MAC!"
 #    endif
-#  elif defined(OS_MSWIN)
-#    define NCBI_OS_MSWIN 1
-#    define NCBI_OS "MSWIN"
-#  elif defined(OS_MAC)
-#    define NCBI_OS_MAC 1
-#    define NCBI_OS "MAC"
-#  else
-#    error "Unknown OS, must be one of OS_UNIX, OS_MSWIN, OS_MAC!"
-#  endif
-#endif /* NCBI_C */
+#  else /* else!NCBI_C */
+#    include <ncbiconf.h>
+#  endif /* NCBI_C */
+#endif /* !NCBI_OS_{UNIX, MSWIN, MAC} */
 
 
 /* Platform-specific system headers
