@@ -37,6 +37,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <util/random_gen.hpp>
 
 // Objects includes
 #include <objects/seqloc/Seq_id.hpp>
@@ -218,15 +219,6 @@ void CTestApp::x_TestVector(TSeqPos start,
     }
 
     // cout << "OK" << endl;
-}
-
-
-TSeqPos random(TSeqPos size)
-{
-    double r = rand();
-    r /= RAND_MAX;
-    r *= size;
-    return r;
 }
 
 
@@ -429,11 +421,11 @@ int CTestApp::Run(void)
     }
     cout << "Testing random reading (seed: " << rseed
          << ", cycles: " << cycles << ")... " << endl;
-    srand(rseed);
+    CRandom random(rseed);
     vit = CSeqVector_CI(m_Vect);
     for (int i = 0; i < cycles; ++i) {
-        TSeqPos start = random(m_Vect.size());
-        TSeqPos stop = random(m_Vect.size());
+        TSeqPos start = random.GetRand(0, m_Vect.size() - 1);
+        TSeqPos stop = random.GetRand(0, m_Vect.size() - 1);
         switch (i % 3) {
         case 0:
             x_TestIterate(vit, start, stop);
@@ -471,6 +463,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/08/06 20:51:54  grichenk
+* Use CRandom class
+*
 * Revision 1.3  2003/07/09 18:49:33  grichenk
 * Added arguments (seed and cycles), default random cycles set to 20.
 *
