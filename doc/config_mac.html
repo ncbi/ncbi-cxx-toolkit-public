@@ -2,23 +2,81 @@
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<a name="ref_MacProjTree"></a><h2>MacOS:  Building the whole NCBI C++ tree locally</h2>
+<a name="ref_MacProjTree"></a><h2>Building with Metrowerks CodeWarrior (Version 
+8.0 Update 8.3)</h2>
 
-<p>We have built the NCBI C++ toolkit with <span class="ncbi_compiler">Metrowerks CodeWarrior Pro 6</span>.  Other compilers or versions of CodeWarrior have not been tested.</p>
-
-<p>The build script is currently using a hard-coded search path for the source tree.</p>
-<ul>
-    <li>The preferred location for downloaded archive distributions is  <span class="ncbi_dir">&lt;startup-disk&gt;:Development:NCBI:c++</span>. Any of these folders can may be replaced with an alias to a folder.  This is the first location searched.
-    <li>An alternate location is the following:  <span class="ncbi_dir">&lt;startup-disk&gt;:Development:Trees:NCBI:vault.ncbi:internal:c++</span>.  Again, any of these folders can may be replaced with an alias to a folder.  This arrangement is intended to complement the use of a <a href="mac_cvs.html">Mac CVS client</a>.
-    <li>The original location requires renaming <span class="ncbi_dir">c++</span> to <span class="ncbi_dir">cxx</span> and moving it to the folder <span class="ncbi_compiler">Metrowerks CodeWarrior 6.0</span> at the root level of the startup disk, and in this case aliases are not resolved.  (Whether this is actually an installation of CodeWarrior or an otherwise empty folder doesn't matter, as long as you have CodeWarrior installed somewhere.)  This is the last location searched.
-</ul>
-
-<p>To build the toolkit libraries and test programs:
-<ol>
-    <li>Open the folder <span class="ncbi_dir">mac_prj</span>, which is in the folder <span class="ncbi_dir">compilers</span> (inside <span class="ncbi_dir">c++</span>).
-    <li>Open the file <span class="ncbi_file">makelibs.met</span> with Script Editor (e.g. by dragging the file's icon onto an icon for Script Editor).  Click <span class="ncbi_menu">Run</span>.  There may be some compiler warnings in CodeWarrior, but this is not a problem.  The script will speak (or possibly just beep) to signal completion.
-    <li>Then do the same thing with <span class="ncbi_file">maketests.met</span>.
-</ol>
+<p>We now build all the libraries and most of the applications including the 
+Genome Workbench (gbench). We do not build any of the many test or demo apps 
+(except testvalidator). We also build the fltk library's GUI editor, fluid.</p>
+<p>All apps are built as application bundles except gbench_plugin_scan and 
+datatool which are built as command line apps. Any of the applications can be 
+built as command line apps by tweaking the build scripts or the Codewarrior 
+projects.</p>
+<p>Build procedure is still the same: use an AppleScript editor to open and run 
+the script files makeLibs.met and makeApps.met. You must use a script editor 
+capable of opening a script file larger than 32K, such as Apple's Script Editor 
+v2.0, or Smile. Script Editor v1.9 will not work since makeLibs.met just got too 
+big. The command line tool osascript also works.</p>
+<p>Projects include targets to compile with BSD/Apple headers and libraries and 
+with MSL headers and libraries, but plugins (for gbench) built with MSL do not 
+link properly, and so, beause of lack of interest to keep up with changes, some 
+source code does not currently compile with MSL. Hopefully this will become 
+easier to work with and get fixed with Codewarrior v.9.</p>
+<p>Targets to be compiled can be controlled by including an empty file or folder 
+in the compilers:mac_prj folder with the name 'Build' followed by the keywords 
+of the targets you want built. The keywords are: MSL, BSD, Debug and Final. For 
+example, to build only the BSD Debug targets use: &quot;Build BSD Debug&quot;, to build 
+both BSD debug and release (final) versions: &quot;Build BSD&quot;. The default is to 
+build everything.</p>
+<p>If you install the C++ toolkit under a different name than &quot;ncbi_cxx&quot; or in a 
+different location than your home directory, you can edit the script's 
+properties, pRootFolderName and pRootFolderPath, to override these defaults. 
+Note: these paths, and those mentioned below, must be entered in mac format 
+(e.g. disk:Users:username:) not Unix format (e.g. /Users/username/). The disk 
+name (and its following colon) may be omitted.</p>
+<p>Certain third party libraries are required to build the C++ toolkit. The 
+scripts will try and find them if they are in your home directory, or you can 
+specify where they were installed using properties at the beginning of the 
+script:</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="80%" id="AutoNumber1">
+  <tr>
+    <td width="33%" align="center"><b>Library</b></td>
+    <td width="33%" align="center"><b>Property</b></td>
+    <td width="34%" align="center"><b>Example</b></td>
+  </tr>
+  <tr>
+    <td width="33%">fltk</td>
+    <td width="33%">pFLTKRootFolder</td>
+    <td width="34%">&quot;usr:local:src:fltk-1.1.4:&quot;</td>
+  </tr>
+  <tr>
+    <td width="33%">bdb </td>
+    <td width="33%">pBdbRootFolder</td>
+    <td width="34%">&quot;Users:myhome:mylibs:db-4.1.25&quot;</td>
+  </tr>
+  <tr>
+    <td width="33%">dlcompat </td>
+    <td width="33%">pDLRootFolder</td>
+    <td width="34%">&quot;usr:&quot;</td>
+  </tr>
+</table>
+<p>The latest release of fltk, 1.1.4x should be used. </p>
+<p>You do not have to build the fltk or bdb libraries separately. This is done 
+by the scripts and Codewarrior along with the toolkit libraries. Just unpack the 
+the source bundles in your home directory or where ever you have specified in 
+the appropriate properties. The root folders for fltk and bdb do not have to 
+have any particular names. If there is more than one version the scripts will 
+grab whichever is last alphabetically (e.g. fltk-1.1.4r2 will get used instead 
+of fltk-1.1.3). </p>
+<p>The scripts normally halt on any Codewarrior compilation errors. If you want 
+them to continue and save errors, set the next script property, 
+pSaveContinueOnErrors, to true. Compilation errors for a project will be saved 
+in a file in the same folder as the project being built, with a name in the 
+following format: projectName-targetNumber.errs (e.g. xncbi-2.errs).</p>
+<p>The Genome Workbench's configuration file(s) is stored in the users 
+Library:Application Support:gbench folder.</p>
+<p>CFM builds are not supported. OS 8 or 9 are not supported. We know 10.2 
+works. We think 10.1 still works.</p>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
