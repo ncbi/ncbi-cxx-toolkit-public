@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 
 const SeqScores* HMM_State::seqscr = 0;
 
-bool Lorentz::Init(istream& from, const string& label)
+bool Lorentz::Init(CNcbiIstream& from, const string& label)
 {
     string s;
     from >> s;
@@ -314,6 +314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/06 15:02:21  ucko
+ * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *

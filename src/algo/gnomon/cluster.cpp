@@ -93,7 +93,7 @@ void AlignVec::Extend(const AlignVec& a)
 }
 
 
-static istream& InputError(istream& s, ios::pos_type pos)
+static CNcbiIstream& InputError(CNcbiIstream& s, CT_POS_TYPE pos)
 {
     s.clear();
     s.seekg(pos);
@@ -102,9 +102,9 @@ static istream& InputError(istream& s, ios::pos_type pos)
 }
 
 
-istream& operator>>(istream& s, AlignVec& a)
+CNcbiIstream& operator>>(CNcbiIstream& s, AlignVec& a)
 {
-    ios::pos_type pos = s.tellg();
+    CT_POS_TYPE pos = s.tellg();
 
     string strandname;
     int strand;
@@ -167,7 +167,7 @@ istream& operator>>(istream& s, AlignVec& a)
     a.SetID(id);
     a.SetCdsLimits(cds_limits);
     a.Insert(IPair(start,stop));
-    ios::pos_type lastpos = s.tellg();
+    CT_POS_TYPE lastpos = s.tellg();
     while (s >> start) {
         if ( !(s >> stop)  ) {
             return InputError(s,pos);
@@ -182,7 +182,7 @@ istream& operator>>(istream& s, AlignVec& a)
 }
 
 
-ostream& operator<<(ostream& s, const AlignVec& a)
+CNcbiOstream& operator<<(CNcbiOstream& s, const AlignVec& a)
 {
     s << (a.Strand() == Plus ? '+' : '-') << " ID" << a.ID() << ' ';
 
@@ -236,9 +236,9 @@ void CCluster::Init(int first, int second, int t)
 }
 
 
-istream& operator>>(istream& s, CCluster& c)
+CNcbiIstream& operator>>(CNcbiIstream& s, CCluster& c)
 {
-    ios::pos_type pos = s.tellg();
+    CT_POS_TYPE pos = s.tellg();
 
     string cluster;
     s >> cluster;
@@ -282,7 +282,7 @@ istream& operator>>(istream& s, CCluster& c)
 }
 
 
-ostream& operator<<(ostream& s, const CCluster& c)
+CNcbiOstream& operator<<(CNcbiOstream& s, const CCluster& c)
 {
     s << "CCluster ";
     s << c.Limits().first << ' ';
@@ -332,9 +332,9 @@ void CClusterSet::Init(string cnt)
 }
 
 
-istream& operator>>(istream& s, CClusterSet& cls)
+CNcbiIstream& operator>>(CNcbiIstream& s, CClusterSet& cls)
 {
-    ios::pos_type pos = s.tellg();
+    CT_POS_TYPE pos = s.tellg();
 
     string contig;
     s >> contig;
@@ -357,7 +357,7 @@ istream& operator>>(istream& s, CClusterSet& cls)
 }
 
 
-ostream& operator<<(ostream& s, const CClusterSet& cls)
+CNcbiOstream& operator<<(CNcbiOstream& s, const CClusterSet& cls)
 {
     int num = cls.size();
     if (num) {
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/06 15:02:21  ucko
+ * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
+ *
  * Revision 1.2  2003/11/06 02:47:22  ucko
  * Fix usage of iterators -- be consistent about constness.
  *

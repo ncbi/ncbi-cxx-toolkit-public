@@ -264,8 +264,8 @@ private:
     double score;
 };
 
-istream& operator>>(istream& s, AlignVec& a);
-ostream& operator<<(ostream& s, const AlignVec& a);
+CNcbiIstream& operator>>(CNcbiIstream& s, AlignVec& a);
+CNcbiOstream& operator<<(CNcbiOstream& s, const AlignVec& a);
 
 
 class CCluster : public list<AlignVec>
@@ -286,8 +286,8 @@ private:
     int type;
 };
 
-istream& operator>>(istream& s, CCluster& c);
-ostream& operator<<(ostream& s, const CCluster& c);
+CNcbiIstream& operator>>(CNcbiIstream& s, CCluster& c);
+CNcbiOstream& operator<<(CNcbiOstream& s, const CCluster& c);
 
 
 class CClusterSet : public set<CCluster>
@@ -306,8 +306,8 @@ private:
     string contig;
 };
 
-istream& operator>>(istream& s, CClusterSet& cls);
-ostream& operator<<(ostream& s, const CClusterSet& cls);
+CNcbiIstream& operator>>(CNcbiIstream& s, CClusterSet& cls);
+CNcbiOstream& operator<<(CNcbiOstream& s, const CClusterSet& cls);
 
 
 class CFrameShiftInfo
@@ -427,7 +427,7 @@ template<class State> StateScores CalcStateScores(const State& st)
 class Lorentz
 {
 public:
-    bool Init(istream& from, const string& label);
+    bool Init(CNcbiIstream& from, const string& label);
     double Score(int l) const { return score[(l-1)/step]; }
     double ClosingScore(int l) const;
     int MinLen() const { return minl; }
@@ -649,7 +649,8 @@ class Parse
 public:
     Parse(const SeqScores& ss);
     const HMM_State* Path() const { return path; }
-    int PrintGenes(ostream& to = cout, ostream& toprot = cout, bool complete = false) const;
+    int PrintGenes(CNcbiOstream& to = cout, CNcbiOstream& toprot = cout,
+                   bool complete = false) const;
     void PrintInfo() const;
     list<Gene> GetGenes() const;
     //typedef list<Gene>::iterator GenIt;
@@ -715,6 +716,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/06 15:02:21  ucko
+ * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *

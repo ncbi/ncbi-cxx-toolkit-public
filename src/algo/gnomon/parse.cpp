@@ -472,19 +472,19 @@ Parse::Parse(const SeqScores& ss) : seqscr(ss)
 }
 
 
-template<class T> void Out(T t, int w, ostream& to = cout)
+template<class T> void Out(T t, int w, CNcbiOstream& to = cout)
 {
     to.width(w);
-    to.setf(ios_base::right,ios_base::adjustfield);
+    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
     to << t;
 }
 
 
-void Out(double t, int w, ostream& to = cout, int prec = 1)
+void Out(double t, int w, CNcbiOstream& to = cout, int prec = 1)
 {
     to.width(w);
-    to.setf(ios_base::right,ios_base::adjustfield);
-    to.setf(ios_base::fixed,ios_base::floatfield);
+    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
+    to.setf(IOS_BASE::fixed,IOS_BASE::floatfield);
     to.precision(prec);
 
     if (t > 1000000000) {
@@ -514,7 +514,7 @@ inline char toACGT(int c)
 }
 
 
-int Parse::PrintGenes(ostream& to, ostream& toprot, bool complete) const
+int Parse::PrintGenes(CNcbiOstream& to, CNcbiOstream& toprot, bool complete) const
 {
     enum {DNA_Align = 1, Prot_Align = 2 };
 
@@ -673,7 +673,7 @@ int Parse::PrintGenes(ostream& to, ostream& toprot, bool complete) const
 
 
 /*
-int Parse::PrintGenes(ostream& to, ostream& toprot, bool complete) const
+int Parse::PrintGenes(CNcbiOstream& to, CNcbiOstream& toprot, bool complete) const
 {
     const char* aa_table = "KNKNXTTTTTRSRSXIIMIXXXXXXQHQHXPPPPPRRRRRLLLLLXXXXXEDEDXAAAAAGGGGGVVVVVXXXXX * Y*YXSSSSS * CWCXLFLFXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
 
@@ -1384,6 +1384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/06 15:02:21  ucko
+ * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *
