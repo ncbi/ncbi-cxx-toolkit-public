@@ -445,6 +445,10 @@ CGBDataLoader::GC(void)
             m_InvokeGC=false;
         }
         g.Lock();
+#if defined(_REENTRANT)
+        int i=0;
+        for(cur_tse = m_UseListHead;cur_tse && i<skip; ++i) cur_tse = cur_tse->next ;
+#endif
     }
     if(m_InvokeGC) { // nothing has been cleaned up
       assert(m_TseGC_Threshhold<=m_TseCount); // GC entrance condition
@@ -835,6 +839,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/03/01 23:07:42  kimelman
+* bugfix: MTsafe
+*
 * Revision 1.50  2003/03/01 22:27:57  kimelman
 * performance fixes
 *
