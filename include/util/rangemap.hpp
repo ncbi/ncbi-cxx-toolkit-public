@@ -408,7 +408,10 @@ public:
 protected:
     // internal typedefs
     typedef typename TRangeMapTraits::TSelectMap TSelectMap;
+    typedef typename TSelectMap::value_type select_value;
+    typedef typename TSelectMap::iterator TSelectMapI;
     typedef typename TRangeMapTraits::TLevelMap TLevelMap;
+    typedef typename TLevelMap::iterator TLevelMapI;
 
     // constructor
     CRangeMapBase(void)
@@ -418,6 +421,15 @@ protected:
 #endif
         }
 
+    TSelectMapI insertLevel(position_type key)
+        {
+            TSelectMapI iter = m_SelectMap.lower_bound(key);
+            if ( iter == m_SelectMap.end() || iter->first != key ) {
+                iter = m_SelectMap.insert(iter,
+                                          select_value(key, TLevelMap()));
+            }
+            return iter;
+        }
 public:
     // capacity
     bool empty(void) const
@@ -553,10 +565,10 @@ public:
 
     typedef typename TParent::TRangeMapTraits TRangeMapTraits;
     typedef typename TParent::TSelectMap TSelectMap;
-    typedef typename TSelectMap::value_type select_value;
-    typedef typename TSelectMap::iterator TSelectMapI;
+    typedef typename TParent::select_value select_value;
+    typedef typename TParent::TSelectMapI TSelectMapI;
     typedef typename TParent::TLevelMap TLevelMap;
-    typedef typename TLevelMap::iterator TLevelMapI;
+    typedef typename TParent::TLevelMapI TLevelMapI;
 
     // constructor
     explicit CRangeMap(void)
@@ -577,17 +589,15 @@ public:
             // get level
 
             // insert element
-            pair<TSelectMapI, bool> selectInsert =
-                m_SelectMap.insert(select_value(selectKey, TLevelMap()));
-            pair<TLevelMapI, bool> levelInsert =
-                selectInsert.first->second.insert(value);
+            TSelectMapI selectIter = insertLevel(selectKey);
+            pair<TLevelMapI, bool> levelIns = selectIter->second.insert(value);
             
             pair<iterator, bool> ret;
-            ret.second = levelInsert.second;
+            ret.second = levelIns.second;
             ret.first.m_Range = range_type::GetWhole();
-            ret.first.m_SelectIter = selectInsert.first;
+            ret.first.m_SelectIter = selectIter;
             ret.first.m_SelectIterEnd = m_SelectMap.end();
-            ret.first.m_LevelIter = levelInsert.first;
+            ret.first.m_LevelIter = levelIns.first;
             return ret;
         }
 
@@ -617,10 +627,10 @@ public:
 
     typedef typename TParent::TRangeMapTraits TRangeMapTraits;
     typedef typename TParent::TSelectMap TSelectMap;
-    typedef typename TSelectMap::value_type select_value;
-    typedef typename TSelectMap::iterator TSelectMapI;
+    typedef typename TParent::select_value select_value;
+    typedef typename TParent::TSelectMapI TSelectMapI;
     typedef typename TParent::TLevelMap TLevelMap;
-    typedef typename TLevelMap::iterator TLevelMapI;
+    typedef typename TParent::TLevelMapI TLevelMapI;
 
     // constructor
     explicit CRangeMultimap(void)
@@ -639,14 +649,11 @@ public:
                 TRangeMapTraits::get_max_length(value.first);
 
             // insert element
-            pair<TSelectMapI, bool> selectInsert =
-                m_SelectMap.insert(select_value(selectKey, TLevelMap()));
-
             iterator ret;
             ret.m_Range = range_type::GetWhole();
-            ret.m_SelectIter = selectInsert.first;
+            ret.m_SelectIter = insertLevel(selectKey);
             ret.m_SelectIterEnd = m_SelectMap.end();
-            ret.m_LevelIter = selectInsert.first->second.insert(value);
+            ret.m_LevelIter = ret.m_SelectIter->second.insert(value);
             return ret;
         }
 };
@@ -662,6 +669,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/01/13 17:23:14  vasilche
+* Performance fix - do not create level node until it's really needed.
+*
 * Revision 1.22  2003/04/22 17:21:02  ucko
 * Clarified comment for get_max_length (taken from an exchange between
 * Eugene and Karl).
