@@ -1,5 +1,5 @@
-#ifndef NCBI_THREAD__HPP
-#define NCBI_THREAD__HPP
+#ifndef NCBITHR__HPP
+#define NCBITHR__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,14 +26,20 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Aleksey Grichenko
  *
  * File Description:
  *   Multi-threading -- classes and features.
  *
+ *   TLS:
+ *      CTlsBase         -- TLS implementation (base class for CTls<>)
+ *      CTls<>           -- thread local storage template
+ *
+ *   THREAD:
+ *      CThread          -- thread wrapper class
+ *
  *   MUTEX:
- *      CInternalMutex   -- platform-dependent mutex structure (fwd-decl)
- *      CMutex           -- mutex-related data and methods
+ *      CMutex           -- mutex that allows nesting (with runtime checks)
  *      CAutoMutex       -- guarantee mutex release
  *      CMutexGuard      -- acquire mutex, then guarantee for its release
  *
@@ -46,6 +52,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/03/13 22:43:19  vakatov
+ * Full redesign.
+ * Implemented all core functionality.
+ * Thoroughly tested on different platforms.
+ *
  * Revision 1.2  2000/12/11 06:48:51  vakatov
  * Revamped Mutex and RW-lock APIs
  *
@@ -55,79 +66,310 @@
  * ===========================================================================
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <memory>
+#include <set>
+#include <list>
 
 
 BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  Mutex
+//
+// DECLARATIONS of internal (platform-dependent) representations
+//
+//    TTlsKey        -- internal TLS key type
+//    TThreadHandle  -- platform-dependent thread handle type
+//
+
+#if defined(NCBI_WIN32_THREADS)
+
+typedef DWORD  TTlsKey;
+typedef HANDLE TThreadHandle;
+
+typedef DWORD  TWrapperRes;
+typedef LPVOID TWrapperArg;
+
+#elif defined(NCBI_POSIX_THREADS)
+
+typedef pthread_key_t TTlsKey;
+typedef pthread_t     TThreadHandle;
+
+typedef void* TWrapperRes;
+typedef void* TWrapperArg;
+
+#else
+
+// fake
+typedef void* TTlsKey;
+typedef int   TThreadHandle;
+
+typedef void* TWrapperRes;
+typedef void* TWrapperArg;
+
+#endif
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTlsBase::
+//
+//  CTls<>::
+//
+//    Thread local storage
+//
+//  Store thread-specific data.
+//
+
+class CTlsBase : public CObject  // only to serve as a base class for CTls<>
+{
+    friend class CRef<CTlsBase>;
+    friend class CThread;
+
+public:
+    typedef void (*FCleanupBase)(void* value, void* cleanup_data);
+
+protected:
+    // All other methods are described just below, in CTls<> class declaration
+    CTlsBase(void);
+
+    // Cleanup data, delete TLS key
+    ~CTlsBase(void);
+
+    void* x_GetValue(void) const;
+    void x_SetValue(void* value, FCleanupBase cleanup=0, void* cleanup_data=0);
+    void x_Reset(void);
+    void x_Discard(void);
+
+private:
+    TTlsKey m_Key;
+
+    // Internal structure to store all three pointers in the same TLS
+    struct STlsData {
+        void*        m_Value;
+        FCleanupBase m_CleanupFunc;
+        void*        m_CleanupData;
+    };
+    STlsData* x_GetTlsData(void) const;
+};
+
+
+template <class TValue>
+class CTls : public CTlsBase
+{
+public:
+    // Get the pointer previously stored by SetValue().
+    // Return 0 if no value has been stored, or if Reset() was last called.
+    TValue* GetValue(void) const {
+        return reinterpret_cast<TValue*> (x_GetValue());
+    }
+
+    // Cleanup previously stored value, store the new value.
+    // The "cleanup" function and "cleanup_data" will be used to
+    // destroy the new "value" in the next call to SetValue() or Reset().
+    // Do not cleanup if the new value is equal to the old one.
+    typedef void (*FCleanup)(TValue* value, void* cleanup_data);
+    void SetValue(TValue* value, FCleanup cleanup=0, void* cleanup_data=0) {
+        x_SetValue(value,
+                   reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
+    }
+
+    // Reset TLS to its initial value (as it was before the first call
+    // to SetValue()). Do cleanup if the cleanup function was specified
+    // in the previous call to SetValue().
+    // NOTE:  Reset() will always be called automatically on the thread
+    //        termination, or when the TLS is destroyed.
+    void Reset(void) { x_Reset(); }
+
+    // Schedule the TLS to be destroyed
+    // (as soon as there are no CRef to it left).
+    void Discard(void) { x_Discard(); }
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CThread::
+//
+//    Thread wrapper class
+//
+//  Base class for user-defined threads. Creates the new thread, then
+//  calls user-provided Main() function. The thread then can be detached
+//  or joined. In any case, explicit destruction of the thread is prohibited.
 //
 
 
+class CThread : public CObject
+{
+    friend class CRef<CThread>;
+    friend class CTlsBase;
+
+public:
+    // Must be allocated in the heap (only!).
+    CThread(void);
+
+    // Run the thread:
+    // create new thread, initialize it, and call user-provided Main() method.
+    bool Run(void);
+
+    // Inform the thread that user does not need to wait for its termination.
+    // The thread object will be destroyed by Exit().
+    // If the thread has already been terminated by Exit, Detach() will
+    // also schedule the thread object for destruction.
+    // NOTE:  it is no more safe to use this thread object after Detach(),
+    //        unless there are still CRef<> based references to it!
+    void Detach(void);
+
+    // Wait for the thread termination.
+    // The thread object will be scheduled for destruction right here,
+    // inside Join(). Only one call to Join() is allowed.
+    void Join(void** exit_data = 0);
+
+    // Cancel current thread. If the thread is detached, then schedule
+    // the thread object for destruction.
+    static void Exit(void* exit_data);
+
+    // If the thread has not been Run() yet, then schedule the thread object
+    // for destruction, and return TRUE.
+    // Otherwise, do nothing, and return FALSE.
+    bool Discard(void);
+
+    // Get ID of current thread (for main thread it is always zero).
+    typedef unsigned int TID;
+    static TID GetSelf(void);
+
+protected:
+    // Derived (user-created) class must provide a real thread function.
+    virtual void* Main(void) = 0;
+
+    // Override this to execute finalization code.
+    // Unlike destructor, this code will be executed before
+    // thread termination and as a part of the thread.
+    virtual void OnExit(void);
+
+    // To be called only internally!
+    // NOTE:  destructor of the derived (user-provided) class should be
+    //        declared "protected", too!
+    virtual ~CThread(void);
+
+private:
+    TID           m_ID;            // thread ID
+    TThreadHandle m_Handle;        // platform-dependent thread handle
+    bool          m_IsRun;         // if Run() was called for the thread
+    bool          m_IsDetached;    // if the thread is detached
+    bool          m_IsJoined;      // if Join() was called for the thread
+    bool          m_IsTerminated;  // if Exit() was called for the thread
+    CRef<CThread> m_SelfRef;       // "this" -- to avoid premature destruction
+    void*         m_ExitData;      // as returned by Main() or passed to Exit()
+
+    // Function to use (internally) as the thread's startup function
+    static TWrapperRes Wrapper(TWrapperArg arg);
+
+    // To store "CThread" object related to the current (running) thread
+    static CRef< CTls<CThread> > sm_ThreadsTls;
+
+    // Keep all TLS references to clean them up in Exit()
+    typedef set< CRef<CTlsBase> > TTlsSet;
+    TTlsSet m_UsedTls;
+    static void AddUsedTls(CTlsBase* tls);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //
-// Forward declaration of internal (platform-dependent) mutex representation
+//  MUTEX
+//
+//    CMutex::
+//    CAutoMutex::
+//    CMutexGuard::
 //
 
-class CInternalMutex;
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
-//  CMutex
+//  CMutex::
+//
+//    Mutex that allows nesting (with runtime checks)
+//
+//  Allows for nested locks by the same thread. Checks the mutex
+//  owner before unlocking. This mutex should be used when perfomance
+//  is less important than data protection.
 //
 
 class CMutex
 {
 public:
     // 'ctors
-    CMutex(void);
+    CMutex (void);
+    // Report error if the mutex is locked
     ~CMutex(void);
 
-    // Acquire the mutex. If the mutex is already acquired by
-    // another thread, then wait until it is released.
+    // If the mutex is unlocked, then acquire it for the calling thread.
+    // If the mutex is acquired by this thread, then increase the
+    // lock counter (each call to Lock() must have corresponding
+    // call to Unlock() in the same thread).
+    // If the mutex is acquired by another thread, then wait until it's
+    // unlocked, then act like a Lock() on an unlocked mutex.
     void Lock(void);
 
-    // Try to acquire the mutex. Return immediately.
-    // Return FALSE if the mutex is already acquired by another thread.
-    // Return TRUE  if the mutex has been successfully acquired.
+    // Try to aquire the mutex. On success, return "true", and acquire
+    // the mutex (just as the Lock() above does).
+    // If the mutex is already acquired by another thread, then return "false".
     bool TryLock(void);
 
-    // Release the mutex.
+    // If the mutex is acquired by this thread, then decrease the lock counter.
+    // If the lock counter becomes zero, then release the mutex completely.
+    // Report error if the mutex is not locked or locked by another
+    // thread.
     void Unlock(void);
 
 private:
-    CInternalMutex& m_Mutex;  // platform-dependent mutex data
+    CInternalMutex m_Mtx;    // (low-level functionality is in CInternalMutex)
+    CThread::TID   m_Owner;  // platform-dependent thread data
+    int            m_Count;  // # of nested (in the same thread) locks
 
     // Disallow assignment and copy constructor
     CMutex(const CMutex&);
     CMutex& operator= (const CMutex&);
+
+    friend class CRWLock; // uses m_Mtx and m_Owner members directly
 };
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CAutoMutex::
-//  To guarantee the release of the mutex (acts in a way like "auto_ptr<>").
+//
+//    Guarantee mutex release
+//
+//  Acts in a way like "auto_ptr<>": guarantees mutex release.
 //
 
 class CAutoMutex
 {
 public:
     // Register the mutex to be released by the guard destructor.
-    CAutoMutex(CMutex& mtx) : m_Mutex(&mtx) { m_Mutex->Lock(); }
+    CAutoMutex(CMutex& mtx) : m_Mutex(&mtx)  { }
 
     // Release the mutex, if it was (and still is) successfully acquired.
-    ~CAutoMutex(void)  { if (m_Mutex) m_Mutex->Unlock(); }
+    ~CAutoMutex(void)  { if (m_Mutex)  m_Mutex->Unlock(); }
 
     // Release the mutex right now (do not release it in the guard destructor).
-    void Release(void) { m_Mutex->Unlock();  m_Mutex = 0; }
+    void Release(void)  { m_Mutex->Unlock(); m_Mutex = 0; }
 
     // Get the mutex being guarded
-    CMutex* GetMutex(void) const { return m_Mutex; }
+    CMutex* GetMutex(void) const  { return m_Mutex; }
 
 private:
-    CMutex* m_Mutex;  // the mutex (NULL if not acquired)
+    CMutex* m_Mutex;  // the mutex (NULL if released)
 
     // Disallow assignment and copy constructor
     CAutoMutex(const CAutoMutex&);
@@ -136,9 +378,11 @@ private:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CMutexGuard::
-//  Acquire the mutex at first, then act just like CAutoMutex.
+//
+//    Acquire the mutex, then guarantee for its release
 //
 
 class CMutexGuard : public CAutoMutex
@@ -156,19 +400,33 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  RW-lock
+//
+//  RW-LOCK
+//
+//    CRWLock::
+//    CAutoRW::
+//    CReadLockGuard::
+//    CWriteLockGuard::
 //
 
 
-//
 // Forward declaration of internal (platform-dependent) RW-lock representation
-//
-
 class CInternalRWLock;
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
-//  CRWLock
+//  CRWLock::
+//
+//    Read/Write lock related  data and methods
+//
+//  Allows multiple readers or single writer with nested locks.
+//  R-after-W is considered to be a nested Write-lock.
+//  W-after-R is not allowed.
+//
+//  NOTE: When _DEBUG is not defined, does not always detect W-after-R
+//  correctly, so that deadlock may happen. Test your application
+//  in _DEBUG mode firts!
 //
 
 class CRWLock
@@ -195,7 +453,16 @@ public:
     void Unlock(void);
 
 private:
-    CInternalRWLock& m_RW;  // platform-dependent RW-lock data
+    // platform-dependent RW-lock data
+    auto_ptr<CInternalRWLock>  m_RW;
+    CMutex                     m_Mutex;
+    // Writer ID, one of the readers ID or kThreadID_None if unlocked
+    CThread::TID               m_Owner;
+    // Number of readers (if >0) or writers (if <0)
+    int                        m_Count;
+
+    // List of all readers or writers (for debugging)
+    list<CThread::TID>         m_Readers;
 
     // Disallow assignment and copy constructor
     CRWLock(const CRWLock&);
@@ -204,9 +471,13 @@ private:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
-//  CAutoRW
-//  To guarantee the release of the RW-lock (acts in a way like "auto_ptr<>").
+//  CAutoRW::
+//
+//    Guarantee RW-lock release
+//
+//  Acts in a way like "auto_ptr<>": guarantees RW-Lock release.
 //
 
 class CAutoRW
@@ -216,7 +487,7 @@ public:
     // Do NOT acquire the RW-lock though!
     CAutoRW(CRWLock& rw) : m_RW(&rw) {}
 
-    // Release the RW-lock right now (do not release it in the guard desctruc).
+    // Release the RW-lock right now (don't release it in the guard destructor)
     void Release(void) { m_RW->Unlock();  m_RW = 0; }
 
     // Release the R-lock, if it was successfully acquired and
@@ -236,9 +507,11 @@ private:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CReadLockGuard::
-//  Acquire the R-lock at first, then act just like CAutoRW.
+//
+//    Acquire the R-lock, then guarantee for its release
 //
 
 class CReadLockGuard : public CAutoRW
@@ -255,9 +528,11 @@ private:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CWriteLockGuard::
-//  Acquire the W-lock at first, then act just like CAutoRW.
+//
+//    Acquire the W-lock, then guarantee for its release
 //
 
 class CWriteLockGuard : public CAutoRW
@@ -273,6 +548,139 @@ private:
 };
 
 
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CTlsBase::
+//
+
+inline
+CTlsBase::STlsData* CTlsBase::x_GetTlsData(void)
+const
+{
+    void* tls_data;
+
+#if defined(NCBI_WIN32_THREADS)
+    tls_data = TlsGetValue(m_Key);
+#elif defined(NCBI_POSIX_THREADS)
+    tls_data = pthread_getspecific(m_Key);
+#else
+    tls_data = m_Key;
+#endif
+
+    return static_cast<STlsData*> (tls_data);
+}
+
+
+inline
+void* CTlsBase::x_GetValue(void)
+const
+{
+    // Get TLS-stored structure
+    STlsData* tls_data = x_GetTlsData();
+
+    // If assigned, extract and return user data
+    return tls_data ? tls_data->m_Value : 0;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CThread::
+//
+
+inline
+CThread::TID CThread::GetSelf(void)
+{
+    if (sm_ThreadsTls == 0) {
+        return 0;
+    }
+
+    // Try to get pointer to the current thread object
+    CThread* thread_ptr = static_cast<CThread*>(sm_ThreadsTls->GetValue());
+
+    // If zero, it is main thread which has no CThread object
+    return thread_ptr ? thread_ptr->m_ID : 0/*main thread*/;
+}
+
+
+// Special value, stands for "no thread" thread ID
+const CThread::TID kThreadID_None = 0xFFFFFFFF;
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CMutex::
+//
+
+inline
+void CMutex::Lock(void)
+{
+    CThread::TID owner = CThread::GetSelf();
+    if (owner == m_Owner) {
+        // Don't lock twice, just increase the counter
+        m_Count++;
+        return;
+    }
+
+    // Lock the mutex and remember the owner
+    m_Mtx.Lock();
+    m_Owner = owner;
+    m_Count = 1;
+}
+
+
+inline
+bool CMutex::TryLock(void)
+{
+    CThread::TID owner = CThread::GetSelf();
+    if (owner == m_Owner) {
+        // Don't lock twice, just increase the counter
+        m_Count++;
+        return true;
+    }
+
+    // If TryLock is successful, remember the owner
+    if ( m_Mtx.TryLock() ) {
+        m_Owner = owner;
+        m_Count = 1;
+        return true;
+    }
+
+    return false;
+}
+
+
+inline
+void CMutex::Unlock(void)
+{
+    // No unlocks by threads other than owner.
+    // This includes no unlocks of unlocked mutex.
+    if (m_Owner != CThread::GetSelf()) {
+        throw runtime_error
+            ("CMutex::Unlock() -- mutex is locked by another thread");
+    }
+
+    // No real unlocks if counter > 1, just decrease it
+    if (--m_Count > 0) {
+        return;
+    }
+
+    // This was the last lock - clear the owner and unlock the mutex
+    m_Owner = kThreadID_None;
+    m_Mtx.Unlock();
+}
+
+
 END_NCBI_SCOPE
 
-#endif  /* NCBI_THREAD__HPP */
+#endif  /* NCBITHR__HPP */

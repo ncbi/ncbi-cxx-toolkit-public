@@ -23,27 +23,28 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Aleksey Grichenko
  *
  * File Description:
- *   Multithreading:
  *   Multi-threading -- classes and features.
  *
- *   MUTEX:
- *      CInternalMutex   -- platform-dependent mutex structure
- *      CMutex           -- mutex-related data and methods
- *      CAutoMutex       -- guarantee mutex release
- *      CMutexGuard      -- acquire mutex, then guarantee for its release
+ *    TLS:
+ *      CTlsBase         -- TLS implementation (base class for CTls<>)
  *
- *   RW-LOCK:
- *      CInternalRWLock  -- platform-dependent RW-lock structure
+ *    THREAD:
+ *      CThread          -- thread wrapper class
+ *
+ *    RW-LOCK:
+ *      CInternalRWLock  -- platform-dependent RW-lock structure (fwd-decl)
  *      CRWLock          -- Read/Write lock related  data and methods
- *      CAutoRW          -- guarantee RW-lock release
- *      CReadLockGuard   -- acquire R-lock, then guarantee for its release
- *      CWriteLockGuard  -- acquire W-lock, then guarantee for its release
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/03/13 22:43:20  vakatov
+ * Full redesign.
+ * Implemented all core functionality.
+ * Thoroughly tested on different platforms.
+ *
  * Revision 1.3  2000/12/11 06:48:49  vakatov
  * Revamped Mutex and RW-lock APIs
  *
@@ -57,39 +58,485 @@
  */
 
 #include <corelib/ncbithr.hpp>
+#include <algorithm>
+#include <assert.h>
 
 
 BEGIN_NCBI_SCOPE
 
 
+
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//  Mutex
+//  Auxiliary
 //
+
+
+#if defined(_DEBUG)
+#  define verify(expr) assert(expr)
+#  define s_Verify(state, message)  assert(((void) message, (state)))
+#else  /* _DEBUG */
+#  define verify(expr) ((void)(expr))
+inline
+void s_Verify(bool state, const char* message)
+{
+    if ( !state ) {
+        throw runtime_error(message);
+    }
+}
+#endif  /* _DEBUG */
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CTlsBase::
+//
+
+
+// Set of all TLS objects -- to prevent memory leaks due to
+// undestroyed TLS objects, and to avoid premature TLS destruction.
+typedef set< CRef<CTlsBase> > TTls_TlsSet;
+static TTls_TlsSet s_Tls_TlsSet;
+
+// Protects "s_Tls_TlsSet"
+static CFastMutex  s_TlsMutex;
+
+
+CTlsBase::CTlsBase(void)
+{
+    DoDeleteThisObject();
+
+    // Create platform-dependent TLS key (index)
+#if defined(NCBI_WIN32_THREADS)
+    s_Verify((m_Key = TlsAlloc()) != DWORD(-1),
+             "CTlsBase::CTlsBase() -- error creating key");
+#elif defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_key_create(&m_Key, 0) == 0,
+             "CTlsBase::CTlsBase() -- error creating key");
+#else
+    m_Key = 0;
+#endif
+
+    {{
+        CFastMutexGuard guard(s_TlsMutex);
+        // Add to the cleanup set
+        s_Tls_TlsSet.insert( CRef<CTlsBase> (this) );
+    }}
+}
+
+
+CTlsBase::~CTlsBase(void)
+{
+    x_Reset();
+
+    // Destroy system TLS key
+#if defined(NCBI_WIN32_THREADS)
+    if ( TlsFree(m_Key) ) {
+        return;
+    }
+#elif defined(NCBI_POSIX_THREADS)
+    if (pthread_key_delete(m_Key) == 0) {
+        return;
+    }
+#else
+    return;
+#endif
+
+    assert(0);
+}
+
+
+void CTlsBase::x_Discard(void)
+{
+    CFastMutexGuard guard(s_TlsMutex);
+    non_const_iterate(TTls_TlsSet, it, s_Tls_TlsSet) {
+        if (it->GetPointer() == this) {
+            s_Tls_TlsSet.erase(it);
+            break;
+        }
+    }
+}
+
+
+// Platform-specific TLS data storing
+inline
+void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
+{
+#if defined(NCBI_WIN32_THREADS)
+    s_Verify(TlsSetValue(key, data) != 0, err_message);
+#elif defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_setspecific(key, data) == 0, err_message);
+#else
+    key = data;
+    assert(err_message);  // to get rid of the "unused variable" warning
+#endif
+}
+
+
+void CTlsBase::x_SetValue(void*        value,
+                          FCleanupBase cleanup,
+                          void*        cleanup_data)
+{
+    // Get previously stored data
+    STlsData* tls_data = static_cast<STlsData*> (x_GetTlsData());
+
+    // Create and initialize TLS structure, if it was not present
+    if ( !tls_data ) {
+        tls_data = new STlsData;
+        s_Verify(tls_data != 0,
+                 "CTlsBase::x_SetValue() -- cannot alloc memory for TLS data");
+        tls_data->m_Value       = 0;
+        tls_data->m_CleanupFunc = 0;
+        tls_data->m_CleanupData = 0;
+    }
+
+    // Cleanup
+    if (tls_data->m_CleanupFunc  &&  tls_data->m_Value != value) {
+        tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
+    }
+
+    // Store the values
+    tls_data->m_Value       = value;
+    tls_data->m_CleanupFunc = cleanup;
+    tls_data->m_CleanupData = cleanup_data;
+
+    // Store the structure in the TLS
+    s_TlsSetValue(m_Key, tls_data,
+                  "CTlsBase::x_SetValue() -- error setting value");
+
+    // Add to the used TLS list to cleanup data in the thread Exit()
+    CThread::AddUsedTls(this);
+}
+
+
+void CTlsBase::x_Reset(void)
+{
+    // Get previously stored data
+    STlsData* tls_data = static_cast<STlsData*> (x_GetTlsData());
+    if ( !tls_data ) {
+        return;
+    }
+
+    // Cleanup & destroy
+    if ( tls_data->m_CleanupFunc ) {
+        tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
+    }
+    delete tls_data;
+
+    // Store NULL in the TLS
+    s_TlsSetValue(m_Key, 0,
+                  "CTlsBase::x_Reset() -- error cleaning-up TLS");
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CThread::
+//
+
+// Mutex to protect CThread members and to make sure that Wrapper() function
+// will not proceed until after the appropriate Run() is finished.
+static CFastMutex s_ThreadMutex;
+static CFastMutex s_TlsCleanupMutex;
+
+
+// Internal storage for thread objects
+CRef< CTls<CThread> > CThread::sm_ThreadsTls(new CTls<CThread>);
+
+
+TWrapperRes CThread::Wrapper(TWrapperArg arg)
+{
+    // Get thread object and self ID
+    CThread* thread_obj = static_cast<CThread*>(arg);
+
+    // Set Toolkit thread ID. Otherwise no mutexes will work!
+    {{
+        CFastMutexGuard guard(s_ThreadMutex);
+
+        static int s_ThreadCount = 0;
+        s_ThreadCount++;
+
+        thread_obj->m_ID = s_ThreadCount;
+        s_Verify(thread_obj->m_ID != 0,
+                 "CThread::Wrapper() -- error assigning thread ID");
+        sm_ThreadsTls->SetValue(thread_obj);
+    }}
+
+    // Run user-provided thread main function here
+    void* exit_data = thread_obj->Main();
+
+    // Call Exit() here if it was not called inside Main()
+    thread_obj->Exit(exit_data);
+
+    // We should never go beyond Exit()
+    assert(0);
+    return 0;
+}
+
+
+CThread::CThread(void)
+    : m_IsRun(false),
+      m_IsDetached(false),
+      m_IsJoined(false),
+      m_IsTerminated(false),
+      m_ExitData(0)
+{
+    DoDeleteThisObject();
+    m_SelfRef.Reset(this);
+#if defined(HAVE_PTHREAD_SETCONCURRENCY)  &&  defined(NCBI_POSIX_THREADS)
+    // Adjust concurrency for Solaris etc.
+    if (pthread_getconcurrency() < 2) {
+        s_Verify(pthread_setconcurrency(2) == 0,
+                 "CThread::CThread() -- pthread_setconcurrency(2) failed");
+    }
+#endif
+}
+
+
+CThread::~CThread(void)
+{
+    return;
+}
+
+
+
+#if defined(NCBI_POSIX_THREADS)
+extern "C" {
+    typedef TWrapperRes (*FSystemWrapper)(TWrapperArg);
+}
+#endif
+
+
+bool CThread::Run(void)
+{
+    // Do not allow the new thread to run until m_Handle is set
+    CFastMutexGuard state_guard(s_ThreadMutex);
+
+    // Check
+    s_Verify(!m_IsRun,
+             "CThread::Run() -- called for already started thread");
+ 
+#if defined(NCBI_WIN32_THREADS)
+    // We need this parameter in WinNT - can not use NULL instead!
+    DWORD  thread_id;
+    HANDLE thread_handle;
+    typedef TWrapperRes (WINAPI *FSystemWrapper)(TWrapperArg);
+    thread_handle = CreateThread
+        (NULL, 0,
+         reinterpret_cast<FSystemWrapper>(Wrapper),
+         this, 0, &thread_id);
+    s_Verify(thread_handle != NULL,
+             "CThread::Run() -- error creating thread");
+    s_Verify(DuplicateHandle(GetCurrentProcess(), thread_handle,
+                             GetCurrentProcess(), &m_Handle,
+                             0, FALSE, DUPLICATE_SAME_ACCESS) != 0,
+             "CThread::Run() -- error getting thread handle");
+    s_Verify(CloseHandle(thread_handle) != 0,
+             "CThread::Run() -- error closing thread handle");
+#elif defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_create
+             (&m_Handle, 0,
+              reinterpret_cast<FSystemWrapper>(Wrapper), this) == 0,
+             "CThread::Run() -- error creating thread");
+#else
+    s_Verify(0,
+             "CThread::Run() -- system does not support threads");
+#endif
+
+    // Indicate that the thread is run
+    m_IsRun = true;
+    return true;
+}
+
+
+void CThread::Detach(void)
+{
+    CFastMutexGuard state_guard(s_ThreadMutex);
+
+    // Check the thread state: it must be run, but not detached yet
+    s_Verify(m_IsRun,
+             "CThread::Detach() -- called for not yet started thread");
+    s_Verify(!m_IsDetached,
+             "CThread::Detach() -- called for already detached thread");
+
+    // Detach the thread
+#if defined(NCBI_WIN32_THREADS)
+    s_Verify(CloseHandle(m_Handle) != 0,
+             "CThread::Detach() -- error closing thread handle");
+#elif defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_detach(m_Handle) == 0,
+             "CThread::Detach() -- error detaching thread");
+#endif
+
+    // Indicate the thread is detached
+    m_IsDetached = true;
+
+    // Schedule the thread object for destruction, if already terminated
+    if ( m_IsTerminated ) {
+        m_SelfRef.Reset();
+    }
+}
+
+
+void CThread::Join(void** exit_data)
+{
+    // Check the thread state: it must be run, but not detached yet
+    {{
+        CFastMutexGuard state_guard(s_ThreadMutex);
+        s_Verify(m_IsRun,
+                 "CThread::Join() -- called for not yet started thread");
+        s_Verify(!m_IsDetached,
+                 "CThread::Join() -- called for already detached thread");
+        s_Verify(!m_IsJoined,
+                 "CThread::Join() -- called for already joined thread");
+        m_IsJoined = true;
+    }}
+
+    // Join (wait for) and destroy
+#if defined(NCBI_WIN32_THREADS)
+    s_Verify(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0,
+             "CThread::Join() -- can not join thread");
+    DWORD status;
+    s_Verify(GetExitCodeThread(m_Handle, &status) &&
+             status != DWORD(STILL_ACTIVE),
+             "CThread::Join() -- thread is still running after join");
+    s_Verify(CloseHandle(m_Handle) != 0,
+             "CThread::Join() -- can not close thread handle");
+#elif defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_join(m_Handle, 0) == 0,
+             "CThread::Join() -- can not join thread");
+#endif
+
+    // Set exit_data value
+    if ( exit_data ) {
+        *exit_data = m_ExitData;
+    }
+
+    // Schedule the thread object for destruction
+    {{
+        CFastMutexGuard state_guard(s_ThreadMutex);
+        m_SelfRef.Reset();
+    }}
+}
+
+
+void CThread::Exit(void* exit_data)
+{
+    // Don't exit from the main thread
+    CThread* x_this = sm_ThreadsTls->GetValue();
+    s_Verify(x_this != 0,
+             "CThread::Exit() -- attempt to call it for the main thread");
+
+    // Call user-provided OnExit()
+    x_this->OnExit();
+
+    // Cleanup local storages used by this thread
+    {{
+        CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+        non_const_iterate(TTlsSet, it, x_this->m_UsedTls) {
+            (*it)->x_Reset();
+        }
+    }}
+
+    {{
+        CFastMutexGuard state_guard(s_ThreadMutex);
+
+        // Indicate the thread is terminated
+        x_this->m_IsTerminated = true;
+
+        x_this->m_ExitData = exit_data;
+
+        // Schedule the thread object for destruction, if detached
+        if ( x_this->m_IsDetached ) {
+            x_this->m_SelfRef.Reset();
+        }
+    }}
+
+    // Terminate the thread
+#if defined(NCBI_WIN32_THREADS)
+    ExitThread(0);
+#elif defined(NCBI_POSIX_THREADS)
+    pthread_exit(0);
+#endif
+
+    assert(0);
+}
+
+
+bool CThread::Discard(void)
+{
+    CFastMutexGuard state_guard(s_ThreadMutex);
+
+    // Do not discard after Run()
+    if ( m_IsRun ) {
+        return false;
+    }
+
+    // Schedule for destruction (or, destroy it right now if there is no
+    // other CRef<>-based references to this object left).
+    m_SelfRef.Reset();
+    return true;
+}
+
+
+void CThread::OnExit(void)
+{
+    return;
+}
+
+
+void CThread::AddUsedTls(CTlsBase* tls)
+{
+    // Can not use s_ThreadMutex in POSIX since it may be already locked
+    CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
+
+    // Get current thread object
+    CThread* x_this = sm_ThreadsTls->GetValue();
+    if ( x_this ) {
+        x_this->m_UsedTls.insert(tls);
+    }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  CInternalMutex::
-//    ***  NOT REALLY IMPLEMENTED YET!  ***
 //
 
-class CInternalMutex
+CInternalMutex::CInternalMutex(void)
 {
-public:
-    CInternalMutex(void) : m_Counter(0)  {}
-    int m_Counter;
-};
+    // Create platform-dependent mutex handle
+#if defined(NCBI_WIN32_THREADS)
+    s_Verify((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
+             "CInternalMutex::CInternalMutex() -- error creating mutex");
+#elif defined(NCBI_POSIX_THREADS)
+    s_Verify(pthread_mutex_init(&m_Handle, 0) == 0,
+             "CInternalMutex::CInternalMutex() -- error creating mutex");
+#endif
+    return;
+}
 
+
+CInternalMutex::~CInternalMutex(void)
+{
+    // Destroy system mutex handle
+#if defined(NCBI_WIN32_THREADS)
+    verify(CloseHandle(m_Handle) != 0);
+#elif defined(NCBI_POSIX_THREADS)
+    verify(pthread_mutex_destroy(&m_Handle) == 0);
+#endif
+    return;
+}
 
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  CMutex::
-//    ***  NOT REALLY IMPLEMENTED YET!  ***
 //
 
 CMutex::CMutex(void)
-    : m_Mutex(*new CInternalMutex)
+    : m_Owner(kThreadID_None),
+      m_Count(0)
 {
     return;
 }
@@ -97,64 +544,87 @@ CMutex::CMutex(void)
 
 CMutex::~CMutex(void)
 {
-    if ( m_Mutex.m_Counter ) {
-        throw runtime_error("~CMutex():  mutex is still locked");
-    }
-    delete &m_Mutex;
+    // check if the mutex is unlocked
+    assert(m_Owner == kThreadID_None);
+    assert(m_Count == 0);
+    return;
 }
 
-
-void CMutex::Lock(void)
-{
-    m_Mutex.m_Counter++;
-}
-
-
-bool CMutex::TryLock(void)
-{
-    Lock();
-    return true;
-}
-
-
-void CMutex::Unlock(void)
-{
-    if ( !m_Mutex.m_Counter ) {
-        throw runtime_error("CMutex::Unlock():  mutex is already unlocked");
-    }
-    m_Mutex.m_Counter++;
-}
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////
-//  RW-lock
-//
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  CInternalRWLock::
-//    ***  NOT REALLY IMPLEMENTED YET!  ***
 //
 
 class CInternalRWLock
 {
 public:
-    CInternalRWLock(void) : m_Counter(0)  {}
-    int m_Counter;
+    CInternalRWLock(void);
+    ~CInternalRWLock(void);
+
+    // Platform-dependent RW-lock data
+#if defined(NCBI_WIN32_THREADS)
+    HANDLE m_Rsema;
+    HANDLE m_Wsema;
+#elif defined(NCBI_POSIX_THREADS)
+    pthread_cond_t m_Rcond;
+    pthread_cond_t m_Wcond;
+#endif
 };
+
+
+
+inline
+CInternalRWLock::CInternalRWLock(void)
+{
+    // Create system handles
+#if defined(NCBI_WIN32_THREADS)
+    if ((m_Rsema = CreateSemaphore(NULL, 1, 1, NULL)) != NULL) {
+        if ((m_Wsema = CreateSemaphore(NULL, 1, 1, NULL)) != NULL) {
+            return;
+        }
+        CloseHandle(m_Rsema);
+    }
+#elif defined(NCBI_POSIX_THREADS)
+    if (pthread_cond_init(&m_Rcond, 0) == 0) {
+        if (pthread_cond_init(&m_Wcond, 0) == 0) {
+            return;
+        }
+        pthread_cond_destroy(&m_Rcond);
+    }
+#else
+    return;
+#endif
+
+    s_Verify(0,
+             "CInternalRMLock::InternalRWLock() -- initialization error");
+}
+
+
+inline
+CInternalRWLock::~CInternalRWLock(void)
+{
+#if defined(NCBI_WIN32_THREADS)
+    verify(CloseHandle(m_Rsema) != 0);
+    verify(CloseHandle(m_Wsema) != 0);
+#elif defined(NCBI_POSIX_THREADS)
+    verify(pthread_cond_destroy(&m_Rcond) == 0);
+    verify(pthread_cond_destroy(&m_Wcond) == 0);
+#endif
+}
+
 
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  CRWLock::
-//    ***  NOT REALLY IMPLEMENTED YET!  ***
 //
 
 CRWLock::CRWLock(void)
-    : m_RW(*new CInternalRWLock)
+    : m_RW(new CInternalRWLock),
+      m_Mutex(),
+      m_Owner(kThreadID_None),
+      m_Count(0)
 {
     return;
 }
@@ -162,56 +632,308 @@ CRWLock::CRWLock(void)
 
 CRWLock::~CRWLock(void)
 {
-    if ( m_RW.m_Counter ) {
-        throw runtime_error("~CRWLock():  RW-lock is still locked");
-    }
-    delete &m_RW;
+    assert(m_Count == 0);
+    return;
 }
 
 
 void CRWLock::ReadLock(void)
 {
-    if (m_RW.m_Counter >= 0)
-        m_RW.m_Counter++;
-    else
-        m_RW.m_Counter--;
+    // Lock mutex now, unlock before exit.
+    // (in fact, it will be unlocked by the waiting function for a while)
+    CMutexGuard guard(m_Mutex);
+    CThread::TID self_id = CThread::GetSelf();
+
+    if (m_Count < 0  &&  m_Owner == self_id) {
+        // if W-locked by the same thread -- update W-counter
+        m_Count--;
+    }
+    else if (m_Count < 0) {
+        // W-locked by another thread
+#if defined(NCBI_WIN32_THREADS)
+        HANDLE obj[2];
+        DWORD  wait_res;
+        obj[0] = m_Mutex.m_Mtx.m_Handle;
+        obj[1] = m_RW->m_Rsema;
+
+        m_Mutex.Unlock();
+        wait_res = WaitForMultipleObjects(2, obj, TRUE, INFINITE);
+        s_Verify(wait_res >= WAIT_OBJECT_0  &&  wait_res < WAIT_OBJECT_0 + 2,
+                 "CRWLock::ReadLock() -- R-lock waiting error");
+        // Success, check the semaphore
+        LONG prev_sema;
+        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema) != 0,
+                 "CRWLock::ReadLock() -- failed to release R-semaphore");
+        s_Verify(prev_sema == 0,
+                 "CRWLock::ReadLock() -- invalid R-semaphore state");
+        if (m_Count == 0) {
+            s_Verify(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
+                     "CRWLock::ReadLock() - failed to lock W-semaphore");
+        }
+#elif defined(NCBI_POSIX_THREADS)
+        while (m_Count < 0) {
+            s_Verify(pthread_cond_wait(&m_RW->m_Rcond,
+                                       &m_Mutex.m_Mtx.m_Handle) == 0,
+                     "CRWLock::ReadLock() -- R-lock waiting error");
+        }
+#else
+        // Can not be already W-locked by another thread without MT
+        s_Verify(0,
+                 "CRWLock::ReadLock() -- weird R-lock error in non-MT mode");
+#endif
+
+        // Update mutex owner -- now it belongs to this thread
+        m_Mutex.m_Owner = self_id;
+
+        s_Verify(m_Count >= 0,
+                 "CRWLock::ReadLock() -- invalid readers counter");
+        m_Count++;
+        m_Owner = self_id;
+    }
+    else if (m_Count == 0) {
+        // Unlocked
+#if defined(NCBI_WIN32_THREADS)
+        // Lock against writers
+        s_Verify(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
+                 "CRWLock::ReadLock() - failed to lock W-semaphore");
+#endif
+        m_Count = 1;
+        m_Owner = self_id;
+    }
+    else {
+        // R-locked by other threads
+        m_Count++;
+        if (m_Owner == kThreadID_None) {
+            m_Owner = self_id;
+        }
+    }
+
+#if defined(_DEBUG)
+    // Remember new reader
+    if (m_Count > 0) {
+        m_Readers.push_back(self_id);
+    }
+#endif
 }
 
 
 void CRWLock::WriteLock(void)
 {
-    if (m_RW.m_Counter >= 0) 
-        throw runtime_error("CRWLock::WriteLock():  W-lock after R-lock");
-    else
-        m_RW.m_Counter--;
+    CMutexGuard guard(m_Mutex);
+    CThread::TID self_id = CThread::GetSelf();
+
+    if (m_Count < 0  &&  m_Owner == self_id) {
+        // W-locked by the same thread
+        m_Count--;
+    }
+    else if (m_Count == 0 || m_Owner != self_id) {
+        // Unlocked or RW-locked by another thread
+
+        // Look in readers - must not be there
+        assert(find(m_Readers.begin(), m_Readers.end(), self_id)
+               == m_Readers.end());
+
+#if defined(NCBI_WIN32_THREADS)
+        HANDLE obj[3];
+        obj[0] = m_RW->m_Rsema;
+        obj[1] = m_RW->m_Wsema;
+        obj[2] = m_Mutex.m_Mtx.m_Handle;
+        DWORD wait_res;
+        if (m_Count == 0) {
+            // Unlocked - lock both semaphores
+            wait_res = WaitForMultipleObjects(2, obj, TRUE, 0);
+            s_Verify(wait_res >= WAIT_OBJECT_0 && wait_res < WAIT_OBJECT_0+2,
+                     "CRWLock::WriteLock() -- error locking R&W-semaphores");
+        }
+        else {
+            // Locked by another thread - wait for unlock
+            m_Mutex.Unlock();
+            wait_res = WaitForMultipleObjects(3, obj, TRUE, INFINITE);
+            s_Verify(wait_res >= WAIT_OBJECT_0 && wait_res < WAIT_OBJECT_0+3,
+                     "CRWLock::WriteLock() -- error locking R&W-semaphores");
+        }
+#elif defined(NCBI_POSIX_THREADS)
+        while (m_Count != 0) {
+            s_Verify(pthread_cond_wait(&m_RW->m_Wcond,
+                                       &m_Mutex.m_Mtx.m_Handle) == 0,
+                     "CRWLock::WriteLock() -- error locking R&W-conditionals");
+        }
+#endif
+
+        // Update mutex owner - now it's this thread
+        m_Mutex.m_Owner = self_id;
+
+        s_Verify(m_Count >= 0,
+                 "CRWLock::WriteLock() -- invalid readers counter");
+        m_Count = -1;
+        m_Owner = self_id;
+    }
+    else {
+        // R-locked by the same thread, not always detectable in POSIX
+        s_Verify(0,
+                 "CRWLock::WriteLock() -- attempt to set W-after-R lock");
+    }
+
+    // No readers allowed
+    assert(m_Readers.begin() == m_Readers.end());
 }
 
 
 bool CRWLock::TryReadLock(void)
 {
-    ReadLock();
+    CMutexGuard guard(m_Mutex);
+    CThread::TID self_id = CThread::GetSelf();
+
+    if (m_Count < 0 && m_Owner != self_id) {
+        // W-locked by another thread
+        return false;
+    }
+
+    if (m_Count >= 0) {
+        // Unlocked - do R-lock
+#if defined(NCBI_WIN32_THREADS)
+        if (m_Count == 0) {
+            // Lock W-semaphore in MSWIN
+            s_Verify(WaitForSingleObject(m_RW->m_Wsema, 0) == WAIT_OBJECT_0,
+                     "CRWLock::TryReadLock() -- can not lock W-semaphore");
+        }
+#endif
+        m_Count++;
+        m_Owner = self_id;
+#if defined(_DEBUG)
+        m_Readers.push_back(CThread::GetSelf());
+#endif
+    }
+    else {
+        // W-locked, try to set R after W if in the same thread
+        if (m_Owner != self_id) {
+            return false;
+        }
+        m_Count--;
+    }
+
     return true;
 }
 
 
 bool CRWLock::TryWriteLock(void)
 {
-    WriteLock();
+    CMutexGuard guard(m_Mutex);
+    CThread::TID self_id = CThread::GetSelf();
+
+    if (m_Count > 0  ||  (m_Count < 0  &&  m_Owner != self_id)) {
+        return false;
+    }
+
+    if (m_Count == 0) {
+        // Unlocked - do W-lock
+#if defined(NCBI_WIN32_THREADS)
+        // In MSWIN lock semaphores
+        HANDLE obj[2];
+        obj[0] = m_RW->m_Rsema;
+        obj[1] = m_RW->m_Wsema;
+        DWORD wait_res;
+        wait_res = WaitForMultipleObjects(2, obj, TRUE, 0);
+        s_Verify(wait_res >= WAIT_OBJECT_0  &&  wait_res < WAIT_OBJECT_0 + 2,
+                 "CRWLock::TryWriteLock() -- error locking R&W-semaphores");
+#endif
+        m_Count = -1;
+        m_Owner = self_id;
+    }
+    else if (m_Count > 0) {
+        // R-locked, can not set W-lock
+        return false;
+    }
+    else {
+        // W-locked, check for the same thread
+        if (m_Owner != self_id) {
+            return false;
+        }
+        m_Count--;
+    }
+
+    // No readers allowed
+    assert(m_Readers.begin() == m_Readers.end());
+
     return true;
 }
 
 
 void CRWLock::Unlock(void)
 {
-    if (m_RW.m_Counter == 0) {
-        throw runtime_error("CRWLock::Unlock():  RW-lock is already unlocked");
+    CMutexGuard guard(m_Mutex);
+    CThread::TID self_id = CThread::GetSelf();
+
+    // Check it is R-locked or W-locked by the same thread
+    s_Verify(m_Count != 0,
+             "CRWLock::Unlock() -- RWLock is not locked");
+    s_Verify(m_Count >= 0 || m_Owner == self_id,
+             "CRWLock::Unlock() -- RWLock is locked by another thread");
+
+    if (m_Count == -1) {
+        // unlock the last W-lock
+#if defined(NCBI_WIN32_THREADS)
+        LONG prev_sema;
+        s_Verify(ReleaseSemaphore(m_RW->m_Rsema, 1, &prev_sema) != 0,
+                 "CRWLock::Unlock() -- error releasing R-semaphore");
+        s_Verify(prev_sema == 0,
+                 "CRWLock::Unlock() -- invalid R-semaphore state");
+        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema) != 0,
+                 "CRWLock::Unlock() -- error releasing W-semaphore");
+        s_Verify(prev_sema == 0,
+                 "CRWLock::Unlock() -- invalid W-semaphore state");
+#elif defined(NCBI_POSIX_THREADS)
+        s_Verify(pthread_cond_broadcast(&m_RW->m_Rcond) == 0,
+                 "CRWLock::Unlock() -- error signalling unlock");
+        s_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0,
+                 "CRWLock::Unlock() -- error signalling unlock");
+#endif
+        // Update mutex owner - now it's this thread
+        m_Mutex.m_Owner = self_id;
+
+        m_Count = 0;
+        m_Owner = kThreadID_None;
     }
+    else if (m_Count < -1) {
+        // unlock W-lock (not the last one)
+        m_Count++;
+    }
+    else if (m_Count == 1) {
+        // unlock the last R-lock
+#if defined(NCBI_WIN32_THREADS)
+        LONG prev_sema;
+        s_Verify(ReleaseSemaphore(m_RW->m_Wsema, 1, &prev_sema) != 0,
+                 "CRWLock::Unlock() -- error releasing W-semaphore");
+        s_Verify(prev_sema == 0,
+                 "CRWLock::Unlock() -- invalid W-semaphore state");
+#elif defined(NCBI_POSIX_THREADS)
+        s_Verify(pthread_cond_signal(&m_RW->m_Wcond) == 0,
+                 "CRWLock::Unlock() -- error signalling unlock");
+#endif
 
-    if (m_RW.m_Counter > 0)
-        m_RW.m_Counter--;
-    else
-        m_RW.m_Counter++;
+        m_Count = 0;
+        m_Owner = kThreadID_None;
 
+#if defined(_DEBUG)
+        m_Readers.erase(m_Readers.begin(), m_Readers.end());
+#endif
+    }
+    else {
+        // unlock R-lock (not the last one)
+        m_Count--;
+        // reset the owner, it may become incorrect after unlock
+        if (m_Owner == self_id) {
+            m_Owner = kThreadID_None;
+        }
+
+#if defined(_DEBUG)
+        // Check if the unlocking thread is in the owners list
+        list<CThread::TID>::iterator found = 
+            find(m_Readers.begin(), m_Readers.end(), self_id);
+        assert(found != m_Readers.end());
+        m_Readers.erase(found);
+#endif
+    }
 }
 
 
