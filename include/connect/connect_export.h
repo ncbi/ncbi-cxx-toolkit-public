@@ -46,7 +46,7 @@
 #endif
 
 
-#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
+#if defined(WIN32)  &&  defined(NCBI_DLL_BUILD)
 
 #ifndef _MSC_VER
 #  error "This toolkit is not buildable with a compiler other than MSVC."
@@ -89,6 +89,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.3  2003/07/18 21:07:56  ivanov
+ * Using WIN32 definition instead NCBI_MS_WIN
+ *
  * Revision 6.2  2003/04/09 17:58:37  siyan
  * Added doxygen support
  *
