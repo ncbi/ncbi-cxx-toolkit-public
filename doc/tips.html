@@ -143,9 +143,10 @@
 <p>
 	 SunPro 4.2 doesn't understand <i>&quot;using namespace std;&quot;</i>, and it
 	 was decided to prohibite the explicit use <i>&quot;using namespace XXX;&quot;</i>
-	 in NCBI C++ code. Thus, if you need to use STL just use special
-	 preprocessor macro <i>"NCBI_USING_STL;"</i>(it is defined in
-	 <i>"&lt;ncbistd.hpp&gt;"</i>, see <a href="framewrk.cpp">example</a>).
+	 in NCBI C++ code.
+	 For the use of standard C++ template classes(including STL) and/or
+	 NCBI namespaces
+	 <a href="style.html#ref_Scope">click here</a>.
 	 <p>
 	 The <i>basic_string</i> class has a few
 	 <a href="http://www.loria.fr/serveurs/CCH/documentation/docSGI/STL_doc/string_discussion.html">pitfalls</a>.
