@@ -645,8 +645,11 @@ static char* s_Firewall_Write(size_t reserve, const USERV_Info* u_info)
 static SSERV_Info* s_Firewall_Read(const char** str)
 {
     ESERV_Type type;
-    if (!(*str = SERV_ReadType(*str, &type)))
-        return 0;
+    const char* s;
+    if (!(s = SERV_ReadType(*str, &type)))
+        type = fSERV_Any;
+    else
+        *str = s;
     return SERV_CreateFirewallInfo(0, 0, type);
 }
 
@@ -832,6 +835,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2003/03/13 19:08:26  lavr
+ * Allow missing type in Firewall server info specification
+ *
  * Revision 6.47  2003/03/07 22:21:31  lavr
  * Heed 'uninitted use' (false) warning by moving lines around
  *
