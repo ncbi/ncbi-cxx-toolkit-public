@@ -330,6 +330,113 @@ string ConfigName(const string& config)
     return config +'|'+ MSVC_PROJECT_PLATFORM;
 }
 
+//-----------------------------------------------------------------------------
+CSourceFileToProjectInserter::CSourceFileToProjectInserter
+                                        (const string&            project_id,
+                                         const list<SConfigInfo>& configs,
+                                         const string&            project_dir)
+    :m_ProjectId  (project_id),
+     m_Configs    (configs),
+     m_ProjectDir (project_dir)
+{
+}
+
+
+CSourceFileToProjectInserter::~CSourceFileToProjectInserter(void)
+{
+}
+
+void 
+CSourceFileToProjectInserter::operator()(CRef<CFilter>&  filter, 
+                                         const string&   rel_source_file)
+{
+#if 0
+    CRef< CFFile > file(new CFFile());
+    file->SetAttlist().SetRelativePath(rel_source_file);
+
+    CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+    ce->SetFile(*file);
+    filter->SetFF().SetFF().push_back(ce);
+#endif
+
+#if 1
+    CRef< CFFile > file(new CFFile());
+    file->SetAttlist().SetRelativePath(rel_source_file);
+    //
+    TPch pch_usage = DefinePchUsage(m_ProjectDir, rel_source_file);
+    //
+    ITERATE(list<SConfigInfo>, n , m_Configs) {
+        // Iterate all configurations
+        const string& config = (*n).m_Name;
+
+        CRef<CFileConfiguration> file_config(new CFileConfiguration());
+        file_config->SetAttlist().SetName(ConfigName(config));
+
+        CRef<CTool> compilerl_tool(new CTool(""));
+        compilerl_tool->SetAttlist().SetName("VCCLCompilerTool");
+
+        if (pch_usage.first == eCreate) {
+            compilerl_tool->SetAttlist().SetUsePrecompiledHeader("1");
+            compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
+                                                            (pch_usage.second);
+        } else if (pch_usage.first == eUse) {
+            compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");
+            compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
+                                                            (pch_usage.second);
+        }
+        else {
+            compilerl_tool->SetAttlist().SetUsePrecompiledHeader("0");
+            compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough("");
+        }
+        file_config->SetTool(*compilerl_tool);
+
+        file->SetFileConfiguration().push_back(file_config);
+    }
+    //
+    CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
+    ce->SetFile(*file);
+    filter->SetFF().SetFF().push_back(ce);
+
+#endif
+}
+
+CSourceFileToProjectInserter::TPch 
+CSourceFileToProjectInserter::DefinePchUsage(const string& project_dir,
+                                             const string& rel_source_file)
+{
+    // Check global permission
+    if ( !GetApp().GetMetaMakefile().IsPchEnabled() )
+        return TPch(eNotUse, "");
+
+    string abs_source_file = 
+        CDirEntry::ConcatPath(project_dir, rel_source_file);
+    abs_source_file = CDirEntry::NormalizePath(abs_source_file);
+
+    // .c files - not use PCH
+    string ext;
+    CDirEntry::SplitPath(abs_source_file, NULL, NULL, &ext);
+    if ( NStr::CompareNocase(ext, ".c") == 0)
+        return TPch(eNotUse, "");
+
+    // PCH usage is defined in msvc master makefile
+    string pch_file = 
+        GetApp().GetMetaMakefile().GetUsePchThroughHeader
+                                       (m_ProjectId,
+                                        abs_source_file, 
+                                        GetApp().GetProjectTreeInfo().m_Src);
+    // No PCH - not use
+    if ( pch_file.empty() )
+        return TPch(eNotUse, "");
+
+    if (m_PchHeaders.find(pch_file) == m_PchHeaders.end()) {
+        // New PCH - this source file will create it
+        m_PchHeaders.insert(pch_file);
+        return TPch(eCreate, pch_file);
+    } else {
+        // Use PCH (previously created)
+        return TPch(eUse, pch_file);
+    }
+}
 
 void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
                                 const list<SConfigInfo> configs,
@@ -519,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/05/10 14:29:03  gorelenk
+ * Implemented CSourceFileToProjectInserter .
+ *
  * Revision 1.18  2004/04/22 18:15:38  gorelenk
  * Changed implementation of SourceFileExt .
  *
