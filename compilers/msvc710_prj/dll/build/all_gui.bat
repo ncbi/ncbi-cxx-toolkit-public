@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.1 2004/04/06 12:22:19 ivanov Exp $
+REM $Id: all_gui.bat,v 1.2 2004/04/27 15:27:23 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -55,6 +55,9 @@ GOTO EXIT
 :CONTINUE
 ECHO INFO: Building "all - %CFG%"
 devenv gui\ncbi_gui_dll.sln /build %CFG% /project "-BUILD-ALL-"
+IF ERRORLEVEL 1 GOTO ABORT
+ECHO INFO: Installing GBENCH %CFG%
+devenv gui\ncbi_gui_dll_gbench_install.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 
 SHIFT
