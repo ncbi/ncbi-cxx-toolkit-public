@@ -1,0 +1,12 @@
+*.def0
+*.dtd
+*.files
+*.mod
+[A-Z]*.cpp
+mla__.cpp
+mla___.cpp
+.cvsignore
+Makefile.*.lib
+Makefile.in
+gmon.out
+gprof.out
