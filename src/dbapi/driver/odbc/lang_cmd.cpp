@@ -29,6 +29,7 @@
  *
  */
 
+#include <stdio.h>
 #include <dbapi/driver/odbc/interfaces.hpp>
 
 
@@ -481,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/08 20:40:08  soussov
+ * adds stdio.h for sprintf
+ *
  * Revision 1.2  2003/05/08 20:30:24  soussov
  * CDB_LongChar CDB_LongBinary added
  *
