@@ -43,9 +43,6 @@ extern "C" {
 
 #include <algo/blast/core/blast_hits.h>
 
-#define BLAST_SMALL_GAPS 0
-#define BLAST_LARGE_GAPS 1
-
 /** Link HSPs using sum statistics.
  * @param program_number BLAST program [in]
  * @param hsp_list List of HSPs [in]
