@@ -75,9 +75,9 @@ public:
      **                fasta file itself
      **
      **/
-    CWinMaskCountsGenerator( const std::string & input,
-                             const std::string & output,
-                             const std::string & th,
+    CWinMaskCountsGenerator( const string & input,
+                             const string & output,
+                             const string & th,
                              Uint4 mem_avail,
                              Uint1 unit_size,
                              Uint4 min_count,
@@ -111,9 +111,9 @@ private:
      **
      **/
     void process( Uint4 prefix, Uint1 prefix_size, 
-                  const std::vector< std::string > & input );
+                  const vector< string > & input );
 
-    std::string input;      /**<\internal input file (or list of input files) */
+    string input;      /**<\internal input file (or list of input files) */
     CNcbiOstream * out_stream;  /**<\internal output stream (standard C++ ostream) */
     Uint4 max_mem;      /**<\internal available memory in bytes */
     Uint4 unit_size;        /**<\internal n-mer length in base pairs */
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

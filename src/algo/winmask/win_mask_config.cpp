@@ -46,39 +46,39 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
           ( !args["input"].AsString().empty() 
             ? new CNcbiIfstream( args["input"].AsString().c_str() ) 
             : &NcbiCin ) : NULL ), reader( NULL ), 
-            os( !args["mk_counts"].AsBoolean() ?
-                ( !args["output"].AsString().empty() 
-                  ? new CNcbiOfstream( args["output"].AsString().c_str() )
-                  : &NcbiCout ) : NULL ), writer( NULL ),
-                  lstat_name( args["lstat"].AsString() ),
-                  xdrop( args["xdrop"].AsInteger() ), 
-                  cutoff_score( args["score"].AsInteger() ),
-                  max_score( args["highscore"].AsInteger() ),
-                  min_score( args["lowscore"].AsInteger() ),
-                  window_size( args["window"].AsInteger() ),
-                  merge_pass( args["mpass"].AsBoolean() ),
-                  merge_cutoff_score( args["mscore"].AsInteger() ),
-                  abs_merge_cutoff_dist( args["mabs"].AsInteger() ),
-                  mean_merge_cutoff_dist( args["mmean"].AsInteger() ),
-                  trigger( args["trigger"].AsString() ),
-                  tmin_count( args["tmin_count"].AsInteger() ),
-                  discontig( args["discontig"].AsBoolean() ),
-                  pattern( args["pattern"].AsInteger() ),
-                  window_step( args["wstep"].AsInteger() ),
-                  unit_step( args["ustep"].AsInteger() ),
-                  merge_unit_step( args["mustep"].AsInteger() ),
-                  mk_counts( args["mk_counts"].AsBoolean() ),
-                  fa_list( args["fa_list"].AsBoolean() ),
-                  mem( args["mem"].AsInteger() ),
-                  unit_size( args["unit"].AsInteger() ),
-                  input( args["input"].AsString() ),
-                  output( args["output"].AsString() ),
-                  th( args["th"].AsString() ),
-                  use_dust( args["dust"].AsBoolean() ),
-                  dust_window( args["dust_window"].AsInteger() ),
-                  dust_level( args["dust_level"].AsInteger() ),
-                  dust_linker( args["dust_linker"].AsInteger() ),
-                  checkdup( args["checkdup"].AsBoolean() )
+      os( !args["mk_counts"].AsBoolean() ?
+          ( !args["output"].AsString().empty() 
+            ? new CNcbiOfstream( args["output"].AsString().c_str() )
+            : &NcbiCout ) : NULL ), writer( NULL ),
+      lstat_name( args["lstat"].AsString() ),
+      xdrop( args["xdrop"].AsInteger() ), 
+      cutoff_score( args["score"].AsInteger() ),
+      max_score( args["highscore"].AsInteger() ),
+      min_score( args["lowscore"].AsInteger() ),
+      window_size( args["window"].AsInteger() ),
+      merge_pass( args["mpass"].AsBoolean() ),
+      merge_cutoff_score( args["mscore"].AsInteger() ),
+      abs_merge_cutoff_dist( args["mabs"].AsInteger() ),
+      mean_merge_cutoff_dist( args["mmean"].AsInteger() ),
+      trigger( args["trigger"].AsString() ),
+      tmin_count( args["tmin_count"].AsInteger() ),
+      discontig( args["discontig"].AsBoolean() ),
+      pattern( args["pattern"].AsInteger() ),
+      window_step( args["wstep"].AsInteger() ),
+      unit_step( args["ustep"].AsInteger() ),
+      merge_unit_step( args["mustep"].AsInteger() ),
+      mk_counts( args["mk_counts"].AsBoolean() ),
+      fa_list( args["fa_list"].AsBoolean() ),
+      mem( args["mem"].AsInteger() ),
+      unit_size( args["unit"].AsInteger() ),
+      input( args["input"].AsString() ),
+      output( args["output"].AsString() ),
+      th( args["th"].AsString() ),
+      use_dust( args["dust"].AsBoolean() ),
+      dust_window( args["dust_window"].AsInteger() ),
+      dust_level( args["dust_level"].AsInteger() ),
+      dust_linker( args["dust_linker"].AsInteger() ),
+      checkdup( args["checkdup"].AsBoolean() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
@@ -177,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

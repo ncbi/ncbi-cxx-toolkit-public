@@ -70,7 +70,7 @@ static inline bool ambig( char c )
 }
 
 //------------------------------------------------------------------------------
-std::string mkdata( const CSeq_entry & entry )
+string mkdata( const CSeq_entry & entry )
 {
     const CBioseq & bioseq( entry.GetSeq() );
 
@@ -80,13 +80,13 @@ std::string mkdata( const CSeq_entry & entry )
     {
         TSeqPos len( bioseq.GetInst().GetLength() );
         const CSeq_data & seqdata( bioseq.GetInst().GetSeq_data() );
-        std::auto_ptr< CSeq_data > dest( new CSeq_data );
+        auto_ptr< CSeq_data > dest( new CSeq_data );
         CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
                                0, len );
         return dest->GetIupacna().Get();
     }
 
-    return std::string( "" );
+    return string( "" );
 }
 
 //------------------------------------------------------------------------------
@@ -104,9 +104,9 @@ static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 }
 
 //------------------------------------------------------------------------------
-CWinMaskCountsGenerator::CWinMaskCountsGenerator( const std::string & arg_input,
-                                                  const std::string & output,
-                                                  const std::string & arg_th,
+CWinMaskCountsGenerator::CWinMaskCountsGenerator( const string & arg_input,
+                                                  const string & output,
+                                                  const string & arg_th,
                                                   Uint4 mem_avail,
                                                   Uint1 arg_unit_size,
                                                   Uint4 arg_min_count,
@@ -145,16 +145,16 @@ CWinMaskCountsGenerator::~CWinMaskCountsGenerator()
 void CWinMaskCountsGenerator::operator()()
 {
     // Generate a list of files to process.
-    std::vector< std::string > file_list;
+    vector< string > file_list;
 
     if( !use_list )
         file_list.push_back( input );
     else
     {
-        std::string line;
+        string line;
         CNcbiIfstream fl_stream( input.c_str() );
 
-        while( std::getline( fl_stream, line ) )
+        while( getline( fl_stream, line ) )
             if( !line.empty() )
                 file_list.push_back( line );
     }
@@ -163,7 +163,7 @@ void CWinMaskCountsGenerator::operator()()
     if( check_duplicates )
     {
         CheckDuplicates( file_list );
-        std::cerr << "." << std::flush;
+        cerr << "." << flush;
     }
 
     // Estimate the length of the prefix. 
@@ -179,7 +179,7 @@ void CWinMaskCountsGenerator::operator()()
     if( prefix_size == 0 )
         suffix_size = unit_size;
 
-    *out_stream << unit_size << std::endl;
+    *out_stream << unit_size << endl;
 
     // Now process for each prefix.
     Uint4 prefix_exp( 1<<(2*prefix_size) );
@@ -188,7 +188,7 @@ void CWinMaskCountsGenerator::operator()()
         process( prefix, prefix_size, file_list );
 
     // Now put the final statistics as comments at the end of the output.
-    *out_stream << "\n# " << total_ecodes << " ecodes" << std::endl;
+    *out_stream << "\n# " << total_ecodes << " ecodes" << endl;
 
     for( Uint4 i( 1 ); i < max_count; ++i )
         score_counts[i] += score_counts[i-1];
@@ -202,9 +202,9 @@ void CWinMaskCountsGenerator::operator()()
     {
         current 
             = 100.0*(((double)(score_counts[i - 1] + offset))/((double)total_ecodes));
-        *out_stream << "# " << std::dec << i << "\t" 
+        *out_stream << "# " << dec << i << "\t" 
             << score_counts[i - 1] + offset << "\t"
-            << current << std::endl;
+            << current << endl;
 
         for( Uint1 j( 0 ); j < 4; ++j )
             if( previous < th[j] && current >= th[j] )
@@ -213,18 +213,18 @@ void CWinMaskCountsGenerator::operator()()
         previous = current;
     }
 
-    *out_stream << "#" << std::endl;
+    *out_stream << "#" << endl;
 
     for( Uint1 i( 0 ); i < 4; ++i )
         *out_stream << "# " << th[i]
-            << "%% threshold at " << index[i] << std::endl;
+            << "%% threshold at " << index[i] << endl;
 
-    std::cerr << std::endl;
+    cerr << endl;
 }
 
 //------------------------------------------------------------------------------
 void CWinMaskCountsGenerator::process( 
-                                      Uint4 prefix, Uint1 prefix_size, const std::vector< std::string > & input )
+                                      Uint4 prefix, Uint1 prefix_size, const vector< string > & input )
 {
     Uint1 suffix_size( unit_size - prefix_size );
     Uint4 vector_size( 1<<(2*suffix_size) );
@@ -235,7 +235,7 @@ void CWinMaskCountsGenerator::process(
 
     prefix <<= (2*suffix_size);
 
-    for( std::vector< std::string >::const_iterator it( input.begin() );
+    for( vector< string >::const_iterator it( input.begin() );
          it != input.end(); ++it )
     {
         CNcbiIfstream input_stream( it->c_str() );
@@ -244,12 +244,12 @@ void CWinMaskCountsGenerator::process(
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            std::string data( mkdata( *entry ) );
+            string data( mkdata( *entry ) );
 
             if( data.empty() )
                 continue;
 
-            std::string::size_type length( data.length() );
+            string::size_type length( data.length() );
             Uint4 count( 0 );
             Uint4 unit( 0 );
 
@@ -279,7 +279,7 @@ void CWinMaskCountsGenerator::process(
                 }
         }
 
-        std::cerr << "." << std::flush;
+        cerr << "." << flush;
     }
 
     for( Uint4 i( 0 ); i < vector_size; ++i )
@@ -293,8 +293,8 @@ void CWinMaskCountsGenerator::process(
                 ++score_counts[max_count - 1];
             else ++score_counts[counts[i] - 1];
 
-            *out_stream << std::hex << prefix + i << " " 
-                << std::dec << counts[i] << "\n";
+            *out_stream << hex << prefix + i << " " 
+                << dec << counts[i] << "\n";
         }
     }
 }
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

@@ -31,7 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <sstream>
 #include <algorithm>
 
 #include <algo/winmask/seq_masker_window.hpp>
@@ -396,11 +395,11 @@ ambig_unit( 0 )
 
         if( unit_start == NPOS || unit_end == NPOS || len_start == NPOS )
         {
-            ostringstream str;
+            CNcbiOstrstream str;
             str << "at line " << linenum;
+            string msg = CNcbiOstrstreamToString(str);
             NCBI_THROW( CSeqMaskerException,
-                        eLstatSyntax,
-                        str.str().c_str() );
+                        eLstatSyntax, msg);
         }
 
         Uint4 unit = NStr::StringToUInt( line.substr( unit_start, 
@@ -508,7 +507,7 @@ void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
     TMaskList::const_iterator send( src->end() );
     TMaskList::iterator di( dest->begin() );
     TMaskList::iterator dend( dest->end() );
-    std::auto_ptr< TMaskList > res( new TMaskList );
+    auto_ptr< TMaskList > res( new TMaskList );
     TMaskedInterval seg;
     TMaskedInterval next_seg;
 
@@ -548,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

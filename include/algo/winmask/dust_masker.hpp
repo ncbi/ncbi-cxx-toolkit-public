@@ -78,7 +78,7 @@ public:
      **\return pointer to a list of dusted sequences
      **
      **/
-    TMaskList * operator()( const std::string & data );
+    TMaskList * operator()( const string & data );
 
 private:
 
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

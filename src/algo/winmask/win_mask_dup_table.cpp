@@ -31,7 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <sstream>
 #include <vector>
 #include <string>
 #include <map>
@@ -48,7 +47,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-extern std::string mkdata( const CSeq_entry & entry );
+extern string mkdata( const CSeq_entry & entry );
 
 const Uint4 SAMPLE_LENGTH    = 100; /**<\internal length of a sample segment */
 const Uint4 SAMPLE_SKIP      = 10000;   /**<\internal distance between subsequent samples */
@@ -72,7 +71,7 @@ public:
      **/
     struct sample_loc
     {
-        std::size_t seqnum; /**<\internal sequence number (in the order the sequences appear in the input) */
+        size_t seqnum; /**<\internal sequence number (in the order the sequences appear in the input) */
         Uint4 offset;       /**<\internal offset of the sample in the sequence defined by seqnum */
 
         /**\internal
@@ -81,7 +80,7 @@ public:
          **\param new_seqnum the sequence number
          **\param new_offset the sample offset
          **/
-        sample_loc( std::size_t new_seqnum, Uint4 new_offset )
+        sample_loc( size_t new_seqnum, Uint4 new_offset )
             : seqnum( new_seqnum ), offset( new_offset ) {}
     };
 
@@ -97,7 +96,7 @@ public:
     private:
 
         /**\internal \brief Type for lists of sample locations. */
-        typedef std::vector< sample_loc > loc_list_type;
+        typedef vector< sample_loc > loc_list_type;
 
     public:
 
@@ -131,13 +130,13 @@ private:
      **\brief Type representing a list of sequence id strings for all 
      **       sequences that have been read so far.
      **/
-    typedef std::vector< std::string > seq_id_list_type;
+    typedef vector< string > seq_id_list_type;
 
     /**\internal
      **\brief A type mapping sample strings to the information about their
      **       occurances in the input.
      **/
-    typedef std::map< std::string, sample > sample_set_type;
+    typedef map< string, sample > sample_set_type;
 
 public:
 
@@ -151,8 +150,8 @@ public:
      **\param seq_id id string for the new sequence
      **\param seq_data new sequence data in IUPACNA format
      **/
-    void add_seq_info( const std::string & seq_id,
-                       const std::string & seq_data );
+    void add_seq_info( const string & seq_id,
+                       const string & seq_data );
 
     /**\internal
      **\brief Get the sequence id string from the sequence number.
@@ -160,7 +159,7 @@ public:
      **\param seqnum the sequence number
      **\return the sequence id string in FASTA format
      **/
-    const std::string seqid( Uint4 seqnum ) const
+    const string seqid( Uint4 seqnum ) const
     { return seq_id_list[seqnum]; }
 
     /**\internal
@@ -170,7 +169,7 @@ public:
      **\param index the sample value
      **\return pointer to the corresponding instance of the sample class
      **/
-    const sample * operator[]( const std::string & index ) const
+    const sample * operator[]( const string & index ) const
     {
         sample_set_type::const_iterator i( sample_set.find( index ) );
         return i == sample_set.end() ? 0 : &(i->second);
@@ -184,7 +183,7 @@ private:
      **\param sample the sample value
      **\param loc the sample location description
      **/
-    void add_loc( const std::string & sample, const sample_loc & loc )
+    void add_loc( const string & sample, const sample_loc & loc )
     { sample_set[sample].add_loc( loc ); }
 
     seq_id_list_type seq_id_list;   /**<\internal the list of sequence id strings */
@@ -239,17 +238,17 @@ inline bool operator==( const dup_lookup_table::sample_loc & lhs,
 { return !(lhs < rhs) && !(rhs < lhs); }
 
 //------------------------------------------------------------------------------
-void dup_lookup_table::add_seq_info( const std::string & seq_id, 
-                                     const std::string & seq_data )
+void dup_lookup_table::add_seq_info( const string & seq_id, 
+                                     const string & seq_data )
 {
-    static std::string::size_type next_offset( 0 );
+    static string::size_type next_offset( 0 );
 
     seq_id_list.push_back( seq_id );
-    std::string::size_type data_len( seq_data.length() );
+    string::size_type data_len( seq_data.length() );
 
     while( next_offset < data_len - SAMPLE_LENGTH )
     {
-        std::string sample( seq_data.substr( next_offset, SAMPLE_LENGTH ) );
+        string sample( seq_data.substr( next_offset, SAMPLE_LENGTH ) );
         sample_loc loc( seq_id_list.size() - 1, next_offset );
         add_loc( sample, loc );
         next_offset += SAMPLE_SKIP;
@@ -287,7 +286,7 @@ private:
     {
         Uint4 count;            /**<\internal current number of consequtive sample matches */
         sample_loc loc;         /**<\internal information about query location of the last sample match */
-        std::string::size_type s_offset;    /**<\internal location in the subject of the last sample match */
+        string::size_type s_offset;    /**<\internal location in the subject of the last sample match */
 
         /**\internal
          **\brief Object constructor.
@@ -297,7 +296,7 @@ private:
          **\param new_count initial value of match count
          **/
         result( const sample_loc & newloc,
-                std::string::size_type new_offset, 
+                string::size_type new_offset, 
                 Uint4 new_count = 1 )
             : count( new_count ), loc( newloc ), s_offset( new_offset ) {}
     };
@@ -305,7 +304,7 @@ private:
     /**\internal
      **\brief type used to store the set of currently tracked matches. 
      **/
-    typedef std::vector< result > result_list_type;
+    typedef vector< result > result_list_type;
 
 public:
 
@@ -336,8 +335,8 @@ public:
      **\param start start of the list of matches to the lookup table
      **\param end end of the list of matches to the lookup table
      **/
-    void operator()( const std::string & index, Uint4 seqnum,
-                     std::string::size_type subject_offset,
+    void operator()( const string & index, Uint4 seqnum,
+                     string::size_type subject_offset,
                      iterator start, iterator end );
 
 private:
@@ -356,8 +355,8 @@ private:
      **/
     void tracker::report_match( Uint4 queryseq, 
                                 Uint4 match_count,
-                                std::string::size_type s_off,
-                                std::string::size_type q_off );
+                                string::size_type s_off,
+                                string::size_type q_off );
 
     result_list_type main_list;     /**<\internal current result list */
     result_list_type aux_list;      /**<\internal additional (helper) result list */
@@ -365,17 +364,17 @@ private:
 
 //------------------------------------------------------------------------------
 void tracker::report_match( Uint4 queryseq, Uint4 match_count,
-                            std::string::size_type s_off,
-                            std::string::size_type q_off )
+                            string::size_type s_off,
+                            string::size_type q_off )
 {
-    std::string query_id( table.seqid( queryseq ) );
+    string query_id( table.seqid( queryseq ) );
     NcbiCerr << "Possible duplication of sequences:\n"
         << "subject: " << subject_id << " and query: " << query_id << "\n"
         << "at intervals\n"
         << "subject: " << s_off - match_count*SAMPLE_SKIP
         << " --- " << s_off - SAMPLE_SKIP << "\n"
         << "query  : " << q_off - match_count*SAMPLE_SKIP
-        << " --- " << q_off - SAMPLE_SKIP << "\n" << std::endl;
+        << " --- " << q_off - SAMPLE_SKIP << "\n" << endl;
 }
 
 //------------------------------------------------------------------------------
@@ -397,9 +396,9 @@ tracker::~tracker()
 }
 
 //------------------------------------------------------------------------------
-void tracker::operator()( const std::string & index, 
+void tracker::operator()( const string & index, 
                           Uint4 seqnum,
-                          std::string::size_type subject_offset,
+                          string::size_type subject_offset,
                           dup_lookup_table::iterator iter,
                           dup_lookup_table::iterator end )
 {
@@ -499,25 +498,25 @@ void tracker::operator()( const std::string & index,
  **\param entry sequence description structure
  **\return the first id string corresponding to entry
  **/
-static const std::string GetIdString( const CSeq_entry & entry )
+static const string GetIdString( const CSeq_entry & entry )
 {
     const CBioseq & seq = entry.GetSeq();
-    std::list< CRef< CSeq_id > > idlist = seq.GetId();
+    list< CRef< CSeq_id > > idlist = seq.GetId();
 
     if( idlist.empty() ) 
         return "???";
     else
     {
-        ostringstream os;
+        CNcbiOstrstream os;
         (*idlist.begin())->WriteAsFasta( os );
-        return os.str();
+        return CNcbiOstrstreamToString(os);
     }
 }
 
 //------------------------------------------------------------------------------
-void CheckDuplicates( const std::vector< std::string > & input )
+void CheckDuplicates( const vector< string > & input )
 {
-    typedef std::vector< std::string >::const_iterator input_iterator;
+    typedef vector< string >::const_iterator input_iterator;
 
     dup_lookup_table table;
 
@@ -530,19 +529,19 @@ void CheckDuplicates( const std::vector< std::string > & input )
 
         while( (entry = reader.GetNextSequence()).NotEmpty() )
         {
-            std::string data( mkdata( *entry ) );
-            std::string::size_type data_len( data.length() );
+            string data( mkdata( *entry ) );
+            string::size_type data_len( data.length() );
 
             if( data_len < MIN_SEQ_LENGTH )
                 continue;
 
-            std::string id( GetIdString( *entry ) );
+            string id( GetIdString( *entry ) );
             data_len -= SAMPLE_SKIP;
             tracker track( table, id );
 
-            for( std::string::size_type i( 0 ); i < data_len; ++i )
+            for( string::size_type i( 0 ); i < data_len; ++i )
             {
-                std::string index( data.substr( i, SAMPLE_LENGTH ) );
+                string index( data.substr( i, SAMPLE_LENGTH ) );
                 const dup_lookup_table::sample * sample( table[index] );
 
                 if( sample != 0 )
@@ -561,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

@@ -49,13 +49,16 @@ BEGIN_NCBI_SCOPE
  **
  **/
 NCBI_XALGOWINMASK_EXPORT
-void CheckDuplicates( const std::vector< std::string > & input );
+void CheckDuplicates( const vector< string > & input );
 
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

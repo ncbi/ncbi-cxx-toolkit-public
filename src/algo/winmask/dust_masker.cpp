@@ -73,13 +73,13 @@ CDustMasker::CDustMasker( Uint4 arg_window, Uint4 arg_level, Uint4 arg_linker )
 CDustMasker::~CDustMasker(){}
 
 //------------------------------------------------------------------------------
-CDustMasker::TMaskList * CDustMasker::operator()( const std::string & data )
+CDustMasker::TMaskList * CDustMasker::operator()( const string & data )
 {
     // Transform to BLASTNA.
-    std::string data_blastna;
+    string data_blastna;
     data_blastna.reserve( data.size() );
-    std::transform( data.begin(), data.end(), 
-                    std::back_inserter< std::string >( data_blastna ), 
+    transform( data.begin(), data.end(), 
+                    back_inserter< string >( data_blastna ), 
                     iupacna_to_blastna );
 
     // Now dust.
@@ -95,14 +95,14 @@ CDustMasker::TMaskList * CDustMasker::operator()( const std::string & data )
     while( blast_loc )
     {
         result->push_back( 
-                          std::make_pair< unsigned, unsigned >( blast_loc->ssr->left, 
+                          make_pair< unsigned, unsigned >( blast_loc->ssr->left, 
                                                                 blast_loc->ssr->right ) );
         blast_loc = blast_loc->next;
     }
 
     // Results are not necessarily sorted, so sort and remove duplicates.
-    std::sort( result->begin(), result->end() );
-    result->erase( std::unique( result->begin(), result->end() ), 
+    sort( result->begin(), result->end() );
+    result->erase( unique( result->begin(), result->end() ), 
                    result->end() );
 
     return result;
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/12 20:24:39  dicuccio
+ * Dropped use of std:: (not needed)
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.
