@@ -76,9 +76,9 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     //
 
-    // Rebuild command for project_tree_builder.sln
+    // Build command for project_tree_builder.sln
     m_CustomBuildCommand += 
-        "devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ";
+        "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
 
     string project_tree_builder_sln_dir = 
         GetApp().GetProjectTreeInfo().m_Compilers;
@@ -203,6 +203,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/04/01 17:31:06  gorelenk
+ * Changed "rebuild" to "build"
+ * in class CMsvcConfigureProjectGenerator constructor .
+ *
  * Revision 1.9  2004/03/16 16:37:33  gorelenk
  * Changed msvc7_prj subdirs structure: Separated "static" and "dll" branches.
  *
