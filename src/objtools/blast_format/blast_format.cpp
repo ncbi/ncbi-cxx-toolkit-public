@@ -44,7 +44,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/alnmgr/util/blast_format.hpp>
+#include <objtools/blast_format/blast_format.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
