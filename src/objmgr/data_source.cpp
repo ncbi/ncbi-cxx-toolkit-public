@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/04/22 20:05:08  grichenk
+* Fixed minor bug in GetSequence()
+*
 * Revision 1.36  2002/04/19 18:02:47  kimelman
 * add verify to catch coredump
 *
@@ -557,7 +560,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                 seq_piece->src_start = 0;
                 seq_piece->length = seg.m_Length;
                 seq_piece->src_data = 0;
-                break;
+                return true;
             }
         case CSeqMap::eSeqEnd:
             {
