@@ -87,13 +87,13 @@ const CSeqVector& CSequenceItem::GetSequence(void) const
 inline
 TSeqPos CSequenceItem::GetFrom(void) const
 {
-    return m_From + 1;
+    return m_From;
 }
 
 inline
 TSeqPos CSequenceItem::GetTo(void) const
 {
-    return m_To + 1;
+    return m_To;
 }
 
 inline
@@ -111,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/28 17:16:04  shomrat
+* Modifying internal representation
+*
 * Revision 1.4  2004/11/24 16:47:33  shomrat
 * Inlined methods
 *
