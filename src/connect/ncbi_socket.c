@@ -94,10 +94,11 @@
 #  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
-#  if ! defined(NCBI_OS_BEOS) &&  ! defined(NCBI_COMPILER_MW_MSL)
+#  if !defined(NCBI_OS_BEOS) && !defined(NCBI_COMPILER_MW_MSL)
 #    include <arpa/inet.h>
 #  endif /*NCBI_OS_BEOS*/
 #  include <signal.h>
+#  include <sys/un.h>
 
 #elif defined(NCBI_OS_MSWIN)
 #  ifndef COMP_METRO
@@ -124,8 +125,10 @@
 
 /* NCBI core headers
  */
+#include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_buffer.h>
+#include <connect/ncbi_connutil.h>
 #include <connect/ncbi_socket.h>
 
 
@@ -329,6 +332,11 @@ typedef struct SOCK_tag {
     size_t          n_written;  /* DSOCK: total #; SOCK: last /session only  */
     size_t          n_in;       /* DSOCK: msg #; SOCK: total # of bytes read */
     size_t          n_out;      /* DSOCK: msg #; SOCK: total # of bytes sent */
+
+#ifdef NCBI_OS_UNIX
+    /* filename for UNIX socket */
+    char            file[1];
+#endif
 } SOCK_struct;
 
 
@@ -580,7 +588,7 @@ static const char* s_ID(const SOCK sock, char* buf)
  */
 static void s_DoLog
 (const SOCK  sock, EIO_Event event,
- const void* data, size_t    size,  const struct sockaddr_in* sin)
+ const void* data, size_t    size,  const struct sockaddr* sa)
 {
     char head[128];
     char tail[128];
@@ -593,39 +601,53 @@ static void s_DoLog
     switch (event) {
     case eIO_Open:
         if (sock->type == eSOCK_Datagram) {
-            if ( !sin ) {
-                sprintf(head, "Datagram socket created");
-            } else if ( !data ) {
-                sprintf(head, "Datagram socket bound to port :%hu",
-                        ntohs(sin->sin_port));
+            if ( !sa ) {
+                strcpy(head, "Datagram socket created");
             } else {
-                if (SOCK_ntoa(sin->sin_addr.s_addr, tail, sizeof(tail)) != 0)
-                    strcpy(tail, "???");
-                sprintf(head, "Datagram socket connected to %s:%hu",
-                        tail, ntohs(sin->sin_port));
+                const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
+                if ( !data ) {
+                    strcpy(head, "Datagram socket bound to port :");
+                    sprintf(tail, "%hu", ntohs(sin->sin_port));
+                } else {
+                    strcpy(head, "Datagram socket connected to ");
+                    HostPortToString(sin->sin_addr.s_addr,ntohs(sin->sin_port),
+                                     tail, sizeof(tail));
+                }
             }
-            CORE_LOGF(eLOG_Trace, ("%s%s", s_ID(sock, _id), head));
-            break;
         } else {
-            if (SOCK_ntoa(sin->sin_addr.s_addr, head, sizeof(head)) != 0)
-                strcpy(head, "???");
-            CORE_LOGF(eLOG_Trace, ("%s%s %s:%hu", s_ID(sock, _id),
-                                   sock->type == eSOCK_ClientSide
-                                   ? "Connecting to" : data
-                                   ? "Connected to" : "Accepted from",
-                                   head, ntohs(sin->sin_port)));
+            if (sock->type == eSOCK_ClientSide)
+                strcpy(head, "Connecting to ");
+            else if ( data )
+                strcpy(head, "Connected to ");
+            else
+                strcpy(head, "Accepted from ");
+            if (sa->sa_family == AF_INET) {
+                const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
+                HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
+                                 tail, sizeof(tail));
+            }
+#ifdef NCBI_OS_UNIX
+            else if (sa->sa_family == AF_UNIX) {
+                const struct sockaddr_un* un = (const struct sockaddr_un*) sa;
+                strncpy0(tail, un->sun_path, sizeof(tail) - 1);
+            }
+#endif
+            else
+                strcpy(tail, "???");
         }
+        CORE_LOGF(eLOG_Trace, ("%s%s%s", s_ID(sock, _id), head, tail));
         break;
     case eIO_Read:
     case eIO_Write:
         if (sock->type == eSOCK_Datagram) {
-            assert(sin != 0);
-            if (SOCK_ntoa(sin->sin_addr.s_addr, tail, sizeof(tail)) != 0)
-                strcpy(tail, "???");
-            sprintf(tail + strlen(tail), ":%hu, msg# %u", ntohs(sin->sin_port),
+            const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
+            assert(sa && sa->sa_family == AF_INET);
+            HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
+                             tail, sizeof(tail));
+            sprintf(tail + strlen(tail), ", msg# %u",
                     (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
         } else {
-            assert(sin == 0);
+            assert(sa == 0);
             *tail = 0;
         }
         sprintf(head, "%s%s at offset %lu%s%s", s_ID(sock, _id),
@@ -637,7 +659,7 @@ static void s_DoLog
                    ? SOCK_STRERROR(SOCK_ERRNO) : "Written"),
                 (unsigned long) (event == eIO_Read
                                  ? sock->n_read : sock->n_written),
-                sin ? (event == eIO_Read ? " from " : " to ") : "", tail);
+                sa ? (event == eIO_Read ? " from " : " to ") : "", tail);
         CORE_DATA(data, size, head);
         break;
     case eIO_Close:
@@ -737,8 +759,11 @@ static void s_ShowDataLayout(void)
                           "\tn_read:    %u\n"
                           "\tn_written: %u\n"
                           "\tn_in:      %u\n"
-                          "\tn_out:     %u",
-                          (unsigned int) sizeof(SOCK_struct),
+                          "\tn_out:     %u"
+#ifdef NCBI_OS_UNIX
+                          "\n\tfile:      %u"
+#endif
+                          , (unsigned int) sizeof(SOCK_struct),
                           offsetof(SOCK_struct, sock),
                           offsetof(SOCK_struct, id),
                           offsetof(SOCK_struct, host),
@@ -758,7 +783,11 @@ static void s_ShowDataLayout(void)
                           offsetof(SOCK_struct, n_read),
                           offsetof(SOCK_struct, n_written),
                           offsetof(SOCK_struct, n_in),
-                          offsetof(SOCK_struct, n_out)));
+                          offsetof(SOCK_struct, n_out)
+#ifdef NCBI_OS_UNIX
+                          , offsetoff(SOCK_struct, file)
+#endif
+                          ));
 }
 
 #endif
@@ -1249,6 +1278,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
             return eIO_Unknown;
         }
         lsock->n_accept++;
+        assert(addr.sin_family == AF_INET);
         /* man accept(2) notes that non-blocking state is not inherited */
         if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
             CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [LSOCK::Accept]  Cannot"
@@ -1292,7 +1322,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(*sock, eIO_Open, 0, 0, &addr);
+        s_DoLog(*sock, eIO_Open, 0, 0, (struct sockaddr*) &addr);
 
     return eIO_Success;
 }
@@ -1442,6 +1472,9 @@ static EIO_Status s_Connect(SOCK            sock,
     struct sockaddr_in peer;
 
     assert(sock->type == eSOCK_ClientSide);
+#ifdef NCBI_OS_UNIX
+    assert(!sock->file[0]);
+#endif
 
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
@@ -1489,7 +1522,7 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(sock, eIO_Open, 0, 0, &peer);
+        s_DoLog(sock, eIO_Open, 0, 0, (struct sockaddr*) &peer);
 
     /* establish connection to the peer */
     sock->r_status  = eIO_Success;
@@ -1501,12 +1534,10 @@ static EIO_Status s_Connect(SOCK            sock,
             SOCK_ERRNO != SOCK_EWOULDBLOCK) {
             int x_errno = SOCK_ERRNO;
             char addr[80];
-            if (SOCK_ntoa(x_host, addr, sizeof(addr)) != 0)
-                strcpy(addr, "???");
+            HostPortToString(x_host, ntohs(x_port), addr, sizeof(addr));
             CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                               ("%s[SOCK::s_Connect]  Failed connect() to "
-                                "%.64s:%hu", s_ID(sock, _id),
-                                addr, ntohs(x_port)));
+                               ("%s[SOCK::s_Connect]  Failed connect() to %s",
+                                s_ID(sock, _id), addr));
             sock->sock = SOCK_INVALID;
             SOCK_CLOSE(x_sock);
             return eIO_Unknown; /* unrecoverable error */
@@ -1520,13 +1551,11 @@ static EIO_Status s_Connect(SOCK            sock,
             status = s_IsConnected(sock, s_to2tv(timeout, &tv), &x_errno, 0);
             if (status != eIO_Success) {
                 char addr[80];
-                if (SOCK_ntoa(x_host, addr, sizeof(addr)) != 0)
-                    strcpy(addr, "???");
+                HostPortToString(x_host, ntohs(x_port), addr, sizeof(addr));
                 CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_Connect]  Failed pending "
-                                    "connect() to %s:%hu (%s)",
-                                    s_ID(sock, _id), addr, ntohs(x_port),
-                                    IO_StatusStr(status)));
+                                    "connect() to %s (%s)", s_ID(sock, _id),
+                                    addr, IO_StatusStr(status)));
                 sock->sock = SOCK_INVALID;
                 SOCK_CLOSE(x_sock);
                 return status;
@@ -1924,13 +1953,17 @@ static EIO_Status s_WritePending(SOCK                  sock,
             if (status != eIO_Timeout) {
                 char addr[80];
                 char  _id[32];
-                if (SOCK_ntoa(sock->host, addr, sizeof(addr)) != 0)
-                    strcpy(addr, "???");
+#ifdef NCBI_OS_UNIX
+                if (!sock->file[0])
+                    sprintf(addr, "\"%.*s\"", (int) sizeof(addr)-3,sock->file);
+                else
+#endif
+                    HostPortToString(sock->host, ntohs(sock->port),
+                                     addr, sizeof(addr));
                 CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_WritePending]  Failed pending "
-                                    "connect() to %s:%hu (%s)",s_ID(sock, _id),
-                                    addr, ntohs(sock->port),
-                                    IO_StatusStr(status)));
+                                    "connect() to %s (%s)", s_ID(sock, _id),
+                                    addr, IO_StatusStr(status)));
             }
             return status;
         }
@@ -2351,16 +2384,23 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
                                      ESwitch       log,
                                      ESCOT_OnClose on_close)
 {
-    struct sockaddr_in peer;
+    union {
+        struct sockaddr    sa;
+        struct sockaddr_in in;
+#ifdef NCBI_OS_UNIX
+        struct sockaddr_un un;
+#endif
+    } peer;
     SOCK               x_sock;
     TSOCK_Handle       xx_sock;
     BUF                w_buf = 0;
     unsigned int       x_id = ++s_ID_Counter * 1000;
     SOCK_socklen_t     peerlen = (SOCK_socklen_t) sizeof(peer);
+    size_t             socklen;
 
     *sock = 0;
     assert(!datalen  ||  data);
-    
+
     if (!handle  ||  handle_size != sizeof(xx_sock)) {
         CORE_LOGF(eLOG_Error, ("SOCK#%u[?]: [SOCK::CreateOnTopEx] "
                                " Invalid handle %s%lu", x_id,
@@ -2376,8 +2416,15 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
 
     /* get peer's address */
     if (getpeername(xx_sock, (struct sockaddr*) &peer, &peerlen) != 0 ||
-        peerlen != sizeof(peer) || peer.sin_family != AF_INET)
+        peerlen != sizeof(peer))
         return eIO_Closed;
+#ifdef NCBI_OS_UNIX
+    if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
+        return eIO_InvalidArg;
+#else
+    if (peer.sa.sa_family != AF_INET)
+        return eIO_InvalidArg;
+#endif
 
     /* store initial data */
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
@@ -2391,12 +2438,36 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     }
 
     /* create and fill socket handle */
-    if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock))))
+#ifdef NCBI_OS_UNIX
+    if (peer.sa.sa_family == AF_UNIX) {
+        if (!peer.un.sun_path[0]) {
+            CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [SOCK::CreateOnTopEx] "
+                                   " Cannot deal with anonymous UNIX sockets",
+                                   x_id, (unsigned int) xx_sock));
+            assert(0);
+            BUF_Destroy(w_buf);
+            return eIO_InvalidArg;
+        }
+        socklen = strlen(peer.un.sun_path);
+    } else
+#endif
+        socklen = 0;
+    if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
+        BUF_Destroy(w_buf);
         return eIO_Unknown;
+    }
     x_sock->sock     = xx_sock;
     x_sock->id       = x_id;
-    x_sock->host     = peer.sin_addr.s_addr;
-    x_sock->port     = peer.sin_port;
+#ifdef NCBI_OS_UNIX
+    if (peer.sa.sa_family != AF_UNIX) {
+        x_sock->host = peer.in.sin_addr.s_addr;
+        x_sock->port = peer.in.sin_port;
+    } else
+        strcpy(x_sock->file, peer.un.sun_path);
+#else
+    x_sock->host     = peer.in.sin_addr.s_addr;
+    x_sock->port     = peer.in.sin_port;
+#endif
     x_sock->log      = log;
     x_sock->type     = (on_close != eSCOT_KeepOnClose
                         ? eSOCK_ServerSide
@@ -2425,7 +2496,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
 
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn))
-        s_DoLog(x_sock, eIO_Open, &peer, 0, &peer);
+        s_DoLog(x_sock, eIO_Open, &peer, 0, &peer.sa);
 
     /* success */
     *sock = x_sock;
@@ -2446,6 +2517,15 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
         assert(0);
         return eIO_InvalidArg;
     }
+
+#ifdef NCBI_OS_UNIX
+    if (sock->file[0]) {
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect]  Called for "
+                               "UNIX socket", s_ID(sock, _id)));
+        assert(0);
+        return eIO_InvalidArg;
+    }
+#endif
 
     /* close the socket if necessary */
     if (sock->sock != SOCK_INVALID)
@@ -2870,6 +2950,20 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
 }
 
 
+extern char* SOCK_GetPeerAddressString(SOCK   sock,
+                                       char*  buf,
+                                       size_t buflen)
+{
+    if (!buf  ||  !buflen)
+        return 0;
+    if (sock->file[0])
+        strncpy0(buf, sock->file, buflen - 1);
+    else
+        HostPortToString(sock->host, ntohs(sock->port), buf, buflen);
+    return buf;
+}
+
+
 extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
                                    void*  handle,
                                    size_t handle_size)
@@ -3027,7 +3121,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(sock, eIO_Open, 0, 0, &addr);
+        s_DoLog(sock, eIO_Open, 0, 0, (struct sockaddr*) &addr);
     return eIO_Success;
 }
 
@@ -3090,7 +3184,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(sock, eIO_Open, &peer, 0, &peer);
+        s_DoLog(sock, eIO_Open, &peer, 0, (struct sockaddr*) &peer);
     return eIO_Success;
 }
 
@@ -3163,8 +3257,10 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
         if ((x_written = sendto(sock->sock, x_msg, x_msgsize, 0/*flags*/,
                                 (struct sockaddr*) &addr, sizeof(addr))) >= 0){
             /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
-                s_DoLog(sock, eIO_Write, x_msg, (size_t) x_written, &addr);
+            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
+                s_DoLog(sock, eIO_Write, x_msg, (size_t) x_written,
+                        (struct sockaddr*) &addr);
+            }
             sock->n_written += x_written;
             sock->n_out++;
             if ((size_t) x_written != x_msgsize) {
@@ -3292,8 +3388,10 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                     memcpy(buf, x_msg, buflen);
             }
             /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
-                s_DoLog(sock, eIO_Read, x_msg, (size_t) x_read, &addr);
+            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
+                s_DoLog(sock, eIO_Read, x_msg, (size_t) x_read,
+                        (struct sockaddr*) &addr);
+            }
             sock->n_read += x_read;
             sock->n_in++;
             break;
@@ -3587,10 +3685,12 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 #    endif /*NCBI_OS_MAC*/
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
-        if ( he ) {
+        if (he  &&  he->addrtype == AF_INET  &&  he->length == sizeof(host)) {
             memcpy(&host, he->h_addr, sizeof(host));
         } else {
             host = 0;
+            if ( he )
+                x_errno = EINVAL;
         }
 
 #  if !defined(HAVE_GETHOSTBYNAME_R)
@@ -3719,6 +3819,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.116  2003/07/15 16:50:20  lavr
+ * Allow to build on-top SOCKs from UNIX socket fds (on UNIX only)
+ * +SOCK_GetPeerAddressString()
+ *
  * Revision 6.115  2003/06/09 19:47:52  lavr
  * Few changes to relocate some arg checks and asserts
  *
