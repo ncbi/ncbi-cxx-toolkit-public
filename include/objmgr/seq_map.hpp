@@ -323,7 +323,9 @@ protected:
     CDataSource*     m_Source;
 
     // Molecule type from seq-inst
-    TMol m_Mol;
+    TMol    m_Mol;
+    // Sequence length
+    mutable TSeqPos m_SeqLength;
 
     //mutable CAtomicCounter m_LockCounter; // usage lock counter
 
@@ -347,6 +349,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/06/26 19:47:25  grichenk
+* Added sequence length cache
+*
 * Revision 1.38  2003/06/24 14:22:46  vasilche
 * Fixed CSeqMap constructor from CSeq_loc.
 *

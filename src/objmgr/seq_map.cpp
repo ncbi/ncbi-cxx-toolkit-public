@@ -83,7 +83,8 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
 CSeqMap::CSeqMap(CDataSource* source)
     : m_Resolved(0),
       m_Source(source),
-      m_Mol(CSeq_inst::eMol_not_set)
+      m_Mol(CSeq_inst::eMol_not_set),
+      m_SeqLength(kInvalidSeqPos)
 {
 }
 
@@ -91,7 +92,8 @@ CSeqMap::CSeqMap(CDataSource* source)
 CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
     : m_Resolved(0),
       m_Source(parent->m_Source),
-      m_Mol(CSeq_inst::eMol_not_set)
+      m_Mol(CSeq_inst::eMol_not_set),
+      m_SeqLength(kInvalidSeqPos)
 {
 }
 
@@ -99,7 +101,8 @@ CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
 CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
     : m_Resolved(0),
       m_Source(source),
-      m_Mol(CSeq_inst::eMol_not_set)
+      m_Mol(CSeq_inst::eMol_not_set),
+      m_SeqLength(kInvalidSeqPos)
 {
     x_AddEnd();
     x_Add(ref);
@@ -110,7 +113,8 @@ CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
 CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
     : m_Resolved(0),
       m_Source(source),
-      m_Mol(CSeq_inst::eMol_not_set)
+      m_Mol(CSeq_inst::eMol_not_set),
+      m_SeqLength(kInvalidSeqPos)
 {
     x_AddEnd();
     x_Add(data, length);
@@ -121,7 +125,8 @@ CSeqMap::CSeqMap(CSeq_data& data, TSeqPos length, CDataSource* source)
 CSeqMap::CSeqMap(TSeqPos length, CDataSource* source)
     : m_Resolved(0),
       m_Source(source),
-      m_Mol(CSeq_inst::eMol_not_set)
+      m_Mol(CSeq_inst::eMol_not_set),
+      m_SeqLength(length)
 {
     x_AddEnd();
     x_AddGap(length);
@@ -594,6 +599,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
         ret.Reset(new CSeqMap(TSeqPos(0)));
     }
     const_cast<CSeqMap&>(*ret).m_Mol = inst.GetMol();
+    const_cast<CSeqMap&>(*ret).m_SeqLength = inst.GetLength();
     return ret;
 }
 
@@ -642,6 +648,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                           0, kInvalidSeqPos, strand);
         ret->x_AddEnd();
         ret->m_Mol = seqMap->m_Mol;
+        ret->m_SeqLength = seqMap->m_SeqLength;
         seqMap = ret;
     }
     return seqMap;
@@ -828,6 +835,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/06/26 19:47:27  grichenk
+* Added sequence length cache
+*
 * Revision 1.40  2003/06/24 14:22:46  vasilche
 * Fixed CSeqMap constructor from CSeq_loc.
 *

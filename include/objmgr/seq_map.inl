@@ -77,7 +77,10 @@ TSeqPos CSeqMap::x_GetSegmentLength(size_t index, CScope* scope) const
 inline
 TSeqPos CSeqMap::GetLength(CScope* scope) const
 {
-    return x_GetSegmentPosition(x_GetSegmentsCount(), scope);
+    if (m_SeqLength == kInvalidSeqPos) {
+        m_SeqLength = x_GetSegmentPosition(x_GetSegmentsCount(), scope);
+    }
+    return m_SeqLength;
 }
 
 
@@ -91,6 +94,9 @@ CSeqMap::TMol CSeqMap::GetMol(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/26 19:47:26  grichenk
+ * Added sequence length cache
+ *
  * Revision 1.3  2003/06/11 19:32:53  grichenk
  * Added molecule type caching to CSeqMap, simplified
  * coding and sequence type calculations in CSeqVector.
