@@ -34,6 +34,15 @@
 #include <string.h>
 
 
+#if defined(NCBI_OS_MSWIN)
+#include <io.h>
+inline int close(int fd)
+{
+    return _close(fd);
+}
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -551,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/02/25 16:09:26  soussov
+ * adds wrapper for close to make windows happy
+ *
  * Revision 1.8  2005/02/23 21:39:08  soussov
  * Adds Abort() method to connection
  *
