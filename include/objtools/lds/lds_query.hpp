@@ -70,6 +70,7 @@ public:
         CFormatGuess::EFormat   format;
         string                  file_name;
         size_t                  offset;
+        string                  title;
     };
 
     // Return object's description.
@@ -88,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/06 20:47:58  kuznets
+ * SObjectDescr receives title field to facilitate structure reuse in gbench UI component)
+ *
  * Revision 1.4  2003/07/10 20:09:26  kuznets
  * Implemented GetObjectDescr query. Searches both objects and annotations.
  *
