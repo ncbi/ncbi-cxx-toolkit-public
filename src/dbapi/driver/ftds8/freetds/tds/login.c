@@ -577,7 +577,8 @@ int tds_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
     rc=tds_put_string(tds,config->host_name,TDS_MAX_LOGIN_STR_SZ);   /* client host name */
     rc|=tds_put_string(tds,config->user_name,TDS_MAX_LOGIN_STR_SZ);  /* account name */
     rc|=tds_put_string(tds,config->password,TDS_MAX_LOGIN_STR_SZ);  /* account password */
-    rc|=tds_put_string(tds,"37876",TDS_MAX_LOGIN_STR_SZ);        /* host process */
+    //rc|=tds_put_string(tds,"37876",TDS_MAX_LOGIN_STR_SZ);        /* host process */
+    rc|=tds_put_string(tds,"11111",TDS_MAX_LOGIN_STR_SZ);        /* host process */
 #ifdef WORDS_BIGENDIAN
     if (tds->emul_little_endian) {
         rc|=tds_put_n(tds,le1,6);
@@ -861,6 +862,16 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
 #endif
         packet_size += (user_name_len + password_len)*2;
 
+#ifdef NCBI_FTDS
+	tds_put_int(tds, packet_size);
+	if (IS_TDS80(tds)) {
+	  static const unsigned char tds8Version[] = { 0x01, 0x00, 0x00, 0x71 };
+		tds_put_n(tds, tds8Version, 4);
+	} else {
+	  static const unsigned char tds7Version[] = { 0x00, 0x00, 0x00, 0x70 };
+		tds_put_n(tds, tds7Version, 4);
+	}
+#else
     tds_put_smallint(tds,packet_size);
     tds_put_n(tds,NULL,5);
     if (IS_TDS80(tds)) {
@@ -869,8 +880,53 @@ int tds7_send_login(TDSSOCKET *tds, TDSCONFIGINFO *config)
         tds_put_byte(tds,0x70);
     }
     tds_put_n(tds,NULL,3);       /* rest of TDSVersion which is a 4 byte field    */
+#endif
+#ifdef NCBI_FTDS
+	if(config->block_size < 512 || config->block_size > 1000000) 
+	  config->block_size= 4096;
+	tds_put_int(tds, config->block_size);
+
+	tds_put_n(tds, magic1, 4);	/* client program version ? */
+
+	packet_size= getpid();
+	tds_put_int(tds, packet_size);	/* process id of this process */
+
+	/*tds_put_n(tds, magic1+8, 13);*/
+#if 1
+	{
+	static const unsigned char connection_id[] = { 0x00, 0x00, 0x00, 0x00 };
+	unsigned char option_flag1 = 0x00;
+	unsigned char option_flag2 = 0x00;
+	static const unsigned char sql_type_flag = 0x00;
+	static const unsigned char reserved_flag = 0x00;
+	static const unsigned char time_zone[] = { 0x88, 0xff, 0xff, 0xff };
+	static const unsigned char collation[] = { 0x36, 0x04, 0x00, 0x00 };
+
+	tds_put_n(tds, connection_id, 4);
+	option_flag1 |= 0x80;	/* enable warning messages if SET LANGUAGE issued   */
+	option_flag1 |= 0x40;	/* change to initial database must succeed          */
+	option_flag1 |= 0x20;	/* enable warning messages if USE <database> issued */
+
+	tds_put_byte(tds, option_flag1);
+
+	option_flag2 |= 0x02;	/* client is an ODBC driver                         */
+	option_flag2 |= 0x01;	/* change to initial language must succeed          */
+
+	tds_put_byte(tds, option_flag2);
+
+	tds_put_byte(tds, sql_type_flag);
+	tds_put_byte(tds, reserved_flag);
+
+	tds_put_n(tds, time_zone, 4);
+	tds_put_n(tds, collation, 4);
+	}
+#endif
+
+	
+#else
     tds_put_n(tds,NULL,4);       /* desired packet size being requested by client */
     tds_put_n(tds,magic1,21);
+#endif
 
     current_pos = 86; /* ? */
     /* host name */
