@@ -20,6 +20,8 @@ at the following locations:
 
 <h1>NCBI C++ Library Dependency Graph</h1>
 
+<img src="depgraph.gif">
+
 This graph was obtained by building the full toolkit and then
 running the following commands:
 <pre class="ncbi_cmd">
@@ -35,8 +37,17 @@ package.  If you are at NCBI, you can find the source to
 <a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/source/src/internal/util/depgraph/">here.</a>
 Dashed lines represent containment.
 <p>
+Alternatively, you may wish to consult the <a href="libdeps.txt">list</a>
+of each library's dependencies.  The format of each line is
+<span class="ncbi_var">libname: LIB / LIBS</span>, where everything in
+<span class="ncbi_var">LIB</span> must follow
+<span class="ncbi_var">libname</span> in your makefile's LIB setting and
+everything in <span>LIBS</span> must appear in your makefile's LIBS
+setting.
+<p>
 You can find a version of the graph which includes internal projects
-<a href="depgraph-full.pdf">here</a>.
+<a href="depgraph-full.pdf">here</a>, and a corresponding list
+<a href="internal/full-libdeps.txt">here</a>.
 <!-- produced as follows:
 * \ls $NCBI/c++/Release/lib > all-libs
 * pick a single member of each static/dynamic triplet
@@ -49,7 +60,6 @@ You can find a version of the graph which includes internal projects
 * distall -pagesize 11 8.5 in depgraph-full.ps
 -->
 <br><br>
-<img src="depgraph.gif">
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 <!--#include virtual="./ssi/footer.shtml" -->
