@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/26 00:15:52  vakatov
+* minor beautification
+*
 * Revision 1.6  2002/03/25 15:44:47  kimelman
 * proper logging and exception handling
 *
@@ -49,7 +52,6 @@
 * Revision 1.1  2002/03/20 21:25:00  gouriano
 * *** empty log message ***
 *
-*
 * ===========================================================================
 */
 
@@ -65,12 +67,16 @@
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
 
+
 BEGIN_NCBI_SCOPE
 using namespace objects;
 
 
-//===========================================================================
-// CTestApplication
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTestApplication::
+//
+
 
 class CTestApplication : public CNcbiApplication
 {
@@ -78,67 +84,74 @@ public:
     virtual int Run( void);
 };
 
+
+
 int CTestApplication::Run()
-//---------------------------------------------------------------------------
 {
-NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
-{
-    {
-        CRef< CObjectManager> pOm = new CObjectManager;
-        {
-//            CRef< CGBDataLoader> pLoader = new CGBDataLoader;
-//            pOm->RegisterDataLoader( *pLoader, CObjectManager::eDefault);
-            pOm->RegisterDataLoader( *(new CGBDataLoader("ID",new CId1Reader,2)), CObjectManager::eDefault);
-            
-            int i=1;
-	    int ecount=0;
-            while(i<1800)
-              {
-                CScope scope(*pOm);
-                scope.AddDefaults();
-                NcbiCout << "gi " << i << NcbiEndl;
-                CSeq_id x;
-                x.SetGi(i);
-                CObjectOStreamAsn oos(NcbiCout);
-                try
-                  {
-                    CBioseq_Handle h = scope.GetBioseqHandle(x);
-                    if(!h)
-                      LOG_POST( "Gi (" << i << "):: not found in ID");
-                    else 
-                      iterate(list< CRef< CSeq_id > >, it, h.GetBioseq().GetId())
-                      {
-                        //oos << **it;
-                        ;//NcbiCout << NcbiEndl;
-                      }
-                  }
-                catch (exception e)
-                  {
-                    LOG_POST( "TROUBLE(" << i << "):: " << e.what());
-		    ecount++;
-		    if(ecount > 20) 
-                       break;
-                  }
-                NcbiCout << NcbiEndl;
-                i++;
-              }
+    NcbiCout << "      Reading Data    =============================="
+             << NcbiEndl;
+
+    CRef< CObjectManager> pOm = new CObjectManager;
+
+    // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
+    // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
+    pOm->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader, 2),
+                            CObjectManager::eDefault);
+
+    int ecount = 0;
+    for (int i = 1;  i < 1800;  i++) {
+        CScope scope(*pOm);
+        scope.AddDefaults();
+
+        NcbiCout << "gi " << i << NcbiEndl;
+
+        CSeq_id x;
+        x.SetGi(i);
+        CObjectOStreamAsn oos(NcbiCout);
+        try {
+            CBioseq_Handle h = scope.GetBioseqHandle(x);
+            if ( !h ) {
+                LOG_POST("Gi (" << i << "):: not found in ID");
+            } else {
+                iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
+                    //oos << **it;
+                    //NcbiCout << NcbiEndl;
+                    ;
+                }
+            }
         }
+        catch (exception& e) {
+            LOG_POST("TROUBLE(" << i << "):: " << e.what());
+            ecount++;
+            if (ecount > 20)
+                break;
+        }
+        NcbiCout << NcbiEndl;
+        i++;
     }
-}
-NcbiCout << "==================================================" << NcbiEndl;
-NcbiCout << "Test completed" << NcbiEndl;
+
+
+    NcbiCout << "=================================================="
+             << NcbiEndl;
+    NcbiCout << "Test completed" << NcbiEndl;
     return 0;
 }
 
+
 END_NCBI_SCOPE
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  MAIN
+//
+
 
 USING_NCBI_SCOPE;
 
-//===========================================================================
-// entry point
-
-int main( int argc, const char* argv[])
+int main(int argc, const char* argv[])
 {
-    return CTestApplication().AppMain( argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
