@@ -211,9 +211,7 @@ void CCachedId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
             CWriterCopyByteSourceReader proxy(&reader, writer.get());
 
             auto_ptr<CObjectIStream> in(CObjectIStream::Create(eSerial_AsnBinary,proxy));
-            
-            CReader::SetSeqEntryReadHooks(*in);
-            
+                        
             CStreamDelayBufferGuard guard(*in);
             
             snp_info.Read(*in);
@@ -241,6 +239,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.7  2003/10/14 19:31:18  kuznets
+ * Removed unnecessary hook in SNP deserialization.
+ *
  * Revision 1.6  2003/10/14 18:31:55  vasilche
  * Added caching support for SNP blobs.
  * Added statistics collection of ID1 connection.
