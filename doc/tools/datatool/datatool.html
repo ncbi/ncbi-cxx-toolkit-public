@@ -1,94 +1,570 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
-  <head>
-	<title>DATATOOL -- the data serialization utility (NCBI C++)</title>
-  </head>
-  
-  <body>
-	<h1>DATATOOL -- the data serialization utility (NCBI C++)</h1>
-	
-	<a name="ref_TableMisc"></a>
-	<table border=1 cellspacing=0>
-	  <tr>
-		<td>
-		  <b>Location</b>
-		</td>
-		<td>
-		  <i>c++/src/serial/tool</i>
-		</td>
-	  </tr>
-	  
-	  <tr>
-		<td><b>Synopsis</b></td>
-		<td> Using ASN.1 and XML data specifications, generate C++ classes to
-		  serialize (read/write) the data
-		</td>
-	  </tr>
-	</table>
-	
-	<p>
-	  This program is intended for data conversion between ASN.1 and XML and
-	  for generation of C++ class hierarchy based on ASN.1 or XML data definition.
-	<p>
-	<h2>Invocation</h2>
-	<h1>Main arguments</h1>
-	Equivalent to arguments of asntool
-	<p>
-	<table border=1 cellspacing=0>
-	  <tr><th>argument</th><th>effect</th><th>comment</th></tr>
-	  <tr><td> -H</td><td>display DATATOOL main arguments</td></tr>
-	  <tr><td> -oH</td><td>display DATATOOL code generation arguments</td></tr>
-	  <tr><td> -m &lt;file&gt;</td><td>ASN.1 module file</td><td rowspan=2>only one of these arguments is required</tr>
-	  <tr><td> -mx &lt;file&gt;</td><td>XML module file</td></tr>
-	  <tr><td> -M &lt;file&gt;</td><td>external ASN.1 module files</td><td rowspan=2>these modules are used for IMPORT type resolution</td></tr>
-	  <tr><td> -Mx &lt;file&gt;</td><td>external XML module files</td></tr>
-	  <tr><td> -i</td><td>ignore unresolved types</td></tr>
-	  <tr><td> -f &lt;file&gt;</td><td>write ASN.1 module file</td></tr>
-	  <tr><td> -fx &lt;file&gt;</td><td>write XML module file</td></tr>
-	  <tr><td> -v &lt;file&gt;</td><td>read value in ASN.1 text format</td></tr>
-	  <tr><td> -vx &lt;file&gt;</td><td>read value in XML format</td></tr>
-	  <tr><td> -p &lt;file&gt;</td><td>write value in ASN.1 text format</td></tr>
-	  <tr><td> -px &lt;file&gt;</td><td>write value in XML format</td></tr>
-	  <tr><td> -d &lt;file&gt;</td><td>read value in ASN.1 binary format</td><td>-t argument required</td></tr>
-	  <tr><td> -t &lt;type&gt;</td><td>binary value type</td></tr>
-	  <tr><td> -e &lt;file&gt;</td><td>write value in ASN.1 binary format</td></tr>
-	</table>
-	<h1>Code generation arguments</h1>
-	<table border=1 cellspacing=0>
-	  <tr><th> argument</th><th>effect</th><th>comment</th></tr>
-	  <tr><td> -oH</td><td>display DATATOOL code generation arguments</td></tr>
-	  <tr><td> -oA</td><td>generate C++ files for all types</td><td rowspan=2>only types from main module are used<br>(see -m and -mx argument)</td></tr>
-	  <tr><td> -ot &lt;types&gt;</td><td>generate C++ files for listed types</td></tr>
-	  <tr><td> -ox &lt;types&gt;</td><td> exclude types from generation</td></tr>
-	  <tr><td> -oX</td><td> turn off recursive type generation</td></tr>
-	  <tr><td> -od &lt;file&gt;</td><td> C++ code definition file</td><td>see <a href="#ref_DefFile">Definition file</a></td></tr>
-	  <tr><td> -of &lt;file&gt;</td><td> write list of generated C++ files</td></tr>
-	  <tr><td> -opm &lt;dir&gt;</td><td> directory for searching source modules</td></tr>
-	  <tr><td> -oph &lt;dir&gt;</td><td> directory for generated *.hpp files</td></tr>
-	  <tr><td> -opc &lt;dir&gt;</td><td> directory for generated *.cpp files</td></tr>
-	  <tr><td> -or &lt;prefix&gt;</td><td> add prefix to generated file names</td></tr>
-	  <tr><td> -ors</td><td> add source file dir to generated file names</td></tr>
-	  <tr><td> -orm</td><td> add module name to generated file names</td></tr>
-	  <tr><td> -orA</td><td> combine all -or* prefixes</td></tr>
-	  <tr><td> -oR &lt;dir&gt;</td><td> set -op* and -or* arguments for NCBI dir tree</td></tr>
-	</table>
-	
-	<a name="ref_DefFile"><h2>Definition file</h2></a>
-	
-	<br>
-	<hr>
-	<table border=0 width="100%" cellspacing=0>
-	  <tr>
-		<td align=left>
-		  <address>
-			<a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a>
-		  </address>
-		</td>
-		<!-- <td align=center><i>$Revision$</i></td> -->
-		<td align=right>
-		  <i>$Date$</i>
-		</td>
-	  </tr>
-	</table>
-  </body>
+<head>
+<title>DATATOOL -- the data serialization utility (NCBI C++)</title>
+</head>
+<body>
+
+<h1>
+DATATOOL - the data serialization utility (NCBI C++)</h1>
+
+<ul>
+<li>
+<a href="#refSynopsis">Synopsis</a></li>
+
+<li>
+<a href="#refArgs">Invocation</a></li>
+
+<ul>
+<li>
+<a href="#refMainArgs">Main rguments</a></li>
+
+<li>
+<a href="#refCodeGenerationArgs">Code generation arguments</a></li>
+</ul>
+
+<li>
+<a href="#refDefFile">Definition file</a></li>
+
+<ul>
+<li>
+<a href="#refDefCommon">Common definitions</a></li>
+
+<li>
+<a href="#refDefINT">INTEGER, REAL, BOOLEAN, NULL</a></li>
+
+<li>
+<a href="#refDefENUM">ENUMERATED</a></li>
+
+<li>
+<a href="#refDefOCTETS">OCTET STRING</a></li>
+
+<li>
+<a href="#refDefArray">SEQUENCE OF, SET OF</a></li>
+
+<li>
+<a href="#refDefClass">SEQUENCE, SET</a></li>
+
+<li>
+<a href="#refDefChoice">CHOICE</a></li>
+</ul>
+
+<li>
+<a href="#refCode">Generated code</a></li>
+
+<ul>
+<li>
+<a href="#refNormalizedName">Normalized name</a></li>
+
+<li>
+<a href="#refCodeEnum">ENUMERATED</a></li>
+
+<li>
+<a href="#refCodeClass">SEQUENCE, SET</a></li>
+
+<li>
+<a href="#refCodeChoice">CHOICE</a></li>
+
+<li>
+<a href="#refCodeOther">Other</a></li>
+</ul>
+</ul>
+<a NAME="refSynopsis"></a>
+<table BORDER CELLSPACING=0 NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td ALIGN=RIGHT NOSAVE><b>Location:</b></td>
+
+<td><i>c++/src/serial/datatool</i></td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td ALIGN=RIGHT NOSAVE><b>Synopsis:</b></td>
+
+<td>
+<ol>
+<li>
+read ASN.1 data specifications</li>
+
+<li>
+read/write ASN.1 or XML data</li>
+
+<li>
+write ASN.1 or DTD data specification</li>
+
+<li>
+generate C++ classes to serialize (read/write) the data</li>
+</ol>
+</td>
+</tr>
+</table>
+
+<p>This program is intended for data conversion between ASN.1 and XML and
+for generation of C++ class hierarchy based on ASN.1 data definition.
+<h1>
+<a NAME="refArgs"></a>Invocation</h1>
+
+<h2>
+<a NAME="refMainArgs"></a>Main arguments</h2>
+Equivalent to arguments of asntool
+<table BORDER CELLSPACING=0 NOSAVE >
+<tr>
+<th>argument</th>
+
+<th>effect</th>
+
+<th>comment</th>
+</tr>
+
+<tr>
+<td>-H</td>
+
+<td>display DATATOOL <a href="#refMainArgs">main arguments</a></td>
+</tr>
+
+<tr>
+<td>-oH</td>
+
+<td>display DATATOOL <a href="#refCodeGenerationArgs">code generation arguments</a></td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refArg_m"></a>-m &lt;file></td>
+
+<td>ASN.1 module file</td>
+
+<td VALIGN=CENTER ROWSPAN="2" NOSAVE>only one of these arguments is required</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refArg_mx"></a>-mx &lt;file></td>
+
+<td>XML module file</td>
+</tr>
+
+<tr>
+<td>-M &lt;file></td>
+
+<td>external ASN.1 module files</td>
+
+<td ROWSPAN="2">these modules are used for IMPORT type resolution</td>
+</tr>
+
+<tr>
+<td>-Mx &lt;file></td>
+
+<td>external XML module files</td>
+</tr>
+
+<tr>
+<td>-i</td>
+
+<td>ignore unresolved types</td>
+</tr>
+
+<tr>
+<td>-f &lt;file></td>
+
+<td>write ASN.1 module file</td>
+</tr>
+
+<tr>
+<td>-fx &lt;file></td>
+
+<td>write XML module file</td>
+</tr>
+
+<tr>
+<td>-v &lt;file></td>
+
+<td>read value in ASN.1 text format</td>
+</tr>
+
+<tr>
+<td>-vx &lt;file></td>
+
+<td>read value in XML format</td>
+</tr>
+
+<tr>
+<td>-p &lt;file></td>
+
+<td>write value in ASN.1 text format</td>
+</tr>
+
+<tr>
+<td>-px &lt;file></td>
+
+<td>write value in XML format</td>
+</tr>
+
+<tr>
+<td>-d &lt;file></td>
+
+<td>read value in ASN.1 binary format</td>
+
+<td><a href="#refArg_t">-t</a> argument required</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td><a NAME="refArg_t"></a>-t &lt;type></td>
+
+<td NOSAVE>binary value type</td>
+</tr>
+
+<tr>
+<td>-e &lt;file></td>
+
+<td>write value in ASN.1 binary format</td>
+</tr>
+</table>
+
+<h2>
+<a NAME="refCodeGenerationArgs"></a>Code generation arguments</h2>
+
+<table BORDER CELLSPACING=0 >
+<tr>
+<th>argument</th>
+
+<th>effect</th>
+
+<th>comment</th>
+</tr>
+
+<tr>
+<td>-oH</td>
+
+<td>display DATATOOL <a href="#refCodeGenerationArgs">code generation arguments</a></td>
+</tr>
+
+<tr>
+<td>-oA</td>
+
+<td>generate C++ files for all types</td>
+
+<td ROWSPAN="2">only types from main module are used
+<br>(see <a href="#refArg_m">-m</a> and <a href="#refArg_mx">-mx</a> argument)</td>
+</tr>
+
+<tr>
+<td>-ot &lt;types></td>
+
+<td>generate C++ files for listed types</td>
+</tr>
+
+<tr>
+<td>-ox &lt;types></td>
+
+<td>exclude types from generation</td>
+</tr>
+
+<tr>
+<td>-oX</td>
+
+<td>turn off recursive type generation</td>
+</tr>
+
+<tr>
+<td><a NAME="refArg_od"></a>-od &lt;file></td>
+
+<td>C++ code <a href="#refDefFile">definition file</a></td>
+
+<td>see <a href="#refDefFile">Definition file</a></td>
+</tr>
+
+<tr>
+<td>-of &lt;file></td>
+
+<td>write list of generated C++ files</td>
+</tr>
+
+<tr>
+<td><a NAME="refArg_op"></a>-opm &lt;dir></td>
+
+<td>directory for searching source modules</td>
+</tr>
+
+<tr>
+<td>-oph &lt;dir></td>
+
+<td>directory for generated *.hpp files</td>
+</tr>
+
+<tr>
+<td>-opc &lt;dir></td>
+
+<td>directory for generated *.cpp files</td>
+</tr>
+
+<tr>
+<td><a NAME="refArg_or"></a>-or &lt;prefix></td>
+
+<td>add prefix to generated file names</td>
+</tr>
+
+<tr>
+<td>-ors</td>
+
+<td>add source file dir to generated file names</td>
+</tr>
+
+<tr>
+<td>-orm</td>
+
+<td>add module name to generated file names</td>
+</tr>
+
+<tr>
+<td>-orA</td>
+
+<td>combine all <a href="#refArg_or">-or*</a> prefixes</td>
+</tr>
+
+<tr>
+<td>-oR &lt;dir></td>
+
+<td>set <a href="#refArg_op">-op*</a> and <a href="#refArg_or">-or*</a>
+arguments for NCBI dir tree</td>
+</tr>
+</table>
+
+<h1>
+<a NAME="refDefFile"></a>Definition file</h1>
+There is a possibility of fine tuning of code generation. It is performed
+via definition file specified in <a href="#refArg_od">-od</a> argument.
+File format is the same as applications *.ini files.
+<p>Tuning parameters are searched in several sections:
+<ol>
+<li>
+[ModuleName.TypeName]</li>
+
+<li>
+[TypeName]</li>
+
+<li>
+[ModuleName]</li>
+</ol>
+Prefix of parameter name in section is determined from location of element
+we want to affect in ASN.1 definition.
+<br>For root type itself prefix is empty.
+<br>For element of 'SET OF' or 'SEQUENCE OF' add "_E." to prefix.
+<br>For element of 'SET', 'SEQUENCE' or 'CHOICE' add <i>element name</i>
+and dot (".") to prefix.
+<br>For example, if we have ASN.1 definitions:
+<hr WIDTH="100%">
+<pre><tt>&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refType_Date"></a>Date ::= CHOICE {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refMember_Date_str"></a>str VisibleString,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; std <a href="#refType_Date_std">Date-std
+</a>&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refType_Date_std"></a>Date-std ::= SEQUENCE {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; year INTEGER,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; month INTEGER OPTIONAL
+&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refType_Dates"></a>Dates ::= SEQUENCE OF <a href="#refType_Date">Date
+</a>&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refType_Int_fuzz"></a>Int-fuzz ::= CHOICE {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; p-m INTEGER,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refMember_Int_fuzz_range"></a>range SEQUENCE {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; max INTEGER,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refMember_Int_fuzz_range_min"></a>min INTEGER
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pct INTEGER,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lim ENUMERATED {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; unk (0),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gt (1),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lt (2),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tr (3),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tl (4),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; circle (5),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; other (255)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; },
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a NAME="refMember_Int_fuzz_alt"></a>alt SET OF INTEGER
+&nbsp;&nbsp;&nbsp; }</tt></pre>
+
+<hr WIDTH="100%">
+<br>Then definitions:
+<p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Date">Date</a>]</i>
+<br><i>&nbsp;&nbsp;&nbsp; <a href="#refMember_Date_str">str</a>._type =
+string</i>
+<br>will affect generation of <i><a href="#refMember_Date_str">str</a></i>
+member in <i><a href="#refType_Date">Date</a></i> structure.
+<p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Dates">Dates</a>]</i>
+<br><i>&nbsp;&nbsp;&nbsp; _E._pointer = true</i>
+<br>will affect generation of elements in <i><a href="#refType_Dates">Dates</a></i>
+container.
+<p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Int_fuzz">Int-fuzz</a>]</i>
+<br><i>&nbsp;&nbsp;&nbsp; <a href="#refMember_Int_fuzz_range">range</a>.<a href="#refMember_Int_fuzz_range_min">min</a>._type
+= long</i>
+<br>will affect generation of <i><a href="#refMember_Int_fuzz_range_min">min</a></i>
+member of <i><a href="#refMember_Int_fuzz_range">range</a></i> member of
+<i><a href="#refType_Int_fuzz">Int-fuzz</a></i>
+structure.
+<p><i>&nbsp;&nbsp;&nbsp; [<a href="#refType_Int_fuzz">Int-fuzz</a>]</i>
+<br><i>&nbsp;&nbsp;&nbsp; <a href="#refMember_Int_fuzz_alt">alt</a>._E._type
+= long</i>
+<br>will affect generation of elements of <i><a href="#refMember_Int_fuzz_alt">alt</a></i>
+member of <i><a href="#refType_Int_fuzz">Int-fuzz</a></i> structure.
+<br>&nbsp;
+<h2>
+<a NAME="refDefCommon"></a>Some definitions affect whole generated type:</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refDef_file"></a><i>_file</i></td>
+
+<td>basename for generated C++ files</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refDef_dir"></a><i>_dir</i></td>
+
+<td>subdirectory for generated C++ files
+<br>(if <i><a href="#refDef_file">_file</a></i> not specified)</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refDef_class"></a><i>_class</i></td>
+
+<td>generated class name
+<br>(if "-" then do not generated code for this type)</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refDef_namespace"></a><i>_namespace</i></td>
+
+<td>namespace where to place generated class</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><a NAME="refDef_parent_class"></a><i>_parent_class</i></td>
+
+<td>inherit generated C++ class from specified class</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td><a NAME="refDef_parent_type"></a><i>_parent_type</i></td>
+
+<td NOSAVE>inherit generated C++ class from class corresponding to specified
+type
+<br>(if <i><a href="#refDef_parent_class">_parent_class</a></i> not specified)</td>
+</tr>
+</table>
+
+<h2>
+Definition which affect specific types:</h2>
+
+<h2>
+<a NAME="refDefINT"></a>INTEGER, REAL, BOOLEAN, NULL:</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><i>_type</i></td>
+
+<td>C++ type (int, short, unsigned, long etc.)</td>
+</tr>
+</table>
+
+<h2>
+<a NAME="refDefENUM"></a>ENUMERATED</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><i>_type</i></td>
+
+<td>C++ type of variable (int, short, unsigned, long etc.)</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><i>_prefix</i></td>
+
+<td>prefix for enum values' names (default "e")</td>
+</tr>
+</table>
+
+<h2>
+<a NAME="refDefOCTETS"></a>OCTET STRING</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td><i>_char</i></td>
+
+<td NOSAVE>vector element type (char, unsigned char or signed char)</td>
+</tr>
+</table>
+
+<h2>
+<a NAME="refDefArray"></a>SEQUENCE OF, SET OF</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td><i>_type</i></td>
+
+<td NOSAVE>STL container type (list, vector, set, multiset)</td>
+</tr>
+</table>
+
+<h2>
+<a NAME="refDefClass"></a>SEQUENCE, SET</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><i>memberName._delay</i></td>
+
+<td>mark specified member for <a href="#refDelayed">delayed reading</a></td>
+</tr>
+</table>
+
+<h2>
+<a NAME="refDefChoice"></a>CHOICE</h2>
+
+<table BORDER WIDTH="100%" NOSAVE >
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><i>_virtual_choice</i></td>
+
+<td>if non empty, do not generate special class for choice
+<br>instead make choice class as parent class for all its variants</td>
+</tr>
+
+<tr VALIGN=BASELINE NOSAVE>
+<td NOSAVE><i>variantName._delay</i></td>
+
+<td>mark specified variant for <a href="#refDelayed">delayed reading</a></td>
+</tr>
+</table>
+
+<h1>
+<a NAME="refCode"></a>Generated code</h1>
+
+<h2>
+<a NAME="refNormalizedName"></a>Normalized name</h2>
+Everywhere in generated code we use so called NormalizedName which is produced
+from ASN.1 type name by replacing all minuses ("-") with underscores ("_")
+and making first letter capital.
+<h2>
+<a NAME="refCodeEnum"></a>ENUMERATED types</h2>
+For every ENUMERATED type datatool will produce C++ enum type by default
+having name E<a href="#refNormalizedName">NormalizedName</a>.
+<h2>
+<a NAME="refCodeClass"></a>SEQUENCE and SET code</h2>
+
+<h2>
+<a NAME="refCodeChoice"></a>CHOICE code</h2>
+
+<h2>
+<a NAME="refCodeOther"></a>Other types code</h2>
+
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT>
+<address>
+<a NAME="copyright"></a><a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene
+Vasilchenko</a>&nbsp;</address>
+</td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
+</table>
+
+</body>
 </html>
