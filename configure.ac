@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.255 2004/01/21 16:47:12 ucko Exp $
+#  $Id: configure.ac,v 1.256 2004/01/21 20:53:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1274,7 +1274,10 @@ case "$AMQ" in
       else
          smart_pwd=pwd
       fi
-   ;;
+      ;;
+   *)
+      smart_pwd=pwd
+      ;;
 esac
 
 #### Make "build_root" absolute

@@ -4702,7 +4702,10 @@ echo "${ECHO_T}$ncbi_cv_prog_amq_w" >&6
       else
          smart_pwd=pwd
       fi
-   ;;
+      ;;
+   *)
+      smart_pwd=pwd
+      ;;
 esac
 
 #### Make "build_root" absolute
