@@ -35,6 +35,7 @@
 
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/api/blast_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -60,6 +61,12 @@ SetupSubjects(const TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
+/// Allows specification of whether sentinel bytes should be used or not
+enum ESentinelType {
+    eSentinels,
+    eNoSentinels
+};
+
 /** Retrieves a sequence using the object manager
  * @param sl seqloc of the sequence to obtain [in]
  * @param encoding encoding for the sequence retrieved.
@@ -70,17 +77,46 @@ SetupSubjects(const TSeqLocVector& subjects,
  *        N.B.: When requesting the NCBI2NA_ENCODING, only the plus strand
  *        is retrieved, because BLAST only requires one strand on the subject
  *        sequences (as in BLAST databases). [in]
- * @param add_nucl_sentinel true to guard nucleotide sequence with sentinel 
+ * @param sentinel Use eSentinels to guard nucleotide sequence with sentinel 
  *        bytes (ignored for protein sequences, which always have sentinels) 
- *        When using NCBI2NA_ENCODING, this argument should be set to false as
- *        a sentinel byte cannot be represented in this encoding. [in]
+ *        When using NCBI2NA_ENCODING, this argument should be set to
+ *        eNoSentinels as a sentinel byte cannot be represented in this 
+ *        encoding. [in]
  * @return pair containing the buffer and its length. 
  */
 pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope,
             objects::ENa_strand strand = objects::eNa_strand_plus, 
-            bool add_nucl_sentinel = true);
+            ESentinelType sentinel = eSentinels)
+            THROWS((CBlastException, CException));
+
+/** Calculates the length of the buffer to allocate given the desired encoding,
+ * strand (if applicable) and use of sentinel bytes around sequence
+ * @param sequence_length Length of the sequence [in]
+ * @param encoding Desired encoding for calculation (supported encodings are
+ *        listed in GetSequence()) [in]
+ * @param strand Which strand to use for calculation [in]
+ * @param sentinel Whether to include or not sentinels in calculation. Same
+ *        criteria as GetSequence() applies [in]
+ * @return Length of the buffer to allocate to contain original sequence of
+ *        length sequence_length for given encoding and parameter constraints
+ */
+TSeqPos
+CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
+                         objects::ENa_strand strand =
+                         objects::eNa_strand_unknown,
+                         ESentinelType sentinel = eSentinels)
+                         THROWS((CBlastException));
+
+/** Convenience function to centralize the knowledge of which sentinel bytes we
+ * use for supported encodings. Note that only BLASTP_ENCODING,
+ * BLASTNA_ENCODING, and NCBI4NA_ENCODING support sentinel bytes, any other
+ * values for encoding will cause an exception to be thrown.
+ * @param encoding Encoding for which a sentinel byte is needed [in]
+ * @return sentinel byte
+ */
+Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException));
 
 #if 0
 // not used right now
@@ -124,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/03/06 00:39:47  camacho
+* Some refactorings, changed boolen parameter to enum in GetSequence
+*
 * Revision 1.17  2003/12/29 17:03:47  camacho
 * Added documentation to GetSequence
 *

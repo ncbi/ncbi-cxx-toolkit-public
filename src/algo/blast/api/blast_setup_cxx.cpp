@@ -334,7 +334,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             // Get both strands of the original nucleotide sequence with
             // sentinels
             pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-                GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
+                GetSequence(*itr->seqloc, encoding, itr->scope, strand,
+                            eSentinels));
             
 
             AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
@@ -367,7 +368,8 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                    strand == eNa_strand_minus);
 
             pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-                GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
+                GetSequence(*itr->seqloc, encoding, itr->scope, strand,
+                            eSentinels));
             int idx = (strand == eNa_strand_minus) ? 
                 ctx_index + 1 : ctx_index;
             int offset = qinfo->context_offsets[idx];
@@ -377,7 +379,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
             pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope,
-                            eNa_strand_unknown, true));
+                            eNa_strand_unknown, eSentinels));
             int offset = qinfo->context_offsets[ctx_index];
             memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
 
@@ -426,9 +428,9 @@ SetupSubjects(const TSeqLocVector& subjects,
                        prog == eTblastn ||
                        prog == eTblastx);
 
-    bool use_sentinels = true;
+    ESentinelType sentinels = eSentinels;
     if (prog == eTblastn || prog == eTblastx) {
-        use_sentinels = false;
+        sentinels = eNoSentinels;
     }
 
     Uint1 encoding = GetSubjectEncoding(prog);
@@ -443,7 +445,7 @@ SetupSubjects(const TSeqLocVector& subjects,
 
         pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
             GetSequence(*itr->seqloc, encoding, itr->scope,
-                        eNa_strand_plus, use_sentinels));
+                        eNa_strand_plus, sentinels));
 
         if (BlastSeqBlkNew(&subj) < 0) {
             NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
@@ -456,14 +458,13 @@ SetupSubjects(const TSeqLocVector& subjects,
 
         if (subj_is_na) {
             BlastSeqBlkSetSequence(subj, seqbuf.first.release(), 
-                                   use_sentinels ? seqbuf.second - 2 :
-                                                   seqbuf.second);
+               (sentinels == eSentinels) ? seqbuf.second - 2 : seqbuf.second);
 
             try {
                 // Get the compressed sequence
                 pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> comp_seqbuf(
                     GetSequence(*itr->seqloc, NCBI2NA_ENCODING, itr->scope,
-                                 eNa_strand_plus, false));
+                                 eNa_strand_plus, eNoSentinels));
                 BlastSeqBlkSetCompressedSequence(subj, 
                                                  comp_seqbuf.first.release());
             } catch (const CSeqVectorException&) {
@@ -485,24 +486,23 @@ SetupSubjects(const TSeqLocVector& subjects,
     options->SetDbLength(dblength);
 }
 
-static
-TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 coding,
-                                 ENa_strand strand = eNa_strand_unknown, 
-                                 bool add_sentinels = true)
+TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 encoding,
+                                 ENa_strand strand, ESentinelType sentinel)
+                                 THROWS((CBlastException))
 {
     TSeqPos retval = 0;
 
-    switch (coding) {
+    switch (encoding) {
     // Strand and sentinels are irrelevant in this encoding.
     // Strand is always plus and sentinels cannot be represented
     case NCBI2NA_ENCODING:
-        ASSERT(add_sentinels == false);
+        ASSERT(sentinel == eNoSentinels);
         ASSERT(strand == eNa_strand_plus);
         retval = sequence_length / COMPRESSION_RATIO + 1;
         break;
 
     case NCBI4NA_ENCODING:
-        if (add_sentinels) {
+        if (sentinel == eSentinels) {
             if (strand == eNa_strand_both) {
                 retval = sequence_length * 2;
                 retval += 3;
@@ -519,13 +519,13 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 coding,
         break;
 
     case BLASTP_ENCODING:
-        ASSERT(add_sentinels == true);
+        ASSERT(sentinel == eSentinels);
         ASSERT(strand == eNa_strand_unknown);
         retval = sequence_length + 2;
         break;
 
     default:
-        abort();
+        NCBI_THROW(CBlastException, eBadParameter, "Unsupported encoding");
     }
 
     return retval;
@@ -563,14 +563,30 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;
 }
 
+Uint1 GetSentinelByte(Uint1 encoding) THROWS((CBlastException))
+{
+    switch (encoding) {
+    case BLASTP_ENCODING:
+        return NULLB;
+
+    case NCBI4NA_ENCODING:
+    case BLASTNA_ENCODING:
+        return 0xF;
+
+    default:
+        NCBI_THROW(CBlastException, eBadParameter, "Unsupported encoding");
+    }
+}
+
 pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
-            ENa_strand strand, bool add_nucl_sentinel)
+            ENa_strand strand, ESentinelType sentinel) 
+            THROWS((CBlastException, CException))
 {
-    Uint1* buf,* buf_var;       // buffers to write sequence
+    Uint1* buf = NULL;          // buffer to write sequence
+    Uint1* buf_var = NULL;      // temporary pointer to buffer
     TSeqPos buflen;             // length of buffer allocated
     TSeqPos i;                  // loop index of original sequence
-    Uint1 sentinel;             // sentinel byte
     AutoPtr<Uint1, CDeleter<Uint1> > safe_buf; // contains buf to ensure 
                                                // exception safety
 
@@ -584,27 +600,25 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
     switch (encoding) {
     // Protein sequences (query & subject) always have sentinels around sequence
     case BLASTP_ENCODING:
-        sentinel = NULLB;
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
-        *buf_var++ = sentinel;
+        *buf_var++ = GetSentinelByte(encoding);
         for (i = 0; i < sv.size(); i++)
             *buf_var++ = sv[i];
-        *buf_var++ = sentinel;
+        *buf_var++ = GetSentinelByte(encoding);
         break;
 
     case NCBI4NA_ENCODING:
     case BLASTNA_ENCODING: // Used for nucleotide blastn queries
         sv.SetCoding(CSeq_data::e_Ncbi4na);
-        sentinel = 0xF;
         buflen = CalculateSeqBufferLength(sv.size(), NCBI4NA_ENCODING,
-                                          strand, add_nucl_sentinel);
+                                          strand, sentinel);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
-        if (add_nucl_sentinel)
-            *buf_var++ = sentinel;
+        if (sentinel == eSentinels)
+            *buf_var++ = GetSentinelByte(encoding);
 
         if (encoding == BLASTNA_ENCODING) {
             for (i = 0; i < sv.size(); i++) {
@@ -615,8 +629,8 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
                 *buf_var++ = sv[i];
             }
         }
-        if (add_nucl_sentinel)
-            *buf_var++ = sentinel;
+        if (sentinel == eSentinels)
+            *buf_var++ = GetSentinelByte(encoding);
 
         if (strand == eNa_strand_both) {
             // Get the minus strand if both strands are required
@@ -633,8 +647,8 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
                     *buf_var++ = sv[i];
                 }
             }
-            if (add_nucl_sentinel) {
-                *buf_var++ = sentinel;
+            if (sentinel == eSentinels) {
+                *buf_var++ = GetSentinelByte(encoding);
             }
         }
 
@@ -646,10 +660,10 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
      * last byte.
      */
     case NCBI2NA_ENCODING:
-        ASSERT(add_nucl_sentinel == false);
+        ASSERT(sentinel == eNoSentinels);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
         buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
-                                          eNa_strand_plus, add_nucl_sentinel);
+                                          eNa_strand_plus, eNoSentinels);
         buf = (Uint1*) malloc(sizeof(Uint1)*buflen);
         safe_buf.reset(buf);
         CompressDNA(sv, buf, buflen);
@@ -852,6 +866,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/03/06 00:39:47  camacho
+* Some refactorings, changed boolen parameter to enum in GetSequence
+*
 * Revision 1.57  2004/02/24 18:14:56  dondosha
 * Set the maximal length in the set of queries, when filling BlastQueryInfo structure
 *
