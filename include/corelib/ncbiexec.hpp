@@ -127,7 +127,7 @@ public:
     ///
     /// Meaning of the suffix "L" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    /// arguments are passed separately as arguments.
+    ///   arguments are passed separately as arguments.
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -139,11 +139,11 @@ public:
     /// @param argv
     ///   Argument vector.
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
@@ -154,17 +154,17 @@ public:
     /// environment settings.
     ///
     /// In the SpawnLE() version, the command-line arguments and environment
-    /// pointer are passed individually. SpawnLE() is typically used when number
-    /// of parameters to the new process and individual environment parameter
-    /// settings are known in advance.
+    /// pointer are passed individually. SpawnLE() is typically used when
+    /// number of parameters to the new process and individual environment 
+    /// parameter settings are known in advance.
     ///
     /// Meaning of the suffix "LE" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    /// arguments are passed separately as arguments.
+    ///   arguments are passed separately as arguments.
     /// - The letter "E" as suffix refers to the fact that environment pointer,
-    /// envp, is passed as an array of pointers to environment settings to 
-    /// the new process. The NULL environment pointer indicates that the new 
-    /// process will inherit the parents process's environment.
+    ///   envp, is passed as an array of pointers to environment settings to 
+    ///   the new process. The NULL environment pointer indicates that the new 
+    ///   process will inherit the parents process's environment.
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -178,11 +178,11 @@ public:
     /// @param ...
     ///   NULL, const char* envp[]
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
@@ -200,11 +200,11 @@ public:
     ///
     /// Meaning of the suffix "LP" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    /// arguments are passed separately as arguments.
+    ///   arguments are passed separately as arguments.
     /// - The letter "P" as suffix refers to the fact that the PATH
-    /// environment variable is used to find file to execute - on a Unix
-    /// platform this feature works in functions without letter "P" in
-    /// function name. 
+    ///   environment variable is used to find file to execute - on a Unix
+    ///   platform this feature works in functions without letter "P" in
+    ///   function name. 
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -218,11 +218,11 @@ public:
     /// @param ...
     ///   NULL
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
@@ -242,15 +242,15 @@ public:
     ///
     /// Meaning of the suffix "LPE" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    /// arguments are passed separately as arguments.
+    ///   arguments are passed separately as arguments.
     /// - The letter "P" as suffix refers to the fact that the PATH
-    /// environment variable is used to find file to execute - on a Unix
-    /// platform this feature works in functions without letter "P" in
-    /// function name. 
+    ///   environment variable is used to find file to execute - on a Unix
+    ///   platform this feature works in functions without letter "P" in
+    ///   function name. 
     /// - The letter "E" as suffix refers to the fact that environment pointer,
-    /// envp, is passed as an array of pointers to environment settings to 
-    /// the new process. The NULL environment pointer indicates that the new 
-    /// process will inherit the parents process's environment.
+    ///   envp, is passed as an array of pointers to environment settings to 
+    ///   the new process. The NULL environment pointer indicates that the new 
+    ///   process will inherit the parents process's environment.
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -264,11 +264,11 @@ public:
     /// @param ...
     ///   NULL, const char* envp[]
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///    Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnV(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
@@ -296,11 +296,11 @@ public:
     /// @param argv
     ///   Argument vector.
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
@@ -318,11 +318,11 @@ public:
     ///
     /// Meaning of the suffix "VE" in method name:
     /// - The letter "V" as suffix refers to the fact that the number of
-    /// command-line arguments are variable.
+    ///   command-line arguments are variable.
     /// - The letter "E" as suffix refers to the fact that environment pointer,
-    /// envp, is passed as an array of pointers to environment settings to 
-    /// the new process. The NULL environment pointer indicates that the new 
-    /// process will inherit the parents process's environment.
+    ///   envp, is passed as an array of pointers to environment settings to 
+    ///   the new process. The NULL environment pointer indicates that the new 
+    ///   process will inherit the parents process's environment.
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -334,11 +334,11 @@ public:
     /// @param argv
     ///   Argument vector.
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVP(), 
     ///   SpawnVPE().
@@ -355,11 +355,11 @@ public:
     ///
     /// Meaning of the suffix "VP" in method name:
     /// - The letter "V" as suffix refers to the fact that the number of
-    /// command-line arguments are variable.
+    ///   command-line arguments are variable.
     /// - The letter "P" as suffix refers to the fact that the PATH
-    /// environment variable is used to find file to execute - on a Unix
-    /// platform this feature works in functions without letter "P" in
-    /// function name. 
+    ///   environment variable is used to find file to execute - on a Unix
+    ///   platform this feature works in functions without letter "P" in
+    ///   function name. 
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -373,11 +373,11 @@ public:
     /// @param ...
     ///   NULL, const char* envp[]
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), 
     ///   SpawnVPE().
@@ -396,15 +396,15 @@ public:
     ///
     /// Meaning of the suffix "VPE" in method name:
     /// - The letter "V" as suffix refers to the fact that the number of
-    /// command-line arguments are variable.
+    ///   command-line arguments are variable.
     /// - The letter "P" as suffix refers to the fact that the PATH
-    /// environment variable is used to find file to execute - on a Unix
-    /// platform this feature works in functions without letter "P" in
-    /// function name. 
+    ///   environment variable is used to find file to execute - on a Unix
+    ///   platform this feature works in functions without letter "P" in
+    ///   function name. 
     /// - The letter "E" as suffix refers to the fact that environment pointer,
-    /// envp, is passed as an array of pointers to environment settings to 
-    /// the new process. The NULL environment pointer indicates that the new 
-    /// process will inherit the parents process's environment.
+    ///   envp, is passed as an array of pointers to environment settings to 
+    ///   the new process. The NULL environment pointer indicates that the new 
+    ///   process will inherit the parents process's environment.
     ///
     /// NOTE: At least one argument must be present. This argument is always, 
     /// by convention, the name of the file being spawned (argument with 
@@ -416,11 +416,11 @@ public:
     /// @param argv
     ///   Argument vector.
     /// @return 
-    /// -  -1 on error and then "errno" will contain the error code.
-    /// -  On success, return:
-    ///   - exit code   - in eWait mode.
-    ///   - process pid - in eNoWait and eDetach modes.
-    ///   - nothing     - in eOverlay mode.   
+    ///   On success, return:
+    ///     - exit code   - in eWait mode.
+    ///     - process pid - in eNoWait and eDetach modes.
+    ///     - nothing     - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(),
     ///   SpawnVP(), 
@@ -435,9 +435,8 @@ public:
     ///   Wait on child process "pid".
     /// @return
     ///   - Exit code of child process, if no errors.
-    ///   - -1, if error has occured.
-    static int Wait(const int pid);
-
+    ///   - (-1), if error has occured.
+    static int Wait(int pid);
 };
 
 
@@ -450,6 +449,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/09/16 15:22:31  ivanov
+ * Minor comments changes
+ *
  * Revision 1.8  2003/07/30 11:08:44  siyan
  * Documentation changes.
  *
