@@ -1,5 +1,5 @@
-#ifndef NCBIAPP__HPP
-#define NCBIAPP__HPP
+#ifndef NCBI_INET_APP__HPP
+#define NCBI_INET_APP__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -30,21 +30,14 @@
 *	Vsevolod Sandomirskiy
 *
 * File Description:
-*   CNcbiApplication -- a generic NCBI application class
-*   CCgiApplication  -- a NCBI CGI-application class
+*   Basic CGI Application class
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  1998/12/09 16:49:56  sandomir
+* Revision 1.5  1998/12/09 16:49:55  sandomir
 * CCgiApplication added
 *
-* Revision 1.6  1998/12/07 23:46:52  vakatov
-* Merged with "cgiapp.hpp";  minor fixes
-*
-* Revision 1.5  1998/12/07 22:31:12  vakatov
-* minor fixes
-*
-* Revision 1.4  1998/12/03 21:24:21  sandomir
+* Revision 1.1  1998/12/03 21:24:21  sandomir
 * NcbiApplication and CgiApplication updated
 *
 * Revision 1.3  1998/12/01 19:12:36  lewisg
@@ -59,36 +52,37 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <ncbiapp.hpp>
 #include <ncbicgi.hpp>
-
 
 BEGIN_NCBI_SCOPE
 
-///////////////////////////////////////////////////////
-// CNcbiApplication
+//
+// class CCgiApplication
 //
 
-class CNcbiApplication {
+class CCgiApplication: public CNcbiApplication {
 public:
-    static CNcbiApplication* Instance(void); // Singleton method
+  static CCgiApplication* Instance(void); // Singleton method
 
-    // (throw exception if not-only instance)
-    CNcbiApplication(int argc=0, char** argv=0);
-    virtual ~CNcbiApplication(void);
+  CCgiApplication(int argc=0, char** argv=0,
+                  CNcbiIstream* istr=0, bool indexes_as_entries=true);
+  virtual ~CCgiApplication(void);
 
-    virtual void Init(void); // initialization
-    virtual void Exit(void); // cleanup
-    virtual int Run(void) = 0; // main loop
-  
-protected: 
-    static CNcbiApplication* m_Instance;
-    int    m_Argc;
-    char** m_Argv;
+  virtual void Init(void); // initialization
+  virtual void Exit(void); // cleanup
+
+  const CCgiRequest* GetRequest(void) const 
+    { return m_CgiRequest; }
+
+protected:
+  CCgiRequest*  m_CgiRequest;
+  CNcbiIstream* m_Istr;
+  bool          m_Iase; // indexes_as_entries
 };
 
 END_NCBI_SCOPE
 
-#endif // NCBIAPP__HPP
+#endif // NCBI_INET_APP__HPP
 
 

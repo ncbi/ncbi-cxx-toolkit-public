@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/09 16:49:56  sandomir
+* CCgiApplication added
+*
 * Revision 1.6  1998/12/07 23:47:05  vakatov
 * minor fixes
 *
@@ -116,17 +119,12 @@ CCgiApplication* CCgiApplication::Instance(void)
 
 CCgiApplication::CCgiApplication(int argc, char** argv,
                                  CNcbiIstream* istr, bool indexes_as_entries)
-    : CNcbiApplication(argc, argv)
-{
-    m_CgiRequest = 0;
-    m_Istr = istr;
-    m_Iase = indexes_as_entries;
-}
+    : CNcbiApplication(argc, argv),
+      m_CgiRequest( 0 ), m_Istr( istr ), m_Iase( indexes_as_entries )
+{}
 
 CCgiApplication::~CCgiApplication(void)
-{
-    Exit();
-}
+{}
 
 void CCgiApplication::Init(void)
 {
@@ -136,8 +134,8 @@ void CCgiApplication::Init(void)
 
 void CCgiApplication::Exit(void)
 {
-    CNcbiApplication::Exit();
     delete m_CgiRequest;
+    CNcbiApplication::Exit();
 }
 
 
