@@ -913,7 +913,7 @@ bool CCdd::GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs) {
 }
 
 
-bool CCdd::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str, bool Pad) {
+bool CCdd::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str, bool Pad, int Len) {
 //-------------------------------------------------------------------
 // get seq-id string for RowIndex of alignment
 //-------------------------------------------------------------------
@@ -922,12 +922,12 @@ bool CCdd::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str, bo
   CRef<CSeq_id> SeqID;
 
   GetSeqID(Pair, DenDiagRow, SeqID);
-  Make_GI_or_PDB_String(SeqID, Str, Pad);
+  Make_GI_or_PDB_String(SeqID, Str, Pad, Len);
   return(true);
 }
 
 
-void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad) {
+void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad, int Len) {
 //-------------------------------------------------------------------
 // make a string for a seq-id
 //-------------------------------------------------------------------
@@ -949,9 +949,9 @@ void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad
     Str += Chain;
   }
 
-  // pad with spaces to length of 10
+  // pad with spaces to length of Len
   if (Pad) {
-    while (strlen(Str.c_str()) < 10) {
+    while (strlen(Str.c_str()) < Len) {
       Str += " ";
     }
   }
@@ -1379,6 +1379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/10/09 21:22:49  hurwitz
+ * small change to previous commit
+ *
  * Revision 1.15  2002/10/09 20:59:50  hurwitz
  * added function for getting seq-id string for a row of the alignment
  *
