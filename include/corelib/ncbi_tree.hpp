@@ -49,7 +49,8 @@ BEGIN_NCBI_SCOPE
 ///    Bi-directionaly linked N way tree.
 ///
 
-template <class TValue> class CTreeNode
+template <class TValue> 
+class CTreeNode
 {
 public:
     typedef TValue                     TValueType;
@@ -80,6 +81,19 @@ public:
     /// @return parent to the current node, NULL if it is a top
     /// of the tree
     TTreeType* GetParent() { return m_Parent; }
+
+    /// Get the topmost node 
+    ///
+    /// @return global parent of the current node, this if it is a top
+    /// of the tree
+    const TTreeType* GetRoot() const;
+
+    /// Get the topmost node 
+    ///
+    /// @return global parent of the current node, this if it is a top
+    /// of the tree
+    TTreeType* GetRoot();
+
 
     /// Return first const iterator on subnode list
     TNodeList_CI SubNodeBegin() const { return m_Nodes.begin(); }
@@ -503,6 +517,29 @@ void TreeTraceToRoot(const TTreeNode& tree_node, TTraceContainer& trace)
 }
 
 
+/// Change tree root (tree rotation)
+///
+/// @param new_root_node
+///    new node which becomes new tree root after the call
+template<class TTreeNode>
+void TreeReRoot(TTreeNode& new_root_node)
+{
+    vector<const TTreeNode*> trace;
+    TreeTraceToRoot(new_root_node, trace);
+
+    TTreeNode* local_root = &new_root_node;
+    ITERATE(vector<const TTreeNode*>, it, trace) {
+        TTreeNode* node = const_cast<TTreeNode*>(*it);
+        TTreeNode* parent = node->GetParent();
+        if (parent)
+            parent->DetachNode(node);
+        if (local_root != node)
+            local_root->AddNode(node);
+        local_root = node;
+    }
+}
+
+
 /// Check if two nodes have the same common root
 /// @param tree_node_a
 ///     Node A
@@ -560,10 +597,11 @@ template<class TTreeNode, class TConverter>
 class CTreePrintFunc
 {
 public:
-    CTreePrintFunc(CNcbiOstream& os, TConverter& conv)
+    CTreePrintFunc(CNcbiOstream& os, TConverter& conv, bool print_ptr)
     : m_OStream(os),
       m_Conv(conv),
-      m_Level(0)
+      m_Level(0),
+      m_PrintPtr(print_ptr)
     {}
 
     ETreeTraverseCode 
@@ -574,7 +612,13 @@ public:
             PrintLevelMargin();
             const string& node_str = m_Conv(tr.GetValue());
 
-            m_OStream << node_str << endl;
+            if (m_PrintPtr) {
+                m_OStream  
+                   << "[" << "0x" << hex << &tr << "]=> 0x" << tr.GetParent() 
+                   << " ( " << node_str << " ) " << endl;
+            } else {
+                m_OStream << node_str << endl;
+            }
         }
 
         return eTreeTraverse;
@@ -591,21 +635,33 @@ private:
     CNcbiOstream&  m_OStream;
     TConverter&    m_Conv;
     int            m_Level;
+    bool           m_PrintPtr;
 };
 
 
+/// Tree printing (use for debugging purposes)
+///
+/// @param os
+///     Stream to print the tree
+/// @param tree_node
+///     Tree node to print (top or sub-tree)
+/// @param conv
+///     Converter of node value to string (string Conv(node_value) )
+/// @param print_ptr
+///     When TRUE function prints all internal pointers (debugging)
+///
 template<class TTreeNode, class TConverter>
 void TreePrint(CNcbiOstream&     os, 
                const TTreeNode&  tree_node, 
-               TConverter        conv)
+               TConverter        conv,
+               bool              print_ptr = false)
 {
     // fake const_cast, nothing to worry 
     //   (should go away when we have const traverse)
     TTreeNode* non_c_tr = const_cast<TTreeNode*>(&tree_node);
-    CTreePrintFunc<TTreeNode, TConverter> func(os, conv);
+    CTreePrintFunc<TTreeNode, TConverter> func(os, conv, print_ptr);
     TreeDepthFirstTraverse(*non_c_tr, func);
 }
-
 
 
 
@@ -623,8 +679,10 @@ CTreeNode<TValue>::CTreeNode(const TValue& value)
 template<class TValue>
 CTreeNode<TValue>::~CTreeNode()
 {
+    _ASSERT(m_Parent == 0);
     ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNode* node = *it;
+        node->m_Parent = 0;
         delete node;
     }
 }
@@ -666,6 +724,7 @@ void CTreeNode<TValue>::RemoveNode(TTreeType* subnode)
         CTreeNode* node = *it;
         if (node == subnode) {
             m_Nodes.erase(it);
+            node->m_Parent = 0;
             delete node;
             break;
         }
@@ -676,6 +735,7 @@ template<class TValue>
 void CTreeNode<TValue>::RemoveNode(TNodeList_I it)
 {
     CTreeNode* node = *it;
+    node->m_Parent = 0;
     m_Nodes.erase(it);
     delete node;
 }
@@ -712,6 +772,7 @@ CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TNodeList_I it)
 template<class TValue>
 void CTreeNode<TValue>::AddNode(typename CTreeNode<TValue>::TTreeType* subnode)
 {
+    _ASSERT(subnode != this);
     m_Nodes.push_back(subnode);
     subnode->SetParent(this);
 }
@@ -742,6 +803,34 @@ void CTreeNode<TValue>::RemoveAllSubNodes(EDeletePolicy del)
         }
     }
     m_Nodes.clear();
+}
+
+template<class TValue>
+const CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot() const
+{
+    const TTreeType* node_ptr = this;
+    while (true) {
+        const TTreeType* parent = node_ptr->GetParent();
+        if (parent)
+            node_ptr = parent;
+        else
+            break;
+    }
+    return node_ptr;
+}
+
+template<class TValue>
+CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot()
+{
+    TTreeType* node_ptr = this;
+    while (true) {
+        TTreeType* parent = node_ptr->GetParent();
+        if (parent) 
+            node_ptr = parent;
+        else 
+            break;
+    }
+    return node_ptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -854,6 +943,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/04/09 14:25:56  kuznets
+ * + TreeReRoot, improved internal data integrity diagnostics
+ *
  * Revision 1.27  2004/04/08 18:34:19  kuznets
  * attached code to a doxygen group
  * +TreePrinting template (for debug purposes)
