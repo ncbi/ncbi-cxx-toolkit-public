@@ -10,7 +10,7 @@
 #################################
 
 LIB_PROJ = connect xxconnect xconnect
-SUB_PROJ = @daemons@ test
+SUB_PROJ = @daemons@ test caf
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
