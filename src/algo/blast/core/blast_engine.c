@@ -174,20 +174,17 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    offset_array_size = 10000;
    wordfinder = BlastNaWordFinder;
    
-   if (mb_lookup)
-     {
-       offset_array_size = 20000;
-       wordfinder = MB_WordFinder;
-     }
-
-   if (ag_blast)
+   if (mb_lookup) {
+      wordfinder = MB_WordFinder;
+   } else if (ag_blast) {
      wordfinder = BlastNaWordFinder_AG;
+   }
 
    if (blastp)
      {
        LookupTablePtr lut = lookup->lut;
        offset_array_size= MAX(1024, lut->longest_chain);
-     wordfinder = BlastAaWordFinder;
+       wordfinder = BlastAaWordFinder;
 
 #ifndef DIAG_ARRAY_SIZE_CORRECTION_MADE  
      { 
