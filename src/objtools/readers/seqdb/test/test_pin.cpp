@@ -273,16 +273,16 @@ int test1(int argc, char ** argv)
     
     bool  use_mm        = true;
     bool  deletions     = true;
-    Int4  num_display   = -1;
-    Int4  num_itera     = 1;
+    int   num_display   = -1;
+    int   num_itera     = 1;
     bool  look_seq      = false;
     bool  show_bioseq   = false;
     bool  show_fasta    = false;
     bool  get_bioseq    = false;
     bool  show_progress = true;
     bool  approx        = true;
-    Uint4 membound      = 0;
-    Uint4 slicesize     = 0;
+    Uint8 membound      = 0;
+    Uint8 slicesize     = 0;
     bool  defer_ret     = false;
     bool  x4mutate      = false;
     
@@ -443,17 +443,17 @@ int test1(int argc, char ** argv)
                 return 1;
             }
             
-            Uint4 gi = atoi(args.begin()->c_str());
+            int gi = atoi(args.begin()->c_str());
             args.pop_front();
             
-            Uint4 target_gi = (s == "-gi2bs-target") ? gi : 0;
+            int target_gi = (s == "-gi2bs-target") ? gi : 0;
             
             if (gi < 1) {
                 cout << "The GI " << gi << " is not valid." << endl;
                 return 1;
             }
             
-            Uint4 oid(0);
+            int oid(0);
             
             if (! db.GiToOid(gi, oid)) {
                 cout << "The GI " << gi << " was not found." << endl;
@@ -473,7 +473,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-gi2bs] [-gi2bs-target]";
         
         if (s == "-taxid") {
-            Uint4 oid = 12;
+            int oid = 12;
             
             if (args.size() == 1) {
                 oid = atoi((*args.begin()).c_str());
@@ -486,13 +486,13 @@ int test1(int argc, char ** argv)
             
             CRef<CBlast_def_line_set> bdls = nr.GetHdr(oid);
             
-            vector<Uint4> taxids;
+            vector<int> taxids;
             
             ITERATE(list< CRef<CBlast_def_line> >, iter, bdls->Get()) {
                 taxids.push_back((**iter).GetTaxid());
             }
             
-            ITERATE(vector<Uint4>, it, taxids) {
+            ITERATE(vector<int>, it, taxids) {
                 cout << "taxid: " << (*it) << endl;
             }
             
@@ -559,7 +559,7 @@ int test1(int argc, char ** argv)
             
             double ee2,ee3;
             
-            for(Uint4 i = 0; i<10; i++) {
+            for(int i = 0; i<10; i++) {
                 ee2 = sw.Elapsed();
                 
                 CSeqDB::FindVolumePaths(dbname, seqtype, paths2);
@@ -599,7 +599,7 @@ int test1(int argc, char ** argv)
             //const char * dbname1 = "nr";
             
             bool is_prot = true;
-            Uint4 gi = 8;
+            int gi = 8;
             
             if (s == "-bs10") {
                 is_prot = true;
@@ -624,7 +624,7 @@ int test1(int argc, char ** argv)
             {
                 CSeqDB db(dbname, is_prot ? CSeqDB::eProtein : CSeqDB::eNucleotide);
                 
-                Uint4 oid(0);
+                int oid(0);
                 
                 if (db.GiToOid(gi, oid)) {
                     CRef<CBioseq> bs = db.GetBioseq(oid);
@@ -666,7 +666,7 @@ int test1(int argc, char ** argv)
                                                     NULL,
                                                     NULL);
                 
-                Uint4 oid = readdb_gi2seq(rdfp, gi, 0);
+                int oid = readdb_gi2seq(rdfp, gi, 0);
                 
                 rdfp->gi_target = gi;
                 
@@ -685,7 +685,7 @@ int test1(int argc, char ** argv)
                     
                     ByteStorePtr bstorep = bsp->seq_data;
                     
-                    Uint4 bslen = bstorep->totlen;
+                    int bslen = bstorep->totlen;
                     
                     vector<char> byte_data;
                     byte_data.resize(bslen);
@@ -696,7 +696,7 @@ int test1(int argc, char ** argv)
                     // don't seek to the beginning.
                     
                     Nlm_BSSeek(bstorep, 0, SEEK_SET);
-                    Uint4 i =  BSRead(bstorep, & byte_data[0], bslen);
+                    int i = BSRead(bstorep, & byte_data[0], bslen);
                     
                     cout << "Bytes read = " << i << endl;
                     
@@ -713,9 +713,9 @@ int test1(int argc, char ** argv)
                 BioseqFree(bsp);
             }
             
-            Uint4 num_diffs = 0;
+            int num_diffs = 0;
             
-            for(Uint4 i = 0; i<readdb_data.size(); i++) {
+            for(int i = 0; i < (int)readdb_data.size(); i++) {
                 unsigned R = unsigned(readdb_data[i]) & 0xFF;
                 unsigned S = unsigned(seqdb_data[i])  & 0xFF;
                 
@@ -787,8 +787,8 @@ int test1(int argc, char ** argv)
             cout << "using_readdb:     " << (using_readdb     ? "T" : "F") << endl;
             cout << "seperate_caching: " << (seperate_caching ? "T" : "F") << endl;
             
-            vector<Uint4> gis;
-            vector<Uint4> oids;
+            vector<int> gis;
+            vector<int> oids;
             
             CStopWatch sw(true);
             
@@ -801,18 +801,18 @@ int test1(int argc, char ** argv)
                                NULL,
                                NULL);
             
-            Uint4 nseq = db.GetNumSeqs();
+            int nseq = db.GetNumSeqs();
             
             double spt1(0.0);
             double spt1a(0.0);
             double spt2(0.0);
             
             if (build_gilist) {
-                Uint4 jump = 10;
+                int jump = 10;
 
                 cout << "Setting up (j" << jump << ")..." << endl;
                 
-                Uint4 i = 0;
+                int i = 0;
                 
                 for(i = 0; i<nseq; i+= jump) {
                     oids.push_back(i);
@@ -831,7 +831,7 @@ int test1(int argc, char ** argv)
                     
                     CSeqDB & dbx(seperate_caching ? db1 : db);
                     
-                    for(i = 0; i<oids.size(); i++) {
+                    for(i = 0; i<(int)oids.size(); i++) {
                         dbx.OidToGi(oids[i], gis[i]);
                     }
                 }
@@ -844,13 +844,13 @@ int test1(int argc, char ** argv)
                     CRandom prng;
                     
                     for(int i2 = 0; i2 < (int)oids.size(); i2+= jump) {
-                        Uint4 j = prng.GetRand(0, (int) oids.size()-1);
+                        int j = prng.GetRand(0, (int) oids.size()-1);
                     
-                        Uint4 oid_tmp = oids[i2];
+                        int oid_tmp = oids[i2];
                         oids[i2] = oids[j];
                         oids[j] = oid_tmp;
                     
-                        Uint4 gi_tmp = gis[i2];
+                        int gi_tmp = gis[i2];
                         gis[i2] = gis[j];
                         gis[j] = gi_tmp;
                     }
@@ -858,7 +858,7 @@ int test1(int argc, char ** argv)
                 
                 ofstream gilist("gilist.txt");
                 
-                for(Uint4 i2 = 0; i2<oids.size(); i2++) {
+                for(int i2 = 0; i2<(int)oids.size(); i2++) {
                     gilist << gis[i2] << "\n";
                 }
             } else {
@@ -869,7 +869,7 @@ int test1(int argc, char ** argv)
                 ifstream gilist("gilist.txt");
                 
                 while(gilist) {
-                    Uint4 gi(0);
+                    int gi(0);
                     
                     gilist >> gi;
                     gis.push_back(gi);
@@ -877,8 +877,8 @@ int test1(int argc, char ** argv)
                 
                 spt1a = sw.Elapsed();
                 
-                ITERATE(vector<Uint4>, iter, gis) {
-                    Uint4 oid(0);
+                ITERATE(vector<int>, iter, gis) {
+                    int oid(0);
                     db.GiToOid(*iter, oid);
                     
                     oids.push_back(oid);
@@ -891,12 +891,12 @@ int test1(int argc, char ** argv)
             
             cout << "Phase 2..." << endl;
             
-            for(Uint4 iter = 0; iter<4; iter++) {
+            for(int iter = 0; iter<4; iter++) {
                 double spt3 = sw.Elapsed();
                 
                 if (using_readdb) {
-                    for(Uint4 i = 0; i<oids.size(); i++) {
-                        Uint4 oid(Uint4(-1));
+                    for(int i = 0; i<(int)oids.size(); i++) {
+                        int oid(int(-1));
                         oid = readdb_gi2seq(rdfp, gis[i], 0);
                         
                         if (oid != oids[i]) {
@@ -906,8 +906,8 @@ int test1(int argc, char ** argv)
                         }
                     }
                 } else {
-                    for(Uint4 i = 0; i<oids.size(); i++) {
-                        Uint4 oid(Uint4(-1));
+                    for(int i = 0; i<(int)oids.size(); i++) {
+                        int oid(int(-1));
                         db.GiToOid(gis[i], oid);
                         
                         if (oid != oids[i]) {
@@ -930,19 +930,19 @@ int test1(int argc, char ** argv)
             
             string seqid_str("gi|129295");
             
-            vector<Uint4> oids;
+            vector<int> oids;
             CSeq_id seqid(seqid_str);
             
             nr.SeqidToOids(seqid, oids);
             
             cout << "\nTranslating Seqid: " << seqid_str << endl;
             
-            for(Uint4 i = 0; i<oids.size(); i++) {
+            for(int i = 0; i<(int)oids.size(); i++) {
                 cout << "  found oid: " << oids[i] << endl;
             }
             
             cout << "\nTranslating gi 129295" << endl;
-            Uint4 oid2((Uint4)-1);
+            int oid2((int)-1);
             
             nr.GiToOid(129295, oid2);
             
@@ -1008,13 +1008,13 @@ int test1(int argc, char ** argv)
             
             CSeqDB db(dbname, seqtype);
             
-            vector<Uint4> oids;
+            vector<int> oids;
             db.AccessionToOids(acc, oids);
             
             if (oids.empty()) {
                 cout << "Could not find OIDs for Accession " << acc << endl;
             } else {
-                ITERATE(vector<Uint4>, iter, oids) {
+                ITERATE(vector<int>, iter, oids) {
                     cout << "Have OID " << (*iter)
                          << ", length " << db.GetSeqLength(*iter) << endl;
                 }
@@ -1038,8 +1038,8 @@ int test1(int argc, char ** argv)
             CSeqDB db(dbname, CSeqDB::eProtein);
             
             while((acc != "QUIT") && cin) {
-                vector<Uint4> oids;
-                Uint4 oid(0), gi(0);
+                vector<int> oids;
+                int oid(0), gi(0);
                 
                 db.AccessionToOids(acc, oids);
                 
@@ -1107,8 +1107,8 @@ int test1(int argc, char ** argv)
             
             CSeqDB db(dbname, seqtype);
             
-            Uint4 s_oid = oid;
-            Uint4 s_leng = 0;
+            int s_oid = oid;
+            int s_leng = 0;
             const char* s_data = 0;
             
             if (! have_oid) {
@@ -1133,7 +1133,7 @@ int test1(int argc, char ** argv)
                                NULL,
                                NULL);
             
-            Uint4 r_oid = oid;
+            int r_oid = oid;
             Int4 r_leng = 0;
             unsigned char* r_data = 0;
             
@@ -1145,7 +1145,7 @@ int test1(int argc, char ** argv)
             
             // Testing
             
-            if (((Uint4)r_leng) != ((Uint4)s_leng)) {
+            if (((int)r_leng) != ((int)s_leng)) {
                 cout << "Failure, lengths differ: R(" << r_leng << "), S(" << s_leng << ")" << endl;
             }
             int x = 0;
@@ -1237,23 +1237,23 @@ int test1(int argc, char ** argv)
                     s_MutateString(line);
                 }
                 
-                vector<Uint4> oids;
+                vector<int> oids;
                 
                 if (rx) {
                     oids.clear();
                     
-                    Int4 * data(0);
-                    Int4   count(0);
+                    int * data(0);
+                    int   count(0);
                     
-                    Int4 result = readdb_acc2fastaEx(rdfp, (char*)line.c_str(), & data, & count);
+                    int result = readdb_acc2fastaEx(rdfp, (char*)line.c_str(), & data, & count);
                     
                     if ((result >= 0) && (count > 0)) {
-                        for(Int4 i = 0; i<count; i++) {
+                        for(int i = 0; i<count; i++) {
                             oids.push_back(data[i]);
                         }
                     }
                 } else {
-                    Int4 oid1 = readdb_acc2fasta(rdfp, (char*)line.c_str());
+                    int oid1 = readdb_acc2fasta(rdfp, (char*)line.c_str());
                     
                     if (oid1 != -1) {
                         oids.resize(1);
@@ -1264,7 +1264,7 @@ int test1(int argc, char ** argv)
                 cout << "orig[" << linecpy << "] -> Acc [" << line << "] has oids: ";
                 
                 if (oids.size()) {
-                    for(Uint4 i = 0; i < oids.size(); i++) {
+                    for(int i = 0; i < (int)oids.size(); i++) {
                         if (i) {
                             cout << ", ";
                         }
@@ -1300,18 +1300,18 @@ int test1(int argc, char ** argv)
                     s_MutateString(line);
                 }
                 
-                vector<Uint4> oids;
+                vector<int> oids;
                 db.AccessionToOids(line, oids);
                 
                 cout << "orig[" << linecpy << "] -> Acc [" << line << "] has oids: ";
                 
                 if (oids.size()) {
-                    for(Uint4 i = 0; i < oids.size(); i++) {
+                    for(int i = 0; i < (int)oids.size(); i++) {
                         if (i) {
                             cout << ", ";
                         }
                         
-                        Uint4 gi(0);
+                        int gi(0);
                         db.OidToGi(oids[i], gi);
                         
                         cout << oids[i];
@@ -1334,31 +1334,31 @@ int test1(int argc, char ** argv)
             
             cout << "Time to construct: " << (e2 - e1) << endl;
             
-            vector<Uint4> oids;
+            vector<int> oids;
             oids.resize(10000);
-            Uint4 obegin(0), oend(0);
+            int obegin(0), oend(0);
             
-            Uint4 numseq = 0;
+            int numseq = 0;
             
-            Uint4 z1 = 0;
+            int z1 = 0;
             
             while(1) {
                 CSeqDB::EOidListType range_type =
                     db.GetNextOIDChunk(obegin, oend, oids);
                 
-                Uint4 num_found(0);
+                int num_found(0);
                 
                 if (range_type == CSeqDB::eOidList) {
                     num_found = (int) oids.size();
-//                     ITERATE(vector<Uint4>, iter, oids) {
-//                         Uint4 iter_gi(0);
+//                     ITERATE(vector<int>, iter, oids) {
+//                         int iter_gi(0);
 //                         db.OidToGi(*iter, iter_gi);
 //                         cout << *iter << ":" << iter_gi << endl;
 //                    }
                 } else {
                     num_found = oend - obegin;
-//                     for(Uint4 iter = obegin; iter < oend; iter++) {
-//                         Uint4 iter_gi(0);
+//                     for(int iter = obegin; iter < oend; iter++) {
+//                         int iter_gi(0);
 //                         db.OidToGi(iter, iter_gi);
 //                         cout << iter << ":" << iter_gi << endl;
 //                     }
@@ -1393,7 +1393,7 @@ int test1(int argc, char ** argv)
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
-            Uint4 pig(2201), oid(0), gi(0), pg2(0), oid2(0), len(0);
+            int pig(2201), oid(0), gi(0), pg2(0), oid2(0), len(0);
             bool b1, b2, b3, b4;
             
             b1  = db.PigToOid(pig, oid);
@@ -1431,12 +1431,12 @@ int test1(int argc, char ** argv)
 #if 0
             cout << "PIG translations worked, trying bulk mode:" << endl;
             
-            //Uint4 numseqs(db.GetNumSeqs());
+            //int numseqs(db.GetNumSeqs());
             
-            Uint4 i = 0;
+            int i = 0;
             
             for(i = 0; i<10000; i++) {
-                Uint4 OID = 0;
+                int OID = 0;
                 
                 if (db.PigToOid(i, OID)) {
                     cout << "pig " << i << " is oid " << OID << endl;
@@ -1445,10 +1445,10 @@ int test1(int argc, char ** argv)
                 }
             }
             
-//             Uint4 shout_at = 0;
+//             int shout_at = 0;
             
 //             for(; i<numseqs; i++) {
-//                 Uint4 pig = 0;
+//                 int pig = 0;
                 
 //                 if (i > shout_at) {
 //                     shout_at = ((i * 4) / 3);
@@ -1481,7 +1481,7 @@ int test1(int argc, char ** argv)
             
             cout << "Num oids: " << db.GetNumSeqs() << endl;
             
-            Uint4 pig = 2201, oid(0), pg2(0), len(0);
+            int pig = 2201, oid(0), pg2(0), len(0);
             bool b1, b2;
             
             b1  = db.PigToOid(pig, oid);
@@ -1508,12 +1508,12 @@ int test1(int argc, char ** argv)
             
             cout << "PIG translations worked, trying bulk mode:" << endl;
             
-            //Uint4 numseqs(db.GetNumSeqs());
+            //int numseqs(db.GetNumSeqs());
             
-            Uint4 i = 0;
+            int i = 0;
             
             for(i = 0; i<10000; i++) {
-                Uint4 OID = 0;
+                int OID = 0;
                 
                 if (db.PigToOid(i, OID)) {
                     cout << "pig " << i << " is oid " << OID << endl;
@@ -1522,10 +1522,10 @@ int test1(int argc, char ** argv)
                 }
             }
             
-//             Uint4 shout_at = 0;
+//             int shout_at = 0;
             
 //             for(; i<numseqs; i++) {
-//                 Uint4 pig = 0;
+//                 int pig = 0;
                 
 //                 if (i > shout_at) {
 //                     shout_at = ((i * 4) / 3);
@@ -1563,7 +1563,7 @@ int test1(int argc, char ** argv)
                 cerr << "Constructor ran?" << endl;
                 
                 const char * sq = 0;
-                Uint4 sqlen = 0;
+                int sqlen = 0;
                 
                 sqlen = db.GetSequence(10, & sq);
                 
@@ -1596,9 +1596,9 @@ int test1(int argc, char ** argv)
         if (s == "-atlas2") {
             CSeqDB db("nr", CSeqDB::eProtein);
             
-            for(Uint4 index = 311073; index < 700000; index++) {
+            for(int index = 311073; index < 700000; index++) {
                 const char * sq = 0;
-                /*Uint4 sqlen =*/ db.GetSequence(10, & sq);
+                /*int sqlen =*/ db.GetSequence(10, & sq);
                 db.RetSequence(& sq);
             }
             
@@ -1666,8 +1666,8 @@ int test1(int argc, char ** argv)
             
             CSeqDB db(dbname, seqtype);
             
-            Uint4 gi(129295);
-            Uint4 oid(0);
+            int gi(129295);
+            int oid(0);
             
             if (! args.empty()) {
                 gi = atoi(args.front().c_str());
@@ -1720,7 +1720,7 @@ int test1(int argc, char ** argv)
         if (s == "-memtest") {
             CSeqDB nt("nt", CSeqDB::eNucleotide, 0, 0, false);
             
-            Uint4 oid = 0;
+            int oid = 0;
             
             for(int i = 0; i<100; i++) {
                 const char * buf(0);
@@ -1801,7 +1801,7 @@ int test1(int argc, char ** argv)
         if (s == "-getambig") {
             CSeqDB nt(/*dbpath,*/ "nt", CSeqDB::eNucleotide, 0, 0, false);
             
-            Uint4 oid = 0;
+            int oid = 0;
             
             for(int i = 0; i<100; i++) {
                 const char * buf(0);
@@ -2078,7 +2078,7 @@ int test1(int argc, char ** argv)
              
             {
                 Uint8 tlen = 0;
-                Uint4 numb = 0;
+                int numb = 0;
                 
                 CSeqDBIter skywalk = phil.Begin();
                 
@@ -2124,10 +2124,10 @@ int test1(int argc, char ** argv)
             
             cout << " num oids " << sp.GetNumSeqs() << endl;
             
-            vector<Uint4> chunky;
+            vector<int> chunky;
             chunky.resize(1000000);
             
-            Uint4 b(0), e(0);
+            int b(0), e(0);
             
             CSeqDB::EOidListType et = sp.GetNextOIDChunk(b,e,chunky);
             
@@ -2152,17 +2152,17 @@ int test1(int argc, char ** argv)
             //CSeqDB phil(dbname1, 'p', 1000000, 1 << 30, true);
             CSeqDB phil(dbname1, CSeqDB::eProtein, 1880000, 1 << 30, true);
             
-            const Uint4 max_oids = 100;
+            const int max_oids = 100;
             
-            Uint4 begin(0), end(0);
+            int begin(0), end(0);
             
-            //Uint4 oid_list[max_oids];
-            vector<Uint4> oid_list;
+            //int oid_list[max_oids];
+            vector<int> oid_list;
             oid_list.resize(max_oids);
             
             bool have_any = true;
             
-            Uint4 chunk_index = 0;
+            int chunk_index = 0;
             
             while (have_any) {
                 cout << "\nChunk #" << chunk_index++ << "\n    ";
@@ -2170,15 +2170,15 @@ int test1(int argc, char ** argv)
                 if (CSeqDB::eOidList == phil.GetNextOIDChunk(begin, end, oid_list)) {
                     have_any = ! oid_list.empty();
                     
-                    Uint4 begin2 = 0;
+                    int begin2 = 0;
                     
-                    for(Uint4 i = 0; i<oid_list.size(); i++) {
+                    for(int i = 0; i < (int)oid_list.size(); i++) {
                         cout << i << "/" << (i-begin2) << ": got oid(L) " << oid_list[i] << "\n    ";
                     }
                 } else {
                     have_any = (begin != end);
                     
-                    for(Uint4 i = begin; i<end; i++) {
+                    for(int i = begin; i<end; i++) {
                         cout << i << "/" << (i-begin) << ": got oid(R) " << i << "\n    ";
                     }
                 }
@@ -2257,11 +2257,11 @@ int test1(int argc, char ** argv)
             
             string db_list;
             
-            Uint4 num_dbs = int(sizeof(dbs)/sizeof(dbs[0]));
+            int num_dbs = int(sizeof(dbs)/sizeof(dbs[0]));
             
             cout << "\nDatabase will include data from:\n";
             
-            for(Uint4 i = 0; i < num_dbs; i++) {
+            for(int i = 0; i < num_dbs; i++) {
                 string next_db = string("Microbial/");
                 next_db.append(NStr::UIntToString(dbs[i]));
                 
@@ -2289,8 +2289,8 @@ int test1(int argc, char ** argv)
             
             cout << "\nDone constructing; Getting first OID..." << endl;
             
-            Uint4 oid = 0;
-            Uint4 oid_cnt = 0;
+            int oid = 0;
+            int oid_cnt = 0;
             
             if (db.CheckOrFindOID(oid)) {
                 cout << "\nFound first; Iterating over remaining OIDs..." << endl;
@@ -2355,7 +2355,7 @@ int test1(int argc, char ** argv)
             double e1 = sw.Elapsed();
             double e2 = e1;
             
-            Uint4 i(0);
+            int i(0);
             while((e2 - e1) < 10.0) {
                 CSeqDB cob("genomes/barley", CSeqDB::eNucleotide);
                 i++;
@@ -2425,10 +2425,10 @@ int test1(int argc, char ** argv)
             
             cout << " num oids " << sp.GetNumSeqs() << endl;
             
-            vector<Uint4> chunky;
+            vector<int> chunky;
             chunky.resize(1000000);
             
-            Uint4 b(0), e(0);
+            int b(0), e(0);
             
             CSeqDB::EOidListType et = sp.GetNextOIDChunk(b,e,chunky);
             
@@ -2851,7 +2851,7 @@ int test1(int argc, char ** argv)
                 indx = NStr::StringToUInt8(indx_str);
                 
                 if (cin && (indx != 0)) {
-                    Uint4 oid = db.GetOidAtOffset(0, indx);
+                    int oid = db.GetOidAtOffset(0, indx);
                     cout << "get at " << indx << " is " << oid << endl;
                 } else {
                     break;
@@ -2895,10 +2895,10 @@ int test1(int argc, char ** argv)
             Uint8 start  = 0; 
             Uint8 offset = start + (total_bases - start) / 2;
            
-            Uint4 oid1 = 1;
-            Uint4 oid2 = 0;
+            int oid1 = 1;
+            int oid2 = 0;
             
-            Uint4 oid_same_cnt = 0;
+            int oid_same_cnt = 0;
             
             while((oid_same_cnt < 10) && ((total_bases - start) > 5)) {
                 oid1 = oid2;
