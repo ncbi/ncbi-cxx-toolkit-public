@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/01/06 16:13:43  vasilche
+* Updated help messages.
+*
 * Revision 1.24  1999/12/30 21:33:39  vasilche
 * Changed arguments - more structured.
 * Added intelligence in detection of source directories.
@@ -80,32 +83,46 @@ typedef pair<AnyType, TTypeInfo> TObject;
 static void Help(void)
 {
     NcbiCout << NcbiEndl <<
-        "DataTool 1.0 arguments:" << NcbiEndl <<
+        "DataTool 1.0 arguments:\n" <<
         NcbiEndl <<
-        "  -m  ASN.1 module file [File In] Optional" << NcbiEndl <<
-        "  -mx XML module file [File In] Optional" << NcbiEndl <<
-        "  -M  external ASN.1 module files [File In] Optional" << NcbiEndl <<
-        "  -Mx external XML module files [File In] Optional" << NcbiEndl <<
-        "  -f  ASN.1 module file [File Out]  Optional" << NcbiEndl <<
-        "  -fx XML module file [File Out]  Optional" << NcbiEndl <<
-        "  -v  Read value in ASN.1 text format [File In]  Optional" << NcbiEndl <<
-        "  -p  Print value in ASN.1 text format [File Out]  Optional" << NcbiEndl <<
-        "  -vx Read value in XML format [File In]  Optional" << NcbiEndl <<
-        "  -px Print value in XML format [File Out]  Optional" << NcbiEndl <<
-        "  -d  Read value in ASN.1 binary format (type required) [File In]  Optional" << NcbiEndl <<
-        "  -t  Binary value type [String]  Optional" << NcbiEndl <<
-        "  -e  Write value in ASN.1 binary format [File Out]  Optional" << NcbiEndl <<
-        "  -oA generate C++ files for all types Optional" << NcbiEndl <<
-        "  -ot generate C++ files for listed types [Types] Optional" << NcbiEndl <<
-        "  -ox exclude listed types from generation [Types] Optional" << NcbiEndl <<
-        "  -oX exclude all other types from generation Optional" << NcbiEndl <<
-        "  -od C++ code definition file [File In] Optional" << NcbiEndl <<
-        "  -oh Directory for generated C++ headers [Directory] Optional" << NcbiEndl <<
-        "  -oc Directory for generated C++ code [Directory] Optional" << NcbiEndl <<
-        "  -of File for list of generated C++ files [File Out] Optional" << NcbiEndl <<
-        "  -oR set root directory in NCBI C++ toolkit tree [root]" << NcbiEndl <<
-        "  -or Generate files in subdirs with source name [prefix]" << NcbiEndl <<
-        "  -i  Ignore unresolved symbols Optional" << NcbiEndl;
+        "  -H           display this message (optional)\n" <<
+        "  -oH          display code generation arguments (optional)\n" <<
+        "  -m <file>    ASN.1 module file\n" <<
+        "  -mx <file>   XML module file\n" <<
+        "  -M <files>   external ASN.1 module files (optional)\n" <<
+        "  -Mx <files>  external XML module files (optional)\n" <<
+        "  -i           ignore unresolved symbols (optional)\n" <<
+        "  -f <file>    write ASN.1 module file (optional)\n" <<
+        "  -fx <file>   write XML module file (optional)\n" <<
+        "  -v <file>    read value in ASN.1 text format (optional)\n" <<
+        "  -p <file>    write value in ASN.1 text format (optional)\n" <<
+        "  -vx <file>   read value in XML format (optional)\n" <<
+        "  -px <file>   write value in XML format (optional)\n" <<
+        "  -d <file>    read value in ASN.1 binary format (type required) (optianal)\n" <<
+        "  -t <type>    binary value type (optional)\n" <<
+        "  -e <file>    write value in ASN.1 binary format (optional)\n";
+}
+
+static void GenerateHelp(void)
+{
+    NcbiCout << NcbiEndl <<
+        "DataTool 1.0 code generation arguments (all optional):\n" <<
+        NcbiEndl <<
+        "  -oH          display this message\n" <<
+        "  -oA          generate C++ files for all types\n" <<
+        "  -ot <types>  generate C++ files for listed types\n" <<
+        "  -ox <types>  exclude listed types from generation\n" <<
+        "  -oX          turn off recursive type generation\n" <<
+        "  -od <file>   C++ code definition file\n" <<
+        "  -of <file>   write list of generated C++ files\n" <<
+        "  -opm <dir>   directory for searching source modules\n" <<
+        "  -oph <dir>   directory for generated *.hpp files\n" <<
+        "  -opc <dir>   directory for generated *.cpp files\n" <<
+        "  -or <prefix> add prefix to generated file names\n" <<
+        "  -ors         add source file dir to generated file names\n" <<
+        "  -orm         add module name to generated file names\n" <<
+        "  -orA         combine all -or* prefixes\n" <<
+        "  -oR <dir>    set -op* and -or* arguments for NCBI dir tree\n";
 }
 
 static
@@ -206,7 +223,7 @@ int main(int argc, const char*argv[])
 
     if ( argc <= 1 ) {
         Help();
-        return 0;
+        return 1;
     }
     else {
         for ( int i = 1; i < argc; ++i ) {
@@ -215,6 +232,9 @@ int main(int argc, const char*argv[])
                 ERR_POST(Fatal << "Invalid argument: " << arg);
             }
             switch ( arg[1] ) {
+            case 'H':
+                Help();
+                return 1;
             case 'm':
                 GetFilesIn(mainModules, arg, argv[++i]);
                 break;
@@ -244,6 +264,9 @@ int main(int argc, const char*argv[])
                 break;
             case 'o':
                 switch ( arg[2] ) {
+                case 'H':
+                    GenerateHelp();
+                    return 1;
                 case 'A':
                     generateAllTypes = true;
                     break;
@@ -275,7 +298,8 @@ int main(int argc, const char*argv[])
                         modulesDir = DirArgument(argv[++i]);
                         break;
                     default:
-                        ERR_POST(Fatal << "Invalid argument: " << arg);
+                        ERR_POST(Fatal << "Invalid argument: " << arg <<
+                                 "\nRun datatool -oH for more info");
                         break;
                     }
                     break;
@@ -295,7 +319,8 @@ int main(int argc, const char*argv[])
                         generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
                         break;
                     default:
-                        ERR_POST(Fatal << "Invalid argument: " << arg);
+                        ERR_POST(Fatal << "Invalid argument: " << arg <<
+                                 "\nRun datatool -oH for more info");
                     }
                     break;
                 case 'R':
@@ -308,11 +333,13 @@ int main(int argc, const char*argv[])
                     generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
                     break;
                 default:
-                    ERR_POST(Fatal << "Invalid argument: " << arg);
+                    ERR_POST(Fatal << "Invalid argument: " << arg <<
+                             "\nRun datatool -oH for more info");
                 }
                 break;
             default:
-                ERR_POST(Fatal << "Invalid argument: " << arg);
+                ERR_POST(Fatal << "Invalid argument: " << arg <<
+                         "\nRun datatool -H for more info");
             }
         }
     }
