@@ -366,6 +366,34 @@ protected:
 
 
 
+class NCBI_XALNMGR_EXPORT CAlnMapPrinter : public CObject
+{
+public:
+    /// Constructor
+    CAlnMapPrinter(const CAlnMap& aln_map,
+                   CNcbiOstream&  out);
+
+    /// Printing methods
+    void CsvTable();
+    void Segments();
+    void Chunks  (CAlnMap::TGetChunkFlags flags = CAlnMap::fAlnSegsOnly);
+
+    /// Fasta style Ids
+    const string& GetId  (CAlnMap::TNumrow row) const;
+    void          PrintId(CAlnMap::TNumrow row) const;
+
+private:
+    const CAlnMap&         m_AlnMap;
+    const CAlnMap::TNumrow m_NumRows;
+    mutable vector<string> m_Ids;
+
+protected:
+    size_t                 m_IdFieldLen;
+    CNcbiOstream*          m_Out;
+};
+
+
+
 ///////////////////////////////////////////////////////////
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
@@ -664,6 +692,12 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
     return GetSegType(row, GetSeg(aln_pos));
 }
 
+inline
+const string&
+CAlnMapPrinter::GetId(CAlnMap::TNumrow row) const
+{
+    return m_Ids[row];
+}
 
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
@@ -678,6 +712,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/03/15 17:44:24  todorov
+* Added a printer class
+*
 * Revision 1.40  2004/10/12 19:42:44  rsmith
 * work around compiler bug in Codewarrior
 *

@@ -154,6 +154,33 @@ private:
 
 
 
+class NCBI_XALNMGR_EXPORT CAlnVecPrinter : public CAlnMapPrinter
+{
+public:
+    /// Constructor
+    CAlnVecPrinter(const CAlnVec& aln_vec,
+                   CNcbiOstream&  out);
+
+
+    /// which algorithm to choose
+    enum EAlgorithm {
+        eUseSeqString,         // memory ineficient
+        eUseAlnSeqString,      // memory efficient, recommended for large alns
+        eUseWholeAlnSeqString  // memory ineficient, but very fast
+    };
+
+    /// Printing methods
+    void PopsetStyle (int        scrn_width = 70,
+                      EAlgorithm algorithm  = eUseAlnSeqString);
+
+    void ClustalStyle(int        scrn_width = 50,
+                      EAlgorithm algorithm  = eUseAlnSeqString);
+
+private:
+    const CAlnVec& m_AlnVec;
+};
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
@@ -357,6 +384,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2005/03/15 17:44:24  todorov
+ * Added a printer class
+ *
  * Revision 1.33  2004/03/30 16:37:43  todorov
  * +GetColumnVector comments
  *
