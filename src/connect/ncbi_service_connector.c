@@ -337,7 +337,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     }
 
     {{
-        char* iter_header = SERV_Print(uuu->iter);
+        char* iter_header = SERV_PrintEx(uuu->iter, uuu->net_info);
         switch (info->type) {
         case fSERV_Ncbid:
             user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
@@ -519,7 +519,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 
     if (user_header) {
         /* We create HTTP connector here */
-        char* iter_header = SERV_Print(uuu->iter);
+        char* iter_header = SERV_PrintEx(uuu->iter, uuu->net_info);
         size_t n;
         if (iter_header /*NB: <CR><LF>-terminated*/) {
             if ((n = strlen(user_header)) > 0) {
@@ -847,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2004/07/01 16:28:44  lavr
+ * Generate "Referer:" for resolved HTTP service hits
+ *
  * Revision 6.60  2003/08/25 14:41:53  lavr
  * Employ new k..Timeout constants  --  log modification only
  *
