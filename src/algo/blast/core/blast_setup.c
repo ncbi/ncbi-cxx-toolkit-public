@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.9  2003/04/18 22:26:45  dondosha
+* Removed structures generated from ASN.1 from the main engine of BLAST
+*
 * Revision 1.8  2003/04/17 21:14:41  dondosha
 * Added cutoff score hit parameters that is calculated from e-value
 *
@@ -1302,7 +1305,8 @@ Boolean use_blastna,	/* [in] if TRUE use blastna alphabet (ignored for proteins)
 Boolean concatenate,	/* [in] if TRUE do all SeqLoc's, otherwise only first. */
 Uint1Ptr *buffer, 	/* [out] buffer to hold plus strand or protein. */
 Int4 *buffer_length,	/* [out] length of buffer allocated. */
-ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by X. */
+ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by
+                           X. */
 )
 {
 	Boolean 	is_na; /* nucl. if TRUE, otherwise protein. */
@@ -1313,7 +1317,8 @@ ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by X
 	SeqPortPtr	spp; /* Used to get sequence with SeqPortGetResidue. */
 	Uint1Ptr	buffer_var; /* buffer offset to be worked on. */
 	Int2 mol = SeqLocMol(slp);	 /* Get molecule type. */
-
+        Boolean double_length = FALSE;
+ 
 	slp_var = slp;
 	length=0;
 	slp_count=0;
@@ -1321,6 +1326,8 @@ ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by X
 	{
 		length += SeqLocLen(slp_var);
 		slp_count++;
+                if (SeqLocStrand(slp_var) == Seq_strand_both)
+                   double_length = TRUE;
 		if (!concatenate)
 			break;
 		slp_var = slp_var->next;
@@ -1328,7 +1335,7 @@ ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by X
 
 	is_na = ISA_na(mol);
 
-	if (is_na)
+	if (double_length)
 	{	/* twice as long for two strands. */
 		*buffer_length = 2*(length + slp_count) + 1;
 	}
@@ -1346,7 +1353,7 @@ ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by X
 	    {
 		Uint1 strand = SeqLocStrand(slp_var);
 		
-		if (strand == Seq_strand_plus || strand == Seq_strand_minus)	
+		if (strand == Seq_strand_plus || strand == Seq_strand_minus)
 		{	/* One strand. */
 			spp = SeqPortNewByLoc(slp_var, Seq_code_ncbi4na);
 			if (spp)
@@ -1403,6 +1410,63 @@ ValNodePtr *selcys_pos	/* [out] positions where selenocysteine was replaced by X
 	return status;
 }
 
+Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
+        Int4 *buffer_length, Boolean compress_dna)
+{
+   Boolean is_na = ISA_na(SeqLocMol(subject_slp));
+   Uint1Ptr buffer_var;
+   SeqPortPtr spp = NULL;
+   SPCompressPtr spc=NULL;
+   Uint1 residue;
+   BioseqPtr subject_bsp;
+
+   *buffer_length = SeqLocLen(subject_slp);
+
+   if (!is_na) {
+      *buffer = buffer_var = (Uint1Ptr) Malloc(*buffer_length + 2);
+      *buffer_var = NULLB;
+      spp = SeqPortNewByLoc(subject_slp, Seq_code_ncbistdaa);
+      while ((residue=SeqPortGetResidue(spp)) != SEQPORT_EOF) {
+         if (IS_residue(residue)) {
+           *(++buffer_var) = residue;
+         }
+      }
+      *(++buffer_var) = NULLB;
+   } else if (!compress_dna) {
+      *buffer = buffer_var = (Uint1Ptr) Malloc(*buffer_length + 2);
+      *buffer_var = NULLB;
+      spp = SeqPortNewByLoc(subject_slp, Seq_code_ncbi4na);
+      subject_bsp = BioseqFindCore(SeqLocId(subject_slp));
+      if (subject_bsp != NULL && subject_bsp->repr == Seq_repr_delta)
+         SeqPortSet_do_virtual(spp, TRUE);
+      *buffer_var = ncbi4na_to_blastna[0];
+      
+      while ((residue=SeqPortGetResidue(spp)) != SEQPORT_EOF) {
+         if (IS_residue(residue)) {
+            *(++buffer_var) = ncbi4na_to_blastna[residue];
+         }
+      }
+      /* Gap character in last space. */
+      *(++buffer_var) = ncbi4na_to_blastna[0];
+   } else {
+      spp = SeqPortNewByLoc(subject_slp, Seq_code_ncbi4na);
+      subject_bsp = BioseqFindCore(SeqLocId(subject_slp));
+      if (subject_bsp != NULL && subject_bsp->repr == Seq_repr_delta)
+         SeqPortSet_do_virtual(spp, TRUE);
+      spc = SPCompressDNA(spp);
+      if (spc == NULL) {
+         *buffer = NULL;
+         *buffer_length = 0;
+      } else {
+         *buffer = spc->buffer;
+         spc->buffer = NULL;
+         SPCompressFree(spc);
+      }
+   }
+   spp = SeqPortFree(spp);
+   return 0;
+}
+
 /** Create and fill the query information structure, including sequence ids, 
  * and array of offsets into a concatenated sequence, if needed.
  * @param prog_number Numeric value of the BLAST program [in]
@@ -1418,6 +1482,7 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
    BlastQueryInfoPtr query_info;
    Int4 index, numseqs, num_contexts, context;
    SeqLocPtr slp;
+   Int4 total_length = 0;
 
    if (!query_slp || !sbp || !query_info_ptr)
       return -1;
@@ -1438,14 +1503,12 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
    query_info->first_context = 0;
    query_info->last_context = num_contexts - 1;
    query_info->num_queries = numseqs;
-   query_info->query_slp = query_slp;
 
    query_info->context_offsets =
       (Int4Ptr) Malloc((num_contexts+1)*sizeof(Int4));
 
    query_info->eff_searchsp_array = 
       (Int8Ptr) Malloc(num_contexts*sizeof(Int8));
-   query_info->qid_array = (SeqIdPtr PNTR) Malloc(numseqs*sizeof(SeqIdPtr));
 
    query_info->context_offsets[0] = 0;
 
@@ -1455,34 +1518,33 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
            ++index, slp = slp->next) {
          context = 2*index + 1;
          query_length = SeqLocLen(slp);
+         total_length += query_length;
          query_info->context_offsets[context] =
             query_info->context_offsets[context-1] + query_length + 1;
          query_info->context_offsets[context+1] =
             query_info->context_offsets[context] + query_length + 1;
-         query_info->qid_array[index] = SeqLocId(slp);
       }
       break;
    case blast_type_blastx: case blast_type_tblastx:
       for (index = 0, slp = query_slp; index < num_contexts && slp;
            ++index, slp = slp->next) {
          query_length = SeqLocLen(slp);
+         total_length += query_length;
          query_info->context_offsets[index+1] =
             query_info->context_offsets[index] + query_length + 1;
-         if ((index % 6) == 0) {
-            query_info->qid_array[index/6] = (SeqLocId(slp))->next;
-         }
       }
       break;
    default: /* blastp, tblastn */
       for (index = 0, slp = query_slp; index < numseqs && slp;
            ++index, slp = slp->next) {
          query_length = SeqLocLen(slp);
+         total_length += query_length;
          query_info->context_offsets[index+1] =
             query_info->context_offsets[index] + query_length + 1;
-         query_info->qid_array[index] = SeqLocId(slp);
       }
       break;
    }
+   query_info->total_length = total_length;
    *query_info_ptr = query_info;
    return 0;
 }

@@ -94,7 +94,6 @@ BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
       else
          MemFree(seq_blk->sequence);
    }
-   SeqIdFree(seq_blk->seqid);
    return (BLAST_SequenceBlkPtr) MemFree(seq_blk);
 }
 
@@ -158,7 +157,6 @@ BLAST_SequenceBlkPtr BLAST_SequenceBlkDestruct(BLAST_SequenceBlkPtr seq_blk)
 {
    if (seq_blk->sequence_allocated)
       MemFree(seq_blk->sequence_start);
-   SeqIdFree(seq_blk->seqid);
    return (BLAST_SequenceBlkPtr) MemFree(seq_blk);
 }
 

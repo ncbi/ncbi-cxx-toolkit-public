@@ -45,71 +45,10 @@ extern Uint1Ptr
 GetPrivatTranslationTable PROTO((CharPtr genetic_code,
                                  Boolean reverse_complement));
 
-#ifdef GAPPED_LOG
-/** Print out the initial hits information. Used for debugging only, will be 
- * removed later.
- * @param hsp_list A structure holding an array of HSPs [in]
- * @param query_info Query information structure [in]
- * @param filename Name of the output file [in]
- * @param first_time Is this the first time the output file will be opened? [in]
- */
-static Boolean WriteLogInfo(BlastHSPListPtr hsp_list, BlastQueryInfoPtr query_info,
-                            CharPtr filename, Int4 oid, Boolean first_time)
-{
-   Int4 query_length, i;
-   Int4 q_start, q_end, s_start, s_end;
-   FILE *logfp2;
-
-   if (!hsp_list || hsp_list->hspcnt == 0)
-      return first_time;
-
-   query_length = SeqLocLen(query_info->query_slp);
-
-   if (first_time) {
-      logfp2 = FileOpen(filename, "w");
-   } else {
-      logfp2 = FileOpen(filename, "a");
-   }
-
-   fprintf(logfp2, "# Sequence %ld\n", (long)oid);
-   for (i=0; i<hsp_list->hspcnt; ++i) {
-      if (hsp_list->hsp_array[i]->query.offset > query_length) {
-         q_end = 2*query_length -
-            hsp_list->hsp_array[i]->query.offset + 1;
-         q_start = 2*query_length - hsp_list->hsp_array[i]->query.end + 2;
-         s_start = hsp_list->hsp_array[i]->subject.end;
-         s_end = hsp_list->hsp_array[i]->subject.offset + 1;
-      } else {
-         q_start = hsp_list->hsp_array[i]->query.offset + 1;
-         q_end = hsp_list->hsp_array[i]->query.end;
-         s_start = hsp_list->hsp_array[i]->subject.offset + 1;
-         s_end = hsp_list->hsp_array[i]->subject.end;
-      }
-      fprintf(logfp2, "%ld [%ld %ld] [%ld %ld] %ld\n", 
-              (long)(oid + 1), (long)q_start, (long)q_end, (long)s_start, 
-              (long)s_end, (long)hsp_list->hsp_array[i]->score);
-   }
-   FileClose(logfp2);
-
-   return FALSE;
-}
-
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr db, Int4 numseqs, 
-        BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
-        BlastScoringOptionsPtr score_options, 
-        BlastInitialWordParametersPtr word_params, 
-        BlastExtensionParametersPtr ext_params, 
-        BlastHitSavingParametersPtr hit_params, 
-        BlastResultsPtr PNTR results_ptr, 
-        BlastReturnStatPtr return_stats, CharPtr logname)
-#else
-Int4 
-BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
-        LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr db, Int4 numseqs, 
+        ReadDBFILEPtr db, BLAST_SequenceBlkPtr subject_blk, Int4 numseqs, 
         BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
         BlastScoringOptionsPtr score_options, 
         BlastInitialWordParametersPtr word_params, 
@@ -117,7 +56,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastHitSavingParametersPtr hit_params, 
         BlastResultsPtr PNTR results_ptr,
         BlastReturnStatPtr return_stats)
-#endif
 {
    Int4 oid;
    BLAST_SequenceBlkPtr subject = NULL;
@@ -130,9 +68,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       (word_options->extend_word_method & EXTEND_WORD_AG);
    Int4 max_hits = 0, total_hits = 0, num_hits;
    BlastHSPListPtr hsp_list, combined_hsp_list, full_hsp_list;
-#ifdef GAPPED_LOG  
-   Boolean first_time = TRUE;
-#endif
    BlastResultsPtr results;
    Int2 status;
    BlastHitSavingOptionsPtr hit_options = hit_params->options;
@@ -237,10 +172,14 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       if ( (oid % 10000) == 0 ) printf("oid=%d\n",oid);
 #endif
 
-      subject = BlastSequenceBlkFree(subject);
-      /* Retrieve subject sequence in ncbistdaa for proteins or ncbi2na 
-         for nucleotides */
-      MakeBlastSequenceBlk(db, &subject, oid, BLASTP_ENCODING);
+      if (db) {
+         /* Retrieve subject sequence in ncbistdaa for proteins or ncbi2na 
+            for nucleotides */
+         MakeBlastSequenceBlk(db, &subject, oid, BLASTP_ENCODING);
+      } else {
+         subject = MemDup(subject_blk, sizeof(BLAST_SequenceBlk));
+      }
+
       if (translated_subject) {
          frame_min = -3;
          frame_max = 3;
@@ -328,12 +267,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          /* The subject ordinal id is not yet filled in this HSP list */
          hsp_list->oid = oid;
          
-#ifdef GAPPED_LOG  
-         if (logname)
-            first_time = WriteLogInfo(hsp_list, query_info, logname, oid, 
-                                      first_time);
-#endif
-
          /* Multiple contexts - adjust all HSP offsets to the individual 
             query coordinates; also assign frames */
          BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info);
@@ -379,10 +312,27 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          full_hsp_list, hit_params, query_info, gap_align->sbp, 
          score_options, db, NULL);
 
+      if (db) {
+         if (translated_subject) {
+            /* Restore the original contents of the subject block */
+            subject->length = nucl_length;
+            subject->sequence = nucl_sequence;
+         }
+         subject = BlastSequenceBlkFree(subject);
+      } else {
+         /* Two sequences case: do not free the sequence! */
+         subject = MemFree(subject);
+      }
    }
 
    BLAST_InitHitListDestruct(init_hitlist);
    BlastHSPListFree(hsp_list);
+
+   if (translated_subject) {
+      MemFree(translation_table);
+      MemFree(translation_table_rc);
+      MemFree(translation_buffer);
+   }
 
    /* Now sort the hit lists for all queries */
    BLAST_SortResults(results);
@@ -390,9 +340,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    /* epilogue */
 
    if (blastp)
-     {
-       DiagFree(ewp->diag_table);
-     }
+      DiagFree(ewp->diag_table);
 
    MemFree(query_offsets); query_offsets = NULL;
    MemFree(subject_offsets); subject_offsets = NULL;
