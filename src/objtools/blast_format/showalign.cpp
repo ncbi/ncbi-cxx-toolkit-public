@@ -207,6 +207,30 @@ static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
 static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 static void x_ColorDifferentBases(string& seq, char identityChar, CNcbiOstream& out);
+static void s_WrapOutputLine(CNcbiOstream& out, const string& str);
+
+static void s_WrapOutputLine(CNcbiOstream& out, const string& str){
+  const int line_len = 60;
+  const int front_space = 12;
+  bool do_wrap = false;
+  int length = (int) str.size();
+  if (length > line_len) {
+    for (int i = 0; i < length; i ++){
+      if(i > 0 && i % line_len == 0){
+	do_wrap = true;
+      }   
+      out << str[i];
+      if(do_wrap && isspace(str[i])){
+	out << endl;  
+	AddSpace(out, front_space);
+	do_wrap = false;
+      }
+    }
+  } else {
+    out << str;
+  }
+}
+
 
 //To add color to bases other than identityChar
 static void x_ColorDifferentBases(string& seq, char identityChar, CNcbiOstream& out){
@@ -1177,7 +1201,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
       out << ">"; 
       wid->WriteAsFasta(out);
       out<<" ";
-      out << GetTitle(bspHandle);
+      s_WrapOutputLine(out, GetTitle(bspHandle));
       out << endl;
     } else {
       //print each defline 
@@ -1232,7 +1256,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
  
 	out <<" ";
 	if((*iter)->IsSetTitle()){
-	  out << (*iter)->GetTitle();     
+	  s_WrapOutputLine(out, (*iter)->GetTitle());     
 	}
 	out<<endl;
 	isFirst = false;
@@ -1968,6 +1992,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.31  2004/01/29 23:13:20  jianye
+*Wrap defline
+*
 *Revision 1.30  2004/01/27 17:11:43  ucko
 *Allocate storage for m_NumAsciiChar to avoid link errors on AIX.
 *
