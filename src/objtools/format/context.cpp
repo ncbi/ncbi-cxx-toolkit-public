@@ -445,7 +445,7 @@ void CBioseqContext::x_SetId(void)
         }
 
         // WGS
-        m_IsWGS = m_IsWGS  ||  ((acc_div & CSeq_id::eAcc_wgs) != 0);
+        m_IsWGS = m_IsWGS  ||  (acc_div == CSeq_id::eAcc_wgs);
         
         if ( m_IsWGS  &&  !acc.empty() ) {
             size_t len = acc.length();
@@ -529,11 +529,13 @@ bool CBioseqContext::x_IsDeltaLitOnly(void) const
 {
     _ASSERT(IsDelta());
 
-    const CSeq_inst& inst = m_Handle.GetBioseqCore()->GetInst();
-    if ( inst.CanGetExt()  &&  inst.GetExt().IsDelta() ) {
-        ITERATE (CDelta_ext::Tdata, it, inst.GetExt().GetDelta().Get()) {
-            if ( (*it)->IsLoc() ) {
-                return false;
+    if ( m_Handle.IsSetInst_Ext() ) {
+        const CBioseq_Handle::TInst_Ext& ext = m_Handle.GetInst_Ext();
+        if ( ext.IsDelta() ) {
+            ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
+                if ( (*it)->IsLoc() ) {
+                    return false;
+                }
             }
         }
     }
@@ -719,6 +721,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/03/26 17:23:38  shomrat
+* fixed initialization of m_IsWGS
+*
 * Revision 1.11  2004/03/25 20:36:02  shomrat
 * Use handles
 *
