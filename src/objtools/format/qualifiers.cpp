@@ -68,7 +68,7 @@ const string IFlatQVal::kEOL       = "\n";
 static const char* kAANames[] = {
     "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
     "Lys", "Leu", "Met", "Asn", "Pro", "Glu", "Arg", "Ser", "Thr", "Val",
-    "Trp", "Xaa", "Tyr", "Glx", "Sec", "TERM"
+    "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM"
 };
 
 
@@ -467,15 +467,46 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
 {
     // XXX - add link in HTML mode?
     ITERATE (TXref, it, m_Value) {
+        if ( !m_Quals.Empty()  &&  x_XrefInGeneXref(**it) ) {
+            continue;
+        }
         string s((*it)->GetDb());
         const CObject_id& id = (*it)->GetTag();
-        switch (id.Which()) {
-        case CObject_id::e_Id: s += ':' + NStr::IntToString(id.GetId()); break;
-        case CObject_id::e_Str: s += ':' + id.GetStr(); break;
-        default: break; // complain?
+        switch ( id.Which() ) {
+        case CObject_id::e_Id:
+            s += ':' + NStr::IntToString(id.GetId());
+            break;
+        case CObject_id::e_Str:
+            s += ':' + id.GetStr();
+            break;
+        default:
+            break;
         }
         x_AddFQ(q, name, s);
     }
+}
+
+
+bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
+{
+    if ( !m_Quals->HasQual(eFQ_gene_xref) ) {
+        return false;
+    }
+
+    typedef TQuals::const_iterator TQCI;
+    pair<TQCI, TQCI> gxrefs = m_Quals->GetQuals(eFQ_gene_xref);
+    for ( TQCI it = gxrefs.first; it != gxrefs.second; ++it ) {
+        const CFlatXrefQVal* xrefqv =
+            dynamic_cast<const CFlatXrefQVal*>(it->second.GetPointerOrNull());
+        if ( xrefqv != 0 ) {
+            ITERATE (TXref, dbt, xrefqv->m_Value) {
+                if ( dbtag.Match(**dbt) ) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -495,12 +526,23 @@ void CFlatModelEvQVal::Format
 
     size_t nm = 0;
     if ( m_Value->HasField("mRNA") ) {
-        const CUser_field& uf = m_Value->GetField("mRNA");
-        if ( uf.GetData().IsFields() ) {
-            ITERATE (CUser_field::C_Data::TFields, it, uf.GetData().GetFields()) {
-                if ( (*it)->CanGetLabel()  &&  (*it)->GetData().IsStr()  &&
-                     (*it)->GetData().GetStr() == "accession" ) {
-                    ++nm;
+        const CUser_field& field = m_Value->GetField("mRNA");
+        if ( field.GetData().IsFields() ) {
+            ITERATE (CUser_field::C_Data::TFields, it, field.GetData().GetFields()) {
+                const CUser_field& uf = **it;
+                if ( !uf.CanGetData()  ||  !uf.GetData().IsFields() ) {
+                    continue;
+                }
+                ITERATE (CUser_field::C_Data::TFields, it, uf.GetData().GetFields()) {
+                    if ( !(*it)->CanGetLabel() ) {
+                        continue;
+                    }
+                    const CObject_id& oid = (*it)->GetLabel();
+                    if ( oid.IsStr() ) {
+                        if ( oid.GetStr() == "accession" ) {
+                            ++nm;
+                        }
+                    }
                 }
             }
         }
@@ -592,6 +634,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/30 20:32:53  shomrat
+* Fixed go and modelev qual formatting
+*
 * Revision 1.9  2004/03/25 20:46:19  shomrat
 * implement CFlatPubSetQVal formatting
 *
