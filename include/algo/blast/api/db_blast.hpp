@@ -29,6 +29,25 @@
 
 /// @file db_blast.hpp
 /// Declaration of the database BLAST class CDbBlast
+/// <pre>
+/// Top-level API for doing a BLAST search with CDbBlast class:
+/// 
+/// Full search, returning Seq-align:
+///     Run();
+///
+/// Full search, returning BlastHSPResults:
+///     PartialRun(); 
+///     GetResults(); 
+///
+/// Preliminary search only, returning BlastHSPResults:
+///     SetupSearch();
+///     RunPreliminarySearch();
+///     GetResults();
+///
+/// Traceback only, returning Seq-align:
+///     RunTraceback();
+/// </pre>
+///
 
 #ifndef ALGO_BLAST_API___DBBLAST__HPP
 #define ALGO_BLAST_API___DBBLAST__HPP
@@ -105,9 +124,6 @@ public:
     virtual void PartialRun();
     /// Perform the main part of the search setup
     virtual void SetupSearch();
-    /// Run the RPS BLAST search engine; assumes that main setup has already 
-    /// been performed. Combines preliminary and traceback stages of RPS search.
-    virtual void RunRPSSearch();
     /// Run the preliminary stage of the search engine; assumes that main
     /// setup has already been performed.
     virtual void RunPreliminarySearch();
@@ -115,7 +131,6 @@ public:
     /// in the Seq-align form. Assumes that preliminary search has already been
     /// done, and its results are available from the HSP stream.
     virtual TSeqAlignVector RunTraceback(); 
-    
     /// Remove extra results if a limit is provided on total number of HSPs
     void TrimBlastHSPResults();
 
@@ -128,7 +143,7 @@ public:
     /// Retrieve the data structure for saving and extracting HSP lists
     BlastHSPStream* GetHSPStream() const;
     /// Retrieve the results of the BLAST search in the internal form.
-    BlastHSPResults* GetResults() const;
+    BlastHSPResults* GetResults();
     /// Retrieve the diagnostics structure
     BlastDiagnostics* GetDiagnostics() const;
     /// Retrieve the scoring and statistical parameters structure
@@ -143,12 +158,12 @@ public:
     TBlastError& GetErrorMessage();
 
 protected:
-    /// Convert results in internal form to a Seq-align form
-    virtual TSeqAlignVector x_Results2SeqAlign();
     /// Perform traceback given preliminary results are already computed and 
     /// saved in an HSP stream. Fills the BlastHSPResults internal structure 
     /// with after-traceback results.
-    virtual void x_RunTracebackEngine();
+    virtual void x_RunTracebackSearch();
+    /// Convert results in internal form to a Seq-align form
+    virtual TSeqAlignVector x_Results2SeqAlign();
     /// Reset the query-related data structures for a new search
     virtual void x_ResetQueryDs();
     /// Reset results-related data structures for a new search
@@ -262,11 +277,6 @@ inline BlastHSPStream* CDbBlast::GetHSPStream() const
     return m_pHspStream;
 }
 
-inline BlastHSPResults* CDbBlast::GetResults() const
-{
-    return m_ipResults;
-}
-
 inline BlastDiagnostics* CDbBlast::GetDiagnostics() const
 {
     return m_ipDiagnostics;
@@ -307,6 +317,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2004/12/21 17:15:56  dondosha
+* GetResults method made non-const and moved to .cpp file - it can now retrieve results after preliminary stage
+*
 * Revision 1.27  2004/11/04 15:51:59  papadopo
 * prepend 'Blast' to RPSInfo and related structures
 *
