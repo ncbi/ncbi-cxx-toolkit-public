@@ -481,11 +481,13 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
-        if (net_info->stateless) {
+        if (net_info->stateless ||
+            (info && (info->u.firewall.type & fSERV_Http))) {
             if (info) {
                 req_method = info->u.firewall.type == fSERV_HttpGet
                     ? eReqMethod_Get : (info->u.firewall.type == fSERV_HttpPost
                                         ? eReqMethod_Post : eReqMethod_Any);
+                net_info->stateless = 1/*true*/;
             } else
                 req_method = eReqMethod_Any;
         } else
@@ -546,9 +548,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                  "\r\n");
         }
 
-        if ((!info ||
-             info->type == fSERV_Firewall || info->type == fSERV_Ncbid) &&
-            !net_info->stateless) {
+        if (!net_info->stateless && (!info                        ||
+                                     info->type == fSERV_Firewall ||
+                                     info->type == fSERV_Ncbid)) {
             /* HTTP connector is auxiliary only */
             CONNECTOR conn;
             CONN c;
@@ -831,6 +833,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2002/12/19 17:34:58  lavr
+ * Do not initiate STATEFUL_CAPABLE challenge with HTTP servers in relay mode
+ *
  * Revision 6.51  2002/12/10 22:11:50  lavr
  * Stamp HTTP packets with "User-Agent:" header tag and DISP_PROTOCOL_VERSION
  *
