@@ -111,8 +111,10 @@ the file <i>NewProj.cpp</i>:
 
 #include < iostream > 
 
+using namespace std;
+
 int main () {
-  cout << "Hello again, world" << endl;
+    cout << "Hello again, world" << endl;
 }
 </pre>
 <font color = black> 
@@ -220,7 +222,7 @@ BEGIN_NCBI_SCOPE
 
 class CTestApp : public CNcbiApplication {
 public:
-  virtual int Run ();
+    virtual int Run ();
 };
 
 END_NCBI_SCOPE
@@ -248,8 +250,8 @@ USING_NCBI_SCOPE </i> statement:
 BEGIN_NCBI_SCOPE
 
 int CTestApp::Run() {
-  cout << endl << "Wow. Can you believe this thing is actually running?!" << endl;
-  return 0;
+    cout << endl << "Wow. Can you believe this thing is actually running?!" << endl;
+    return 0;
 }
 
 END_NCBI_SCOPE
@@ -258,8 +260,8 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[]) 
 {
-  CTestApp theTestApp;
-  return theTestApp.AppMain(argc, argv);
+    CTestApp theTestApp;
+    return theTestApp.AppMain(argc, argv);
 }
 
 </pre>
@@ -300,28 +302,28 @@ Here is a somewhat simplified view of the application class's definition:
 class CNcbiApplication {
 public:
 
-  int AppMain (int argc, char **argv, char **envp,
-	       EAppDiagStream diag, char* config, string& name);
+    int AppMain (int argc, char **argv, char **envp,
+	         EAppDiagStream diag, char* config, string& name);
 
-  void Init();     
-  int  Run ();  
-  void Exit();     
-  CNcbiArguments&   GetArguments();
-  CNcbiEnvironment& GetEnvironment();
-  CNcbiRegistry&    GetConfig();
+    void Init();     
+    int  Run ();  
+    void Exit();     
+    CNcbiArguments&   GetArguments();
+    CNcbiEnvironment& GetEnvironment();
+    CNcbiRegistry&    GetConfig();
 
 protected:
 
-  bool SetupDiag  (EAppDiagStream diag);
-  bool LoadConfig (CNcbiRegistry& reg, const string* conf);
+    bool SetupDiag  (EAppDiagStream diag);
+    bool LoadConfig (CNcbiRegistry& reg, const string* conf);
 
 private:
 
-  static CNcbiApplication*   m_Instance;  
-  auto_ptr<CNcbiArguments>   m_Args;      
-  auto_ptr<CNcbiEnvironment> m_Environ;   
-  auto_ptr<CNcbiRegistry>    m_Config;    
-  auto_ptr<CNcbiOstream>     m_DiagStream;
+    static CNcbiApplication*   m_Instance;  
+    auto_ptr<CNcbiArguments>   m_Args;      
+    auto_ptr<CNcbiEnvironment> m_Environ;   
+    auto_ptr<CNcbiRegistry>    m_Config;    
+    auto_ptr<CNcbiOstream>     m_DiagStream;
 };
 </xmp>
 <font color = black> 

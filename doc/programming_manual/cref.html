@@ -7,6 +7,7 @@
   <body bgcolor = white>
     <h1>Smart pointers, <i>auto_ptrs</i>, and the <i>CRef</i> Class</h1>
 
+<p align="JUSTIFY">
 C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
 the case, the good news is also the bad news: 
 <ul>
@@ -15,29 +16,46 @@ the case, the good news is also the bad news:
 <li> void pointers allow heterogeneous function arguments of different types, but type
 	  information may not be there when you need it.
 </ul>
-
+<p align="JUSTIFY">
 C++ adds some additional considerations to pointer management: STL containers cannot hold <i>
 reference</i> objects, so you are left with the choice of using either pointers or <i>copies</i>
 of objects. Neither choice is attractive, as pointers can cause memory leaks and the copy 
-constructor may be expensive. <p>
+constructor may be expensive. </p>
 
-The idea behind a C++ <i>smart pointer</i> is to create a wrapper class object capable of
-holding a pointer.  The wrapper class's constructors and destructors can then handle memory
-management as the object goes in and out of scope. The problem with this solution is that it
-does not handle multiple pointers to the same resource properly, and it raises the issue of
-ownership. This is essentially what the STL <i>auto_ptr</i> offers, and is only safe to use
-when the lifetime of the resource maps into the lifetime of a single scope.<p>
+The idea behind a C++ <i>smart pointer</i> is to create a wrapper class capable of holding a
+pointer.  The wrapper class's constructors and destructors can then handle memory management as
+the object goes in and out of scope. The problem with this solution is that it does not handle
+multiple pointers to the same resource properly, and it raises the issue of ownership. This is
+essentially what the STL <i>auto_ptr</i> offers, but this strategy is only safe to use when the
+resource maps to a single pointer variable.<p>
 
-The NCBI <i>CRef</i> class addresses these issues by defining a reference-counted smart pointer:
-the resource cannot be deallocated until <i>all</i> references to it have ceased to exist. In
-addition, the <i>CRef</i> class implements methods of obtaining type information about the
-resource pointed to. 
+The NCBI <i>CRef</i> class addresses these issues by defining a reference-counted smart
+pointer: the resource cannot be deallocated until <i>all</i> references to it have ceased to
+exist. An example program, <a href="smart_cpp.html"> <i>smart.cpp</i></a>, demonstrates this
+difference in memory management. Using an STL <i>auto_ptr</i> to reference an <i>int</i>, the
+program tests whether or not the reference is still accessible after an auxilliary <i>auto_ptr</i>
+which goes out of scope has also been used to reference it. The same sequence is then tested
+using <i>CRef</i> objects instead. <p>
+
+In the first case, the results are unpredictable; the original pointer may have been lost
+immediately with the <i>release()</i> statement. Alternatively, it may still be accessible inside
+the block where ownership is transferred to <i>copy_ap</i>. Using <i>CRef</i>s however, the
+original reference remains accessible in all blocks where <i>orig</i> is defined. There is some
+overhead entailed however, as the reference must now be wrapped inside an object
+(<i>CObject</i>) where a <i>reference count</i> is also maintained.
 
 
 
 	  <p>
-
+In
+addition, the <i>CRef</i> class implements methods of obtaining type information about the
+resource pointed to. 
   </body>
+<a href="traverse.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="diag.html"> <i> next</i> </a>
 </html>
 
 	 <hr>

@@ -27,31 +27,31 @@
 static
 void PrintUsage(void)
 {
-  NcbiCout <<
-    "Arguments:\n" <<
-    "  -i  Filename for asn.1 input\n" <<
-    "  -e  Input is a Seq-entry\n" <<
-    "  -b  Input asnfile in binary mode\n" <<
-    "  -S  Skip value in file without reading it in memory (no write after)\n" <<
-    "  -o  Filename for asn.1 output\n" <<
-    "  -s  Output asnfile in binary mode\n" <<
-    "  -l  Log errors to file named\n";
-  exit(1);
+    NcbiCout <<
+      "Arguments:\n" <<
+      "  -i  Filename for asn.1 input\n" <<
+      "  -e  Input is a Seq-entry\n" <<
+      "  -b  Input asnfile in binary mode\n" <<
+      "  -S  Skip value in file without reading it in memory (no write after)\n" <<
+      "  -o  Filename for asn.1 output\n" <<
+      "  -s  Output asnfile in binary mode\n" <<
+      "  -l  Log errors to file named\n";
+    exit(1);
 }
 
 static
 void InvalidArgument(const string& arg)
 {
-  ERR_POST(Error << "Invalid argument: " << arg);
-  PrintUsage();
+    ERR_POST(Error << "Invalid argument: " << arg);
+    PrintUsage();
 }
 
 static
 const string& StringArgument(const CNcbiArguments& args, size_t index)
 {
-  if ( index >= args.Size() || args[index].empty() )
-    InvalidArgument("Argument required");
-  return args[index];
+    if ( index >= args.Size() || args[index].empty() )
+      InvalidArgument("Argument required");
+    return args[index];
 }
 
 <font color = "red">
@@ -63,137 +63,147 @@ const string& StringArgument(const CNcbiArguments& args, size_t index)
 <font color = "black">
 int CAsn2Asn::Run(void)
 {
-  string inFile;
-  bool skip = false; 
-  bool inSeqEntry = false;
-  bool inBinary = false;
-  string outFile;
-  bool outBinary = false;
-  string logFile;
+    string inFile;
+    bool skip = false; 
+    bool inSeqEntry = false;
+    bool inBinary = false;
+    string outFile;
+    bool outBinary = false;
+    string logFile;
  
 
-<font color = "red">  // initialize the diagnostic stream <font color = "black">
+<font color = "red">    // initialize the diagnostic stream <font color = "black">
   
-  CNcbiOfstream diag("errs.asn2asn");
-  SetDiagStream(&diag);
+    CNcbiOfstream diag("errs.asn2asn");
+    SetDiagStream(&diag);
 
-<font color = "red">  // process the input arguments <font color = "black">
+<font color = "red">    // process the input arguments <font color = "black">
 
-  if ( GetArguments().Size() == 1 )
-  PrintUsage();
+    if ( GetArguments().Size() == 1 )
+    PrintUsage();
+    
+    {
+        for ( size_t i = 1; i < GetArguments().Size(); ++i ) {
+            const string& arg = GetArguments()[i];
+            if ( arg[0] == '-' ) {
+                switch ( arg[1] ) {
 
-  {
-    for ( size_t i = 1; i < GetArguments().Size(); ++i ) {
-      const string& arg = GetArguments()[i];
-      if ( arg[0] == '-' ) {
-	switch ( arg[1] ) {
-	  case 'i':
-	  inFile = StringArgument(GetArguments(), ++i);
-	  break;
-	  case 'e':
-	  inSeqEntry = true;
-	  break;
-	  case 'b':
-	  inBinary = true;
-	  break;
-	  case 'o':
-	  outFile = StringArgument(GetArguments(), ++i);
-	  break;
-	  case 's':
-	  outBinary = true;
-	  break;
-	  case 'S':
-	  skip = true;
-	  break;
-	  case 'l':
-	  logFile = StringArgument(GetArguments(), ++i);
-	  break;
-	  default:
-	  InvalidArgument(arg);
-	  break;
-	}
-      }
-      else {
-	InvalidArgument(arg);
-	break;
-      }
+      	       case 'i':
+                    inFile = StringArgument(GetArguments(), ++i);
+                    break;
+
+                case 'e':
+                    inSeqEntry = true;
+                    break;
+
+                case 'b':
+                    inBinary = true;
+                    break;
+
+                case 'o':
+                    outFile = StringArgument(GetArguments(), ++i);
+                    break;
+
+                case 's':
+                    outBinary = true;
+                    break;
+
+                case 'S':
+                    skip = true;
+                    break;
+
+                case 'l':
+                    logFile = StringArgument(GetArguments(), ++i);
+                    break;
+
+                default:
+                    InvalidArgument(arg);
+                    break;
+                }
+            }
+            else {
+            	InvalidArgument(arg);
+            	break;
+            }
+        }
     }
-  }
 
-<font color = "red">  // initialize the ASN input stream <font color = "black">
+<font color = "red">    // initialize the ASN input stream <font color = "black">
 
-  auto_ptr<CNcbiIstream> inFStream;
-  CNcbiIstream* inStream;
-  if ( inFile.empty() || inFile == "stdin" ) {
-    inStream = &NcbiCin;
-  }
-  else {
+    auto_ptr<CNcbiIstream> inFStream;
+    CNcbiIstream* inStream;
+    if ( inFile.empty() || inFile == "stdin" ) {
+        inStream = &NcbiCin;
+    }
+    else {
+        if ( inBinary )
+            inFStream.reset(inStream = 
+                new CNcbiIfstream(inFile.c_str(), IOS_BASE::in | IOS_BASE::binary));
+        else
+            inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str()));
+
+        if ( !*inStream ) 
+          ERR_POST(Fatal << "Cannot open file: " << inFile);
+    }
+
+<font color = "red">    // Associate an ASN input object with the input <font color = "black">
+
+    auto_ptr<CObjectIStream> inObject;
     if ( inBinary )
-    inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str(),
-						 IOS_BASE::in | IOS_BASE::binary));
+      inObject.reset(new CObjectIStreamAsnBinary(*inStream));
     else
-    inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str()));
-    if ( !*inStream )
-    ERR_POST(Fatal << "Cannot open file: " << inFile);
-  }
-
-<font color = "red">  // Associate an ASN input object with the input <font color = "black">
-
-  auto_ptr<CObjectIStream> inObject;
-  if ( inBinary )
-  inObject.reset(new CObjectIStreamAsnBinary(*inStream));
-  else
-  inObject.reset(new CObjectIStreamAsn(*inStream));
+      inObject.reset(new CObjectIStreamAsn(*inStream));
   
-<font color = "red">  // initialize the ASN output stream <font color = "black">
+<font color = "red">    // initialize the ASN output stream <font color = "black">
 
-  auto_ptr<CNcbiOstream> outFStream;
-  CNcbiOstream* outStream;
-  if ( outFile.empty() ) {
-    outStream = 0;
-  }
-  else if ( outFile == "stdout" || outFile == "-" ) {
-    outStream = &NcbiCout;
-  }
-  else {
-    if ( outBinary )
-    outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str(),
-						   IOS_BASE::out | IOS_BASE::binary));
-    else
-    outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str()));
-    if ( !*outStream )
-    ERR_POST(Fatal << "Cannot open file: " << outFile);
-  }
+    auto_ptr<CNcbiOstream> outFStream;
+    CNcbiOstream* outStream;
+    if ( outFile.empty() ) {
+        outStream = 0;
+    }
+    else if ( outFile == "stdout" || outFile == "-" ) {
+        outStream = &NcbiCout;
+    }
+    else {
+        if ( outBinary )
+            outFStream.reset(outStream =
+                new CNcbiOfstream(outFile.c_str(), IOS_BASE::out | IOS_BASE::binary));
+        else
+            outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str()));
 
-<font color = "red">  // Associate an ASN output object with the output <font color = "black">
+       if ( !*outStream )
+           ERR_POST(Fatal << "Cannot open file: " << outFile);
+    }
 
-  auto_ptr<CObjectOStream> outObject;
-  if ( outStream ) {
-    if ( outBinary )
-    outObject.reset(new CObjectOStreamAsnBinary(*outStream));
-    else
-    outObject.reset(new CObjectOStreamAsn(*outStream));
-  }
+<font color = "red">    // Associate an ASN output object with the output <font color = "black">
+
+    auto_ptr<CObjectOStream> outObject;
+    if ( outStream ) {
+        if ( outBinary )
+            outObject.reset(new CObjectOStreamAsnBinary(*outStream));
+        else
+            outObject.reset(new CObjectOStreamAsn(*outStream));
+    }  
   
-  if ( inSeqEntry ) {	  <font color = "red">  //  read one Seq-entry <font color = "black">
+    if ( inSeqEntry ) {	  <font color = "red">  //  read one Seq-entry <font color = "black">
 
-    CSeq_entry entry;
-    *inObject >> entry;
-    if ( outObject.get() )
-    *outObject << entry;
-  }
+        CSeq_entry entry;
+        *inObject >> entry;
+        if ( outObject.get() )
+        *outObject << entry;
+    }
 
-  else {                  <font color = "red">  // read Seq-entry's from a Bioseq-set  <font color = "black">
+    else {                <font color = "red">  // read Seq-entry's from a Bioseq-set  <font color = "black">
 
-    CBioseq_set entries;
-    *inObject >> entries;
-    if ( outObject.get() )
-    *outObject << entries;
-  }
+        CBioseq_set entries;
+        *inObject >> entries;
+        if ( outObject.get() )
+        *outObject << entries;
+    }
 
-  inObject.reset(0);
-  outObject.reset(0);
-  return 0;
+    inObject.reset(0);
+    outObject.reset(0);
+    return 0;
 }
 <font color = "blue">END_NCBI_SCOPE
 
@@ -201,5 +211,5 @@ USING_NCBI_SCOPE;
 <font color = "black">
 int main(int argc, char** argv)
 {
-  return CAsn2Asn().AppMain(argc, argv);
+    return CAsn2Asn().AppMain(argc, argv);
 }
