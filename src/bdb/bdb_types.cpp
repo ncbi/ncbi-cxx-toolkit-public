@@ -319,13 +319,21 @@ CBDB_BufferManager::CBDB_BufferManager()
     m_Nullable(false),
     m_NullSetSize(0),
     m_CompareLimit(0),
-    m_LegacyString(false)
+    m_LegacyString(false),
+	m_OwnFields(false)
 {
 }
 
 CBDB_BufferManager::~CBDB_BufferManager()
 {
     delete [] m_Buffer;
+	
+	if (m_OwnFields) {
+    	for (size_t i = 0;  i < m_Fields.size(); ++i) {
+        	CBDB_Field* field = m_Fields[i];
+			delete field;
+    	}
+	}
 }
 
 void CBDB_BufferManager::Bind(CBDB_Field* field, ENullable is_nullable)
@@ -953,6 +961,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/06/17 16:25:50  kuznets
+ * + ownership flag to BufferManager
+ *
  * Revision 1.24  2004/06/17 13:38:02  kuznets
  * +CBDB_FieldFactory
  *

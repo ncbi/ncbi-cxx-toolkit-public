@@ -1203,13 +1203,15 @@ protected:
 
     /// Attach 'field' to the buffer.
     /// NOTE: buffer manager will not own the attached object, nor will it
-    ///       keep ref counters or do any other automagic memory management.
+    ///       keep ref counters or do any other automagic memory management,
+	///       unless field ownership is set to TRUE	
     void Bind(CBDB_Field* field, ENullable is_nullable = eNotNullable);
 
     /// Duplicate (dynamic allocation is used) all fields from 'buf_mgr' and
     /// bind them to the this buffer manager. Field values are not copied.
     /// NOTE: CBDB_BufferManager does not own or deallocate fields, 
-    ///       caller is responsible for deallocation.
+    ///       caller is responsible for deallocation,
+	///       unless field ownership is set to TRUE	
     void CopyFieldsFrom(const CBDB_BufferManager& buf_mgr);
 
     /// Copy all field values from the 'buf_mgr'.
@@ -1270,6 +1272,12 @@ protected:
     void SetLegacyStringsCheck(bool value) { m_LegacyString = value; }
 
     void SetDBT_Size(size_t size) { m_DBT_Size = size; }
+	
+	/// Fields deletion is managed by the class when own_fields is TRUE
+	void SetFieldOwnership(bool own_fields) { m_OwnFields = own_fields; }
+	
+	/// Return fields ownership flag
+	bool IsOwnFields() const { return m_OwnFields; }
 
 private:
     CBDB_BufferManager(const CBDB_BufferManager&);
@@ -1297,6 +1305,9 @@ private:
 
     /// Flag to check for legacy string compatibility
     bool                    m_LegacyString;
+	
+	/// Field ownership flag
+	bool                    m_OwnFields;
 
 private:
     friend class CBDB_Field;
@@ -1307,7 +1318,7 @@ private:
 };
 
 /// Class factory for BDB field types
-class CBDB_FieldFactory
+class NCBI_BDB_EXPORT CBDB_FieldFactory
 {
 public:
 	enum EType 
@@ -1864,6 +1875,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/06/17 16:25:27  kuznets
+ * + ownership flag to BufferManager
+ *
  * Revision 1.37  2004/06/17 13:37:28  kuznets
  * +CBDB_FieldFactory
  *
