@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/04/15 21:59:58  vakatov
+* [MSVC++]  Added "LIBCALLBACK" to the WriteAsn() proto
+*
 * Revision 1.3  1999/04/14 17:26:52  vasilche
 * Fixed warning about mixing pointers to "C" and "C++" functions.
 *
@@ -50,7 +53,7 @@
 BEGIN_NCBI_SCOPE
 
 extern "C" {
-    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+    static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
 }
 
 CAsnWriteNode::CAsnWriteNode(void)
@@ -72,7 +75,7 @@ AsnIoPtr CAsnWriteNode::GetOut(void)
     return out;
 }
 
-Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
