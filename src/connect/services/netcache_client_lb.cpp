@@ -89,20 +89,21 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
                          << " cannot be found using load balancer"
                          << " reserve service used " 
                          << host << ":" << port);
-        return false;
+        return true;
     } 
     *err_msg += ". Reserve netcache instance at ";
     *err_msg += host;
     *err_msg += ":";
     *err_msg += NStr::UIntToString(port);
     *err_msg += " not responding.";
-    return true;
+    return false;
 }
 
 
 
 void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
-                              const string&    service_name)
+                              const string&    service_name,
+                              bool             use_fall_back_server)
 {
     SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
     STimeout& to = nc_client->SetCommunicationTimeout();
@@ -140,22 +141,24 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
     // LB failed to provide any alive services
     // lets try to call "emergency numbers"
 
-    const unsigned short rport = 9009;
-    if (s_ConnectClient_Reserve(nc_client, 
-                                "netcache.ncbi.nlm.nih.gov", 
-                                rport, 
-                                service_name,
-                                to, 
-                                &err_msg)) {
-        return;
-    }
-    if (s_ConnectClient_Reserve(nc_client, 
-                                "service1", 
-                                rport, 
-                                service_name,
-                                to, 
-                                &err_msg)) {
-        return;
+    if (use_fall_back_server) {
+        const unsigned short rport = 9009;
+        if (s_ConnectClient_Reserve(nc_client, 
+                                    "netcache", 
+                                    rport, 
+                                    service_name,
+                                    to, 
+                                    &err_msg)) {
+            return;
+        }
+        if (s_ConnectClient_Reserve(nc_client, 
+                                    "service1", 
+                                    rport, 
+                                    service_name,
+                                    to, 
+                                    &err_msg)) {
+            return;
+        }
     }
 
     err_msg += ")";
@@ -189,7 +192,8 @@ CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
   m_LastRebalanceTime(0),
   m_Requests(0),
   m_RWBytes(0),
-  m_StickToHost(false)
+  m_StickToHost(false),
+  m_ServiceBackup(true)
 {
     if (lb_service_name.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -200,6 +204,11 @@ CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
 
 CNetCacheClient_LB::~CNetCacheClient_LB()
 {
+}
+
+void CNetCacheClient_LB::EnableServiceBackup(bool on_off)
+{
+    m_ServiceBackup = on_off;
 }
 
 string CNetCacheClient_LB::PutData(const void*   buf,
@@ -403,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/04 16:42:10  kuznets
+ * Backup service (when LB unavailable) location made optional
+ *
  * Revision 1.11  2005/03/28 15:32:27  didenko
  * Made destructors virtual
  *

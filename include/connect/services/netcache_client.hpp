@@ -234,7 +234,8 @@ protected:
 
 extern NCBI_XCONNECT_EXPORT
 void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
-                              const string&    service_name);
+                              const string&    service_name,
+                              bool             use_fall_back_server = true);
 
 
 /// Client API for NetCache server.
@@ -282,6 +283,13 @@ public:
 
     virtual ~CNetCacheClient_LB();
 
+    /// Enable client to connect to predefined backup servers if service
+    /// name is not available (load balancer is not available)
+    /// (enabled by default)
+    ///
+    void EnableServiceBackup(bool on_off = true);
+
+
     virtual 
     string PutData(const void*   buf,
                    size_t        size,
@@ -324,6 +332,7 @@ private:
     unsigned int  m_Requests;
     unsigned int  m_RWBytes;
     bool          m_StickToHost;
+    bool          m_ServiceBackup;
 };
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetCacheClient,  "xnetcache", 1, 1, 0);
@@ -421,6 +430,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/04/04 16:41:51  kuznets
+ * Backup service (when LB unavailable) location made optional
+ *
  * Revision 1.28  2005/03/28 15:31:37  didenko
  * Made destructors virtual
  *
