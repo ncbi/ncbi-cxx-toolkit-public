@@ -46,9 +46,6 @@
 extern "C" {
 #endif
 
-/** Diagonal distance cutoff when looking for HSP inclusion in Mega BLAST */ 
-#define MB_DIAG_NEAR 30 
-
 /** Diagonal distance between HSPs for which one can be considered included in 
    the other in Mega BLAST */
 #define MB_DIAG_CLOSE 6 
