@@ -91,7 +91,8 @@ public:
         fSkipAlnSeq          = 0x0100,
         fSeqOnly             = fSkipAllGaps | fSkipInserts,
         fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq,
-        fAlnSegsOnly         = fSkipInserts | fSkipUnalignedGaps
+        fAlnSegsOnly         = fSkipInserts | fSkipUnalignedGaps,
+        fDoNotTruncate       = 0x0200
     };
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
@@ -658,6 +659,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/01/21 20:53:44  todorov
+* EGetChunkFlags += fDoNotTruncate
+*
 * Revision 1.31  2003/12/31 17:26:18  todorov
 * +fIgnoreAnchore usage comment
 *
