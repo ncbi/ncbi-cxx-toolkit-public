@@ -249,7 +249,10 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
 CConfig::CConfig(TParamTree* param_tree, EOwnership own)
     : m_ParamTree(param_tree), m_OwnTree(own)
 {
-    _ASSERT(param_tree);
+    if ( !param_tree ) {
+        m_ParamTree = new TParamTree;
+        m_OwnTree = eTakeOwnership;
+    }
 }
 
 
@@ -263,9 +266,14 @@ CConfig::CConfig(const IRegistry& reg)
 
 CConfig::CConfig(const TParamTree* param_tree)
 {
-    _ASSERT(param_tree);
-    m_ParamTree = const_cast<TParamTree*>(param_tree);
-    m_OwnTree = eNoOwnership;
+    if ( !param_tree ) {
+        m_ParamTree = new TParamTree;
+        m_OwnTree = eTakeOwnership;
+    }
+    else {
+        m_ParamTree = const_cast<TParamTree*>(param_tree);
+        m_OwnTree = eNoOwnership;
+    }
 }
 
 
@@ -406,6 +414,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/12/22 19:22:33  grichenk
+ * Allow null param tree pointer
+ *
  * Revision 1.10  2004/12/20 16:43:16  ucko
  * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
  *
