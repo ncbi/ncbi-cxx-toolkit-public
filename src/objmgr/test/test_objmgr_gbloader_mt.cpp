@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/06/06 06:17:07  vakatov
+* Workaround a weird compiler bug (WorkShop 5.3 on INTEL in ReleaseMT mode)
+*
 * Revision 1.14  2002/06/04 17:18:33  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *
@@ -226,7 +229,8 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
   CObjectManager Om;
   {
     CScope         scope(Om);
-    CTestThread  **thr = new (CTestThread*)[thread_count];
+    typedef CTestThread* CTestThreadPtr;
+    CTestThreadPtr *thr = new CTestThreadPtr[thread_count];
   
     // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
     // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
