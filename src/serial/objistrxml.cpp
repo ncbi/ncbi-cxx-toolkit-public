@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/08/08 18:35:09  grichenk
+* ReadTagData() -- added memory pre-allocation for long strings
+*
 * Revision 1.18  2001/05/17 15:07:08  lavr
 * Typos corrected
 *
@@ -630,7 +633,12 @@ void CObjectIStreamXml::ReadTagData(string& str)
         if ( c < 0 )
             break;
         str += char(c);
+        // pre-allocate memory for long strings
+        if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
+            str.reserve(str.size()*2);
+        }
     }
+    str.reserve(str.size());
 }
 
 TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
