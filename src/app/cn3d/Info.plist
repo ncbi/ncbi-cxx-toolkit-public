@@ -19,13 +19,13 @@
 	<key>CFBundleSignature</key>
 	<string>Cn3D</string>
 	<key>CFBundleVersion</key>
-	<string>4.1</string>
+	<string>4.2</string>
 	<key>CFBundleShortVersionString</key>
-	<string>4.1</string>
+	<string>4.2</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Cn3D version 4.1</string>
+	<string>Cn3D version 4.2</string>
 	<key>CFBundleLongVersionString</key>
-	<string>Cn3D version 4.1</string>
+	<string>Cn3D version 4.2</string>
         <key>CFBundleDocumentTypes</key>
         <array>
             <dict>
