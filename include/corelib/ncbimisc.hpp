@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/07/08 14:44:52  vakatov
+* Tiny fix in EndsWith()
+*
 * Revision 1.24  1999/07/06 15:21:04  vakatov
 * + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
 *
@@ -147,9 +150,8 @@ struct NStr {
     }
     
     static bool EndsWith(const string& str, const string& end) {
-        SIZE_TYPE pos = str.size() - end.size();
-        return pos >= 0  &&
-            Compare(str, pos, end.size(), end) == 0;
+        return str.size() >= end.size()  &&
+            Compare(str, str.size() - end.size(), end.size(), end) == 0;
     }
 
     enum ETrunc {
