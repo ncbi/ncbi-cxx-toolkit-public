@@ -132,6 +132,19 @@ public:
     bool IsLatest() const 
        { return (m_Major == -1 && m_Minor == -1 && m_PatchLevel == -1); }
 
+    /// Check if this version info is more contemporary version 
+    /// than parameter cinfo (or the same version)
+    ///
+    /// @param cinfo
+    ///    Version checked (all components must be <= than this)
+    ///
+    bool IsUpCompatible(const CVersionInfo &cinfo) const
+    {
+        return cinfo.m_Major <= m_Major && 
+               cinfo.m_Minor <= m_Minor &&
+               cinfo.m_PatchLevel <= m_PatchLevel;
+    }
+
 protected:
     int           m_Major;       ///< Major number
     int           m_Minor;       ///< Minor number
@@ -170,7 +183,7 @@ bool NCBI_XNCBI_EXPORT IsBetterVersion(const CVersionInfo& info,
 /// @param first
 ///    first iterator to start search 
 /// @param last
-///    ending iterator (typically returned by end() fnction of an STL
+///    ending iterator (typically returned by end() function of an STL
 ///    container)
 /// @return 
 ///    iterator on the best version or last
@@ -240,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/05 20:52:30  kuznets
+ * + IsUpCompatible()
+ *
  * Revision 1.15  2005/04/05 14:34:56  kuznets
  * Added dll export spec
  *
