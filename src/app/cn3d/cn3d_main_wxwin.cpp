@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.172  2002/12/19 15:56:16  thiessen
+* use wxCHECK_VERSION
+*
 * Revision 1.171  2002/11/25 15:02:20  thiessen
 * changes for cdd annotation evidence show
 *
@@ -1567,7 +1570,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
     initialFontData.SetInitialFont(*initialFont);
 
     // bring up font chooser dialog
-#if wxVERSION >= 2303
+#if wxCHECK_VERSION(2,3,3)
     wxFontDialog dialog(this, initialFontData);
 #else
     wxFontDialog dialog(this, &initialFontData);
@@ -2319,7 +2322,7 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
         ERR_POST(Error << "Cn3DGLCanvas::SetGLFontFromRegistry() - can't set wxNativeFontInfo fron native font string");
         return;
     }
-#if wxVERSION >= 2304
+#if wxCHECK_VERSION(2,3,4)
     if (fontScale != 1.0 && fontScale > 0.0)
         fontInfo.SetPointSize(fontScale * fontInfo.GetPointSize());
 #endif

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/12/19 15:56:16  thiessen
+* use wxCHECK_VERSION
+*
 * Revision 1.23  2002/10/18 17:15:33  thiessen
 * use wxNativeEncodingInfo to store fonts in registry
 *
@@ -122,7 +125,7 @@ class wxFrame;
 #include <wx/platform.h>
 #include <wx/version.h>
 
-#if wxVERSION_NUMBER < 2302
+#if !wxCHECK_VERSION(2,3,2)
 #error Cn3D requires at wxWindows version 2.3.2 or higher!
 #endif
 
