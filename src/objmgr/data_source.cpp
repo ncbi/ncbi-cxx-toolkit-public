@@ -59,6 +59,8 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -1224,6 +1226,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.126  2004/02/02 15:27:20  dicuccio
+* +<algorithm> for find
+*
 * Revision 1.125  2004/02/02 14:46:43  vasilche
 * Several performance fixed - do not iterate whole tse set in CDataSource.
 *
