@@ -132,6 +132,8 @@ CValidError_imp::CValidError_imp
       m_RequireISOJTA((options & CValidator::eVal_need_isojta) != 0),
       m_ValidateIdSet((options & CValidator::eVal_validate_id_set) != 0),
       m_RemoteFetch((options & CValidator::eVal_remote_fetch) != 0),
+      m_FarFetchMRNAproducts((options & CValidator::eVal_far_fetch_mrna_products) != 0),
+      m_FarFetchCDSproducts((options & CValidator::eVal_far_fetch_cds_products) != 0),
       m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
       m_IsStandaloneAnnot(false),
       m_NoPubs(false),
@@ -951,44 +953,7 @@ void CValidError_imp::ValidatePubArticle
                 }
                 
                 if ( !no_pages ) {
-                    sev = eDiag_Warning;
-                    string pages = imp.GetPages();
-                    size_t pos = pages.find('-');
-                    if ( pos != string::npos ) {
-                        try {
-                            int start = 
-                                NStr::StringToInt(pages.substr(0, pos), 
-                                                  10, NStr::eCheck_Skip);
-                            
-                            try {
-                                int stop = NStr::StringToInt(
-                                        pages.substr(pos + 1, pages.length()),
-                                        10, NStr::eCheck_Skip);
-                                
-                                if ( start == 0  ||  stop == 0 ) {
-                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                        "Page numbering has zero value", obj);
-                                } else if ( start < 0  ||  stop < 0 ) {
-                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                        "Page numbering has negative value", obj);
-                                } else if ( start > stop ) {
-                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                        "Page numbering out of order", obj);
-                                } else if ( stop - start > 50 ) {
-                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                        "Page numbering greater than 50", obj);
-                                }
-                            } catch ( CStringException& ) {
-                                PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                    "Page numbering stop looks strange", obj);
-                            }
-                        } catch ( CStringException& ) {
-                            if ( !isalpha(pages[0]) ) {
-                                PostErr(sev, eErr_GENERIC_BadPageNumbering,
-                                    "Page numbering start looks strange", obj);
-                            }
-                        }
-                    }
+                    x_ValidatePages(imp.GetPages(), obj);
                 }
             }
         }
@@ -996,6 +961,119 @@ void CValidError_imp::ValidatePubArticle
             PostErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
                 "ISO journal title abbreviation missing", obj);
         }
+    }
+}
+
+
+bool s_GetDigits(const string& pages, string& digits)
+{
+    string::size_type pos = 0;
+    string::size_type len = pages.length();
+
+    digits.erase();
+
+    // skip alpha at the begining 
+    while (pos < len  &&  !isdigit(pages[pos])) {
+        ++pos;
+    }
+
+    while (pos < len  &&  isdigit(pages[pos])) {
+        digits += pages[pos];
+        ++pos;
+    }
+
+    _ASSERT (pos >= len  ||  !isdigit(pages[pos]));
+
+    while (pos < len) {
+        if (isdigit(pages[pos])) {
+            digits.erase();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+void CValidError_imp::x_ValidatePages
+(const string& pages,
+ const CSerialObject& obj)
+{
+    static const string kRoman = "IVXLCDM";
+
+    if (pages.empty()) {
+        return;
+    }
+
+    EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
+    
+    ITERATE (string, it, pages) {
+        if (!isalnum(*it)  &&  *it != '-') {
+            PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering contain bad characters", obj);
+            return;
+        }
+    }
+
+    string start, stop;
+    NStr::SplitInTwo(pages, "-", start, stop);
+    if (start.empty()  ||  stop.empty()) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering doesn't contain '-'", obj);
+        return;
+    }
+
+    // roman numerals are fine
+    if (start.find_first_not_of(kRoman) == NPOS  &&
+        stop.find_first_not_of(kRoman) == NPOS) {
+        return;
+    }
+    
+    if ((isalpha(start[0])  &&  !isalpha(stop[0]))  ||
+        (isdigit(start[0])  &&  !isdigit(stop[0]))) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Inconsistent page numbering", obj);
+        return;
+    }
+
+    string digits;
+    int beg = 0, end = 0;
+    size_t good = 0;
+    try {
+        if (!s_GetDigits(start, digits)) {
+            PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering stop start strange", obj);
+        } else {
+            beg = NStr::StringToInt(digits);
+            ++good;
+        }
+        if (!s_GetDigits(stop, digits)) {
+            PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering stop looks strange", obj);
+        } else {
+            end = NStr::StringToInt(digits);
+            ++good;
+        }
+    } catch (CStringException&) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                "Page numbering looks strange", obj);
+        return;
+    }
+    if (good != 2) {
+        return;
+    }
+    if (beg == 0  ||  end == 0) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering has zero value", obj);
+    } else if (beg < 0  ||  end < 0) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering has negative value", obj);
+    } else if (beg > end) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering out of order", obj);
+    } else if ( beg - end > 50 ) {
+        PostErr(sev, eErr_GENERIC_BadPageNumbering,
+            "Page numbering difference greater than 50", obj);
     }
 }
 
@@ -1592,6 +1670,7 @@ void CValidError_imp::ValidateSeqLoc
     // differnt id types (i.e. gi and accession)
     ValidateSeqLocIds(loc, obj);
     
+    bool trans_splice = false;
     bool exception = false;
     const CSeq_feat* sfp = dynamic_cast<const CSeq_feat*>(&obj);
     if (sfp != 0) {
@@ -1624,6 +1703,13 @@ void CValidError_imp::ValidateSeqLoc
         }
         
         exception = sfp->IsSetExcept() ?  sfp->GetExcept() : false;
+        if (exception  &&  sfp->CanGetExcept_text()) {
+            // trans splicing exception turns off both mixed_strand and
+            // out_of_order messages
+            if (NStr::FindNoCase(sfp->GetExcept_text(), "trans-splicing") != NPOS) {
+                trans_splice = true;
+            }
+        }
     }
 
     string loc_lbl;
@@ -1634,13 +1720,11 @@ void CValidError_imp::ValidateSeqLoc
             prefix + ": Adjacent intervals in SeqLoc [" +
             loc_lbl + "]", obj);
     }
-    if (exception  &&  sfp->CanGetExcept_text()) {
-        // trans splicing exception turns off both mixed_strand and
-        // out_of_order messages
-        if (NStr::FindNoCase(sfp->GetExcept_text(), "trans-splicing") != NPOS) {
-            return;
-        }
+
+    if (trans_splice) {
+        return;
     }
+
     if (mixed_strand  ||  unmarked_strand  ||  !ordered) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
@@ -2473,6 +2557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/09/21 15:47:37  shomrat
+* Fixed page numbering test
+*
 * Revision 1.58  2004/08/09 14:54:49  shomrat
 * Added m_IsGB
 *
