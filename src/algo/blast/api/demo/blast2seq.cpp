@@ -59,10 +59,16 @@ static char const rcsid[] =
 
 #include <objects/seqalign/Seq_align_set.hpp>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
+#ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 /// CBlast2seqApplication: command line blast2sequences application
@@ -85,10 +91,10 @@ private:
     FILE* GetOutputFilePtr(void); // needed for debugging only
 #endif
 
-    CRef<CObjectManager>    m_ObjMgr;
-    CRef<CScope>            m_Scope;
+    CRef<CObjectManager>    m_ObjMgr;  ///< instance of the object manager
 };
 
+/** Initialize commandline arguments. */
 void CBlast2seqApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
@@ -212,8 +218,8 @@ void CBlast2seqApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-void 
-CBlast2seqApplication::InitObjMgr(void)
+/** Initialize object manager. */
+void CBlast2seqApplication::InitObjMgr(void)
 {
     m_ObjMgr = CObjectManager::GetInstance();
     if (!m_ObjMgr) {
@@ -221,6 +227,7 @@ CBlast2seqApplication::InitObjMgr(void)
     }
 }
 
+/** Use commandline arguments to set CBlastOptions. */
 CBlastOptionsHandle*
 CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
 {
@@ -370,6 +377,8 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
 }
 
 #ifndef NDEBUG
+
+/** Optionally output to a file for debugging. */
 FILE*
 CBlast2seqApplication::GetOutputFilePtr(void)
 {
@@ -385,8 +394,9 @@ CBlast2seqApplication::GetOutputFilePtr(void)
 }
 #endif
 
-/*****************************************************************************/
 
+/** Application setup. Set up query and subject, process commandline
+    arguments, run the search, and output results. */
 int CBlast2seqApplication::Run(void)
 {
     try {
@@ -463,199 +473,17 @@ int CBlast2seqApplication::Run(void)
     return 0;
 }
 
+/** Application teardown. */
 void CBlast2seqApplication::Exit(void)
 {
     SetDiagStream(0);
 }
 
+/* @} */
 
+/** Application entry point. */
 int main(int argc, const char* argv[])
 {
     return CBlast2seqApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
-
-/*
- * ===========================================================================
- * $Log$
- * Revision 1.56  2005/01/10 13:39:21  madden
- * Removal of calls to delete methods such as SetSeedExtensionMethod, SetSeedContainerType, and SetScanStep
- *
- * Revision 1.55  2004/12/21 17:18:44  dondosha
- * eSkipTbck option has been removed
- *
- * Revision 1.54  2004/11/02 17:53:02  camacho
- * Add SKIP_DOXYGEN_PROCESSING to rcsid string
- *
- * Revision 1.53  2004/10/26 19:22:41  dondosha
- * Set strand to both in query Seq-locs for tblastx
- *
- * Revision 1.52  2004/08/18 18:14:13  camacho
- * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
- *
- * Revision 1.51  2004/08/17 17:22:01  dondosha
- * Removed call to register GenBank loader in object manager
- *
- * Revision 1.50  2004/08/11 15:25:14  dondosha
- * Use appropriate derived class for options handle in case of megablast and discontiguous megablast; use scantype argument 0 for default setting and 1-3 for specific types
- *
- * Revision 1.49  2004/07/21 15:51:24  grichenk
- * CObjectManager made singleton, GetInstance() added.
- * CXXXXDataLoader constructors made private, added
- * static RegisterInObjectManager() and GetLoaderNameFromArgs()
- * methods.
- *
- * Revision 1.48  2004/07/06 15:52:07  dondosha
- * Distinguish between 2 different enumerations for program
- *
- * Revision 1.47  2004/06/08 15:21:44  dondosha
- * Set traceback algorithm properly
- *
- * Revision 1.46  2004/05/21 21:41:02  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.45  2004/05/19 14:52:02  camacho
- * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
- * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
- *    location
- * 3. Added use of @todo doxygen keyword
- *
- * Revision 1.44  2004/05/17 15:33:57  madden
- * Int algorithm_type replaced with enum EBlastPrelimGapExt
- *
- * Revision 1.43  2004/04/30 15:56:31  papadopo
- * Plus/minus/both strands are acceptable for any blast program
- * that takes a nucleotide query
- *
- * Revision 1.42  2004/04/23 13:51:56  papadopo
- * handle strands for blastx correctly
- *
- * Revision 1.41  2004/04/19 21:35:23  papadopo
- * explicitly calculate strands for input sequences
- *
- * Revision 1.40  2004/03/26 18:50:32  camacho
- * Use CException::what() in catch block
- *
- * Revision 1.39  2004/03/17 20:09:08  dondosha
- * Use CBlastNucleotideOptionsHandle method to set both extension method and scan step, instead of directly calling CalculateBestStride
- *
- * Revision 1.38  2004/03/11 17:27:41  camacho
- * Minor change to avoid confusing doxygen
- *
- * Revision 1.37  2004/03/09 18:55:34  dondosha
- * Fix: set out-of-frame mode boolean option in addition to the frame shift penalty
- *
- * Revision 1.36  2004/02/13 03:31:51  camacho
- * 1. Use CBlastOptionsHandle class (still needs some work)
- * 2. Remove dead code, clean up, add @todo doxygen tags
- *
- * Revision 1.35  2004/01/05 18:50:27  vasilche
- * Fixed path to include files.
- *
- * Revision 1.34  2003/12/31 20:05:58  dondosha
- * For discontiguous megablast, set extension method and scanning stride correctly
- *
- * Revision 1.33  2003/12/09 15:13:58  camacho
- * Use difference scopes for queries and subjects
- *
- * Revision 1.32  2003/12/04 17:07:51  camacho
- * Remove yet another unused variable
- *
- * Revision 1.31  2003/11/26 18:36:45  camacho
- * Renaming blast_option*pp -> blast_options*pp
- *
- * Revision 1.30  2003/11/26 18:24:32  camacho
- * +Blast Option Handle classes
- *
- * Revision 1.29  2003/11/03 15:20:39  camacho
- * Make multiple query processing the default for Run().
- *
- * Revision 1.28  2003/10/27 20:52:29  dondosha
- * Made greedy option an integer, to specify number of extension stages
- *
- * Revision 1.27  2003/10/24 20:55:30  camacho
- * Rename GetDefaultStride
- *
- * Revision 1.26  2003/10/22 16:48:09  dondosha
- * Changed "ag" option to "scantype";
- * Use function from core library to calculate default value of stride if AG
- * scanning method is used.
- *
- * Revision 1.25  2003/10/21 22:15:33  camacho
- * Rearranging of C options structures, fix seed extension method
- *
- * Revision 1.24  2003/10/21 17:34:34  camacho
- * Renaming of gap open/extension accessors/mutators
- *
- * Revision 1.23  2003/10/17 18:22:28  dondosha
- * Use separate variables for different initial word extension options
- *
- * Revision 1.22  2003/10/08 15:27:02  camacho
- * Remove unnecessary conditional
- *
- * Revision 1.21  2003/10/07 17:37:10  dondosha
- * Lower case mask is now a boolean argument in call to BLASTGetSeqLocFromStream
- *
- * Revision 1.20  2003/09/26 21:36:29  dondosha
- * Show results for all queries in multi-query case
- *
- * Revision 1.19  2003/09/26 15:42:23  dondosha
- * Added second argument to SetExtendWordMethod, so bit can be set or unset
- *
- * Revision 1.18  2003/09/11 17:46:16  camacho
- * Changed CBlastOption -> CBlastOptions
- *
- * Revision 1.17  2003/09/09 15:43:43  ucko
- * Fix #include directive for blast_input.hpp.
- *
- * Revision 1.16  2003/09/05 18:24:28  camacho
- * Restoring printing of SeqAlign, fix setting of default word extension method
- *
- * Revision 1.15  2003/08/28 23:17:20  camacho
- * Add processing of command-line options
- *
- * Revision 1.14  2003/08/19 20:36:44  dondosha
- * EProgram enum type is no longer part of CBlastOptions class
- *
- * Revision 1.13  2003/08/18 20:58:57  camacho
- * Added blast namespace, removed *__.hpp includes
- *
- * Revision 1.12  2003/08/18 17:07:42  camacho
- * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
- * Change in function to read seqlocs from files.
- *
- * Revision 1.11  2003/08/15 16:03:00  dondosha
- * TSeqLoc and TSeqLocVector types no longer belong to class CBl2Seq, but are common to all BLAST applications
- *
- * Revision 1.10  2003/08/11 20:16:43  camacho
- * Change return type of BLASTGetSeqLocFromStream and fix namespaces
- *
- * Revision 1.9  2003/08/11 15:26:30  dondosha
- * BLASTGetSeqLocFromStream function moved to blast_input.cpp
- *
- * Revision 1.8  2003/08/08 20:46:08  camacho
- * Fix to use new ReadFasta arguments
- *
- * Revision 1.7  2003/08/08 20:24:31  dicuccio
- * Adjustments for Unix build: rename 'ncmimath' -> 'ncbi_math'; fix #include in demo app
- *
- * Revision 1.6  2003/08/01 22:38:31  camacho
- * Added conditional compilation to write seqaligns
- *
- * Revision 1.5  2003/07/30 16:33:31  madden
- * Remove C toolkit dependencies
- *
- * Revision 1.4  2003/07/16 20:25:34  camacho
- * Added dummy features argument to C formatter
- *
- * Revision 1.3  2003/07/14 21:53:32  camacho
- * Minor
- *
- * Revision 1.2  2003/07/11 21:22:57  camacho
- * Use same command line option as blast to display seqalign
- *
- * Revision 1.1  2003/07/10 18:35:58  camacho
- * Initial revision
- *
- * ===========================================================================
- */
