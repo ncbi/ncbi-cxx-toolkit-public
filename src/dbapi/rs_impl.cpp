@@ -232,7 +232,11 @@ size_t CResultSet::Read(void* buf, size_t size)
         return 0;
     }
     else {
-        return m_rs->ReadItem(buf, size, &m_wasNull);
+        int ret = m_rs->ReadItem(buf, size, &m_wasNull);
+        if( ret == 0 ) {
+            m_column = m_rs->CurrentItemNo();
+        }
+        return ret;
     }
 }
 
@@ -384,6 +388,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.37  2004/10/25 21:39:27  kholodov
+* Fixed: moving to the next column if no data read
+*
 * Revision 1.36  2004/09/28 00:01:22  vakatov
 * Warning fix:  CResultSet::Next() -- rightfully unhandled variants in switch()
 *
