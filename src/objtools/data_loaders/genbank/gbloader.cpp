@@ -118,7 +118,7 @@ CGBDataLoader::SSeqrefs::~SSeqrefs()
 // Create driver specified in "env"
 CReader* s_CreateReader(string env)
 {
-#if defined(HAVE_LIBDL) && defined(HAVE_PUBSEQ_OS)
+#if defined(HAVE_PUBSEQ_OS)
     if (env == DRV_PUBSEQOS) {
         try {
             return new CPubseqReader;
@@ -957,6 +957,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/07/22 22:01:43  vasilche
+* Removed use of HAVE_LIBDL.
+*
 * Revision 1.79  2003/07/17 22:51:31  vasilche
 * Fixed unused variables warnings.
 *
