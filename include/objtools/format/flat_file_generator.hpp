@@ -37,6 +37,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/scope.hpp>
 
+#include <objtools/format/flat_file_flags.hpp>
+#include <objtools/format/context.hpp>
 #include <util/range.hpp>
 
 
@@ -47,80 +49,12 @@ BEGIN_SCOPE(objects)
 class IFlatTextOStream;
 class CFlatItemOStream;
 class CSeq_submit;
-class CFFContext;
 
 
 class NCBI_FORMAT_EXPORT CFlatFileGenerator : public CObject
 {
 public:
-    enum EFormat {
-        // formatting styles
-        eFormat_GenBank,
-        eFormat_EMBL,
-        eFormat_DDBJ,
-        eFormat_GBSeq,
-        eFormat_FTable,
-        eFormat_GFF
-    };
-
-    enum EMode {
-        // determines the tradeoff between strictness and completeness
-        eMode_Release, // strict -- for official public releases
-        eMode_Entrez,  // somewhat laxer -- for CGIs
-        eMode_GBench,  // even laxer -- for editing submissions
-        eMode_Dump     // shows everything, regardless of validity
-    };
-    
-
-    enum EStyle {
-        // determines handling of segmented records
-        eStyle_Normal,  // default -- show segments iff they're near
-        eStyle_Segment, // always show segments
-        eStyle_Master,  // merge segments into a single virtual record
-        eStyle_Contig   // just an index of segments -- no actual sequence
-    };
-
-    enum EFlags {
-        fProduceHTML          = 0x1,
-        fShowContigFeatures   = 0x2, // not just source features
-        fShowContigSources    = 0x4, // not just focus
-        fShowFarTranslations  = 0x8,
-        fTranslateIfNoProduct = 0x10,
-        fAlwaysTranslateCDS   = 0x20,
-        fOnlyNearFeatures     = 0x40,
-        fFavorFarFeatures     = 0x80,  // ignore near feats on segs w/far feats
-        fCopyCDSFromCDNA      = 0x100, // these two are for gen. prod. sets
-        fCopyGeneToCDNA       = 0x200,
-        fShowContigInMaster   = 0x400,
-        fHideImportedFeatures = 0x800,
-        fHideRemoteImpFeats   = 0x1000,
-        fHideSNPFeatures      = 0x2000,
-        fHideExonFeatures     = 0x4000,
-        fHideIntronFeatures   = 0x8000,
-        fHideMiscFeatures     = 0x10000,
-        fHideCDSProdFeatures  = 0x20000,
-        fHideCDDFeats         = 0x40000,
-        fShowTranscriptions   = 0x80000,
-        fShowPeptides         = 0x100000,
-        fHideGeneRIFs         = 0x200000,
-        fOnlyGeneRIFs         = 0x400000,
-        fLatestGeneRIFs       = 0x800000,
-        fShowContigAndSeq     = 0x1000000
-    };
-
-    enum EFilterFlags {
-        // determines which Bioseqs in an entry to skip
-        fSkipNone        = 0x0,
-        fSkipNucleotides = 0x1,
-        fSkipProteins    = 0x2
-    };
-
     // types
-    typedef EFormat         TFormat;
-    typedef EMode           TMode;
-    typedef EStyle          TStyle;
-    typedef unsigned int    TFlags;       // binary OR of "EFlags"
-    typedef EFilterFlags    TFilter;
     typedef CRange<TSeqPos> TRange;
 
     // constructor / destructor
@@ -131,6 +65,9 @@ public:
                        TFilter      filter = fSkipProteins,
                        TFlags       flags  = 0);
     ~CFlatFileGenerator(void);
+
+    // Supply an annotation selector to be used in feature gathering.
+    SAnnotSelector& SetAnnotSelector(void);
 
     void Generate(const CSeq_entry& entry, CNcbiOstream& os);
     void Generate(const CSeq_submit& submit, CNcbiOstream& os);
@@ -144,12 +81,6 @@ public:
 
 private:
     CRef<CFFContext>    m_Ctx;
-    //CScope&         m_Scope;
-    //TFormat         m_Format;
-    //TMode           m_Mode;
-    //TStyle          m_Style;
-    //TFilter         m_Filter;
-    //TFlags          m_Flags;
 
     // forbidden
     CFlatFileGenerator(const CFlatFileGenerator&);
@@ -165,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:46:01  shomrat
+* enumerations moved to flat_file_flags.hpp
+*
 * Revision 1.4  2004/02/11 16:40:33  shomrat
 * added HideCDDFeats flag
 *
