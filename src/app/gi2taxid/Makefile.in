@@ -1,0 +1,4 @@
+APP_PROJ = gi2taxid
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
