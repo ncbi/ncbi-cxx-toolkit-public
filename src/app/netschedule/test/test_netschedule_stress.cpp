@@ -115,6 +115,7 @@ int CTestNetScheduleStress::Run(void)
     }
     CNetScheduleClient::EJobStatus status;
     CNetScheduleClient cl(host, port, "client_test", queue_name);
+    //cl.SetRequestRateControl(false);
 
     const string input = "Hello " + queue_name;
 
@@ -182,13 +183,16 @@ int CTestNetScheduleStress::Run(void)
     string input;
 
     unsigned cnt = 0;
-    for (; cnt < 1000; ++cnt) {
-        bool job_exists = cl.GetJob(&job_key, &input);
+    for (; cnt < jcount/2; ++cnt) {
+        bool job_exists = cl.WaitJob(&job_key, &input, 60, 9111);
+//        bool job_exists = cl.GetJob(&job_key, &input);
         if (!job_exists)
             break;
         cl.ReturnJob(job_key);
         jobs_returned.push_back(job_key);
     }
+    NcbiCout << "Returned " << cnt << " jobs." << NcbiEndl;
+
     double elapsed = sw.Elapsed();
     if (cnt) {
         double avg = elapsed / cnt;
@@ -280,6 +284,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/04 12:08:50  kuznets
+ * Test for WaitJob
+ *
  * Revision 1.2  2005/02/28 18:41:14  kuznets
  * test for ReturnJob()
  *
