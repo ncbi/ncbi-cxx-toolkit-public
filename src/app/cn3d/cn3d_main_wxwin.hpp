@@ -168,6 +168,7 @@ public:
                     MID_FIT,
                     MID_BLOCK_FIT,
                     MID_BLOCK_Z_FIT,
+                    MID_BLOCK_ROW_FIT,
                 MID_OBJECT,
                 MID_DOMAIN,
                 MID_MOLECULE,
@@ -296,6 +297,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/02/06 16:39:53  thiessen
+* add block row fit coloring
+*
 * Revision 1.75  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -606,6 +606,9 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(
         case StyleSettings::eBlockZFit:
             alignedColor = conservationColorer->GetBlockZFitColor(block, row);
             break;
+        case StyleSettings::eBlockRowFit:
+            alignedColor = conservationColorer->GetBlockRowFitColor(block, row);
+            break;
         default:
             alignedColor = NULL;
     }
@@ -1794,6 +1797,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/02/06 16:39:52  thiessen
+* add block row fit coloring
+*
 * Revision 1.48  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

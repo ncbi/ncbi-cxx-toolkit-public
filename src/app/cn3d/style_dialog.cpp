@@ -228,6 +228,8 @@ void StyleDialog::SetupStyleStrings(void)
         ColorSchemeStrings.Associate(StyleSettings::eInformationContent, "Information Content");
         ColorSchemeStrings.Associate(StyleSettings::eFit, "Fit");
         ColorSchemeStrings.Associate(StyleSettings::eBlockFit, "Block Fit");
+        ColorSchemeStrings.Associate(StyleSettings::eBlockZFit, "Normalized Block Fit");
+        ColorSchemeStrings.Associate(StyleSettings::eBlockRowFit, "Block Row Fit");
         ColorSchemeStrings.Associate(StyleSettings::eTemperature, "Temperature");
         ColorSchemeStrings.Associate(StyleSettings::eHydrophobicity, "Hydrophobicity");
         ColorSchemeStrings.Associate(StyleSettings::eRainbow, "Rainbow");
@@ -762,9 +764,11 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Weighted Variety",
         "Information Content",
         "Fit",
-        "Block Fit"
+        "Block Fit",
+        "Normalized Block Fit",
+        "Block Row Fit"
     };
-    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 17, strs12, 0 );
+    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 19, strs12, 0 );
     item3->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item13 = new wxButton( parent, ID_PBB_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -803,9 +807,11 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Weighted Variety",
         "Information Content",
         "Fit",
-        "Block Fit"
+        "Block Fit",
+        "Normalized Block Fit",
+        "Block Row Fit"
     };
-    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 16, strs17, 0 );
+    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 18, strs17, 0 );
     item3->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item18 = new wxButton( parent, ID_PSIDE_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1307,6 +1313,9 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/02/06 16:39:53  thiessen
+* add block row fit coloring
+*
 * Revision 1.24  2003/02/03 19:20:07  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -89,7 +89,7 @@ private:
     FitColors fitColors;
 
     typedef std::map < const UngappedAlignedBlock * , std::vector < Vector > >  BlockFitColors;
-    BlockFitColors blockFitColors, blockZFitColors;
+    BlockFitColors blockFitColors, blockZFitColors, blockRowFitColors;
 
 public:
 
@@ -139,6 +139,12 @@ public:
         CalculateConservationColors();
         return &(blockZFitColors.find(block)->second[row]);
     }
+
+    const Vector *GetBlockRowFitColor(const UngappedAlignedBlock *block, int row)
+    {
+        CalculateConservationColors();
+        return &(blockRowFitColors.find(block)->second[row]);
+    }
 };
 
 END_SCOPE(Cn3D)
@@ -148,6 +154,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/06 16:39:53  thiessen
+* add block row fit coloring
+*
 * Revision 1.12  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

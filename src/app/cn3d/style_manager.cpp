@@ -362,7 +362,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
 
         case eAlignedShortcut: case eIdentityShortcut: case eVarietyShortcut:
         case eWeightedVarietyShortcut: case eInformationContentShortcut:
-        case eFitShortcut: case eBlockFitShortcut: case eBlockZFitShortcut:
+        case eFitShortcut: case eBlockFitShortcut: case eBlockZFitShortcut: case eBlockRowFitShortcut:
             switch (scheme) {
                 case eAlignedShortcut: proteinBackbone.colorScheme = eAligned; break;
                 case eIdentityShortcut: proteinBackbone.colorScheme = eIdentity; break;
@@ -372,6 +372,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
                 case eFitShortcut: proteinBackbone.colorScheme = eFit; break;
                 case eBlockFitShortcut: proteinBackbone.colorScheme = eBlockFit; break;
                 case eBlockZFitShortcut: proteinBackbone.colorScheme = eBlockZFit; break;
+                case eBlockRowFitShortcut: proteinBackbone.colorScheme = eBlockRowFit; break;
             }
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
@@ -710,6 +711,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         case StyleSettings::eFit:
         case StyleSettings::eBlockFit:
         case StyleSettings::eBlockZFit:
+        case StyleSettings::eBlockRowFit:
             if (molecule->sequence &&
                 molecule->parentSet->alignmentManager->
                     IsAligned(molecule->sequence, residue->id - 1)) { // assume seqIndex is rID - 1
@@ -1593,6 +1595,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/02/06 16:39:53  thiessen
+* add block row fit coloring
+*
 * Revision 1.72  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

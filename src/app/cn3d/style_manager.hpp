@@ -112,7 +112,8 @@ public:
         eInformationContent = 11,
         eFit = 12,
         eBlockFit = 17,
-        eBlockZFit = 18
+        eBlockZFit = 18,
+        eBlockRowFit = 19
     };
 
     typedef struct {
@@ -189,6 +190,7 @@ public:
         eFitShortcut,
         eBlockFitShortcut,
         eBlockZFitShortcut,
+        eBlockRowFitShortcut,
         eObjectShortcut,
         eDomainShortcut,
         eMoleculeShortcut,
@@ -432,6 +434,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/02/06 16:39:53  thiessen
+* add block row fit coloring
+*
 * Revision 1.39  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
