@@ -241,7 +241,8 @@ bool CSeqMap_CI::IsInvalid(void) const
 inline
 CSeqMap_CI::operator bool(void) const
 {
-    return m_Stack.front().InRange();
+    return m_Stack.front().InRange()  &&
+        m_Stack.front().GetType() != CSeqMap::eSeqEnd;
 }
 
 
@@ -352,6 +353,9 @@ CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/28 16:16:05  grichenk
+ * Fixed CSeqMap_CI::bool()
+ *
  * Revision 1.5  2003/08/27 21:24:16  vasilche
  * Added CSeqMap_CI::IsInvalid() method.
  *
