@@ -17,7 +17,6 @@
 it is needed here for malloc. */
 
 #include <stdlib.h>
-#include <corelib/mswin_export.h>
 
 /* Allow for C++ users */
 
@@ -71,9 +70,9 @@ typedef struct real_pcre_extra pcre_extra;
 /* Store get and free functions. These can be set to alternative malloc/free
    functions if required */
 
-NCBI_XUTIL_EXPORT
+
 extern void *(*pcre_malloc)(size_t);
-NCBI_XUTIL_EXPORT
+
 extern void  (*pcre_free)(void *);
 
 /* Functions */
