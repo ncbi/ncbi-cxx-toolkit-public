@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/03/04 15:09:27  grichenk
+* Improved MT-safety. Added live/dead flag to CDataSource methods.
+*
 * Revision 1.11  2002/03/01 19:41:34  gouriano
 * *** empty log message ***
 *
@@ -81,7 +84,7 @@
 #include <objects/objmgr1/seq_map.hpp>
 #include <objects/objmgr1/data_loader.hpp>
 #include <objects/seq/Seq_data.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -99,7 +102,7 @@ public:
     virtual ~CDataSource(void);
 
     /// Register new TSE (Top Level Seq-entry)
-    void AddTSE(CSeq_entry& se);
+    void AddTSE(CSeq_entry& se, bool dead = false);
 
     /// Add new sub-entry to "parent".
     /// Return FALSE and do nothing if "parent" is not a node in an
@@ -196,8 +199,8 @@ public:
 
 private:
     // Process seq-entry recursively
-    void x_IndexEntry     (CSeq_entry& entry, CSeq_entry& tse);
-    void x_AddToBioseqMap (CSeq_entry& entry);
+    void x_IndexEntry     (CSeq_entry& entry, CSeq_entry& tse, bool dead);
+    void x_AddToBioseqMap (CSeq_entry& entry, bool dead);
     void x_AddToAnnotMap  (CSeq_entry& entry);
 
     // Find the seq-entry with best bioseq for the seq-id handle.
@@ -235,6 +238,8 @@ private:
     // range sets for each synonym of each handle
     void x_ResolveLocationHandles(CHandleRangeMap& loc) const;
 
+    static CMutex sm_DataSource_Mutex;
+
     CRef<CDataLoader>    m_Loader;
     CRef<CSeq_entry>     m_pTopEntry;
     CObjectManager* m_ObjMgr;
@@ -245,7 +250,8 @@ private:
     TSeqMaps             m_SeqMaps;   // Sequence maps for bioseqs
 
     friend class CAnnot_CI;
-    friend class CAnnotTypes_CI;
+    friend class CAnnotTypes_CI; // using mutex etc.
+    friend class CBioseq_Handle; // using mutex
 };
 
 

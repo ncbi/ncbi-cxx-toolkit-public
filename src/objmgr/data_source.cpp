@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/03/04 15:09:27  grichenk
+* Improved MT-safety. Added live/dead flag to CDataSource methods.
+*
 * Revision 1.16  2002/02/28 20:53:31  grichenk
 * Implemented attaching segmented sequence data. Fixed minor bugs.
 *
@@ -106,13 +109,11 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <serial/iterator.hpp>
-#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-static CMutex s_DataSource_Mutex;
+CMutex CDataSource::sm_DataSource_Mutex;
 
 CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
@@ -124,7 +125,7 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
 CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr)
 {
-    x_AddToBioseqMap(entry);
+    x_AddToBioseqMap(entry, false);
 }
 
 
@@ -152,7 +153,7 @@ CSeq_entry* CDataSource::GetTopEntry(void)
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
     if ( tse_set == m_TSE_seq.end() )
         return 0;
@@ -177,11 +178,11 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
     CSeq_id_Handle idh = info.m_Handle;
     CBioseq_Handle h(idh);
     CRef<CTSE_Info> tse = info.m_TSE;
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     TBioseqMap::iterator found = tse->m_BioseqMap.find(idh);
     _ASSERT(found != tse->m_BioseqMap.end());
     h.x_ResolveTo(scope, *this,
-        *found->second->m_Entry, *tse->m_TSE);
+        *found->second->m_Entry, *tse);
     scope.x_AddToHistory(*tse);
     return h;
 }
@@ -193,7 +194,7 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
     _ASSERT(&setResult != &setSource);
     // for each handle
     TSeq_id_HandleSet::iterator itHandle;
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     for( itHandle = setSource.begin(); itHandle != setSource.end(); ) {
         // if it is in my map
         if (m_TSE_seq.find(*itHandle) != m_TSE_seq.end()) {
@@ -217,7 +218,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     // the handle must be resolved to this data source
     _ASSERT(handle.m_DataSource == this);
     return handle.m_Entry->GetSeq();
@@ -227,7 +228,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
 const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 {
     // Bioseq and TSE must be loaded if there exists a handle
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     _ASSERT(handle.m_DataSource == this);
     return *m_Entries[handle.m_Entry]->m_TSE;
 }
@@ -236,7 +237,7 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     (const CBioseq_Handle& handle)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     const CBioseq* seq = &GetBioseq(handle);
 
     CBioseq* seq_core = new CBioseq();
@@ -301,7 +302,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
 
 const CSeqMap& CDataSource::GetSeqMap(const CBioseq_Handle& handle)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     return x_GetSeqMap(handle);
 }
 
@@ -355,7 +356,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eSequence);
     }
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     if (handle.m_DataSource != this  &&  handle.m_DataSource != 0) {
         // Resolved to a different data source
         return false;
@@ -367,7 +368,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         if ( !info )
             return false;
         entry = info->m_BioseqMap[rhandle.GetKey()]->m_Entry;
-        rhandle.x_ResolveTo(scope, *this, *entry, *info->m_TSE);
+        rhandle.x_ResolveTo(scope, *this, *entry, *info);
     }
     _ASSERT(entry->IsSeq());
     CBioseq& seq = entry->GetSeq();
@@ -443,17 +444,17 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
 }
 
 
-void CDataSource::AddTSE(CSeq_entry& se)
+void CDataSource::AddTSE(CSeq_entry& se, bool dead)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
-    x_AddToBioseqMap(se);
+    CMutexGuard guard(sm_DataSource_Mutex);
+    x_AddToBioseqMap(se, dead);
 }
 
 
 CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 {
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
@@ -463,13 +464,13 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
 
 bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(parent);
     if ( !found ) {
         return false;
     }
     CSeq_entry& entry = *found;
-    _ASSERT(entry.IsSet());
+    _ASSERT(found  &&  entry.IsSet());
 
     entry.SetSet().SetSeq_set().push_back(&bioseq);
 
@@ -479,14 +480,16 @@ bool CDataSource::AttachEntry(const CSeq_entry& parent, CSeq_entry& bioseq)
         top = top->GetParentEntry();
     }
     top->Parentize();
-    x_IndexEntry(bioseq, *top);
+    // The "dead" parameter is not used here since the TSE_Info
+    // structure must have been created already.
+    x_IndexEntry(bioseq, *top, false);
     return true;
 }
 
 
 bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(bioseq);
     if ( !found ) {
         return false;
@@ -510,7 +513,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
     cases "whole" reference should be the only segment of a delta-ext.
 */
     // Get non-const reference to the entry
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(bioseq);
     if ( !found ) {
         return false;
@@ -623,7 +626,7 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
 bool CDataSource::AttachAnnot(const CSeq_entry& entry,
                            CSeq_annot& annot)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(entry);
     if ( !found ) {
         return false;
@@ -673,16 +676,16 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
 }
 
 
-void CDataSource::x_AddToBioseqMap(CSeq_entry& entry)
+void CDataSource::x_AddToBioseqMap(CSeq_entry& entry, bool dead)
 {
     // Search for bioseqs, add each to map
     entry.Parentize();
-    x_IndexEntry(entry, entry);
+    x_IndexEntry(entry, entry, dead);
     x_AddToAnnotMap(entry);
 }
 
 
-void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse)
+void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse, bool dead)
 {
     CTSE_Info* tse_info = 0;
     TEntries::iterator found_tse = m_Entries.find(&tse);
@@ -690,7 +693,7 @@ void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse)
         // New TSE info
         tse_info = new CTSE_Info;
         tse_info->m_TSE = &tse;
-        tse_info->m_Dead = false;
+        tse_info->m_Dead = dead;
     }
     else {
         // existing TSE info
@@ -736,7 +739,7 @@ void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse)
     }
     else {
         iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
-            x_IndexEntry(**it, tse);
+            x_IndexEntry(**it, tse, dead);
         }
     }
 }
@@ -1056,7 +1059,7 @@ The resulting set will contain 0 or 1 TSE with the sequence, all live TSEs
 without the sequence but with references to the id and all dead TSEs
 (with references and without the sequence), referenced by the history.
 */
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     x_ResolveLocationHandles(loc);
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
@@ -1148,7 +1151,7 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc) const
 
 bool CDataSource::DropTSE(const CSeq_entry& tse)
 {
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     // Allow to drop top-level seq-entries only
     _ASSERT(tse.GetParentEntry() == 0);
 
@@ -1397,7 +1400,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id)
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore);
     }
     CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
-    CMutexGuard guard(s_DataSource_Mutex);
+    CMutexGuard guard(sm_DataSource_Mutex);
     CTSE_Info* tse = x_FindBestTSE(idh);
     if (tse) {
         return (CSeqMatch_Info(idh, *tse, *this));
