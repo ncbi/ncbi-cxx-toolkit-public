@@ -468,7 +468,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
    Int4** matrix;
    Uint1* query,* subject;
    Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
-   Int4 i;
+   Int4 index;
    Int2 factor = 1;
    Uint1 mask = 0x0f;
    GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
@@ -503,10 +503,10 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
    sum = 0;
    new_q_start = new_q_end = query;
    new_s_start = new_s_end = subject;
-   i = 0;
+   index = 0;
    
    if (!gapped_calculation) {
-      for (i = 0; i < hsp->subject.length; ++i) {
+      for (index = 0; index < hsp->subject.length; ++index) {
          sum += factor*matrix[*query & mask][*subject];
          query++;
          subject++;
@@ -539,15 +539,15 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
             sum += factor*matrix[*query & mask][*subject];
             query++;
             subject++;
-            i++;
+            index++;
          } else if (esp->op_type == GAPALIGN_DEL) {
             sum -= gap_open + gap_extend * esp->num;
             subject += esp->num;
-            i += esp->num;
+            index += esp->num;
          } else if (esp->op_type == GAPALIGN_INS) {
             sum -= gap_open + gap_extend * esp->num;
             query += esp->num;
-            i += esp->num;
+            index += esp->num;
          }
          
          if (sum < 0) {
@@ -557,10 +557,10 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
                new_q_start = query;
                new_s_start = subject;
                score = sum = 0;
-               if (i < esp->num) {
-                  esp->num -= i;
+               if (index < esp->num) {
+                  esp->num -= index;
                   first_esp = esp;
-                  i = 0;
+                  index = 0;
                } else {
                   first_esp = esp->next;
                }
@@ -577,12 +577,12 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
             /* Remember this point as the best scoring end point */
             score = sum;
             last_esp = esp;
-            last_esp_num = i;
+            last_esp_num = index;
             new_q_end = query;
             new_s_end = subject;
          }
-         if (i >= esp->num) {
-            i = 0;
+         if (index >= esp->num) {
+            index = 0;
             prev_esp = esp;
             esp = esp->next;
          }
