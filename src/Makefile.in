@@ -39,6 +39,14 @@ internal: $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 # and move aside internal libraries we plan to stop installing altogether
 #
 
+compress_tests:
+	for f in $(bindir)/*; do \
+	   case "`basename $$f`" in \
+	      testipub) ;; \
+	      *test* | *demo* | *sample*) test -d $$f  ||  gzip -N $$f ;; \
+	   esac; \
+	done
+
 apps_to_drop = $(top_srcdir)/scripts/internal/projects/apps_to_drop
 libs_to_drop = $(top_srcdir)/scripts/internal/projects/libs_to_drop
 dbindir = $(bindir)/.DEATH-ROW
