@@ -246,28 +246,27 @@ EIO_Status CListeningSocket::Close(void)
 string CSocketAPI::gethostname(void)
 {
     char hostname[128];
-    if (SOCK_gethostname(hostname, sizeof(hostname)) == 0)
-        return string(hostname);
-    return kEmptyStr;
+    if (SOCK_gethostname(hostname, sizeof(hostname)) != 0)
+        *hostname = 0;
+    return string(hostname);
 }
 
 
 string CSocketAPI::ntoa(unsigned int host)
 {
     char ipaddr[64];
-    if (SOCK_ntoa(host, ipaddr, sizeof(ipaddr)) == 0)
-        return string(ipaddr);
-    return kEmptyStr;
+    if (SOCK_ntoa(host, ipaddr, sizeof(ipaddr)) != 0)
+        *ipaddr = 0;
+    return string(ipaddr);
 }
 
 
 string CSocketAPI::gethostbyaddr(unsigned int host)
 {
     char hostname[128];
-
-    if (SOCK_gethostbyaddr(host, hostname, sizeof(hostname)) != 0)
-        return string(hostname);
-    return kEmptyStr;
+    if (!SOCK_gethostbyaddr(host, hostname, sizeof(hostname)))
+        *hostname = 0;
+    return string(hostname);
 }    
 
 
@@ -320,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/08/14 15:16:25  lavr
+ * Do not use kEmptyStr for not to depend on xncbi(corelib) library
+ *
  * Revision 6.2  2002/08/13 19:29:02  lavr
  * Move most methods out-of-line to this file
  *
