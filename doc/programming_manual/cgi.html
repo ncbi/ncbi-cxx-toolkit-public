@@ -760,6 +760,60 @@ in the <span class="ncbi_reg">[CGI]</span> section.</p>
 </table>
 
 
+<p>CGI load balancing settings.<span class="ncbi_reg">[CGI-LB]</span> section.</p>
+
+<table border=1 width=550 cellspacing=1>
+  <caption></caption>
+  <tr><th>Field</th><th>Value(s)</th><th>Action</th> </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">Name</span></td> 
+	<td>Cookie name</td>
+	<td>Name of the load balancing cookie in the HTTP response
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">LifeSpan</span></td> 
+	<td>Cookie life span in seconds</td>
+	<td>Cookie expiration period in seconds
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">Domain</span></td> 
+	<td>Internet domain</td>
+	<td>For NCBI services should be "ncbi.nlm.nih.gov"
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">Path</span></td> 
+	<td>Cookie path</td>
+	<td>"/" for most cases
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">Secure</span></td> 
+	<td>true | false</td>
+	<td>Cookie security mode
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">Host</span></td> 
+	<td>Host IP address</td>
+	<td>This becomes the value of the cookie. 
+	When registry value is not defined, application tries to identify the host 
+	value automatically. In this case application should be initialized using 
+	CCgiApplication::SetCafService function.	
+	</td>
+  </tr>
+
+</table>
+
+
 <a name=appendix></a><h3>Appendix</h3>
 <h4> Restrictions on arguments to the <span class="ncbi_class">CCgiCookie</span> constructor </h4>
 <table border=1 width=550 cellspacing=1>
