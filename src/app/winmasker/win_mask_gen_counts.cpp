@@ -295,6 +295,9 @@ void CWinMaskCountsGenerator::operator()()
         total_ecodes = 0;
         min_count = index[0];
 
+        if( min_count == 0 )
+          min_count = 1;
+
         for( Uint4 i( 0 ); i < max_count; ++i )
             score_counts[i] = 0;
 
@@ -405,40 +408,42 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
                             if( runit <= unit && (runit&prefix_mask) == prefix )
                                 ++counts[runit&suffix_mask];
                         }
+
+                        ++count;
                     }
                 }
             }
-
-            cerr << "." << flush;
         }
 
-        for( Uint4 i( 0 ); i < vector_size; ++i )
+        cerr << "." << flush;
+    }
+
+    for( Uint4 i( 0 ); i < vector_size; ++i )
+    {
+        Uint4 ri = 0; 
+
+        if( counts[i] > 0 )
         {
-            Uint4 ri = 0; 
+            ri = reverse_complement( i, unit_size );
 
-            if( counts[i] > 0 )
-            {
-                ri = reverse_complement( i, unit_size );
+            if( i == ri )
+                ++total_ecodes; 
+            else total_ecodes += 2;
+        }
 
+        if( counts[i] >= min_count )
+        {
+            if( counts[i] >= max_count )
                 if( i == ri )
-                    ++total_ecodes; 
-                else total_ecodes += 2;
-            }
+                    ++score_counts[max_count - 1];
+                else score_counts[max_count - 1] += 2;
+            else if( i == ri )
+                ++score_counts[counts[i] - 1];
+            else score_counts[counts[i] - 1] += 2;
 
-            if( counts[i] >= min_count )
-            {
-                if( counts[i] >= max_count )
-                    if( i == ri )
-                        ++score_counts[max_count - 1];
-                    else score_counts[max_count - 1] += 2;
-                else if( i == ri )
-                    ++score_counts[counts[i] - 1];
-                else score_counts[counts[i] - 1] += 2;
-
-                if( do_output )
-                    *out_stream << hex << prefix + i << " " 
-                        << dec << counts[i] << "\n";
-            }
+            if( do_output )
+                *out_stream << hex << prefix + i << " " 
+                            << dec << counts[i] << "\n";
         }
     }
 }
@@ -449,6 +454,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/03/21 21:02:44  morgulis
+ * Fixed one possible bug that might occur there are no valid units in the
+ * whole input.
+ * Fixed merging conflicts with changes by Michael DiCuccio.
+ *
  * Revision 1.6  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.
