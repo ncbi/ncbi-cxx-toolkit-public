@@ -69,9 +69,9 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 	$(NCBI_C_INCLUDE) \
 	-D__WXGTK__ -DGTK_NO_CHECK_CASTS -D_REENTRANT \
 	-I$(HOME)/Programs/wxGTK-2.2.6/install/include \
-    -I$(HOME)/Programs/GTK-1.2/install/include/gtk-1.2 \
-    -I$(HOME)/Programs/GTK-1.2/install/include/glib-1.2 \
-    -I$(HOME)/Programs/GTK-1.2/install/lib/glib/include
+	-I$(HOME)/Programs/GTK-1.2/install/include/gtk-1.2 \
+	-I$(HOME)/Programs/GTK-1.2/install/include/glib-1.2 \
+	-I$(HOME)/Programs/GTK-1.2/install/lib/glib/include
 
 LIBS = $(ORIG_LIBS) \
 	-L$(HOME)/Programs/wxGTK-2.2.6/install/lib \
