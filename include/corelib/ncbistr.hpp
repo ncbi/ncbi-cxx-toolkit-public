@@ -79,10 +79,10 @@ class CNcbiEmptyString
 public:
     /// Get string.
     static const string& Get(void)
-	{
-		static string empty_str;
-		return empty_str;
-	}
+    {
+        static string empty_str;
+        return empty_str;
+    }
 };
 #endif // NCBI_OS_MSWIN
 /// Empty string definition.
@@ -2247,6 +2247,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2004/03/11 22:56:51  gorelenk
+ * Removed tabs.
+ *
  * Revision 1.53  2004/03/11 18:48:34  gorelenk
  * Added (condionaly) Windows-specific declaration of class CNcbiEmptyString.
  *
