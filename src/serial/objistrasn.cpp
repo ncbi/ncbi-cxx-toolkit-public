@@ -562,7 +562,7 @@ double CObjectIStreamAsn::ReadDouble(void)
 
     if ( base == 10 ) {     /* range checking only on base 10, for doubles */
         if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
-            return mantissa < 0 ? -DBL_MAX: DBL_MAX;
+            ThrowError(fOverflow, "double overflow");
         else if ( exp < DBL_MIN_10_EXP )  /* exponent too small */
             return 0;
     }
@@ -1298,6 +1298,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2004/05/04 17:05:17  gouriano
+* Check double for overflow
+*
 * Revision 1.90  2004/03/23 15:39:23  gouriano
 * Added setup options for skipping unknown data members
 *
