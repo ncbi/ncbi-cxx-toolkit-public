@@ -144,7 +144,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
                            BlastEffectiveLengthsOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, BLAST_ResultsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_ResultsFree);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/04/30 17:12:42  dondosha
+* Changed prefix from BLAST_ to conventional Blast_
+*
 * Revision 1.32  2004/03/19 18:56:04  camacho
 * Move to doxygen AlgoBlast group
 *
