@@ -57,6 +57,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/02/14 17:15:44  kans
+* use standard numeric limits on MacOS (AU)
+*
 * Revision 1.2  2001/05/30 16:17:23  vakatov
 * Introduced #NCBI_USE_INT64 -- in oreder to use "__int64" type
 * only when absolutely necessary (otherwise it conflicted with
@@ -71,6 +74,9 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
+#ifndef NCBI_OS_MAC
+// The system limits are presumably sane, and some system headers explicitly
+// use std::numeric_limits<>, so just stick with the system version on MacOS.
 
 BEGIN_NCBI_SCOPE
 
@@ -140,6 +146,8 @@ NCBI_NUMERIC_LIMITS_UNSIGNED (unsigned __int64, UInt64);
 
 
 END_NCBI_SCOPE
+
+#endif // NCBI_OS_MAC
 
 
 #endif /* NCBI_LIMITS__HPP */
