@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 
 auto_ptr<CMetaRegistry> CMetaRegistry::sm_Instance;
-CMutex                  CMetaRegistry::sm_Mutex;
+DEFINE_CLASS_STATIC_MUTEX(CMetaRegistry::sm_Mutex);
 
 
 CMetaRegistry::~CMetaRegistry()
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2003/12/08 18:40:22  ucko
+ * Use DEFINE_CLASS_STATIC_MUTEX to avoid possible premature locking.
+ *
  * Revision 1.10  2003/10/01 14:32:09  ucko
  * +EFollowLinks
  *
