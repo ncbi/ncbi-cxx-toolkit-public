@@ -47,7 +47,7 @@ class CBlastException;
 
 class CBlastOptionsHandle;
 
-/*!
+/**
 * Creates BlastOptionsHandle objects with default values for the 
 * programs/tasks requested.
 *
@@ -55,7 +55,7 @@ class CBlastOptionsHandle;
 * objects with default values, given a program (or task). 
 *
 * Example:
-* \code
+* @code
 * ...
 * CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(eBlastn);
 * CBl2Seq blaster(query, subject, opts);
@@ -67,7 +67,7 @@ class CBlastOptionsHandle;
 * blaster.SetOptionsHandle(CBlastOptionsFactory::Create(eDiscMegablast));
 * results = blaster.Run();
 * ...
-* \endcode
+* @endcode
 */
 
 class NCBI_XBLAST_EXPORT CBlastOptionsFactory
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/03 21:30:20  camacho
+ * Follow consistent use of doxygen tags
+ *
  * Revision 1.5  2004/01/16 20:45:31  bealer
  * - Add locality flag and DoneDefaults() method.
  *
