@@ -246,23 +246,38 @@ void CProcessor::RegisterAllProcessors(CReadDispatcher& d)
 
 bool CProcessor::TryStringPack(void)
 {
-    static bool var = CPackString::TryStringPack() &&
-        GetConfigFlag(GENBANK_SECTION, STRING_PACK_ENV, true);
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = CPackString::TryStringPack() &&
+            GetConfigFlag(GENBANK_SECTION, STRING_PACK_ENV, true);
+        s_Value = value;
+    }
+    return value != 0;
 }
 
 
 bool CProcessor::TrySNPSplit(void)
 {
-    static bool var = GetConfigFlag(GENBANK_SECTION, SNP_SPLIT_ENV, true);
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigFlag(GENBANK_SECTION, SNP_SPLIT_ENV, true);
+        s_Value = value;
+    }
+    return value != 0;
 }
 
 
 bool CProcessor::TrySNPTable(void)
 {
-    static bool var = GetConfigFlag(GENBANK_SECTION, SNP_TABLE_ENV, true);
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigFlag(GENBANK_SECTION, SNP_TABLE_ENV, true);
+        s_Value = value;
+    }
+    return value != 0;
 }
 
 
@@ -317,13 +332,14 @@ void CProcessor::SetSNPReadHooks(CObjectIStream& in)
 }
 
 
+inline
 CWriter* CProcessor::GetWriter(CReaderRequestResult& result) const
 {
     return m_Dispatcher->GetWriter(result, CWriter::eBlobWriter);
 }
 
 
-bool CProcessor::IsLoaded(const TBlobId& blob_id,
+bool CProcessor::IsLoaded(const TBlobId& /*blob_id*/,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob)
 {
@@ -333,12 +349,11 @@ bool CProcessor::IsLoaded(const TBlobId& blob_id,
     else {
         return blob->GetSplitInfo().GetChunk(chunk_id).IsLoaded();
     }
-    //return blob.IsLoaded() && !CProcessor_ExtAnnot::IsExtAnnot(blob_id, blob);
 }
 
 
 void CProcessor::SetLoaded(CReaderRequestResult& result,
-                           const TBlobId& blob_id,
+                           const TBlobId& /*blob_id*/,
                            TChunkId chunk_id,
                            CLoadLockBlob& blob)
 {
@@ -355,6 +370,7 @@ void CProcessor::SetLoaded(CReaderRequestResult& result,
 
 
 namespace {
+    inline
     CRef<CWriter::CBlobStream> OpenStream(CWriter* writer,
                                           CReaderRequestResult& result,
                                           const CProcessor::TBlobId& blob_id,
@@ -363,6 +379,8 @@ namespace {
     {
         _ASSERT(writer);
         _ASSERT(processor);
+        return writer->OpenBlobStream(result, blob_id, chunk_id, *processor);
+        /*
         if ( chunk_id == CProcessor::kMain_ChunkId ) {
             return writer->OpenBlobStream(result, blob_id, *processor);
         }
@@ -370,6 +388,7 @@ namespace {
             return writer->OpenChunkStream(result, blob_id, chunk_id,
                                            *processor);
         }
+        */
     }
 }
 
@@ -533,10 +552,8 @@ CProcessor_ID1::GetVersion(const CID1server_back& reply) const
     switch ( reply.Which() ) {
     case CID1server_back::e_Gotblobinfo:
         return abs(reply.GetGotblobinfo().GetBlob_state());
-        break;
     case CID1server_back::e_Gotsewithinfo:
         return abs(reply.GetGotsewithinfo().GetBlob_info().GetBlob_state());
-        break;
     default:
         return -1;
     }
@@ -648,8 +665,8 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
                     dynamic_cast<const CProcessor_St_SE_SNPT*>
                     (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
                 if ( prc ) {
-                    prc->SaveBlob(result, blob_id, chunk_id, blob, writer,
-                                  *seq_entry, snps);
+                    prc->SaveSNPBlob(result, blob_id, chunk_id, blob, writer,
+                                     *seq_entry, snps);
                 }
             }
         }
@@ -817,8 +834,8 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                     dynamic_cast<const CProcessor_St_SE_SNPT*>
                     (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
                 if ( prc ) {
-                    prc->SaveBlob(result, blob_id, chunk_id, blob, writer,
-                                  *seq_entry, snps);
+                    prc->SaveSNPBlob(result, blob_id, chunk_id, blob, writer,
+                                     *seq_entry, snps);
                 }
             }
         }
@@ -1053,20 +1070,20 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
     CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), snps);
     CWriter* writer = GetWriter(result);
     if ( writer ) {
-        SaveBlob(result, blob_id, chunk_id, blob, writer, *seq_entry, snps);
+        SaveSNPBlob(result, blob_id, chunk_id, blob, writer, *seq_entry, snps);
     }
     blob->SetSeq_entry(*seq_entry, snps);
     SetLoaded(result, blob_id, chunk_id, blob);
 }
 
 
-void CProcessor_St_SE_SNPT::SaveBlob(CReaderRequestResult& result,
-                                     const TBlobId& blob_id,
-                                     TChunkId chunk_id,
-                                     const CLoadLockBlob& blob,
-                                     CWriter* writer,
-                                     const CSeq_entry& seq_entry,
-                                     const TSNP_InfoMap& snps) const
+void CProcessor_St_SE_SNPT::SaveSNPBlob(CReaderRequestResult& result,
+                                        const TBlobId& blob_id,
+                                        TChunkId chunk_id,
+                                        const CLoadLockBlob& blob,
+                                        CWriter* writer,
+                                        const CSeq_entry& seq_entry,
+                                        const TSNP_InfoMap& snps) const
 {
     _ASSERT(writer);
     CRef<CWriter::CBlobStream> stream
@@ -1196,7 +1213,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                     (&m_Dispatcher->GetProcessor(eType_ID2AndSkel));
                 if ( prc ) {
                     prc->SaveDataAndSkel(result, blob_id, chunk_id,
-                                         blob, writer, split_version,
+                                         writer, split_version,
                                          data, *skel);
                 }
             }
@@ -1397,7 +1414,6 @@ void CProcessor_ID2AndSkel::ProcessObjStream(CReaderRequestResult& result,
 void CProcessor_ID2AndSkel::SaveDataAndSkel(CReaderRequestResult& result,
                                             const TBlobId& blob_id,
                                             TChunkId chunk_id,
-                                            const CLoadLockBlob& blob,
                                             CWriter* writer,
                                             TSplitVersion split_version,
                                             const CID2_Reply_Data& split,
@@ -1461,7 +1477,7 @@ CProcessor::TMagic CProcessor_ExtAnnot::GetMagic(void) const
 void CProcessor_ExtAnnot::ProcessStream(CReaderRequestResult& result,
                                         const TBlobId& blob_id,
                                         TChunkId chunk_id,
-                                        CNcbiIstream& stream) const
+                                        CNcbiIstream& /*stream*/) const
 {
     Process(result, blob_id, chunk_id);
 }
