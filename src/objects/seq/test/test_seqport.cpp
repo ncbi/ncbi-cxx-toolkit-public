@@ -532,7 +532,7 @@ void CSeqportTestApp::SeqDataTest()
     unsigned int nTimes=0, uOverhang=0;
     TSeqPos uSeqLen = 0, uCnt = 0;
     int nInSeqType, nOutSeqType;
-    CSeq_data::E_Choice to_code;
+    CSeq_data::E_Choice to_code = CSeq_data::e_not_set;
     bool bAmbig;
 
     //Create in CSeq_data 
@@ -1528,6 +1528,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2003/04/15 19:48:06  vasilche
+ * Fixed uninitialized variable.
+ *
  * Revision 1.9  2003/03/11 15:53:25  kuznets
  * iterate -> ITERATE
  *

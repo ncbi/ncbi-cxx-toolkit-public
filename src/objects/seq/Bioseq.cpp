@@ -171,7 +171,7 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
     }
     
     if (type != eType  &&  !GetId().empty()) {
-        const CSeq_id* id;
+        const CSeq_id* id = 0;
         if (!worst) {
             id = GetId().begin()->GetPointer();
         } else {
@@ -246,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2003/04/15 19:48:54  vasilche
+ * Fixed uninitialized variable.
+ *
  * Revision 6.18  2003/03/11 15:53:25  kuznets
  * iterate -> ITERATE
  *
