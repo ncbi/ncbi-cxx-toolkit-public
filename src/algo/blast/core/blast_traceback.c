@@ -397,83 +397,89 @@ HSPContainedInHSPCheck(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index, Bool
  * @param program_number which program [in]
  * @param sbp the scoring information [in]
  * @param scoring_params Parameters for how to score matches. [in]
- * @param hit_options determines which scores to save. [in]
+ * @param hit_params Determines which scores to save, and whether to calculate 
+ *                   e-values. [in]
  */
 static Boolean
 HSPSetScores(BlastQueryInfo* query_info, Uint1* query, 
    Uint1* subject, BlastHSP* hsp, 
    Uint1 program_number, BlastScoreBlk* sbp,
    const BlastScoringParameters* score_params,
-   const BlastHitSavingOptions* hit_options)
+   const BlastHitSavingParameters* hit_params)
 {
 
-            Boolean keep = TRUE;
-            Int4 align_length = 0;
-            double scale_factor = score_params->scale_factor;
-            BlastScoringOptions *score_options = score_params->options;
+   Boolean keep = TRUE;
+   Int4 align_length = 0;
+   double scale_factor = score_params->scale_factor;
+   BlastScoringOptions *score_options = score_params->options;
+   BlastHitSavingOptions *hit_options = hit_params->options;
+   
+   /* Calculate alignment length and number of identical letters. 
+      Do not get the number of identities if the query is not available */
+   if (query != NULL) {
+      if (score_options->is_ooframe) {
+         Blast_HSPGetOOFNumIdentities(query, subject, hsp, program_number,
+                                      &hsp->num_ident, &align_length);
+      } else {
+         Blast_HSPGetNumIdentities(query, subject, hsp, 
+                                   score_options->gapped_calculation, 
+                                   &hsp->num_ident, &align_length);
+      }
+   }
 
-            /* Calculate alignment length and number of 
-               identical letters. Do not get the number of 
-               identities if the query is not available */
-            if (query != NULL) {
-               if (score_options->is_ooframe) {
-                  Blast_HSPGetOOFNumIdentities(query, subject, hsp, program_number,
-                                          &hsp->num_ident, &align_length);
-               }
-               else {
-                     Blast_HSPGetNumIdentities(query, subject, hsp, 
-                        score_options->gapped_calculation, &hsp->num_ident, 
-                        &align_length);
-               }
-            }
-
-            if ((hsp->num_ident * 100 < 
-                align_length * hit_options->percent_identity) ||
-                align_length < hit_options->min_hit_length) {
-               keep = FALSE;
-            }
+   if ((hsp->num_ident * 100 < 
+        align_length * hit_options->percent_identity) ||
+       align_length < hit_options->min_hit_length) {
+      keep = FALSE;
+   }
             
-            if (keep == TRUE)
-            {
-               if (program_number == blast_type_blastp ||
-                   program_number == blast_type_rpsblast ||
-                   program_number == blast_type_blastn) {
+   if (keep == TRUE) {
+      /* If sum statistics is not used, calcualte e-values here. */
+      if (!hit_params->do_sum_stats) {
+         
+         Blast_KarlinBlk** kbp;
+         if (score_options->gapped_calculation)
+            kbp = sbp->kbp_gap;
+         else
+            kbp = sbp->kbp;
+         
+         if (hit_options->phi_align) {
+            Blast_HSPPHIGetEvalue(hsp, sbp);
+         } else {
+            /* Divide lambda by the scaling factor, so e-value is 
+               calculated correctly from a scaled score. Since score
+               is an integer, adjusting score before the e-value 
+               calculation would have lead to loss of precision.*/
+            kbp[hsp->context]->Lambda /= scale_factor;
+            hsp->evalue = 
+               BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
+                  query_info->eff_searchsp_array[hsp->context]);
+            kbp[hsp->context]->Lambda *= scale_factor;
+         }
+         if (hsp->evalue > hit_options->expect_value) {
+            /* put in for comp. based stats. */
+            keep = FALSE;
+         }
+      }
 
-                  Blast_KarlinBlk** kbp;
-                  if (score_options->gapped_calculation)
-                     kbp = sbp->kbp_gap;
-                  else
-                     kbp = sbp->kbp;
+      /* only one alignment considered for blast[np]. */
+      /* This may be changed by LinkHsps for blastx or tblastn. */
+      hsp->num = 1;
+      if ((program_number == blast_type_tblastn ||
+           program_number == blast_type_rpstblastn) && 
+          hit_options->longest_intron > 0) {
+         /* For uneven version of LinkHsps, the individual e-values
+            need to be calculated for each HSP. */
+         hsp->evalue = 
+            BLAST_KarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
+               query_info->eff_searchsp_array[hsp->context]);
+      }
 
-                  if (hit_options->phi_align) {
-                     Blast_HSPPHIGetEvalue(hsp, sbp);
-                  } else {
-                     hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-                          query_info->eff_searchsp_array[hsp->context]);
-                  }
-                  if (hsp->evalue > hit_options->expect_value) 
-                    /* put in for comp. based stats. */
-                     keep = FALSE;
-               }
+      /* remove any scaling of the calculated score */
+      hsp->score = (Int4) ((hsp->score+(0.5*scale_factor)) / scale_factor);
+   }
 
-               /* remove any scaling of the calculated score */
-               hsp->score = (Int4) ((hsp->score+(0.5*scale_factor))/
-                                        scale_factor);
-
-               /* only one alignment considered for blast[np]. */
-               /* This may be changed by LinkHsps for blastx or tblastn. */
-               hsp->num = 1;
-               if ((program_number == blast_type_tblastn ||
-                    program_number == blast_type_rpstblastn) && 
-                     hit_options->longest_intron > 0) {
-                   hsp->evalue = 
-                     BLAST_KarlinStoE_simple(hsp->score, 
-                     sbp->kbp_gap[hsp->context],
-                     query_info->eff_searchsp_array[hsp->context]);
-               }
-           }
-
-           return keep;
+   return keep;
 }
 
 /** Adjusts offset if out-of-frame and negative frame, or if partial sequence used for extension.
@@ -740,7 +746,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
             }
             
             keep = HSPSetScores(query_info, query, adjusted_subject, hsp, 
-                                program_number, sbp, score_params, hit_options);
+                                program_number, sbp, score_params, hit_params);
 
             HSPAdjustSubjectOffset(hsp, subject_blk, k_is_ooframe, 
                                    start_shift);
@@ -773,22 +779,10 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
     Blast_HSPListPurgeNullHSPs(hsp_list);
     
     /* Relink and rereap the HSP list, if needed. */
-
-    if (program_number == blast_type_blastx ||
-        program_number == blast_type_tblastn ||
-        program_number == blast_type_rpstblastn) {
-        
-        if (hit_params->do_sum_stats == TRUE) {
-           BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
-                         sbp, hit_params, score_options->gapped_calculation);
-        } else if (hit_options->phi_align) {
-           Blast_HSPListPHIGetEvalues(hsp_list, sbp);
-        } else {
-           Blast_HSPListGetEvalues(program_number, query_info, hsp_list, 
-                                      score_options->gapped_calculation, sbp);
-        }
-        
-        Blast_HSPListReapByEvalue(hsp_list, hit_options);
+    if (hit_params->do_sum_stats) {
+       BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
+                      sbp, hit_params, score_options->gapped_calculation);
+       Blast_HSPListReapByEvalue(hsp_list, hit_options);
     }
     
     qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), score_compare_hsps);
@@ -1042,14 +1036,6 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
    if (!hit_list)
       return 0;
 
-   /* for translated searches, the traceback code calculates
-      E values *after* the scaling factor has been removed from
-      the alignment scores. Thus, lambda must not be pre-scaled
-      for a translated search */
-
-   if (program_number != blast_type_rpstblastn)
-      sbp->kbp_gap[0]->Lambda /= score_params->scale_factor;
-
    for (i = 0; i < hit_list->hsplist_count; i++) {
       hsp_list = hit_list->hsplist_array[i];
       if (!hsp_list)
@@ -1121,10 +1107,6 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
 
       RPSUpdateHSPList(hsp_list);
    }
-
-   /* restore input data */
-   if (program_number != blast_type_rpstblastn)
-      sbp->kbp_gap[0]->Lambda *= score_params->scale_factor;
 
    gap_align->sbp->posMatrix = orig_pssm;
    return status;
