@@ -681,7 +681,7 @@ in the <span class="ncbi_reg">[CGI]</span> section.</p>
   </tr>
   <tr>
 	<td><span class="ncbi_reg_var">PrintEnv</span></td> 
-	<td>all | {comma separated list of variables}</td>
+	<td>all | {comma separated list of environment variables}</td>
 	<td> "all" - log all environment variables<br>
 		 instead of "all" can be list of variables to be logged
 	</td>
@@ -694,6 +694,39 @@ in the <span class="ncbi_reg">[CGI]</span> section.</p>
 		"OnError" - enables logging if CGI fails for some reason<br>
 	</td>
   </tr>
+  <tr>
+	<td><span class="ncbi_reg_var">StatLog</span></td> 
+	<td>true | false</td>
+	<td>"true" - enable statistical logging <br> 
+	</td>
+  </tr>
+  <tr>
+	<td><span class="ncbi_reg_var">LogArgs</span></td> 
+	<td>{comma separated list of CGI request variables}</td>
+	<td>If defined all variables will appear in the statistics log files 
+	in form of key='value' pairs where key is the variable name.
+	<pre class="ncbi_code"> Example: LogArgs = param1,param2 </pre>
+	Here param1 and param2 are names of the 
+	In addition it is possible to specify alternative aliases for variable 
+	names. Aliases are used in case we want param1 to appear in the log file 
+	under some different name (say 'alias').
+	<br>
+	<pre class="ncbi_code"> Example: LogParams = param1=alias,param2</pre>
+	<br>
+	The rationale for aliasing can be saving space in log files, 
+	resolving names ambuiguities or improving log files readabilty.
+	</td>
+  </tr>
+  <tr>
+	<td><span class="ncbi_reg_var">TimeStatCutOff</span></td> 
+	<td>number of cut-off seconds</td>
+	<td>Used with <span class="ncbi_reg_var">StatLog</span>. 
+	Used NOT to log statistics if CGI request took less than specified number 
+	of seconds. No effect if set to 0.
+	<br> 
+	</td>
+  </tr>
+
 </table>
 
 <p>Fast CGI settings.<span class="ncbi_reg">[FastCGI]</span> section.</p>
