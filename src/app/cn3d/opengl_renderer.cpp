@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/07 00:21:17  thiessen
+* add display list mechanism
+*
 * Revision 1.11  2000/08/04 22:49:03  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -93,8 +96,8 @@ static const double PI = acos(-1);
 static inline double DegreesToRad(double deg) { return deg*PI/180.0; }
 static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 
-static const GLuint FIRST_LIST = 1;
-
+const unsigned int OpenGLRenderer::NO_LIST = 0;
+const unsigned int OpenGLRenderer::FIRST_LIST = 1;
 
 // it's easier to keep one global qobj for now
 static GLUquadricObj *qobj = NULL;
@@ -305,6 +308,19 @@ void OpenGLRenderer::SetSize(GLint width, GLint height) const
     NewView();
 }
 
+// display list management stuff
+void OpenGLRenderer::StartDisplayList(unsigned int list)
+{
+    SetColor(GL_NONE, 0, 0, 0); // reset color caches in SetColor
+    TESTMSG("creating display list " << list);
+    glNewList(list, GL_COMPILE);
+}
+
+void OpenGLRenderer::EndDisplayList(void)
+{
+    glEndList();
+}
+
 
 // methods dealing with structure data and drawing
 
@@ -323,7 +339,8 @@ void OpenGLRenderer::Display(void) const
     }
     
     if (structureSet) {
-        glCallList(FIRST_LIST);
+        for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++)
+            glCallList(i);
     } else {
         glCallList(FIRST_LIST); // draw logo
     }
@@ -341,6 +358,7 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
     Display();
     GLint hits = glRenderMode(GL_RENDER);
     selectMode = false;
+    NewView();
 
     // parse selection buffer to find name of selected item
     int i, j, p=0, n, top=0;
@@ -367,8 +385,6 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
         }
     }
 
-    NewView();
-    Display();
     if (*name != NO_NAME)
         return true;
     else
@@ -395,7 +411,6 @@ void OpenGLRenderer::Construct(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    SetColor(GL_NONE, 0, 0, 0); // reset color caches in SetColor
     if (structureSet) {
         glNewList(FIRST_LIST, GL_COMPILE);
         structureSet->DrawAll();

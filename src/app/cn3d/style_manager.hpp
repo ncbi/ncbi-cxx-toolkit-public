@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/07 00:20:19  thiessen
+* add display list mechanism
+*
 * Revision 1.2  2000/08/04 22:49:11  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -83,14 +86,6 @@ public:
     double radius;
     int slices, stacks;
     unsigned int name;
-
-    AtomStyle(void)
-    {
-        style = StyleManager::eNotDisplayed;
-        color = Vector(0,0,0);
-        radius = 0.0;
-        slices = stacks = 3;
-    }
 };
 
 class BondStyle
@@ -105,16 +100,6 @@ public:
         unsigned int name;
     } end1, end2;
     bool midCap;
-
-    BondStyle(void)
-    {
-        end1.style = end2.style = StyleManager::eNotDisplayed;
-        end1.color = end2.color = Vector(0,0,0);
-        end1.radius = end2.radius = 0.0;
-        end1.atomCap = end2.atomCap = midCap = false;
-        end1.sides = end2.sides = 3;
-        end1.segments = end2.segments = 2;
-    }
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/07 00:21:17  thiessen
+* add display list mechanism
+*
 * Revision 1.5  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -57,6 +60,10 @@
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/bond.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/opengl_renderer.hpp"
+#include "cn3d/coord_set.hpp"
+#include "cn3d/atom_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -64,7 +71,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph) :
-    StructureBase(parent)
+    StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST)
 {
     static const CBiostruc_residue_graph_set* standardDictionary = NULL;
     if (!standardDictionary) {
@@ -92,6 +99,45 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             ERR_POST(Fatal << "file 'bstdt.val' does not contain expected dictionary data");
     }
 
+    // figure out what models we'll be drawing, based on contents of parent 
+    // StructureSet and StructureObject
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "ChemicalGraph::ChemicalGraph() - can't get StructureObject parent");
+        return;
+    }
+
+    // if this is the only StructureObject in this StructureSet, and if this
+    // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
+    // has multiple ensembles, then use multiple altConf ensemble
+    int nAlts = 0;
+    if (!parentSet->isMultipleStructure && object->coordSets.size() == 1 &&
+        object->coordSets.front()->atomSet->ensembles.size() > 1) {
+
+        AtomSet *atomSet = object->coordSets.front()->atomSet;
+        AtomSet::EnsembleList::iterator e, ee=atomSet->ensembles.end();
+        for (e=atomSet->ensembles.begin(); e!=ee; e++) {
+            atomSetList.push_back(std::make_pair(atomSet, *e));
+            nAlts++;
+        }
+
+    // otherwise, use all CoordSets using default altConf ensemble for single
+    // structure; for multiple structure, use only first CoordSet
+    } else {
+        StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
+        for (c=object->coordSets.begin(); c!=ce; c++) {
+            atomSetList.push_back(std::make_pair((*c)->atomSet,
+                reinterpret_cast<const std::string *>(NULL)));   // VC++ requires this cast for some reason...
+            nAlts++;
+            if (parentSet->isMultipleStructure) break;
+        }
+    }
+    TESTMSG("nAlts = " << nAlts);
+    if (!nAlts) {
+        ERR_POST(Warning << "ChemicalGraph has zero AtomSets!");
+        return;
+    }
+
     // load molecules from SEQUENCE OF Molecule-graph
     CBiostruc_graph::TMolecule_graphs::const_iterator i, ie=graph.GetMolecule_graphs().end();
     for (i=graph.GetMolecule_graphs().begin(); i!=ie; i++) {
@@ -99,6 +145,28 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             i->GetObject(),
             standardDictionary->GetResidue_graphs(),
             graph.GetResidue_graphs());
+
+        // set molecules' display list(s); each protein or nucleotide molecule
+        // gets its own display list(s) (one display list for each molecule for
+        // each set of coordinates), while everything else - hets, solvents,
+        // inter-molecule bonds - goes in a single list(s).
+        if (molecule->IsProtein() || molecule->IsNucleotide()) {
+            for (int n=0; n<nAlts; n++) {
+                molecule->displayLists.push_back(++(parentSet->lastDisplayList));
+            }
+        } else {
+            if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
+                displayListOtherStart = parentSet->lastDisplayList + 1;
+                for (int n=0; n<nAlts; n++) {
+                    molecule->displayLists.push_back(++(parentSet->lastDisplayList));
+                }
+            } else {
+                for (int n=0; n<nAlts; n++) {
+                    molecule->displayLists.push_back(displayListOtherStart + n);
+                }
+            }
+        }
+
         if (molecules.find(molecule->id) != molecules.end())
             ERR_POST(Fatal << "confused by repeated Molecule-graph ID's");
         molecules[molecule->id] = molecule;
@@ -114,9 +182,87 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
                 j->GetObject().GetAtom_id_1(), 
                 j->GetObject().GetAtom_id_2(),
                 order);
+
+            // set inter-molecule bonds' display list(s)
+            if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
+                displayListOtherStart = parentSet->lastDisplayList + 1;
+                parentSet->lastDisplayList += nAlts;
+            }
+
             if (bond) interMoleculeBonds.push_back(bond);
         }
     }
+}
+
+// This is where the work of breaking objects up into display lists gets done.
+bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
+{
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "ChemicalGraph::DrawAll() - can't get StructureObject parent");
+        return false;
+    }
+    TESTMSG("drawing ChemicalGraph of object " << object->pdbID);
+
+    // put each protein or nucleotide chain in its own display list
+    bool continueDraw;
+    AtomSetList::const_iterator a, ae=atomSetList.end();
+    MoleculeMap::const_iterator m, me=molecules.end();
+    for (m=molecules.begin(); m!=me; m++) {
+        if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
+
+        Molecule::DisplayListList::const_iterator md=m->second->displayLists.begin();
+        for (a=atomSetList.begin(); a!=ae; a++, md++) {
+
+            // start new display list
+            TESTMSG("drawing molecule #" << m->second->id << " in display list " << *md
+					<< " of " << atomSetList.size());
+            parentSet->renderer->StartDisplayList(*md);
+
+            // apply relative transformation if this is a slave structure
+            if (object->IsSlave()) parentSet->renderer->PushMatrix(object->transformToMaster);
+
+            // draw this molecule with all alternative AtomSets (e.g., NMR's or altConfs)
+            a->first->SetActiveEnsemble(a->second);
+            if (!(continueDraw = m->second->DrawAll(a->first))) break;
+
+            // revert transformation matrix
+            if (object->IsSlave()) parentSet->renderer->PopMatrix();
+
+            // end display list
+            parentSet->renderer->EndDisplayList();
+        }
+
+        if (!continueDraw) return false;
+    }
+
+    // then put everything else (solvents, hets, intermolecule bonds) in a single display list
+    if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
+    TESTMSG("drawing hets/solvents/i-m bonds");
+    int n = 0;
+    for (a=atomSetList.begin(); a!=ae; a++, n++) {
+    
+        a->first->SetActiveEnsemble(a->second);
+        parentSet->renderer->StartDisplayList(displayListOtherStart + n);
+        if (object->IsSlave()) parentSet->renderer->PushMatrix(object->transformToMaster);
+
+        for (m=molecules.begin(); m!=me; m++) {
+            if (m->second->IsProtein() || m->second->IsNucleotide()) continue;
+            if (!(continueDraw = m->second->DrawAll(a->first))) break;
+        }
+
+        BondList::const_iterator b, be=interMoleculeBonds.end();
+        for (b=interMoleculeBonds.begin(); b!=be; b++) {
+            if (!(continueDraw = (*b)->Draw(a->first))) break;
+        }
+
+        if (object->IsSlave()) parentSet->renderer->PopMatrix();
+        parentSet->renderer->EndDisplayList();
+
+        if (!continueDraw) break;
+    }
+
+    return true;
 }
 
 END_SCOPE(Cn3D)

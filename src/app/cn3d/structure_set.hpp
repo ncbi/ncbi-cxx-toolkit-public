@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/08/07 00:20:18  thiessen
+* add display list mechanism
+*
 * Revision 1.15  2000/08/04 22:49:11  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -109,6 +112,8 @@ public:
     ~StructureSet(void);
 
     // public data
+    const bool isMultipleStructure;
+
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;
 
@@ -134,6 +139,9 @@ public:
 
     // called when an atom is selected in the GL window
     void SelectedAtom(unsigned int name);
+
+    // for assigning display lists
+    unsigned int lastDisplayList;
 
 private:
     typedef std::pair < const Residue*, int > NamePair;
@@ -165,7 +173,6 @@ public:
     CoordSetList coordSets;
 
     // public methods
-    bool DrawAll(const AtomSet *atomSet) const;
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);
 
 private:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/07 00:20:18  thiessen
+* add display list mechanism
+*
 * Revision 1.5  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -98,11 +101,14 @@ public:
     BondList interResidueBonds;
     BondList virtualBonds;
 
+    typedef LIST_TYPE < unsigned int > DisplayListList;
+    DisplayListList displayLists;
+
     // public methods
-    bool IsProtein(void) { return (type == eProtein); }
-    bool IsNucleotide(void) { return (type == eDNA || type == eRNA); }
-    bool IsSolvent(void) { return (type == eSolvent); }
-    bool IsHeterogen(void) { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
+    bool IsProtein(void) const { return (type == eProtein); }
+    bool IsNucleotide(void) const { return (type == eDNA || type == eRNA); }
+    bool IsSolvent(void) const { return (type == eSolvent); }
+    bool IsHeterogen(void) const { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
     const Residue::AtomInfo * GetAtomInfo(int rID, int aID) const
     { 
         ResidueMap::const_iterator info=residues.find(rID);

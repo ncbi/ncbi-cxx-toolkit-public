@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/07 00:21:18  thiessen
+* add display list mechanism
+*
 * Revision 1.8  2000/08/04 22:49:03  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -138,7 +141,6 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
         // anything else is side chain
         else
             return Residue::eSideChainAtom;
-
     }
 
     return Residue::eUnknownAtom;
@@ -294,16 +296,16 @@ bool Residue::Draw(const AtomSet *atomSet) const
         return false;
     }
 
+    // verify presense of OpenGLRenderer
+    if (!parentSet->renderer) {
+        ERR_POST(Warning << "Residue::Draw() - no renderer");
+        return false;
+    }
+
     // get Molecule parent
     const Molecule *molecule;
     if (!GetParentOfType(&molecule)) {
         ERR_POST(Error << "Residue::Draw(data) - can't get parent Molecule");
-        return false;
-    }
-
-    // verify presense of OpenGLRenderer
-    if (!parentSet->renderer) {
-        ERR_POST(Warning << "Residue::Draw() - no renderer");
         return false;
     }
 
@@ -316,6 +318,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
     AtomStyle atomStyle;
+    const Atom *atom;
 
     // iterate atoms; key is atomID
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
@@ -323,16 +326,13 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
         AtomPntr ap(molecule->id, id, a->first);
 
-        // get Atom* for appropriate altConf
-        const Atom *atom = atomSet->GetAtom(ap, overlayEnsembles);
-        if (!atom) continue; // skip atom if no altConf
-
         // get Style
         if (!parentSet->styleManager->GetAtomStyle(object, ap, &atomStyle))
             return false;
 
-        // draw the atom
-        if (atomStyle.style != StyleManager::eNotDisplayed)
+        // get Atom* for appropriate altConf and draw the atom
+        if (atomStyle.style != StyleManager::eNotDisplayed &&
+            (atom = atomSet->GetAtom(ap, overlayEnsembles)) != NULL)
             parentSet->renderer->DrawAtom(atom->site, atomStyle);
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/07 00:21:17  thiessen
+* add display list mechanism
+*
 * Revision 1.5  2000/08/03 15:12:23  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -83,7 +86,7 @@ CoordSet::CoordSet(StructureBase *parent,
 
 bool CoordSet::Draw(const AtomSet *atomSet) const
 {
-    TESTMSG("not drawing CoordSet");
+    // don't draw CoordSets directly
     return false;
 }
 

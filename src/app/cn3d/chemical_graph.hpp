@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/07 00:20:18  thiessen
+* add display list mechanism
+*
 * Revision 1.6  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -55,6 +58,7 @@
 #define CN3D_CHEMICALGRAPH__HPP
 
 #include <map>
+#include <string>
 
 #include <objects/mmdb1/Biostruc_graph.hpp>
 
@@ -70,6 +74,8 @@ BEGIN_SCOPE(Cn3D)
 // bonds ("connections" in Cn3D jargon).
 
 class Bond;
+class AtomSet;
+class StructureObject;
 
 class ChemicalGraph : public StructureBase
 {
@@ -84,6 +90,8 @@ public:
     BondList interMoleculeBonds;
 
     // public methods
+
+    bool DrawAll(const AtomSet *atomSet = NULL) const;
     const Residue::AtomInfo * GetAtomInfo(const AtomPntr& atom) const
     { 
         MoleculeMap::const_iterator info=molecules.find(atom.mID);
@@ -93,6 +101,9 @@ public:
     }
 
 private:
+    typedef LIST_TYPE < std::pair < AtomSet *, const std::string * > > AtomSetList;
+    AtomSetList atomSetList;
+    unsigned int displayListOtherStart;
 };
 
 END_SCOPE(Cn3D)

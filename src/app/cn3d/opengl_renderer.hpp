@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/07 00:20:18  thiessen
+* add display list mechanism
+*
 * Revision 1.8  2000/08/04 22:49:10  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -124,6 +127,11 @@ public:
     void PushMatrix(const Matrix* xform) const;
     // pop matrix
     void PopMatrix(void) const;
+
+    // display list management
+    static const unsigned int NO_LIST, FIRST_LIST;
+    void StartDisplayList(unsigned int list);
+    void EndDisplayList(void);
 
     // drawing methods
     void DrawAtom(const Vector& site, const AtomStyle& atomStyle);

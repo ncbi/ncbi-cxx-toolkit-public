@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/07 00:21:17  thiessen
+* add display list mechanism
+*
 * Revision 1.9  2000/08/04 22:49:02  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -125,6 +128,25 @@ const Bond* MakeBond(StructureBase *parent,
 
 bool Bond::Draw(const AtomSet *atomSet) const
 {
+    if (!parentSet->renderer) {
+        ERR_POST(Error << "Bond::Draw() - no renderer");
+        return false;
+    }
+
+    // get Style
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) {
+        ERR_POST(Error << "Bond::Draw() - can't get StructureObject parent");
+        return false;
+    }
+    BondStyle bondStyle;
+    if (!parentSet->styleManager->GetBondStyle(object, atom1, atom2, order, &bondStyle))
+        return false;
+    // don't show bond if either atom isn't visible
+    if (bondStyle.end1.style == StyleManager::eNotDisplayed ||
+        bondStyle.end2.style == StyleManager::eNotDisplayed)
+        return true;
+
     // get Atom* for appropriate altConf
     if (!atomSet) {
         ERR_POST(Error << "Bond::Draw(data) - NULL AtomSet*");
@@ -136,24 +158,8 @@ bool Bond::Draw(const AtomSet *atomSet) const
     const Atom *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
     if (!a2) return true;
 
-    // get Style
-    const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "Bond::Draw() - can't get StructureObject parent");
-        return false;
-    }
-    BondStyle bondStyle;
-    if (!parentSet->styleManager->GetBondStyle(object, atom1, atom2, order, &bondStyle))
-        return false;
-
     // draw the bond
-    if (!parentSet->renderer) {
-        ERR_POST(Error << "Bond::Draw() - no renderer");
-        return false;
-    }
-    if (bondStyle.end1.style != StyleManager::eNotDisplayed &&
-        bondStyle.end2.style != StyleManager::eNotDisplayed)
-        parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle);
+    parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle);
 
     return true;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/07 00:21:18  thiessen
+* add display list mechanism
+*
 * Revision 1.5  2000/08/04 22:49:04  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -49,6 +52,7 @@
 */
 
 #include "cn3d/structure_base.hpp"
+#include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -80,6 +84,7 @@ StructureBase::~StructureBase(void)
 // draws the object and all its children - halt upon false return from Draw or DrawAll
 bool StructureBase::DrawAll(const AtomSet *atomSet) const
 {
+    if (!parentSet->renderer) return false;
     if (!Draw(atomSet)) return true;
     _ChildList::const_iterator i, e=_children.end();
     for (i=_children.begin(); i!=e; i++) 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/08/07 00:21:18  thiessen
+* add display list mechanism
+*
 * Revision 1.15  2000/08/04 22:49:04  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -107,7 +110,9 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-    StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME)
+    StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
+    lastDisplayList(OpenGLRenderer::NO_LIST),
+    isMultipleStructure(mime.IsAlignstruc())
 {
     StructureObject *object;
     parentSet = this;
@@ -339,44 +344,6 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
         }
     }
     return false;
-}
-
-// override DrawAll so that the graph will be applied to each CoordSet
-bool StructureObject::DrawAll(const AtomSet *ignored) const
-{
-    TESTMSG("drawing StructureObject " << pdbID);
-    
-    // apply relative transformation if this is a slave structure
-    if (!isMaster && parentSet->renderer)
-        parentSet->renderer->PushMatrix(transformToMaster);
-
-    // if this is the only StructureObject in this StructureSet, and if this
-    // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
-    // has multiple ensembles, then draw multiple altConf ensembles
-    if (coordSets.size() == 1 && coordSets.front()->atomSet->ensembles.size() > 1 &&
-        parentSet->objects.size() == 1) {
-        AtomSet *atomSet = coordSets.front()->atomSet;
-        AtomSet::EnsembleList::iterator e, ee=atomSet->ensembles.end();
-        for (e=atomSet->ensembles.begin(); e!=ee; e++) {
-            TESTMSG("drawing multiple altConf ensemble '" << **e << '\'');
-            atomSet->SetActiveEnsemble(*e);
-            if (!graph->DrawAll(coordSets.front()->atomSet)) return true;
-        }
-
-    // otherwise, loop through all CoordSets using default altConf ensemble
-    } else {
-        TESTMSG("drawing default altConf ensemble");
-        CoordSetList::const_iterator c, ce=coordSets.end();
-        for (c=coordSets.begin(); c!=ce; c++) {
-            (*c)->atomSet->SetActiveEnsemble(NULL);
-            if (!(graph->DrawAll((*c)->atomSet))) return true;
-        }
-    }
-    // revert GL matrix
-    if (!isMaster && parentSet->renderer)
-        parentSet->renderer->PopMatrix();
-
-    return true;
 }
 
 END_SCOPE(Cn3D)
