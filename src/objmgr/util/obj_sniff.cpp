@@ -230,6 +230,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
             break;
         }
         catch (CException& ) {
+            Reset();
             ++it; // trying the next type.
         }
     }
@@ -243,6 +244,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2003/10/07 20:43:12  kuznets
+* Added Reset() call when parsing fails.
+*
 * Revision 1.13  2003/08/28 16:15:57  kuznets
 * + SetDiscardCurrObject() method
 *
