@@ -1,0 +1,7 @@
+# $Id$
+
+LIB = ncbi_xloader_blastdb
+SRC = bdbloader
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+LIBS = $(ORIG_LIBS) $(NCBI_C_LIBPATH) -lncbitool -lncbiobj $(NCBI_C_ncbi)
