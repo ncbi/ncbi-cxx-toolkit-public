@@ -213,9 +213,13 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     
     string name(p, spacep);
     
-    // Find value
+    // Skip spaces, tabs, to find value
     while((spacep < ep) && ((*spacep == ' ') || (*spacep == '\t')))
         spacep ++;
+    
+    // Strip spaces, tabs from end
+    while((spacep < ep) && ((ep[-1] == ' ') || (ep[-1] == '\t')))
+        ep --;
     
     string value(spacep, ep);
     
