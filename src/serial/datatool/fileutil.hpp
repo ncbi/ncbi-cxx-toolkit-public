@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/30 21:33:39  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
 * Revision 1.4  1999/12/28 18:55:57  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -60,6 +64,7 @@ class SourceFile
 {
 public:
     SourceFile(const string& name, bool binary = false);
+    SourceFile(const string& name, const string& dir, bool binary = false);
     ~SourceFile(void);
 
     operator CNcbiIstream&(void) const
@@ -70,6 +75,8 @@ public:
 private:
     CNcbiIstream* m_StreamPtr;
     bool m_Open;
+
+    bool x_Open(const string& name, bool binary);
 };
 
 class DestinationFile

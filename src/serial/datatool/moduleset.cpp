@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/12/30 21:33:40  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
 * Revision 1.16  1999/12/28 18:55:59  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -111,14 +115,27 @@ const string& CFileModules::GetSourceFileName(void) const
 string CFileModules::GetFileNamePrefix(void) const
 {
     _TRACE("file " << m_SourceFileName << ": " << GetModuleContainer().GetFileNamePrefixSource());
-    string prefix = GetModuleContainer().GetFileNamePrefix();
     if ( MakeFileNamePrefixFromSourceFileName() ) {
-        if ( m_PrefixFromSourceFileName.empty() )
+        if ( m_PrefixFromSourceFileName.empty() ) {
             m_PrefixFromSourceFileName = DirName(m_SourceFileName);
-        _TRACE("file " << m_SourceFileName << ": \"" << prefix << "\" \"" << m_PrefixFromSourceFileName << "\"");
-        return Path(prefix, m_PrefixFromSourceFileName);
+            if ( m_PrefixFromSourceFileName.empty() ||
+                 m_PrefixFromSourceFileName[0] == '.' ||
+                 m_PrefixFromSourceFileName[0] == '/' ) {
+                // path absent or non local
+                m_PrefixFromSourceFileName.erase();
+                return GetModuleContainer().GetFileNamePrefix();
+            }
+        }
+        _TRACE("file " << m_SourceFileName << ": \"" << m_PrefixFromSourceFileName << "\"");
+        if ( UseAllFileNamePrefixes() ) {
+            return Path(GetModuleContainer().GetFileNamePrefix(),
+                        m_PrefixFromSourceFileName);
+        }
+        else {
+            return m_PrefixFromSourceFileName;
+        }
     }
-    return prefix;
+    return GetModuleContainer().GetFileNamePrefix();
 }
 
 CDataType* CFileModules::ExternalResolve(const string& moduleName,

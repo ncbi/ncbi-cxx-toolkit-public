@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/12/30 21:33:40  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
 * Revision 1.16  1999/12/29 16:01:51  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -233,14 +237,19 @@ CDataType* CDataTypeModule::Resolve(const string& typeName) const
 string CDataTypeModule::GetFileNamePrefix(void) const
 {
     _TRACE("module " << m_Name << ": " << GetModuleContainer().GetFileNamePrefixSource());
-    string prefix = GetModuleContainer().GetFileNamePrefix();
     if ( MakeFileNamePrefixFromModuleName() ) {
         if ( m_PrefixFromName.empty() )
             m_PrefixFromName = Identifier(m_Name);
-        _TRACE("module " << m_Name << ": \"" << prefix << "\" \"" << m_PrefixFromName << "\"");
-        return Path(prefix, m_PrefixFromName);
+        _TRACE("module " << m_Name << ": \"" << m_PrefixFromName << "\"");
+        if ( UseAllFileNamePrefixes() ) {
+            return Path(GetModuleContainer().GetFileNamePrefix(),
+                        m_PrefixFromName);
+        }
+        else {
+            return m_PrefixFromName;
+        }
     }
-    return prefix;
+    return GetModuleContainer().GetFileNamePrefix();
 }
 
 const string& CDataTypeModule::GetVar(const string& section,

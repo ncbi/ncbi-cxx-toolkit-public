@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/30 21:33:39  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
 * Revision 1.4  1999/12/28 18:55:57  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -54,22 +58,25 @@
 static const int BUFFER_SIZE = 4096;
 
 SourceFile::SourceFile(const string& name, bool binary)
+    : m_StreamPtr(0), m_Open(false)
 {
     if ( name == "stdin" || name == "-" ) {
         m_StreamPtr = &NcbiCin;
-        m_Open = false;
     }
     else {
-        m_StreamPtr = new CNcbiIfstream(name.c_str(),
-                                        binary?
-                                            IOS_BASE::in | IOS_BASE::binary:
-                                            IOS_BASE::in);
-        if ( !*m_StreamPtr ) {
-            delete m_StreamPtr;
-            m_StreamPtr = 0;
+        if ( !x_Open(name, binary) )
             ERR_POST(Fatal << "cannot open file " << name);
-        }
-        m_Open = true;
+    }
+}
+
+SourceFile::SourceFile(const string& name, const string& dir, bool binary)
+{
+    if ( name == "stdin" || name == "-" ) {
+        m_StreamPtr = &NcbiCin;
+    }
+    else {
+        if ( !x_Open(name, binary) && !x_Open(Path(dir, name), binary) )
+            ERR_POST(Fatal << "cannot open file " << name);
     }
 }
 
@@ -77,7 +84,23 @@ SourceFile::~SourceFile(void)
 {
     if ( m_Open ) {
         delete m_StreamPtr;
+        m_StreamPtr = 0;
+        m_Open = false;
     }
+}
+
+bool SourceFile::x_Open(const string& name, bool binary)
+{
+    m_StreamPtr = new CNcbiIfstream(name.c_str(),
+                                    binary?
+                                        IOS_BASE::in | IOS_BASE::binary:
+                                        IOS_BASE::in);
+    m_Open = *m_StreamPtr;
+    if ( !m_Open ) {
+        delete m_StreamPtr;
+        m_StreamPtr = 0;
+    }
+    return m_Open;
 }
 
 DestinationFile::DestinationFile(const string& name, bool binary)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/12/30 21:33:39  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
 * Revision 1.23  1999/12/28 18:55:58  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -255,25 +259,40 @@ int main(int argc, const char*argv[])
                 case 'd':
                     generator.LoadConfig(FileInArgument(argv[++i]));
                     break;
-                case 'h':
-                    generator.SetHPPDir(DirArgument(argv[++i]));
+                case 'f':
+                    generator.SetFileListFileName(FileOutArgument(argv[++i]));
                     break;
-                case 'c':
-                    generator.SetCPPDir(DirArgument(argv[++i]));
-                    break;
-                case 'm':
-                    modulesDir = DirArgument(argv[++i]);
+                case 'p':
+                    // set directories
+                    switch ( arg[3] ) {
+                    case 'h':
+                        generator.SetHPPDir(DirArgument(argv[++i]));
+                        break;
+                    case 'c':
+                        generator.SetCPPDir(DirArgument(argv[++i]));
+                        break;
+                    case 'm':
+                        modulesDir = DirArgument(argv[++i]);
+                        break;
+                    default:
+                        ERR_POST(Fatal << "Invalid argument: " << arg);
+                        break;
+                    }
                     break;
                 case 'r':
+                    // set relative path of classes
                     switch ( arg[3] ) {
+                    case '\0':
+                        generator.SetFileNamePrefix(StringArgument(argv[++i]));
+                        break;
                     case 's':
                         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
                         break;
                     case 'm':
                         generator.SetFileNamePrefixSource(eFileName_FromModuleName);
                         break;
-                    case 'a':
-                        generator.SetFileNamePrefix(StringArgument(argv[++i]));
+                    case 'A':
+                        generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
                         break;
                     default:
                         ERR_POST(Fatal << "Invalid argument: " << arg);
@@ -282,14 +301,11 @@ int main(int argc, const char*argv[])
                 case 'R':
                     ++i;
                     generator.SetHPPDir(Path(DirArgument(argv[i]),
-                                                 "include"));
+                                             "include"));
                     generator.SetCPPDir(Path(DirArgument(argv[i]),
-                                                 "src"));
+                                             "src"));
                     modulesDir = Path(DirArgument(argv[i]), "src");
                     generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
-                    break;
-                case 'f':
-                    generator.SetFileListFileName(FileOutArgument(argv[++i]));
                     break;
                 default:
                     ERR_POST(Fatal << "Invalid argument: " << arg);
@@ -353,7 +369,7 @@ void LoadDefinitions(CFileSet& fileSet,
             continue;
         }
         try {
-			SourceFile fName(Path(modulesDir, name));
+			SourceFile fName(name, modulesDir);
             ASNLexer lexer(fName);
             ASNParser parser(lexer);
             fileSet.AddFile(parser.Modules(name));

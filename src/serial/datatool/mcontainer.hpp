@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/30 21:33:39  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
 * Revision 1.3  1999/12/29 16:01:50  vasilche
 * Added explicit virtual destructors.
 * Resolved overloading of InternalResolve.
@@ -65,7 +69,8 @@ USING_NCBI_SCOPE;
 enum EFileNamePrefixSource {
     eFileName_FromNone = 0,
     eFileName_FromSourceFileName = 1,
-    eFileName_FromModuleName = 2
+    eFileName_FromModuleName = 2,
+    eFileName_UseAllPrefixes = 4
 };
 
 class CModuleContainer
@@ -86,6 +91,11 @@ public:
     bool MakeFileNamePrefixFromModuleName(void) const
         {
             return (GetFileNamePrefixSource() & eFileName_FromModuleName)
+                != 0;
+        }
+    bool UseAllFileNamePrefixes(void) const
+        {
+            return (GetFileNamePrefixSource() & eFileName_UseAllPrefixes)
                 != 0;
         }
     virtual CDataType* InternalResolve(const string& moduleName,
