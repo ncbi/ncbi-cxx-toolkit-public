@@ -239,7 +239,7 @@ private:
     // Submission/Result progression
     void x_SubmitSearch(void);
     void x_CheckResults(void);
-    void x_PollUntilDone(void);
+    void x_PollUntilDone(bool poll_immed);
 };
 
 
@@ -250,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/05 00:38:07  bealer
+ * - Polling optimization.
+ *
  * Revision 1.3  2004/02/04 22:31:24  bealer
  * - Add async interface to Blast4 API.
  * - Clean up, simplify code and interfaces.

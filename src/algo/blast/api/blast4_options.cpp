@@ -140,12 +140,15 @@ bool CBlast4Options::SubmitSync(void)
     // EFailed: no work to do, already an error.
     // EDone:   already done, just return.
     
+    bool poll_immed = false;
+    
     switch(x_GetState()) {
     case EStart:
+        poll_immed = true;
         x_SubmitSearch();
-
+        
     case EWait:
-        x_PollUntilDone();
+        x_PollUntilDone(poll_immed);
         break;
     }
     
@@ -393,7 +396,26 @@ void CBlast4Options::x_CheckResults(void)
     }
 }
 
-void CBlast4Options::x_PollUntilDone(void)
+// The input here is a hint as to whether the request might be ready.
+// If the flag is true, then we are polling immediately after
+// submission.  In this case, the results will not be ready, and so we
+// skip the first results check to reduce net traffic.  If the flag is
+// false, then the user is using the asynchronous interface, and we do
+// not know how long it has been since the request was submitted.  In
+// this case, we check the results before sleeping.
+//
+// If this was always set to 'true' then async mode would -always-
+// sleep.  This is undesireable in the case where (for example) 100
+// requests are batched together - the mandatory sleeps would add to a
+// total of 1000 seconds, more than a quarter hour.
+//
+// If it were always specified as 'false', then synchronous mode would
+// shoot off an immediate 'check results' as soon as the "submit"
+// returned, which creates unnecessary traffic.
+//
+// Futher optimizations are no doubt possible.
+
+void CBlast4Options::x_PollUntilDone(bool poll_immed)
 {
     if (m_Verbose)
         cout << "polling " << 0 << endl;
@@ -415,6 +437,10 @@ void CBlast4Options::x_PollUntilDone(void)
     
     if (m_Verbose)
         cout << "line " << __LINE__ << " sleep next " << sleep_next << " sleep totl " << sleep_totl << endl;
+    
+    if (! poll_immed) {
+        x_CheckResults();
+    }
     
     while (m_Pending && (sleep_totl < max_time)) {
         if (m_Verbose)
@@ -510,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/05 00:37:43  bealer
+* - Polling optimization.
+*
 * Revision 1.2  2004/02/04 22:31:14  bealer
 * - Add async interface to Blast4 API.
 * - Clean up, simplify code and interfaces.
