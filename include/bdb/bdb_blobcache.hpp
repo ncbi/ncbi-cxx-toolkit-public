@@ -101,7 +101,7 @@ public:
     enum ELockMode 
     {
         eNoLock,     ///< Do not lock-protect cache instance
-        ePidLock,    ///< Create PID lock on cache (exception if failed) 
+        ePidLock     ///< Create PID lock on cache (exception if failed) 
     };
 
     void Open(const char* cache_path, 
@@ -277,7 +277,7 @@ public:
     enum ELockMode 
     {
         eNoLock,     //!< Do not lock-protect cache instance
-        ePidLock,    //!< Create PID lock on cache (exception if failed) 
+        ePidLock     //!< Create PID lock on cache (exception if failed) 
     };
 
     void Open(const char* cache_path, ELockMode lm = eNoLock);
@@ -362,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/01/13 16:37:27  vasilche
+ * Removed extra comma.
+ *
  * Revision 1.11  2003/12/08 16:12:02  kuznets
  * Added plugin mananger support
  *
