@@ -34,6 +34,7 @@
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/interfaces.hpp>
 
 #ifdef HAVE_LIBSYBASE
 #  include <dbapi/driver/ctlib/interfaces.hpp>
@@ -133,6 +134,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2002/04/09 18:48:14  kimelman
+* portability bugfixes: to compile on IRIX, sparc gcc
+*
 * Revision 1.2  2002/04/08 23:07:50  vakatov
 * #include <vector>
 * get rid of the "using ..." directive in the header

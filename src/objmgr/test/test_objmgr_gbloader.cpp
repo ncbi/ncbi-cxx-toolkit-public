@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/09 18:48:17  kimelman
+* portability bugfixes: to compile on IRIX, sparc gcc
+*
 * Revision 1.13  2002/04/04 01:35:37  kimelman
 * more MT tests
 *
@@ -138,7 +141,7 @@ int CTestApplication::Run()
           CSeqVector v = h.GetSeqVector();
           LOG_POST("Vector size = " << v.size());
           string vs = "";
-          for (int cc = 0; cc < v.size(); cc++)
+          for (unsigned cc = 0; cc < v.size(); cc++)
               vs += v[cc];
           LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
           LOG_POST("Gi (" << gi << "):: OK");

@@ -33,8 +33,8 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
 #include <objects/objmgr1/reader.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,6 +57,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/04/09 18:48:16  kimelman
+* portability bugfixes: to compile on IRIX, sparc gcc
+*
 * Revision 1.1  2002/04/09 16:11:00  ucko
 * Split CStrStreamBuf out into a common location.
 *

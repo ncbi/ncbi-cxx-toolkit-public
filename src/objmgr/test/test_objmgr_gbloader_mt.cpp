@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/09 18:48:17  kimelman
+* portability bugfixes: to compile on IRIX, sparc gcc
+*
 * Revision 1.6  2002/04/05 23:47:20  kimelman
 * playing around tests
 *
@@ -153,7 +156,7 @@ void* CTestThread::Main(void)
     x.SetGi(gi);
     CBioseq_Handle h = s->GetBioseqHandle(x);
     if ( !h ) {
-      GBLOG_POST(" gi=" << gi << " :: not found in ID");
+      LOG_POST(CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
     } else {
       //CObjectOStreamAsn oos(NcbiCout);
       iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
@@ -161,7 +164,7 @@ void* CTestThread::Main(void)
         //NcbiCout << NcbiEndl;
                ;
       }
-      GBLOG_POST(" gi=" << gi << " OK");
+      LOG_POST(CThread::GetSelf() << ":: gi=" << gi << " OK");
     }
     s->ResetHistory();
   }

@@ -233,6 +233,7 @@ private:
   bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
   bool            x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
   bool            x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask);
+  void            x_Check(STSEinfo *me);
 };
 
 
@@ -243,6 +244,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.15  2002/04/09 18:48:14  kimelman
+ * portability bugfixes: to compile on IRIX, sparc gcc
+ *
  * Revision 1.14  2002/04/09 15:53:42  kimelman
  * turn off debug messages
  *
