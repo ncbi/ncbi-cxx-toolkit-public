@@ -8,13 +8,13 @@
 <h1> Working Independently In a C++ Subtree </h1>
 
 An alternative to developing a new project from scratch is to work within a subtree of the
-C++ libraries so as to utilize the header, source, and make files defined for that
+main NCBI C++ source tree so as to utilize the header, source, and make files defined for that
 subtree. One way to do this would be to check out the entire source tree and then do all
 your work within the selected subtree(s) only. A better solution is to create a new
 working directory and check out only the relevant subtrees into that directory. This is
 somewhat complicated by the distributed organization of the C++ CVS tree: header files are
 (recursively) contained in an <i> include </i> subtree, while source files are
-(recursively) contained in a <i> src </i> subtree.  Thus multiple checkouts may be
+(recursively) contained in a <i> src </i> subtree.  Thus, multiple checkouts may be
 required to set things up properly, and the customized makefiles (<i>Makefile.*.app</i>) will
 need to be modified. The shell script <a href="../new_proj.html#ref_OutsideImport">
 <i> import_project.sh </i></a> will do all of this 
@@ -25,7 +25,7 @@ import_project.sh  subtree_name  [builddir]
 where:
 <dl>
   <dt> - <i> subtree </i> is the path to a selected directory inside <i>internal/c++/src/</i>
-  <dt> - <i> builddir </i>  optionally specifies which version of the NCBI C++ Toolkit libraries should be linked to;
+  <dt> - <i> builddir </i> (optional) specifies what version of the pre-built NCBI C++ Toolkit libraries to link to
 </dl>
 
 As a result of executing this shell script, you will have a new directory created with the
@@ -33,42 +33,45 @@ pathname <i>./internal/c++/</i> whose structure contains "slices" of the origina
 tree. Specifically, you will find:
 
 <dl> <i>
-<dt> ./internal/c++/CVS
-<dt> ./internal/c++/include/CVS
 <dt> ./internal/c++/include/subtree_name
-<dt> ./internal/c++/src/CVS
 <dt> ./internal/c++/src/subtree_name
 </dl> </i>
 
 The <i>src</i> and <i>include</i> directories will contain all of the requested subtree's source and
 header files along with any hierarchically defined subdirectories. In addition, the script
-will create new makefiles with the suffix "_app". These makefiles are generated from the
-orginal customized make files (<i>Makefile.*.app</i>) located in the original src subtrees.
+will create new makefiles with the suffix <i>*_app</i>. These makefiles are generated from the
+orginal <a href="../new_proj.html#ref_MakeProjApp"> customized make files</a>
+ (<i>Makefile.*.app</i>) located in the original src subtrees.
 The customized makefiles were designed to work only in conjunction with the build
 directories in the larger NCBI C++ tree; the newly created makefile can be used directly in
 your new working directories.<p>
 
-Currently, there are eight project directories in the <a href="../src_tree.gif">NCBI C++ tree</a>, including:
+The NCBI C++ Toolkit project directories, along with the libraries they implement and the
+logical modules they entail, are summarized in the Reference Manual page 
+<a href="../libs.html"> NCBI C++ libraries</a>.
+Currently, there are eight project directories in the <a href="../src_tree.gif">NCBI C++ 
+source tree</a>, including:
 
 <ul>
- <li> <i> cgi </i> - libraries for developing CGI applications 
+ <li> <i> corelib </i> - libraries for the Toolkit foundations
  <li> <i> connect </i> - libraries providing client/server connections
- <li> <i> corelib </i> - libraries for Toolkit foundations
- <li> <i> hello </i> - a simple example project that incorporates all but the serial libraries
+ <li> <i> cgi </i> - libraries for developing CGI applications 
  <li> <i> html </i> - libraries for developing HTML pages
  <li> <i> serial </i> - libraries for handling ASN, XML and files of other specified formats
+ <li> <i> hello </i> - a simple example project that incorporates all but the serial libraries
 </ul>
 
-Two other project directories, <i> internal </i> and <i> objects </i>, are not intended
-for general use, and the mechanisms in the <i>import_project.sh</i> script for generating makefiles
-are not guaranteed to work for these.  The <i> objects </i> subdirectories are used as the
-original repositories for ASN.1 specifications, and subsequently, for writing the object
-definitions and implementations created by the <i> datatool </i> program. These
-definitions are available for use in your application as described in the section <a
-href="asn.html"> Processing ASN.1 Data. </a> The <i> internal </i> subdirectory is used
-for in-house development, and is the recommended work area for <i> new </i> projects.
+Two other project directories, <i> internal </i> and <i> objects</i>, are not intended for
+general use, and the mechanisms in the <a
+href="../new_proj.html#ref_OutsideImport"><i>import_project.sh</i></a> script for generating
+makefiles are not guaranteed to work for these.  The <i> objects </i> subdirectories are used
+as the original repositories for ASN.1 specifications, and subsequently, for writing the object
+definitions and implementations created by the <i> datatool </i> program. These definitions are
+available for use in your application as described in the section <a href="asn.html">
+Processing ASN.1 Data. </a> The <i> internal </i> subdirectory is used for in-house
+development, and is the recommended work area for <i> new </i> projects.<p>
 
-<p>
+
 <p>
 </body>
 <a href="getting_started.html"> <i> previous</i> </a>
