@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.5  2001/01/12 23:49:19  lavr
+* Timeout and GetCONN method added
+*
 * Revision 6.4  2001/01/11 23:04:06  lavr
 * Bugfixes; tie is now done at streambuf level, not in iostream
 *
@@ -56,26 +59,33 @@
 BEGIN_NCBI_SCOPE
 
 
-CConn_IOStream::CConn_IOStream(CONNECTOR connector,
+CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
                                streamsize buf_size, bool do_tie)
-    : iostream(new CConn_Streambuf(connector, buf_size, do_tie))
+    : iostream(new CConn_Streambuf(connector, timeout, buf_size, do_tie))
 {
     return;
 }
 
 
-CConn_IOStream::~CConn_IOStream(void)
+CONN CConn_IOStream::GetCONN() const
 {
-    delete const_cast<streambuf*> (rdbuf());
+    return dynamic_cast<CConn_Streambuf*>(rdbuf())->GetCONN();
 }
 
 
-CConn_SocketStream::CConn_SocketStream(const string&  host,
-                                       unsigned short port,
-                                       unsigned int   max_try,
-                                       streamsize     buf_size)
+CConn_IOStream::~CConn_IOStream(void)
+{
+    delete rdbuf();
+}
+
+
+CConn_SocketStream::CConn_SocketStream(const string&   host,
+                                       unsigned short  port,
+                                       unsigned int    max_try,
+                                       const STimeout* timeout,
+                                       streamsize      buf_size)
     : CConn_IOStream(SOCK_CreateConnector(host.c_str(), port, max_try),
-                     buf_size)
+                     timeout, buf_size)
 {
     return;
 }
@@ -109,20 +119,21 @@ static CONNECTOR s_HttpConnectorBuilder(const char*    host,
 }
 
 
-CConn_HttpStream::CConn_HttpStream(const string&  host,
-                                   const string&  path,
-                                   const string&  args,
-                                   const string&  user_header,
-                                   unsigned short port,
-                                   THCC_Flags     flags,
-                                   streamsize     buf_size)
+CConn_HttpStream::CConn_HttpStream(const string&   host,
+                                   const string&   path,
+                                   const string&   args,
+                                   const string&   user_header,
+                                   unsigned short  port,
+                                   THCC_Flags      flags,
+                                   const STimeout* timeout,
+                                   streamsize      buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(host.c_str(),
                                             port,
                                             path.c_str(),
                                             args.c_str(),
                                             user_header.c_str(),
                                             flags),
-                     buf_size)
+                     timeout, buf_size)
 {
     return;
 }
@@ -131,9 +142,10 @@ CConn_HttpStream::CConn_HttpStream(const string&  host,
 CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* info,
                                    const string&       user_header,
                                    THCC_Flags          flags,
+                                   const STimeout*     timeout,
                                    streamsize          buf_size)
     : CConn_IOStream(HTTP_CreateConnector(info, user_header.c_str(), flags),
-                     buf_size)
+                     timeout, buf_size)
 {
     return;
 }
@@ -142,10 +154,11 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* info,
 CConn_ServiceStream::CConn_ServiceStream(const string&       service,
                                          TSERV_Type          types,
                                          const SConnNetInfo* info,
+                                         const STimeout*     timeout,
                                          streamsize          buf_size)
     : CConn_IOStream(SERVICE_CreateConnectorEx(service.c_str(),
                                                types, info),
-                     buf_size)
+                     timeout, buf_size)
 {
     return;
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2001/01/12 23:49:20  lavr
+* Timeout and GetCONN method added
+*
 * Revision 6.2  2001/01/11 23:04:07  lavr
 * Bugfixes; tie is now done at streambuf level, not in iostream
 *
@@ -53,8 +56,10 @@ BEGIN_NCBI_SCOPE
 class CConn_Streambuf : public streambuf
 {
 public:
-    CConn_Streambuf(CONNECTOR connector, streamsize buf_size, bool tie);
-    virtual ~CConn_Streambuf(void);
+    CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
+                    streamsize buf_size, bool tie);
+    CONN GetCONN() const { return m_Conn; };
+    virtual ~CConn_Streambuf();
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2001/01/12 23:49:20  lavr
+* Timeout and GetCONN method added
+*
 * Revision 6.2  2001/01/11 23:04:06  lavr
 * Bugfixes; tie is now done at streambuf level, not in iostream
 *
@@ -46,12 +49,12 @@
 BEGIN_NCBI_SCOPE
 
 
-CConn_Streambuf::CConn_Streambuf(CONNECTOR connector,
+CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
     : m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
 {
     if ( !connector ) {
-        x_CheckThrow(eIO_Unknown, "<NULL> connector");
+        x_CheckThrow(eIO_Unknown, "CConn_Streambuf(): NULL connector");
     }
 
     m_Buf.reset(new CT_CHAR_TYPE[2 * m_BufSize]);
@@ -60,10 +63,15 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector,
     setp(m_WriteBuf, m_WriteBuf + m_BufSize);
 
     m_ReadBuf = m_Buf.get() + m_BufSize;
-    setg(0, 0, 0);
+    setg(0, 0, 0); // we wish to call underflow at the first read
 
     x_CheckThrow(CONN_Create(connector, &m_Conn),
-                 "CConn_Streambuf(): Failed to create connection");
+                 "CConn_Streambuf(): CONN_Create() failed");
+
+    CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
+    CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
+    CONN_SetTimeout(m_Conn, eIO_Write, timeout);
+    CONN_SetTimeout(m_Conn, eIO_Close, timeout);
 }
 
 
@@ -88,8 +96,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         }
 
         x_CheckThrow
-            (CONN_Write(m_Conn,
-                        m_WriteBuf, n_write, &n_written),
+            (CONN_Write(m_Conn, m_WriteBuf, n_write, &n_written),
              "overflow(): CONN_Write() failed");
         _ASSERT(n_written);
 
@@ -106,8 +113,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     if (c != CT_EOF) {
         // send char
         x_CheckThrow
-            (CONN_Write(m_Conn,
-                        &c, 1, &n_written),
+            (CONN_Write(m_Conn, &c, 1, &n_written),
              "overflow(): CONN_Write(1) failed");
         _ASSERT(n_written);
         
@@ -132,7 +138,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     x_CheckThrow(status, "underflow(): CONN_Read() failed");
     _ASSERT(n_read);
 
-    setg(0, m_ReadBuf, m_ReadBuf + n_read);
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
     return m_ReadBuf[0];
 }
@@ -161,7 +167,6 @@ void CConn_Streambuf::x_CheckThrow(EIO_Status status, const string& msg)
         
     }
 }
-
 
 
 END_NCBI_SCOPE
