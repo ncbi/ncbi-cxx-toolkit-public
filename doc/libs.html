@@ -1,523 +1,500 @@
-<!--#set var="TITLE" value="NCBI C++ libraries" -->
-<!--#set var="DOCROOT" value="." -->
-<!--#include virtual="./ssi/header.shtml" -->
-
-<h1>
-NCBI C++ libraries</h1>
-
-<a NAME="ref_TableLibs"></a>
-<table BORDER CELLSPACING=0 >
-<caption>&nbsp;</caption>
-
-<tr>
-<th><i>Library</i></th>
-
-<th>Project</th>
-
-<th>Synopsis &amp; Hints</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td><i><a href="#ref_TableXNCBI">xncbi</a></i></td>
-
-<td ALIGN=CENTER><b><a href="lxr/source/include/corelib">corelib</a></b></td>
-
-<td>Provide a portable low-level API and a lot of useful classes, functions
-and macro.&nbsp;
-<br><b>HINT:</b> It must be linked to every executable which uses the NCBI
-C++ toolkit!&nbsp;</td>
-</tr>
-
-<tr>
-<td><i><a href="libs/conn.html">xconnect</a></i></td>
-
-<td>
-<center><b><a href="lxr/source/include/connect">connect</a></b></center>
-</td>
-
-<td>Connection library. Includes platform-independent socket interface, SOCK,
-connection object, CONN, and specialized connector constructors, socket,
-file, HTTP and service, to be used as engines for connections.
-Also, provides access to load-balancing daemon and NCBI named service
-dispatching facilities.
-</tr>
-
-<tr>
-<td><i><a href="#ref_TableXUTIL">xutil</a></i></td>
-
-<td>
-<center><b><a href="lxr/source/include/util">util</a></b></center>
-</td>
-
-<td>Collection of useful classes which can be used in more then one application.</td>
-</tr>
-
-<tr>
-<td><i><a href="#ref_TableXCGI">xcgi</a></i></td>
-
-<td ALIGN=CENTER><b><a href="lxr/source/include/cgi">cgi</a></b></td>
-
-<td>An <a href="libs/cgi.html">integrated framework</a> to write CGI applications:
-helps to retrieve and parse HTTP request, and then to compose and send
-out HTTP response.&nbsp;</td>
-</tr>
-
-<tr>
-<td><i><a href="#ref_TableXCGI">xfcgi</a></i></td>
-
-<td ALIGN=CENTER><b><a href="lxr/source/include/cgi">cgi</a></b></td>
-
-<td>A Fast-CGI version of <i><a href="#ref_TableXCGI">xcgi</a></i>.&nbsp;
-<br><b>HINT:</b> Requires the target executable to be linked with a 3rd-party
-FastCGI library, as in: <a href="new_proj.html#ref_MakeProjApp">LIBS</a>=
-<b><a href="config.html#ref_TableLocalization1">$(FASTCGI_LIBS)</a></b>.&nbsp;
-<br><b>HINT:</b> On non-FastCGI capable platforms (or if run as a plain
-CGI on a a FastCGI capable platform), it works just as a plain CGI.&nbsp;</td>
-</tr>
-
-<tr>
-<td><i><a href="#ref_TableXHTML">xhtml</a></i></td>
-
-<td ALIGN=CENTER><b><a href="lxr/source/include/html">html</a></b></td>
-
-<td><a href="libs/newhtml.html">Compose and printout a HTML page</a> --
-using a static HTML template with embedded dynamic fragments. Provide a
-rich set of classes to help build the dynamic fragments of regular HTML
-tags (and text) arranged into a tree-like structure.&nbsp;</td>
-</tr>
-
-<tr>
-<td><i><a href="#ref_TableXSERIAL">xserial</a></i></td>
-
-<td ALIGN=CENTER><b><a href="lxr/source/include/serial">serial</a></b></td>
-
-<td>Generic library to provide data serialization in different formats.
-See also <a href="tools/datatool/datatool.html">datatool</a>.&nbsp;</td>
-</tr>
-<tr>
-<td><i><a href="#ref_TableDBAPI_DRIVER">dbapi_driver</a></i></td>
-
-<td ALIGN=CENTER><b><a href="lxr/source/include/dbapi/driver">dbapi</a></b></td>
-
-<td><a href="libs/dbapi_driver.html">Driver API</a>
-for the NCBI database connectivity project.
-</td>
-</tr>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <!--#set var="TITLE" value="NCBI C++ libraries" --><!--#set var="DOCROOT" value="." --><!--#include virtual="./ssi/header.shtml" -->
+</head>
+    <body>
+<h1> NCBI C++ libraries</h1>
+<a name="ref_TableLibs"></a>
+<table border="1" cellspacing="0">
+  <caption><br>
+  </caption><tbody>
+    <tr>
+      <th><i>Library</i></th>
+      <th>Project</th>
+      <th>Synopsis &amp; Hints</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableXNCBI">xncbi</a>
+      </i></td>
+      <td align="Center"><b><a href="lxr/source/include/corelib">corelib</a>
+      </b></td>
+      <td>Provide a portable low-level API and a lot of useful classes, functions 
+ and macro.  <br>
+      <b>HINT:</b> It must be linked to every executable which uses the NCBI 
+ C++ toolkit! </td>
+    </tr>
+    <tr>
+      <td><i><a href="libs/conn.html">xconnect</a>
+      </i></td>
+      <td>
+      <center><b><a href="lxr/source/include/connect">connect</a>
+      </b></center>
+      </td>
+      <td>Connection library. Includes platform-independent socket interface,
+ SOCK, connection object, CONN, and specialized connector constructors, socket, 
+ file, HTTP and service, to be used as engines for connections. Also, provides
+ access to load-balancing daemon and NCBI named service dispatching facilities. 
+       </td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableXUTIL">xutil</a>
+      </i></td>
+      <td>
+      <center><b><a href="lxr/source/include/util">util</a>
+      </b></center>
+      </td>
+      <td>Collection of useful classes which can be used in more then one 
+application.</td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableXCGI">xcgi</a>
+      </i></td>
+      <td align="Center"><b><a href="lxr/source/include/cgi">cgi</a>
+      </b></td>
+      <td>An <a href="libs/cgi.html">integrated framework</a>
+   to write CGI applications: helps to retrieve and parse HTTP request, and
+ then to compose and send out HTTP response. </td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableXCGI">xfcgi</a>
+      </i></td>
+      <td align="Center"><b><a href="lxr/source/include/cgi">cgi</a>
+      </b></td>
+      <td>A Fast-CGI version of <i><a href="#ref_TableXCGI">xcgi</a>
+      </i>.  <br>
+      <b>HINT:</b> Requires the target executable to be linked with a 3rd-party 
+ FastCGI library, as in: <a href="new_proj.html#ref_MakeProjApp">LIBS</a>
+  = <b><a href="config.html#ref_TableLocalization1">$(FASTCGI_LIBS)</a>
+      </b>.  <br>
+      <b>HINT:</b> On non-FastCGI capable platforms (or if run as a plain 
+ CGI on a a FastCGI capable platform), it works just as a plain CGI. </td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableXHTML">xhtml</a>
+      </i></td>
+      <td align="Center"><b><a href="lxr/source/include/html">html</a>
+      </b></td>
+      <td><a href="libs/newhtml.html">Compose and printout a HTML page</a>
+   -- using a static HTML template with embedded dynamic fragments. Provide
+ a rich set of classes to help build the dynamic fragments of regular HTML 
+ tags (and text) arranged into a tree-like structure. </td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableXSERIAL">xserial</a>
+      </i></td>
+      <td align="Center"><b><a href="lxr/source/include/serial">serial</a>
+      </b></td>
+      <td>Generic library to provide data serialization in different formats. 
+ See also <a href="tools/datatool/datatool.html">datatool</a>
+  . </td>
+    </tr>
+    <tr>
+      <td><i><a href="#ref_TableDBAPI_DRIVER">dbapi_driver</a>
+      </i></td>
+      <td align="Center"><b><a href="lxr/source/include/dbapi/driver">dbapi</a>
+      </b></td>
+      <td><a href="libs/dbapi_driver.html">Driver API</a>
+   for the NCBI database connectivity project. </td>
+    </tr>
+    <tr>
+      <td valign="Top"><i><a href="libs/object_manager.html">xobjmgr1</a>
+      </i></td>
+      <td valign="Top"><b><a href="lxr/source/include/objects/objmgr1">objmgr1</a>
+      </b></td>
+      <td valign="Top">Object manager - a library of classes to facilitate
+access to biological sequence data<br>
+      </td>
+    </tr>
+  </tbody>
 </table>
-
-<!-- ------------------------------------------------------- --> 
-
-<p><a NAME="ref_TableXNCBI"></a>
-<table BORDER CELLSPACING=0 >
-<caption>Library <b><i><a href="#ref_TableLibs">xncbi</a></i></b> ( project
-<b><i>corelib</i></b>
-)&nbsp;</caption>
-
-<tr>
-<th><i><a href="#ref_ModuleNote">Module</a></i></th>
-
-<th>Content</th>
-
-<th>Synopsis</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbidbg.hpp">ncbidbg</a></i></td>
-
-<td ALIGN=CENTER><b>_ASSERT()</b>
-<br><b>_VERIFY()</b></td>
-
-<td><a href="libs/err_msg.html#ref_Assert">Debug-mode checks and diagnostics</a></td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbiexpt.hpp">ncbiexpt</a></i></td>
-
-<td ALIGN=CENTER><b>CErrnoException</b>
-<br><b>CParseException</b>
-<br><b>STD_CATCH()</b></td>
-
-<td><a href="libs/err_msg.html#ref_Exception">Auxiliary C++ exceptions,
-related macros</a></td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbidiag.hpp">ncbidiag</a></i></td>
-
-<td ALIGN=CENTER><b>CNcbiDiag</b>
-<br><b>SetDiagStream</b>
-<br><b>ERR_POST()</b></td>
-
-<td><a href="libs/err_msg.html#ref_Message">Standard NCBI C++ message posting</a></td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbireg.hpp">ncbireg</a></i></td>
-
-<td ALIGN=CENTER><b>CNcbiRegistry</b></td>
-
-<td>To handle application configuration parameters arranged in the <b>[section],
-name=<i>value</i></b> fashion; store them in the configuration files <i>a
-la</i> MS-Windows <b>*.INI</b></td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbistre.hpp">ncbistre</a></i></td>
-
-<td ALIGN=CENTER><b>C++ i/o streams</b></td>
-
-<td>Aliases (#define's) to switch between the "old" and the "new" (<b>std::</b>,
-template-based) C++ i/o stream classes, and to resolve some portability
-issues; also, auxiliary functions and classes to deal with the C++ i/o
-streams</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbiutil.hpp">ncbiutil</a></i></td>
-
-<td ALIGN=CENTER><b>.....</b></td>
-
-<td>Miscellaneous useful classes, functions, predicates, <b>auto_ptr</b>-like
-template, <b>map</b>-related auxiliary functions, etc.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/corelib/ncbimtx.hpp">ncbimtx</a></i>
-<br><i><a href="lxr/source/include/corelib/ncbithr.hpp">ncbithr</a></i></td>
-
-<td ALIGN=CENTER><b>.....</b></td>
-
-<td><a href=libs/threads.html>Thread manipulation and synchronization classes</a></td>
-</tr>
-</table>
-
-<p><a NAME="ref_TableXUTIL"></a>
-<table BORDER CELLSPACING=0 >
-<caption>Library <b><i><a href="#ref_TableLibs">xutil</a></i></b> ( project
-<b>util</b>
-) more details can be found <a href="libs/util.html">here</a>&nbsp;</caption>
-
-<tr>
-<th><i><a href="#ref_ModuleNote">Module</a></i></th>
-
-<th>Content</th>
-
-<th>Synopsis</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/checksum.hpp">checksum</a></i></td>
-
-<td ALIGN=CENTER><b>CChecksum</b></td>
-
-<td>Managing CRC32 checksum in text file.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/lightstr.hpp">lightstr</a></i></td>
-
-<td ALIGN=CENTER><b>CLightString</b></td>
-
-<td>Lightweight string replacement.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/weakmap.hpp">weakmap</a></i></td>
-
-<td ALIGN=CENTER><b>CWeakMap&lt;></b>
-<br><b>CWeakMapKey&lt;></b></td>
-
-<td>Map with automatic element deletion when key is destructed.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/range.hpp">range</a></i></td>
-
-<td ALIGN=CENTER><b>CRange</b></td>
-
-<td>Support for generic intervals.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/rangemap.hpp">rangemap</a></i></td>
-
-<td ALIGN=CENTER><b>CRangeMap</b>
-<br><b>CRangeMultiMap</b></td>
-
-<td>Map for storing data using CRange as key.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/itree.hpp">itree</a></i></td>
-
-<td>
-<center><b>CIntervalTree</b></center>
-</td>
-
-<td>Map for storing data using CRange as key with another algorithm of
-retrieval.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/strbuffer.hpp">strbuffer</a></i></td>
-
-<td>
-<center><b>CIStreamBuffer</b>
-<br><b>COStreamBuffer</b></center>
-</td>
-
-<td>Additional buffering for C++&nbsp;iostreams.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/bytesrc.hpp">bytesrc</a></i></td>
-
-<td ALIGN=CENTER><b>CByteSource</b>
-<br><b>CByteSourceReader</b>
-<br><b>CSubSourceCollector</b></td>
-
-<td>Support for stream buffers.</td>
-</tr>
-
-<tr>
-<td><i><a href="lxr/source/include/util/thread_pool.hpp">thread_pool</a></i></td>
-
-<td ALIGN=CENTER><b>CBlockingQueue&lt;></b>
-<br><b>CThreadInPool&lt;></b>
-<br><b>CPoolOfThreads&lt;></b>
-<br><b>CStdRequest</b>
-<br><b>CStdThreadInPool</b>
-<br><b>CStdPoolOfThreads</b></td>
-
-<td>Support for pools of request-handling threads.</td>
-</tr>
-</table>
-
-<p><a NAME="ref_TableXCGI"></a>
-<table BORDER CELLSPACING=0 >
-<caption>Libraries <b><i><a href="#ref_TableLibs">xcgi, xfcgi</a></i></b>
-( project <b><i>cgi</i></b> )&nbsp;</caption>
-
-<tr>
-<th><i><a href="#ref_ModuleNote">Module</a></i></th>
-
-<th>Content</th>
-
-<th>Synopsis</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-</table>
-
-
-<!-- ------------------------------------------------------- --> 
-
-
-<p><a NAME="ref_TableXHTML"></a>
-<table BORDER CELLSPACING=0 >
-<caption>Library <b><i><a href="#ref_TableLibs">xhtml</a></i></b> ( project
-<b><i>html</i></b>
-)&nbsp;</caption>
-
-<tr>
-<th><i><a href="#ref_ModuleNote">Module</a></i></th>
-
-<th>Content</th>
-
-<th>Synopsis</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-</table>
-
-<p><a NAME="ref_TableXSERIAL"></a>
-<table BORDER CELLSPACING=0 >
-<caption>Library <b><i><a href="#ref_TableLibs">xserial</a></i></b> ( project
-<b><i>serial</i></b>
-)&nbsp;</caption>
-
-<tr>
-<th><i><a href="#ref_ModuleNote">Module</a></i></th>
-
-<th>Content</th>
-
-<th>Synopsis</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-</table>
-
-
-
 <!-- ------------------------------------------------------- -->
-
-<a NAME="ref_TableDBAPI_DRIVER"></a>
+<p><a name="ref_TableXNCBI"></a>
+<table border="1" cellspacing="0">
+  <caption>Library <b><i><a href="#ref_TableLibs">xncbi</a>
+  </i></b> ( project <b><i>corelib</i></b> ) </caption><tbody>
+    <tr>
+      <th><i><a href="#ref_ModuleNote">Module</a>
+      </i></th>
+      <th>Content</th>
+      <th>Synopsis</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbidbg.hpp">ncbidbg</a>
+      </i></td>
+      <td align="Center"><b>_ASSERT()</b><br>
+      <b>_VERIFY()</b></td>
+      <td><a href="libs/err_msg.html#ref_Assert">Debug-mode checks and diagnostics</a>
+      </td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbiexpt.hpp">ncbiexpt</a>
+      </i></td>
+      <td align="Center"><b>CErrnoException</b><br>
+      <b>CParseException</b><br>
+      <b>STD_CATCH()</b></td>
+      <td><a href="libs/err_msg.html#ref_Exception">Auxiliary C++ exceptions, 
+ related macros</a>
+      </td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbidiag.hpp">ncbidiag</a>
+      </i></td>
+      <td align="Center"><b>CNcbiDiag</b><br>
+      <b>SetDiagStream</b><br>
+      <b>ERR_POST()</b></td>
+      <td><a href="libs/err_msg.html#ref_Message">Standard NCBI C++ message 
+posting</a>
+      </td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbireg.hpp">ncbireg</a>
+      </i></td>
+      <td align="Center"><b>CNcbiRegistry</b></td>
+      <td>To handle application configuration parameters arranged in the 
+     <b>[section],  name=<i>value</i></b> fashion; store them in the configuration 
+files <i>a  la</i> MS-Windows <b>*.INI</b></td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbistre.hpp">ncbistre</a>
+      </i></td>
+      <td align="Center"><b>C++ i/o streams</b></td>
+      <td>Aliases (#define's) to switch between the "old" and the "new" (<b>
+ std::</b> , template-based) C++ i/o stream classes, and to resolve some
+portability  issues; also, auxiliary functions and classes to deal with the
+C++ i/o streams</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbiutil.hpp">ncbiutil</a>
+      </i></td>
+      <td align="Center"><b>.....</b></td>
+      <td>Miscellaneous useful classes, functions, predicates, <b>auto_ptr</b>
+  -like template, <b>map</b>-related auxiliary functions, etc.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/corelib/ncbimtx.hpp">ncbimtx</a>
+      </i><br>
+      <i><a href="lxr/source/include/corelib/ncbithr.hpp">ncbithr</a>
+      </i></td>
+      <td align="Center"><b>.....</b></td>
+      <td><a href="libs/threads.html">Thread manipulation and synchronization
+ classes</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</p>
+<p><a name="ref_TableXUTIL"></a>
+<table border="1" cellspacing="0">
+  <caption>Library <b><i><a href="#ref_TableLibs">xutil</a>
+  </i></b> ( project <b>util</b> ) more details can be found <a href="libs/util.html">
+  here</a>
+  </caption><tbody>
+    <tr>
+      <th><i><a href="#ref_ModuleNote">Module</a>
+      </i></th>
+      <th>Content</th>
+      <th>Synopsis</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/checksum.hpp">checksum</a>
+      </i></td>
+      <td align="Center"><b>CChecksum</b></td>
+      <td>Managing CRC32 checksum in text file.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/lightstr.hpp">lightstr</a>
+      </i></td>
+      <td align="Center"><b>CLightString</b></td>
+      <td>Lightweight string replacement.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/weakmap.hpp">weakmap</a>
+      </i></td>
+      <td align="Center"><b>CWeakMap&lt;&gt;</b><br>
+      <b>CWeakMapKey&lt;&gt;</b></td>
+      <td>Map with automatic element deletion when key is destructed.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/range.hpp">range</a>
+      </i></td>
+      <td align="Center"><b>CRange</b></td>
+      <td>Support for generic intervals.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/rangemap.hpp">rangemap</a>
+      </i></td>
+      <td align="Center"><b>CRangeMap</b><br>
+      <b>CRangeMultiMap</b></td>
+      <td>Map for storing data using CRange as key.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/itree.hpp">itree</a>
+      </i></td>
+      <td>
+      <center><b>CIntervalTree</b></center>
+      </td>
+      <td>Map for storing data using CRange as key with another algorithm 
+of retrieval.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/strbuffer.hpp">strbuffer</a>
+      </i></td>
+      <td>
+      <center><b>CIStreamBuffer</b><br>
+      <b>COStreamBuffer</b></center>
+      </td>
+      <td>Additional buffering for C++ iostreams.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/bytesrc.hpp">bytesrc</a>
+      </i></td>
+      <td align="Center"><b>CByteSource</b><br>
+      <b>CByteSourceReader</b><br>
+      <b>CSubSourceCollector</b></td>
+      <td>Support for stream buffers.</td>
+    </tr>
+    <tr>
+      <td><i><a href="lxr/source/include/util/thread_pool.hpp">thread_pool</a>
+      </i></td>
+      <td align="Center"><b>CBlockingQueue&lt;&gt;</b><br>
+      <b>CThreadInPool&lt;&gt;</b><br>
+      <b>CPoolOfThreads&lt;&gt;</b><br>
+      <b>CStdRequest</b><br>
+      <b>CStdThreadInPool</b><br>
+      <b>CStdPoolOfThreads</b></td>
+      <td>Support for pools of request-handling threads.</td>
+    </tr>
+  </tbody>
+</table>
+</p>
+<p><a name="ref_TableXCGI"></a>
+<table border="1" cellspacing="0">
+  <caption>Libraries <b><i><a href="#ref_TableLibs">xcgi, xfcgi</a>
+  </i></b> ( project <b><i>cgi</i></b> ) </caption><tbody>
+    <tr>
+      <th><i><a href="#ref_ModuleNote">Module</a>
+      </i></th>
+      <th>Content</th>
+      <th>Synopsis</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<!-- ------------------------------------------------------- --></p>
+<p><a name="ref_TableXHTML"></a>
+<table border="1" cellspacing="0">
+  <caption>Library <b><i><a href="#ref_TableLibs">xhtml</a>
+  </i></b> ( project <b><i>html</i></b> ) </caption><tbody>
+    <tr>
+      <th><i><a href="#ref_ModuleNote">Module</a>
+      </i></th>
+      <th>Content</th>
+      <th>Synopsis</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</p>
+<p><a name="ref_TableXSERIAL"></a>
+<table border="1" cellspacing="0">
+  <caption>Library <b><i><a href="#ref_TableLibs">xserial</a>
+  </i></b> ( project <b><i>serial</i></b> ) </caption><tbody>
+    <tr>
+      <th><i><a href="#ref_ModuleNote">Module</a>
+      </i></th>
+      <th>Content</th>
+      <th>Synopsis</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<!-- ------------------------------------------------------- --><a name="ref_TableDBAPI_DRIVER"></a>
+</p>
 <p>
-<table BORDER CELLSPACING=0 >
-<caption>Library <b><i><a href="#ref_TableLibs">dbapi_driver</a></i></b> (part of the DB API project
-)&nbsp;</caption>
-
-<tr>
-<th><i><a href="#ref_ModuleNote">Module</a></i></th>
-
-<th>Content</th>
-
-<th>Synopsis</th>
-</tr>
-
-<tr>
-<td></td>
-
-<td ALIGN=CENTER></td>
-
-<td></td>
-</tr>
-
-<!-- ---- -->
-
-<tr>
-<td><i><a href="lxr/source/include/dbapi/driver/public.hpp">public</a></i></td>
-
-<td ALIGN=CENTER>
-<a href="lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a></br>
-<a href="lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a></br>
-<a href="lxr/ident?i=CDB_Result&d=C">CDB_Result</a></br>
-<a href="lxr/ident?i=CDB_LangCmd&d=C">CDB_LangCmd</a></br>
-<a href="lxr/ident?i=CDB_RPCCmd&d=C">CDB_RPCCmd</a></br>
-<a href="lxr/ident?i=CDB_BCPInCmd&d=C">CDB_BCPInCmd</a></br>
-<a href="lxr/ident?i=CDB_CursorCmd&d=C">CDB_CursorCmd</a></br>
-<a href="lxr/ident?i=CDB_SendDataCmd&d=C">CDB_SendDataCmd</a></br>
-</td>
-
-<td>
-<a href="libs/dbapi_driver.html">Context, connection, command and result classes</a>
-</td>
-</tr>
-
-<!-- ---- -->
-
-<tr>
-<td><i><a href="lxr/source/include/dbapi/driver/types.hpp">types</a></i></td>
-
-<td ALIGN=CENTER>
-<a href="lxr/ident?i=CDB_Object&d=C"><i>CDB_Object</i></a></br>
-<a href="lxr/ident?i=CDB_Int&d=C">CDB_Int</a></br>
-<a href="lxr/ident?i=CDB_SmallInt&d=C">CDB_SmallInt</a></br>
-<a href="lxr/ident?i=CDB_TinyInt&d=C">CDB_TinyInt</a></br>
-<a href="lxr/ident?i=CDB_BigInt&d=C">CDB_BigInt</a></br>
-<a href="lxr/ident?i=CDB_VarChar&d=C">CDB_VarChar</a></br>
-<a href="lxr/ident?i=CDB_Char&d=C">CDB_Char</a></br>
-<a href="lxr/ident?i=CDB_VarBinary&d=C">CDB_VarBinary</a></br>
-<a href="lxr/ident?i=CDB_Binary&d=C">CDB_Binary</a></br>
-<a href="lxr/ident?i=CDB_Float&d=C">CDB_Float</a></br>
-<a href="lxr/ident?i=CDB_Double&d=C">CDB_Double</a></br>
-<a href="lxr/ident?i=CDB_Stream&d=C">CDB_Stream</a></br>
-<a href="lxr/ident?i=CDB_Image&d=C">CDB_Image</a></br>
-<a href="lxr/ident?i=CDB_Text&d=C">CDB_Text</a></br>
-<a href="lxr/ident?i=CDB_SmallDateTime&d=C">CDB_SmallDateTime</a></br>
-<a href="lxr/ident?i=CDB_DateTime&d=C">CDB_DateTime</a></br>
-<a href="lxr/ident?i=CDB_Bit&d=C">CDB_Bit</a></br>
-<a href="lxr/ident?i=CDB_Numeric&d=C">CDB_Numeric</a></br>
-</td>
-
-<td>
-<a href="libs/dbapi_driver.html#ref_TextImage">Database data types</a>
-</td>
-</tr>
-
-<!-- ---- -->
-
-<tr>
-<td><i><a href="lxr/source/include/dbapi/driver/exception.hpp">exception</a></i></td>
-
-<td ALIGN=CENTER>
-<a href="lxr/ident?i=CDB_Exception&d=C"><i>CDB_Exception</i></a></br>
-<a href="lxr/ident?i=CDB_DSEx&d=C">CDB_DSEx</a></br>
-<a href="lxr/ident?i=CDB_RPCEx&d=C">CDB_RPCEx</a></br>
-<a href="lxr/ident?i=CDB_SQLEx&d=C">CDB_SQLEx</a></br>
-<a href="lxr/ident?i=CDB_DeadlockEx&d=C">CDB_DeadlockEx</a></br>
-<a href="lxr/ident?i=CDB_TimeoutEx&d=C">CDB_TimeoutEx</a></br>
-<a href="lxr/ident?i=CDB_ClientEx&d=C">CDB_ClientEx</a></br>
-<a href="lxr/ident?i=CDB_MultiEx&d=C">CDB_MultiEx</a></br>
-<a href="lxr/ident?i=CDB_UserHandler&d=C">CDB_UserHandler</a></br>
-<a href="lxr/ident?i=CDB_UserHandler_Stream&d=C">CDB_UserHandler_Stream</a></br>
-</td>
-
-<td>
-<a href="libs/dbapi_driver.html#ref_Errors">Exceptions and error handling</a>
-</td>
-</tr>
-
-
+<table border="1" cellspacing="0">
+  <caption>Library <b><i><a href="#ref_TableLibs">dbapi_driver</a>
+  </i></b> (part of the DB API project ) </caption><tbody>
+    <tr>
+      <th><i><a href="#ref_ModuleNote">Module</a>
+      </i></th>
+      <th>Content</th>
+      <th>Synopsis</th>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td align="Center"><br>
+      </td>
+      <td><br>
+      </td>
+    </tr>
+<!-- ---- --><tr>
+      <td><i><a href="lxr/source/include/dbapi/driver/public.hpp">public</a>
+      </i></td>
+      <td align="Center"><a href="lxr/ident?i=I_DriverContext&amp;d=C">I_DriverContext</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Connection&amp;d=C">CDB_Connection</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Result&amp;d=C">CDB_Result</a>
+      <br>
+      <a href="lxr/ident?i=CDB_LangCmd&amp;d=C">CDB_LangCmd</a>
+      <br>
+      <a href="lxr/ident?i=CDB_RPCCmd&amp;d=C">CDB_RPCCmd</a>
+      <br>
+      <a href="lxr/ident?i=CDB_BCPInCmd&amp;d=C">CDB_BCPInCmd</a>
+      <br>
+      <a href="lxr/ident?i=CDB_CursorCmd&amp;d=C">CDB_CursorCmd</a>
+      <br>
+      <a href="lxr/ident?i=CDB_SendDataCmd&amp;d=C">CDB_SendDataCmd</a>
+      <br>
+      </td>
+      <td><a href="libs/dbapi_driver.html">Context, connection, command and
+ result classes</a>
+      </td>
+    </tr>
+<!-- ---- --><tr>
+      <td><i><a href="lxr/source/include/dbapi/driver/types.hpp">types</a>
+      </i></td>
+      <td align="Center"><a href="lxr/ident?i=CDB_Object&amp;d=C"><i>CDB_Object</i></a>
+      <br>
+      <a href="lxr/ident?i=CDB_Int&amp;d=C">CDB_Int</a>
+      <br>
+      <a href="lxr/ident?i=CDB_SmallInt&amp;d=C">CDB_SmallInt</a>
+      <br>
+      <a href="lxr/ident?i=CDB_TinyInt&amp;d=C">CDB_TinyInt</a>
+      <br>
+      <a href="lxr/ident?i=CDB_BigInt&amp;d=C">CDB_BigInt</a>
+      <br>
+      <a href="lxr/ident?i=CDB_VarChar&amp;d=C">CDB_VarChar</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Char&amp;d=C">CDB_Char</a>
+      <br>
+      <a href="lxr/ident?i=CDB_VarBinary&amp;d=C">CDB_VarBinary</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Binary&amp;d=C">CDB_Binary</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Float&amp;d=C">CDB_Float</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Double&amp;d=C">CDB_Double</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Stream&amp;d=C">CDB_Stream</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Image&amp;d=C">CDB_Image</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Text&amp;d=C">CDB_Text</a>
+      <br>
+      <a href="lxr/ident?i=CDB_SmallDateTime&amp;d=C">CDB_SmallDateTime</a>
+      <br>
+      <a href="lxr/ident?i=CDB_DateTime&amp;d=C">CDB_DateTime</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Bit&amp;d=C">CDB_Bit</a>
+      <br>
+      <a href="lxr/ident?i=CDB_Numeric&amp;d=C">CDB_Numeric</a>
+      <br>
+      </td>
+      <td><a href="libs/dbapi_driver.html#ref_TextImage">Database data types</a>
+      </td>
+    </tr>
+<!-- ---- --><tr>
+      <td><i><a href="lxr/source/include/dbapi/driver/exception.hpp">exception</a>
+      </i></td>
+      <td align="Center"><a href="lxr/ident?i=CDB_Exception&amp;d=C"><i>CDB_Exception</i></a>
+      <br>
+      <a href="lxr/ident?i=CDB_DSEx&amp;d=C">CDB_DSEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_RPCEx&amp;d=C">CDB_RPCEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_SQLEx&amp;d=C">CDB_SQLEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_DeadlockEx&amp;d=C">CDB_DeadlockEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_TimeoutEx&amp;d=C">CDB_TimeoutEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_ClientEx&amp;d=C">CDB_ClientEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_MultiEx&amp;d=C">CDB_MultiEx</a>
+      <br>
+      <a href="lxr/ident?i=CDB_UserHandler&amp;d=C">CDB_UserHandler</a>
+      <br>
+      <a href="lxr/ident?i=CDB_UserHandler_Stream&amp;d=C">CDB_UserHandler_Stream</a>
+      <br>
+      </td>
+      <td><a href="libs/dbapi_driver.html#ref_Errors">Exceptions and error 
+handling</a>
+      </td>
+    </tr>
+  </tbody>
 </table>
-
-
-<!-- ------------------------------------------------------- -->
-
-
-<p><a NAME="ref_ModuleNote"></a>NOTE: In the tables above, the module's
-header and source code are located in the project directory of the containing
-library:
-<br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c++/include/<b>project</b>/module.{hpp,inl,h}</i>
-<br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c++/src/<b>project</b>/module.{cpp,c}</i>
-<br>For example, module <b><i>ncbidbg</i></b> consists of:
-<br>&nbsp;&nbsp;&nbsp;&nbsp; <i>c++/include/<b>corelib</b>/ncbidbg.hpp,
-c++/src/<b>corelib</b>/ncbidbg.cpp</i>.
-<br>
+<!-- ------------------------------------------------------- --></p>
+<p><a name="ref_ModuleNote"></a>
+  NOTE: In the tables above, the module's header and source code are located
+ in the project directory of the containing library: <br>
+<i>      c++/include/<b>project</b>/module.{hpp,inl,h}</i><br>
+<i>      c++/src/<b>project</b>/module.{cpp,c}</i><br>
+  For example, module <b><i>ncbidbg</i></b> consists of: <br>
+<i>c++/include/<b>corelib</b>/ncbidbg.hpp, c++/src/<b>corelib</b>/ncbidbg.cpp</i>
+  . <br>
+</p>
 <hr>
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<tr>
-<td ALIGN=LEFT>
-<address>
-<a href="mailto:cpp@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
-</td>
-
-<td><!-- <td align=center><i>$Revision$</i></td> --></td>
-
-<td ALIGN=RIGHT><i>$Date$</i></td>
-</tr>
+<table border="0" cellspacing="0" width="100%">
+  <tbody>
+    <tr>
+      <td align="Left">
+      <address><a href="mailto:cpp@ncbi.nlm.nih.gov">Denis Vakatov</a>
+      </address>
+      </td>
+      <td><br>
+<!-- <td align=center><i>$Revision$</i></td> --></td>
+      <td align="Right"><i>$Date$</i></td>
+    </tr>
+  </tbody>
 </table>
-
 <!--#include virtual="./ssi/footer.shtml" -->
+</body>
+</html>
