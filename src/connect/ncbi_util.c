@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/08/09 16:25:06  lavr
+ * Remove last (unneeded) parameter from LOG_Reset()
+ * Added: fLOG_OmitNoteLevel format flag handling
+ *
  * Revision 6.13  2001/07/30 14:41:37  lavr
  * Added: CORE_SetLOGFormatFlags()
  *
@@ -223,7 +227,9 @@ extern char* LOG_ComposeMessage
 #endif/*NCBI_CXX_TOOLKIT*/
         datetime_len = strftime(datetime, sizeof(datetime), "%D %T ", tm);
     }
-    if ((format_flags & fLOG_Level) != 0) {
+    if ((format_flags & fLOG_Level) != 0  &&
+        (call_data->level != eLOG_Note ||
+         !(format_flags & fLOG_OmitNoteLevel))) {
         level_len = strlen(LOG_LevelStr(call_data->level)) + 2;
     }
     if ((format_flags & fLOG_Module) != 0  &&
@@ -357,12 +363,12 @@ extern void LOG_ToFILE
 {
     if ( fp ) {
         if ( auto_close ) {
-            LOG_Reset(lg, fp, s_LOG_FileHandler, s_LOG_FileCleanup, 1/*true*/);
+            LOG_Reset(lg, fp, s_LOG_FileHandler, s_LOG_FileCleanup);
         } else {
-            LOG_Reset(lg, fp, s_LOG_FileHandler, 0, 1/*true*/);
+            LOG_Reset(lg, fp, s_LOG_FileHandler, 0/*no cleaning up*/);
         }
     } else {
-        LOG_Reset(lg, 0, 0, 0, 1/*true - cleanup*/);
+        LOG_Reset(lg, 0/*data*/, 0/*handler*/, 0/*cleanup*/);
     }
 }
 
