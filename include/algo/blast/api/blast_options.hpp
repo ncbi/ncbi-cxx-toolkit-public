@@ -911,6 +911,7 @@ inline void
 CBlastOptions::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
+    m_ScoringOpts->is_ooframe = TRUE;
 }
 
 inline int 
@@ -1053,6 +1054,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/11/04 17:13:01  dondosha
+* Set boolean is_ooframe option when needed
+*
 * Revision 1.31  2003/10/30 19:37:01  dondosha
 * Removed gapped_calculation from BlastHitSavingOptions structure
 *
