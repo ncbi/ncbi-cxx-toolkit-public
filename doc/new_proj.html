@@ -56,14 +56,27 @@
 <h2>Retrieve NCBI C++ source tree from CVS</h2>
 
 <p>
-To checkout the whole NCBI C++ source tree from CVS to you local
-directory(e.g. <b><i>foo/c++/</i></b>) use:
+You can checkout the whole NCBI C++ source tree from CVS to you local
+directory(e.g. <b><i>foo/c++/</i></b>) just by running:
 <pre>
 cd foo
 cvs checkout -d c++ internal/c++
 </pre>
 
-For the detailed info on CVS see
+<p>
+However, the whole NCBI C++ tree is very big because it contains a lot
+of internal user projects. There are also numerous platform-specific
+files (and even whole sub-trees) which you will never need if you
+work on other platforms.
+
+<br>
+To help one to retrieve the sources which are suitable for your
+platform, there are auxiliary scripts <b><i>scripts/cvs_core.sh</i></b></a> and
+<b><i>scripts/cvs_core_msvc.bat</i></b> to checkout only core (basic and portable)
+NCBI C++ toolkit sources.
+
+<p>
+For the detailed info on the CVS utility see
 <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
   CVS online manual</a> or run commands <i>"man cvs"</i> or <i>"cvs -H"</i> on
 your workstation.
@@ -640,7 +653,7 @@ Shown below is a real-life example of a <i>user makefile</i>:
   <li> use the resultant application <i><b>$(bindir)/hc_gen_obj</b></i>
     to generate source an header files <i><b>humchrom_dat.[ch]</b></i>
     from data file <i><b>humchrom.dat</b></i>
-  <li> carefully, using script <i><b>$(top_srcdir)/src/if_diff.sh</b></i>
+  <li> carefully, using script <i><b>$(top_srcdir)/scripts/if_diff.sh</b></i>
     to check if they really different, replace previous versions
     of <i><b>humchrom_dat.[ch]</b></i> (if any) by the new (just generated)
     ones
@@ -683,9 +696,9 @@ build_hc_gen_obj:
 humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
 	-cp -p humchrom_dat.c humchrom_dat.save.c
 	$(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat -f humchrom_dat
-	$(top_srcdir)/src/if_diff.sh "mv" humchrom_dat.h $(incdir)/humchrom_dat.h
+	$(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h $(incdir)/humchrom_dat.h
 	-rm humchrom_dat.h
-	$(top_srcdir)/src/if_diff.sh "mv" humchrom_dat.c humchrom_dat.save.c
+	$(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c humchrom_dat.save.c
 	mv humchrom_dat.save.c humchrom_dat.c
 	touch humchrom_dat.dep
 </pre>
@@ -719,7 +732,7 @@ entirely up to the <a href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 <h2>Developing a project(lib, application) outside of the NCBI C++ tree</h2>
 
 <a name="ref_OutsideImport"></a>
-<h3><b><i>src/import_project.sh &lt;cvs_tree_path&gt; [builddir]</i></b></h3>
+<h3><b><i>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</i></b></h3>
 
 <p>
 In many cases, you work on your own project which <b>is a part</b> of the
@@ -728,7 +741,7 @@ the whole NCBI C++ tree. -- Instead, you just want to use headers and
 libraries of the pre-built NCBI C++ toolkit to build your project.
 
 <p>
-Shell script <b><i>src/import_project.sh</i></b> will checkout
+Shell script <b><i>import_project.sh</i></b> will checkout
 your project's source and include directories from CVS, and it will create
 a (temporary) makefile based on the project's <i>customized makefile</i>.
 This makefile will also contain a reference to the pre-built NCBI C++ toolkit.
@@ -757,7 +770,7 @@ Now you can just go to the created working directory
 <p>
 <br>
 <a name="ref_OutsideCreate"></a>
-<h3><b><i>src/new_project.sh &lt;name&gt; lib|app [builddir]</i></b> </h3>
+<h3><b><i>scripts/new_project.sh &lt;name&gt; lib|app [builddir]</i></b> </h3>
 
 <p>
 This script will help you to write a makefile for a new, out-of-scratch
