@@ -44,39 +44,6 @@
  *  See in "ncbi_connector.h" for the detailed specification of the underlying
  *  connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2001/08/20 20:00:22  vakatov
- * CONN_SetTimeout() to return "EIO_Status".
- *
- * Revision 6.8  2001/06/28 22:00:31  lavr
- * Added function: CONN_SetCallback
- * Added callback: eCONN_OnClose
- *
- * Revision 6.7  2001/04/24 21:19:29  lavr
- * Introduced CONN_DEFAULT_TIMEOUT for use as a CONNECTOR-specific timeout
- *
- * Revision 6.6  2001/03/02 20:07:33  lavr
- * Typo fixed
- *
- * Revision 6.5  2001/02/09 17:33:38  lavr
- * CONN_GetType added
- *
- * Revision 6.4  2001/01/03 22:29:22  lavr
- * Changed IOStatus -> Status
- *
- * Revision 6.3  2000/12/29 17:43:42  lavr
- * Pretty printed;
- * Reconnect renamed to ReInit with ability to close current connector
- *
- * Revision 6.2  2000/04/07 19:59:47  vakatov
- * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
- * to "ncbi_connector.h"
- *
- * Revision 6.1  2000/03/24 22:52:20  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_connector.h>
@@ -183,9 +150,9 @@ extern EIO_Status CONN_Flush
  * If there is absolutely no data available to read and the timeout (see
  * CONN_SetTimeout()) is expired then return eIO_Timeout (and "*n_read" := 0).
  * The arg "how" means:
- *   eIO_Plain   -- read the presently available data only and return
- *   eIO_Peek    -- eREAD_Plain, but dont discard the read data from inp. queue
- *   eIO_Persist -- try to read exactly "size" bytes;  return eIO_Timeout if
+ *   eIO_ReadPlain  -- read presently available data only and return
+ *   eIO_ReadPeek   -- eIO_ReadPlain but dont discard read data from inp. queue
+ *   eIO_ReadPersist-- try to read exactly "n" bytes;  return eIO_Timeout if
  *                  could not read the requested # of bytes, and the timeout
  *                  has expired.
  */
@@ -287,5 +254,45 @@ extern EIO_Status CONN_WaitAsync
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.10  2002/08/07 16:27:33  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to the bottom
+ *
+ * Revision 6.9  2001/08/20 20:00:22  vakatov
+ * CONN_SetTimeout() to return "EIO_Status".
+ *
+ * Revision 6.8  2001/06/28 22:00:31  lavr
+ * Added function: CONN_SetCallback
+ * Added callback: eCONN_OnClose
+ *
+ * Revision 6.7  2001/04/24 21:19:29  lavr
+ * Introduced CONN_DEFAULT_TIMEOUT for use as a CONNECTOR-specific timeout
+ *
+ * Revision 6.6  2001/03/02 20:07:33  lavr
+ * Typo fixed
+ *
+ * Revision 6.5  2001/02/09 17:33:38  lavr
+ * CONN_GetType added
+ *
+ * Revision 6.4  2001/01/03 22:29:22  lavr
+ * Changed IOStatus -> Status
+ *
+ * Revision 6.3  2000/12/29 17:43:42  lavr
+ * Pretty printed;
+ * Reconnect renamed to ReInit with ability to close current connector
+ *
+ * Revision 6.2  2000/04/07 19:59:47  vakatov
+ * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
+ * to "ncbi_connector.h"
+ *
+ * Revision 6.1  2000/03/24 22:52:20  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
 
 #endif /* NCBI_CONNECTION__H */
