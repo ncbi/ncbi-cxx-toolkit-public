@@ -41,9 +41,9 @@
 /* Hard-coded pseudo-registry getter
  */
 
-#define TEST_HOST            "yar.ncbi.nlm.nih.gov"
+#define TEST_HOST            "graceland.ncbi.nlm.nih.gov"
 #define TEST_PORT            "6224"
-#define TEST_PATH            "/tools/vakatov/con_url.cgi"
+#define TEST_PATH            "/ieb/ToolBox/NETWORK/con_url.cgi"
 #define TEST_ARGS            "arg1+arg2+arg3"
 #define TEST_DEBUG_PRINTOUT  "yes"
 #define TEST_REQ_METHOD      "any"
@@ -108,8 +108,8 @@ int main(void)
     CORE_SetREG( REG_Create(0, s_REG_Get, 0, 0, 0) );
 
     /* Connection timeout */
-    timeout.sec  = 5;
-    timeout.usec = 123456;
+    /*    timeout.sec  = 5;
+          timeout.usec = 123456;*/
 
     /* Printout all socket traffic */
     /* SOCK_SetDataLoggingAPI(eOn); */
@@ -142,6 +142,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2004/11/22 20:25:27  lavr
+ * "yar" replaced with "graceland"
+ *
  * Revision 6.15  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
