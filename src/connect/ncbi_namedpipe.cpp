@@ -51,6 +51,11 @@
 BEGIN_NCBI_SCOPE
 
 
+#if !defined(HAVE_SOCKLEN_T)
+typedef int socklen_t;
+#endif
+
+
 // Predefined timeouts
 const STimeout kZeroZimeoutValue = {0,0};
 const STimeout *const CNamedPipe::kNoWait            = &kZeroZimeoutValue;
@@ -1110,6 +1115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/18 22:53:59  vakatov
+ * Fix for the platforms which are missing type 'socklen_t'
+ *
  * Revision 1.2  2003/08/18 20:51:56  ivanov
  * Retry 'connect()' syscall if interrupted and allowed to restart
  * (by Anton Lavrentiev)
