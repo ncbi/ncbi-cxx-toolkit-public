@@ -72,6 +72,7 @@ MakeDirs()
     COMMON_ExecRB mkdir -p $1/etc
     COMMON_ExecRB mkdir -p $1/plugins
     COMMON_ExecRB mkdir -p $1/executables
+    COMMON_ExecRB mkdir -p $1/patterns
 }
 
 
@@ -312,6 +313,14 @@ for f in ${source_dir}/../plugins/algo/executables/*; do
         echo copying executable: `basename $f`
         rm -f ${target_dir}/executables/`basename $f`
         DoCopy $f ${target_dir}/executables
+    fi
+done
+
+# copy pattern files for searching
+for f in ${source_dir}/patterns/*; do
+    if [ ! -d $f ]; then
+        rm -f ${target_dir}/patterns/`basename $f`
+        DoCopy $f ${target_dir}/patterns
     fi
 done
 
