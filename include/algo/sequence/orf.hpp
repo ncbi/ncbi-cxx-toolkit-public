@@ -32,11 +32,12 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <algorithm>
-#include <algo/sequence/seq_match.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -48,17 +49,18 @@ class COrf
 public:
     /// Find all ORFs in both orientations that
     /// are at least min_length_bp long.
-    /// Report results as Seq-locs
-    /// seq must be in ncbi8na
+    /// Report results as Seq-locs.
+    /// seq must be in iupac.
     template<class Seq>
     static void FindOrfs(const Seq& seq,
                          vector<CRef<objects::CSeq_loc> >& results,
-                         unsigned int min_length_bp = 3)
+                         unsigned int min_length_bp = 3,
+                         int genetic_code = 1)
     {
         vector<TSeqPos> begins, ends;
 
         // find ORFs on the forward sequence and report them as-is
-        FindForwardOrfs(seq, begins, ends, min_length_bp);
+        FindForwardOrfs(seq, begins, ends, min_length_bp, genetic_code);
         for (unsigned int i = 0;  i < begins.size();  i++) {
             CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
             orf->SetInt().SetFrom(begins[i]);
@@ -68,11 +70,20 @@ public:
         }
 
         // find ORFs on the complement and munge the numbers
+
         begins.clear();
         ends.clear();
         Seq comp(seq);
-        CSeqMatch::CompNcbi8na(comp);
-        FindForwardOrfs(comp, begins, ends, min_length_bp);
+
+        // compute the complement;
+        // this should be replaced with new Seqport_util call
+        reverse(comp.begin(), comp.end());
+        for (unsigned int i = 0;  i < comp.size();  i++) {
+            comp[i] = CSeqportUtil::GetIndexComplement(eSeq_code_type_iupacna,
+                                                       comp[i]);
+        }
+
+        FindForwardOrfs(comp, begins, ends, min_length_bp, genetic_code);
         for (unsigned int i = 0;  i < begins.size();  i++) {
             CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
             orf->SetInt().SetFrom(comp.length() - ends[i] - 1);
@@ -88,42 +99,41 @@ public:
     /// (when new CSeqportUtil is ready; but what to do about vec coding?).
     static void FindOrfs(const CSeqVector& orig_vec,
                          vector<CRef<objects::CSeq_loc> >& results,
-                         unsigned int min_length_bp = 3)
+                         unsigned int min_length_bp = 3,
+                         int genetic_code = 1)
     {
-        string seq8na;  // will contain ncbi8na
+        string seq_iupac;  // will contain ncbi8na
         CSeqVector vec(orig_vec);
-        vec.SetNcbiCoding();
-        vec.GetSeqData(0, vec.size(), seq8na);
-        FindOrfs(seq8na, results, min_length_bp);
+        vec.SetIupacCoding();
+        vec.GetSeqData(0, vec.size(), seq_iupac);
+        FindOrfs(seq_iupac, results, min_length_bp, genetic_code);
     }
 
 
     /// Find all ORFs in forward orientation with
     /// length in *base pairs* >= min_length_bp.
-    /// seq must be in ncbi8na.
+    /// seq must be in iupac.
     template<class Seq>
     static void FindForwardOrfs(const Seq& seq, vector<TSeqPos>& begins,
                                 vector<TSeqPos>& ends,
-                                unsigned int min_length_bp = 3)
+                                unsigned int min_length_bp = 3,
+                                int genetic_code = 1)
     {
-        string scodons1, scodons2;
-        CSeqMatch::IupacToNcbi8na("TAR", scodons1);  // uaa and uag
-        CSeqMatch::IupacToNcbi8na("TRA", scodons2);  // uaa and uga
-    
-        // find only those positions that definitely match a stop
-        vector<TSeqPos> stops1, stops2, dummy, all_stops;
-        CSeqMatch::FindMatchesNcbi8na(seq, scodons1, stops1, dummy);
-        CSeqMatch::FindMatchesNcbi8na(seq, scodons2, stops2, dummy);
-        set_union(stops1.begin(), stops1.end(),
-                  stops2.begin(), stops2.end(),
-                  back_inserter(all_stops));
 
-        // now sort them out by reading frame
         vector<vector<TSeqPos> > stops;
         stops.resize(3);
-        for (unsigned int i = 0;  i < all_stops.size();  i++) {
-            stops[all_stops[i] % 3].push_back(all_stops[i]);
+        const objects::CTrans_table& tbl = 
+            objects::CGen_code_table::GetTransTable(genetic_code);
+        int state = 0;
+        for (unsigned int i = 0;  i < seq.size() - 2;  i += 3) {
+            for (int pos = 0;  pos < 3;  pos++) {
+                state = tbl.NextCodonState(state, seq[i + pos]);
+                if (tbl.IsOrfStop(state)) {
+                    stops[(i + pos - 2) % 3].push_back(i + pos - 2);
+                }
+            }
         }
+        
 
         TSeqPos from, to;
         // for each reading frame, calculate the orfs
@@ -187,8 +197,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.9  2003/08/19 17:40:02  rsmith
- * include Seq_interval.hpp
+ * Revision 1.10  2003/08/19 18:36:23  jcherry
+ * Reimplemented stop codon finding using CTrans_table finite state machine
  *
  * Revision 1.8  2003/08/19 10:21:24  dicuccio
  * Compilation fixes - use objects:: namespace where appropriate
