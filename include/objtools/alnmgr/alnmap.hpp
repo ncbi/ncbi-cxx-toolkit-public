@@ -199,12 +199,16 @@ public:
                                           ESearchDirection dir = eNone,
                                           bool try_reverse_dir = true)  const;
     
+    // Create a vector of relative mapping positions from row0 to row1.
+    // Input:  row0, row1, aln_rng (vertical slice)
+    // Output: result (the resulting vector of positions),
+    //         rng0, rng1 (affected ranges in native sequence coords)
     void          GetResidueIndexMap     (TNumrow row0,
                                           TNumrow row1,
                                           TRange aln_rng,
                                           vector<TSignedSeqPos>& result,
                                           TRange& rng0,
-                                          TRange& rng1)      const;
+                                          TRange& rng1)                 const;
 
     // AlnChunks -- declared here for access to typedefs
     class CAlnChunk;
@@ -667,6 +671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/03/03 20:33:27  todorov
+* +comments
+*
 * Revision 1.34  2004/03/03 19:39:43  todorov
 * +GetResidueIndexMap
 *
