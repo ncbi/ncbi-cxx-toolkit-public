@@ -283,7 +283,9 @@ void CTL_RPCCmd::Release()
 {
     m_BR = 0;
     if ( m_WasSent) {
-        Cancel();
+        try {
+            Cancel();
+        } catch (CDB_Exception& e) {}
         m_WasSent = false;
     }
 
@@ -299,7 +301,9 @@ CTL_RPCCmd::~CTL_RPCCmd()
     }
 
     if ( m_WasSent ) {
-        Cancel();
+        try {
+            Cancel();
+        } catch (CDB_Exception& e) {}
     }
 
     if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
@@ -342,6 +346,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/09/16 19:40:03  soussov
+ * add try catch when canceling in Release method
+ *
  * Revision 1.2  2001/11/06 17:59:55  lavr
  * Formatted uniformly as the rest of the library
  *
