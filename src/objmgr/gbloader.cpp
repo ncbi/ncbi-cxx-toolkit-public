@@ -86,6 +86,11 @@ struct CGBDataLoader::SSeqrefs
   TSeqrefs       *m_Sr;
   CRefresher      m_Timer;
   SSeqrefs() : m_Sr(0) {};
+  ~SSeqrefs()
+  {
+    if (m_Sr)
+      delete m_Sr;
+  };
 };
 
 //=======================================================================
@@ -116,8 +121,6 @@ CGBDataLoader::~CGBDataLoader(void)
     {
       if(sih_it->second)
         {
-          if(sih_it->second->m_Sr)
-            delete sih_it->second->m_Sr;
           delete sih_it->second;
         }
     }
@@ -325,9 +328,7 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
       TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(*sih_it);
       if(bsit == m_Bs2Sr.end()) continue;
       // delete sih
-      if(bsit->second->m_Sr)
-        delete bsit->second->m_Sr;
-      bsit->second->m_Sr=0;
+      delete bsit->second;
       m_Bs2Sr.erase(bsit);
     }
   if(m_UseListHead==tse) m_UseListHead=tse->next;
@@ -720,6 +721,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/04/02 16:27:20  gouriano
+* memory leak
+*
 * Revision 1.19  2002/04/02 16:02:31  kimelman
 * MT testing
 *
