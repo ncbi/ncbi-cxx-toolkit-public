@@ -573,8 +573,11 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/10/02 14:52:23  lavr
+ * Wrapped long lines in the change log
+ *
  * Revision 6.25  2003/09/24 02:56:55  ucko
- * HEAP_AttachEx: size_t -> TNCBI_Size per prototype (needed on 64-bit platforms)
+ * HEAP_AttachEx: size_t -> TNCBI_Size per prototype (needed on 64-bit archs)
  *
  * Revision 6.24  2003/09/23 21:06:30  lavr
  * +HEAP_AttachEx()
