@@ -972,6 +972,8 @@ int CPipeHandle::x_GetHandle(CPipe::EChildIOHandle from_handle) const
         return m_ChildStdOut;
     case CPipe::eStdErr:
         return m_ChildStdErr;
+    default:
+        break;
     }
     return -1;
 }
@@ -1259,6 +1261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/11/04 03:11:51  lavr
+ * x_GetHandle(): default switch case added [for GCC2.95.2 to be happy]
+ *
  * Revision 1.33  2003/10/24 16:52:38  lavr
  * Check RW bits before E bits in select()
  *
