@@ -54,11 +54,15 @@ public:
 
     void Resolve(const string& define, list<string>* resolved_def);
 
+    CSymResolver& operator+= (const CSymResolver& src);
+
     static void LoadFrom(const string& file_path, CSymResolver* resolver);
 
     bool IsEmpty(void) const;
 
-    static bool IsDefine(const string& param);
+    static bool   IsDefine   (const string& param);
+    static string StripDefine(const string& define);
+
 private:
     void Clear(void);
     void SetFrom(const CSymResolver& resolver);
@@ -68,12 +72,20 @@ private:
     CSimpleMakeFileContents::TContents m_Cache;
 };
 
+// Filter opt defines like $(SRC_C:.core_%)           to $(SRC_C).
+// or $(OBJMGR_LIBS:dbapi_driver=dbapi_driver-static) to $(OBJMGR_LIBS)
+string FilterDefine(const string& define);
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/04 23:11:43  gorelenk
+ * StripDefine helper promoted to class CSymResolver member. FilterDefine was
+ * moved here from proj_src_resolver.cpp module.
+ *
  * Revision 1.3  2004/01/22 17:57:09  gorelenk
  * first version
  *
