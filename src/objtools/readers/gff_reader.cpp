@@ -81,7 +81,7 @@ static string& s_URLDecode(const string& s, string& out) {
             try {
                 out += (char)NStr::StringToInt(s.substr(pos2 + 1, 2), 16);
                 pos = pos2 + 3;
-            } catch (CStringException& e) {
+            } catch (CStringException&) {
                 // some sources neglect to encode % (!)
                 out += '%';
                 pos = pos2 + 1;
@@ -1036,6 +1036,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/12/17 13:57:29  dicuccio
+* Drop unused exception variable
+*
 * Revision 1.9  2004/10/12 13:31:37  dicuccio
 * Set products from transcript_id, protein_id where appropriate.  Don't merge
 * qualifiers based on protein_id - missing in some cases (i.e., stop codons).
