@@ -37,6 +37,17 @@
 #
 #############################################################################
 
+# Set up lock.  The diversion magic lets this occur before AC_INIT, which
+# already interferes with other configure processes.
+
+divert(AC_DIVERSION_INIT)
+if scripts/get_lock.sh configure $$; then
+    ac_clean_files=configure.lock
+else
+    exit 1
+fi
+divert(-1)
+
 AC_INIT(src/Makefile.mk.in)
 
 
