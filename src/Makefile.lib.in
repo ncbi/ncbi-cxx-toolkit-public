@@ -29,10 +29,14 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 ### C/C++ source file compilation rules
 
 CXXFLAGS_ALL = $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+%@obj_ext@: ./%.cpp
+	$(CXX) @f_compile@ $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 %@obj_ext@: $(srcdir)/%.cpp
 	$(CXX) @f_compile@ $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 
 CFLAGS_ALL = $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+%@obj_ext@: ./%.c
+	$(CC)  @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
 	$(CC)  @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 
