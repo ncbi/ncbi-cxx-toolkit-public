@@ -182,7 +182,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
 
     ofs << "%PTB_PATH%\\project_tree_builder.exe"
         << " -logfile out.log"
-        << " -conffile %PTB_PATH%\\..\\..\\project_tree_builder.ini "
+        << " -conffile %PTB_PATH%\\..\\..\\..\\project_tree_builder.ini "
         << "%TREE_ROOT%" << " " << m_SubtreeToBuild << " " << "%SLN_PATH%" ;
 
 }
@@ -195,6 +195,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/02 23:31:45  gorelenk
+ * Changed implementation of
+ * CMsvcConfigureProjectGenerator::CreateProjectFileItem .
+ *
  * Revision 1.6  2004/02/20 22:53:25  gorelenk
  * Added analysis of ASN projects depends.
  *
