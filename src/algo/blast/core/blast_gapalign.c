@@ -2493,7 +2493,7 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    Uint1* query=NULL,* subject=NULL;
    Boolean switch_seq = FALSE;
    Int4 query_length, subject_length;
-   Uint4 subject_shift = 0;
+   Int4 subject_shift = 0;
     
    if (gap_align == NULL)
       return FALSE;
