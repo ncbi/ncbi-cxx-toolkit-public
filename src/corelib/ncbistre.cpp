@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/04/11 20:14:31  vakatov
+* Printable() -- added the forgotten "break"s.
+* Printable(), WritePrintable() -- cast "char" to "unsigned char".
+*
 * Revision 1.11  2001/03/26 20:26:59  vakatov
 * Added "Printable" symbol conversions (by A.Grichenko)
 *
@@ -169,20 +173,20 @@ string Printable(char c)
 {
     string s;
     switch ( c ) {
-    case '\0': s = "\\0";
-    case '\\': s = "\\\\";
-    case '\n': s = "\\n";
-    case '\t': s = "\\t";
-    case '\r': s = "\\r";
-    case '\v': s = "\\v";
+    case '\0':  s = "\\0";   break;
+    case '\\':  s = "\\\\";  break;
+    case '\n':  s = "\\n";   break;
+    case '\t':  s = "\\t";   break;
+    case '\r':  s = "\\r";   break;
+    case '\v':  s = "\\v";   break;
     default:
         {
             if ( isprint(c) ) {
                 s = c;
             } else {
                 s = "\\x";
-                s += s_Hex[c / 16];
-                s += s_Hex[c % 16];
+                s += s_Hex[(unsigned char) c / 16];
+                s += s_Hex[(unsigned char) c % 16];
             }
         }
     }
@@ -194,20 +198,20 @@ inline
 void WritePrintable(CNcbiOstream& out, char c)
 {
     switch ( c ) {
-    case '\0': out.write("\\0", 2); break;
-    case '\\': out.write("\\\\", 2); break;
-    case '\n': out.write("\\n", 2); break;
-    case '\t': out.write("\\t", 2); break;
-    case '\r': out.write("\\r", 2); break;
-    case '\v': out.write("\\v", 2); break;
+    case '\0':  out.write("\\0",  2);  break;
+    case '\\':  out.write("\\\\", 2);  break;
+    case '\n':  out.write("\\n",  2);  break;
+    case '\t':  out.write("\\t",  2);  break;
+    case '\r':  out.write("\\r",  2);  break;
+    case '\v':  out.write("\\v",  2);  break;
     default:
         {
             if ( isprint(c) ) {
                 out.put(c);
             } else {
                 out.write("\\x", 2);
-                out.put(s_Hex[c / 16]);
-                out.put(s_Hex[c % 16]);
+                out.put(s_Hex[(unsigned char) c / 16]);
+                out.put(s_Hex[(unsigned char) c % 16]);
             }
         }
     }
