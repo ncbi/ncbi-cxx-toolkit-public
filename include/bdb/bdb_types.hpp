@@ -505,6 +505,8 @@ public:
     virtual size_t      GetDataLength(const void* buf) const;
     virtual void        SetMinVal();
     virtual void        SetMaxVal();
+
+    virtual void SetString(const char*);
 };
 
 
@@ -907,6 +909,11 @@ void CBDB_FieldString::Set(const char* str, EOverflowAction if_overflow)
     SetNotNull();
 }
 
+inline
+void CBDB_FieldString::SetString(const char* str)
+{
+    operator=(str);
+}
 
 inline int CBDB_FieldString::Compare(const void* p1, const void* p2) const
 {
@@ -1158,6 +1165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/07/16 13:32:04  kuznets
+ * Implemented CBDB_FieldString::SetString (part of IBDB_FieldConvert interface)
+ *
  * Revision 1.9  2003/07/02 17:53:59  kuznets
  * Eliminated direct dependency from <db.h>
  *
