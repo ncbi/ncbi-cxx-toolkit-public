@@ -39,15 +39,12 @@
 #include <util/rangemap.hpp>
 
 #include <objmgr/seq_id_handle.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/annot_types_ci.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-
-//#include <objects/seqalign/Seq_align.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,15 +52,18 @@ BEGIN_SCOPE(objects)
 class CSeqMap_CI;
 class CScope;
 class CSeq_align_Mapper;
+class CAnnotObject_Ref;
 
 class CSeq_id;
 class CSeq_loc;
 class CSeq_interval;
 class CSeq_point;
 
+class CSeq_align;
 class CDense_seg;
 class CPacked_seg;
 class CSeq_align_set;
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_loc_Conversion
@@ -306,6 +306,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/03/30 21:21:09  grichenk
+* Reduced number of includes.
+*
 * Revision 1.14  2004/03/30 15:42:33  grichenk
 * Moved alignment mapper to separate file, added alignment mapping
 * to CSeq_loc_Mapper.

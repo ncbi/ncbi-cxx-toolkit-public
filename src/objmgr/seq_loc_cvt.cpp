@@ -34,11 +34,8 @@
 
 #include <objmgr/impl/seq_align_mapper.hpp>
 #include <objmgr/seq_map_ci.hpp>
-#include <objmgr/scope.hpp>
 #include <objmgr/impl/scope_impl.hpp>
-#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/annot_types_ci.hpp>
-#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -46,8 +43,6 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqres/Seq_graph.hpp>
-#include <objects/seq/Bioseq.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -836,6 +831,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/03/30 21:21:09  grichenk
+* Reduced number of includes.
+*
 * Revision 1.24  2004/03/30 15:42:33  grichenk
 * Moved alignment mapper to separate file, added alignment mapping
 * to CSeq_loc_Mapper.

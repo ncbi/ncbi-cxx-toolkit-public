@@ -37,6 +37,7 @@
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
+#include <objmgr/impl/seq_loc_cvt.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -1546,6 +1547,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/30 21:21:09  grichenk
+* Reduced number of includes.
+*
 * Revision 1.9  2004/03/30 17:00:00  grichenk
 * Fixed warnings, moved inline functions to hpp.
 *

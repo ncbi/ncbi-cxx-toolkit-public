@@ -36,9 +36,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <util/range.hpp>
+#include <util/rangemap.hpp>
 #include <objects/seqloc/Na_strand.hpp>
-#include <objmgr/impl/seq_loc_cvt.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objmgr/seq_id_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -47,11 +48,12 @@ BEGIN_SCOPE(objects)
 
 class CSeq_id;
 class CSeq_loc;
+class CSeq_loc_CI;
 class CSeq_feat;
 class CSeq_align;
 class CScope;
 class CBioseq_Handle;
-
+class CSeqMap;
 
 class CMappingRange : public CObject
 {
@@ -337,6 +339,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/30 21:21:09  grichenk
+* Reduced number of includes.
+*
 * Revision 1.6  2004/03/30 17:00:00  grichenk
 * Fixed warnings, moved inline functions to hpp.
 *
