@@ -138,9 +138,12 @@ const unsigned int kTDSMaxNameLen = 128 + 4;
 //  CTDSContext::
 //
 
+I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0);
+
 class CTDSContext : public I_DriverContext
 {
     friend class CDB_Connection;
+    friend I_DriverContext* FTDS_CreateContext(map<string,string>* attr);
 public:
     CTDSContext(DBINT version = DBVERSION_UNKNOWN);
 
@@ -735,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/12/18 19:00:55  soussov
+ * makes FTDS_CreateContext return an existing context if reuse_context option is set
+ *
  * Revision 1.14  2003/07/17 20:43:33  soussov
  * connections pool improvements
  *

@@ -389,11 +389,16 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 // Driver manager related functions
 //
 
-I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0)
+I_DriverContext* FTDS_CreateContext(map<string,string>* attr)
 {
     DBINT version= DBVERSION_UNKNOWN;
 
     if(attr) {
+        if((*attr)["reuse_context"] == "true" && 
+           CTDSContext::m_pTDSContext) {
+            return CTDSContext::m_pTDSContext;
+        }
+            
         string vers= (*attr)["version"];
         if(vers.find("42") != string::npos)
             version= DBVERSION_42;
@@ -464,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/12/18 19:01:35  soussov
+ * makes FTDS_CreateContext return an existing context if reuse_context option is set
+ *
  * Revision 1.22  2003/11/14 20:46:29  soussov
  * implements DoNotConnect mode
  *
