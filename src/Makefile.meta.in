@@ -195,7 +195,7 @@ RELEVANT_DIR = pwd | $(RELEVANT)
 RELEVANT_SUBS = find "`pwd`"/* -type d | $(RELEVANT)
 
 SUB_BRA_P = \
-+if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
+if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
         -n "$(EXPENDABLE_SUB_PROJ)"  -o  -n "$(CHECK_SUB_PROJ)" ;  then \
     x_subproj="$(SUB_PROJ) $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ) $(CHECK_SUB_PROJ)"; \
     expendable=false ; \
@@ -207,20 +207,20 @@ SUB_BRA_P = \
 SUB_KET_P = $(SUB_KET)
 
 all_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
-	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
-	@if $(RELEVANT_SUBS); then $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
+	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
+	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
 
 clean_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
-	@if $(RELEVANT_SUBS); then $(SUB_BRA_P) clean_p $(SUB_KET_P); else true; fi
+	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) clean_p $(SUB_KET_P); else true; fi
 
 purge_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) purge; else true; fi
-	@if $(RELEVANT_SUBS); then $(SUB_BRA_P) purge_p $(SUB_KET_P); else true; fi
+	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) purge_p $(SUB_KET_P); else true; fi
 
 check_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@$(CHECK_BRA) check_add_p $(CHECK_KET)
 
 check_add_p: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
-	@if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
+	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
