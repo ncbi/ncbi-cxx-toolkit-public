@@ -36,11 +36,15 @@
 
 BEGIN_NCBI_SCOPE
 
-//////////////////////////////////////////////////////////////////
-//
-// Internal template used for compiler based type mapping  
-// (C++ templates specialization emplyed here)
-//
+/** @addtogroup BDB_Map
+ *
+ * @{
+ */
+
+
+/// Internal template used for compiler based type mapping  
+/// (C++ templates specialization emplyed here)
+///
 template<class T> struct CBDB_TypeMapper
 {
     typedef T  TFieldType;
@@ -56,10 +60,8 @@ template<> struct CBDB_TypeMapper<string>
     typedef CBDB_FieldString TFieldType;
 };
 
-//////////////////////////////////////////////////////////////////
-//
-// db_map_base 
-// 
+/// db_map_base 
+/// 
 
 template<class K, class T> class db_map_base
 {
@@ -391,16 +393,14 @@ protected:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// db_map template, mimics std::map<> using BerkeleyDB as the underlying
-// Btree mechanism.
-//
-// NOTE: const methods of this template are conditionally thread safe due 
-// to the use of mutable variables.
-// If you access to access one instance of db_map from more than one thread,
-// external syncronization is required.
-//
+/// db_map template, mimics std::map<> using BerkeleyDB as the underlying
+/// Btree mechanism.
+///
+/// NOTE: const methods of this template are conditionally thread safe due 
+/// to the use of mutable variables.
+/// If you access to access one instance of db_map from more than one thread,
+/// external syncronization is required.
+
 template<class K, class T> class db_map : public db_map_base<K, T>
 {
 public:
@@ -429,16 +429,14 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// db_multimap template, mimics std::multimap<> using BerkeleyDB as 
-// the underlying Btree mechanism.
-//
-// NOTE: const methods of this template are conditionally thread safe due 
-// to the use of mutable variables.
-// If you access to access one instance of db_map from more than one thread,
-// external syncronization is required.
-//
+/// db_multimap template, mimics std::multimap<> using BerkeleyDB as 
+/// the underlying Btree mechanism.
+///
+/// NOTE: const methods of this template are conditionally thread safe due 
+/// to the use of mutable variables.
+/// If you access to access one instance of db_map from more than one thread,
+/// external syncronization is required.
+///
 template<class K, class T> class db_multimap : public db_map_base<K, T>
 {
 public:
@@ -458,6 +456,8 @@ public:
 
 };
 
+
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -601,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/29 14:30:22  kuznets
+ * Comments doxygenification
+ *
  * Revision 1.6  2003/07/24 15:43:25  kuznets
  * Fixed SUN compilation problems
  *

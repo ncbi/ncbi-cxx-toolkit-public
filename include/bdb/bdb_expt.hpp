@@ -41,6 +41,12 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB
+ *
+ * @{
+ */
+
+
 
 /// Base BDB exception class
 
@@ -166,12 +172,18 @@ public:
     } while (0)
 
 
+/* @} */
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/09/29 14:30:22  kuznets
+ * Comments doxygenification
+ *
  * Revision 1.7  2003/09/26 19:51:00  kuznets
  * Comments clean up
  *

@@ -39,6 +39,11 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB
+ *
+ * @{
+ */
+
 
 /// BDB environment object a collection including support for some or 
 /// all of caching, locking, logging and transaction subsystems.
@@ -76,12 +81,16 @@ private:
     DB_ENV*  m_Env;
 };
 
+/* @} */
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/29 14:30:22  kuznets
+ * Comments doxygenification
+ *
  * Revision 1.3  2003/09/26 19:16:09  kuznets
  * Documentation changes
  *
