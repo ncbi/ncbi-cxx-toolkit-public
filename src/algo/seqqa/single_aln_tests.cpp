@@ -93,9 +93,9 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     sel.SetAdaptiveDepth();
     CFeat_CI it(xcript_hand, 0, xcript_hand.GetBioseqLength() - 1, sel);
 
-    const CSeq_feat& mf = it->GetMappedFeature();
-    TSeqPos cds_from = mf.GetLocation().GetInt().GetFrom();
-    TSeqPos cds_to   = mf.GetLocation().GetInt().GetTo();
+    const CSeq_loc& loc = it->GetLocation();
+    TSeqPos cds_from = loc.GetInt().GetFrom();
+    TSeqPos cds_to   = loc.GetInt().GetTo();
 
 
     TSeqPos last_genomic_end = 0;
@@ -413,7 +413,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         CFeat_CI it(genomic_hand, genomic_roi_from, genomic_roi_to, gene_sel);
         TSeqPos shortest_dist = kLargestGeneDist + 1;
         while (it) {
-            const CSeq_loc& gene_loc = it->GetMappedFeature().GetLocation();
+            const CSeq_loc& gene_loc = it->GetLocation();
             if (is_minus) {
                 if (sequence::GetStrand(gene_loc) == eNa_strand_minus) {
                     if (sequence::GetStart(gene_loc) > genomic_start) {
@@ -451,6 +451,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/10 21:56:45  jcherry
+ * Don't call CMappedFeat::GetMappedFeature; as of recent changes, this
+ * apparently doesn't work when the feature has not been mapped.
+ *
  * Revision 1.2  2004/10/06 21:49:05  jcherry
  * Use "adaptive depth" (apparently will be necessary for use
  * of "fake" transcripts representing genomic annotation)
