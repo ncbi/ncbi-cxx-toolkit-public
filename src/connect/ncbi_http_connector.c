@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2002/04/26 16:36:56  lavr
+ * Added setting of default timeout in meta-connector's setup routine
+ * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
+ *
  * Revision 6.24  2002/04/22 19:31:33  lavr
  * Reading/waiting redesigned to be more robust in case of network errors
  *
@@ -186,9 +190,11 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
         *redirect = 0;
         if (!status)
             return 0/*false*/;
-    } else if (!uuu->adjust_net_info || !(*uuu->adjust_net_info)
-               (uuu->net_info, uuu->adjust_data, uuu->failure_count))
-        return 0/*false*/;
+    } else if (!uuu->adjust_net_info ||
+               !uuu->adjust_net_info(uuu->net_info,
+                                     uuu->adjust_data,
+                                     uuu->failure_count))
+               return 0/*false*/;
 
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
 
@@ -203,8 +209,7 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 {
     assert(uuu->sock);
     BUF_Read(uuu->http, 0, BUF_Size(uuu->http));
-    SOCK_SetTimeout(uuu->sock, eIO_Close, timeout == CONN_DEFAULT_TIMEOUT ?
-                    uuu->net_info->timeout : timeout);
+    SOCK_SetTimeout(uuu->sock, eIO_Close, timeout);
     SOCK_Close(uuu->sock);
     uuu->sock = 0;
 }
@@ -229,10 +234,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
             (uuu->net_info->host, uuu->net_info->port,
              uuu->net_info->path, uuu->net_info->args,
              uuu->net_info->req_method, BUF_Size(uuu->obuf),
-             uuu->c_timeout == CONN_DEFAULT_TIMEOUT
-             ? uuu->net_info->timeout : uuu->c_timeout,
-             uuu->w_timeout == CONN_DEFAULT_TIMEOUT
-             ? uuu->net_info->timeout : uuu->w_timeout,
+             uuu->c_timeout, uuu->w_timeout,
              uuu->net_info->http_user_header,
              (int/*bool*/) (uuu->flags & fHCC_UrlEncodeArgs),
              uuu->net_info->debug_printout == eDebugPrintout_Data ? eOn :
@@ -277,9 +279,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
             /* flush the accumulated output data */
             size_t off = 0;
 
-            SOCK_SetTimeout(uuu->sock, eIO_Write,
-                            uuu->w_timeout == CONN_DEFAULT_TIMEOUT 
-                            ? uuu->net_info->timeout : uuu->w_timeout);
+            SOCK_SetTimeout(uuu->sock, eIO_Write, uuu->w_timeout);
             do {
                 char       buf[4096];
                 size_t     n_written;
@@ -430,15 +430,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 }
 
 
-static EIO_Status s_PreRead(SHttpConnector* uuu, const STimeout* r_timeout)
+static EIO_Status s_PreRead(SHttpConnector* uuu, const STimeout* timeout)
 {
-    static const STimeout zero_tmo = {0, 0};
+    static const STimeout zero_timeout = {0, 0};
     char* redirect = 0;
     EIO_Status status;
 
     for (;;) {
-        const STimeout* r_tmo;
-
         if (!uuu->sock) {
             if ((status = s_ConnectAndSend(uuu)) != eIO_Success)
                 break;
@@ -447,11 +445,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu, const STimeout* r_timeout)
             status = eIO_Success;
 
         /* set timeout */
-        if (r_timeout == CONN_DEFAULT_TIMEOUT)
-            r_tmo = uuu->net_info->timeout;
-        else
-            r_tmo = r_timeout;
-        SOCK_SetTimeout(uuu->sock, eIO_Read, r_tmo);
+        SOCK_SetTimeout(uuu->sock, eIO_Read, timeout);
 
         if (!uuu->first_read)
             break;
@@ -462,8 +456,8 @@ static EIO_Status s_PreRead(SHttpConnector* uuu, const STimeout* r_timeout)
             BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
             break;
         }
-        if (status == eIO_Timeout &&
-            r_tmo && memcmp(r_tmo, &zero_tmo, sizeof(zero_tmo)) == 0)
+        if (status == eIO_Timeout && timeout &&
+            memcmp(timeout, &zero_timeout, sizeof(STimeout)) == 0)
             break;
 
         s_DropConnection(uuu, 0/*no wait*/);
@@ -560,7 +554,7 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
 static void s_FlushAndDisconnect(SHttpConnector* uuu, const STimeout* timeout)
 {
     /* store timeout for later use */
-    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+    if (timeout) {
         uuu->cc_timeout = *timeout;
         uuu->c_timeout  = &uuu->cc_timeout;
         uuu->ww_timeout = *timeout;
@@ -668,12 +662,11 @@ static EIO_Status s_VT_Wait
     case eIO_Read:
         if (!uuu->sock) {
             EIO_Status status = s_PreRead(uuu, timeout);
-            if (status != eIO_Success  ||  BUF_Size(uuu->ibuf))
+            if (status != eIO_Success || BUF_Size(uuu->ibuf))
                 return status;
             assert(uuu->sock);
         }
-        return SOCK_Wait(uuu->sock, eIO_Read, timeout == CONN_DEFAULT_TIMEOUT
-                         ? uuu->net_info->timeout : timeout);
+        return SOCK_Wait(uuu->sock, eIO_Read, timeout);
     case eIO_Write:
         /* Return 'Closed' if no more writes are allowed (and now - reading) */
         return uuu->can_connect == eCC_None ||
@@ -728,12 +721,11 @@ static EIO_Status s_VT_Write
     }
 
     /* store the write timeout */
-    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+    if (timeout) {
         uuu->ww_timeout = *timeout;
         uuu->w_timeout  = &uuu->ww_timeout;
-    } else {
+    } else
         uuu->w_timeout  = timeout;
-    }
 
     return eIO_Success;
 }
@@ -748,12 +740,11 @@ static EIO_Status s_VT_Flush
     /* The real flush will be performed on the first "READ" (or "CLOSE"),
      * or on "WAIT". We just store write timeout here, that's all...
      */
-    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+    if (timeout) {
         uuu->ww_timeout = *timeout;
         uuu->w_timeout  = &uuu->ww_timeout;
-    } else {
+    } else
         uuu->w_timeout  = timeout;
-    }
 
     return eIO_Success;
 }
@@ -815,6 +806,8 @@ static EIO_Status s_VT_WaitAsync
 
 static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 {
+    SHttpConnector* uuu = (SHttpConnector*) connector->handle;
+
     /* initialize virtual table */
     CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
     CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
@@ -827,6 +820,7 @@ static void s_Setup(SMetaConnector *meta, CONNECTOR connector)
 #ifdef IMPLEMENTED__CONN_WaitAsync
     CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
 #endif
+    CONN_SET_DEFAULT_TIMEOUT(meta, uuu->net_info->timeout);
 }
 
 
@@ -836,7 +830,7 @@ static void s_Destroy(CONNECTOR connector)
 
     ConnNetInfo_Destroy(uuu->net_info);
     if (uuu->adjust_cleanup)
-        (*uuu->adjust_cleanup)(uuu->adjust_data);
+        uuu->adjust_cleanup(uuu->adjust_data);
     BUF_Destroy(uuu->http);
     BUF_Destroy(uuu->obuf);
     BUF_Destroy(uuu->ibuf);
@@ -899,8 +893,8 @@ extern CONNECTOR HTTP_CreateConnectorEx
     uuu->obuf = 0;
     uuu->ibuf = 0;
     uuu->http = 0;
-    uuu->c_timeout = CONN_DEFAULT_TIMEOUT;
-    uuu->w_timeout = CONN_DEFAULT_TIMEOUT;
+    uuu->c_timeout = CONN_DEFAULT_TIMEOUT; /* intentionally bad values --    */
+    uuu->w_timeout = CONN_DEFAULT_TIMEOUT; /* should be reset prior to usage */
 
     /* initialize connector structure */
     ccc->handle  = uuu;
