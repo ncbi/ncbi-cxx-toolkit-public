@@ -64,12 +64,21 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
     x_ExpandAliases(dbpath, "-", prot_nucl, use_mmap, recurse);
 }
 
-// Public Constructor
-//
-// This is the user-visible constructor, which builds the top level
-// node in the dbalias node tree.  This design effectively treats the
-// user-input database list as if it were an alias file containing
-// only the DBLIST specification.
+// Private Constructor
+// 
+// This is the constructor for nodes other than the top-level node.
+// As such it is private and only called from this class.
+// 
+// This constructor constructs subnodes by calling x_ExpandAliases,
+// which calls this constructor again with the subnode's arguments.
+// But no node should be its own ancestor.  To prevent this kind of
+// recursive loop, each file adds its full path to a set of strings
+// and does not create a subnode for any path already in that set.
+// 
+// The set (recurse) is passed BY VALUE so that two branches of the
+// same file can contain equivalent nodes.  A more efficient method
+// for allowing this kind of sharing might be to pass by reference,
+// removing the current node path from the set after construction.
 
 CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
                                  const string & dbname,
