@@ -516,7 +516,8 @@ static void TestCgiResponse(const CNcbiArguments& args)
     response.SetOutput(&NcbiCout);
 
     if (args.Size() > 2) {
-        response.Cookies().Add( CCgiCookies(args[2]) );
+        CCgiCookies cookies(args[2]);
+        response.Cookies().Add(cookies);
     }
     response.Cookies().Remove(response.Cookies().Find("to-Remove"));
     NcbiCout << "Cookies: " << response.Cookies() << NcbiEndl;
@@ -599,6 +600,10 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.19  2004/04/26 16:39:34  ucko
+ * Don't try to pass temporary CCgiCookies objects, even by const
+ * reference, as CCgiCookies has no public copy constructor.
+ *
  * Revision 1.18  2003/11/24 18:15:21  ucko
  * Verify &amp; -> & conversion.
  *
