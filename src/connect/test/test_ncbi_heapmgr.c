@@ -34,28 +34,27 @@
 #include <connect/ncbi_heapmgr.h>
 #include <stdlib.h>
 #include <time.h>
+#if 0
+#  define eLOG_Warning eLOG_Fatal
+#  define eLOG_Error   eLOG_Fatal
+#  include "../ncbi_heapmgr.c"
+#endif
 /* This header must go last */
 #include "test_assert.h"
-
-
-#if 0
-#define eLOG_Warning    eLOG_Fatal
-#define eLOG_Error      eLOG_Fatal
-#include "../ncbi_heapmgr.c"
-#endif
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static char* s_Expand(char* base, TNCBI_Size size)
+/*ARGSUSED*/
+static void* s_Expand(void* base, TNCBI_Size size, void* arg)
 {
     if (base && size)
-        return (char*) realloc(base, size);
-    else if (size)
-        return (char*) malloc(size);
-    else
+        return realloc(base, size);
+    if (size)
+        return malloc(size);
+    if (base)
         free(base);
     return 0;
 }
@@ -76,11 +75,11 @@ int main(void)
     for (j = 1; j <= 3; j++) {
         srand((int)time(0));
         CORE_LOGF(eLOG_Note, ("Creating heap %d", j));
-        if (!(heap = HEAP_Create(0, 0, 4096, s_Expand)))
+        if (!(heap = HEAP_Create(0, 0, 4096, s_Expand, 0)))
             CORE_LOG(eLOG_Error, "Cannot create heap");
         while (rand() != 12345) {
             r = rand() & 7;
-            if (r == 1 || r == 2) {
+            if (r == 1 || r == 3) {
                 i = rand() & 0xFF;
                 if (i) {
                     CORE_LOGF(eLOG_Note, ("Allocating %d bytes", i));
@@ -92,7 +91,7 @@ int main(void)
                     while (i--)
                         *c++ = rand();
                 }
-            } else if (r == 3 || r == 4) {
+            } else if (r == 2 || r == 4) {
                 blk = 0;
                 i = 0;
                 do {
@@ -126,7 +125,7 @@ int main(void)
                 HEAP newheap;
 
                 if (r == 6)
-                    newheap = HEAP_Attach(/* HACK! */*(char **)heap);
+                    newheap = HEAP_Attach(/* HACK! */*((char**)heap));
                 else
                     newheap = HEAP_Copy(heap);
 
@@ -166,6 +165,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/08/25 14:58:10  lavr
+ * Adjust test to take advantage of modified API
+ *
  * Revision 6.11  2003/07/31 17:54:16  lavr
  * +HEAP_Trim() test
  *
