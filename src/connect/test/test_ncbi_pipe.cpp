@@ -294,7 +294,7 @@ int CTest::Run(void)
         assert(ps.good());
         assert(value == i*i);
     }
-    ps.SetReadHandle(CPipe::eStdErr);
+    ps.GetPipe().SetReadHandle(CPipe::eStdErr);
     ps >> str;
     cout << str << endl;
     assert(str == "Done");
@@ -361,6 +361,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2003/11/12 16:43:36  ivanov
+ * Using SetReadHandle() through GetPipe()
+ *
  * Revision 6.18  2003/09/30 21:00:34  lavr
  * Formatting
  *
