@@ -657,7 +657,6 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
 		       Int4 max_hits,
 		       BlastInitHitListPtr init_hitlist)
 {
-   BlastInitialWordOptionsPtr word_options = word_params->options;
    LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
    Uint1Ptr s_start = subject->sequence;
    Uint1Ptr abs_start = s_start;
