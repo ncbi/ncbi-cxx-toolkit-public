@@ -33,6 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/12/27 19:44:15  vakatov
+* Fixes for R1.13:
+* ERR_POST() -- use eDPF_Default rather than eDPF_Trace;  forcibly flush
+* ("<< Endm") the diag. stream. Get rid of the eDPF_CopyFilename, always
+* make a copy of the file name.
+*
 * Revision 1.13  1999/09/27 16:23:20  vasilche
 * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
 * so that they will be much easier for compilers to eat.
@@ -102,8 +108,7 @@ typedef enum {
 
 // Auxiliary macros for a "standard" error posting
 #define ERR_POST(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
-          NCBI_NS_NCBI::eDiag_Error, NCBI_NS_NCBI::eDPF_Trace) << message )
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << Endm )
 
 
 // Which parts of the diagnostic context should be posted, and which are not...
@@ -119,7 +124,6 @@ typedef enum {
     eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
     eDPF_Prefix       = 0x8,  // set by default (always)
     eDPF_Severity     = 0x10, // set by default (always)
-    eDPF_CopyFilename = 0x20,
 
     // set all flags
     eDPF_All          = 0x7FFF,
@@ -186,9 +190,8 @@ private:
 #endif
 
     EDiagSev     m_Severity;  // severity level of the current message
-    const char*  m_File;      // file name            .....
-    char         m_FileBuffer[256]; // file name buffer  .....
-    size_t       m_Line;      // line #         .....
+    char         m_File[256]; // file name
+    size_t       m_Line;      // line #
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
     unsigned int m_PostFlags; // bitwise OR of "EDiagPostFlag"
     // prohibit assignment

@@ -30,6 +30,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/27 19:44:18  vakatov
+* Fixes for R1.13:
+* ERR_POST() -- use eDPF_Default rather than eDPF_Trace;  forcibly flush
+* ("<< Endm") the diag. stream. Get rid of the eDPF_CopyFilename, always
+* make a copy of the file name.
+*
 * Revision 1.12  1999/12/16 17:22:51  vakatov
 * Fixed "delete" to "delete[]"
 *
@@ -338,7 +344,7 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
     : m_Severity(sev), m_Line(0),
       m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
 {
-    m_File   = "";
+    *m_File = '\0';
 }
 
 CNcbiDiag::CNcbiDiag(const char* file, size_t line,
@@ -351,17 +357,11 @@ CNcbiDiag::CNcbiDiag(const char* file, size_t line,
 
 CNcbiDiag& CNcbiDiag::SetFile(const char* file)
 {
-    if ( file && *file ) {
-        if ( m_PostFlags & eDPF_CopyFilename ) {
-            m_File = m_FileBuffer;
-            ::strncpy(m_FileBuffer, file, sizeof(m_FileBuffer));
-            m_FileBuffer[sizeof(m_FileBuffer) - 1] = '\0';
-        }
-        else {
-            m_File = file;
-        }
+    if (file  &&  *file) {
+        ::strncpy(m_File, file, sizeof(m_File));
+        m_File[sizeof(m_File) - 1] = '\0';
     } else {
-        m_File = "";
+        *m_File = '\0';
     }
     return *this;
 }
