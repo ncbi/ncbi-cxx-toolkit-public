@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/03/21 17:15:36  vasilche
+* Avoid unnecessary buffer growth in GetChars().
+*
 * Revision 1.35  2003/02/26 21:32:00  gouriano
 * modify C++ exceptions thrown by this library
 *
@@ -354,7 +357,9 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                 m_Collector->AddChunk(m_CollectPos, count);
             m_CollectPos = newPos;
         }
-        memmove(newPos, m_CurrentPos, m_DataEndPos - m_CurrentPos);
+        size_t copy_count = m_DataEndPos - m_CurrentPos;
+        if ( copy_count )
+            memmove(newPos, m_CurrentPos, copy_count);
         m_CurrentPos = newPos;
         m_DataEndPos -= erase;
         m_BufferOffset += erase;
@@ -443,8 +448,8 @@ void CIStreamBuffer::GetChars(char* buffer, size_t count)
         else {
             memcpy(buffer, pos, c);
             buffer += c;
-            pos += c;
             count -= c;
+            m_CurrentPos = pos += c;
             pos = FillBuffer(pos);
         }
     }
@@ -463,8 +468,8 @@ void CIStreamBuffer::GetChars(size_t count)
             return;
         }
         else {
-            pos += c;
             count -= c;
+            m_CurrentPos = pos += c;
             pos = FillBuffer(pos);
         }
     }
