@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/07/25 19:15:27  grichenk
+* Added comments. Added type checking before dynamic cast.
+*
 * Revision 1.9  2001/07/16 16:22:47  grichenk
 * Added CSerialUserOp class to create Assign() and Equals() methods for
 * user-defind classes.
@@ -73,6 +76,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 
@@ -120,9 +124,9 @@ class CSerialUserOp
     friend class CClassTypeInfo;
     friend class CChoiceTypeInfo;
 protected:
-    // will be called after...
+    // will be called after copying the datatool-generated members
     virtual void Assign(const CSerialUserOp& source) = 0;
-    // ...
+    // will be called after comparing the datatool-generated members
     virtual bool Equals(const CSerialUserOp& object) const = 0;
 };
 
@@ -135,6 +139,11 @@ protected:
 template <class C>
 C& SerialAssign(C& dest, const C& src)
 {
+    if ( typeid(src) != typeid(dest) ) {
+        ERR_POST(Fatal <<
+                 "SerialAssign() -- Assignment of incompatible types: " <<
+                 typeid(dest).name() << " = " << typeid(src).name());
+    }
     C::GetTypeInfo()->Assign(&dest, &src);
     return dest;
 }
@@ -143,6 +152,11 @@ C& SerialAssign(C& dest, const C& src)
 template <class C>
 bool SerialEquals(const C& object1, const C& object2)
 {
+    if ( typeid(object1) != typeid(object2) ) {
+        ERR_POST(Fatal <<
+                 "SerialAssign() -- Can not compare types: " <<
+                 typeid(object1).name() << " == " << typeid(object2).name());
+    }
     return C::GetTypeInfo()->Equals(&object1, &object2);
 }
 
