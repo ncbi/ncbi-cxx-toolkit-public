@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/22 16:26:29  vasilche
+* Added generation/checking of checksum to user files.
+*
 * Revision 1.24  2000/11/07 17:26:25  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -129,6 +132,7 @@
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/namespace.hpp>
 #include <serial/datatool/module.hpp>
+#include <serial/datatool/checksum.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
@@ -508,19 +512,179 @@ void CFileCode::GenerateCPP(const string& path) const
 
 bool CFileCode::GenerateUserHPP(const string& path) const
 {
-    string fileName = Path(path, GetUserHPPName());
-    CNcbiOfstream header(fileName.c_str(), IOS_BASE::app);
-    if ( !header ) {
-        ERR_POST(Fatal << "Cannot create file: " << fileName);
-        return false;
-    }
-	header.seekp(0, IOS_BASE::end);
-    if ( streampos(header.tellp()) != streampos(0) ) {
-        ERR_POST(Info <<
-                 "Will not overwrite existing user file: " << fileName);
+    return WriteUserFile(path, GetUserHPPName(),
+                         &CFileCode::GenerateUserHPPCode);
+}
+
+bool CFileCode::GenerateUserCPP(const string& path) const
+{
+    return WriteUserFile(path, GetUserCPPName(),
+                         &CFileCode::GenerateUserCPPCode);
+}
+
+bool CFileCode::ModifiedByUser(const string& fileName,
+                               const list<string>& newLines) const
+{
+    // first check if file exists
+    CNcbiIfstream in(fileName.c_str());
+    if ( !in ) {
+        // file doesn't exit -> was not modified by user
         return false;
     }
 
+    CChecksum checksum;
+    bool haveChecksum = false;
+    bool equal = true;
+    
+    list<string>::const_iterator newLinesI = newLines.begin();
+    SIZE_TYPE lineOffset = 0;
+    while ( in ) {
+        char buffer[1024]; // buffer must be as big as checksum line
+        in.getline(buffer, sizeof(buffer), '\n');
+        SIZE_TYPE count = in.gcount();
+        if ( count == 0 ) {
+            // end of file
+            break;
+        }
+        if ( haveChecksum || in.eof() ) {
+            // text after checksum -> modified by user
+            //    OR
+            // partial last line -> modified by user
+            ERR_POST(Info <<
+                     "Will not overwrite modified user file: "<<fileName);
+            return true;
+        }
+
+        bool eol;
+        // check where EOL was read
+        if ( in.fail() ) {
+            // very long line
+            // reset fail flag
+            in.clear(in.rdstate() & ~in.failbit);
+            eol = false;
+        }
+        else {
+            // full line was read
+            --count; // do not include EOL symbol
+            eol = true;
+        }
+
+        // check for checksum line
+        if ( lineOffset == 0 && eol ) {
+            haveChecksum = checksum.ValidChecksumLine(buffer, count);
+            if ( haveChecksum )
+                continue;
+        }
+
+        // update checksum
+        checksum.AddChars(buffer, count);
+        // update equal flag
+        if ( equal ) {
+            if ( newLinesI == newLines.end() )
+                equal = false;
+            else if ( newLinesI->size() < lineOffset + count )
+                equal = false;
+            else {
+                const char* ptr = newLinesI->data() + lineOffset;
+                equal = memcmp(ptr, buffer, count) == 0;
+            }
+        }
+        lineOffset += count;
+        if ( eol ) {
+            checksum.NextLine();
+            if ( equal ) {
+                // check for end of line in newLines
+                equal = newLinesI->size() == lineOffset;
+                ++newLinesI;
+            }
+            lineOffset = 0;
+        }
+    }
+
+    if ( haveChecksum ) {
+        // file contains valid checksum -> it was not modified by user
+        return false;
+    }
+
+    // file doesn't have checksum
+    // we assume it modified if its content different from newLines
+    return !equal || newLinesI != newLines.end();
+}
+
+void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
+{
+    CNcbiOstrstream code;
+
+    // generate code
+    (this->*method)(code);
+
+    // get code length
+    size_t count = code.pcount();
+    if ( count == 0 )
+        THROW1_TRACE(runtime_error, "empty generated code");
+
+    // get code string pointer
+    const char* codePtr = code.str();
+    code.freeze(false);
+
+    // split code by lines
+    while ( count > 0 ) {
+        // find end of next line
+        const char* eolPtr = (const char*)memchr(codePtr, '\n', count);
+        if ( !eolPtr )
+            THROW1_TRACE(runtime_error, "unended line in generated code");
+
+        // add next line to list
+        lines.push_back(NcbiEmptyString);
+        lines.back().assign(codePtr, eolPtr);
+
+        // skip EOL symbol ('\n')
+        ++eolPtr;
+
+        // update code length
+        count -= (eolPtr - codePtr);
+        // update code pointer
+        codePtr = eolPtr;
+    }
+}
+
+bool CFileCode::WriteUserFile(const string& path, const string& name,
+                              TGenerateMethod method) const
+{
+    // parse new code lines
+    list<string> newLines;
+    LoadLines(method, newLines);
+
+    string fileName = Path(path, name);
+    if ( ModifiedByUser(fileName, newLines) ) {
+        // do nothing on user modified files
+        return false;
+    }
+
+    // write new contents of nonmodified file
+    CDelayedOfstream out(fileName.c_str());
+    if ( !out ) {
+        ERR_POST(Fatal << "Cannot create file: " << fileName);
+        return false;
+    }
+
+    CChecksum checksum;
+    iterate ( list<string>, i, newLines ) {
+        checksum.AddLine(*i);
+        out << *i << '\n';
+    }
+    out << checksum;
+
+    out.close();
+    if ( !out ) {
+        ERR_POST("Error writing file " << fileName);
+        return false;
+    }
+    return true;
+}
+
+void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
+{
     string hppDefine = GetUserHPPDefine();
     WriteUserCopyright(header) <<
         "\n"
@@ -549,27 +713,10 @@ bool CFileCode::GenerateUserHPP(const string& path) const
     header <<
         "\n"
         "#endif // " << hppDefine << "\n";
-    header.close();
-    if ( !header )
-        ERR_POST("Error writing file " << fileName);
-    return true;
 }
 
-bool CFileCode::GenerateUserCPP(const string& path) const
+void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
 {
-    string fileName = Path(path, GetUserCPPName());
-    CNcbiOfstream code(fileName.c_str(), IOS_BASE::app);
-    if ( !code ) {
-        ERR_POST(Fatal << "Cannot create file: " << fileName);
-        return false;
-    }
-	code.seekp(0, IOS_BASE::end);
-    if ( streampos(code.tellp()) != streampos(0) ) {
-        ERR_POST(Info <<
-                 "Will not overwrite existing user file: " << fileName);
-        return false;
-    }
-
     WriteUserCopyright(code) <<
         "\n"
         "// standard includes\n"
@@ -589,11 +736,6 @@ bool CFileCode::GenerateUserCPP(const string& path) const
         }
     }
     ns.Reset(code);
-
-    code.close();
-    if ( !code )
-        ERR_POST(Fatal << "Error writing file " << fileName);
-    return true;
 }
 
 bool CFileCode::AddType(const CDataType* type)

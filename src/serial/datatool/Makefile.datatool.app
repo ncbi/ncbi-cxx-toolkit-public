@@ -11,7 +11,7 @@ OBJ = datatool \
 	type namespace statictype enumtype reftype unitype blocktype choicetype \
 	typestr ptrstr stdstr classstr enumstr stlstr choicestr choiceptrstr \
 	value mcontainer module moduleset generate filecode code \
-	fileutil alexer aparser parser lexer exceptions
+	fileutil alexer aparser parser lexer exceptions checksum
 LIB = xser xncbi
 
 CPPFLAGS = -I. $(ORIG_CPPFLAGS)

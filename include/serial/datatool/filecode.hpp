@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/22 16:26:22  vasilche
+* Added generation/checking of checksum to user files.
+*
 * Revision 1.9  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -96,6 +99,7 @@
 #include <serial/datatool/typestr.hpp>
 #include <map>
 #include <set>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -182,6 +186,16 @@ private:
     
     CFileCode(const CFileCode&);
     CFileCode& operator=(const CFileCode&);
+
+    void GenerateUserHPPCode(CNcbiOstream& code) const;
+    void GenerateUserCPPCode(CNcbiOstream& code) const;
+
+    typedef void (CFileCode::* TGenerateMethod)(CNcbiOstream& out) const;
+    bool WriteUserFile(const string& path, const string& name,
+                       TGenerateMethod method) const;
+    void LoadLines(TGenerateMethod method, list<string>& lines) const;
+    bool ModifiedByUser(const string& fileName,
+                        const list<string>& newLines) const;
 };
 
 END_NCBI_SCOPE
