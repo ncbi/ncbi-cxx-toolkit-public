@@ -119,6 +119,12 @@ void CAlnMrgApp::Init(void)
          "Calculate each aligned seq pair score and use it when merging.",
          CArgDescriptions::eBoolean, "f");
 
+    arg_desc->AddDefaultKey
+        ("queryseqmergeonly", "QuerySeqMergeOnly",
+         "Merge the query seq only, keep subject seqs on separate rows "
+         "(even if the same seq).",
+         CArgDescriptions::eBoolean, "f");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -262,6 +268,10 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fNegativeStrand;
     }
 
+    if (args["queryseqmergeonly"]  &&  args["queryseqmergeonly"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::fQuerySeqMergeOnly;
+    }
+
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
     }
@@ -302,6 +312,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/05/15 19:09:18  todorov
+* Optional mixing of the query sequence only
+*
 * Revision 1.1  2003/04/03 21:17:48  todorov
 * Adding demo projects
 *
