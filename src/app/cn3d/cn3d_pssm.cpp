@@ -31,6 +31,10 @@
 * ===========================================================================
 */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
@@ -67,7 +71,7 @@ private:
     unsigned int masterLength;
 
     PSIMsa *data;
-    PSIBlastOptions options;
+    PSIBlastOptions *options;
     PSIDiagnosticsRequest diag;
 
 public:
@@ -79,7 +83,7 @@ public:
     unsigned char * GetQuery(void) { return masterNCBIStdaa; }
     unsigned int GetQueryLength(void) { return masterLength; }
     PSIMsa * GetData(void) { return data; }
-    const PSIBlastOptions* GetOptions(void) { return &options; }
+    const PSIBlastOptions* GetOptions(void) { return options; }
     const char * GetMatrixName(void) { return "BLOSUM62"; }
     const PSIDiagnosticsRequest * GetDiagnosticsRequest(void) { return &diag; }
 };
@@ -201,6 +205,10 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
                         cell.letter = LookupNCBIStdaaNumberFromCharacter(
                             seq->sequenceString[slaveStart + slaveWidth - masterWidth + column]);
                 }
+
+                // test to see if query row is used at all:
+//                if (row == 0)
+//                    cell.letter = LookupNCBIStdaaNumberFromCharacter('X');
             }
         }
     }
@@ -274,13 +282,7 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     dim.query_length = bma->GetMaster()->Length();
     dim.num_seqs = bma->NRows() - 1;    // don't include master
     data = PSIMsaNew(&dim);
-
-    // set up relevant PSIBlastOptions
-//    options.pseudo_count = ;              // set below...
-    options.inclusion_ethresh = 1.0;        // not used, but internal validation fails w/o legit value
-//    options.use_best_alignment = ;
-    options.nsg_compatibility_mode = true;
-    options.impala_scaling_factor = 1.0;    // again, not used (I think?), but needs real value
+    FillInAlignmentData(bma, data);
 
     // set up PSIDiagnosticsRequest
     diag.information_content = false;
@@ -289,28 +291,30 @@ Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
     diag.frequency_ratios = false;
     diag.gapless_column_weights = false;
 
-    // fill in PSIMsa
-    FillInAlignmentData(bma, data);
-
-    // set pseudoconstant
+    // create PSIBlastOptions
+    PSIBlastOptionsNew(&options);
+    options->nsg_compatibility_mode = true;
     double infoContent = CalculateInformationContent(data);
-    if      (infoContent > 84  ) options.pseudo_count = 10;
-    else if (infoContent > 55  ) options.pseudo_count =  7;
-    else if (infoContent > 43  ) options.pseudo_count =  5;
-    else if (infoContent > 41.5) options.pseudo_count =  4;
-    else if (infoContent > 40  ) options.pseudo_count =  3;
-    else if (infoContent > 39  ) options.pseudo_count =  2;
-    else                         options.pseudo_count =  1;
+    if      (infoContent > 84  ) options->pseudo_count = 10;
+    else if (infoContent > 55  ) options->pseudo_count =  7;
+    else if (infoContent > 43  ) options->pseudo_count =  5;
+    else if (infoContent > 41.5) options->pseudo_count =  4;
+    else if (infoContent > 40  ) options->pseudo_count =  3;
+    else if (infoContent > 39  ) options->pseudo_count =  2;
+    else                         options->pseudo_count =  1;
 }
 
 Cn3DPSSMInput::~Cn3DPSSMInput(void)
 {
     PSIMsaFree(data);
+    PSIBlastOptionsFree(options);
     delete[] masterNCBIStdaa;
 }
 
 static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
 {
+    TRACEMSG("converting CPssmWithParameters to BLAST_Matrix");
+
     if (!pssm.GetPssm().IsSetFinalData())
         PTHROW("ConvertPSSMToBLASTMatrix() - pssm must have finalData");
     unsigned int nScores = pssm.GetPssm().GetNumRows() * pssm.GetPssm().GetNumColumns();
@@ -372,7 +376,7 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
         CPssmEngine engine(&input);
         CRef < CPssmWithParameters > pssm = engine.Run();
         matrix = ConvertPSSMToBLASTMatrix(*pssm);
-    } catch (CException& e) {
+    } catch (exception& e) {
         ERRORMSG("CreateBlastMatrix() failed with exception: " << e.what());
     }
     return matrix;
@@ -383,6 +387,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/03/08 22:09:51  thiessen
+* use proper default options
+*
 * Revision 1.1  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *
