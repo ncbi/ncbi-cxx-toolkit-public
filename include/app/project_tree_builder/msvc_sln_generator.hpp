@@ -89,7 +89,7 @@ private:
         void SetFrom(const CPrjContext& project_context);
     };
 
-    typedef map<string, CPrjContext> TProjects;
+    typedef map<CProjKey, CPrjContext> TProjects;
     TProjects m_Projects;
 
     //Writers:
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/20 22:54:46  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.8  2004/02/12 23:13:49  gorelenk
  * Declared function for MSVC utility project creation.
  *

@@ -243,13 +243,13 @@ class CLinkerToolImpl : public ILinkerTool
 public:
     CLinkerToolImpl(const string& additional_options,
                     const string& additional_library_directories,
-                    const string& project_name,
+                    const string& project_id,
                     const CMsvcProjectMakefile& project_makefile,
                     const CMsvcMetaMakefile&    meta_makefile,
                     const SConfigInfo&          config)
 	    :m_AdditionalOptions    (additional_options),
          m_AdditionalLibraryDirectories(additional_library_directories),
-		 m_ProjectName          (project_name),
+		 m_ProjectId            (project_id),
          m_MsvcProjectMakefile  (project_makefile),
          m_MsvcMetaMakefile     (meta_makefile),
          m_Config               (config)
@@ -261,11 +261,15 @@ public:
     }
     virtual string AdditionalOptions(void) const
     {
-	    return m_AdditionalOptions;
+	    return m_AdditionalOptions + " " +
+               GetLinkerOpt(m_MsvcMetaMakefile,
+                            m_MsvcProjectMakefile,
+                            "AdditionalOptions", 
+                            m_Config );
     }
     virtual string OutputFile(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectName + ConfTrait::TargetExtension();
+	    return string("$(OutDir)/") + m_ProjectId + ConfTrait::TargetExtension();
     }
 
 #define SUPPORT_LINKER_OPTION(opt) \
@@ -282,14 +286,14 @@ public:
 
     virtual string ProgramDatabaseFile(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectName + ".pdb";
+	    return string("$(OutDir)/") + m_ProjectId + ".pdb";
     }
 
     SUPPORT_LINKER_OPTION(SubSystem)
     
     virtual string ImportLibrary(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectName + ".lib";
+	    return string("$(OutDir)/") + m_ProjectId + ".lib";
     }
 
     SUPPORT_LINKER_OPTION(TargetMachine)
@@ -306,7 +310,7 @@ public:
 private:
     string      m_AdditionalOptions;
     string      m_AdditionalLibraryDirectories;
-    string      m_ProjectName;
+    string      m_ProjectId;
     SConfigInfo m_Config;
 
     const CMsvcProjectMakefile& m_MsvcProjectMakefile;
@@ -381,13 +385,13 @@ class CLibrarianToolImpl : public ILibrarianTool
 public:
     CLibrarianToolImpl( const string& additional_options,
                         const string& additional_library_directories,
-                        const string& project_name,
+                        const string& project_id,
                         const CMsvcProjectMakefile& project_makefile,
                         const CMsvcMetaMakefile&    meta_makefile,
                         const SConfigInfo&          config)
 	    :m_AdditionalOptions    (additional_options),
          m_AdditionalLibraryDirectories(additional_library_directories),
-	     m_ProjectName          (project_name),
+	     m_ProjectId            (project_id),
          m_MsvcProjectMakefile  (project_makefile),
          m_MsvcMetaMakefile     (meta_makefile),
          m_Config               (config)
@@ -404,7 +408,7 @@ public:
     }
     virtual string OutputFile(void) const
     {
-	    return string("$(OutDir)/") + m_ProjectName + ".lib";
+	    return string("$(OutDir)/") + m_ProjectId + ".lib";
     }
 
 #define SUPPORT_LIBRARIAN_OPTION(opt) \
@@ -427,7 +431,7 @@ public:
 private:
     string      m_AdditionalOptions;
     string      m_AdditionalLibraryDirectories;
-    string      m_ProjectName;
+    string      m_ProjectId;
     SConfigInfo m_Config;
    
     const CMsvcProjectMakefile& m_MsvcProjectMakefile;
@@ -450,7 +454,7 @@ private:
 class CLibrarianToolDummyImpl : public ILibrarianTool // for APP and DLL
 {
 public:
-    CLibrarianToolDummyImpl()
+    CLibrarianToolDummyImpl(void)
     {
     }
 
@@ -468,6 +472,69 @@ public:
 private:
 	CLibrarianToolDummyImpl(const CLibrarianToolDummyImpl&);
 	CLibrarianToolDummyImpl& operator= (const CLibrarianToolDummyImpl&);
+};
+
+
+class CPreBuildEventToolDummyImpl : public IPreBuildEventTool // for APP and DLL
+{
+public:
+    CPreBuildEventToolDummyImpl(void)
+    {
+    }
+
+    virtual string Name(void) const
+    {
+	    return "VCPreBuildEventTool";
+    }
+
+    SUPPORT_DUMMY_OPTION(CommandLine)
+
+private:
+	CPreBuildEventToolDummyImpl(const CPreBuildEventToolDummyImpl&);
+	CPreBuildEventToolDummyImpl& operator= (const CPreBuildEventToolDummyImpl&);
+};
+
+
+class CPreBuildEventToolLibImpl : public IPreBuildEventTool // for LIB
+{
+public:
+    CPreBuildEventToolLibImpl(const list<string>& lib_depends)
+        :m_LibDepends(lib_depends)
+    {
+    }
+
+    virtual string Name(void) const
+    {
+	    return "VCPreBuildEventTool";
+    }
+
+    virtual string CommandLine(void) const
+    {
+        string command_line;
+        if ( !m_LibDepends.empty() ) {
+            command_line += "@echo on\n";
+        }
+        ITERATE(list<string>, p, m_LibDepends)
+        {
+            const string& lib = *p;
+            
+            command_line += "IF EXIST $(OutDir)\\" + lib;
+            command_line += " GOTO HAVE_" + lib + "\n";
+
+            command_line += "devenv /build $(ConfigurationName) /project ";
+            command_line += lib;
+            command_line += " \"$(SolutionPath)\"\n";
+
+            command_line += ":HAVE_" + lib + "\n";
+        }
+        return command_line;
+    }
+
+private:
+    list<string> m_LibDepends;
+
+	CPreBuildEventToolLibImpl(const CPreBuildEventToolLibImpl&);
+	CPreBuildEventToolLibImpl& operator= (const CPreBuildEventToolLibImpl&);
 };
 
 
@@ -500,10 +567,11 @@ DEFINE_NAME_ONLY_DUMMY_TOOL(CMIDLToolDummyImpl,
 DEFINE_NAME_ONLY_DUMMY_TOOL(CPostBuildEventToolDummyImpl,
                             IPostBuildEventTool, 
                             "VCPostBuildEventTool"); 
-
+#if 0
 DEFINE_NAME_ONLY_DUMMY_TOOL(CPreBuildEventToolDummyImpl,
                             IPreBuildEventTool, 
                             "VCPreBuildEventTool"); 
+#endif
 
 DEFINE_NAME_ONLY_DUMMY_TOOL(CPreLinkEventToolDummyImpl,
                             IPreLinkEventTool, 
@@ -605,6 +673,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/20 22:54:46  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.6  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

@@ -76,7 +76,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 
     // Rebuild command for project_tree_builder.sln
     m_CustomBuildCommand += 
-        "devenv /rebuild $(ConfigurationName) /project project_tree_builder ";
+        "devenv /rebuild $(ConfigurationName) /project project_tree_builder.exe ";
 
     string project_tree_builder_sln_dir = 
         GetApp().GetProjectTreeInfo().m_Compilers;
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/20 22:53:25  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.5  2004/02/13 20:39:51  gorelenk
  * Minor cosmetic changes.
  *

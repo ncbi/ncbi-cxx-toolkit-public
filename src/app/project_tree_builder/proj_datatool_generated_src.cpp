@@ -93,7 +93,8 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
             ITERATE(list<string>, p, modules) {
                 // add ext from source file to all modules to import
                 const string& module = *p;
-                src->m_ImportModules.push_back(module + ext);
+                src->m_ImportModules.push_back
+                                      (CDirEntry::NormalizePath(module + ext));
             }
         }
     }}
@@ -205,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/20 22:53:58  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.2  2004/02/13 23:07:38  gorelenk
  * Added data members-abstraction of datatool generated files.
  *

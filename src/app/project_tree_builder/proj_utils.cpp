@@ -34,14 +34,18 @@ string ParentDir (const string& dir_abs)
     string parent_dir_abs = CDirEntry::AddTrailingPathSeparator(dir_abs);
     parent_dir_abs += "..";
     parent_dir_abs = CDirEntry::AddTrailingPathSeparator(parent_dir_abs);
+    parent_dir_abs = CDirEntry::NormalizePath(parent_dir_abs);
 
-    return CDirEntry::NormalizePath(parent_dir_abs);
+    return CDirEntry::AddTrailingPathSeparator(parent_dir_abs);
 }
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/20 22:53:59  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.1  2004/02/06 23:10:33  gorelenk
  * Initial revision.
  *

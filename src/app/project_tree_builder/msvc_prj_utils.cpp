@@ -439,11 +439,28 @@ void CreateUtilityProject(const string&            name,
     }}
 }
 
+
+string CreateProjectName(const CProjKey& project_id)
+{
+    switch (project_id.Type()) {
+    case CProjKey::eApp:
+        return project_id.Id() + ".exe";
+    case CProjKey::eLib:
+        return project_id.Id() + ".lib";
+    default:
+        NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
+        return "";
+    }
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/20 22:53:26  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.14  2004/02/13 20:39:51  gorelenk
  * Minor cosmetic changes.
  *

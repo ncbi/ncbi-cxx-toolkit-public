@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 
 struct PIsExcludedByMakefile
 {
-    bool operator() (const pair<string, CProjItem>& item) const
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
     {
         const CProjItem& project = item.second;
         CMsvcPrjProjectContext prj_context(project);
@@ -64,7 +65,8 @@ struct PIsExcludedByMakefile
 
 struct PIsExcludedByRequires
 {
-    bool operator() (const pair<string, CProjItem>& item) const
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+    bool operator() (const TValueType& item) const
     {
         const CProjItem& project = item.second;
         if ( CMsvcPrjProjectContext::IsRequiresOk(project) )
@@ -352,10 +354,11 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         CArgs args = GetArgs();
         
         // Root, etc.
-        m_ProjectTreeInfo->m_Root = 
-            CDirEntry::NormalizePath
-                (CDirEntry::AddTrailingPathSeparator
-                              (args["root"].AsString()));
+        string root = args["root"].AsString();
+        root = CDirEntry::AddTrailingPathSeparator(root);
+        root = CDirEntry::NormalizePath(root);
+        root = CDirEntry::AddTrailingPathSeparator(root);
+        m_ProjectTreeInfo->m_Root = root;
 
         // Subtree to build
         string subtree = args["subtree"].AsString();
@@ -470,6 +473,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/02/20 22:53:58  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.21  2004/02/18 23:37:06  gorelenk
  * Changed definition of member-function GetProjectTreeInfo.
  *

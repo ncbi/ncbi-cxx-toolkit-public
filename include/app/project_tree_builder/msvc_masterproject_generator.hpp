@@ -81,9 +81,9 @@ private:
 
     
    
-    void AddProjectToFilter(CRef<CFilter>& filter, const string& project_id);
+    void AddProjectToFilter(CRef<CFilter>& filter, const CProjKey& project_id);
 
-    void CreateProjectFileItem(const CProjItem& project);
+    void CreateProjectFileItem(const CProjKey& project_id);
 
     void ProcessTreeFolder(const SProjectTreeFolder&  folder, 
                            CSerialObject*             parent);
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/20 22:54:45  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.8  2004/02/12 17:48:12  gorelenk
  * Re-designed of projects saving. Added member-function GetPath().
  *

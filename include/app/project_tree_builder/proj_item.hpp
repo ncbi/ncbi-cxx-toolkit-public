@@ -44,6 +44,43 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CProjKey --
+///
+/// Project key  abstraction.
+///
+/// Project key (type + project_id).
+
+class CProjKey
+{
+public:
+    typedef enum {
+        eNoProj,
+        eLib,
+        eApp,
+        eLast   //TODO - add eDll
+    } TProjType;
+
+    CProjKey(void);
+    CProjKey(TProjType type, const string& project_id);
+    CProjKey(const CProjKey& key);
+    CProjKey& operator= (const CProjKey& key);
+    ~CProjKey(void);
+
+    bool operator<  (const CProjKey& key) const;
+    bool operator== (const CProjKey& key) const;
+    bool operator!= (const CProjKey& key) const;
+
+    TProjType     Type(void) const;
+    const string& Id  (void) const;
+
+private:
+    TProjType m_Type;
+    string    m_Id;
+
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CProjItem --
 ///
 /// Project abstraction.
@@ -53,13 +90,8 @@ BEGIN_NCBI_SCOPE
 class CProjItem
 {
 public:
+    typedef CProjKey::TProjType TProjType;
 
-    typedef enum {
-        eNoProj,
-        eLib,
-        eApp,
-        eLast   //TODO - add eDll
-    } TProjType;
 
     CProjItem(void);
     CProjItem(const CProjItem& item);
@@ -69,12 +101,12 @@ public:
               const string& name,
               const string& id,
               const string& sources_base,
-              const list<string>& sources, 
-              const list<string>& depends,
-              const list<string>& requires,
-              const list<string>& libs_3_party,
-              const list<string>& include_dirs,
-              const list<string>& defines);
+              const list<string>&   sources, 
+              const list<CProjKey>& depends,
+              const list<string>&   requires,
+              const list<string>&   libs_3_party,
+              const list<string>&   include_dirs,
+              const list<string>&   defines);
     
     ~CProjItem(void);
 
@@ -95,7 +127,7 @@ public:
     list<string> m_Sources;
     
     /// What projects this project is depend upon (IDs).
-    list<string> m_Depends;
+    list<CProjKey> m_Depends;
 
     /// What this project requires to have (in user site).
     list<string> m_Requires;
@@ -142,17 +174,25 @@ public:
     string m_RootSrc;
 
     /// Project ID / ProjectItem.
-    typedef map<string, CProjItem> TProjects;
+    typedef map<CProjKey, CProjItem> TProjects;
     TProjects m_Projects;
 
     /// Full file path / File contents.
     typedef map<string, CSimpleMakeFileContents> TFiles;
 
     /// Collect all depends for all project items.
-    void GetInternalDepends(list<string>* depends) const;
+    void GetInternalDepends(list<CProjKey>* depends) const;
 
     /// Get depends that are not inside this project tree.
-    void GetExternalDepends(list<string>* externalDepends) const;
+    void GetExternalDepends(list<CProjKey>* externalDepends) const;
+
+#if 0
+    void GetDepends(const CProjKey& proj_id,
+                    list<CProjKey>* depends) const;
+
+    void CreateBuildOrder(const CProjKey& proj_id, 
+                          list<CProjKey>* projects) const;
+#endif
 
     // for navigation through the tree use class CProjectTreeFolders below.
 
@@ -235,37 +275,39 @@ struct SMakeProjectT
 
     static bool IsMakeAppFile(const string& name);
 
+    static void ConvertLibDepends(const list<string>& depends_libs, 
+                                  list<CProjKey>*     depends_ids);
 };
 
 
 struct SAppProjectT : public SMakeProjectT
 {
-    static string DoCreate(const string& source_base_dir,
-                           const string& proj_name,
-                           const string& applib_mfilepath,
-                           const TFiles& makeapp, 
-                           CProjectItemsTree* tree);
+    static CProjKey DoCreate(const string& source_base_dir,
+                             const string& proj_name,
+                             const string& applib_mfilepath,
+                             const TFiles& makeapp, 
+                             CProjectItemsTree* tree);
 };
 
 struct SLibProjectT : public SMakeProjectT
 {
-    static string DoCreate(const string& source_base_dir,
-                           const string& proj_name,
-                           const string& applib_mfilepath,
-                           const TFiles& makeapp, 
-                           CProjectItemsTree* tree);
+    static CProjKey DoCreate(const string& source_base_dir,
+                             const string& proj_name,
+                             const string& applib_mfilepath,
+                             const TFiles& makeapp, 
+                             CProjectItemsTree* tree);
 };
 
 struct SAsnProjectT : public SMakeProjectT
 {
     typedef CProjectItemsTree::TProjects TProjects;
 
-    static string DoCreate(const string& source_base_dir,
-                           const string& proj_name,
-                           const string& applib_mfilepath,
-                           const TFiles& makeapp, 
-                           const TFiles& makelib, 
-                           CProjectItemsTree* tree);
+    static CProjKey DoCreate(const string& source_base_dir,
+                             const string& proj_name,
+                             const string& applib_mfilepath,
+                             const TFiles& makeapp, 
+                             const TFiles& makelib, 
+                             CProjectItemsTree* tree);
     
     typedef enum {
             eNoAsn,
@@ -281,22 +323,22 @@ struct SAsnProjectT : public SMakeProjectT
 
 struct SAsnProjectSingleT : public SAsnProjectT
 {
-    static string DoCreate(const string& source_base_dir,
-                           const string& proj_name,
-                           const string& applib_mfilepath,
-                           const TFiles& makeapp, 
-                           const TFiles& makelib, 
-                           CProjectItemsTree* tree);
+    static CProjKey DoCreate(const string& source_base_dir,
+                             const string& proj_name,
+                             const string& applib_mfilepath,
+                             const TFiles& makeapp, 
+                             const TFiles& makelib, 
+                             CProjectItemsTree* tree);
 };
 
 struct SAsnProjectMultipleT : public SAsnProjectT
 {
-    static string DoCreate(const string& source_base_dir,
-                           const string& proj_name,
-                           const string& applib_mfilepath,
-                           const TFiles& makeapp, 
-                           const TFiles& makelib, 
-                           CProjectItemsTree* tree);
+    static CProjKey DoCreate(const string& source_base_dir,
+                             const string& proj_name,
+                             const string& applib_mfilepath,
+                             const TFiles& makeapp, 
+                             const TFiles& makelib, 
+                             CProjectItemsTree* tree);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -348,6 +390,9 @@ private:
 
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 
+    
+    static void AddDatatoolSourcesDepends(CProjectItemsTree* tree);
+
 };
 
 struct  SProjectTreeFolder
@@ -369,7 +414,7 @@ struct  SProjectTreeFolder
     typedef map<string, SProjectTreeFolder* > TSiblings;
     TSiblings m_Siblings;
 
-    typedef set<string> TProjects;
+    typedef set<CProjKey> TProjects;
     TProjects m_Projects;
 
     SProjectTreeFolder* m_Parent;
@@ -411,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/20 22:55:12  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.9  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

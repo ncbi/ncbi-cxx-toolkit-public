@@ -295,6 +295,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
             //Name
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), Name);
+            //CommandLine
+            BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), CommandLine);
 
             conf->SetTool().push_back(tool);
         }}
@@ -521,9 +523,9 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     //CommandLine
     //exe location - path is supposed to be relative encoded
     string tool_exe_location("");
-    if (prj.m_ProjType == CProjItem::eApp)
+    if (prj.m_ProjType == CProjKey::eApp)
         tool_exe_location = GetApp().GetDatatoolPathForApp();
-    else if (prj.m_ProjType == CProjItem::eLib)
+    else if (prj.m_ProjType == CProjKey::eLib)
         tool_exe_location = GetApp().GetDatatoolPathForLib();
     else
         return;
@@ -552,7 +554,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
 
     //Outputs
     string data_tool_src_base;
-    CDirEntry::SplitPath(prj.m_Name, NULL, &data_tool_src_base);
+    CDirEntry::SplitPath(src.m_SourceFile, NULL, &data_tool_src_base);
     string outputs = "$(InputDir)" + data_tool_src_base + "__.cpp;";
     outputs += "$(InputDir)" + data_tool_src_base + "___.cpp;";
     ITERATE(list<string>, p, src.m_GeneratedCppLocal) {
@@ -626,6 +628,20 @@ static bool s_IsProducedByDatatool(const string&    src_path_abs,
     return false;
 }
 
+static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
+{
+    string dir_name;
+    CDirEntry::SplitPath(src_path_abs, &dir_name);
+
+    CDir dir(dir_name);
+    if ( dir.GetEntries("*.files").empty() ) 
+        return false;
+    if ( dir.GetEntries("*.module").empty() ) 
+        return false;
+
+    return true;
+}
+
 
 void 
 CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
@@ -673,7 +689,8 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
                 CDirEntry::CreateRelativePath(context.ProjectDir(), 
                                               source_file_abs_path));
         } 
-        else if ( s_IsProducedByDatatool(abs_path, project) ) {
+        else if ( s_IsProducedByDatatool(abs_path, project) ||
+                  s_IsInsideDatatoolSourceDir(abs_path) ) {
             // .cpp file extension
             rel_pathes->push_back(
                 CDirEntry::CreateRelativePath(context.ProjectDir(), 
@@ -760,6 +777,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/02/20 22:53:26  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.17  2004/02/13 23:11:10  gorelenk
  * Changed implementation of function s_CreateDatatoolCustomBuildInfo - added
  * list of output files to generated SCustomBuildInfo.

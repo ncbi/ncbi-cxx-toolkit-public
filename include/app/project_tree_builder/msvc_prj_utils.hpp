@@ -34,6 +34,7 @@
 #include <corelib/ncbireg.hpp>
 
 #include <app/project_tree_builder/msvc71_project__.hpp>
+#include <app/project_tree_builder/proj_item.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
@@ -224,12 +225,17 @@ void CreateUtilityProject(const string&            name,
                           const list<SConfigInfo>& configs, 
                           CVisualStudioProject*    project);
 
+/// Project naming schema
+string CreateProjectName(const CProjKey& project_id);
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/20 22:54:45  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.12  2004/02/12 23:13:49  gorelenk
  * Declared function for MSVC utility project creation.
  *

@@ -44,8 +44,10 @@ BEGIN_NCBI_SCOPE
 //-----------------------------------------------------------------------------
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 {
-    //MSVC project name it's project ID from project tree
-    m_ProjectName    = project.m_ID;
+    //MSVC project name created from project type and project ID
+    m_ProjectName  = CreateProjectName(CProjKey(project.m_ProjType, 
+                                                project.m_ID));
+    m_ProjectId    = project.m_ID;
 
     m_SourcesBaseDir = project.m_SourcesBaseDir;
     m_Requires       = project.m_Requires;
@@ -132,6 +134,16 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // Proprocessor definitions from makefiles:
     m_Defines = project.m_Defines;
+
+    // Pre-Builds for LIB projects:
+    if (m_ProjType == CProjKey::eLib) {
+        ITERATE(list<CProjKey>, p, project.m_Depends) {
+            const CProjKey& proj_key = *p;
+            if (proj_key.Type() == CProjKey::eLib) {
+                m_PreBuilds.push_back(CreateProjectName(proj_key));
+            }
+        }
+    }
 }
 
 
@@ -283,10 +295,10 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
 {
     //m_Type
     switch ( prj_context.ProjectType() ) {
-    case CProjItem::eLib:
+    case CProjKey::eLib:
         m_Type = eLib;
         break;
-    case CProjItem::eApp:
+    case CProjKey::eApp:
         m_Type = eExe;
         break;
     default:
@@ -372,8 +384,16 @@ CMsvcTools::CMsvcTools(const CMsvcPrjGeneralContext& general_context,
     m_MIDL       = auto_ptr<IMIDLTool>(new CMIDLToolDummyImpl());
     m_PostBuildEvent =
         auto_ptr<IPostBuildEventTool>(new CPostBuildEventToolDummyImpl());
-    m_PreBuildEvent = 
-        auto_ptr<IPreBuildEventTool>(new CPreBuildEventToolDummyImpl());
+
+    //Pre-build event - special case for LIB projects
+    if (project_context.ProjectType() == CProjKey::eLib) {
+        m_PreBuildEvent = 
+            auto_ptr<IPreBuildEventTool>(new CPreBuildEventToolLibImpl
+                                                (project_context.PreBuilds()));
+    } else {
+        m_PreBuildEvent = 
+            auto_ptr<IPreBuildEventTool>(new CPreBuildEventToolDummyImpl());
+    }
     m_PreLinkEvent = 
         auto_ptr<IPreLinkEventTool>(new CPreLinkEventToolDummyImpl());
 
@@ -577,7 +597,7 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                                             (general_context.m_Config),
                         project_context.AdditionalLibraryDirectories
                                             (general_context.m_Config),
-                        project_context.ProjectName(),
+                        project_context.ProjectId(),
                         project_context.GetMsvcProjectMakefile(),
                         general_context.GetMsvcMetaMakefile(),
                         general_context.m_Config);
@@ -594,7 +614,7 @@ s_CreateLinkerTool(const CMsvcPrjGeneralContext& general_context,
                                             (general_context.m_Config),
                         project_context.AdditionalLibraryDirectories
                                             (general_context.m_Config),
-                        project_context.ProjectName(),
+                        project_context.ProjectId(),
                         project_context.GetMsvcProjectMakefile(),
                         general_context.GetMsvcMetaMakefile(),
                         general_context.m_Config);
@@ -614,7 +634,7 @@ s_CreateLibrarianTool(const CMsvcPrjGeneralContext& general_context,
                                                     (general_context.m_Config),
                                  project_context.AdditionalLibraryDirectories
                                                     (general_context.m_Config),
-								 project_context.ProjectName(),
+								 project_context.ProjectId(),
                                  project_context.GetMsvcProjectMakefile(),
                                  general_context.GetMsvcMetaMakefile(),
                                  general_context.m_Config);
@@ -647,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/20 22:53:26  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.11  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

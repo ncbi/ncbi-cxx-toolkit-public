@@ -54,7 +54,7 @@ CMsvcSolutionGenerator::~CMsvcSolutionGenerator(void)
 void 
 CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 {
-    m_Projects[project.m_ID] = CPrjContext(project);
+    m_Projects[CProjKey(project.m_ProjType, project.m_ID)] = CPrjContext(project);
 }
 
 
@@ -216,9 +216,15 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
 
     ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
 
-    ITERATE(list<string>, p, project.m_Project.m_Depends) {
+    ITERATE(list<CProjKey>, p, project.m_Project.m_Depends) {
 
-        const string& id = *p;
+        const CProjKey& id = *p;
+
+        // Do not generate lib-to-lib depends.
+        if (project.m_Project.m_ProjType == CProjKey::eLib  &&
+            id.Type() == CProjKey::eLib) {
+            continue;
+        }
 
         TProjects::const_iterator n = m_Projects.find(id);
         if (n != m_Projects.end()) {
@@ -232,7 +238,7 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         } else {
 
             LOG_POST(Warning << "Project: " + 
-                      project.m_ProjectName + " is dependend of " + id + 
+                      project.m_ProjectName + " is dependend of " + id.Id() + 
                       ". But no such project");
         }
     }
@@ -328,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/20 22:53:26  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.11  2004/02/12 23:15:29  gorelenk
  * Implemented utility projects creation and configure re-build of the app.
  *

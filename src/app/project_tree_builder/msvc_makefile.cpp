@@ -85,10 +85,10 @@ string CreateMsvcProjectMakefileName(const string&        project_name,
     name += project_name + '.';
     
     switch (type) {
-    case CProjItem::eApp:
+    case CProjKey::eApp:
         name += "app.";
         break;
-    case CProjItem::eLib:
+    case CProjKey::eLib:
         name += "lib.";
         break;
     default:
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/20 22:53:25  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.5  2004/02/12 16:27:56  gorelenk
  * Changed generation of command line for datatool.
  *

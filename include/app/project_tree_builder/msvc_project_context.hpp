@@ -62,10 +62,13 @@ public:
     //Compiler::General
     string AdditionalIncludeDirectories(const SConfigInfo& cfg_info) const;
 
-    //Linker::General
     string ProjectName(void) const
     {
         return m_ProjectName;
+    }
+    string ProjectId  (void) const
+    {
+        return m_ProjectId;
     }
 
 
@@ -119,6 +122,11 @@ public:
         return m_Defines;
     }
 
+    const list<string>& PreBuilds(void) const
+    {
+        return m_PreBuilds;
+    }
+
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
@@ -127,6 +135,7 @@ private:
 
 
     string m_ProjectName;
+    string m_ProjectId;
 
     string m_AdditionalLibrarianOptions;
 
@@ -150,6 +159,8 @@ private:
     list<SCustomBuildInfo> m_CustomBuildInfo;
 
     list<string> m_Defines;
+
+    list<string> m_PreBuilds;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -367,10 +378,14 @@ struct IPostBuildEventTool : public ITool
 {
     //Name : "VCPostBuildEventTool"
 };
+
+/// Not a dummy for lib projects
 struct IPreBuildEventTool : public ITool
 {
     //Name : "VCPreBuildEventTool"
+    virtual string CommandLine(void) const = 0;
 };
+
 struct IPreLinkEventTool : public ITool
 {
     //Name : "VCPreLinkEventTool"
@@ -493,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/20 22:54:45  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.7  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

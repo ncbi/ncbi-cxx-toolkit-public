@@ -112,7 +112,7 @@ void CMsvcMasterProjectGenerator::ProcessTreeFolder
 
         ITERATE(SProjectTreeFolder::TProjects, p, folder.m_Projects) {
 
-            const string& project_id = *p;
+            const CProjKey& project_id = *p;
             AddProjectToFilter(filter, project_id);
         }
         ITERATE(SProjectTreeFolder::TSiblings, p, folder.m_Siblings) {
@@ -149,8 +149,8 @@ s_RegisterCreatedFilter(CRef<CFilter>& filter, CSerialObject* parent)
 }
 
 void 
-CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter, 
-                                                const string&  project_id)
+CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter, 
+                                                const CProjKey&  project_id)
 {
     CProjectItemsTree::TProjects::const_iterator p = 
         m_Tree.m_Projects.find(project_id);
@@ -158,12 +158,12 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter,
     if (p != m_Tree.m_Projects.end()) {
         // Add project to this filter (folder)
         const CProjItem& project = p->second;
-        CreateProjectFileItem(project);
+        CreateProjectFileItem(project_id);
 
         SCustomBuildInfo build_info;
         string source_file_path_abs = 
             CDirEntry::ConcatPath(m_ProjectDir, 
-                                  project.m_ID + m_ProjectItemExt);
+                                  CreateProjectName(project_id) + m_ProjectItemExt);
         source_file_path_abs = CDirEntry::NormalizePath(source_file_path_abs);
 
         build_info.m_SourceFile  = source_file_path_abs;
@@ -177,15 +177,16 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter,
                                    build_info);
 
     } else {
-        LOG_POST(Error << "No project with id : " + project_id);
+        LOG_POST(Error << "No project with id : " + project_id.Id());
     }
 }
 
 
 void 
-CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjItem& project)
+CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjKey& project_id)
 {
-    string file_path = CDirEntry::ConcatPath(m_ProjectDir, project.m_ID);
+    string file_path = 
+        CDirEntry::ConcatPath(m_ProjectDir, CreateProjectName(project_id));
 
     file_path += m_ProjectItemExt;
 
@@ -208,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/20 22:53:25  gorelenk
+ * Added analysis of ASN projects depends.
+ *
  * Revision 1.13  2004/02/13 20:39:51  gorelenk
  * Minor cosmetic changes.
  *
