@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2000/10/13 19:55:15  vasilche
+* Fixed error with static html node object.
+*
 * Revision 1.61  2000/09/27 14:11:17  vasilche
 * Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
 * KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
@@ -605,18 +608,18 @@ class CHTML_tc_Cache
 {
 public:
     CHTML_tc_Cache(void)
-        : m_Node(0)
+        : m_Used(false), m_Node(0)
         {
         }
         
     bool IsUsed(void) const
         {
-            return m_Node != 0;
+            return m_Used;
         }
         
     bool IsNode(void) const
         {
-            return m_Node != 0 && m_Node != &sm_UsedNode;
+            return m_Node != 0;
         }
     CHTML_tc* GetCellNode(void) const
         {
@@ -627,9 +630,8 @@ public:
     void SetCellNode(CHTML_tc* node);
         
 private:
+    bool m_Used;
     CHTML_tc* m_Node;
-
-    static CHTML_tc sm_UsedNode;
 };
     
 class CHTML_tr_Cache
@@ -812,19 +814,18 @@ void CHTML_tc::ResetTableCache(void)
         m_Parent->ResetTableCache();
 }
 
-void CHTML_tc_Cache::SetCellNode(CHTML_tc* cellNode)
+void CHTML_tc_Cache::SetUsed()
 {
     if ( IsUsed() )
         THROW1_TRACE(runtime_error, "Overlapped table cells");
+    m_Used = true;
+}
+
+void CHTML_tc_Cache::SetCellNode(CHTML_tc* cellNode)
+{
+    SetUsed();
     m_Node = cellNode;
 }
-
-void CHTML_tc_Cache::SetUsed()
-{
-    SetCellNode(&sm_UsedNode);
-}
-
-CHTML_tc CHTML_tc_Cache::sm_UsedNode("");
 
 static
 CHTML_table::TIndex x_NextSize(CHTML_table::TIndex size,
