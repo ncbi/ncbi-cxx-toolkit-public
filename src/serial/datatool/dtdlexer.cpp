@@ -39,10 +39,11 @@
 BEGIN_NCBI_SCOPE
 
 
-DTDLexer::DTDLexer(CNcbiIstream& in)
-    : AbstractLexer(in)
+DTDLexer::DTDLexer(CNcbiIstream& in, const string& name)
+    : AbstractLexer(in,name)
 {
     m_CharsToSkip = 0;
+    m_IdentifierEnd = false;
 }
 
 DTDLexer::~DTDLexer(void)
@@ -51,6 +52,10 @@ DTDLexer::~DTDLexer(void)
 
 TToken DTDLexer::LookupToken(void)
 {
+    if (m_IdentifierEnd) {
+        m_IdentifierEnd = false;
+        return T_IDENTIFIER_END;
+    }
     TToken tok;
     char c = Char();
     switch (c) {
@@ -66,12 +71,10 @@ TToken DTDLexer::LookupToken(void)
                 return T_CONDITIONAL_BEGIN;
             } else {
                 LexerError("name must start with a letter (alpha)");
-//                _ASSERT(0);
             }
         } else {
              // not allowed in DTD
              LexerError("Incorrect format");
-//             _ASSERT(0);
         }
         break;
     case '#':
@@ -79,7 +82,6 @@ TToken DTDLexer::LookupToken(void)
         if (tok == T_IDENTIFIER) {
             LexerError("Unknown keyword");
         }
-//        _ASSERT(tok != T_IDENTIFIER);
         return tok;
     case '%':
         tok = LookupEntity();
@@ -111,6 +113,9 @@ TToken DTDLexer::LookupToken(void)
 void DTDLexer::LookupComments(void)
 {
     EndPrevToken();
+    if (m_IdentifierEnd) {
+        return;
+    }
     char c;
     for (;;) {
         c = Char();
@@ -172,21 +177,31 @@ bool DTDLexer::ProcessComment(void)
     return false;
 }
 
+bool DTDLexer::IsIdentifierSymbol(char c)
+{
+// complete specification is here:
+// http://www.w3.org/TR/2000/REC-xml-20001006#sec-common-syn
+    return isalnum(c) || strchr("#._-:", c);
+}
+
 TToken DTDLexer::LookupIdentifier(void)
 {
     StartToken();
 // something (not comment) started
 // find where it ends
-    for (char c = Char(); c != 0; c = Char()) {
-// complete specification is here:
-// http://www.w3.org/TR/2000/REC-xml-20001006#sec-common-syn
-        if (isalnum(c) || strchr("#._-:", c)) {
+    char c;
+    for (c = Char(); c != 0; c = Char()) {
+        if (IsIdentifierSymbol(c)) {
             AddChar();
         } else {
             break;
         }
     }
-    return LookupKeyword();
+    TToken tok = LookupKeyword();
+    if (c != 0 && tok == T_IDENTIFIER) {
+        m_IdentifierEnd = (c != '%');
+    }
+    return tok;
 }
 
 #define CHECK(keyword, t, length) \
@@ -248,18 +263,21 @@ TToken DTDLexer::LookupEntity(void)
     if (c != '%') {
         LexerError("Unexpected symbol: %");
     }
-//    _ASSERT(c == '%');
     if (isspace(Char(1))) {
         return T_SYMBOL;
     } else if (isalpha(Char(1))) {
         SkipChar();
         StartToken();
-        for (c = Char(); c != ';'; c = Char()) {
+        for (c = Char(); c != ';' && c != 0; c = Char()) {
             AddChar();
         }
         m_CharsToSkip = 1;
     } else {
         LexerError("Unexpected symbol");
+    }
+    if (c != 0) {
+        c = Char(m_CharsToSkip);
+        m_IdentifierEnd = !(IsIdentifierSymbol(c) || c == '%' || c == '[');
     }
     return T_ENTITY;
 }
@@ -274,11 +292,10 @@ TToken DTDLexer::LookupString(void)
     if(c0 != '\"' && c0 != '\'') {
         LexerError("Unexpected symbol");
     }
-//    _ASSERT(c0 == '\"' || c0 == '\'');
     SkipChar();
     StartToken();
     m_CharsToSkip = 1;
-    for (char c = Char(); c != c0; c = Char()) {
+    for (char c = Char(); c != c0 && c != 0; c = Char()) {
         if (c == '\n') {
             NextLine();
         }
@@ -304,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2005/01/06 20:27:51  gouriano
+ * Find out the end of an identifier name to process compound identifiers
+ *
  * Revision 1.8  2005/01/03 16:51:15  gouriano
  * Added parsing of conditional sections
  *
