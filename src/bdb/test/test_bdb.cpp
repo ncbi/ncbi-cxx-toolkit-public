@@ -956,6 +956,21 @@ static void s_TEST_db_map(void)
     size_t sz = i2s.size();
     assert(sz == 0);
 
+    // testing string -> int case
+
+    db_map<string, int>  s2i;
+
+    s2i.open("s2i.db", ios_base::out|ios_base::trunc);
+
+    s2i.insert(pair<const string, int>("Data1", 1));
+    s2i.insert(pair<const string, int>("Data2", 2));
+    s2i.insert(pair<const string, int>("Data3", 3));
+
+    int i = s2i[string("Data2")];
+
+    assert(i == 2);
+
+
     cout << "======== db_map test ok." << endl;
 
 }
@@ -1087,6 +1102,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/07/25 15:35:59  kuznets
+ * Added simple db_map<string, int> test
+ *
  * Revision 1.14  2003/07/24 15:44:44  kuznets
  * Clened up several compiler warnings
  *
