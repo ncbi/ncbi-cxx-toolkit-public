@@ -420,14 +420,14 @@ static void s_TEST_Dir(void)
 
 static void s_TEST_MemoryFile(void)
 {
-    static const char   s_FileName[] = "file.tmp";
+    static const char   s_FileName[] = "test.tmp";
     static const char   s_Data[]     = "test data";
-    static const size_t s_DataLen   = sizeof(s_Data) - 1;
+    static const size_t s_DataLen    = sizeof(s_Data) - 1;
 
     // Create test file 
     FILE* file = fopen(s_FileName, "w+");
     assert( file );
-    fputs("test data", file);
+    fputs( s_Data, file);
     fclose(file);
     
     // Check if the file exists now
@@ -435,25 +435,76 @@ static void s_TEST_MemoryFile(void)
     assert( f.Exists() );
     assert( f.GetLength() == s_DataLen );
 
+    // eMMP_Read [+ eMMS_Private]
+    
     {{
-        // Map file into memory
-        CMemoryFile fm1(s_FileName);
-        assert( fm1.GetSize() == s_DataLen );
-        assert( memcmp(fm1.GetPtr(), s_Data, s_DataLen) == 0 );
+        // Map file into memory (for reading only by default)
+        CMemoryFile m1(s_FileName);
+        assert( m1.GetSize() == s_DataLen );
+        assert( memcmp(m1.GetPtr(), s_Data, s_DataLen) == 0 );
 
-        // Map second copy of file into memory
-        CMemoryFile fm2(s_FileName);
-        assert( fm1.GetSize() == fm2.GetSize() );
-        assert( memcmp(fm1.GetPtr(), fm2.GetPtr(),
-                       (size_t) fm2.GetSize()) == 0 );
+        // Map second copy of the file into the memory
+        CMemoryFile m2(s_FileName);
+        assert( m1.GetSize() == m2.GetSize() );
+        assert( memcmp(m1.GetPtr(), m2.GetPtr(), (size_t)m2.GetSize()) == 0 );
 
         // Unmap second copy
-        assert( fm2.Unmap() );
-        assert( fm2.GetSize() == -1 );
-        assert( fm2.GetPtr()    ==  0 );
-        assert( fm2.Unmap() );
+        assert( m2.Unmap() );
+        assert( m2.GetSize() == -1 );
+        assert( m2.GetPtr()  ==  0 );
+        assert( m2.Unmap() );
     }}
-  
+
+    // eMMP_ReadWrite + eMMS_Shared
+    
+    {{
+        // Map file into memory
+        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                       CMemoryFile::eMMS_Shared);
+        assert( m1.GetSize() == s_DataLen );
+        assert( memcmp(m1.GetPtr(), s_Data, s_DataLen) == 0 );
+        char* ptr = (char*)m1.GetPtr();
+        *ptr = '@';
+        assert( m1.Flush() );
+
+        // Map second copy of the file into the memory
+        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read,
+                       CMemoryFile::eMMS_Shared);
+        assert( m1.GetSize() == m2.GetSize() );
+        // m2 must contain changes made via m1 
+        assert( memcmp(m2.GetPtr(), ptr, s_DataLen) == 0 );
+
+        // Restore previous data
+        memcpy(ptr, s_Data, s_DataLen);
+        // Flushing data to disk at memory unmapping in the destructor
+    }}
+    {{
+        // Checking the previous flush
+        CMemoryFile m1(s_FileName);
+        assert( m1.GetSize() == s_DataLen );
+        assert( memcmp(m1.GetPtr(), s_Data, s_DataLen) == 0 );
+    }}
+
+    // eMMP_ReadWrite + eMMS_Private
+
+    {{
+        // Map file into memory
+        CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                       CMemoryFile::eMMS_Private);
+        assert( m1.GetSize() == s_DataLen );
+        assert( memcmp(m1.GetPtr(), s_Data, s_DataLen) == 0 );
+        char* ptr = (char*)m1.GetPtr();
+        *ptr = '@';
+        assert( m1.Flush() );
+
+        // Map second copy of the file into the memory
+        CMemoryFile m2(s_FileName, CMemoryFile::eMMP_Read,
+                       CMemoryFile::eMMS_Shared);
+        assert( m1.GetSize() == m2.GetSize() );
+        // m2 must contain the original data
+        assert( memcmp(m2.GetPtr(), s_Data, s_DataLen) == 0 );
+    }}
+
     // Remove the file
     assert( f.Remove() );
 }
@@ -519,6 +570,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/02/05 22:08:26  ivanov
+ * Enlarged CMemoryFile test
+ *
  * Revision 1.17  2002/06/29 06:45:50  vakatov
  * Get rid of some compilation warnings
  *
