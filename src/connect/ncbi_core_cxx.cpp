@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 static void s_REG_Get(void* user_data,
                       const char* section, const char* name,
-                      char* value, size_t value_size)
+                      char* value, size_t value_size) THROWS_NONE
 {
     try {
         string result = static_cast<CNcbiRegistry*> (user_data)->
@@ -58,13 +58,19 @@ static void s_REG_Get(void* user_data,
         if ( !result.empty() )
             strncpy0(value, result.c_str(), value_size - 1);
     }
+    catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("s_REG_Get() failed", e);
+    }
+    catch (exception& e) {
+        ERR_POST("s_REG_Get() failed" << ": " << e.what());
+    }
     STD_CATCH_ALL("s_REG_Get() failed");
 }
 
 
 static void s_REG_Set(void* user_data,
                       const char* section, const char* name,
-                      const char* value, EREG_Storage storage)
+                      const char* value, EREG_Storage storage) THROWS_NONE
 {
     try {
         static_cast<CNcbiRegistry*> (user_data)->
@@ -72,14 +78,26 @@ static void s_REG_Set(void* user_data,
                 (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
     }
+    catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("s_REG_Set() failed", e);
+    }
+    catch (exception& e) {
+        ERR_POST("s_REG_Set() failed" << ": " << e.what());
+    }
     STD_CATCH_ALL("s_REG_Set() failed");
 }
 
 
-static void s_REG_Cleanup(void* user_data)
+static void s_REG_Cleanup(void* user_data) THROWS_NONE
 {
     try {
         delete static_cast<CNcbiRegistry*> (user_data);
+    }
+    catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("s_REG_Cleanup() failed", e);
+    }
+    catch (exception& e) {
+        ERR_POST("s_REG_Cleanup() failed" << ": " << e.what());
     }
     STD_CATCH_ALL("s_REG_Cleanup() failed");
 }
@@ -100,7 +118,8 @@ extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
  *                                Logger                               *
  ***********************************************************************/
 
-static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
+static void s_LOG_Handler(void*         /*user_data*/,
+                          SLOG_Handler*   call_data) THROWS_NONE
 {
     try {
         EDiagSev level;
@@ -146,6 +165,12 @@ static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
                 "\n#################### [END] Raw Data";
         }
     }
+    catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("s_LOG_Handler() failed", e);
+    }
+    catch (exception& e) {
+        ERR_POST("s_LOG_Handler() failed" << ": " << e.what());
+    }
     STD_CATCH_ALL("s_LOG_Handler() failed");
 }
 
@@ -163,7 +188,7 @@ extern LOG LOG_cxx2c(void)
  *                               MT-Lock                               *
  ***********************************************************************/
 
-static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
+static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
 {
     try {
         CRWLock* lock = static_cast<CRWLock*> (user_data);
@@ -178,21 +203,33 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
             lock->Unlock();
             break;
         default:
-            THROW1_TRACE(runtime_error,
-                         "s_LOCK_Handler() used with op " + (unsigned int)how);
+            NCBI_THROW(CCoreException, eCore,
+                       "Used with op " + (unsigned int) how);
         }
         return 1/*true*/;
 
+    }
+    catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("s_LOCK_Handler() failed", e);
+    }
+    catch (exception& e) {
+        ERR_POST("s_LOCK_Handler() failed" << ": " << e.what());
     }
     STD_CATCH_ALL("s_LOCK_Handler() failed");
     return 0/*false*/;
 }
 
 
-static void s_LOCK_Cleanup(void* user_data)
+static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
 {
     try {
         delete static_cast<CRWLock*> (user_data);
+    }
+    catch (CException& e) {
+        NCBI_REPORT_EXCEPTION("s_LOCK_Cleanup() failed", e);
+    }
+    catch (exception& e) {
+        ERR_POST("s_LOCK_Cleanup() failed" << ": " << e.what());
     }
     STD_CATCH_ALL("s_LOCK_Cleanup() failed");
 }
@@ -226,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/12/19 17:33:47  lavr
+ * More complete (and consistent with corelib) exception handling
+ *
  * Revision 6.13  2002/10/28 15:42:57  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
