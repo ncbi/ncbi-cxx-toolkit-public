@@ -42,7 +42,7 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 #include <blast_options.h>
 #include <blast_extend.h>
 #include <gapinfo.h>
-#include <mbalign.h>
+#include <greedy_align.h>
 
 #ifdef __cplusplus
 extern "C" {
