@@ -55,15 +55,15 @@ public:
 
     bool Split(const CSeq_entry& entry);
     
-    const CSplittedBlob& GetBlob(void) const
+    const CSplitBlob& GetBlob(void) const
         {
-            return m_SplittedBlob;
+            return m_SplitBlob;
         }
 
 private:
     SSplitterParams m_Params;
 
-    CSplittedBlob m_SplittedBlob;
+    CSplitBlob m_SplitBlob;
 };
 
 END_SCOPE(objects)
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/03 19:30:44  kuznets
+* Misprint fixed
+*
 * Revision 1.2  2003/11/26 23:04:57  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

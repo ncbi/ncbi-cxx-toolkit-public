@@ -104,7 +104,7 @@ CBlobSplitterImpl::~CBlobSplitterImpl(void)
 
 void CBlobSplitterImpl::Reset(void)
 {
-    m_SplittedBlob.Reset();
+    m_SplitBlob.Reset();
     m_Skeleton.Reset(new CSeq_entry);
     m_NextBioseq_set_Id = 1;
     m_Bioseqs.clear();
@@ -124,9 +124,9 @@ void CBlobSplitterImpl::MakeID2SObjects(void)
             MakeID2Chunk(it->first, it->second);
         }
     }
-    m_SplittedBlob.Reset(*m_Skeleton, *m_Split_Info);
+    m_SplitBlob.Reset(*m_Skeleton, *m_Split_Info);
     ITERATE ( TID2Chunks, it, m_ID2_Chunks ) {
-        m_SplittedBlob.AddChunk(it->first, *it->second);
+        m_SplitBlob.AddChunk(it->first, *it->second);
     }
 }
 
@@ -540,6 +540,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/12/03 19:30:45  kuznets
+* Misprint fixed
+*
 * Revision 1.5  2003/12/02 19:12:24  vasilche
 * Fixed compilation on MSVC.
 *

@@ -61,12 +61,12 @@ bool CBlobSplitter::Split(const CSeq_entry& entry)
 {
     CBlobSplitterImpl impl(m_Params);
     if ( impl.Split(entry) ) {
-        m_SplittedBlob = impl.GetBlob();
+        m_SplitBlob = impl.GetBlob();
     }
     else {
-        m_SplittedBlob.Reset(entry);
+        m_SplitBlob.Reset(entry);
     }
-    return m_SplittedBlob.IsSplitted();
+    return m_SplitBlob.IsSplit();
 }
 
 
@@ -111,7 +111,7 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
     _ASSERT(before_count == after_count);
 #endif
 
-    return m_SplittedBlob.IsSplitted();
+    return m_SplitBlob.IsSplit();
 }
 
 
@@ -307,6 +307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/03 19:30:44  kuznets
+* Misprint fixed
+*
 * Revision 1.3  2003/11/26 23:04:57  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

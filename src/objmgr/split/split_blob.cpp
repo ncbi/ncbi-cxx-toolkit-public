@@ -42,20 +42,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
-// CSplittedBlob
+// CSplitBlob
 /////////////////////////////////////////////////////////////////////////////
 
-CSplittedBlob::CSplittedBlob(void)
+CSplitBlob::CSplitBlob(void)
 {
 }
 
 
-CSplittedBlob::~CSplittedBlob(void)
+CSplitBlob::~CSplitBlob(void)
 {
 }
 
 
-CSplittedBlob::CSplittedBlob(const CSplittedBlob& blob)
+CSplitBlob::CSplitBlob(const CSplitBlob& blob)
     : m_MainBlob(blob.m_MainBlob),
       m_SplitInfo(blob.m_SplitInfo),
       m_Chunks(blob.m_Chunks)
@@ -63,7 +63,7 @@ CSplittedBlob::CSplittedBlob(const CSplittedBlob& blob)
 }
 
 
-CSplittedBlob& CSplittedBlob::operator=(const CSplittedBlob& blob)
+CSplitBlob& CSplitBlob::operator=(const CSplitBlob& blob)
 {
     m_MainBlob = blob.m_MainBlob;
     m_SplitInfo = blob.m_SplitInfo;
@@ -72,7 +72,7 @@ CSplittedBlob& CSplittedBlob::operator=(const CSplittedBlob& blob)
 }
 
 
-void CSplittedBlob::Reset(void)
+void CSplitBlob::Reset(void)
 {
     m_MainBlob.Reset();
     m_SplitInfo.Reset();
@@ -80,14 +80,14 @@ void CSplittedBlob::Reset(void)
 }
 
 
-void CSplittedBlob::Reset(const CSeq_entry& entry)
+void CSplitBlob::Reset(const CSeq_entry& entry)
 {
     Reset();
     m_MainBlob.Reset(&entry);
 }
 
 
-void CSplittedBlob::Reset(const CSeq_entry& skeleton,
+void CSplitBlob::Reset(const CSeq_entry& skeleton,
                           const CID2S_Split_Info& split_info)
 {
     Reset();
@@ -96,7 +96,7 @@ void CSplittedBlob::Reset(const CSeq_entry& skeleton,
 }
 
 
-void CSplittedBlob::AddChunk(const CID2S_Chunk_Id& id,
+void CSplitBlob::AddChunk(const CID2S_Chunk_Id& id,
                              const CID2S_Chunk& chunk)
 {
     m_Chunks[id].Reset(&chunk);
@@ -109,6 +109,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/03 19:30:45  kuznets
+* Misprint fixed
+*
 * Revision 1.3  2003/12/02 19:12:24  vasilche
 * Fixed compilation on MSVC.
 *

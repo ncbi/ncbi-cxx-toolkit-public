@@ -87,9 +87,9 @@ public:
 
     bool Split(const CSeq_entry& entry);
 
-    const CSplittedBlob& GetBlob(void) const
+    const CSplitBlob& GetBlob(void) const
         {
-            return m_SplittedBlob;
+            return m_SplitBlob;
         }
 
     void Reset(void);
@@ -121,7 +121,7 @@ private:
     SSplitterParams m_Params;
 
     // split result
-    CSplittedBlob m_SplittedBlob;
+    CSplitBlob m_SplitBlob;
 
     // split state
     CRef<CSeq_entry> m_Skeleton;
@@ -144,6 +144,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/03 19:30:44  kuznets
+* Misprint fixed
+*
 * Revision 1.3  2003/12/02 19:12:23  vasilche
 * Fixed compilation on MSVC.
 *

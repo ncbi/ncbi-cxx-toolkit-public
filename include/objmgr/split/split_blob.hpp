@@ -49,14 +49,14 @@ class CID2S_Split_Info;
 class CID2S_Chunk;
 class CID2S_Chunk_Id;
 
-class CSplittedBlob
+class CSplitBlob
 {
 public:
-    CSplittedBlob(void);
-    ~CSplittedBlob(void);
+    CSplitBlob(void);
+    ~CSplitBlob(void);
 
-    CSplittedBlob(const CSplittedBlob& blob);
-    CSplittedBlob& operator=(const CSplittedBlob& blob);
+    CSplitBlob(const CSplitBlob& blob);
+    CSplitBlob& operator=(const CSplitBlob& blob);
 
     void Reset(void);
     void Reset(const CSeq_entry& entry);
@@ -64,7 +64,7 @@ public:
                const CID2S_Split_Info& split_info);
     void AddChunk(const CID2S_Chunk_Id& id, const CID2S_Chunk& chunk);
 
-    bool IsSplitted(void) const
+    bool IsSplit(void) const
         {
             return m_SplitInfo;
         }
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/03 19:30:46  kuznets
+* Misprint fixed
+*
 * Revision 1.3  2003/12/02 19:12:24  vasilche
 * Fixed compilation on MSVC.
 *

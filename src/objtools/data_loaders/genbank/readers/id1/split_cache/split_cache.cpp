@@ -608,11 +608,11 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         return;
     }
 
-    const CSplittedBlob& blob = splitter.GetBlob();
+    const CSplitBlob& blob = splitter.GetBlob();
     if ( m_DumpAsnText ) {
         Dump(blob.GetMainBlob(), eSerial_AsnText, blob_key, "-main");
         Dump(blob.GetSplitInfo(), eSerial_AsnText, blob_key, "-split");
-        ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
             Dump(*it->second, eSerial_AsnText, blob_key, suffix);
         }
@@ -620,7 +620,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     if ( m_DumpAsnBinary ) {
         Dump(blob.GetMainBlob(), eSerial_AsnBinary, blob_key, "-main");
         Dump(blob.GetSplitInfo(), eSerial_AsnBinary, blob_key, "-split");
-        ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
             Dump(*it->second, eSerial_AsnBinary, blob_key, suffix);
         }
@@ -628,7 +628,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     {{ // storing split data
         DumpData(blob.GetMainBlob(), eDataType_MainBlob, blob_key, "-main");
         DumpData(blob.GetSplitInfo(), eDataType_SplitInfo, blob_key, "-split");
-        ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
             DumpData(*it->second, eDataType_Chunk, blob_key, suffix);
         }
@@ -637,7 +637,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         StoreToCache(blob.GetMainBlob(), eDataType_MainBlob, seqref, "-main");
         StoreToCache(blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
                      "-split");
-        ITERATE ( CSplittedBlob::TChunks, it, blob.GetChunks() ) {
+        ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
             StoreToCache(*it->second, eDataType_Chunk, seqref, suffix);
         }
@@ -668,6 +668,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/12/03 19:30:45  kuznets
+* Misprint fixed
+*
 * Revision 1.8  2003/12/02 23:46:20  vasilche
 * Fixed INTERNAL COMPILER ERROR on MSVC - splitted expression.
 *
