@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2001/09/25 14:04:06  ucko
+ * Update call to CConn_ServiceStream constructor for new interface.
+ *
  * Revision 1.7  2001/07/19 19:40:20  lavr
  * Typo fixed
  *
@@ -171,7 +174,7 @@ int CId1FetchApp::Run(void)
 
     // Open connection to ID1 server
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
-    CConn_ServiceStream     id1_server("ID1", fSERV_Any, 0, &tmout);
+    CConn_ServiceStream     id1_server("ID1", fSERV_Any, 0, 0, &tmout);
     {{
         CObjectOStreamAsnBinary id1_server_output(id1_server);
 
