@@ -431,7 +431,7 @@ char *yytext;
  */
 #line 44 "newick.lpp"
 #include <string.h>
-#include <stdlib.h>
+#include <util/stream_utils.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 
 USING_SCOPE(ncbi);
@@ -444,8 +444,8 @@ static string g_Buffer;
 extern CNcbiIstream *g_NewickIstr;
 #define YY_INPUT(buf, result, max_size) \
 { \
-    result = g_NewickIstr->readsome(buf, max_size); \
-    if (result == 0 && !g_NewickIstr) { \
+    result = CStreamUtils::Readsome(*g_NewickIstr, buf, max_size); \
+    if (result == 0 && !*g_NewickIstr) { \
         result = YY_NULL; \
     } \
 }
@@ -725,7 +725,7 @@ YY_RULE_SETUP
     g_Buffer.erase();
     g_Buffer.reserve(strlen(yytext));
     for (unsigned int i = 1;  i < strlen(yytext) - 1; ++ i) {
-        g_Buffer.push_back(yytext[i]);
+        g_Buffer += yytext[i];
         if (yytext[i] == '\'') {
             ++i;
         }
@@ -1653,6 +1653,9 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/12 02:30:35  ucko
+ * More portability fixes for newick parser.
+ *
  * Revision 1.2  2004/02/11 22:18:16  ucko
  * erase() strings rather than clear()ing them for older compilers' sake.
  *
