@@ -351,7 +351,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 
    lh_helper_size = MAX(1024,hsp_list->hspcnt+5);
    lh_helper = (LinkHelpStruct *) 
-      MemNew(sizeof(LinkHelpStruct)*lh_helper_size);
+      calloc(lh_helper_size, sizeof(LinkHelpStruct));
 
 	if (gapped_calculation && 
        program_number != blast_type_blastn)
