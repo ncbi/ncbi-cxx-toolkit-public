@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2002/04/13 06:36:36  lavr
+ * Fix for empty path parsing in HTTP URL
+ *
  * Revision 6.31  2002/03/19 22:13:09  lavr
  * Minor tweak in recognizing "infinite" (and part) as a special timeout
  *
@@ -429,9 +432,15 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     } else
         a = s + strlen(s);
 
-    /* path (can be relative) */
-    if (*s == '/' || !(p = strrchr(info->path, '/')))
+    /* path (NB: can be relative) */
+    if (s != url || *s == '/' || !(p = strrchr(info->path, '/'))) {
+        /* absolute path */
         p = info->path - 1;
+        if (!*s) {
+            s = "/";   /* in case of an empty path we take the root '/' */
+            a = s + 1;
+        }
+    }
     p++;
     if ((size_t)(a - s) < sizeof(info->path) - (size_t)(p - info->path)) {
         memcpy(p, s, (size_t)(a - s));
