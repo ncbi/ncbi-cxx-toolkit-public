@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.7  2001/11/01 19:05:12  thiessen
 * use wxDirSelector
 *
@@ -94,18 +97,19 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit = TRUE, bool s
 #define ID_TEXTCTRL 10004
 #define ID_SPINBUTTON 10005
 #define ID_C_HIGHLIGHT 10006
-#define ID_B_Q_LOW 10007
-#define ID_B_Q_MED 10008
-#define ID_B_Q_HIGH 10009
+#define ID_RADIOBOX 10007
+#define ID_B_Q_LOW 10008
+#define ID_B_Q_MED 10009
+#define ID_B_Q_HIGH 10010
 wxSizer *SetupQualityPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
-#define ID_C_CACHE_ON 10010
-#define ID_LINE 10011
-#define ID_T_CACHE_1 10012
-#define ID_B_CACHE_BROWSE 10013
-#define ID_T_CACHE_FOLDER 10014
-#define ID_T_CACHE_2 10015
-#define ID_B_CACHE_CLEAR 10016
+#define ID_C_CACHE_ON 10011
+#define ID_LINE 10012
+#define ID_T_CACHE_1 10013
+#define ID_B_CACHE_BROWSE 10014
+#define ID_T_CACHE_FOLDER 10015
+#define ID_T_CACHE_2 10016
+#define ID_B_CACHE_CLEAR 10017
 wxSizer *SetupCachePage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,6 +154,16 @@ END_EVENT_TABLE()
             box->SetValue(on); \
     } while (0)
 
+#define SET_RADIOBOX_FROM_REGISTRY_VALUE(section, name, id) \
+    do { \
+        std::string value; \
+        wxRadioBox *radio = wxDynamicCast(FindWindow(id), wxRadioBox); \
+        if (!radio || !RegistryGetString((section), (name), &value)) \
+            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+        else \
+            radio->SetStringSelection(value.c_str()); \
+    } while (0)
+
 PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     wxDialog(parent, -1, "Cn3D++ Preferences", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU) // not resizable
@@ -175,6 +189,7 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, iWormSegments);
     SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, iHelixSides);
     SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
+    SET_RADIOBOX_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, ID_RADIOBOX);
 
     SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_ENABLED, ID_C_CACHE_ON);
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
@@ -217,6 +232,20 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
         } \
     } while (0)
 
+#define SET_RADIO_REGISTRY_VALUE_IF_DIFFERENT(section, name, id, changedPtr) \
+    do { \
+        std::string oldValue, newValue; \
+        if (!RegistryGetString((section), (name), &oldValue)) throw "RegistryGetString() failed"; \
+        wxRadioBox *radio = wxDynamicCast(FindWindow(id), wxRadioBox); \
+        if (!radio) throw "Can't get wxRadioBox*"; \
+        newValue = radio->GetStringSelection().c_str(); \
+        if (newValue != oldValue) { \
+            if (!RegistrySetString((section), (name), newValue)) \
+                throw "RegistrySetString() failed"; \
+            if (changedPtr) *((bool*) changedPtr) = true; \
+        } \
+    } while (0)
+
 #define SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(section, name, textCtrl) \
     do { \
         std::string oldValue, newValue; \
@@ -249,6 +278,8 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
             REG_QUALITY_HELIX_SIDES, iHelixSides, &qualityChanged);
         SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
             REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT, &qualityChanged);
+        SET_RADIO_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_PROJECTION_TYPE, ID_RADIOBOX, &qualityChanged);
 
         SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_ENABLED, ID_C_CACHE_ON, NULL);
         DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
@@ -415,9 +446,10 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit, bool set_size
 
 wxSizer *SetupQualityPage(wxPanel *parent, bool call_fit, bool set_sizer)
 {
-    wxBoxSizer *item0 = new wxBoxSizer( wxHORIZONTAL );
+    wxFlexGridSizer *item0 = new wxFlexGridSizer( 2, 0, 0 );
+
     wxStaticBox *item2 = new wxStaticBox( parent, -1, "Rendering Settings" );
-    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxHORIZONTAL );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
     wxFlexGridSizer *item3 = new wxFlexGridSizer( 3, 0, 0 );
     item3->AddGrowableCol( 0 );
 
@@ -475,37 +507,53 @@ wxSizer *SetupQualityPage(wxPanel *parent, bool call_fit, bool set_sizer)
     item3->Add(giAtomStacks->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item3->Add(giAtomStacks->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    wxStaticText *item222 = new wxStaticText( parent, ID_TEXT, "Highlights:", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item222, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    wxCheckBox *item233 = new wxCheckBox( parent, ID_C_HIGHLIGHT, "", wxDefaultPosition, wxDefaultSize, 0 );
-    item3->Add( item233, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
-
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
     item1->Add(item3, 0, wxALIGN_CENTRE|wxALL, 5);
-    item0->Add(item1, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 
+    wxFlexGridSizer *item22 = new wxFlexGridSizer( 2, 0, 0, 0 );
+    item22->AddGrowableCol( 1 );
 
-    wxStaticBox *item23 = new wxStaticBox( parent, -1, "Presets" );
-    wxStaticBoxSizer *item22 = new wxStaticBoxSizer( item23, wxHORIZONTAL );
+    wxStaticText *item23 = new wxStaticText( parent, ID_TEXT, "Highlights:", wxDefaultPosition, wxDefaultSize, 0 );
+    item22->Add( item23, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxBoxSizer *item24 = new wxBoxSizer( wxVERTICAL );
+    wxCheckBox *item24 = new wxCheckBox( parent, ID_C_HIGHLIGHT, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item22->Add( item24, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
 
-    wxButton *item25 = new wxButton( parent, ID_B_Q_LOW, "Low", wxDefaultPosition, wxDefaultSize, 0 );
-    item24->Add( item25, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticText *item25 = new wxStaticText( parent, ID_TEXT, "Projection:", wxDefaultPosition, wxDefaultSize, 0 );
+    item22->Add( item25, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    item24->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxString strs26[] =
+    {
+        "Perspective",
+        "Orthographic"
+    };
+    wxRadioBox *item26 = new wxRadioBox( parent, ID_RADIOBOX, "", wxDefaultPosition, wxDefaultSize, 2, strs26, 1, wxRA_SPECIFY_COLS );
+    item22->Add( item26, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
-    wxButton *item26 = new wxButton( parent, ID_B_Q_MED, "Medium", wxDefaultPosition, wxDefaultSize, 0 );
-    item24->Add( item26, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item1->Add( item22, 0, wxALIGN_CENTRE, 5 );
 
-    item24->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 
-    wxButton *item27 = new wxButton( parent, ID_B_Q_HIGH, "High", wxDefaultPosition, wxDefaultSize, 0 );
-    item24->Add( item27, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxStaticBox *item28 = new wxStaticBox( parent, -1, "Presets" );
+    wxStaticBoxSizer *item27 = new wxStaticBoxSizer( item28, wxHORIZONTAL );
 
-    item22->Add( item24, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxBoxSizer *item29 = new wxBoxSizer( wxVERTICAL );
 
-    item0->Add( item22, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
+    wxButton *item30 = new wxButton( parent, ID_B_Q_LOW, "Low", wxDefaultPosition, wxDefaultSize, 0 );
+    item29->Add( item30, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item29->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item31 = new wxButton( parent, ID_B_Q_MED, "Medium", wxDefaultPosition, wxDefaultSize, 0 );
+    item29->Add( item31, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item29->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item32 = new wxButton( parent, ID_B_Q_HIGH, "High", wxDefaultPosition, wxDefaultSize, 0 );
+    item29->Add( item32, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item27->Add( item29, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
+
+    item0->Add( item27, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 
     if (set_sizer)
     {

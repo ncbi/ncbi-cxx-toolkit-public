@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.59  2002/02/01 13:55:54  thiessen
 * fix view restore bug when new file loaded
 *
@@ -285,6 +288,8 @@ static const GLint Shininess = 40;
 // to cache registry values
 static int atomSlices, atomStacks, bondSides, wormSides, wormSegments, helixSides;
 static bool highlightsOn;
+static std::string projectionType;
+
 
 // matrix conversion utility functions
 
@@ -376,10 +381,26 @@ void OpenGLRenderer::NewView(int selectX, int selectY) const
     }
 
     GLdouble aspect = (static_cast<GLdouble>(Viewport[2])) / Viewport[3];
-    gluPerspective(RadToDegrees(cameraAngleRad),    // viewing angle (degrees)
-                   aspect,                          // w/h aspect
-                   cameraClipNear,                  // near clipping plane
-                   cameraClipFar);                  // far clipping plane
+
+    // set camera angle/perspective
+    if (projectionType == "Perspective") {
+        gluPerspective(RadToDegrees(cameraAngleRad),    // viewing angle (degrees)
+                       aspect,                          // w/h aspect
+                       cameraClipNear,                  // near clipping plane
+                       cameraClipFar);                  // far clipping plane
+    } else { // Orthographic
+        GLdouble right, top;
+        top = ((cameraClipNear + cameraClipFar) / 2.0) * sin(cameraAngleRad / 2.0);
+        right = top * aspect;
+        glOrtho(-right,             // sides of viewing box, assuming eye is at (0,0,0)
+                right,
+                -top,
+                top,
+                cameraClipNear,     // near clipping plane
+                cameraClipFar);     // far clipping plane
+    }
+
+    // set camera position and direction
     gluLookAt(0.0,0.0,cameraDistance,               // the camera position
               cameraLookAtX,                        // the "look-at" point
               cameraLookAtY,
@@ -722,7 +743,8 @@ void OpenGLRenderer::Construct(void)
             !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, &wormSides) ||
             !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, &wormSegments) ||
             !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, &helixSides) ||
-            !RegistryGetBoolean(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, &highlightsOn))
+            !RegistryGetBoolean(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, &highlightsOn) ||
+            !RegistryGetString(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, &projectionType))
             ERR_POST(Error << "OpenGLRenderer::Construct() - error getting quality setting from registry");
 
         // do the drawing

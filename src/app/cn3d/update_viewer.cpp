@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/03/04 15:52:15  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.29  2002/02/27 16:29:42  thiessen
 * add model type flag to general mime type
 *
@@ -205,6 +208,7 @@ void UpdateViewer::SaveDialog(void)
 void UpdateViewer::CreateUpdateWindow(void)
 {
     if (updateWindow) {
+        updateWindow->Show(true);
         GlobalMessenger()->PostRedrawSequenceViewer(this);
     } else {
         SequenceDisplay *display = GetCurrentDisplay();
@@ -222,7 +226,10 @@ void UpdateViewer::CreateUpdateWindow(void)
 
 void UpdateViewer::Refresh(void)
 {
-    if (updateWindow) updateWindow->Refresh();
+    if (updateWindow) {
+        updateWindow->Show(true);
+        updateWindow->Refresh();
+    }
 }
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.46  2002/03/01 15:48:05  thiessen
 * revert to single line per sequence
 *
@@ -214,9 +217,10 @@ void SequenceViewer::CreateSequenceWindow(void)
 
 void SequenceViewer::Refresh(void)
 {
-    if (sequenceWindow)
+    if (sequenceWindow) {
+        sequenceWindow->Show(true);
         sequenceWindow->Refresh();
-    else
+    } else
         CreateSequenceWindow();
 }
 

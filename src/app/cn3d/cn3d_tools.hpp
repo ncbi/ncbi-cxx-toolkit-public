@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/03/04 15:52:13  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.14  2001/12/20 21:41:46  thiessen
 * create/use user preferences directory
 *
@@ -142,6 +145,7 @@ static const std::string
     REG_QUALITY_WORM_SEGMENTS = "WormSegments",
     REG_QUALITY_HELIX_SIDES = "HelixSides",
     REG_HIGHLIGHTS_ON = "HighlightsOn",
+    REG_PROJECTION_TYPE = "ProjectionType",
     // font settings
     REG_OPENGL_FONT_SECTION = "Cn3D-4-Font-OpenGL",
     REG_SEQUENCE_FONT_SECTION = "Cn3D-4-Font-Sequence",

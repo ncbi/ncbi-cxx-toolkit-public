@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/03/04 15:52:14  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.26  2002/02/13 14:53:30  thiessen
 * add update sort
 *
@@ -189,10 +192,12 @@ SequenceViewerWindow::~SequenceViewerWindow(void)
 void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
 {
     if (viewer) {
-        if (!SaveDialog(event.CanVeto())) {
-            event.Veto();       // cancelled
+        if (event.CanVeto()) {
+            Show(false);    // just hide the window if we can
+            event.Veto();
             return;
         }
+        SaveDialog(false);
         viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
         viewer->GUIDestroyed(); // make sure SequenceViewer knows the GUI is gone
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!

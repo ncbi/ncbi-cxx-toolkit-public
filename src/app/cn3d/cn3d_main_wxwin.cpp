@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.126  2002/03/04 15:52:13  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.125  2002/03/01 19:21:00  thiessen
 * add icon to all frames
 *
@@ -603,8 +606,8 @@ public:
 #if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
                 | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
 #endif
-            ) 
-    { 
+            )
+    {
         totalChars = 0;
         SetIcon(wxICON(cn3d));
     }
@@ -729,6 +732,7 @@ void Cn3DApp::InitRegistry(void)
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, 6);
     RegistrySetInteger(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, 12);
     RegistrySetBoolean(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, true);
+    RegistrySetString(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, "Perspective");
 
     // default font for OpenGL (structure window)
 #if defined(__WXMSW__)

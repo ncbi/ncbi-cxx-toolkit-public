@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/03/04 15:52:13  thiessen
+* hide sequence windows instead of destroying ; add perspective/orthographic projection choice
+*
 * Revision 1.26  2002/02/05 18:53:24  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -210,6 +213,7 @@ void Messenger::ProcessRedraws(void)
     if (redrawAllStructures) {
         structureWindow->glCanvas->SetCurrent();
 		structureWindow->glCanvas->renderer->Construct();
+        structureWindow->glCanvas->renderer->NewView(0,0);
 		structureWindow->glCanvas->Refresh(false);
 		redrawAllStructures = false;
     }
@@ -228,6 +232,7 @@ void Messenger::ProcessRedraws(void)
             hetsRedrawn[object] = true;
         }
         redrawMolecules.clear();
+        structureWindow->glCanvas->renderer->NewView(0,0);
         structureWindow->glCanvas->Refresh(false);
     }
 }
