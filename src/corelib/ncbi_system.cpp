@@ -418,14 +418,14 @@ unsigned long GetVirtualMemoryPageSize(void)
 void SleepMicroSec(unsigned long mc_sec)
 {
 #if defined(NCBI_OS_MSWIN)
-    Sleep(mc_sec / 1000);
+    Sleep((mc_sec + 500) / 1000);
 #elif defined(NCBI_OS_UNIX)
     struct timeval delay;
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
     select(0, (fd_set*)NULL, (fd_set*)NULL, (fd_set*)NULL, &delay);
 #elif defined(NCBI_OS_MAC)
-    OTDelay(mc_sec / 1000);
+    OTDelay((mc_sec + 500) / 1000);
 #endif
 }
 
@@ -434,8 +434,10 @@ void SleepMilliSec(unsigned long ml_sec)
 {
 #if defined(NCBI_OS_MSWIN)
     Sleep(ml_sec);
-#else
-    SleepMicroSec(ml_sec * kMilliSecondsPerSecond);
+#elif defined(NCBI_OS_UNIX)
+    SleepMicroSec(ml_sec * 1000);
+#elif defined(NCBI_OS_MAC)
+    OTDelay(ml_sec);
 #endif
 }
 
@@ -485,6 +487,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/03/01 17:40:23  ivanov
+ * SleepMicroSec(): when converting sleeping time to milliseconds on OS which
+ * doesn't support it round sleeping time instead of truncate.
+ *
  * Revision 1.40  2005/02/23 13:45:37  ivanov
  * + SuppressSystemMessageBox() (Windows specific)
  *
