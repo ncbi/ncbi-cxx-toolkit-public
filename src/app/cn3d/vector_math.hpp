@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/08/15 20:50:31  juran
+* Include <stddef.h> for size_t.
+* "Alienate" friend operators.
+*
 * Revision 1.12  2001/05/22 22:35:36  thiessen
 * remove SIZE_TYPE
 *
@@ -73,6 +77,7 @@
 #define CN3D_VECTORMATH__HPP
 
 #include <math.h>
+#include <stddef.h>
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
@@ -101,13 +106,13 @@ public:
     {
         x=xs; y=ys; z=zs;
     }
-    friend bool operator == (const Vector& a, const Vector& b)
+    bool operator == (const Vector& other)
     {
-        return (a.x==b.x && a.y==b.y && a.z==b.z);
+        return (x == other.x && y == other.y && z == other.z);
     }
-    friend bool operator != (const Vector& a, const Vector& b)
+    bool operator != (const Vector& other)
     {
-        return (a.x!=b.x || a.y!=b.y || a.z!=b.z);
+        return !(*this == other);
     }
     double& operator [] (size_t i)
     {
