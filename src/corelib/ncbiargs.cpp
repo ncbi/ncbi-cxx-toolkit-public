@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2000/09/19 21:19:58  butanaev
+ * Added possibility to change file open mode on the fly
+ *
  * Revision 1.4  2000/09/18 19:39:02  vasilche
  * Added CreateArgs() from CNcbiArguments.
  *
@@ -105,12 +108,12 @@ bool CArgValue::AsBoolean(void) const
     ARG_THROW("Not implemented", AsString());
 }
 
-CNcbiIstream &CArgValue::AsInputFile(void) const
+CNcbiIstream &CArgValue::AsInputFile(EFlags changeModeTo) const
 {
     ARG_THROW("Not implemented", AsString());
 }
 
-CNcbiOstream &CArgValue::AsOutputFile(void) const
+CNcbiOstream &CArgValue::AsOutputFile(EFlags changeModeTo) const
 {
     ARG_THROW("Not implemented", AsString());
 }
@@ -252,11 +255,11 @@ public:
                    IOS_BASE::openmode  openmode  = 0,
                    bool                delay_open = false);
     ~CArg_InputFile();
-    virtual CNcbiIstream& AsInputFile(void) const;
+    virtual CNcbiIstream& AsInputFile(EFlags changeModeTo = fUnchanged) const;
 
 private:
     void Open(void) const;
-    IOS_BASE::openmode   m_OpenMode;
+    mutable IOS_BASE::openmode   m_OpenMode;
     mutable CNcbiIstream *m_InputFile;
     mutable bool m_DeleteFlag;
 };
@@ -301,10 +304,19 @@ CArg_InputFile::~CArg_InputFile()
     delete m_InputFile;
 }
 
-CNcbiIstream& CArg_InputFile::AsInputFile(void) const
+CNcbiIstream& CArg_InputFile::AsInputFile(EFlags changeModeTo) const
 {
-    Open();
-    return *m_InputFile;
+  if(changeModeTo != fUnchanged && m_InputFile)
+    ARG_THROW("Cannot change open mode in non-deffered open file argument", AsString());
+
+  if(changeModeTo == fToText)
+    m_OpenMode &= ~CArgDescriptions::fBinary;
+
+  if(changeModeTo == fToBinary)
+    m_OpenMode |= CArgDescriptions::fBinary;
+
+  Open();
+  return *m_InputFile;
 }
 
 
@@ -319,10 +331,10 @@ public:
                   bool               delay_open);
   ~CArg_OutputFile();
 
-  virtual CNcbiOstream& AsOutputFile(void) const;
+  virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
 private:
   void Open(void) const;
-  IOS_BASE::openmode              m_OpenMode;
+  mutable IOS_BASE::openmode m_OpenMode;
   mutable CNcbiOstream *m_OutputFile;
   mutable bool m_DeleteFlag;
 };
@@ -368,10 +380,19 @@ CArg_OutputFile::~CArg_OutputFile()
     delete m_OutputFile;
 }
 
-CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
+CNcbiOstream& CArg_OutputFile::AsOutputFile(EFlags changeModeTo) const
 {
-    Open();
-    return *m_OutputFile;
+  if(changeModeTo != fUnchanged && ! m_OutputFile)
+    ARG_THROW("Cannot change open mode in non-deffered open file argument", AsString());
+
+  if(changeModeTo == fToText)
+    m_OpenMode &= ~CArgDescriptions::fBinary;
+
+  if(changeModeTo == fToBinary)
+    m_OpenMode |= CArgDescriptions::fBinary;
+
+  Open();
+  return *m_OutputFile;
 }
 
 ///////////////////////////////////////////////////////

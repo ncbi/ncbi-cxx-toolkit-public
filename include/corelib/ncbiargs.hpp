@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2000/09/19 21:18:11  butanaev
+ * Added possibility to change file open mode on the fly
+ *
  * Revision 1.3  2000/09/18 19:38:59  vasilche
  * Added CreateArgs() from CNcbiArguments.
  *
@@ -122,8 +125,16 @@ public:
     virtual long            AsInteger    (void) const;
     virtual double          AsDouble     (void) const;
     virtual bool            AsBoolean    (void) const;
-    virtual CNcbiIstream&  AsInputFile  (void) const;
-    virtual CNcbiOstream&  AsOutputFile (void) const;
+
+    enum EFlags {
+        // for "AsInputFile" and "AsOutputFile"
+        fUnchanged = 0x1, // do not change open mode
+        fToText      = 0x2, // change file open mode to text
+        fToBinary    = 0x4  // change file open mode to binary
+    };
+
+    virtual CNcbiIstream&  AsInputFile  (EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiOstream&  AsOutputFile (EFlags changeModeTo = fUnchanged) const;
 
 protected:
     // Prohibit explicit instantiation of "CArg" objects
